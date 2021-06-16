@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
@@ -22,22 +23,23 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
+import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
+import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeSignaturePool;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.server.StateStorageMode;
@@ -68,11 +70,17 @@ public class ValidatorApiHandlerIntegrationTest {
   private final DefaultPerformanceTracker performanceTracker =
       mock(DefaultPerformanceTracker.class);
   private final BlockImportChannel blockImportChannel = mock(BlockImportChannel.class);
-  private final BlockGossipChannel blockGossipChannel = Mockito.mock(BlockGossipChannel.class);
+  private final BlockGossipChannel blockGossipChannel = mock(BlockGossipChannel.class);
   private final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
   private final ForkChoiceTrigger forkChoiceTrigger = mock(ForkChoiceTrigger.class);
 
   private final ChainUpdater chainUpdater = storageSystem.chainUpdater();
+  private final SyncCommitteeSignaturePool syncCommitteeSignaturePool =
+      mock(SyncCommitteeSignaturePool.class);
+  private final SyncCommitteeContributionPool syncCommitteeContributionPool =
+      mock(SyncCommitteeContributionPool.class);
+  private final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager =
+      mock(SyncCommitteeSubscriptionManager.class);
   private final ValidatorApiHandler handler =
       new ValidatorApiHandler(
           chainDataProvider,
@@ -88,15 +96,19 @@ public class ValidatorApiHandlerIntegrationTest {
           mock(DutyMetrics.class),
           performanceTracker,
           spec,
-          forkChoiceTrigger);
+          forkChoiceTrigger,
+          syncCommitteeSignaturePool,
+          syncCommitteeContributionPool,
+          syncCommitteeSubscriptionManager);
 
   @BeforeEach
   public void setup() {
     when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
+    when(forkChoiceTrigger.prepareForAttestationProduction(any())).thenReturn(SafeFuture.COMPLETE);
   }
 
   @Test
-  public void createUnsignedAttestation_withRecentBlockAvailable() {
+  public void createAttestationData_withRecentBlockAvailable() {
     final UInt64 targetEpoch = UInt64.valueOf(3);
     final UInt64 targetEpochStartSlot = spec.computeStartSlotAtEpoch(targetEpoch);
     final UInt64 targetSlot = targetEpochStartSlot.plus(2);
@@ -118,10 +130,10 @@ public class ValidatorApiHandlerIntegrationTest {
     final Checkpoint expectedTarget = new Checkpoint(targetEpoch, epochBoundaryBlock.getRoot());
 
     final int committeeIndex = 0;
-    final SafeFuture<Optional<Attestation>> result =
-        handler.createUnsignedAttestation(targetSlot, committeeIndex);
+    final SafeFuture<Optional<AttestationData>> result =
+        handler.createAttestationData(targetSlot, committeeIndex);
     assertThatSafeFuture(result).isCompletedWithNonEmptyOptional();
-    final AttestationData attestation = result.join().get().getData();
+    final AttestationData attestation = result.join().orElseThrow();
     assertThat(attestation.getBeacon_block_root()).isEqualTo(latestBlock.getRoot());
     assertThat(attestation.getSource()).isEqualTo(genesisCheckpoint);
     assertThat(attestation.getTarget()).isEqualTo(expectedTarget);
@@ -143,14 +155,15 @@ public class ValidatorApiHandlerIntegrationTest {
       latestBlock = chainUpdater.advanceChain();
       chainUpdater.updateBestBlock(latestBlock);
     }
+    chainUpdater.setCurrentSlot(targetSlot);
     assertThat(latestBlock).isNotNull();
     final Checkpoint expectedTarget = new Checkpoint(targetEpoch, latestBlock.getRoot());
 
     final int committeeIndex = 0;
-    final SafeFuture<Optional<Attestation>> result =
-        handler.createUnsignedAttestation(targetSlot, committeeIndex);
+    final SafeFuture<Optional<AttestationData>> result =
+        handler.createAttestationData(targetSlot, committeeIndex);
     assertThatSafeFuture(result).isCompletedWithNonEmptyOptional();
-    final AttestationData attestation = result.join().get().getData();
+    final AttestationData attestation = result.join().orElseThrow();
     assertThat(attestation.getBeacon_block_root()).isEqualTo(latestBlock.getRoot());
     assertThat(attestation.getSource()).isEqualTo(genesisCheckpoint);
     assertThat(attestation.getTarget()).isEqualTo(expectedTarget);

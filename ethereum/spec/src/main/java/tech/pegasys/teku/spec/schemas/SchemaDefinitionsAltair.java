@@ -14,19 +14,21 @@
 package tech.pegasys.teku.spec.schemas;
 
 import com.google.common.base.Preconditions;
+import java.util.Optional;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.altair.MetadataMessageSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProofSchema;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionDataSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContributionSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignatureSchema;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSigningDataSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 
-public class SchemaDefinitionsAltair implements SchemaDefinitions {
+public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
   private final BeaconStateSchemaAltair beaconStateSchema;
   private final BeaconBlockBodySchemaAltair beaconBlockBodySchema;
   private final BeaconBlockSchema beaconBlockSchema;
@@ -34,6 +36,7 @@ public class SchemaDefinitionsAltair implements SchemaDefinitions {
   private final SyncCommitteeContributionSchema syncCommitteeContributionSchema;
   private final ContributionAndProofSchema contributionAndProofSchema;
   private final SignedContributionAndProofSchema signedContributionAndProofSchema;
+  private final MetadataMessageSchemaAltair metadataMessageSchema;
 
   public SchemaDefinitionsAltair(final SpecConfigAltair specConfig) {
     this.beaconStateSchema = BeaconStateSchemaAltair.create(specConfig);
@@ -45,6 +48,7 @@ public class SchemaDefinitionsAltair implements SchemaDefinitions {
         ContributionAndProofSchema.create(syncCommitteeContributionSchema);
     this.signedContributionAndProofSchema =
         SignedContributionAndProofSchema.create(contributionAndProofSchema);
+    this.metadataMessageSchema = new MetadataMessageSchemaAltair();
   }
 
   public static SchemaDefinitionsAltair required(final SchemaDefinitions schemaDefinitions) {
@@ -76,6 +80,16 @@ public class SchemaDefinitionsAltair implements SchemaDefinitions {
     return beaconBlockBodySchema;
   }
 
+  @Override
+  public MetadataMessageSchemaAltair getMetadataMessageSchema() {
+    return metadataMessageSchema;
+  }
+
+  @Override
+  public Optional<SchemaDefinitionsAltair> toVersionAltair() {
+    return Optional.of(this);
+  }
+
   public SyncCommitteeContributionSchema getSyncCommitteeContributionSchema() {
     return syncCommitteeContributionSchema;
   }
@@ -92,7 +106,7 @@ public class SchemaDefinitionsAltair implements SchemaDefinitions {
     return SyncCommitteeSignatureSchema.INSTANCE;
   }
 
-  public SyncCommitteeSigningDataSchema getSyncCommitteeSigningDataSchema() {
-    return SyncCommitteeSigningDataSchema.INSTANCE;
+  public SyncAggregatorSelectionDataSchema getSyncAggregatorSelectionDataSchema() {
+    return SyncAggregatorSelectionDataSchema.INSTANCE;
   }
 }

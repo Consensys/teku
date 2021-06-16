@@ -14,6 +14,10 @@
 package tech.pegasys.teku.spec.logic.common.statetransition.exceptions;
 
 public final class BlockProcessingException extends Exception {
+  public BlockProcessingException(String message, Exception cause) {
+    super(message, cause);
+  }
+
   public BlockProcessingException(String err) {
     super(err);
   }

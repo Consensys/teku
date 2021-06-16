@@ -13,10 +13,6 @@
 
 package tech.pegasys.teku.core;
 
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
-import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_ETH1_VOTING_PERIOD;
-
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
@@ -25,6 +21,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
@@ -36,9 +33,8 @@ import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.rayonism.BeaconStateRayonism;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.BeaconStateMerge;
 import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
-import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
@@ -65,7 +61,7 @@ public class BlockProposalTestUtil {
       final SszList<SignedVoluntaryExit> exits)
       throws StateTransitionException, EpochProcessingException, SlotProcessingException {
 
-    final UInt64 newEpoch = compute_epoch_at_slot(newSlot);
+    final UInt64 newEpoch = spec.computeEpochAtSlot(newSlot);
     final BLSSignature randaoReveal =
         signer.createRandaoReveal(newEpoch, state.getForkInfo()).join();
 
@@ -73,7 +69,7 @@ public class BlockProposalTestUtil {
     final BeaconBlockAndState newBlockAndState =
         spec.createNewUnsignedBlock(
             newSlot,
-            get_beacon_proposer_index(blockSlotState, newSlot),
+            spec.getBeaconProposerIndex(blockSlotState, newSlot),
             blockSlotState,
             parentBlockSigningRoot,
             builder ->
@@ -106,7 +102,7 @@ public class BlockProposalTestUtil {
       final Optional<SszList<SignedVoluntaryExit>> exits,
       final Optional<Eth1Data> eth1Data)
       throws StateTransitionException, EpochProcessingException, SlotProcessingException {
-    final UInt64 newEpoch = compute_epoch_at_slot(newSlot);
+    final UInt64 newEpoch = spec.computeEpochAtSlot(newSlot);
     return createNewBlock(
         signer,
         newSlot,
@@ -119,17 +115,18 @@ public class BlockProposalTestUtil {
         exits.orElse(blockBodyLists.createVoluntaryExits()));
   }
 
-  private static Eth1Data get_eth1_data_stub(BeaconState state, UInt64 current_epoch) {
-    UInt64 epochs_per_period = UInt64.valueOf(EPOCHS_PER_ETH1_VOTING_PERIOD);
-    UInt64 voting_period = current_epoch.dividedBy(epochs_per_period);
+  private Eth1Data get_eth1_data_stub(BeaconState state, UInt64 current_epoch) {
+    final SpecConfig specConfig = spec.atSlot(state.getSlot()).getConfig();
+    final int epochsPerPeriod = specConfig.getEpochsPerEth1VotingPeriod();
+    UInt64 votingPeriod = current_epoch.dividedBy(epochsPerPeriod);
     return new Eth1Data(
-        Hash.sha2_256(SSZ.encodeUInt64(epochs_per_period.longValue())),
+        Hash.sha2_256(SSZ.encodeUInt64(epochsPerPeriod)),
         state.getEth1_deposit_index(),
-        Hash.sha2_256(Hash.sha2_256(SSZ.encodeUInt64(voting_period.longValue()))));
+        Hash.sha2_256(Hash.sha2_256(SSZ.encodeUInt64(votingPeriod.longValue()))));
   }
 
   private static ExecutionPayload createExecutionPayload(Spec spec, BeaconState genericState) {
-    final BeaconStateRayonism state = BeaconStateRayonism.required(genericState);
+    final BeaconStateMerge state = BeaconStateMerge.required(genericState);
     final Bytes32 executionParentHash = state.getLatest_execution_payload_header().getBlock_hash();
     final UInt64 timestamp = spec.computeTimeAtSlot(state, state.getSlot());
 
@@ -145,6 +142,6 @@ public class BlockProposalTestUtil {
     } catch (SlotProcessingException | EpochProcessingException e) {
       throw new RuntimeException(e);
     }
-    return BeaconStateUtil.get_beacon_proposer_index(state);
+    return spec.getBeaconProposerIndex(state, state.getSlot());
   }
 }

@@ -20,12 +20,11 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
-import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataStateTransitionValidator;
-import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
+import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
+import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
-import tech.pegasys.teku.spec.logic.common.util.CommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
@@ -43,14 +42,14 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
       final MiscHelpers miscHelpers,
       final BeaconStateAccessors beaconStateAccessors,
       final BeaconStateMutators beaconStateMutators,
-      final CommitteeUtil committeeUtil,
+      final OperationSignatureVerifier operationSignatureVerifier,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
+      final OperationValidator operationValidator,
       final ValidatorStatusFactoryPhase0 validatorStatusFactory,
       final EpochProcessorPhase0 epochProcessor,
       final BlockProcessorPhase0 blockProcessor,
-      final StateTransition stateTransition,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil) {
     super(
@@ -58,16 +57,17 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
         miscHelpers,
         beaconStateAccessors,
         beaconStateMutators,
-        committeeUtil,
+        operationSignatureVerifier,
         validatorsUtil,
         beaconStateUtil,
         attestationUtil,
+        operationValidator,
         validatorStatusFactory,
         epochProcessor,
         blockProcessor,
-        stateTransition,
         forkChoiceUtil,
-        blockProposalUtil);
+        blockProposalUtil,
+        Optional.empty());
   }
 
   public static SpecLogicPhase0 create(
@@ -81,23 +81,19 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
         new BeaconStateMutators(config, miscHelpers, beaconStateAccessors);
 
     // Operation validaton
-    final AttestationDataStateTransitionValidator attestationValidator =
-        new AttestationDataStateTransitionValidator();
+    final OperationSignatureVerifier operationSignatureVerifier =
+        new OperationSignatureVerifier(miscHelpers, beaconStateAccessors);
 
     // Util
-    final CommitteeUtil committeeUtil = new CommitteeUtil(config);
-    final ValidatorsUtil validatorsUtil = new ValidatorsUtil();
+    final ValidatorsUtil validatorsUtil =
+        new ValidatorsUtil(config, miscHelpers, beaconStateAccessors);
     final BeaconStateUtil beaconStateUtil =
         new BeaconStateUtil(
-            config,
-            schemaDefinitions,
-            validatorsUtil,
-            committeeUtil,
-            predicates,
-            miscHelpers,
-            beaconStateAccessors);
-    final AttestationUtil attestationUtil =
-        new AttestationUtil(config, beaconStateUtil, beaconStateAccessors, miscHelpers);
+            config, schemaDefinitions, predicates, miscHelpers, beaconStateAccessors);
+    final AttestationUtil attestationUtil = new AttestationUtil(beaconStateAccessors, miscHelpers);
+    final OperationValidator operationValidator =
+        OperationValidator.create(
+            config, predicates, miscHelpers, beaconStateAccessors, attestationUtil);
     final ValidatorStatusFactoryPhase0 validatorStatusFactory =
         new ValidatorStatusFactoryPhase0(
             config, beaconStateUtil, attestationUtil, beaconStateAccessors, predicates);
@@ -117,31 +113,30 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
             miscHelpers,
             beaconStateAccessors,
             beaconStateMutators,
+            operationSignatureVerifier,
             beaconStateUtil,
             attestationUtil,
             validatorsUtil,
-            attestationValidator);
-    final StateTransition stateTransition =
-        StateTransition.create(
-            config, blockProcessor, epochProcessor, beaconStateUtil, beaconStateAccessors);
+            operationValidator);
     final ForkChoiceUtil forkChoiceUtil =
-        new ForkChoiceUtil(config, beaconStateUtil, attestationUtil, stateTransition, miscHelpers);
+        new ForkChoiceUtil(
+            config, beaconStateAccessors, attestationUtil, blockProcessor, miscHelpers);
     final BlockProposalUtil blockProposalUtil =
-        new BlockProposalUtil(schemaDefinitions, stateTransition);
+        new BlockProposalUtil(schemaDefinitions, blockProcessor);
 
     return new SpecLogicPhase0(
         predicates,
         miscHelpers,
         beaconStateAccessors,
         beaconStateMutators,
-        committeeUtil,
+        operationSignatureVerifier,
         validatorsUtil,
         beaconStateUtil,
         attestationUtil,
+        operationValidator,
         validatorStatusFactory,
         epochProcessor,
         blockProcessor,
-        stateTransition,
         forkChoiceUtil,
         blockProposalUtil);
   }

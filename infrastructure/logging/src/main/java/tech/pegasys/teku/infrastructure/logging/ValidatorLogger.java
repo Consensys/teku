@@ -14,7 +14,6 @@
 package tech.pegasys.teku.infrastructure.logging;
 
 import com.google.common.base.Strings;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
@@ -24,11 +23,13 @@ import tech.pegasys.teku.infrastructure.logging.ColorConsolePrinter.Color;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ValidatorLogger {
+  private static final int VALIDATOR_KEY_LIMIT = 20;
   public static final ValidatorLogger VALIDATOR_LOGGER =
       new ValidatorLogger(LoggingConfigurator.VALIDATOR_LOGGER_NAME);
-  public static final int LONGEST_TYPE_LENGTH = "attestation".length();
+  public static final int LONGEST_TYPE_LENGTH = "sync_contribution".length();
   private static final String PREFIX = "Validator   *** ";
 
+  @SuppressWarnings("PrivateStaticFinalLoggers")
   private final Logger log;
 
   private ValidatorLogger(final String name) {
@@ -70,13 +71,23 @@ public class ValidatorLogger {
   public void dutyFailed(
       final String producedType,
       final UInt64 slot,
-      final Optional<String> maybeKey,
+      final Set<String> maybeKey,
       final Throwable error) {
     final String errorString =
         String.format(
             "%sFailed to produce %s  Slot: %s%s",
-            PREFIX, producedType, slot, maybeKey.map(key -> " Validator: " + key).orElse(""));
+            PREFIX, producedType, slot, formatValidators(maybeKey));
     log.error(ColorConsolePrinter.print(errorString, Color.RED), error);
+  }
+
+  private String formatValidators(final Set<String> keys) {
+    if (keys.isEmpty()) {
+      return "";
+    }
+    final String suffix = keys.size() > VALIDATOR_KEY_LIMIT ? "… (" + keys.size() + " total)" : "";
+    return keys.stream()
+        .limit(VALIDATOR_KEY_LIMIT)
+        .collect(Collectors.joining(", ", " Validator: ", suffix));
   }
 
   private void logDuty(
@@ -99,6 +110,18 @@ public class ValidatorLogger {
             PREFIX
                 + "Skipped aggregation for committee "
                 + committeeIndex
+                + " at slot "
+                + slot
+                + " because there was nothing to aggregate",
+            Color.YELLOW));
+  }
+
+  public void syncSubcommitteeAggregationSkipped(final UInt64 slot, final int subcommitteeIndex) {
+    log.warn(
+        ColorConsolePrinter.print(
+            PREFIX
+                + "Skipped aggregation for sync subcommittee "
+                + subcommitteeIndex
                 + " at slot "
                 + slot
                 + " because there was nothing to aggregate",

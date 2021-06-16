@@ -35,28 +35,29 @@ public class Eth2IncomingRequestHandler<
     implements RpcRequestHandler {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final Eth2RpcMethod<TRequest, TResponse> method;
   private final PeerLookup peerLookup;
   private final LocalMessageHandler<TRequest, TResponse> localMessageHandler;
-  private final RpcEncoder rpcEncoder;
+  private final RpcResponseEncoder<TResponse, ?> responseEncoder;
 
   private final RpcRequestDecoder<TRequest> requestDecoder;
 
+  private final String protocolId;
   private final AsyncRunner asyncRunner;
   private final AtomicBoolean requestHandled = new AtomicBoolean(false);
 
   public Eth2IncomingRequestHandler(
+      final String protocolId,
+      final RpcResponseEncoder<TResponse, ?> responseEncoder,
+      final RpcRequestDecoder<TRequest> requestDecoder,
       final AsyncRunner asyncRunner,
-      final Eth2RpcMethod<TRequest, TResponse> method,
       final PeerLookup peerLookup,
       final LocalMessageHandler<TRequest, TResponse> localMessageHandler) {
+    this.protocolId = protocolId;
     this.asyncRunner = asyncRunner;
-    this.method = method;
     this.peerLookup = peerLookup;
     this.localMessageHandler = localMessageHandler;
-    this.rpcEncoder = new RpcEncoder(method.getEncoding());
-
-    requestDecoder = method.createRequestDecoder();
+    this.responseEncoder = responseEncoder;
+    this.requestDecoder = requestDecoder;
   }
 
   @Override
@@ -70,12 +71,10 @@ public class Eth2IncomingRequestHandler<
       Optional<Eth2Peer> peer = peerLookup.getConnectedPeer(nodeId);
       requestDecoder
           .decodeRequest(data)
-          .ifPresent(
-              request ->
-                  handleRequest(peer, request, new RpcResponseCallback<>(rpcStream, rpcEncoder)));
+          .ifPresent(request -> handleRequest(peer, request, createResponseCallback(rpcStream)));
     } catch (final RpcException e) {
       requestHandled.set(true);
-      new RpcResponseCallback<>(rpcStream, rpcEncoder).completeWithErrorResponse(e);
+      createResponseCallback(rpcStream).completeWithErrorResponse(e);
     }
   }
 
@@ -85,11 +84,9 @@ public class Eth2IncomingRequestHandler<
       Optional<Eth2Peer> peer = peerLookup.getConnectedPeer(nodeId);
       requestDecoder
           .complete()
-          .ifPresent(
-              request ->
-                  handleRequest(peer, request, new RpcResponseCallback<>(rpcStream, rpcEncoder)));
+          .ifPresent(request -> handleRequest(peer, request, createResponseCallback(rpcStream)));
     } catch (RpcException e) {
-      new RpcResponseCallback<>(rpcStream, rpcEncoder).completeWithErrorResponse(e);
+      createResponseCallback(rpcStream).completeWithErrorResponse(e);
       LOG.debug("RPC Request stream closed prematurely", e);
     }
   }
@@ -101,12 +98,18 @@ public class Eth2IncomingRequestHandler<
       Optional<Eth2Peer> peer, TRequest request, ResponseCallback<TResponse> callback) {
     try {
       requestHandled.set(true);
-      localMessageHandler.onIncomingMessage(peer, request, callback);
+      final Optional<RpcException> requestValidationError =
+          localMessageHandler.validateRequest(protocolId, request);
+      if (requestValidationError.isPresent()) {
+        callback.completeWithErrorResponse(requestValidationError.get());
+        return;
+      }
+      localMessageHandler.onIncomingMessage(protocolId, peer, request, callback);
     } catch (final StreamClosedException e) {
-      LOG.trace("Stream closed before response sent for request {}", method.getMultistreamId(), e);
+      LOG.trace("Stream closed before response sent for request {}", protocolId, e);
       callback.completeWithUnexpectedError(e);
     } catch (final Throwable t) {
-      LOG.error("Unhandled error while processing request {}", method.getMultistreamId(), t);
+      LOG.error("Unhandled error while processing request {}", protocolId, t);
       callback.completeWithUnexpectedError(t);
     }
   }
@@ -119,9 +122,9 @@ public class Eth2IncomingRequestHandler<
             (__) -> {
               if (!requestHandled.get()) {
                 LOG.debug(
-                    "Failed to receive incoming request data within {} sec for method {}. Close stream.",
+                    "Failed to receive incoming request data within {} sec for protocol {}. Close stream.",
                     timeout.getSeconds(),
-                    method);
+                    protocolId);
                 stream.closeAbruptly().reportExceptions();
               }
             })
@@ -135,6 +138,10 @@ public class Eth2IncomingRequestHandler<
 
   @Override
   public String toString() {
-    return "Eth2IncomingRequestHandler{" + "method=" + method + '}';
+    return "Eth2IncomingRequestHandler{" + "protocol=" + protocolId + '}';
+  }
+
+  private RpcResponseCallback<TResponse> createResponseCallback(final RpcStream rpcStream) {
+    return new RpcResponseCallback<>(rpcStream, responseEncoder);
   }
 }

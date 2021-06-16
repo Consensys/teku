@@ -13,19 +13,21 @@
 
 package tech.pegasys.teku.spec.logic.common;
 
+import java.util.Optional;
 import tech.pegasys.teku.spec.logic.SpecLogic;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
+import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
-import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
+import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
+import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
-import tech.pegasys.teku.spec.logic.common.util.CommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 
@@ -35,52 +37,58 @@ public abstract class AbstractSpecLogic implements SpecLogic {
   protected final MiscHelpers miscHelpers;
   protected final BeaconStateAccessors beaconStateAccessors;
   protected final BeaconStateMutators beaconStateMutators;
+  // Operations
+  protected final OperationSignatureVerifier operationSignatureVerifier;
   // Utils
-  protected final CommitteeUtil committeeUtil;
   protected final ValidatorsUtil validatorsUtil;
   protected final BeaconStateUtil beaconStateUtil;
   protected final AttestationUtil attestationUtil;
+  protected final OperationValidator operationValidator;
   protected final ValidatorStatusFactory validatorStatusFactory;
   protected final EpochProcessor epochProcessor;
   protected final BlockProcessor blockProcessor;
-  protected final StateTransition stateTransition;
   protected final ForkChoiceUtil forkChoiceUtil;
   protected final BlockProposalUtil blockProposalUtil;
+
+  // State upgrade
+  protected final Optional<StateUpgrade<?>> stateUpgrade;
 
   protected AbstractSpecLogic(
       final Predicates predicates,
       final MiscHelpers miscHelpers,
       final BeaconStateAccessors beaconStateAccessors,
       final BeaconStateMutators beaconStateMutators,
-      final CommitteeUtil committeeUtil,
+      final OperationSignatureVerifier operationSignatureVerifier,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
+      final OperationValidator operationValidator,
       final ValidatorStatusFactory validatorStatusFactory,
       final EpochProcessor epochProcessor,
       final BlockProcessor blockProcessor,
-      final StateTransition stateTransition,
       final ForkChoiceUtil forkChoiceUtil,
-      final BlockProposalUtil blockProposalUtil) {
+      final BlockProposalUtil blockProposalUtil,
+      final Optional<StateUpgrade<?>> stateUpgrade) {
     this.predicates = predicates;
     this.miscHelpers = miscHelpers;
     this.beaconStateAccessors = beaconStateAccessors;
     this.beaconStateMutators = beaconStateMutators;
-    this.committeeUtil = committeeUtil;
+    this.operationSignatureVerifier = operationSignatureVerifier;
     this.validatorsUtil = validatorsUtil;
     this.beaconStateUtil = beaconStateUtil;
     this.attestationUtil = attestationUtil;
     this.validatorStatusFactory = validatorStatusFactory;
     this.epochProcessor = epochProcessor;
     this.blockProcessor = blockProcessor;
-    this.stateTransition = stateTransition;
     this.forkChoiceUtil = forkChoiceUtil;
     this.blockProposalUtil = blockProposalUtil;
+    this.operationValidator = operationValidator;
+    this.stateUpgrade = stateUpgrade;
   }
 
   @Override
-  public CommitteeUtil getCommitteeUtil() {
-    return committeeUtil;
+  public Optional<StateUpgrade<?>> getStateUpgrade() {
+    return stateUpgrade;
   }
 
   @Override
@@ -99,6 +107,11 @@ public abstract class AbstractSpecLogic implements SpecLogic {
   }
 
   @Override
+  public OperationValidator getOperationValidator() {
+    return operationValidator;
+  }
+
+  @Override
   public EpochProcessor getEpochProcessor() {
     return epochProcessor;
   }
@@ -106,11 +119,6 @@ public abstract class AbstractSpecLogic implements SpecLogic {
   @Override
   public BlockProcessor getBlockProcessor() {
     return blockProcessor;
-  }
-
-  @Override
-  public StateTransition getStateTransition() {
-    return stateTransition;
   }
 
   @Override
@@ -146,5 +154,10 @@ public abstract class AbstractSpecLogic implements SpecLogic {
   @Override
   public BeaconStateMutators beaconStateMutators() {
     return beaconStateMutators;
+  }
+
+  @Override
+  public OperationSignatureVerifier operationSignatureVerifier() {
+    return operationSignatureVerifier;
   }
 }

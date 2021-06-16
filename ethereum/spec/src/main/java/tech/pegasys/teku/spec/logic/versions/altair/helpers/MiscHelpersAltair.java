@@ -19,59 +19,41 @@ import java.util.List;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.IncentivizationWeights;
-import tech.pegasys.teku.spec.constants.ParticipationFlags;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 
 public class MiscHelpersAltair extends MiscHelpers {
 
-  public static final FlagIndexAndWeight TIMELY_HEAD_FLAG_INDEX_AND_WEIGHT =
-      new FlagIndexAndWeight(
-          ParticipationFlags.TIMELY_HEAD_FLAG_INDEX, IncentivizationWeights.TIMELY_HEAD_WEIGHT);
-  public static final FlagIndexAndWeight TIMELY_SOURCE_FLAG_INDEX_AND_WEIGHT =
-      new FlagIndexAndWeight(
-          ParticipationFlags.TIMELY_SOURCE_FLAG_INDEX, IncentivizationWeights.TIMELY_SOURCE_WEIGHT);
-  public static final FlagIndexAndWeight TIMELY_TARGET_FLAG_INDEX_AND_WEIGHT =
-      new FlagIndexAndWeight(
-          ParticipationFlags.TIMELY_TARGET_FLAG_INDEX, IncentivizationWeights.TIMELY_TARGET_WEIGHT);
-  private static final List<FlagIndexAndWeight> flagIndicesAndWeights =
+  public static final List<UInt64> PARTICIPATION_FLAG_WEIGHTS =
       List.of(
-          TIMELY_HEAD_FLAG_INDEX_AND_WEIGHT,
-          TIMELY_SOURCE_FLAG_INDEX_AND_WEIGHT,
-          TIMELY_TARGET_FLAG_INDEX_AND_WEIGHT);
+          IncentivizationWeights.TIMELY_SOURCE_WEIGHT,
+          IncentivizationWeights.TIMELY_TARGET_WEIGHT,
+          IncentivizationWeights.TIMELY_HEAD_WEIGHT);
 
   public MiscHelpersAltair(final SpecConfig specConfig) {
     super(specConfig);
   }
 
-  public List<FlagIndexAndWeight> getFlagIndicesAndWeights() {
-    return flagIndicesAndWeights;
-  }
-
+  /**
+   * Return a new ParticipationFlags adding flagIndex to flags.
+   *
+   * @param participationFlags the current participation flags
+   * @param flagIndex the flag index to add
+   * @return the new participation flags value
+   */
   public byte addFlag(final byte participationFlags, final int flagIndex) {
     final int flag = indexToFlag(flagIndex);
     return (byte) (participationFlags | flag);
   }
 
+  /**
+   * Return whether participationFlags has flagIndex set.
+   *
+   * @param participationFlags the participation flags to check
+   * @param flagIndex the flag index to check for
+   * @return true if flagIndex is set in participationFlags
+   */
   public boolean hasFlag(final byte participationFlags, final int flagIndex) {
     final int flag = indexToFlag(flagIndex);
     return (participationFlags & flag) == flag;
-  }
-
-  public static class FlagIndexAndWeight {
-    final int index;
-    final UInt64 weight;
-
-    private FlagIndexAndWeight(final int index, final UInt64 weight) {
-      this.index = index;
-      this.weight = weight;
-    }
-
-    public int getIndex() {
-      return index;
-    }
-
-    public UInt64 getWeight() {
-      return weight;
-    }
   }
 }

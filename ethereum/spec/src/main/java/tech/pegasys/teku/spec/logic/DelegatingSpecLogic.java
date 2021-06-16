@@ -15,17 +15,18 @@ package tech.pegasys.teku.spec.logic;
 
 import java.util.Optional;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
+import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
-import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
+import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
+import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
-import tech.pegasys.teku.spec.logic.common.util.CommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
@@ -39,8 +40,8 @@ public class DelegatingSpecLogic implements SpecLogic {
   }
 
   @Override
-  public CommitteeUtil getCommitteeUtil() {
-    return specLogic.getCommitteeUtil();
+  public Optional<StateUpgrade<?>> getStateUpgrade() {
+    return specLogic.getStateUpgrade();
   }
 
   @Override
@@ -59,6 +60,11 @@ public class DelegatingSpecLogic implements SpecLogic {
   }
 
   @Override
+  public OperationValidator getOperationValidator() {
+    return specLogic.getOperationValidator();
+  }
+
+  @Override
   public EpochProcessor getEpochProcessor() {
     return specLogic.getEpochProcessor();
   }
@@ -66,11 +72,6 @@ public class DelegatingSpecLogic implements SpecLogic {
   @Override
   public BlockProcessor getBlockProcessor() {
     return specLogic.getBlockProcessor();
-  }
-
-  @Override
-  public StateTransition getStateTransition() {
-    return specLogic.getStateTransition();
   }
 
   @Override
@@ -116,5 +117,10 @@ public class DelegatingSpecLogic implements SpecLogic {
   @Override
   public ExecutionPayloadUtil getExecutionPayloadUtil() {
     return specLogic.getExecutionPayloadUtil();
+  }
+
+  @Override
+  public OperationSignatureVerifier operationSignatureVerifier() {
+    return specLogic.operationSignatureVerifier();
   }
 }

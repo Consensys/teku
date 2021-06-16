@@ -16,10 +16,13 @@ package tech.pegasys.teku.storage.client;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -34,11 +37,40 @@ class CombinedChainDataClientTest {
   private final CombinedChainDataClient client =
       new CombinedChainDataClient(recentChainData, historicalChainData, spec);
 
+  final HashSet<SignedBeaconBlock> nonCanonicalBlocks = new HashSet<>();
+  final SignedBeaconBlock firstBlock = dataStructureUtil.randomSignedBeaconBlock(1);
+  final SignedBeaconBlock secondBlock = dataStructureUtil.randomSignedBeaconBlock(1);
+
   @Test
   public void getCommitteesFromStateWithCache_shouldReturnCommitteeAssignments() {
     BeaconState state = dataStructureUtil.randomBeaconState();
     List<CommitteeAssignment> data =
         client.getCommitteesFromState(state, spec.getCurrentEpoch(state));
     assertThat(data.size()).isEqualTo(spec.getSlotsPerEpoch(state.getSlot()));
+  }
+
+  @Test
+  public void mergeNonCanonicalAndCanonicalBlocks_shouldAddCanonicalBlockIfPresent() {
+    nonCanonicalBlocks.add(firstBlock);
+    assertThat(
+            client.mergeNonCanonicalAndCanonicalBlocks(
+                nonCanonicalBlocks, Optional.of(secondBlock)))
+        .containsExactlyInAnyOrder(firstBlock, secondBlock);
+  }
+
+  @Test
+  public void mergeNonCanonicalAndCanonicalBlocks_shouldReturnNonCanonicalOnly() {
+    nonCanonicalBlocks.add(firstBlock);
+    nonCanonicalBlocks.add(secondBlock);
+    assertThat(client.mergeNonCanonicalAndCanonicalBlocks(nonCanonicalBlocks, Optional.empty()))
+        .containsExactlyInAnyOrder(firstBlock, secondBlock);
+  }
+
+  @Test
+  public void mergeNonCanonicalAndCanonicalBlocks_shouldReturnCanonicalOnly() {
+    assertThat(
+            client.mergeNonCanonicalAndCanonicalBlocks(
+                nonCanonicalBlocks, Optional.of(secondBlock)))
+        .containsExactlyInAnyOrder(secondBlock);
   }
 }

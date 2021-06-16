@@ -118,7 +118,7 @@ class RecentChainDataTest {
   @Test
   public void initializeFromGenesis_withTimeLessThanGenesisTime() {
     initPreGenesis();
-    final ChainBuilder chainBuilder = ChainBuilder.createDefault();
+    final ChainBuilder chainBuilder = ChainBuilder.create(spec);
     final UInt64 genesisTime = UInt64.valueOf(5000);
     final SignedBlockAndState genesis = chainBuilder.generateGenesis(genesisTime, false);
     recentChainData.initializeFromGenesis(genesis.getState(), UInt64.valueOf(100));
@@ -128,7 +128,7 @@ class RecentChainDataTest {
   @Test
   public void initializeFromGenesis_withTimeGreaterThanGenesisTime() {
     initPreGenesis();
-    final ChainBuilder chainBuilder = ChainBuilder.createDefault();
+    final ChainBuilder chainBuilder = ChainBuilder.create(spec);
     final UInt64 genesisTime = UInt64.valueOf(5000);
     final UInt64 time = genesisTime.plus(100);
     final SignedBlockAndState genesis = chainBuilder.generateGenesis(genesisTime, false);
@@ -139,7 +139,7 @@ class RecentChainDataTest {
   @Test
   public void initializeFromAnchorPoint_withTimeLessThanGenesisTime() {
     initPreGenesis();
-    final ChainBuilder chainBuilder = ChainBuilder.createDefault();
+    final ChainBuilder chainBuilder = ChainBuilder.create(spec);
     final UInt64 genesisTime = UInt64.valueOf(5000);
     chainBuilder.generateGenesis(genesisTime, true);
     // Build a small chain
@@ -156,7 +156,7 @@ class RecentChainDataTest {
   @Test
   public void initializeFromAnchorPoint_withTimeLessThanAnchorBlockTime() {
     initPreGenesis();
-    final ChainBuilder chainBuilder = ChainBuilder.createDefault();
+    final ChainBuilder chainBuilder = ChainBuilder.create(spec);
     final UInt64 genesisTime = UInt64.valueOf(5000);
     chainBuilder.generateGenesis(genesisTime, true);
     // Build a small chain
@@ -175,7 +175,7 @@ class RecentChainDataTest {
   @Test
   public void initializeFromAnchorPoint_withTimeGreaterThanAnchorBlockTime() {
     initPreGenesis();
-    final ChainBuilder chainBuilder = ChainBuilder.createDefault();
+    final ChainBuilder chainBuilder = ChainBuilder.create(spec);
     final UInt64 genesisTime = UInt64.valueOf(5000);
     chainBuilder.generateGenesis(genesisTime, true);
     // Build a small chain
@@ -188,6 +188,12 @@ class RecentChainDataTest {
     final UInt64 time = anchorBlockTime.plus(100);
     recentChainData.initializeFromAnchorPoint(anchorPoint, time);
     assertThat(recentChainData.getStore().getTime()).isEqualTo(time);
+  }
+
+  @Test
+  void getGenesisData_shouldBeEmptyPreGenesis() {
+    initPreGenesis();
+    assertThat(recentChainData.getGenesisData()).isEmpty();
   }
 
   @ParameterizedTest

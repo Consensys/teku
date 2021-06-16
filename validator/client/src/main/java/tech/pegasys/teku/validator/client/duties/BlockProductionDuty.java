@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -54,17 +53,7 @@ public class BlockProductionDuty implements Duty {
   @Override
   public SafeFuture<DutyResult> performDuty() {
     LOG.trace("Creating block for validator {} at slot {}", validator.getPublicKey(), slot);
-    return forkProvider.getForkInfo().thenCompose(this::produceBlock);
-  }
-
-  @Override
-  public String getProducedType() {
-    return "block";
-  }
-
-  @Override
-  public Optional<BLSPublicKey> getValidatorIdentifier() {
-    return Optional.of(validator.getPublicKey());
+    return forkProvider.getForkInfo(slot).thenCompose(this::produceBlock);
   }
 
   public SafeFuture<DutyResult> produceBlock(final ForkInfo forkInfo) {
@@ -72,7 +61,7 @@ public class BlockProductionDuty implements Duty {
         .thenCompose(this::createUnsignedBlock)
         .thenCompose(unsignedBlock -> signBlock(forkInfo, unsignedBlock))
         .thenCompose(this::sendBlock)
-        .exceptionally(DutyResult::forError);
+        .exceptionally(error -> DutyResult.forError(validator.getPublicKey(), error));
   }
 
   private SafeFuture<DutyResult> sendBlock(final SignedBeaconBlock signedBlock) {
@@ -84,6 +73,7 @@ public class BlockProductionDuty implements Duty {
                 return DutyResult.success(signedBlock.getRoot());
               }
               return DutyResult.forError(
+                  validator.getPublicKey(),
                   new IllegalArgumentException(
                       "Block was rejected by the beacon node: "
                           + result.getRejectionReason().orElse("<reason unknown>")));

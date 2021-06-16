@@ -31,28 +31,25 @@ import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
+import tech.pegasys.teku.sync.events.SyncState;
 
 public class GetProposerDutiesTest extends AbstractValidatorApiTest {
-  private BeaconStateUtil beaconStateUtil;
 
   @BeforeEach
   public void setup() {
     handler = new GetProposerDuties(syncDataProvider, validatorDataProvider, jsonProvider);
-    beaconStateUtil = spec.atSlot(UInt64.ZERO).getBeaconStateUtil();
   }
 
   @Test
   public void shouldGetProposerDuties() throws Exception {
     when(validatorDataProvider.isStoreAvailable()).thenReturn(true);
-    when(syncService.isSyncActive()).thenReturn(false);
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(context.pathParamMap()).thenReturn(Map.of("epoch", "100"));
 
     GetProposerDutiesResponse duties =
         new GetProposerDutiesResponse(
             Bytes32.fromHexString("0x1234"),
-            List.of(
-                getProposerDuty(2, beaconStateUtil.computeStartSlotAtEpoch(UInt64.valueOf(100)))));
+            List.of(getProposerDuty(2, spec.computeStartSlotAtEpoch(UInt64.valueOf(100)))));
     when(validatorDataProvider.getProposerDuties(eq(UInt64.valueOf(100))))
         .thenReturn(SafeFuture.completedFuture(Optional.of(duties)));
 
@@ -64,7 +61,7 @@ public class GetProposerDutiesTest extends AbstractValidatorApiTest {
   @Test
   public void shouldReturnBadRequestWhenIllegalArgumentExceptionThrown() throws Exception {
     when(validatorDataProvider.isStoreAvailable()).thenReturn(true);
-    when(syncService.isSyncActive()).thenReturn(false);
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(context.pathParamMap()).thenReturn(Map.of("epoch", "100"));
     when(validatorDataProvider.getProposerDuties(UInt64.valueOf(100)))
         .thenReturn(SafeFuture.failedFuture(new IllegalArgumentException("Bad epoch")));

@@ -72,9 +72,9 @@ public class BLSSignature {
   private final Supplier<Bytes> bytesCompressed;
 
   /**
-   * Construct from a Mikuli Signature object.
+   * Construct from an implementation-specific Signature object.
    *
-   * @param signature A Mikuli Signature
+   * @param signature An implementation-specific Signature
    */
   BLSSignature(Signature signature) {
     this(() -> signature, Suppliers.memoize(signature::toBytesCompressed));

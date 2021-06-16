@@ -18,11 +18,12 @@ import com.google.common.base.Throwables;
 import io.libp2p.core.Connection;
 import io.libp2p.core.ConnectionHandler;
 import io.libp2p.core.Network;
+import io.libp2p.core.PeerId;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -38,13 +39,14 @@ import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
-import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 
 public class PeerManager implements ConnectionHandler {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private final Map<RpcMethod, RpcHandler> rpcHandlers;
+  private final List<RpcHandler<?, ?, ?>> rpcHandlers;
+
+  private final Function<PeerId, Double> peerScoreFunction;
 
   private final ConcurrentHashMap<NodeId, Peer> connectedPeerMap = new ConcurrentHashMap<>();
   private final ConcurrentHashMap<NodeId, SafeFuture<Peer>> pendingConnections =
@@ -59,17 +61,19 @@ public class PeerManager implements ConnectionHandler {
       final MetricsSystem metricsSystem,
       final ReputationManager reputationManager,
       final List<PeerHandler> peerHandlers,
-      final Map<RpcMethod, RpcHandler> rpcHandlers) {
+      final List<RpcHandler<?, ?, ?>> rpcHandlers,
+      Function<PeerId, Double> peerScoreFunction) {
     this.reputationManager = reputationManager;
     this.peerHandlers = peerHandlers;
     this.rpcHandlers = rpcHandlers;
+    this.peerScoreFunction = peerScoreFunction;
     metricsSystem.createGauge(
         TekuMetricCategory.LIBP2P, "peers", "Tracks number of libp2p peers", this::getPeerCount);
   }
 
   @Override
   public void handleConnection(@NotNull final Connection connection) {
-    Peer peer = new LibP2PPeer(connection, rpcHandlers, reputationManager);
+    Peer peer = new LibP2PPeer(connection, rpcHandlers, reputationManager, peerScoreFunction);
     onConnectedPeer(peer);
   }
 
@@ -98,7 +102,8 @@ public class PeerManager implements ConnectionHandler {
                 if (connection.closeFuture().isDone()) {
                   // Connection has been immediately closed and the peer already removed
                   // Since the connection is closed anyway, we can create a new peer to wrap it.
-                  return new LibP2PPeer(connection, rpcHandlers, reputationManager);
+                  return new LibP2PPeer(
+                      connection, rpcHandlers, reputationManager, peerScoreFunction);
                 } else {
                   // Theoretically this should never happen because removing from the map is done
                   // by the close future completing, but make a loud noise just in case.

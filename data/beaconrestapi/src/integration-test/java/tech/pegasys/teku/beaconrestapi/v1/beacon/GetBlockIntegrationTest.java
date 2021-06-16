@@ -18,7 +18,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.io.IOException;
 import java.util.List;
 import okhttp3.Response;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v1.beacon.GetBlockResponse;
 import tech.pegasys.teku.api.schema.BLSSignature;
@@ -26,16 +25,14 @@ import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlock;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 
 public class GetBlockIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
-  @BeforeEach
-  public void setup() {
-    startRestAPIAtGenesis();
-  }
 
   @Test
   public void shouldGetBlock() throws IOException {
+    startRestAPIAtGenesis();
     final List<SignedBlockAndState> created = createBlocksAtSlots(10);
     final Response response = get("head");
 
@@ -52,8 +49,17 @@ public class GetBlockIntegrationTest extends AbstractDataBackedRestAPIIntegratio
 
   @Test
   public void shouldGetBlock_return404WhenBlockRootNotFound() throws IOException {
+    startRestAPIAtGenesis();
     final Response response = get("0xdeadbeef");
     assertNotFound(response);
+  }
+
+  @Test
+  public void shouldFailToGetAltairBlock() throws IOException {
+    startRestAPIAtGenesis(SpecMilestone.ALTAIR);
+    Response response = get("head");
+    assertThat(response.code()).isEqualTo(400);
+    assertThat(response.body().string()).contains("/eth/v2/beacon/blocks");
   }
 
   public Response get(final String blockIdString) throws IOException {

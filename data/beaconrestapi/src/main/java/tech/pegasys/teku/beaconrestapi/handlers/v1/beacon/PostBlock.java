@@ -26,8 +26,7 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_SERVICE_UNAVA
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -35,15 +34,19 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
+import tech.pegasys.teku.api.schema.interfaces.SignedBlock;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class PostBlock implements Handler {
+  private static final Logger LOG = LogManager.getLogger();
   public static final String ROUTE = "/eth/v1/beacon/blocks";
 
   private final JsonProvider jsonProvider;
@@ -70,8 +73,7 @@ public class PostBlock implements Handler {
       method = HttpMethod.POST,
       summary = "Publish a signed block",
       tags = {TAG_BEACON, TAG_VALIDATOR_REQUIRED},
-      requestBody =
-          @OpenApiRequestBody(content = {@OpenApiContent(from = SignedBeaconBlock.class)}),
+      requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = SignedBlock.class)}),
       description =
           "Submit a signed beacon block to the beacon node to be imported."
               + " The beacon node performs the required validation.",
@@ -101,7 +103,7 @@ public class PostBlock implements Handler {
       }
 
       final SignedBeaconBlock signedBeaconBlock =
-          jsonProvider.jsonToObject(ctx.body(), SignedBeaconBlock.class);
+          validatorDataProvider.parseBlock(jsonProvider, ctx.body());
 
       ctx.result(
           validatorDataProvider
@@ -109,10 +111,11 @@ public class PostBlock implements Handler {
               .thenApplyChecked(
                   validatorBlockResult -> handleResponseContext(ctx, validatorBlockResult)));
 
-    } catch (final JsonMappingException | JsonParseException ex) {
+    } catch (final JsonProcessingException ex) {
       ctx.status(SC_BAD_REQUEST);
       ctx.result(BadRequest.badRequest(jsonProvider, ex.getMessage()));
     } catch (final Exception ex) {
+      LOG.error("Failed to post block due to internal error", ex);
       ctx.status(SC_INTERNAL_SERVER_ERROR);
       ctx.result(BadRequest.internalError(jsonProvider, ex.getMessage()));
     }

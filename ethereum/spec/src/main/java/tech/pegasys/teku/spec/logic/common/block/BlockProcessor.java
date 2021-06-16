@@ -17,12 +17,11 @@ import java.util.Map;
 import java.util.Optional;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
-import tech.pegasys.teku.bls.BLSSignatureVerifier.InvalidSignatureException;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -35,64 +34,64 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.ssz.SszList;
 
 public interface BlockProcessor {
   Optional<OperationInvalidReason> validateAttestation(
       final BeaconState state, final AttestationData data);
 
+  BeaconState processAndValidateBlock(
+      SignedBeaconBlock signedBlock,
+      BeaconState blockSlotState,
+      IndexedAttestationCache indexedAttestationCache)
+      throws StateTransitionException;
+
+  /**
+   * Processes the given block on top of {@code blockSlotState} and optionally validates the block
+   *
+   * @param signedBlock The block to be processed
+   * @param blockSlotState The preState on which this block should be procssed, this preState must
+   *     already be advanced to the block's slot
+   * @param indexedAttestationCache A cache of indexed attestations
+   * @return The post state after processing the block on top of {@code blockSlotState}
+   * @throws StateTransitionException If the block is invalid or cannot be processed
+   */
+  BeaconState processAndValidateBlock(
+      SignedBeaconBlock signedBlock,
+      BeaconState blockSlotState,
+      IndexedAttestationCache indexedAttestationCache,
+      BLSSignatureVerifier signatureVerifier)
+      throws StateTransitionException;
+
+  BeaconState processUnsignedBlock(
+      BeaconState preState,
+      BeaconBlock block,
+      IndexedAttestationCache indexedAttestationCache,
+      BLSSignatureVerifier signatureVerifier)
+      throws BlockProcessingException;
+
   void processBlockHeader(MutableBeaconState state, BeaconBlockSummary blockHeader)
       throws BlockProcessingException;
-
-  void processRandaoNoValidation(MutableBeaconState state, BeaconBlockBody body)
-      throws BlockProcessingException;
-
-  void verifyRandao(BeaconState state, BeaconBlock block, BLSSignatureVerifier bls)
-      throws InvalidSignatureException;
-
-  void processEth1Data(MutableBeaconState state, BeaconBlockBody body);
 
   boolean isEnoughVotesToUpdateEth1Data(long voteCount);
 
   long getVoteCount(BeaconState state, Eth1Data eth1Data);
 
-  void processOperationsNoValidation(
-      MutableBeaconState state,
-      BeaconBlockBody body,
-      IndexedAttestationCache indexedAttestationCache)
-      throws BlockProcessingException;
-
   void processProposerSlashings(
-      MutableBeaconState state, SszList<ProposerSlashing> proposerSlashings)
-      throws BlockProcessingException;
-
-  void processProposerSlashingsNoValidation(
-      MutableBeaconState state, SszList<ProposerSlashing> proposerSlashings)
-      throws BlockProcessingException;
-
-  boolean verifyProposerSlashings(
-      BeaconState state,
+      MutableBeaconState state,
       SszList<ProposerSlashing> proposerSlashings,
-      BLSSignatureVerifier signatureVerifier);
+      BLSSignatureVerifier signatureVerifier)
+      throws BlockProcessingException;
 
   void processAttesterSlashings(
       MutableBeaconState state, SszList<AttesterSlashing> attesterSlashings)
       throws BlockProcessingException;
 
-  void processAttestations(MutableBeaconState state, SszList<Attestation> attestations)
-      throws BlockProcessingException;
-
   void processAttestations(
       MutableBeaconState state,
       SszList<Attestation> attestations,
-      IndexedAttestationCache indexedAttestationCache)
-      throws BlockProcessingException;
-
-  void verifyAttestationSignatures(
-      BeaconState state,
-      SszList<Attestation> attestations,
-      BLSSignatureVerifier signatureVerifier,
-      IndexedAttestationCache indexedAttestationCache)
+      BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException;
 
   void processDeposits(MutableBeaconState state, SszList<? extends Deposit> deposits)
@@ -103,18 +102,14 @@ public interface BlockProcessor {
       final Deposit deposit,
       final Map<BLSPublicKey, Integer> pubKeyToIndexMap);
 
-  void processVoluntaryExits(MutableBeaconState state, SszList<SignedVoluntaryExit> exits)
+  void processVoluntaryExits(
+      MutableBeaconState state,
+      SszList<SignedVoluntaryExit> exits,
+      BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException;
 
-  void processVoluntaryExitsNoValidation(
-      MutableBeaconState state, SszList<SignedVoluntaryExit> exits) throws BlockProcessingException;
-
-  boolean verifyVoluntaryExits(
-      BeaconState state,
-      SszList<SignedVoluntaryExit> exits,
-      BLSSignatureVerifier signatureVerifier);
-
-  void processSyncCommittee(MutableBeaconState state, SyncAggregate syncAggregate)
+  void processSyncCommittee(
+      MutableBeaconState state, SyncAggregate syncAggregate, BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException;
 
   default void processExecutionPayload(MutableBeaconState state, ExecutionPayload executionPayload)

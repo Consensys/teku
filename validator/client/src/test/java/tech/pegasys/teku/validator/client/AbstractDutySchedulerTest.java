@@ -33,8 +33,6 @@ import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
-import tech.pegasys.teku.validator.client.duties.AttestationProductionDuty;
-import tech.pegasys.teku.validator.client.duties.ValidatorDutyFactory;
 
 @SuppressWarnings("FutureReturnValueIgnored")
 public abstract class AbstractDutySchedulerTest {
@@ -49,7 +47,6 @@ public abstract class AbstractDutySchedulerTest {
   final Validator validator2 = new Validator(VALIDATOR2_KEY, validator2Signer, Optional::empty);
 
   final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
-  final ValidatorDutyFactory dutyFactory = mock(ValidatorDutyFactory.class);
   final ForkProvider forkProvider = mock(ForkProvider.class);
   final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
@@ -61,12 +58,10 @@ public abstract class AbstractDutySchedulerTest {
   public void setUp() {
     when(validatorIndexProvider.getValidatorIndices(VALIDATOR_KEYS))
         .thenReturn(SafeFuture.completedFuture(VALIDATOR_INDICES));
-    when(dutyFactory.createAttestationProductionDuty(any()))
-        .thenReturn(mock(AttestationProductionDuty.class));
     final SafeFuture<BLSSignature> rejectAggregationSignature =
         SafeFuture.failedFuture(new UnsupportedOperationException("This test ignores aggregation"));
     when(validator1Signer.signAggregationSlot(any(), any())).thenReturn(rejectAggregationSignature);
     when(validator2Signer.signAggregationSlot(any(), any())).thenReturn(rejectAggregationSignature);
-    when(forkProvider.getForkInfo()).thenReturn(completedFuture(fork));
+    when(forkProvider.getForkInfo(any())).thenReturn(completedFuture(fork));
   }
 }

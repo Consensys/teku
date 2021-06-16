@@ -21,9 +21,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
+import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
-import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -112,6 +112,8 @@ public interface Database extends AutoCloseable {
   Optional<BeaconState> getLatestAvailableFinalizedState(UInt64 maxSlot);
 
   Optional<MinGenesisTimeBlockEvent> getMinGenesisTimeBlock();
+
+  Set<SignedBeaconBlock> getNonCanonicalBlocksAtSlot(final UInt64 slot);
 
   @MustBeClosed
   Stream<DepositsFromBlockEvent> streamDepositsFromBlocks();

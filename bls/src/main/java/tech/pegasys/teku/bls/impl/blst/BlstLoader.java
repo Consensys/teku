@@ -20,7 +20,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.impl.BLS12381;
 
 /**
- * The BLST JNI clases use a static block to automatically load the native library. That means that
+ * The BLST JNI classes use a static block to automatically load the native library. That means that
  * it loads as soon as the class is loaded which is hard to control. Since the native library may
  * not be supported on all platforms we need to control when the native library loads and handle any
  * exceptions from it by using a fallback instead.
@@ -35,14 +35,19 @@ public class BlstLoader {
 
   private static Optional<BLS12381> loadBlst() {
     try {
+      // Trigger loading of native library
+      Class.forName("supranational.blst.blstJNI");
+
+      // Load actual implementation - *might* trigger loading but doesn't always
       final Class<?> blstClass = Class.forName("tech.pegasys.teku.bls.impl.blst.BlstBLS12381");
       return Optional.of((BLS12381) blstClass.getDeclaredConstructor().newInstance());
     } catch (final InstantiationException
+        | ExceptionInInitializerError
         | InvocationTargetException
         | NoSuchMethodException
         | IllegalAccessException
         | ClassNotFoundException e) {
-      LOG.debug("Couldn't load native BLS library", e);
+      LOG.error("Couldn't load native BLS library", e);
       return Optional.empty();
     }
   }

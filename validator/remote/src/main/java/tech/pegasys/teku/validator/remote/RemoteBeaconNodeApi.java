@@ -22,6 +22,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
@@ -61,7 +62,8 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
     apiEndpoint = apiEndpoint.newBuilder().username("").password("").build();
     final OkHttpClient okHttpClient = httpClientBuilder.build();
     final OkHttpValidatorRestApiClient apiClient =
-        new OkHttpValidatorRestApiClient(apiEndpoint, okHttpClient);
+        new OkHttpValidatorRestApiClient(
+            apiEndpoint, okHttpClient, spec.isMilestoneSupported(SpecMilestone.ALTAIR));
 
     final ValidatorApiChannel validatorApiChannel =
         new MetricRecordingValidatorApiChannel(

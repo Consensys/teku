@@ -6,11 +6,13 @@ dependencies {
     implementation 'org.apache.tuweni:tuweni-ssz'
     implementation 'org.apache.tuweni:tuweni-bytes'
 
+    api 'org.web3j:core'
+
     testFixturesImplementation project(':infrastructure:unsigned')
     testFixturesImplementation testFixtures(project(':bls'))
     testFixturesImplementation project(':infrastructure:io')
 
-    testFixturesApi project(':pow')
+    testFixturesApi project(':ethereum:pow:api')
     testFixturesApi 'com.google.guava:guava'
 
     testImplementation testFixtures(project(':bls'))
@@ -31,7 +33,7 @@ dependencies {
     api project(':infrastructure:collections')
     implementation project(':infrastructure:io')
     implementation project(':infrastructure:logging')
-    implementation project(':pow')
+    implementation project(':ethereum:pow:api')
     implementation project(':util')
 
     implementation 'com.google.code.gson:gson'
@@ -46,7 +48,7 @@ dependencies {
 
     testImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
 
-    testFixturesApi project(':pow')
+    testFixturesApi project(':ethereum:pow:api')
     testFixturesApi project(':ssz')
     testFixturesApi project(':storage:api')
 

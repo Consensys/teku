@@ -13,49 +13,68 @@
 
 package tech.pegasys.teku.spec;
 
-import java.util.List;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
-import tech.pegasys.teku.spec.config.SpecConfigRayonism;
-import tech.pegasys.teku.spec.datastructures.state.Fork;
+import tech.pegasys.teku.spec.config.SpecConfigMerge;
+import tech.pegasys.teku.spec.config.TestConfigLoader;
 import tech.pegasys.teku.spec.networks.Eth2Network;
-import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class TestSpecFactory {
 
+  public static Spec createDefault() {
+    return createMinimalPhase0();
+  }
+
   public static Spec createMinimalMerge() {
-    final SpecConfigRayonism specConfig =
-        SpecConfigRayonism.required(SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()));
-    return create(specConfig, specConfig.getMergeForkVersion());
+    final SpecConfigMerge specConfig =
+        SpecConfigMerge.required(SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()));
+    return create(specConfig, SpecMilestone.MERGE);
   }
 
   public static Spec createMinimalAltair() {
-    final SpecConfigAltair specConfig =
-        SpecConfigAltair.required(SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()));
-    return create(specConfig, specConfig.getAltairForkVersion());
+    final SpecConfigAltair specConfig = getAltairSpecConfig(Eth2Network.MINIMAL);
+    return create(specConfig, SpecMilestone.ALTAIR);
+  }
+
+  public static Spec createMinimal(final SpecMilestone specMilestone) {
+    if (specMilestone == SpecMilestone.PHASE0) {
+      return createMinimalPhase0();
+    }
+    return createMinimalAltair();
+  }
+
+  /**
+   * Create a spec that forks to altair at the provided slot
+   *
+   * @param altairForkEpoch The altair fork epoch
+   * @return A spec with phase0 and altair enabled, forking to altair at the given epoch
+   */
+  public static Spec createMinimalWithAltairForkEpoch(final UInt64 altairForkEpoch) {
+    final SpecConfigAltair config = getAltairSpecConfig(Eth2Network.MINIMAL, altairForkEpoch);
+    return create(config, SpecMilestone.ALTAIR);
   }
 
   public static Spec createMinimalPhase0() {
     final SpecConfig specConfig = SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName());
-    return create(specConfig, specConfig.getGenesisForkVersion());
+    return create(specConfig, SpecMilestone.PHASE0);
   }
 
   public static Spec createMainnetMerge() {
-    final SpecConfigRayonism specConfig =
-        SpecConfigRayonism.required(SpecConfigLoader.loadConfig(Eth2Network.MAINNET.configName()));
-    return create(specConfig, specConfig.getMergeForkVersion());
+    final SpecConfigMerge specConfig =
+        SpecConfigMerge.required(SpecConfigLoader.loadConfig(Eth2Network.MAINNET.configName()));
+    return create(specConfig, SpecMilestone.MERGE);
   }
 
   public static Spec createMainnetAltair() {
-    final SpecConfigAltair specConfig =
-        SpecConfigAltair.required(SpecConfigLoader.loadConfig(Eth2Network.MAINNET.configName()));
-    return create(specConfig, specConfig.getAltairForkVersion());
+    final SpecConfigAltair specConfig = getAltairSpecConfig(Eth2Network.MAINNET);
+    return create(specConfig, SpecMilestone.ALTAIR);
   }
 
   public static Spec createMainnetPhase0() {
     final SpecConfig specConfig = SpecConfigLoader.loadConfig(Eth2Network.MAINNET.configName());
-    return create(specConfig, specConfig.getGenesisForkVersion());
+    return create(specConfig, SpecMilestone.PHASE0);
   }
 
   public static Spec createPhase0(final String configName) {
@@ -64,13 +83,26 @@ public class TestSpecFactory {
   }
 
   public static Spec createPhase0(final SpecConfig config) {
-    return create(config, config.getGenesisForkVersion());
+    return create(config, SpecMilestone.PHASE0);
   }
 
-  private static Spec create(final SpecConfig config, final Bytes4 genesisForkVersion) {
-    final ForkManifest forkManifest =
-        ForkManifest.create(
-            List.of(new Fork(genesisForkVersion, genesisForkVersion, SpecConfig.GENESIS_EPOCH)));
-    return Spec.create(config, forkManifest);
+  public static Spec createAltair(final SpecConfig config) {
+    return create(config, SpecMilestone.ALTAIR);
+  }
+
+  private static Spec create(
+      final SpecConfig config, final SpecMilestone highestSupportedMilestone) {
+    return Spec.create(config, highestSupportedMilestone);
+  }
+
+  private static SpecConfigAltair getAltairSpecConfig(final Eth2Network network) {
+    return getAltairSpecConfig(network, UInt64.ZERO);
+  }
+
+  private static SpecConfigAltair getAltairSpecConfig(
+      final Eth2Network network, final UInt64 altairForkEpoch) {
+    return SpecConfigAltair.required(
+        TestConfigLoader.loadConfig(
+            network.configName(), c -> c.altairBuilder(a -> a.altairForkEpoch(altairForkEpoch))));
   }
 }

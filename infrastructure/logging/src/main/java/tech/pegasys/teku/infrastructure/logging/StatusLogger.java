@@ -26,6 +26,7 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.logging.ColorConsolePrinter.Color;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class StatusLogger {
@@ -33,6 +34,7 @@ public class StatusLogger {
   public static final StatusLogger STATUS_LOG =
       new StatusLogger(LoggingConfigurator.STATUS_LOGGER_NAME);
 
+  @SuppressWarnings("PrivateStaticFinalLoggers")
   final Logger log;
 
   private StatusLogger(final String name) {
@@ -45,6 +47,13 @@ public class StatusLogger {
         "This software is licensed under the Apache License, Version 2.0 (the \"License\"); "
             + "you may not use this software except in compliance with the License. "
             + "You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0");
+  }
+
+  public void warnForkEpochChanged(final String milestoneName, final UInt64 newEpoch) {
+    log.warn(
+        print(
+            milestoneName + " configuration has been overridden to activate at epoch " + newEpoch,
+            Color.YELLOW));
   }
 
   public void fatalError(final String description, final Throwable cause) {
@@ -61,7 +70,7 @@ public class StatusLogger {
         cause);
   }
 
-  public void eth1FetchDepositsTimeout(final int batchSize) {
+  public void eth1FetchDepositsRequiresSmallerRange(final int batchSize) {
     log.warn(
         "Request for eth1 deposit logs from {} blocks failed. Retrying with a smaller block range.",
         batchSize);
@@ -271,10 +280,11 @@ public class StatusLogger {
     log.info(performance);
   }
 
-  public void eth1DepositChainIdMismatch(int expectedChainId, int eth1ChainId) {
+  public void eth1DepositChainIdMismatch(int expectedChainId, int eth1ChainId, String endpointId) {
     log.log(
         Level.ERROR,
-        "PLEASE CHECK YOUR ETH1 NODE | Wrong Eth1 chain id (expected={}, actual={})",
+        "PLEASE CHECK YOUR ETH1 NODE (endpoint {})| Wrong Eth1 chain id (expected={}, actual={})",
+        endpointId,
         expectedChainId,
         eth1ChainId);
   }
@@ -312,6 +322,14 @@ public class StatusLogger {
 
   public void validatorStatusChange(String oldStatus, String newStatus, String publicKey) {
     log.warn("Validator {} has changed status from {} to {}.", publicKey, oldStatus, newStatus);
+  }
+
+  public void eth1MinGenesisNotFound(final Throwable error) {
+    log.error(
+        "Failed to retrieve min genesis block. "
+            + "Check that your eth1 node is fully synced. "
+            + "Will retry in 1 minute.",
+        error);
   }
 
   private void logWithColorIfLevelGreaterThanInfo(

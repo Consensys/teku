@@ -189,7 +189,7 @@ class BeaconValidatorsTest {
 
   private List<tech.pegasys.teku.api.schema.Validator> getValidators(BeaconState beaconState) {
     tech.pegasys.teku.api.schema.BeaconState state =
-        new tech.pegasys.teku.api.schema.BeaconState(beaconState);
+        new tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0(beaconState);
     return state.validators;
   }
 }

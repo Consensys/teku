@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.util;
 
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
+import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,13 +31,15 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
+import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
+import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
-import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -48,6 +51,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
@@ -64,6 +70,10 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
@@ -78,6 +88,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.B
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.SszPrimitive;
@@ -140,7 +151,7 @@ public final class DataStructureUtil {
   }
 
   public int randomPositiveInt() {
-    return new Random(nextSeed()).nextInt(Integer.MAX_VALUE);
+    return randomInt(Integer.MAX_VALUE);
   }
 
   public byte randomByte() {
@@ -272,7 +283,7 @@ public final class DataStructureUtil {
    * returned won't be reached for another 12,000 years or so.
    */
   public UInt64 randomEpoch() {
-    return UInt64.valueOf(new Random(nextSeed()).nextInt(1_000_000_000));
+    return UInt64.valueOf(randomInt(1_000_000_000));
   }
 
   public SlotAndBlockRoot randomSlotAndBlockRoot() {
@@ -295,16 +306,64 @@ public final class DataStructureUtil {
     return new Checkpoint(randomEpoch(), randomBytes32());
   }
 
+  public SyncAggregate randomSyncAggregate() {
+    final SyncAggregateSchema schema =
+        BeaconBlockBodySchemaAltair.required(
+                spec.getGenesisSchemaDefinitions().getBeaconBlockBodySchema())
+            .getSyncAggregateSchema();
+    return schema.create(List.of(randomInt(4), randomInt(4)), randomSignature());
+  }
+
   public SyncCommittee randomSyncCommittee() {
     final SyncCommitteeSchema syncCommitteeSchema =
-        ((BeaconStateSchemaAltair) spec.getGenesisSchemaDefinitions().getBeaconStateSchema())
+        ((BeaconStateSchemaAltair)
+                spec.forMilestone(SpecMilestone.ALTAIR)
+                    .getSchemaDefinitions()
+                    .getBeaconStateSchema())
             .getCurrentSyncCommitteeSchema();
     return syncCommitteeSchema.create(
         randomSszVector(
             syncCommitteeSchema.getPubkeysSchema(), () -> new SszPublicKey(randomPublicKey())),
+        new SszPublicKey(randomPublicKey()));
+  }
+
+  public SyncCommittee randomSyncCommittee(SszList<Validator> validators) {
+    final SyncCommitteeSchema syncCommitteeSchema =
+        ((BeaconStateSchemaAltair)
+                spec.forMilestone(SpecMilestone.ALTAIR)
+                    .getSchemaDefinitions()
+                    .getBeaconStateSchema())
+            .getCurrentSyncCommitteeSchema();
+    return syncCommitteeSchema.create(
         randomSszVector(
-            syncCommitteeSchema.getPubkeyAggregatesSchema(),
-            () -> new SszPublicKey(randomPublicKey())));
+            syncCommitteeSchema.getPubkeysSchema(),
+            () -> new SszPublicKey(randomValidatorKey(validators))),
+        new SszPublicKey(randomPublicKey()));
+  }
+
+  private BLSPublicKey randomValidatorKey(final SszList<Validator> validators) {
+    final int rand = new Random(nextSeed()).nextInt();
+    final int index = rand > 0 ? rand % validators.size() : (-1 * rand) % validators.size();
+    return validators.get(index).getPublicKey();
+  }
+
+  public SyncCommitteeSignature randomSyncCommitteeSignature() {
+    return randomSyncCommitteeSignature(randomUInt64());
+  }
+
+  public SyncCommitteeSignature randomSyncCommitteeSignature(final long slot) {
+    return randomSyncCommitteeSignature(UInt64.valueOf(slot));
+  }
+
+  public SyncCommitteeSignature randomSyncCommitteeSignature(final UInt64 slot) {
+    return randomSyncCommitteeSignature(slot, randomBytes32());
+  }
+
+  public SyncCommitteeSignature randomSyncCommitteeSignature(
+      final UInt64 slot, final Bytes32 beaconBlockRoot) {
+    return getAltairSchemaDefinitions(UInt64.ZERO)
+        .getSyncCommitteeSignatureSchema()
+        .create(slot, beaconBlockRoot, randomUInt64(), randomSignature());
   }
 
   public AttestationData randomAttestationData() {
@@ -638,7 +697,7 @@ public final class DataStructureUtil {
 
   public DepositsFromBlockEvent randomDepositsFromBlockEvent(
       UInt64 blockIndex, long depositIndexStartInclusive, long depositIndexEndExclusive) {
-    List<tech.pegasys.teku.pow.event.Deposit> deposits = new ArrayList<>();
+    List<tech.pegasys.teku.ethereum.pow.api.Deposit> deposits = new ArrayList<>();
     for (long i = depositIndexStartInclusive; i < depositIndexEndExclusive; i++) {
       deposits.add(randomDepositEvent(UInt64.valueOf(i)));
     }
@@ -671,12 +730,12 @@ public final class DataStructureUtil {
         randomDepositData());
   }
 
-  public tech.pegasys.teku.pow.event.Deposit randomDepositEvent(long index) {
+  public tech.pegasys.teku.ethereum.pow.api.Deposit randomDepositEvent(long index) {
     return randomDepositEvent(UInt64.valueOf(index));
   }
 
-  public tech.pegasys.teku.pow.event.Deposit randomDepositEvent(UInt64 index) {
-    return new tech.pegasys.teku.pow.event.Deposit(
+  public tech.pegasys.teku.ethereum.pow.api.Deposit randomDepositEvent(UInt64 index) {
+    return new tech.pegasys.teku.ethereum.pow.api.Deposit(
         BLSTestUtil.randomPublicKey(nextSeed()),
         randomBytes32(),
         randomSignature(),
@@ -684,7 +743,7 @@ public final class DataStructureUtil {
         index);
   }
 
-  public tech.pegasys.teku.pow.event.Deposit randomDepositEvent() {
+  public tech.pegasys.teku.ethereum.pow.api.Deposit randomDepositEvent() {
     return randomDepositEvent(randomUInt64());
   }
 
@@ -809,6 +868,49 @@ public final class DataStructureUtil {
     return AnchorPoint.create(anchorCheckpoint, signedAnchorBlock, anchorState);
   }
 
+  public SignedContributionAndProof randomSignedContributionAndProof(final long slot) {
+    return randomSignedContributionAndProof(UInt64.valueOf(slot));
+  }
+
+  public SignedContributionAndProof randomSignedContributionAndProof(final UInt64 slot) {
+    final ContributionAndProof contributionAndProof = randomContributionAndProof(slot);
+    return getAltairSchemaDefinitions(slot)
+        .getSignedContributionAndProofSchema()
+        .create(contributionAndProof, randomSignature());
+  }
+
+  private ContributionAndProof randomContributionAndProof(final UInt64 slot) {
+    return getAltairSchemaDefinitions(slot)
+        .getContributionAndProofSchema()
+        .create(randomUInt64(), randomSyncCommitteeContribution(slot), randomSignature());
+  }
+
+  public SyncCommitteeContribution randomSyncCommitteeContribution(final UInt64 slot) {
+    return randomSyncCommitteeContribution(slot, randomBytes32());
+  }
+
+  public SyncCommitteeContribution randomSyncCommitteeContribution(
+      final UInt64 slot, final Bytes32 beaconBlockRoot) {
+    final int subcommitteeSize =
+        spec.atSlot(slot).getSyncCommitteeUtil().orElseThrow().getSubcommitteeSize();
+    return getAltairSchemaDefinitions(slot)
+        .getSyncCommitteeContributionSchema()
+        .create(
+            slot,
+            beaconBlockRoot,
+            UInt64.valueOf(randomInt(SYNC_COMMITTEE_SUBNET_COUNT)),
+            randomSszBitvector(subcommitteeSize),
+            randomSignature());
+  }
+
+  private int randomInt(final int bound) {
+    return new Random(nextSeed()).nextInt(bound);
+  }
+
+  private SchemaDefinitionsAltair getAltairSchemaDefinitions(final UInt64 slot) {
+    return SchemaDefinitionsAltair.required(spec.atSlot(slot).getSchemaDefinitions());
+  }
+
   int getEpochsPerEth1VotingPeriod() {
     return getConstant(SpecConfig::getEpochsPerEth1VotingPeriod);
   }
@@ -831,14 +933,12 @@ public final class DataStructureUtil {
 
   private Bytes32 computeDomain() {
     final SpecVersion genesisSpec = spec.getGenesisSpec();
-    final Bytes4 domain = genesisSpec.getConfig().getDomainDeposit();
-    return genesisSpec.getBeaconStateUtil().computeDomain(domain);
+    final Bytes4 domain = Domain.DEPOSIT;
+    return genesisSpec.miscHelpers().computeDomain(domain);
   }
 
   private Bytes getSigningRoot(final DepositMessage proofOfPossessionData, final Bytes32 domain) {
-    return spec.getGenesisSpec()
-        .getBeaconStateUtil()
-        .computeSigningRoot(proofOfPossessionData, domain);
+    return spec.getGenesisSpec().miscHelpers().computeSigningRoot(proofOfPossessionData, domain);
   }
 
   UInt64 computeStartSlotAtEpoch(final UInt64 epoch) {

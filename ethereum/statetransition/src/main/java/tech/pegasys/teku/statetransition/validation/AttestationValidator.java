@@ -13,17 +13,11 @@
 
 package tech.pegasys.teku.statetransition.validation;
 
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.spec.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
-import static tech.pegasys.teku.spec.datastructures.util.CommitteeUtil.computeSubnetForAttestation;
-import static tech.pegasys.teku.spec.datastructures.util.CommitteeUtil.get_beacon_committee;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ACCEPT;
 import static tech.pegasys.teku.util.config.Constants.ATTESTATION_PROPAGATION_SLOT_RANGE;
-import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 import static tech.pegasys.teku.util.config.Constants.VALID_ATTESTATION_SET_SIZE;
 
 import java.util.List;
@@ -42,14 +36,12 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
 
 public class AttestationValidator {
 
   private static final UInt64 MAX_FUTURE_SLOT_ALLOWANCE = UInt64.valueOf(3);
-  private static final UInt64 MILLIS_PER_SECOND = UInt64.valueOf(1000);
   private static final UInt64 MAXIMUM_GOSSIP_CLOCK_DISPARITY =
       UInt64.valueOf(Constants.MAXIMUM_GOSSIP_CLOCK_DISPARITY);
 
@@ -121,7 +113,7 @@ public class AttestationValidator {
     Attestation attestation = validateableAttestation.getAttestation();
     final AttestationData data = attestation.getData();
     // The attestation's epoch matches its target
-    if (!data.getTarget().getEpoch().equals(compute_epoch_at_slot(data.getSlot()))) {
+    if (!data.getTarget().getEpoch().equals(spec.computeEpochAtSlot(data.getSlot()))) {
       return SafeFuture.completedFuture(InternalValidationResult.REJECT);
     }
 
@@ -158,14 +150,14 @@ public class AttestationValidator {
               // The committee index is within the expected range
               if (data.getIndex()
                   .isGreaterThanOrEqualTo(
-                      get_committee_count_per_slot(state, data.getTarget().getEpoch()))) {
+                      spec.getCommitteeCountPerSlot(state, data.getTarget().getEpoch()))) {
                 return InternalValidationResult.REJECT;
               }
 
               // The attestation's committee index (attestation.data.index) is for the correct
               // subnet.
               if (receivedOnSubnetId.isPresent()
-                  && computeSubnetForAttestation(state, attestation)
+                  && spec.computeSubnetForAttestation(state, attestation)
                       != receivedOnSubnetId.getAsInt()) {
                 return InternalValidationResult.REJECT;
               }
@@ -174,12 +166,12 @@ public class AttestationValidator {
               // with aggregation bits size greater/less than the committee size is invalid. So we
               // reject those attestations at the networking layer.
               final List<Integer> committee =
-                  get_beacon_committee(state, data.getSlot(), data.getIndex());
+                  spec.getBeaconCommittee(state, data.getSlot(), data.getIndex());
               if (committee.size() != attestation.getAggregation_bits().size()) {
                 return InternalValidationResult.REJECT;
               }
 
-              if (!is_valid_indexed_attestation(state, validateableAttestation, signatureVerifier)
+              if (!spec.isValidIndexedAttestation(state, validateableAttestation, signatureVerifier)
                   .isSuccessful()) {
                 return InternalValidationResult.REJECT;
               }
@@ -188,7 +180,7 @@ public class AttestationValidator {
               if (!spec.getAncestor(
                       recentChainData.getForkChoiceStrategy().orElseThrow(),
                       data.getBeacon_block_root(),
-                      compute_start_slot_at_epoch(data.getTarget().getEpoch()))
+                      spec.computeStartSlotAtEpoch(data.getTarget().getEpoch()))
                   .map(ancestorOfLMDVote -> ancestorOfLMDVote.equals(data.getTarget().getRoot()))
                   .orElse(false)) {
                 return InternalValidationResult.REJECT;
@@ -201,7 +193,7 @@ public class AttestationValidator {
               if (!spec.getAncestor(
                       recentChainData.getForkChoiceStrategy().orElseThrow(),
                       data.getBeacon_block_root(),
-                      compute_start_slot_at_epoch(finalizedCheckpoint.getEpoch()))
+                      spec.computeStartSlotAtEpoch(finalizedCheckpoint.getEpoch()))
                   .map(ancestorOfLMDVote -> ancestorOfLMDVote.equals(finalizedCheckpoint.getRoot()))
                   .orElse(false)) {
                 return InternalValidationResult.REJECT;
@@ -226,8 +218,8 @@ public class AttestationValidator {
     final Bytes32 blockRoot = attestation.getData().getBeacon_block_root();
     final Checkpoint targetEpoch = attestation.getData().getTarget();
     final UInt64 earliestSlot =
-        CommitteeUtil.getEarliestQueryableSlotForTargetEpoch(targetEpoch.getEpoch());
-    final UInt64 earliestEpoch = compute_epoch_at_slot(earliestSlot);
+        spec.getEarliestQueryableSlotForBeaconCommitteeInTargetEpoch(targetEpoch.getEpoch());
+    final UInt64 earliestEpoch = spec.computeEpochAtSlot(earliestSlot);
 
     if (blockState.getSlot().isLessThan(earliestSlot)) {
       final Checkpoint checkpoint = new Checkpoint(earliestEpoch, blockRoot);
@@ -252,14 +244,14 @@ public class AttestationValidator {
   }
 
   private boolean isFromFarFuture(final Attestation attestation, final UInt64 currentTimeMillis) {
+    final int secondsPerSlot = secondsPerSlot(attestation);
     final UInt64 attestationSlotTimeMillis =
         secondsToMillis(
             recentChainData
                 .getGenesisTime()
-                .plus(
-                    attestation.getEarliestSlotForForkChoiceProcessing().times(SECONDS_PER_SLOT)));
+                .plus(attestation.getEarliestSlotForForkChoiceProcessing().times(secondsPerSlot)));
     final UInt64 discardAttestationsAfterMillis =
-        currentTimeMillis.plus(secondsToMillis(MAX_FUTURE_SLOT_ALLOWANCE.times(SECONDS_PER_SLOT)));
+        currentTimeMillis.plus(secondsToMillis(MAX_FUTURE_SLOT_ALLOWANCE.times(secondsPerSlot)));
     return attestationSlotTimeMillis.isGreaterThan(discardAttestationsAfterMillis);
   }
 
@@ -269,13 +261,11 @@ public class AttestationValidator {
     return maximumBroadcastTimeMillis(attestationSlot).isLessThan(currentTimeMillis);
   }
 
-  private UInt64 secondsToMillis(final UInt64 seconds) {
-    return seconds.times(MILLIS_PER_SECOND);
-  }
-
   private UInt64 minimumBroadcastTimeMillis(final UInt64 attestationSlot) {
     final UInt64 lastAllowedTime =
-        recentChainData.getGenesisTime().plus(attestationSlot.times(SECONDS_PER_SLOT));
+        recentChainData
+            .getGenesisTime()
+            .plus(attestationSlot.times(secondsPerSlot(attestationSlot)));
     final UInt64 lastAllowedTimeMillis = secondsToMillis(lastAllowedTime);
     return lastAllowedTimeMillis.isGreaterThanOrEqualTo(MAXIMUM_GOSSIP_CLOCK_DISPARITY)
         ? lastAllowedTimeMillis.minus(MAXIMUM_GOSSIP_CLOCK_DISPARITY)
@@ -286,7 +276,9 @@ public class AttestationValidator {
     final UInt64 lastAllowedSlot = attestationSlot.plus(ATTESTATION_PROPAGATION_SLOT_RANGE);
     // The last allowed time is the end of the lastAllowedSlot (hence the plus 1).
     final UInt64 lastAllowedTime =
-        recentChainData.getGenesisTime().plus(lastAllowedSlot.plus(ONE).times(SECONDS_PER_SLOT));
+        recentChainData
+            .getGenesisTime()
+            .plus(lastAllowedSlot.plus(ONE).times(secondsPerSlot(attestationSlot)));
 
     // Add allowed clock disparity
     return secondsToMillis(lastAllowedTime).plus(MAXIMUM_GOSSIP_CLOCK_DISPARITY);
@@ -324,5 +316,13 @@ public class AttestationValidator {
     public int hashCode() {
       return Objects.hash(targetEpoch, committeeIndex, committeePosition);
     }
+  }
+
+  private int secondsPerSlot(final UInt64 slot) {
+    return spec.getSecondsPerSlot(slot);
+  }
+
+  private int secondsPerSlot(final Attestation attestation) {
+    return spec.getSecondsPerSlot(attestation.getData().getSlot());
   }
 }

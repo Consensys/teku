@@ -15,6 +15,8 @@ package tech.pegasys.teku.validator.api;
 
 import static java.util.stream.Collectors.toList;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Splitter;
 import java.io.File;
 import java.io.IOException;
@@ -24,7 +26,6 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
@@ -66,6 +67,9 @@ class KeyStoreFilesLocator {
       throw new InvalidConfigurationException(
           String.format("Invalid configuration. Could not find the key file (%s).", keyFileName));
     }
+    if (isDepositDataFile(keyFile)) {
+      return;
+    }
     if (!passwordFile.exists()) {
       throw new InvalidConfigurationException(
           String.format(
@@ -87,6 +91,31 @@ class KeyStoreFilesLocator {
     }
   }
 
+  private boolean isDepositDataFile(final File keyFile) {
+    String keyFileName = keyFile.toPath().getFileName().toString();
+    if (keyFileName.startsWith("deposit_data-") && hasDepositDataFileContents(keyFile)) {
+      LOG.debug("Ignoring deposit data file: " + keyFileName);
+      return true;
+    }
+    return false;
+  }
+
+  private boolean hasDepositDataFileContents(final File keyFile) {
+    try {
+      byte[] fileData = Files.readAllBytes(keyFile.toPath());
+      ObjectMapper objectMapper = new ObjectMapper();
+      List<Map<String, String>> listData =
+          objectMapper.readValue(fileData, new TypeReference<>() {});
+
+      return !listData.isEmpty()
+          && listData.get(0).containsKey("deposit_message_root")
+          && listData.get(0).containsKey("deposit_data_root");
+    } catch (final Exception e) {
+      LOG.debug("Unable to determine if {} is a deposit_data file", keyFile, e);
+      return false;
+    }
+  }
+
   void parseDirectory(final File keyDirectory, final File passwordDirectory) {
     try (Stream<Path> walk = Files.walk(keyDirectory.toPath(), FileVisitOption.FOLLOW_LINKS)) {
       walk.filter(Files::isRegularFile)
@@ -97,38 +126,29 @@ class KeyStoreFilesLocator {
               path -> {
                 final Path relativeDirectoryPath =
                     keyDirectory.toPath().relativize(path.getParent());
+                if (isDepositDataFile(path.toFile())) {
+                  return;
+                }
                 final String keystoreName = path.getFileName().toString();
-                final Path passwordPath =
+                final File passwordFile =
                     passwordDirectory
                         .toPath()
                         .resolve(relativeDirectoryPath)
                         .resolve(
-                            keystoreName.substring(0, keystoreName.length() - ".json".length()));
-                final Optional<File> maybePassFile =
-                    findPassFile(passwordPath.toAbsolutePath().toString());
-                if (maybePassFile.isEmpty()) {
+                            keystoreName.substring(0, keystoreName.length() - ".json".length())
+                                + ".txt")
+                        .toFile();
+                if (!passwordFile.isFile()) {
                   throw new InvalidConfigurationException(
                       String.format(
-                          "Invalid configuration. No matching password file for (%s) in the key path.",
-                          path.toAbsolutePath().toString()));
+                          "Invalid configuration. Password file for keystore %s either doesn't exist or isn't readable. Expected to find it at %s",
+                          path.toAbsolutePath(), passwordFile.getAbsolutePath()));
                 }
-                pathMap.putIfAbsent(path, maybePassFile.get().toPath());
+                pathMap.putIfAbsent(path, passwordFile.toPath());
               });
     } catch (IOException e) {
       LOG.fatal("Failed to load keys from keystore", e);
     }
-  }
-
-  private Optional<File> findPassFile(final String absolutePassPathWithoutExtension) {
-    // bin type will be added here soon most likely.
-    List<String> extensions = List.of("txt");
-    for (String ext : extensions) {
-      final File file = new File(absolutePassPathWithoutExtension + "." + ext);
-      if (file.exists() && file.isFile()) {
-        return Optional.of(file);
-      }
-    }
-    return Optional.empty();
   }
 
   public List<Pair<Path, Path>> getFilePairs() {

@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeSignature;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -117,7 +118,12 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
   protected void addGossipManagers(final ForkInfo forkInfo) {
     AttestationSubnetSubscriptions attestationSubnetSubscriptions =
         new AttestationSubnetSubscriptions(
-            asyncRunner, discoveryNetwork, gossipEncoding, recentChainData, attestationProcessor);
+            asyncRunner,
+            discoveryNetwork,
+            gossipEncoding,
+            recentChainData,
+            attestationProcessor,
+            forkInfo);
 
     blockGossipManager =
         new BlockGossipManager(
@@ -188,6 +194,21 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
 
   @Override
   public void unsubscribeFromAttestationSubnetId(final int subnetId) {
-    attestationGossipManager.subscribeToSubnetId(subnetId);
+    attestationGossipManager.unsubscribeFromSubnetId(subnetId);
+  }
+
+  @Override
+  public void publishSyncCommitteeSignature(final ValidateableSyncCommitteeSignature signature) {
+    // Does not apply to this fork.
+  }
+
+  @Override
+  public void subscribeToSyncCommitteeSignatureSubnet(final int subnetId) {
+    // Does not apply to this fork.
+  }
+
+  @Override
+  public void unsubscribeFromSyncCommitteeSignatureSubnet(final int subnetId) {
+    // Does not apply to this fork.
   }
 }

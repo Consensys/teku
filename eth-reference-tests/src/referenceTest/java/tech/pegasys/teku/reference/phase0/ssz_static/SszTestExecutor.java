@@ -78,23 +78,23 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
                       SchemaDefinitionsAltair.required(schemas)
                           .getSignedContributionAndProofSchema()))
           .put(
-              "ssz_static/SyncCommitteeSignature",
+              "ssz_static/SyncCommitteeMessage",
               new SszTestExecutor<>(
                   schemas ->
                       SchemaDefinitionsAltair.required(schemas).getSyncCommitteeSignatureSchema()))
           .put(
-              "ssz_static/SyncCommitteeSigningData",
+              "ssz_static/SyncAggregatorSelectionData",
               new SszTestExecutor<>(
                   schemas ->
                       SchemaDefinitionsAltair.required(schemas)
-                          .getSyncCommitteeSigningDataSchema()))
+                          .getSyncAggregatorSelectionDataSchema()))
           .put(
               "ssz_static/ExecutionPayloadHeader",
               new SszTestExecutor<>(schemas -> ExecutionPayloadHeader.SSZ_SCHEMA))
           .put(
               "ssz_static/ExecutionPayload",
               new SszTestExecutor<>(schemas -> ExecutionPayload.SSZ_SCHEMA))
-          .put("ssz_static/PowBlock", IGNORE_TESTS) // We don't have an PowBlock structure
+          .put("ssz_static/PowBlock", IGNORE_TESTS) // We don't have a PowBlock structure
           .put("ssz_static/LightClientStore", IGNORE_TESTS)
           .put("ssz_static/LightClientSnapshot", IGNORE_TESTS)
           .put("ssz_static/LightClientUpdate", IGNORE_TESTS)

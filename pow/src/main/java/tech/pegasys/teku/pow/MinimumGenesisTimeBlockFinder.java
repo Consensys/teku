@@ -14,21 +14,24 @@
 package tech.pegasys.teku.pow;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.math.BigInteger;
+import java.time.Duration;
 import java.util.Optional;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.web3j.protocol.core.methods.response.EthBlock;
+import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
-import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.pow.exception.FailedToFindMinGenesisBlockException;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -51,13 +54,24 @@ public class MinimumGenesisTimeBlockFinder {
    * Find first block in history that has timestamp greater than MIN_GENESIS_TIME
    *
    * @param headBlockNumber block number at current chain head (respecting follow distance)
+   * @param asyncRunner
    * @return min genesis time block
    */
   public SafeFuture<EthBlock.Block> findMinGenesisTimeBlockInHistory(
-      final BigInteger headBlockNumber) {
+      final BigInteger headBlockNumber, final AsyncRunner asyncRunner) {
     return binarySearchLoop(
             new SearchContext(eth1DepositContractDeployBlock.orElse(ZERO), headBlockNumber))
-        .thenCompose(this::confirmMinGenesisBlock);
+        .thenCompose(this::confirmMinGenesisBlock)
+        .exceptionallyCompose(
+            error -> {
+              if (!(error.getCause() instanceof FailedToFindMinGenesisBlockException)) {
+                STATUS_LOG.eth1MinGenesisNotFound(error);
+                return asyncRunner.runAfterDelay(
+                    () -> findMinGenesisTimeBlockInHistory(headBlockNumber, asyncRunner),
+                    Duration.ofMinutes(1));
+              }
+              return SafeFuture.failedFuture(error);
+            });
   }
 
   /**

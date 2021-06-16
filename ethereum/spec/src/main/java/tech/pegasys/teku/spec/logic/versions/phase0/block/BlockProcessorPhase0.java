@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.phase0.block;
 
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
@@ -26,7 +27,8 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
-import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataStateTransitionValidator;
+import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
+import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
@@ -40,20 +42,22 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
       final MiscHelpers miscHelpers,
       final BeaconStateAccessors beaconStateAccessors,
       final BeaconStateMutators beaconStateMutators,
+      final OperationSignatureVerifier operationSignatureVerifier,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
       final ValidatorsUtil validatorsUtil,
-      final AttestationDataStateTransitionValidator attestationValidator) {
+      final OperationValidator operationValidator) {
     super(
         specConfig,
         predicates,
         miscHelpers,
         beaconStateAccessors,
         beaconStateMutators,
+        operationSignatureVerifier,
         beaconStateUtil,
         attestationUtil,
         validatorsUtil,
-        attestationValidator);
+        operationValidator);
   }
 
   @Override
@@ -80,7 +84,9 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
 
   @Override
   public void processSyncCommittee(
-      final MutableBeaconState state, final SyncAggregate syncAggregate)
+      final MutableBeaconState state,
+      final SyncAggregate syncAggregate,
+      final BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No SyncAggregates in phase0");
   }

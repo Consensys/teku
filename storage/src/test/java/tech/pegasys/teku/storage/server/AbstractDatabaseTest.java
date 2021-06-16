@@ -45,8 +45,8 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.core.ChainProperties;
+import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -678,6 +678,45 @@ public abstract class AbstractDatabaseTest {
             .streamBlocksAndStates(4, forkChainResult.getFirstHotBlockSlot().longValue())
             .map(SignedBlockAndState::getBlock)
             .collect(Collectors.toList()));
+  }
+
+  @Test
+  public void orphanedBlockStorageTest_multiple() {
+    createStorage(storageMode, StoreConfig.createDefault(), true);
+    final ChainBuilder primaryChain = ChainBuilder.create(VALIDATOR_KEYS);
+    primaryChain.generateGenesis(genesisTime, true);
+    primaryChain.generateBlocksUpToSlot(3);
+    final ChainBuilder forkChain = primaryChain.fork();
+    // Primary chain's next block is at 5
+    primaryChain.generateBlockAtSlot(5);
+    final ChainBuilder secondFork = primaryChain.fork();
+
+    // Primary chain's next block is at 7
+    final SignedBlockAndState finalizedBlock = primaryChain.generateBlockAtSlot(7);
+    final Checkpoint finalizedCheckpoint = getCheckpointForBlock(primaryChain.getBlockAtSlot(7));
+    final UInt64 firstHotBlockSlot = finalizedCheckpoint.getEpochStartSlot().plus(UInt64.ONE);
+    primaryChain.generateBlockAtSlot(firstHotBlockSlot);
+    // Fork chain's next block is at 6
+    forkChain.generateBlockAtSlot(6);
+    forkChain.generateBlockAtSlot(firstHotBlockSlot);
+    secondFork.generateBlockAtSlot(6);
+    secondFork.generateBlockAtSlot(firstHotBlockSlot);
+    // Setup database
+
+    initGenesis();
+
+    final Set<SignedBlockAndState> allBlocksAndStates =
+        Streams.concat(
+                primaryChain.streamBlocksAndStates(),
+                forkChain.streamBlocksAndStates(),
+                secondFork.streamBlocksAndStates())
+            .collect(Collectors.toSet());
+
+    // Finalize at block 7, making the fork blocks unavailable
+    add(allBlocksAndStates);
+    justifyAndFinalizeEpoch(finalizedCheckpoint.getEpoch(), finalizedBlock);
+
+    assertThat(database.getNonCanonicalBlocksAtSlot(UInt64.valueOf(6)).size()).isEqualTo(2);
   }
 
   @Test

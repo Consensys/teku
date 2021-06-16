@@ -1,15 +1,27 @@
+import com.github.jk1.license.filter.LicenseBundleNormalizer
+import tech.pegasys.internal.license.reporter.GroupedLicenseHtmlRenderer
+
 import java.text.SimpleDateFormat
 
+buildscript {
+  repositories {
+    maven { url "https://artifacts.consensys.net/public/maven/maven/" }
+  }
+  dependencies {
+    classpath 'tech.pegasys.internal.license.reporter:license-reporter:1.0.0'
+  }
+}
+
 plugins {
-  id 'com.diffplug.gradle.spotless' version '4.5.1'
+  id 'com.diffplug.spotless' version '5.12.5'
   id 'com.github.ben-manes.versions' version '0.28.0'
-  id 'com.github.hierynomus.license' version '0.15.0'
+  id 'com.github.jk1.dependency-license-report' version '1.16'
   id 'io.spring.dependency-management' version '1.0.9.RELEASE'
-  id 'net.ltgt.errorprone' version '1.2.1' apply false
+  id 'net.ltgt.errorprone' version '2.0.1' apply false
   id 'net.researchgate.release' version '2.8.1'
   id 'me.champeau.gradle.jmh' version '0.5.2' apply false
   id 'de.undercouch.download' version '4.1.0'
-  id 'org.ajoberstar.grgit' version '4.0.2'
+  id 'org.ajoberstar.grgit' version '4.1.0'
 }
 
 rootProject.version = calculatePublishVersion()
@@ -18,7 +30,7 @@ def isDevelopBuild = rootProject.version.contains('develop')
 
 apply plugin: 'application'
 
-defaultTasks 'build','checkLicenses'
+defaultTasks 'build','checkLicense'
 
 def buildAliases = [
   'dev': [
@@ -30,7 +42,7 @@ def buildAliases = [
     'compileReferenceTestJava',
     'spotlessApply',
     'build',
-    'checkLicenses',
+    'checkLicense',
     // TODO - Fix javadoc task
     /*'javadoc'*/],
   'mash': [
@@ -58,7 +70,6 @@ allprojects {
   apply plugin: 'io.spring.dependency-management'
   apply plugin: 'net.ltgt.errorprone'
   apply from: "${rootDir}/gradle/versions.gradle"
-  apply from: "${rootDir}/gradle/check-licenses.gradle"
 
   version = rootProject.version
 
@@ -81,9 +92,10 @@ allprojects {
 
   dependencies {
     errorprone("com.google.errorprone:error_prone_core")
+    errorprone("tech.pegasys.tools.epchecks:errorprone-checks")
   }
 
-  apply plugin: 'com.diffplug.gradle.spotless'
+  apply plugin: 'com.diffplug.spotless'
   spotless {
     java {
       // This path needs to be relative to each project
@@ -97,13 +109,15 @@ allprojects {
         exclude '**/resources'
         exclude '**/src/*/generated'
         exclude '**/src/*/generated_tests'
+        exclude '**/build/**'
       }
 
       importOrder 'tech.pegasys', 'net.consensys', 'java', ''
       trimTrailingWhitespace()
       endWithNewline()
       licenseHeaderFile "${rootDir}/gradle/spotless.java.license"
-      googleJavaFormat('1.7')
+      // See gradle.properties for exports/opens flags required by JDK 16 and Google Java Format plugin
+      googleJavaFormat('1.10.0')
     }
   }
 
@@ -139,6 +153,12 @@ allprojects {
       check('FieldCanBeFinal', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('InsecureCryptoUsage', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
       check('WildcardImport', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
+      check('InlineMeSuggester', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+
+      // these checks are imported from errorprone-checks dependency but not required in Teku
+      check('MethodInputParametersMustBeFinal', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+      check('BannedMethod', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+      check('ExperimentalCliOptionMustBeCorrectlyDisplayed', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
 
       // This check is broken in Java 12.  See https://github.com/google/error-prone/issues/1257
       if (JavaVersion.current() == JavaVersion.VERSION_12) {
@@ -206,9 +226,9 @@ allprojects {
   }
 }
 
-// Note: v1.0.0 tests were republished to fix an initial error. This comment forces cache update
-def refTestVersion = 'v1.1.0-alpha.4-pre2'
-def refTestBaseUrl = 'https://github.com/protolambda/eth2.0-spec-tests/releases/download'
+// Note: v1.0.0 tests were republished to fix an initial error. Reset the cache?
+def refTestVersion = 'v1.1.0-alpha.7'
+def refTestBaseUrl = 'https://github.com/ethereum/eth2.0-spec-tests/releases/download'
 def refTestDownloadDir = "${buildDir}/refTests/${refTestVersion}"
 def refTestExpandDir = "${project.rootDir}/eth-reference-tests/src/referenceTest/resources/eth2.0-spec-tests/"
 
@@ -253,6 +273,15 @@ task expandRefTests(dependsOn: [expandRefTestsGeneral, expandRefTestsMainnet, ex
 task cleanRefTests(dependsOn: [cleanRefTestsGeneral, cleanRefTestsMainnet, cleanRefTestsMinimal])
 
 task deploy() {}
+
+licenseReport {
+  configurations = ['runtimeClasspath']
+  outputDir = "${buildDir}/reports/licenses"
+  excludes = ['org.junit:junit-bom']
+  allowedLicensesFile = new File("${rootDir}/gradle/license-report-config/allowed-licenses.json")
+  filters = [new LicenseBundleNormalizer()]
+  renderers = [new GroupedLicenseHtmlRenderer()]
+}
 
 task checkMavenCoordinateCollisions {
   doLast {
@@ -302,7 +331,7 @@ task autocomplete(type: JavaExec) {
 installDist { }
 
 distTar {
-  dependsOn checkLicenses, autocomplete
+  dependsOn checkLicense, autocomplete
   doFirst {
     delete fileTree(dir: 'build/distributions', include: '*.tar.gz')
   }
@@ -311,7 +340,7 @@ distTar {
 }
 
 distZip {
-  dependsOn checkLicenses, autocomplete
+  dependsOn checkLicense, autocomplete
   doFirst {
     delete fileTree(dir: 'build/distributions', include: '*.zip')
   }
@@ -569,7 +598,7 @@ subprojects {
     testFixturesImplementation 'org.assertj:assertj-core'
   }
 
-  if (project.name != 'unsigned' && project.name != 'errorprone-checks') {
+  if (project.name != 'unsigned') {
     dependencies.implementation(project(':infrastructure:unsigned'))
   }
 
@@ -627,15 +656,20 @@ run {
 }
 
 dependencies {
-  compile project(':teku')
+  implementation project(':teku')
   errorprone 'com.google.errorprone:error_prone_core'
+  errorprone 'tech.pegasys.tools.epchecks:errorprone-checks'
 }
 
 distributions {
   main {
     contents {
       from("./LICENSE") { into "." }
-      from("build/reports/license/license-dependency.html") { into "." }
+      from("build/reports/licenses") {
+        into "./licenses"
+        exclude "**/dependencies-without-allowed-license.json"
+        exclude "**/project-licenses-for-check-license-task.json"
+      }
       from("libs") { into "native" }
       from("build/teku.autocomplete.sh") { into "." }
     }
@@ -695,18 +729,6 @@ task printVersion() {
 def getCheckedOutGitCommitHash() {
   def takeFromHash = 8
   grgit ? grgit.head().id.take(takeFromHash) : 'UNKNOWN'
-}
-
-configurations { annotationProcessor }
-
-// Prevent errorprone-checks being dependent upon errorprone-checks!
-// However, ensure all subprojects comply with the custom rules.
-configure(subprojects.findAll {it.name != 'errorprone-checks'}) {
-  dependencies { annotationProcessor project(":errorprone-checks") }
-
-  tasks.withType(JavaCompile) {
-    options.annotationProcessorPath = configurations.annotationProcessor
-  }
 }
 
 task cloudsmithUpload {

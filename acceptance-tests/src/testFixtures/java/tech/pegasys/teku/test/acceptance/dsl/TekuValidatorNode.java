@@ -24,6 +24,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
 import org.testcontainers.utility.MountableFile;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class TekuValidatorNode extends Node {
@@ -144,6 +145,11 @@ public class TekuValidatorNode extends Node {
       writeTo(configFile);
       configFiles.put(configFile, CONFIG_FILE_PATH);
       return configFiles;
+    }
+
+    public TekuValidatorNode.Config withAltairEpoch(final UInt64 altairSlot) {
+      configMap.put("Xnetwork-altair-fork-epoch", altairSlot.toString());
+      return this;
     }
 
     private void writeTo(final File configFile) throws Exception {

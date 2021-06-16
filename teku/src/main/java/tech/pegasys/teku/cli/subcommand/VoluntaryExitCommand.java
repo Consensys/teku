@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.cli.subcommand;
 
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-
 import com.google.common.base.Throwables;
 import java.io.UncheckedIOException;
 import java.net.ConnectException;
@@ -33,7 +31,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import picocli.CommandLine;
-import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -47,9 +44,11 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
-import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 import tech.pegasys.teku.validator.client.loader.PublicKeyLoader;
@@ -76,6 +75,7 @@ public class VoluntaryExitCommand implements Runnable {
   private OwnedValidators validators;
   private TekuConfiguration config;
   private final MetricsSystem metricsSystem = new NoOpMetricsSystem();
+  private Spec spec;
 
   @CommandLine.Mixin(name = "Validator Keys")
   private ValidatorKeysOptions validatorKeysOptions;
@@ -118,6 +118,7 @@ public class VoluntaryExitCommand implements Runnable {
   private void confirmExits() {
     SUB_COMMAND_LOG.display("Exits are going to be generated for validators: ");
     SUB_COMMAND_LOG.display(getValidatorAbbreviatedKeys());
+    SUB_COMMAND_LOG.display("Epoch: " + epoch.toString());
     SUB_COMMAND_LOG.display("");
     SUB_COMMAND_LOG.display(
         "These validators won't be able to be re-activated, and withdrawals aren't likely to be possible until Phase 2 of eth2 Mainnet.");
@@ -175,18 +176,29 @@ public class VoluntaryExitCommand implements Runnable {
     }
   }
 
+  private Spec getSpec() {
+    try {
+      return apiClient
+          .getConfigSpec()
+          .map(response -> SpecConfigLoader.loadConfig(response.data))
+          .map(specConfig -> SpecFactory.create(specConfig, Optional.empty(), Optional.empty()))
+          .orElseThrow();
+    } catch (Exception ex) {
+      SUB_COMMAND_LOG.error(
+          "Failed to retrieve network config. Check beacon node is accepting REST requests.");
+      System.exit(1);
+    }
+    return null;
+  }
+
   private Optional<UInt64> getEpoch() {
     return apiClient
         .getBlockHeader("head")
-        .map(response -> compute_epoch_at_slot(response.data.header.message.slot));
+        .map(response -> spec.computeEpochAtSlot(response.data.header.message.slot));
   }
 
   private Optional<Bytes32> getGenesisRoot() {
     return apiClient.getGenesis().map(response -> response.getData().getGenesisValidatorsRoot());
-  }
-
-  private Optional<tech.pegasys.teku.spec.datastructures.state.Fork> getFork() {
-    return apiClient.getFork().map(Fork::asInternalFork);
   }
 
   private void initialise() {
@@ -203,13 +215,10 @@ public class VoluntaryExitCommand implements Runnable {
             .map(this::buildHttpEndpoint)
             .orElseThrow();
 
-    final Optional<tech.pegasys.teku.spec.datastructures.state.Fork> maybeFork = getFork();
-    if (maybeFork.isEmpty()) {
-      SUB_COMMAND_LOG.error("Unable to fetch fork, cannot generate an exit.");
-      System.exit(1);
-    }
-    fork = maybeFork.get();
+    spec = getSpec();
+
     validateOrDefaultEpoch();
+    fork = spec.getForkSchedule().getFork(epoch);
 
     // get genesis time
     final Optional<Bytes32> maybeRoot = getGenesisRoot();
@@ -221,7 +230,7 @@ public class VoluntaryExitCommand implements Runnable {
 
     final ValidatorLoader validatorLoader =
         ValidatorLoader.create(
-            config.validatorClient().getSpec(),
+            spec,
             config.validatorClient().getValidatorConfig(),
             config.validatorClient().getInteropConfig(),
             new RejectingSlashingProtector(),
@@ -246,7 +255,7 @@ public class VoluntaryExitCommand implements Runnable {
     {
       HttpUrl apiEndpoint = HttpUrl.get(endpoint);
       final OkHttpClient.Builder httpClientBuilder =
-          new OkHttpClient.Builder().readTimeout(Constants.SECONDS_PER_SLOT * 2, TimeUnit.SECONDS);
+          new OkHttpClient.Builder().readTimeout(30, TimeUnit.SECONDS);
       OkHttpClientAuthLoggingIntercepter.addAuthenticator(apiEndpoint, httpClientBuilder);
       // Strip any authentication info from the URL to ensure it doesn't get logged.
       apiEndpoint = apiEndpoint.newBuilder().username("").password("").build();

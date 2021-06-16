@@ -13,36 +13,67 @@
 
 package tech.pegasys.teku.pow;
 
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+
+import com.google.common.base.Throwables;
 import java.math.BigInteger;
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.Response;
+import org.web3j.protocol.core.Response.Error;
+import org.web3j.protocol.core.methods.request.EthFilter;
 import org.web3j.protocol.core.methods.request.Transaction;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.EthCall;
 import org.web3j.protocol.core.methods.response.EthChainId;
-import org.web3j.protocol.core.methods.response.EthSyncing;
+import org.web3j.protocol.core.methods.response.EthLog;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.pow.exception.RejectedRequestException;
 import tech.pegasys.teku.util.config.Constants;
 
-public class Web3jEth1Provider implements Eth1Provider {
+public class Web3jEth1Provider extends AbstractMonitorableEth1Provider {
   private static final Logger LOG = LogManager.getLogger();
 
+  private final AtomicBoolean validating = new AtomicBoolean(false);
+
+  private final String id;
   private final Web3j web3j;
   private final AsyncRunner asyncRunner;
+  private final LabelledMetric<Counter> requestCounter;
 
-  public Web3jEth1Provider(final Web3j web3j, final AsyncRunner asyncRunner) {
+  public Web3jEth1Provider(
+      final MetricsSystem metricsSystem,
+      final String id,
+      final Web3j web3j,
+      final AsyncRunner asyncRunner,
+      final TimeProvider timeProvider) {
+    super(timeProvider);
     this.web3j = web3j;
     this.asyncRunner = asyncRunner;
+    this.id = id;
+    requestCounter =
+        metricsSystem.createLabelledCounter(
+            TekuMetricCategory.BEACON,
+            "eth1_requests_total",
+            "Counter of the number of requests made to the eth1-endpoint, by endpoint ID and JSON-RPC method",
+            "endpoint",
+            "method");
   }
 
   @Override
@@ -107,7 +138,19 @@ public class Web3jEth1Provider implements Eth1Provider {
   @SuppressWarnings("rawtypes")
   private <S, T extends Response> SafeFuture<T> sendAsync(final Request<S, T> request) {
     try {
-      return SafeFuture.of(request.sendAsync());
+      requestCounter.labels(id, request.getMethod()).inc();
+      return SafeFuture.of(request.sendAsync())
+          .thenApply(
+              response -> {
+                if (response.hasError()) {
+                  final Error error = response.getError();
+                  throw new RejectedRequestException(error.getCode(), error.getMessage());
+                } else {
+                  updateLastCall(Result.SUCCESS);
+                  return response;
+                }
+              })
+          .catchAndRethrow(__ -> updateLastCall(Result.FAILED));
     } catch (RejectedExecutionException ex) {
       LOG.debug("shutting down, ignoring error", ex);
       return new SafeFuture<>();
@@ -118,6 +161,18 @@ public class Web3jEth1Provider implements Eth1Provider {
   public SafeFuture<EthBlock.Block> getLatestEth1Block() {
     DefaultBlockParameter blockParameter = DefaultBlockParameterName.LATEST;
     return getEth1Block(blockParameter);
+  }
+
+  @Override
+  public SafeFuture<EthBlock.Block> getGuaranteedLatestEth1Block() {
+    return getLatestEth1Block()
+        .exceptionallyCompose(
+            (err) -> {
+              LOG.debug("Retrying Eth1 request for latest block", err);
+              return asyncRunner
+                  .getDelayedFuture(Constants.ETH1_INDIVIDUAL_BLOCK_RETRY_TIMEOUT)
+                  .thenCompose(__ -> getGuaranteedLatestEth1Block());
+            });
   }
 
   @Override
@@ -138,6 +193,78 @@ public class Web3jEth1Provider implements Eth1Provider {
 
   @Override
   public SafeFuture<Boolean> ethSyncing() {
-    return sendAsync(web3j.ethSyncing()).thenApply(EthSyncing::isSyncing);
+    return sendAsync(web3j.ethSyncing())
+        .thenApply(response -> Web3jInSyncCheck.isSyncing(id, response));
+  }
+
+  @Override
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  public SafeFuture<List<EthLog.LogResult<?>>> ethGetLogs(EthFilter ethFilter) {
+    return sendAsync(web3j.ethGetLogs(ethFilter))
+        .thenApply(EthLog::getLogs)
+        .thenApply(logs -> (List<EthLog.LogResult<?>>) (List) logs);
+  }
+
+  @Override
+  public SafeFuture<Boolean> validate() {
+    if (validating.compareAndSet(false, true)) {
+      LOG.debug("Validating endpoint {} ...", this.id);
+      return validateChainId()
+          .thenCompose(
+              result -> {
+                if (result == Result.FAILED) {
+                  return SafeFuture.completedFuture(result);
+                } else {
+                  return validateSyncing();
+                }
+              })
+          .thenApply(
+              result -> {
+                updateLastValidation(result);
+                return result == Result.SUCCESS;
+              })
+          .exceptionally(
+              error -> {
+                LOG.warn(
+                    "Endpoint {} is INVALID | {}",
+                    this.id,
+                    Throwables.getRootCause(error).getMessage());
+                updateLastValidation(Result.FAILED);
+                return false;
+              })
+          .alwaysRun(() -> validating.set(false));
+    } else {
+      LOG.debug("Already validating");
+      return SafeFuture.completedFuture(isValid());
+    }
+  }
+
+  private SafeFuture<Result> validateChainId() {
+    return getChainId()
+        .thenApply(
+            chainId -> {
+              if (chainId.intValueExact() != Constants.DEPOSIT_CHAIN_ID) {
+                STATUS_LOG.eth1DepositChainIdMismatch(
+                    Constants.DEPOSIT_CHAIN_ID, chainId.intValueExact(), this.id);
+                return Result.FAILED;
+              }
+              return Result.SUCCESS;
+            });
+  }
+
+  private SafeFuture<Result> validateSyncing() {
+    return ethSyncing()
+        .thenApply(
+            syncing -> {
+              if (syncing) {
+                LOG.warn("Endpoint {} is INVALID | Still syncing", this.id);
+                updateLastValidation(Result.FAILED);
+                return Result.FAILED;
+              } else {
+                LOG.debug("Endpoint {} is VALID", this.id);
+                updateLastValidation(Result.SUCCESS);
+                return Result.SUCCESS;
+              }
+            });
   }
 }

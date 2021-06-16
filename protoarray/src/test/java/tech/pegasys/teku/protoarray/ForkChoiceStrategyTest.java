@@ -21,7 +21,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +36,7 @@ import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
+import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
@@ -51,7 +51,7 @@ import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final ProtoArrayStorageChannel storageChannel = mock(ProtoArrayStorageChannel.class);
 
   @BeforeEach
@@ -152,6 +152,29 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     final ForkChoiceStrategy protoArrayStrategy = createProtoArray(storageSystem);
     assertThat(protoArrayStrategy.getAncestor(block.getRoot(), block.getSlot()))
         .contains(block.getRoot());
+  }
+
+  @Test
+  void getBlockRootsAtSlot_shouldReturnAllRoots() {
+    final StorageSystem storageSystem = initStorageSystem();
+    storageSystem.chainUpdater().addNewBestBlock();
+    ChainBuilder fork = storageSystem.chainBuilder().fork();
+    final SignedBlockAndState bestBlock = storageSystem.chainUpdater().addNewBestBlock();
+    final SignedBlockAndState forkBlock =
+        fork.generateBlockAtSlot(
+            bestBlock.getSlot(),
+            ChainBuilder.BlockOptions.create()
+                .setEth1Data(new Eth1Data(Bytes32.ZERO, UInt64.valueOf(6), Bytes32.ZERO)));
+    final ForkChoiceStrategy strategy = createProtoArray(storageSystem);
+
+    strategy.applyUpdate(
+        List.of(
+            BlockAndCheckpointEpochs.fromBlockAndState(bestBlock),
+            BlockAndCheckpointEpochs.fromBlockAndState(forkBlock)),
+        emptySet(),
+        storageSystem.recentChainData().getFinalizedCheckpoint().orElseThrow());
+    assertThat(strategy.getBlockRootsAtSlot(bestBlock.getSlot()))
+        .containsExactlyInAnyOrder(bestBlock.getRoot(), forkBlock.getRoot());
   }
 
   @Test
@@ -288,7 +311,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     final SignedBlockAndState block3 = storageSystem.chainUpdater().addNewBestBlock();
     final SignedBlockAndState block4 = storageSystem.chainUpdater().addNewBestBlock();
     final ForkChoiceStrategy strategy = createProtoArray(storageSystem);
-    final UInt64 block3Epoch = compute_epoch_at_slot(block3.getSlot());
+    final UInt64 block3Epoch = spec.computeEpochAtSlot(block3.getSlot());
 
     strategy.applyUpdate(
         emptyList(),
@@ -321,7 +344,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
   }
 
   private StorageSystem initStorageSystem() {
-    final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
+    final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     storageSystem.chainUpdater().initializeGenesis();
     return storageSystem;
   }

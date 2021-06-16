@@ -32,10 +32,11 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.rpc.Utils;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
+import tech.pegasys.teku.networking.eth2.rpc.core.methods.Eth2RpcMethod;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EmptyMessage;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.MetadataMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class Eth2IncomingRequestHandlerTest
@@ -64,7 +65,9 @@ public class Eth2IncomingRequestHandlerTest
   @Override
   protected Eth2IncomingRequestHandler<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock>
       createRequestHandler(final BeaconChainMethods beaconChainMethods) {
-    return beaconChainMethods.beaconBlocksByRange().createIncomingRequestHandler();
+    final Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock> method =
+        beaconChainMethods.beaconBlocksByRange();
+    return method.createIncomingRequestHandler(method.getIds().get(0));
   }
 
   private SafeFuture<Optional<SignedBeaconBlock>> getBlockAtSlot(final UInt64 slot) {
@@ -74,8 +77,9 @@ public class Eth2IncomingRequestHandlerTest
 
   @Test
   public void testEmptyRequestMessage() {
+    final Eth2RpcMethod<EmptyMessage, MetadataMessage> method = beaconChainMethods.getMetadata();
     Eth2IncomingRequestHandler<EmptyMessage, MetadataMessage> requestHandler =
-        beaconChainMethods.getMetadata().createIncomingRequestHandler();
+        method.createIncomingRequestHandler(method.getIds().get(0));
     requestHandler.readComplete(nodeId, rpcStream);
     asyncRunner.executeQueuedActions();
     // verify non-error response

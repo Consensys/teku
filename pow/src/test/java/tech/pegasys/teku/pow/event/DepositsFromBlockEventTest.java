@@ -18,8 +18,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.ethereum.pow.api.Deposit;
+import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
+import tech.pegasys.teku.ethereum.pow.api.InvalidDepositEventsException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.pow.exception.InvalidDepositEventsException;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class DepositsFromBlockEventTest {

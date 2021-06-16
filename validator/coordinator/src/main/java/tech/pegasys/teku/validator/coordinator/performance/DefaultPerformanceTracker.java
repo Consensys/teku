@@ -36,7 +36,10 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.ssz.collections.SszBitlist;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -46,7 +49,7 @@ import tech.pegasys.teku.validator.coordinator.ActiveValidatorTracker;
 public class DefaultPerformanceTracker implements PerformanceTracker {
 
   @VisibleForTesting
-  final NavigableMap<UInt64, Set<SignedBeaconBlock>> producedBlocksByEpoch = new TreeMap<>();
+  final NavigableMap<UInt64, Set<SlotAndBlockRoot>> producedBlocksByEpoch = new TreeMap<>();
 
   final NavigableMap<UInt64, Set<Attestation>> producedAttestationsByEpoch = new TreeMap<>();
 
@@ -62,10 +65,11 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
   private final ValidatorPerformanceMetrics validatorPerformanceMetrics;
   private final ValidatorPerformanceTrackingMode mode;
   private final ActiveValidatorTracker validatorTracker;
+  private final SyncCommitteePerformanceTracker syncCommitteePerformanceTracker;
   private final Spec spec;
 
   private Optional<UInt64> nodeStartEpoch = Optional.empty();
-  private AtomicReference<UInt64> latestAnalyzedEpoch = new AtomicReference<>(UInt64.ZERO);
+  private final AtomicReference<UInt64> latestAnalyzedEpoch = new AtomicReference<>(UInt64.ZERO);
 
   public DefaultPerformanceTracker(
       CombinedChainDataClient combinedChainDataClient,
@@ -73,12 +77,14 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
       ValidatorPerformanceMetrics validatorPerformanceMetrics,
       ValidatorPerformanceTrackingMode mode,
       ActiveValidatorTracker validatorTracker,
+      SyncCommitteePerformanceTracker syncCommitteePerformanceTracker,
       final Spec spec) {
     this.combinedChainDataClient = combinedChainDataClient;
     this.statusLogger = statusLogger;
     this.validatorPerformanceMetrics = validatorPerformanceMetrics;
     this.mode = mode;
     this.validatorTracker = validatorTracker;
+    this.syncCommitteePerformanceTracker = syncCommitteePerformanceTracker;
     this.spec = spec;
   }
 
@@ -144,35 +150,61 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
         }
       }
     }
+
+    // Nothing to report until epoch 0 is complete
+    if (!currentEpoch.isZero()) {
+      final SyncCommitteePerformance syncCommitteePerformance =
+          syncCommitteePerformanceTracker.calculatePerformance(currentEpoch.minus(1)).join();
+      if (syncCommitteePerformance.getNumberOfExpectedSignatures() > 0) {
+        if (mode.isLoggingEnabled()) {
+          statusLogger.performance(syncCommitteePerformance.toString());
+        }
+
+        if (mode.isMetricsEnabled()) {
+          validatorPerformanceMetrics.updateSyncCommitteePerformance(syncCommitteePerformance);
+        }
+      }
+    }
   }
 
   private BlockPerformance getBlockPerformanceForEpochs(
       UInt64 startEpochInclusive, UInt64 endEpochExclusive) {
     int numberOfBlockProductionAttempts =
-        blockProductionAttemptsByEpoch.subMap(startEpochInclusive, true, endEpochExclusive, false)
-            .values().stream()
+        blockProductionAttemptsByEpoch
+            .subMap(startEpochInclusive, true, endEpochExclusive, false)
+            .values()
+            .stream()
             .mapToInt(AtomicInteger::get)
             .sum();
-    List<SignedBeaconBlock> producedBlocks =
-        producedBlocksByEpoch.subMap(startEpochInclusive, true, endEpochExclusive, false).values()
+    List<SlotAndBlockRoot> producedBlocks =
+        producedBlocksByEpoch
+            .subMap(startEpochInclusive, true, endEpochExclusive, false)
+            .values()
             .stream()
             .flatMap(Collection::stream)
             .collect(Collectors.toList());
 
-    long numberOfIncludedBlocks =
+    final StateAndBlockSummary chainHead = combinedChainDataClient.getChainHead().orElseThrow();
+    final BeaconState state = chainHead.getState();
+    final long numberOfIncludedBlocks =
         producedBlocks.stream()
             .filter(
-                sentBlock ->
-                    combinedChainDataClient
-                        .getBlockAtSlotExact(sentBlock.getSlot())
-                        .join()
-                        .map(block -> block.equals(sentBlock))
-                        .orElse(false))
+                producedBlock ->
+                    // Chain head root itself isn't available in state history
+                    producedBlock.getBlockRoot().equals(chainHead.getRoot())
+                        || isInHistoricBlockRoots(state, producedBlock))
             .count();
 
     int numberOfProducedBlocks = producedBlocks.size();
     return new BlockPerformance(
         numberOfBlockProductionAttempts, (int) numberOfIncludedBlocks, numberOfProducedBlocks);
+  }
+
+  private boolean isInHistoricBlockRoots(
+      final BeaconState state, final SlotAndBlockRoot producedBlock) {
+    return producedBlock.getSlot().isLessThan(state.getSlot())
+        && spec.getBlockRootAtSlot(state, producedBlock.getSlot())
+            .equals(producedBlock.getBlockRoot());
   }
 
   private AttestationPerformance getAttestationPerformanceForEpoch(
@@ -302,9 +334,9 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
   @Override
   public void saveProducedBlock(SignedBeaconBlock block) {
     UInt64 epoch = spec.computeEpochAtSlot(block.getSlot());
-    Set<SignedBeaconBlock> blocksInEpoch =
+    Set<SlotAndBlockRoot> blocksInEpoch =
         producedBlocksByEpoch.computeIfAbsent(epoch, __ -> new HashSet<>());
-    blocksInEpoch.add(block);
+    blocksInEpoch.add(new SlotAndBlockRoot(block.getSlot(), block.getRoot()));
   }
 
   @Override
@@ -312,6 +344,20 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
     AtomicInteger numberOfBlockProductionAttempts =
         blockProductionAttemptsByEpoch.computeIfAbsent(epoch, __ -> new AtomicInteger(0));
     numberOfBlockProductionAttempts.incrementAndGet();
+  }
+
+  @Override
+  public void saveExpectedSyncCommitteeParticipant(
+      final int validatorIndex,
+      final Set<Integer> syncCommitteeIndices,
+      final UInt64 subscribeUntilEpoch) {
+    syncCommitteePerformanceTracker.saveExpectedSyncCommitteeParticipant(
+        validatorIndex, syncCommitteeIndices, subscribeUntilEpoch);
+  }
+
+  @Override
+  public void saveProducedSyncCommitteeSignature(final SyncCommitteeSignature signature) {
+    syncCommitteePerformanceTracker.saveProducedSyncCommitteeSignature(signature);
   }
 
   static long getPercentage(final long numerator, final long denominator) {

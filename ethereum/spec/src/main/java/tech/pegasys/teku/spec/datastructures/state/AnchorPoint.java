@@ -29,7 +29,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.util.config.Constants;
 
 /**
@@ -77,7 +76,7 @@ public class AnchorPoint extends StateAndBlockSummary {
         SignedBeaconBlock.create(spec, genesisBlock, BLSSignature.empty());
 
     final Bytes32 genesisBlockRoot = genesisBlock.hashTreeRoot();
-    final UInt64 genesisEpoch = BeaconStateUtil.get_current_epoch(genesisState);
+    final UInt64 genesisEpoch = spec.getCurrentEpoch(genesisState);
     final Checkpoint genesisCheckpoint = new Checkpoint(genesisEpoch, genesisBlockRoot);
 
     return new AnchorPoint(genesisCheckpoint, genesisState, signedGenesisBlock);

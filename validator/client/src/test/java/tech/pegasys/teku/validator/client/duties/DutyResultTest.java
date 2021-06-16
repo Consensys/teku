@@ -15,15 +15,14 @@ package tech.pegasys.teku.validator.client.duties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -36,13 +35,13 @@ class DutyResultTest {
   private static final String TYPE = "type";
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final ValidatorLogger validatorLogger = mock(ValidatorLogger.class);
-  private final Optional<String> validatorId =
-      Optional.of(dataStructureUtil.randomValidator().getPubkeyBytes().toShortHexString());
+  private final BLSPublicKey validatorKey = dataStructureUtil.randomPublicKey();
+  private final Set<String> validatorId = Set.of(validatorKey.toAbbreviatedString());
 
   @Test
   void shouldReportSuccess() {
     final Bytes32 root = dataStructureUtil.randomBytes32();
-    DutyResult.success(root).report(TYPE, SLOT, validatorId, validatorLogger);
+    DutyResult.success(root).report(TYPE, SLOT, validatorLogger);
 
     verify(validatorLogger).dutyCompleted(TYPE, SLOT, 1, Set.of(root));
     verifyNoMoreInteractions(validatorLogger);
@@ -51,7 +50,7 @@ class DutyResultTest {
   @Test
   void shouldReportError() {
     final RuntimeException error = new RuntimeException("Oh no");
-    DutyResult.forError(error).report(TYPE, SLOT, validatorId, validatorLogger);
+    DutyResult.forError(validatorKey, error).report(TYPE, SLOT, validatorLogger);
 
     verify(validatorLogger).dutyFailed(TYPE, SLOT, validatorId, error);
     verifyNoMoreInteractions(validatorLogger);
@@ -59,8 +58,7 @@ class DutyResultTest {
 
   @Test
   void shouldReportNodeSyncing() {
-    DutyResult.forError(new NodeSyncingException())
-        .report(TYPE, SLOT, validatorId, validatorLogger);
+    DutyResult.forError(new NodeSyncingException()).report(TYPE, SLOT, validatorLogger);
 
     verify(validatorLogger).dutySkippedWhileSyncing(TYPE, SLOT, 1);
     verifyNoMoreInteractions(validatorLogger);
@@ -75,7 +73,7 @@ class DutyResultTest {
         DutyResult.success(root1)
             .combine(DutyResult.success(root2))
             .combine(DutyResult.success(root1));
-    combined.report(TYPE, SLOT, validatorId, validatorLogger);
+    combined.report(TYPE, SLOT, validatorLogger);
 
     verify(validatorLogger).dutyCompleted(TYPE, SLOT, 3, Set.of(root1, root2));
     verifyNoMoreInteractions(validatorLogger);
@@ -83,16 +81,16 @@ class DutyResultTest {
 
   @Test
   void shouldCombineErrorResults() {
-    final RuntimeException exception1 = new RuntimeException("Oops");
-    final RuntimeException exception2 = new RuntimeException("Nope");
+    final Exception exception1 = new RuntimeException("Oops");
+    final Exception exception2 = new IllegalArgumentException("Nope");
 
     final DutyResult combined =
-        DutyResult.forError(exception1)
-            .combine(DutyResult.forError(exception2))
-            .combine(DutyResult.forError(exception1));
-    combined.report(TYPE, SLOT, validatorId, validatorLogger);
+        DutyResult.forError(validatorKey, exception1)
+            .combine(DutyResult.forError(validatorKey, exception2))
+            .combine(DutyResult.forError(validatorKey, exception1));
+    combined.report(TYPE, SLOT, validatorLogger);
 
-    verify(validatorLogger, times(2)).dutyFailed(TYPE, SLOT, validatorId, exception1);
+    verify(validatorLogger).dutyFailed(TYPE, SLOT, validatorId, exception1);
     verify(validatorLogger).dutyFailed(TYPE, SLOT, validatorId, exception2);
     verifyNoMoreInteractions(validatorLogger);
   }
@@ -103,7 +101,7 @@ class DutyResultTest {
         DutyResult.forError(new NodeSyncingException())
             .combine(DutyResult.forError(new NodeSyncingException()))
             .combine(DutyResult.forError(new NodeSyncingException()));
-    combined.report(TYPE, SLOT, validatorId, validatorLogger);
+    combined.report(TYPE, SLOT, validatorLogger);
 
     verify(validatorLogger).dutySkippedWhileSyncing(TYPE, SLOT, 3);
     verifyNoMoreInteractions(validatorLogger);
@@ -113,18 +111,18 @@ class DutyResultTest {
   void shouldCombineMixedResults() {
     final Bytes32 root1 = dataStructureUtil.randomBytes32();
     final Bytes32 root2 = dataStructureUtil.randomBytes32();
-    final RuntimeException exception1 = new RuntimeException("Nope");
-    final RuntimeException exception2 = new RuntimeException("Oops");
+    final Exception exception1 = new RuntimeException("Nope");
+    final Exception exception2 = new IllegalArgumentException("Oops");
 
     final DutyResult combined =
         DutyResult.success(root1)
-            .combine(DutyResult.forError(exception1))
-            .combine(DutyResult.forError(new NodeSyncingException()))
-            .combine(DutyResult.forError(exception2))
-            .combine(DutyResult.forError(new NodeSyncingException()))
+            .combine(DutyResult.forError(validatorKey, exception1))
+            .combine(DutyResult.forError(validatorKey, new NodeSyncingException()))
+            .combine(DutyResult.forError(validatorKey, exception2))
+            .combine(DutyResult.forError(validatorKey, new NodeSyncingException()))
             .combine(DutyResult.success(root2))
             .combine(DutyResult.success(root1));
-    combined.report(TYPE, SLOT, validatorId, validatorLogger);
+    combined.report(TYPE, SLOT, validatorLogger);
 
     verify(validatorLogger).dutyCompleted(TYPE, SLOT, 3, Set.of(root1, root2));
     verify(validatorLogger).dutySkippedWhileSyncing(TYPE, SLOT, 2);
@@ -137,23 +135,24 @@ class DutyResultTest {
   void shouldCombineSafeFutureResults() {
     final Bytes32 root1 = dataStructureUtil.randomBytes32();
     final Bytes32 root2 = dataStructureUtil.randomBytes32();
-    final RuntimeException exception1 = new RuntimeException("Nope");
-    final RuntimeException exception2 = new RuntimeException("Oops");
+    final Exception exception1 = new RuntimeException("Nope");
+    final Exception exception2 = new IllegalArgumentException("Oops");
     final SafeFuture<DutyResult> combinedFuture =
         DutyResult.combine(
             List.of(
                 SafeFuture.completedFuture(DutyResult.success(root1)),
-                SafeFuture.completedFuture(DutyResult.forError(exception1)),
+                SafeFuture.completedFuture(DutyResult.forError(validatorKey, exception1)),
                 SafeFuture.failedFuture(exception2),
-                SafeFuture.completedFuture(DutyResult.forError(new NodeSyncingException())),
+                SafeFuture.completedFuture(
+                    DutyResult.forError(validatorKey, new NodeSyncingException())),
                 SafeFuture.failedFuture(new NodeSyncingException()),
                 SafeFuture.completedFuture(DutyResult.success(root2))));
 
     assertThat(combinedFuture).isCompleted();
-    combinedFuture.join().report(TYPE, SLOT, validatorId, validatorLogger);
+    combinedFuture.join().report(TYPE, SLOT, validatorLogger);
     verify(validatorLogger).dutyCompleted(TYPE, SLOT, 2, Set.of(root1, root2));
     verify(validatorLogger).dutyFailed(TYPE, SLOT, validatorId, exception1);
-    verify(validatorLogger).dutyFailed(TYPE, SLOT, validatorId, exception2);
+    verify(validatorLogger).dutyFailed(TYPE, SLOT, Set.of(), exception2);
     verify(validatorLogger).dutySkippedWhileSyncing(TYPE, SLOT, 2);
     verifyNoMoreInteractions(validatorLogger);
   }
@@ -172,7 +171,7 @@ class DutyResultTest {
     future2.complete(DutyResult.success(root));
     assertThat(combinedFuture).isCompleted();
 
-    combinedFuture.join().report(TYPE, SLOT, validatorId, validatorLogger);
+    combinedFuture.join().report(TYPE, SLOT, validatorLogger);
     verify(validatorLogger).dutyCompleted(TYPE, SLOT, 2, Set.of(root));
     verifyNoMoreInteractions(validatorLogger);
   }

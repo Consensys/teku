@@ -22,6 +22,7 @@ import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -37,12 +38,13 @@ import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.core.CommitteeAssignmentUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -51,18 +53,24 @@ import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
-import tech.pegasys.teku.spec.datastructures.state.Fork;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeSignature;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
-import tech.pegasys.teku.ssz.collections.SszBitlist;
+import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
+import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
+import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeSignaturePool;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.sync.events.SyncStateProvider;
 import tech.pegasys.teku.validator.api.AttesterDuties;
@@ -72,6 +80,10 @@ import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
+import tech.pegasys.teku.validator.api.SubmitCommitteeSignatureError;
+import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
+import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
+import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 
@@ -99,6 +111,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final PerformanceTracker performanceTracker;
   private final Spec spec;
   private final ForkChoiceTrigger forkChoiceTrigger;
+  private final SyncCommitteeSignaturePool syncCommitteeSignaturePool;
+  private final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager;
+  private final SyncCommitteeContributionPool syncCommitteeContributionPool;
 
   public ValidatorApiHandler(
       final ChainDataProvider chainDataProvider,
@@ -114,7 +129,10 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final DutyMetrics dutyMetrics,
       final PerformanceTracker performanceTracker,
       final Spec spec,
-      final ForkChoiceTrigger forkChoiceTrigger) {
+      final ForkChoiceTrigger forkChoiceTrigger,
+      final SyncCommitteeSignaturePool syncCommitteeSignaturePool,
+      final SyncCommitteeContributionPool syncCommitteeContributionPool,
+      final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager) {
     this.chainDataProvider = chainDataProvider;
     this.combinedChainDataClient = combinedChainDataClient;
     this.syncStateProvider = syncStateProvider;
@@ -129,12 +147,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     this.performanceTracker = performanceTracker;
     this.spec = spec;
     this.forkChoiceTrigger = forkChoiceTrigger;
-  }
-
-  @Override
-  public SafeFuture<Optional<Fork>> getFork() {
-    return SafeFuture.completedFuture(
-        combinedChainDataClient.getBestState().map(BeaconState::getFork));
+    this.syncCommitteeSignaturePool = syncCommitteeSignaturePool;
+    this.syncCommitteeContributionPool = syncCommitteeContributionPool;
+    this.syncCommitteeSubscriptionManager = syncCommitteeSubscriptionManager;
   }
 
   @Override
@@ -177,8 +192,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                   "Attestation duties were requested %s epochs ahead, only 1 epoch in future is supported.",
                   epoch.minus(combinedChainDataClient.getCurrentEpoch()).toString())));
     }
-    final UInt64 slot =
-        spec.atEpoch(epoch).getBeaconStateUtil().getEarliestQueryableSlotForTargetEpoch(epoch);
+    final UInt64 slot = spec.getEarliestQueryableSlotForBeaconCommitteeInTargetEpoch(epoch);
     LOG.trace("Retrieving attestation duties from epoch {} using state at slot {}", epoch, slot);
     return combinedChainDataClient
         .getStateAtSlotExact(slot)
@@ -186,6 +200,22 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             optionalState ->
                 optionalState.map(
                     state -> getAttesterDutiesFromIndexesAndState(state, epoch, validatorIndexes)));
+  }
+
+  @Override
+  public SafeFuture<Optional<SyncCommitteeDuties>> getSyncCommitteeDuties(
+      final UInt64 epoch, final Collection<Integer> validatorIndices) {
+    if (isSyncActive()) {
+      return NodeSyncingException.failedFuture();
+    }
+    final SpecVersion specVersion = spec.atEpoch(epoch);
+
+    return getStateForCommitteeDuties(specVersion, epoch)
+        .thenApply(
+            maybeState ->
+                Optional.of(
+                    getSyncCommitteeDutiesFromIndexesAndState(
+                        maybeState, epoch, validatorIndices)));
   }
 
   @Override
@@ -198,7 +228,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
           new IllegalArgumentException(
               String.format(
                   "Proposer duties were requested for a future epoch (current: %s, requested: %s).",
-                  combinedChainDataClient.getCurrentEpoch().toString(), epoch.toString())));
+                  combinedChainDataClient.getCurrentEpoch().toString(), epoch)));
     }
     LOG.trace("Retrieving proposer duties from epoch {}", epoch);
     return combinedChainDataClient
@@ -271,50 +301,66 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<Attestation>> createUnsignedAttestation(
+  public SafeFuture<Optional<AttestationData>> createAttestationData(
       final UInt64 slot, final int committeeIndex) {
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
 
+    final UInt64 currentSlot = combinedChainDataClient.getCurrentSlot();
+    if (slot.isGreaterThan(currentSlot)) {
+      // Avoid creating attestations in the future as that may cause fork choice to run too soon
+      // and then not re-run when it is actually due.  It's also dangerous for validators to create
+      // attestations in the future.  Since attestations are due either when the block is imported
+      // or 4 seconds into the slot, there's some tolerance for clock skew already built in.
+      return SafeFuture.failedFuture(
+          new IllegalArgumentException(
+              "Cannot create attestation for future slot. Requested "
+                  + slot
+                  + " but current slot is "
+                  + currentSlot));
+    }
+
     final UInt64 epoch = spec.computeEpochAtSlot(slot);
     final UInt64 minQuerySlot = spec.computeStartSlotAtEpoch(epoch);
 
-    return combinedChainDataClient
-        .getSignedBlockAndStateInEffectAtSlot(slot)
+    return forkChoiceTrigger
+        .prepareForAttestationProduction(slot)
         .thenCompose(
-            maybeBlockAndState -> {
-              if (maybeBlockAndState.isEmpty()) {
-                return SafeFuture.completedFuture(Optional.empty());
-              }
-              final SignedBlockAndState blockAndState = maybeBlockAndState.get();
-              final BeaconBlock block = blockAndState.getBlock().getMessage();
-              if (blockAndState.getSlot().compareTo(minQuerySlot) < 0) {
-                // The current effective block is too far in the past - so roll the state
-                // forward to the current epoch. Ensures we have the latest justified checkpoint
-                return combinedChainDataClient
-                    .getCheckpointState(epoch, blockAndState)
-                    .thenApply(
-                        checkpointState ->
-                            Optional.of(
-                                createAttestation(
-                                    block, checkpointState.getState(), slot, committeeIndex)));
-              } else {
-                final Attestation attestation =
-                    createAttestation(block, blockAndState.getState(), slot, committeeIndex);
-                return SafeFuture.completedFuture(Optional.of(attestation));
-              }
-            });
+            __ ->
+                combinedChainDataClient
+                    .getSignedBlockAndStateInEffectAtSlot(slot)
+                    .thenCompose(
+                        maybeBlockAndState -> {
+                          if (maybeBlockAndState.isEmpty()) {
+                            return SafeFuture.completedFuture(Optional.empty());
+                          }
+                          final SignedBlockAndState blockAndState = maybeBlockAndState.get();
+                          final BeaconBlock block = blockAndState.getBlock().getMessage();
+                          if (blockAndState.getSlot().compareTo(minQuerySlot) < 0) {
+                            // The current effective block is too far in the past - so roll the
+                            // state forward to the current epoch. Ensures we have the latest
+                            // justified checkpoint
+                            return combinedChainDataClient
+                                .getCheckpointState(epoch, blockAndState)
+                                .thenApply(
+                                    checkpointState ->
+                                        Optional.of(
+                                            createAttestationData(
+                                                block,
+                                                checkpointState.getState(),
+                                                slot,
+                                                committeeIndex)));
+                          } else {
+                            final AttestationData attestationData =
+                                createAttestationData(
+                                    block, blockAndState.getState(), slot, committeeIndex);
+                            return SafeFuture.completedFuture(Optional.of(attestationData));
+                          }
+                        }));
   }
 
-  @Override
-  public SafeFuture<Optional<AttestationData>> createAttestationData(
-      final UInt64 slot, final int committeeIndex) {
-    return createUnsignedAttestation(slot, committeeIndex)
-        .thenApply(maybeAttestation -> maybeAttestation.map(Attestation::getData));
-  }
-
-  private Attestation createAttestation(
+  private AttestationData createAttestationData(
       final BeaconBlock block,
       final BeaconState state,
       final UInt64 slot,
@@ -330,16 +376,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
               + (committeeCount - 1));
     }
     final UInt64 committeeIndexUnsigned = UInt64.valueOf(committeeIndex);
-    final AttestationData attestationData =
-        spec.getGenericAttestationData(slot, state, block, committeeIndexUnsigned);
-    final List<Integer> committee =
-        spec.atSlot(slot)
-            .getBeaconStateUtil()
-            .getBeaconCommittee(state, slot, committeeIndexUnsigned);
-
-    SszBitlist aggregationBits =
-        Attestation.SSZ_SCHEMA.getAggregationBitsSchema().ofBits(committee.size());
-    return new Attestation(aggregationBits, attestationData, BLSSignature.empty());
+    return spec.getGenericAttestationData(slot, state, block, committeeIndexUnsigned);
   }
 
   @Override
@@ -353,6 +390,13 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             .createAggregateFor(attestationHashTreeRoot)
             .filter(attestation -> attestation.getData().getSlot().equals(slot))
             .map(ValidateableAttestation::getAttestation));
+  }
+
+  @Override
+  public SafeFuture<Optional<SyncCommitteeContribution>> createSyncCommitteeContribution(
+      final UInt64 slot, final int subcommitteeIndex, final Bytes32 beaconBlockRoot) {
+    return SafeFuture.completedFuture(
+        syncCommitteeSignaturePool.createContribution(slot, beaconBlockRoot, subcommitteeIndex));
   }
 
   @Override
@@ -372,6 +416,24 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                 request.getCommitteeIndex(), request.getCommitteesAtSlot(), request.getSlot());
           }
         });
+  }
+
+  @Override
+  public void subscribeToSyncCommitteeSubnets(
+      final Collection<SyncCommitteeSubnetSubscription> subscriptions) {
+    for (final SyncCommitteeSubnetSubscription subscription : subscriptions) {
+      final UInt64 unsubscribeSlot =
+          spec.computeStartSlotAtEpoch(subscription.getUntilEpoch().increment());
+      final SyncCommitteeUtil syncCommitteeUtil =
+          spec.getSyncCommitteeUtilRequired(
+              spec.computeStartSlotAtEpoch(subscription.getUntilEpoch()));
+      final Set<Integer> syncCommitteeIndices = subscription.getSyncCommitteeIndices();
+      performanceTracker.saveExpectedSyncCommitteeParticipant(
+          subscription.getValidatorIndex(), syncCommitteeIndices, subscription.getUntilEpoch());
+      syncCommitteeUtil
+          .getSyncSubcommittees(syncCommitteeIndices)
+          .forEach(index -> syncCommitteeSubscriptionManager.subscribe(index, unsubscribeSlot));
+    }
   }
 
   @Override
@@ -454,6 +516,72 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             });
   }
 
+  @Override
+  public SafeFuture<List<SubmitCommitteeSignatureError>> sendSyncCommitteeSignatures(
+      final List<SyncCommitteeSignature> syncCommitteeSignatures) {
+
+    final List<SafeFuture<InternalValidationResult>> addedSignatures =
+        syncCommitteeSignatures.stream()
+            .map(ValidateableSyncCommitteeSignature::fromValidator)
+            .map(this::processSyncCommitteeSignature)
+            .collect(toList());
+
+    return SafeFuture.collectAll(addedSignatures.stream())
+        .thenApply(this::getSendSyncCommitteesResultFromFutures);
+  }
+
+  private SafeFuture<InternalValidationResult> processSyncCommitteeSignature(
+      final ValidateableSyncCommitteeSignature signature) {
+    return syncCommitteeSignaturePool
+        .add(signature)
+        .thenPeek(
+            result -> {
+              if (result.isAccept() || result.isSaveForFuture()) {
+                performanceTracker.saveProducedSyncCommitteeSignature(signature.getSignature());
+              }
+            });
+  }
+
+  private List<SubmitCommitteeSignatureError> getSendSyncCommitteesResultFromFutures(
+      final List<InternalValidationResult> internalValidationResults) {
+    final List<SubmitCommitteeSignatureError> errorList = new ArrayList<>();
+    for (int index = 0; index < internalValidationResults.size(); index++) {
+      final Optional<SubmitCommitteeSignatureError> maybeError =
+          fromInternalValidationResult(internalValidationResults.get(index), index);
+      maybeError.ifPresent(errorList::add);
+    }
+    return errorList;
+  }
+
+  @Override
+  public SafeFuture<Void> sendSignedContributionAndProofs(
+      final Collection<SignedContributionAndProof> aggregates) {
+    return SafeFuture.collectAll(aggregates.stream().map(syncCommitteeContributionPool::add))
+        .thenAccept(
+            results -> {
+              final List<String> errorMessages =
+                  results.stream()
+                      .filter(InternalValidationResult::isReject)
+                      .flatMap(result -> result.getDescription().stream())
+                      .collect(toList());
+              if (!errorMessages.isEmpty()) {
+                throw new IllegalArgumentException(
+                    "Invalid contribution and proofs: \n" + String.join("\n", errorMessages));
+              }
+            });
+  }
+
+  private Optional<SubmitCommitteeSignatureError> fromInternalValidationResult(
+      final InternalValidationResult internalValidationResult, final int resultIndex) {
+    if (!internalValidationResult.isReject()) {
+      return Optional.empty();
+    }
+    return Optional.of(
+        new SubmitCommitteeSignatureError(
+            UInt64.valueOf(resultIndex),
+            internalValidationResult.getDescription().orElse("Rejected")));
+  }
+
   @VisibleForTesting
   boolean isSyncActive() {
     return !syncStateProvider.getCurrentSyncState().isInSync();
@@ -486,10 +614,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
     return combine(
         spec.getValidatorPubKey(state, UInt64.valueOf(validatorIndex)),
-        CommitteeAssignmentUtil.get_committee_assignment(state, epoch, validatorIndex),
+        spec.getCommitteeAssignment(state, epoch, validatorIndex),
         (pkey, committeeAssignment) -> {
-          final UInt64 committeeCountPerSlot =
-              spec.atEpoch(epoch).getBeaconStateUtil().getCommitteeCountPerSlot(state, epoch);
+          final UInt64 committeeCountPerSlot = spec.getCommitteeCountPerSlot(state, epoch);
           return new AttesterDuty(
               pkey,
               validatorIndex,
@@ -499,6 +626,77 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
               committeeAssignment.getCommittee().indexOf(validatorIndex),
               committeeAssignment.getSlot());
         });
+  }
+
+  private SafeFuture<Optional<BeaconState>> getStateForCommitteeDuties(
+      final SpecVersion specVersion, final UInt64 epoch) {
+    final Optional<SyncCommitteeUtil> maybeSyncCommitteeUtil = specVersion.getSyncCommitteeUtil();
+    if (maybeSyncCommitteeUtil.isEmpty()) {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+    final SyncCommitteeUtil syncCommitteeUtil = maybeSyncCommitteeUtil.get();
+    final Optional<BeaconState> maybeBestState = combinedChainDataClient.getBestState();
+    if (maybeBestState.isEmpty()) {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+    final BeaconState bestState = maybeBestState.get();
+    if (syncCommitteeUtil.isStateUsableForCommitteeCalculationAtEpoch(bestState, epoch)) {
+      return SafeFuture.completedFuture(maybeBestState);
+    }
+
+    final UInt64 lastQueryableEpoch =
+        syncCommitteeUtil.computeLastEpochOfNextSyncCommitteePeriod(
+            combinedChainDataClient.getCurrentEpoch());
+    if (lastQueryableEpoch.isLessThan(epoch)) {
+      return SafeFuture.failedFuture(
+          new IllegalArgumentException(
+              "Cannot calculate sync committee duties for epoch "
+                  + epoch
+                  + " because it is not within the current or next sync committee periods"));
+    }
+
+    final UInt64 requiredEpoch;
+    final UInt64 stateEpoch = spec.getCurrentEpoch(bestState);
+    if (epoch.isGreaterThan(stateEpoch)) {
+      // Use the earliest possible epoch since we'll need to process empty slots
+      requiredEpoch = syncCommitteeUtil.getMinEpochForSyncCommitteeAssignments(epoch);
+    } else {
+      // Use the latest possible epoch since it's most likely to still be in memory
+      requiredEpoch = syncCommitteeUtil.computeLastEpochOfCurrentSyncCommitteePeriod(epoch);
+    }
+    return combinedChainDataClient.getStateAtSlotExact(spec.computeStartSlotAtEpoch(requiredEpoch));
+  }
+
+  private SyncCommitteeDuties getSyncCommitteeDutiesFromIndexesAndState(
+      final Optional<BeaconState> maybeState,
+      final UInt64 epoch,
+      final Collection<Integer> validatorIndices) {
+    if (maybeState.isEmpty()) {
+      return new SyncCommitteeDuties(List.of());
+    }
+    final BeaconState state = maybeState.get();
+    return new SyncCommitteeDuties(
+        validatorIndices.stream()
+            .flatMap(validatorIndex -> getSyncCommitteeDuty(state, epoch, validatorIndex).stream())
+            .collect(toList()));
+  }
+
+  private Optional<SyncCommitteeDuty> getSyncCommitteeDuty(
+      final BeaconState state, final UInt64 epoch, final Integer validatorIndex) {
+    final Optional<SyncCommitteeUtil> syncCommitteeUtil =
+        spec.atEpoch(epoch).getSyncCommitteeUtil();
+    final Set<Integer> duties =
+        syncCommitteeUtil
+            .map(util -> util.getCommitteeIndices(state, epoch, UInt64.valueOf(validatorIndex)))
+            .orElse(Collections.emptySet());
+
+    if (duties.isEmpty()) {
+      return Optional.empty();
+    }
+
+    return Optional.of(
+        new SyncCommitteeDuty(
+            state.getValidators().get(validatorIndex).getPublicKey(), validatorIndex, duties));
   }
 
   private static <A, B, R> Optional<R> combine(

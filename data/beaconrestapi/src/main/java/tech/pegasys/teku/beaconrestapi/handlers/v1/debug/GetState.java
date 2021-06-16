@@ -42,13 +42,14 @@ import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.response.StateSszResponse;
+import tech.pegasys.teku.api.response.SszResponse;
 import tech.pegasys.teku.api.response.v1.debug.GetStateResponse;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.spec.SpecMilestone;
 
 public class GetState extends AbstractHandler implements Handler {
   public static final String ROUTE = "/eth/v1/debug/beacon/states/:state_id";
@@ -70,7 +71,8 @@ public class GetState extends AbstractHandler implements Handler {
       tags = {TAG_DEBUG},
       description =
           "Returns full BeaconState object for given state_id.\n\n"
-              + "Use Accept header to select `application/octet-stream` if SSZ response type is required.",
+              + "Use Accept header to select `application/octet-stream` if SSZ response type is required.\n\n"
+              + "__NOTE__: Only phase0 beacon state will be returned in JSON, use `/eth/v2/beacon/states/{state_id}` for altair.",
       pathParams = {@OpenApiParam(name = PARAM_STATE_ID, description = PARAM_STATE_ID_DESCRIPTION)},
       responses = {
         @OpenApiResponse(
@@ -88,34 +90,41 @@ public class GetState extends AbstractHandler implements Handler {
   public void handle(@NotNull final Context ctx) throws Exception {
     final Optional<String> maybeAcceptHeader = Optional.ofNullable(ctx.header(HEADER_ACCEPT));
     final Map<String, String> pathParamMap = ctx.pathParamMap();
-    if (maybeAcceptHeader.orElse(HEADER_ACCEPT_JSON).equalsIgnoreCase(HEADER_ACCEPT_JSON)) {
-      final SafeFuture<Optional<BeaconState>> future =
-          chainDataProvider.getBeaconState(pathParamMap.get(PARAM_STATE_ID));
-      handleOptionalResult(ctx, future, this::handleJsonResult, SC_NOT_FOUND);
-    } else if (maybeAcceptHeader.orElse("").equalsIgnoreCase(HEADER_ACCEPT_OCTET)) {
-      final SafeFuture<Optional<StateSszResponse>> future =
+    if (maybeAcceptHeader.orElse("").equalsIgnoreCase(HEADER_ACCEPT_OCTET)) {
+      final SafeFuture<Optional<SszResponse>> future =
           chainDataProvider.getBeaconStateSsz(pathParamMap.get(PARAM_STATE_ID));
       handleOptionalSszResult(
           ctx, future, this::handleSszResult, this::resultFilename, SC_NOT_FOUND);
     } else {
-      ctx.status(SC_BAD_REQUEST);
-      ctx.result(
-          BadRequest.badRequest(
-              jsonProvider, "Received an unsupported accept-header: " + maybeAcceptHeader.get()));
+      // accept header is not octet, could be anything else, or even not set - our default return is
+      // json.
+      final SafeFuture<Optional<BeaconState>> future =
+          chainDataProvider.getBeaconState(pathParamMap.get(PARAM_STATE_ID));
+      handleOptionalResult(ctx, future, this::handleJsonResult, SC_NOT_FOUND);
     }
   }
 
-  private String resultFilename(final StateSszResponse response) {
-    return response.stateAbbreviatedHash + ".ssz";
+  private String resultFilename(final SszResponse response) {
+    return response.abbreviatedHash + ".ssz";
   }
 
   private Optional<ByteArrayInputStream> handleSszResult(
-      final Context context, final StateSszResponse response) {
+      final Context context, final SszResponse response) {
     return Optional.of(response.byteStream);
   }
 
   private Optional<String> handleJsonResult(Context ctx, final BeaconState response)
       throws JsonProcessingException {
-    return Optional.of(jsonProvider.objectToJSON(new GetStateResponse(response)));
+    final SpecMilestone milestone = chainDataProvider.getMilestoneAtSlot(response.slot);
+    if (!milestone.equals(SpecMilestone.PHASE0)) {
+      ctx.status(SC_BAD_REQUEST);
+      return Optional.of(
+          BadRequest.badRequest(
+              jsonProvider,
+              String.format(
+                  "Slot %s is not a phase0 slot, please fetch via /eth/v2/debug/states",
+                  response.slot)));
+    }
+    return Optional.of(jsonProvider.objectToJSON(new GetStateResponse(milestone, response)));
   }
 }

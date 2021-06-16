@@ -33,6 +33,7 @@ import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.sync.events.SyncState;
 
 public class PostAttesterDutiesTest extends AbstractValidatorApiTest {
 
@@ -44,7 +45,8 @@ public class PostAttesterDutiesTest extends AbstractValidatorApiTest {
   @Test
   public void shouldReturnServiceUnavailableWhenResultIsEmpty() throws Exception {
     when(validatorDataProvider.isStoreAvailable()).thenReturn(true);
-    when(syncService.isSyncActive()).thenReturn(false);
+
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(context.pathParamMap()).thenReturn(Map.of("epoch", "100"));
     when(context.body()).thenReturn("[\"2\"]");
     when(validatorDataProvider.getAttesterDuties(eq(UInt64.valueOf(100)), any()))
@@ -57,13 +59,12 @@ public class PostAttesterDutiesTest extends AbstractValidatorApiTest {
   @Test
   public void shouldGetAttesterDuties() throws Exception {
     when(validatorDataProvider.isStoreAvailable()).thenReturn(true);
-    when(syncService.isSyncActive()).thenReturn(false);
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(context.pathParamMap()).thenReturn(Map.of("epoch", "100"));
     when(context.body()).thenReturn("[\"2\"]");
 
     final UInt64 epoch = UInt64.valueOf(100);
-    final UInt64 startSlot =
-        spec.atEpoch(epoch).getBeaconStateUtil().computeStartSlotAtEpoch(epoch);
+    final UInt64 startSlot = spec.computeStartSlotAtEpoch(epoch);
     PostAttesterDutiesResponse duties =
         new PostAttesterDutiesResponse(
             Bytes32.fromHexString("0x1234"), List.of(getDuty(2, 1, 2, 10, 3, startSlot)));
@@ -78,7 +79,7 @@ public class PostAttesterDutiesTest extends AbstractValidatorApiTest {
   @Test
   public void shouldReturnBadRequestWhenIllegalArgumentExceptionThrown() throws Exception {
     when(validatorDataProvider.isStoreAvailable()).thenReturn(true);
-    when(syncService.isSyncActive()).thenReturn(false);
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(context.pathParamMap()).thenReturn(Map.of("epoch", "100"));
     when(context.body()).thenReturn("[\"2\"]");
     when(validatorDataProvider.getAttesterDuties(UInt64.valueOf(100), List.of(2)))

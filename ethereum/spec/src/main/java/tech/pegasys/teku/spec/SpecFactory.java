@@ -13,33 +13,53 @@
 
 package tech.pegasys.teku.spec;
 
-import java.util.List;
+import java.util.Optional;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigBuilder;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
-import tech.pegasys.teku.spec.datastructures.state.Fork;
 
-public interface SpecFactory {
-  SpecFactory PHASE0 = new Phase0SpecFactory();
+public class SpecFactory {
 
-  static SpecFactory getDefault() {
-    return PHASE0;
+  public static Spec create(String configName) {
+    return create(configName, Optional.empty(), Optional.empty());
   }
 
-  Spec create(String configName);
+  public static Spec create(
+      String configName,
+      final Optional<UInt64> altairForkEpoch,
+      final Optional<UInt64> mergeForkEpoch) {
+    final SpecConfig config =
+        SpecConfigLoader.loadConfig(
+            configName,
+            builder -> {
+              altairForkEpoch.ifPresent(forkEpoch -> overrideAltairForkEpoch(builder, forkEpoch));
+              mergeForkEpoch.ifPresent(forkEpoch -> overrideMergeForkEpoch(builder, forkEpoch));
+            });
+    return create(config, altairForkEpoch, mergeForkEpoch);
+  }
 
-  class Phase0SpecFactory implements SpecFactory {
+  private static void overrideAltairForkEpoch(
+      final SpecConfigBuilder builder, final UInt64 forkEpoch) {
+    builder.altairBuilder(altairBuilder -> altairBuilder.altairForkEpoch(forkEpoch));
+  }
 
-    @Override
-    public Spec create(String configName) {
-      final SpecConfig config = SpecConfigLoader.loadConfig(configName);
-      final ForkManifest forkManifest =
-          ForkManifest.create(
-              List.of(
-                  new Fork(
-                      config.getGenesisForkVersion(),
-                      config.getGenesisForkVersion(),
-                      SpecConfig.GENESIS_EPOCH)));
-      return Spec.create(config, forkManifest);
+  private static void overrideMergeForkEpoch(
+      final SpecConfigBuilder builder, final UInt64 forkEpoch) {
+    builder.mergeBuilder(mergeBuilder -> mergeBuilder.mergeForkEpoch(forkEpoch));
+  }
+
+  public static Spec create(
+      final SpecConfig config,
+      final Optional<UInt64> altairForkEpoch,
+      final Optional<UInt64> mergeForkEpoch) {
+    // Merge takes precedence in the prototype
+    if (mergeForkEpoch.isPresent()) {
+      return Spec.create(config, SpecMilestone.MERGE);
     }
+
+    final SpecMilestone highestMilestoneSupported =
+        altairForkEpoch.map(__ -> SpecMilestone.ALTAIR).orElse(SpecMilestone.PHASE0);
+    return Spec.create(config, highestMilestoneSupported);
   }
 }

@@ -27,7 +27,6 @@ import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class SpecConfigBuilder {
   private final Map<String, Object> rawConfig = new HashMap<>();
-  private String configName = "Custom (unknown)";
 
   // Misc
   private UInt64 eth1FollowDistance;
@@ -52,7 +51,6 @@ public class SpecConfigBuilder {
 
   // Initial values
   private Bytes4 genesisForkVersion;
-  private Bytes blsWithdrawalPrefix;
 
   // Time parameters
   private UInt64 genesisDelay;
@@ -87,20 +85,8 @@ public class SpecConfigBuilder {
   private Integer maxDeposits;
   private Integer maxVoluntaryExits;
 
-  // Signature domains
-  private Bytes4 domainBeaconProposer;
-  private Bytes4 domainBeaconAttester;
-  private Bytes4 domainRandao;
-  private Bytes4 domainDeposit;
-  private Bytes4 domainVoluntaryExit;
-  private Bytes4 domainSelectionProof;
-  private Bytes4 domainAggregateAndProof;
-
   // Validator
-  private Integer targetAggregatorsPerCommittee;
   private UInt64 secondsPerEth1Block;
-  private Integer randomSubnetsPerValidator;
-  private Integer epochsPerRandomSubnetSubscription;
 
   // Fork Choice
   private Integer safeSlotsToUpdateJustified;
@@ -114,14 +100,13 @@ public class SpecConfigBuilder {
   private Optional<AltairBuilder> altairBuilder = Optional.empty();
 
   // Merge
-  private Optional<RayonismBuilder> rayonismBuilder = Optional.empty();
+  private Optional<MergeBuilder> mergeBuilder = Optional.empty();
 
   public SpecConfig build() {
     validate();
     final SpecConfig phase0 =
         new SpecConfigPhase0(
             rawConfig,
-            configName,
             eth1FollowDistance,
             maxCommitteesPerSlot,
             targetCommitteeSize,
@@ -140,7 +125,6 @@ public class SpecConfigBuilder {
             ejectionBalance,
             effectiveBalanceIncrement,
             genesisForkVersion,
-            blsWithdrawalPrefix,
             genesisDelay,
             secondsPerSlot,
             minAttestationInclusionDelay,
@@ -166,24 +150,14 @@ public class SpecConfigBuilder {
             maxAttestations,
             maxDeposits,
             maxVoluntaryExits,
-            domainBeaconProposer,
-            domainBeaconAttester,
-            domainRandao,
-            domainDeposit,
-            domainVoluntaryExit,
-            domainSelectionProof,
-            domainAggregateAndProof,
-            targetAggregatorsPerCommittee,
             secondsPerEth1Block,
-            randomSubnetsPerValidator,
-            epochsPerRandomSubnetSubscription,
             safeSlotsToUpdateJustified,
             depositChainId,
             depositNetworkId,
             depositContractAddress);
 
-    if (rayonismBuilder.isPresent()) {
-      return rayonismBuilder.get().build(phase0);
+    if (mergeBuilder.isPresent()) {
+      return mergeBuilder.get().build(phase0);
     } else if (altairBuilder.isPresent()) {
       return altairBuilder.get().build(phase0);
     } else {
@@ -193,7 +167,6 @@ public class SpecConfigBuilder {
 
   private void validate() {
     checkArgument(rawConfig.size() > 0, "Raw spec config must be provided");
-    validateConstant("configName", configName);
     validateConstant("eth1FollowDistance", eth1FollowDistance);
     validateConstant("maxCommitteesPerSlot", maxCommitteesPerSlot);
     validateConstant("targetCommitteeSize", targetCommitteeSize);
@@ -212,7 +185,6 @@ public class SpecConfigBuilder {
     validateConstant("ejectionBalance", ejectionBalance);
     validateConstant("effectiveBalanceIncrement", effectiveBalanceIncrement);
     validateConstant("genesisForkVersion", genesisForkVersion);
-    validateConstant("blsWithdrawalPrefix", blsWithdrawalPrefix);
     validateConstant("genesisDelay", genesisDelay);
     validateConstant("secondsPerSlot", secondsPerSlot);
     validateConstant("minAttestationInclusionDelay", minAttestationInclusionDelay);
@@ -238,24 +210,14 @@ public class SpecConfigBuilder {
     validateConstant("maxAttestations", maxAttestations);
     validateConstant("maxDeposits", maxDeposits);
     validateConstant("maxVoluntaryExits", maxVoluntaryExits);
-    validateConstant("domainBeaconProposer", domainBeaconProposer);
-    validateConstant("domainBeaconAttester", domainBeaconAttester);
-    validateConstant("domainRandao", domainRandao);
-    validateConstant("domainDeposit", domainDeposit);
-    validateConstant("domainVoluntaryExit", domainVoluntaryExit);
-    validateConstant("domainSelectionProof", domainSelectionProof);
-    validateConstant("domainAggregateAndProof", domainAggregateAndProof);
-    validateConstant("targetAggregatorsPerCommittee", targetAggregatorsPerCommittee);
     validateConstant("secondsPerEth1Block", secondsPerEth1Block);
-    validateConstant("randomSubnetsPerValidator", randomSubnetsPerValidator);
-    validateConstant("epochsPerRandomSubnetSubscription", epochsPerRandomSubnetSubscription);
     validateConstant("safeSlotsToUpdateJustified", safeSlotsToUpdateJustified);
     validateConstant("depositChainId", depositChainId);
     validateConstant("depositNetworkId", depositNetworkId);
     validateConstant("depositContractAddress", depositContractAddress);
 
     altairBuilder.ifPresent(AltairBuilder::validate);
-    rayonismBuilder.ifPresent(RayonismBuilder::validate);
+    mergeBuilder.ifPresent(MergeBuilder::validate);
   }
 
   private void validateConstant(final String name, final Object value) {
@@ -276,15 +238,9 @@ public class SpecConfigBuilder {
     checkArgument(value != null, "Missing value for spec constant '%s'", camelToSnakeCase(name));
   }
 
-  public SpecConfigBuilder rawConfig(final Map<String, Object> rawConfig) {
+  public SpecConfigBuilder rawConfig(final Map<String, ?> rawConfig) {
     checkNotNull(rawConfig);
     this.rawConfig.putAll(rawConfig);
-    return this;
-  }
-
-  public SpecConfigBuilder configName(final String configName) {
-    checkNotNull(configName);
-    this.configName = configName;
     return this;
   }
 
@@ -395,12 +351,6 @@ public class SpecConfigBuilder {
   public SpecConfigBuilder genesisForkVersion(final Bytes4 genesisForkVersion) {
     checkNotNull(genesisForkVersion);
     this.genesisForkVersion = genesisForkVersion;
-    return this;
-  }
-
-  public SpecConfigBuilder blsWithdrawalPrefix(final Bytes blsWithdrawalPrefix) {
-    checkNotNull(blsWithdrawalPrefix);
-    this.blsWithdrawalPrefix = blsWithdrawalPrefix;
     return this;
   }
 
@@ -556,71 +506,9 @@ public class SpecConfigBuilder {
     return this;
   }
 
-  public SpecConfigBuilder domainBeaconProposer(final Bytes4 domainBeaconProposer) {
-    checkNotNull(domainBeaconProposer);
-    this.domainBeaconProposer = domainBeaconProposer;
-    return this;
-  }
-
-  public SpecConfigBuilder domainBeaconAttester(final Bytes4 domainBeaconAttester) {
-    checkNotNull(domainBeaconAttester);
-    this.domainBeaconAttester = domainBeaconAttester;
-    return this;
-  }
-
-  public SpecConfigBuilder domainRandao(final Bytes4 domainRandao) {
-    checkNotNull(domainRandao);
-    this.domainRandao = domainRandao;
-    return this;
-  }
-
-  public SpecConfigBuilder domainDeposit(final Bytes4 domainDeposit) {
-    checkNotNull(domainDeposit);
-    this.domainDeposit = domainDeposit;
-    return this;
-  }
-
-  public SpecConfigBuilder domainVoluntaryExit(final Bytes4 domainVoluntaryExit) {
-    checkNotNull(domainVoluntaryExit);
-    this.domainVoluntaryExit = domainVoluntaryExit;
-    return this;
-  }
-
-  public SpecConfigBuilder domainSelectionProof(final Bytes4 domainSelectionProof) {
-    checkNotNull(domainSelectionProof);
-    this.domainSelectionProof = domainSelectionProof;
-    return this;
-  }
-
-  public SpecConfigBuilder domainAggregateAndProof(final Bytes4 domainAggregateAndProof) {
-    checkNotNull(domainAggregateAndProof);
-    this.domainAggregateAndProof = domainAggregateAndProof;
-    return this;
-  }
-
-  public SpecConfigBuilder targetAggregatorsPerCommittee(
-      final Integer targetAggregatorsPerCommittee) {
-    checkNotNull(targetAggregatorsPerCommittee);
-    this.targetAggregatorsPerCommittee = targetAggregatorsPerCommittee;
-    return this;
-  }
-
   public SpecConfigBuilder secondsPerEth1Block(final UInt64 secondsPerEth1Block) {
     checkNotNull(secondsPerEth1Block);
     this.secondsPerEth1Block = secondsPerEth1Block;
-    return this;
-  }
-
-  public SpecConfigBuilder randomSubnetsPerValidator(final Integer randomSubnetsPerValidator) {
-    checkNotNull(randomSubnetsPerValidator);
-    this.randomSubnetsPerValidator = randomSubnetsPerValidator;
-    return this;
-  }
-
-  public SpecConfigBuilder epochsPerRandomSubnetSubscription(
-      final Integer epochsPerRandomSubnetSubscription) {
-    checkNotNull(epochsPerRandomSubnetSubscription);
-    this.epochsPerRandomSubnetSubscription = epochsPerRandomSubnetSubscription;
     return this;
   }
 
@@ -657,7 +545,7 @@ public class SpecConfigBuilder {
     return this;
   }
 
-  class AltairBuilder {
+  public class AltairBuilder {
     // Updated penalties
     private UInt64 inactivityPenaltyQuotientAltair;
     private Integer minSlashingPenaltyQuotientAltair;
@@ -665,25 +553,18 @@ public class SpecConfigBuilder {
 
     // Misc
     private Integer syncCommitteeSize;
-    private Integer syncPubkeysPerAggregate;
     private UInt64 inactivityScoreBias;
+    private UInt64 inactivityScoreRecoveryRate;
 
     // Time
     private Integer epochsPerSyncCommitteePeriod;
 
-    // Signature domains
-    private Bytes4 domainSyncCommittee;
-    private Bytes4 domainSyncCommitteeSelectionProof;
-    private Bytes4 domainContributionAndProof;
-
     // Fork
     private Bytes4 altairForkVersion;
-    private UInt64 altairForkSlot;
+    private UInt64 altairForkEpoch;
 
     // Sync protocol
     private Integer minSyncCommitteeParticipants;
-    private Integer maxValidLightClientUpdates;
-    private Integer lightClientUpdateTimeout;
 
     private AltairBuilder() {}
 
@@ -694,17 +575,12 @@ public class SpecConfigBuilder {
           minSlashingPenaltyQuotientAltair,
           proportionalSlashingMultiplierAltair,
           syncCommitteeSize,
-          syncPubkeysPerAggregate,
           inactivityScoreBias,
+          inactivityScoreRecoveryRate,
           epochsPerSyncCommitteePeriod,
-          domainSyncCommittee,
-          domainSyncCommitteeSelectionProof,
-          domainContributionAndProof,
           altairForkVersion,
-          altairForkSlot,
-          minSyncCommitteeParticipants,
-          maxValidLightClientUpdates,
-          lightClientUpdateTimeout);
+          altairForkEpoch,
+          minSyncCommitteeParticipants);
     }
 
     void validate() {
@@ -713,17 +589,12 @@ public class SpecConfigBuilder {
       validateConstant(
           "proportionalSlashingMultiplierAltair", proportionalSlashingMultiplierAltair);
       validateConstant("syncCommitteeSize", syncCommitteeSize);
-      validateConstant("syncPubkeysPerAggregate", syncPubkeysPerAggregate);
       validateConstant("inactivityScoreBias", inactivityScoreBias);
+      validateConstant("inactivityScoreRecoveryRate", inactivityScoreRecoveryRate);
       validateConstant("epochsPerSyncCommitteePeriod", epochsPerSyncCommitteePeriod);
-      validateConstant("domainSyncCommittee", domainSyncCommittee);
-      validateConstant("domainSyncCommitteeSelectionProof", domainSyncCommitteeSelectionProof);
-      validateConstant("domainContributionAndProof", domainContributionAndProof);
       validateConstant("altairForkVersion", altairForkVersion);
-      validateConstant("altairForkSlot", altairForkSlot);
+      validateConstant("altairForkEpoch", altairForkEpoch);
       validateConstant("minSyncCommitteeParticipants", minSyncCommitteeParticipants);
-      validateConstant("maxValidLightClientUpdates", maxValidLightClientUpdates);
-      validateConstant("lightClientUpdateTimeout", lightClientUpdateTimeout);
     }
 
     public AltairBuilder inactivityPenaltyQuotientAltair(
@@ -753,34 +624,9 @@ public class SpecConfigBuilder {
       return this;
     }
 
-    public AltairBuilder syncPubkeysPerAggregate(final Integer syncPubkeysPerAggregate) {
-      checkNotNull(syncPubkeysPerAggregate);
-      this.syncPubkeysPerAggregate = syncPubkeysPerAggregate;
-      return this;
-    }
-
     public AltairBuilder epochsPerSyncCommitteePeriod(final Integer epochsPerSyncCommitteePeriod) {
       checkNotNull(epochsPerSyncCommitteePeriod);
       this.epochsPerSyncCommitteePeriod = epochsPerSyncCommitteePeriod;
-      return this;
-    }
-
-    public AltairBuilder domainSyncCommittee(final Bytes4 domainSyncCommittee) {
-      checkNotNull(domainSyncCommittee);
-      this.domainSyncCommittee = domainSyncCommittee;
-      return this;
-    }
-
-    public AltairBuilder domainSyncCommitteeSelectionProof(
-        final Bytes4 domainSyncCommitteeSelectionProof) {
-      checkNotNull(domainSyncCommitteeSelectionProof);
-      this.domainSyncCommitteeSelectionProof = domainSyncCommitteeSelectionProof;
-      return this;
-    }
-
-    public AltairBuilder domainContributionAndProof(final Bytes4 domainContributionAndProof) {
-      checkNotNull(domainContributionAndProof);
-      this.domainContributionAndProof = domainContributionAndProof;
       return this;
     }
 
@@ -790,15 +636,21 @@ public class SpecConfigBuilder {
       return this;
     }
 
+    public AltairBuilder inactivityScoreRecoveryRate(final UInt64 inactivityScoreRecoveryRate) {
+      checkNotNull(inactivityScoreRecoveryRate);
+      this.inactivityScoreRecoveryRate = inactivityScoreRecoveryRate;
+      return this;
+    }
+
     public AltairBuilder altairForkVersion(final Bytes4 altairForkVersion) {
       checkNotNull(altairForkVersion);
       this.altairForkVersion = altairForkVersion;
       return this;
     }
 
-    public AltairBuilder altairForkSlot(final UInt64 altairForkSlot) {
-      checkNotNull(altairForkSlot);
-      this.altairForkSlot = altairForkSlot;
+    public AltairBuilder altairForkEpoch(final UInt64 altairForkEpoch) {
+      checkNotNull(altairForkEpoch);
+      this.altairForkEpoch = altairForkEpoch;
       return this;
     }
 
@@ -807,64 +659,52 @@ public class SpecConfigBuilder {
       this.minSyncCommitteeParticipants = minSyncCommitteeParticipants;
       return this;
     }
-
-    public AltairBuilder maxValidLightClientUpdates(final Integer maxValidLightClientUpdates) {
-      checkNotNull(maxValidLightClientUpdates);
-      this.maxValidLightClientUpdates = maxValidLightClientUpdates;
-      return this;
-    }
-
-    public AltairBuilder lightClientUpdateTimeout(final Integer lightClientUpdateTimeout) {
-      checkNotNull(lightClientUpdateTimeout);
-      this.lightClientUpdateTimeout = lightClientUpdateTimeout;
-      return this;
-    }
   }
 
   // Merge
-  public SpecConfigBuilder rayonismBuilder(final Consumer<RayonismBuilder> consumer) {
-    if (rayonismBuilder.isEmpty()) {
-      rayonismBuilder = Optional.of(new RayonismBuilder());
+  public SpecConfigBuilder mergeBuilder(final Consumer<MergeBuilder> consumer) {
+    if (mergeBuilder.isEmpty()) {
+      mergeBuilder = Optional.of(new MergeBuilder());
     }
-    consumer.accept(rayonismBuilder.get());
+    consumer.accept(mergeBuilder.get());
     return this;
   }
 
-  class RayonismBuilder {
+  public class MergeBuilder {
 
     // Fork
     private Bytes4 mergeForkVersion;
-    private UInt64 mergeForkSlot;
+    private UInt64 mergeForkEpoch;
 
     // Transition
     private long transitionTotalDifficulty;
 
-    private RayonismBuilder() {}
+    private MergeBuilder() {}
 
-    SpecConfigRayonism build(final SpecConfig specConfig) {
-      return new SpecConfigRayonism(
-          specConfig, mergeForkVersion, mergeForkSlot, transitionTotalDifficulty);
+    SpecConfigMerge build(final SpecConfig specConfig) {
+      return new SpecConfigMerge(
+          specConfig, mergeForkVersion, mergeForkEpoch, transitionTotalDifficulty);
     }
 
     void validate() {
       validateConstant("mergeForkVersion", mergeForkVersion);
-      validateConstant("mergeForkSlot", mergeForkSlot);
+      validateConstant("mergeForkEpoch", mergeForkEpoch);
       validateConstant("transitionTotalDifficulty", transitionTotalDifficulty);
     }
 
-    public RayonismBuilder mergeForkVersion(Bytes4 mergeForkVersion) {
+    public MergeBuilder mergeForkVersion(Bytes4 mergeForkVersion) {
       checkNotNull(mergeForkVersion);
       this.mergeForkVersion = mergeForkVersion;
       return this;
     }
 
-    public RayonismBuilder mergeForkSlot(UInt64 mergeForkSlot) {
-      checkNotNull(mergeForkSlot);
-      this.mergeForkSlot = mergeForkSlot;
+    public MergeBuilder mergeForkEpoch(UInt64 mergeForkEpoch) {
+      checkNotNull(mergeForkEpoch);
+      this.mergeForkEpoch = mergeForkEpoch;
       return this;
     }
 
-    public RayonismBuilder transitionTotalDifficulty(long transitionTotalDifficulty) {
+    public MergeBuilder transitionTotalDifficulty(long transitionTotalDifficulty) {
       this.transitionTotalDifficulty = transitionTotalDifficulty;
       return this;
     }

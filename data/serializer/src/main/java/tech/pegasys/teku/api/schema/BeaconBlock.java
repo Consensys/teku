@@ -20,11 +20,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.api.schema.interfaces.UnsignedBlock;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 
-public class BeaconBlock {
+public class BeaconBlock implements UnsignedBlock {
   @Schema(type = "string", format = "uint64")
   public final UInt64 slot;
 
@@ -37,7 +38,11 @@ public class BeaconBlock {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
   public final Bytes32 state_root;
 
-  public final BeaconBlockBody body;
+  private final BeaconBlockBody body;
+
+  public BeaconBlockBody getBody() {
+    return body;
+  }
 
   public BeaconBlock(tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock message) {
     this.slot = message.getSlot();

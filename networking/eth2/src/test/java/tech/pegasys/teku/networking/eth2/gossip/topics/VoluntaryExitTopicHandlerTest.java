@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.VoluntaryExitGenerator;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
-import tech.pegasys.teku.networking.eth2.gossip.VoluntaryExitGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.spec.Spec;
@@ -60,7 +59,7 @@ public class VoluntaryExitTopicHandlerTest {
           processor,
           gossipEncoding,
           dataStructureUtil.randomForkInfo().getForkDigest(),
-          VoluntaryExitGossipManager.TOPIC_NAME,
+          GossipTopicName.VOLUNTARY_EXIT,
           SignedVoluntaryExit.SSZ_SCHEMA);
 
   @BeforeEach
@@ -112,7 +111,7 @@ public class VoluntaryExitTopicHandlerTest {
             processor,
             gossipEncoding,
             forkDigest,
-            VoluntaryExitGossipManager.TOPIC_NAME,
+            GossipTopicName.VOLUNTARY_EXIT,
             SignedVoluntaryExit.SSZ_SCHEMA);
     assertThat(topicHandler.getTopic()).isEqualTo("/eth2/11223344/voluntary_exit/ssz_snappy");
   }

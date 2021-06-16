@@ -19,18 +19,23 @@ import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GE
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_ATTESTATION_DATA;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_ATTESTATION_DUTIES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_BLOCK_HEADER;
-import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_FORK;
+import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_CONFIG_SPEC;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_GENESIS;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_PROPOSER_DUTIES;
-import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_UNSIGNED_ATTESTATION;
+import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_SYNC_COMMITTEE_CONTRIBUTION;
+import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_SYNC_COMMITTEE_DUTIES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_UNSIGNED_BLOCK;
+import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_UNSIGNED_BLOCK_V2;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_VALIDATORS;
+import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_CONTRIBUTION_AND_PROOF;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_AGGREGATE_AND_PROOF;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_ATTESTATION;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_BLOCK;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_VOLUNTARY_EXIT;
+import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SYNC_COMMITTEE_SIGNATURES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SUBSCRIBE_TO_BEACON_COMMITTEE_SUBNET;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SUBSCRIBE_TO_PERSISTENT_SUBNETS;
+import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SUBSCRIBE_TO_SYNC_COMMITTEE_SUBNET;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
@@ -55,23 +60,30 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionRequest;
 import tech.pegasys.teku.api.response.v1.beacon.GetBlockHeaderResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
-import tech.pegasys.teku.api.response.v1.beacon.GetStateForkResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
+import tech.pegasys.teku.api.response.v1.beacon.PostSyncCommitteeFailureResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
+import tech.pegasys.teku.api.response.v1.config.GetSpecResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAttestationDataResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetNewBlockResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
+import tech.pegasys.teku.api.response.v1.validator.GetSyncCommitteeContributionResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
+import tech.pegasys.teku.api.response.v1.validator.PostSyncDutiesResponse;
+import tech.pegasys.teku.api.response.v2.validator.GetNewBlockResponseV2;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttestationData;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
-import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.api.schema.SubnetSubscription;
+import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
+import tech.pegasys.teku.api.schema.altair.SyncCommitteeContribution;
+import tech.pegasys.teku.api.schema.altair.SyncCommitteeSignature;
+import tech.pegasys.teku.api.schema.altair.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
@@ -88,20 +100,25 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   private final JsonProvider jsonProvider = new JsonProvider();
   private final OkHttpClient httpClient;
   private final HttpUrl baseEndpoint;
+  private final boolean useV2CreateBlock;
 
   public OkHttpValidatorRestApiClient(final HttpUrl baseEndpoint, final OkHttpClient okHttpClient) {
-    this.baseEndpoint = baseEndpoint;
-    this.httpClient = okHttpClient;
+    this(baseEndpoint, okHttpClient, false);
   }
 
-  @Override
-  public Optional<Fork> getFork() {
+  public OkHttpValidatorRestApiClient(
+      final HttpUrl baseEndpoint, final OkHttpClient okHttpClient, final boolean useV2CreateBlock) {
+    this.baseEndpoint = baseEndpoint;
+    this.httpClient = okHttpClient;
+    this.useV2CreateBlock = useV2CreateBlock;
+  }
+
+  public Optional<GetSpecResponse> getConfigSpec() {
     return get(
-            GET_FORK,
-            Map.of("state_id", "head"),
-            EMPTY_QUERY_PARAMS,
-            createHandler(GetStateForkResponse.class))
-        .map(GetStateForkResponse::getData);
+        GET_CONFIG_SPEC,
+        EMPTY_QUERY_PARAMS,
+        EMPTY_QUERY_PARAMS,
+        createHandler(GetSpecResponse.class));
   }
 
   @Override
@@ -127,11 +144,11 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
 
   @Override
   public Optional<PostAttesterDutiesResponse> getAttestationDuties(
-      final UInt64 epoch, final Collection<Integer> validatorIndexes) {
+      final UInt64 epoch, final Collection<Integer> validatorIndices) {
     return post(
         GET_ATTESTATION_DUTIES,
         Map.of("epoch", epoch.toString()),
-        validatorIndexes.toArray(),
+        validatorIndices.toArray(),
         createHandler(PostAttesterDutiesResponse.class));
   }
 
@@ -147,16 +164,22 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   @Override
   public Optional<BeaconBlock> createUnsignedBlock(
       final UInt64 slot, final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
+    final Map<String, String> pathParams = Map.of("slot", slot.toString());
     final Map<String, String> queryParams = new HashMap<>();
     queryParams.put("randao_reveal", encodeQueryParam(randaoReveal));
     graffiti.ifPresent(bytes32 -> queryParams.put("graffiti", encodeQueryParam(bytes32)));
 
+    if (useV2CreateBlock) {
+      return get(
+              GET_UNSIGNED_BLOCK_V2,
+              pathParams,
+              queryParams,
+              createHandler(GetNewBlockResponseV2.class))
+          .map(response -> (BeaconBlock) response.data);
+    }
     return get(
-            GET_UNSIGNED_BLOCK,
-            Map.of("slot", slot.toString()),
-            queryParams,
-            createHandler(GetNewBlockResponse.class))
-        .map(response -> response.data);
+            GET_UNSIGNED_BLOCK, pathParams, queryParams, createHandler(GetNewBlockResponse.class))
+        .map(response -> (BeaconBlock) response.data);
   }
 
   @Override
@@ -164,16 +187,6 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
     return post(SEND_SIGNED_BLOCK, beaconBlock, createHandler())
         .map(__ -> SendSignedBlockResult.success(Bytes32.ZERO))
         .orElseGet(() -> SendSignedBlockResult.notImported("UNKNOWN"));
-  }
-
-  @Override
-  public Optional<Attestation> createUnsignedAttestation(
-      final UInt64 slot, final int committeeIndex) {
-    final Map<String, String> queryParams = new HashMap<>();
-    queryParams.put("slot", encodeQueryParam(slot));
-    queryParams.put("committee_index", String.valueOf(committeeIndex));
-
-    return get(GET_UNSIGNED_ATTESTATION, queryParams, createHandler(Attestation.class));
   }
 
   @Override
@@ -236,6 +249,57 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   @Override
   public void subscribeToPersistentSubnets(final Set<SubnetSubscription> subnetSubscriptions) {
     post(SUBSCRIBE_TO_PERSISTENT_SUBNETS, subnetSubscriptions, createHandler());
+  }
+
+  @Override
+  public Optional<PostSyncCommitteeFailureResponse> sendSyncCommitteeSignatures(
+      final List<SyncCommitteeSignature> syncCommitteeSignatures) {
+    return post(
+        SEND_SYNC_COMMITTEE_SIGNATURES,
+        syncCommitteeSignatures,
+        createHandler(PostSyncCommitteeFailureResponse.class));
+  }
+
+  @Override
+  public Optional<PostSyncDutiesResponse> getSyncCommitteeDuties(
+      final UInt64 epoch, final Collection<Integer> validatorIndices) {
+    return post(
+        GET_SYNC_COMMITTEE_DUTIES,
+        Map.of("epoch", epoch.toString()),
+        validatorIndices.toArray(),
+        createHandler(PostSyncDutiesResponse.class));
+  }
+
+  @Override
+  public void subscribeToSyncCommitteeSubnets(
+      final List<SyncCommitteeSubnetSubscription> subnetSubscriptions) {
+    post(SUBSCRIBE_TO_SYNC_COMMITTEE_SUBNET, subnetSubscriptions, createHandler());
+  }
+
+  @Override
+  public void sendContributionAndProofs(
+      final List<SignedContributionAndProof> signedContributionAndProofs) {
+    post(SEND_CONTRIBUTION_AND_PROOF, signedContributionAndProofs, createHandler());
+  }
+
+  @Override
+  public Optional<SyncCommitteeContribution> createSyncCommitteeContribution(
+      final UInt64 slot, final int subcommitteeIndex, final Bytes32 beaconBlockRoot) {
+    final Map<String, String> pathParams = Map.of();
+    final Map<String, String> queryParams =
+        Map.of(
+            "slot",
+            slot.toString(),
+            "subcommittee_index",
+            Integer.toString(subcommitteeIndex),
+            "beacon_block_root",
+            beaconBlockRoot.toHexString());
+    return get(
+            GET_SYNC_COMMITTEE_CONTRIBUTION,
+            pathParams,
+            queryParams,
+            createHandler(GetSyncCommitteeContributionResponse.class))
+        .map(response -> response.data);
   }
 
   private ResponseHandler<Void> createHandler() {

@@ -6,11 +6,14 @@ dependencyManagement {
 
     dependency 'com.google.auto.service:auto-service:1.0-rc7'
 
-    dependency 'com.google.errorprone:javac:9+181-r4173-1'
-    dependency 'com.google.errorprone:error_prone_check_api:2.4.0'
-    dependency 'com.google.errorprone:error_prone_core:2.4.0'
-    dependency 'com.google.errorprone:error_prone_annotation:2.4.0'
-    dependency 'com.google.errorprone:error_prone_test_helpers:2.4.0'
+    dependencySet(group: 'com.google.errorprone', version: '2.7.1') {
+      entry 'error_prone_annotation'
+      entry 'error_prone_check_api'
+      entry 'error_prone_core'
+      entry 'error_prone_test_helpers'
+    }
+
+    dependency 'tech.pegasys.tools.epchecks:errorprone-checks:1.0.0'
 
     dependency 'com.google.guava:guava:29.0-jre'
     dependency 'com.google.code.gson:gson:2.8.6'
@@ -38,7 +41,7 @@ dependencyManagement {
     dependency 'io.protostuff:protostuff-core:1.6.2'
     dependency 'io.protostuff:protostuff-runtime:1.6.2'
 
-    dependency 'io.libp2p:jvm-libp2p-minimal:0.8.1-RELEASE'
+    dependency 'io.libp2p:jvm-libp2p-minimal:0.8.2-RELEASE'
     dependency 'tech.pegasys:jblst:0.3.3-1'
 
     dependency 'org.hdrhistogram:HdrHistogram:2.1.12'
@@ -130,7 +133,6 @@ dependencyManagement {
       entry 'jmh-core'
       entry 'jmh-generator-annprocess'
     }
-    dependency 'org.miracl.milagro.amcl:milagro-crypto-java:0.4.0'
     dependency 'org.quartz-scheduler:quartz:2.3.2'
     dependency 'org.rocksdb:rocksdbjni:6.11.4'
     dependency 'org.fusesource.leveldbjni:leveldbjni-all:1.8'
@@ -148,10 +150,10 @@ dependencyManagement {
     dependency 'org.hyperledger.besu.internal:metrics-core:21.1.1'
     dependency 'org.hyperledger.besu:plugin-api:21.1.1'
 
-    dependency "org.testcontainers:testcontainers:1.15.0-rc2"
-    dependency "org.testcontainers:junit-jupiter:1.15.0-rc2"
+    dependency "org.testcontainers:testcontainers:1.15.3"
+    dependency "org.testcontainers:junit-jupiter:1.15.3"
 
-    dependency 'tech.pegasys.discovery:discovery:0.4.5'
+    dependency 'tech.pegasys.discovery:discovery:0.4.7'
 
     dependency 'tech.pegasys.signers.internal:bls-keystore:1.0.15'
 

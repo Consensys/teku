@@ -31,11 +31,6 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
-  public String getConfigName() {
-    return specConfig.getConfigName();
-  }
-
-  @Override
   public UInt64 getBaseRewardsPerEpoch() {
     return specConfig.getBaseRewardsPerEpoch();
   }
@@ -271,58 +266,8 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
-  public Bytes4 getDomainBeaconProposer() {
-    return specConfig.getDomainBeaconProposer();
-  }
-
-  @Override
-  public Bytes4 getDomainBeaconAttester() {
-    return specConfig.getDomainBeaconAttester();
-  }
-
-  @Override
-  public Bytes4 getDomainRandao() {
-    return specConfig.getDomainRandao();
-  }
-
-  @Override
-  public Bytes4 getDomainDeposit() {
-    return specConfig.getDomainDeposit();
-  }
-
-  @Override
-  public Bytes4 getDomainVoluntaryExit() {
-    return specConfig.getDomainVoluntaryExit();
-  }
-
-  @Override
-  public Bytes4 getDomainSelectionProof() {
-    return specConfig.getDomainSelectionProof();
-  }
-
-  @Override
-  public Bytes4 getDomainAggregateAndProof() {
-    return specConfig.getDomainAggregateAndProof();
-  }
-
-  @Override
-  public int getTargetAggregatorsPerCommittee() {
-    return specConfig.getTargetAggregatorsPerCommittee();
-  }
-
-  @Override
   public UInt64 getSecondsPerEth1Block() {
     return specConfig.getSecondsPerEth1Block();
-  }
-
-  @Override
-  public int getRandomSubnetsPerValidator() {
-    return specConfig.getRandomSubnetsPerValidator();
-  }
-
-  @Override
-  public int getEpochsPerRandomSubnetSubscription() {
-    return specConfig.getEpochsPerRandomSubnetSubscription();
   }
 
   @Override

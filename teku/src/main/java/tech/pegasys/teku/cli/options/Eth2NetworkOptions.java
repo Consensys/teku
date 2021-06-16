@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import picocli.CommandLine;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 
 public class Eth2NetworkOptions {
@@ -46,6 +47,22 @@ public class Eth2NetworkOptions {
           "Contract address for the deposit contract. Only required when creating a custom network.",
       arity = "1")
   private String eth1DepositContractAddress = null; // Depends on network configuration
+
+  @Option(
+      names = {"--Xnetwork-altair-fork-epoch"},
+      hidden = true,
+      paramLabel = "<epoch>",
+      description = "Override the Altair fork activation epoch.",
+      arity = "1")
+  private UInt64 altairForkEpoch;
+
+  @Option(
+      names = {"--Xnetwork-merge-fork-epoch"},
+      hidden = true,
+      paramLabel = "<epoch>",
+      description = "Override the Merge fork activation epoch.",
+      arity = "1")
+  private UInt64 mergeForkEpoch;
 
   @Option(
       names = {"--Xstartup-target-peer-count"},
@@ -134,5 +151,15 @@ public class Eth2NetworkOptions {
     if (forkChoiceBalanceAttackMitigationEnabled != null) {
       builder.balanceAttackMitigationEnabled(forkChoiceBalanceAttackMitigationEnabled);
     }
+    if (altairForkEpoch != null) {
+      builder.altairForkEpoch(altairForkEpoch);
+    }
+    if (mergeForkEpoch != null) {
+      builder.altairForkEpoch(mergeForkEpoch);
+    }
+  }
+
+  public String getNetwork() {
+    return network;
   }
 }

@@ -29,6 +29,7 @@ public class EventLogger {
   public static final EventLogger EVENT_LOG =
       new EventLogger(LoggingConfigurator.EVENT_LOGGER_NAME);
 
+  @SuppressWarnings("PrivateStaticFinalLoggers")
   private final Logger log;
 
   private EventLogger(final String name) {
@@ -113,6 +114,13 @@ public class EventLogger {
             LogFormatter.formatHashRoot(finalizedRoot),
             numPeers);
     info(slotEventLog, Color.WHITE);
+  }
+
+  public void networkUpgradeActivated(final UInt64 nodeEpoch, final String upgradeName) {
+    info(
+        String.format(
+            "Milestone   *** Epoch: %s, Activating network upgrade: %s", nodeEpoch, upgradeName),
+        Color.GREEN);
   }
 
   private void info(final String message, final Color color) {

@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client.duties;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
 
 import java.util.ArrayList;
@@ -44,7 +45,6 @@ public class AttestationProductionDuty implements Duty {
   private final UInt64 slot;
   private final ForkProvider forkProvider;
   private final ValidatorApiChannel validatorApiChannel;
-  private BLSPublicKey validatorPublicKey;
 
   public AttestationProductionDuty(
       final UInt64 slot,
@@ -75,7 +75,6 @@ public class AttestationProductionDuty implements Duty {
         validatorsByCommitteeIndex.computeIfAbsent(
             attestationCommitteeIndex, key -> new Committee());
     committee.addValidator(validator, committeePosition, validatorIndex, committeeSize);
-    validatorPublicKey = validator.getPublicKey();
     return committee.attestationDataFuture;
   }
 
@@ -85,17 +84,7 @@ public class AttestationProductionDuty implements Duty {
     if (validatorsByCommitteeIndex.isEmpty()) {
       return SafeFuture.completedFuture(DutyResult.NO_OP);
     }
-    return forkProvider.getForkInfo().thenCompose(this::produceAttestations);
-  }
-
-  @Override
-  public String getProducedType() {
-    return "attestation";
-  }
-
-  @Override
-  public Optional<BLSPublicKey> getValidatorIdentifier() {
-    return Optional.ofNullable(validatorPublicKey);
+    return forkProvider.getForkInfo(slot).thenCompose(this::produceAttestations);
   }
 
   private SafeFuture<DutyResult> produceAttestations(final ForkInfo forkInfo) {
@@ -112,28 +101,38 @@ public class AttestationProductionDuty implements Duty {
     final SafeFuture<Optional<AttestationData>> unsignedAttestationFuture =
         validatorApiChannel.createAttestationData(slot, committeeIndex);
     unsignedAttestationFuture.propagateTo(committee.attestationDataFuture);
-    return unsignedAttestationFuture.thenCompose(
-        maybeUnsignedAttestation ->
-            maybeUnsignedAttestation
-                .map(
-                    attestationData ->
-                        signAttestationsForCommittee(forkInfo, committee, attestationData))
-                .orElseGet(
-                    () ->
-                        failedFuture(
-                            new IllegalStateException(
-                                "Unable to produce attestation for slot "
-                                    + slot
-                                    + " with committee "
-                                    + committeeIndex
-                                    + " because chain data was unavailable"))));
+    return unsignedAttestationFuture
+        .thenCompose(
+            maybeUnsignedAttestation ->
+                maybeUnsignedAttestation
+                    .map(
+                        attestationData ->
+                            signAttestationsForCommittee(forkInfo, committee, attestationData))
+                    .orElseGet(
+                        () ->
+                            failedFuture(
+                                new IllegalStateException(
+                                    "Unable to produce attestation for slot "
+                                        + slot
+                                        + " with committee "
+                                        + committeeIndex
+                                        + " because chain data was unavailable"))))
+        .exceptionally(
+            error ->
+                DutyResult.forError(
+                    committee.validators.stream()
+                        .map(ValidatorWithCommitteePositionAndIndex::getPublicKey)
+                        .collect(toSet()),
+                    error));
   }
 
   private SafeFuture<DutyResult> signAttestationsForCommittee(
       final ForkInfo forkInfo, final Committee validators, final AttestationData attestationData) {
     return DutyResult.combine(
         validators.forEach(
-            validator -> signAttestationForValidator(forkInfo, attestationData, validator)));
+            validator ->
+                signAttestationForValidator(forkInfo, attestationData, validator)
+                    .exceptionally(error -> DutyResult.forError(validator.getPublicKey(), error))));
   }
 
   private SafeFuture<DutyResult> signAttestationForValidator(
@@ -223,6 +222,10 @@ public class AttestationProductionDuty implements Duty {
 
     public int getCommitteeSize() {
       return committeeSize;
+    }
+
+    public BLSPublicKey getPublicKey() {
+      return validator.getPublicKey();
     }
 
     @Override

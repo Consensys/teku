@@ -13,32 +13,50 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
+import java.util.Collections;
 import java.util.concurrent.atomic.AtomicLong;
-import tech.pegasys.teku.infrastructure.subscribers.ValueObserver;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.PingMessage;
-import tech.pegasys.teku.ssz.schema.collections.SszBitvectorSchema;
-import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessageSchema;
 
-public class MetadataMessagesFactory implements ValueObserver<Iterable<Integer>> {
+public class MetadataMessagesFactory {
 
-  private final AtomicLong seqNumberGenerator = new AtomicLong();
-  private volatile MetadataMessage currentMessage = MetadataMessage.DEFAULT;
+  private final AtomicLong seqNumberGenerator = new AtomicLong(0L);
+  private Iterable<Integer> attestationSubnetIds = Collections.emptyList();
+  private Iterable<Integer> syncCommitteeSubnetIds = Collections.emptyList();
+  private MetadataMessage currentMetadata;
 
-  @Override
-  public void onValueChanged(Iterable<Integer> subnetIds) {
-    currentMessage =
-        new MetadataMessage(
-            UInt64.valueOf(seqNumberGenerator.incrementAndGet()),
-            SszBitvectorSchema.create(Constants.ATTESTATION_SUBNET_COUNT).ofBits(subnetIds));
+  public synchronized void updateAttestationSubnetIds(Iterable<Integer> attestationSubnetIds) {
+    this.attestationSubnetIds = attestationSubnetIds;
+    handleUpdate();
   }
 
-  public MetadataMessage createMetadataMessage() {
-    return currentMessage;
+  public synchronized void updateSyncCommitteeSubnetIds(Iterable<Integer> syncCommitteeSubnetIds) {
+    this.syncCommitteeSubnetIds = syncCommitteeSubnetIds;
+    handleUpdate();
+  }
+
+  private void handleUpdate() {
+    seqNumberGenerator.incrementAndGet();
+    // Clear cache
+    currentMetadata = null;
+  }
+
+  public synchronized MetadataMessage createMetadataMessage(MetadataMessageSchema<?> schema) {
+    if (currentMetadata == null) {
+      currentMetadata =
+          schema.create(getCurrentSeqNumber(), attestationSubnetIds, syncCommitteeSubnetIds);
+    }
+
+    return currentMetadata;
   }
 
   public PingMessage createPingMessage() {
-    return new PingMessage(currentMessage.getSeqNumber());
+    return new PingMessage(getCurrentSeqNumber());
+  }
+
+  private UInt64 getCurrentSeqNumber() {
+    return UInt64.valueOf(seqNumberGenerator.get());
   }
 }

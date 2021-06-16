@@ -18,7 +18,9 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,6 +36,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -47,6 +51,7 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
+import tech.pegasys.teku.ssz.type.Bytes4;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgContext;
@@ -84,6 +89,9 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   private final boolean updateHeadForEmptySlots;
 
   private volatile UpdatableStore store;
+  private volatile Optional<GenesisData> genesisData = Optional.empty();
+  private final Map<Bytes4, SpecMilestone> forkDigestToMilestone = new ConcurrentHashMap<>();
+  private final Map<SpecMilestone, Bytes4> milestoneToForkDigest = new ConcurrentHashMap<>();
   private volatile Optional<ChainHead> chainHead = Optional.empty();
   private volatile UInt64 genesisTime;
 
@@ -151,7 +159,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       throw new IllegalStateException(
           "Failed to initialize from state: store has already been initialized");
     }
-
     eventBus.post(anchorPoint);
 
     // Set the head to the anchor point
@@ -164,12 +171,15 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   public Optional<GenesisData> getGenesisData() {
-    if (isPreGenesis() || isPreForkChoice()) {
-      return Optional.empty();
-    }
+    return genesisData;
+  }
 
-    return getBestState()
-        .map(state -> new GenesisData(state.getGenesis_time(), state.getGenesis_validators_root()));
+  public Optional<SpecMilestone> getMilestoneByForkDigest(final Bytes4 forkDigest) {
+    return Optional.ofNullable(forkDigestToMilestone.get(forkDigest));
+  }
+
+  public Optional<Bytes4> getForkDigestByMilestone(final SpecMilestone milestone) {
+    return Optional.ofNullable(milestoneToForkDigest.get(milestone));
   }
 
   public boolean isPreGenesis() {
@@ -187,7 +197,24 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     }
     this.store = store;
     this.store.startMetrics();
+
+    // Set data that depends on the genesis state
     this.genesisTime = this.store.getGenesisTime();
+    final BeaconState anchorState = store.getLatestFinalized().getState();
+    final Bytes32 genesisValidatorsRoot = anchorState.getGenesis_validators_root();
+    this.genesisData =
+        Optional.of(new GenesisData(anchorState.getGenesis_time(), genesisValidatorsRoot));
+    spec.getForkSchedule()
+        .getActiveMilestones()
+        .forEach(
+            forkAndMilestone -> {
+              final Fork fork = forkAndMilestone.getFork();
+              final ForkInfo forkInfo = new ForkInfo(fork, genesisValidatorsRoot);
+              final Bytes4 forkDigest = forkInfo.getForkDigest();
+              this.forkDigestToMilestone.put(forkDigest, forkAndMilestone.getSpecMilestone());
+              this.milestoneToForkDigest.put(forkAndMilestone.getSpecMilestone(), forkDigest);
+            });
+
     storeInitializedFuture.complete(null);
     return true;
   }
@@ -345,6 +372,15 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return getCurrentSlot().map(spec::computeEpochAtSlot);
   }
 
+  /** @return The current spec version according to the recorded time */
+  public SpecVersion getCurrentSpec() {
+    return getCurrentSlot().map(spec::atSlot).orElseGet(spec::getGenesisSpec);
+  }
+
+  public Spec getSpec() {
+    return spec;
+  }
+
   /** @return The number of slots between our chainhead and the current slot by time */
   public Optional<UInt64> getChainHeadSlotsBehind() {
     return chainHead
@@ -352,38 +388,35 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         .flatMap(headSlot -> getCurrentSlot().map(s -> s.minusMinZero(headSlot)));
   }
 
-  public Optional<ForkInfo> getHeadForkInfo() {
-    return getBestState().map(BeaconState::getForkInfo);
+  public Optional<Fork> getNextFork(final Fork fork) {
+    return spec.getForkSchedule().getNextFork(fork.getEpoch());
   }
 
-  public Optional<Fork> getNextFork() {
-    return getCurrentEpoch().flatMap(spec.getForkManifest()::getNext);
+  private Optional<Fork> getCurrentFork() {
+    return getCurrentEpoch().map(spec.getForkSchedule()::getFork);
+  }
+
+  private Fork getFork(final UInt64 epoch) {
+    return spec.getForkSchedule().getFork(epoch);
   }
 
   /**
-   * Returns the fork info that applies based on the node's current slot, regardless of where the
-   * sync progress is up to.
-   *
-   * <p>NOTE: Works on the basis that there is only one future forked scheduled as that's all we can
-   * currently support.
+   * Returns the fork info that applies based on the current slot as calculated from the current
+   * time, regardless of where the sync progress is up to.
    *
    * @return fork info based on the current time, not head block
    */
-  public Optional<ForkInfo> getForkInfoAtCurrentTime() {
-    return getHeadForkInfo()
-        .map(
-            headForkInfo ->
-                getNextFork()
-                    .filter(this::isForkActive)
-                    .map(
-                        nextFork -> new ForkInfo(nextFork, headForkInfo.getGenesisValidatorsRoot()))
-                    .orElse(headForkInfo));
+  public Optional<ForkInfo> getCurrentForkInfo() {
+    return genesisData
+        .map(GenesisData::getGenesisValidatorsRoot)
+        .flatMap(
+            validatorsRoot -> getCurrentFork().map(fork -> new ForkInfo(fork, validatorsRoot)));
   }
 
-  private boolean isForkActive(final Fork fork) {
-    return getCurrentSlot()
-        .map(currentSlot -> spec.computeEpochAtSlot(currentSlot).compareTo(fork.getEpoch()) >= 0)
-        .orElse(false);
+  public Optional<ForkInfo> getForkInfo(final UInt64 epoch) {
+    return genesisData
+        .map(GenesisData::getGenesisValidatorsRoot)
+        .map(validatorsRoot -> new ForkInfo(getFork(epoch), validatorsRoot));
   }
 
   /**
@@ -506,5 +539,11 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return getForkChoiceStrategy()
         .map(ReadOnlyForkChoiceStrategy::getChainHeads)
         .orElse(Collections.emptyMap());
+  }
+
+  public Set<Bytes32> getAllBlockRootsAtSlot(final UInt64 slot) {
+    return getForkChoiceStrategy()
+        .map(forkChoiceStrategy -> forkChoiceStrategy.getBlockRootsAtSlot(slot))
+        .orElse(Collections.emptySet());
   }
 }

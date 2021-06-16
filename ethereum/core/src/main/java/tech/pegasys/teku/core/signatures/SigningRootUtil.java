@@ -13,84 +13,89 @@
 
 package tech.pegasys.teku.core.signatures;
 
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_signing_root;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_domain;
-import static tech.pegasys.teku.util.config.Constants.DOMAIN_BEACON_ATTESTER;
-import static tech.pegasys.teku.util.config.Constants.DOMAIN_SELECTION_PROOF;
-
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
-import tech.pegasys.teku.util.config.Constants;
 
 public class SigningRootUtil {
-  public static Bytes signingRootForRandaoReveal(final UInt64 epoch, final ForkInfo forkInfo) {
+  private final Spec spec;
+
+  public SigningRootUtil(final Spec spec) {
+    this.spec = spec;
+  }
+
+  public Bytes signingRootForRandaoReveal(final UInt64 epoch, final ForkInfo forkInfo) {
+    final SpecVersion specVersion = spec.atEpoch(epoch);
     Bytes32 domain =
-        get_domain(
-            Constants.DOMAIN_RANDAO,
-            epoch,
-            forkInfo.getFork(),
-            forkInfo.getGenesisValidatorsRoot());
-    return compute_signing_root(epoch.longValue(), domain);
+        spec.getDomain(
+            Domain.RANDAO, epoch, forkInfo.getFork(), forkInfo.getGenesisValidatorsRoot());
+    return specVersion.miscHelpers().computeSigningRoot(epoch, domain);
   }
 
-  public static Bytes signingRootForSignBlock(final BeaconBlock block, final ForkInfo forkInfo) {
+  public Bytes signingRootForSignBlock(final BeaconBlock block, final ForkInfo forkInfo) {
+    final SpecVersion specVersion = spec.atSlot(block.getSlot());
     final Bytes32 domain =
-        get_domain(
-            Constants.DOMAIN_BEACON_PROPOSER,
-            compute_epoch_at_slot(block.getSlot()),
+        spec.getDomain(
+            Domain.BEACON_PROPOSER,
+            spec.computeEpochAtSlot(block.getSlot()),
             forkInfo.getFork(),
             forkInfo.getGenesisValidatorsRoot());
-    return compute_signing_root(block, domain);
+    return specVersion.miscHelpers().computeSigningRoot(block, domain);
   }
 
-  public static Bytes signingRootForSignAttestationData(
+  public Bytes signingRootForSignAttestationData(
       final AttestationData attestationData, final ForkInfo forkInfo) {
+    final SpecVersion specVersion = spec.atSlot(attestationData.getSlot());
     final Bytes32 domain =
-        get_domain(
-            DOMAIN_BEACON_ATTESTER,
+        spec.getDomain(
+            Domain.BEACON_ATTESTER,
             attestationData.getTarget().getEpoch(),
             forkInfo.getFork(),
             forkInfo.getGenesisValidatorsRoot());
-    return compute_signing_root(attestationData, domain);
+    return specVersion.miscHelpers().computeSigningRoot(attestationData, domain);
   }
 
-  public static Bytes signingRootForSignAggregationSlot(
-      final UInt64 slot, final ForkInfo forkInfo) {
+  public Bytes signingRootForSignAggregationSlot(final UInt64 slot, final ForkInfo forkInfo) {
+    final SpecVersion specVersion = spec.atSlot(slot);
     final Bytes32 domain =
-        get_domain(
-            DOMAIN_SELECTION_PROOF,
-            compute_epoch_at_slot(slot),
+        spec.getDomain(
+            Domain.SELECTION_PROOF,
+            spec.computeEpochAtSlot(slot),
             forkInfo.getFork(),
             forkInfo.getGenesisValidatorsRoot());
-    return compute_signing_root(slot.longValue(), domain);
+    return specVersion.miscHelpers().computeSigningRoot(slot, domain);
   }
 
-  public static Bytes signingRootForSignAggregateAndProof(
+  public Bytes signingRootForSignAggregateAndProof(
       final AggregateAndProof aggregateAndProof, final ForkInfo forkInfo) {
+    final UInt64 slot = aggregateAndProof.getAggregate().getData().getSlot();
+    final SpecVersion specVersion = spec.atSlot(slot);
     final Bytes32 domain =
-        get_domain(
-            Constants.DOMAIN_AGGREGATE_AND_PROOF,
-            compute_epoch_at_slot(aggregateAndProof.getAggregate().getData().getSlot()),
+        spec.getDomain(
+            Domain.AGGREGATE_AND_PROOF,
+            spec.computeEpochAtSlot(slot),
             forkInfo.getFork(),
             forkInfo.getGenesisValidatorsRoot());
-    return compute_signing_root(aggregateAndProof, domain);
+    return specVersion.miscHelpers().computeSigningRoot(aggregateAndProof, domain);
   }
 
-  public static Bytes signingRootForSignVoluntaryExit(
+  public Bytes signingRootForSignVoluntaryExit(
       final VoluntaryExit voluntaryExit, final ForkInfo forkInfo) {
+    final SpecVersion specVersion = spec.atEpoch(voluntaryExit.getEpoch());
     final Bytes32 domain =
-        get_domain(
-            Constants.DOMAIN_VOLUNTARY_EXIT,
+        spec.getDomain(
+            Domain.VOLUNTARY_EXIT,
             voluntaryExit.getEpoch(),
             forkInfo.getFork(),
             forkInfo.getGenesisValidatorsRoot());
-    return compute_signing_root(voluntaryExit, domain);
+    return specVersion.miscHelpers().computeSigningRoot(voluntaryExit, domain);
   }
 }

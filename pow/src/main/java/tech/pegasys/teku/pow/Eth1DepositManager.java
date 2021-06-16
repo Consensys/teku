@@ -144,7 +144,7 @@ public class Eth1DepositManager {
     }
 
     return minimumGenesisTimeBlockFinder
-        .findMinGenesisTimeBlockInHistory(headBlock.getNumber())
+        .findMinGenesisTimeBlockInHistory(headBlock.getNumber(), asyncRunner)
         .thenCompose(block -> sendDepositsUpToMinGenesis(block, replayDepositsResult))
         .thenAccept(
             minGenesisTimeBlock -> {
@@ -165,8 +165,10 @@ public class Eth1DepositManager {
   }
 
   private SafeFuture<EthBlock.Block> getHead() {
-    return waitForEth1ProviderToBeInSync()
-        .thenCompose(__ -> getLatestEth1BlockNumber())
+    return eth1Provider
+        .getGuaranteedLatestEth1Block()
+        .thenApply(EthBlock.Block::getNumber)
+        .thenApply(UInt64::valueOf)
         .thenCompose(this::waitForEth1ChainToReachFollowDistanceIfNecessary)
         .thenApply(number -> number.minus(Constants.ETH1_FOLLOW_DISTANCE))
         .thenCompose(eth1Provider::getGuaranteedEth1Block)
@@ -181,23 +183,6 @@ public class Eth1DepositManager {
               return asyncRunner
                   .getDelayedFuture(Constants.ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT)
                   .thenCompose((__) -> getHead());
-            });
-  }
-
-  private SafeFuture<Void> waitForEth1ProviderToBeInSync() {
-    return eth1Provider
-        .ethSyncing()
-        .thenCompose(
-            isSyncing -> {
-              if (isSyncing) {
-                LOG.info(
-                    "Eth1DepositManager failed to get the head of Eth1: still syncing. Retrying in {} seconds.",
-                    Constants.ETH1_SYNCING_RETRY_TIMEOUT.toSeconds());
-                return asyncRunner.runAfterDelay(
-                    this::waitForEth1ProviderToBeInSync, Constants.ETH1_SYNCING_RETRY_TIMEOUT);
-              } else {
-                return SafeFuture.COMPLETE;
-              }
             });
   }
 

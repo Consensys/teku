@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.client;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Verify.verifyNotNull;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -21,6 +22,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -42,7 +45,6 @@ import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
-import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
@@ -355,15 +357,14 @@ public class CombinedChainDataClient {
 
   public List<CommitteeAssignment> getCommitteesFromState(BeaconState state, UInt64 epoch) {
     List<CommitteeAssignment> result = new ArrayList<>();
-    final BeaconStateUtil beaconStateUtil = spec.atEpoch(epoch).getBeaconStateUtil();
     final int slotsPerEpoch = spec.slotsPerEpoch(epoch);
-    final UInt64 startingSlot = beaconStateUtil.computeStartSlotAtEpoch(epoch);
-    int committeeCount = beaconStateUtil.getCommitteeCountPerSlot(state, epoch).intValue();
+    final UInt64 startingSlot = spec.computeStartSlotAtEpoch(epoch);
+    int committeeCount = spec.getCommitteeCountPerSlot(state, epoch).intValue();
     for (int i = 0; i < slotsPerEpoch; i++) {
       UInt64 slot = startingSlot.plus(i);
       for (int j = 0; j < committeeCount; j++) {
         UInt64 idx = UInt64.valueOf(j);
-        List<Integer> committee = beaconStateUtil.getBeaconCommittee(state, slot, idx);
+        List<Integer> committee = spec.getBeaconCommittee(state, slot, idx);
         result.add(new CommitteeAssignment(committee, idx, slot));
       }
     }
@@ -385,8 +386,8 @@ public class CombinedChainDataClient {
     return spec.computeEpochAtSlot(headSlot);
   }
 
-  public Optional<ForkInfo> getHeadForkInfo() {
-    return recentChainData.getHeadForkInfo();
+  public Optional<ForkInfo> getCurrentForkInfo() {
+    return recentChainData.getCurrentForkInfo();
   }
 
   /** @return The current slot according to clock time */
@@ -484,5 +485,34 @@ public class CombinedChainDataClient {
     return historicalChainData
         .getEarliestAvailableBlock()
         .thenApply(res -> res.<BeaconBlockSummary>map(b -> b).or(() -> latestFinalized));
+  }
+
+  public SafeFuture<Set<SignedBeaconBlock>> GetAllBlocksAtSlot(final UInt64 slot) {
+    if (isFinalized(slot)) {
+      return historicalChainData
+          .getNonCanonicalBlocksBySlot(slot)
+          .thenCombine(getBlockAtSlotExact(slot), this::mergeNonCanonicalAndCanonicalBlocks);
+    }
+    return getBlocksByRoots(recentChainData.getAllBlockRootsAtSlot(slot));
+  }
+
+  @SuppressWarnings("unchecked")
+  private SafeFuture<Set<SignedBeaconBlock>> getBlocksByRoots(final Set<Bytes32> blockRoots) {
+    final SafeFuture<Optional<SignedBeaconBlock>>[] futures =
+        blockRoots.stream().map(this::getBlockByBlockRoot).toArray(SafeFuture[]::new);
+    return SafeFuture.collectAll(futures)
+        .thenApply(
+            optionalBlocks ->
+                optionalBlocks.stream().flatMap(Optional::stream).collect(Collectors.toSet()));
+  }
+
+  Set<SignedBeaconBlock> mergeNonCanonicalAndCanonicalBlocks(
+      final Set<SignedBeaconBlock> signedBeaconBlocks,
+      final Optional<SignedBeaconBlock> canonicalBlock) {
+    verifyNotNull(signedBeaconBlocks, "Expected empty set but got null");
+    if (canonicalBlock.isPresent()) {
+      signedBeaconBlocks.add(canonicalBlock.get());
+    }
+    return signedBeaconBlocks;
   }
 }

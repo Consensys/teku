@@ -19,15 +19,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_EPOCH;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
-import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSTestUtil;
@@ -36,6 +32,8 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.constants.Domain;
+import tech.pegasys.teku.spec.constants.ValidatorConstants;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
@@ -89,7 +87,7 @@ public class BeaconStateUtilTest {
   @Test
   void compute_next_epoch_boundary_slotAtBoundary() {
     final UInt64 expectedEpoch = UInt64.valueOf(2);
-    final UInt64 slot = beaconStateUtil.computeStartSlotAtEpoch(expectedEpoch);
+    final UInt64 slot = spec.computeStartSlotAtEpoch(expectedEpoch);
 
     assertThat(beaconStateUtil.computeNextEpochBoundary(slot)).isEqualTo(expectedEpoch);
   }
@@ -97,7 +95,7 @@ public class BeaconStateUtilTest {
   @Test
   void compute_next_epoch_boundary_slotPriorToBoundary() {
     final UInt64 expectedEpoch = UInt64.valueOf(2);
-    final UInt64 slot = beaconStateUtil.computeStartSlotAtEpoch(expectedEpoch).minus(1);
+    final UInt64 slot = spec.computeStartSlotAtEpoch(expectedEpoch).minus(1);
 
     assertThat(beaconStateUtil.computeNextEpochBoundary(slot)).isEqualTo(expectedEpoch);
   }
@@ -147,9 +145,10 @@ public class BeaconStateUtilTest {
             depositData.getWithdrawal_credentials(),
             depositData.getAmount());
     Bytes32 domain =
-        beaconStateUtil.getDomain(
-            createBeaconState(), specConfig.getDomainDeposit(), GENESIS_EPOCH);
-    Bytes signing_root = beaconStateUtil.computeSigningRoot(depositMessage, domain);
+        genesisSpec
+            .beaconStateAccessors()
+            .getDomain(createBeaconState(), Domain.DEPOSIT, GENESIS_EPOCH);
+    Bytes signing_root = genesisSpec.miscHelpers().computeSigningRoot(depositMessage, domain);
 
     assertFalse(BLS.verify(pubkey, signing_root, depositData.getSignature()));
   }
@@ -172,70 +171,6 @@ public class BeaconStateUtilTest {
                     UInt64.ONE, UInt64.ZERO, -1))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Parameter n must be greater than 0");
-  }
-
-  @ParameterizedTest(name = "n={0}")
-  @MethodSource("getNValues")
-  public void isSlotAtNthEpochBoundary_allSlotsFilled(final int n) {
-    final UInt64 epochs = UInt64.valueOf(n * 3);
-    final UInt64 slots = epochs.times(SLOTS_PER_EPOCH);
-
-    for (int i = 1; i <= slots.intValue(); i++) {
-      final boolean expected = i % (n * SLOTS_PER_EPOCH) == 0 && i != 0;
-
-      final UInt64 blockSlot = UInt64.valueOf(i);
-      assertThat(
-              tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.isSlotAtNthEpochBoundary(
-                  blockSlot, blockSlot.minus(1), n))
-          .describedAs("Block at %d should %sbe at epoch boundary", i, expected ? "" : "not ")
-          .isEqualTo(expected);
-    }
-  }
-
-  @ParameterizedTest(name = "n={0}")
-  @MethodSource("getNValues")
-  void isSlotAtNthEpochBoundary_withSkippedBlock(final int n) {
-    final int nthStartSlot = beaconStateUtil.computeStartSlotAtEpoch(UInt64.valueOf(n)).intValue();
-
-    final UInt64 genesisSlot = UInt64.ZERO;
-    final UInt64 block1Slot = UInt64.valueOf(nthStartSlot + 1);
-    final UInt64 block2Slot = block1Slot.plus(1);
-    assertThat(beaconStateUtil.isSlotAtNthEpochBoundary(block1Slot, genesisSlot, n)).isTrue();
-    assertThat(beaconStateUtil.isSlotAtNthEpochBoundary(block2Slot, block1Slot, n)).isFalse();
-  }
-
-  @ParameterizedTest(name = "n={0}")
-  @MethodSource("getNValues")
-  public void isSlotAtNthEpochBoundary_withSkippedEpochs_oneEpochAndSlotSkipped(final int n) {
-    final int nthStartSlot = beaconStateUtil.computeStartSlotAtEpoch(UInt64.valueOf(n)).intValue();
-
-    final UInt64 genesisSlot = UInt64.ZERO;
-    final UInt64 block1Slot = UInt64.valueOf(nthStartSlot + SLOTS_PER_EPOCH + 1);
-    final UInt64 block2Slot = block1Slot.plus(1);
-
-    assertThat(beaconStateUtil.isSlotAtNthEpochBoundary(block1Slot, genesisSlot, n)).isTrue();
-    assertThat(beaconStateUtil.isSlotAtNthEpochBoundary(block2Slot, block1Slot, n)).isFalse();
-  }
-
-  @ParameterizedTest(name = "n={0}")
-  @MethodSource("getNValues")
-  public void isSlotAtNthEpochBoundary_withSkippedEpochs_nearlyNEpochsSkipped(final int n) {
-    final int startSlotAt2N =
-        beaconStateUtil.computeStartSlotAtEpoch(UInt64.valueOf(n * 2L)).intValue();
-
-    final UInt64 genesisSlot = UInt64.ZERO;
-    final UInt64 block1Slot = UInt64.valueOf(startSlotAt2N - 1);
-    final UInt64 block2Slot = block1Slot.plus(1);
-    final UInt64 block3Slot = block2Slot.plus(1);
-
-    assertThat(beaconStateUtil.isSlotAtNthEpochBoundary(block1Slot, genesisSlot, n)).isTrue();
-    assertThat(beaconStateUtil.isSlotAtNthEpochBoundary(block2Slot, block1Slot, n)).isTrue();
-    assertThat(beaconStateUtil.isSlotAtNthEpochBoundary(block3Slot, block2Slot, n)).isFalse();
-  }
-
-  public static Stream<Arguments> getNValues() {
-    return Stream.of(
-        Arguments.of(1), Arguments.of(2), Arguments.of(3), Arguments.of(4), Arguments.of(5));
   }
 
   @Test
@@ -280,13 +215,13 @@ public class BeaconStateUtilTest {
     final BeaconStateTestBuilder stateBuilder =
         new BeaconStateTestBuilder(dataStructureUtil).slot(5);
     for (int i = 0;
-        i < specConfig.getSlotsPerEpoch() * specConfig.getTargetAggregatorsPerCommittee() * 2;
+        i < specConfig.getSlotsPerEpoch() * ValidatorConstants.TARGET_AGGREGATORS_PER_COMMITTEE * 2;
         i++) {
       stateBuilder.activeValidator(
           UInt64.valueOf(i).times(specConfig.getEffectiveBalanceIncrement()));
     }
     final BeaconState state = stateBuilder.build();
-    assertThat(beaconStateUtil.getCommitteeCountPerSlot(state, UInt64.ZERO))
+    assertThat(genesisSpec.beaconStateAccessors().getCommitteeCountPerSlot(state, UInt64.ZERO))
         .isGreaterThan(UInt64.ZERO);
 
     // Randao seed is fixed for state so we know the committee allocations will be the same
@@ -335,7 +270,7 @@ public class BeaconStateUtilTest {
   @Test
   void getAttestersTotalEffectiveBalance_shouldRejectRequestFromBeyondLookAheadPeriod() {
     final BeaconState state = dataStructureUtil.randomBeaconState(UInt64.ONE);
-    final UInt64 epoch3Start = beaconStateUtil.computeStartSlotAtEpoch(UInt64.valueOf(3));
+    final UInt64 epoch3Start = spec.computeStartSlotAtEpoch(UInt64.valueOf(3));
     assertThatThrownBy(() -> beaconStateUtil.getAttestersTotalEffectiveBalance(state, epoch3Start))
         .isInstanceOf(IllegalArgumentException.class);
   }

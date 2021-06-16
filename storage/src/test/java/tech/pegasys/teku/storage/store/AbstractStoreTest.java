@@ -46,7 +46,7 @@ import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 public abstract class AbstractStoreTest {
   protected final Spec spec = TestSpecFactory.createMinimalPhase0();
   protected final StorageUpdateChannel storageUpdateChannel = new StubStorageUpdateChannel();
-  protected final ChainBuilder chainBuilder = ChainBuilder.createDefault();
+  protected final ChainBuilder chainBuilder = ChainBuilder.create(spec);
 
   protected void processChainWithLimitedCache(
       BiConsumer<UpdatableStore, SignedBlockAndState> chainProcessor) {

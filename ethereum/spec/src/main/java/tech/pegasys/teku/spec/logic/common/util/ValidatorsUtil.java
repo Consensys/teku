@@ -13,15 +13,38 @@
 
 package tech.pegasys.teku.spec.logic.common.util;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.bytesToUInt64;
+
+import java.util.List;
 import java.util.Optional;
+import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.constants.ValidatorConstants;
+import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 
 public class ValidatorsUtil {
+
+  private final SpecConfig specConfig;
+  private final MiscHelpers miscHelpers;
+  private final BeaconStateAccessors beaconStateAccessors;
+
+  public ValidatorsUtil(
+      final SpecConfig specConfig,
+      final MiscHelpers miscHelpers,
+      final BeaconStateAccessors beaconStateAccessors) {
+    this.specConfig = specConfig;
+    this.miscHelpers = miscHelpers;
+    this.beaconStateAccessors = beaconStateAccessors;
+  }
 
   /**
    * Check if validator is eligible for activation.
@@ -45,17 +68,64 @@ public class ValidatorsUtil {
   }
 
   /**
-   * Determines if a validator has a balance that can be slashed
+   * Return the committee assignment in the ``epoch`` for ``validator_index``. ``assignment``
+   * returned is a tuple of the following form: ``assignment[0]`` is the list of validators in the
+   * committee ``assignment[1]`` is the index to which the committee is assigned ``assignment[2]``
+   * is the slot at which the committee is assigned Return None if no assignment.
    *
-   * @param validator
-   * @param epoch
-   * @return
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_slashable_validator<a/>
+   * @param state the BeaconState.
+   * @param epoch either on or between previous or current epoch.
+   * @param validator_index the validator that is calling this function.
+   * @return Optional.of(CommitteeAssignment).
    */
-  public boolean isSlashableValidator(Validator validator, UInt64 epoch) {
-    return !validator.isSlashed()
-        && (validator.getActivation_epoch().compareTo(epoch) <= 0
-            && epoch.compareTo(validator.getWithdrawable_epoch()) < 0);
+  public Optional<CommitteeAssignment> getCommitteeAssignment(
+      BeaconState state, UInt64 epoch, int validator_index) {
+    return getCommitteeAssignment(
+        state, epoch, validator_index, beaconStateAccessors.getCommitteeCountPerSlot(state, epoch));
+  }
+
+  /**
+   * Return the committee assignment in the ``epoch`` for ``validator_index``. ``assignment``
+   * returned is a tuple of the following form: ``assignment[0]`` is the list of validators in the
+   * committee ``assignment[1]`` is the index to which the committee is assigned ``assignment[2]``
+   * is the slot at which the committee is assigned Return None if no assignment.
+   *
+   * @param state the BeaconState.
+   * @param epoch either on or between previous or current epoch.
+   * @param validator_index the validator that is calling this function.
+   * @param committeeCountPerSlot the number of committees for the target epoch
+   * @return Optional.of(CommitteeAssignment).
+   */
+  public Optional<CommitteeAssignment> getCommitteeAssignment(
+      BeaconState state, UInt64 epoch, int validator_index, final UInt64 committeeCountPerSlot) {
+    UInt64 next_epoch = beaconStateAccessors.getCurrentEpoch(state).plus(UInt64.ONE);
+    checkArgument(
+        epoch.compareTo(next_epoch) <= 0, "get_committee_assignment: Epoch number too high");
+
+    UInt64 start_slot = miscHelpers.computeStartSlotAtEpoch(epoch);
+    for (UInt64 slot = start_slot;
+        slot.isLessThan(start_slot.plus(specConfig.getSlotsPerEpoch()));
+        slot = slot.plus(UInt64.ONE)) {
+
+      for (UInt64 index = UInt64.ZERO;
+          index.compareTo(committeeCountPerSlot) < 0;
+          index = index.plus(UInt64.ONE)) {
+        final List<Integer> committee = beaconStateAccessors.getBeaconCommittee(state, slot, index);
+        if (committee.contains(validator_index)) {
+          return Optional.of(new CommitteeAssignment(committee, index, slot));
+        }
+      }
+    }
+    return Optional.empty();
+  }
+
+  public boolean isAggregator(final BLSSignature slot_signature, final int modulo) {
+    return bytesToUInt64(Hash.sha2_256(slot_signature.toSSZBytes()).slice(0, 8))
+        .mod(modulo)
+        .isZero();
+  }
+
+  public int getAggregatorModulo(final int committeeSize) {
+    return Math.max(1, committeeSize / ValidatorConstants.TARGET_AGGREGATORS_PER_COMMITTEE);
   }
 }

@@ -14,43 +14,49 @@
 package tech.pegasys.teku.spec;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
+import tech.pegasys.teku.spec.config.TestConfigLoader;
 import tech.pegasys.teku.spec.networks.Eth2Network;
-import tech.pegasys.teku.ssz.type.Bytes4;
 
 class SpecVersionTest {
 
-  private final SpecConfig specConfig =
-      SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName());
+  private final SpecConfig minimalPhase0Config =
+      TestConfigLoader.loadPhase0Config(Eth2Network.MINIMAL.configName());
+  private final SpecConfigAltair minimalConfig =
+      SpecConfigAltair.required(SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()));
 
   @Test
-  void shouldCreatePhase0SpecFromFork() {
-    final SpecVersion expectedVersion = SpecVersion.createPhase0(specConfig);
-    final SpecVersion actualVersion =
-        SpecVersion.createForFork(specConfig.getGenesisForkVersion(), specConfig);
-    assertThat(actualVersion.getSchemaDefinitions())
+  void shouldCreatePhase0Spec() {
+    final SpecVersion expectedVersion = SpecVersion.createPhase0(minimalConfig);
+    final Optional<SpecVersion> actualVersion =
+        SpecVersion.create(SpecMilestone.PHASE0, minimalConfig);
+    assertThat(actualVersion).isPresent();
+    assertThat(actualVersion.get().getMilestone()).isEqualTo(SpecMilestone.PHASE0);
+    assertThat(actualVersion.get().getSchemaDefinitions())
         .hasSameClassAs(expectedVersion.getSchemaDefinitions());
   }
 
   @Test
-  void shouldCreateAltairSpecFromFork() {
-    final SpecConfigAltair altairSpecConfig = SpecConfigAltair.required(specConfig);
+  void shouldCreateAltairSpec() {
+    final SpecConfigAltair altairSpecConfig = SpecConfigAltair.required(minimalConfig);
     final SpecVersion expectedVersion = SpecVersion.createAltair(altairSpecConfig);
-    final SpecVersion actualVersion =
-        SpecVersion.createForFork(altairSpecConfig.getAltairForkVersion(), specConfig);
-    assertThat(actualVersion.getSchemaDefinitions())
+    final Optional<SpecVersion> actualVersion =
+        SpecVersion.create(SpecMilestone.ALTAIR, minimalConfig);
+    assertThat(actualVersion).isPresent();
+    assertThat(actualVersion.get().getMilestone()).isEqualTo(SpecMilestone.ALTAIR);
+    assertThat(actualVersion.get().getSchemaDefinitions())
         .hasSameClassAs(expectedVersion.getSchemaDefinitions());
   }
 
   @Test
-  void shouldThrowWhenForkIsUnknown() {
-    assertThatThrownBy(
-            () -> SpecVersion.createForFork(Bytes4.fromHexString("0x12341234"), specConfig))
-        .isInstanceOf(IllegalArgumentException.class);
+  void shouldReturnEmptyWhen_altairRequestedWithPhase0Config() {
+    final Optional<SpecVersion> actualVersion =
+        SpecVersion.create(SpecMilestone.ALTAIR, minimalPhase0Config);
+    assertThat(actualVersion).isEmpty();
   }
 }

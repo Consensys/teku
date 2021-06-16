@@ -15,6 +15,7 @@ package tech.pegasys.teku.api.blockselector;
 
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -66,6 +67,10 @@ public class BlockSelectorFactory {
 
   public BlockSelector headSelector() {
     return () -> optionalToList(SafeFuture.completedFuture(client.getBestBlock()));
+  }
+
+  public BlockSelector nonCanonicalBlocksSelector(final UInt64 slot) {
+    return () -> client.GetAllBlocksAtSlot(slot).thenApply(ArrayList::new);
   }
 
   public BlockSelector finalizedSelector() {

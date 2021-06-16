@@ -29,9 +29,11 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.LocalSigner;
 import tech.pegasys.teku.core.signatures.Signer;
+import tech.pegasys.teku.core.synccomittee.SignedContributionAndProofTestBuilder;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -44,13 +46,19 @@ import tech.pegasys.teku.spec.datastructures.interop.MockStartDepositGenerator;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionData;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
+import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
+import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -80,8 +88,8 @@ public class ChainBuilder {
     existingBlocks.values().forEach(b -> blocksByHash.put(b.getRoot(), b));
   }
 
-  public static ChainBuilder createDefault() {
-    return ChainBuilder.create(TestSpecFactory.createMinimalPhase0(), DEFAULT_VALIDATOR_KEYS);
+  public static ChainBuilder create(final Spec spec) {
+    return ChainBuilder.create(spec, DEFAULT_VALIDATOR_KEYS);
   }
 
   public static ChainBuilder create(final List<BLSKeyPair> validatorKeys) {
@@ -232,7 +240,7 @@ public class ChainBuilder {
     final List<DepositData> initialDepositData =
         new MockStartDepositGenerator(new DepositGenerator(signDeposits))
             .createDeposits(validatorKeys, depositAmount);
-    final BeaconState genesisState =
+    BeaconState genesisState =
         new MockStartBeaconStateGenerator(spec)
             .createInitialBeaconState(genesisTime, initialDepositData);
 
@@ -404,6 +412,80 @@ public class ChainBuilder {
 
   private SignedBeaconBlock resultToBlock(final SignedBlockAndState result) {
     return Optional.ofNullable(result).map(SignedBlockAndState::getBlock).orElse(null);
+  }
+
+  public SignedContributionAndProofTestBuilder createValidSignedContributionAndProofBuilder() {
+    return createValidSignedContributionAndProofBuilder(getLatestSlot());
+  }
+
+  public SignedContributionAndProofTestBuilder createValidSignedContributionAndProofBuilder(
+      final UInt64 slot) {
+    final SyncCommitteeUtil syncCommitteeUtil = spec.getSyncCommitteeUtilRequired(slot);
+    final SignedBlockAndState latestBlockAndState = getLatestBlockAndState();
+    final Bytes32 beaconBlockRoot = latestBlockAndState.getRoot();
+    final UInt64 epoch = syncCommitteeUtil.getEpochForDutiesAtSlot(slot);
+
+    final Map<UInt64, SyncSubcommitteeAssignments> subcommitteeAssignments =
+        syncCommitteeUtil.getSyncSubcommittees(latestBlockAndState.getState(), epoch);
+    for (Map.Entry<UInt64, SyncSubcommitteeAssignments> entry :
+        subcommitteeAssignments.entrySet()) {
+      final UInt64 validatorIndex = entry.getKey();
+      final Signer signer = getSigner(validatorIndex.intValue());
+      final SyncSubcommitteeAssignments assignments = entry.getValue();
+      for (int subcommitteeIndex : assignments.getAssignedSubcommittees()) {
+        final SyncAggregatorSelectionData syncAggregatorSelectionData =
+            syncCommitteeUtil.createSyncAggregatorSelectionData(
+                slot, UInt64.valueOf(subcommitteeIndex));
+        final BLSSignature proof =
+            signer
+                .signSyncCommitteeSelectionProof(
+                    syncAggregatorSelectionData, latestBlockAndState.getState().getForkInfo())
+                .join();
+        if (syncCommitteeUtil.isSyncCommitteeAggregator(proof)) {
+          return new SignedContributionAndProofTestBuilder()
+              .signerProvider(this::getSigner)
+              .syncCommitteeUtil(syncCommitteeUtil)
+              .spec(spec)
+              .state(latestBlockAndState.getState())
+              .subcommitteeIndex(subcommitteeIndex)
+              .slot(slot)
+              .selectionProof(proof)
+              .beaconBlockRoot(beaconBlockRoot)
+              .aggregator(validatorIndex, signer);
+        }
+      }
+    }
+    throw new IllegalStateException("No valid sync subcommittee aggregators found");
+  }
+
+  public SyncCommitteeSignature createValidSyncCommitteeSignature() {
+    final SignedBlockAndState target = getLatestBlockAndState();
+    return createSyncCommitteeSignature(target.getSlot(), target.getRoot());
+  }
+
+  public SyncCommitteeSignature createSyncCommitteeSignature(
+      final UInt64 slot, final Bytes32 blockRoot) {
+    final BeaconStateAltair state =
+        BeaconStateAltair.required(getLatestBlockAndStateAtSlot(slot).getState());
+
+    final BLSPublicKey pubKey =
+        state.getCurrentSyncCommittee().getPubkeys().get(0).getBLSPublicKey();
+    return createSyncCommitteeSignature(slot, blockRoot, state, pubKey);
+  }
+
+  public SyncCommitteeSignature createSyncCommitteeSignature(
+      final UInt64 slot,
+      final Bytes32 blockRoot,
+      final BeaconStateAltair state,
+      final BLSPublicKey validatorPublicKey) {
+    final int validatorIndex = spec.getValidatorIndex(state, validatorPublicKey).orElseThrow();
+    final BLSSignature signature =
+        getSigner(validatorIndex)
+            .signSyncCommitteeSignature(slot, blockRoot, state.getForkInfo())
+            .join();
+    return SchemaDefinitionsAltair.required(spec.atSlot(slot).getSchemaDefinitions())
+        .getSyncCommitteeSignatureSchema()
+        .create(slot, blockRoot, UInt64.valueOf(validatorIndex), signature);
   }
 
   private Signer getSigner(final int proposerIndex) {

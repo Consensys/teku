@@ -13,18 +13,20 @@
 
 package tech.pegasys.teku.cli.options;
 
-import java.util.Optional;
+import java.util.ArrayList;
+import java.util.List;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
 
 public class DepositOptions {
 
   @Option(
-      names = {"--eth1-endpoint"},
+      names = {"--eth1-endpoints", "--eth1-endpoint"},
       paramLabel = "<NETWORK>",
-      description = "URL for Eth1 node.",
-      arity = "1")
-  private String eth1Endpoint = null;
+      description = "URLs for Eth1 nodes.",
+      split = ",",
+      arity = "1..*")
+  private List<String> eth1Endpoints = new ArrayList<>();
 
   @Option(
       names = {"--eth1-deposit-contract-max-request-size"},
@@ -34,14 +36,20 @@ public class DepositOptions {
       arity = "1")
   private int eth1LogsMaxBlockRange = 10_000;
 
-  public int getEth1LogsMaxBlockRange() {
-    return eth1LogsMaxBlockRange;
-  }
+  @Option(
+      names = {"--Xeth1-time-based-head-tracking-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Enable experimental time based Eth1 head tracking",
+      hidden = true,
+      arity = "0..1",
+      fallbackValue = "true")
+  private boolean useTimeBasedHeadTracking = false;
 
   public void configure(final TekuConfiguration.Builder builder) {
     builder.powchain(
         b ->
-            b.eth1Endpoint(Optional.ofNullable(eth1Endpoint))
-                .eth1LogsMaxBlockRange(eth1LogsMaxBlockRange));
+            b.eth1Endpoints(eth1Endpoints)
+                .eth1LogsMaxBlockRange(eth1LogsMaxBlockRange)
+                .useTimeBasedHeadTracking(useTimeBasedHeadTracking));
   }
 }

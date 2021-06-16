@@ -33,6 +33,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.Liveness;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.PutLogLevel;
+import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetAllBlocksAtSlot;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetSszState;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetStateByBlockRoot;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetAttestations;
@@ -65,6 +66,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.events.GetEvents;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetHealth;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetIdentity;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeerById;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeerCount;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeers;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetSyncing;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion;
@@ -72,9 +74,12 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetAggregateAttesta
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetAttestationData;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetProposerDuties;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetSyncCommitteeContribution;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostAggregateAndProofs;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostAttesterDuties;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostContributionAndProofs;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSubscribeToBeaconCommitteeSubnet;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSyncCommitteeSubscriptions;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -158,6 +163,10 @@ public class BeaconRestApiV1Test {
         .add(Arguments.of(GetBlockHeader.ROUTE, GetBlockHeader.class))
         .add(Arguments.of(GetBlockHeaders.ROUTE, GetBlockHeaders.class))
         .add(Arguments.of(GetBlock.ROUTE, GetBlock.class))
+        .add(
+            Arguments.of(
+                tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetBlock.ROUTE,
+                tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetBlock.class))
         .add(Arguments.of(GetBlockRoot.ROUTE, GetBlockRoot.class))
         .add(Arguments.of(GetBlockAttestations.ROUTE, GetBlockAttestations.class))
         .add(Arguments.of(GetGenesis.ROUTE, GetGenesis.class))
@@ -171,6 +180,7 @@ public class BeaconRestApiV1Test {
         .add(Arguments.of(GetAttestations.ROUTE, GetAttestations.class))
         .add(Arguments.of(GetAttesterSlashings.ROUTE, GetAttesterSlashings.class))
         .add(Arguments.of(GetProposerSlashings.ROUTE, GetProposerSlashings.class))
+        .add(Arguments.of(GetSyncCommitteeContribution.ROUTE, GetSyncCommitteeContribution.class))
         .add(Arguments.of(GetVoluntaryExits.ROUTE, GetVoluntaryExits.class));
 
     // events
@@ -182,6 +192,7 @@ public class BeaconRestApiV1Test {
         .add(Arguments.of(GetIdentity.ROUTE, GetIdentity.class))
         .add(Arguments.of(GetPeerById.ROUTE, GetPeerById.class))
         .add(Arguments.of(GetPeers.ROUTE, GetPeers.class))
+        .add(Arguments.of(GetPeerCount.ROUTE, GetPeerCount.class))
         .add(Arguments.of(GetSyncing.ROUTE, GetSyncing.class))
         .add(Arguments.of(GetVersion.ROUTE, GetVersion.class));
 
@@ -189,8 +200,13 @@ public class BeaconRestApiV1Test {
     builder
         .add(Arguments.of(GetAggregateAttestation.ROUTE, GetAggregateAttestation.class))
         .add(Arguments.of(GetAttestationData.ROUTE, GetAttestationData.class))
+        .add(
+            Arguments.of(
+                tech.pegasys.teku.beaconrestapi.handlers.v2.validator.GetNewBlock.ROUTE,
+                tech.pegasys.teku.beaconrestapi.handlers.v2.validator.GetNewBlock.class))
         .add(Arguments.of(GetNewBlock.ROUTE, GetNewBlock.class))
-        .add(Arguments.of(GetProposerDuties.ROUTE, GetProposerDuties.class));
+        .add(Arguments.of(GetProposerDuties.ROUTE, GetProposerDuties.class))
+        .add(Arguments.of(GetSyncCommitteeContribution.ROUTE, GetSyncCommitteeContribution.class));
 
     // config
     builder
@@ -200,11 +216,16 @@ public class BeaconRestApiV1Test {
 
     // DEBUG
     builder.add(Arguments.of(GetState.ROUTE, GetState.class));
+    builder.add(
+        Arguments.of(
+            tech.pegasys.teku.beaconrestapi.handlers.v2.debug.GetState.ROUTE,
+            tech.pegasys.teku.beaconrestapi.handlers.v2.debug.GetState.class));
 
     // TEKU
     builder.add(Arguments.of(GetSszState.ROUTE, GetSszState.class));
     builder.add(Arguments.of(GetStateByBlockRoot.ROUTE, GetStateByBlockRoot.class));
     builder.add(Arguments.of(Liveness.ROUTE, Liveness.class));
+    builder.add(Arguments.of(GetAllBlocksAtSlot.ROUTE, GetAllBlocksAtSlot.class));
 
     return builder.build();
   }
@@ -233,8 +254,12 @@ public class BeaconRestApiV1Test {
         .add(Arguments.of(PostAttestation.ROUTE, PostAttestation.class))
         .add(
             Arguments.of(
+                PostSyncCommitteeSubscriptions.ROUTE, PostSyncCommitteeSubscriptions.class))
+        .add(
+            Arguments.of(
                 PostSubscribeToBeaconCommitteeSubnet.ROUTE,
-                PostSubscribeToBeaconCommitteeSubnet.class));
+                PostSubscribeToBeaconCommitteeSubnet.class))
+        .add(Arguments.of(PostContributionAndProofs.ROUTE, PostContributionAndProofs.class));
 
     return builder.build();
   }

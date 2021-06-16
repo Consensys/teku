@@ -22,29 +22,23 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.logic.common.operations.signatures.ProposerSlashingSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
-import tech.pegasys.teku.spec.logic.common.operations.validation.ProposerSlashingStateTransitionValidator;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class ProposerSlashingValidator implements OperationValidator<ProposerSlashing> {
   private static final Logger LOG = LogManager.getLogger();
 
+  private final Spec spec;
   private final RecentChainData recentChainData;
   private final Set<UInt64> receivedValidSlashingForProposerSet =
       LimitedSet.create(VALID_VALIDATOR_SET_SIZE);
-  private final ProposerSlashingStateTransitionValidator transitionValidator;
-  private final ProposerSlashingSignatureVerifier signatureValidator;
 
-  public ProposerSlashingValidator(
-      RecentChainData recentChainData,
-      ProposerSlashingStateTransitionValidator proposerSlashingStateTransitionValidator,
-      ProposerSlashingSignatureVerifier proposerSlashingSignatureVerifier) {
+  public ProposerSlashingValidator(final Spec spec, RecentChainData recentChainData) {
+    this.spec = spec;
     this.recentChainData = recentChainData;
-    this.transitionValidator = proposerSlashingStateTransitionValidator;
-    this.signatureValidator = proposerSlashingSignatureVerifier;
   }
 
   @Override
@@ -71,7 +65,7 @@ public class ProposerSlashingValidator implements OperationValidator<ProposerSla
 
   @Override
   public boolean validateForStateTransition(BeaconState state, ProposerSlashing slashing) {
-    Optional<OperationInvalidReason> invalidReason = transitionValidator.validate(state, slashing);
+    Optional<OperationInvalidReason> invalidReason = spec.validateProposerSlashing(state, slashing);
 
     if (invalidReason.isPresent()) {
       LOG.trace(
@@ -89,7 +83,7 @@ public class ProposerSlashingValidator implements OperationValidator<ProposerSla
       return false;
     }
 
-    if (!signatureValidator.verifySignature(state, slashing, BLSSignatureVerifier.SIMPLE)) {
+    if (!spec.verifyProposerSlashingSignature(state, slashing, BLSSignatureVerifier.SIMPLE)) {
       LOG.trace("ProposerSlashingValidator: Slashing fails signature verification.");
       return false;
     }

@@ -26,11 +26,11 @@ import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFa
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StateStorageMode;
-import tech.pegasys.teku.storage.server.rocksdb.InMemoryRocksDbDatabaseFactory;
-import tech.pegasys.teku.storage.server.rocksdb.core.MockRocksDbInstance;
-import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaFinalized;
-import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaHot;
-import tech.pegasys.teku.storage.server.rocksdb.schema.V6SchemaFinalized;
+import tech.pegasys.teku.storage.server.kvstore.InMemoryKvStoreDatabaseFactory;
+import tech.pegasys.teku.storage.server.kvstore.MockKvStoreInstance;
+import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaFinalized;
+import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaHot;
+import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaFinalized;
 import tech.pegasys.teku.storage.store.StoreConfig;
 
 public class InMemoryStorageSystemBuilder {
@@ -45,9 +45,9 @@ public class InMemoryStorageSystemBuilder {
   private Spec spec = TestSpecFactory.createMinimalPhase0();
 
   // Internal variables
-  MockRocksDbInstance unifiedDb;
-  private MockRocksDbInstance hotDb;
-  private MockRocksDbInstance coldDb;
+  MockKvStoreInstance unifiedDb;
+  private MockKvStoreInstance hotDb;
+  private MockKvStoreInstance coldDb;
 
   private InMemoryStorageSystemBuilder() {}
 
@@ -63,12 +63,18 @@ public class InMemoryStorageSystemBuilder {
     return create().storageMode(storageMode).build();
   }
 
+  public static StorageSystem buildDefault(final Spec spec) {
+    return create().specProvider(spec).build();
+  }
+
   public StorageSystem build() {
     final Database database;
     switch (version) {
+      case LEVELDB2: // Leveldb only varies by db type which doesn't apply to in-memory
       case V6:
         database = createV6Database();
         break;
+      case LEVELDB1: // Leveldb only varies by db type which doesn't apply to in-memory
       case V5:
         database = createV5Database();
         break;
@@ -162,7 +168,7 @@ public class InMemoryStorageSystemBuilder {
   private Database createV6Database() {
     if (hotDb == null) {
       hotDb =
-          MockRocksDbInstance.createEmpty(
+          MockKvStoreInstance.createEmpty(
               concat(
                   V4SchemaHot.create(spec).getAllColumns(),
                   V6SchemaFinalized.create(spec).getAllColumns()),
@@ -171,7 +177,7 @@ public class InMemoryStorageSystemBuilder {
                   V6SchemaFinalized.create(spec).getAllVariables()));
       coldDb = hotDb;
     }
-    return InMemoryRocksDbDatabaseFactory.createV6(
+    return InMemoryKvStoreDatabaseFactory.createV6(
         hotDb, coldDb, storageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
   }
 
@@ -183,16 +189,16 @@ public class InMemoryStorageSystemBuilder {
   private Database createV4Database() {
     if (hotDb == null) {
       hotDb =
-          MockRocksDbInstance.createEmpty(
+          MockKvStoreInstance.createEmpty(
               V4SchemaHot.create(spec).getAllColumns(), V4SchemaHot.create(spec).getAllVariables());
     }
     if (coldDb == null) {
       coldDb =
-          MockRocksDbInstance.createEmpty(
+          MockKvStoreInstance.createEmpty(
               V4SchemaFinalized.create(spec).getAllColumns(),
               V4SchemaFinalized.create(spec).getAllVariables());
     }
-    return InMemoryRocksDbDatabaseFactory.createV4(
+    return InMemoryKvStoreDatabaseFactory.createV4(
         hotDb, coldDb, storageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
   }
 

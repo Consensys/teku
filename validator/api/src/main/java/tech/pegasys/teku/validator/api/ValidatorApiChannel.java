@@ -31,13 +31,13 @@ import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
-import tech.pegasys.teku.spec.datastructures.state.Fork;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 
 public interface ValidatorApiChannel extends ChannelInterface {
   int UKNOWN_VALIDATOR_ID = -1;
-
-  SafeFuture<Optional<Fork>> getFork();
 
   SafeFuture<Optional<GenesisData>> getGenesisData();
 
@@ -48,20 +48,26 @@ public interface ValidatorApiChannel extends ChannelInterface {
       final Collection<BLSPublicKey> validatorIdentifiers);
 
   SafeFuture<Optional<AttesterDuties>> getAttestationDuties(
-      final UInt64 epoch, final Collection<Integer> validatorIndexes);
+      final UInt64 epoch, final Collection<Integer> validatorIndices);
+
+  SafeFuture<Optional<SyncCommitteeDuties>> getSyncCommitteeDuties(
+      final UInt64 epoch, final Collection<Integer> validatorIndices);
 
   SafeFuture<Optional<ProposerDuties>> getProposerDuties(final UInt64 epoch);
 
   SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(
       UInt64 slot, BLSSignature randaoReveal, Optional<Bytes32> graffiti);
 
-  SafeFuture<Optional<Attestation>> createUnsignedAttestation(UInt64 slot, int committeeIndex);
-
   SafeFuture<Optional<AttestationData>> createAttestationData(UInt64 slot, int committeeIndex);
 
   SafeFuture<Optional<Attestation>> createAggregate(UInt64 slot, Bytes32 attestationHashTreeRoot);
 
+  SafeFuture<Optional<SyncCommitteeContribution>> createSyncCommitteeContribution(
+      UInt64 slot, int subcommitteeIndex, Bytes32 beaconBlockRoot);
+
   void subscribeToBeaconCommittee(List<CommitteeSubscriptionRequest> requests);
+
+  void subscribeToSyncCommitteeSubnets(Collection<SyncCommitteeSubnetSubscription> subscriptions);
 
   void subscribeToPersistentSubnets(Set<SubnetSubscription> subnetSubscriptions);
 
@@ -72,4 +78,10 @@ public interface ValidatorApiChannel extends ChannelInterface {
   void sendAggregateAndProof(SignedAggregateAndProof aggregateAndProof);
 
   SafeFuture<SendSignedBlockResult> sendSignedBlock(SignedBeaconBlock block);
+
+  SafeFuture<List<SubmitCommitteeSignatureError>> sendSyncCommitteeSignatures(
+      List<SyncCommitteeSignature> syncCommitteeSignatures);
+
+  SafeFuture<Void> sendSignedContributionAndProofs(
+      Collection<SignedContributionAndProof> signedContributionAndProofs);
 }

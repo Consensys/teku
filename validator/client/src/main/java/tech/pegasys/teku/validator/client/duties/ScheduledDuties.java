@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,133 +13,21 @@
 
 package tech.pegasys.teku.validator.client.duties;
 
-import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
-
-import java.util.NavigableMap;
-import java.util.Optional;
-import java.util.TreeMap;
 import org.apache.tuweni.bytes.Bytes32;
-import org.hyperledger.besu.plugin.services.MetricsSystem;
-import org.hyperledger.besu.plugin.services.metrics.Counter;
-import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
-import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
-import tech.pegasys.teku.validator.client.Validator;
 
-public class ScheduledDuties {
-  private final NavigableMap<UInt64, BlockProductionDuty> blockProductionDuties = new TreeMap<>();
-  private final NavigableMap<UInt64, AttestationProductionDuty> attestationProductionDuties =
-      new TreeMap<>();
-  private final NavigableMap<UInt64, AggregationDuty> aggregationDuties = new TreeMap<>();
+public interface ScheduledDuties {
 
-  private final ValidatorDutyFactory dutyFactory;
-  private final Bytes32 dependentRoot;
-  private final LabelledMetric<Counter> dutiesPerformedCounter;
+  boolean requiresRecalculation(Bytes32 newHeadDependentRoot);
 
-  public ScheduledDuties(
-      final ValidatorDutyFactory dutyFactory,
-      final Bytes32 dependentRoot,
-      final MetricsSystem metricsSystem) {
-    this.dutyFactory = dutyFactory;
-    this.dependentRoot = dependentRoot;
-    dutiesPerformedCounter =
-        metricsSystem.createLabelledCounter(
-            TekuMetricCategory.VALIDATOR,
-            "duties_performed",
-            "Count of the failed duties, by duty type",
-            "type",
-            "result");
-  }
+  SafeFuture<DutyResult> performProductionDuty(UInt64 slot);
 
-  public Bytes32 getDependentRoot() {
-    return dependentRoot;
-  }
+  String getProductionType();
 
-  public synchronized void scheduleBlockProduction(final UInt64 slot, final Validator validator) {
-    blockProductionDuties.put(slot, dutyFactory.createBlockProductionDuty(slot, validator));
-  }
+  SafeFuture<DutyResult> performAggregationDuty(UInt64 slot);
 
-  public synchronized SafeFuture<Optional<AttestationData>> scheduleAttestationProduction(
-      final UInt64 slot,
-      final Validator validator,
-      final int attestationCommitteeIndex,
-      final int attestationCommitteePosition,
-      final int attestationCommitteeSize,
-      final int validatorIndex) {
-    return attestationProductionDuties
-        .computeIfAbsent(slot, dutyFactory::createAttestationProductionDuty)
-        .addValidator(
-            validator,
-            attestationCommitteeIndex,
-            attestationCommitteePosition,
-            validatorIndex,
-            attestationCommitteeSize);
-  }
+  String getAggregationType();
 
-  public synchronized void scheduleAggregationDuties(
-      final UInt64 slot,
-      final Validator validator,
-      final int validatorIndex,
-      final BLSSignature slotSignature,
-      final int attestationCommitteeIndex,
-      final SafeFuture<Optional<AttestationData>> unsignedAttestationFuture) {
-    aggregationDuties
-        .computeIfAbsent(slot, dutyFactory::createAggregationDuty)
-        .addValidator(
-            validator,
-            validatorIndex,
-            slotSignature,
-            attestationCommitteeIndex,
-            unsignedAttestationFuture);
-  }
-
-  public synchronized void produceBlock(final UInt64 slot) {
-    performDutyForSlot(blockProductionDuties, slot);
-  }
-
-  public synchronized void produceAttestations(final UInt64 slot) {
-    performDutyForSlot(attestationProductionDuties, slot);
-  }
-
-  public synchronized void performAggregation(final UInt64 slot) {
-    performDutyForSlot(aggregationDuties, slot);
-  }
-
-  private void performDutyForSlot(
-      final NavigableMap<UInt64, ? extends Duty> duties, final UInt64 slot) {
-    discardDutiesBeforeSlot(duties, slot);
-
-    final Duty duty = duties.remove(slot);
-    if (duty == null) {
-      return;
-    }
-    duty.performDuty()
-        .finish(
-            result -> reportDutySuccess(result, duty, slot),
-            error -> reportDutyFailure(error, duty, slot));
-  }
-
-  private void reportDutyFailure(final Throwable error, final Duty duty, final UInt64 slot) {
-    dutiesPerformedCounter.labels(duty.getProducedType(), "failed").inc();
-    VALIDATOR_LOGGER.dutyFailed(duty.getProducedType(), slot, duty.getValidatorIdString(), error);
-  }
-
-  private void reportDutySuccess(final DutyResult result, final Duty duty, final UInt64 slot) {
-    dutiesPerformedCounter.labels(duty.getProducedType(), "success").inc();
-    result.report(duty.getProducedType(), slot, duty.getValidatorIdString(), VALIDATOR_LOGGER);
-  }
-
-  private void discardDutiesBeforeSlot(
-      final NavigableMap<UInt64, ? extends Duty> duties, final UInt64 slot) {
-    duties.subMap(UInt64.ZERO, true, slot, false).clear();
-  }
-
-  public int countDuties() {
-    return blockProductionDuties.size()
-        + attestationProductionDuties.size()
-        + aggregationDuties.size();
-  }
+  int countDuties();
 }

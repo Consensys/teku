@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.gossip;
 
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
@@ -24,8 +25,6 @@ import tech.pegasys.teku.ssz.schema.SszSchema;
 
 public class SignedContributionAndProofGossipManager
     extends AbstractGossipManager<SignedContributionAndProof> {
-
-  public static String TOPIC_NAME = "sync_committee_contribution_and_proof";
 
   private final SszSchema<SignedContributionAndProof> gossipType;
 
@@ -37,7 +36,14 @@ public class SignedContributionAndProofGossipManager
       final ForkInfo forkInfo,
       final OperationProcessor<SignedContributionAndProof> processor,
       final GossipPublisher<SignedContributionAndProof> publisher) {
-    super(TOPIC_NAME, asyncRunner, gossipNetwork, gossipEncoding, forkInfo, processor, publisher);
+    super(
+        GossipTopicName.SYNC_COMMITTEE_CONTRIBUTION_AND_PROOF,
+        asyncRunner,
+        gossipNetwork,
+        gossipEncoding,
+        forkInfo,
+        processor,
+        publisher);
     gossipType = schemaDefinitions.getSignedContributionAndProofSchema();
   }
 

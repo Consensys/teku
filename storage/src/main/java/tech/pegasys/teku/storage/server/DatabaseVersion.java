@@ -14,6 +14,8 @@
 package tech.pegasys.teku.storage.server;
 
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public enum DatabaseVersion {
   NOOP("noop"),
@@ -23,8 +25,31 @@ public enum DatabaseVersion {
   LEVELDB1("leveldb1"),
   LEVELDB2("leveldb2");
 
-  public static final DatabaseVersion DEFAULT_VERSION = DatabaseVersion.V5;
+  private static final Logger LOG = LogManager.getLogger();
+  public static final DatabaseVersion DEFAULT_VERSION;
   private String value;
+
+  static {
+    if (isLevelDbSupported()) {
+      DEFAULT_VERSION = LEVELDB2;
+    } else {
+      DEFAULT_VERSION = V5;
+    }
+  }
+
+  private static boolean isLevelDbSupported() {
+    // Use JNI to load as the native library is loaded in a static block
+    try {
+      Class.forName("org.fusesource.leveldbjni.JniDBFactory");
+      return true;
+    } catch (final UnsatisfiedLinkError e) {
+      LOG.info("LevelDB not supported on this system: {}", e.getMessage());
+      return false;
+    } catch (ClassNotFoundException e) {
+      LOG.error("Failed to check LevelDB support. Defaulting to RocksDB.", e);
+      return false;
+    }
+  }
 
   DatabaseVersion(final String value) {
     this.value = value;

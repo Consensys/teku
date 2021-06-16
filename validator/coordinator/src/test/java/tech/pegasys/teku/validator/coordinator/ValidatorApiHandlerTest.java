@@ -18,10 +18,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
@@ -34,9 +36,11 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -44,9 +48,11 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -54,19 +60,25 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
-import tech.pegasys.teku.spec.datastructures.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SszMutableList;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
+import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
+import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeSignaturePool;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.sync.events.SyncState;
 import tech.pegasys.teku.sync.events.SyncStateProvider;
@@ -77,13 +89,16 @@ import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
+import tech.pegasys.teku.validator.api.SubmitCommitteeSignatureError;
+import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
+import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
 
 class ValidatorApiHandlerTest {
 
   private static final UInt64 EPOCH = UInt64.valueOf(13);
   private static final UInt64 PREVIOUS_EPOCH = EPOCH.minus(ONE);
-  private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private final Spec spec = TestSpecFactory.createMinimalAltair();
   private final UInt64 EPOCH_START_SLOT = spec.computeStartSlotAtEpoch(EPOCH);
   private final UInt64 PREVIOUS_EPOCH_START_SLOT = spec.computeStartSlotAtEpoch(PREVIOUS_EPOCH);
 
@@ -103,6 +118,12 @@ class ValidatorApiHandlerTest {
   private final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
   private final DutyMetrics dutyMetrics = mock(DutyMetrics.class);
   private final ForkChoiceTrigger forkChoiceTrigger = mock(ForkChoiceTrigger.class);
+  private final SyncCommitteeSignaturePool syncCommitteeSignaturePool =
+      mock(SyncCommitteeSignaturePool.class);
+  private final SyncCommitteeContributionPool syncCommitteeContributionPool =
+      mock(SyncCommitteeContributionPool.class);
+  private final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager =
+      mock(SyncCommitteeSubscriptionManager.class);
 
   private final ValidatorApiHandler validatorApiHandler =
       new ValidatorApiHandler(
@@ -119,7 +140,10 @@ class ValidatorApiHandlerTest {
           dutyMetrics,
           performanceTracker,
           spec,
-          forkChoiceTrigger);
+          forkChoiceTrigger,
+          syncCommitteeSignaturePool,
+          syncCommitteeContributionPool,
+          syncCommitteeSubscriptionManager);
 
   @BeforeEach
   public void setUp() {
@@ -325,6 +349,63 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
+  void getSyncCommitteeDuties_shouldFailForEpochTooFarAhead() {
+    final BeaconState state = dataStructureUtil.stateBuilderAltair().slot(EPOCH_START_SLOT).build();
+    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH);
+    when(chainDataClient.getBestState()).thenReturn(Optional.of(state));
+    final int epochsPerSyncCommitteePeriod =
+        SpecConfigAltair.required(spec.getSpecConfig(EPOCH)).getEpochsPerSyncCommitteePeriod();
+    final SyncCommitteeUtil syncCommitteeUtil = spec.getSyncCommitteeUtilRequired(EPOCH_START_SLOT);
+    final UInt64 firstSlotAfterNextSyncCommitteePeriod =
+        syncCommitteeUtil
+            .computeFirstEpochOfCurrentSyncCommitteePeriod(EPOCH)
+            .plus(epochsPerSyncCommitteePeriod * 2L);
+    assertThatSafeFuture(
+            validatorApiHandler.getSyncCommitteeDuties(
+                firstSlotAfterNextSyncCommitteePeriod, List.of(1)))
+        .isCompletedExceptionallyWith(IllegalArgumentException.class)
+        .hasMessageContaining("not within the current or next sync committee periods");
+  }
+
+  @Test
+  void getSyncCommitteeDuties_shouldNotUseEpochPriorToFork() {
+    final Spec spec = TestSpecFactory.createMinimalWithAltairForkEpoch(EPOCH);
+    final ValidatorApiHandler validatorApiHandler =
+        new ValidatorApiHandler(
+            chainDataProvider,
+            chainDataClient,
+            syncStateProvider,
+            blockFactory,
+            blockImportChannel,
+            blockGossipChannel,
+            attestationPool,
+            attestationManager,
+            attestationTopicSubscriptions,
+            activeValidatorTracker,
+            dutyMetrics,
+            performanceTracker,
+            spec,
+            forkChoiceTrigger,
+            syncCommitteeSignaturePool,
+            syncCommitteeContributionPool,
+            syncCommitteeSubscriptionManager);
+    // Best state is still in Phase0
+    final BeaconState state =
+        dataStructureUtil.stateBuilderPhase0().slot(PREVIOUS_EPOCH_START_SLOT.minus(1)).build();
+    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH);
+    when(chainDataClient.getBestState()).thenReturn(Optional.of(state));
+    when(chainDataClient.getStateAtSlotExact(any())).thenReturn(new SafeFuture<>());
+
+    final SafeFuture<Optional<SyncCommitteeDuties>> result =
+        validatorApiHandler.getSyncCommitteeDuties(EPOCH, List.of(1));
+    assertThat(result).isNotDone();
+
+    // The start of the sync committee period is prior to the fork block so we should use the
+    // fork block to ensure we actually have sync committees available.
+    verify(chainDataClient).getStateAtSlotExact(EPOCH_START_SLOT);
+  }
+
+  @Test
   public void createUnsignedBlock_shouldFailWhenNodeIsSyncing() {
     nodeIsSyncing();
     final SafeFuture<Optional<BeaconBlock>> result =
@@ -364,18 +445,19 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
-  public void createUnsignedAttestation_shouldFailWhenNodeIsSyncing() {
+  public void createAttestationData_shouldFailWhenNodeIsSyncing() {
     nodeIsSyncing();
-    final SafeFuture<Optional<Attestation>> result =
-        validatorApiHandler.createUnsignedAttestation(ONE, 1);
+    final SafeFuture<Optional<AttestationData>> result =
+        validatorApiHandler.createAttestationData(ONE, 1);
 
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(NodeSyncingException.class);
   }
 
   @Test
-  public void createUnsignedAttestation_shouldCreateAttestation() {
+  public void createAttestationData_shouldCreateAttestation() {
     final UInt64 slot = spec.computeStartSlotAtEpoch(EPOCH).plus(ONE);
+    when(chainDataClient.getCurrentSlot()).thenReturn(slot);
 
     final BeaconState state = createStateWithActiveValidators(EPOCH_START_SLOT);
     final SignedBeaconBlock block =
@@ -386,29 +468,44 @@ class ValidatorApiHandlerTest {
         completedFuture(Optional.of(blockAndState));
     when(chainDataClient.getSignedBlockAndStateInEffectAtSlot(slot))
         .thenReturn(blockAndStateResult);
+    when(forkChoiceTrigger.prepareForAttestationProduction(slot)).thenReturn(SafeFuture.COMPLETE);
 
     final int committeeIndex = 0;
-    final SafeFuture<Optional<Attestation>> result =
-        validatorApiHandler.createUnsignedAttestation(slot, committeeIndex);
+    final SafeFuture<Optional<AttestationData>> result =
+        validatorApiHandler.createAttestationData(slot, committeeIndex);
 
     assertThat(result).isCompleted();
-    final Optional<Attestation> maybeAttestation = result.join();
+    final Optional<AttestationData> maybeAttestation = result.join();
     assertThat(maybeAttestation).isPresent();
-    final Attestation attestation = maybeAttestation.orElseThrow();
-    assertThat(attestation.getAggregation_bits())
-        .isEqualTo(Attestation.SSZ_SCHEMA.getAggregationBitsSchema().ofBits(4));
-    assertThat(attestation.getData())
+    final AttestationData attestationData = maybeAttestation.orElseThrow();
+    assertThat(attestationData)
         .isEqualTo(
-            AttestationUtil.getGenericAttestationData(
+            spec.getGenericAttestationData(
                 slot, state, block.getMessage(), UInt64.valueOf(committeeIndex)));
-    assertThat(attestation.getData().getSlot()).isEqualTo(slot);
-    assertThat(attestation.getAggregate_signature().toSSZBytes())
-        .isEqualTo(BLSSignature.empty().toSSZBytes());
+    assertThat(attestationData.getSlot()).isEqualTo(slot);
+    final InOrder inOrder = inOrder(forkChoiceTrigger, chainDataClient);
+
+    // Ensure we prepare for attestation production prior to getting the block to attest to
+    inOrder.verify(forkChoiceTrigger).prepareForAttestationProduction(slot);
+    inOrder.verify(chainDataClient).getSignedBlockAndStateInEffectAtSlot(slot);
   }
 
   @Test
-  public void createUnsignedAttestation_shouldUseCorrectSourceWhenEpochTransitionRequired() {
+  public void createAttestationData_shouldRejectRequestWhenSlotIsInTheFuture() {
+    final UInt64 slot = spec.computeStartSlotAtEpoch(EPOCH).plus(ONE);
+    when(chainDataClient.getCurrentSlot()).thenReturn(slot.minus(1));
+
+    final int committeeIndex = 0;
+    final SafeFuture<Optional<AttestationData>> result =
+        validatorApiHandler.createAttestationData(slot, committeeIndex);
+
+    assertThatSafeFuture(result).isCompletedExceptionallyWith(IllegalArgumentException.class);
+  }
+
+  @Test
+  public void createAttestationData_shouldUseCorrectSourceWhenEpochTransitionRequired() {
     final UInt64 slot = spec.computeStartSlotAtEpoch(EPOCH);
+    when(chainDataClient.getCurrentSlot()).thenReturn(slot);
     // Slot is from before the current epoch, so we need to ensure we process the epoch transition
     final UInt64 blockSlot = slot.minus(1);
 
@@ -427,24 +524,21 @@ class ValidatorApiHandlerTest {
         .thenReturn(
             SafeFuture.completedFuture(
                 CheckpointState.create(new Checkpoint(EPOCH, block.getRoot()), block, rightState)));
+    when(forkChoiceTrigger.prepareForAttestationProduction(slot)).thenReturn(SafeFuture.COMPLETE);
 
     final int committeeIndex = 0;
-    final SafeFuture<Optional<Attestation>> result =
-        validatorApiHandler.createUnsignedAttestation(slot, committeeIndex);
+    final SafeFuture<Optional<AttestationData>> result =
+        validatorApiHandler.createAttestationData(slot, committeeIndex);
 
     assertThat(result).isCompleted();
-    final Optional<Attestation> maybeAttestation = result.join();
+    final Optional<AttestationData> maybeAttestation = result.join();
     assertThat(maybeAttestation).isPresent();
-    final Attestation attestation = maybeAttestation.orElseThrow();
-    assertThat(attestation.getAggregation_bits())
-        .isEqualTo(Attestation.SSZ_SCHEMA.getAggregationBitsSchema().ofBits(4));
-    assertThat(attestation.getData())
+    final AttestationData attestationData = maybeAttestation.orElseThrow();
+    assertThat(attestationData)
         .isEqualTo(
-            AttestationUtil.getGenericAttestationData(
+            spec.getGenericAttestationData(
                 slot, rightState, block.getMessage(), UInt64.valueOf(committeeIndex)));
-    assertThat(attestation.getData().getSlot()).isEqualTo(slot);
-    assertThat(attestation.getAggregate_signature().toSSZBytes())
-        .isEqualTo(BLSSignature.empty().toSSZBytes());
+    assertThat(attestationData.getSlot()).isEqualTo(slot);
   }
 
   @Test
@@ -469,21 +563,6 @@ class ValidatorApiHandlerTest {
             validatorApiHandler.createAggregate(
                 aggregate.get().getData().getSlot(), attestationData.hashTreeRoot()))
         .isCompletedWithValue(aggregate);
-  }
-
-  @Test
-  public void getFork_shouldReturnEmptyWhenHeadStateNotAvailable() {
-    when(chainDataClient.getBestState()).thenReturn(Optional.empty());
-
-    assertThat(validatorApiHandler.getFork()).isCompletedWithValue(Optional.empty());
-  }
-
-  @Test
-  public void getFork_shouldReturnForkFromHeadState() {
-    final BeaconState state = dataStructureUtil.randomBeaconState();
-    when(chainDataClient.getBestState()).thenReturn(Optional.of(state));
-
-    assertThat(validatorApiHandler.getFork()).isCompletedWithValue(Optional.of(state.getFork()));
   }
 
   @Test
@@ -515,6 +594,26 @@ class ValidatorApiHandlerTest {
 
     verifyNoInteractions(attestationTopicSubscriptions);
     verify(activeValidatorTracker).onCommitteeSubscriptionRequest(validatorIndex, aggregationSlot);
+  }
+
+  @Test
+  void subscribeToSyncCommitteeSubnets_shouldConvertCommitteeIndexToSubnetId() {
+    final SyncCommitteeSubnetSubscription subscription1 =
+        new SyncCommitteeSubnetSubscription(1, Set.of(1, 2, 15, 30), UInt64.valueOf(44));
+    final SyncCommitteeSubnetSubscription subscription2 =
+        new SyncCommitteeSubnetSubscription(1, Set.of(5, 10), UInt64.valueOf(35));
+    validatorApiHandler.subscribeToSyncCommitteeSubnets(List.of(subscription1, subscription2));
+    final UInt64 unsubscribeSlotSubscription1 =
+        spec.computeStartSlotAtEpoch(UInt64.valueOf(44).increment());
+    final UInt64 unsubscribeSlotSubscription2 =
+        spec.computeStartSlotAtEpoch(UInt64.valueOf(35).increment());
+    verify(syncCommitteeSubscriptionManager).subscribe(0, unsubscribeSlotSubscription1);
+    verify(syncCommitteeSubscriptionManager).subscribe(1, unsubscribeSlotSubscription1);
+    verify(syncCommitteeSubscriptionManager).subscribe(3, unsubscribeSlotSubscription1);
+
+    verify(syncCommitteeSubscriptionManager).subscribe(0, unsubscribeSlotSubscription2);
+    verify(syncCommitteeSubscriptionManager).subscribe(1, unsubscribeSlotSubscription2);
+    verifyNoMoreInteractions(syncCommitteeSubscriptionManager);
   }
 
   @Test
@@ -621,6 +720,82 @@ class ValidatorApiHandlerTest {
     assertThatSafeFuture(
             validatorApiHandler.getValidatorIndices(List.of(validator0, unknownValidator)))
         .isCompletedWithValue(Map.of(validator0, 0));
+  }
+
+  @Test
+  void sendSyncCommitteeSignatures_shouldAllowEmptyRequest() {
+    final List<SyncCommitteeSignature> signatures = List.of();
+    final SafeFuture<List<SubmitCommitteeSignatureError>> result =
+        validatorApiHandler.sendSyncCommitteeSignatures(signatures);
+    assertThat(result).isCompleted();
+  }
+
+  @Test
+  void sendSyncCommitteeSignatures_shouldAddSignaturesToPool() {
+    final SyncCommitteeSignature signature = dataStructureUtil.randomSyncCommitteeSignature();
+    final List<SyncCommitteeSignature> signatures = List.of(signature);
+    when(syncCommitteeSignaturePool.add(any()))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+    final SafeFuture<List<SubmitCommitteeSignatureError>> result =
+        validatorApiHandler.sendSyncCommitteeSignatures(signatures);
+    assertThat(result).isCompletedWithValue(emptyList());
+    verify(performanceTracker).saveProducedSyncCommitteeSignature(signature);
+  }
+
+  @Test
+  void sendSyncCommitteeSignatures_shouldRaiseErrors() {
+    final SyncCommitteeSignature signature = dataStructureUtil.randomSyncCommitteeSignature();
+    final List<SyncCommitteeSignature> signatures = List.of(signature);
+    when(syncCommitteeSignaturePool.add(any()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                InternalValidationResult.create(ValidationResultCode.REJECT, "Rejected")));
+    final SafeFuture<List<SubmitCommitteeSignatureError>> result =
+        validatorApiHandler.sendSyncCommitteeSignatures(signatures);
+    assertThat(result)
+        .isCompletedWithValue(List.of(new SubmitCommitteeSignatureError(UInt64.ZERO, "Rejected")));
+    verify(performanceTracker, never()).saveProducedSyncCommitteeSignature(signature);
+  }
+
+  @Test
+  void sendSignedContributionAndProofs_shouldAllowEmptyRequest() {
+    final SafeFuture<Void> result =
+        validatorApiHandler.sendSignedContributionAndProofs(emptyList());
+    assertThat(result).isCompleted();
+  }
+
+  @Test
+  void sendSignedContributionAndProofs_shouldAddContributionsToPool() {
+    final SignedContributionAndProof contribution =
+        dataStructureUtil.randomSignedContributionAndProof(5);
+    when(syncCommitteeContributionPool.add(any()))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+
+    final SafeFuture<Void> result =
+        validatorApiHandler.sendSignedContributionAndProofs(List.of(contribution));
+    assertThat(result).isCompleted();
+  }
+
+  @Test
+  void sendSignedContributionAndProofs_shouldReportErrors() {
+    final SignedContributionAndProof contribution1 =
+        dataStructureUtil.randomSignedContributionAndProof(5);
+    final SignedContributionAndProof contribution2 =
+        dataStructureUtil.randomSignedContributionAndProof(5);
+    when(syncCommitteeContributionPool.add(contribution1))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                InternalValidationResult.create(ValidationResultCode.REJECT, "Bad")));
+    when(syncCommitteeContributionPool.add(contribution2))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                InternalValidationResult.create(ValidationResultCode.REJECT, "Worse")));
+
+    final SafeFuture<Void> result =
+        validatorApiHandler.sendSignedContributionAndProofs(List.of(contribution1, contribution2));
+    assertThatSafeFuture(result)
+        .isCompletedExceptionallyWith(IllegalArgumentException.class)
+        .hasMessageContainingAll("Bad", "Worse");
   }
 
   private <T> Optional<T> assertCompletedSuccessfully(final SafeFuture<Optional<T>> result) {

@@ -13,21 +13,23 @@
 
 package tech.pegasys.teku.spec;
 
-import static java.util.stream.Collectors.toList;
-
 import com.google.common.base.Preconditions;
-import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
+import javax.annotation.CheckReturnValue;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
@@ -36,7 +38,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -46,14 +47,15 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateInvariants;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.genesis.GenesisGenerator;
 import tech.pegasys.teku.spec.logic.SpecLogic;
+import tech.pegasys.teku.spec.logic.StateTransition;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
@@ -64,37 +66,64 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
-import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.collections.SszBitlist;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class Spec {
-  // Eventually we will have multiple SpecVersions, where each version is active for a specific
-  // range of epochs
-  private final SpecVersion genesisSpec;
-  private final ForkManifest forkManifest;
+  private final Map<SpecMilestone, SpecVersion> specVersions;
+  private final ForkSchedule forkSchedule;
+  private final StateTransition stateTransition;
 
-  private Spec(final SpecVersion genesisSpec, final ForkManifest forkManifest) {
-    Preconditions.checkArgument(forkManifest != null);
-    Preconditions.checkArgument(genesisSpec != null);
-    this.genesisSpec = genesisSpec;
-    this.forkManifest = forkManifest;
+  private Spec(Map<SpecMilestone, SpecVersion> specVersions, final ForkSchedule forkSchedule) {
+    Preconditions.checkArgument(specVersions != null && specVersions.size() > 0);
+    Preconditions.checkArgument(forkSchedule != null);
+    this.specVersions = specVersions;
+    this.forkSchedule = forkSchedule;
+
+    // Setup state transition
+    this.stateTransition = new StateTransition(this::atSlot);
   }
 
-  public static Spec create(final SpecConfig config, final ForkManifest forkManifest) {
-    final SpecVersion initialSpec =
-        SpecVersion.createForFork(forkManifest.getGenesisFork().getCurrent_version(), config);
-    return new Spec(initialSpec, forkManifest);
+  static Spec create(final SpecConfig config, final SpecMilestone highestMilestoneSupported) {
+    final Map<SpecMilestone, SpecVersion> specVersions = new HashMap<>();
+    final ForkSchedule.Builder forkScheduleBuilder = ForkSchedule.builder();
+
+    for (SpecMilestone milestone : SpecMilestone.getMilestonesUpTo(highestMilestoneSupported)) {
+      SpecVersion.create(milestone, config)
+          .ifPresent(
+              milestoneSpec -> {
+                forkScheduleBuilder.addNextMilestone(milestoneSpec);
+                specVersions.put(milestone, milestoneSpec);
+              });
+    }
+
+    final ForkSchedule forkSchedule = forkScheduleBuilder.build();
+
+    return new Spec(specVersions, forkSchedule);
+  }
+
+  public SpecVersion forMilestone(final SpecMilestone milestone) {
+    return specVersions.get(milestone);
   }
 
   public SpecVersion atEpoch(final UInt64 epoch) {
-    return genesisSpec;
+    return specVersions.get(forkSchedule.getSpecMilestoneAtEpoch(epoch));
   }
 
   public SpecVersion atSlot(final UInt64 slot) {
-    // Calculate using the latest spec
-    final UInt64 epoch = getLatestSpec().miscHelpers().computeEpochAtSlot(slot);
-    return atEpoch(epoch);
+    return specVersions.get(forkSchedule.getSpecMilestoneAtSlot(slot));
+  }
+
+  private SpecVersion atTime(final UInt64 genesisTime, final UInt64 currentTime) {
+    return specVersions.get(forkSchedule.getSpecMilestoneAtTime(genesisTime, currentTime));
+  }
+
+  private SpecVersion specVersionFromForkChoice(ReadOnlyForkChoiceStrategy forkChoiceStrategy) {
+    final UInt64 latestSlot =
+        forkChoiceStrategy.getChainHeads().values().stream()
+            .max(UInt64::compareTo)
+            .orElse(UInt64.MAX_VALUE);
+    return atSlot(latestSlot);
   }
 
   public SpecConfig getSpecConfig(final UInt64 epoch) {
@@ -107,6 +136,14 @@ public class Spec {
 
   public Optional<SyncCommitteeUtil> getSyncCommitteeUtil(final UInt64 slot) {
     return atSlot(slot).getSyncCommitteeUtil();
+  }
+
+  public SyncCommitteeUtil getSyncCommitteeUtilRequired(final UInt64 slot) {
+    return getSyncCommitteeUtil(slot)
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "Fork at slot " + slot + " does not support sync committees"));
   }
 
   public SpecVersion getGenesisSpec() {
@@ -125,14 +162,12 @@ public class Spec {
     return getGenesisSpec().getSchemaDefinitions();
   }
 
-  public ForkManifest getForkManifest() {
-    return forkManifest;
+  public ForkSchedule getForkSchedule() {
+    return forkSchedule;
   }
 
-  public Collection<ForkAndSpecMilestone> getEnabledMilestones() {
-    return forkManifest.getForkSchedule().stream()
-        .map(fork -> new ForkAndSpecMilestone(fork, getMilestoneForFork(fork)))
-        .collect(toList());
+  public List<ForkAndSpecMilestone> getEnabledMilestones() {
+    return forkSchedule.getActiveMilestones();
   }
 
   public Optional<SpecLogic> getSpecLogicForMilestone(SpecMilestone milestone) {
@@ -142,38 +177,23 @@ public class Spec {
         .map(m -> atEpoch(m.getFork().getEpoch()));
   }
 
-  private SpecMilestone getMilestoneForFork(final Fork fork) {
-    final SpecConfig specConfig = getSpecConfig(fork.getEpoch());
-    if (specConfig
-        .toVersionAltair()
-        .map(config -> fork.getCurrent_version().equals(config.getAltairForkVersion()))
-        .orElse(false)) {
-      return SpecMilestone.ALTAIR;
-    } else if (specConfig
-        .toVersionRayonism()
-        .map(config -> fork.getCurrent_version().equals(config.getMergeForkVersion()))
-        .orElse(false)) {
-      return SpecMilestone.MERGE;
-    } else if (fork.getCurrent_version().equals(specConfig.getGenesisForkVersion())) {
-      // Checking Phase 0 at the end to correctly process the case
-      // when another fork is enabled since Genesis
-      return SpecMilestone.PHASE0;
-    } else {
-      throw new UnsupportedOperationException("Unsupported fork scheduled" + fork);
-    }
+  /**
+   * Returns true if the given milestone is at or prior to our highest supported milestone
+   *
+   * @param milestone The milestone to be checked
+   * @return True if the milestone is supported
+   */
+  public boolean isMilestoneSupported(final SpecMilestone milestone) {
+    return forkSchedule.getSupportedMilestones().contains(milestone);
   }
 
   public Fork fork(final UInt64 epoch) {
-    return forkManifest.get(epoch);
+    return forkSchedule.getFork(epoch);
   }
 
   // Config helpers
   public int slotsPerEpoch(final UInt64 epoch) {
     return atEpoch(epoch).getConfig().getSlotsPerEpoch();
-  }
-
-  public Bytes4 domainBeaconProposer(final UInt64 epoch) {
-    return atEpoch(epoch).getConfig().getDomainBeaconProposer();
   }
 
   public long getSlotsPerHistoricalRoot(final UInt64 slot) {
@@ -204,15 +224,23 @@ public class Spec {
     return atSlot(slot).getConfig().getSecondsPerEth1Block();
   }
 
+  public int getSyncCommitteeSize(final UInt64 slot) {
+    return atSlot(slot)
+        .getConfig()
+        .toVersionAltair()
+        .map(SpecConfigAltair::getSyncCommitteeSize)
+        .orElse(0);
+  }
   // Genesis
   public BeaconState initializeBeaconStateFromEth1(
       Bytes32 eth1BlockHash, UInt64 eth1Timestamp, List<? extends Deposit> deposits) {
-    return GenesisGenerator.initializeBeaconStateFromEth1(
-        getGenesisSpec(), eth1BlockHash, eth1Timestamp, deposits);
+    final GenesisGenerator genesisGenerator = createGenesisGenerator();
+    genesisGenerator.updateCandidateState(eth1BlockHash, eth1Timestamp, deposits);
+    return genesisGenerator.getGenesisState();
   }
 
   public GenesisGenerator createGenesisGenerator() {
-    return new GenesisGenerator(getGenesisSpec());
+    return new GenesisGenerator(getGenesisSpec(), forkSchedule.getFork(SpecConfig.GENESIS_EPOCH));
   }
 
   // Serialization
@@ -250,7 +278,7 @@ public class Spec {
   }
 
   public UInt64 computeStartSlotAtEpoch(final UInt64 epoch) {
-    return atEpoch(epoch).getBeaconStateUtil().computeStartSlotAtEpoch(epoch);
+    return atEpoch(epoch).miscHelpers().computeStartSlotAtEpoch(epoch);
   }
 
   public UInt64 computeEpochAtSlot(final UInt64 slot) {
@@ -261,20 +289,50 @@ public class Spec {
     return atSlot(slot).miscHelpers().computeTimeAtSlot(state, slot);
   }
 
+  public Bytes computeSigningRoot(BeaconBlock block, Bytes32 domain) {
+    return atBlock(block).miscHelpers().computeSigningRoot(block, domain);
+  }
+
   public int getBeaconProposerIndex(final BeaconState state, final UInt64 slot) {
     return atState(state).beaconStateAccessors().getBeaconProposerIndex(state, slot);
   }
 
   public UInt64 getCommitteeCountPerSlot(final BeaconState state, final UInt64 epoch) {
-    return atState(state).getBeaconStateUtil().getCommitteeCountPerSlot(state, epoch);
+    return atState(state).beaconStateAccessors().getCommitteeCountPerSlot(state, epoch);
   }
 
   public Bytes32 getBlockRoot(final BeaconState state, final UInt64 epoch) {
-    return atState(state).getBeaconStateUtil().getBlockRoot(state, epoch);
+    return atState(state).beaconStateAccessors().getBlockRoot(state, epoch);
   }
 
   public Bytes32 getBlockRootAtSlot(final BeaconState state, final UInt64 slot) {
-    return atState(state).getBeaconStateUtil().getBlockRootAtSlot(state, slot);
+    return atState(state).beaconStateAccessors().getBlockRootAtSlot(state, slot);
+  }
+
+  public Bytes32 getDomain(
+      final Bytes4 domainType,
+      final UInt64 epoch,
+      final Fork fork,
+      final Bytes32 genesisValidatorsRoot) {
+    return atEpoch(epoch)
+        .beaconStateAccessors()
+        .getDomain(domainType, epoch, fork, genesisValidatorsRoot);
+  }
+
+  public boolean verifyProposerSlashingSignature(
+      BeaconState state,
+      ProposerSlashing proposerSlashing,
+      BLSSignatureVerifier signatureVerifier) {
+    return atState(state)
+        .operationSignatureVerifier()
+        .verifyProposerSlashingSignature(state, proposerSlashing, signatureVerifier);
+  }
+
+  public boolean verifyVoluntaryExitSignature(
+      BeaconState state, SignedVoluntaryExit signedExit, BLSSignatureVerifier signatureVerifier) {
+    return atState(state)
+        .operationSignatureVerifier()
+        .verifyVoluntaryExitSignature(state, signedExit, signatureVerifier);
   }
 
   public Bytes32 getPreviousDutyDependentRoot(BeaconState state) {
@@ -289,13 +347,34 @@ public class Spec {
     return atSlot(slot).getBeaconStateUtil().computeNextEpochBoundary(slot);
   }
 
+  public int computeSubnetForAttestation(final BeaconState state, final Attestation attestation) {
+    return atState(state).getBeaconStateUtil().computeSubnetForAttestation(state, attestation);
+  }
+
+  public int computeSubnetForCommittee(
+      final UInt64 attestationSlot, final UInt64 committeeIndex, final UInt64 committeesPerSlot) {
+    return atSlot(attestationSlot)
+        .getBeaconStateUtil()
+        .computeSubnetForCommittee(attestationSlot, committeeIndex, committeesPerSlot);
+  }
+
+  public UInt64 getEarliestQueryableSlotForBeaconCommitteeInTargetEpoch(final UInt64 epoch) {
+    return atEpoch(epoch)
+        .miscHelpers()
+        .getEarliestQueryableSlotForBeaconCommitteeInTargetEpoch(epoch);
+  }
+
   // ForkChoice utils
   public UInt64 getCurrentSlot(UInt64 currentTime, UInt64 genesisTime) {
-    return getLatestSpec().getForkChoiceUtil().getCurrentSlot(currentTime, genesisTime);
+    return atTime(genesisTime, currentTime)
+        .getForkChoiceUtil()
+        .getCurrentSlot(currentTime, genesisTime);
   }
 
   public UInt64 getCurrentSlot(ReadOnlyStore store) {
-    return getLatestSpec().getForkChoiceUtil().getCurrentSlot(store);
+    return atTime(store.getGenesisTime(), store.getTime())
+        .getForkChoiceUtil()
+        .getCurrentSlot(store);
   }
 
   public UInt64 getSlotStartTime(UInt64 slotNumber, UInt64 genesisTime) {
@@ -304,7 +383,9 @@ public class Spec {
 
   public Optional<Bytes32> getAncestor(
       ReadOnlyForkChoiceStrategy forkChoiceStrategy, Bytes32 root, UInt64 slot) {
-    return getLatestSpec().getForkChoiceUtil().getAncestor(forkChoiceStrategy, root, slot);
+    return specVersionFromForkChoice(forkChoiceStrategy)
+        .getForkChoiceUtil()
+        .getAncestor(forkChoiceStrategy, root, slot);
   }
 
   public NavigableMap<UInt64, Bytes32> getAncestors(
@@ -313,20 +394,20 @@ public class Spec {
       UInt64 startSlot,
       UInt64 step,
       UInt64 count) {
-    return getLatestSpec()
+    return specVersionFromForkChoice(forkChoiceStrategy)
         .getForkChoiceUtil()
         .getAncestors(forkChoiceStrategy, root, startSlot, step, count);
   }
 
   public NavigableMap<UInt64, Bytes32> getAncestorsOnFork(
       ReadOnlyForkChoiceStrategy forkChoiceStrategy, Bytes32 root, UInt64 startSlot) {
-    return getLatestSpec()
+    return specVersionFromForkChoice(forkChoiceStrategy)
         .getForkChoiceUtil()
         .getAncestorsOnFork(forkChoiceStrategy, root, startSlot);
   }
 
   public void onTick(MutableStore store, UInt64 time) {
-    getLatestSpec().getForkChoiceUtil().onTick(store, time);
+    atTime(store.getGenesisTime(), time).getForkChoiceUtil().onTick(store, time);
   }
 
   public AttestationProcessingResult validateAttestation(
@@ -336,6 +417,21 @@ public class Spec {
     return atSlot(validateableAttestation.getAttestation().getData().getSlot())
         .getForkChoiceUtil()
         .validate(store, validateableAttestation, maybeTargetState);
+  }
+
+  public Optional<OperationInvalidReason> validateAttesterSlashing(
+      final BeaconState state, final AttesterSlashing attesterSlashing) {
+    return atState(state).getOperationValidator().validateAttesterSlashing(state, attesterSlashing);
+  }
+
+  public Optional<OperationInvalidReason> validateProposerSlashing(
+      final BeaconState state, final ProposerSlashing proposerSlashing) {
+    return atState(state).getOperationValidator().validateProposerSlashing(state, proposerSlashing);
+  }
+
+  public Optional<OperationInvalidReason> validateVoluntaryExit(
+      final BeaconState state, final SignedVoluntaryExit signedExit) {
+    return atState(state).getOperationValidator().validateVoluntaryExit(state, signedExit);
   }
 
   public BlockImportResult onBlock(
@@ -357,46 +453,9 @@ public class Spec {
         .blockDescendsFromLatestFinalizedBlock(block, store, forkChoiceStrategy);
   }
 
-  // State Transition Utils
-  public BeaconState initiateStateTransition(BeaconState preState, SignedBeaconBlock signedBlock)
-      throws StateTransitionException {
-    return atBlock(signedBlock).getStateTransition().initiate(preState, signedBlock);
-  }
-
-  public BeaconState initiateStateTransition(
-      BeaconState preState, SignedBeaconBlock signedBlock, boolean validateStateRootAndSignatures)
-      throws StateTransitionException {
-    return atBlock(signedBlock)
-        .getStateTransition()
-        .initiate(preState, signedBlock, validateStateRootAndSignatures);
-  }
-
-  public BeaconState initiateStateTransition(
-      BeaconState preState,
-      SignedBeaconBlock signedBlock,
-      boolean validateStateRootAndSignatures,
-      final IndexedAttestationCache indexedAttestationCache)
-      throws StateTransitionException {
-    return atBlock(signedBlock)
-        .getStateTransition()
-        .initiate(preState, signedBlock, validateStateRootAndSignatures, indexedAttestationCache);
-  }
-
-  public BeaconState processAndValidateBlock(
-      final SignedBeaconBlock signedBlock,
-      final IndexedAttestationCache indexedAttestationCache,
-      final BeaconState blockSlotState,
-      final boolean validateStateRootAndSignatures)
-      throws StateTransitionException {
-    return atBlock(signedBlock)
-        .getStateTransition()
-        .processAndValidateBlock(
-            signedBlock, blockSlotState, validateStateRootAndSignatures, indexedAttestationCache);
-  }
-
   public BeaconState processSlots(BeaconState preState, UInt64 slot)
       throws SlotProcessingException, EpochProcessingException {
-    return atSlot(slot).getStateTransition().processSlots(preState, slot);
+    return stateTransition.processSlots(preState, slot);
   }
 
   // Block Proposal
@@ -415,56 +474,44 @@ public class Spec {
 
   // Block Processor Utils
 
+  public BlockProcessor getBlockProcessor(final UInt64 slot) {
+    return atSlot(slot).getBlockProcessor();
+  }
+
+  public BeaconState processBlock(
+      final BeaconState preState,
+      final SignedBeaconBlock block,
+      final BLSSignatureVerifier signatureVerifier)
+      throws StateTransitionException {
+    try {
+      final BeaconState blockSlotState = stateTransition.processSlots(preState, block.getSlot());
+      return getBlockProcessor(block.getSlot())
+          .processAndValidateBlock(
+              block, blockSlotState, IndexedAttestationCache.NOOP, signatureVerifier);
+    } catch (SlotProcessingException | EpochProcessingException e) {
+      throw new StateTransitionException(e);
+    }
+  }
+
+  public BeaconState replayValidatedBlock(final BeaconState preState, final SignedBeaconBlock block)
+      throws StateTransitionException {
+    try {
+      final BeaconState blockSlotState = stateTransition.processSlots(preState, block.getSlot());
+      return getBlockProcessor(block.getSlot())
+          .processUnsignedBlock(
+              blockSlotState,
+              block.getMessage(),
+              IndexedAttestationCache.NOOP,
+              BLSSignatureVerifier.NO_OP);
+    } catch (SlotProcessingException | EpochProcessingException | BlockProcessingException e) {
+      throw new StateTransitionException(e);
+    }
+  }
+
+  @CheckReturnValue
   public Optional<OperationInvalidReason> validateAttestation(
       final BeaconState state, final AttestationData data) {
     return atState(state).getBlockProcessor().validateAttestation(state, data);
-  }
-
-  public void processBlockHeader(MutableBeaconState state, BeaconBlockSummary blockHeader)
-      throws BlockProcessingException {
-    atState(state).getBlockProcessor().processBlockHeader(state, blockHeader);
-  }
-
-  public void processProposerSlashings(
-      MutableBeaconState state, SszList<ProposerSlashing> proposerSlashings)
-      throws BlockProcessingException {
-    atState(state).getBlockProcessor().processProposerSlashings(state, proposerSlashings);
-  }
-
-  public void processAttesterSlashings(
-      MutableBeaconState state, SszList<AttesterSlashing> attesterSlashings)
-      throws BlockProcessingException {
-    atState(state).getBlockProcessor().processAttesterSlashings(state, attesterSlashings);
-  }
-
-  public void processAttestations(MutableBeaconState state, SszList<Attestation> attestations)
-      throws BlockProcessingException {
-    atState(state).getBlockProcessor().processAttestations(state, attestations);
-  }
-
-  public void processSyncAggregate(MutableBeaconState state, SyncAggregate syncAggregate)
-      throws BlockProcessingException {
-    atState(state).getBlockProcessor().processSyncCommittee(state, syncAggregate);
-  }
-
-  public void processAttestations(
-      MutableBeaconState state,
-      SszList<Attestation> attestations,
-      IndexedAttestationCache indexedAttestationCache)
-      throws BlockProcessingException {
-    atState(state)
-        .getBlockProcessor()
-        .processAttestations(state, attestations, indexedAttestationCache);
-  }
-
-  public void processDeposits(MutableBeaconState state, SszList<? extends Deposit> deposits)
-      throws BlockProcessingException {
-    atState(state).getBlockProcessor().processDeposits(state, deposits);
-  }
-
-  public void processVoluntaryExits(MutableBeaconState state, SszList<SignedVoluntaryExit> exits)
-      throws BlockProcessingException {
-    atState(state).getBlockProcessor().processVoluntaryExits(state, exits);
   }
 
   public boolean isEnoughVotesToUpdateEth1Data(
@@ -482,13 +529,16 @@ public class Spec {
     return atEpoch(epoch).beaconStateAccessors().getActiveValidatorIndices(state, epoch);
   }
 
+  public UInt64 getTotalActiveBalance(BeaconState state) {
+    return atState(state).beaconStateAccessors().getTotalActiveBalance(state);
+  }
+
   public int getPreviousEpochAttestationCapacity(final BeaconState state) {
     return atState(state).beaconStateAccessors().getPreviousEpochAttestationCapacity(state);
   }
 
-  // Validator Utils
-  public int countActiveValidators(final BeaconState state, final UInt64 epoch) {
-    return getActiveValidatorIndices(state, epoch).size();
+  public List<Integer> getBeaconCommittee(BeaconState state, UInt64 slot, UInt64 index) {
+    return atState(state).beaconStateAccessors().getBeaconCommittee(state, slot, index);
   }
 
   public Optional<BLSPublicKey> getValidatorPubKey(
@@ -496,9 +546,19 @@ public class Spec {
     return atState(state).beaconStateAccessors().getValidatorPubKey(state, proposerIndex);
   }
 
+  // Validator Utils
+  public int countActiveValidators(final BeaconState state, final UInt64 epoch) {
+    return getActiveValidatorIndices(state, epoch).size();
+  }
+
   public Optional<Integer> getValidatorIndex(
       final BeaconState state, final BLSPublicKey publicKey) {
     return atState(state).getValidatorsUtil().getValidatorIndex(state, publicKey);
+  }
+
+  public Optional<CommitteeAssignment> getCommitteeAssignment(
+      BeaconState state, UInt64 epoch, int validatorIndex) {
+    return atEpoch(epoch).getValidatorsUtil().getCommitteeAssignment(state, epoch, validatorIndex);
   }
 
   // Attestation helpers
@@ -510,11 +570,20 @@ public class Spec {
   public AttestationData getGenericAttestationData(
       final UInt64 slot,
       final BeaconState state,
-      final BeaconBlock block,
+      final BeaconBlockSummary block,
       final UInt64 committeeIndex) {
     return atSlot(slot)
         .getAttestationUtil()
         .getGenericAttestationData(slot, state, block, committeeIndex);
+  }
+
+  public AttestationProcessingResult isValidIndexedAttestation(
+      BeaconState state,
+      ValidateableAttestation attestation,
+      BLSSignatureVerifier blsSignatureVerifier) {
+    return atState(state)
+        .getAttestationUtil()
+        .isValidIndexedAttestation(state, attestation, blsSignatureVerifier);
   }
 
   // Private helpers
@@ -526,21 +595,16 @@ public class Spec {
     return atSlot(blockSummary.getSlot());
   }
 
-  private SpecVersion getLatestSpec() {
-    // When fork manifest is non-empty, we should pull the newest spec here
-    return genesisSpec;
-  }
-
   @Override
   public boolean equals(final Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     final Spec spec = (Spec) o;
-    return Objects.equals(forkManifest, spec.forkManifest);
+    return Objects.equals(forkSchedule, spec.forkSchedule);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(forkManifest);
+    return Objects.hash(forkSchedule);
   }
 }

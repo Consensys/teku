@@ -22,12 +22,15 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.ChainBuilder;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class StateCacheTest {
 
-  private final ChainBuilder chainBuilder = ChainBuilder.createDefault();
+  private final Spec spec = TestSpecFactory.createDefault();
+  private final ChainBuilder chainBuilder = ChainBuilder.create(spec);
 
   private final int chainSize = 10;
   private final int maxSize = 2;

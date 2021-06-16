@@ -17,8 +17,8 @@ import com.google.common.base.Suppliers;
 import java.time.Duration;
 import java.util.function.Supplier;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.util.config.Constants;
 
 class ScoringConfig {
@@ -44,6 +44,7 @@ class ScoringConfig {
 
   private final Spec spec;
   private final SpecConfig genesisConfig;
+  private final SpecVersion genesisSpec;
   private final Duration slotDuration;
   private final Duration epochDuration;
 
@@ -54,8 +55,10 @@ class ScoringConfig {
 
   private ScoringConfig(final Spec spec, final int d) {
     this.spec = spec;
-    // TODO(#3356) Use spec provider through-out rather than relying only on genesis constants
+    // TODO(#3356) Use spec provider through-out rather than relying only on genesis constants and
+    //  genesis spec
     this.genesisConfig = spec.getGenesisSpecConfig();
+    this.genesisSpec = spec.getGenesisSpec();
     this.d = d;
 
     this.slotDuration = Duration.ofSeconds(this.genesisConfig.getSecondsPerSlot());
@@ -142,7 +145,8 @@ class ScoringConfig {
 
   public double getAggregatorsPerSlot(final int activeValidatorCount) {
     final int committeesPerEpoch =
-        spec.getGenesisBeaconStateUtil()
+        spec.getGenesisSpec()
+            .beaconStateAccessors()
             .getCommitteeCountPerSlot(activeValidatorCount)
             .times(genesisConfig.getSlotsPerEpoch())
             .intValue();
@@ -156,8 +160,10 @@ class ScoringConfig {
     final int smallCommitteesPerEpoch = committeesPerEpoch - largeCommitteesPerEpoch;
 
     // Calculate aggregators per epoch
-    final int smallAggregatorModulo = CommitteeUtil.getAggregatorModulo(smallCommitteeSize);
-    final int largeAggregatorModulo = CommitteeUtil.getAggregatorModulo(largeCommitteeSize);
+    final int smallAggregatorModulo =
+        genesisSpec.getValidatorsUtil().getAggregatorModulo(smallCommitteeSize);
+    final int largeAggregatorModulo =
+        genesisSpec.getValidatorsUtil().getAggregatorModulo(largeCommitteeSize);
     final int smallCommitteeAggregatorPerEpoch =
         smallCommitteeSize / smallAggregatorModulo * smallCommitteesPerEpoch;
     final int largeCommitteeAggregatorPerEpoch =
@@ -168,7 +174,8 @@ class ScoringConfig {
   }
 
   public int getCommitteesPerSlot(final int activeValidatorCount) {
-    return spec.getGenesisBeaconStateUtil()
+    return spec.getGenesisSpec()
+        .beaconStateAccessors()
         .getCommitteeCountPerSlot(activeValidatorCount)
         .intValue();
   }

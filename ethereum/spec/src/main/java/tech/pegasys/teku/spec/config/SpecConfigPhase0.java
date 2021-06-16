@@ -21,8 +21,9 @@ import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class SpecConfigPhase0 implements SpecConfig {
   private final Map<String, Object> rawConfig;
-  private final String configName;
 
+  // Constants
+  private final Bytes blsWithdrawalPrefix = Bytes.fromHexString("0x00");
   private final UInt64 baseRewardsPerEpoch = UInt64.valueOf(4);
   private final int depositContractTreeDepth = 32;
   private final int justificationBitsLength = 4;
@@ -50,7 +51,6 @@ public class SpecConfigPhase0 implements SpecConfig {
 
   // Initial values
   private final Bytes4 genesisForkVersion;
-  private final Bytes blsWithdrawalPrefix;
 
   // Time parameters
   private final UInt64 genesisDelay;
@@ -85,20 +85,8 @@ public class SpecConfigPhase0 implements SpecConfig {
   private final int maxDeposits;
   private final int maxVoluntaryExits;
 
-  // Signature domains
-  private final Bytes4 domainBeaconProposer;
-  private final Bytes4 domainBeaconAttester;
-  private final Bytes4 domainRandao;
-  private final Bytes4 domainDeposit;
-  private final Bytes4 domainVoluntaryExit;
-  private final Bytes4 domainSelectionProof;
-  private final Bytes4 domainAggregateAndProof;
-
   // Validator
-  private final int targetAggregatorsPerCommittee;
   private final UInt64 secondsPerEth1Block;
-  private final int randomSubnetsPerValidator;
-  private final int epochsPerRandomSubnetSubscription;
 
   // Fork Choice
   private final int safeSlotsToUpdateJustified;
@@ -110,7 +98,6 @@ public class SpecConfigPhase0 implements SpecConfig {
 
   public SpecConfigPhase0(
       final Map<String, Object> rawConfig,
-      final String configName,
       final UInt64 eth1FollowDistance,
       final int maxCommitteesPerSlot,
       final int targetCommitteeSize,
@@ -129,7 +116,6 @@ public class SpecConfigPhase0 implements SpecConfig {
       final UInt64 ejectionBalance,
       final UInt64 effectiveBalanceIncrement,
       final Bytes4 genesisForkVersion,
-      final Bytes blsWithdrawalPrefix,
       final UInt64 genesisDelay,
       final int secondsPerSlot,
       final int minAttestationInclusionDelay,
@@ -155,23 +141,12 @@ public class SpecConfigPhase0 implements SpecConfig {
       final int maxAttestations,
       final int maxDeposits,
       final int maxVoluntaryExits,
-      final Bytes4 domainBeaconProposer,
-      final Bytes4 domainBeaconAttester,
-      final Bytes4 domainRandao,
-      final Bytes4 domainDeposit,
-      final Bytes4 domainVoluntaryExit,
-      final Bytes4 domainSelectionProof,
-      final Bytes4 domainAggregateAndProof,
-      final int targetAggregatorsPerCommittee,
       final UInt64 secondsPerEth1Block,
-      final int randomSubnetsPerValidator,
-      final int epochsPerRandomSubnetSubscription,
       final int safeSlotsToUpdateJustified,
       final int depositChainId,
       final int depositNetworkId,
       final Bytes depositContractAddress) {
     this.rawConfig = rawConfig;
-    this.configName = configName;
     this.eth1FollowDistance = eth1FollowDistance;
     this.maxCommitteesPerSlot = maxCommitteesPerSlot;
     this.targetCommitteeSize = targetCommitteeSize;
@@ -190,7 +165,6 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.ejectionBalance = ejectionBalance;
     this.effectiveBalanceIncrement = effectiveBalanceIncrement;
     this.genesisForkVersion = genesisForkVersion;
-    this.blsWithdrawalPrefix = blsWithdrawalPrefix;
     this.genesisDelay = genesisDelay;
     this.secondsPerSlot = secondsPerSlot;
     this.minAttestationInclusionDelay = minAttestationInclusionDelay;
@@ -216,17 +190,7 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.maxAttestations = maxAttestations;
     this.maxDeposits = maxDeposits;
     this.maxVoluntaryExits = maxVoluntaryExits;
-    this.domainBeaconProposer = domainBeaconProposer;
-    this.domainBeaconAttester = domainBeaconAttester;
-    this.domainRandao = domainRandao;
-    this.domainDeposit = domainDeposit;
-    this.domainVoluntaryExit = domainVoluntaryExit;
-    this.domainSelectionProof = domainSelectionProof;
-    this.domainAggregateAndProof = domainAggregateAndProof;
-    this.targetAggregatorsPerCommittee = targetAggregatorsPerCommittee;
     this.secondsPerEth1Block = secondsPerEth1Block;
-    this.randomSubnetsPerValidator = randomSubnetsPerValidator;
-    this.epochsPerRandomSubnetSubscription = epochsPerRandomSubnetSubscription;
     this.safeSlotsToUpdateJustified = safeSlotsToUpdateJustified;
     this.depositChainId = depositChainId;
     this.depositNetworkId = depositNetworkId;
@@ -236,11 +200,6 @@ public class SpecConfigPhase0 implements SpecConfig {
   @Override
   public Map<String, Object> getRawConfig() {
     return rawConfig;
-  }
-
-  @Override
-  public String getConfigName() {
-    return configName;
   }
 
   @Override
@@ -479,58 +438,8 @@ public class SpecConfigPhase0 implements SpecConfig {
   }
 
   @Override
-  public Bytes4 getDomainBeaconProposer() {
-    return domainBeaconProposer;
-  }
-
-  @Override
-  public Bytes4 getDomainBeaconAttester() {
-    return domainBeaconAttester;
-  }
-
-  @Override
-  public Bytes4 getDomainRandao() {
-    return domainRandao;
-  }
-
-  @Override
-  public Bytes4 getDomainDeposit() {
-    return domainDeposit;
-  }
-
-  @Override
-  public Bytes4 getDomainVoluntaryExit() {
-    return domainVoluntaryExit;
-  }
-
-  @Override
-  public Bytes4 getDomainSelectionProof() {
-    return domainSelectionProof;
-  }
-
-  @Override
-  public Bytes4 getDomainAggregateAndProof() {
-    return domainAggregateAndProof;
-  }
-
-  @Override
-  public int getTargetAggregatorsPerCommittee() {
-    return targetAggregatorsPerCommittee;
-  }
-
-  @Override
   public UInt64 getSecondsPerEth1Block() {
     return secondsPerEth1Block;
-  }
-
-  @Override
-  public int getRandomSubnetsPerValidator() {
-    return randomSubnetsPerValidator;
-  }
-
-  @Override
-  public int getEpochsPerRandomSubnetSubscription() {
-    return epochsPerRandomSubnetSubscription;
   }
 
   @Override
@@ -588,14 +497,10 @@ public class SpecConfigPhase0 implements SpecConfig {
         && maxAttestations == that.maxAttestations
         && maxDeposits == that.maxDeposits
         && maxVoluntaryExits == that.maxVoluntaryExits
-        && targetAggregatorsPerCommittee == that.targetAggregatorsPerCommittee
-        && randomSubnetsPerValidator == that.randomSubnetsPerValidator
-        && epochsPerRandomSubnetSubscription == that.epochsPerRandomSubnetSubscription
         && safeSlotsToUpdateJustified == that.safeSlotsToUpdateJustified
         && depositChainId == that.depositChainId
         && depositNetworkId == that.depositNetworkId
         && Objects.equals(baseRewardsPerEpoch, that.baseRewardsPerEpoch)
-        && Objects.equals(configName, that.configName)
         && Objects.equals(eth1FollowDistance, that.eth1FollowDistance)
         && Objects.equals(minGenesisTime, that.minGenesisTime)
         && Objects.equals(hysteresisQuotient, that.hysteresisQuotient)
@@ -612,13 +517,6 @@ public class SpecConfigPhase0 implements SpecConfig {
         && Objects.equals(shardCommitteePeriod, that.shardCommitteePeriod)
         && Objects.equals(proposerRewardQuotient, that.proposerRewardQuotient)
         && Objects.equals(inactivityPenaltyQuotient, that.inactivityPenaltyQuotient)
-        && Objects.equals(domainBeaconProposer, that.domainBeaconProposer)
-        && Objects.equals(domainBeaconAttester, that.domainBeaconAttester)
-        && Objects.equals(domainRandao, that.domainRandao)
-        && Objects.equals(domainDeposit, that.domainDeposit)
-        && Objects.equals(domainVoluntaryExit, that.domainVoluntaryExit)
-        && Objects.equals(domainSelectionProof, that.domainSelectionProof)
-        && Objects.equals(domainAggregateAndProof, that.domainAggregateAndProof)
         && Objects.equals(secondsPerEth1Block, that.secondsPerEth1Block)
         && Objects.equals(depositContractAddress, that.depositContractAddress);
   }
@@ -629,7 +527,6 @@ public class SpecConfigPhase0 implements SpecConfig {
         baseRewardsPerEpoch,
         depositContractTreeDepth,
         justificationBitsLength,
-        configName,
         eth1FollowDistance,
         maxCommitteesPerSlot,
         targetCommitteeSize,
@@ -674,17 +571,7 @@ public class SpecConfigPhase0 implements SpecConfig {
         maxAttestations,
         maxDeposits,
         maxVoluntaryExits,
-        domainBeaconProposer,
-        domainBeaconAttester,
-        domainRandao,
-        domainDeposit,
-        domainVoluntaryExit,
-        domainSelectionProof,
-        domainAggregateAndProof,
-        targetAggregatorsPerCommittee,
         secondsPerEth1Block,
-        randomSubnetsPerValidator,
-        epochsPerRandomSubnetSubscription,
         safeSlotsToUpdateJustified,
         depositChainId,
         depositNetworkId,

@@ -16,29 +16,31 @@ package tech.pegasys.teku.storage.server;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class DatabaseVersionTest {
   @Test
-  public void defaultVersion() {
-    assertThat(DatabaseVersion.DEFAULT_VERSION).isEqualTo(DatabaseVersion.V5);
+  void defaultVersion() {
+    assertThat(DatabaseVersion.DEFAULT_VERSION).isEqualTo(DatabaseVersion.LEVELDB2);
   }
 
-  @Test
-  public void shouldAcceptV6FromString() {
-    Optional<DatabaseVersion> data = DatabaseVersion.fromString("6");
-    assertThat(data).contains(DatabaseVersion.V6);
+  @ParameterizedTest
+  @MethodSource("databaseVersions")
+  void shouldAcceptVersionAsString(final String input, final DatabaseVersion expected) {
+    final Optional<DatabaseVersion> result = DatabaseVersion.fromString(input);
+    assertThat(result).contains(expected);
   }
 
-  @Test
-  public void shouldAcceptV5FromString() {
-    Optional<DatabaseVersion> data = DatabaseVersion.fromString("5");
-    assertThat(data).contains(DatabaseVersion.V5);
-  }
-
-  @Test
-  public void shouldAcceptV4FromString() {
-    Optional<DatabaseVersion> data = DatabaseVersion.fromString("4");
-    assertThat(data).contains(DatabaseVersion.V4);
+  static Stream<Arguments> databaseVersions() {
+    return Stream.of(
+        Arguments.of("4", DatabaseVersion.V4),
+        Arguments.of("5", DatabaseVersion.V5),
+        Arguments.of("6", DatabaseVersion.V6),
+        Arguments.of("leveldb1", DatabaseVersion.LEVELDB1),
+        Arguments.of("leveldb2", DatabaseVersion.LEVELDB2));
   }
 }

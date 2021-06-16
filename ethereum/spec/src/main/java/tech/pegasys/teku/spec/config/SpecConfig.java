@@ -36,8 +36,6 @@ public interface SpecConfig {
 
   Map<String, Object> getRawConfig();
 
-  String getConfigName();
-
   UInt64 getBaseRewardsPerEpoch();
 
   int getDepositContractTreeDepth();
@@ -132,27 +130,7 @@ public interface SpecConfig {
 
   int getMaxVoluntaryExits();
 
-  Bytes4 getDomainBeaconProposer();
-
-  Bytes4 getDomainBeaconAttester();
-
-  Bytes4 getDomainRandao();
-
-  Bytes4 getDomainDeposit();
-
-  Bytes4 getDomainVoluntaryExit();
-
-  Bytes4 getDomainSelectionProof();
-
-  Bytes4 getDomainAggregateAndProof();
-
-  int getTargetAggregatorsPerCommittee();
-
   UInt64 getSecondsPerEth1Block();
-
-  int getRandomSubnetsPerValidator();
-
-  int getEpochsPerRandomSubnetSubscription();
 
   int getSafeSlotsToUpdateJustified();
 
@@ -166,7 +144,7 @@ public interface SpecConfig {
     return Optional.empty();
   }
 
-  default Optional<SpecConfigRayonism> toVersionRayonism() {
+  default Optional<SpecConfigMerge> toVersionMerge() {
     return Optional.empty();
   }
 }

@@ -37,6 +37,7 @@ import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.services.ServiceController;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.util.config.Constants;
 
 public abstract class AbstractNode implements Node {
@@ -56,6 +57,7 @@ public abstract class AbstractNode implements Node {
     LoggingConfigurator.update(tekuConfig.loggingConfig());
 
     STATUS_LOG.onStartup(VersionProvider.VERSION);
+    reportForkSlotOverrides(tekuConfig);
     this.metricsEndpoint = new MetricsEndpoint(tekuConfig.metricsConfig(), vertx);
     final MetricsSystem metricsSystem = metricsEndpoint.getMetricsSystem();
     final TekuDefaultExceptionHandler subscriberExceptionHandler =
@@ -73,6 +75,19 @@ public abstract class AbstractNode implements Node {
             metricsSystem,
             DataDirLayout.createFrom(tekuConfig.dataConfig()));
     Constants.setConstants(tekuConfig.eth2NetworkConfiguration().getConstants());
+  }
+
+  private void reportForkSlotOverrides(final TekuConfiguration tekuConfig) {
+    tekuConfig
+        .eth2NetworkConfiguration()
+        .getAltairForkEpoch()
+        .ifPresent(
+            forkEpoch -> STATUS_LOG.warnForkEpochChanged(SpecMilestone.ALTAIR.name(), forkEpoch));
+    tekuConfig
+        .eth2NetworkConfiguration()
+        .getMergeForkEpoch()
+        .ifPresent(
+            forkEpoch -> STATUS_LOG.warnForkEpochChanged(SpecMilestone.MERGE.name(), forkEpoch));
   }
 
   protected abstract ServiceController getServiceController();

@@ -90,7 +90,7 @@ public enum BeaconStateFields {
     // Finality
     state.setJustification_bits(source.getJustification_bits());
     state.setPrevious_justified_checkpoint(source.getPrevious_justified_checkpoint());
-    state.setCurrent_justified_checkpoint(source.getPrevious_justified_checkpoint());
+    state.setCurrent_justified_checkpoint(source.getCurrent_justified_checkpoint());
     state.setFinalized_checkpoint(source.getFinalized_checkpoint());
   }
 

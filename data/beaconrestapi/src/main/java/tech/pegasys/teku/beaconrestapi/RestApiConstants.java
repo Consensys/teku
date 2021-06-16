@@ -28,17 +28,20 @@ public class RestApiConstants {
   public static final String SLOT = "slot";
   public static final String EPOCH = "epoch";
   public static final String COMMITTEE_INDEX = "committee_index";
+  public static final String SUBCOMMITTEE_INDEX = "subcommittee_index";
   public static final String RANDAO_REVEAL = "randao_reveal";
   public static final String GRAFFITI = "graffiti";
   public static final String ATTESTATION_DATA_ROOT = "attestation_data_root";
   public static final String INDEX = "index";
   public static final String TOPICS = "topics";
   public static final String PARENT_ROOT = "parent_root";
+  public static final String BEACON_BLOCK_ROOT = "beacon_block_root";
   public static final String STATUS = "status";
 
   public static final String TAG_NODE = "Node";
   public static final String TAG_VALIDATOR = "Validator";
   public static final String TAG_BEACON = "Beacon";
+  public static final String TAG_EXPERIMENTAL = "Experimental";
   public static final String TAG_CONFIG = "Config";
   public static final String TAG_EVENTS = "Events";
   public static final String TAG_VALIDATOR_REQUIRED = "Validator Required Api";
@@ -90,6 +93,10 @@ public class RestApiConstants {
   public static final String PARAM_VALIDATOR_ID = "validator_id";
   public static final String PARAM_VALIDATOR_DESCRIPTION =
       "Either hex encoded public key (with 0x prefix) or validator index";
+
+  public static final String SYNCING_STATUS = "syncing_status";
+  public static final String SYNCING_STATUS_DESCRIPTION =
+      "Customize syncing status instead of deafult " + SC_PARTIAL_CONTENT;
 
   public static final String HEADER_ACCEPT = "Accept";
   public static final String HEADER_ACCEPT_JSON = "application/json";

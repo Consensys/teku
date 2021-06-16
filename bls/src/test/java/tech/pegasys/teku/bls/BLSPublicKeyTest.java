@@ -28,9 +28,12 @@ import org.junit.jupiter.api.Test;
 
 abstract class BLSPublicKeyTest {
 
-  private static final Bytes InfinityPublicKey =
+  private static final Bytes infinityPublicKeyBytes =
       Bytes.fromHexString(
           "0xc00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
+
+  private static final BLSPublicKey infinityPublicKey =
+      BLSPublicKey.fromSSZBytes(infinityPublicKeyBytes);
 
   @Test
   void fromBytesCompressedValidate_okWhenValidBytes() {
@@ -59,9 +62,8 @@ abstract class BLSPublicKeyTest {
 
   @Test
   void succeedsWhenTwoInfinityPublicKeysAreEqual() {
-    // Infinity keys are valid G1 points, so pass the equality test
-    BLSPublicKey publicKey1 = BLSPublicKey.fromSSZBytes(InfinityPublicKey);
-    BLSPublicKey publicKey2 = BLSPublicKey.fromSSZBytes(InfinityPublicKey);
+    BLSPublicKey publicKey1 = new BLSPublicKey(infinityPublicKey.getPublicKey());
+    BLSPublicKey publicKey2 = new BLSPublicKey(infinityPublicKey.getPublicKey());
     assertEquals(publicKey1, publicKey2);
   }
 
@@ -112,7 +114,6 @@ abstract class BLSPublicKeyTest {
 
   @Test
   void succeedsIfDeserializationOfInfinityPublicKeyIsCorrect() {
-    BLSPublicKey infinityPublicKey = BLSPublicKey.fromSSZBytes(InfinityPublicKey);
     byte[] pointBytes = new byte[48];
     pointBytes[0] = (byte) 0xc0;
     Bytes infinityBytesSsz =
@@ -163,7 +164,7 @@ abstract class BLSPublicKeyTest {
 
   @Test
   void succeedsWhenRoundtripSSZReturnsTheInfinityPublicKey() {
-    BLSPublicKey publicKey1 = BLSPublicKey.fromSSZBytes(InfinityPublicKey);
+    BLSPublicKey publicKey1 = infinityPublicKey;
     BLSPublicKey publicKey2 = BLSPublicKey.fromSSZBytes(publicKey1.toSSZBytes());
     assertEquals(publicKey1, publicKey2);
   }
@@ -182,6 +183,36 @@ abstract class BLSPublicKeyTest {
             Bytes48.fromHexString(
                 "0xa6e82f6da4520f85c5d27d8f329eccfa05944fd1096b20734c894966d12a9e2a9a9744529d7212d33883113a0cadb909"));
     assertThat(aggrPk).isEqualTo(aggrPkGolden);
+  }
+
+  @Test
+  void aggregateWithInfinitePubKeyShouldFail() {
+    BLSPublicKey pk =
+        BLSPublicKey.fromBytesCompressedValidate(
+            Bytes48.fromHexString(
+                "0x89ece308f9d1f0131765212deca99697b112d61f9be9a5f1f3780a51335b3ff981747a0b2ca2179b96d2c0c9024e5224"));
+
+    BLSPublicKey aggrPk = BLSPublicKey.aggregate(List.of(pk, infinityPublicKey));
+
+    assertThat(aggrPk).isEqualTo(infinityPublicKey);
+  }
+
+  @Test
+  void aggregateWithNotInGroupPubKeyShouldFail() {
+    // This one is in the G1 group
+    BLSPublicKey pk1 =
+        BLSPublicKey.fromBytesCompressedValidate(
+            Bytes48.fromHexString(
+                "0x89ece308f9d1f0131765212deca99697b112d61f9be9a5f1f3780a51335b3ff981747a0b2ca2179b96d2c0c9024e5224"));
+    // This one is on the curve but not in the G1 group
+    BLSPublicKey pk2 =
+        BLSPublicKey.fromBytesCompressed(
+            Bytes48.fromHexString(
+                "0x800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004"));
+
+    BLSPublicKey aggrPk = BLSPublicKey.aggregate(List.of(pk1, pk2));
+
+    assertThat(aggrPk).isEqualTo(infinityPublicKey);
   }
 
   @Test

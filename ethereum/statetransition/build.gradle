@@ -2,6 +2,7 @@ dependencies {
   implementation project(':bls')
   implementation project(':data')
   implementation project(':ethereum:core')
+  implementation project(':ethereum:pow:api')
   implementation project(':ethereum:spec')
   implementation project(':ethereum:weaksubjectivity')
   implementation project(':infrastructure:async')
@@ -30,6 +31,7 @@ dependencies {
   testImplementation testFixtures(project(':ethereum:networks'))
   testImplementation testFixtures(project(':ethereum:weaksubjectivity'))
   testImplementation testFixtures(project(':infrastructure:async'))
+  testImplementation testFixtures(project(':infrastructure:time'))
   testImplementation testFixtures(project(':util'))
   testImplementation testFixtures(project(':storage'))
   testImplementation 'org.hyperledger.besu.internal:metrics-core'

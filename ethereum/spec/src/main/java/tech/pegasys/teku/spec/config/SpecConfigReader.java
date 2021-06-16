@@ -18,6 +18,8 @@ import static tech.pegasys.teku.spec.config.SpecConfigFormatter.camelToSnakeCase
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
@@ -29,16 +31,52 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.config.SpecConfigBuilder.RayonismBuilder;
+import tech.pegasys.teku.spec.config.SpecConfigBuilder.MergeBuilder;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class SpecConfigReader {
+  private static final Logger LOG = LogManager.getLogger();
+  private static final String PRESET_KEY = "PRESET_BASE";
+  private static final String CONFIG_NAME_KEY = "CONFIG_NAME";
+  private static final ImmutableSet<String> KEYS_TO_IGNORE =
+      ImmutableSet.of(
+          PRESET_KEY,
+          CONFIG_NAME_KEY,
+          // Unsupported, upcoming fork-related keys
+          "MERGE_FORK_VERSION",
+          "MERGE_FORK_EPOCH",
+          "SHARDING_FORK_VERSION",
+          "SHARDING_FORK_EPOCH",
+          "TRANSITION_TOTAL_DIFFICULTY");
+  private static final ImmutableSet<String> CONSTANT_KEYS =
+      ImmutableSet.of(
+          // Phase0 constants which may exist in legacy config files, but should now be ignored
+          "BLS_WITHDRAWAL_PREFIX",
+          "TARGET_AGGREGATORS_PER_COMMITTEE",
+          "RANDOM_SUBNETS_PER_VALIDATOR",
+          "EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION",
+          "DOMAIN_BEACON_PROPOSER",
+          "DOMAIN_BEACON_ATTESTER",
+          "DOMAIN_RANDAO",
+          "DOMAIN_DEPOSIT",
+          "DOMAIN_VOLUNTARY_EXIT",
+          "DOMAIN_SELECTION_PROOF",
+          "DOMAIN_AGGREGATE_AND_PROOF",
+          // Altair constants
+          "DOMAIN_SYNC_COMMITTEE",
+          "DOMAIN_CONTRIBUTION_AND_PROOF",
+          "TARGET_AGGREGATORS_PER_SYNC_SUBCOMMITTEE",
+          "DOMAIN_SYNC_COMMITTEE_SELECTION_PROOF");
+
   private final ImmutableMap<Class<?>, Function<Object, ?>> parsers =
       ImmutableMap.<Class<?>, Function<Object, ?>>builder()
           .put(Integer.TYPE, this::parseInt)
@@ -64,21 +102,52 @@ public class SpecConfigReader {
     return build();
   }
 
-  public void read(final InputStream source) throws IOException {
+  /**
+   * Reads and processes the resource, returns any referenced "preset" to be processed if a preset
+   * field is set
+   *
+   * @param source The source to read
+   * @return An optional value containing any declared preset if it is specified in this source
+   * @throws IOException Thrown if an error occurs reading the source
+   */
+  public Optional<String> read(final InputStream source) throws IOException {
     final Map<String, Object> rawValues = readValues(source);
+    loadFromMap(rawValues);
+    return Optional.ofNullable(rawValues.get(PRESET_KEY)).map(this::castPresetValue);
+  }
+
+  private String castPresetValue(final Object preset) {
+    if (!(preset instanceof String)) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Unable to parse config field '%s' (value = '%s') as a string", PRESET_KEY, preset));
+    }
+    return (String) preset;
+  }
+
+  public void loadFromMap(final Map<String, ?> rawValues) {
     processSeenValues(rawValues);
-    final Map<String, Object> unprocessConfig = new HashMap<>(rawValues);
+    final Map<String, Object> unprocessedConfig = new HashMap<>(rawValues);
+    final Map<String, Object> apiSpecConfig = new HashMap<>(rawValues);
+    // Remove any keys that we're ignoring
+    KEYS_TO_IGNORE.forEach(
+        key -> {
+          unprocessedConfig.remove(key);
+          if (!key.equals(PRESET_KEY) && !key.equals(CONFIG_NAME_KEY)) {
+            apiSpecConfig.remove(key);
+          }
+        });
 
     // Process phase0 config
-    configBuilder.rawConfig(rawValues);
+    configBuilder.rawConfig(apiSpecConfig);
     streamConfigSetters(configBuilder.getClass())
         .forEach(
             setter -> {
               final String constantKey = camelToSnakeCase(setter.getName());
-              final Object rawValue = unprocessConfig.get(constantKey);
+              final Object rawValue = unprocessedConfig.get(constantKey);
               invokeSetter(
                   setter, BuilderSupplier.fromBuilder(configBuilder), constantKey, rawValue);
-              unprocessConfig.remove(constantKey);
+              unprocessedConfig.remove(constantKey);
             });
 
     // Process altair config
@@ -86,28 +155,38 @@ public class SpecConfigReader {
         .forEach(
             setter -> {
               final String constantKey = camelToSnakeCase(setter.getName());
-              final Object rawValue = unprocessConfig.get(constantKey);
+              final Object rawValue = unprocessedConfig.get(constantKey);
               invokeSetter(setter, configBuilder::altairBuilder, constantKey, rawValue);
-              unprocessConfig.remove(constantKey);
+              unprocessedConfig.remove(constantKey);
             });
 
     // Process merge config
-    streamConfigSetters(RayonismBuilder.class)
+    streamConfigSetters(MergeBuilder.class)
         .forEach(
             setter -> {
               final String constantKey = camelToSnakeCase(setter.getName());
-              final Object rawValue = unprocessConfig.get(constantKey);
-              invokeSetter(setter, configBuilder::rayonismBuilder, constantKey, rawValue);
-              unprocessConfig.remove(constantKey);
+              final Object rawValue = unprocessedConfig.get(constantKey);
+              invokeSetter(setter, configBuilder::mergeBuilder, constantKey, rawValue);
+              unprocessedConfig.remove(constantKey);
             });
 
-    if (unprocessConfig.size() > 0) {
-      final String unknownKeys = String.join(",", unprocessConfig.keySet());
+    // Check any constants that have been configured and then ignore
+    final Set<String> configuredConstants =
+        Sets.intersection(CONSTANT_KEYS, unprocessedConfig.keySet());
+    if (configuredConstants.size() > 0) {
+      LOG.info(
+          "Ignoring non-configurable constants supplied in network configuration: {}",
+          String.join(", ", configuredConstants));
+    }
+    CONSTANT_KEYS.forEach(unprocessedConfig::remove);
+
+    if (unprocessedConfig.size() > 0) {
+      final String unknownKeys = String.join(",", unprocessedConfig.keySet());
       throw new IllegalArgumentException("Detected unknown spec config entries: " + unknownKeys);
     }
   }
 
-  private void processSeenValues(final Map<String, Object> rawValues) {
+  private void processSeenValues(final Map<String, ? extends Object> rawValues) {
     if (seenValues.isEmpty()) {
       seenValues.putAll(rawValues);
       return;

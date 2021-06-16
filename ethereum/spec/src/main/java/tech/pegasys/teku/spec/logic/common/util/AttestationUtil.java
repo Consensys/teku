@@ -28,7 +28,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -46,18 +46,11 @@ public class AttestationUtil {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private final SpecConfig specConfig;
-  private final BeaconStateUtil beaconStateUtil;
   private final BeaconStateAccessors beaconStateAccessors;
   private final MiscHelpers miscHelpers;
 
   public AttestationUtil(
-      final SpecConfig specConfig,
-      final BeaconStateUtil beaconStateUtil,
-      final BeaconStateAccessors beaconStateAccessors,
-      final MiscHelpers miscHelpers) {
-    this.specConfig = specConfig;
-    this.beaconStateUtil = beaconStateUtil;
+      final BeaconStateAccessors beaconStateAccessors, final MiscHelpers miscHelpers) {
     this.beaconStateAccessors = beaconStateAccessors;
     this.miscHelpers = miscHelpers;
   }
@@ -120,7 +113,7 @@ public class AttestationUtil {
   public IntStream streamAttestingIndices(
       BeaconState state, AttestationData data, SszBitlist bits) {
     List<Integer> committee =
-        beaconStateUtil.getBeaconCommittee(state, data.getSlot(), data.getIndex());
+        beaconStateAccessors.getBeaconCommittee(state, data.getSlot(), data.getIndex());
     checkArgument(
         bits.size() == committee.size(),
         "Aggregation bitlist size (%s) does not match committee size (%s)",
@@ -131,6 +124,13 @@ public class AttestationUtil {
 
   public AttestationProcessingResult isValidIndexedAttestation(
       BeaconState state, ValidateableAttestation attestation) {
+    return isValidIndexedAttestation(state, attestation, BLSSignatureVerifier.SIMPLE);
+  }
+
+  public AttestationProcessingResult isValidIndexedAttestation(
+      BeaconState state,
+      ValidateableAttestation attestation,
+      BLSSignatureVerifier blsSignatureVerifier) {
     if (attestation.isValidIndexedAttestation()) {
       return AttestationProcessingResult.SUCCESSFUL;
     } else {
@@ -139,7 +139,7 @@ public class AttestationUtil {
             getIndexedAttestation(state, attestation.getAttestation());
         attestation.setIndexedAttestation(indexedAttestation);
         AttestationProcessingResult result =
-            isValidIndexedAttestation(state, indexedAttestation, BLSSignatureVerifier.SIMPLE);
+            isValidIndexedAttestation(state, indexedAttestation, blsSignatureVerifier);
         if (result.isSuccessful()) {
           attestation.saveCommitteeShufflingSeed(state);
           attestation.setValidIndexedAttestation();
@@ -188,11 +188,9 @@ public class AttestationUtil {
 
     BLSSignature signature = indexed_attestation.getSignature();
     Bytes32 domain =
-        beaconStateUtil.getDomain(
-            state,
-            specConfig.getDomainBeaconAttester(),
-            indexed_attestation.getData().getTarget().getEpoch());
-    Bytes signing_root = beaconStateUtil.computeSigningRoot(indexed_attestation.getData(), domain);
+        beaconStateAccessors.getDomain(
+            state, Domain.BEACON_ATTESTER, indexed_attestation.getData().getTarget().getEpoch());
+    Bytes signing_root = miscHelpers.computeSigningRoot(indexed_attestation.getData(), domain);
 
     if (!signatureVerifier.verify(pubkeys, signing_root, signature)) {
       LOG.debug("AttestationUtil.is_valid_indexed_attestation: Verify aggregate signature");
@@ -223,11 +221,11 @@ public class AttestationUtil {
     UInt64 epoch = miscHelpers.computeEpochAtSlot(slot);
     // Get variables necessary that can be shared among Attestations of all validators
     Bytes32 beacon_block_root = block.getRoot();
-    UInt64 start_slot = beaconStateUtil.computeStartSlotAtEpoch(epoch);
+    UInt64 start_slot = miscHelpers.computeStartSlotAtEpoch(epoch);
     Bytes32 epoch_boundary_block_root =
         start_slot.compareTo(slot) == 0 || state.getSlot().compareTo(start_slot) <= 0
             ? block.getRoot()
-            : beaconStateUtil.getBlockRootAtSlot(state, start_slot);
+            : beaconStateAccessors.getBlockRootAtSlot(state, start_slot);
     Checkpoint source = state.getCurrent_justified_checkpoint();
     Checkpoint target = new Checkpoint(epoch, epoch_boundary_block_root);
 

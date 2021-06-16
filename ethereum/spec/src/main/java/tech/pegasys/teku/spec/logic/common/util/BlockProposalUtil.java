@@ -17,26 +17,28 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.logic.common.statetransition.StateTransition;
+import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class BlockProposalUtil {
 
-  private final StateTransition stateTransition;
+  private final BlockProcessor blockProcessor;
   private final SchemaDefinitions schemaDefinitions;
 
   public BlockProposalUtil(
-      final SchemaDefinitions schemaDefinitions, final StateTransition stateTransition) {
+      final SchemaDefinitions schemaDefinitions, final BlockProcessor blockProcessor) {
     this.schemaDefinitions = schemaDefinitions;
-    this.stateTransition = stateTransition;
+    this.blockProcessor = blockProcessor;
   }
 
   public BeaconBlockAndState createNewUnsignedBlock(
@@ -69,8 +71,11 @@ public class BlockProposalUtil {
                 beaconBlockBody);
 
     // Run state transition and set state root
+    // Skip verifying signatures as all operations are coming from our own pools.
     try {
-      final BeaconState newState = stateTransition.processBlock(blockSlotState, newBlock);
+      final BeaconState newState =
+          blockProcessor.processUnsignedBlock(
+              blockSlotState, newBlock, IndexedAttestationCache.NOOP, BLSSignatureVerifier.NO_OP);
 
       Bytes32 stateRoot = newState.hashTreeRoot();
       BeaconBlock newCompleteBlock = newBlock.withStateRoot(stateRoot);

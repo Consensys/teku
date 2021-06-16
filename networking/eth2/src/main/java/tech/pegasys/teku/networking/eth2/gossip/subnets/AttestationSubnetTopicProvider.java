@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
-import static tech.pegasys.teku.networking.eth2.gossip.topics.TopicNames.getAttestationSubnetTopic;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopics.getAttestationSubnetTopic;
 
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.ssz.type.Bytes4;
@@ -30,7 +30,7 @@ public class AttestationSubnetTopicProvider {
   }
 
   public String getTopicForSubnet(final int subnetId) {
-    final Bytes4 forkDigest = recentChainData.getHeadForkInfo().orElseThrow().getForkDigest();
+    final Bytes4 forkDigest = recentChainData.getCurrentForkInfo().orElseThrow().getForkDigest();
     return getAttestationSubnetTopic(forkDigest, subnetId, gossipEncoding);
   }
 }

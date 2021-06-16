@@ -21,16 +21,14 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.rpc.core.Eth2RpcMethod;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
-import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
+import tech.pegasys.teku.networking.eth2.rpc.core.methods.Eth2RpcMethod;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeIdGenerator;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
@@ -41,12 +39,15 @@ import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedSubscriber;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
-import tech.pegasys.teku.networking.p2p.rpc.RpcStream;
+import tech.pegasys.teku.networking.p2p.rpc.RpcResponseHandler;
+import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
+import tech.pegasys.teku.networking.p2p.rpc.RpcStreamController;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.collections.SszBitvector;
@@ -56,6 +57,7 @@ public class RespondingEth2Peer implements Eth2Peer {
   private static final MockNodeIdGenerator idGenerator = new MockNodeIdGenerator();
   private static final Bytes4 forkDigest = Bytes4.fromHexString("0x11223344");
 
+  private final Spec spec;
   private final ChainBuilder chain;
   private final List<ChainBuilder> forks;
 
@@ -72,7 +74,11 @@ public class RespondingEth2Peer implements Eth2Peer {
       Function.identity();
 
   private RespondingEth2Peer(
-      final ChainBuilder chain, final List<ChainBuilder> forks, final PeerStatus status) {
+      final Spec spec,
+      final ChainBuilder chain,
+      final List<ChainBuilder> forks,
+      final PeerStatus status) {
+    this.spec = spec;
     this.chain = chain;
     this.forks = forks;
     this.status = status;
@@ -81,9 +87,9 @@ public class RespondingEth2Peer implements Eth2Peer {
   }
 
   public static RespondingEth2Peer create(
-      final ChainBuilder chain, final ChainBuilder... forkChains) {
+      final Spec spec, final ChainBuilder chain, final ChainBuilder... forkChains) {
     return new RespondingEth2Peer(
-        chain, Arrays.asList(forkChains), createStatus(chain.getLatestBlockAndState()));
+        spec, chain, Arrays.asList(forkChains), createStatus(chain.getLatestBlockAndState()));
   }
 
   private static PeerStatus createStatus(final StateAndBlockSummary head) {
@@ -187,7 +193,7 @@ public class RespondingEth2Peer implements Eth2Peer {
       final UInt64 startSlot,
       final UInt64 count,
       final UInt64 step,
-      final ResponseStreamListener<SignedBeaconBlock> listener) {
+      final RpcResponseListener<SignedBeaconBlock> listener) {
     final long lastSlotExclusive = startSlot.longValue() + count.longValue() * step.longValue();
 
     final PendingBlockRequestHandler<Void> handler =
@@ -204,7 +210,7 @@ public class RespondingEth2Peer implements Eth2Peer {
 
   @Override
   public SafeFuture<Void> requestBlocksByRoot(
-      final List<Bytes32> blockRoots, final ResponseStreamListener<SignedBeaconBlock> listener)
+      final List<Bytes32> blockRoots, final RpcResponseListener<SignedBeaconBlock> listener)
       throws RpcException {
     final PendingBlockRequestHandler<Void> handler =
         PendingBlockRequestHandler.createForBatchRequest(
@@ -246,7 +252,9 @@ public class RespondingEth2Peer implements Eth2Peer {
 
   @Override
   public SafeFuture<MetadataMessage> requestMetadata() {
-    return SafeFuture.completedFuture(MetadataMessage.DEFAULT);
+    final MetadataMessage defaultMetadata =
+        spec.getGenesisSchemaDefinitions().getMetadataMessageSchema().createDefault();
+    return SafeFuture.completedFuture(defaultMetadata);
   }
 
   @Override
@@ -272,7 +280,7 @@ public class RespondingEth2Peer implements Eth2Peer {
   }
 
   @Override
-  public int getOutstandingPings() {
+  public int getUnansweredPingCount() {
     return 0;
   }
 
@@ -284,6 +292,11 @@ public class RespondingEth2Peer implements Eth2Peer {
   @Override
   public PeerAddress getAddress() {
     return new PeerAddress(nodeId);
+  }
+
+  @Override
+  public Double getGossipScore() {
+    return 0d;
   }
 
   @Override
@@ -317,8 +330,14 @@ public class RespondingEth2Peer implements Eth2Peer {
   }
 
   @Override
-  public SafeFuture<RpcStream> sendRequest(
-      final RpcMethod rpcMethod, final Bytes initialPayload, final RpcRequestHandler handler) {
+  public <
+          TOutgoingHandler extends RpcRequestHandler,
+          TRequest,
+          RespHandler extends RpcResponseHandler<?>>
+      SafeFuture<RpcStreamController<TOutgoingHandler>> sendRequest(
+          final RpcMethod<TOutgoingHandler, TRequest, RespHandler> rpcMethod,
+          final TRequest tRequest,
+          final RespHandler responseHandler) {
     return null;
   }
 
@@ -423,7 +442,7 @@ public class RespondingEth2Peer implements Eth2Peer {
     }
 
     static PendingBlockRequestHandler<Void> createForBatchRequest(
-        final ResponseStreamListener<SignedBeaconBlock> listener,
+        final RpcResponseListener<SignedBeaconBlock> listener,
         final Supplier<List<SignedBeaconBlock>> blocksSupplier) {
       return new PendingBlockRequestHandler<Void>() {
         @Override

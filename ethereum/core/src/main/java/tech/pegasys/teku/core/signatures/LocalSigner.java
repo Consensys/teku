@@ -13,12 +13,6 @@
 
 package tech.pegasys.teku.core.signatures;
 
-import static tech.pegasys.teku.core.signatures.SigningRootUtil.signingRootForSignAggregateAndProof;
-import static tech.pegasys.teku.core.signatures.SigningRootUtil.signingRootForSignAggregationSlot;
-import static tech.pegasys.teku.core.signatures.SigningRootUtil.signingRootForSignAttestationData;
-import static tech.pegasys.teku.core.signatures.SigningRootUtil.signingRootForSignBlock;
-import static tech.pegasys.teku.core.signatures.SigningRootUtil.signingRootForSignVoluntaryExit;
-
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -34,7 +28,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSigningData;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionData;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 
@@ -43,44 +37,46 @@ public class LocalSigner implements Signer {
   private final Spec spec;
   private final BLSKeyPair keypair;
   private final AsyncRunner asyncRunner;
+  private final SigningRootUtil signingRootUtil;
 
   public LocalSigner(final Spec spec, final BLSKeyPair keypair, final AsyncRunner asyncRunner) {
     this.spec = spec;
     this.keypair = keypair;
     this.asyncRunner = asyncRunner;
+    this.signingRootUtil = new SigningRootUtil(spec);
   }
 
   @Override
   public SafeFuture<BLSSignature> createRandaoReveal(final UInt64 epoch, final ForkInfo forkInfo) {
-    return sign(SigningRootUtil.signingRootForRandaoReveal(epoch, forkInfo));
+    return sign(signingRootUtil.signingRootForRandaoReveal(epoch, forkInfo));
   }
 
   @Override
   public SafeFuture<BLSSignature> signBlock(final BeaconBlock block, final ForkInfo forkInfo) {
-    return sign(signingRootForSignBlock(block, forkInfo));
+    return sign(signingRootUtil.signingRootForSignBlock(block, forkInfo));
   }
 
   @Override
   public SafeFuture<BLSSignature> signAttestationData(
       final AttestationData attestationData, final ForkInfo forkInfo) {
-    return sign(signingRootForSignAttestationData(attestationData, forkInfo));
+    return sign(signingRootUtil.signingRootForSignAttestationData(attestationData, forkInfo));
   }
 
   @Override
   public SafeFuture<BLSSignature> signAggregationSlot(final UInt64 slot, final ForkInfo forkInfo) {
-    return sign(signingRootForSignAggregationSlot(slot, forkInfo));
+    return sign(signingRootUtil.signingRootForSignAggregationSlot(slot, forkInfo));
   }
 
   @Override
   public SafeFuture<BLSSignature> signAggregateAndProof(
       final AggregateAndProof aggregateAndProof, final ForkInfo forkInfo) {
-    return sign(signingRootForSignAggregateAndProof(aggregateAndProof, forkInfo));
+    return sign(signingRootUtil.signingRootForSignAggregateAndProof(aggregateAndProof, forkInfo));
   }
 
   @Override
   public SafeFuture<BLSSignature> signVoluntaryExit(
       final VoluntaryExit voluntaryExit, final ForkInfo forkInfo) {
-    return sign(signingRootForSignVoluntaryExit(voluntaryExit, forkInfo));
+    return sign(signingRootUtil.signingRootForSignVoluntaryExit(voluntaryExit, forkInfo));
   }
 
   @Override
@@ -96,10 +92,10 @@ public class LocalSigner implements Signer {
 
   @Override
   public SafeFuture<BLSSignature> signSyncCommitteeSelectionProof(
-      final SyncCommitteeSigningData signingData, final ForkInfo forkInfo) {
+      final SyncAggregatorSelectionData selectionData, final ForkInfo forkInfo) {
     return signingRootFromSyncCommitteeUtils(
-            signingData.getSlot(),
-            utils -> utils.getSyncCommitteeSigningDataSigningRoot(signingData, forkInfo))
+            selectionData.getSlot(),
+            utils -> utils.getSyncAggregatorSelectionDataSigningRoot(selectionData, forkInfo))
         .thenCompose(this::sign);
   }
 
@@ -114,8 +110,7 @@ public class LocalSigner implements Signer {
 
   private SafeFuture<Bytes> signingRootFromSyncCommitteeUtils(
       final UInt64 slot, final Function<SyncCommitteeUtil, Bytes> createSigningRoot) {
-    return SafeFuture.of(
-        () -> createSigningRoot.apply(spec.getSyncCommitteeUtil(slot).orElseThrow()));
+    return SafeFuture.of(() -> createSigningRoot.apply(spec.getSyncCommitteeUtilRequired(slot)));
   }
 
   @Override

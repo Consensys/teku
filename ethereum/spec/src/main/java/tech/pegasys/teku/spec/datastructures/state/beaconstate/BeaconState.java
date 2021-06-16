@@ -25,8 +25,8 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.analysis.ValidatorStats;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.BeaconStateMerge;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStatePhase0;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.rayonism.BeaconStateRayonism;
 import tech.pegasys.teku.ssz.SszContainer;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.SszMutableContainer;
@@ -174,7 +174,7 @@ public interface BeaconState extends SszContainer, ValidatorStats {
     return Optional.empty();
   }
 
-  default Optional<BeaconStateRayonism> toVersionRayonism() {
+  default Optional<BeaconStateMerge> toVersionMerge() {
     return Optional.empty();
   }
 }

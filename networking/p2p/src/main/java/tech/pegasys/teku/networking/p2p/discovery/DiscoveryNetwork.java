@@ -14,7 +14,6 @@
 package tech.pegasys.teku.networking.p2p.discovery;
 
 import static java.util.stream.Collectors.toList;
-import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -38,11 +37,12 @@ import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
-import tech.pegasys.teku.ssz.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
 import tech.pegasys.teku.ssz.type.Bytes4;
 import tech.pegasys.teku.storage.store.KeyValueStore;
 
@@ -50,12 +50,14 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   private static final Logger LOG = LogManager.getLogger();
 
   public static final String ATTESTATION_SUBNET_ENR_FIELD = "attnets";
+  public static final String SYNC_COMMITTEE_SUBNET_ENR_FIELD = "syncnets";
   public static final String ETH2_ENR_FIELD = "eth2";
 
   private final Spec spec;
   private final P2PNetwork<P> p2pNetwork;
   private final DiscoveryService discoveryService;
   private final ConnectionManager connectionManager;
+  private final SchemaDefinitionsSupplier currentSchemaDefinitionsSupplier;
 
   private volatile Optional<EnrForkId> enrForkId = Optional.empty();
 
@@ -63,12 +65,14 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
       final P2PNetwork<P> p2pNetwork,
       final DiscoveryService discoveryService,
       final ConnectionManager connectionManager,
-      final Spec spec) {
+      final Spec spec,
+      final SchemaDefinitionsSupplier currentSchemaDefinitionsSupplier) {
     super(p2pNetwork);
     this.p2pNetwork = p2pNetwork;
     this.discoveryService = discoveryService;
     this.connectionManager = connectionManager;
     this.spec = spec;
+    this.currentSchemaDefinitionsSupplier = currentSchemaDefinitionsSupplier;
     initialize();
   }
 
@@ -89,9 +93,15 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
       final PeerSelectionStrategy peerSelectionStrategy,
       final DiscoveryConfig discoveryConfig,
       final NetworkConfig p2pConfig,
-      final Spec spec) {
+      final Spec spec,
+      final SchemaDefinitionsSupplier currentSchemaDefinitionsSupplier) {
     final DiscoveryService discoveryService =
-        createDiscoveryService(discoveryConfig, p2pConfig, kvStore, p2pNetwork.getPrivateKey());
+        createDiscoveryService(
+            discoveryConfig,
+            p2pConfig,
+            kvStore,
+            p2pNetwork.getPrivateKey(),
+            currentSchemaDefinitionsSupplier);
     final ConnectionManager connectionManager =
         new ConnectionManager(
             metricsSystem,
@@ -102,17 +112,21 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
             discoveryConfig.getStaticPeers().stream()
                 .map(p2pNetwork::createPeerAddress)
                 .collect(toList()));
-    return new DiscoveryNetwork<>(p2pNetwork, discoveryService, connectionManager, spec);
+    return new DiscoveryNetwork<>(
+        p2pNetwork, discoveryService, connectionManager, spec, currentSchemaDefinitionsSupplier);
   }
 
   private static DiscoveryService createDiscoveryService(
       final DiscoveryConfig discoConfig,
       final NetworkConfig p2pConfig,
       final KeyValueStore<String, Bytes> kvStore,
-      final Bytes privateKey) {
+      final Bytes privateKey,
+      final SchemaDefinitionsSupplier currentSchemaDefinitionsSupplier) {
     final DiscoveryService discoveryService;
     if (discoConfig.isDiscoveryEnabled()) {
-      discoveryService = DiscV5Service.create(discoConfig, p2pConfig, kvStore, privateKey);
+      discoveryService =
+          DiscV5Service.create(
+              discoConfig, p2pConfig, kvStore, privateKey, currentSchemaDefinitionsSupplier);
     } else {
       discoveryService = new NoOpDiscoveryService();
     }
@@ -156,14 +170,27 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   public void setLongTermAttestationSubnetSubscriptions(Iterable<Integer> subnetIds) {
     discoveryService.updateCustomENRField(
         ATTESTATION_SUBNET_ENR_FIELD,
-        SszBitvectorSchema.create(ATTESTATION_SUBNET_COUNT).ofBits(subnetIds).sszSerialize());
+        currentSchemaDefinitionsSupplier
+            .getAttnetsENRFieldSchema()
+            .ofBits(subnetIds)
+            .sszSerialize());
+  }
+
+  public void setSyncCommitteeSubnetSubscriptions(Iterable<Integer> subnetIds) {
+    discoveryService.updateCustomENRField(
+        SYNC_COMMITTEE_SUBNET_ENR_FIELD,
+        currentSchemaDefinitionsSupplier
+            .getSyncnetsENRFieldSchema()
+            .ofBits(subnetIds)
+            .sszSerialize());
   }
 
   public void setPreGenesisForkInfo() {
-    final Bytes4 genesisForkVersion = spec.getGenesisSpecConfig().getGenesisForkVersion();
+    final SpecVersion genesisSpec = spec.getGenesisSpec();
+    final Bytes4 genesisForkVersion = genesisSpec.getConfig().getGenesisForkVersion();
     final EnrForkId enrForkId =
         new EnrForkId(
-            spec.getGenesisBeaconStateUtil().computeForkDigest(genesisForkVersion, Bytes32.ZERO),
+            genesisSpec.miscHelpers().computeForkDigest(genesisForkVersion, Bytes32.ZERO),
             genesisForkVersion,
             SpecConfig.FAR_FUTURE_EPOCH);
     discoveryService.updateCustomENRField(ETH2_ENR_FIELD, enrForkId.sszSerialize());

@@ -42,7 +42,8 @@ import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.MetadataMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.ssz.type.Bytes4;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -59,15 +60,18 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
   private final AtomicReference<State> state = new AtomicReference<>(State.IDLE);
   private final GossipEncoding gossipEncoding;
   private final GossipConfigurator gossipConfigurator;
-  private final AttestationSubnetService attestationSubnetService;
+  private final SubnetSubscriptionService attestationSubnetService;
+  private final SubnetSubscriptionService syncCommitteeSubnetService;
   private final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
   private final AtomicBoolean gossipStarted = new AtomicBoolean(false);
 
   private final GossipForkManager gossipForkManager;
 
   private long discoveryNetworkAttestationSubnetsSubscription;
+  private long discoveryNetworkSyncCommitteeSubnetsSubscription;
 
   private volatile Cancellable gossipUpdateTask;
+  private ForkInfo currentForkInfo;
 
   public ActiveEth2P2PNetwork(
       final Spec spec,
@@ -77,7 +81,8 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
       final GossipForkManager gossipForkManager,
       final EventChannels eventChannels,
       final RecentChainData recentChainData,
-      final AttestationSubnetService attestationSubnetService,
+      final SubnetSubscriptionService attestationSubnetService,
+      final SubnetSubscriptionService syncCommitteeSubnetService,
       final GossipEncoding gossipEncoding,
       final GossipConfigurator gossipConfigurator,
       final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider) {
@@ -92,6 +97,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     this.gossipEncoding = gossipEncoding;
     this.gossipConfigurator = gossipConfigurator;
     this.attestationSubnetService = attestationSubnetService;
+    this.syncCommitteeSubnetService = syncCommitteeSubnetService;
     this.processedAttestationSubscriptionProvider = processedAttestationSubscriptionProvider;
   }
 
@@ -105,8 +111,8 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
               + " is fully initialized.");
     }
     // Set the current fork info prior to discovery starting up.
-    final ForkInfo currentForkInfo = recentChainData.getHeadForkInfo().orElseThrow();
-    discoveryNetwork.setForkInfo(currentForkInfo, recentChainData.getNextFork());
+    final ForkInfo currentForkInfo = recentChainData.getCurrentForkInfo().orElseThrow();
+    updateForkInfo(currentForkInfo);
     return super.start().thenAccept(r -> startup());
   }
 
@@ -142,6 +148,9 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     discoveryNetworkAttestationSubnetsSubscription =
         attestationSubnetService.subscribeToUpdates(
             discoveryNetwork::setLongTermAttestationSubnetSubscriptions);
+    discoveryNetworkSyncCommitteeSubnetsSubscription =
+        syncCommitteeSubnetService.subscribeToUpdates(
+            discoveryNetwork::setSyncCommitteeSubnetSubscriptions);
 
     gossipForkManager.configureGossipForEpoch(recentChainData.getCurrentEpoch().orElseThrow());
     processedAttestationSubscriptionProvider.subscribe(gossipForkManager::publishAttestation);
@@ -200,6 +209,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
       gossipUpdateTask.cancel();
       gossipForkManager.stopGossip();
       attestationSubnetService.unsubscribe(discoveryNetworkAttestationSubnetsSubscription);
+      syncCommitteeSubnetService.unsubscribe(discoveryNetworkSyncCommitteeSubnetsSubscription);
     }
 
     return peerManager
@@ -246,6 +256,8 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     if (gossipStarted.get()) {
       gossipForkManager.configureGossipForEpoch(epoch);
     }
+
+    recentChainData.getForkInfo(epoch).ifPresent(this::updateForkInfo);
   }
 
   @Override
@@ -260,7 +272,19 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
 
   @Override
   public void setLongTermAttestationSubnetSubscriptions(final Iterable<Integer> subnetIndices) {
-    attestationSubnetService.updateSubscriptions(subnetIndices);
+    attestationSubnetService.setSubscriptions(subnetIndices);
+  }
+
+  @Override
+  public void subscribeToSyncCommitteeSubnetId(final int subnetId) {
+    gossipForkManager.subscribeToSyncCommitteeSubnetId(subnetId);
+    syncCommitteeSubnetService.addSubscription(subnetId);
+  }
+
+  @Override
+  public void unsubscribeFromSyncCommitteeSubnetId(final int subnetId) {
+    gossipForkManager.unsubscribeFromSyncCommitteeSubnetId(subnetId);
+    syncCommitteeSubnetService.removeSubscription(subnetId);
   }
 
   @Override
@@ -271,5 +295,16 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
   @VisibleForTesting
   Eth2PeerManager getPeerManager() {
     return peerManager;
+  }
+
+  private synchronized void updateForkInfo(final ForkInfo forkInfo) {
+    if (currentForkInfo != null
+        && (currentForkInfo.equals(forkInfo) || forkInfo.isPriorTo(currentForkInfo))) {
+      return;
+    }
+
+    currentForkInfo = forkInfo;
+    final Optional<Fork> nextFork = recentChainData.getNextFork(forkInfo.getFork());
+    discoveryNetwork.setForkInfo(forkInfo, nextFork);
   }
 }

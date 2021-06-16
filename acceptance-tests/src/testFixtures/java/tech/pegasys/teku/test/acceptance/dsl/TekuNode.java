@@ -43,22 +43,27 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.utility.MountableFile;
 import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
-import tech.pegasys.teku.api.response.v1.beacon.GetBlockResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetBlockRootResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateFinalityCheckpointsResponse;
 import tech.pegasys.teku.api.response.v1.debug.GetStateResponse;
+import tech.pegasys.teku.api.response.v2.beacon.GetBlockResponseV2;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
+import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
+import tech.pegasys.teku.api.schema.interfaces.SignedBlock;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.ssz.collections.SszBitvector;
+import tech.pegasys.teku.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateConfig;
 import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateGenerator;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
@@ -78,7 +83,7 @@ public class TekuNode extends Node {
     super(network, TEKU_DOCKER_IMAGE, LOG);
     this.httpClient = httpClient;
     this.config = config;
-    this.spec = SpecFactory.getDefault().create(config.getNetworkName());
+    this.spec = SpecFactory.create(config.getNetworkName());
 
     container
         .withWorkingDirectory(WORKING_DIRECTORY)
@@ -163,6 +168,39 @@ public class TekuNode extends Node {
         MINUTES);
   }
 
+  public void waitForFullSyncCommitteeAggregate() {
+    LOG.debug("Wait for full sync committee aggregates");
+    waitFor(
+        () -> {
+          final Optional<SignedBlock> block = fetchHeadBlock();
+          assertThat(block).isPresent();
+          assertThat(block.get()).isInstanceOf(SignedBeaconBlockAltair.class);
+
+          final SignedBeaconBlockAltair altairBlock = (SignedBeaconBlockAltair) block.get();
+          final int syncCommitteeSize = spec.getSyncCommitteeSize(altairBlock.getMessage().slot);
+          final SszBitvectorSchema<SszBitvector> syncCommitteeSchema =
+              SszBitvectorSchema.create(syncCommitteeSize);
+
+          final Bytes syncCommitteeBits =
+              altairBlock.getMessage().getBody().syncAggregate.syncCommitteeBits;
+          final int actualSyncBitCount =
+              syncCommitteeSchema.sszDeserialize(syncCommitteeBits).getBitCount();
+          final double percentageOfBitsSet =
+              actualSyncBitCount == syncCommitteeSize
+                  ? 1.0
+                  : actualSyncBitCount / (double) syncCommitteeSize;
+          if (percentageOfBitsSet < 1.0) {
+            LOG.debug(
+                String.format(
+                    "Sync committee bits are only %s%% full, expecting %s%%: %s",
+                    percentageOfBitsSet * 100, 100, syncCommitteeBits));
+          }
+          assertThat(percentageOfBitsSet >= 1.0).isTrue();
+        },
+        5,
+        MINUTES);
+  }
+
   public void waitUntilInSyncWith(final TekuNode targetNode) {
     LOG.debug("Wait for {} to sync to {}", nodeAlias, targetNode.nodeAlias);
     waitFor(
@@ -227,12 +265,12 @@ public class TekuNode extends Node {
     return Optional.of(response.data);
   }
 
-  private Optional<SignedBeaconBlock> fetchHeadBlock() throws IOException {
-    final String result = httpClient.get(getRestApiUrl(), "/eth/v1/beacon/blocks/head");
+  private Optional<SignedBlock> fetchHeadBlock() throws IOException {
+    final String result = httpClient.get(getRestApiUrl(), "/eth/v2/beacon/blocks/head");
     if (result.isEmpty()) {
       return Optional.empty();
     } else {
-      return Optional.of(jsonProvider.jsonToObject(result, GetBlockResponse.class).data);
+      return Optional.of(jsonProvider.jsonToObject(result, GetBlockResponseV2.class).data);
     }
   }
 
@@ -266,22 +304,23 @@ public class TekuNode extends Node {
             .collect(toList());
     waitFor(
         () -> {
-          final Optional<SignedBeaconBlock> maybeBlock = fetchHeadBlock();
+          final Optional<SignedBlock> maybeBlock = fetchHeadBlock();
           final Optional<BeaconState> maybeState = fetchHeadState();
           assertThat(maybeBlock).isPresent();
           assertThat(maybeState).isPresent();
-          SignedBeaconBlock block = maybeBlock.get();
+          SignedBeaconBlock block = (SignedBeaconBlock) maybeBlock.get();
           BeaconState state = maybeState.get();
 
           // Check that the fetched block and state are in sync
-          assertThat(state.latest_block_header.parent_root).isEqualTo(block.message.parent_root);
+          assertThat(state.latest_block_header.parent_root)
+              .isEqualTo(block.getMessage().parent_root);
 
           tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState internalBeaconState =
               state.asInternalBeaconState(spec);
-          UInt64 proposerIndex = block.message.proposer_index;
+          UInt64 proposerIndex = block.getMessage().proposer_index;
 
           Set<UInt64> attesterIndicesInAttestations =
-              block.message.body.attestations.stream()
+              block.getMessage().getBody().attestations.stream()
                   .map(
                       a ->
                           spec.getAttestingIndices(
@@ -452,6 +491,11 @@ public class TekuNode extends Node {
       return this;
     }
 
+    public Config withLogging(final String logging) {
+      configMap.put("logging", logging);
+      return this;
+    }
+
     public Config withInteropValidators(final int startIndex, final int validatorCount) {
       configMap.put("Xinterop-owned-validator-start-index", startIndex);
       configMap.put("Xinterop-owned-validator-count", validatorCount);
@@ -483,6 +527,11 @@ public class TekuNode extends Node {
     public Config withNetwork(String networkName) {
       this.networkName = networkName;
       configMap.put("network", networkName);
+      return this;
+    }
+
+    public Config withAltairEpoch(final UInt64 altairSlot) {
+      configMap.put("Xnetwork-altair-fork-epoch", altairSlot.toString());
       return this;
     }
 

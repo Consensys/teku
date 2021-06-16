@@ -21,14 +21,14 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
-import tech.pegasys.teku.networking.eth2.rpc.core.Eth2RpcMethod;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
-import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
+import tech.pegasys.teku.networking.eth2.rpc.core.methods.Eth2RpcMethod;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
+import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.collections.SszBitvector;
@@ -77,7 +77,7 @@ public interface Eth2Peer extends Peer, SyncSource {
   SafeFuture<Void> sendGoodbye(UInt64 reason);
 
   SafeFuture<Void> requestBlocksByRoot(
-      List<Bytes32> blockRoots, ResponseStreamListener<SignedBeaconBlock> listener)
+      List<Bytes32> blockRoots, RpcResponseListener<SignedBeaconBlock> listener)
       throws RpcException;
 
   SafeFuture<Optional<SignedBeaconBlock>> requestBlockBySlot(UInt64 slot);
@@ -95,7 +95,7 @@ public interface Eth2Peer extends Peer, SyncSource {
 
   SafeFuture<UInt64> sendPing();
 
-  int getOutstandingPings();
+  int getUnansweredPingCount();
 
   interface PeerStatusSubscriber {
     void onPeerStatus(final PeerStatus initialStatus);

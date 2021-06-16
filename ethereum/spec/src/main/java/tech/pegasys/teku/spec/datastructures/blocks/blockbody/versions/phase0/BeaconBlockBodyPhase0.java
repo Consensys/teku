@@ -13,10 +13,12 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0;
 
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -29,7 +31,7 @@ import tech.pegasys.teku.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 
 /** A Beacon block body */
-class BeaconBlockBodyPhase0
+public class BeaconBlockBodyPhase0
     extends Container8<
         BeaconBlockBodyPhase0,
         SszSignature,
@@ -115,5 +117,10 @@ class BeaconBlockBodyPhase0
   @Override
   public BeaconBlockBodySchemaPhase0 getSchema() {
     return (BeaconBlockBodySchemaPhase0) super.getSchema();
+  }
+
+  @Override
+  public Optional<BeaconBlockBodyAltair> toVersionAltair() {
+    return Optional.empty();
   }
 }

@@ -15,7 +15,7 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody;
 
 import java.util.Optional;
 import java.util.function.Consumer;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.rayonism.BeaconBlockBodySchemaRayonism;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge.BeaconBlockBodySchemaMerge;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -43,7 +43,7 @@ public interface BeaconBlockBodySchema<T extends BeaconBlockBody> extends SszCon
 
   SszListSchema<SignedVoluntaryExit, ?> getVoluntaryExitsSchema();
 
-  default Optional<BeaconBlockBodySchemaRayonism> toVersionRayonism() {
+  default Optional<BeaconBlockBodySchemaMerge> toVersionMerge() {
     return Optional.empty();
   }
 }

@@ -45,13 +45,13 @@ import org.iq80.leveldb.ReadOptions;
 import org.iq80.leveldb.WriteBatch;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
-import tech.pegasys.teku.storage.server.rocksdb.core.ColumnEntry;
-import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor;
-import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbColumn;
-import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbVariable;
+import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
+import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 
 /**
- * Implements {@link RocksDbAccessor} but actually uses LevelDB to store the data.
+ * Implements {@link KvStoreAccessor} using LevelDB to store the data.
  *
  * <p>The primary difference between RocksDB and LevelDB is that LevelDB doesn't support columns. To
  * support the same interface and generally make it easy to work with the database, columns are
@@ -60,7 +60,7 @@ import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbVariable;
  * column with the only caveat being that we need to manually check if the next entry is from a
  * different column and stop iterating.
  */
-public class LevelDbInstance implements RocksDbAccessor {
+public class LevelDbInstance implements KvStoreAccessor {
   private static final Logger LOG = LogManager.getLogger();
 
   private final Set<LevelDbTransaction> openTransactions = new HashSet<>();
@@ -90,21 +90,21 @@ public class LevelDbInstance implements RocksDbAccessor {
   }
 
   @Override
-  public <T> Optional<T> get(final RocksDbVariable<T> variable) {
+  public <T> Optional<T> get(final KvStoreVariable<T> variable) {
     assertOpen();
     return Optional.ofNullable(db.get(getVariableKey(variable)))
         .map(variable.getSerializer()::deserialize);
   }
 
   @Override
-  public <K, V> Optional<V> get(final RocksDbColumn<K, V> column, final K key) {
+  public <K, V> Optional<V> get(final KvStoreColumn<K, V> column, final K key) {
     assertOpen();
     return Optional.ofNullable(db.get(getColumnKey(column, key)))
         .map(column.getValueSerializer()::deserialize);
   }
 
   @Override
-  public <K, V> Map<K, V> getAll(final RocksDbColumn<K, V> column) {
+  public <K, V> Map<K, V> getAll(final KvStoreColumn<K, V> column) {
     return withIterator(
         iterator -> {
           iterator.seek(column.getId().toArrayUnsafe());
@@ -124,7 +124,7 @@ public class LevelDbInstance implements RocksDbAccessor {
 
   @Override
   public <K, V> Optional<ColumnEntry<K, V>> getFloorEntry(
-      final RocksDbColumn<K, V> column, final K key) {
+      final KvStoreColumn<K, V> column, final K key) {
     return withIterator(
         iterator -> {
           final byte[] matchingKey = getColumnKey(column, key);
@@ -154,7 +154,7 @@ public class LevelDbInstance implements RocksDbAccessor {
   }
 
   @Override
-  public <K, V> Optional<ColumnEntry<K, V>> getFirstEntry(final RocksDbColumn<K, V> column) {
+  public <K, V> Optional<ColumnEntry<K, V>> getFirstEntry(final KvStoreColumn<K, V> column) {
     return withIterator(
         iterator -> {
           iterator.seek(column.getId().toArrayUnsafe());
@@ -168,7 +168,7 @@ public class LevelDbInstance implements RocksDbAccessor {
   }
 
   @Override
-  public <K, V> Optional<K> getLastKey(final RocksDbColumn<K, V> column) {
+  public <K, V> Optional<K> getLastKey(final KvStoreColumn<K, V> column) {
     return withIterator(
         iterator -> {
           final byte[] keyAfterColumn = getKeyAfterColumn(column);
@@ -194,7 +194,7 @@ public class LevelDbInstance implements RocksDbAccessor {
    * column we're interested in.
    */
   private <K, V> Optional<Map.Entry<byte[], byte[]>> getLastDatabaseEntryIfFromColumn(
-      final RocksDbColumn<K, V> column, final DBIterator iterator) {
+      final KvStoreColumn<K, V> column, final DBIterator iterator) {
     iterator.seekToLast();
     if (!iterator.hasNext()) {
       // Empty database
@@ -205,7 +205,7 @@ public class LevelDbInstance implements RocksDbAccessor {
 
   @Override
   @MustBeClosed
-  public <K, V> Stream<ColumnEntry<K, V>> stream(final RocksDbColumn<K, V> column) {
+  public <K, V> Stream<ColumnEntry<K, V>> stream(final KvStoreColumn<K, V> column) {
     // Note that the "to" key is actually after the end of the column and iteration is inclusive.
     // Fortunately, we know that the "to" key can't exist because it is just the column ID with an
     // empty item key and empty item keys are not allowed.
@@ -215,7 +215,7 @@ public class LevelDbInstance implements RocksDbAccessor {
   @Override
   @MustBeClosed
   public <K extends Comparable<K>, V> Stream<ColumnEntry<K, V>> stream(
-      final RocksDbColumn<K, V> column, final K from, final K to) {
+      final KvStoreColumn<K, V> column, final K from, final K to) {
     final byte[] fromBytes = getColumnKey(column, from);
     final byte[] toBytes = getColumnKey(column, to);
     return stream(column, fromBytes, toBytes);
@@ -223,7 +223,7 @@ public class LevelDbInstance implements RocksDbAccessor {
 
   @MustBeClosed
   private <K, V> Stream<ColumnEntry<K, V>> stream(
-      final RocksDbColumn<K, V> column, final byte[] fromBytes, final byte[] toBytes) {
+      final KvStoreColumn<K, V> column, final byte[] fromBytes, final byte[] toBytes) {
     assertOpen();
     final DBIterator iterator = createIterator();
     iterator.seek(fromBytes);
@@ -234,7 +234,7 @@ public class LevelDbInstance implements RocksDbAccessor {
 
   @Override
   @MustBeClosed
-  public synchronized RocksDbTransaction startTransaction() {
+  public synchronized KvStoreTransaction startTransaction() {
     assertOpen();
     openedTransactionsCounter.inc();
     final WriteBatch writeBatch = db.createWriteBatch();
@@ -279,8 +279,9 @@ public class LevelDbInstance implements RocksDbAccessor {
   }
 
   synchronized void onTransactionClosed(final LevelDbTransaction transaction) {
-    closedTransactionsCounter.inc();
-    openTransactions.remove(transaction);
+    if (openTransactions.remove(transaction)) {
+      closedTransactionsCounter.inc();
+    }
   }
 
   private DBIterator createIterator() {

@@ -16,9 +16,10 @@ package tech.pegasys.teku.api.response.v1.validator;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import tech.pegasys.teku.api.schema.BeaconBlock;
+import tech.pegasys.teku.api.schema.interfaces.UnsignedBlock;
 
 public class GetNewBlockResponse {
-  public final BeaconBlock data;
+  public final UnsignedBlock data;
 
   @JsonCreator
   public GetNewBlockResponse(@JsonProperty("data") final BeaconBlock data) {

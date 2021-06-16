@@ -61,7 +61,6 @@ import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
-import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.AttesterDuties;
@@ -88,23 +87,6 @@ class RemoteValidatorApiHandlerTest {
   @BeforeEach
   public void beforeEach() {
     apiHandler = new RemoteValidatorApiHandler(spec, apiClient, asyncRunner);
-  }
-
-  @Test
-  public void getForkInfo_WhenPresent_ReturnsValue() {
-    final Fork fork = dataStructureUtil.randomFork();
-    when(apiClient.getFork()).thenReturn(Optional.of(new tech.pegasys.teku.api.schema.Fork(fork)));
-    SafeFuture<Optional<Fork>> future = apiHandler.getFork();
-
-    assertThat(unwrapToValue(future)).isEqualTo(fork);
-  }
-
-  @Test
-  public void getForkInfo_WhenNotPresent_ReturnsEmpty() {
-    when(apiClient.getFork()).thenReturn(Optional.empty());
-    SafeFuture<Optional<Fork>> future = apiHandler.getFork();
-
-    assertThat(unwrapToOptional(future)).isNotPresent();
   }
 
   @Test
@@ -333,29 +315,6 @@ class RemoteValidatorApiHandlerTest {
   }
 
   @Test
-  public void createUnsignedAttestation_WhenNone_ReturnsEmpty() {
-    when(apiClient.createUnsignedAttestation(any(), anyInt())).thenReturn(Optional.empty());
-
-    SafeFuture<Optional<Attestation>> future = apiHandler.createUnsignedAttestation(UInt64.ONE, 0);
-
-    assertThat(unwrapToOptional(future)).isEmpty();
-  }
-
-  @Test
-  public void createUnsignedAttestation_WhenFound_ReturnsAttestation() {
-    final Attestation attestation = dataStructureUtil.randomAttestation();
-    final tech.pegasys.teku.api.schema.Attestation schemaAttestation =
-        new tech.pegasys.teku.api.schema.Attestation(attestation);
-
-    when(apiClient.createUnsignedAttestation(eq(UInt64.ONE), eq(0)))
-        .thenReturn(Optional.of(schemaAttestation));
-
-    SafeFuture<Optional<Attestation>> future = apiHandler.createUnsignedAttestation(UInt64.ONE, 0);
-
-    assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(attestation);
-  }
-
-  @Test
   public void createAttestationData_WhenNone_ReturnsEmpty() {
     when(apiClient.createAttestationData(any(), anyInt())).thenReturn(Optional.empty());
 
@@ -561,14 +520,15 @@ class RemoteValidatorApiHandlerTest {
 
   @Test
   void shouldRetryAfterDelayWhenRequestRateLimited() {
-    when(apiClient.getFork()).thenThrow(new RateLimitedException("/fork"));
+    when(apiClient.getGenesis()).thenThrow(new RateLimitedException("/fork"));
 
-    final SafeFuture<Optional<Fork>> result = apiHandler.getFork();
+    final SafeFuture<Optional<tech.pegasys.teku.spec.datastructures.genesis.GenesisData>> result =
+        apiHandler.getGenesisData();
 
     for (int i = 0; i < MAX_RATE_LIMITING_RETRIES; i++) {
       asyncRunner.executeQueuedActions();
       assertThat(result).isNotDone();
-      verify(apiClient, times(i + 1)).getFork();
+      verify(apiClient, times(i + 1)).getGenesis();
     }
 
     asyncRunner.executeQueuedActions();

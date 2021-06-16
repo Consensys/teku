@@ -14,25 +14,16 @@
 package tech.pegasys.teku.util.config;
 
 import com.google.common.collect.ImmutableList;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
 import java.time.Duration;
-import java.util.List;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class Constants {
 
   public static final ImmutableList<String> NETWORK_DEFINITIONS =
-      ImmutableList.of(
-          "mainnet", "minimal", "swift", "pyrmont", "prater", "less-swift", "mergenet-minimal");
-
-  @Deprecated public static String CONFIG_NAME;
+      ImmutableList.of("mainnet", "minimal", "swift", "pyrmont", "prater", "less-swift");
 
   // Non-configurable constants
   @Deprecated public static final long GENESIS_SLOT = 0;
@@ -41,6 +32,33 @@ public class Constants {
   @Deprecated public static final UInt64 BASE_REWARDS_PER_EPOCH = UInt64.valueOf(4);
   @Deprecated public static final int DEPOSIT_CONTRACT_TREE_DEPTH = 32;
   @Deprecated public static final int JUSTIFICATION_BITS_LENGTH = 4;
+
+  // Phase0 constants which may exist in legacy config files, but are no longer configurable
+  @Deprecated public static final Bytes BLS_WITHDRAWAL_PREFIX = Bytes.fromHexString("0x00");
+  @Deprecated public static final int TARGET_AGGREGATORS_PER_COMMITTEE = 16;
+  @Deprecated public static final int RANDOM_SUBNETS_PER_VALIDATOR = 1;
+  @Deprecated public static final int EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION = 256;
+
+  @Deprecated
+  public static final Bytes4 DOMAIN_BEACON_PROPOSER = new Bytes4(Bytes.fromHexString("0x00000000"));
+
+  @Deprecated
+  public static final Bytes4 DOMAIN_BEACON_ATTESTER = new Bytes4(Bytes.fromHexString("0x01000000"));
+
+  @Deprecated
+  public static final Bytes4 DOMAIN_RANDAO = new Bytes4(Bytes.fromHexString("0x02000000"));
+
+  @Deprecated
+  public static final Bytes4 DOMAIN_DEPOSIT = new Bytes4(Bytes.fromHexString("0x03000000"));
+
+  @Deprecated
+  public static final Bytes4 DOMAIN_VOLUNTARY_EXIT = new Bytes4(Bytes.fromHexString("0x04000000"));
+
+  @Deprecated
+  public static final Bytes4 DOMAIN_SELECTION_PROOF = Bytes4.fromHexString("0x05000000");
+
+  @Deprecated
+  public static final Bytes4 DOMAIN_AGGREGATE_AND_PROOF = Bytes4.fromHexString("0x06000000");
 
   // Misc
   @Deprecated public static UInt64 ETH1_FOLLOW_DISTANCE = UInt64.valueOf(1024);
@@ -65,7 +83,6 @@ public class Constants {
 
   // Initial values
   @Deprecated public static Bytes4 GENESIS_FORK_VERSION = Bytes4.fromHexString("0x00000000");
-  @Deprecated public static Bytes BLS_WITHDRAWAL_PREFIX;
 
   // Time parameters
   @Deprecated public static UInt64 GENESIS_DELAY;
@@ -100,27 +117,8 @@ public class Constants {
   @Deprecated public static int MAX_DEPOSITS;
   @Deprecated public static int MAX_VOLUNTARY_EXITS = 16;
 
-  // Signature domains
-  @Deprecated
-  public static Bytes4 DOMAIN_BEACON_PROPOSER = new Bytes4(Bytes.fromHexString("0x00000000"));
-
-  @Deprecated
-  public static Bytes4 DOMAIN_BEACON_ATTESTER = new Bytes4(Bytes.fromHexString("0x01000000"));
-
-  @Deprecated public static Bytes4 DOMAIN_RANDAO = new Bytes4(Bytes.fromHexString("0x02000000"));
-  @Deprecated public static Bytes4 DOMAIN_DEPOSIT = new Bytes4(Bytes.fromHexString("0x03000000"));
-
-  @Deprecated
-  public static Bytes4 DOMAIN_VOLUNTARY_EXIT = new Bytes4(Bytes.fromHexString("0x04000000"));
-
-  @Deprecated public static Bytes4 DOMAIN_SELECTION_PROOF;
-  @Deprecated public static Bytes4 DOMAIN_AGGREGATE_AND_PROOF;
-
   // Validator
-  @Deprecated public static int TARGET_AGGREGATORS_PER_COMMITTEE = 16;
   @Deprecated public static UInt64 SECONDS_PER_ETH1_BLOCK = UInt64.valueOf(14L);
-  @Deprecated public static int RANDOM_SUBNETS_PER_VALIDATOR = 1;
-  @Deprecated public static int EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION = 256;
 
   // Fork Choice
   @Deprecated public static int SAFE_SLOTS_TO_UPDATE_JUSTIFIED = 8;
@@ -132,13 +130,6 @@ public class Constants {
   @Deprecated
   public static Bytes DEPOSIT_CONTRACT_ADDRESS =
       Bytes.fromHexString("0x1234567890123456789012345678901234567890");
-
-  // Merge
-  @Deprecated public static Bytes4 MERGE_FORK_VERSION = Bytes4.fromHexString("0x02000001");
-  @Deprecated public static UInt64 MERGE_FORK_SLOT = UInt64.MAX_VALUE;
-  @Deprecated public static long TRANSITION_TOTAL_DIFFICULTY = Long.MAX_VALUE;
-  @Deprecated public static int MAX_BYTES_PER_OPAQUE_TRANSACTION = 1048576;
-  @Deprecated public static int MAX_APPLICATION_TRANSACTIONS = 16384;
 
   // SSZ
   public static final UInt64 BYTES_PER_LENGTH_OFFSET = UInt64.valueOf(4L);
@@ -156,6 +147,8 @@ public class Constants {
   public static final int VALID_ATTESTATION_SET_SIZE = 1000;
   public static final int VALID_AGGREGATE_SET_SIZE = 1000;
   public static final int VALID_VALIDATOR_SET_SIZE = 10000;
+  public static final int VALID_CONTRIBUTION_AND_PROOF_SET_SIZE = 10000;
+  public static final int VALID_SYNC_COMMITTEE_SIGNATURE_SET_SIZE = 10000;
   public static final int NETWORKING_FAILURE_REPEAT_INTERVAL = 3; // in sec
 
   // Teku specific
@@ -163,8 +156,14 @@ public class Constants {
   public static final double TIME_TICKER_REFRESH_RATE = 2; // per sec
   public static final Duration ETH1_INDIVIDUAL_BLOCK_RETRY_TIMEOUT = Duration.ofMillis(500);
   public static final Duration ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT = Duration.ofSeconds(2);
-  public static final Duration ETH1_SYNCING_RETRY_TIMEOUT = Duration.ofSeconds(30);
   public static final Duration ETH1_LOCAL_CHAIN_BEHIND_FOLLOW_DISTANCE_WAIT = Duration.ofSeconds(3);
+  public static final Duration ETH1_ENDPOINT_MONITOR_SERVICE_POLL_INTERVAL = Duration.ofSeconds(10);
+  public static final Duration ETH1_VALID_ENDPOINT_CHECK_INTERVAL =
+      Duration.ofSeconds(60); // usable
+  public static final Duration ETH1_FAILED_ENDPOINT_CHECK_INTERVAL =
+      Duration.ofSeconds(30); // network or API call failure
+  public static final Duration ETH1_INVALID_ENDPOINT_CHECK_INTERVAL =
+      Duration.ofSeconds(60); // syncing or wrong chainid
   public static final int MAXIMUM_CONCURRENT_ETH1_REQUESTS = 5;
   public static final int REPUTATION_MANAGER_CAPACITY = 1024;
   public static final Duration STORAGE_REQUEST_TIMEOUT = Duration.ofSeconds(60);
@@ -193,27 +192,7 @@ public class Constants {
    */
   @Deprecated
   public static void setConstants(final String source) {
-    try (final InputStream input = createInputStream(source)) {
-      ConstantsReader.loadConstantsFrom(input);
-    } catch (IOException e) {
-      throw new InvalidConfigurationException("Failed to load constants from " + source, e);
-    }
+    ConstantsReader.loadConstantsFrom(source);
     SpecDependent.resetAll();
-  }
-
-  private static InputStream createInputStream(final String source) throws IOException {
-    return ResourceLoader.classpathUrlOrFile(
-            Constants.class,
-            enumerateNetworkResources(),
-            s -> s.endsWith(".yaml") || s.endsWith(".yml"))
-        .load(source + ".yaml", source + "/phase0.yaml", source)
-        .orElseThrow(() -> new FileNotFoundException("Could not load constants from " + source));
-  }
-
-  private static List<String> enumerateNetworkResources() {
-    return NETWORK_DEFINITIONS.stream()
-        .map(s -> List.of(s + ".yaml", s + "/phase0.yaml"))
-        .flatMap(List::stream)
-        .collect(Collectors.toList());
   }
 }

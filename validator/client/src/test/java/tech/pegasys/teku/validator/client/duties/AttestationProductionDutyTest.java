@@ -36,6 +36,7 @@ import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
@@ -48,9 +49,11 @@ import tech.pegasys.teku.validator.client.Validator;
 
 class AttestationProductionDutyTest {
 
+  private static final String TYPE = "attesation";
   private static final UInt64 SLOT = UInt64.valueOf(1488);
 
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final DataStructureUtil dataStructureUtil =
+      new DataStructureUtil(TestSpecFactory.createDefault());
   private final ForkInfo fork = dataStructureUtil.randomForkInfo();
   private final ForkProvider forkProvider = mock(ForkProvider.class);
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
@@ -61,12 +64,7 @@ class AttestationProductionDutyTest {
 
   @BeforeEach
   public void setUp() {
-    when(forkProvider.getForkInfo()).thenReturn(completedFuture(fork));
-  }
-
-  @Test
-  public void shouldReportCorrectProducedType() {
-    assertThat(duty.getProducedType()).isEqualTo("attestation");
+    when(forkProvider.getForkInfo(any())).thenReturn(completedFuture(fork));
   }
 
   @Test
@@ -89,9 +87,9 @@ class AttestationProductionDutyTest {
     assertThat(attestationFuture).isCompletedWithValue(Optional.empty());
     verify(validatorLogger)
         .dutyFailed(
-            eq(duty.getProducedType()),
+            eq(TYPE),
             eq(SLOT),
-            eq(duty.getValidatorIdString()),
+            eq(Set.of(validator.getPublicKey().toAbbreviatedString())),
             any(IllegalStateException.class));
     verifyNoMoreInteractions(validatorLogger);
   }
@@ -130,13 +128,12 @@ class AttestationProductionDutyTest {
 
     verify(validatorApiChannel).sendSignedAttestation(expectedAttestation, Optional.of(10));
     verify(validatorLogger)
-        .dutyCompleted(
-            duty.getProducedType(), SLOT, 1, Set.of(attestationData.getBeacon_block_root()));
+        .dutyCompleted(TYPE, SLOT, 1, Set.of(attestationData.getBeacon_block_root()));
     verify(validatorLogger)
         .dutyFailed(
-            eq(duty.getProducedType()),
+            eq(TYPE),
             eq(SLOT),
-            eq(duty.getValidatorIdString()),
+            eq(Set.of(validator1.getPublicKey().toAbbreviatedString())),
             any(IllegalStateException.class));
     verifyNoMoreInteractions(validatorLogger);
   }
@@ -178,10 +175,9 @@ class AttestationProductionDutyTest {
     verify(validatorApiChannel).sendSignedAttestation(expectedAttestation, Optional.of(10));
 
     verify(validatorLogger)
-        .dutyCompleted(
-            duty.getProducedType(), SLOT, 1, Set.of(attestationData.getBeacon_block_root()));
+        .dutyCompleted(TYPE, SLOT, 1, Set.of(attestationData.getBeacon_block_root()));
     verify(validatorLogger)
-        .dutyFailed(duty.getProducedType(), SLOT, duty.getValidatorIdString(), failure);
+        .dutyFailed(TYPE, SLOT, Set.of(validator1.getPublicKey().toAbbreviatedString()), failure);
     verifyNoMoreInteractions(validatorLogger);
   }
 
@@ -216,10 +212,10 @@ class AttestationProductionDutyTest {
     verify(validatorApiChannel).sendSignedAttestation(expectedAttestation, Optional.of(10));
 
     verify(validatorLogger)
-        .dutyCompleted(
-            duty.getProducedType(), SLOT, 1, Set.of(attestationData.getBeacon_block_root()));
+        .dutyCompleted(TYPE, SLOT, 1, Set.of(attestationData.getBeacon_block_root()));
     verify(validatorLogger)
-        .dutyFailed(duty.getProducedType(), SLOT, duty.getValidatorIdString(), signingFailure);
+        .dutyFailed(
+            TYPE, SLOT, Set.of(validator1.getPublicKey().toAbbreviatedString()), signingFailure);
     verifyNoMoreInteractions(validatorLogger);
   }
 
@@ -241,8 +237,7 @@ class AttestationProductionDutyTest {
 
     verify(validatorApiChannel).sendSignedAttestation(expectedAttestation, Optional.of(10));
     verify(validatorLogger)
-        .dutyCompleted(
-            duty.getProducedType(), SLOT, 1, Set.of(attestationData.getBeacon_block_root()));
+        .dutyCompleted(TYPE, SLOT, 1, Set.of(attestationData.getBeacon_block_root()));
     verifyNoMoreInteractions(validatorLogger);
   }
 
@@ -289,8 +284,7 @@ class AttestationProductionDutyTest {
     // Should have only needed to create one unsigned attestation and reused it for each validator
     verify(validatorApiChannel, times(1)).createAttestationData(any(), anyInt());
     verify(validatorLogger)
-        .dutyCompleted(
-            duty.getProducedType(), SLOT, 3, Set.of(attestationData.getBeacon_block_root()));
+        .dutyCompleted(TYPE, SLOT, 3, Set.of(attestationData.getBeacon_block_root()));
     verifyNoMoreInteractions(validatorLogger);
   }
 
@@ -342,7 +336,7 @@ class AttestationProductionDutyTest {
     verify(validatorApiChannel, times(2)).createAttestationData(any(), anyInt());
     verify(validatorLogger)
         .dutyCompleted(
-            duty.getProducedType(),
+            TYPE,
             SLOT,
             3,
             Set.of(
@@ -388,8 +382,6 @@ class AttestationProductionDutyTest {
   private void performAndReportDuty() {
     final SafeFuture<DutyResult> result = duty.performDuty();
     assertThat(result).isCompleted();
-    result
-        .join()
-        .report(duty.getProducedType(), SLOT, duty.getValidatorIdString(), validatorLogger);
+    result.join().report(TYPE, SLOT, validatorLogger);
   }
 }

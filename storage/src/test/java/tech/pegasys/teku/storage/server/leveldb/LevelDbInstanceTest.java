@@ -15,7 +15,7 @@ package tech.pegasys.teku.storage.server.leveldb;
 
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.UINT64_SERIALIZER;
+import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.UINT64_SERIALIZER;
 
 import com.google.common.primitives.Ints;
 import java.nio.file.Path;
@@ -30,33 +30,33 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.storage.server.rocksdb.RocksDbConfiguration;
-import tech.pegasys.teku.storage.server.rocksdb.core.ColumnEntry;
-import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor;
-import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor.RocksDbTransaction;
-import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbColumn;
-import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbVariable;
-import tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer;
+import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
+import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
+import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransaction;
+import tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
+import tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer;
 
 class LevelDbInstanceTest {
 
   private static final IntSerializer INT_SERIALIZER = new IntSerializer();
 
-  private static final RocksDbVariable<Integer> variable1 =
-      RocksDbVariable.create(0, INT_SERIALIZER);
-  private static final RocksDbVariable<Integer> variable2 =
-      RocksDbVariable.create(1, INT_SERIALIZER);
+  private static final KvStoreVariable<Integer> variable1 =
+      KvStoreVariable.create(0, INT_SERIALIZER);
+  private static final KvStoreVariable<Integer> variable2 =
+      KvStoreVariable.create(1, INT_SERIALIZER);
 
-  private static final RocksDbColumn<Integer, Integer> column1 =
-      RocksDbColumn.create(1, INT_SERIALIZER, INT_SERIALIZER);
-  private static final RocksDbColumn<Integer, Integer> column2 =
-      RocksDbColumn.create(2, INT_SERIALIZER, INT_SERIALIZER);
-  private static final RocksDbColumn<Integer, Integer> column3 =
-      RocksDbColumn.create(3, INT_SERIALIZER, INT_SERIALIZER);
-  private static final RocksDbColumn<UInt64, UInt64> column4 =
-      RocksDbColumn.create(4, UINT64_SERIALIZER, UINT64_SERIALIZER);
+  private static final KvStoreColumn<Integer, Integer> column1 =
+      KvStoreColumn.create(1, INT_SERIALIZER, INT_SERIALIZER);
+  private static final KvStoreColumn<Integer, Integer> column2 =
+      KvStoreColumn.create(2, INT_SERIALIZER, INT_SERIALIZER);
+  private static final KvStoreColumn<Integer, Integer> column3 =
+      KvStoreColumn.create(3, INT_SERIALIZER, INT_SERIALIZER);
+  private static final KvStoreColumn<UInt64, UInt64> column4 =
+      KvStoreColumn.create(4, UINT64_SERIALIZER, UINT64_SERIALIZER);
 
-  private RocksDbAccessor instance;
+  private KvStoreAccessor instance;
 
   @BeforeEach
   void setUp(@TempDir final Path tempDir) {
@@ -64,7 +64,7 @@ class LevelDbInstanceTest {
         LevelDbInstanceFactory.create(
             new NoOpMetricsSystem(),
             TekuMetricCategory.STORAGE,
-            RocksDbConfiguration.v6SingleDefaults().withDatabaseDir(tempDir),
+            KvStoreConfiguration.v6SingleDefaults().withDatabaseDir(tempDir),
             List.of(column1, column2, column3));
   }
 
@@ -75,7 +75,7 @@ class LevelDbInstanceTest {
 
   @Test
   void shouldStoreAndLoadSimpleKey() {
-    try (final RocksDbTransaction update = instance.startTransaction()) {
+    try (final KvStoreTransaction update = instance.startTransaction()) {
       update.put(column1, 0, 0);
       update.put(column1, 1, 1);
       update.put(column2, 1, 2);
@@ -99,7 +99,7 @@ class LevelDbInstanceTest {
     assertThat(instance.get(variable1)).isEmpty();
     assertThat(instance.get(variable2)).isEmpty();
 
-    try (final RocksDbTransaction update = instance.startTransaction()) {
+    try (final KvStoreTransaction update = instance.startTransaction()) {
       update.put(variable1, 0);
       update.put(variable2, 1);
       update.commit();
@@ -301,14 +301,14 @@ class LevelDbInstanceTest {
     assertThat(instance.getFloorEntry(column1, 5)).contains(ColumnEntry.create(4, 4));
   }
 
-  private void update(final Consumer<RocksDbTransaction> updater) {
-    try (final RocksDbTransaction transaction = instance.startTransaction()) {
+  private void update(final Consumer<KvStoreTransaction> updater) {
+    try (final KvStoreTransaction transaction = instance.startTransaction()) {
       updater.accept(transaction);
       transaction.commit();
     }
   }
 
-  private static class IntSerializer implements RocksDbSerializer<Integer> {
+  private static class IntSerializer implements KvStoreSerializer<Integer> {
 
     @Override
     public Integer deserialize(final byte[] data) {

@@ -15,9 +15,12 @@ package tech.pegasys.teku.pow;
 
 import java.math.BigInteger;
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
+import org.web3j.protocol.core.methods.request.EthFilter;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.EthCall;
+import org.web3j.protocol.core.methods.response.EthLog;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -62,6 +65,11 @@ public class ErrorTrackingEth1Provider implements Eth1Provider {
   }
 
   @Override
+  public SafeFuture<EthBlock.Block> getGuaranteedLatestEth1Block() {
+    return logStatus(delegate.getGuaranteedLatestEth1Block());
+  }
+
+  @Override
   public SafeFuture<EthBlock.Block> getGuaranteedEth1Block(final UInt64 blockNumber) {
     return logStatus(delegate.getGuaranteedEth1Block(blockNumber));
   }
@@ -85,6 +93,11 @@ public class ErrorTrackingEth1Provider implements Eth1Provider {
   @Override
   public SafeFuture<Boolean> ethSyncing() {
     return logStatus(delegate.ethSyncing());
+  }
+
+  @Override
+  public SafeFuture<List<EthLog.LogResult<?>>> ethGetLogs(EthFilter ethFilter) {
+    return logStatus(delegate.ethGetLogs(ethFilter));
   }
 
   private <T> SafeFuture<T> logStatus(final SafeFuture<T> action) {

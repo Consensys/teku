@@ -31,7 +31,7 @@ public class SpecConfigAssertions {
   }
 
   static void assertAllMergeFieldsSet(final SpecConfig config) throws Exception {
-    assertAllFieldsSet(config, SpecConfigRayonism.class);
+    assertAllFieldsSet(config, SpecConfigMerge.class);
   }
 
   static void assertAllFieldsSet(final SpecConfig config, Class<?> targetConfig) throws Exception {

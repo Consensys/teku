@@ -124,4 +124,4 @@ We have a set of [coding conventions](https://wiki.hyperledger.org/display/BESU/
 
 [private-quorum@consensys.net]: mailto:private-quorum@consensys.net
 [Discord]: https://discord.gg/7hPv2T6
-[CLA.md]: /CLA.md
+[CLA.md]: CLA.md

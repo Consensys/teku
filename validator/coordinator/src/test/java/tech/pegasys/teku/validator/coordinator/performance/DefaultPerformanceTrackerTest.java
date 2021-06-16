@@ -29,12 +29,11 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.core.AttestationGenerator;
 import tech.pegasys.teku.core.ChainBuilder;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.TestConfigLoader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -47,29 +46,35 @@ import tech.pegasys.teku.validator.coordinator.ActiveValidatorTracker;
 public class DefaultPerformanceTrackerTest {
 
   private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(64);
-  final SpecConfig specConfig = TestConfigLoader.loadConfig("minimal", b -> b.slotsPerEpoch(4));
-  private final Spec spec = TestSpecFactory.createPhase0(specConfig);
-  protected StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
-  protected ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
+  private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  protected StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
+  protected ChainBuilder chainBuilder = ChainBuilder.create(spec, VALIDATOR_KEYS);
   protected ChainUpdater chainUpdater =
       new ChainUpdater(storageSystem.recentChainData(), chainBuilder);
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final StatusLogger log = mock(StatusLogger.class);
   private final ActiveValidatorTracker validatorTracker = mock(ActiveValidatorTracker.class);
+  private final SyncCommitteePerformanceTracker syncCommitteePerformanceTracker =
+      mock(SyncCommitteePerformanceTracker.class);
+  private final ValidatorPerformanceMetrics validatorPerformanceMetrics =
+      mock(ValidatorPerformanceMetrics.class);
 
   private final DefaultPerformanceTracker performanceTracker =
       new DefaultPerformanceTracker(
           storageSystem.combinedChainDataClient(),
           log,
-          mock(ValidatorPerformanceMetrics.class),
+          validatorPerformanceMetrics,
           ValidatorPerformanceTrackingMode.ALL,
           validatorTracker,
+          syncCommitteePerformanceTracker,
           spec);
 
   @BeforeEach
   void beforeEach() {
     when(validatorTracker.getNumberOfValidatorsForEpoch(any())).thenReturn(0);
+    when(syncCommitteePerformanceTracker.calculatePerformance(any()))
+        .thenReturn(SafeFuture.completedFuture(new SyncCommitteePerformance(0, 0, 0)));
     chainUpdater.initializeGenesis();
     performanceTracker.start(UInt64.ZERO);
   }
@@ -83,6 +88,18 @@ public class DefaultPerformanceTrackerTest {
     performanceTracker.saveProducedBlock(chainUpdater.chainBuilder.getBlockAtSlot(2));
     performanceTracker.onSlot(spec.computeStartSlotAtEpoch(BLOCK_PERFORMANCE_EVALUATION_INTERVAL));
     BlockPerformance expectedBlockPerformance = new BlockPerformance(2, 2, 2);
+    verify(log).performance(expectedBlockPerformance.toString());
+  }
+
+  @Test
+  void shouldDisplayBlockInclusionWhenProducedBlockIsChainHead() {
+    final UInt64 lastSlot = spec.computeStartSlotAtEpoch(BLOCK_PERFORMANCE_EVALUATION_INTERVAL);
+    final SignedBlockAndState bestBlock = chainUpdater.advanceChainUntil(2);
+    chainUpdater.updateBestBlock(bestBlock);
+    performanceTracker.reportBlockProductionAttempt(spec.computeEpochAtSlot(bestBlock.getSlot()));
+    performanceTracker.saveProducedBlock(bestBlock.getBlock());
+    performanceTracker.onSlot(lastSlot);
+    BlockPerformance expectedBlockPerformance = new BlockPerformance(1, 1, 1);
     verify(log).performance(expectedBlockPerformance.toString());
   }
 
@@ -114,7 +131,7 @@ public class DefaultPerformanceTrackerTest {
     performanceTracker.saveProducedAttestation(attestation1);
     when(validatorTracker.getNumberOfValidatorsForEpoch(any())).thenReturn(1);
 
-    performanceTracker.onSlot(spec.computeStartSlotAtEpoch(UInt64.valueOf(2)));
+    performanceTracker.onSlot(spec.computeStartSlotAtEpoch(ATTESTATION_INCLUSION_RANGE));
     AttestationPerformance expectedAttestationPerformance =
         new AttestationPerformance(1, 1, 1, 1, 1, 1, 1, 1);
     verify(log).performance(expectedAttestationPerformance.toString());
@@ -141,7 +158,7 @@ public class DefaultPerformanceTrackerTest {
     performanceTracker.saveProducedAttestation(attestation1);
     performanceTracker.saveProducedAttestation(attestation2);
     when(validatorTracker.getNumberOfValidatorsForEpoch(any())).thenReturn(2);
-    performanceTracker.onSlot(spec.computeStartSlotAtEpoch(UInt64.valueOf(2)));
+    performanceTracker.onSlot(spec.computeStartSlotAtEpoch(ATTESTATION_INCLUSION_RANGE));
     AttestationPerformance expectedAttestationPerformance =
         new AttestationPerformance(2, 2, 2, 2, 1, 1.5, 2, 2);
     verify(log).performance(expectedAttestationPerformance.toString());
@@ -177,7 +194,7 @@ public class DefaultPerformanceTrackerTest {
 
     when(validatorTracker.getNumberOfValidatorsForEpoch(any())).thenReturn(2);
 
-    performanceTracker.onSlot(spec.computeStartSlotAtEpoch(UInt64.valueOf(4)));
+    performanceTracker.onSlot(spec.computeStartSlotAtEpoch(ATTESTATION_INCLUSION_RANGE.plus(1)));
     when(validatorTracker.getNumberOfValidatorsForEpoch(any())).thenReturn(2);
     AttestationPerformance expectedAttestationPerformance =
         new AttestationPerformance(2, 2, 2, 1, 1, 1, 1, 1);
@@ -215,7 +232,7 @@ public class DefaultPerformanceTrackerTest {
     performanceTracker.saveProducedAttestation(attestation2);
     when(validatorTracker.getNumberOfValidatorsForEpoch(any())).thenReturn(2);
 
-    performanceTracker.onSlot(spec.computeStartSlotAtEpoch(UInt64.valueOf(4)));
+    performanceTracker.onSlot(spec.computeStartSlotAtEpoch(ATTESTATION_INCLUSION_RANGE.plus(1)));
     AttestationPerformance expectedAttestationPerformance =
         new AttestationPerformance(2, 2, 2, 2, 1, 1.5, 2, 1);
     verify(log).performance(expectedAttestationPerformance.toString());
@@ -259,7 +276,7 @@ public class DefaultPerformanceTrackerTest {
     performanceTracker.saveProducedAttestation(attestation1);
     when(validatorTracker.getNumberOfValidatorsForEpoch(any())).thenReturn(1);
 
-    performanceTracker.onSlot(spec.computeStartSlotAtEpoch(UInt64.valueOf(2)));
+    performanceTracker.onSlot(spec.computeStartSlotAtEpoch(ATTESTATION_INCLUSION_RANGE));
     AttestationPerformance expectedAttestationPerformance =
         new AttestationPerformance(1, 1, 1, 1, 1, 1, 1, 1);
     verify(log).performance(expectedAttestationPerformance.toString());
@@ -279,7 +296,7 @@ public class DefaultPerformanceTrackerTest {
                     a.getData().equals(attestation1.getData())
                         && !a.getAggregation_bits().equals(attestation1.getAggregation_bits()))
             .findFirst()
-            .get();
+            .orElseThrow();
 
     block1Options.addAttestation(attestation1);
     block1Options.addAttestation(attestation2);
@@ -291,7 +308,7 @@ public class DefaultPerformanceTrackerTest {
     performanceTracker.saveProducedAttestation(attestation2);
     when(validatorTracker.getNumberOfValidatorsForEpoch(any())).thenReturn(2);
 
-    performanceTracker.onSlot(spec.computeStartSlotAtEpoch(UInt64.valueOf(2)));
+    performanceTracker.onSlot(spec.computeStartSlotAtEpoch(ATTESTATION_INCLUSION_RANGE));
     AttestationPerformance expectedAttestationPerformance =
         new AttestationPerformance(2, 2, 2, 1, 1, 1, 2, 2);
     verify(log).performance(expectedAttestationPerformance.toString());
@@ -301,11 +318,22 @@ public class DefaultPerformanceTrackerTest {
   void shouldReportExpectedAttestationOnlyForTheGivenEpoch() {
     when(validatorTracker.getNumberOfValidatorsForEpoch(UInt64.valueOf(2))).thenReturn(2);
     when(validatorTracker.getNumberOfValidatorsForEpoch(UInt64.valueOf(3))).thenReturn(1);
-    performanceTracker.onSlot(
-        spec.computeStartSlotAtEpoch(UInt64.valueOf(2).plus(ATTESTATION_INCLUSION_RANGE)));
+    performanceTracker.onSlot(spec.computeStartSlotAtEpoch(ATTESTATION_INCLUSION_RANGE.plus(2)));
     AttestationPerformance expectedAttestationPerformance =
         new AttestationPerformance(2, 0, 0, 0, 0, 0, 0, 0);
     verify(log).performance(expectedAttestationPerformance.toString());
+  }
+
+  @Test
+  void shouldReportSyncCommitteePerformance() {
+    final SyncCommitteePerformance performance = new SyncCommitteePerformance(10, 9, 8);
+    final UInt64 epoch = UInt64.valueOf(2);
+    when(syncCommitteePerformanceTracker.calculatePerformance(epoch.minus(1)))
+        .thenReturn(SafeFuture.completedFuture(performance));
+
+    performanceTracker.onSlot(spec.computeStartSlotAtEpoch(epoch));
+    verify(log).performance(performance.toString());
+    verify(validatorPerformanceMetrics).updateSyncCommitteePerformance(performance);
   }
 
   private Attestation createAttestation(
@@ -318,7 +346,7 @@ public class DefaultPerformanceTrackerTest {
                     .getBeacon_block_root()
                     .equals(chainBuilder.getBlockAtSlot(vouchingForBlockAtSlot).getRoot()))
         .findFirst()
-        .get();
+        .orElseThrow();
   }
 
   private Attestation createAttestation(int validForBlockAtSlot, int vouchingForBlockAtSlot) {

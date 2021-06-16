@@ -30,9 +30,9 @@ This document was influenced by the following:
 - Kubernetes governance.md, available at [kub governance]
 - OSSWatch Benevolent Dictator Governance Model, available at [oss watch benevolent dictator].
 
-[CLA.md]: /CLA.md
-[community membership]: /community-membership.md
-[code of conduct]: /CODE-OF-CONDUCT.md
+[CLA.md]: CLA.md
+[community membership]: community-membership.md
+[code of conduct]: CODE-OF-CONDUCT.md
 [oss watch benevolent dictator]: http://oss-watch.ac.uk/resources/benevolentdictatorgovernancemodel
 [kub community membership]: https://raw.githubusercontent.com/kubernetes/community/master/community-membership.md
 [kub governance]:https://github.com/kubernetes/community/blob/master/governance.md

@@ -23,7 +23,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
@@ -44,7 +43,6 @@ public class AggregationDuty implements Duty {
   private final ValidatorApiChannel validatorApiChannel;
   private final ForkProvider forkProvider;
   private final ValidatorLogger validatorLogger;
-  private BLSPublicKey validatorPublicKey;
 
   public AggregationDuty(
       final UInt64 slot,
@@ -65,9 +63,9 @@ public class AggregationDuty implements Duty {
    * @param validatorIndex the validator's index
    * @param proof the validator's slot signature proving it is the aggregator
    * @param attestationCommitteeIndex the committee index to aggregate
-   * @param unsignedAttestationFuture the future returned by {@link #addValidator(Validator, int,
-   *     BLSSignature, int, SafeFuture)} which completes with the unsigned attestation for this
-   *     committee and slot.
+   * @param unsignedAttestationFuture the future returned by {@link
+   *     AttestationProductionDuty#addValidator(Validator, int, int, int, int)} which completes with
+   *     the unsigned attestation for this committee and slot.
    */
   public void addValidator(
       final Validator validator,
@@ -84,7 +82,6 @@ public class AggregationDuty implements Duty {
                 attestationCommitteeIndex,
                 proof,
                 unsignedAttestationFuture));
-    validatorPublicKey = validator.getPublicKey();
   }
 
   @Override
@@ -100,7 +97,8 @@ public class AggregationDuty implements Duty {
     return aggregator
         .unsignedAttestationFuture
         .thenCompose(this::createAggregate)
-        .thenCompose(maybeAggregate -> sendAggregate(aggregator, maybeAggregate));
+        .thenCompose(maybeAggregate -> sendAggregate(aggregator, maybeAggregate))
+        .exceptionally(error -> DutyResult.forError(aggregator.validator.getPublicKey(), error));
   }
 
   public CompletionStage<Optional<Attestation>> createAggregate(
@@ -123,7 +121,7 @@ public class AggregationDuty implements Duty {
     final AggregateAndProof aggregateAndProof =
         new AggregateAndProof(aggregator.validatorIndex, aggregate, aggregator.proof);
     return forkProvider
-        .getForkInfo()
+        .getForkInfo(slot)
         .thenCompose(
             forkInfo ->
                 aggregator.validator.getSigner().signAggregateAndProof(aggregateAndProof, forkInfo))
@@ -134,16 +132,6 @@ public class AggregationDuty implements Duty {
               return DutyResult.success(
                   aggregateAndProof.getAggregate().getData().getBeacon_block_root());
             });
-  }
-
-  @Override
-  public String getProducedType() {
-    return "aggregate";
-  }
-
-  @Override
-  public Optional<BLSPublicKey> getValidatorIdentifier() {
-    return Optional.ofNullable(validatorPublicKey);
   }
 
   private static class CommitteeAggregator {

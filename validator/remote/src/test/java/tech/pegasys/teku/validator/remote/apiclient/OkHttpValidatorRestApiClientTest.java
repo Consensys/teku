@@ -41,23 +41,25 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionRequest;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
-import tech.pegasys.teku.api.response.v1.beacon.GetStateForkResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAttestationDataResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetNewBlockResponse;
+import tech.pegasys.teku.api.response.v1.validator.GetSyncCommitteeContributionResponse;
+import tech.pegasys.teku.api.response.v2.validator.GetNewBlockResponseV2;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttestationData;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
-import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.api.schema.SubnetSubscription;
+import tech.pegasys.teku.api.schema.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 
 class OkHttpValidatorRestApiClientTest {
@@ -78,48 +80,6 @@ class OkHttpValidatorRestApiClientTest {
   @AfterEach
   public void afterEach() throws Exception {
     mockWebServer.shutdown();
-  }
-
-  @Test
-  public void getFork_MakesExpectedRequest() throws Exception {
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
-
-    apiClient.getFork();
-
-    RecordedRequest request = mockWebServer.takeRequest();
-
-    assertThat(request.getMethod()).isEqualTo("GET");
-    assertThat(request.getPath())
-        .contains(ValidatorApiMethod.GET_FORK.getPath(Map.of("state_id", "head")));
-  }
-
-  @Test
-  public void getFork_WhenServerError_ThrowsRuntimeException() {
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
-
-    assertThatThrownBy(() -> apiClient.getFork())
-        .isInstanceOf(RuntimeException.class)
-        .hasMessageContaining("Unexpected response from Beacon Node API");
-  }
-
-  @Test
-  public void getFork_WhenNoContent_ReturnsEmpty() {
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
-
-    assertThat(apiClient.getFork()).isEmpty();
-  }
-
-  @Test
-  public void getFork_WhenSuccess_ReturnsForkResponse() {
-    final GetStateForkResponse getStateForkResponse = schemaObjects.getStateForkResponse();
-
-    mockWebServer.enqueue(
-        new MockResponse().setResponseCode(SC_OK).setBody(asJson(getStateForkResponse)));
-
-    Optional<Fork> fork = apiClient.getFork();
-
-    assertThat(fork).isPresent();
-    assertThat(fork.get()).isEqualTo(getStateForkResponse.data);
   }
 
   @Test
@@ -269,6 +229,25 @@ class OkHttpValidatorRestApiClientTest {
   }
 
   @Test
+  public void createUnsignedBlock_Altair_ReturnsBeaconBlock() {
+    apiClient = new OkHttpValidatorRestApiClient(mockWebServer.url("/"), okHttpClient, true);
+    final UInt64 slot = UInt64.ONE;
+    final BLSSignature blsSignature = schemaObjects.BLSSignature();
+    final Optional<Bytes32> graffiti = Optional.of(Bytes32.random());
+    final BeaconBlock expectedBeaconBlock = schemaObjects.beaconBlockAltair();
+
+    mockWebServer.enqueue(
+        new MockResponse()
+            .setResponseCode(SC_OK)
+            .setBody(asJson(new GetNewBlockResponseV2(SpecMilestone.ALTAIR, expectedBeaconBlock))));
+
+    Optional<BeaconBlock> beaconBlock = apiClient.createUnsignedBlock(slot, blsSignature, graffiti);
+
+    assertThat(beaconBlock).isPresent();
+    assertThat(beaconBlock.get()).usingRecursiveComparison().isEqualTo(expectedBeaconBlock);
+  }
+
+  @Test
   public void sendSignedBlock_MakesExpectedRequest() throws Exception {
     final Bytes32 blockRoot = Bytes32.fromHexStringLenient("0x1234");
     final SignedBeaconBlock signedBeaconBlock = schemaObjects.signedBeaconBlock();
@@ -326,64 +305,6 @@ class OkHttpValidatorRestApiClientTest {
     assertThatThrownBy(() -> apiClient.sendSignedBlock(signedBeaconBlock))
         .isInstanceOf(RuntimeException.class)
         .hasMessageContaining("Unexpected response from Beacon Node API");
-  }
-
-  @Test
-  public void createUnsignedAttestation_MakesExpectedRequest() throws Exception {
-    final UInt64 slot = UInt64.ONE;
-    final int committeeIndex = 1;
-
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
-
-    apiClient.createUnsignedAttestation(slot, committeeIndex);
-
-    RecordedRequest request = mockWebServer.takeRequest();
-
-    assertThat(request.getMethod()).isEqualTo("GET");
-    assertThat(request.getPath())
-        .contains(ValidatorApiMethod.GET_UNSIGNED_ATTESTATION.getPath(emptyMap()));
-    assertThat(request.getRequestUrl().queryParameter("slot")).isEqualTo(slot.toString());
-    assertThat(request.getRequestUrl().queryParameter("committee_index"))
-        .isEqualTo(String.valueOf(committeeIndex));
-  }
-
-  @Test
-  public void createUnsignedAttestation_WhenBadRequest_ThrowsIllegalArgumentException() {
-    final UInt64 slot = UInt64.ONE;
-    final int committeeIndex = 1;
-
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
-
-    assertThatThrownBy(() -> apiClient.createUnsignedAttestation(slot, committeeIndex))
-        .isInstanceOf(IllegalArgumentException.class);
-  }
-
-  @Test
-  public void createUnsignedAttestation_WhenNotFound_ThrowsException() {
-    final UInt64 slot = UInt64.ONE;
-    final int committeeIndex = 1;
-
-    // An attestation could not be created for the specified slot
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_FOUND));
-
-    assertThatThrownBy(() -> apiClient.createUnsignedAttestation(slot, committeeIndex))
-        .isInstanceOf(RuntimeException.class)
-        .hasMessageContaining("Unexpected response from Beacon Node API");
-  }
-
-  @Test
-  public void createUnsignedAttestation_WhenSuccess_ReturnsAttestation() {
-    final UInt64 slot = UInt64.ONE;
-    final int committeeIndex = 1;
-    final Attestation expectedAttestation = schemaObjects.attestation();
-
-    mockWebServer.enqueue(
-        new MockResponse().setResponseCode(SC_OK).setBody(asJson(expectedAttestation)));
-
-    Optional<Attestation> attestation = apiClient.createUnsignedAttestation(slot, committeeIndex);
-
-    assertThat(attestation).isPresent();
-    assertThat(attestation.get()).usingRecursiveComparison().isEqualTo(expectedAttestation);
   }
 
   @Test
@@ -562,6 +483,26 @@ class OkHttpValidatorRestApiClientTest {
   }
 
   @Test
+  public void createSyncCommitteeContribution_WhenSuccess_ReturnsContribution() {
+    final SyncCommitteeContribution contribution =
+        schemaObjects.syncCommitteeContribution(UInt64.ONE);
+
+    mockWebServer.enqueue(
+        new MockResponse()
+            .setResponseCode(SC_OK)
+            .setBody(asJson(new GetSyncCommitteeContributionResponse(contribution))));
+
+    final Optional<SyncCommitteeContribution> response =
+        apiClient.createSyncCommitteeContribution(
+            contribution.slot,
+            contribution.subcommitteeIndex.intValue(),
+            contribution.beaconBlockRoot);
+
+    assertThat(response).isPresent();
+    assertThat(response.get()).usingRecursiveComparison().isEqualTo(contribution);
+  }
+
+  @Test
   public void sendAggregateAndProofs_MakesExpectedRequest() throws Exception {
     final SignedAggregateAndProof signedAggregateAndProof = schemaObjects.signedAggregateAndProof();
 
@@ -717,7 +658,7 @@ class OkHttpValidatorRestApiClientTest {
     apiClient = new OkHttpValidatorRestApiClient(url, okHttpClient);
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
-    apiClient.getFork();
+    apiClient.getGenesis();
 
     RecordedRequest request = mockWebServer.takeRequest();
 
@@ -731,7 +672,7 @@ class OkHttpValidatorRestApiClientTest {
   void shouldThrowRateLimitedExceptionWhen429ResponseReceived() {
     mockWebServer.enqueue(new MockResponse().setResponseCode(429));
 
-    assertThatThrownBy(() -> apiClient.getFork()).isInstanceOf(RateLimitedException.class);
+    assertThatThrownBy(() -> apiClient.getGenesis()).isInstanceOf(RateLimitedException.class);
   }
 
   private String asJson(Object object) {

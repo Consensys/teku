@@ -46,7 +46,7 @@ public class EpochProcessingExecutor {
       case PROCESS_EFFECTIVE_BALANCE_UPDATES:
         epochProcessor.processEffectiveBalanceUpdates(state);
         break;
-      case PROCESS_PARTICIPATION_RECORD_UPDATES:
+      case PROCESS_PARTICIPATION_FLAG_UPDATES:
         epochProcessor.processParticipationUpdates(state);
         break;
       case PROCESS_ETH1_DATA_RESET:
@@ -64,10 +64,18 @@ public class EpochProcessingExecutor {
       case SYNC_COMMITTEE_UPDATES:
         epochProcessor.processSyncCommitteeUpdates(state);
         break;
+      case INACTIVITY_UPDATES:
+        processInactivityUpdates(state);
+        break;
       default:
         throw new UnsupportedOperationException(
             "Attempted to execute unknown operation type: " + operation);
     }
+  }
+
+  private void processInactivityUpdates(final MutableBeaconState state) {
+    epochProcessor.processInactivityUpdates(
+        state, validatorStatusFactory.createValidatorStatuses(state));
   }
 
   public void processSlashings(final MutableBeaconState state) {

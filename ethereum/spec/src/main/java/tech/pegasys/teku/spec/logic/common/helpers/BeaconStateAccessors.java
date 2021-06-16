@@ -15,7 +15,7 @@ package tech.pegasys.teku.spec.logic.common.helpers;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_EPOCH;
-import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uintToBytes;
+import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBytes;
 
 import java.util.Collection;
 import java.util.List;
@@ -26,8 +26,11 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.collections.TekuPair;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.constants.Domain;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
@@ -145,8 +148,31 @@ public abstract class BeaconStateAccessors {
     UInt64 randaoIndex =
         epoch.plus(config.getEpochsPerHistoricalVector() - config.getMinSeedLookahead() - 1);
     Bytes32 mix = getRandaoMix(state, randaoIndex);
-    Bytes epochBytes = uintToBytes(epoch.longValue(), 8);
+    Bytes epochBytes = uint64ToBytes(epoch);
     return Hash.sha2_256(Bytes.concatenate(domain_type.getWrappedBytes(), epochBytes, mix));
+  }
+
+  /**
+   * return the number of committees in each slot for the given `epoch`.
+   *
+   * @param state
+   * @param epoch
+   * @return
+   */
+  public UInt64 getCommitteeCountPerSlot(BeaconState state, UInt64 epoch) {
+    List<Integer> activeValidatorIndices = getActiveValidatorIndices(state, epoch);
+    return getCommitteeCountPerSlot(activeValidatorIndices.size());
+  }
+
+  public UInt64 getCommitteeCountPerSlot(final int activeValidatorCount) {
+    return UInt64.valueOf(
+        Math.max(
+            1,
+            Math.min(
+                config.getMaxCommitteesPerSlot(),
+                Math.floorDiv(
+                    Math.floorDiv(activeValidatorCount, config.getSlotsPerEpoch()),
+                    config.getTargetCommitteeSize()))));
   }
 
   public Bytes32 getRandaoMix(BeaconState state, UInt64 epoch) {
@@ -169,8 +195,7 @@ public abstract class BeaconStateAccessors {
               Bytes32 seed =
                   Hash.sha2_256(
                       Bytes.concatenate(
-                          getSeed(state, epoch, config.getDomainBeaconProposer()),
-                          uintToBytes(slot.longValue(), 8)));
+                          getSeed(state, epoch, Domain.BEACON_PROPOSER), uint64ToBytes(slot)));
               List<Integer> indices = getActiveValidatorIndices(state, epoch);
               return miscHelpers.computeProposerIndex(state, indices, seed);
             });
@@ -201,6 +226,27 @@ public abstract class BeaconStateAccessors {
         stateEpoch);
   }
 
+  public Bytes32 getBlockRootAtSlot(BeaconState state, UInt64 slot)
+      throws IllegalArgumentException {
+    checkArgument(
+        isBlockRootAvailableFromState(state, slot),
+        "Block at slot %s not available from state at slot %s",
+        slot,
+        state.getSlot());
+    int latestBlockRootIndex = slot.mod(config.getSlotsPerHistoricalRoot()).intValue();
+    return state.getBlock_roots().getElement(latestBlockRootIndex);
+  }
+
+  public Bytes32 getBlockRoot(BeaconState state, UInt64 epoch) throws IllegalArgumentException {
+    return getBlockRootAtSlot(state, miscHelpers.computeStartSlotAtEpoch(epoch));
+  }
+
+  private boolean isBlockRootAvailableFromState(BeaconState state, UInt64 slot) {
+    UInt64 slotPlusHistoricalRoot = slot.plus(config.getSlotsPerHistoricalRoot());
+    return slot.isLessThan(state.getSlot())
+        && state.getSlot().isLessThanOrEqualTo(slotPlusHistoricalRoot);
+  }
+
   // Custom accessors
 
   /**
@@ -214,5 +260,62 @@ public abstract class BeaconStateAccessors {
   public int getPreviousEpochAttestationCapacity(final BeaconState state) {
     // No strict limit in general
     return Integer.MAX_VALUE;
+  }
+
+  public List<Integer> getBeaconCommittee(BeaconState state, UInt64 slot, UInt64 index) {
+    // Make sure state is within range of the slot being queried
+    validateStateForCommitteeQuery(state, slot);
+
+    return BeaconStateCache.getTransitionCaches(state)
+        .getBeaconCommittee()
+        .get(
+            TekuPair.of(slot, index),
+            p -> {
+              UInt64 epoch = miscHelpers.computeEpochAtSlot(slot);
+              UInt64 committees_per_slot = getCommitteeCountPerSlot(state, epoch);
+              int committeeIndex =
+                  slot.mod(config.getSlotsPerEpoch())
+                      .times(committees_per_slot)
+                      .plus(index)
+                      .intValue();
+              int count = committees_per_slot.times(config.getSlotsPerEpoch()).intValue();
+              return miscHelpers.computeCommittee(
+                  state,
+                  getActiveValidatorIndices(state, epoch),
+                  getSeed(state, epoch, Domain.BEACON_ATTESTER),
+                  committeeIndex,
+                  count);
+            });
+  }
+
+  public void validateStateForCommitteeQuery(BeaconState state, UInt64 slot) {
+    final UInt64 oldestQueryableSlot =
+        miscHelpers.getEarliestQueryableSlotForBeaconCommitteeAtTargetSlot(slot);
+    checkArgument(
+        state.getSlot().compareTo(oldestQueryableSlot) >= 0,
+        "Committee information must be derived from a state no older than the previous epoch. State at slot %s is older than cutoff slot %s",
+        state.getSlot(),
+        oldestQueryableSlot);
+  }
+
+  public Bytes32 getDomain(BeaconState state, Bytes4 domainType, UInt64 messageEpoch) {
+    UInt64 epoch = (messageEpoch == null) ? getCurrentEpoch(state) : messageEpoch;
+    return getDomain(domainType, epoch, state.getFork(), state.getGenesis_validators_root());
+  }
+
+  public Bytes32 getDomain(BeaconState state, Bytes4 domainType) {
+    return getDomain(state, domainType, null);
+  }
+
+  public Bytes32 getDomain(
+      final Bytes4 domainType,
+      final UInt64 epoch,
+      final Fork fork,
+      final Bytes32 genesisValidatorsRoot) {
+    Bytes4 forkVersion =
+        (epoch.compareTo(fork.getEpoch()) < 0)
+            ? fork.getPrevious_version()
+            : fork.getCurrent_version();
+    return miscHelpers.computeDomain(domainType, forkVersion, genesisValidatorsRoot);
   }
 }

@@ -54,7 +54,7 @@ public class GenesisGenerator {
 
   private int activeValidatorCount = 0;
 
-  public GenesisGenerator(final SpecVersion genesisSpec) {
+  public GenesisGenerator(final SpecVersion genesisSpec, final Fork genesisFork) {
     this.genesisSpec = genesisSpec;
     this.specConfig = genesisSpec.getConfig();
     final SchemaDefinitions schemaDefinitions = genesisSpec.getSchemaDefinitions();
@@ -67,24 +67,12 @@ public class GenesisGenerator {
         new BeaconBlockHeader(
             genesisSlot, UInt64.ZERO, Bytes32.ZERO, Bytes32.ZERO, latestBlockRoot);
     state.setLatest_block_header(beaconBlockHeader);
-    state.setFork(
-        new Fork(
-            specConfig.getGenesisForkVersion(), specConfig.getGenesisForkVersion(), GENESIS_EPOCH));
+    state.setFork(genesisFork);
 
     depositDataList =
         SszListSchema.create(DepositData.SSZ_SCHEMA, 1L << specConfig.getDepositContractTreeDepth())
             .getDefault()
             .createWritableCopy();
-  }
-
-  public static BeaconState initializeBeaconStateFromEth1(
-      final SpecVersion genesisSpec,
-      Bytes32 eth1BlockHash,
-      UInt64 eth1Timestamp,
-      List<? extends Deposit> deposits) {
-    final GenesisGenerator genesisGenerator = new GenesisGenerator(genesisSpec);
-    genesisGenerator.updateCandidateState(eth1BlockHash, eth1Timestamp, deposits);
-    return genesisGenerator.getGenesisState();
   }
 
   public void updateCandidateState(
@@ -96,7 +84,7 @@ public class GenesisGenerator {
             Bytes32.ZERO, UInt64.valueOf(depositDataList.size() + deposits.size()), eth1BlockHash));
 
     state
-        .toMutableVersionRayonism()
+        .toMutableVersionMerge()
         .ifPresent(
             stateMerge ->
                 stateMerge.setLatestExecutionPayloadHeader(
@@ -191,6 +179,10 @@ public class GenesisGenerator {
     calculateDepositRoot();
     final BeaconState readOnlyState = state.commitChanges();
     state.setGenesis_validators_root(readOnlyState.getValidators().hashTreeRoot());
+
+    genesisSpec
+        .getSyncCommitteeUtil()
+        .ifPresent(syncCommitteeUtil -> syncCommitteeUtil.setGenesisStateSyncCommittees(state));
   }
 
   private void calculateRandaoMixes() {

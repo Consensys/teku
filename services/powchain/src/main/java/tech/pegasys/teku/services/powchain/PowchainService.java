@@ -17,8 +17,12 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.pow.api.Eth1DataCachePeriodCalculator.calculateEth1DataCacheDurationPriorToCurrentTime;
 import static tech.pegasys.teku.util.config.Constants.MAXIMUM_CONCURRENT_ETH1_REQUESTS;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import org.apache.logging.log4j.LogManager;
@@ -26,10 +30,12 @@ import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.http.HttpService;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.ExceptionThrowingRunnable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
-import tech.pegasys.teku.pow.DepositContractAccessor;
+import tech.pegasys.teku.pow.BlockBasedEth1HeadTracker;
+import tech.pegasys.teku.pow.DepositEventsAccessor;
 import tech.pegasys.teku.pow.DepositFetcher;
 import tech.pegasys.teku.pow.DepositProcessingController;
 import tech.pegasys.teku.pow.ErrorTrackingEth1Provider;
@@ -37,8 +43,11 @@ import tech.pegasys.teku.pow.Eth1BlockFetcher;
 import tech.pegasys.teku.pow.Eth1DepositManager;
 import tech.pegasys.teku.pow.Eth1HeadTracker;
 import tech.pegasys.teku.pow.Eth1Provider;
+import tech.pegasys.teku.pow.Eth1ProviderSelector;
+import tech.pegasys.teku.pow.FallbackAwareEth1Provider;
 import tech.pegasys.teku.pow.MinimumGenesisTimeBlockFinder;
 import tech.pegasys.teku.pow.ThrottlingEth1Provider;
+import tech.pegasys.teku.pow.TimeBasedEth1HeadTracker;
 import tech.pegasys.teku.pow.ValidatingEth1EventsPublisher;
 import tech.pegasys.teku.pow.Web3jEth1Provider;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
@@ -52,28 +61,43 @@ public class PowchainService extends Service {
 
   private final Eth1DepositManager eth1DepositManager;
   private final Eth1HeadTracker headTracker;
-  private final Eth1ChainIdValidator chainIdValidator;
-  private final Web3j web3j;
+  private final Eth1ProviderMonitor eth1ProviderMonitor;
+  private final List<Web3j> web3js;
+  private final OkHttpClient okHttpClient;
 
   public PowchainService(final ServiceConfig serviceConfig, final PowchainConfiguration powConfig) {
     checkArgument(powConfig.isEnabled());
 
     AsyncRunner asyncRunner = serviceConfig.createAsyncRunner("powchain");
 
-    this.web3j = createWeb3j(powConfig);
+    this.okHttpClient = createOkHttpClient();
+    this.web3js = createWeb3js(powConfig);
+    Eth1ProviderSelector eth1ProviderSelector =
+        new Eth1ProviderSelector(
+            IntStream.range(0, web3js.size())
+                .mapToObj(
+                    idx ->
+                        new Web3jEth1Provider(
+                            serviceConfig.getMetricsSystem(),
+                            Eth1Provider.generateEth1ProviderId(
+                                idx + 1, powConfig.getEth1Endpoints().get(idx)),
+                            web3js.get(idx),
+                            asyncRunner,
+                            serviceConfig.getTimeProvider()))
+                .collect(Collectors.toList()));
 
     final Eth1Provider eth1Provider =
         new ThrottlingEth1Provider(
             new ErrorTrackingEth1Provider(
-                new Web3jEth1Provider(web3j, asyncRunner),
+                new FallbackAwareEth1Provider(eth1ProviderSelector, asyncRunner),
                 asyncRunner,
                 serviceConfig.getTimeProvider()),
             MAXIMUM_CONCURRENT_ETH1_REQUESTS,
             serviceConfig.getMetricsSystem());
 
     final String depositContract = powConfig.getDepositContract().toHexString();
-    DepositContractAccessor depositContractAccessor =
-        DepositContractAccessor.create(eth1Provider, web3j, depositContract);
+    DepositEventsAccessor depositEventsAccessor =
+        new DepositEventsAccessor(eth1Provider, depositContract);
 
     final ValidatingEth1EventsPublisher eth1EventsPublisher =
         new ValidatingEth1EventsPublisher(
@@ -91,12 +115,18 @@ public class PowchainService extends Service {
         new DepositFetcher(
             eth1Provider,
             eth1EventsPublisher,
-            depositContractAccessor.getContract(),
+            depositEventsAccessor,
             eth1BlockFetcher,
             asyncRunner,
             powConfig.getEth1LogsMaxBlockRange());
 
-    headTracker = new Eth1HeadTracker(asyncRunner, eth1Provider);
+    if (powConfig.useTimeBasedHeadTracking()) {
+      headTracker =
+          new TimeBasedEth1HeadTracker(
+              powConfig.getSpec(), serviceConfig.getTimeProvider(), asyncRunner, eth1Provider);
+    } else {
+      headTracker = new BlockBasedEth1HeadTracker(asyncRunner, eth1Provider);
+    }
     final DepositProcessingController depositProcessingController =
         new DepositProcessingController(
             eth1Provider,
@@ -118,12 +148,15 @@ public class PowchainService extends Service {
             new MinimumGenesisTimeBlockFinder(eth1Provider, eth1DepositContractDeployBlock),
             eth1DepositContractDeployBlock);
 
-    chainIdValidator = new Eth1ChainIdValidator(eth1Provider, asyncRunner);
+    eth1ProviderMonitor = new Eth1ProviderMonitor(eth1ProviderSelector, asyncRunner);
   }
 
-  private Web3j createWeb3j(final PowchainConfiguration config) {
-    final HttpService web3jService =
-        new HttpService(config.getEth1Endpoint(), createOkHttpClient());
+  private List<Web3j> createWeb3js(final PowchainConfiguration config) {
+    return config.getEth1Endpoints().stream().map(this::createWeb3j).collect(Collectors.toList());
+  }
+
+  private Web3j createWeb3j(final String endpoint) {
+    final HttpService web3jService = new HttpService(endpoint, this.okHttpClient);
     web3jService.addHeader("User-Agent", VersionProvider.VERSION);
     return Web3j.build(web3jService);
   }
@@ -146,15 +179,17 @@ public class PowchainService extends Service {
     return SafeFuture.allOfFailFast(
         SafeFuture.fromRunnable(headTracker::start),
         SafeFuture.fromRunnable(eth1DepositManager::start),
-        SafeFuture.fromRunnable(chainIdValidator::start));
+        SafeFuture.fromRunnable(eth1ProviderMonitor::start));
   }
 
   @Override
   protected SafeFuture<?> doStop() {
     return SafeFuture.allOfFailFast(
-        SafeFuture.fromRunnable(headTracker::stop),
-        SafeFuture.fromRunnable(eth1DepositManager::stop),
-        SafeFuture.fromRunnable(chainIdValidator::stop),
-        SafeFuture.fromRunnable(web3j::shutdown));
+        Stream.concat(
+                Stream.<ExceptionThrowingRunnable>of(
+                    headTracker::stop, eth1DepositManager::stop, eth1ProviderMonitor::stop),
+                web3js.stream().map(web3j -> web3j::shutdown))
+            .map(SafeFuture::fromRunnable)
+            .toArray(SafeFuture[]::new));
   }
 }

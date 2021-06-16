@@ -15,12 +15,8 @@ package tech.pegasys.teku.networking.eth2.gossip.config;
 
 import java.time.Duration;
 import java.util.Optional;
-import tech.pegasys.teku.networking.eth2.gossip.AggregateGossipManager;
-import tech.pegasys.teku.networking.eth2.gossip.AttesterSlashingGossipManager;
-import tech.pegasys.teku.networking.eth2.gossip.BlockGossipManager;
-import tech.pegasys.teku.networking.eth2.gossip.ProposerSlashingGossipManager;
-import tech.pegasys.teku.networking.eth2.gossip.VoluntaryExitGossipManager;
-import tech.pegasys.teku.networking.eth2.gossip.topics.TopicNames;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopics;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipScoringConfig;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipTopicScoringConfig;
@@ -135,8 +131,8 @@ class GossipScoringConfigurator implements GossipConfigurator {
 
     private void configureVoluntaryExitTopic(final GossipTopicsScoringConfig.Builder builder) {
       final String topic =
-          TopicNames.getTopic(
-              forkDigest, VoluntaryExitGossipManager.TOPIC_NAME, eth2Context.getGossipEncoding());
+          GossipTopics.getTopic(
+              forkDigest, GossipTopicName.VOLUNTARY_EXIT, eth2Context.getGossipEncoding());
       builder.topicScoring(
           topic,
           b ->
@@ -149,10 +145,8 @@ class GossipScoringConfigurator implements GossipConfigurator {
 
     private void configureAttesterSlashingTopic(final GossipTopicsScoringConfig.Builder builder) {
       final String topic =
-          TopicNames.getTopic(
-              forkDigest,
-              AttesterSlashingGossipManager.TOPIC_NAME,
-              eth2Context.getGossipEncoding());
+          GossipTopics.getTopic(
+              forkDigest, GossipTopicName.ATTESTER_SLASHING, eth2Context.getGossipEncoding());
       builder.topicScoring(
           topic,
           b ->
@@ -165,10 +159,8 @@ class GossipScoringConfigurator implements GossipConfigurator {
 
     private void configureProposerSlashingTopic(final GossipTopicsScoringConfig.Builder builder) {
       final String topic =
-          TopicNames.getTopic(
-              forkDigest,
-              ProposerSlashingGossipManager.TOPIC_NAME,
-              eth2Context.getGossipEncoding());
+          GossipTopics.getTopic(
+              forkDigest, GossipTopicName.PROPOSER_SLASHING, eth2Context.getGossipEncoding());
       builder.topicScoring(
           topic,
           b ->
@@ -181,8 +173,8 @@ class GossipScoringConfigurator implements GossipConfigurator {
 
     private void configureBlockTopic(final GossipTopicsScoringConfig.Builder builder) {
       final String topic =
-          TopicNames.getTopic(
-              forkDigest, BlockGossipManager.TOPIC_NAME, eth2Context.getGossipEncoding());
+          GossipTopics.getTopic(
+              forkDigest, GossipTopicName.BEACON_BLOCK, eth2Context.getGossipEncoding());
       final MessageDeliveriesOptions msgDeliveryOptions =
           MessageDeliveriesOptions.create(
               scoringConfig.getEpochDuration(), 3.0, scoringConfig.convertEpochsToSlots(5));
@@ -200,8 +192,10 @@ class GossipScoringConfigurator implements GossipConfigurator {
 
     private void configureAggregateTopic(final GossipTopicsScoringConfig.Builder builder) {
       final String topic =
-          TopicNames.getTopic(
-              forkDigest, AggregateGossipManager.TOPIC_NAME, eth2Context.getGossipEncoding());
+          GossipTopics.getTopic(
+              forkDigest,
+              GossipTopicName.BEACON_AGGREGATE_AND_PROOF,
+              eth2Context.getGossipEncoding());
       final MessageDeliveriesOptions msgDeliveryOptions =
           MessageDeliveriesOptions.create(
               scoringConfig.getEpochDuration(), 4.0, scoringConfig.convertEpochsToSlots(2));
@@ -244,9 +238,9 @@ class GossipScoringConfigurator implements GossipConfigurator {
           MessageDeliveriesOptions.create(activationWindow, 16.0, decaySlots);
 
       for (int i = 0; i < scoringConfig.getAttestationSubnetCount(); i++) {
-        final String subnetName = TopicNames.getAttestationSubnetTopicName(i);
+        final String subnetName = GossipTopicName.getAttestationSubnetTopicName(i);
         final String topic =
-            TopicNames.getTopic(forkDigest, subnetName, eth2Context.getGossipEncoding());
+            GossipTopics.getTopic(forkDigest, subnetName, eth2Context.getGossipEncoding());
         builder.topicScoring(
             topic,
             b ->

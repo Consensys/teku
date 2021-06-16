@@ -48,7 +48,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
     DEPOSIT,
     VOLUNTARY_EXIT,
     ATTESTATION,
-    SYNC_COMMITTEE,
+    SYNC_AGGREGATE,
     EXECUTION_PAYLOAD
   }
 
@@ -75,8 +75,8 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
               "operations/attestation",
               new OperationsTestExecutor<>("attestation.ssz_snappy", Operation.ATTESTATION))
           .put(
-              "operations/sync_committee",
-              new OperationsTestExecutor<>("sync_aggregate.ssz_snappy", Operation.SYNC_COMMITTEE))
+              "operations/sync_aggregate",
+              new OperationsTestExecutor<>("sync_aggregate.ssz_snappy", Operation.SYNC_AGGREGATE))
           .put(
               "operations/execution_payload",
               new OperationsTestExecutor<>(
@@ -176,7 +176,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
             loadSsz(testDefinition, dataFileName, Attestation.SSZ_SCHEMA);
         processor.processAttestation(state, attestation);
         break;
-      case SYNC_COMMITTEE:
+      case SYNC_AGGREGATE:
         final SyncAggregate syncAggregate =
             loadSsz(
                 testDefinition,
