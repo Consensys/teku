@@ -59,7 +59,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
         InMemoryStorageSystemBuilder.create().specProvider(spec).build();
     final RecentChainData recentChainData = storageSystem.recentChainData();
     recentChainData.initializeFromAnchorPoint(
-        AnchorPoint.fromInitialBlockAndState(new SignedBlockAndState(anchorBlock, anchorState)),
+        AnchorPoint.fromInitialBlockAndState(
+            spec, new SignedBlockAndState(anchorBlock, anchorState)),
         spec.getSlotStartTime(anchorBlock.getSlot(), anchorState.getGenesis_time()));
 
     final ForkChoice forkChoice =

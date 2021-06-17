@@ -843,7 +843,7 @@ public final class DataStructureUtil {
   public AnchorPoint randomAnchorPoint(final UInt64 epoch) {
     final SignedBlockAndState anchorBlockAndState =
         randomSignedBlockAndState(computeStartSlotAtEpoch(epoch));
-    return AnchorPoint.fromInitialBlockAndState(anchorBlockAndState);
+    return AnchorPoint.fromInitialBlockAndState(spec, anchorBlockAndState);
   }
 
   public AnchorPoint createAnchorFromState(final BeaconState anchorState) {

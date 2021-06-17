@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.datastructures.state;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_next_epoch_boundary;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -89,7 +88,7 @@ public class AnchorPoint extends StateAndBlockSummary {
       final BeaconBlockHeader header = BeaconBlockHeader.fromState(state);
 
       // Calculate closest epoch boundary to use for the checkpoint
-      final UInt64 epoch = compute_next_epoch_boundary(state.getSlot());
+      final UInt64 epoch = spec.computeNextEpochBoundary(state.getSlot());
       final Checkpoint checkpoint = new Checkpoint(epoch, header.hashTreeRoot());
 
       return new AnchorPoint(checkpoint, state, header);
@@ -100,18 +99,19 @@ public class AnchorPoint extends StateAndBlockSummary {
     return state.getSlot().equals(UInt64.valueOf(Constants.GENESIS_SLOT));
   }
 
-  public static AnchorPoint fromInitialBlockAndState(final SignedBlockAndState blockAndState) {
-    return fromInitialBlockAndState(blockAndState.getBlock(), blockAndState.getState());
+  public static AnchorPoint fromInitialBlockAndState(
+      final Spec spec, final SignedBlockAndState blockAndState) {
+    return fromInitialBlockAndState(spec, blockAndState.getBlock(), blockAndState.getState());
   }
 
   public static AnchorPoint fromInitialBlockAndState(
-      final SignedBeaconBlock block, final BeaconState state) {
+      final Spec spec, final SignedBeaconBlock block, final BeaconState state) {
     checkArgument(
         Objects.equals(block.getStateRoot(), state.hashTreeRoot()),
         "State must belong to the given block");
 
     // Calculate closest epoch boundary to use for the checkpoint
-    final UInt64 epoch = compute_next_epoch_boundary(state.getSlot());
+    final UInt64 epoch = spec.computeNextEpochBoundary(state.getSlot());
     final Checkpoint checkpoint = new Checkpoint(epoch, block.getRoot());
 
     return new AnchorPoint(checkpoint, state, block);

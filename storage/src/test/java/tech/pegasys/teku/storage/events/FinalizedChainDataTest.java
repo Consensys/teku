@@ -31,7 +31,7 @@ public class FinalizedChainDataTest {
   private final SignedBlockAndState genesis = chainBuilder.generateGenesis();
   private final Checkpoint genesisCheckpoint =
       chainBuilder.getCurrentCheckpointForEpoch(GENESIS_EPOCH);
-  private final AnchorPoint genesisAnchor = AnchorPoint.fromInitialBlockAndState(genesis);
+  private final AnchorPoint genesisAnchor = AnchorPoint.fromInitialBlockAndState(spec, genesis);
 
   @Test
   public void build_withSingleFinalizedBlock() {
