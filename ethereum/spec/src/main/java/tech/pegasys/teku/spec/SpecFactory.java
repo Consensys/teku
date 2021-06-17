@@ -55,6 +55,9 @@ public class SpecFactory {
       final Optional<UInt64> mergeForkEpoch) {
     // Merge takes precedence in the prototype
     if (mergeForkEpoch.isPresent()) {
+      if (mergeForkEpoch.get().equals(UInt64.ZERO)) {
+        return Spec.createSinceGenesis(config, SpecMilestone.MERGE);
+      }
       return Spec.create(config, SpecMilestone.MERGE);
     }
 

@@ -52,11 +52,8 @@ public class SpecConfigReader {
           PRESET_KEY,
           CONFIG_NAME_KEY,
           // Unsupported, upcoming fork-related keys
-          "MERGE_FORK_VERSION",
-          "MERGE_FORK_EPOCH",
           "SHARDING_FORK_VERSION",
-          "SHARDING_FORK_EPOCH",
-          "TRANSITION_TOTAL_DIFFICULTY");
+          "SHARDING_FORK_EPOCH");
   private static final ImmutableSet<String> CONSTANT_KEYS =
       ImmutableSet.of(
           // Phase0 constants which may exist in legacy config files, but should now be ignored

@@ -155,7 +155,7 @@ public class Eth2NetworkOptions {
       builder.altairForkEpoch(altairForkEpoch);
     }
     if (mergeForkEpoch != null) {
-      builder.altairForkEpoch(mergeForkEpoch);
+      builder.mergeForkEpoch(mergeForkEpoch);
     }
   }
 

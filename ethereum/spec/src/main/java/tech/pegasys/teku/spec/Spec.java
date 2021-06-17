@@ -85,10 +85,18 @@ public class Spec {
   }
 
   static Spec create(final SpecConfig config, final SpecMilestone highestMilestoneSupported) {
+    return create(config, SpecMilestone.getMilestonesUpTo(highestMilestoneSupported));
+  }
+
+  static Spec createSinceGenesis(final SpecConfig config, final SpecMilestone milestone) {
+    return create(config, List.of(milestone));
+  }
+
+  private static Spec create(final SpecConfig config, final List<SpecMilestone> milestones) {
     final Map<SpecMilestone, SpecVersion> specVersions = new HashMap<>();
     final ForkSchedule.Builder forkScheduleBuilder = ForkSchedule.builder();
 
-    for (SpecMilestone milestone : SpecMilestone.getMilestonesUpTo(highestMilestoneSupported)) {
+    for (SpecMilestone milestone : milestones) {
       SpecVersion.create(milestone, config)
           .ifPresent(
               milestoneSpec -> {
