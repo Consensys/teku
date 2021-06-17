@@ -39,7 +39,7 @@ public class AttestationDutyScheduler extends AbstractDutyScheduler {
   }
 
   @Override
-  public void onAttestationCreationDue(final UInt64 slot) {
+  public void onAttestationCreationDue(final UInt64 slot, final boolean receivedBlock) {
     onProductionDue(slot);
   }
 

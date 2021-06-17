@@ -67,7 +67,7 @@ class EventSourceHandlerTest {
     verify(validatorTimingChannel)
         .onHeadUpdate(
             eq(slot), eq(previousDutyDependentRoot), eq(currentDutyDependentRoot), eq(blockRoot));
-    verify(validatorTimingChannel).onAttestationCreationDue(slot);
+    verify(validatorTimingChannel).onAttestationCreationDue(slot, true);
     verifyNoMoreInteractions(validatorTimingChannel);
   }
 

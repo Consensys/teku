@@ -374,7 +374,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   @Test
   public void shouldNotProcessAttestationIfEpochIsUnknown() {
     createDutySchedulerWithMockDuties();
-    dutyScheduler.onAttestationCreationDue(ONE);
+    dutyScheduler.onAttestationCreationDue(ONE, false);
     verify(scheduledDuties, never()).performProductionDuty(ZERO);
   }
 
@@ -394,7 +394,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     // first slot of epoch 2
     final UInt64 slot = spec.computeStartSlotAtEpoch(UInt64.valueOf(LOOKAHEAD_EPOCHS + 1));
     dutyScheduler.onSlot(ONE); // epoch 0
-    dutyScheduler.onAttestationCreationDue(slot);
+    dutyScheduler.onAttestationCreationDue(slot, false);
     verify(scheduledDuties, never()).performProductionDuty(slot);
   }
 
@@ -416,7 +416,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     final UInt64 slot =
         spec.computeStartSlotAtEpoch(UInt64.valueOf(LOOKAHEAD_EPOCHS + 1)).decrement();
     dutyScheduler.onSlot(ONE); // epoch 0
-    dutyScheduler.onAttestationCreationDue(slot);
+    dutyScheduler.onAttestationCreationDue(slot, false);
     verify(scheduledDuties).performProductionDuty(slot);
   }
 
@@ -433,7 +433,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     dutyScheduler.onSlot(ZERO);
 
     dutyScheduler.onBlockProductionDue(ZERO);
-    dutyScheduler.onAttestationCreationDue(ZERO);
+    dutyScheduler.onAttestationCreationDue(ZERO, false);
     dutyScheduler.onAttestationAggregationDue(ZERO);
     // Duties haven't been loaded yet.
     verify(scheduledDuties, never()).performProductionDuty(ZERO);
@@ -469,11 +469,11 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     verify(attestationDuty).addValidator(validator1, 3, 6, 5, 10);
 
     // Execute
-    dutyScheduler.onAttestationCreationDue(attestationProductionSlot);
+    dutyScheduler.onAttestationCreationDue(attestationProductionSlot, true);
     verify(attestationDuty).performDuty();
 
     // Somehow we triggered the same slot again.
-    dutyScheduler.onAttestationCreationDue(attestationProductionSlot);
+    dutyScheduler.onAttestationCreationDue(attestationProductionSlot, false);
     // But shouldn't produce another block and get ourselves slashed.
     verifyNoMoreInteractions(attestationDuty);
   }
@@ -542,7 +542,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
             validator2CommitteeSize);
 
     // Execute
-    dutyScheduler.onAttestationCreationDue(attestationSlot);
+    dutyScheduler.onAttestationCreationDue(attestationSlot, true);
     verify(attestationDuty).performDuty();
   }
 
@@ -610,7 +610,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
             validator2CommitteeSize);
 
     // Execute
-    dutyScheduler.onAttestationCreationDue(attestationSlot);
+    dutyScheduler.onAttestationCreationDue(attestationSlot, false);
     verify(attestationDuty).performDuty();
   }
 
@@ -678,10 +678,10 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
             validator2CommitteeSize);
 
     // Execute
-    dutyScheduler.onAttestationCreationDue(attestationSlot);
+    dutyScheduler.onAttestationCreationDue(attestationSlot, false);
     verify(attestationDuty).performDuty();
 
-    dutyScheduler.onAttestationCreationDue(attestationSlot);
+    dutyScheduler.onAttestationCreationDue(attestationSlot, false);
     verifyNoMoreInteractions(attestationDuty);
   }
 

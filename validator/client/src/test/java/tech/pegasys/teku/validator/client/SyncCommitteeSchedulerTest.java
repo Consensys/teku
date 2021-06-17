@@ -93,7 +93,7 @@ class SyncCommitteeSchedulerTest {
     UInt64.range(UInt64.ONE, UInt64.valueOf(10))
         .forEach(
             slot -> {
-              scheduler.onAttestationCreationDue(slot);
+              scheduler.onAttestationCreationDue(slot, false);
               verify(duties).performProductionDuty(slot);
             });
   }
@@ -179,12 +179,12 @@ class SyncCommitteeSchedulerTest {
     getRequestedDutiesForSyncCommitteePeriod(1).complete(Optional.of(nextDuties));
 
     // Subscribed, but still performing duties for first sync committee period
-    scheduler.onAttestationCreationDue(subscribeSlot);
+    scheduler.onAttestationCreationDue(subscribeSlot, false);
     verify(duties).performProductionDuty(subscribeSlot);
 
     final UInt64 nextSyncCommitteeFirstDutySlot = nextSyncCommitteePeriodStartSlot.minus(1);
     scheduler.onSlot(nextSyncCommitteeFirstDutySlot);
-    scheduler.onAttestationCreationDue(nextSyncCommitteeFirstDutySlot);
+    scheduler.onAttestationCreationDue(nextSyncCommitteeFirstDutySlot, false);
     verify(nextDuties).performProductionDuty(nextSyncCommitteeFirstDutySlot);
     verify(duties, never()).performProductionDuty(nextSyncCommitteeFirstDutySlot);
   }
@@ -210,7 +210,7 @@ class SyncCommitteeSchedulerTest {
     getRequestedDutiesForSyncCommitteePeriod(1).complete(Optional.of(nextDuties));
 
     // Unexpectedly jump ahead to the next committee period without getting a slot event first
-    scheduler.onAttestationCreationDue(nextSyncCommitteePeriodStartSlot);
+    scheduler.onAttestationCreationDue(nextSyncCommitteePeriodStartSlot, false);
     scheduler.onAttestationAggregationDue(nextSyncCommitteePeriodStartSlot);
 
     // Should use duties from the next period
@@ -222,7 +222,7 @@ class SyncCommitteeSchedulerTest {
         syncCommitteeUtil.computeFirstEpochOfNextSyncCommitteePeriod(
             nextSyncCommitteePeriodStartEpoch);
     final UInt64 tooFarInFutureSlot = spec.computeStartSlotAtEpoch(tooFarInFutureEpoch);
-    scheduler.onAttestationCreationDue(tooFarInFutureSlot);
+    scheduler.onAttestationCreationDue(tooFarInFutureSlot, false);
     scheduler.onAttestationAggregationDue(tooFarInFutureSlot);
 
     verify(duties, never()).performProductionDuty(tooFarInFutureSlot);

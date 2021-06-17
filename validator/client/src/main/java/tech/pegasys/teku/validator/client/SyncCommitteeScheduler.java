@@ -109,7 +109,10 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
   }
 
   @Override
-  public void onAttestationCreationDue(final UInt64 slot) {
+  public void onAttestationCreationDue(final UInt64 slot, final boolean receivedBlock) {
+    if (receivedBlock) {
+      return;
+    }
     getDutiesForSlot(slot).ifPresent(duties -> duties.onProductionDue(slot));
   }
 

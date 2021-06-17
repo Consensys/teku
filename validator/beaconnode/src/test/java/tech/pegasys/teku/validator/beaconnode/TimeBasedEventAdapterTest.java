@@ -111,12 +111,14 @@ class TimeBasedEventAdapterTest {
     // Attestation should not fire at the start of the slot
     timeProvider.advanceTimeBySeconds(timeUntilNextSlot);
     asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel, never()).onAttestationCreationDue(UInt64.valueOf(nextSlot));
+    verify(validatorTimingChannel, never())
+        .onAttestationCreationDue(UInt64.valueOf(nextSlot), false);
 
     // But does fire 1/3rds through the slot
     timeProvider.advanceTimeBySeconds(secondsPerSlot / 3);
     asyncRunner.executeDueActionsRepeatedly();
-    verify(validatorTimingChannel, times(1)).onAttestationCreationDue(UInt64.valueOf(nextSlot));
+    verify(validatorTimingChannel, times(1))
+        .onAttestationCreationDue(UInt64.valueOf(nextSlot), false);
   }
 
   @Test

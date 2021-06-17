@@ -89,8 +89,8 @@ public class ValidatorTimingActions implements ValidatorTimingChannel {
   }
 
   @Override
-  public void onAttestationCreationDue(final UInt64 slot) {
-    delegates.forEach(delegate -> delegate.onAttestationCreationDue(slot));
+  public void onAttestationCreationDue(final UInt64 slot, final boolean receivedBlock) {
+    delegates.forEach(delegate -> delegate.onAttestationCreationDue(slot, receivedBlock));
   }
 
   @Override

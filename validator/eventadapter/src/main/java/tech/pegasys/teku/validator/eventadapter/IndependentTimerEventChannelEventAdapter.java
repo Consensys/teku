@@ -74,6 +74,6 @@ public class IndependentTimerEventChannelEventAdapter
             validatorTimingChannel.onChainReorg(slot, reorgContext.getCommonAncestorSlot()));
     validatorTimingChannel.onHeadUpdate(
         slot, previousDutyDependentRoot, currentDutyDependentRoot, bestBlockRoot);
-    validatorTimingChannel.onAttestationCreationDue(slot);
+    validatorTimingChannel.onAttestationCreationDue(slot, true);
   }
 }

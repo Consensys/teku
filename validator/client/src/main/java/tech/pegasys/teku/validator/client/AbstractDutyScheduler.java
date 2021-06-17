@@ -161,7 +161,7 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
   public void onBlockProductionDue(final UInt64 slot) {}
 
   @Override
-  public void onAttestationCreationDue(final UInt64 slot) {}
+  public void onAttestationCreationDue(final UInt64 slot, final boolean receivedBlock) {}
 
   protected void onProductionDue(final UInt64 slot) {
     // Check slot being null for the edge case of genesis slot (i.e. slot 0)

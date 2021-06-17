@@ -87,7 +87,7 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
       LOG.warn("Skipping attestation for slot {} due to unexpected delay in slot processing", slot);
       return;
     }
-    validatorTimingChannel.onAttestationCreationDue(slot);
+    validatorTimingChannel.onAttestationCreationDue(slot, false);
   }
 
   private void onAggregationDue(final UInt64 scheduledTime, final UInt64 actualTime) {

@@ -107,7 +107,7 @@ class EventSourceHandler implements EventHandler {
         headEvent.previousDutyDependentRoot,
         headEvent.currentDutyDependentRoot,
         headEvent.block);
-    validatorTimingChannel.onAttestationCreationDue(headEvent.slot);
+    validatorTimingChannel.onAttestationCreationDue(headEvent.slot, true);
   }
 
   private void handleChainReorgEvent(final MessageEvent messageEvent)
