@@ -20,8 +20,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -33,6 +36,7 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 public class SyncCommitteeContributionPool implements SlotEventsChannel {
+  private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
   private final SignedContributionAndProofValidator validator;
@@ -81,13 +85,20 @@ public class SyncCommitteeContributionPool implements SlotEventsChannel {
 
   private SyncCommitteeContribution betterContribution(
       final SyncCommitteeContribution a, SyncCommitteeContribution b) {
+    final SyncCommitteeContribution best;
     if (a == null) {
-      return b;
+      best = b;
     } else if (b == null) {
-      return a;
+      best = a;
     } else {
-      return a.getAggregationBits().getBitCount() >= b.getAggregationBits().getBitCount() ? a : b;
+      best = a.getAggregationBits().getBitCount() >= b.getAggregationBits().getBitCount() ? a : b;
     }
+    LOG.trace(
+        "Updating best sync committee contribution for slot {} and root {} to one with {} participants",
+        best.getSlot(),
+        LogFormatter.formatHashRoot(best.getBeaconBlockRoot()),
+        best.getAggregationBits().getBitCount());
+    return best;
   }
 
   /**

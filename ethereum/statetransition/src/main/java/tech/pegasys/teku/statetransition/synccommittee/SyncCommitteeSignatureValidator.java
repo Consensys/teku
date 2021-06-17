@@ -93,6 +93,7 @@ public class SyncCommitteeSignatureValidator {
       final UniquenessKey key =
           getUniquenessKey(signature, validateableSignature.getReceivedSubnetId().getAsInt());
       if (seenIndices.contains(key)) {
+        LOG.trace("Ignoring sync committee signature {} because it has already been seen", key);
         return SafeFuture.completedFuture(IGNORE);
       }
       uniquenessKey = Optional.of(key);
@@ -174,6 +175,7 @@ public class SyncCommitteeSignatureValidator {
     // [IGNORE] There has been no other valid sync committee signature for the declared slot for the
     // validator referenced by sync_committee_signature.validator_index.
     if (seenIndices.containsAll(uniquenessKeys)) {
+      LOG.trace("Ignoring sync committee signature because it has already been seen");
       return IGNORE;
     }
 
