@@ -532,7 +532,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             attestations.forEach(
                 attestation ->
                     aggregateValidator.addSeenAggregate(
-                        ValidateableAttestation.from(attestation))));
+                        ValidateableAttestation.from(spec, attestation))));
     attestationManager =
         AttestationManager.create(
             eventBus,

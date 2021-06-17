@@ -207,7 +207,7 @@ public class GossipMessageHandlerIntegrationTest {
         node1.storageClient().getChainHead().orElseThrow();
     Attestation validAttestation = attestationGenerator.validAttestation(bestBlockAndState);
     processedAttestationSubscribers.forEach(
-        s -> s.accept(ValidateableAttestation.from(validAttestation)));
+        s -> s.accept(ValidateableAttestation.from(spec, validAttestation)));
 
     ensureConditionRemainsMet(() -> assertThat(node2attestations).isEmpty());
   }
@@ -257,7 +257,8 @@ public class GossipMessageHandlerIntegrationTest {
     final StateAndBlockSummary bestBlockAndState =
         node1.storageClient().getChainHead().orElseThrow();
     ValidateableAttestation validAttestation =
-        ValidateableAttestation.from(attestationGenerator.validAttestation(bestBlockAndState));
+        ValidateableAttestation.from(
+            spec, attestationGenerator.validAttestation(bestBlockAndState));
 
     final int subnetId =
         spec.computeSubnetForAttestation(
@@ -328,7 +329,7 @@ public class GossipMessageHandlerIntegrationTest {
         spec.computeSubnetForAttestation(bestBlockAndState.getState(), attestation);
 
     ValidateableAttestation validAttestation =
-        ValidateableAttestation.fromNetwork(attestation, subnetId);
+        ValidateableAttestation.fromNetwork(spec, attestation, subnetId);
 
     node1.network().subscribeToAttestationSubnetId(subnetId);
     node2.network().subscribeToAttestationSubnetId(subnetId);

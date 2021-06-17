@@ -20,6 +20,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.bls.BLS;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -30,11 +31,13 @@ import tech.pegasys.teku.ssz.collections.SszBitlist;
  * made redundant by the current aggregate.
  */
 class AggregateAttestationBuilder {
+  private final Spec spec;
   private final Set<ValidateableAttestation> includedAttestations = new HashSet<>();
   private final AttestationData attestationData;
   private SszBitlist currentAggregateBits;
 
-  AggregateAttestationBuilder(final AttestationData attestationData) {
+  AggregateAttestationBuilder(final Spec spec, final AttestationData attestationData) {
+    this.spec = spec;
     this.attestationData = attestationData;
   }
 
@@ -61,6 +64,7 @@ class AggregateAttestationBuilder {
   public ValidateableAttestation buildAggregate() {
     checkState(currentAggregateBits != null, "Must aggregate at least one attestation");
     return ValidateableAttestation.from(
+        spec,
         new Attestation(
             currentAggregateBits,
             attestationData,

@@ -23,6 +23,7 @@ import java.util.TreeMap;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -45,12 +46,16 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
   private final NavigableMap<Integer, Set<ValidateableAttestation>> attestationsByValidatorCount =
       new TreeMap<>(Comparator.reverseOrder()); // Most validators first
 
+  private final Spec spec;
   private final AttestationData attestationData;
   private final Bytes32 committeeShufflingSeed;
   private SszBitlist seenAggregationBits = Attestation.createEmptyAggregationBits();
 
   public MatchingDataAttestationGroup(
-      final AttestationData attestationData, final Bytes32 committeeShufflingSeed) {
+      final Spec spec,
+      final AttestationData attestationData,
+      final Bytes32 committeeShufflingSeed) {
+    this.spec = spec;
     this.attestationData = attestationData;
     this.committeeShufflingSeed = committeeShufflingSeed;
   }
@@ -159,7 +164,8 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
 
     @Override
     public ValidateableAttestation next() {
-      final AggregateAttestationBuilder builder = new AggregateAttestationBuilder(attestationData);
+      final AggregateAttestationBuilder builder =
+          new AggregateAttestationBuilder(spec, attestationData);
       streamRemainingAttestations()
           .forEach(
               candidate -> {

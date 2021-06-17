@@ -55,7 +55,7 @@ public class SingleAttestationTopicHandlerTest
     final StateAndBlockSummary blockAndState = recentChainData.getChainHead().orElseThrow();
     final ValidateableAttestation attestation =
         ValidateableAttestation.fromNetwork(
-            attestationGenerator.validAttestation(blockAndState), SUBNET_ID);
+            spec, attestationGenerator.validAttestation(blockAndState), SUBNET_ID);
     when(processor.process(attestation))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
     final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
@@ -72,7 +72,7 @@ public class SingleAttestationTopicHandlerTest
     final StateAndBlockSummary blockAndState = recentChainData.getChainHead().orElseThrow();
     final ValidateableAttestation attestation =
         ValidateableAttestation.fromNetwork(
-            attestationGenerator.validAttestation(blockAndState), SUBNET_ID);
+            spec, attestationGenerator.validAttestation(blockAndState), SUBNET_ID);
     when(processor.process(attestation))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.IGNORE));
     final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
@@ -89,7 +89,7 @@ public class SingleAttestationTopicHandlerTest
     final StateAndBlockSummary blockAndState = recentChainData.getChainHead().orElseThrow();
     final ValidateableAttestation attestation =
         ValidateableAttestation.fromNetwork(
-            attestationGenerator.validAttestation(blockAndState), SUBNET_ID);
+            spec, attestationGenerator.validAttestation(blockAndState), SUBNET_ID);
     when(processor.process(attestation))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
     final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
@@ -106,7 +106,7 @@ public class SingleAttestationTopicHandlerTest
     final StateAndBlockSummary blockAndState = recentChainData.getChainHead().orElseThrow();
     final ValidateableAttestation attestation =
         ValidateableAttestation.fromNetwork(
-            attestationGenerator.validAttestation(blockAndState), SUBNET_ID);
+            spec, attestationGenerator.validAttestation(blockAndState), SUBNET_ID);
     when(processor.process(attestation))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.REJECT));
     final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());

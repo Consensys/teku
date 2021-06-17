@@ -93,13 +93,13 @@ public class AttestationGossipManagerTest {
 
     // Post new attestation
     final Bytes serialized = gossipEncoding.encode(attestation);
-    attestationGossipManager.onNewAttestation(ValidateableAttestation.from(attestation));
+    attestationGossipManager.onNewAttestation(ValidateableAttestation.from(spec, attestation));
 
     verify(gossipNetwork).gossip(getSubnetTopic(subnetId), serialized);
 
     // We should process attestations for different committees on the same subnet
     final Bytes serialized2 = gossipEncoding.encode(attestation2);
-    attestationGossipManager.onNewAttestation(ValidateableAttestation.from(attestation2));
+    attestationGossipManager.onNewAttestation(ValidateableAttestation.from(spec, attestation2));
 
     verify(gossipNetwork).gossip(getSubnetTopic(subnetId), serialized2);
   }
@@ -112,7 +112,7 @@ public class AttestationGossipManagerTest {
     attestationGossipManager.subscribeToSubnetId(subnetId + 1);
 
     // Post new attestation
-    attestationGossipManager.onNewAttestation(ValidateableAttestation.from(attestation));
+    attestationGossipManager.onNewAttestation(ValidateableAttestation.from(spec, attestation));
 
     verify(gossipNetwork).gossip(getSubnetTopic(subnetId), gossipEncoding.encode(attestation));
   }
@@ -131,13 +131,13 @@ public class AttestationGossipManagerTest {
 
     // Attestation for dismissed assignment should be ignored
     final Bytes serialized = gossipEncoding.encode(attestation);
-    attestationGossipManager.onNewAttestation(ValidateableAttestation.from(attestation));
+    attestationGossipManager.onNewAttestation(ValidateableAttestation.from(spec, attestation));
 
     verify(gossipNetwork).gossip(getSubnetTopic(dismissedSubnetId), serialized);
 
     // Attestation for remaining assignment should be processed
     final Bytes serialized2 = gossipEncoding.encode(attestation2);
-    attestationGossipManager.onNewAttestation(ValidateableAttestation.from(attestation2));
+    attestationGossipManager.onNewAttestation(ValidateableAttestation.from(spec, attestation2));
 
     verify(gossipNetwork).gossip(getSubnetTopic(subnetId), serialized2);
   }
@@ -148,7 +148,7 @@ public class AttestationGossipManagerTest {
     when(gossipNetwork.gossip(any(), any())).thenReturn(SafeFuture.completedFuture(null));
 
     // Attestation for dismissed assignment should be ignored
-    attestationGossipManager.onNewAttestation(ValidateableAttestation.from(attestation));
+    attestationGossipManager.onNewAttestation(ValidateableAttestation.from(spec, attestation));
 
     assertThat(getPublishSuccessCounterValue()).isEqualTo(1);
     assertThat(getPublishFailureCounterValue()).isZero();
@@ -161,7 +161,7 @@ public class AttestationGossipManagerTest {
         .thenReturn(SafeFuture.failedFuture(new RuntimeException("Ooops")));
 
     // Attestation for dismissed assignment should be ignored
-    attestationGossipManager.onNewAttestation(ValidateableAttestation.from(attestation));
+    attestationGossipManager.onNewAttestation(ValidateableAttestation.from(spec, attestation));
 
     assertThat(getPublishSuccessCounterValue()).isZero();
     assertThat(getPublishFailureCounterValue()).isEqualTo(1);

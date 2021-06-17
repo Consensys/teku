@@ -192,13 +192,15 @@ class GossipForkManagerTest {
     manager.configureGossipForEpoch(UInt64.ZERO);
 
     final ValidateableAttestation firstForkAttestation =
-        ValidateableAttestation.fromValidator(dataStructureUtil.randomAttestation(0));
+        ValidateableAttestation.fromValidator(spec, dataStructureUtil.randomAttestation(0));
     final ValidateableAttestation secondForkAttestation =
         ValidateableAttestation.fromValidator(
+            spec,
             dataStructureUtil.randomAttestation(
                 spec.computeStartSlotAtEpoch(UInt64.ONE).longValue()));
     final ValidateableAttestation thirdForkAttestation =
         ValidateableAttestation.fromValidator(
+            spec,
             dataStructureUtil.randomAttestation(
                 spec.computeStartSlotAtEpoch(UInt64.valueOf(2)).longValue()));
 
@@ -228,6 +230,7 @@ class GossipForkManagerTest {
 
     final ValidateableAttestation attestation =
         ValidateableAttestation.fromValidator(
+            spec,
             dataStructureUtil.randomAttestation(
                 spec.computeStartSlotAtEpoch(secondFork.getActivationEpoch()).longValue()));
 

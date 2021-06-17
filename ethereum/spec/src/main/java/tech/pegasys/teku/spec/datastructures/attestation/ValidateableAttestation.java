@@ -13,10 +13,6 @@
 
 package tech.pegasys.teku.spec.datastructures.attestation;
 
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_seed;
-import static tech.pegasys.teku.util.config.Constants.DOMAIN_BEACON_ATTESTER;
-
 import com.google.common.base.Objects;
 import com.google.common.base.Suppliers;
 import java.util.Collection;
@@ -26,6 +22,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
@@ -33,6 +31,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class ValidateableAttestation {
+  private final Spec spec;
   private final Attestation attestation;
   private final Optional<SignedAggregateAndProof> maybeAggregate;
   private final Supplier<Bytes32> hashTreeRoot;
@@ -45,30 +44,36 @@ public class ValidateableAttestation {
   private volatile Optional<Bytes32> committeeShufflingSeed = Optional.empty();
   private volatile OptionalInt receivedSubnetId;
 
-  public static ValidateableAttestation from(Attestation attestation) {
-    return new ValidateableAttestation(attestation, Optional.empty(), OptionalInt.empty(), false);
-  }
-
-  public static ValidateableAttestation fromValidator(Attestation attestation) {
-    return new ValidateableAttestation(attestation, Optional.empty(), OptionalInt.empty(), true);
-  }
-
-  public static ValidateableAttestation fromNetwork(Attestation attestation, int receivedSubnetId) {
+  public static ValidateableAttestation from(final Spec spec, Attestation attestation) {
     return new ValidateableAttestation(
-        attestation, Optional.empty(), OptionalInt.of(receivedSubnetId), false);
+        spec, attestation, Optional.empty(), OptionalInt.empty(), false);
+  }
+
+  public static ValidateableAttestation fromValidator(final Spec spec, Attestation attestation) {
+    return new ValidateableAttestation(
+        spec, attestation, Optional.empty(), OptionalInt.empty(), true);
+  }
+
+  public static ValidateableAttestation fromNetwork(
+      final Spec spec, Attestation attestation, int receivedSubnetId) {
+    return new ValidateableAttestation(
+        spec, attestation, Optional.empty(), OptionalInt.of(receivedSubnetId), false);
   }
 
   public static ValidateableAttestation aggregateFromValidator(
-      SignedAggregateAndProof attestation) {
+      final Spec spec, SignedAggregateAndProof attestation) {
     return new ValidateableAttestation(
+        spec,
         attestation.getMessage().getAggregate(),
         Optional.of(attestation),
         OptionalInt.empty(),
         true);
   }
 
-  public static ValidateableAttestation aggregateFromNetwork(SignedAggregateAndProof attestation) {
+  public static ValidateableAttestation aggregateFromNetwork(
+      final Spec spec, SignedAggregateAndProof attestation) {
     return new ValidateableAttestation(
+        spec,
         attestation.getMessage().getAggregate(),
         Optional.of(attestation),
         OptionalInt.empty(),
@@ -76,10 +81,12 @@ public class ValidateableAttestation {
   }
 
   private ValidateableAttestation(
+      final Spec spec,
       Attestation attestation,
       Optional<SignedAggregateAndProof> aggregateAndProof,
       OptionalInt receivedSubnetId,
       boolean producedLocally) {
+    this.spec = spec;
     this.maybeAggregate = aggregateAndProof;
     this.attestation = attestation;
     this.receivedSubnetId = receivedSubnetId;
@@ -121,8 +128,10 @@ public class ValidateableAttestation {
     }
 
     Bytes32 committeeShufflingSeed =
-        get_seed(
-            state, compute_epoch_at_slot(attestation.getData().getSlot()), DOMAIN_BEACON_ATTESTER);
+        spec.getSeed(
+            state,
+            spec.computeEpochAtSlot(attestation.getData().getSlot()),
+            Domain.BEACON_ATTESTER);
     this.committeeShufflingSeed = Optional.of(committeeShufflingSeed);
   }
 
