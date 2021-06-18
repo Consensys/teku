@@ -43,10 +43,14 @@ class LevelDbUtils {
   }
 
   static <K, V> byte[] getColumnKey(final KvStoreColumn<K, V> column, final K key) {
-    final byte[] prefix = column.getId().toArrayUnsafe();
     final byte[] suffix = column.getKeySerializer().serialize(key);
     checkArgument(suffix.length > 0, "Empty item key detected for serialization of %s", key);
-    return concat(prefix, suffix);
+    return getColumnKey(column, suffix);
+  }
+
+  static <K, V> byte[] getColumnKey(final KvStoreColumn<K, V> column, final byte[] key) {
+    final byte[] prefix = column.getId().toArrayUnsafe();
+    return concat(prefix, key);
   }
 
   static <K, V> boolean isFromColumn(final KvStoreColumn<K, V> column, final byte[] key) {
@@ -80,8 +84,18 @@ class LevelDbUtils {
         column.getValueSerializer().deserialize(entry.getValue()));
   }
 
+  static ColumnEntry<byte[], byte[]> asRawColumnEntry(
+      final KvStoreColumn<?, ?> column, final Map.Entry<byte[], byte[]> entry) {
+    return ColumnEntry.create(removeKeyPrefix(column, entry.getKey()), entry.getValue());
+  }
+
   static <K, V> K deserializeKey(final KvStoreColumn<K, V> column, final byte[] key) {
-    final byte[] keyBytes = Arrays.copyOfRange(key, column.getId().size(), key.length);
+    final byte[] keyBytes = removeKeyPrefix(column, key);
     return column.getKeySerializer().deserialize(keyBytes);
+  }
+
+  static byte[] removeKeyPrefix(final KvStoreColumn<?, ?> column, final byte[] key) {
+    final byte[] keyBytes = Arrays.copyOfRange(key, column.getId().size(), key.length);
+    return keyBytes;
   }
 }

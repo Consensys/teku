@@ -25,6 +25,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes;
 import org.rocksdb.AbstractRocksIterator;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.RocksDBException;
@@ -59,10 +60,18 @@ public class RocksDbInstance implements KvStoreAccessor {
 
   @Override
   public <T> Optional<T> get(KvStoreVariable<T> variable) {
+    return getRaw(variable).map(data -> variable.getSerializer().deserialize(data.toArrayUnsafe()));
+  }
+
+  @Override
+  public Optional<Bytes> getRaw(final KvStoreVariable<?> variable) {
     assertOpen();
     try {
-      return Optional.ofNullable(db.get(defaultHandle, variable.getId().toArrayUnsafe()))
-          .map(data -> variable.getSerializer().deserialize(data));
+      final byte[] byteArray = db.get(defaultHandle, variable.getId().toArrayUnsafe());
+      if (byteArray == null) {
+        return Optional.empty();
+      }
+      return Optional.of(Bytes.wrap(byteArray));
     } catch (RocksDBException e) {
       throw RocksDbExceptionUtil.wrapException("Failed to get value", e);
     }
@@ -129,6 +138,14 @@ public class RocksDbInstance implements KvStoreAccessor {
 
   @Override
   @MustBeClosed
+  public Stream<ColumnEntry<Bytes, Bytes>> streamRaw(final KvStoreColumn<?, ?> column) {
+    assertOpen();
+    return createStreamRaw(column, RocksIterator::seekToFirst, key -> true)
+        .map(entry -> ColumnEntry.create(Bytes.wrap(entry.getKey()), Bytes.wrap(entry.getValue())));
+  }
+
+  @Override
+  @MustBeClosed
   public <K extends Comparable<K>, V> Stream<ColumnEntry<K, V>> stream(
       final KvStoreColumn<K, V> column, final K from, final K to) {
     assertOpen();
@@ -154,16 +171,32 @@ public class RocksDbInstance implements KvStoreAccessor {
     return createStream(column, setupIterator, key -> true);
   }
 
-  @SuppressWarnings("MustBeClosedChecker")
   @MustBeClosed
   private <K, V> Stream<ColumnEntry<K, V>> createStream(
+      KvStoreColumn<K, V> column,
+      Consumer<RocksIterator> setupIterator,
+      Predicate<K> continueTest) {
+
+    return createStreamRaw(column, setupIterator, continueTest)
+        .map(
+            entry ->
+                ColumnEntry.create(
+                    column.getKeySerializer().deserialize(entry.getKey()),
+                    column.getValueSerializer().deserialize(entry.getValue())));
+  }
+
+  @SuppressWarnings("MustBeClosedChecker")
+  @MustBeClosed
+  private <K, V> Stream<ColumnEntry<byte[], byte[]>> createStreamRaw(
       KvStoreColumn<K, V> column,
       Consumer<RocksIterator> setupIterator,
       Predicate<K> continueTest) {
     final ColumnFamilyHandle handle = columnHandles.get(column);
     final RocksIterator rocksDbIterator = db.newIterator(handle);
     setupIterator.accept(rocksDbIterator);
-    return RocksDbIterator.create(column, rocksDbIterator, continueTest, closed::get).toStream();
+    return RocksDbIterator.create(column, rocksDbIterator, continueTest, closed::get)
+        .toStream()
+        .onClose(rocksDbIterator::close);
   }
 
   @Override

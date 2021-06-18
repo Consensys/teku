@@ -17,12 +17,15 @@ import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 
 public interface KvStoreAccessor extends AutoCloseable {
 
   <T> Optional<T> get(KvStoreVariable<T> variable);
+
+  Optional<Bytes> getRaw(KvStoreVariable<?> variable);
 
   <K, V> Optional<V> get(KvStoreColumn<K, V> column, K key);
 
@@ -63,6 +66,15 @@ public interface KvStoreAccessor extends AutoCloseable {
   <K, V> Stream<ColumnEntry<K, V>> stream(KvStoreColumn<K, V> column);
 
   /**
+   * WARNING: should only be used to migrate data between database instances
+   *
+   * @param column
+   * @return
+   */
+  @MustBeClosed
+  Stream<ColumnEntry<Bytes, Bytes>> streamRaw(KvStoreColumn<?, ?> column);
+
+  /**
    * Stream entries from a column between keys from and to fully inclusive.
    *
    * @param column the column to stream entries from
@@ -82,7 +94,30 @@ public interface KvStoreAccessor extends AutoCloseable {
 
     <T> void put(KvStoreVariable<T> variable, T value);
 
+    /**
+     * Write raw bytes to a specified variable WARNING: should only be used to migrate data between
+     * database instances
+     *
+     * @param variable
+     * @param value
+     * @param <T>
+     */
+    <T> void putRaw(KvStoreVariable<T> variable, Bytes value);
+
     <K, V> void put(KvStoreColumn<K, V> column, K key, V value);
+
+    /**
+     * Write raw bytes to a column for a given key WARNING: should only be used to migrate data
+     * between database instances
+     *
+     * @apiNote
+     * @param column
+     * @param key
+     * @param value
+     * @param <K>
+     * @param <V>
+     */
+    <K, V> void putRaw(KvStoreColumn<K, V> column, Bytes key, Bytes value);
 
     <K, V> void put(KvStoreColumn<K, V> column, Map<K, V> data);
 
