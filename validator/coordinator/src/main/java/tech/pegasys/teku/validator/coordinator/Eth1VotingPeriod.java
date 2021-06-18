@@ -42,6 +42,10 @@ public class Eth1VotingPeriod {
         spec.getEth1FollowDistance(slot).times(spec.getSecondsPerEth1Block(slot)));
   }
 
+  public long getTotalSlotsInVotingPeriod(final UInt64 slot) {
+    return spec.getEpochsPerEth1VotingPeriod(slot) * spec.getSlotsPerEpoch(slot);
+  }
+
   private UInt64 secondsBeforeCurrentVotingPeriodStartTime(
       final UInt64 slot, final UInt64 genesisTime, final UInt64 valueToSubtract) {
     final UInt64 currentVotingPeriodStartTime = getVotingPeriodStartTime(slot, genesisTime);
@@ -54,7 +58,7 @@ public class Eth1VotingPeriod {
 
   private UInt64 getVotingPeriodStartTime(final UInt64 slot, final UInt64 genesisTime) {
     final UInt64 eth1VotingPeriodStartSlot =
-        slot.minus(slot.mod(spec.getEpochsPerEth1VotingPeriod(slot) * spec.getSlotsPerEpoch(slot)));
+        slot.minus(slot.mod(getTotalSlotsInVotingPeriod(slot)));
     return computeTimeAtSlot(eth1VotingPeriodStartSlot, genesisTime);
   }
 

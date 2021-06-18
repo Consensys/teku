@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -39,6 +40,7 @@ import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -455,6 +457,7 @@ class ValidatorApiHandlerTest {
   @Test
   public void createAttestationData_shouldCreateAttestation() {
     final UInt64 slot = spec.computeStartSlotAtEpoch(EPOCH).plus(ONE);
+    when(chainDataClient.getCurrentSlot()).thenReturn(slot);
 
     final BeaconState state = createStateWithActiveValidators(EPOCH_START_SLOT);
     final SignedBeaconBlock block =
@@ -465,6 +468,7 @@ class ValidatorApiHandlerTest {
         completedFuture(Optional.of(blockAndState));
     when(chainDataClient.getSignedBlockAndStateInEffectAtSlot(slot))
         .thenReturn(blockAndStateResult);
+    when(forkChoiceTrigger.prepareForAttestationProduction(slot)).thenReturn(SafeFuture.COMPLETE);
 
     final int committeeIndex = 0;
     final SafeFuture<Optional<AttestationData>> result =
@@ -479,11 +483,29 @@ class ValidatorApiHandlerTest {
             spec.getGenericAttestationData(
                 slot, state, block.getMessage(), UInt64.valueOf(committeeIndex)));
     assertThat(attestationData.getSlot()).isEqualTo(slot);
+    final InOrder inOrder = inOrder(forkChoiceTrigger, chainDataClient);
+
+    // Ensure we prepare for attestation production prior to getting the block to attest to
+    inOrder.verify(forkChoiceTrigger).prepareForAttestationProduction(slot);
+    inOrder.verify(chainDataClient).getSignedBlockAndStateInEffectAtSlot(slot);
+  }
+
+  @Test
+  public void createAttestationData_shouldRejectRequestWhenSlotIsInTheFuture() {
+    final UInt64 slot = spec.computeStartSlotAtEpoch(EPOCH).plus(ONE);
+    when(chainDataClient.getCurrentSlot()).thenReturn(slot.minus(1));
+
+    final int committeeIndex = 0;
+    final SafeFuture<Optional<AttestationData>> result =
+        validatorApiHandler.createAttestationData(slot, committeeIndex);
+
+    assertThatSafeFuture(result).isCompletedExceptionallyWith(IllegalArgumentException.class);
   }
 
   @Test
   public void createAttestationData_shouldUseCorrectSourceWhenEpochTransitionRequired() {
     final UInt64 slot = spec.computeStartSlotAtEpoch(EPOCH);
+    when(chainDataClient.getCurrentSlot()).thenReturn(slot);
     // Slot is from before the current epoch, so we need to ensure we process the epoch transition
     final UInt64 blockSlot = slot.minus(1);
 
@@ -502,6 +524,7 @@ class ValidatorApiHandlerTest {
         .thenReturn(
             SafeFuture.completedFuture(
                 CheckpointState.create(new Checkpoint(EPOCH, block.getRoot()), block, rightState)));
+    when(forkChoiceTrigger.prepareForAttestationProduction(slot)).thenReturn(SafeFuture.COMPLETE);
 
     final int committeeIndex = 0;
     final SafeFuture<Optional<AttestationData>> result =
@@ -580,7 +603,6 @@ class ValidatorApiHandlerTest {
     final SyncCommitteeSubnetSubscription subscription2 =
         new SyncCommitteeSubnetSubscription(1, Set.of(5, 10), UInt64.valueOf(35));
     validatorApiHandler.subscribeToSyncCommitteeSubnets(List.of(subscription1, subscription2));
-    System.out.println(spec.getSyncCommitteeUtilRequired(ZERO).getSubcommitteeSize());
     final UInt64 unsubscribeSlotSubscription1 =
         spec.computeStartSlotAtEpoch(UInt64.valueOf(44).increment());
     final UInt64 unsubscribeSlotSubscription2 =

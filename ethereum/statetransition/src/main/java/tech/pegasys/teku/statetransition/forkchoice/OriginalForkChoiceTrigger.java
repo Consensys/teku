@@ -23,15 +23,15 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
  */
 class OriginalForkChoiceTrigger implements ForkChoiceTrigger {
 
-  private final ForkChoice forkChoice;
+  private final ForkChoiceRatchet forkChoiceRatchet;
 
   OriginalForkChoiceTrigger(final ForkChoice forkChoice) {
-    this.forkChoice = forkChoice;
+    forkChoiceRatchet = new ForkChoiceRatchet(forkChoice);
   }
 
   @Override
   public void onSlotStartedWhileSyncing(final UInt64 nodeSlot) {
-    forkChoice.processHead(nodeSlot).join();
+    forkChoiceRatchet.ensureForkChoiceCompleteForSlot(nodeSlot).join();
   }
 
   @Override
@@ -39,11 +39,16 @@ class OriginalForkChoiceTrigger implements ForkChoiceTrigger {
 
   @Override
   public void onAttestationsDueForSlot(final UInt64 nodeSlot) {
-    forkChoice.processHead(nodeSlot).join();
+    forkChoiceRatchet.ensureForkChoiceCompleteForSlot(nodeSlot).join();
   }
 
   @Override
   public SafeFuture<Void> prepareForBlockProduction(final UInt64 slot) {
     return SafeFuture.COMPLETE;
+  }
+
+  @Override
+  public SafeFuture<Void> prepareForAttestationProduction(final UInt64 slot) {
+    return forkChoiceRatchet.ensureForkChoiceCompleteForSlot(slot);
   }
 }

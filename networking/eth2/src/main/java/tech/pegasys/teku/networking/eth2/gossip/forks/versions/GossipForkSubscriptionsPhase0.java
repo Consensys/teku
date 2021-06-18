@@ -127,7 +127,13 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
 
     blockGossipManager =
         new BlockGossipManager(
-            spec, asyncRunner, discoveryNetwork, gossipEncoding, forkInfo, blockProcessor);
+            recentChainData,
+            spec,
+            asyncRunner,
+            discoveryNetwork,
+            gossipEncoding,
+            forkInfo,
+            blockProcessor);
     addGossipManager(blockGossipManager);
 
     attestationGossipManager =
@@ -136,11 +142,17 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
 
     aggregateGossipManager =
         new AggregateGossipManager(
-            asyncRunner, discoveryNetwork, gossipEncoding, forkInfo, aggregateProcessor);
+            recentChainData,
+            asyncRunner,
+            discoveryNetwork,
+            gossipEncoding,
+            forkInfo,
+            aggregateProcessor);
     addGossipManager(aggregateGossipManager);
 
     addGossipManager(
         new VoluntaryExitGossipManager(
+            recentChainData,
             asyncRunner,
             discoveryNetwork,
             gossipEncoding,
@@ -150,6 +162,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
 
     addGossipManager(
         new ProposerSlashingGossipManager(
+            recentChainData,
             asyncRunner,
             discoveryNetwork,
             gossipEncoding,
@@ -159,6 +172,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
 
     addGossipManager(
         new AttesterSlashingGossipManager(
+            recentChainData,
             asyncRunner,
             discoveryNetwork,
             gossipEncoding,
