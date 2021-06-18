@@ -65,6 +65,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTrans
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
+import tech.pegasys.teku.spec.logic.versions.merge.helpers.MiscHelpersMerge;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.ssz.collections.SszBitlist;
 import tech.pegasys.teku.ssz.type.Bytes4;
@@ -592,6 +593,16 @@ public class Spec {
     return atState(state)
         .getAttestationUtil()
         .isValidIndexedAttestation(state, attestation, blsSignatureVerifier);
+  }
+
+  // Misc helpers
+  public boolean isTransitionCompleted(final BeaconState genericState) {
+    SpecVersion specVersion = atSlot(genericState.getSlot());
+    if (specVersion.getMilestone() != SpecMilestone.MERGE) {
+      return false;
+    }
+
+    return ((MiscHelpersMerge) specVersion.miscHelpers()).isMergeComplete(genericState);
   }
 
   // Private helpers

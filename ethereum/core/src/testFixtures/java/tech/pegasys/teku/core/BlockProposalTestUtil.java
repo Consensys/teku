@@ -132,6 +132,7 @@ public class BlockProposalTestUtil {
 
     return spec.atSlot(state.getSlot())
         .getExecutionPayloadUtil()
+        .orElseThrow()
         .produceExecutionPayload(executionParentHash, timestamp);
   }
 

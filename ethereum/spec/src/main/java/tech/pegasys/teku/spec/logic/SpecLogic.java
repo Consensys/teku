@@ -18,6 +18,7 @@ import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
+import tech.pegasys.teku.spec.logic.common.helpers.MergeTransitionHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
@@ -65,5 +66,7 @@ public interface SpecLogic {
 
   OperationSignatureVerifier operationSignatureVerifier();
 
-  ExecutionPayloadUtil getExecutionPayloadUtil();
+  Optional<ExecutionPayloadUtil> getExecutionPayloadUtil();
+
+  Optional<MergeTransitionHelpers> getMergeTransitionHelpers();
 }

@@ -768,7 +768,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               ? ExecutionEngineService.create(
                   beaconConfig.powchainConfig().getEth1Endpoints().get(0))
               : ExecutionEngineService.createStub();
-      specLogicMerge.getExecutionPayloadUtil().setExecutionEngineService(executionEngineService);
+      specLogicMerge
+          .getExecutionPayloadUtil()
+          .ifPresent(util -> util.setExecutionEngineService(executionEngineService));
 
       // Propagate head updates
       eventChannels.subscribe(

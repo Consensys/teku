@@ -17,6 +17,7 @@ import java.util.Optional;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
+import tech.pegasys.teku.spec.logic.common.helpers.MergeTransitionHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
@@ -168,7 +169,12 @@ public class SpecLogicAltair extends AbstractSpecLogic {
   }
 
   @Override
-  public ExecutionPayloadUtil getExecutionPayloadUtil() {
-    throw new UnsupportedOperationException("There is no ExecutionPayloadUtil in altair");
+  public Optional<MergeTransitionHelpers> getMergeTransitionHelpers() {
+    return Optional.empty();
+  }
+
+  @Override
+  public Optional<ExecutionPayloadUtil> getExecutionPayloadUtil() {
+    return Optional.empty();
   }
 }

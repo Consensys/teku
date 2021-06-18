@@ -113,7 +113,9 @@ public class BlockProcessorMerge extends AbstractBlockProcessor {
     final BeaconBlockBodyMerge blockBody = BeaconBlockBodyMerge.required(block.getBody());
 
     super.processBlock(state, block, indexedAttestationCache, signatureVerifier);
-    processExecutionPayload(state, blockBody.getExecution_payload());
+    if (miscHelpersMerge.isExecutionEnabled(genericState, block)) {
+      processExecutionPayload(state, blockBody.getExecution_payload());
+    }
   }
 
   @Override
@@ -123,7 +125,7 @@ public class BlockProcessorMerge extends AbstractBlockProcessor {
     try {
       final MutableBeaconStateMerge state = MutableBeaconStateMerge.required(genericState);
 
-      if (miscHelpersMerge.isTransitionCompleted(state)) {
+      if (miscHelpersMerge.isMergeComplete(state)) {
         checkArgument(
             executionPayload
                 .getParent_hash()

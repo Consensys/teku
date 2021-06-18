@@ -18,6 +18,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
+import tech.pegasys.teku.spec.logic.common.helpers.MergeTransitionHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
@@ -147,7 +148,12 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
   }
 
   @Override
-  public ExecutionPayloadUtil getExecutionPayloadUtil() {
-    throw new UnsupportedOperationException("There is no ExecutionPayloadUtil in phase 0");
+  public Optional<MergeTransitionHelpers> getMergeTransitionHelpers() {
+    return Optional.empty();
+  }
+
+  @Override
+  public Optional<ExecutionPayloadUtil> getExecutionPayloadUtil() {
+    return Optional.empty();
   }
 }

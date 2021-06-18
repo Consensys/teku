@@ -18,6 +18,7 @@ import tech.pegasys.teku.spec.config.SpecConfigMerge;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
+import tech.pegasys.teku.spec.logic.common.helpers.MergeTransitionHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
@@ -39,6 +40,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
 public class SpecLogicMerge extends AbstractSpecLogic {
 
   private final ExecutionPayloadUtil executionPayloadUtil;
+  private final MergeTransitionHelpers mergeTransitionHelpers;
 
   private SpecLogicMerge(
       final Predicates predicates,
@@ -56,7 +58,8 @@ public class SpecLogicMerge extends AbstractSpecLogic {
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil,
       final ExecutionPayloadUtil executionPayloadUtil,
-      final MergeStateUpgrade stateUpgrade) {
+      final MergeStateUpgrade stateUpgrade,
+      final MergeTransitionHelpers mergeTransitionHelpers) {
     super(
         predicates,
         miscHelpers,
@@ -74,6 +77,7 @@ public class SpecLogicMerge extends AbstractSpecLogic {
         blockProposalUtil,
         Optional.of(stateUpgrade));
     this.executionPayloadUtil = executionPayloadUtil;
+    this.mergeTransitionHelpers = mergeTransitionHelpers;
   }
 
   public static SpecLogicMerge create(
@@ -126,9 +130,15 @@ public class SpecLogicMerge extends AbstractSpecLogic {
             validatorsUtil,
             operationValidator,
             executionPayloadUtil);
+    final MergeTransitionHelpers mergeTransitionHelpers = new MergeTransitionHelpers(miscHelpers);
     final ForkChoiceUtil forkChoiceUtil =
         new ForkChoiceUtil(
-            config, beaconStateAccessors, attestationUtil, blockProcessor, miscHelpers);
+            config,
+            beaconStateAccessors,
+            attestationUtil,
+            blockProcessor,
+            miscHelpers,
+            mergeTransitionHelpers);
     final BlockProposalUtil blockProposalUtil =
         new BlockProposalUtil(schemaDefinitions, blockProcessor);
 
@@ -152,7 +162,8 @@ public class SpecLogicMerge extends AbstractSpecLogic {
         forkChoiceUtil,
         blockProposalUtil,
         executionPayloadUtil,
-        stateUpgrade);
+        stateUpgrade,
+        mergeTransitionHelpers);
   }
 
   @Override
@@ -161,7 +172,12 @@ public class SpecLogicMerge extends AbstractSpecLogic {
   }
 
   @Override
-  public ExecutionPayloadUtil getExecutionPayloadUtil() {
-    return executionPayloadUtil;
+  public Optional<MergeTransitionHelpers> getMergeTransitionHelpers() {
+    return Optional.of(mergeTransitionHelpers);
+  }
+
+  @Override
+  public Optional<ExecutionPayloadUtil> getExecutionPayloadUtil() {
+    return Optional.of(executionPayloadUtil);
   }
 }

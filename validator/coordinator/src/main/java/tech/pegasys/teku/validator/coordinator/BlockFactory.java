@@ -30,9 +30,12 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.BeaconStateMerge;
+import tech.pegasys.teku.spec.logic.common.helpers.MergeTransitionHelpers;
+import tech.pegasys.teku.spec.logic.common.helpers.MergeTransitionHelpers.PowBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
+import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadUtil;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -144,11 +147,26 @@ public class BlockFactory {
 
   private ExecutionPayload getExecutionPayload(BeaconState genericState) {
     final BeaconStateMerge state = BeaconStateMerge.required(genericState);
+    final ExecutionPayloadUtil executionPayloadUtil =
+        spec.atSlot(state.getSlot()).getExecutionPayloadUtil().orElseThrow();
+    final MergeTransitionHelpers mergeTransitionHelpers =
+        spec.atSlot(state.getSlot()).getMergeTransitionHelpers().orElseThrow();
+
+    if (!mergeTransitionHelpers.isMergeComplete(state)) {
+      PowBlock powHead = mergeTransitionHelpers.getPowChainHead();
+      if (!mergeTransitionHelpers.isValidTerminalPowBlock(powHead)) {
+        // Pre-merge, empty payload
+        return new ExecutionPayload();
+      } else {
+        // Signify merge via producing on top of the last PoW block
+        UInt64 timestamp = spec.computeTimeAtSlot(state, state.getSlot());
+        executionPayloadUtil.produceExecutionPayload(powHead.blockHash, timestamp);
+      }
+    }
+
+    // Post-merge, normal payload
     final Bytes32 executionParentHash = state.getLatest_execution_payload_header().getBlock_hash();
     final UInt64 timestamp = spec.computeTimeAtSlot(state, state.getSlot());
-
-    return spec.atSlot(state.getSlot())
-        .getExecutionPayloadUtil()
-        .produceExecutionPayload(executionParentHash, timestamp);
+    return executionPayloadUtil.produceExecutionPayload(executionParentHash, timestamp);
   }
 }

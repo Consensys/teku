@@ -28,19 +28,19 @@ public class MiscHelpersMerge extends MiscHelpers {
     super(specConfig);
   }
 
-  public boolean isTransitionCompleted(final BeaconState genericState) {
+  public boolean isMergeComplete(final BeaconState genericState) {
     final BeaconStateMerge state = BeaconStateMerge.required(genericState);
     return !state.getLatest_execution_payload_header().equals(new ExecutionPayloadHeader());
   }
 
-  public boolean isTransitionBlock(final BeaconState genericState, final BeaconBlock block) {
+  public boolean isMergeBlock(final BeaconState genericState, final BeaconBlock block) {
     final BeaconStateMerge state = BeaconStateMerge.required(genericState);
     final BeaconBlockBodyMerge blockBody = BeaconBlockBodyMerge.required(block.getBody());
-    return !isTransitionCompleted(state)
+    return !isMergeComplete(state)
         && !blockBody.getExecution_payload().equals(new ExecutionPayload());
   }
 
   public boolean isExecutionEnabled(final BeaconState genericState, final BeaconBlock block) {
-    return isTransitionCompleted(genericState) || isTransitionBlock(genericState, block);
+    return isMergeBlock(genericState, block) || isMergeComplete(genericState);
   }
 }
