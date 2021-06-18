@@ -257,8 +257,6 @@ public class LevelDbInstance implements KvStoreAccessor {
     iterator.seek(fromBytes);
     return new LevelDbIterator<>(this, iterator, column, toBytes)
         .toStream()
-        //        .map(entry -> ColumnEntry.create(removeKeyPrefix(column, entry.getKey()),
-        // entry.getValue()))
         .onClose(() -> closeIterator(iterator));
   }
 
