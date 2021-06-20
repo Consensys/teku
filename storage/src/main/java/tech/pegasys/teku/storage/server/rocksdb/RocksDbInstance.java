@@ -67,11 +67,8 @@ public class RocksDbInstance implements KvStoreAccessor {
   public Optional<Bytes> getRaw(final KvStoreVariable<?> variable) {
     assertOpen();
     try {
-      final byte[] byteArray = db.get(defaultHandle, variable.getId().toArrayUnsafe());
-      if (byteArray == null) {
-        return Optional.empty();
-      }
-      return Optional.of(Bytes.wrap(byteArray));
+      return Optional.ofNullable(db.get(defaultHandle, variable.getId().toArrayUnsafe()))
+          .map(Bytes::wrap);
     } catch (RocksDBException e) {
       throw RocksDbExceptionUtil.wrapException("Failed to get value", e);
     }
