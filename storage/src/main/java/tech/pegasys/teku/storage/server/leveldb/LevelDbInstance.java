@@ -35,6 +35,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
@@ -91,9 +92,14 @@ public class LevelDbInstance implements KvStoreAccessor {
 
   @Override
   public <T> Optional<T> get(final KvStoreVariable<T> variable) {
+    return getRaw(variable)
+        .map(value -> variable.getSerializer().deserialize(value.toArrayUnsafe()));
+  }
+
+  @Override
+  public Optional<Bytes> getRaw(final KvStoreVariable<?> variable) {
     assertOpen();
-    return Optional.ofNullable(db.get(getVariableKey(variable)))
-        .map(variable.getSerializer()::deserialize);
+    return Optional.ofNullable(db.get(getVariableKey(variable))).map(Bytes::wrap);
   }
 
   @Override
@@ -214,6 +220,13 @@ public class LevelDbInstance implements KvStoreAccessor {
 
   @Override
   @MustBeClosed
+  public Stream<ColumnEntry<Bytes, Bytes>> streamRaw(final KvStoreColumn<?, ?> column) {
+    return streamRaw(column, column.getId().toArrayUnsafe(), getKeyAfterColumn(column))
+        .map(entry -> ColumnEntry.create(Bytes.wrap(entry.getKey()), Bytes.wrap(entry.getValue())));
+  }
+
+  @Override
+  @MustBeClosed
   public <K extends Comparable<K>, V> Stream<ColumnEntry<K, V>> stream(
       final KvStoreColumn<K, V> column, final K from, final K to) {
     final byte[] fromBytes = getColumnKey(column, from);
@@ -224,6 +237,17 @@ public class LevelDbInstance implements KvStoreAccessor {
   @MustBeClosed
   private <K, V> Stream<ColumnEntry<K, V>> stream(
       final KvStoreColumn<K, V> column, final byte[] fromBytes, final byte[] toBytes) {
+    return streamRaw(column, fromBytes, toBytes)
+        .map(
+            entry ->
+                ColumnEntry.create(
+                    column.getKeySerializer().deserialize(entry.getKey()),
+                    column.getValueSerializer().deserialize(entry.getValue())));
+  }
+
+  @MustBeClosed
+  private Stream<ColumnEntry<byte[], byte[]>> streamRaw(
+      final KvStoreColumn<?, ?> column, final byte[] fromBytes, final byte[] toBytes) {
     assertOpen();
     final DBIterator iterator = createIterator();
     iterator.seek(fromBytes);

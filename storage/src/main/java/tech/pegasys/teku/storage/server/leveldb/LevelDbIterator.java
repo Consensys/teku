@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.storage.server.leveldb;
 
-import static tech.pegasys.teku.storage.server.leveldb.LevelDbUtils.asColumnEntry;
+import static tech.pegasys.teku.storage.server.leveldb.LevelDbUtils.asRawColumnEntry;
 import static tech.pegasys.teku.storage.server.leveldb.LevelDbUtils.isFromColumn;
 
 import java.util.Arrays;
@@ -26,7 +26,7 @@ import org.iq80.leveldb.DBIterator;
 import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
 
-public class LevelDbIterator<K, V> implements Iterator<ColumnEntry<K, V>> {
+public class LevelDbIterator<K, V> implements Iterator<ColumnEntry<byte[], byte[]>> {
 
   private final LevelDbInstance dbInstance;
   private final DBIterator iterator;
@@ -56,13 +56,13 @@ public class LevelDbIterator<K, V> implements Iterator<ColumnEntry<K, V>> {
   }
 
   @Override
-  public ColumnEntry<K, V> next() {
+  public ColumnEntry<byte[], byte[]> next() {
     dbInstance.assertOpen();
-    return asColumnEntry(column, iterator.next());
+    return asRawColumnEntry(column, iterator.next());
   }
 
-  public Stream<ColumnEntry<K, V>> toStream() {
-    final Spliterator<ColumnEntry<K, V>> split =
+  public Stream<ColumnEntry<byte[], byte[]>> toStream() {
+    final Spliterator<ColumnEntry<byte[], byte[]>> split =
         Spliterators.spliteratorUnknownSize(
             this,
             Spliterator.IMMUTABLE

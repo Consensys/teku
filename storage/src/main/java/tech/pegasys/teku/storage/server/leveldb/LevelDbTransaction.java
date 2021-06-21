@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
+import org.apache.tuweni.bytes.Bytes;
 import org.iq80.leveldb.DB;
 import org.iq80.leveldb.WriteBatch;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
@@ -45,13 +46,26 @@ public class LevelDbTransaction implements KvStoreTransaction {
 
   @Override
   public <T> void put(final KvStoreVariable<T> variable, final T value) {
-    applyUpdate(
-        () -> writeBatch.put(getVariableKey(variable), variable.getSerializer().serialize(value)));
+    putRaw(variable, Bytes.wrap(variable.getSerializer().serialize(value)));
+  }
+
+  @Override
+  public <T> void putRaw(final KvStoreVariable<T> variable, final Bytes value) {
+    applyUpdate(() -> writeBatch.put(getVariableKey(variable), value.toArrayUnsafe()));
   }
 
   @Override
   public <K, V> void put(final KvStoreColumn<K, V> column, final K key, final V value) {
-    applyUpdate(() -> writeBatch.put(getColumnKey(column, key), serializeValue(column, value)));
+    putRaw(
+        column,
+        Bytes.wrap(column.getKeySerializer().serialize(key)),
+        Bytes.wrap(serializeValue(column, value)));
+  }
+
+  @Override
+  public <K, V> void putRaw(final KvStoreColumn<K, V> column, final Bytes key, final Bytes value) {
+    applyUpdate(
+        () -> writeBatch.put(getColumnKey(column, key.toArrayUnsafe()), value.toArrayUnsafe()));
   }
 
   @Override
