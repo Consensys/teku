@@ -95,27 +95,18 @@ public interface KvStoreAccessor extends AutoCloseable {
     <T> void put(KvStoreVariable<T> variable, T value);
 
     /**
-     * Write raw bytes to a specified variable WARNING: should only be used to migrate data between
-     * database instances
+     * Write raw bytes to a specified variable.
      *
-     * @param variable
-     * @param value
-     * @param <T>
+     * <p>WARNING: should only be used to migrate data between database instances
      */
     <T> void putRaw(KvStoreVariable<T> variable, Bytes value);
 
     <K, V> void put(KvStoreColumn<K, V> column, K key, V value);
 
     /**
-     * Write raw bytes to a column for a given key WARNING: should only be used to migrate data
-     * between database instances
+     * Write raw bytes to a column for a given key.
      *
-     * @apiNote
-     * @param column
-     * @param key
-     * @param value
-     * @param <K>
-     * @param <V>
+     * <p>WARNING: should only be used to migrate data between database instances
      */
     <K, V> void putRaw(KvStoreColumn<K, V> column, Bytes key, Bytes value);
 

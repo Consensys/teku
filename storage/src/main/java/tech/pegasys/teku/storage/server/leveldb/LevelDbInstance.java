@@ -99,11 +99,7 @@ public class LevelDbInstance implements KvStoreAccessor {
   @Override
   public Optional<Bytes> getRaw(final KvStoreVariable<?> variable) {
     assertOpen();
-    final byte[] bytes = db.get(getVariableKey(variable));
-    if (bytes == null) {
-      return Optional.empty();
-    }
-    return Optional.of(Bytes.wrap(bytes));
+    return Optional.ofNullable(db.get(getVariableKey(variable))).map(Bytes::wrap);
   }
 
   @Override

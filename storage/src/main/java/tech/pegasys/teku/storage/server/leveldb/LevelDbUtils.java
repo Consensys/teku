@@ -95,7 +95,6 @@ class LevelDbUtils {
   }
 
   static byte[] removeKeyPrefix(final KvStoreColumn<?, ?> column, final byte[] key) {
-    final byte[] keyBytes = Arrays.copyOfRange(key, column.getId().size(), key.length);
-    return keyBytes;
+    return Arrays.copyOfRange(key, column.getId().size(), key.length);
   }
 }

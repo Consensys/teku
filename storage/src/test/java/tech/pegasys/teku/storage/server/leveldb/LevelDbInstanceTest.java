@@ -249,9 +249,8 @@ class LevelDbInstanceTest {
 
     assertThat(instance.get(column4, UInt64.ZERO)).contains(data);
     try (final Stream<ColumnEntry<Bytes, Bytes>> stream = instance.streamRaw(column4)) {
-      assertThat(stream.map(ColumnEntry::toString))
-          .containsExactly(
-              ColumnEntry.create(Bytes.fromHexString("0x0000000000000000"), byteData).toString());
+      assertThat(stream)
+          .containsExactly(ColumnEntry.create(Bytes.fromHexString("0x0000000000000000"), byteData));
     }
   }
 

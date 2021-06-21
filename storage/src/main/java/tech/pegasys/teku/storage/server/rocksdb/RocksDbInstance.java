@@ -191,9 +191,7 @@ public class RocksDbInstance implements KvStoreAccessor {
     final ColumnFamilyHandle handle = columnHandles.get(column);
     final RocksIterator rocksDbIterator = db.newIterator(handle);
     setupIterator.accept(rocksDbIterator);
-    return RocksDbIterator.create(column, rocksDbIterator, continueTest, closed::get)
-        .toStream()
-        .onClose(rocksDbIterator::close);
+    return RocksDbIterator.create(column, rocksDbIterator, continueTest, closed::get).toStream();
   }
 
   @Override
