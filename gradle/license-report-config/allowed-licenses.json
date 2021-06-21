@@ -66,6 +66,9 @@
     },
     {
       "moduleName": "io.libp2p:jvm-libp2p-minimal"
+    },
+    {
+      "moduleName": "org.jetbrains.kotlinx:kotlinx-coroutines-core"
     }
   ],
   "overrideLicenses" : [
@@ -137,11 +140,6 @@
     {
       "moduleName": "org.rocksdb:rocksdbjni",
       "moduleLicense": "Apache License, Version 2.0"
-    },
-    {
-      "moduleName": "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.2",
-      "moduleLicense": "Apache License, Version 2.0",
-      "moduleLicenseUrl": "https://github.com/Kotlin/kotlinx.coroutines/blob/develop/LICENSE.txt"
     }
   ]
 }

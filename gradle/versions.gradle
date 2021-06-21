@@ -100,11 +100,6 @@ dependencyManagement {
       entry 'tuweni-toml'
       entry 'tuweni-units'
     }
-    dependencySet(group: 'org.jetbrains.kotlinx', version: '1.4.2') {
-      entry 'kotlinx-coroutines-core'
-      entry 'kotlinx-coroutines-guava'
-      entry 'kotlinx-coroutines-jdk8'
-    }
 
     dependency 'org.apache.commons:commons-text:1.8'
     dependency 'org.apache.commons:commons-lang3:3.10'
