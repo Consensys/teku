@@ -19,6 +19,8 @@ import static tech.pegasys.teku.statetransition.attestation.AggregatorUtil.aggre
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -27,11 +29,12 @@ import tech.pegasys.teku.ssz.collections.SszBitlist;
 
 class MatchingDataAttestationGroupTest {
   private static final UInt64 SLOT = UInt64.valueOf(1234);
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final Spec spec = TestSpecFactory.createDefault();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final AttestationData attestationData = dataStructureUtil.randomAttestationData(SLOT);
 
   private final MatchingDataAttestationGroup group =
-      new MatchingDataAttestationGroup(attestationData, Bytes32.ZERO);
+      new MatchingDataAttestationGroup(spec, attestationData, Bytes32.ZERO);
 
   @Test
   public void isEmpty_shouldBeEmptyInitially() {
@@ -117,6 +120,7 @@ class MatchingDataAttestationGroupTest {
     final ValidateableAttestation attestation = addAttestation(1);
     final ValidateableAttestation copy =
         ValidateableAttestation.from(
+            spec,
             Attestation.SSZ_SCHEMA.sszDeserialize(attestation.getAttestation().sszSerialize()));
 
     assertThat(group.add(copy)).isFalse();
@@ -130,7 +134,7 @@ class MatchingDataAttestationGroupTest {
 
     final Attestation expected =
         aggregateAttestations(attestation1.getAttestation(), attestation2.getAttestation());
-    assertThat(group).containsExactlyInAnyOrder(ValidateableAttestation.from(expected));
+    assertThat(group).containsExactlyInAnyOrder(ValidateableAttestation.from(spec, expected));
   }
 
   @Test
@@ -142,6 +146,7 @@ class MatchingDataAttestationGroupTest {
     assertThat(group)
         .containsExactly(
             ValidateableAttestation.from(
+                spec,
                 aggregateAttestations(
                     bigAttestation.getAttestation(), littleAttestation.getAttestation())),
             mediumAttestation);
@@ -194,6 +199,7 @@ class MatchingDataAttestationGroupTest {
     final SszBitlist aggregationBits =
         Attestation.SSZ_SCHEMA.getAggregationBitsSchema().ofBits(10, validators);
     return ValidateableAttestation.from(
+        spec,
         new Attestation(aggregationBits, attestationData, dataStructureUtil.randomSignature()));
   }
 }

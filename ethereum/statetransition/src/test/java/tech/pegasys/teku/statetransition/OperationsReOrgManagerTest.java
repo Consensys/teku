@@ -32,6 +32,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -46,8 +48,8 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 @SuppressWarnings("unchecked")
 public class OperationsReOrgManagerTest {
-
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final Spec spec = TestSpecFactory.createDefault();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private final OperationPool<ProposerSlashing> proposerSlashingOperationPool =
       mock(OperationPool.class);
@@ -130,11 +132,11 @@ public class OperationsReOrgManagerTest {
     List<ValidateableAttestation> attestationList = new ArrayList<>();
     attestationList.addAll(
         fork1Block1.getBody().getAttestations().stream()
-            .map(ValidateableAttestation::from)
+            .map(attestation -> ValidateableAttestation.from(spec, attestation))
             .collect(Collectors.toList()));
     attestationList.addAll(
         fork1Block2.getBody().getAttestations().stream()
-            .map(ValidateableAttestation::from)
+            .map(attestation -> ValidateableAttestation.from(spec, attestation))
             .collect(Collectors.toList()));
     assertThat(argument.getAllValues()).containsExactlyInAnyOrderElementsOf(attestationList);
 

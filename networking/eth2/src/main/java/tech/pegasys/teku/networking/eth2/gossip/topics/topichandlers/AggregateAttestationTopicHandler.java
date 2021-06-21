@@ -33,7 +33,9 @@ public class AggregateAttestationTopicHandler {
 
     OperationProcessor<SignedAggregateAndProof> convertingProcessor =
         proofMessage ->
-            operationProcessor.process(ValidateableAttestation.aggregateFromNetwork(proofMessage));
+            operationProcessor.process(
+                ValidateableAttestation.aggregateFromNetwork(
+                    recentChainData.getSpec(), proofMessage));
 
     return new Eth2TopicHandler<>(
         recentChainData,

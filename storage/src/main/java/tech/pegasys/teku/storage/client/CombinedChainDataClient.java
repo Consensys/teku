@@ -196,7 +196,7 @@ public class CombinedChainDataClient {
         .thenApply(
             checkpointState -> {
               final SignedBeaconBlock block = latestBlockAndState.getBlock();
-              return CheckpointState.create(checkpoint, block, checkpointState.orElseThrow());
+              return CheckpointState.create(spec, checkpoint, block, checkpointState.orElseThrow());
             });
   }
 

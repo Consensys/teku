@@ -133,6 +133,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
         recentChainData,
         metricsSystem,
         new Eth2PeerFactory(
+            spec,
             metricsSystem,
             combinedChainDataClient,
             statusMessageFactory,

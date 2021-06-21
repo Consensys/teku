@@ -104,7 +104,7 @@ public class WeakSubjectivityValidator {
     }
 
     return chainData
-        .getFinalizedBlockInEffectAtSlot(wsCheckpoint.getEpochStartSlot())
+        .getFinalizedBlockInEffectAtSlot(wsCheckpoint.getEpochStartSlot(spec))
         .thenAccept(
             maybeBlock -> {
               SignedBeaconBlock blockAtCheckpointSlot =
@@ -192,7 +192,7 @@ public class WeakSubjectivityValidator {
       // If the block is at or past the checkpoint, the wsCheckpoint must be an ancestor
       final Optional<Bytes32> ancestor =
           spec.getAncestor(
-              forkChoiceStrategy, block.getParentRoot(), wsCheckpoint.getEpochStartSlot());
+              forkChoiceStrategy, block.getParentRoot(), wsCheckpoint.getEpochStartSlot(spec));
       // If ancestor is not present, the chain must have moved passed the wsCheckpoint
       return ancestor.map(a -> a.equals(wsCheckpoint.getRoot())).orElse(true);
     }
