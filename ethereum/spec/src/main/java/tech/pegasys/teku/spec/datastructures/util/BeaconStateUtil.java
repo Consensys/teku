@@ -59,40 +59,12 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 import tech.pegasys.teku.ssz.Merkleizable;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.collections.SszBitvector;
-import tech.pegasys.teku.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
 import tech.pegasys.teku.util.config.Constants;
 
 @Deprecated
 public class BeaconStateUtil {
-
-  /**
-   * Verify that the given ``leaf`` is on the merkle branch ``branch`` starting with the given
-   * ``root``.
-   *
-   * @param leaf
-   * @param branch
-   * @param depth
-   * @param index
-   * @param root
-   * @return A boolean depending on the merkle branch being valid
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_valid_merkle_branch</a>
-   */
-  @Deprecated
-  public static boolean is_valid_merkle_branch(
-      Bytes32 leaf, SszBytes32Vector branch, int depth, int index, Bytes32 root) {
-    Bytes32 value = leaf;
-    for (int i = 0; i < depth; i++) {
-      if (Math.floor(index / Math.pow(2, i)) % 2 == 1) {
-        value = Hash.sha2_256(Bytes.concatenate(branch.getElement(i), value));
-      } else {
-        value = Hash.sha2_256(Bytes.concatenate(value, branch.getElement(i)));
-      }
-    }
-    return value.equals(root);
-  }
 
   /**
    * Generate a seed for the given ``epoch``.
