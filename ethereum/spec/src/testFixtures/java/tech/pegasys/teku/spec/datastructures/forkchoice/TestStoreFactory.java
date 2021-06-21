@@ -21,6 +21,8 @@ import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -29,7 +31,8 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.util.config.Constants;
 
 public class TestStoreFactory {
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final Spec spec = TestSpecFactory.createDefault();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   public TestStoreImpl createGenesisStore() {
     return getForkChoiceStore(createAnchorForGenesis());
@@ -48,6 +51,7 @@ public class TestStoreFactory {
 
   public TestStoreImpl createEmptyStore() {
     return new TestStoreImpl(
+        spec,
         UInt64.ZERO,
         UInt64.ZERO,
         Optional.empty(),
@@ -83,6 +87,7 @@ public class TestStoreFactory {
     checkpoint_states.put(anchorCheckpoint, anchorState);
 
     return new TestStoreImpl(
+        spec,
         anchorState.getGenesis_time().plus(anchorState.getSlot().times(SECONDS_PER_SLOT)),
         anchorState.getGenesis_time(),
         Optional.of(anchorCheckpoint),

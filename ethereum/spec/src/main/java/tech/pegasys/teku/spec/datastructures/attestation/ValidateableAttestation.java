@@ -161,7 +161,7 @@ public class ValidateableAttestation {
   }
 
   public UInt64 getEarliestSlotForForkChoiceProcessing() {
-    return attestation.getEarliestSlotForForkChoiceProcessing();
+    return attestation.getEarliestSlotForForkChoiceProcessing(spec);
   }
 
   public Collection<Bytes32> getDependentBlockRoots() {

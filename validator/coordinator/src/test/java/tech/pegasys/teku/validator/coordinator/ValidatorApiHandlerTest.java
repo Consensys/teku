@@ -523,7 +523,8 @@ class ValidatorApiHandlerTest {
     when(chainDataClient.getCheckpointState(EPOCH, blockAndState))
         .thenReturn(
             SafeFuture.completedFuture(
-                CheckpointState.create(new Checkpoint(EPOCH, block.getRoot()), block, rightState)));
+                CheckpointState.create(
+                    spec, new Checkpoint(EPOCH, block.getRoot()), block, rightState)));
     when(forkChoiceTrigger.prepareForAttestationProduction(slot)).thenReturn(SafeFuture.COMPLETE);
 
     final int committeeIndex = 0;

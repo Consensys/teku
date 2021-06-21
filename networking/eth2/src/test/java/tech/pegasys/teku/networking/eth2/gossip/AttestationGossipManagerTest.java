@@ -54,7 +54,7 @@ public class AttestationGossipManagerTest {
       mock(OperationProcessor.class);
 
   private final RecentChainData recentChainData =
-      MemoryOnlyRecentChainData.create(mock(EventBus.class));
+      MemoryOnlyRecentChainData.create(spec, mock(EventBus.class));
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   private AttestationGossipManager attestationGossipManager;

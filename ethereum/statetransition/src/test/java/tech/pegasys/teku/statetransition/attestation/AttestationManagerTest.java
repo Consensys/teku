@@ -61,7 +61,7 @@ class AttestationManagerTest {
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
   private final ForkChoice forkChoice = mock(ForkChoice.class);
   private final PendingPool<ValidateableAttestation> pendingAttestations =
-      PendingPool.createForAttestations();
+      PendingPool.createForAttestations(spec);
   private final FutureItems<ValidateableAttestation> futureAttestations =
       FutureItems.create(ValidateableAttestation::getEarliestSlotForForkChoiceProcessing);
 

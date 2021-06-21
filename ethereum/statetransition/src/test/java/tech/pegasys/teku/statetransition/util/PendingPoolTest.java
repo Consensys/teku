@@ -22,17 +22,20 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class PendingPoolTest {
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final Spec spec = TestSpecFactory.createDefault();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final UInt64 historicalTolerance = UInt64.valueOf(5);
   private final UInt64 futureTolerance = UInt64.valueOf(2);
   private final int maxItems = 15;
   private final PendingPool<SignedBeaconBlock> pendingPool =
-      PendingPool.createForBlocks(historicalTolerance, futureTolerance, maxItems);
+      PendingPool.createForBlocks(spec, historicalTolerance, futureTolerance, maxItems);
   private UInt64 currentSlot = historicalTolerance.times(2);
   private List<Bytes32> requiredRootEvents = new ArrayList<>();
   private List<Bytes32> requiredRootDroppedEvents = new ArrayList<>();
@@ -128,7 +131,7 @@ public class PendingPoolTest {
     final Checkpoint checkpoint = finalizedCheckpoint(finalizedBlock);
     pendingPool.onNewFinalizedCheckpoint(checkpoint);
 
-    final UInt64 slot = checkpoint.getEpochStartSlot().plus(UInt64.ONE);
+    final UInt64 slot = checkpoint.getEpochStartSlot(spec).plus(UInt64.ONE);
     setSlot(slot);
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot.longValue());
 
@@ -146,10 +149,10 @@ public class PendingPoolTest {
     final SignedBeaconBlock finalizedBlock = dataStructureUtil.randomSignedBeaconBlock(10);
     final Checkpoint checkpoint = finalizedCheckpoint(finalizedBlock);
     pendingPool.onNewFinalizedCheckpoint(checkpoint);
-    final long slot = checkpoint.getEpochStartSlot().longValue() + 10;
+    final long slot = checkpoint.getEpochStartSlot(spec).longValue() + 10;
     setSlot(slot);
 
-    final long blockSlot = checkpoint.getEpochStartSlot().longValue();
+    final long blockSlot = checkpoint.getEpochStartSlot(spec).longValue();
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(blockSlot);
 
     pendingPool.add(block);
@@ -417,7 +420,7 @@ public class PendingPoolTest {
   public void prune_finalizedBlocks() {
     final SignedBeaconBlock finalizedBlock = dataStructureUtil.randomSignedBeaconBlock(10);
     final Checkpoint checkpoint = finalizedCheckpoint(finalizedBlock);
-    final long finalizedSlot = checkpoint.getEpochStartSlot().longValue();
+    final long finalizedSlot = checkpoint.getEpochStartSlot(spec).longValue();
     setSlot(finalizedSlot);
 
     // Add a bunch of blocks

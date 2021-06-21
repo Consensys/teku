@@ -366,7 +366,7 @@ class ForkChoiceTest {
             AttestationProcessingResult.invalid(
                 String.format(
                     "Checkpoint state (%s) must be at or prior to checkpoint slot boundary (%s)",
-                    targetBlock.getSlot(), targetCheckpoint.getEpochStartSlot())));
+                    targetBlock.getSlot(), targetCheckpoint.getEpochStartSlot(spec))));
   }
 
   private UInt64 applyAttestationFromValidator(

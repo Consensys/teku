@@ -58,7 +58,8 @@ public class BlockManagerTest {
   private final UInt64 futureBlockTolerance = UInt64.valueOf(2);
   private final int maxPendingBlocks = 10;
   private final PendingPool<SignedBeaconBlock> pendingBlocks =
-      PendingPool.createForBlocks(historicalBlockTolerance, futureBlockTolerance, maxPendingBlocks);
+      PendingPool.createForBlocks(
+          spec, historicalBlockTolerance, futureBlockTolerance, maxPendingBlocks);
   private final FutureItems<SignedBeaconBlock> futureBlocks =
       FutureItems.create(SignedBeaconBlock::getSlot);
 

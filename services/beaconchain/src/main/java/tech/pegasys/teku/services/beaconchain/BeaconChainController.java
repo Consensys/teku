@@ -328,7 +328,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private void initPendingBlocks() {
     LOG.debug("BeaconChainController.initPendingBlocks()");
-    pendingBlocks = PendingPool.createForBlocks();
+    pendingBlocks = PendingPool.createForBlocks(spec);
     eventChannels.subscribe(FinalizedCheckpointChannel.class, pendingBlocks);
   }
 
@@ -520,7 +520,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private void initAttestationManager() {
     final PendingPool<ValidateableAttestation> pendingAttestations =
-        PendingPool.createForAttestations();
+        PendingPool.createForAttestations(spec);
     final FutureItems<ValidateableAttestation> futureAttestations =
         FutureItems.create(
             ValidateableAttestation::getEarliestSlotForForkChoiceProcessing, UInt64.valueOf(3));

@@ -865,7 +865,7 @@ public final class DataStructureUtil {
     final UInt64 anchorEpoch = spec.getCurrentEpoch(anchorState);
     final Checkpoint anchorCheckpoint = new Checkpoint(anchorEpoch, anchorRoot);
 
-    return AnchorPoint.create(anchorCheckpoint, signedAnchorBlock, anchorState);
+    return AnchorPoint.create(spec, anchorCheckpoint, signedAnchorBlock, anchorState);
   }
 
   public SignedContributionAndProof randomSignedContributionAndProof(final long slot) {
