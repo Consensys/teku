@@ -26,7 +26,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class CheckpointState {
 
-  private final Spec spec;
   private final Checkpoint checkpoint;
   private final BeaconBlockSummary block;
   private final BeaconState state;
@@ -44,7 +43,6 @@ public class CheckpointState {
         state.getSlot().equals(checkpoint.getEpochStartSlot(spec)),
         "State must be advanced to checkpoint epoch boundary slot");
 
-    this.spec = spec;
     this.checkpoint = checkpoint;
     this.block = block;
     this.state = state;
