@@ -26,7 +26,10 @@ import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.testcontainers.containers.Network;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase.CaptureArtifacts;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNode.Config;
 import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateGenerator;
 
 @ExtendWith(CaptureArtifacts.class)
@@ -66,7 +69,12 @@ public class AcceptanceTestBase {
   }
 
   protected TekuDepositSender createTekuDepositSender() {
-    return addNode(new TekuDepositSender(network));
+    return createTekuDepositSender(Config.DEFAULT_NETWORK_NAME);
+  }
+
+  protected TekuDepositSender createTekuDepositSender(final String networkName) {
+    final Spec spec = SpecFactory.create(networkName);
+    return addNode(new TekuDepositSender(network, spec));
   }
 
   protected BesuNode createBesuNode() {

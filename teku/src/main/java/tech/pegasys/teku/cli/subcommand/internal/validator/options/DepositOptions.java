@@ -40,7 +40,7 @@ import tech.pegasys.teku.util.config.Constants;
 
 public class DepositOptions {
 
-  @Spec private CommandSpec spec;
+  @Spec private CommandSpec commandSpec;
 
   @Option(
       names = {"-n", "--network"},
@@ -89,7 +89,7 @@ public class DepositOptions {
       final Eth1PrivateKeyOptions eth1PrivateKeyOptions,
       final IntConsumer shutdownFunction,
       final ConsoleAdapter consoleAdapter) {
-    this.spec = commandSpec;
+    this.commandSpec = commandSpec;
     this.eth1PrivateKeyOptions = eth1PrivateKeyOptions;
     this.shutdownFunction = shutdownFunction;
     this.consoleAdapter = consoleAdapter;
@@ -100,6 +100,7 @@ public class DepositOptions {
         Eth2NetworkConfiguration.builder(network).build();
     Constants.setConstants(networkConfig.getConstants());
     return new DepositSender(
+        networkConfig.getSpec(),
         eth1NodeUrl,
         getEth1Credentials(),
         getContractAddress(networkConfig),
@@ -135,16 +136,17 @@ public class DepositOptions {
   private Credentials getEth1CredentialsFromKeystore() {
     final String keystorePassword =
         KeystorePasswordOptions.readFromFile(
-            spec.commandLine(), eth1PrivateKeyOptions.keystoreOptions.eth1KeystorePasswordFile);
+            commandSpec.commandLine(),
+            eth1PrivateKeyOptions.keystoreOptions.eth1KeystorePasswordFile);
     final File eth1KeystoreFile = eth1PrivateKeyOptions.keystoreOptions.eth1KeystoreFile;
     try {
       return WalletUtils.loadCredentials(keystorePassword, eth1KeystoreFile);
     } catch (final FileNotFoundException e) {
       throw new ParameterException(
-          spec.commandLine(), "Error: File not found: " + eth1KeystoreFile, e);
+          commandSpec.commandLine(), "Error: File not found: " + eth1KeystoreFile, e);
     } catch (final IOException e) {
       throw new ParameterException(
-          spec.commandLine(),
+          commandSpec.commandLine(),
           "Error: Unexpected IO Error while reading Eth1 keystore ["
               + eth1KeystoreFile
               + "] : "
@@ -152,7 +154,7 @@ public class DepositOptions {
           e);
     } catch (final CipherException e) {
       throw new ParameterException(
-          spec.commandLine(),
+          commandSpec.commandLine(),
           "Error: Unable to decrypt Eth1 keystore [" + eth1KeystoreFile + "] : " + e.getMessage(),
           e);
     }

@@ -24,7 +24,6 @@ import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_HISTORICAL_VECT
 import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_SLASHINGS_VECTOR;
 import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.util.config.Constants.GENESIS_EPOCH;
-import static tech.pegasys.teku.util.config.Constants.GENESIS_FORK_VERSION;
 import static tech.pegasys.teku.util.config.Constants.MAX_COMMITTEES_PER_SLOT;
 import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
 import static tech.pegasys.teku.util.config.Constants.MAX_SEED_LOOKAHEAD;
@@ -140,19 +139,6 @@ public class BeaconStateUtil {
   private static Bytes32 compute_domain(final Bytes4 domain_type, final Bytes32 fork_data_root) {
     return Bytes32.wrap(
         Bytes.concatenate(domain_type.getWrappedBytes(), fork_data_root.slice(0, 28)));
-  }
-
-  /**
-   * Return the domain for the ``domain_type``.
-   *
-   * @param domain_type
-   * @return domain
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#compute_domain</a>
-   */
-  @Deprecated
-  public static Bytes32 compute_domain(Bytes4 domain_type) {
-    return compute_domain(domain_type, GENESIS_FORK_VERSION, Bytes32.ZERO);
   }
 
   /**
