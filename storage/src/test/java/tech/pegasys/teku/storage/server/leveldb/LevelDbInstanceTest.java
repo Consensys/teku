@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,6 +47,8 @@ class LevelDbInstanceTest {
       KvStoreVariable.create(0, INT_SERIALIZER);
   private static final KvStoreVariable<Integer> variable2 =
       KvStoreVariable.create(1, INT_SERIALIZER);
+  private static final KvStoreVariable<UInt64> variable3 =
+      KvStoreVariable.create(2, UINT64_SERIALIZER);
 
   private static final KvStoreColumn<Integer, Integer> column1 =
       KvStoreColumn.create(1, INT_SERIALIZER, INT_SERIALIZER);
@@ -224,6 +227,30 @@ class LevelDbInstanceTest {
     try (final Stream<ColumnEntry<UInt64, UInt64>> stream =
         instance.stream(column4, UInt64.valueOf(startInclusive), UInt64.valueOf(endInclusive))) {
       assertThat(stream.map(ColumnEntry::getKey)).containsExactlyElementsOf(expectedKeys);
+    }
+  }
+
+  @Test
+  void putRaw_shouldWriteToStorage() {
+    // random data is fine, but must not have signed bit set because of the 'valueOf' logic
+    final Bytes byteData = Bytes.random(8).and(Bytes.fromHexString("0x7FFFFFFFFFFFFFFF"));
+    final UInt64 data = UInt64.valueOf(byteData.toLong());
+    update(tx -> tx.putRaw(variable3, byteData));
+    assertThat(instance.get(variable3)).contains(data);
+    assertThat(instance.getRaw(variable3)).contains(byteData);
+  }
+
+  @Test
+  void streamRaw_shouldGetByteData() {
+    // random data is fine, but must not have signed bit set because of the 'valueOf' logic
+    final Bytes byteData = Bytes.random(8).and(Bytes.fromHexString("0x7FFFFFFFFFFFFFFF"));
+    final UInt64 data = UInt64.valueOf(byteData.toLong());
+    update(tx -> tx.put(column4, UInt64.ZERO, data));
+
+    assertThat(instance.get(column4, UInt64.ZERO)).contains(data);
+    try (final Stream<ColumnEntry<Bytes, Bytes>> stream = instance.streamRaw(column4)) {
+      assertThat(stream)
+          .containsExactly(ColumnEntry.create(Bytes.fromHexString("0x0000000000000000"), byteData));
     }
   }
 

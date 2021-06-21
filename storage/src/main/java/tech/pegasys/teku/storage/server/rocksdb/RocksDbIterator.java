@@ -31,7 +31,8 @@ import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
 
-class RocksDbIterator<TKey, TValue> implements Iterator<ColumnEntry<TKey, TValue>>, AutoCloseable {
+class RocksDbIterator<TKey, TValue>
+    implements Iterator<ColumnEntry<byte[], byte[]>>, AutoCloseable {
   private static final Logger LOG = LogManager.getLogger();
 
   private final KvStoreColumn<TKey, TValue> column;
@@ -68,7 +69,7 @@ class RocksDbIterator<TKey, TValue> implements Iterator<ColumnEntry<TKey, TValue
   }
 
   @Override
-  public ColumnEntry<TKey, TValue> next() {
+  public ColumnEntry<byte[], byte[]> next() {
     assertOpen();
     try {
       rocksIterator.status();
@@ -78,17 +79,16 @@ class RocksDbIterator<TKey, TValue> implements Iterator<ColumnEntry<TKey, TValue
     if (!hasNext()) {
       throw new NoSuchElementException();
     }
-    final TKey key = column.getKeySerializer().deserialize(rocksIterator.key());
-    final TValue value = column.getValueSerializer().deserialize(rocksIterator.value());
-    final ColumnEntry<TKey, TValue> entry = ColumnEntry.create(key, value);
+    final ColumnEntry<byte[], byte[]> entry =
+        ColumnEntry.create(rocksIterator.key(), rocksIterator.value());
     rocksIterator.next();
     return entry;
   }
 
   @MustBeClosed
-  public Stream<ColumnEntry<TKey, TValue>> toStream() {
+  public Stream<ColumnEntry<byte[], byte[]>> toStream() {
     assertOpen();
-    final Spliterator<ColumnEntry<TKey, TValue>> split =
+    final Spliterator<ColumnEntry<byte[], byte[]>> split =
         Spliterators.spliteratorUnknownSize(
             this,
             Spliterator.IMMUTABLE
