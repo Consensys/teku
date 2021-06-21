@@ -69,8 +69,8 @@ class ChainHead extends StateAndBlockSummary {
     // Couldn't find a common ancestor in the available block roots so fallback to finalized
     return getState()
         .getFinalized_checkpoint()
-        .getEpochStartSlot()
-        .min(other.getState().getFinalized_checkpoint().getEpochStartSlot());
+        .getEpochStartSlot(spec)
+        .min(other.getState().getFinalized_checkpoint().getEpochStartSlot(spec));
   }
 
   private Bytes32 getBlockRootAtSlot(final UInt64 slot) {

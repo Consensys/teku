@@ -102,13 +102,13 @@ public class RespondingEth2Peer implements Eth2Peer {
         head.getSlot());
   }
 
-  private static PeerStatus createStatus(final Checkpoint head, final Checkpoint finalized) {
+  private PeerStatus createStatus(final Checkpoint head, final Checkpoint finalized) {
     return new PeerStatus(
         forkDigest,
         finalized.getRoot(),
         finalized.getEpoch(),
         head.getRoot(),
-        head.getEpochStartSlot());
+        head.getEpochStartSlot(spec));
   }
 
   public void updateStatus(final Checkpoint head, final Checkpoint finalized) {

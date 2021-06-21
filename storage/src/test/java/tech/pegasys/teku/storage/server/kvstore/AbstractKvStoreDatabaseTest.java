@@ -200,7 +200,9 @@ public abstract class AbstractKvStoreDatabaseTest extends AbstractStorageBackedD
     database.close();
 
     assertThatThrownBy(
-            () -> database.getLatestAvailableFinalizedState(genesisCheckpoint.getEpochStartSlot()))
+            () ->
+                database.getLatestAvailableFinalizedState(
+                    genesisCheckpoint.getEpochStartSlot(spec)))
         .isInstanceOf(ShuttingDownException.class);
   }
 
@@ -259,7 +261,7 @@ public abstract class AbstractKvStoreDatabaseTest extends AbstractStorageBackedD
     SignedBlockAndState finalizedBlock = chainBuilder.getBlockAndStateAtSlot(finalizedSlot);
     final Checkpoint finalizedCheckpoint = getCheckpointForBlock(finalizedBlock.getBlock());
     final long firstHotBlockSlot =
-        finalizedCheckpoint.getEpochStartSlot().plus(UInt64.ONE).longValue();
+        finalizedCheckpoint.getEpochStartSlot(spec).plus(UInt64.ONE).longValue();
     for (int i = 0; i < hotBlockCount; i++) {
       chainBuilder.generateBlockAtSlot(firstHotBlockSlot + i);
     }

@@ -289,7 +289,9 @@ public class ForkChoiceUtil {
 
     // Attestations cannot be from future epochs. If they are, delay consideration until the epoch
     // arrives
-    if (currentSlot.compareTo(attestation.getData().getTarget().getEpochStartSlot()) < 0) {
+    final UInt64 epochStartSlot =
+        miscHelpers.computeStartSlotAtEpoch(attestation.getData().getTarget().getEpoch());
+    if (currentSlot.isLessThan(epochStartSlot)) {
       return AttestationProcessingResult.SAVED_FOR_FUTURE;
     }
     return AttestationProcessingResult.SUCCESSFUL;
@@ -369,12 +371,16 @@ public class ForkChoiceUtil {
   }
 
   private boolean isFinalizedAncestorOfJustified(ReadOnlyStore store) {
-    UInt64 finalizedSlot = store.getFinalizedCheckpoint().getEpochStartSlot();
     return hasAncestorAtSlot(
         store.getForkChoiceStrategy(),
         store.getJustifiedCheckpoint().getRoot(),
-        finalizedSlot,
+        getFinalizedCheckpointStartSlot(store),
         store.getFinalizedCheckpoint().getRoot());
+  }
+
+  private UInt64 getFinalizedCheckpointStartSlot(final ReadOnlyStore store) {
+    final UInt64 finalizedEpoch = store.getFinalizedCheckpoint().getEpoch();
+    return miscHelpers.computeStartSlotAtEpoch(finalizedEpoch);
   }
 
   private Optional<BlockImportResult> checkOnBlockConditions(
@@ -414,11 +420,12 @@ public class ForkChoiceUtil {
     final UInt64 blockSlot = block.getSlot();
 
     // Make sure this block's slot is after the latest finalized slot
-    return blockIsAfterLatestFinalizedSlot(blockSlot, finalizedCheckpoint.getEpochStartSlot())
+    final UInt64 finalizedEpochStartSlot = getFinalizedCheckpointStartSlot(store);
+    return blockIsAfterLatestFinalizedSlot(blockSlot, finalizedEpochStartSlot)
         && hasAncestorAtSlot(
             forkChoiceStrategy,
             block.getParentRoot(),
-            finalizedCheckpoint.getEpochStartSlot(),
+            finalizedEpochStartSlot,
             finalizedCheckpoint.getRoot());
   }
 

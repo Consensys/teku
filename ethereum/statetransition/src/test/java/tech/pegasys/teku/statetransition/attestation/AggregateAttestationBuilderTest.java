@@ -20,6 +20,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -29,11 +31,12 @@ import tech.pegasys.teku.ssz.collections.SszBitlist;
 class AggregateAttestationBuilderTest {
 
   public static final int BITLIST_SIZE = 10;
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final Spec spec = TestSpecFactory.createDefault();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final AttestationData attestationData = dataStructureUtil.randomAttestationData();
 
   private final AggregateAttestationBuilder builder =
-      new AggregateAttestationBuilder(attestationData);
+      new AggregateAttestationBuilder(spec, attestationData);
 
   @Test
   public void canAggregate_shouldBeTrueForFirstAttestation() {
@@ -87,6 +90,7 @@ class AggregateAttestationBuilderTest {
     assertThat(builder.buildAggregate())
         .isEqualTo(
             ValidateableAttestation.from(
+                spec,
                 new Attestation(expectedAggregationBits, attestationData, expectedSignature)));
   }
 
@@ -99,6 +103,7 @@ class AggregateAttestationBuilderTest {
     final SszBitlist aggregationBits =
         Attestation.SSZ_SCHEMA.getAggregationBitsSchema().ofBits(BITLIST_SIZE, validators);
     return ValidateableAttestation.from(
+        spec,
         new Attestation(aggregationBits, attestationData, dataStructureUtil.randomSignature()));
   }
 }

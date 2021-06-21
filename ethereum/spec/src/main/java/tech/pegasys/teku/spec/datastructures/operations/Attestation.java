@@ -18,6 +18,7 @@ import java.util.Collection;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 import tech.pegasys.teku.ssz.collections.SszBitlist;
@@ -70,8 +71,8 @@ public class Attestation
     return SSZ_SCHEMA.getAggregationBitsSchema().ofBits(Constants.MAX_VALIDATORS_PER_COMMITTEE);
   }
 
-  public UInt64 getEarliestSlotForForkChoiceProcessing() {
-    return getData().getEarliestSlotForForkChoice();
+  public UInt64 getEarliestSlotForForkChoiceProcessing(final Spec spec) {
+    return getData().getEarliestSlotForForkChoice(spec);
   }
 
   public Collection<Bytes32> getDependentBlockRoots() {

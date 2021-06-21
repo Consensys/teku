@@ -33,21 +33,21 @@ public abstract class CheckpointStateGenerator {
 
     // Derive checkpoint state
     final BeaconState state = regenerateCheckpointState(spec, checkpoint, blockAndState.getState());
-    return CheckpointState.create(checkpoint, blockAndState.getBlock(), state);
+    return CheckpointState.create(spec, checkpoint, blockAndState.getBlock(), state);
   }
 
   public static BeaconState regenerateCheckpointState(
       final Spec spec, final Checkpoint checkpoint, BeaconState baseState) {
-    if (baseState.getSlot().isGreaterThan(checkpoint.getEpochStartSlot())) {
+    if (baseState.getSlot().isGreaterThan(checkpoint.getEpochStartSlot(spec))) {
       throw new InvalidCheckpointException(
           "Checkpoint state must be at or prior to checkpoint slot boundary");
     }
     try {
-      if (baseState.getSlot().equals(checkpoint.getEpochStartSlot())) {
+      if (baseState.getSlot().equals(checkpoint.getEpochStartSlot(spec))) {
         return baseState;
       }
 
-      return spec.processSlots(baseState, checkpoint.getEpochStartSlot());
+      return spec.processSlots(baseState, checkpoint.getEpochStartSlot(spec));
     } catch (SlotProcessingException | EpochProcessingException | IllegalArgumentException e) {
       throw new InvalidCheckpointException(e);
     }

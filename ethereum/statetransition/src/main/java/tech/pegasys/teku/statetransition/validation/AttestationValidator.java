@@ -249,7 +249,10 @@ public class AttestationValidator {
         secondsToMillis(
             recentChainData
                 .getGenesisTime()
-                .plus(attestation.getEarliestSlotForForkChoiceProcessing().times(secondsPerSlot)));
+                .plus(
+                    attestation
+                        .getEarliestSlotForForkChoiceProcessing(spec)
+                        .times(secondsPerSlot)));
     final UInt64 discardAttestationsAfterMillis =
         currentTimeMillis.plus(secondsToMillis(MAX_FUTURE_SLOT_ALLOWANCE.times(secondsPerSlot)));
     return attestationSlotTimeMillis.isGreaterThan(discardAttestationsAfterMillis);

@@ -37,20 +37,20 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class OperationsReOrgManager implements ChainHeadChannel {
   private static final Logger LOG = LogManager.getLogger();
 
-  final OperationPool<SignedVoluntaryExit> exitPool;
-  final OperationPool<ProposerSlashing> proposerSlashingPool;
-  final OperationPool<AttesterSlashing> attesterSlashingPool;
-  final AttestationManager attestationManager;
-  final AggregatingAttestationPool attestationPool;
-  final RecentChainData recentChainData;
+  private final OperationPool<SignedVoluntaryExit> exitPool;
+  private final OperationPool<ProposerSlashing> proposerSlashingPool;
+  private final OperationPool<AttesterSlashing> attesterSlashingPool;
+  private final AttestationManager attestationManager;
+  private final AggregatingAttestationPool attestationPool;
+  private final RecentChainData recentChainData;
 
   public OperationsReOrgManager(
-      OperationPool<ProposerSlashing> proposerSlashingPool,
-      OperationPool<AttesterSlashing> attesterSlashingPool,
-      OperationPool<SignedVoluntaryExit> exitPool,
-      AggregatingAttestationPool attestationPool,
-      AttestationManager attestationManager,
-      RecentChainData recentChainData) {
+      final OperationPool<ProposerSlashing> proposerSlashingPool,
+      final OperationPool<AttesterSlashing> attesterSlashingPool,
+      final OperationPool<SignedVoluntaryExit> exitPool,
+      final AggregatingAttestationPool attestationPool,
+      final AttestationManager attestationManager,
+      final RecentChainData recentChainData) {
     this.exitPool = exitPool;
     this.proposerSlashingPool = proposerSlashingPool;
     this.attesterSlashingPool = attesterSlashingPool;
@@ -121,7 +121,7 @@ public class OperationsReOrgManager implements ChainHeadChannel {
     attestations.forEach(
         attestation -> {
           attestationManager
-              .onAttestation(ValidateableAttestation.from(attestation))
+              .onAttestation(ValidateableAttestation.from(recentChainData.getSpec(), attestation))
               .finish(
                   result ->
                       result.ifInvalid(
