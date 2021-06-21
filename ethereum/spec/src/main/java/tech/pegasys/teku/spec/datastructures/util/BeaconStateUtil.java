@@ -77,7 +77,7 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_seed</a>
    */
   @Deprecated
-  public static Bytes32 get_seed(BeaconState state, UInt64 epoch, Bytes4 domain_type)
+  private static Bytes32 get_seed(BeaconState state, UInt64 epoch, Bytes4 domain_type)
       throws IllegalArgumentException {
     UInt64 randaoIndex = epoch.plus(EPOCHS_PER_HISTORICAL_VECTOR - MIN_SEED_LOOKAHEAD - 1);
     Bytes32 mix = get_randao_mix(state, randaoIndex);
