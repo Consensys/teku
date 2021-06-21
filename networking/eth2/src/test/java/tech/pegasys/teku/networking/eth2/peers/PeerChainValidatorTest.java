@@ -50,7 +50,7 @@ public class PeerChainValidatorTest {
   private final UpdatableStore store = mock(UpdatableStore.class);
 
   private final ForkInfo remoteForkInfo = dataStructureUtil.randomForkInfo();
-  private final Bytes4 remoteFork = remoteForkInfo.getForkDigest();
+  private final Bytes4 remoteFork = remoteForkInfo.getForkDigest(spec);
   private final ForkInfo otherForkInfo = dataStructureUtil.randomForkInfo();
 
   private final UInt64 genesisEpoch = UInt64.valueOf(Constants.GENESIS_EPOCH);

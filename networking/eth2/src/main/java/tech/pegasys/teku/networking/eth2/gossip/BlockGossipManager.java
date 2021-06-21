@@ -56,7 +56,7 @@ public class BlockGossipManager implements GossipManager {
             asyncRunner,
             processor,
             gossipEncoding,
-            forkInfo.getForkDigest(),
+            forkInfo.getForkDigest(spec),
             GossipTopicName.BEACON_BLOCK,
             signedBeaconBlockSchema);
     this.channel = gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);

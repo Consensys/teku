@@ -103,11 +103,11 @@ class Eth2GossipTopicFilterTest {
   }
 
   private String getTopicName(final GossipTopicName name) {
-    return GossipTopics.getTopic(forkInfo.getForkDigest(), name, SSZ_SNAPPY);
+    return GossipTopics.getTopic(forkInfo.getForkDigest(spec), name, SSZ_SNAPPY);
   }
 
   private String getTopicName(final String name) {
-    return GossipTopics.getTopic(forkInfo.getForkDigest(), name, SSZ_SNAPPY);
+    return GossipTopics.getTopic(forkInfo.getForkDigest(spec), name, SSZ_SNAPPY);
   }
 
   private String getNextForkTopicName(final GossipTopicName name) {

@@ -186,6 +186,6 @@ public class AttestationGossipManagerTest {
 
   private String getSubnetTopic(final int subnetId) {
     return GossipTopics.getAttestationSubnetTopic(
-        forkInfo.getForkDigest(), subnetId, gossipEncoding);
+        forkInfo.getForkDigest(spec), subnetId, gossipEncoding);
   }
 }

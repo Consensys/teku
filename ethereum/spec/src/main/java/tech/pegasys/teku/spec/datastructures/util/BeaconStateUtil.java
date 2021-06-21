@@ -119,12 +119,6 @@ public class BeaconStateUtil {
     return new ForkData(current_version, genesis_validators_root).hashTreeRoot();
   }
 
-  @Deprecated
-  public static Bytes4 compute_fork_digest(
-      Bytes4 current_version, Bytes32 genesis_validators_root) {
-    return new Bytes4(compute_fork_data_root(current_version, genesis_validators_root).slice(0, 4));
-  }
-
   /**
    * Return the domain for the ``domain_type`` and ``fork_version``.
    *

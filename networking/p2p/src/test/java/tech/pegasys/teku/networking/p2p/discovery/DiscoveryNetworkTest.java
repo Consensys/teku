@@ -173,7 +173,7 @@ class DiscoveryNetworkTest {
 
     final EnrForkId expectedEnrForkId =
         new EnrForkId(
-            currentForkInfo.getForkDigest(),
+            currentForkInfo.getForkDigest(spec),
             currentForkInfo.getFork().getCurrent_version(),
             SpecConfig.FAR_FUTURE_EPOCH);
     verify(discoveryService).updateCustomENRField("eth2", expectedEnrForkId.sszSerialize());
@@ -187,7 +187,9 @@ class DiscoveryNetworkTest {
 
     final EnrForkId expectedEnrForkId =
         new EnrForkId(
-            currentForkInfo.getForkDigest(), nextFork.getCurrent_version(), nextFork.getEpoch());
+            currentForkInfo.getForkDigest(spec),
+            nextFork.getCurrent_version(),
+            nextFork.getEpoch());
     verify(discoveryService).updateCustomENRField("eth2", expectedEnrForkId.sszSerialize());
   }
 
@@ -199,7 +201,7 @@ class DiscoveryNetworkTest {
 
     final EnrForkId expectedEnrForkId =
         new EnrForkId(
-            currentForkInfo.getForkDigest(),
+            currentForkInfo.getForkDigest(spec),
             currentForkInfo.getFork().getCurrent_version(),
             SpecConfig.FAR_FUTURE_EPOCH);
     Bytes encodedForkId = expectedEnrForkId.sszSerialize();
@@ -213,7 +215,7 @@ class DiscoveryNetworkTest {
 
     final EnrForkId newEnrForkId1 =
         new EnrForkId(
-            currentForkInfo.getForkDigest(), Bytes4.fromHexString("0xdeadbeef"), UInt64.ZERO);
+            currentForkInfo.getForkDigest(spec), Bytes4.fromHexString("0xdeadbeef"), UInt64.ZERO);
     DiscoveryPeer peer2 = createDiscoveryPeer(Optional.of(newEnrForkId1));
     assertThat(peerPredicateArgumentCaptor.getValue().test(peer2)).isTrue();
 
@@ -232,7 +234,7 @@ class DiscoveryNetworkTest {
 
     final EnrForkId expectedEnrForkId =
         new EnrForkId(
-            currentForkInfo.getForkDigest(),
+            currentForkInfo.getForkDigest(spec),
             currentForkInfo.getFork().getCurrent_version(),
             SpecConfig.FAR_FUTURE_EPOCH);
     Bytes encodedForkId = expectedEnrForkId.sszSerialize();
@@ -252,7 +254,7 @@ class DiscoveryNetworkTest {
 
     final EnrForkId enrForkId =
         new EnrForkId(
-            currentForkInfo.getForkDigest(),
+            currentForkInfo.getForkDigest(spec),
             currentForkInfo.getFork().getCurrent_version(),
             SpecConfig.FAR_FUTURE_EPOCH);
     ArgumentCaptor<Predicate<DiscoveryPeer>> peerPredicateArgumentCaptor =

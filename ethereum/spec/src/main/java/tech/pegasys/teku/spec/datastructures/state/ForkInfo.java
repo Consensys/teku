@@ -13,11 +13,10 @@
 
 package tech.pegasys.teku.spec.datastructures.state;
 
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_fork_digest;
-
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class ForkInfo {
@@ -37,8 +36,8 @@ public class ForkInfo {
     return genesisValidatorsRoot;
   }
 
-  public Bytes4 getForkDigest() {
-    return compute_fork_digest(fork.getCurrent_version(), genesisValidatorsRoot);
+  public Bytes4 getForkDigest(final Spec spec) {
+    return spec.computeForkDigest(fork.getCurrent_version(), genesisValidatorsRoot);
   }
 
   /**
