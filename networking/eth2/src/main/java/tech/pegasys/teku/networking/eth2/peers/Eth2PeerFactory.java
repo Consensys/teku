@@ -20,11 +20,13 @@ import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class Eth2PeerFactory {
 
+  private final Spec spec;
   private final StatusMessageFactory statusMessageFactory;
   private final MetadataMessagesFactory metadataMessagesFactory;
   private final MetricsSystem metricsSystem;
@@ -35,6 +37,7 @@ public class Eth2PeerFactory {
   private final int peerRequestLimit;
 
   public Eth2PeerFactory(
+      final Spec spec,
       final MetricsSystem metricsSystem,
       final CombinedChainDataClient chainDataClient,
       final StatusMessageFactory statusMessageFactory,
@@ -43,6 +46,7 @@ public class Eth2PeerFactory {
       final Optional<Checkpoint> requiredCheckpoint,
       final int peerRateLimit,
       final int peerRequestLimit) {
+    this.spec = spec;
     this.metricsSystem = metricsSystem;
     this.chainDataClient = chainDataClient;
     this.timeProvider = timeProvider;
@@ -59,7 +63,7 @@ public class Eth2PeerFactory {
         rpcMethods,
         statusMessageFactory,
         metadataMessagesFactory,
-        PeerChainValidator.create(metricsSystem, chainDataClient, requiredCheckpoint),
+        PeerChainValidator.create(spec, metricsSystem, chainDataClient, requiredCheckpoint),
         new RateTracker(peerRateLimit, 60, timeProvider),
         new RateTracker(peerRequestLimit, 60, timeProvider));
   }

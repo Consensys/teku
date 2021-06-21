@@ -95,7 +95,8 @@ public class ChainStorageTest {
 
     // Initialize from intermediate anchor point
     final AnchorPoint anchorPoint =
-        AnchorPoint.create(anchorCheckpoint, anchorBlockAndState.getState(), Optional.empty());
+        AnchorPoint.create(
+            spec, anchorCheckpoint, anchorBlockAndState.getState(), Optional.empty());
     storageSystem.recentChainData().initializeFromAnchorPoint(anchorPoint, ZERO);
     final long firstMissingBlockSlot = anchorBlockAndState.getSlot().longValue();
 
@@ -137,11 +138,12 @@ public class ChainStorageTest {
     final long firstMissingBlockSlot;
     if (initializeWithAnchorStateAlone) {
       anchorPoint =
-          AnchorPoint.create(anchorCheckpoint, anchorBlockAndState.getState(), Optional.empty());
+          AnchorPoint.create(
+              spec, anchorCheckpoint, anchorBlockAndState.getState(), Optional.empty());
       storageSystem.recentChainData().initializeFromAnchorPoint(anchorPoint, ZERO);
       firstMissingBlockSlot = anchorBlockAndState.getSlot().longValue();
     } else {
-      anchorPoint = AnchorPoint.create(anchorCheckpoint, anchorBlockAndState);
+      anchorPoint = AnchorPoint.create(spec, anchorCheckpoint, anchorBlockAndState);
       storageSystem.recentChainData().initializeFromAnchorPoint(anchorPoint, ZERO);
       firstMissingBlockSlot = anchorBlockAndState.getSlot().minus(1).longValue();
     }
@@ -204,7 +206,8 @@ public class ChainStorageTest {
 
     // Initialize from intermediate anchor
     final AnchorPoint anchorPoint =
-        AnchorPoint.create(anchorCheckpoint, anchorBlockAndState.getState(), Optional.empty());
+        AnchorPoint.create(
+            spec, anchorCheckpoint, anchorBlockAndState.getState(), Optional.empty());
     storageSystem.recentChainData().initializeFromAnchorPoint(anchorPoint, ZERO);
     final long firstMissingBlockSlot = anchorBlockAndState.getSlot().longValue();
 
@@ -239,7 +242,8 @@ public class ChainStorageTest {
 
     // Initialize from intermediate anchor
     final AnchorPoint anchorPoint =
-        AnchorPoint.create(anchorCheckpoint, anchorBlockAndState.getState(), Optional.empty());
+        AnchorPoint.create(
+            spec, anchorCheckpoint, anchorBlockAndState.getState(), Optional.empty());
     storageSystem.recentChainData().initializeFromAnchorPoint(anchorPoint, ZERO);
     final long firstMissingBlockSlot = anchorBlockAndState.getSlot().longValue();
 
@@ -277,7 +281,8 @@ public class ChainStorageTest {
 
     // Initialize from intermediate anchor
     final AnchorPoint anchorPoint =
-        AnchorPoint.create(anchorCheckpoint, anchorBlockAndState.getState(), Optional.empty());
+        AnchorPoint.create(
+            spec, anchorCheckpoint, anchorBlockAndState.getState(), Optional.empty());
     storageSystem.recentChainData().initializeFromAnchorPoint(anchorPoint, ZERO);
     final long firstMissingBlockSlot = anchorBlockAndState.getSlot().longValue();
 

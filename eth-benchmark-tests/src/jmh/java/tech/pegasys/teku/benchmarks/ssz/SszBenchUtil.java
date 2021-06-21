@@ -14,6 +14,8 @@
 package tech.pegasys.teku.benchmarks.ssz;
 
 import org.openjdk.jmh.infra.Blackhole;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
@@ -31,6 +33,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 
 public class SszBenchUtil {
+  private static final Spec SPEC = TestSpecFactory.createDefault();
 
   public static void iterateData(PendingAttestation pa, Blackhole bh) {
     bh.consume(pa.getAggregation_bits());
@@ -116,7 +119,7 @@ public class SszBenchUtil {
   public static void iterateData(AttestationData ad, Blackhole bh) {
     bh.consume(ad.getSlot());
     bh.consume(ad.getIndex());
-    bh.consume(ad.getEarliestSlotForForkChoice());
+    bh.consume(ad.getEarliestSlotForForkChoice(SPEC));
     iterateData(ad.getSource(), bh);
     iterateData(ad.getTarget(), bh);
   }

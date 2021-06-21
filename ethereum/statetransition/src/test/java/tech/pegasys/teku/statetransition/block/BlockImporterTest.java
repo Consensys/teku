@@ -415,7 +415,10 @@ public class BlockImporterTest {
     // Verify ws period checks were run
     final CheckpointState finalizedCheckpointState =
         CheckpointState.create(
-            new Checkpoint(UInt64.ZERO, genesis.getRoot()), genesis.getBlock(), genesis.getState());
+            spec,
+            new Checkpoint(UInt64.ZERO, genesis.getRoot()),
+            genesis.getBlock(),
+            genesis.getState());
     verify(weakSubjectivityValidator)
         .validateLatestFinalizedCheckpoint(finalizedCheckpointState, currentSlot);
   }
@@ -456,7 +459,10 @@ public class BlockImporterTest {
     // Verify ws period checks were run
     final CheckpointState finalizedCheckpointState =
         CheckpointState.create(
-            new Checkpoint(UInt64.ZERO, genesis.getRoot()), genesis.getBlock(), genesis.getState());
+            spec,
+            new Checkpoint(UInt64.ZERO, genesis.getRoot()),
+            genesis.getBlock(),
+            genesis.getState());
     verify(weakSubjectivityValidator)
         .validateLatestFinalizedCheckpoint(finalizedCheckpointState, currentSlot);
   }

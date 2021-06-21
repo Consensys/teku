@@ -377,7 +377,7 @@ class BeaconChainMetricsTest {
     List<Bytes32> blockRootsList =
         new ArrayList<>(Collections.nCopies(33, dataStructureUtil.randomBytes32()));
     blockRootsList.set(
-        target.getEpochStartSlot().mod(slotsPerHistoricalRoot).intValue(), blockRoot);
+        target.getEpochStartSlot(spec).mod(slotsPerHistoricalRoot).intValue(), blockRoot);
     setBlockRoots(blockRootsList);
     final SszBitlist bitlist1 = bitlistOf(1, 3, 5, 7);
     final SszBitlist bitlist2 = bitlistOf(2, 4, 6, 8);
@@ -435,7 +435,8 @@ class BeaconChainMetricsTest {
 
     List<Bytes32> blockRootsList =
         new ArrayList<>(Collections.nCopies(33, dataStructureUtil.randomBytes32()));
-    final int blockRootIndex = target.getEpochStartSlot().mod(slotsPerHistoricalRoot).intValue();
+    final int blockRootIndex =
+        target.getEpochStartSlot(spec).mod(slotsPerHistoricalRoot).intValue();
     blockRootsList.set(blockRootIndex, blockRoot);
     setBlockRoots(blockRootsList);
     final SszBitlist bitlist1 = bitlistOf(1, 3, 5, 7);

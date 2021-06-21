@@ -83,7 +83,8 @@ class StateAtSlotTaskTest {
     when(stateProvider.getState(checkpoint.getRoot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
 
-    final StateAtSlotTask task = createTask(checkpoint.getEpochStartSlot(), checkpoint.getRoot());
+    final StateAtSlotTask task =
+        createTask(checkpoint.getEpochStartSlot(spec), checkpoint.getRoot());
     final SafeFuture<Optional<BeaconState>> result = task.performTask();
     final BeaconState expectedState =
         CheckpointStateGenerator.regenerateCheckpointState(spec, checkpoint, state);
@@ -136,7 +137,7 @@ class StateAtSlotTaskTest {
         CheckpointStateGenerator.regenerateCheckpointState(
             spec, realCheckpoint, newBase.getState());
     final StateAtSlotTask task =
-        createTask(realCheckpoint.getEpochStartSlot(), Bytes32.fromHexStringLenient("0x12"));
+        createTask(realCheckpoint.getEpochStartSlot(spec), Bytes32.fromHexStringLenient("0x12"));
 
     final CachingTaskQueue.CacheableTask<SlotAndBlockRoot, BeaconState> rebasedTask =
         task.rebase(newBase.getState());

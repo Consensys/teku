@@ -360,13 +360,13 @@ class ForkChoiceTest {
                 targetCheckpoint),
             BLSSignature.empty());
     final SafeFuture<AttestationProcessingResult> result =
-        forkChoice.onAttestation(ValidateableAttestation.from(attestation));
+        forkChoice.onAttestation(ValidateableAttestation.from(spec, attestation));
     assertThat(result)
         .isCompletedWithValue(
             AttestationProcessingResult.invalid(
                 String.format(
                     "Checkpoint state (%s) must be at or prior to checkpoint slot boundary (%s)",
-                    targetBlock.getSlot(), targetCheckpoint.getEpochStartSlot())));
+                    targetBlock.getSlot(), targetCheckpoint.getEpochStartSlot(spec))));
   }
 
   private UInt64 applyAttestationFromValidator(
@@ -376,6 +376,7 @@ class ForkChoiceTest {
     final UInt64 updatedAttestationSlot = UInt64.valueOf(20);
     final ValidateableAttestation updatedVote =
         ValidateableAttestation.from(
+            spec,
             new Attestation(
                 Attestation.SSZ_SCHEMA.getAggregationBitsSchema().ofBits(16),
                 new AttestationData(

@@ -523,7 +523,7 @@ class RecentChainDataTest {
 
     // Set up mock store with genesis data and a small chain
     List<SignedBlockAndState> chain = chainBuilder.generateBlocksUpToSlot(3);
-    mockGenesis(store, genesis);
+    mockGenesis(spec, store, genesis);
     mockChainData(store, chain);
 
     // Set store and update best block to genesis
@@ -914,7 +914,7 @@ class RecentChainDataTest {
     // the store
     final List<SignedBlockAndState> expectedBlocks =
         chainBuilder
-            .streamBlocksAndStates(finalizedCheckpoint.getEpochStartSlot())
+            .streamBlocksAndStates(finalizedCheckpoint.getEpochStartSlot(spec))
             .collect(Collectors.toList());
     final Set<Bytes32> blockRoots =
         expectedBlocks.stream().map(SignedBlockAndState::getRoot).collect(Collectors.toSet());

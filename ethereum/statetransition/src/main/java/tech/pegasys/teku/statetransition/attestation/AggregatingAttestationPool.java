@@ -81,6 +81,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
                 dataRoot,
                 key ->
                     new MatchingDataAttestationGroup(
+                        spec,
                         attestationData,
                         attestation
                             .getCommitteeShufflingSeed()

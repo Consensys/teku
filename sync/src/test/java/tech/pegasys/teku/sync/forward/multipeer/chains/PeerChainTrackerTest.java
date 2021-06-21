@@ -33,11 +33,14 @@ import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedSubscriber;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class PeerChainTrackerTest {
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final Spec spec = TestSpecFactory.createDefault();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @SuppressWarnings("unchecked")
   private final P2PNetwork<Eth2Peer> p2pNetwork = mock(P2PNetwork.class);
@@ -60,7 +63,7 @@ class PeerChainTrackerTest {
 
   private final PeerChainTracker tracker =
       new PeerChainTracker(
-          eventThread, p2pNetwork, syncSourceFactory, finalizedChains, nonfinalizedChains);
+          spec, eventThread, p2pNetwork, syncSourceFactory, finalizedChains, nonfinalizedChains);
 
   @BeforeEach
   void setUp() {

@@ -34,6 +34,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -51,6 +52,7 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
   private static final int DEFAULT_MAX_ITEMS = 5000;
   private static final UInt64 GENESIS_SLOT = UInt64.valueOf(Constants.GENESIS_SLOT);
 
+  private final Spec spec;
   private final Subscribers<RequiredBlockRootSubscriber> requiredBlockRootSubscribers =
       Subscribers.create(true);
   private final Subscribers<RequiredBlockRootDroppedSubscriber>
@@ -73,12 +75,14 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
   private volatile UInt64 latestFinalizedSlot = UInt64.valueOf(Constants.GENESIS_SLOT);
 
   PendingPool(
+      final Spec spec,
       final UInt64 historicalSlotTolerance,
       final UInt64 futureSlotTolerance,
       final int maxItems,
       final Function<T, Bytes32> hashTreeRootFunction,
       final Function<T, Collection<Bytes32>> requiredBlockRootsFunction,
       final Function<T, UInt64> targetSlotFunction) {
+    this.spec = spec;
     this.historicalSlotTolerance = historicalSlotTolerance;
     this.futureSlotTolerance = futureSlotTolerance;
     this.maxItems = maxItems;
@@ -87,18 +91,21 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
     this.targetSlotFunction = targetSlotFunction;
   }
 
-  public static PendingPool<SignedBeaconBlock> createForBlocks() {
+  public static PendingPool<SignedBeaconBlock> createForBlocks(final Spec spec) {
     return createForBlocks(
+        spec,
         DEFAULT_HISTORICAL_SLOT_TOLERANCE,
         FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE,
         DEFAULT_MAX_ITEMS);
   }
 
   public static PendingPool<SignedBeaconBlock> createForBlocks(
+      final Spec spec,
       final UInt64 historicalBlockTolerance,
       final UInt64 futureBlockTolerance,
       final int maxItems) {
     return new PendingPool<>(
+        spec,
         historicalBlockTolerance,
         futureBlockTolerance,
         maxItems,
@@ -107,8 +114,9 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
         SignedBeaconBlock::getSlot);
   }
 
-  public static PendingPool<ValidateableAttestation> createForAttestations() {
+  public static PendingPool<ValidateableAttestation> createForAttestations(final Spec spec) {
     return new PendingPool<>(
+        spec,
         DEFAULT_HISTORICAL_SLOT_TOLERANCE,
         FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE,
         DEFAULT_MAX_ITEMS,
@@ -298,7 +306,7 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
 
   @Override
   public void onNewFinalizedCheckpoint(final Checkpoint checkpoint) {
-    this.latestFinalizedSlot = checkpoint.getEpochStartSlot();
+    this.latestFinalizedSlot = checkpoint.getEpochStartSlot(spec);
   }
 
   @VisibleForTesting

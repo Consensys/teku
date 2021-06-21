@@ -346,8 +346,8 @@ public class KvStoreDatabase implements Database {
     final boolean shouldIncludeAnchorBlock =
         maybeAnchor.isPresent()
             && finalizedCheckpoint
-                .getEpochStartSlot()
-                .equals(maybeAnchor.get().getEpochStartSlot());
+                .getEpochStartSlot(spec)
+                .equals(maybeAnchor.get().getEpochStartSlot(spec));
     if (shouldIncludeAnchorBlock && !blockInformation.containsKey(maybeAnchor.get().getRoot())) {
       final Checkpoint anchor = maybeAnchor.orElseThrow();
       final StateAndBlockSummary latestFinalized = StateAndBlockSummary.create(finalizedState);
@@ -361,7 +361,7 @@ public class KvStoreDatabase implements Database {
     final Optional<SignedBeaconBlock> finalizedBlock =
         hotDao.getHotBlock(finalizedCheckpoint.getRoot());
     final AnchorPoint latestFinalized =
-        AnchorPoint.create(finalizedCheckpoint, finalizedState, finalizedBlock);
+        AnchorPoint.create(spec, finalizedCheckpoint, finalizedState, finalizedBlock);
 
     // Make sure time is set to a reasonable value in the case where we start up before genesis when
     // the clock time would be prior to genesis
@@ -580,7 +580,7 @@ public class KvStoreDatabase implements Database {
               checkpoint -> {
                 updater.setFinalizedCheckpoint(checkpoint);
                 final int slotsPerEpoch = spec.slotsPerEpoch(checkpoint.getEpoch());
-                final UInt64 finalizedSlot = checkpoint.getEpochStartSlot().plus(slotsPerEpoch);
+                final UInt64 finalizedSlot = checkpoint.getEpochStartSlot(spec).plus(slotsPerEpoch);
                 updater.pruneHotStateRoots(hotDao.getStateRootsBeforeSlot(finalizedSlot));
                 updater.deleteHotState(checkpoint.getRoot());
               });
@@ -708,7 +708,7 @@ public class KvStoreDatabase implements Database {
           lastSlot =
               maybeBlock
                   .map(SignedBeaconBlock::getSlot)
-                  .orElseGet(() -> initialCheckpoint.orElseThrow().getEpochStartSlot());
+                  .orElseGet(() -> initialCheckpoint.orElseThrow().getEpochStartSlot(spec));
           i++;
         }
         updater.commit();

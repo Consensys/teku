@@ -153,7 +153,7 @@ public class StorageBackedRecentChainDataTest {
     assertThat(client).isNotDone();
 
     // Post a store response to complete initialization
-    final AnchorPoint anchorPoint = AnchorPoint.fromInitialBlockAndState(blockAndState);
+    final AnchorPoint anchorPoint = AnchorPoint.fromInitialBlockAndState(spec, blockAndState);
 
     final StoreBuilder storeBuilder =
         StoreBuilder.create()
