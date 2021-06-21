@@ -43,7 +43,7 @@ public class DepositOptions {
       hidden = true,
       arity = "0..1",
       fallbackValue = "true")
-  private boolean useTimeBasedHeadTracking = false;
+  private boolean useTimeBasedHeadTracking = true;
 
   public void configure(final TekuConfiguration.Builder builder) {
     builder.powchain(
