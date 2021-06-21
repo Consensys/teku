@@ -15,9 +15,12 @@ package tech.pegasys.teku.spec.logic.versions.merge.block;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.web3j.protocol.core.methods.response.EthBlock;
+import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -234,6 +237,16 @@ public class BlockProcessorMerge extends AbstractBlockProcessor {
                   public SafeFuture<Response<GenericResponse>> consensusFinalizeBlock(
                       Bytes32 blockHash) {
                     return null;
+                  }
+
+                  @Override
+                  public SafeFuture<Optional<Block>> getPowBlock(Bytes32 blockHash) {
+                    return SafeFuture.completedFuture(Optional.empty());
+                  }
+
+                  @Override
+                  public SafeFuture<Block> getPowChainHead() {
+                    return SafeFuture.completedFuture(new EthBlock.Block());
                   }
                 })));
   }

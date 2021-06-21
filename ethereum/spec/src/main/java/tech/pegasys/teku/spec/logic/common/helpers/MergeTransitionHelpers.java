@@ -17,11 +17,13 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineService;
 import tech.pegasys.teku.spec.logic.versions.merge.helpers.MiscHelpersMerge;
 
 public class MergeTransitionHelpers {
 
   private final MiscHelpersMerge miscHelpers;
+  private ExecutionEngineService executionEngineService;
 
   public MergeTransitionHelpers(MiscHelpersMerge miscHelpers) {
     this.miscHelpers = miscHelpers;
@@ -36,35 +38,21 @@ public class MergeTransitionHelpers {
   }
 
   public boolean isValidTerminalPowBlock(PowBlock powBlock) {
-    return false;
+    return powBlock.totalDifficulty.compareTo(UInt256.ZERO) > 0;
   }
 
   public PowBlock getPowBlock(Bytes32 blockHash) {
-    return new PowBlock(blockHash, true, true, UInt256.ZERO, UInt256.ZERO);
+    return executionEngineService
+        .getPowBlock(blockHash)
+        .map(PowBlock::new)
+        .orElse(new PowBlock(blockHash, false, false, UInt256.ZERO, UInt256.ZERO));
   }
 
   public PowBlock getPowChainHead() {
-    return new PowBlock(Bytes32.ZERO, true, true, UInt256.ZERO, UInt256.ZERO);
+    return new PowBlock(executionEngineService.getPowChainHead());
   }
 
-  public static class PowBlock {
-    public final Bytes32 blockHash;
-    public final boolean isProcessed;
-    public final boolean isValid;
-    public final UInt256 totalDifficulty;
-    public final UInt256 difficulty;
-
-    public PowBlock(
-        Bytes32 blockHash,
-        boolean isProcessed,
-        boolean isValid,
-        UInt256 totalDifficulty,
-        UInt256 difficulty) {
-      this.blockHash = blockHash;
-      this.isProcessed = isProcessed;
-      this.isValid = isValid;
-      this.totalDifficulty = totalDifficulty;
-      this.difficulty = difficulty;
-    }
+  public void setExecutionEngineService(ExecutionEngineService executionEngineService) {
+    this.executionEngineService = executionEngineService;
   }
 }

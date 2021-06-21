@@ -771,6 +771,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       specLogicMerge
           .getExecutionPayloadUtil()
           .ifPresent(util -> util.setExecutionEngineService(executionEngineService));
+      specLogicMerge
+          .getMergeTransitionHelpers()
+          .ifPresent(helpers -> helpers.setExecutionEngineService(executionEngineService));
 
       // Propagate head updates
       eventChannels.subscribe(

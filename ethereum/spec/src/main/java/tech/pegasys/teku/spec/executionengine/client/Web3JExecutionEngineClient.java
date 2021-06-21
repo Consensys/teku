@@ -14,9 +14,13 @@
 package tech.pegasys.teku.spec.executionengine.client;
 
 import java.util.Collections;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.apache.tuweni.bytes.Bytes32;
+import org.web3j.protocol.Web3j;
+import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.Request;
+import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.http.HttpService;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.executionengine.client.schema.AssembleBlockRequest;
@@ -28,9 +32,11 @@ import tech.pegasys.teku.spec.executionengine.client.schema.Response;
 public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 
   private final HttpService web3jService;
+  private final Web3j web3j;
 
   public Web3JExecutionEngineClient(String eth1Endpoint) {
     this.web3jService = new HttpService(eth1Endpoint);
+    this.web3j = Web3j.build(web3jService);
   }
 
   @Override
@@ -76,6 +82,20 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
             web3jService,
             GenericWeb3jResponse.class);
     return doRequest(web3jRequest);
+  }
+
+  @Override
+  public SafeFuture<Optional<EthBlock.Block>> getPowBlock(Bytes32 blockHash) {
+    return SafeFuture.of(web3j.ethGetBlockByHash(blockHash.toHexString(), false).sendAsync())
+        .thenApply(EthBlock::getBlock)
+        .thenApply(Optional::ofNullable);
+  }
+
+  @Override
+  public SafeFuture<EthBlock.Block> getPowChainHead() {
+    return SafeFuture.of(
+            web3j.ethGetBlockByNumber(DefaultBlockParameterName.LATEST, false).sendAsync())
+        .thenApply(EthBlock::getBlock);
   }
 
   private <T> SafeFuture<Response<T>> doRequest(

@@ -31,7 +31,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.BeaconStateMerge;
 import tech.pegasys.teku.spec.logic.common.helpers.MergeTransitionHelpers;
-import tech.pegasys.teku.spec.logic.common.helpers.MergeTransitionHelpers.PowBlock;
+import tech.pegasys.teku.spec.logic.common.helpers.PowBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
@@ -160,7 +160,7 @@ public class BlockFactory {
       } else {
         // Signify merge via producing on top of the last PoW block
         UInt64 timestamp = spec.computeTimeAtSlot(state, state.getSlot());
-        executionPayloadUtil.produceExecutionPayload(powHead.blockHash, timestamp);
+        return executionPayloadUtil.produceExecutionPayload(powHead.blockHash, timestamp);
       }
     }
 
