@@ -408,7 +408,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
             b ->
                 b.eth1Endpoints(List.of("http://localhost:8545"))
                     .depositContract(address)
-                    .eth1LogsMaxBlockRange(10_000))
+                    .eth1LogsMaxBlockRange(10_000)
+                    .useTimeBasedHeadTracking(true))
         .store(b -> b.hotStatePersistenceFrequencyInEpochs(2))
         .storageConfiguration(
             b ->
