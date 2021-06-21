@@ -96,30 +96,13 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_total_balance</a>
    */
   @Deprecated
-  public static UInt64 get_total_balance(BeaconState state, Collection<Integer> indices) {
+  static UInt64 get_total_balance(BeaconState state, Collection<Integer> indices) {
     UInt64 sum = UInt64.ZERO;
     SszList<Validator> validator_registry = state.getValidators();
     for (Integer index : indices) {
       sum = sum.plus(validator_registry.get(index).getEffective_balance());
     }
     return sum.max(EFFECTIVE_BALANCE_INCREMENT);
-  }
-
-  /**
-   * Return the combined effective balance of the active validators.
-   *
-   * @param state - Current BeaconState
-   * @return
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_total_active_balance</a>
-   */
-  @Deprecated
-  public static UInt64 get_total_active_balance(BeaconState state) {
-    return BeaconStateCache.getTransitionCaches(state)
-        .getTotalActiveBalance()
-        .get(
-            get_current_epoch(state),
-            epoch -> get_total_balance(state, get_active_validator_indices(state, epoch)));
   }
 
   /**
