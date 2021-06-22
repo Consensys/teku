@@ -25,6 +25,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 
 import java.net.InetSocketAddress;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 import org.apache.tuweni.bytes.Bytes;
@@ -59,9 +60,14 @@ import tech.pegasys.teku.ssz.type.Bytes4;
 import tech.pegasys.teku.storage.store.MemKeyValueStore;
 
 class DiscoveryNetworkTest {
-  private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private final Spec spec =
+      TestSpecFactory.createMinimalWithAltairForkEpoch(UInt64.valueOf(10_000));
   private final SchemaDefinitions schemaDefinitions = spec.getGenesisSchemaDefinitions();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final List<Fork> forks = spec.getForkSchedule().getForks();
+  private final Bytes32 genesisValidatorsRoot = dataStructureUtil.randomBytes32();
+  final ForkInfo currentForkInfo = new ForkInfo(forks.get(0), genesisValidatorsRoot);
+  final Fork nextFork = forks.get(1);
 
   @SuppressWarnings("unchecked")
   private final P2PNetwork<Peer> p2pNetwork = mock(P2PNetwork.class);
@@ -168,7 +174,6 @@ class DiscoveryNetworkTest {
 
   @Test
   public void setForkInfo_noFutureForkScheduled() {
-    final ForkInfo currentForkInfo = dataStructureUtil.randomForkInfo();
     discoveryNetwork.setForkInfo(currentForkInfo, Optional.empty());
 
     final EnrForkId expectedEnrForkId =
@@ -181,8 +186,6 @@ class DiscoveryNetworkTest {
 
   @Test
   public void setForkInfo_futureForkScheduled() {
-    final ForkInfo currentForkInfo = dataStructureUtil.randomForkInfo();
-    final Fork nextFork = dataStructureUtil.randomFork();
     discoveryNetwork.setForkInfo(currentForkInfo, Optional.of(nextFork));
 
     final EnrForkId expectedEnrForkId =
@@ -196,7 +199,6 @@ class DiscoveryNetworkTest {
   @Test
   @SuppressWarnings("unchecked")
   public void setForkInfoShouldAddPredicateToConnectionManager() {
-    final ForkInfo currentForkInfo = dataStructureUtil.randomForkInfo();
     discoveryNetwork.setForkInfo(currentForkInfo, Optional.empty());
 
     final EnrForkId expectedEnrForkId =
@@ -229,7 +231,6 @@ class DiscoveryNetworkTest {
   @Test
   @SuppressWarnings("unchecked")
   public void shouldNotConnectToPeerWithNoEnrForkId() {
-    final ForkInfo currentForkInfo = dataStructureUtil.randomForkInfo();
     discoveryNetwork.setForkInfo(currentForkInfo, Optional.empty());
 
     final EnrForkId expectedEnrForkId =
@@ -250,8 +251,6 @@ class DiscoveryNetworkTest {
   @Test
   @SuppressWarnings("unchecked")
   public void shouldNotConnectToPeersWhenNodeHasNoEnrForkId() {
-    final ForkInfo currentForkInfo = dataStructureUtil.randomForkInfo();
-
     final EnrForkId enrForkId =
         new EnrForkId(
             currentForkInfo.getForkDigest(spec),
