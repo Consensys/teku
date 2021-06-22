@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.validation;
 
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
@@ -36,6 +37,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -49,10 +51,13 @@ public class AttestationValidator {
       LimitedSet.create(VALID_ATTESTATION_SET_SIZE);
   private final Spec spec;
   private final RecentChainData recentChainData;
+  private final AsyncBLSSignatureVerifier signatureVerifier;
 
   public AttestationValidator(final Spec spec, RecentChainData recentChainData) {
     this.recentChainData = recentChainData;
     this.spec = spec;
+    // TODO - create real async verifier
+    this.signatureVerifier = AsyncBLSSignatureVerifier.from(BLSSignatureVerifier.SIMPLE);
   }
 
   public SafeFuture<InternalValidationResult> validate(
@@ -60,11 +65,11 @@ public class AttestationValidator {
     Attestation attestation = validateableAttestation.getAttestation();
     final InternalValidationResult internalValidationResult = singleAttestationChecks(attestation);
     if (internalValidationResult.code() != ACCEPT) {
-      return SafeFuture.completedFuture(internalValidationResult);
+      return completedFuture(internalValidationResult);
     }
 
     return singleOrAggregateAttestationChecks(
-            BLSSignatureVerifier.SIMPLE,
+            signatureVerifier,
             validateableAttestation,
             validateableAttestation.getReceivedSubnetId())
         .thenApply(
@@ -106,7 +111,7 @@ public class AttestationValidator {
   }
 
   SafeFuture<InternalValidationResult> singleOrAggregateAttestationChecks(
-      final BLSSignatureVerifier signatureVerifier,
+      final AsyncBLSSignatureVerifier signatureVerifier,
       final ValidateableAttestation validateableAttestation,
       final OptionalInt receivedOnSubnetId) {
 
@@ -114,7 +119,7 @@ public class AttestationValidator {
     final AttestationData data = attestation.getData();
     // The attestation's epoch matches its target
     if (!data.getTarget().getEpoch().equals(spec.computeEpochAtSlot(data.getSlot()))) {
-      return SafeFuture.completedFuture(InternalValidationResult.REJECT);
+      return completedFuture(InternalValidationResult.REJECT);
     }
 
     // attestation.data.slot is within the last ATTESTATION_PROPAGATION_SLOT_RANGE slots (within a
@@ -125,10 +130,10 @@ public class AttestationValidator {
     final UInt64 currentTimeMillis = secondsToMillis(recentChainData.getStore().getTime());
     if (isCurrentTimeAfterAttestationPropagationSlotRange(currentTimeMillis, attestation)
         || isFromFarFuture(attestation, currentTimeMillis)) {
-      return SafeFuture.completedFuture(InternalValidationResult.IGNORE);
+      return completedFuture(InternalValidationResult.IGNORE);
     }
     if (isCurrentTimeBeforeMinimumAttestationBroadcastTime(attestation, currentTimeMillis)) {
-      return SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
+      return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
     }
 
     // The block being voted for (attestation.data.beacon_block_root) passes validation.
@@ -139,19 +144,19 @@ public class AttestationValidator {
         .thenCompose(
             maybeState ->
                 maybeState.isEmpty()
-                    ? SafeFuture.completedFuture(Optional.empty())
+                    ? completedFuture(Optional.empty())
                     : resolveStateForAttestation(attestation, maybeState.get()))
-        .thenApply(
+        .thenCompose(
             maybeState -> {
               if (maybeState.isEmpty()) {
-                return InternalValidationResult.SAVE_FOR_FUTURE;
+                return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
               }
               final BeaconState state = maybeState.get();
               // The committee index is within the expected range
               if (data.getIndex()
                   .isGreaterThanOrEqualTo(
                       spec.getCommitteeCountPerSlot(state, data.getTarget().getEpoch()))) {
-                return InternalValidationResult.REJECT;
+                return completedFuture(InternalValidationResult.REJECT);
               }
 
               // The attestation's committee index (attestation.data.index) is for the correct
@@ -159,7 +164,7 @@ public class AttestationValidator {
               if (receivedOnSubnetId.isPresent()
                   && spec.computeSubnetForAttestation(state, attestation)
                       != receivedOnSubnetId.getAsInt()) {
-                return InternalValidationResult.REJECT;
+                return completedFuture(InternalValidationResult.REJECT);
               }
 
               // The check below is not specified in the Eth2 networking spec, yet an attestation
@@ -168,40 +173,50 @@ public class AttestationValidator {
               final List<Integer> committee =
                   spec.getBeaconCommittee(state, data.getSlot(), data.getIndex());
               if (committee.size() != attestation.getAggregation_bits().size()) {
-                return InternalValidationResult.REJECT;
+                return completedFuture(InternalValidationResult.REJECT);
               }
 
-              if (!spec.isValidIndexedAttestation(state, validateableAttestation, signatureVerifier)
-                  .isSuccessful()) {
-                return InternalValidationResult.REJECT;
-              }
+              return spec.isValidIndexedAttestation(
+                      state, validateableAttestation, signatureVerifier)
+                  .thenApply(
+                      signatureResult -> {
+                        if (!signatureResult.isSuccessful()) {
+                          return InternalValidationResult.REJECT;
+                        }
 
-              // The attestation's target block is an ancestor of the block named in the LMD vote
-              if (!spec.getAncestor(
-                      recentChainData.getForkChoiceStrategy().orElseThrow(),
-                      data.getBeacon_block_root(),
-                      spec.computeStartSlotAtEpoch(data.getTarget().getEpoch()))
-                  .map(ancestorOfLMDVote -> ancestorOfLMDVote.equals(data.getTarget().getRoot()))
-                  .orElse(false)) {
-                return InternalValidationResult.REJECT;
-              }
+                        // The attestation's target block is an ancestor of the block named in the
+                        // LMD vote
+                        if (!spec.getAncestor(
+                                recentChainData.getForkChoiceStrategy().orElseThrow(),
+                                data.getBeacon_block_root(),
+                                spec.computeStartSlotAtEpoch(data.getTarget().getEpoch()))
+                            .map(
+                                ancestorOfLMDVote ->
+                                    ancestorOfLMDVote.equals(data.getTarget().getRoot()))
+                            .orElse(false)) {
+                          return InternalValidationResult.REJECT;
+                        }
 
-              // The current finalized_checkpoint is an ancestor of the block defined by
-              // aggregate.data.beacon_block_root
-              Checkpoint finalizedCheckpoint =
-                  recentChainData.getFinalizedCheckpoint().orElseThrow();
-              if (!spec.getAncestor(
-                      recentChainData.getForkChoiceStrategy().orElseThrow(),
-                      data.getBeacon_block_root(),
-                      spec.computeStartSlotAtEpoch(finalizedCheckpoint.getEpoch()))
-                  .map(ancestorOfLMDVote -> ancestorOfLMDVote.equals(finalizedCheckpoint.getRoot()))
-                  .orElse(false)) {
-                return InternalValidationResult.REJECT;
-              }
+                        // The current finalized_checkpoint is an ancestor of the block defined by
+                        // aggregate.data.beacon_block_root
+                        Checkpoint finalizedCheckpoint =
+                            recentChainData.getFinalizedCheckpoint().orElseThrow();
+                        if (!spec.getAncestor(
+                                recentChainData.getForkChoiceStrategy().orElseThrow(),
+                                data.getBeacon_block_root(),
+                                spec.computeStartSlotAtEpoch(finalizedCheckpoint.getEpoch()))
+                            .map(
+                                ancestorOfLMDVote ->
+                                    ancestorOfLMDVote.equals(finalizedCheckpoint.getRoot()))
+                            .orElse(false)) {
+                          return InternalValidationResult.REJECT;
+                        }
 
-              // Save committee shuffling seed since the state is available and attestation is valid
-              validateableAttestation.saveCommitteeShufflingSeed(state);
-              return InternalValidationResult.ACCEPT;
+                        // Save committee shuffling seed since the state is available and
+                        // attestation is valid
+                        validateableAttestation.saveCommitteeShufflingSeed(state);
+                        return InternalValidationResult.ACCEPT;
+                      });
             });
   }
 
@@ -225,7 +240,7 @@ public class AttestationValidator {
       final Checkpoint checkpoint = new Checkpoint(earliestEpoch, blockRoot);
       return recentChainData.getStore().retrieveCheckpointState(checkpoint, blockState);
     } else {
-      return SafeFuture.completedFuture(Optional.of(blockState));
+      return completedFuture(Optional.of(blockState));
     }
   }
 

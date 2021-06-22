@@ -43,6 +43,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BatchSignatureVerifier;
+import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -90,8 +91,7 @@ public class AggregateAttestationValidator {
     }
 
     final BatchSignatureVerifier signatureVerifier = new BatchSignatureVerifier();
-    return attestationValidator
-        .singleOrAggregateAttestationChecks(signatureVerifier, attestation, OptionalInt.empty())
+    return singleOrAggregateAttestationChecks(signatureVerifier, attestation, OptionalInt.empty())
         .thenCompose(
             aggregateInternalValidationResult -> {
               if (aggregateInternalValidationResult.isNotProcessable()) {
@@ -213,6 +213,16 @@ public class AggregateAttestationValidator {
             state.getGenesis_validators_root());
     final Bytes signingRoot = compute_signing_root(aggregateSlot.longValue(), domain);
     return signatureVerifier.verify(aggregatorPublicKey, signingRoot, selectionProof);
+  }
+
+  SafeFuture<InternalValidationResult> singleOrAggregateAttestationChecks(
+      final BLSSignatureVerifier signatureVerifier,
+      final ValidateableAttestation validateableAttestation,
+      final OptionalInt receivedOnSubnetId) {
+    return attestationValidator.singleOrAggregateAttestationChecks(
+        AsyncBLSSignatureVerifier.from(signatureVerifier),
+        validateableAttestation,
+        receivedOnSubnetId);
   }
 
   private static class AggregatorIndexAndEpoch {
