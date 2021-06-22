@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,23 +11,24 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.bls;
+package tech.pegasys.teku.spec.logic.common.util;
 
 import java.util.Collections;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
-/**
- * Simple interface to enable pluggable variants of BLS verifier. In a {@link #SIMPLE} case it's
- * just static {@link BLS} methods
- */
 @FunctionalInterface
-public interface BLSSignatureVerifier {
-
-  /** Just delegates verify to {@link BLS#fastAggregateVerify(List, Bytes, BLSSignature)} */
-  BLSSignatureVerifier SIMPLE = BLS::fastAggregateVerify;
-
-  BLSSignatureVerifier NO_OP = (publicKeys, message, signature) -> true;
+public interface AsyncBLSSignatureVerifier {
+  static AsyncBLSSignatureVerifier from(BLSSignatureVerifier syncVerifier) {
+    return (List<BLSPublicKey> publicKeys, Bytes message, BLSSignature signature) -> {
+      final boolean result = syncVerifier.verify(publicKeys, message, signature);
+      return SafeFuture.completedFuture(result);
+    };
+  }
 
   /**
    * Verifies an aggregate BLS signature against a message using the list of public keys. In case of
@@ -37,12 +38,12 @@ public interface BLSSignatureVerifier {
    * @param message The message data to verify, not null
    * @param signature The aggregate signature, not null
    * @return True if the verification is successful, false otherwise
-   * @see BLS#fastAggregateVerify(List, Bytes, BLSSignature)
    */
-  boolean verify(List<BLSPublicKey> publicKeys, Bytes message, BLSSignature signature);
+  SafeFuture<Boolean> verify(List<BLSPublicKey> publicKeys, Bytes message, BLSSignature signature);
 
   /** Shortcut to {@link #verify(List, Bytes, BLSSignature)} for non-aggregate case */
-  default boolean verify(BLSPublicKey publicKey, Bytes message, BLSSignature signature) {
+  default SafeFuture<Boolean> verify(
+      BLSPublicKey publicKey, Bytes message, BLSSignature signature) {
     return verify(Collections.singletonList(publicKey), message, signature);
   }
 }
