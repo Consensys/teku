@@ -34,6 +34,7 @@ import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidator;
 import tech.pegasys.teku.statetransition.validation.AttestationValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.statetransition.validation.SignatureVerificationService;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
@@ -57,6 +58,9 @@ public class AttestationManager extends Service implements SlotEventsChannel {
 
   private final AttestationValidator attestationValidator;
   private final AggregateAttestationValidator aggregateValidator;
+  // SignatureVerificationService is only included here, so that it's lifecycle can be controlled by
+  // AttestationManager
+  private final SignatureVerificationService signatureVerificationService;
 
   AttestationManager(
       final EventBus eventBus,
@@ -65,7 +69,8 @@ public class AttestationManager extends Service implements SlotEventsChannel {
       final FutureItems<ValidateableAttestation> futureAttestations,
       final AggregatingAttestationPool aggregatingAttestationPool,
       final AttestationValidator attestationValidator,
-      final AggregateAttestationValidator aggregateValidator) {
+      final AggregateAttestationValidator aggregateValidator,
+      final SignatureVerificationService signatureVerificationService) {
     this.eventBus = eventBus;
     this.attestationProcessor = attestationProcessor;
     this.pendingAttestations = pendingAttestations;
@@ -73,6 +78,7 @@ public class AttestationManager extends Service implements SlotEventsChannel {
     this.aggregatingAttestationPool = aggregatingAttestationPool;
     this.attestationValidator = attestationValidator;
     this.aggregateValidator = aggregateValidator;
+    this.signatureVerificationService = signatureVerificationService;
   }
 
   public static AttestationManager create(
@@ -82,7 +88,8 @@ public class AttestationManager extends Service implements SlotEventsChannel {
       final ForkChoice attestationProcessor,
       final AggregatingAttestationPool aggregatingAttestationPool,
       final AttestationValidator attestationValidator,
-      final AggregateAttestationValidator aggregateValidator) {
+      final AggregateAttestationValidator aggregateValidator,
+      final SignatureVerificationService signatureVerificationService) {
     return new AttestationManager(
         eventBus,
         attestationProcessor,
@@ -90,7 +97,8 @@ public class AttestationManager extends Service implements SlotEventsChannel {
         futureAttestations,
         aggregatingAttestationPool,
         attestationValidator,
-        aggregateValidator);
+        aggregateValidator,
+        signatureVerificationService);
   }
 
   public void subscribeToAllValidAttestations(ProcessedAttestationListener listener) {
@@ -244,12 +252,12 @@ public class AttestationManager extends Service implements SlotEventsChannel {
   @Override
   protected SafeFuture<?> doStart() {
     eventBus.register(this);
-    return SafeFuture.COMPLETE;
+    return signatureVerificationService.start();
   }
 
   @Override
   protected SafeFuture<?> doStop() {
     eventBus.unregister(this);
-    return SafeFuture.COMPLETE;
+    return signatureVerificationService.stop();
   }
 }

@@ -32,6 +32,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.core.AggregateGenerator;
 import tech.pegasys.teku.core.AttestationGenerator;
 import tech.pegasys.teku.core.ChainBuilder;
@@ -51,6 +52,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
+import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -109,6 +111,8 @@ class SignedAggregateAndProofValidatorTest {
       new AggregateGenerator(spec, chainBuilder.getValidatorKeys());
   private final AttestationValidator attestationValidator = mock(AttestationValidator.class);
 
+  private final AsyncBLSSignatureVerifier signatureVerifier =
+      AsyncBLSSignatureVerifier.from(BLSSignatureVerifier.SIMPLE);
   private final AggregateAttestationValidator validator =
       new AggregateAttestationValidator(recentChainData, attestationValidator, spec);
   private SignedBlockAndState bestBlock;
@@ -130,7 +134,7 @@ class SignedAggregateAndProofValidatorTest {
     bestBlock = chainUpdater.addNewBestBlock();
 
     final AttestationValidator realAttestationValidator =
-        new AttestationValidator(spec, recentChainData);
+        new AttestationValidator(spec, recentChainData, signatureVerifier);
     when(attestationValidator.resolveStateForAttestation(any(), any()))
         .thenAnswer(
             i ->

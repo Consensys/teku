@@ -35,6 +35,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -52,6 +53,7 @@ import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidator;
 import tech.pegasys.teku.statetransition.validation.AttestationValidator;
+import tech.pegasys.teku.statetransition.validation.SignatureVerificationService;
 
 class AttestationManagerTest {
   private final Spec spec = TestSpecFactory.createDefault();
@@ -64,7 +66,8 @@ class AttestationManagerTest {
       PendingPool.createForAttestations(spec);
   private final FutureItems<ValidateableAttestation> futureAttestations =
       FutureItems.create(ValidateableAttestation::getEarliestSlotForForkChoiceProcessing);
-
+  private final SignatureVerificationService signatureVerificationService =
+      mock(SignatureVerificationService.class);
   private final AttestationManager attestationManager =
       new AttestationManager(
           eventBus,
@@ -73,10 +76,13 @@ class AttestationManagerTest {
           futureAttestations,
           attestationPool,
           mock(AttestationValidator.class),
-          mock(AggregateAttestationValidator.class));
+          mock(AggregateAttestationValidator.class),
+          signatureVerificationService);
 
   @BeforeEach
   public void setup() {
+    when(signatureVerificationService.start()).thenReturn(SafeFuture.completedFuture(null));
+    when(signatureVerificationService.stop()).thenReturn(SafeFuture.completedFuture(null));
     assertThat(attestationManager.start()).isCompleted();
   }
 

@@ -27,7 +27,6 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -53,11 +52,13 @@ public class AttestationValidator {
   private final RecentChainData recentChainData;
   private final AsyncBLSSignatureVerifier signatureVerifier;
 
-  public AttestationValidator(final Spec spec, RecentChainData recentChainData) {
+  public AttestationValidator(
+      final Spec spec,
+      RecentChainData recentChainData,
+      AsyncBLSSignatureVerifier signatureVerifier) {
     this.recentChainData = recentChainData;
     this.spec = spec;
-    // TODO - create real async verifier
-    this.signatureVerifier = AsyncBLSSignatureVerifier.from(BLSSignatureVerifier.SIMPLE);
+    this.signatureVerifier = signatureVerifier;
   }
 
   public SafeFuture<InternalValidationResult> validate(
