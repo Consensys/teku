@@ -77,7 +77,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   public SafeFuture<Response<GenericResponse>> consensusFinalizeBlock(Bytes32 blockHash) {
     Request<?, GenericWeb3jResponse> web3jRequest =
         new Request<>(
-            "consensus_setHead",
+            "consensus_finalizeBlock",
             Collections.singletonList(blockHash.toHexString()),
             web3jService,
             GenericWeb3jResponse.class);

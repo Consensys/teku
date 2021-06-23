@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.logic.common.helpers;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.forkchoice.TransitionStore;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineService;
 import tech.pegasys.teku.spec.logic.versions.merge.helpers.MiscHelpersMerge;
@@ -37,8 +38,10 @@ public class MergeTransitionHelpers {
     return miscHelpers.isMergeBlock(state, block);
   }
 
-  public boolean isValidTerminalPowBlock(PowBlock powBlock) {
-    return powBlock.totalDifficulty.compareTo(UInt256.ZERO) > 0;
+  public boolean isValidTerminalPowBlock(PowBlock powBlock, TransitionStore transitionStore) {
+    boolean isTotalDifficultyReached =
+        powBlock.totalDifficulty.compareTo(transitionStore.getTransitionTotalDifficulty()) >= 0;
+    return powBlock.isValid && isTotalDifficultyReached;
   }
 
   public PowBlock getPowBlock(Bytes32 blockHash) {

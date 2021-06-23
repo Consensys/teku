@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.config;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
@@ -26,17 +27,20 @@ public class SpecConfigMerge extends DelegatingSpecConfig {
   private final UInt64 mergeForkEpoch;
 
   // Transition
-  private final long transitionTotalDifficulty;
+  private final UInt64 targetSecondsToMerge;
+  private final UInt256 minAnchorPowBlockDifficulty;
 
   public SpecConfigMerge(
       SpecConfig specConfig,
       Bytes4 mergeForkVersion,
       UInt64 mergeForkEpoch,
-      long transitionTotalDifficulty) {
+      UInt64 targetSecondsToMerge,
+      UInt256 minAnchorPowBlockDifficulty) {
     super(specConfig);
     this.mergeForkVersion = mergeForkVersion;
     this.mergeForkEpoch = mergeForkEpoch;
-    this.transitionTotalDifficulty = transitionTotalDifficulty;
+    this.targetSecondsToMerge = targetSecondsToMerge;
+    this.minAnchorPowBlockDifficulty = minAnchorPowBlockDifficulty;
   }
 
   public static SpecConfigMerge required(final SpecConfig specConfig) {
@@ -69,8 +73,12 @@ public class SpecConfigMerge extends DelegatingSpecConfig {
     return mergeForkEpoch;
   }
 
-  public long getTransitionTotalDifficulty() {
-    return transitionTotalDifficulty;
+  public UInt64 getTargetSecondsToMerge() {
+    return targetSecondsToMerge;
+  }
+
+  public UInt256 getMinAnchorPowBlockDifficulty() {
+    return minAnchorPowBlockDifficulty;
   }
 
   @Override
@@ -79,17 +87,23 @@ public class SpecConfigMerge extends DelegatingSpecConfig {
   }
 
   @Override
-  public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     SpecConfigMerge that = (SpecConfigMerge) o;
     return Objects.equals(mergeForkVersion, that.mergeForkVersion)
         && Objects.equals(mergeForkEpoch, that.mergeForkEpoch)
-        && transitionTotalDifficulty == that.transitionTotalDifficulty;
+        && Objects.equals(targetSecondsToMerge, that.targetSecondsToMerge)
+        && Objects.equals(minAnchorPowBlockDifficulty, that.minAnchorPowBlockDifficulty);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(mergeForkVersion, mergeForkEpoch, transitionTotalDifficulty);
+    return Objects.hash(
+        mergeForkVersion, mergeForkEpoch, targetSecondsToMerge, minAnchorPowBlockDifficulty);
   }
 }

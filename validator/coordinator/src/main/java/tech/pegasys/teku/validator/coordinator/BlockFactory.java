@@ -16,13 +16,19 @@ package tech.pegasys.teku.validator.coordinator;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.logging.ColorConsolePrinter;
+import tech.pegasys.teku.infrastructure.logging.ColorConsolePrinter.Color;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.forkchoice.TransitionStore;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -43,6 +49,9 @@ import tech.pegasys.teku.statetransition.attestation.AttestationForkChecker;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 
 public class BlockFactory {
+
+  private static final Logger LOG = LogManager.getLogger();
+
   private final AggregatingAttestationPool attestationPool;
   private final OperationPool<AttesterSlashing> attesterSlashingPool;
   private final OperationPool<ProposerSlashing> proposerSlashingPool;
@@ -151,14 +160,36 @@ public class BlockFactory {
         spec.atSlot(state.getSlot()).getExecutionPayloadUtil().orElseThrow();
     final MergeTransitionHelpers mergeTransitionHelpers =
         spec.atSlot(state.getSlot()).getMergeTransitionHelpers().orElseThrow();
+    final TransitionStore transitionStore =
+        spec.atSlot(state.getSlot()).getTransitionStore().orElseThrow();
 
     if (!mergeTransitionHelpers.isMergeComplete(state)) {
       PowBlock powHead = mergeTransitionHelpers.getPowChainHead();
-      if (!mergeTransitionHelpers.isValidTerminalPowBlock(powHead)) {
+      if (!mergeTransitionHelpers.isValidTerminalPowBlock(powHead, transitionStore)) {
         // Pre-merge, empty payload
+        LOG.info(
+            ColorConsolePrinter.print(
+                String.format(
+                    "Produce pre-merge block: pow_block.total_difficulty(%d) < transition_total_difficulty(%d), PoW blocks left ~%d",
+                    powHead.totalDifficulty.toBigInteger(),
+                    transitionStore.getTransitionTotalDifficulty().toBigInteger(),
+                    transitionStore
+                        .getTransitionTotalDifficulty()
+                        .subtract(powHead.totalDifficulty)
+                        .divide(powHead.difficulty)
+                        .add(UInt256.ONE)
+                        .toBigInteger()),
+                Color.CYAN));
         return new ExecutionPayload();
       } else {
         // Signify merge via producing on top of the last PoW block
+        LOG.info(
+            ColorConsolePrinter.print(
+                String.format(
+                    "Produce transition block: pow_block.total_difficulty(%d) >= transition_total_difficulty(%d)",
+                    powHead.totalDifficulty.toBigInteger(),
+                    transitionStore.getTransitionTotalDifficulty().toBigInteger()),
+                Color.YELLOW));
         UInt64 timestamp = spec.computeTimeAtSlot(state, state.getSlot());
         return executionPayloadUtil.produceExecutionPayload(powHead.blockHash, timestamp);
       }

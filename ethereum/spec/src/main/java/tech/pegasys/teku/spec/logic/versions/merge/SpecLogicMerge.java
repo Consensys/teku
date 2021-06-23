@@ -13,12 +13,17 @@
 
 package tech.pegasys.teku.spec.logic.versions.merge;
 
+import com.google.common.base.Preconditions;
 import java.util.Optional;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.spec.config.SpecConfigMerge;
+import tech.pegasys.teku.spec.datastructures.forkchoice.TransitionStore;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MergeTransitionHelpers;
+import tech.pegasys.teku.spec.logic.common.helpers.PowBlock;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
@@ -31,6 +36,7 @@ import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.merge.block.BlockProcessorMerge;
 import tech.pegasys.teku.spec.logic.versions.merge.forktransition.MergeStateUpgrade;
+import tech.pegasys.teku.spec.logic.versions.merge.forktransition.TransitionStoreUtil;
 import tech.pegasys.teku.spec.logic.versions.merge.helpers.BeaconStateAccessorsMerge;
 import tech.pegasys.teku.spec.logic.versions.merge.helpers.MiscHelpersMerge;
 import tech.pegasys.teku.spec.logic.versions.merge.statetransition.epoch.EpochProcessorMerge;
@@ -41,6 +47,9 @@ public class SpecLogicMerge extends AbstractSpecLogic {
 
   private final ExecutionPayloadUtil executionPayloadUtil;
   private final MergeTransitionHelpers mergeTransitionHelpers;
+  private final TransitionStoreUtil transitionStoreUtil;
+
+  private TransitionStore transitionStore;
 
   private SpecLogicMerge(
       final Predicates predicates,
@@ -58,8 +67,10 @@ public class SpecLogicMerge extends AbstractSpecLogic {
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil,
       final ExecutionPayloadUtil executionPayloadUtil,
-      final MergeStateUpgrade stateUpgrade,
-      final MergeTransitionHelpers mergeTransitionHelpers) {
+      final MergeTransitionHelpers mergeTransitionHelpers,
+      final TransitionStore transitionStore,
+      final TransitionStoreUtil transitionStoreUtil,
+      final MergeStateUpgrade stateUpgrade) {
     super(
         predicates,
         miscHelpers,
@@ -78,6 +89,9 @@ public class SpecLogicMerge extends AbstractSpecLogic {
         Optional.of(stateUpgrade));
     this.executionPayloadUtil = executionPayloadUtil;
     this.mergeTransitionHelpers = mergeTransitionHelpers;
+    this.transitionStoreUtil = transitionStoreUtil;
+
+    this.transitionStore = transitionStore;
   }
 
   public static SpecLogicMerge create(
@@ -146,6 +160,10 @@ public class SpecLogicMerge extends AbstractSpecLogic {
     final MergeStateUpgrade stateUpgrade =
         new MergeStateUpgrade(config, schemaDefinitions, beaconStateAccessors);
 
+    // Transition total difficulty is set on transition logic upgrade
+    final TransitionStore transitionStore = TransitionStore.create(UInt256.ZERO);
+    final TransitionStoreUtil transitionStoreUtil = new TransitionStoreUtil(config);
+
     return new SpecLogicMerge(
         predicates,
         miscHelpers,
@@ -162,8 +180,19 @@ public class SpecLogicMerge extends AbstractSpecLogic {
         forkChoiceUtil,
         blockProposalUtil,
         executionPayloadUtil,
-        stateUpgrade,
-        mergeTransitionHelpers);
+        mergeTransitionHelpers,
+        transitionStore,
+        transitionStoreUtil,
+        stateUpgrade);
+  }
+
+  @Override
+  public void initializeTransitionStore(BeaconState state) {
+    PowBlock powBlock = mergeTransitionHelpers.getPowBlock(state.getEth1_data().getBlock_hash());
+    Preconditions.checkArgument(powBlock.isProcessed, "Anchor PowBlock is not processed");
+    Preconditions.checkArgument(powBlock.isValid, "Anchor PowBlock is invalid");
+
+    this.transitionStore = transitionStoreUtil.getTransitionStore(powBlock);
   }
 
   @Override
@@ -179,5 +208,10 @@ public class SpecLogicMerge extends AbstractSpecLogic {
   @Override
   public Optional<ExecutionPayloadUtil> getExecutionPayloadUtil() {
     return Optional.of(executionPayloadUtil);
+  }
+
+  @Override
+  public Optional<TransitionStore> getTransitionStore() {
+    return Optional.of(transitionStore);
   }
 }

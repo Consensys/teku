@@ -25,6 +25,7 @@ import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.math.BigInteger;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -39,6 +40,7 @@ import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigBuilder.MergeBuilder;
 import tech.pegasys.teku.ssz.type.Bytes4;
@@ -81,6 +83,7 @@ public class SpecConfigReader {
           .put(Long.TYPE, this::parseLong)
           .put(Long.class, this::parseLong)
           .put(UInt64.class, fromString(UInt64::valueOf))
+          .put(UInt256.class, fromString(str -> UInt256.valueOf(new BigInteger(str))))
           .put(String.class, Function.identity())
           .put(Bytes.class, fromString(Bytes::fromHexString))
           .put(Bytes4.class, fromString(Bytes4::fromHexString))

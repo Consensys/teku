@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
@@ -677,19 +678,25 @@ public class SpecConfigBuilder {
     private UInt64 mergeForkEpoch;
 
     // Transition
-    private long transitionTotalDifficulty;
+    private UInt64 targetSecondsToMerge;
+    private UInt256 minAnchorPowBlockDifficulty;
 
     private MergeBuilder() {}
 
     SpecConfigMerge build(final SpecConfig specConfig) {
       return new SpecConfigMerge(
-          specConfig, mergeForkVersion, mergeForkEpoch, transitionTotalDifficulty);
+          specConfig,
+          mergeForkVersion,
+          mergeForkEpoch,
+          targetSecondsToMerge,
+          minAnchorPowBlockDifficulty);
     }
 
     void validate() {
       validateConstant("mergeForkVersion", mergeForkVersion);
       validateConstant("mergeForkEpoch", mergeForkEpoch);
-      validateConstant("transitionTotalDifficulty", transitionTotalDifficulty);
+      validateConstant("targetSecondsToMerge", targetSecondsToMerge);
+      validateConstant("minAnchorPowBlockDifficulty", minAnchorPowBlockDifficulty);
     }
 
     public MergeBuilder mergeForkVersion(Bytes4 mergeForkVersion) {
@@ -704,8 +711,13 @@ public class SpecConfigBuilder {
       return this;
     }
 
-    public MergeBuilder transitionTotalDifficulty(long transitionTotalDifficulty) {
-      this.transitionTotalDifficulty = transitionTotalDifficulty;
+    public MergeBuilder targetSecondsToMerge(UInt64 targetSecondsToMerge) {
+      this.targetSecondsToMerge = targetSecondsToMerge;
+      return this;
+    }
+
+    public MergeBuilder minAnchorPowBlockDifficulty(UInt256 minAnchorPowBlockDifficulty) {
+      this.minAnchorPowBlockDifficulty = minAnchorPowBlockDifficulty;
       return this;
     }
   }

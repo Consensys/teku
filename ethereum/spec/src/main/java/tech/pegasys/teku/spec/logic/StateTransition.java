@@ -73,6 +73,7 @@ public class StateTransition {
                     .orElse(prevMilestoneState);
             // Update spec
             currentSpec = newSpec;
+            newSpec.initializeTransitionStore(state);
           }
         }
       }

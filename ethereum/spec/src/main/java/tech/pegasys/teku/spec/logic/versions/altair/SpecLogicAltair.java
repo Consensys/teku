@@ -15,6 +15,8 @@ package tech.pegasys.teku.spec.logic.versions.altair;
 
 import java.util.Optional;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
+import tech.pegasys.teku.spec.datastructures.forkchoice.TransitionStore;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MergeTransitionHelpers;
@@ -164,6 +166,11 @@ public class SpecLogicAltair extends AbstractSpecLogic {
   }
 
   @Override
+  public void initializeTransitionStore(BeaconState state) {
+    // no transition store in Altair
+  }
+
+  @Override
   public Optional<SyncCommitteeUtil> getSyncCommitteeUtil() {
     return syncCommitteeUtil;
   }
@@ -175,6 +182,11 @@ public class SpecLogicAltair extends AbstractSpecLogic {
 
   @Override
   public Optional<ExecutionPayloadUtil> getExecutionPayloadUtil() {
+    return Optional.empty();
+  }
+
+  @Override
+  public Optional<TransitionStore> getTransitionStore() {
     return Optional.empty();
   }
 }

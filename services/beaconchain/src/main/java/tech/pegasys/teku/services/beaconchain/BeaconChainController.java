@@ -813,9 +813,14 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                           maybeABlock
                               .flatMap(block -> block.getBody().toVersionMerge())
                               .ifPresent(
-                                  body ->
+                                  body -> {
+                                    // Check if there is a payload
+                                    if (!body.getExecution_payload()
+                                        .equals(new ExecutionPayload())) {
                                       executionEngineService.finalizeBlock(
-                                          body.getExecution_payload().getBlock_hash())))
+                                          body.getExecution_payload().getBlock_hash());
+                                    }
+                                  }))
                   .reportExceptions());
     }
   }
