@@ -162,7 +162,7 @@ public class AttestationUtil {
             })
         .exceptionally(
             err -> {
-              if (err instanceof IllegalArgumentException) {
+              if (err.getCause() instanceof IllegalArgumentException) {
                 LOG.debug("on_attestation: Attestation is not valid: ", err);
                 return AttestationProcessingResult.invalid(err.getMessage());
               } else {
