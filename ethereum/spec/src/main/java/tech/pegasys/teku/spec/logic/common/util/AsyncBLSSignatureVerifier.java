@@ -23,7 +23,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 @FunctionalInterface
 public interface AsyncBLSSignatureVerifier {
-  static AsyncBLSSignatureVerifier from(BLSSignatureVerifier syncVerifier) {
+  static AsyncBLSSignatureVerifier wrap(BLSSignatureVerifier syncVerifier) {
     return (List<BLSPublicKey> publicKeys, Bytes message, BLSSignature signature) -> {
       final boolean result = syncVerifier.verify(publicKeys, message, signature);
       return SafeFuture.completedFuture(result);

@@ -220,7 +220,7 @@ public class AggregateAttestationValidator {
       final ValidateableAttestation validateableAttestation,
       final OptionalInt receivedOnSubnetId) {
     return attestationValidator.singleOrAggregateAttestationChecks(
-        AsyncBLSSignatureVerifier.from(signatureVerifier),
+        AsyncBLSSignatureVerifier.wrap(signatureVerifier),
         validateableAttestation,
         receivedOnSubnetId);
   }

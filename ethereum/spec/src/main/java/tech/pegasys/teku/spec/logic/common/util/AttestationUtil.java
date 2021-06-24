@@ -135,7 +135,7 @@ public class AttestationUtil {
       BLSSignatureVerifier blsSignatureVerifier) {
     final SafeFuture<AttestationProcessingResult> result =
         isValidIndexedAttestation(
-            state, attestation, AsyncBLSSignatureVerifier.from(blsSignatureVerifier));
+            state, attestation, AsyncBLSSignatureVerifier.wrap(blsSignatureVerifier));
 
     return result.getImmediately();
   }
@@ -190,7 +190,7 @@ public class AttestationUtil {
       BLSSignatureVerifier signatureVerifier) {
     final SafeFuture<AttestationProcessingResult> result =
         isValidIndexedAttestation(
-            state, indexed_attestation, AsyncBLSSignatureVerifier.from(signatureVerifier));
+            state, indexed_attestation, AsyncBLSSignatureVerifier.wrap(signatureVerifier));
 
     return result.getImmediately();
   }

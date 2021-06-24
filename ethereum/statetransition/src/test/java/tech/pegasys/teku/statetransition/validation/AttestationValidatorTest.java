@@ -92,7 +92,7 @@ class AttestationValidatorTest {
   private final AttestationGenerator attestationGenerator =
       new AttestationGenerator(spec, chainBuilder.getValidatorKeys());
   private final AsyncBLSSignatureVerifier signatureVerifier =
-      AsyncBLSSignatureVerifier.from(BLSSignatureVerifier.SIMPLE);
+      AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE);
 
   private final AttestationValidator validator =
       new AttestationValidator(spec, recentChainData, signatureVerifier);

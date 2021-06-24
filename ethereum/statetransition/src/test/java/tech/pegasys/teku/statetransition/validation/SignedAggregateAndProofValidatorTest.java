@@ -112,7 +112,7 @@ class SignedAggregateAndProofValidatorTest {
   private final AttestationValidator attestationValidator = mock(AttestationValidator.class);
 
   private final AsyncBLSSignatureVerifier signatureVerifier =
-      AsyncBLSSignatureVerifier.from(BLSSignatureVerifier.SIMPLE);
+      AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE);
   private final AggregateAttestationValidator validator =
       new AggregateAttestationValidator(recentChainData, attestationValidator, spec);
   private SignedBlockAndState bestBlock;
