@@ -28,7 +28,6 @@ import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
@@ -72,7 +71,8 @@ public class PeerManager implements ConnectionHandler {
   }
 
   @Override
-  public void handleConnection(@NotNull final Connection connection) {
+  public void handleConnection(final Connection connection) {
+    LOG.debug("Handling connection from {}", connection.remoteAddress());
     Peer peer = new LibP2PPeer(connection, rpcHandlers, reputationManager, peerScoreFunction);
     onConnectedPeer(peer);
   }

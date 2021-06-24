@@ -41,6 +41,9 @@ public class Firewall extends ChannelInboundHandlerAdapter {
 
   @Override
   public void handlerAdded(ChannelHandlerContext ctx) {
+    if (ctx.channel().remoteAddress() != null) {
+      LOG.debug("Firewall added for incoming connection from {}", ctx.channel().remoteAddress());
+    }
     ctx.channel().config().setWriteBufferWaterMark(new WriteBufferWaterMark(100, 1024));
     ctx.pipeline().addLast(new WriteTimeoutHandler(writeTimeout.toMillis(), TimeUnit.MILLISECONDS));
     ctx.pipeline().addLast(new FirewallExceptionHandler());
