@@ -13,13 +13,20 @@
 
 package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 
+import com.google.common.base.Preconditions;
 import com.google.errorprone.annotations.MustBeClosed;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -28,6 +35,8 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransaction;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalized;
 
 public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
@@ -114,6 +123,77 @@ public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
   @Override
   public Optional<? extends SignedBeaconBlock> getNonCanonicalBlock(final Bytes32 root) {
     return db.get(schema.getColumnNonCanonicalBlocksByRoot(), root);
+  }
+
+  @Override
+  public void ingest(
+      final KvStoreFinalizedDao finalizedDao, final int batchSize, final Consumer<String> logger) {
+    Preconditions.checkArgument(batchSize > 1, "Batch size must be greater than 1 element");
+    Preconditions.checkArgument(finalizedDao instanceof V4FinalizedKvStoreDao);
+
+    final Map<String, KvStoreVariable<?>> newVariables = schema.getVariableMap();
+    if (newVariables.size() > 0) {
+      final Map<String, KvStoreVariable<?>> oldVariables =
+          ((V4FinalizedKvStoreDao) finalizedDao).schema.getVariableMap();
+      try (V4FinalizedUpdater updater = new V4FinalizedUpdater(db, schema, UInt64.ONE)) {
+        for (String key : newVariables.keySet()) {
+          logger.accept(String.format("Copy variable %s", key));
+          finalizedDao
+              .getRawVariable(oldVariables.get(key))
+              .ifPresent(value -> updater.transaction.putRaw(newVariables.get(key), value));
+        }
+        updater.commit();
+      }
+    }
+    final Map<String, KvStoreColumn<?, ?>> newColumns = schema.getColumnMap();
+    if (newColumns.size() > 0) {
+      final Map<String, KvStoreColumn<?, ?>> oldColumns =
+          ((V4FinalizedKvStoreDao) finalizedDao).schema.getColumnMap();
+      for (String key : newColumns.keySet()) {
+        logger.accept(String.format("Copy column %s", key));
+        final List<ColumnEntry<Bytes, Bytes>> buffer = new ArrayList<>();
+        final AtomicInteger counter = new AtomicInteger(0);
+        try (final Stream<ColumnEntry<Bytes, Bytes>> oldEntryStream =
+            finalizedDao.streamRawColumn(oldColumns.get(key))) {
+          oldEntryStream.forEach(
+              entry -> {
+                buffer.add(entry);
+                if (buffer.size() >= batchSize) {
+                  pushColumnEntryBatch(newColumns.get(key), buffer);
+                  buffer.clear();
+                }
+                if (counter.incrementAndGet() % 100_000 == 0) {
+                  logger.accept(String.format(" -- %,d...", counter.get()));
+                }
+              });
+        }
+        if (buffer.size() > 0) {
+          pushColumnEntryBatch(newColumns.get(key), buffer);
+          buffer.clear();
+        }
+        logger.accept(String.format(" => Inserted %,d rows", counter.get()));
+      }
+    }
+  }
+
+  private <K, V> void pushColumnEntryBatch(
+      final KvStoreColumn<K, V> column, final List<ColumnEntry<Bytes, Bytes>> buffer) {
+    try (V4FinalizedUpdater updater = new V4FinalizedUpdater(db, schema, UInt64.ONE)) {
+      buffer.forEach(entry -> updater.transaction.putRaw(column, entry.getKey(), entry.getValue()));
+      updater.commit();
+    }
+  }
+
+  @Override
+  public <T> Optional<Bytes> getRawVariable(final KvStoreVariable<T> var) {
+    return db.getRaw(var);
+  }
+
+  @Override
+  @MustBeClosed
+  public <K, V> Stream<ColumnEntry<Bytes, Bytes>> streamRawColumn(
+      final KvStoreColumn<K, V> kvStoreColumn) {
+    return db.streamRaw(kvStoreColumn);
   }
 
   @Override

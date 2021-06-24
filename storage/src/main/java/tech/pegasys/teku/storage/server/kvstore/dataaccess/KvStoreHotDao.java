@@ -17,7 +17,9 @@ import com.google.errorprone.annotations.MustBeClosed;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
@@ -27,6 +29,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 
 /**
  * Provides an abstract "data access object" interface for working with hot data (non-finalized)
@@ -65,6 +70,13 @@ public interface KvStoreHotDao extends AutoCloseable {
   Map<UInt64, VoteTracker> getVotes();
 
   HotUpdater hotUpdater();
+
+  void ingest(KvStoreHotDao hotDao, final int batchSize, final Consumer<String> logger);
+
+  <T> Optional<Bytes> getRawVariable(KvStoreVariable<T> var);
+
+  @MustBeClosed
+  <K, V> Stream<ColumnEntry<Bytes, Bytes>> streamRawColumn(KvStoreColumn<K, V> kvStoreColumn);
 
   interface HotUpdater extends AutoCloseable {
 

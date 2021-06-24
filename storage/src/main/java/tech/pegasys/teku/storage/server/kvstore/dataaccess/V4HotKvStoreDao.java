@@ -13,12 +13,17 @@
 
 package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 
+import com.google.common.base.Preconditions;
 import com.google.errorprone.annotations.MustBeClosed;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
@@ -34,6 +39,8 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransaction;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaHot;
 
 public class V4HotKvStoreDao implements KvStoreHotDao, KvStoreEth1Dao, KvStoreProtoArrayDao {
@@ -143,6 +150,81 @@ public class V4HotKvStoreDao implements KvStoreHotDao, KvStoreEth1Dao, KvStorePr
   @MustBeClosed
   public HotUpdater hotUpdater() {
     return new V4HotUpdater(db, schema);
+  }
+
+  @Override
+  public void ingest(
+      final KvStoreHotDao hotDao, final int batchSize, final Consumer<String> logger) {
+    Preconditions.checkArgument(batchSize > 1, "Batch size must be greater than 1 element");
+    Preconditions.checkArgument(hotDao instanceof V4HotKvStoreDao);
+
+    final Map<String, KvStoreVariable<?>> newVariables = schema.getVariableMap();
+    if (newVariables.size() > 0) {
+      final Map<String, KvStoreVariable<?>> oldVariables =
+          ((V4HotKvStoreDao) hotDao).schema.getVariableMap();
+      try (V4HotUpdater updater = new V4HotUpdater(db, schema)) {
+        for (String key : newVariables.keySet()) {
+          logger.accept(String.format("copy variable %s", key));
+          hotDao
+              .getRawVariable(oldVariables.get(key))
+              .ifPresent(value -> updater.transaction.putRaw(newVariables.get(key), value));
+        }
+        updater.commit();
+      }
+    } else {
+      logger.accept("No variables to copy from hot store.");
+    }
+    final Map<String, KvStoreColumn<?, ?>> newColumns = schema.getColumnMap();
+    if (newColumns.size() > 0) {
+      final Map<String, KvStoreColumn<?, ?>> oldColumns =
+          ((V4HotKvStoreDao) hotDao).schema.getColumnMap();
+      for (String key : newColumns.keySet()) {
+        logger.accept(String.format("copy column %s", key));
+        final List<ColumnEntry<Bytes, Bytes>> buffer = new ArrayList<>();
+        final AtomicInteger counter = new AtomicInteger(0);
+        try (final Stream<ColumnEntry<Bytes, Bytes>> oldEntryStream =
+            hotDao.streamRawColumn(oldColumns.get(key))) {
+          oldEntryStream.forEach(
+              entry -> {
+                buffer.add(entry);
+                if (buffer.size() >= batchSize) {
+                  pushColumnEntryBatch(newColumns.get(key), buffer);
+                  buffer.clear();
+                }
+                if (counter.incrementAndGet() % 100_000 == 0) {
+                  logger.accept(String.format(" -- %,d...", counter.get()));
+                }
+              });
+        }
+        if (buffer.size() > 0) {
+          pushColumnEntryBatch(newColumns.get(key), buffer);
+          buffer.clear();
+        }
+        logger.accept(String.format(" => Inserted %,d rows", counter.get()));
+      }
+    } else {
+      logger.accept("No column data to copy from hot store.");
+    }
+  }
+
+  private <K, V> void pushColumnEntryBatch(
+      final KvStoreColumn<K, V> column, final List<ColumnEntry<Bytes, Bytes>> buffer) {
+    try (V4HotUpdater updater = new V4HotUpdater(db, schema)) {
+      buffer.forEach(entry -> updater.transaction.putRaw(column, entry.getKey(), entry.getValue()));
+      updater.commit();
+    }
+  }
+
+  @Override
+  public <T> Optional<Bytes> getRawVariable(final KvStoreVariable<T> var) {
+    return db.getRaw(var);
+  }
+
+  @Override
+  @MustBeClosed
+  public <K, V> Stream<ColumnEntry<Bytes, Bytes>> streamRawColumn(
+      final KvStoreColumn<K, V> kvStoreColumn) {
+    return db.streamRaw(kvStoreColumn);
   }
 
   @Override
