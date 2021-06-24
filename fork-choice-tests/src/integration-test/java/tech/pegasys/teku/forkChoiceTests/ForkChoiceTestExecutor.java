@@ -260,7 +260,7 @@ public class ForkChoiceTestExecutor {
 
   private boolean processAttestation(ForkChoice fc, Attestation step) {
     AttestationProcessingResult attestationProcessingResult =
-        fc.onAttestation(ValidateableAttestation.from(step)).join();
+        fc.onAttestation(ValidateableAttestation.from(SPEC, step)).join();
     return attestationProcessingResult.isSuccessful();
   }
 

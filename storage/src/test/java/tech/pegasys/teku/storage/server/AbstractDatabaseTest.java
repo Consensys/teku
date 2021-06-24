@@ -611,7 +611,7 @@ public abstract class AbstractDatabaseTest {
         chainBuilder.generateBlockAtSlot(spec.computeStartSlotAtEpoch(anchorEpoch));
     final AnchorPoint anchor =
         AnchorPoint.create(
-            new Checkpoint(anchorEpoch, anchorBlockAndState.getRoot()), anchorBlockAndState);
+            spec, new Checkpoint(anchorEpoch, anchorBlockAndState.getRoot()), anchorBlockAndState);
     createStorage(StateStorageMode.PRUNE);
     initFromAnchor(anchor);
 
@@ -694,7 +694,7 @@ public abstract class AbstractDatabaseTest {
     // Primary chain's next block is at 7
     final SignedBlockAndState finalizedBlock = primaryChain.generateBlockAtSlot(7);
     final Checkpoint finalizedCheckpoint = getCheckpointForBlock(primaryChain.getBlockAtSlot(7));
-    final UInt64 firstHotBlockSlot = finalizedCheckpoint.getEpochStartSlot().plus(UInt64.ONE);
+    final UInt64 firstHotBlockSlot = finalizedCheckpoint.getEpochStartSlot(spec).plus(UInt64.ONE);
     primaryChain.generateBlockAtSlot(firstHotBlockSlot);
     // Fork chain's next block is at 6
     forkChain.generateBlockAtSlot(6);
@@ -759,7 +759,7 @@ public abstract class AbstractDatabaseTest {
     // Primary chain's next block is at 7
     final SignedBlockAndState finalizedBlock = primaryChain.generateBlockAtSlot(7);
     final Checkpoint finalizedCheckpoint = getCheckpointForBlock(primaryChain.getBlockAtSlot(7));
-    final UInt64 firstHotBlockSlot = finalizedCheckpoint.getEpochStartSlot().plus(UInt64.ONE);
+    final UInt64 firstHotBlockSlot = finalizedCheckpoint.getEpochStartSlot(spec).plus(UInt64.ONE);
     primaryChain.generateBlockAtSlot(firstHotBlockSlot);
     // Fork chain's next block is at 6
     forkChain.generateBlockAtSlot(6);
@@ -793,6 +793,7 @@ public abstract class AbstractDatabaseTest {
         chainBuilder.generateBlockAtSlot(spec.computeStartSlotAtEpoch(anchorEpoch));
     final AnchorPoint anchor =
         AnchorPoint.create(
+            spec,
             new Checkpoint(anchorEpoch, anchorBlockAndState.getRoot()),
             anchorBlockAndState.getState(),
             Optional.empty());
@@ -856,6 +857,7 @@ public abstract class AbstractDatabaseTest {
         chainBuilder.generateBlockAtSlot(spec.computeStartSlotAtEpoch(anchorEpoch));
     final AnchorPoint anchor =
         AnchorPoint.create(
+            spec,
             new Checkpoint(anchorEpoch, anchorBlockAndState.getRoot()),
             anchorBlockAndState.getState(),
             Optional.empty());
@@ -908,7 +910,7 @@ public abstract class AbstractDatabaseTest {
     // Primary chain's next block is at 7
     final SignedBlockAndState finalizedBlock = primaryChain.generateBlockAtSlot(7);
     final Checkpoint finalizedCheckpoint = getCheckpointForBlock(finalizedBlock.getBlock());
-    final UInt64 pruneToSlot = finalizedCheckpoint.getEpochStartSlot();
+    final UInt64 pruneToSlot = finalizedCheckpoint.getEpochStartSlot(spec);
     // Add some blocks in the next epoch
     final UInt64 hotSlot = pruneToSlot.plus(UInt64.ONE);
     primaryChain.generateBlockAtSlot(hotSlot);

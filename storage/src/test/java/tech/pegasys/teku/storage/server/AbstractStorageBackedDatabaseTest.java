@@ -138,7 +138,7 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
         chainBuilder.getCurrentCheckpointForEpoch(finalizedEpoch);
 
     // Add some more blocks
-    final UInt64 firstHotBlockSlot = finalizedCheckpoint.getEpochStartSlot().plus(UInt64.ONE);
+    final UInt64 firstHotBlockSlot = finalizedCheckpoint.getEpochStartSlot(spec).plus(UInt64.ONE);
     chainBuilder.generateBlockAtSlot(firstHotBlockSlot);
     chainBuilder.generateBlocksUpToSlot(firstHotBlockSlot.plus(10));
 
@@ -180,7 +180,7 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
         chainBuilder.generateBlockAtSlot(compute_start_slot_at_epoch(anchorEpoch));
     final AnchorPoint anchor =
         AnchorPoint.create(
-            new Checkpoint(anchorEpoch, anchorBlockAndState.getRoot()), anchorBlockAndState);
+            spec, new Checkpoint(anchorEpoch, anchorBlockAndState.getRoot()), anchorBlockAndState);
     createStorage(tempDir.toFile(), StateStorageMode.PRUNE);
     initFromAnchor(anchor);
 

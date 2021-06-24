@@ -194,7 +194,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
       // unlikely to call this on tx objects
       final SignedBlockAndState finalizedBlockAndState =
           retrieveBlockAndState(finalized_checkpoint.get().getRoot()).join().orElseThrow();
-      return AnchorPoint.create(finalized_checkpoint.get(), finalizedBlockAndState);
+      return AnchorPoint.create(spec, finalized_checkpoint.get(), finalizedBlockAndState);
     }
     return store.getLatestFinalized();
   }
@@ -206,6 +206,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
           .thenApply(
               blockAndState ->
                   AnchorPoint.create(
+                      spec,
                       finalizedCheckpoint,
                       blockAndState.orElseThrow(
                           () ->
@@ -309,7 +310,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
       // committed
       return new StateAtSlotTask(
               spec,
-              checkpoint.toSlotAndBlockRoot(),
+              checkpoint.toSlotAndBlockRoot(spec),
               fromBlockAndState(inMemoryCheckpointBlockState))
           .performTask();
     }
@@ -351,7 +352,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
                 return store.retrieveFinalizedCheckpointAndState();
               } else {
                 return SafeFuture.completedFuture(
-                    CheckpointState.create(finalizedCheckpoint, block.get(), state.get()));
+                    CheckpointState.create(spec, finalizedCheckpoint, block.get(), state.get()));
               }
             });
   }

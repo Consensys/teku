@@ -269,6 +269,11 @@ public class Spec {
     return atState(state).beaconStateAccessors().getPreviousEpoch(state);
   }
 
+  public Bytes32 getSeed(BeaconState state, UInt64 epoch, Bytes4 domainType)
+      throws IllegalArgumentException {
+    return atState(state).beaconStateAccessors().getSeed(state, epoch, domainType);
+  }
+
   public UInt64 computeStartSlotAtEpoch(final UInt64 epoch) {
     return atEpoch(epoch).miscHelpers().computeStartSlotAtEpoch(epoch);
   }

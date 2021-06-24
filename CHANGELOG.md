@@ -28,6 +28,9 @@ For information on changes in released versions of Teku, see the [releases page]
 - Prevent LevelDB transactions from attempting to make any updates after the database is shut down.
 - Update `/eth/v1/node/health` to return 206 while node is starting up rather than a 200.
 - Fixed issue which cause a small reduction in attestation rewards when using `--Xvalidators-dependent-root-enabled`.
+- Fixed issue with eth1 follow distance tracking revealed in Rayonism testnets. Teku incorrectly strictly follows 2048 blocks before the eth1 head but the follow distance should be based on timestamp, not block number.
+  This change can be disabled with `--Xeth1-time-based-head-tracking-enabled=false` if required.
+
 
 ### Experimental: New Altair REST APIs
 - implement POST `/eth/v1/beacon/pool/sync_committees` to allow validators to submit sync committee signatures to the beacon node.

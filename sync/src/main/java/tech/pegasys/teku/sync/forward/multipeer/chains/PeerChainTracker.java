@@ -19,6 +19,7 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 
 /**
@@ -26,6 +27,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
  * current peer set, both for finalized and non-finalized chains.
  */
 public class PeerChainTracker {
+  private final Spec spec;
   private final EventThread eventThread;
   private final P2PNetwork<Eth2Peer> p2pNetwork;
   private final Subscribers<Runnable> chainsUpdatedSubscribers = Subscribers.create(true);
@@ -35,11 +37,13 @@ public class PeerChainTracker {
   private volatile long connectSubscription;
 
   public PeerChainTracker(
+      final Spec spec,
       final EventThread eventThread,
       final P2PNetwork<Eth2Peer> p2pNetwork,
       final SyncSourceFactory syncSourceFactory,
       final TargetChains finalizedChains,
       final TargetChains nonfinalizedChains) {
+    this.spec = spec;
     this.eventThread = eventThread;
     this.p2pNetwork = p2pNetwork;
     this.syncSourceFactory = syncSourceFactory;
@@ -80,7 +84,7 @@ public class PeerChainTracker {
     final SyncSource syncSource = syncSourceFactory.getOrCreateSyncSource(peer);
     final SlotAndBlockRoot finalizedChainHead =
         new SlotAndBlockRoot(
-            status.getFinalizedCheckpoint().getEpochStartSlot(), status.getFinalizedRoot());
+            status.getFinalizedCheckpoint().getEpochStartSlot(spec), status.getFinalizedRoot());
     finalizedChains.onPeerStatusUpdated(syncSource, finalizedChainHead);
 
     final SlotAndBlockRoot nonFinalizedChainHead =

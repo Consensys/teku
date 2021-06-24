@@ -132,7 +132,8 @@ public class BlockValidator {
   }
 
   private boolean blockSlotIsGreaterThanLatestFinalizedSlot(SignedBeaconBlock block) {
-    UInt64 finalizedSlot = recentChainData.getStore().getFinalizedCheckpoint().getEpochStartSlot();
+    UInt64 finalizedSlot =
+        recentChainData.getStore().getFinalizedCheckpoint().getEpochStartSlot(spec);
     return block.getSlot().compareTo(finalizedSlot) > 0;
   }
 

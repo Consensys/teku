@@ -13,10 +13,9 @@
 
 package tech.pegasys.teku.spec.datastructures.state;
 
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.ssz.containers.Container2;
 import tech.pegasys.teku.ssz.containers.ContainerSchema2;
@@ -60,11 +59,11 @@ public class Checkpoint extends Container2<Checkpoint, SszUInt64, SszBytes32> {
     return getField1().get();
   }
 
-  public UInt64 getEpochStartSlot() {
-    return compute_start_slot_at_epoch(getEpoch());
+  public UInt64 getEpochStartSlot(final Spec spec) {
+    return spec.computeStartSlotAtEpoch(getEpoch());
   }
 
-  public SlotAndBlockRoot toSlotAndBlockRoot() {
-    return new SlotAndBlockRoot(getEpochStartSlot(), getRoot());
+  public SlotAndBlockRoot toSlotAndBlockRoot(final Spec spec) {
+    return new SlotAndBlockRoot(getEpochStartSlot(spec), getRoot());
   }
 }
