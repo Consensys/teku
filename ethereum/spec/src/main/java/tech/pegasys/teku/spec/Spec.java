@@ -572,22 +572,13 @@ public class Spec {
         .getGenericAttestationData(slot, state, block, committeeIndex);
   }
 
-  public AttestationProcessingResult isValidIndexedAttestation(
-      BeaconState state,
-      ValidateableAttestation attestation,
-      BLSSignatureVerifier blsSignatureVerifier) {
-    return atState(state)
-        .getAttestationUtil()
-        .isValidIndexedAttestation(state, attestation, blsSignatureVerifier);
-  }
-
   public SafeFuture<AttestationProcessingResult> isValidIndexedAttestation(
       BeaconState state,
       ValidateableAttestation attestation,
       AsyncBLSSignatureVerifier blsSignatureVerifier) {
     return atState(state)
         .getAttestationUtil()
-        .isValidIndexedAttestation(state, attestation, blsSignatureVerifier);
+        .isValidIndexedAttestationAsync(state, attestation, blsSignatureVerifier);
   }
 
   // Private helpers

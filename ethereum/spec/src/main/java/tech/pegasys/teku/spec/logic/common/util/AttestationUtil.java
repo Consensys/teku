@@ -134,13 +134,13 @@ public class AttestationUtil {
       ValidateableAttestation attestation,
       BLSSignatureVerifier blsSignatureVerifier) {
     final SafeFuture<AttestationProcessingResult> result =
-        isValidIndexedAttestation(
+        isValidIndexedAttestationAsync(
             state, attestation, AsyncBLSSignatureVerifier.wrap(blsSignatureVerifier));
 
     return result.getImmediately();
   }
 
-  public SafeFuture<AttestationProcessingResult> isValidIndexedAttestation(
+  public SafeFuture<AttestationProcessingResult> isValidIndexedAttestationAsync(
       BeaconState state,
       ValidateableAttestation attestation,
       AsyncBLSSignatureVerifier blsSignatureVerifier) {
@@ -151,7 +151,7 @@ public class AttestationUtil {
     IndexedAttestation indexedAttestation =
         getIndexedAttestation(state, attestation.getAttestation());
     attestation.setIndexedAttestation(indexedAttestation);
-    return isValidIndexedAttestation(state, indexedAttestation, blsSignatureVerifier)
+    return isValidIndexedAttestationAsync(state, indexedAttestation, blsSignatureVerifier)
         .thenApply(
             result -> {
               if (result.isSuccessful()) {
@@ -189,13 +189,13 @@ public class AttestationUtil {
       IndexedAttestation indexed_attestation,
       BLSSignatureVerifier signatureVerifier) {
     final SafeFuture<AttestationProcessingResult> result =
-        isValidIndexedAttestation(
+        isValidIndexedAttestationAsync(
             state, indexed_attestation, AsyncBLSSignatureVerifier.wrap(signatureVerifier));
 
     return result.getImmediately();
   }
 
-  public SafeFuture<AttestationProcessingResult> isValidIndexedAttestation(
+  public SafeFuture<AttestationProcessingResult> isValidIndexedAttestationAsync(
       BeaconState state,
       IndexedAttestation indexed_attestation,
       AsyncBLSSignatureVerifier signatureVerifier) {
