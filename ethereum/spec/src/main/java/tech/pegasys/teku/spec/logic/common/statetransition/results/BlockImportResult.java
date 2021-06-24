@@ -27,6 +27,12 @@ public interface BlockImportResult {
   BlockImportResult FAILED_WEAK_SUBJECTIVITY_CHECKS =
       new FailedBlockImportResult(FailureReason.FAILED_WEAK_SUBJECTIVITY_CHECKS, Optional.empty());
 
+  // // Merge transition logic failures
+  BlockImportResult FAILED_UNKNOWN_TERMINAL_POW_BLOCK =
+      new FailedBlockImportResult(FailureReason.UNKNOWN_TERMINAL_POW_BLOCK, Optional.empty());
+  BlockImportResult FAILED_INVALID_TERMINAL_POW_BLOCK =
+      new FailedBlockImportResult(FailureReason.INVALID_TERMINAL_POW_BLOCK, Optional.empty());
+
   static BlockImportResult failedStateTransition(final Exception cause) {
     return new FailedBlockImportResult(FailureReason.FAILED_STATE_TRANSITION, Optional.of(cause));
   }
@@ -49,7 +55,11 @@ public interface BlockImportResult {
     DOES_NOT_DESCEND_FROM_LATEST_FINALIZED,
     FAILED_STATE_TRANSITION,
     FAILED_WEAK_SUBJECTIVITY_CHECKS,
-    INTERNAL_ERROR // A catch-all category for unexpected errors (bugs)
+    INTERNAL_ERROR, // A catch-all category for unexpected errors (bugs)
+
+    // Merge transition logic failures
+    UNKNOWN_TERMINAL_POW_BLOCK,
+    INVALID_TERMINAL_POW_BLOCK
   }
 
   boolean isSuccessful();

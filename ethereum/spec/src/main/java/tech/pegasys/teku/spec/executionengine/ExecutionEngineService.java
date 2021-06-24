@@ -16,10 +16,12 @@ package tech.pegasys.teku.spec.executionengine;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.web3j.protocol.core.methods.response.EthBlock;
 import tech.pegasys.teku.infrastructure.logging.ColorConsolePrinter;
 import tech.pegasys.teku.infrastructure.logging.ColorConsolePrinter.Color;
 import tech.pegasys.teku.infrastructure.logging.LogFormatter;
@@ -157,5 +159,42 @@ public class ExecutionEngineService {
     } catch (InterruptedException | ExecutionException e) {
       throw new IllegalStateException(e);
     }
+  }
+
+  public Optional<EthBlock.Block> getPowBlock(Bytes32 blockHash) {
+    Optional<EthBlock.Block> response = executionEngineClient.getPowBlock(blockHash).join();
+    if (response.isPresent()) {
+      LOG.info(
+          ColorConsolePrinter.print(
+              String.format(
+                  "eth_getBlock(blockHash=%s) ~> EthBlock(number=%s, totalDifficulty=%s, difficulty=%s)",
+                  LogFormatter.formatHashRoot(blockHash),
+                  response.get().getNumber().toString(),
+                  response.get().getTotalDifficulty().toString(),
+                  response.get().getDifficulty().toString()),
+              Color.CYAN));
+    } else {
+      LOG.info(
+          ColorConsolePrinter.print(
+              String.format(
+                  "eth_getBlock(blockHash=%s) ~> null", LogFormatter.formatHashRoot(blockHash)),
+              Color.CYAN));
+    }
+
+    return response;
+  }
+
+  public EthBlock.Block getPowChainHead() {
+    EthBlock.Block response = executionEngineClient.getPowChainHead().join();
+    LOG.info(
+        ColorConsolePrinter.print(
+            String.format(
+                "eth_getLatestBlock() ~> EthBlock(blockHash=%s, number=%s, totalDifficulty=%s, difficulty=%s)",
+                LogFormatter.formatHashRoot(Bytes32.fromHexString(response.getHash())),
+                response.getNumber().toString(),
+                response.getTotalDifficulty().toString(),
+                response.getDifficulty().toString()),
+            Color.CYAN));
+    return response;
   }
 }

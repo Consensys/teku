@@ -27,16 +27,20 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge.BeaconBlockBodyMerge;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
+import tech.pegasys.teku.spec.datastructures.forkchoice.TransitionStore;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
+import tech.pegasys.teku.spec.logic.common.helpers.MergeTransitionHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
+import tech.pegasys.teku.spec.logic.common.helpers.PowBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 
@@ -47,6 +51,22 @@ public class ForkChoiceUtil {
   private final AttestationUtil attestationUtil;
   private final BlockProcessor blockProcessor;
   private final MiscHelpers miscHelpers;
+  private final MergeTransitionHelpers mergeTransitionHelpers;
+
+  public ForkChoiceUtil(
+      final SpecConfig specConfig,
+      final BeaconStateAccessors beaconStateAccessors,
+      final AttestationUtil attestationUtil,
+      final BlockProcessor blockProcessor,
+      final MiscHelpers miscHelpers,
+      final MergeTransitionHelpers mergeTransitionHelpers) {
+    this.specConfig = specConfig;
+    this.beaconStateAccessors = beaconStateAccessors;
+    this.attestationUtil = attestationUtil;
+    this.blockProcessor = blockProcessor;
+    this.miscHelpers = miscHelpers;
+    this.mergeTransitionHelpers = mergeTransitionHelpers;
+  }
 
   public ForkChoiceUtil(
       final SpecConfig specConfig,
@@ -54,11 +74,7 @@ public class ForkChoiceUtil {
       final AttestationUtil attestationUtil,
       final BlockProcessor blockProcessor,
       final MiscHelpers miscHelpers) {
-    this.specConfig = specConfig;
-    this.beaconStateAccessors = beaconStateAccessors;
-    this.attestationUtil = attestationUtil;
-    this.blockProcessor = blockProcessor;
-    this.miscHelpers = miscHelpers;
+    this(specConfig, beaconStateAccessors, attestationUtil, blockProcessor, miscHelpers, null);
   }
 
   public UInt64 getSlotsSinceGenesis(ReadOnlyStore store, boolean useUnixTime) {
@@ -304,7 +320,8 @@ public class ForkChoiceUtil {
       final MutableStore store,
       final SignedBeaconBlock signedBlock,
       final BeaconState blockSlotState,
-      final IndexedAttestationCache indexedAttestationCache) {
+      final IndexedAttestationCache indexedAttestationCache,
+      final Optional<TransitionStore> maybeTransitionStore) {
     checkArgument(
         blockSlotState.getSlot().equals(signedBlock.getSlot()),
         "State must have slots processed up to the block slot");
@@ -315,6 +332,13 @@ public class ForkChoiceUtil {
         checkOnBlockConditions(block, blockSlotState, store);
     if (maybeFailure.isPresent()) {
       return maybeFailure.get();
+    }
+
+    // [Merge] Return if transition condition checks fail
+    final Optional<BlockImportResult> maybeTerminalPowBlockFailure =
+        checkOnTerminalPowBlockConditions(block, blockSlotState, maybeTransitionStore);
+    if (maybeTerminalPowBlockFailure.isPresent()) {
+      return maybeTerminalPowBlockFailure.get();
     }
 
     // Make a copy of the state to avoid mutability issues
@@ -375,6 +399,30 @@ public class ForkChoiceUtil {
         store.getJustifiedCheckpoint().getRoot(),
         finalizedSlot,
         store.getFinalizedCheckpoint().getRoot());
+  }
+
+  private Optional<BlockImportResult> checkOnTerminalPowBlockConditions(
+      final BeaconBlock block,
+      final BeaconState blockSlotState,
+      final Optional<TransitionStore> maybeTransitionStore) {
+    // not a merge version of the spec
+    if (maybeTransitionStore.isEmpty() || mergeTransitionHelpers == null) {
+      return Optional.empty();
+    }
+
+    if (!mergeTransitionHelpers.isMergeBlock(blockSlotState, block)) {
+      return Optional.empty();
+    }
+    BeaconBlockBodyMerge blockBodyMerge = block.getBody().toVersionMerge().orElseThrow();
+    PowBlock powBlock =
+        mergeTransitionHelpers.getPowBlock(blockBodyMerge.getExecution_payload().getParent_hash());
+    if (!powBlock.isProcessed) {
+      return Optional.of(BlockImportResult.FAILED_UNKNOWN_TERMINAL_POW_BLOCK);
+    }
+    if (!mergeTransitionHelpers.isValidTerminalPowBlock(powBlock, maybeTransitionStore.get())) {
+      return Optional.of(BlockImportResult.FAILED_INVALID_TERMINAL_POW_BLOCK);
+    }
+    return Optional.empty();
   }
 
   private Optional<BlockImportResult> checkOnBlockConditions(

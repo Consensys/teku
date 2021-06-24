@@ -46,7 +46,7 @@ public class Eth1DataCache {
 
   public void onEth1Block(final Bytes32 blockHash, final UInt64 blockTimestamp) {
     final Map.Entry<UInt64, Eth1Data> previousBlock = eth1ChainCache.floorEntry(blockTimestamp);
-    if (previousBlock == null) {
+    if (!eth1ChainCache.isEmpty() && previousBlock == null) {
       // This block is either before any deposits so will never be voted for
       // or before the cache period so would be immediately pruned anyway.
       LOG.debug(
@@ -55,7 +55,7 @@ public class Eth1DataCache {
           blockTimestamp);
       return;
     }
-    final Eth1Data data = previousBlock.getValue();
+    final Eth1Data data = previousBlock != null ? previousBlock.getValue() : new Eth1Data();
     eth1ChainCache.put(blockTimestamp, data.withBlockHash(blockHash));
     prune(blockTimestamp);
   }

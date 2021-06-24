@@ -768,7 +768,12 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               ? ExecutionEngineService.create(
                   beaconConfig.powchainConfig().getEth1Endpoints().get(0))
               : ExecutionEngineService.createStub();
-      specLogicMerge.getExecutionPayloadUtil().setExecutionEngineService(executionEngineService);
+      specLogicMerge
+          .getExecutionPayloadUtil()
+          .ifPresent(util -> util.setExecutionEngineService(executionEngineService));
+      specLogicMerge
+          .getMergeTransitionHelpers()
+          .ifPresent(helpers -> helpers.setExecutionEngineService(executionEngineService));
 
       // Propagate head updates
       eventChannels.subscribe(
@@ -808,9 +813,14 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                           maybeABlock
                               .flatMap(block -> block.getBody().toVersionMerge())
                               .ifPresent(
-                                  body ->
+                                  body -> {
+                                    // Check if there is a payload
+                                    if (!body.getExecution_payload()
+                                        .equals(new ExecutionPayload())) {
                                       executionEngineService.finalizeBlock(
-                                          body.getExecution_payload().getBlock_hash())))
+                                          body.getExecution_payload().getBlock_hash());
+                                    }
+                                  }))
                   .reportExceptions());
     }
   }

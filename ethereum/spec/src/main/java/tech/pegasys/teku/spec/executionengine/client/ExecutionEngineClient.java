@@ -14,8 +14,10 @@
 package tech.pegasys.teku.spec.executionengine.client;
 
 import java.util.Arrays;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.web3j.protocol.core.methods.response.EthBlock;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.executionengine.client.schema.AssembleBlockRequest;
@@ -34,6 +36,10 @@ public interface ExecutionEngineClient {
   SafeFuture<Response<GenericResponse>> consensusSetHead(Bytes32 blockHash);
 
   SafeFuture<Response<GenericResponse>> consensusFinalizeBlock(Bytes32 blockHash);
+
+  SafeFuture<Optional<EthBlock.Block>> getPowBlock(Bytes32 blockHash);
+
+  SafeFuture<EthBlock.Block> getPowChainHead();
 
   ExecutionEngineClient Stub =
       new ExecutionEngineClient() {
@@ -73,6 +79,16 @@ public interface ExecutionEngineClient {
         @Override
         public SafeFuture<Response<GenericResponse>> consensusFinalizeBlock(Bytes32 blockHash) {
           return SafeFuture.completedFuture(new Response<>(new GenericResponse(true)));
+        }
+
+        @Override
+        public SafeFuture<Optional<EthBlock.Block>> getPowBlock(Bytes32 blockHash) {
+          return SafeFuture.completedFuture(Optional.empty());
+        }
+
+        @Override
+        public SafeFuture<EthBlock.Block> getPowChainHead() {
+          return SafeFuture.completedFuture(new EthBlock.Block());
         }
       };
 }
