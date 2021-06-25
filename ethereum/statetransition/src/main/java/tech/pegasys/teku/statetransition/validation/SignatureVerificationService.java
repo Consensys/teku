@@ -14,70 +14,62 @@
 package tech.pegasys.teku.statetransition.validation;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceCapacityExceededException;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 
 public class SignatureVerificationService extends Service implements AsyncBLSSignatureVerifier {
+  private static final Logger LOG = LogManager.getLogger();
+
   private static final int QUEUE_CAPACITY = 1000;
   private static final int MAX_BATCH_SIZE = 50;
   private static final Duration INACTIVITY_PAUSE = Duration.ofMillis(200);
 
-  private final ExecutorFactory executorFactory;
   private final int numThreads;
   private final int maxBatchSize;
 
   @VisibleForTesting final BlockingQueue<SignatureTask> batchSignatureTasks;
-  private ExecutorService executor;
+  private final AsyncRunner asyncRunner;
 
   @VisibleForTesting
   SignatureVerificationService(
-      final ExecutorFactory executorFactory,
+      final AsyncRunnerFactory asyncRunnerFactory,
       final int numThreads,
       final int queueCapacity,
       final int maxBatchSize) {
-    this.executorFactory = executorFactory;
+    this.asyncRunner = asyncRunnerFactory.create(this.getClass().getSimpleName(), numThreads);
     this.numThreads = Math.min(numThreads, Runtime.getRuntime().availableProcessors());
     this.maxBatchSize = maxBatchSize;
 
     this.batchSignatureTasks = new ArrayBlockingQueue<SignatureTask>(queueCapacity);
   }
 
-  public static SignatureVerificationService create() {
-    return new SignatureVerificationService(
-        SignatureVerificationService::defaultExecutorFactory, 2, QUEUE_CAPACITY, MAX_BATCH_SIZE);
-  }
-
-  @VisibleForTesting
-  static ExecutorService defaultExecutorFactory(final int numThreads) {
-    return Executors.newFixedThreadPool(
-        numThreads,
-        new ThreadFactoryBuilder()
-            .setDaemon(false)
-            .setNameFormat(SignatureVerificationService.class.getSimpleName() + "-%d")
-            .build());
+  public static SignatureVerificationService create(final AsyncRunnerFactory asyncRunnerFactory) {
+    return new SignatureVerificationService(asyncRunnerFactory, 2, QUEUE_CAPACITY, MAX_BATCH_SIZE);
   }
 
   @Override
   protected synchronized SafeFuture<?> doStart() {
-    executor = executorFactory.createExecutor(numThreads);
     for (int i = 0; i < numThreads; i++) {
-      executor.submit(this::run);
+      asyncRunner
+          .runAsync(this::run)
+          .finish(err -> LOG.error("Signature Verification Task failed", err));
     }
 
     return SafeFuture.COMPLETE;
@@ -85,7 +77,6 @@ public class SignatureVerificationService extends Service implements AsyncBLSSig
 
   @Override
   protected synchronized SafeFuture<?> doStop() {
-    executor.shutdownNow();
     return SafeFuture.COMPLETE;
   }
 
@@ -164,9 +155,5 @@ public class SignatureVerificationService extends Service implements AsyncBLSSig
       this.message = message;
       this.signature = signature;
     }
-  }
-
-  interface ExecutorFactory {
-    ExecutorService createExecutor(final int numThreads);
   }
 }

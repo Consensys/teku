@@ -28,7 +28,7 @@ import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 
 class AsyncRunnerEventThreadTest {
   private final AsyncRunnerFactory asyncRunnerFactory =
-      new AsyncRunnerFactory(new MetricTrackingExecutorFactory(new StubMetricsSystem()));
+      AsyncRunnerFactory.createDefault(new MetricTrackingExecutorFactory(new StubMetricsSystem()));
 
   private final EventThread eventThread =
       new AsyncRunnerEventThread(AsyncRunnerEventThreadTest.class.getName(), asyncRunnerFactory);

@@ -27,9 +27,13 @@ import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
+import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.Waiter;
-import tech.pegasys.teku.service.serviceutils.MockExecutorService;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.service.serviceutils.ServiceCapacityExceededException;
 import tech.pegasys.teku.statetransition.validation.SignatureVerificationService.SignatureTask;
 
@@ -40,24 +44,14 @@ public class SignatureVerificationServiceTest {
   private final int batchSize = 5;
   private final int numThreads = 2;
 
+  private final StubAsyncRunnerFactory asyncRunnerFactory = new StubAsyncRunnerFactory();
   private SignatureVerificationService service =
-      new SignatureVerificationService(
-          this::mockExecutorFactory, numThreads, queueCapacity, batchSize);
-  private MockExecutorService executor;
+      new SignatureVerificationService(asyncRunnerFactory, numThreads, queueCapacity, batchSize);
 
   @Test
-  public void start_shouldSetupExecutor() {
+  public void start_shouldQueueTAsks() {
     startService();
-    assertThat(executor).isNotNull();
-    assertThat(executor.isShutdown()).isFalse();
-    assertThat(executor.getPendingFuturesCount()).isEqualTo(numThreads);
-  }
-
-  @Test
-  public void stop_shouldShutdownExecutor() {
-    startService();
-    stopService();
-    assertThat(executor.isShutdown()).isTrue();
+    assertThat(getRunner().countDelayedActions()).isEqualTo(numThreads);
   }
 
   @Test
@@ -159,9 +153,10 @@ public class SignatureVerificationServiceTest {
 
   @Test
   public void testRealServiceWithThreads() throws Exception {
-    service =
-        new SignatureVerificationService(
-            SignatureVerificationService::defaultExecutorFactory, 1, queueCapacity, batchSize);
+    final AsyncRunnerFactory realRunnerFactory =
+        AsyncRunnerFactory.createDefault(
+            new MetricTrackingExecutorFactory(new StubMetricsSystem()));
+    service = new SignatureVerificationService(realRunnerFactory, 1, queueCapacity, batchSize);
     startService();
 
     final Random random = new Random(1);
@@ -233,8 +228,9 @@ public class SignatureVerificationServiceTest {
     service.batchVerifySignatures(pendingTasks);
   }
 
-  private final MockExecutorService mockExecutorFactory(final int numThreads) {
-    executor = new MockExecutorService();
-    return executor;
+  private StubAsyncRunner getRunner() {
+    final List<StubAsyncRunner> runners = asyncRunnerFactory.getStubAsyncRunners();
+    assertThat(runners.size()).isEqualTo(1);
+    return runners.get(0);
   }
 }
