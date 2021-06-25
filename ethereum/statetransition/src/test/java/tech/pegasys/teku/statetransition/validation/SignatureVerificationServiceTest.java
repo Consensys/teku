@@ -16,8 +16,10 @@ package tech.pegasys.teku.statetransition.validation;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
@@ -26,8 +28,10 @@ import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.service.serviceutils.MockScheduledExecutor;
+import tech.pegasys.teku.infrastructure.async.Waiter;
+import tech.pegasys.teku.service.serviceutils.MockExecutorService;
 import tech.pegasys.teku.service.serviceutils.ServiceCapacityExceededException;
+import tech.pegasys.teku.statetransition.validation.SignatureVerificationService.SignatureTask;
 
 public class SignatureVerificationServiceTest {
   private static List<BLSKeyPair> KEYS = BLSKeyGenerator.generateKeyPairs(10);
@@ -35,10 +39,11 @@ public class SignatureVerificationServiceTest {
   private final int queueCapacity = 10;
   private final int batchSize = 5;
   private final int numThreads = 2;
-  private final SignatureVerificationService service =
+
+  private SignatureVerificationService service =
       new SignatureVerificationService(
           this::mockExecutorFactory, numThreads, queueCapacity, batchSize);
-  private MockScheduledExecutor executor;
+  private MockExecutorService executor;
 
   @Test
   public void start_shouldSetupExecutor() {
@@ -72,12 +77,24 @@ public class SignatureVerificationServiceTest {
   }
 
   @Test
+  public void verify_withFullQueue() {
+    startService();
+
+    fillQueue();
+    final SafeFuture<Boolean> future = executeInvalidVerify(0, 0);
+
+    assertThat(future).isDone();
+    assertThat(future).isCompletedExceptionally();
+    assertThatThrownBy(future::get).hasCauseInstanceOf(ServiceCapacityExceededException.class);
+  }
+
+  @Test
   public void verify_singleValidSignature() {
     startService();
     final SafeFuture<Boolean> future = executeValidVerify(0, 0);
 
     assertThat(future).isNotDone();
-    executor.runPendingFutures();
+    runPendingTasks();
 
     assertThat(future).isCompletedWithValue(true);
   }
@@ -88,72 +105,86 @@ public class SignatureVerificationServiceTest {
     final SafeFuture<Boolean> future = executeInvalidVerify(0, 0);
 
     assertThat(future).isNotDone();
-    executor.runPendingFutures();
+    runPendingTasks();
 
     assertThat(future).isCompletedWithValue(false);
   }
 
   @Test
-  public void verify_multipleRoundsOfValidSignatures() {
+  public void verify_multipleValidSignatures() {
     startService();
 
-    for (int i = 0; i < 3; i++) {
-      final List<SafeFuture<Boolean>> futures = new ArrayList<>();
-      for (int j = 0; j < queueCapacity; j++) {
+    final List<SafeFuture<Boolean>> futures = new ArrayList<>();
+    for (int j = 0; j < queueCapacity; j++) {
+      futures.add(executeValidVerify(j, j));
+    }
+
+    for (SafeFuture<Boolean> future : futures) {
+      assertThat(future).isNotDone();
+    }
+    runPendingTasks();
+
+    for (SafeFuture<Boolean> future : futures) {
+      assertThat(future).isCompletedWithValue(true);
+    }
+  }
+
+  @Test
+  public void verify_multipleMixedSignatures() {
+    startService();
+
+    final List<SafeFuture<Boolean>> futures = new ArrayList<>();
+    for (int j = 0; j < queueCapacity; j++) {
+      if (j % 3 == 0) {
+        futures.add(executeInvalidVerify(j, j));
+      } else {
         futures.add(executeValidVerify(j, j));
       }
+    }
 
-      for (SafeFuture<Boolean> future : futures) {
-        assertThat(future).isNotDone();
-      }
-      executor.runPendingFutures();
+    for (SafeFuture<Boolean> future : futures) {
+      assertThat(future).isNotDone();
+    }
+    runPendingTasks();
 
-      for (SafeFuture<Boolean> future : futures) {
+    for (int j = 0; j < queueCapacity; j++) {
+      final SafeFuture<Boolean> future = futures.get(j);
+      if (j % 3 == 0) {
+        assertThat(future).isCompletedWithValue(false);
+      } else {
         assertThat(future).isCompletedWithValue(true);
       }
     }
   }
 
   @Test
-  public void verify_multipleRoundsOfMixedSignatures() {
+  public void testRealServiceWithThreads() throws Exception {
+    service =
+        new SignatureVerificationService(
+            SignatureVerificationService::defaultExecutorFactory, 1, queueCapacity, batchSize);
     startService();
 
+    final Random random = new Random(1);
     for (int i = 0; i < 3; i++) {
-      final List<SafeFuture<Boolean>> futures = new ArrayList<>();
-      for (int j = 0; j < queueCapacity; j++) {
-        if (j % 3 == 0) {
-          futures.add(executeInvalidVerify(j, j));
+      final List<SafeFuture<Boolean>> validFutures = new ArrayList<>();
+      final List<SafeFuture<Boolean>> invalidFutures = new ArrayList<>();
+      for (int j = 0; j < queueCapacity - i; j++) {
+        if (random.nextFloat() < .5) {
+          validFutures.add(executeValidVerify(j, j));
         } else {
-          futures.add(executeValidVerify(j, j));
+          invalidFutures.add(executeInvalidVerify(j, j));
         }
       }
 
-      for (SafeFuture<Boolean> future : futures) {
-        assertThat(future).isNotDone();
-      }
-      executor.runPendingFutures();
+      final List<SafeFuture<Boolean>> allFutures = new ArrayList<>();
+      allFutures.addAll(validFutures);
+      allFutures.addAll(invalidFutures);
+      Waiter.waitFor(
+          SafeFuture.allOf(allFutures.toArray(SafeFuture<?>[]::new)), Duration.ofSeconds(5));
 
-      for (int j = 0; j < queueCapacity; j++) {
-        final SafeFuture<Boolean> future = futures.get(j);
-        if (j % 3 == 0) {
-          assertThat(future).isCompletedWithValue(false);
-        } else {
-          assertThat(future).isCompletedWithValue(true);
-        }
-      }
+      validFutures.forEach(f -> assertThat(f).isCompletedWithValue(true));
+      invalidFutures.forEach(f -> assertThat(f).isCompletedWithValue(false));
     }
-  }
-
-  @Test
-  public void verify_withFullQueue() {
-    startService();
-
-    fillQueue();
-    final SafeFuture<Boolean> future = executeInvalidVerify(0, 0);
-
-    assertThat(future).isDone();
-    assertThat(future).isCompletedExceptionally();
-    assertThatThrownBy(future::get).hasCauseInstanceOf(ServiceCapacityExceededException.class);
   }
 
   private void startService() {
@@ -195,8 +226,15 @@ public class SignatureVerificationServiceTest {
     return service.verify(keypair.getPublicKey(), message, signature);
   }
 
-  private final MockScheduledExecutor mockExecutorFactory(final int numThreads) {
-    executor = new MockScheduledExecutor();
+  private void runPendingTasks() {
+    // Get pending tasks
+    final List<SignatureTask> pendingTasks = new ArrayList<>();
+    service.batchSignatureTasks.drainTo(pendingTasks);
+    service.batchVerifySignatures(pendingTasks);
+  }
+
+  private final MockExecutorService mockExecutorFactory(final int numThreads) {
+    executor = new MockExecutorService();
     return executor;
   }
 }

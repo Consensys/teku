@@ -20,8 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.BLS;
@@ -42,8 +42,8 @@ public class SignatureVerificationService extends Service implements AsyncBLSSig
   private final int numThreads;
   private final int maxBatchSize;
 
-  private final BlockingQueue<SignatureTask> batchSignatureTasks;
-  private ScheduledExecutorService executor;
+  @VisibleForTesting final BlockingQueue<SignatureTask> batchSignatureTasks;
+  private ExecutorService executor;
 
   @VisibleForTesting
   SignatureVerificationService(
@@ -63,8 +63,9 @@ public class SignatureVerificationService extends Service implements AsyncBLSSig
         SignatureVerificationService::defaultExecutorFactory, 2, QUEUE_CAPACITY, MAX_BATCH_SIZE);
   }
 
-  private static ScheduledExecutorService defaultExecutorFactory(final int numThreads) {
-    return new ScheduledThreadPoolExecutor(
+  @VisibleForTesting
+  static ExecutorService defaultExecutorFactory(final int numThreads) {
+    return Executors.newFixedThreadPool(
         numThreads,
         new ThreadFactoryBuilder()
             .setDaemon(false)
@@ -104,19 +105,27 @@ public class SignatureVerificationService extends Service implements AsyncBLSSig
 
   private void run() {
     while (isRunning()) {
-      final List<SignatureTask> tasks = new ArrayList<>();
-      batchSignatureTasks.drainTo(tasks, maxBatchSize);
-      if (tasks.isEmpty()) {
-        // Exit loop and resume after a short pause
-        executor.schedule(this::run, INACTIVITY_PAUSE.toMillis(), TimeUnit.MILLISECONDS);
-        return;
-      } else {
+      final List<SignatureTask> tasks = waitForBatch();
+      if (!tasks.isEmpty()) {
         batchVerifySignatures(tasks);
       }
     }
   }
 
-  private void batchVerifySignatures(final List<SignatureTask> tasks) {
+  private List<SignatureTask> waitForBatch() {
+    final List<SignatureTask> tasks = new ArrayList<>();
+    try {
+      final SignatureTask firstTask = batchSignatureTasks.poll(30, TimeUnit.SECONDS);
+      tasks.add(firstTask);
+      batchSignatureTasks.drainTo(tasks, maxBatchSize - 1);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+    }
+    return tasks;
+  }
+
+  @VisibleForTesting
+  void batchVerifySignatures(final List<SignatureTask> tasks) {
     final List<List<BLSPublicKey>> allKeys = new ArrayList<>();
     final List<Bytes> allMessages = new ArrayList<>();
     final List<BLSSignature> allSignatures = new ArrayList<>();
@@ -142,7 +151,8 @@ public class SignatureVerificationService extends Service implements AsyncBLSSig
     }
   }
 
-  private static class SignatureTask {
+  @VisibleForTesting
+  static class SignatureTask {
     final SafeFuture<Boolean> result = new SafeFuture<>();
     final List<BLSPublicKey> publicKeys;
     final Bytes message;
@@ -157,6 +167,6 @@ public class SignatureVerificationService extends Service implements AsyncBLSSig
   }
 
   interface ExecutorFactory {
-    ScheduledExecutorService createExecutor(final int numThreads);
+    ExecutorService createExecutor(final int numThreads);
   }
 }
