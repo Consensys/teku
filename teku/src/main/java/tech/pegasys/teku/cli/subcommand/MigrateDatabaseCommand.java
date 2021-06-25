@@ -17,7 +17,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
-import java.text.DecimalFormat;
 import java.util.Optional;
 import java.util.Scanner;
 import picocli.CommandLine;
@@ -57,7 +56,8 @@ public class MigrateDatabaseCommand implements Runnable {
   // Use Cases
   // - I have a rocksdb database and want to update to the latest leveldb database version
   // - I have leveldb 1 and want to have leveldb2
-  // - I have updated to the latest db but I've decided i want to go back to an older database format
+  // - I have updated to the latest db but I've decided i want to go back to an older database
+  // format
   //   (eg. testing upgrades!)
 
   @CommandLine.Option(

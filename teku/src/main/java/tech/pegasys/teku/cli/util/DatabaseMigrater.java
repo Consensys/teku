@@ -16,6 +16,7 @@ package tech.pegasys.teku.cli.util;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static tech.pegasys.teku.storage.server.VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -23,8 +24,6 @@ import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
-
-import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.io.FileUtils;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.teku.cli.options.DataStorageOptions;
