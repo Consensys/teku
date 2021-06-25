@@ -111,7 +111,7 @@ public class MigrateDatabaseCommand implements Runnable {
       SUB_COMMAND_LOG.display("SUCCESS.");
       SUB_COMMAND_LOG.display(
           "The original database is stored in: " + dbMigrater.getMovedOldBeaconFolderPath());
-      SUB_COMMAND_LOG.display("This can be removed once the new database has been verified.");
+      SUB_COMMAND_LOG.display("This can be removed once you have confirmed the new database works.");
     } catch (DatabaseMigraterError error) {
       SUB_COMMAND_LOG.error("FAILED to migrate database: " + error.getMessage());
       SUB_COMMAND_LOG.display(
