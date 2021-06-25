@@ -764,7 +764,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     initialAnchor.ifPresent(
         anchor -> {
           final UInt64 currentSlot = getCurrentSlot(anchor.getState().getGenesis_time());
-          wsInitializer.validateInitialAnchor(anchor, currentSlot);
+          wsInitializer.validateInitialAnchor(anchor, currentSlot, spec);
         });
 
     if (initialAnchor.isPresent()) {
