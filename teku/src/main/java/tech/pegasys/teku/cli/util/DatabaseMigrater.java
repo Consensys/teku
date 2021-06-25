@@ -22,7 +22,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Consumer;
 import org.apache.commons.io.FileUtils;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
@@ -31,6 +30,7 @@ import tech.pegasys.teku.cli.options.Eth2NetworkOptions;
 import tech.pegasys.teku.cli.options.ValidatorClientDataOptions;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreDatabase;
@@ -41,7 +41,6 @@ public class DatabaseMigrater {
   private final DataStorageOptions dataStorageOptions;
   private final Eth2NetworkOptions eth2NetworkOptions;
   private final int batchSize;
-  private Optional<Path> migratedDatabasePath = Optional.empty();
   private final Spec spec;
   private KvStoreDatabase originalDatabase;
 
@@ -77,13 +76,11 @@ public class DatabaseMigrater {
   public void migrateDatabase(
       final DatabaseVersion sourceDatabaseVersion, final DatabaseVersion targetDatabaseVersion)
       throws DatabaseMigraterError {
-    if (migratedDatabasePath.isEmpty()) {
-      try {
-        duplicateBeaconFolderContents();
-      } catch (IOException ex) {
-        throw new DatabaseMigraterError(
-            "Failed to create new database structure: " + ex.getMessage());
-      }
+    try {
+      duplicateBeaconFolderContents();
+    } catch (IOException ex) {
+      throw new DatabaseMigraterError(
+          "Failed to create new database structure: " + ex.getMessage());
     }
 
     openDatabases(sourceDatabaseVersion, targetDatabaseVersion);
@@ -98,9 +95,11 @@ public class DatabaseMigrater {
 
   @VisibleForTesting
   void openDatabases(
-      final DatabaseVersion sourceDatabaseVersion, final DatabaseVersion targetDatabaseVersion) {
+      final DatabaseVersion sourceDatabaseVersion, final DatabaseVersion targetDatabaseVersion)
+      throws DatabaseMigraterError {
     final Path newDatabasePath = getNewBeaconFolderPath();
     final Path originalDatabasePath = dataDirLayout.getBeaconDataDirectory();
+
     statusUpdater.accept("Opening original database...");
     originalDatabase = createDatabase(originalDatabasePath, sourceDatabaseVersion);
     statusUpdater.accept("Creating a new database...");
@@ -163,7 +162,6 @@ public class DatabaseMigrater {
         }
       }
     }
-    migratedDatabasePath = Optional.of(newBeaconFolderPath);
   }
 
   @VisibleForTesting
@@ -177,7 +175,8 @@ public class DatabaseMigrater {
   }
 
   @VisibleForTesting
-  KvStoreDatabase createDatabase(final Path databasePath, DatabaseVersion databaseVersion) {
+  KvStoreDatabase createDatabase(final Path databasePath, DatabaseVersion databaseVersion)
+      throws DatabaseMigraterError {
     final VersionedDatabaseFactory databaseFactory =
         new VersionedDatabaseFactory(
             new NoOpMetricsSystem(),
@@ -188,7 +187,14 @@ public class DatabaseMigrater {
             eth2NetworkOptions.getNetworkConfiguration().getEth1DepositContractAddress(),
             dataStorageOptions.isStoreNonCanonicalBlocks(),
             spec);
-    return (KvStoreDatabase) databaseFactory.createDatabase();
+    final Database database = databaseFactory.createDatabase();
+    if (!(database instanceof KvStoreDatabase)) {
+      throw new DatabaseMigraterError(
+          "Expected the database at "
+              + databasePath.toFile()
+              + " to be a KV store, but it was not, not able to migrate data.");
+    }
+    return (KvStoreDatabase) database;
   }
 
   public Path getMovedOldBeaconFolderPath() {

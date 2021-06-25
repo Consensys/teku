@@ -91,7 +91,7 @@ public class DatabaseMigraterTest {
   }
 
   @Test
-  void shouldOpenDatabases(@TempDir Path tmpDir) throws IOException {
+  void shouldOpenDatabases(@TempDir Path tmpDir) throws IOException, DatabaseMigraterError {
     final DataDirLayout dataDirLayout = prepareTempDir(tmpDir, "5");
     final DatabaseMigrater migrater = getDatabaseMigrater(dataDirLayout);
 
