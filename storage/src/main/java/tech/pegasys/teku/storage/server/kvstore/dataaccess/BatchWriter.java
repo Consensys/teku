@@ -20,7 +20,7 @@ import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
 
 abstract class BatchWriter implements AutoCloseable {
-  private static final int OUTPUT_PER_TRANSACTION_COUNT = 10;
+  private static final int OUTPUT_PER_TRANSACTION_COUNT = 15;
   final KvStoreAccessor db;
 
   private final Consumer<String> logger;
