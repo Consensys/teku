@@ -153,7 +153,7 @@ public class MigrateDatabaseCommand implements Runnable {
     final DataDirLayout dataDirLayout = DataDirLayout.createFrom(dataOptions.getDataConfig());
 
     SUB_COMMAND_LOG.display(
-        "Current database path: " + dataDirLayout.getBeaconDataDirectory().resolve("db"));
+        "Current database path: " + dataDirLayout.getBeaconDataDirectory());
     SUB_COMMAND_LOG.display("Current Database Version: " + sourceDatabaseVersion.getValue());
   }
 
