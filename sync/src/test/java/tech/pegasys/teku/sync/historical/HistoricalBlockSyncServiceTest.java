@@ -70,6 +70,7 @@ public class HistoricalBlockSyncServiceTest {
   private final UInt64 batchSize = UInt64.valueOf(5);
   private final HistoricalBlockSyncService service =
       new HistoricalBlockSyncService(
+          spec,
           metricsSystem,
           storageUpdateChannel,
           asyncRunner,
@@ -364,7 +365,7 @@ public class HistoricalBlockSyncServiceTest {
     final Optional<SignedBeaconBlock> block =
         includeAnchorBlock ? Optional.of(anchorStateAndBlock.getBlock()) : Optional.empty();
     final AnchorPoint anchorPoint =
-        AnchorPoint.create(anchorCheckpoint, anchorStateAndBlock.getState(), block);
+        AnchorPoint.create(spec, anchorCheckpoint, anchorStateAndBlock.getState(), block);
     storageSystem.recentChainData().initializeFromAnchorPoint(anchorPoint, UInt64.ZERO);
 
     return anchorPoint;

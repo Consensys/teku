@@ -22,6 +22,7 @@ import static org.mockito.Mockito.when;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.BeforeEach;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
@@ -29,6 +30,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -37,12 +40,18 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
 
 public abstract class AbstractSyncTest {
+  protected final Spec spec = TestSpecFactory.createDefault();
   protected final Eth2Peer peer = mock(Eth2Peer.class);
   protected final BlockImporter blockImporter = mock(BlockImporter.class);
   protected final RecentChainData storageClient = mock(RecentChainData.class);
 
-  protected final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  protected final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   protected final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+
+  @BeforeEach
+  public void setup() {
+    when(storageClient.getSpec()).thenReturn(spec);
+  }
 
   @SuppressWarnings("unchecked")
   protected final ArgumentCaptor<RpcResponseListener<SignedBeaconBlock>>

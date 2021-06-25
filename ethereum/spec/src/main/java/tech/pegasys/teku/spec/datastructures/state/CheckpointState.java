@@ -20,6 +20,7 @@ import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
@@ -30,13 +31,16 @@ public class CheckpointState {
   private final BeaconState state;
 
   private CheckpointState(
-      final Checkpoint checkpoint, final BeaconBlockSummary block, final BeaconState state) {
+      final Spec spec,
+      final Checkpoint checkpoint,
+      final BeaconBlockSummary block,
+      final BeaconState state) {
     checkNotNull(checkpoint);
     checkNotNull(block);
     checkNotNull(state);
     checkArgument(checkpoint.getRoot().equals(block.getRoot()), "Block must match checkpoint root");
     checkArgument(
-        state.getSlot().equals(checkpoint.getEpochStartSlot()),
+        state.getSlot().equals(checkpoint.getEpochStartSlot(spec)),
         "State must be advanced to checkpoint epoch boundary slot");
 
     this.checkpoint = checkpoint;
@@ -45,8 +49,11 @@ public class CheckpointState {
   }
 
   public static CheckpointState create(
-      final Checkpoint checkpoint, final BeaconBlockSummary block, final BeaconState state) {
-    return new CheckpointState(checkpoint, block, state);
+      final Spec spec,
+      final Checkpoint checkpoint,
+      final BeaconBlockSummary block,
+      final BeaconState state) {
+    return new CheckpointState(spec, checkpoint, block, state);
   }
 
   public Checkpoint getCheckpoint() {

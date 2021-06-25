@@ -49,8 +49,8 @@ TARGET_AGGREGATORS_PER_COMMITTEE: 16
 RANDOM_SUBNETS_PER_VALIDATOR: 1
 # 2**8 (= 256)
 EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION: 256
-# 14 (estimate from Eth1 mainnet)
-SECONDS_PER_ETH1_BLOCK: 14
+# 1 (expect besu dev mode which creates blocks as fast as possible)
+SECONDS_PER_ETH1_BLOCK: 1
 
 
 # Deposit contract

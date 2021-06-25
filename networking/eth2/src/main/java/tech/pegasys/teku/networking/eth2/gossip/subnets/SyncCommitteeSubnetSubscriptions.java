@@ -25,6 +25,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncComm
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeSignature;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class SyncCommitteeSubnetSubscriptions extends CommitteeSubnetSubscriptions {
 
@@ -34,13 +35,14 @@ public class SyncCommitteeSubnetSubscriptions extends CommitteeSubnetSubscriptio
   private final ForkInfo forkInfo;
 
   public SyncCommitteeSubnetSubscriptions(
+      final RecentChainData recentChainData,
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final SchemaDefinitionsAltair schemaDefinitions,
       final AsyncRunner asyncRunner,
       final OperationProcessor<ValidateableSyncCommitteeSignature> processor,
       final ForkInfo forkInfo) {
-    super(gossipNetwork, gossipEncoding);
+    super(recentChainData, gossipNetwork, gossipEncoding);
     this.schemaDefinitions = schemaDefinitions;
     this.asyncRunner = asyncRunner;
     this.processor = processor;
@@ -60,6 +62,7 @@ public class SyncCommitteeSubnetSubscriptions extends CommitteeSubnetSubscriptio
         message ->
             processor.process(ValidateableSyncCommitteeSignature.fromNetwork(message, subnetId));
     return new Eth2TopicHandler<>(
+        recentChainData,
         asyncRunner,
         convertingProcessor,
         gossipEncoding,

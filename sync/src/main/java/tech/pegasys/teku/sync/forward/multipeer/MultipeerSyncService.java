@@ -95,6 +95,7 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
             batchSync);
     final PeerChainTracker peerChainTracker =
         new PeerChainTracker(
+            recentChainData.getSpec(),
             eventThread,
             p2pNetwork,
             new SyncSourceFactory(asyncRunner, timeProvider),

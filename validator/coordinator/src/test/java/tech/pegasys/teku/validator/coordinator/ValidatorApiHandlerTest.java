@@ -523,7 +523,8 @@ class ValidatorApiHandlerTest {
     when(chainDataClient.getCheckpointState(EPOCH, blockAndState))
         .thenReturn(
             SafeFuture.completedFuture(
-                CheckpointState.create(new Checkpoint(EPOCH, block.getRoot()), block, rightState)));
+                CheckpointState.create(
+                    spec, new Checkpoint(EPOCH, block.getRoot()), block, rightState)));
     when(forkChoiceTrigger.prepareForAttestationProduction(slot)).thenReturn(SafeFuture.COMPLETE);
 
     final int committeeIndex = 0;
@@ -557,7 +558,7 @@ class ValidatorApiHandlerTest {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
     final Optional<Attestation> aggregate = Optional.of(dataStructureUtil.randomAttestation());
     when(attestationPool.createAggregateFor(eq(attestationData.hashTreeRoot())))
-        .thenReturn(aggregate.map(ValidateableAttestation::from));
+        .thenReturn(aggregate.map(attestation -> ValidateableAttestation.from(spec, attestation)));
 
     assertThat(
             validatorApiHandler.createAggregate(
@@ -623,7 +624,7 @@ class ValidatorApiHandlerTest {
         .thenReturn(completedFuture(SUCCESSFUL));
     validatorApiHandler.sendSignedAttestation(attestation);
 
-    verify(attestationManager).onAttestation(ValidateableAttestation.from(attestation));
+    verify(attestationManager).onAttestation(ValidateableAttestation.from(spec, attestation));
   }
 
   @Test
@@ -695,7 +696,7 @@ class ValidatorApiHandlerTest {
     validatorApiHandler.sendAggregateAndProof(aggregateAndProof);
 
     verify(attestationManager)
-        .onAttestation(ValidateableAttestation.aggregateFromValidator(aggregateAndProof));
+        .onAttestation(ValidateableAttestation.aggregateFromValidator(spec, aggregateAndProof));
   }
 
   @Test

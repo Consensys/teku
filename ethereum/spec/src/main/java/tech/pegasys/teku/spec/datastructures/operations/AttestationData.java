@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.datastructures.operations;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.ssz.containers.Container5;
 import tech.pegasys.teku.ssz.containers.ContainerSchema5;
@@ -67,10 +68,10 @@ public class AttestationData
     this(slot, data.getIndex(), data.getBeacon_block_root(), data.getSource(), data.getTarget());
   }
 
-  public UInt64 getEarliestSlotForForkChoice() {
+  public UInt64 getEarliestSlotForForkChoice(final Spec spec) {
     // Attestations can't be processed by fork choice until their slot is in the past and until we
     // are in the same epoch as their target.
-    return getSlot().plus(UInt64.ONE).max(getTarget().getEpochStartSlot());
+    return getSlot().plus(UInt64.ONE).max(getTarget().getEpochStartSlot(spec));
   }
 
   public UInt64 getSlot() {

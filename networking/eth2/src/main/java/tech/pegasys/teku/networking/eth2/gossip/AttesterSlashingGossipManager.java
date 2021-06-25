@@ -21,10 +21,12 @@ import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.ssz.schema.SszSchema;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class AttesterSlashingGossipManager extends AbstractGossipManager<AttesterSlashing> {
 
   public AttesterSlashingGossipManager(
+      final RecentChainData recentChainData,
       final AsyncRunner asyncRunner,
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
@@ -32,6 +34,7 @@ public class AttesterSlashingGossipManager extends AbstractGossipManager<Atteste
       final OperationProcessor<AttesterSlashing> processor,
       final GossipPublisher<AttesterSlashing> publisher) {
     super(
+        recentChainData,
         GossipTopicName.ATTESTER_SLASHING,
         asyncRunner,
         gossipNetwork,

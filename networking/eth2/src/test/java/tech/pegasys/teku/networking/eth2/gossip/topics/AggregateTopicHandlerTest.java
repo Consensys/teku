@@ -14,42 +14,30 @@
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import io.libp2p.core.pubsub.ValidationResult;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
-import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.AggregateAttestationTopicHandler;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.type.Bytes4;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
-public class AggregateTopicHandlerTest {
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+public class AggregateTopicHandlerTest extends AbstractTopicHandlerTest<ValidateableAttestation> {
 
-  @SuppressWarnings("unchecked")
-  private final OperationProcessor<ValidateableAttestation> processor =
-      mock(OperationProcessor.class);
-
-  private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
-  private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
-  private final Eth2TopicHandler<?> topicHandler =
-      AggregateAttestationTopicHandler.createHandler(
-          asyncRunner,
-          processor,
-          gossipEncoding,
-          dataStructureUtil.randomForkInfo().getForkDigest());
+  @Override
+  protected Eth2TopicHandler<?> createHandler(final Bytes4 forkDigest) {
+    return AggregateAttestationTopicHandler.createHandler(
+        recentChainData, asyncRunner, processor, gossipEncoding, forkDigest);
+  }
 
   @Test
   public void handleMessage_validAggregate() {
     final ValidateableAttestation aggregate =
         ValidateableAttestation.aggregateFromValidator(
-            dataStructureUtil.randomSignedAggregateAndProof());
+            spec, dataStructureUtil.randomSignedAggregateAndProof());
     when(processor.process(aggregate))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
@@ -65,7 +53,7 @@ public class AggregateTopicHandlerTest {
   public void handleMessage_savedForFuture() {
     final ValidateableAttestation aggregate =
         ValidateableAttestation.aggregateFromValidator(
-            dataStructureUtil.randomSignedAggregateAndProof());
+            spec, dataStructureUtil.randomSignedAggregateAndProof());
     when(processor.process(aggregate))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
 
@@ -81,7 +69,7 @@ public class AggregateTopicHandlerTest {
   public void handleMessage_ignoredAggregate() {
     final ValidateableAttestation aggregate =
         ValidateableAttestation.aggregateFromValidator(
-            dataStructureUtil.randomSignedAggregateAndProof());
+            spec, dataStructureUtil.randomSignedAggregateAndProof());
     when(processor.process(aggregate))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.IGNORE));
 
@@ -97,7 +85,7 @@ public class AggregateTopicHandlerTest {
   public void handleMessage_invalidAggregate() {
     final ValidateableAttestation aggregate =
         ValidateableAttestation.aggregateFromValidator(
-            dataStructureUtil.randomSignedAggregateAndProof());
+            spec, dataStructureUtil.randomSignedAggregateAndProof());
     when(processor.process(aggregate))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.REJECT));
 
@@ -114,7 +102,7 @@ public class AggregateTopicHandlerTest {
     final Bytes4 forkDigest = Bytes4.fromHexString("0x11223344");
     Eth2TopicHandler<?> topicHandler =
         AggregateAttestationTopicHandler.createHandler(
-            asyncRunner, processor, gossipEncoding, forkDigest);
+            recentChainData, asyncRunner, processor, gossipEncoding, forkDigest);
     assertThat(topicHandler.getTopic())
         .isEqualTo("/eth2/11223344/beacon_aggregate_and_proof/ssz_snappy");
   }

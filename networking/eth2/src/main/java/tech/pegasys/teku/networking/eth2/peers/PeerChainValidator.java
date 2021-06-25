@@ -26,6 +26,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
@@ -36,6 +37,7 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 public class PeerChainValidator {
   private static final Logger LOG = LogManager.getLogger();
 
+  private final Spec spec;
   private final CombinedChainDataClient chainDataClient;
   private final Counter validationStartedCounter;
   private final Counter chainValidCounter;
@@ -46,9 +48,11 @@ public class PeerChainValidator {
   private final AtomicBoolean requiredCheckpointVerified = new AtomicBoolean(false);
 
   private PeerChainValidator(
+      final Spec spec,
       final MetricsSystem metricsSystem,
       final CombinedChainDataClient chainDataClient,
       final Optional<Checkpoint> requiredCheckpoint) {
+    this.spec = spec;
     this.chainDataClient = chainDataClient;
     this.requiredCheckpoint = requiredCheckpoint;
 
@@ -65,10 +69,11 @@ public class PeerChainValidator {
   }
 
   public static PeerChainValidator create(
+      final Spec spec,
       final MetricsSystem metricsSystem,
       final CombinedChainDataClient chainDataClient,
       final Optional<Checkpoint> requiredCheckpoint) {
-    return new PeerChainValidator(metricsSystem, chainDataClient, requiredCheckpoint);
+    return new PeerChainValidator(spec, metricsSystem, chainDataClient, requiredCheckpoint);
   }
 
   public SafeFuture<Boolean> validate(final Eth2Peer peer, final PeerStatus newStatus) {
@@ -254,7 +259,7 @@ public class PeerChainValidator {
   private SafeFuture<Boolean> verifyPeersFinalizedCheckpointIsCanonical(
       final Eth2Peer peer, final PeerStatus status) {
     final Checkpoint remoteFinalizedCheckpoint = status.getFinalizedCheckpoint();
-    final UInt64 remoteFinalizedSlot = remoteFinalizedCheckpoint.getEpochStartSlot();
+    final UInt64 remoteFinalizedSlot = remoteFinalizedCheckpoint.getEpochStartSlot(spec);
     return chainDataClient
         .getBlockInEffectAtSlot(remoteFinalizedSlot)
         .thenApply(

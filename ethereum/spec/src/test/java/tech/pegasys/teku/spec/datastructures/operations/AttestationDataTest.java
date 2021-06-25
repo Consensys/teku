@@ -24,12 +24,15 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.util.config.Constants;
 
 class AttestationDataTest {
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final Spec spec = TestSpecFactory.createDefault();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private UInt64 slot = dataStructureUtil.randomUInt64();
   private UInt64 index = dataStructureUtil.randomUInt64();
   private Bytes32 beaconBlockRoot = dataStructureUtil.randomBytes32();
@@ -63,7 +66,7 @@ class AttestationDataTest {
             new Checkpoint(ONE, Bytes32.ZERO),
             new Checkpoint(ONE, Bytes32.ZERO));
 
-    assertThat(data.getEarliestSlotForForkChoice()).isEqualTo(UInt64.valueOf(61));
+    assertThat(data.getEarliestSlotForForkChoice(spec)).isEqualTo(UInt64.valueOf(61));
   }
 
   @Test
@@ -77,7 +80,7 @@ class AttestationDataTest {
             new Checkpoint(ONE, Bytes32.ZERO),
             target);
 
-    assertThat(data.getEarliestSlotForForkChoice()).isEqualTo(target.getEpochStartSlot());
+    assertThat(data.getEarliestSlotForForkChoice(spec)).isEqualTo(target.getEpochStartSlot(spec));
   }
 
   @Test

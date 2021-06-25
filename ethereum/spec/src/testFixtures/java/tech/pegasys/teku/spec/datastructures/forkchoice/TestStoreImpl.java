@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -32,6 +33,7 @@ import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class TestStoreImpl implements MutableStore, VoteUpdater {
+  private final Spec spec;
   protected UInt64 time;
   protected UInt64 genesis_time;
   protected final Optional<Checkpoint> initialCheckpoint;
@@ -44,6 +46,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   protected Map<UInt64, VoteTracker> votes;
 
   TestStoreImpl(
+      final Spec spec,
       final UInt64 time,
       final UInt64 genesis_time,
       final Optional<Checkpoint> initialCheckpoint,
@@ -54,6 +57,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
       final Map<Bytes32, BeaconState> block_states,
       final Map<Checkpoint, BeaconState> checkpoint_states,
       final Map<UInt64, VoteTracker> votes) {
+    this.spec = spec;
     this.time = time;
     this.genesis_time = genesis_time;
     this.initialCheckpoint = initialCheckpoint;
@@ -101,7 +105,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   public AnchorPoint getLatestFinalized() {
     final SignedBeaconBlock block = getSignedBlock(finalized_checkpoint.getRoot());
     final BeaconState state = getBlockState(finalized_checkpoint.getRoot());
-    return AnchorPoint.create(finalized_checkpoint, block, state);
+    return AnchorPoint.create(spec, finalized_checkpoint, block, state);
   }
 
   @Override
@@ -200,13 +204,14 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   public SafeFuture<CheckpointState> retrieveFinalizedCheckpointAndState() {
     final BeaconState state = getCheckpointState(finalized_checkpoint).orElseThrow();
     final SignedBeaconBlock block = getSignedBlock(finalized_checkpoint.getRoot());
-    return SafeFuture.completedFuture(CheckpointState.create(finalized_checkpoint, block, state));
+    return SafeFuture.completedFuture(
+        CheckpointState.create(spec, finalized_checkpoint, block, state));
   }
 
   @Override
   public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(
       final Checkpoint checkpoint, final BeaconState latestStateAtEpoch) {
-    if (!latestStateAtEpoch.getSlot().equals(checkpoint.getEpochStartSlot())) {
+    if (!latestStateAtEpoch.getSlot().equals(checkpoint.getEpochStartSlot(spec))) {
       throw new UnsupportedOperationException("Checkpoint state calculation not supported");
     }
     return SafeFuture.completedFuture(Optional.of(latestStateAtEpoch));

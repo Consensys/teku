@@ -26,6 +26,10 @@ public class Eth1Vote implements Comparable<Eth1Vote> {
     vote++;
   }
 
+  public int getVoteCount() {
+    return vote;
+  }
+
   // Greater vote number, or in case of a tie,
   // smallest index number wins
   @Override
