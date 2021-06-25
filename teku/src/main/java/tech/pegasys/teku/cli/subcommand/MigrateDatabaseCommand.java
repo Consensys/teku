@@ -111,7 +111,8 @@ public class MigrateDatabaseCommand implements Runnable {
       SUB_COMMAND_LOG.display("SUCCESS.");
       SUB_COMMAND_LOG.display(
           "The original database is stored in: " + dbMigrater.getMovedOldBeaconFolderPath());
-      SUB_COMMAND_LOG.display("This can be removed once you have confirmed the new database works.");
+      SUB_COMMAND_LOG.display(
+          "This can be removed once you have confirmed the new database works.");
     } catch (DatabaseMigraterError error) {
       SUB_COMMAND_LOG.error("FAILED to migrate database: " + error.getMessage());
       SUB_COMMAND_LOG.display(
@@ -152,8 +153,7 @@ public class MigrateDatabaseCommand implements Runnable {
   private void displaySourceDatabaseDetails(final DatabaseVersion sourceDatabaseVersion) {
     final DataDirLayout dataDirLayout = DataDirLayout.createFrom(dataOptions.getDataConfig());
 
-    SUB_COMMAND_LOG.display(
-        "Current database path: " + dataDirLayout.getBeaconDataDirectory());
+    SUB_COMMAND_LOG.display("Current database path: " + dataDirLayout.getBeaconDataDirectory());
     SUB_COMMAND_LOG.display("Current Database Version: " + sourceDatabaseVersion.getValue());
   }
 
