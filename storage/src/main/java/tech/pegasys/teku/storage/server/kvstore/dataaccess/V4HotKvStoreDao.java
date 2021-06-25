@@ -15,11 +15,9 @@ package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 
 import com.google.common.base.Preconditions;
 import com.google.errorprone.annotations.MustBeClosed;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -155,7 +153,7 @@ public class V4HotKvStoreDao implements KvStoreHotDao, KvStoreEth1Dao, KvStorePr
   @Override
   public void ingest(
       final KvStoreHotDao hotDao, final int batchSize, final Consumer<String> logger) {
-    Preconditions.checkArgument(batchSize > 1, "Batch size must be greater than 1 element");
+    Preconditions.checkArgument(batchSize > 0, "Batch size must be at least 1 (MB)");
     Preconditions.checkArgument(hotDao instanceof V4HotKvStoreDao);
 
     final Map<String, KvStoreVariable<?>> newVariables = schema.getVariableMap();
@@ -180,38 +178,15 @@ public class V4HotKvStoreDao implements KvStoreHotDao, KvStoreEth1Dao, KvStorePr
           ((V4HotKvStoreDao) hotDao).schema.getColumnMap();
       for (String key : newColumns.keySet()) {
         logger.accept(String.format("copy column %s", key));
-        final List<ColumnEntry<Bytes, Bytes>> buffer = new ArrayList<>();
-        final AtomicInteger counter = new AtomicInteger(0);
         try (final Stream<ColumnEntry<Bytes, Bytes>> oldEntryStream =
-            hotDao.streamRawColumn(oldColumns.get(key))) {
-          oldEntryStream.forEach(
-              entry -> {
-                buffer.add(entry);
-                if (buffer.size() >= batchSize) {
-                  pushColumnEntryBatch(newColumns.get(key), buffer);
-                  buffer.clear();
-                }
-                if (counter.incrementAndGet() % 100_000 == 0) {
-                  logger.accept(String.format(" -- %,d...", counter.get()));
-                }
-              });
+                hotDao.streamRawColumn(oldColumns.get(key));
+            HotStoreBatchWriter batchWriter =
+                new HotStoreBatchWriter(batchSize, logger, db, schema)) {
+          oldEntryStream.forEach(entry -> batchWriter.add(newColumns.get(key), entry));
         }
-        if (buffer.size() > 0) {
-          pushColumnEntryBatch(newColumns.get(key), buffer);
-          buffer.clear();
-        }
-        logger.accept(String.format(" => Inserted %,d rows", counter.get()));
       }
     } else {
       logger.accept("No column data to copy from hot store.");
-    }
-  }
-
-  private <K, V> void pushColumnEntryBatch(
-      final KvStoreColumn<K, V> column, final List<ColumnEntry<Bytes, Bytes>> buffer) {
-    try (V4HotUpdater updater = new V4HotUpdater(db, schema)) {
-      buffer.forEach(entry -> updater.transaction.putRaw(column, entry.getKey(), entry.getValue()));
-      updater.commit();
     }
   }
 
@@ -244,10 +219,14 @@ public class V4HotKvStoreDao implements KvStoreHotDao, KvStoreEth1Dao, KvStorePr
     db.close();
   }
 
-  private static class V4HotUpdater implements HotUpdater, Eth1Updater, ProtoArrayUpdater {
+  static class V4HotUpdater implements HotUpdater, Eth1Updater, ProtoArrayUpdater {
 
     private final KvStoreTransaction transaction;
     private final SchemaHot schema;
+
+    KvStoreTransaction getTransaction() {
+      return transaction;
+    }
 
     V4HotUpdater(final KvStoreAccessor db, final SchemaHot schema) {
       this.transaction = db.startTransaction();

@@ -15,14 +15,11 @@ package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 
 import com.google.common.base.Preconditions;
 import com.google.errorprone.annotations.MustBeClosed;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -151,36 +148,13 @@ public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
           ((V4FinalizedKvStoreDao) finalizedDao).schema.getColumnMap();
       for (String key : newColumns.keySet()) {
         logger.accept(String.format("Copy column %s", key));
-        final List<ColumnEntry<Bytes, Bytes>> buffer = new ArrayList<>();
-        final AtomicInteger counter = new AtomicInteger(0);
         try (final Stream<ColumnEntry<Bytes, Bytes>> oldEntryStream =
-            finalizedDao.streamRawColumn(oldColumns.get(key))) {
-          oldEntryStream.forEach(
-              entry -> {
-                buffer.add(entry);
-                if (buffer.size() >= batchSize) {
-                  pushColumnEntryBatch(newColumns.get(key), buffer);
-                  buffer.clear();
-                }
-                if (counter.incrementAndGet() % 100_000 == 0) {
-                  logger.accept(String.format(" -- %,d...", counter.get()));
-                }
-              });
+                finalizedDao.streamRawColumn(oldColumns.get(key));
+            FinalizedStoreBatchWriter batchWriter =
+                new FinalizedStoreBatchWriter(batchSize, logger, db, schema)) {
+          oldEntryStream.forEach(entry -> batchWriter.add(newColumns.get(key), entry));
         }
-        if (buffer.size() > 0) {
-          pushColumnEntryBatch(newColumns.get(key), buffer);
-          buffer.clear();
-        }
-        logger.accept(String.format(" => Inserted %,d rows", counter.get()));
       }
-    }
-  }
-
-  private <K, V> void pushColumnEntryBatch(
-      final KvStoreColumn<K, V> column, final List<ColumnEntry<Bytes, Bytes>> buffer) {
-    try (V4FinalizedUpdater updater = new V4FinalizedUpdater(db, schema, UInt64.ONE)) {
-      buffer.forEach(entry -> updater.transaction.putRaw(column, entry.getKey(), entry.getValue()));
-      updater.commit();
     }
   }
 
@@ -208,13 +182,17 @@ public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
     return new V4FinalizedKvStoreDao.V4FinalizedUpdater(db, schema, stateStorageFrequency);
   }
 
-  private static class V4FinalizedUpdater implements FinalizedUpdater {
+  static class V4FinalizedUpdater implements FinalizedUpdater {
     private final KvStoreTransaction transaction;
     private final KvStoreAccessor db;
     private final SchemaFinalized schema;
     private final UInt64 stateStorageFrequency;
     private Optional<UInt64> lastStateStoredSlot = Optional.empty();
     private boolean loadedLastStoreState = false;
+
+    KvStoreTransaction getTransaction() {
+      return transaction;
+    }
 
     V4FinalizedUpdater(
         final KvStoreAccessor db,

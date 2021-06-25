@@ -75,9 +75,9 @@ public class MigrateDatabaseCommand implements Runnable {
       names = {"--batch-size"},
       paramLabel = "<integer>",
       hidden = true,
-      description = "Objects per transaction (Default: 500)",
+      description = "MB per transaction (Default: 50)",
       arity = "1")
-  private Integer batchSize = 500;
+  private Integer batchSize = 50;
 
   @Override
   public void run() {
