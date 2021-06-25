@@ -54,12 +54,11 @@ public class MigrateDatabaseCommand implements Runnable {
   @CommandLine.Mixin(name = "Data")
   private ValidatorClientDataOptions dataOptions;
 
-  // use case - I have a rocksdb database and want to update to the latest leveldb database version
-
-  // i have leveldb 1 and want to have leveldb2
-
-  // i have updated to the latest db but I've decided i want to go back to an older database format
-  // (eg. testing upgrades!)
+  // Use Cases
+  // - I have a rocksdb database and want to update to the latest leveldb database version
+  // - I have leveldb 1 and want to have leveldb2
+  // - I have updated to the latest db but I've decided i want to go back to an older database format
+  //   (eg. testing upgrades!)
 
   @CommandLine.Option(
       names = {"--to"},
@@ -135,6 +134,7 @@ public class MigrateDatabaseCommand implements Runnable {
     SUB_COMMAND_LOG.display(
         " - Once the new database is tested successfully, you can remove the old database");
     SUB_COMMAND_LOG.display("This operation will need to happen while teku is not running.");
+    SUB_COMMAND_LOG.display("");
     if (!confirmYes("Proceed with database migration (yes/no)?")) {
       SUB_COMMAND_LOG.display("Operation cancelled.");
       System.exit(0);
@@ -151,18 +151,10 @@ public class MigrateDatabaseCommand implements Runnable {
 
   private void displaySourceDatabaseDetails(final DatabaseVersion sourceDatabaseVersion) {
     final DataDirLayout dataDirLayout = DataDirLayout.createFrom(dataOptions.getDataConfig());
-    final long size = getFolderSize(dataDirLayout.getBeaconDataDirectory().resolve("db").toFile());
-    String[] units = new String[] {"B", "KB", "MB", "GB", "TB"};
-    int unitIndex = (int) (Math.log10(size) / 3);
-    double unitValue = 1 << (unitIndex * 10);
-
-    String readableSize =
-        new DecimalFormat("#,##0.#").format(size / unitValue) + " " + units[unitIndex];
 
     SUB_COMMAND_LOG.display(
-        "     Current database path: " + dataDirLayout.getBeaconDataDirectory().resolve("db"));
-    SUB_COMMAND_LOG.display("  Current Database Version: " + sourceDatabaseVersion.getValue());
-    SUB_COMMAND_LOG.display("        Current Disk usage: " + readableSize);
+        "Current database path: " + dataDirLayout.getBeaconDataDirectory().resolve("db"));
+    SUB_COMMAND_LOG.display("Current Database Version: " + sourceDatabaseVersion.getValue());
   }
 
   private DatabaseVersion validateSourceDatabase(final DatabaseVersion databaseVersion) {
@@ -190,21 +182,5 @@ public class MigrateDatabaseCommand implements Runnable {
       // NOT REACHED
       return DatabaseVersion.DEFAULT_VERSION;
     }
-  }
-
-  private long getFolderSize(File folder) {
-    long length = 0;
-    File[] files = folder.listFiles();
-
-    int count = files.length;
-
-    for (int i = 0; i < count; i++) {
-      if (files[i].isFile()) {
-        length += files[i].length();
-      } else {
-        length += getFolderSize(files[i]);
-      }
-    }
-    return length;
   }
 }

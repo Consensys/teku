@@ -23,6 +23,8 @@ import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
+
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.io.FileUtils;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.teku.cli.options.DataStorageOptions;
@@ -95,6 +97,7 @@ public class DatabaseMigrater {
     swapActiveDatabase();
   }
 
+  @VisibleForTesting
   void openDatabases(
       final DatabaseVersion sourceDatabaseVersion, final DatabaseVersion targetDatabaseVersion) {
     final Path newDatabasePath = getNewBeaconFolderPath();
@@ -105,6 +108,7 @@ public class DatabaseMigrater {
     newDatabase = createDatabase(newDatabasePath, targetDatabaseVersion);
   }
 
+  @VisibleForTesting
   void swapActiveDatabase() throws DatabaseMigraterError {
     try {
       Files.move(
@@ -128,6 +132,7 @@ public class DatabaseMigrater {
     }
   }
 
+  @VisibleForTesting
   void closeDatabases() {
     try {
       originalDatabase.close();
@@ -141,6 +146,7 @@ public class DatabaseMigrater {
     }
   }
 
+  @VisibleForTesting
   void duplicateBeaconFolderContents() throws IOException {
     final Path newBeaconFolderPath = getNewBeaconFolderPath();
     if (newBeaconFolderPath.toFile().isDirectory()) {
@@ -161,6 +167,7 @@ public class DatabaseMigrater {
     migratedDatabasePath = Optional.of(newBeaconFolderPath);
   }
 
+  @VisibleForTesting
   void migrateData() throws DatabaseMigraterError {
     try {
       newDatabase.ingestDatabase(originalDatabase, batchSize, statusUpdater);
@@ -170,6 +177,7 @@ public class DatabaseMigrater {
     }
   }
 
+  @VisibleForTesting
   KvStoreDatabase createDatabase(final Path databasePath, DatabaseVersion databaseVersion) {
     final VersionedDatabaseFactory databaseFactory =
         new VersionedDatabaseFactory(
