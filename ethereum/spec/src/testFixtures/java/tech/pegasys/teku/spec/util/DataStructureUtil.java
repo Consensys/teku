@@ -851,7 +851,7 @@ public final class DataStructureUtil {
     final BeaconBlockAndState blockAndState =
         randomBlockAndState(
             slot, stateBuilderPhase0().slot(slot).fork(currentFork).build(), randomBytes32());
-    return AnchorPoint.fromInitialBlockAndState(toSigned(blockAndState));
+    return AnchorPoint.fromInitialBlockAndState(spec, toSigned(blockAndState));
   }
 
   public AnchorPoint createAnchorFromState(final BeaconState anchorState) {
