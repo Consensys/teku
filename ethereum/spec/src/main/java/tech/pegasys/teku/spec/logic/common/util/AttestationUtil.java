@@ -148,10 +148,15 @@ public class AttestationUtil {
       return completedFuture(AttestationProcessingResult.SUCCESSFUL);
     }
 
-    IndexedAttestation indexedAttestation =
-        getIndexedAttestation(state, attestation.getAttestation());
-    attestation.setIndexedAttestation(indexedAttestation);
-    return isValidIndexedAttestationAsync(state, indexedAttestation, blsSignatureVerifier)
+    return SafeFuture.of(
+            () -> {
+              // getIndexedAttestation() throws, so wrap it in a future
+              IndexedAttestation indexedAttestation =
+                  getIndexedAttestation(state, attestation.getAttestation());
+              attestation.setIndexedAttestation(indexedAttestation);
+              return indexedAttestation;
+            })
+        .thenCompose(att -> isValidIndexedAttestationAsync(state, att, blsSignatureVerifier))
         .thenApply(
             result -> {
               if (result.isSuccessful()) {
