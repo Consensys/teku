@@ -14,7 +14,6 @@
 package tech.pegasys.teku.statetransition.validation;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -39,7 +38,6 @@ public class SignatureVerificationService extends Service implements AsyncBLSSig
 
   private static final int QUEUE_CAPACITY = 1000;
   private static final int MAX_BATCH_SIZE = 50;
-  private static final Duration INACTIVITY_PAUSE = Duration.ofMillis(200);
 
   private final int numThreads;
   private final int maxBatchSize;
