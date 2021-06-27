@@ -185,6 +185,6 @@ public class BlstBLS12381 implements BLS12381 {
   static BigInteger nextBatchRandomMultiplier() {
     byte[] scalarBytes = new byte[BATCH_RANDOM_BYTES];
     getRND().nextBytes(scalarBytes);
-    return new BigInteger(1, scalarBytes);
+    return new BigInteger(1, scalarBytes).add(BigInteger.ONE);
   }
 }
