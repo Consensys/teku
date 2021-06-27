@@ -106,9 +106,13 @@ public class SignatureVerificationService extends Service implements AsyncBLSSig
   private List<SignatureTask> waitForBatch() {
     final List<SignatureTask> tasks = new ArrayList<>();
     try {
+      int batchSize = maxBatchSize;
       final SignatureTask firstTask = batchSignatureTasks.poll(30, TimeUnit.SECONDS);
-      tasks.add(firstTask);
-      batchSignatureTasks.drainTo(tasks, maxBatchSize - 1);
+      if (firstTask != null) {
+        tasks.add(firstTask);
+        batchSize -= 1;
+      }
+      batchSignatureTasks.drainTo(tasks, batchSize);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
     }
