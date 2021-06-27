@@ -49,7 +49,7 @@ public class SignatureVerificationServiceTest {
       new SignatureVerificationService(asyncRunnerFactory, numThreads, queueCapacity, batchSize);
 
   @Test
-  public void start_shouldQueueTAsks() {
+  public void start_shouldQueueTasks() {
     startService();
     assertThat(getRunner().countDelayedActions()).isEqualTo(numThreads);
   }
