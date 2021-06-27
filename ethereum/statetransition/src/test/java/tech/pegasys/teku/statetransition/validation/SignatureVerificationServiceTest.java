@@ -198,6 +198,7 @@ public class SignatureVerificationServiceTest {
     }
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   private void fillQueue() {
     for (int i = 0; i < queueCapacity; i++) {
       executeValidVerify(0, i);
