@@ -136,6 +136,9 @@ public class SignatureVerificationService extends Service implements AsyncBLSSig
       for (SignatureTask task : tasks) {
         task.result.complete(true);
       }
+    } else if (tasks.size() == 1) {
+      // We only had 1 signature, so it must be invalid
+      tasks.get(0).result.complete(false);
     } else {
       // Validate each signature individually
       for (SignatureTask task : tasks) {
