@@ -65,7 +65,8 @@ public abstract class AbstractNode implements Node {
     this.eventChannels = new EventChannels(subscriberExceptionHandler, metricsSystem);
     final EventBus eventBus = new AsyncEventBus(threadPool, subscriberExceptionHandler);
 
-    asyncRunnerFactory = new AsyncRunnerFactory(new MetricTrackingExecutorFactory(metricsSystem));
+    asyncRunnerFactory =
+        AsyncRunnerFactory.createDefault(new MetricTrackingExecutorFactory(metricsSystem));
     serviceConfig =
         new ServiceConfig(
             asyncRunnerFactory,

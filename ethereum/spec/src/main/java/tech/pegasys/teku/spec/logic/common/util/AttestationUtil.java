@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic.common.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.stream.Collectors.toList;
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 
 import com.google.common.collect.Comparators;
 import java.util.Comparator;
@@ -27,6 +28,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
@@ -131,25 +133,47 @@ public class AttestationUtil {
       BeaconState state,
       ValidateableAttestation attestation,
       BLSSignatureVerifier blsSignatureVerifier) {
+    final SafeFuture<AttestationProcessingResult> result =
+        isValidIndexedAttestationAsync(
+            state, attestation, AsyncBLSSignatureVerifier.wrap(blsSignatureVerifier));
+
+    return result.getImmediately();
+  }
+
+  public SafeFuture<AttestationProcessingResult> isValidIndexedAttestationAsync(
+      BeaconState state,
+      ValidateableAttestation attestation,
+      AsyncBLSSignatureVerifier blsSignatureVerifier) {
     if (attestation.isValidIndexedAttestation()) {
-      return AttestationProcessingResult.SUCCESSFUL;
-    } else {
-      try {
-        IndexedAttestation indexedAttestation =
-            getIndexedAttestation(state, attestation.getAttestation());
-        attestation.setIndexedAttestation(indexedAttestation);
-        AttestationProcessingResult result =
-            isValidIndexedAttestation(state, indexedAttestation, blsSignatureVerifier);
-        if (result.isSuccessful()) {
-          attestation.saveCommitteeShufflingSeed(state);
-          attestation.setValidIndexedAttestation();
-        }
-        return result;
-      } catch (IllegalArgumentException e) {
-        LOG.debug("on_attestation: Attestation is not valid: ", e);
-        return AttestationProcessingResult.invalid(e.getMessage());
-      }
+      return completedFuture(AttestationProcessingResult.SUCCESSFUL);
     }
+
+    return SafeFuture.of(
+            () -> {
+              // getIndexedAttestation() throws, so wrap it in a future
+              IndexedAttestation indexedAttestation =
+                  getIndexedAttestation(state, attestation.getAttestation());
+              attestation.setIndexedAttestation(indexedAttestation);
+              return indexedAttestation;
+            })
+        .thenCompose(att -> isValidIndexedAttestationAsync(state, att, blsSignatureVerifier))
+        .thenApply(
+            result -> {
+              if (result.isSuccessful()) {
+                attestation.saveCommitteeShufflingSeed(state);
+                attestation.setValidIndexedAttestation();
+              }
+              return result;
+            })
+        .exceptionally(
+            err -> {
+              if (err.getCause() instanceof IllegalArgumentException) {
+                LOG.debug("on_attestation: Attestation is not valid: ", err);
+                return AttestationProcessingResult.invalid(err.getMessage());
+              } else {
+                throw new RuntimeException(err);
+              }
+            });
   }
 
   /**
@@ -169,11 +193,23 @@ public class AttestationUtil {
       BeaconState state,
       IndexedAttestation indexed_attestation,
       BLSSignatureVerifier signatureVerifier) {
+    final SafeFuture<AttestationProcessingResult> result =
+        isValidIndexedAttestationAsync(
+            state, indexed_attestation, AsyncBLSSignatureVerifier.wrap(signatureVerifier));
+
+    return result.getImmediately();
+  }
+
+  public SafeFuture<AttestationProcessingResult> isValidIndexedAttestationAsync(
+      BeaconState state,
+      IndexedAttestation indexed_attestation,
+      AsyncBLSSignatureVerifier signatureVerifier) {
     SszUInt64List indices = indexed_attestation.getAttesting_indices();
 
     if (indices.isEmpty()
         || !Comparators.isInStrictOrder(indices.asListUnboxed(), Comparator.naturalOrder())) {
-      return AttestationProcessingResult.invalid("Attesting indices are not sorted");
+      return completedFuture(
+          AttestationProcessingResult.invalid("Attesting indices are not sorted"));
     }
 
     List<BLSPublicKey> pubkeys =
@@ -182,8 +218,8 @@ public class AttestationUtil {
             .flatMap(i -> beaconStateAccessors.getValidatorPubKey(state, i).stream())
             .collect(toList());
     if (pubkeys.size() < indices.size()) {
-      return AttestationProcessingResult.invalid(
-          "Attesting indices include non-existent validator");
+      return completedFuture(
+          AttestationProcessingResult.invalid("Attesting indices include non-existent validator"));
     }
 
     BLSSignature signature = indexed_attestation.getSignature();
@@ -192,11 +228,18 @@ public class AttestationUtil {
             state, Domain.BEACON_ATTESTER, indexed_attestation.getData().getTarget().getEpoch());
     Bytes signing_root = miscHelpers.computeSigningRoot(indexed_attestation.getData(), domain);
 
-    if (!signatureVerifier.verify(pubkeys, signing_root, signature)) {
-      LOG.debug("AttestationUtil.is_valid_indexed_attestation: Verify aggregate signature");
-      return AttestationProcessingResult.invalid("Signature is invalid");
-    }
-    return AttestationProcessingResult.SUCCESSFUL;
+    return signatureVerifier
+        .verify(pubkeys, signing_root, signature)
+        .thenApply(
+            isValidSignature -> {
+              if (isValidSignature) {
+                return AttestationProcessingResult.SUCCESSFUL;
+              } else {
+                LOG.debug(
+                    "AttestationUtil.is_valid_indexed_attestation: Verify aggregate signature");
+                return AttestationProcessingResult.invalid("Signature is invalid");
+              }
+            });
   }
 
   public boolean representsNewAttester(Attestation oldAttestation, Attestation newAttestation) {
