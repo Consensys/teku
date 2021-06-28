@@ -28,6 +28,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.ChainDataLoader;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
@@ -110,7 +111,8 @@ public class WeakSubjectivityInitializer {
             });
   }
 
-  public void validateInitialAnchor(final AnchorPoint initialAnchor, final UInt64 currentSlot) {
+  public void validateInitialAnchor(
+      final AnchorPoint initialAnchor, final UInt64 currentSlot, final Spec spec) {
     if (initialAnchor.isGenesis()) {
       // Skip extra validations for genesis state
       return;
@@ -129,6 +131,13 @@ public class WeakSubjectivityInitializer {
     } else if (anchorEpoch.plus(2).isGreaterThan(currentEpoch)) {
       throw new IllegalStateException(
           "The provided initial state is too recent. Please check that the initial state corresponds to a finalized checkpoint.");
+    }
+
+    Fork expectedFork = spec.getForkSchedule().getFork(initialAnchor.getEpoch());
+    Fork loadedFork = initialAnchor.getState().getFork();
+    if (!expectedFork.equals(loadedFork)) {
+      throw new InvalidConfigurationException(
+          "The fork in loaded state does not match fork at the epoch from ForkSchedule. Please check that network in configuration matches the loaded state.");
     }
 
     if (slotsBetweenBlockAndEpochStart.isGreaterThan(UInt64.ZERO)) {
