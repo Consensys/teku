@@ -35,6 +35,7 @@ public class P2PConfig {
   private final boolean subscribeAllSubnetsEnabled;
   private final int peerRateLimit;
   private final int peerRequestLimit;
+  private final boolean batchVerifyAttestationSignatures;
 
   private P2PConfig(
       final Spec spec,
@@ -45,7 +46,8 @@ public class P2PConfig {
       final int targetSubnetSubscriberCount,
       final boolean subscribeAllSubnetsEnabled,
       final int peerRateLimit,
-      final int peerRequestLimit) {
+      final int peerRequestLimit,
+      final boolean batchVerifyAttestationSignatures) {
     this.spec = spec;
     this.networkConfig = networkConfig;
     this.discoveryConfig = discoveryConfig;
@@ -55,6 +57,7 @@ public class P2PConfig {
     this.subscribeAllSubnetsEnabled = subscribeAllSubnetsEnabled;
     this.peerRateLimit = peerRateLimit;
     this.peerRequestLimit = peerRequestLimit;
+    this.batchVerifyAttestationSignatures = batchVerifyAttestationSignatures;
   }
 
   public static Builder builder() {
@@ -97,6 +100,10 @@ public class P2PConfig {
     return peerRequestLimit;
   }
 
+  public boolean batchVerifyAttestationSignatures() {
+    return batchVerifyAttestationSignatures;
+  }
+
   public static class Builder {
     public static final int DEFAULT_PEER_RATE_LIMIT = 500;
     public static final int DEFAULT_PEER_REQUEST_LIMIT = 50;
@@ -111,6 +118,7 @@ public class P2PConfig {
     private Boolean subscribeAllSubnetsEnabled = false;
     private Integer peerRateLimit = DEFAULT_PEER_RATE_LIMIT;
     private Integer peerRequestLimit = DEFAULT_PEER_REQUEST_LIMIT;
+    private Boolean batchVerifyAttestationSignatures = false;
 
     private Builder() {}
 
@@ -137,7 +145,8 @@ public class P2PConfig {
           targetSubnetSubscriberCount,
           subscribeAllSubnetsEnabled,
           peerRateLimit,
-          peerRequestLimit);
+          peerRequestLimit,
+          batchVerifyAttestationSignatures);
     }
 
     private void validate() {
@@ -187,6 +196,13 @@ public class P2PConfig {
     public Builder peerRequestLimit(final Integer peerRequestLimit) {
       checkNotNull(peerRequestLimit);
       this.peerRequestLimit = peerRequestLimit;
+      return this;
+    }
+
+    public Builder batchVerifyAttestationSignatures(
+        final Boolean batchVerifyAttestationSignatures) {
+      checkNotNull(batchVerifyAttestationSignatures);
+      this.batchVerifyAttestationSignatures = batchVerifyAttestationSignatures;
       return this;
     }
   }

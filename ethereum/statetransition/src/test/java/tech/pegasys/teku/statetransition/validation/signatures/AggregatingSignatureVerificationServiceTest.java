@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.validation;
+package tech.pegasys.teku.statetransition.validation.signatures;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -35,9 +35,9 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.service.serviceutils.ServiceCapacityExceededException;
-import tech.pegasys.teku.statetransition.validation.SignatureVerificationService.SignatureTask;
+import tech.pegasys.teku.statetransition.validation.signatures.AggregatingSignatureVerificationService.SignatureTask;
 
-public class SignatureVerificationServiceTest {
+public class AggregatingSignatureVerificationServiceTest {
   private static List<BLSKeyPair> KEYS = BLSKeyGenerator.generateKeyPairs(10);
 
   private final int queueCapacity = 10;
@@ -45,8 +45,9 @@ public class SignatureVerificationServiceTest {
   private final int numThreads = 2;
 
   private final StubAsyncRunnerFactory asyncRunnerFactory = new StubAsyncRunnerFactory();
-  private SignatureVerificationService service =
-      new SignatureVerificationService(asyncRunnerFactory, numThreads, queueCapacity, batchSize);
+  private AggregatingSignatureVerificationService service =
+      new AggregatingSignatureVerificationService(
+          asyncRunnerFactory, numThreads, queueCapacity, batchSize);
 
   @Test
   public void start_shouldQueueTasks() {
@@ -156,7 +157,8 @@ public class SignatureVerificationServiceTest {
     final AsyncRunnerFactory realRunnerFactory =
         AsyncRunnerFactory.createDefault(
             new MetricTrackingExecutorFactory(new StubMetricsSystem()));
-    service = new SignatureVerificationService(realRunnerFactory, 1, queueCapacity, batchSize);
+    service =
+        new AggregatingSignatureVerificationService(realRunnerFactory, 1, queueCapacity, batchSize);
     startService();
 
     final Random random = new Random(1);

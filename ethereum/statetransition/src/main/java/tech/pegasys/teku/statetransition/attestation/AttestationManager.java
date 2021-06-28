@@ -34,8 +34,8 @@ import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidator;
 import tech.pegasys.teku.statetransition.validation.AttestationValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
-import tech.pegasys.teku.statetransition.validation.SignatureVerificationService;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
+import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 public class AttestationManager extends Service implements SlotEventsChannel {

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.validation;
+package tech.pegasys.teku.statetransition.validation.signatures;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
@@ -29,16 +29,14 @@ import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceCapacityExceededException;
-import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 
-public class SignatureVerificationService extends Service implements AsyncBLSSignatureVerifier {
+class AggregatingSignatureVerificationService extends SignatureVerificationService {
   private static final Logger LOG = LogManager.getLogger();
 
-  private static final int QUEUE_CAPACITY = 10_000;
-  private static final int MAX_BATCH_SIZE = 250;
-  private static final int DEFAULT_THREAD_COUNT = 2;
+  static final int DEFAULT_QUEUE_CAPACITY = 10_000;
+  static final int DEFAULT_MAX_BATCH_SIZE = 250;
+  static final int DEFAULT_THREAD_COUNT = 2;
 
   private final int numThreads;
   private final int maxBatchSize;
@@ -47,7 +45,7 @@ public class SignatureVerificationService extends Service implements AsyncBLSSig
   private final AsyncRunner asyncRunner;
 
   @VisibleForTesting
-  SignatureVerificationService(
+  AggregatingSignatureVerificationService(
       final AsyncRunnerFactory asyncRunnerFactory,
       final int numThreads,
       final int queueCapacity,
@@ -59,9 +57,8 @@ public class SignatureVerificationService extends Service implements AsyncBLSSig
     this.batchSignatureTasks = new ArrayBlockingQueue<>(queueCapacity);
   }
 
-  public static SignatureVerificationService create(final AsyncRunnerFactory asyncRunnerFactory) {
-    return new SignatureVerificationService(
-        asyncRunnerFactory, DEFAULT_THREAD_COUNT, QUEUE_CAPACITY, MAX_BATCH_SIZE);
+  AggregatingSignatureVerificationService(final AsyncRunnerFactory asyncRunnerFactory) {
+    this(asyncRunnerFactory, DEFAULT_THREAD_COUNT, DEFAULT_QUEUE_CAPACITY, DEFAULT_MAX_BATCH_SIZE);
   }
 
   @Override
@@ -69,7 +66,10 @@ public class SignatureVerificationService extends Service implements AsyncBLSSig
     for (int i = 0; i < numThreads; i++) {
       asyncRunner
           .runAsync(this::run)
-          .finish(err -> LOG.error("Signature Verification Task failed", err));
+          .finish(
+              err ->
+                  AggregatingSignatureVerificationService.LOG.error(
+                      "Signature Verification Task failed", err));
     }
 
     return SafeFuture.COMPLETE;

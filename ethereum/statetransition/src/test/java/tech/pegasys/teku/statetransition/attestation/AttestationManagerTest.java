@@ -53,7 +53,7 @@ import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidator;
 import tech.pegasys.teku.statetransition.validation.AttestationValidator;
-import tech.pegasys.teku.statetransition.validation.SignatureVerificationService;
+import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
 
 class AttestationManagerTest {
   private final Spec spec = TestSpecFactory.createDefault();
