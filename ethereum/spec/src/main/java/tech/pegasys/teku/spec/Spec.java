@@ -26,6 +26,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -62,6 +63,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProce
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
@@ -570,13 +572,13 @@ public class Spec {
         .getGenericAttestationData(slot, state, block, committeeIndex);
   }
 
-  public AttestationProcessingResult isValidIndexedAttestation(
+  public SafeFuture<AttestationProcessingResult> isValidIndexedAttestation(
       BeaconState state,
       ValidateableAttestation attestation,
-      BLSSignatureVerifier blsSignatureVerifier) {
+      AsyncBLSSignatureVerifier blsSignatureVerifier) {
     return atState(state)
         .getAttestationUtil()
-        .isValidIndexedAttestation(state, attestation, blsSignatureVerifier);
+        .isValidIndexedAttestationAsync(state, attestation, blsSignatureVerifier);
   }
 
   // Private helpers

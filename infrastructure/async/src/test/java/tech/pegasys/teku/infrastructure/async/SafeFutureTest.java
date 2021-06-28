@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -1042,6 +1043,38 @@ public class SafeFutureTest {
     input.completeExceptionally(exception);
     assertThatSafeFuture(result).isCompletedWithValue(null);
     verify(exceptionHandler).accept(exception);
+  }
+
+  @Test
+  public void getImmediately_completedSuccessfully() {
+    final SafeFuture<Integer> future = SafeFuture.completedFuture(10);
+
+    assertThat(future.getImmediately()).isEqualTo(10);
+  }
+
+  @Test
+  public void getImmediately_exceptionallyCompleted() {
+    final RuntimeException err = new RuntimeException("oops");
+    final SafeFuture<Integer> future = SafeFuture.failedFuture(err);
+
+    assertThatThrownBy(future::getImmediately).hasCause(err);
+  }
+
+  @Test
+  public void getImmediately_cancelled() {
+    final SafeFuture<Integer> future = new SafeFuture<>();
+    future.cancel(true);
+
+    assertThatThrownBy(future::getImmediately).isInstanceOf(CancellationException.class);
+  }
+
+  @Test
+  public void getImmediately_notDone() {
+    final SafeFuture<Integer> future = new SafeFuture<>();
+
+    assertThatThrownBy(future::getImmediately)
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining("Expected result to be available immediately, but was not");
   }
 
   private List<Throwable> collectUncaughtExceptions() {

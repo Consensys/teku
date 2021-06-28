@@ -11,17 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.infrastructure.async;
+package tech.pegasys.teku.service.serviceutils;
 
-import java.util.Collection;
-
-public interface AsyncRunnerFactory {
-  static DefaultAsyncRunnerFactory createDefault(
-      final MetricTrackingExecutorFactory executorFactory) {
-    return new DefaultAsyncRunnerFactory(executorFactory);
+/**
+ * Represents a failure to request some action from a service due to capacity constraints. For
+ * example, if a queue is full some async action may not be accepted for later processing.
+ */
+public class ServiceCapacityExceededException extends RuntimeException {
+  public ServiceCapacityExceededException(final String message) {
+    super(message);
   }
-
-  AsyncRunner create(String name, int maxThreads);
-
-  Collection<AsyncRunner> getAsyncRunners();
 }
