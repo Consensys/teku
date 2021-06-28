@@ -62,7 +62,7 @@ class AggregatingSignatureVerificationService extends SignatureVerificationServi
   }
 
   @Override
-  protected synchronized SafeFuture<?> doStart() {
+  protected SafeFuture<?> doStart() {
     for (int i = 0; i < numThreads; i++) {
       asyncRunner
           .runAsync(this::run)
@@ -76,7 +76,7 @@ class AggregatingSignatureVerificationService extends SignatureVerificationServi
   }
 
   @Override
-  protected synchronized SafeFuture<?> doStop() {
+  protected SafeFuture<?> doStop() {
     return SafeFuture.COMPLETE;
   }
 
