@@ -36,8 +36,9 @@ import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 public class SignatureVerificationService extends Service implements AsyncBLSSignatureVerifier {
   private static final Logger LOG = LogManager.getLogger();
 
-  private static final int QUEUE_CAPACITY = 1000;
-  private static final int MAX_BATCH_SIZE = 50;
+  private static final int QUEUE_CAPACITY = 10_000;
+  private static final int MAX_BATCH_SIZE = 250;
+  private static final int DEFAULT_THREAD_COUNT = 2;
 
   private final int numThreads;
   private final int maxBatchSize;
@@ -55,11 +56,12 @@ public class SignatureVerificationService extends Service implements AsyncBLSSig
     this.numThreads = Math.min(numThreads, Runtime.getRuntime().availableProcessors());
     this.maxBatchSize = maxBatchSize;
 
-    this.batchSignatureTasks = new ArrayBlockingQueue<SignatureTask>(queueCapacity);
+    this.batchSignatureTasks = new ArrayBlockingQueue<>(queueCapacity);
   }
 
   public static SignatureVerificationService create(final AsyncRunnerFactory asyncRunnerFactory) {
-    return new SignatureVerificationService(asyncRunnerFactory, 2, QUEUE_CAPACITY, MAX_BATCH_SIZE);
+    return new SignatureVerificationService(
+        asyncRunnerFactory, DEFAULT_THREAD_COUNT, QUEUE_CAPACITY, MAX_BATCH_SIZE);
   }
 
   @Override
