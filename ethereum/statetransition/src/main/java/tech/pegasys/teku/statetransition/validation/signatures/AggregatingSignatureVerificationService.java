@@ -53,8 +53,8 @@ class AggregatingSignatureVerificationService extends SignatureVerificationServi
       final int numThreads,
       final int queueCapacity,
       final int maxBatchSize) {
-    this.asyncRunner = asyncRunnerFactory.create(this.getClass().getSimpleName(), numThreads);
     this.numThreads = Math.min(numThreads, Runtime.getRuntime().availableProcessors());
+    this.asyncRunner = asyncRunnerFactory.create(this.getClass().getSimpleName(), this.numThreads);
     this.maxBatchSize = maxBatchSize;
 
     this.batchSignatureTasks = new ArrayBlockingQueue<>(queueCapacity);
