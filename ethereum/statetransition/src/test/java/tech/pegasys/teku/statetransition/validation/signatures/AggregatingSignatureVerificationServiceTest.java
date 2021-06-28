@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import org.apache.tuweni.bytes.Bytes;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
@@ -47,7 +48,7 @@ public class AggregatingSignatureVerificationServiceTest {
   private final StubAsyncRunnerFactory asyncRunnerFactory = new StubAsyncRunnerFactory();
   private AggregatingSignatureVerificationService service =
       new AggregatingSignatureVerificationService(
-          asyncRunnerFactory, numThreads, queueCapacity, batchSize);
+          new StubMetricsSystem(), asyncRunnerFactory, numThreads, queueCapacity, batchSize);
 
   @Test
   public void start_shouldQueueTasks() {
@@ -154,11 +155,12 @@ public class AggregatingSignatureVerificationServiceTest {
 
   @Test
   public void testRealServiceWithThreads() throws Exception {
+    final MetricsSystem metrics = new StubMetricsSystem();
     final AsyncRunnerFactory realRunnerFactory =
-        AsyncRunnerFactory.createDefault(
-            new MetricTrackingExecutorFactory(new StubMetricsSystem()));
+        AsyncRunnerFactory.createDefault(new MetricTrackingExecutorFactory(metrics));
     service =
-        new AggregatingSignatureVerificationService(realRunnerFactory, 1, queueCapacity, batchSize);
+        new AggregatingSignatureVerificationService(
+            metrics, realRunnerFactory, 1, queueCapacity, batchSize);
     startService();
 
     final Random random = new Random(1);

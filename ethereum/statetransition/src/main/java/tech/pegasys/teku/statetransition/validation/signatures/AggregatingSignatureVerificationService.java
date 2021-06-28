@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -29,12 +30,13 @@ import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.service.serviceutils.ServiceCapacityExceededException;
 
 class AggregatingSignatureVerificationService extends SignatureVerificationService {
   private static final Logger LOG = LogManager.getLogger();
 
-  static final int DEFAULT_QUEUE_CAPACITY = 10_000;
+  static final int DEFAULT_QUEUE_CAPACITY = 5_000;
   static final int DEFAULT_MAX_BATCH_SIZE = 250;
   static final int DEFAULT_THREAD_COUNT = 2;
 
@@ -46,6 +48,7 @@ class AggregatingSignatureVerificationService extends SignatureVerificationServi
 
   @VisibleForTesting
   AggregatingSignatureVerificationService(
+      final MetricsSystem metricsSystem,
       final AsyncRunnerFactory asyncRunnerFactory,
       final int numThreads,
       final int queueCapacity,
@@ -55,10 +58,21 @@ class AggregatingSignatureVerificationService extends SignatureVerificationServi
     this.maxBatchSize = maxBatchSize;
 
     this.batchSignatureTasks = new ArrayBlockingQueue<>(queueCapacity);
+    metricsSystem.createGauge(
+        TekuMetricCategory.EXECUTOR,
+        "signature_verifications_queue_size",
+        "Tracks number of signatures waiting to be batch verified",
+        this::getQueueSize);
   }
 
-  AggregatingSignatureVerificationService(final AsyncRunnerFactory asyncRunnerFactory) {
-    this(asyncRunnerFactory, DEFAULT_THREAD_COUNT, DEFAULT_QUEUE_CAPACITY, DEFAULT_MAX_BATCH_SIZE);
+  AggregatingSignatureVerificationService(
+      final MetricsSystem metricsSystem, final AsyncRunnerFactory asyncRunnerFactory) {
+    this(
+        metricsSystem,
+        asyncRunnerFactory,
+        DEFAULT_THREAD_COUNT,
+        DEFAULT_QUEUE_CAPACITY,
+        DEFAULT_MAX_BATCH_SIZE);
   }
 
   @Override
@@ -147,6 +161,10 @@ class AggregatingSignatureVerificationService extends SignatureVerificationServi
         task.result.complete(taskIsValid);
       }
     }
+  }
+
+  private double getQueueSize() {
+    return batchSignatureTasks.size();
   }
 
   @VisibleForTesting

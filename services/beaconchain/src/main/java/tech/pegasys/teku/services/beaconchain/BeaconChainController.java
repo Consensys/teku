@@ -528,7 +528,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             ValidateableAttestation::getEarliestSlotForForkChoiceProcessing, UInt64.valueOf(3));
     signatureVerificationService =
         beaconConfig.p2pConfig().batchVerifyAttestationSignatures()
-            ? SignatureVerificationService.createAggregatingService(asyncRunnerFactory)
+            ? SignatureVerificationService.createAggregatingService(
+                metricsSystem, asyncRunnerFactory)
             : SignatureVerificationService.createSimple();
     AttestationValidator attestationValidator =
         new AttestationValidator(spec, recentChainData, signatureVerificationService);
