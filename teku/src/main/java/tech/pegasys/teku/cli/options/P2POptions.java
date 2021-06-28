@@ -154,7 +154,7 @@ public class P2POptions {
       description = "If true, turn on batch verification for gossiped attestation signatures",
       hidden = true,
       arity = "0..1")
-  private boolean batchVerifyAttestationSignatures = false;
+  private boolean batchVerifyAttestationSignatures = true;
 
   private int getP2pLowerBound() {
     if (p2pLowerBound > p2pUpperBound) {
