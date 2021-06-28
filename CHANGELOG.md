@@ -22,6 +22,7 @@ For information on changes in released versions of Teku, see the [releases page]
   - `beacon_eth1_current_period_votes_unknown` - Number of votes for blocks this node considers invalid (e.g. unknown blocks).
   - `beacon_eth1_current_period_votes_current` - Number of votes for the value in the current state (the default vote per the spec).
   - `beacon_eth1_block_cache_size` - Total number of blocks stored in the Eth1 block cache.
+- Aggregate and batch verify signatures for gossiped attestations
 
 ### Bug Fixes
 - Prevent LevelDB transactions from attempting to make any updates after the database is shut down.
