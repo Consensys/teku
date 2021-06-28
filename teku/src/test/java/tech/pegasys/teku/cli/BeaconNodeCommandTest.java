@@ -418,7 +418,12 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .dataStorageFrequency(VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY)
                     .dataStorageCreateDbVersion(DatabaseVersion.DEFAULT_VERSION))
         .data(b -> b.dataBasePath(dataPath))
-        .p2p(b -> b.targetSubnetSubscriberCount(2).peerRateLimit(500).peerRequestLimit(50))
+        .p2p(
+            b ->
+                b.targetSubnetSubscriberCount(2)
+                    .peerRateLimit(500)
+                    .peerRequestLimit(50)
+                    .batchVerifyAttestationSignatures(true))
         .discovery(
             d -> d.isDiscoveryEnabled(false).minPeers(64).maxPeers(74).minRandomlySelectedPeers(12))
         .network(
