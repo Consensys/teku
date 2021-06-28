@@ -147,6 +147,9 @@ public class DatabaseMigrater {
   @VisibleForTesting
   void duplicateBeaconFolderContents() throws IOException {
     final Path newBeaconFolderPath = getNewBeaconFolderPath();
+    // any 'beacon.new' folder that already exists is from an incomplete
+    // migrate-data command, so we can just remove it and re-initialise
+    // If the process had finished, it would have been moved to 'beacon'
     if (newBeaconFolderPath.toFile().isDirectory()) {
       FileUtils.deleteDirectory(newBeaconFolderPath.toFile());
     }

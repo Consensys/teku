@@ -155,16 +155,15 @@ public class V4HotKvStoreDao implements KvStoreHotDao, KvStoreEth1Dao, KvStorePr
       final KvStoreHotDao hotDao, final int batchSize, final Consumer<String> logger) {
     Preconditions.checkArgument(batchSize > 0, "Batch size must be at least 1 (MB)");
     Preconditions.checkArgument(hotDao instanceof V4HotKvStoreDao);
+    final V4HotKvStoreDao dao = (V4HotKvStoreDao) hotDao;
 
     final Map<String, KvStoreVariable<?>> newVariables = schema.getVariableMap();
     if (newVariables.size() > 0) {
-      final Map<String, KvStoreVariable<?>> oldVariables =
-          ((V4HotKvStoreDao) hotDao).schema.getVariableMap();
+      final Map<String, KvStoreVariable<?>> oldVariables = dao.schema.getVariableMap();
       try (V4HotUpdater updater = new V4HotUpdater(db, schema)) {
         for (String key : newVariables.keySet()) {
           logger.accept(String.format("copy variable %s", key));
-          hotDao
-              .getRawVariable(oldVariables.get(key))
+          dao.getRawVariable(oldVariables.get(key))
               .ifPresent(value -> updater.transaction.putRaw(newVariables.get(key), value));
         }
         updater.commit();
@@ -174,14 +173,12 @@ public class V4HotKvStoreDao implements KvStoreHotDao, KvStoreEth1Dao, KvStorePr
     }
     final Map<String, KvStoreColumn<?, ?>> newColumns = schema.getColumnMap();
     if (newColumns.size() > 0) {
-      final Map<String, KvStoreColumn<?, ?>> oldColumns =
-          ((V4HotKvStoreDao) hotDao).schema.getColumnMap();
+      final Map<String, KvStoreColumn<?, ?>> oldColumns = dao.schema.getColumnMap();
       for (String key : newColumns.keySet()) {
         logger.accept(String.format("copy column %s", key));
         try (final Stream<ColumnEntry<Bytes, Bytes>> oldEntryStream =
-                hotDao.streamRawColumn(oldColumns.get(key));
-            HotStoreBatchWriter batchWriter =
-                new HotStoreBatchWriter(batchSize, logger, db, schema)) {
+                dao.streamRawColumn(oldColumns.get(key));
+            BatchWriter batchWriter = new BatchWriter(batchSize, logger, db)) {
           oldEntryStream.forEach(entry -> batchWriter.add(newColumns.get(key), entry));
         }
       }
@@ -190,14 +187,12 @@ public class V4HotKvStoreDao implements KvStoreHotDao, KvStoreEth1Dao, KvStorePr
     }
   }
 
-  @Override
-  public <T> Optional<Bytes> getRawVariable(final KvStoreVariable<T> var) {
+  private <T> Optional<Bytes> getRawVariable(final KvStoreVariable<T> var) {
     return db.getRaw(var);
   }
 
-  @Override
   @MustBeClosed
-  public <K, V> Stream<ColumnEntry<Bytes, Bytes>> streamRawColumn(
+  private <K, V> Stream<ColumnEntry<Bytes, Bytes>> streamRawColumn(
       final KvStoreColumn<K, V> kvStoreColumn) {
     return db.streamRaw(kvStoreColumn);
   }

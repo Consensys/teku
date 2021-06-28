@@ -127,16 +127,15 @@ public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
       final KvStoreFinalizedDao finalizedDao, final int batchSize, final Consumer<String> logger) {
     Preconditions.checkArgument(batchSize > 1, "Batch size must be greater than 1 element");
     Preconditions.checkArgument(finalizedDao instanceof V4FinalizedKvStoreDao);
+    final V4FinalizedKvStoreDao dao = (V4FinalizedKvStoreDao) finalizedDao;
 
     final Map<String, KvStoreVariable<?>> newVariables = schema.getVariableMap();
     if (newVariables.size() > 0) {
-      final Map<String, KvStoreVariable<?>> oldVariables =
-          ((V4FinalizedKvStoreDao) finalizedDao).schema.getVariableMap();
+      final Map<String, KvStoreVariable<?>> oldVariables = dao.schema.getVariableMap();
       try (V4FinalizedUpdater updater = new V4FinalizedUpdater(db, schema, UInt64.ONE)) {
         for (String key : newVariables.keySet()) {
           logger.accept(String.format("Copy variable %s", key));
-          finalizedDao
-              .getRawVariable(oldVariables.get(key))
+          dao.getRawVariable(oldVariables.get(key))
               .ifPresent(value -> updater.transaction.putRaw(newVariables.get(key), value));
         }
         updater.commit();
@@ -144,28 +143,24 @@ public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
     }
     final Map<String, KvStoreColumn<?, ?>> newColumns = schema.getColumnMap();
     if (newColumns.size() > 0) {
-      final Map<String, KvStoreColumn<?, ?>> oldColumns =
-          ((V4FinalizedKvStoreDao) finalizedDao).schema.getColumnMap();
+      final Map<String, KvStoreColumn<?, ?>> oldColumns = dao.schema.getColumnMap();
       for (String key : newColumns.keySet()) {
         logger.accept(String.format("Copy column %s", key));
         try (final Stream<ColumnEntry<Bytes, Bytes>> oldEntryStream =
-                finalizedDao.streamRawColumn(oldColumns.get(key));
-            FinalizedStoreBatchWriter batchWriter =
-                new FinalizedStoreBatchWriter(batchSize, logger, db, schema)) {
+                dao.streamRawColumn(oldColumns.get(key));
+            BatchWriter batchWriter = new BatchWriter(batchSize, logger, db)) {
           oldEntryStream.forEach(entry -> batchWriter.add(newColumns.get(key), entry));
         }
       }
     }
   }
 
-  @Override
-  public <T> Optional<Bytes> getRawVariable(final KvStoreVariable<T> var) {
+  private <T> Optional<Bytes> getRawVariable(final KvStoreVariable<T> var) {
     return db.getRaw(var);
   }
 
-  @Override
   @MustBeClosed
-  public <K, V> Stream<ColumnEntry<Bytes, Bytes>> streamRawColumn(
+  private <K, V> Stream<ColumnEntry<Bytes, Bytes>> streamRawColumn(
       final KvStoreColumn<K, V> kvStoreColumn) {
     return db.streamRaw(kvStoreColumn);
   }

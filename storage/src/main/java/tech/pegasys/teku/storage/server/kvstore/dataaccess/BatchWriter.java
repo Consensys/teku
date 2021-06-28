@@ -19,12 +19,13 @@ import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
 
-abstract class BatchWriter implements AutoCloseable {
+class BatchWriter implements AutoCloseable {
   private static final int OUTPUT_PER_TRANSACTION_COUNT = 15;
   final KvStoreAccessor db;
 
   private final Consumer<String> logger;
   private final long targetBatchSize;
+  private KvStoreAccessor.KvStoreTransaction transaction = null;
 
   private long transactionCounter = 0;
   private long entryCounter = 0;
@@ -41,11 +42,23 @@ abstract class BatchWriter implements AutoCloseable {
     this.db = db;
   }
 
-  abstract void startTransaction();
+  void startTransaction() {
+    if (transaction == null) {
+      transaction = db.startTransaction();
+    }
+  }
 
-  abstract KvStoreAccessor.KvStoreTransaction getTransaction();
+  KvStoreAccessor.KvStoreTransaction getTransaction() {
+    return transaction;
+  }
 
-  abstract void commit();
+  void commit() {
+    if (transaction != null) {
+      transaction.commit();
+      transaction.close();
+      transaction = null;
+    }
+  }
 
   void add(final KvStoreColumn<?, ?> column, final ColumnEntry<Bytes, Bytes> entry) {
     startTransaction();

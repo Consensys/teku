@@ -78,6 +78,21 @@ public class MigrateDatabaseCommand implements Runnable {
       arity = "1")
   private Integer batchSize = 100;
 
+  // OVERVIEW
+  // teku folder has a 'beacon' folder
+  // If the user wants to change the type of database stored in 'beacon',
+  // they can run this command to accomplish that task.
+  // While running, a 'beacon.new' folder is created, and we copy data
+  // from 'beacon' to 'beacon.new'.
+  //
+  // If it completes successfully, we move:
+  //  - 'beacon' -> 'beacon.old'
+  //  - 'beacon.new' -> 'beacon'
+  // User is then advised to cleanup 'beacon.old' manually
+  //
+  // If the process fails to complete, may be left with 'beacon.new',
+  // and 'beacon' will have the previous working database in it, so the user
+  // could start teku again on the old working database.
   @Override
   public void run() {
     // validate output format
@@ -86,6 +101,8 @@ public class MigrateDatabaseCommand implements Runnable {
       SUB_COMMAND_LOG.exit(2, "Invalid database version specified: " + toDbVersion);
     }
     // validate there is no old database instance present
+    // If a previous migrate-data was run, the 'beacon' would have been renamed to 'beacon.old'
+    // and advice given to the user to cleanup 'beacon.old' manually.
     if (Files.isDirectory(dataOptions.getDataBasePath().resolve("beacon.old"))) {
       SUB_COMMAND_LOG.exit(
           1,
