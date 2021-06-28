@@ -174,7 +174,7 @@ public class WeakSubjectivityInitializerTest {
     final AnchorPoint anchor = dataStructureUtil.randomAnchorPoint(0);
 
     // Should not throw
-    initializer.validateInitialAnchor(anchor, UInt64.ZERO);
+    initializer.validateInitialAnchor(anchor, UInt64.ZERO, spec);
   }
 
   @Test
@@ -183,7 +183,7 @@ public class WeakSubjectivityInitializerTest {
     final AnchorPoint anchor = dataStructureUtil.randomAnchorPoint(0);
 
     // Should not throw
-    initializer.validateInitialAnchor(anchor, UInt64.valueOf(10));
+    initializer.validateInitialAnchor(anchor, UInt64.valueOf(10), spec);
   }
 
   @Test
@@ -194,7 +194,7 @@ public class WeakSubjectivityInitializerTest {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil();
     final AnchorPoint anchor = dataStructureUtil.randomAnchorPoint(currentEpoch.plus(1));
 
-    assertThatThrownBy(() -> initializer.validateInitialAnchor(anchor, currentSlot))
+    assertThatThrownBy(() -> initializer.validateInitialAnchor(anchor, currentSlot, spec))
         .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining(
             "The provided initial state appears to be from a future slot ("
@@ -210,7 +210,7 @@ public class WeakSubjectivityInitializerTest {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil();
     final AnchorPoint anchor = dataStructureUtil.randomAnchorPoint(currentEpoch.minus(1));
 
-    assertThatThrownBy(() -> initializer.validateInitialAnchor(anchor, currentSlot))
+    assertThatThrownBy(() -> initializer.validateInitialAnchor(anchor, currentSlot, spec))
         .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining(
             "The provided initial state is too recent. Please check that the initial state corresponds to a finalized checkpoint.");
@@ -219,12 +219,15 @@ public class WeakSubjectivityInitializerTest {
   @Test
   public void validateInitialAnchor_atMostRecentPotentiallyFinalizedEpoch() {
     final UInt64 currentEpoch = UInt64.valueOf(10);
-    final UInt64 currentSlot = compute_start_slot_at_epoch(currentEpoch);
+    final UInt64 currentSlot = spec.computeStartSlotAtEpoch(currentEpoch);
 
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-    final AnchorPoint anchor = dataStructureUtil.randomAnchorPoint(currentEpoch.minus(2));
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    final UInt64 anchorEpoch = currentEpoch.min(2);
+    final AnchorPoint anchor =
+        dataStructureUtil.randomAnchorPoint(
+            anchorEpoch, spec.getForkSchedule().getFork(anchorEpoch));
 
     // Should not throw
-    initializer.validateInitialAnchor(anchor, currentSlot);
+    initializer.validateInitialAnchor(anchor, currentSlot, spec);
   }
 }

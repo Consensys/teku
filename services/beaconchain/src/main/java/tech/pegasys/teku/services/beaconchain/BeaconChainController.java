@@ -94,6 +94,7 @@ import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.statetransition.validation.ProposerSlashingValidator;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.statetransition.validation.VoluntaryExitValidator;
+import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
@@ -159,6 +160,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile DepositProvider depositProvider;
   private volatile SyncService syncService;
   private volatile AttestationManager attestationManager;
+  private volatile SignatureVerificationService signatureVerificationService;
   private volatile CombinedChainDataClient combinedChainDataClient;
   private volatile Eth1DataCache eth1DataCache;
   private volatile SlotProcessor slotProcessor;
@@ -524,7 +526,13 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     final FutureItems<ValidateableAttestation> futureAttestations =
         FutureItems.create(
             ValidateableAttestation::getEarliestSlotForForkChoiceProcessing, UInt64.valueOf(3));
-    AttestationValidator attestationValidator = new AttestationValidator(spec, recentChainData);
+    signatureVerificationService =
+        beaconConfig.p2pConfig().batchVerifyAttestationSignatures()
+            ? SignatureVerificationService.createAggregatingService(
+                metricsSystem, asyncRunnerFactory)
+            : SignatureVerificationService.createSimple();
+    AttestationValidator attestationValidator =
+        new AttestationValidator(spec, recentChainData, signatureVerificationService);
     AggregateAttestationValidator aggregateValidator =
         new AggregateAttestationValidator(recentChainData, attestationValidator, spec);
     blockImporter.subscribeToVerifiedBlockAttestations(
@@ -541,7 +549,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             forkChoice,
             attestationPool,
             attestationValidator,
-            aggregateValidator);
+            aggregateValidator,
+            signatureVerificationService);
     eventChannels
         .subscribe(SlotEventsChannel.class, attestationManager)
         .subscribe(FinalizedCheckpointChannel.class, pendingAttestations);
@@ -764,7 +773,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     initialAnchor.ifPresent(
         anchor -> {
           final UInt64 currentSlot = getCurrentSlot(anchor.getState().getGenesis_time());
-          wsInitializer.validateInitialAnchor(anchor, currentSlot);
+          wsInitializer.validateInitialAnchor(anchor, currentSlot, spec);
         });
 
     if (initialAnchor.isPresent()) {

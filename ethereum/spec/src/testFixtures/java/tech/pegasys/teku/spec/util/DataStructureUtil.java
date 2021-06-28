@@ -846,6 +846,14 @@ public final class DataStructureUtil {
     return AnchorPoint.fromInitialBlockAndState(spec, anchorBlockAndState);
   }
 
+  public AnchorPoint randomAnchorPoint(final UInt64 epoch, final Fork currentFork) {
+    UInt64 slot = computeStartSlotAtEpoch(epoch);
+    final BeaconBlockAndState blockAndState =
+        randomBlockAndState(
+            slot, stateBuilderPhase0().slot(slot).fork(currentFork).build(), randomBytes32());
+    return AnchorPoint.fromInitialBlockAndState(spec, toSigned(blockAndState));
+  }
+
   public AnchorPoint createAnchorFromState(final BeaconState anchorState) {
     // Create corresponding block
     final SchemaDefinitions schemaDefinitions =
