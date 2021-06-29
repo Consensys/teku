@@ -30,6 +30,7 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
@@ -52,14 +53,17 @@ public class SignedContributionAndProofValidator {
   private final Set<UniquenessKey> seenIndices =
       LimitedSet.create(VALID_CONTRIBUTION_AND_PROOF_SET_SIZE);
   private final SyncCommitteeStateUtils syncCommitteeStateUtils;
+  private final SyncCommitteeCurrentSlotUtil slotUtil;
 
   public SignedContributionAndProofValidator(
       final Spec spec,
       final RecentChainData recentChainData,
-      final SyncCommitteeStateUtils syncCommitteeStateUtils) {
+      final SyncCommitteeStateUtils syncCommitteeStateUtils,
+      final TimeProvider timeProvider) {
     this.spec = spec;
     this.recentChainData = recentChainData;
     this.syncCommitteeStateUtils = syncCommitteeStateUtils;
+    slotUtil = new SyncCommitteeCurrentSlotUtil(recentChainData, spec, timeProvider);
   }
 
   public SafeFuture<InternalValidationResult> validate(final SignedContributionAndProof proof) {
@@ -68,6 +72,8 @@ public class SignedContributionAndProofValidator {
 
     // [IGNORE] The sync committee contribution is the first valid contribution received for the
     // aggregator with index contribution_and_proof.aggregator_index for the slot contribution.slot.
+    // (this requires maintaining a cache of size `SYNC_COMMITTEE_SIZE` for this topic that can be
+    // flushed after each slot).
     final UniquenessKey uniquenessKey = getUniquenessKey(contributionAndProof, contribution);
     if (seenIndices.contains(uniquenessKey)) {
       return SafeFuture.completedFuture(IGNORE);
@@ -83,10 +89,9 @@ public class SignedContributionAndProofValidator {
     }
     final SyncCommitteeUtil syncCommitteeUtil = maybeSyncCommitteeUtil.get();
 
-    // [IGNORE] The contribution's slot is for the current slot
-    // i.e. contribution.slot == current_slot.
-    if (recentChainData.getCurrentSlot().isEmpty()
-        || !contribution.getSlot().equals(recentChainData.getCurrentSlot().orElseThrow())) {
+    // [IGNORE] The contribution's slot is for the current slot (with a
+    // `MAXIMUM_GOSSIP_CLOCK_DISPARITY` allowance), i.e. `contribution.slot == current_slot`.
+    if (!slotUtil.isForCurrentSlot(contribution.getSlot())) {
       LOG.trace("Ignoring proof because it is not from the current slot");
       return SafeFuture.completedFuture(IGNORE);
     }
