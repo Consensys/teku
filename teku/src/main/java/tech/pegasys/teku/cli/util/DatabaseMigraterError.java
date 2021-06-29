@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,16 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.server.kvstore.schema;
+package tech.pegasys.teku.cli.util;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Collection;
-import org.apache.tuweni.bytes.Bytes;
+public class DatabaseMigraterError extends Exception {
 
-public interface Schema {
-  Bytes DEFAULT_COLUMN_ID = Bytes.wrap("default".getBytes(StandardCharsets.UTF_8));
+  public DatabaseMigraterError(final String s) {
+    super(s);
+  }
 
-  Collection<KvStoreColumn<?, ?>> getAllColumns();
-
-  Collection<KvStoreVariable<?>> getAllVariables();
+  public DatabaseMigraterError(final String s, final Exception e) {
+    super(s, e);
+  }
 }
