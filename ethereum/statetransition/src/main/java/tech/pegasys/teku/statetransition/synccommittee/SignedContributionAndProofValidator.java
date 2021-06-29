@@ -49,7 +49,6 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class SignedContributionAndProofValidator {
   private static final Logger LOG = LogManager.getLogger();
   private final Spec spec;
-  private final RecentChainData recentChainData;
   private final Set<UniquenessKey> seenIndices =
       LimitedSet.create(VALID_CONTRIBUTION_AND_PROOF_SET_SIZE);
   private final SyncCommitteeStateUtils syncCommitteeStateUtils;
@@ -61,7 +60,6 @@ public class SignedContributionAndProofValidator {
       final SyncCommitteeStateUtils syncCommitteeStateUtils,
       final TimeProvider timeProvider) {
     this.spec = spec;
-    this.recentChainData = recentChainData;
     this.syncCommitteeStateUtils = syncCommitteeStateUtils;
     slotUtil = new SyncCommitteeCurrentSlotUtil(recentChainData, spec, timeProvider);
   }
@@ -93,13 +91,6 @@ public class SignedContributionAndProofValidator {
     // `MAXIMUM_GOSSIP_CLOCK_DISPARITY` allowance), i.e. `contribution.slot == current_slot`.
     if (!slotUtil.isForCurrentSlot(contribution.getSlot())) {
       LOG.trace("Ignoring proof because it is not from the current slot");
-      return SafeFuture.completedFuture(IGNORE);
-    }
-
-    // [IGNORE] The block being signed over (contribution.beacon_block_root) has been seen (via both
-    // gossip and non-gossip sources).
-    if (!recentChainData.containsBlock(contribution.getBeaconBlockRoot())) {
-      LOG.trace("Ignoring proof because beacon block is not known");
       return SafeFuture.completedFuture(IGNORE);
     }
 
