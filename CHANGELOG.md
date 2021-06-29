@@ -12,6 +12,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ## Unreleased Changes
 
 ### Additions and Improvements
+- Added `migrate-data` subcommand to allow users to migrate to a leveldb relatively easily without requiring a full re-sync.
 
 ### Bug Fixes
 

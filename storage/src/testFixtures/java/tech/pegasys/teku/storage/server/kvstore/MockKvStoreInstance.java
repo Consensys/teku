@@ -19,7 +19,6 @@ import static com.google.common.base.Preconditions.checkState;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
@@ -63,7 +62,7 @@ public class MockKvStoreInstance implements KvStoreAccessor {
   }
 
   public static MockKvStoreInstance createEmpty(
-      final Collection<KvStoreColumn<?, ?>> columns, List<KvStoreVariable<?>> variables) {
+      final Collection<KvStoreColumn<?, ?>> columns, Collection<KvStoreVariable<?>> variables) {
     checkArgument(columns.size() > 0, "No columns attached to schema");
 
     final Map<KvStoreColumn<?, ?>, NavigableMap<Bytes, Bytes>> columnData =
