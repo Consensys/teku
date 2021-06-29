@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,16 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.server.kvstore.schema;
+package tech.pegasys.teku.service.serviceutils;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Collection;
-import org.apache.tuweni.bytes.Bytes;
-
-public interface Schema {
-  Bytes DEFAULT_COLUMN_ID = Bytes.wrap("default".getBytes(StandardCharsets.UTF_8));
-
-  Collection<KvStoreColumn<?, ?>> getAllColumns();
-
-  Collection<KvStoreVariable<?>> getAllVariables();
+/**
+ * Represents a failure to request some action from a service due to capacity constraints. For
+ * example, if a queue is full some async action may not be accepted for later processing.
+ */
+public class ServiceCapacityExceededException extends RuntimeException {
+  public ServiceCapacityExceededException(final String message) {
+    super(message);
+  }
 }

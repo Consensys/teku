@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.storage.server.kvstore.schema;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
@@ -44,27 +44,19 @@ public interface SchemaHot extends Schema {
   KvStoreColumn<Bytes32, BeaconState> getColumnHotStatesByRoot();
 
   @Override
-  default List<KvStoreColumn<?, ?>> getAllColumns() {
-    return List.of(
-        getColumnHotBlocksByRoot(),
-        getColumnCheckpointStates(),
-        getColumnVotes(),
-        getColumnDepositsFromBlockEvents(),
-        getColumnStateRootToSlotAndBlockRoot(),
-        getColumnHotStatesByRoot(),
-        getColumnHotBlockCheckpointEpochsByRoot());
+  default Collection<KvStoreColumn<?, ?>> getAllColumns() {
+    return getColumnMap().values();
   }
 
   default Map<String, KvStoreColumn<?, ?>> getColumnMap() {
-    final List<KvStoreColumn<?, ?>> allColumns = getAllColumns();
     return Map.of(
-        "HOT_BLOCKS_BY_ROOT", allColumns.get(0),
-        "CHECKPOINT_STATES", allColumns.get(1),
-        "VOTES", allColumns.get(2),
-        "DEPOSITS_FROM_BLOCK_EVENTS", allColumns.get(3),
-        "STATE_ROOT_TO_SLOT_AND_BLOCK_ROOT", allColumns.get(4),
-        "HOT_STATES_BY_ROOT", allColumns.get(5),
-        "HOT_BLOCK_CHECKPOINT_EPOCHS_BY_ROOT", allColumns.get(6));
+        "HOT_BLOCKS_BY_ROOT", getColumnHotBlocksByRoot(),
+        "CHECKPOINT_STATES", getColumnCheckpointStates(),
+        "VOTES", getColumnVotes(),
+        "DEPOSITS_FROM_BLOCK_EVENTS", getColumnDepositsFromBlockEvents(),
+        "STATE_ROOT_TO_SLOT_AND_BLOCK_ROOT", getColumnStateRootToSlotAndBlockRoot(),
+        "HOT_STATES_BY_ROOT", getColumnHotStatesByRoot(),
+        "HOT_BLOCK_CHECKPOINT_EPOCHS_BY_ROOT", getColumnHotBlockCheckpointEpochsByRoot());
   }
 
   // Variables
@@ -87,30 +79,20 @@ public interface SchemaHot extends Schema {
   KvStoreVariable<Checkpoint> getVariableAnchorCheckpoint();
 
   @Override
-  default List<KvStoreVariable<?>> getAllVariables() {
-    return List.of(
-        getVariableGenesisTime(),
-        getVariableJustifiedCheckpoint(),
-        getVariableBestJustifiedCheckpoint(),
-        getVariableFinalizedCheckpoint(),
-        getVariableLatestFinalizedState(),
-        getVariableMinGenesisTimeBlock(),
-        getVariableProtoArraySnapshot(),
-        getVariableWeakSubjectivityCheckpoint(),
-        getVariableAnchorCheckpoint());
+  default Collection<KvStoreVariable<?>> getAllVariables() {
+    return getVariableMap().values();
   }
 
   default Map<String, KvStoreVariable<?>> getVariableMap() {
-    final List<KvStoreVariable<?>> allVariables = getAllVariables();
     return Map.of(
-        "GENESIS_TIME", allVariables.get(0),
-        "JUSTIFIED_CHECKPOINT", allVariables.get(1),
-        "BEST_JUSTIFIED_CHECKPOINT", allVariables.get(2),
-        "FINALIZED_CHECKPOINT", allVariables.get(3),
-        "LATEST_FINALIZED_STATE", allVariables.get(4),
-        "MIN_GENESIS_TIME_BLOCK", allVariables.get(5),
-        "PROTO_ARRAY_SNAPSHOT", allVariables.get(6),
-        "WEAK_SUBJECTIVITY_CHECKPOINT", allVariables.get(7),
-        "ANCHOR_CHECKPOINT", allVariables.get(8));
+        "GENESIS_TIME", getVariableGenesisTime(),
+        "JUSTIFIED_CHECKPOINT", getVariableJustifiedCheckpoint(),
+        "BEST_JUSTIFIED_CHECKPOINT", getVariableBestJustifiedCheckpoint(),
+        "FINALIZED_CHECKPOINT", getVariableFinalizedCheckpoint(),
+        "LATEST_FINALIZED_STATE", getVariableLatestFinalizedState(),
+        "MIN_GENESIS_TIME_BLOCK", getVariableMinGenesisTimeBlock(),
+        "PROTO_ARRAY_SNAPSHOT", getVariableProtoArraySnapshot(),
+        "WEAK_SUBJECTIVITY_CHECKPOINT", getVariableWeakSubjectivityCheckpoint(),
+        "ANCHOR_CHECKPOINT", getVariableAnchorCheckpoint());
   }
 }

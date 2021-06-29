@@ -84,17 +84,6 @@ public class V4SchemaFinalized implements SchemaFinalized {
   }
 
   @Override
-  public List<KvStoreColumn<?, ?>> getAllColumns() {
-    return List.of(
-        SLOTS_BY_FINALIZED_ROOT,
-        finalizedBlocksBySlot,
-        finalizedStatesBySlot,
-        SLOTS_BY_FINALIZED_STATE_ROOT,
-        nonCanonicalBlocksByRoot,
-        NON_CANONICAL_BLOCK_ROOTS_BY_SLOT);
-  }
-
-  @Override
   public List<KvStoreVariable<?>> getAllVariables() {
     return Collections.emptyList();
   }

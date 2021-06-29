@@ -13,15 +13,26 @@
 
 package tech.pegasys.teku.infrastructure.async;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
-public interface AsyncRunnerFactory {
-  static DefaultAsyncRunnerFactory createDefault(
-      final MetricTrackingExecutorFactory executorFactory) {
-    return new DefaultAsyncRunnerFactory(executorFactory);
+public class StubAsyncRunnerFactory implements AsyncRunnerFactory {
+  private final List<StubAsyncRunner> runners = new ArrayList<>();
+
+  @Override
+  public AsyncRunner create(final String name, final int maxThreads) {
+    final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+    runners.add(asyncRunner);
+    return asyncRunner;
   }
 
-  AsyncRunner create(String name, int maxThreads);
+  @Override
+  public Collection<AsyncRunner> getAsyncRunners() {
+    return new ArrayList<>(runners);
+  }
 
-  Collection<AsyncRunner> getAsyncRunners();
+  public List<StubAsyncRunner> getStubAsyncRunners() {
+    return runners;
+  }
 }
