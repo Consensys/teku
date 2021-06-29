@@ -13,13 +13,8 @@
 
 package tech.pegasys.teku.storage.server.kvstore.schema;
 
-<<<<<<< HEAD
-import java.util.Collections;
-import java.util.List;
-=======
 import java.util.Collection;
 import java.util.Collections;
->>>>>>> upstream/master
 import java.util.Map;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;

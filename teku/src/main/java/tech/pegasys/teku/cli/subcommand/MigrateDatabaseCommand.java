@@ -150,11 +150,7 @@ public class MigrateDatabaseCommand implements Runnable {
     SUB_COMMAND_LOG.display(" - The existing beacon folder will become beacon.old");
     SUB_COMMAND_LOG.display(" - The beacon.new folder will become beacon (the active database)");
     SUB_COMMAND_LOG.display(
-<<<<<<< HEAD
-        " - Once the new database is tested successfully, you can remove the old database");
-=======
         " - Once you have confirmed the new database works, you can remove the old database");
->>>>>>> upstream/master
     SUB_COMMAND_LOG.display("This operation will need to happen while teku is not running.");
     SUB_COMMAND_LOG.display("");
     if (!confirmYes("Proceed with database migration (yes/no)?")) {
