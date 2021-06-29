@@ -61,7 +61,7 @@ public class MigrateDatabaseCommand implements Runnable {
   //   (eg. testing upgrades!)
 
   @CommandLine.Option(
-      names = {"--to"},
+      names = {"--Xto"},
       paramLabel = "<format>",
       hidden = true,
       description =
@@ -71,10 +71,10 @@ public class MigrateDatabaseCommand implements Runnable {
 
   // batch size param
   @CommandLine.Option(
-      names = {"--batch-size"},
+      names = {"--Xbatch-size"},
       paramLabel = "<integer>",
       hidden = true,
-      description = "MB per transaction (Default: 50)",
+      description = "MB per transaction (Default: 100)",
       arity = "1")
   private Integer batchSize = 100;
 
@@ -150,7 +150,7 @@ public class MigrateDatabaseCommand implements Runnable {
     SUB_COMMAND_LOG.display(" - The existing beacon folder will become beacon.old");
     SUB_COMMAND_LOG.display(" - The beacon.new folder will become beacon (the active database)");
     SUB_COMMAND_LOG.display(
-        " - Once the new database is tested successfully, you can remove the old database");
+        " - Once you have confirmed the new database works, you can remove the old database");
     SUB_COMMAND_LOG.display("This operation will need to happen while teku is not running.");
     SUB_COMMAND_LOG.display("");
     if (!confirmYes("Proceed with database migration (yes/no)?")) {

@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.storage.server.kvstore.schema;
 
+import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
@@ -36,29 +36,22 @@ public interface SchemaFinalized extends Schema {
   KvStoreColumn<UInt64, Set<Bytes32>> getColumnNonCanonicalRootsBySlot();
 
   @Override
-  default List<KvStoreColumn<?, ?>> getAllColumns() {
-    return List.of(
-        getColumnSlotsByFinalizedRoot(),
-        getColumnFinalizedBlocksBySlot(),
-        getColumnFinalizedStatesBySlot(),
-        getColumnSlotsByFinalizedStateRoot(),
-        getColumnNonCanonicalBlocksByRoot(),
-        getColumnNonCanonicalRootsBySlot());
+  default Collection<KvStoreColumn<?, ?>> getAllColumns() {
+    return getColumnMap().values();
   }
 
   default Map<String, KvStoreColumn<?, ?>> getColumnMap() {
-    final List<KvStoreColumn<?, ?>> allColumns = getAllColumns();
     return Map.of(
-        "SLOTS_BY_FINALIZED_ROOT", allColumns.get(0),
-        "FINALIZED_BLOCKS_BY_SLOT", allColumns.get(1),
-        "FINALIZED_STATES_BY_SLOT", allColumns.get(2),
-        "SLOTS_BY_FINALIZED_STATE_ROOT", allColumns.get(3),
-        "NON_CANONICAL_BLOCKS_BY_ROOT", allColumns.get(4),
-        "NON_CANONICAL_BLOCK_ROOTS_BY_SLOT", allColumns.get(5));
+        "SLOTS_BY_FINALIZED_ROOT", getColumnSlotsByFinalizedRoot(),
+        "FINALIZED_BLOCKS_BY_SLOT", getColumnFinalizedBlocksBySlot(),
+        "FINALIZED_STATES_BY_SLOT", getColumnFinalizedStatesBySlot(),
+        "SLOTS_BY_FINALIZED_STATE_ROOT", getColumnSlotsByFinalizedStateRoot(),
+        "NON_CANONICAL_BLOCKS_BY_ROOT", getColumnNonCanonicalBlocksByRoot(),
+        "NON_CANONICAL_BLOCK_ROOTS_BY_SLOT", getColumnNonCanonicalRootsBySlot());
   }
 
   @Override
-  default List<KvStoreVariable<?>> getAllVariables() {
+  default Collection<KvStoreVariable<?>> getAllVariables() {
     return Collections.emptyList();
   }
 

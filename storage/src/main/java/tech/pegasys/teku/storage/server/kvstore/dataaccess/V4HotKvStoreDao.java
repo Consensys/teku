@@ -154,19 +154,20 @@ public class V4HotKvStoreDao implements KvStoreHotDao, KvStoreEth1Dao, KvStorePr
   public void ingest(
       final KvStoreHotDao hotDao, final int batchSize, final Consumer<String> logger) {
     Preconditions.checkArgument(batchSize > 0, "Batch size must be at least 1 (MB)");
-    Preconditions.checkArgument(hotDao instanceof V4HotKvStoreDao);
+    Preconditions.checkArgument(
+        hotDao instanceof V4HotKvStoreDao, "Expected instance of V4HotKvStoreDao");
     final V4HotKvStoreDao dao = (V4HotKvStoreDao) hotDao;
 
     final Map<String, KvStoreVariable<?>> newVariables = schema.getVariableMap();
     if (newVariables.size() > 0) {
       final Map<String, KvStoreVariable<?>> oldVariables = dao.schema.getVariableMap();
-      try (V4HotUpdater updater = new V4HotUpdater(db, schema)) {
+      try (final KvStoreTransaction transaction = db.startTransaction()) {
         for (String key : newVariables.keySet()) {
-          logger.accept(String.format("copy variable %s", key));
+          logger.accept(String.format("Copy variable %s", key));
           dao.getRawVariable(oldVariables.get(key))
-              .ifPresent(value -> updater.transaction.putRaw(newVariables.get(key), value));
+              .ifPresent(value -> transaction.putRaw(newVariables.get(key), value));
         }
-        updater.commit();
+        transaction.commit();
       }
     } else {
       logger.accept("No variables to copy from hot store.");
