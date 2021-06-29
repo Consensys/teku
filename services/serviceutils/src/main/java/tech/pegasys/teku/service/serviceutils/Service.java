@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.service.serviceutils;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import java.util.concurrent.atomic.AtomicReference;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
@@ -48,5 +50,9 @@ public abstract class Service {
 
   public boolean isRunning() {
     return state.get() == State.RUNNING;
+  }
+
+  protected void assertIsRunning(final String action) {
+    checkState(isRunning(), "Service must be running to execute action '%s'", action);
   }
 }

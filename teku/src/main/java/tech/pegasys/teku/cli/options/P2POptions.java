@@ -148,6 +148,14 @@ public class P2POptions {
       fallbackValue = "true")
   private boolean gossipScoringEnabled = false;
 
+  @Option(
+      names = {"--Xp2p-batch-verify-attestation-signatures-enabled"},
+      paramLabel = "<Boolean>",
+      description = "If true, turn on batch verification for gossiped attestation signatures",
+      hidden = true,
+      arity = "0..1")
+  private boolean batchVerifyAttestationSignatures = true;
+
   private int getP2pLowerBound() {
     if (p2pLowerBound > p2pUpperBound) {
       STATUS_LOG.adjustingP2pLowerBoundToUpperBound(p2pUpperBound);
@@ -177,6 +185,7 @@ public class P2POptions {
         .p2p(
             b ->
                 b.subscribeAllSubnetsEnabled(subscribeAllSubnetsEnabled)
+                    .batchVerifyAttestationSignatures(batchVerifyAttestationSignatures)
                     .targetSubnetSubscriberCount(p2pTargetSubnetSubscriberCount)
                     .isGossipScoringEnabled(gossipScoringEnabled))
         .discovery(

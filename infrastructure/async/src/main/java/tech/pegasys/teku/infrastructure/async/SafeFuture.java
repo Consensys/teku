@@ -637,6 +637,19 @@ public class SafeFuture<T> extends CompletableFuture<T> {
   }
 
   /**
+   * Return the result if it is available, otherwise, throws {@link IllegalStateException} if future
+   * is not done.
+   *
+   * @return The underlying result
+   */
+  public T getImmediately() {
+    if (!isDone()) {
+      throw new IllegalStateException("Expected result to be available immediately, but was not");
+    }
+    return join();
+  }
+
+  /**
    * Class containing an interrupting Future and exception supplier which produces exception if
    * interrupting Future is triggered
    *
