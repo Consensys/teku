@@ -29,7 +29,6 @@ import org.testcontainers.containers.Network;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase.CaptureArtifacts;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode.Config;
 import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateGenerator;
 
 @ExtendWith(CaptureArtifacts.class)
@@ -66,10 +65,6 @@ public class AcceptanceTestBase {
   protected TekuValidatorNode createValidatorNode(
       final Consumer<TekuValidatorNode.Config> configOptions) {
     return addNode(TekuValidatorNode.create(network, configOptions));
-  }
-
-  protected TekuDepositSender createTekuDepositSender() {
-    return createTekuDepositSender(Config.DEFAULT_NETWORK_NAME);
   }
 
   protected TekuDepositSender createTekuDepositSender(final String networkName) {
