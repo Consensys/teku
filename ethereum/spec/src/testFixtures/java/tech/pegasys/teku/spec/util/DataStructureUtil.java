@@ -767,7 +767,7 @@ public final class DataStructureUtil {
 
   public List<DepositWithIndex> newDeposits(int numDeposits) {
     List<DepositWithIndex> deposits = new ArrayList<>();
-    final DepositGenerator depositGenerator = new DepositGenerator();
+    final DepositGenerator depositGenerator = new DepositGenerator(spec);
 
     for (int i = 0; i < numDeposits; i++) {
       BLSKeyPair keypair = BLSTestUtil.randomKeyPair(i);

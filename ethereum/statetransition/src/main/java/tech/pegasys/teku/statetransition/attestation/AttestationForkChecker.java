@@ -13,28 +13,27 @@
 
 package tech.pegasys.teku.statetransition.attestation;
 
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_seed;
-import static tech.pegasys.teku.util.config.Constants.DOMAIN_BEACON_ATTESTER;
-
 import java.util.HashSet;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class AttestationForkChecker {
 
   private final Set<Bytes32> validCommitteeShufflingSeeds = new HashSet<>();
 
-  public AttestationForkChecker(BeaconState state) {
+  public AttestationForkChecker(final Spec spec, BeaconState state) {
 
-    UInt64 epoch = compute_epoch_at_slot(state.getSlot());
-    Bytes32 currentEpochSeed = get_seed(state, epoch, DOMAIN_BEACON_ATTESTER);
+    UInt64 epoch = spec.computeEpochAtSlot(state.getSlot());
+    Bytes32 currentEpochSeed = spec.getSeed(state, epoch, Domain.BEACON_ATTESTER);
     validCommitteeShufflingSeeds.add(currentEpochSeed);
 
     if (!epoch.equals(UInt64.ZERO)) {
-      Bytes32 previousEpochSeed = get_seed(state, epoch.minus(UInt64.ONE), DOMAIN_BEACON_ATTESTER);
+      Bytes32 previousEpochSeed =
+          spec.getSeed(state, epoch.minus(UInt64.ONE), Domain.BEACON_ATTESTER);
       validCommitteeShufflingSeeds.add(previousEpochSeed);
     }
   }

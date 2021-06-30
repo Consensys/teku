@@ -50,13 +50,14 @@ public class GenesisHandlerTest {
           "minimal", b -> b.minGenesisActiveValidatorCount(VALIDATOR_KEYS.size()));
   private Spec spec = TestSpecFactory.createPhase0(specConfig);
 
-  private static final List<DepositData> INITIAL_DEPOSIT_DATA =
-      new MockStartDepositGenerator(new DepositGenerator(true)).createDeposits(VALIDATOR_KEYS);
-  private static final List<Deposit> INITIAL_DEPOSITS =
-      IntStream.range(0, INITIAL_DEPOSIT_DATA.size())
+  private final List<DepositData> initialDepositData =
+      new MockStartDepositGenerator(new DepositGenerator(spec, true))
+          .createDeposits(VALIDATOR_KEYS);
+  private final List<Deposit> initialDeposits =
+      IntStream.range(0, initialDepositData.size())
           .mapToObj(
               index -> {
-                final DepositData data = INITIAL_DEPOSIT_DATA.get(index);
+                final DepositData data = initialDepositData.get(index);
                 return new Deposit(
                     data.getPubkey(),
                     data.getWithdrawal_credentials(),
@@ -86,21 +87,21 @@ public class GenesisHandlerTest {
   @Test
   public void onDepositsFromBlock_shouldInitializeGenesis() {
     final UInt64 genesisTime = Constants.MIN_GENESIS_TIME;
-    final int batchSize = INITIAL_DEPOSIT_DATA.size() / 2;
+    final int batchSize = initialDepositData.size() / 2;
 
     final DepositsFromBlockEvent event1 =
         DepositsFromBlockEvent.create(
             UInt64.valueOf(100),
             dataStructureUtil.randomBytes32(),
             UInt64.ZERO,
-            INITIAL_DEPOSITS.stream().limit(batchSize));
+            initialDeposits.stream().limit(batchSize));
 
     final DepositsFromBlockEvent event2 =
         DepositsFromBlockEvent.create(
             UInt64.valueOf(100),
             dataStructureUtil.randomBytes32(),
             genesisTime,
-            INITIAL_DEPOSITS.stream().skip(batchSize));
+            initialDeposits.stream().skip(batchSize));
 
     assertThat(storageSystem.recentChainData().isPreGenesis()).isTrue();
     genesisHandler.onDepositsFromBlock(event1);

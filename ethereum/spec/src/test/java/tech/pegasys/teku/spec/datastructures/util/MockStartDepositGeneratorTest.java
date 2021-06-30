@@ -25,6 +25,8 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSecretKey;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartDepositGenerator;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 
@@ -56,7 +58,8 @@ class MockStartDepositGeneratorTest {
     "0x9893413c00283a3f9ed9fd9845dda1cea38228d22567f9541dccc357e54a2d6a6e204103c92564cbc05f4905ac7c493a001fe05baa70dd29ce85f694898bb6de3bcde158a825db56906b54141b2a728d0040597307000000b94dcd09d218d8b0caca57cd43d3a94d62ba16f3c46ec329e925a8d13e08e4e27b1af19a9a09f84af45b44a4c05e77900035386199297397b3bab1914047a1dfe8db70263a021b0cb178c5ffbd91e7ea441c5cd42da7b75eb2ff8fe74703bbfb"
   };
 
-  private final MockStartDepositGenerator generator = new MockStartDepositGenerator();
+  private final Spec spec = TestSpecFactory.createDefault();
+  private final MockStartDepositGenerator generator = new MockStartDepositGenerator(spec);
 
   static {
     Security.addProvider(new BouncyCastleProvider());

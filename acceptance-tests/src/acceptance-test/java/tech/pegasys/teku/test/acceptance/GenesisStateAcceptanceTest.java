@@ -22,6 +22,7 @@ import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuDepositSender;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNode.Config;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeys;
 
 public class GenesisStateAcceptanceTest extends AcceptanceTestBase {
@@ -31,7 +32,7 @@ public class GenesisStateAcceptanceTest extends AcceptanceTestBase {
     final BesuNode eth1Node = createBesuNode();
     eth1Node.start();
 
-    createTekuDepositSender().sendValidatorDeposits(eth1Node, 4);
+    createTekuDepositSender(Config.DEFAULT_NETWORK_NAME).sendValidatorDeposits(eth1Node, 4);
 
     final TekuNode firstTeku = createTekuNode(config -> config.withDepositsFrom(eth1Node));
     firstTeku.start();
@@ -52,7 +53,7 @@ public class GenesisStateAcceptanceTest extends AcceptanceTestBase {
     eth1Node.start();
     int numberOfValidators = 4;
 
-    final TekuDepositSender depositSender = createTekuDepositSender();
+    final TekuDepositSender depositSender = createTekuDepositSender(Config.DEFAULT_NETWORK_NAME);
     final List<ValidatorKeys> validatorKeys =
         depositSender.generateValidatorKeys(numberOfValidators);
     depositSender.sendValidatorDeposits(eth1Node, validatorKeys, MIN_DEPOSIT_AMOUNT);

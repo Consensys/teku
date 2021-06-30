@@ -207,7 +207,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
     final UInt64 nextForkEpoch =
         nextForkInfo.map(Fork::getEpoch).orElse(SpecConfig.FAR_FUTURE_EPOCH);
 
-    final Bytes4 forkDigest = currentForkInfo.getForkDigest();
+    final Bytes4 forkDigest = currentForkInfo.getForkDigest(spec);
     final EnrForkId enrForkId = new EnrForkId(forkDigest, nextVersion, nextForkEpoch);
     final Bytes encodedEnrForkId = enrForkId.sszSerialize();
 

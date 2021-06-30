@@ -24,7 +24,6 @@ import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_HISTORICAL_VECT
 import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_SLASHINGS_VECTOR;
 import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.util.config.Constants.GENESIS_EPOCH;
-import static tech.pegasys.teku.util.config.Constants.GENESIS_FORK_VERSION;
 import static tech.pegasys.teku.util.config.Constants.MAX_COMMITTEES_PER_SLOT;
 import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
 import static tech.pegasys.teku.util.config.Constants.MAX_SEED_LOOKAHEAD;
@@ -59,40 +58,12 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 import tech.pegasys.teku.ssz.Merkleizable;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.collections.SszBitvector;
-import tech.pegasys.teku.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
 import tech.pegasys.teku.util.config.Constants;
 
 @Deprecated
 public class BeaconStateUtil {
-
-  /**
-   * Verify that the given ``leaf`` is on the merkle branch ``branch`` starting with the given
-   * ``root``.
-   *
-   * @param leaf
-   * @param branch
-   * @param depth
-   * @param index
-   * @param root
-   * @return A boolean depending on the merkle branch being valid
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_valid_merkle_branch</a>
-   */
-  @Deprecated
-  public static boolean is_valid_merkle_branch(
-      Bytes32 leaf, SszBytes32Vector branch, int depth, int index, Bytes32 root) {
-    Bytes32 value = leaf;
-    for (int i = 0; i < depth; i++) {
-      if (Math.floor(index / Math.pow(2, i)) % 2 == 1) {
-        value = Hash.sha2_256(Bytes.concatenate(branch.getElement(i), value));
-      } else {
-        value = Hash.sha2_256(Bytes.concatenate(value, branch.getElement(i)));
-      }
-    }
-    return value.equals(root);
-  }
 
   /**
    * Generate a seed for the given ``epoch``.
@@ -105,7 +76,7 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_seed</a>
    */
   @Deprecated
-  public static Bytes32 get_seed(BeaconState state, UInt64 epoch, Bytes4 domain_type)
+  private static Bytes32 get_seed(BeaconState state, UInt64 epoch, Bytes4 domain_type)
       throws IllegalArgumentException {
     UInt64 randaoIndex = epoch.plus(EPOCHS_PER_HISTORICAL_VECTOR - MIN_SEED_LOOKAHEAD - 1);
     Bytes32 mix = get_randao_mix(state, randaoIndex);
@@ -124,30 +95,13 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_total_balance</a>
    */
   @Deprecated
-  public static UInt64 get_total_balance(BeaconState state, Collection<Integer> indices) {
+  static UInt64 get_total_balance(BeaconState state, Collection<Integer> indices) {
     UInt64 sum = UInt64.ZERO;
     SszList<Validator> validator_registry = state.getValidators();
     for (Integer index : indices) {
       sum = sum.plus(validator_registry.get(index).getEffective_balance());
     }
     return sum.max(EFFECTIVE_BALANCE_INCREMENT);
-  }
-
-  /**
-   * Return the combined effective balance of the active validators.
-   *
-   * @param state - Current BeaconState
-   * @return
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_total_active_balance</a>
-   */
-  @Deprecated
-  public static UInt64 get_total_active_balance(BeaconState state) {
-    return BeaconStateCache.getTransitionCaches(state)
-        .getTotalActiveBalance()
-        .get(
-            get_current_epoch(state),
-            epoch -> get_total_balance(state, get_active_validator_indices(state, epoch)));
   }
 
   /**
@@ -162,12 +116,6 @@ public class BeaconStateUtil {
   private static Bytes32 compute_fork_data_root(
       Bytes4 current_version, Bytes32 genesis_validators_root) {
     return new ForkData(current_version, genesis_validators_root).hashTreeRoot();
-  }
-
-  @Deprecated
-  public static Bytes4 compute_fork_digest(
-      Bytes4 current_version, Bytes32 genesis_validators_root) {
-    return new Bytes4(compute_fork_data_root(current_version, genesis_validators_root).slice(0, 4));
   }
 
   /**
@@ -191,19 +139,6 @@ public class BeaconStateUtil {
   private static Bytes32 compute_domain(final Bytes4 domain_type, final Bytes32 fork_data_root) {
     return Bytes32.wrap(
         Bytes.concatenate(domain_type.getWrappedBytes(), fork_data_root.slice(0, 28)));
-  }
-
-  /**
-   * Return the domain for the ``domain_type``.
-   *
-   * @param domain_type
-   * @return domain
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#compute_domain</a>
-   */
-  @Deprecated
-  public static Bytes32 compute_domain(Bytes4 domain_type) {
-    return compute_domain(domain_type, GENESIS_FORK_VERSION, Bytes32.ZERO);
   }
 
   /**
