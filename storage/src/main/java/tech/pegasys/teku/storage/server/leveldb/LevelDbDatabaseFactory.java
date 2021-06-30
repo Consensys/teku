@@ -18,7 +18,7 @@ import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAG
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_HOT_DB;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
 import java.util.Optional;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.spec.Spec;
@@ -42,7 +42,7 @@ public class LevelDbDatabaseFactory {
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
       final Spec spec) {
-    final List<KvStoreColumn<?, ?>> v4FinalizedColumns =
+    final Collection<KvStoreColumn<?, ?>> v4FinalizedColumns =
         V4SchemaFinalized.create(spec).getAllColumns();
     final KvStoreAccessor hotDb =
         LevelDbInstanceFactory.create(

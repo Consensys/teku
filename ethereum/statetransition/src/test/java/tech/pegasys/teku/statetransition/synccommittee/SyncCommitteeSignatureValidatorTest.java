@@ -20,7 +20,6 @@ import static org.mockito.Mockito.spy;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
-import static tech.pegasys.teku.util.config.Constants.MAXIMUM_GOSSIP_CLOCK_DISPARITY;
 
 import java.util.List;
 import java.util.Optional;
@@ -274,51 +273,6 @@ class SyncCommitteeSignatureValidatorTest {
                 dataStructureUtil.randomSignature());
     assertThat(validator.validate(ValidateableSyncCommitteeSignature.fromValidator(signature)))
         .isCompletedWithValue(REJECT);
-  }
-
-  @Test
-  void isSignatureForCurrentSlot_shouldNotUnderflow() {
-    assertThat(validator.isSignatureForCurrentSlot(UInt64.ZERO)).isTrue();
-  }
-
-  @Test
-  void isSignatureForCurrentSlot_shouldRejectOutsideLowerBound() {
-    final UInt64 slot = UInt64.valueOf(1000);
-    final UInt64 slotStartTimeMillis =
-        spec.getSlotStartTime(slot, recentChainData.getGenesisTime()).times(1000);
-    timeProvider.advanceTimeByMillis(
-        slotStartTimeMillis.minus(MAXIMUM_GOSSIP_CLOCK_DISPARITY).decrement().longValue());
-    assertThat(validator.isSignatureForCurrentSlot(slot)).isFalse();
-  }
-
-  @Test
-  void isSignatureForCurrentSlot_shouldAcceptLowerBound() {
-    final UInt64 slot = UInt64.valueOf(1000);
-    final UInt64 slotStartTimeMillis =
-        spec.getSlotStartTime(slot, recentChainData.getGenesisTime()).times(1000);
-    timeProvider.advanceTimeByMillis(
-        slotStartTimeMillis.minus(MAXIMUM_GOSSIP_CLOCK_DISPARITY).longValue());
-    assertThat(validator.isSignatureForCurrentSlot(slot)).isTrue();
-  }
-
-  @Test
-  void isSignatureForCurrentSlot_shouldAcceptUpperBound() {
-    final UInt64 slot = UInt64.valueOf(1000);
-    final UInt64 nextSlotStartTimeMillis =
-        spec.getSlotStartTime(slot.increment(), recentChainData.getGenesisTime()).times(1000);
-    timeProvider.advanceTimeByMillis(
-        nextSlotStartTimeMillis.plus(MAXIMUM_GOSSIP_CLOCK_DISPARITY).longValue());
-    assertThat(validator.isSignatureForCurrentSlot(slot)).isTrue();
-  }
-
-  @Test
-  void isSignatureForCurrentSlot_shouldRecjectOutsideUpperBound() {
-    final UInt64 slot = UInt64.valueOf(1000);
-    final UInt64 nextSlotStartTimeMillis =
-        spec.getSlotStartTime(slot.increment(), recentChainData.getGenesisTime()).times(1000);
-    timeProvider.advanceTimeByMillis(
-        nextSlotStartTimeMillis.plus(MAXIMUM_GOSSIP_CLOCK_DISPARITY).increment().longValue());
-    assertThat(validator.isSignatureForCurrentSlot(slot)).isFalse();
   }
 
   private ValidateableSyncCommitteeSignature fromValidatorSpy(

@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.storage.server.kvstore.schema;
 
+import java.util.Collection;
+import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
@@ -41,6 +43,22 @@ public interface SchemaHot extends Schema {
 
   KvStoreColumn<Bytes32, BeaconState> getColumnHotStatesByRoot();
 
+  @Override
+  default Collection<KvStoreColumn<?, ?>> getAllColumns() {
+    return getColumnMap().values();
+  }
+
+  default Map<String, KvStoreColumn<?, ?>> getColumnMap() {
+    return Map.of(
+        "HOT_BLOCKS_BY_ROOT", getColumnHotBlocksByRoot(),
+        "CHECKPOINT_STATES", getColumnCheckpointStates(),
+        "VOTES", getColumnVotes(),
+        "DEPOSITS_FROM_BLOCK_EVENTS", getColumnDepositsFromBlockEvents(),
+        "STATE_ROOT_TO_SLOT_AND_BLOCK_ROOT", getColumnStateRootToSlotAndBlockRoot(),
+        "HOT_STATES_BY_ROOT", getColumnHotStatesByRoot(),
+        "HOT_BLOCK_CHECKPOINT_EPOCHS_BY_ROOT", getColumnHotBlockCheckpointEpochsByRoot());
+  }
+
   // Variables
   KvStoreVariable<UInt64> getVariableGenesisTime();
 
@@ -59,4 +77,22 @@ public interface SchemaHot extends Schema {
   KvStoreVariable<Checkpoint> getVariableWeakSubjectivityCheckpoint();
 
   KvStoreVariable<Checkpoint> getVariableAnchorCheckpoint();
+
+  @Override
+  default Collection<KvStoreVariable<?>> getAllVariables() {
+    return getVariableMap().values();
+  }
+
+  default Map<String, KvStoreVariable<?>> getVariableMap() {
+    return Map.of(
+        "GENESIS_TIME", getVariableGenesisTime(),
+        "JUSTIFIED_CHECKPOINT", getVariableJustifiedCheckpoint(),
+        "BEST_JUSTIFIED_CHECKPOINT", getVariableBestJustifiedCheckpoint(),
+        "FINALIZED_CHECKPOINT", getVariableFinalizedCheckpoint(),
+        "LATEST_FINALIZED_STATE", getVariableLatestFinalizedState(),
+        "MIN_GENESIS_TIME_BLOCK", getVariableMinGenesisTimeBlock(),
+        "PROTO_ARRAY_SNAPSHOT", getVariableProtoArraySnapshot(),
+        "WEAK_SUBJECTIVITY_CHECKPOINT", getVariableWeakSubjectivityCheckpoint(),
+        "ANCHOR_CHECKPOINT", getVariableAnchorCheckpoint());
+  }
 }

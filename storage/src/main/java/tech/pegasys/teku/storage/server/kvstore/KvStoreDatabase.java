@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -217,6 +218,12 @@ public class KvStoreDatabase implements Database {
       return;
     }
     doUpdate(event);
+  }
+
+  public void ingestDatabase(
+      final KvStoreDatabase kvStoreDatabase, final int batchSize, final Consumer<String> logger) {
+    hotDao.ingest(kvStoreDatabase.hotDao, batchSize, logger);
+    finalizedDao.ingest(kvStoreDatabase.finalizedDao, batchSize, logger);
   }
 
   @Override

@@ -13,12 +13,15 @@
 
 package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 
+import com.google.common.base.Preconditions;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
@@ -34,6 +37,8 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransaction;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaHot;
 
 public class V4HotKvStoreDao implements KvStoreHotDao, KvStoreEth1Dao, KvStoreProtoArrayDao {
@@ -146,6 +151,54 @@ public class V4HotKvStoreDao implements KvStoreHotDao, KvStoreEth1Dao, KvStorePr
   }
 
   @Override
+  public void ingest(
+      final KvStoreHotDao hotDao, final int batchSize, final Consumer<String> logger) {
+    Preconditions.checkArgument(batchSize > 0, "Batch size must be at least 1 (MB)");
+    Preconditions.checkArgument(
+        hotDao instanceof V4HotKvStoreDao, "Expected instance of V4HotKvStoreDao");
+    final V4HotKvStoreDao dao = (V4HotKvStoreDao) hotDao;
+
+    final Map<String, KvStoreVariable<?>> newVariables = schema.getVariableMap();
+    if (newVariables.size() > 0) {
+      final Map<String, KvStoreVariable<?>> oldVariables = dao.schema.getVariableMap();
+      try (final KvStoreTransaction transaction = db.startTransaction()) {
+        for (String key : newVariables.keySet()) {
+          logger.accept(String.format("Copy variable %s", key));
+          dao.getRawVariable(oldVariables.get(key))
+              .ifPresent(value -> transaction.putRaw(newVariables.get(key), value));
+        }
+        transaction.commit();
+      }
+    } else {
+      logger.accept("No variables to copy from hot store.");
+    }
+    final Map<String, KvStoreColumn<?, ?>> newColumns = schema.getColumnMap();
+    if (newColumns.size() > 0) {
+      final Map<String, KvStoreColumn<?, ?>> oldColumns = dao.schema.getColumnMap();
+      for (String key : newColumns.keySet()) {
+        logger.accept(String.format("copy column %s", key));
+        try (final Stream<ColumnEntry<Bytes, Bytes>> oldEntryStream =
+                dao.streamRawColumn(oldColumns.get(key));
+            BatchWriter batchWriter = new BatchWriter(batchSize, logger, db)) {
+          oldEntryStream.forEach(entry -> batchWriter.add(newColumns.get(key), entry));
+        }
+      }
+    } else {
+      logger.accept("No column data to copy from hot store.");
+    }
+  }
+
+  private <T> Optional<Bytes> getRawVariable(final KvStoreVariable<T> var) {
+    return db.getRaw(var);
+  }
+
+  @MustBeClosed
+  private <K, V> Stream<ColumnEntry<Bytes, Bytes>> streamRawColumn(
+      final KvStoreColumn<K, V> kvStoreColumn) {
+    return db.streamRaw(kvStoreColumn);
+  }
+
+  @Override
   @MustBeClosed
   public Eth1Updater eth1Updater() {
     return new V4HotUpdater(db, schema);
@@ -162,10 +215,14 @@ public class V4HotKvStoreDao implements KvStoreHotDao, KvStoreEth1Dao, KvStorePr
     db.close();
   }
 
-  private static class V4HotUpdater implements HotUpdater, Eth1Updater, ProtoArrayUpdater {
+  static class V4HotUpdater implements HotUpdater, Eth1Updater, ProtoArrayUpdater {
 
     private final KvStoreTransaction transaction;
     private final SchemaHot schema;
+
+    KvStoreTransaction getTransaction() {
+      return transaction;
+    }
 
     V4HotUpdater(final KvStoreAccessor db, final SchemaHot schema) {
       this.transaction = db.startTransaction();

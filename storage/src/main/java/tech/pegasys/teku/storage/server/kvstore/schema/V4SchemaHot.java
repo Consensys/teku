@@ -23,7 +23,6 @@ import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSeri
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.UINT64_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.VOTES_SERIALIZER;
 
-import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
@@ -166,31 +165,5 @@ public class V4SchemaHot implements SchemaHot {
   @Override
   public KvStoreVariable<Checkpoint> getVariableAnchorCheckpoint() {
     return ANCHOR_CHECKPOINT;
-  }
-
-  @Override
-  public List<KvStoreColumn<?, ?>> getAllColumns() {
-    return List.of(
-        hotBlocksByRoot,
-        checkpointStates,
-        VOTES,
-        DEPOSITS_FROM_BLOCK_EVENTS,
-        STATE_ROOT_TO_SLOT_AND_BLOCK_ROOT,
-        hotStatesByRoot,
-        HOT_BLOCK_CHECKPOINT_EPOCHS_BY_ROOT);
-  }
-
-  @Override
-  public List<KvStoreVariable<?>> getAllVariables() {
-    return List.of(
-        GENESIS_TIME,
-        JUSTIFIED_CHECKPOINT,
-        BEST_JUSTIFIED_CHECKPOINT,
-        FINALIZED_CHECKPOINT,
-        latestFinalizedState,
-        MIN_GENESIS_TIME_BLOCK,
-        PROTO_ARRAY_SNAPSHOT,
-        WEAK_SUBJECTIVITY_CHECKPOINT,
-        ANCHOR_CHECKPOINT);
   }
 }
