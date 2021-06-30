@@ -1,9 +1,6 @@
 # Changelog
 
 ## Upcoming Breaking Changes
-- Teku currently publishes a `head` event on the REST API 4 seconds into a slot even if a block has not been received. In a future release this will be changed so `head` event is only published when a new
-  chain head block is imported. The `--Xvalidators-dependent-root-enabled` option can be used to switch to the new behaviour now for testing.
-  Note: this should be applied to both the beacon node and validator client if running separately.
 - The `/teku/v1/beacon/states/:state_id` endpoint has been deprecated in favor of the standard API `/eth/v1/debug/beacon/states/:state_id` which now returns the state as SSZ when the `Accept: application/octet-stream` header is specified on the request.
 
 ## Current Releases
@@ -11,8 +8,15 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ## Unreleased Changes
 
+### Breaking Changes
+- Teku no longer publishes a `head` event on the REST API 4 seconds into a slot if a block has not been received. 
+  The `--Xvalidators-dependent-root-enabled=false` option can be used to restore the old behaviour.
+  Note: this should be applied to both the beacon node and validator client if running separately.
+
 ### Additions and Improvements
 - Added `migrate-data` subcommand to allow users to migrate to a leveldb relatively easily without requiring a full re-sync.
+- Improved compatibility of the validator client with other beacon nodes using the REST API by using 
+  the `dependent-root` field to detect re-orgs instead of depending on the beacon chain publishing re-org events when empty slots are later filled.
 
 ### Bug Fixes
 
