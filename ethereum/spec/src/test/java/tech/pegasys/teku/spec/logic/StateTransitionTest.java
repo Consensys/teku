@@ -75,7 +75,7 @@ public class StateTransitionTest {
 
   private BeaconState createGenesis(final Spec spec) {
     final List<DepositData> initialDepositData =
-        new MockStartDepositGenerator(new DepositGenerator(true))
+        new MockStartDepositGenerator(new DepositGenerator(spec, true))
             .createDeposits(VALIDATOR_KEYS, spec.getGenesisSpecConfig().getMaxEffectiveBalance());
 
     final List<DepositWithIndex> deposits = new ArrayList<>();

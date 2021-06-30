@@ -13,10 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.util;
 
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_domain;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.teku.util.config.Constants.BLS_WITHDRAWAL_PREFIX;
-import static tech.pegasys.teku.util.config.Constants.DOMAIN_DEPOSIT;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -28,18 +25,23 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.crypto.BouncyCastleMessageDigestFactory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
 
 public class DepositGenerator {
 
+  private final Spec spec;
   private final boolean signDeposit;
 
-  public DepositGenerator() {
-    this(true);
+  public DepositGenerator(final Spec spec) {
+    this(spec, true);
   }
 
-  public DepositGenerator(boolean signDeposit) {
+  public DepositGenerator(final Spec spec, final boolean signDeposit) {
+    this.spec = spec;
     this.signDeposit = signDeposit;
   }
 
@@ -50,11 +52,13 @@ public class DepositGenerator {
     final Bytes32 withdrawalCredentials = createWithdrawalCredentials(withdrawalPublicKey);
     final DepositMessage depositMessage =
         new DepositMessage(validatorKeyPair.getPublicKey(), withdrawalCredentials, amountInGwei);
+    final SpecVersion specVersion = spec.getGenesisSpec();
+    final Bytes32 depositDomain = specVersion.miscHelpers().computeDomain(Domain.DEPOSIT);
     final BLSSignature signature =
         signDeposit
             ? BLS.sign(
                 validatorKeyPair.getSecretKey(),
-                compute_signing_root(depositMessage, compute_domain(DOMAIN_DEPOSIT)))
+                specVersion.miscHelpers().computeSigningRoot(depositMessage, depositDomain))
             : BLSSignature.empty();
     return new DepositData(depositMessage, signature);
   }

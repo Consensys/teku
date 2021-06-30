@@ -36,16 +36,19 @@ public class ForkSchedule {
   private final NavigableMap<UInt64, SpecMilestone> epochToMilestone;
   private final NavigableMap<UInt64, SpecMilestone> slotToMilestone;
   private final NavigableMap<UInt64, SpecMilestone> genesisOffsetToMilestone;
+  private final Map<Bytes4, SpecMilestone> forkVersionToMilestone;
   private final Map<SpecMilestone, Fork> milestoneToFork;
 
   private ForkSchedule(
       final NavigableMap<UInt64, SpecMilestone> epochToMilestone,
       final NavigableMap<UInt64, SpecMilestone> slotToMilestone,
       final NavigableMap<UInt64, SpecMilestone> genesisOffsetToMilestone,
+      final Map<Bytes4, SpecMilestone> forkVersionToMilestone,
       final Map<SpecMilestone, Fork> milestoneToFork) {
     this.epochToMilestone = epochToMilestone;
     this.slotToMilestone = slotToMilestone;
     this.genesisOffsetToMilestone = genesisOffsetToMilestone;
+    this.forkVersionToMilestone = forkVersionToMilestone;
     this.milestoneToFork = milestoneToFork;
   }
 
@@ -118,6 +121,10 @@ public class ForkSchedule {
     return genesisOffsetToMilestone.floorEntry(genesisOffset).getValue();
   }
 
+  public Optional<SpecMilestone> getSpecMilestoneAtForkVersion(final Bytes4 forkVersion) {
+    return Optional.ofNullable(forkVersionToMilestone.get(forkVersion));
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) return true;
@@ -139,6 +146,7 @@ public class ForkSchedule {
     private final NavigableMap<UInt64, SpecMilestone> epochToMilestone = new TreeMap<>();
     private final NavigableMap<UInt64, SpecMilestone> slotToMilestone = new TreeMap<>();
     private final NavigableMap<UInt64, SpecMilestone> genesisOffsetToMilestone = new TreeMap<>();
+    private final Map<Bytes4, SpecMilestone> forkVersionToMilestone = new HashMap<>();
     private final Map<SpecMilestone, Fork> milestoneToFork = new HashMap<>();
 
     // Track info on the last processed milestone
@@ -151,7 +159,11 @@ public class ForkSchedule {
     public ForkSchedule build() {
       checkState(!epochToMilestone.isEmpty(), "Must configure at least one milestone");
       return new ForkSchedule(
-          epochToMilestone, slotToMilestone, genesisOffsetToMilestone, milestoneToFork);
+          epochToMilestone,
+          slotToMilestone,
+          genesisOffsetToMilestone,
+          forkVersionToMilestone,
+          milestoneToFork);
     }
 
     public Builder addNextMilestone(final SpecVersion spec) {
@@ -196,6 +208,7 @@ public class ForkSchedule {
       if (prevMilestone.isPresent() && prevMilestoneForkEpoch.equals(forkEpoch)) {
         // Clear out previous milestone data that is overshadowed by this milestone
         milestoneToFork.remove(prevMilestone.orElseThrow());
+        forkVersionToMilestone.remove(prevForkVersion.orElseThrow());
         // Remaining mappings are naturally overwritten
       }
 
@@ -203,6 +216,7 @@ public class ForkSchedule {
       epochToMilestone.put(forkEpoch, milestone);
       slotToMilestone.put(forkSlot, milestone);
       genesisOffsetToMilestone.put(genesisOffset, milestone);
+      forkVersionToMilestone.put(forkVersion, milestone);
       milestoneToFork.put(milestone, fork);
 
       // Remember what we just processed

@@ -21,6 +21,7 @@ import org.web3j.crypto.Credentials;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class DepositGenerator implements AutoCloseable {
@@ -29,6 +30,7 @@ public class DepositGenerator implements AutoCloseable {
   private final List<ValidatorKeys> keys = new ArrayList<>();
 
   public DepositGenerator(
+      final Spec spec,
       final String eth1Endpoint,
       final Eth1Address depositContractAddress,
       final Credentials eth1Credentials,
@@ -36,7 +38,8 @@ public class DepositGenerator implements AutoCloseable {
       final UInt64 amount) {
     this.validatorKeyGenerator = new ValidatorKeyGenerator(validatorCount);
     this.depositSenderService =
-        new DepositSenderService(eth1Endpoint, eth1Credentials, depositContractAddress, amount);
+        new DepositSenderService(
+            spec, eth1Endpoint, eth1Credentials, depositContractAddress, amount);
   }
 
   public List<ValidatorKeys> getKeys() {

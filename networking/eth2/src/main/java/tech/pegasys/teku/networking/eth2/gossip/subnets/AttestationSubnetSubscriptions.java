@@ -65,7 +65,7 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
               }
               final String topic =
                   GossipTopics.getAttestationSubnetTopic(
-                      forkInfo.getForkDigest(), subnetId.get(), gossipEncoding);
+                      forkInfo.getForkDigest(spec), subnetId.get(), gossipEncoding);
               return gossipNetwork.gossip(topic, gossipEncoding.encode(attestation));
             });
   }
@@ -84,7 +84,7 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
         asyncRunner,
         processor,
         gossipEncoding,
-        forkInfo.getForkDigest(),
+        forkInfo.getForkDigest(spec),
         topicName,
         subnetId);
   }

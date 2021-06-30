@@ -238,7 +238,7 @@ public class ChainBuilder {
 
     // Generate genesis state
     final List<DepositData> initialDepositData =
-        new MockStartDepositGenerator(new DepositGenerator(signDeposits))
+        new MockStartDepositGenerator(new DepositGenerator(spec, signDeposits))
             .createDeposits(validatorKeys, depositAmount);
     BeaconState genesisState =
         new MockStartBeaconStateGenerator(spec)

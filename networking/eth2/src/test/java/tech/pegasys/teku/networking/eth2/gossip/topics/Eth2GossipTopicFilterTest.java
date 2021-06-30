@@ -22,9 +22,12 @@ import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName.ge
 import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName.getSyncCommitteeSubnetTopicName;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
 
+import java.util.List;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
@@ -35,15 +38,17 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
 
 class Eth2GossipTopicFilterTest {
-  protected Spec spec = TestSpecFactory.createMinimalAltair();
+  protected Spec spec = TestSpecFactory.createMinimalWithAltairForkEpoch(UInt64.valueOf(10));
+  final List<Fork> forks = spec.getForkSchedule().getForks();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
-  private final Fork nextFork = dataStructureUtil.randomFork();
+  private final Bytes32 genesisValidatorsRoot = dataStructureUtil.randomBytes32();
+  private final ForkInfo forkInfo = new ForkInfo(forks.get(0), genesisValidatorsRoot);
+  private final Fork nextFork = forks.get(1);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final Bytes4 nextForkDigest =
       spec.atEpoch(nextFork.getEpoch())
           .miscHelpers()
-          .computeForkDigest(nextFork.getCurrent_version(), forkInfo.getGenesisValidatorsRoot());
+          .computeForkDigest(nextFork.getCurrent_version(), genesisValidatorsRoot);
 
   private final Eth2GossipTopicFilter filter =
       new Eth2GossipTopicFilter(recentChainData, SSZ_SNAPPY, spec);
@@ -103,11 +108,11 @@ class Eth2GossipTopicFilterTest {
   }
 
   private String getTopicName(final GossipTopicName name) {
-    return GossipTopics.getTopic(forkInfo.getForkDigest(), name, SSZ_SNAPPY);
+    return GossipTopics.getTopic(forkInfo.getForkDigest(spec), name, SSZ_SNAPPY);
   }
 
   private String getTopicName(final String name) {
-    return GossipTopics.getTopic(forkInfo.getForkDigest(), name, SSZ_SNAPPY);
+    return GossipTopics.getTopic(forkInfo.getForkDigest(spec), name, SSZ_SNAPPY);
   }
 
   private String getNextForkTopicName(final GossipTopicName name) {

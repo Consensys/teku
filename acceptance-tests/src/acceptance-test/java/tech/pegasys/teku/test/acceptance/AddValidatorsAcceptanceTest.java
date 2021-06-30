@@ -23,20 +23,21 @@ public class AddValidatorsAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   void shouldLoadAdditionalValidatorsWithoutRestart() throws Exception {
+    final String networkName = "less-swift";
     final BesuNode eth1Node = createBesuNode();
     eth1Node.start();
 
     final ValidatorKeystores initialKeystores =
-        createTekuDepositSender().sendValidatorDeposits(eth1Node, 2);
+        createTekuDepositSender(networkName).sendValidatorDeposits(eth1Node, 2);
 
     final ValidatorKeystores additionalKeystores =
-        createTekuDepositSender().sendValidatorDeposits(eth1Node, 2);
+        createTekuDepositSender(networkName).sendValidatorDeposits(eth1Node, 2);
 
     final TekuNode node =
         createTekuNode(
             config ->
                 config
-                    .withNetwork("less-swift")
+                    .withNetwork(networkName)
                     .withDepositsFrom(eth1Node)
                     .withValidatorKeystores(initialKeystores));
     node.start();
@@ -52,7 +53,7 @@ public class AddValidatorsAcceptanceTest extends AcceptanceTestBase {
 
     // Check loading new validators a second time still works and that they don't have to be active
     final ValidatorKeystores evenMoreKeystores =
-        createTekuDepositSender().sendValidatorDeposits(eth1Node, 1);
+        createTekuDepositSender(networkName).sendValidatorDeposits(eth1Node, 1);
     node.addValidators(evenMoreKeystores);
     node.waitForOwnedValidatorCount(5);
   }
