@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.storage.server.kvstore.schema;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -31,4 +34,28 @@ public interface SchemaFinalized extends Schema {
   KvStoreColumn<Bytes32, SignedBeaconBlock> getColumnNonCanonicalBlocksByRoot();
 
   KvStoreColumn<UInt64, Set<Bytes32>> getColumnNonCanonicalRootsBySlot();
+
+  @Override
+  default Collection<KvStoreColumn<?, ?>> getAllColumns() {
+    return getColumnMap().values();
+  }
+
+  default Map<String, KvStoreColumn<?, ?>> getColumnMap() {
+    return Map.of(
+        "SLOTS_BY_FINALIZED_ROOT", getColumnSlotsByFinalizedRoot(),
+        "FINALIZED_BLOCKS_BY_SLOT", getColumnFinalizedBlocksBySlot(),
+        "FINALIZED_STATES_BY_SLOT", getColumnFinalizedStatesBySlot(),
+        "SLOTS_BY_FINALIZED_STATE_ROOT", getColumnSlotsByFinalizedStateRoot(),
+        "NON_CANONICAL_BLOCKS_BY_ROOT", getColumnNonCanonicalBlocksByRoot(),
+        "NON_CANONICAL_BLOCK_ROOTS_BY_SLOT", getColumnNonCanonicalRootsBySlot());
+  }
+
+  @Override
+  default Collection<KvStoreVariable<?>> getAllVariables() {
+    return Collections.emptyList();
+  }
+
+  default Map<String, KvStoreVariable<?>> getVariableMap() {
+    return Collections.emptyMap();
+  }
 }

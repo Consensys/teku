@@ -48,6 +48,7 @@ import tech.pegasys.teku.cli.options.StoreOptions;
 import tech.pegasys.teku.cli.options.ValidatorOptions;
 import tech.pegasys.teku.cli.options.WeakSubjectivityOptions;
 import tech.pegasys.teku.cli.subcommand.GenesisCommand;
+import tech.pegasys.teku.cli.subcommand.MigrateDatabaseCommand;
 import tech.pegasys.teku.cli.subcommand.PeerCommand;
 import tech.pegasys.teku.cli.subcommand.SlashingProtectionCommand;
 import tech.pegasys.teku.cli.subcommand.TransitionCommand;
@@ -78,6 +79,7 @@ import tech.pegasys.teku.util.config.InvalidConfigurationException;
       PeerCommand.class,
       GenesisCommand.class,
       SlashingProtectionCommand.class,
+      MigrateDatabaseCommand.class,
       DebugToolsCommand.class,
       UnstableOptionsCommand.class,
       ValidatorClientCommand.class,

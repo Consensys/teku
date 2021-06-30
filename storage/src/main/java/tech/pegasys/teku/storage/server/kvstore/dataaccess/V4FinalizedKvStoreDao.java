@@ -13,13 +13,17 @@
 
 package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 
+import com.google.common.base.Preconditions;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -28,6 +32,8 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransaction;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
+import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalized;
 
 public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
@@ -117,6 +123,51 @@ public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
   }
 
   @Override
+  public void ingest(
+      final KvStoreFinalizedDao finalizedDao, final int batchSize, final Consumer<String> logger) {
+    Preconditions.checkArgument(batchSize > 1, "Batch size must be greater than 1 element");
+    Preconditions.checkArgument(
+        finalizedDao instanceof V4FinalizedKvStoreDao,
+        "Expected instance of V4FinalizedKvStoreDao");
+    final V4FinalizedKvStoreDao dao = (V4FinalizedKvStoreDao) finalizedDao;
+
+    final Map<String, KvStoreVariable<?>> newVariables = schema.getVariableMap();
+    if (newVariables.size() > 0) {
+      final Map<String, KvStoreVariable<?>> oldVariables = dao.schema.getVariableMap();
+      try (final KvStoreTransaction transaction = db.startTransaction()) {
+        for (String key : newVariables.keySet()) {
+          logger.accept(String.format("Copy variable %s", key));
+          dao.getRawVariable(oldVariables.get(key))
+              .ifPresent(value -> transaction.putRaw(newVariables.get(key), value));
+        }
+        transaction.commit();
+      }
+    }
+    final Map<String, KvStoreColumn<?, ?>> newColumns = schema.getColumnMap();
+    if (newColumns.size() > 0) {
+      final Map<String, KvStoreColumn<?, ?>> oldColumns = dao.schema.getColumnMap();
+      for (String key : newColumns.keySet()) {
+        logger.accept(String.format("Copy column %s", key));
+        try (final Stream<ColumnEntry<Bytes, Bytes>> oldEntryStream =
+                dao.streamRawColumn(oldColumns.get(key));
+            BatchWriter batchWriter = new BatchWriter(batchSize, logger, db)) {
+          oldEntryStream.forEach(entry -> batchWriter.add(newColumns.get(key), entry));
+        }
+      }
+    }
+  }
+
+  private <T> Optional<Bytes> getRawVariable(final KvStoreVariable<T> var) {
+    return db.getRaw(var);
+  }
+
+  @MustBeClosed
+  private <K, V> Stream<ColumnEntry<Bytes, Bytes>> streamRawColumn(
+      final KvStoreColumn<K, V> kvStoreColumn) {
+    return db.streamRaw(kvStoreColumn);
+  }
+
+  @Override
   public Optional<SignedBeaconBlock> getFinalizedBlock(final Bytes32 root) {
     return db.get(schema.getColumnSlotsByFinalizedRoot(), root)
         .flatMap(this::getFinalizedBlockAtSlot);
@@ -128,13 +179,17 @@ public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
     return new V4FinalizedKvStoreDao.V4FinalizedUpdater(db, schema, stateStorageFrequency);
   }
 
-  private static class V4FinalizedUpdater implements FinalizedUpdater {
+  static class V4FinalizedUpdater implements FinalizedUpdater {
     private final KvStoreTransaction transaction;
     private final KvStoreAccessor db;
     private final SchemaFinalized schema;
     private final UInt64 stateStorageFrequency;
     private Optional<UInt64> lastStateStoredSlot = Optional.empty();
     private boolean loadedLastStoreState = false;
+
+    KvStoreTransaction getTransaction() {
+      return transaction;
+    }
 
     V4FinalizedUpdater(
         final KvStoreAccessor db,

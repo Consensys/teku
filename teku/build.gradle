@@ -41,6 +41,7 @@ dependencies {
 
   api 'com.google.guava:guava'
 
+  implementation 'commons-io:commons-io'
   implementation 'com.google.code.gson:gson'
   implementation 'com.squareup.okhttp3:okhttp'
   implementation 'info.picocli:picocli'
@@ -62,6 +63,7 @@ dependencies {
   testImplementation testFixtures(project(':util'))
   testImplementation testFixtures(project(':ethereum:spec'))
   testImplementation testFixtures(project(':bls'))
+  testImplementation testFixtures(project(':storage'))
 
   testImplementation 'org.awaitility:awaitility'
 }
