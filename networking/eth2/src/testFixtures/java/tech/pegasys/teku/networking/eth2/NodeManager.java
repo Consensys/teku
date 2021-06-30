@@ -79,7 +79,7 @@ public class NodeManager {
     final EventChannels eventChannels =
         EventChannels.createSyncChannels(
             ChannelExceptionHandler.THROWING_HANDLER, new NoOpMetricsSystem());
-    final RecentChainData storageClient = MemoryOnlyRecentChainData.create(spec, eventBus);
+    final RecentChainData storageClient = MemoryOnlyRecentChainData.create(spec);
 
     final BeaconChainUtil chainUtil = BeaconChainUtil.create(spec, storageClient, validatorKeys);
     chainUtil.initializeStorage();

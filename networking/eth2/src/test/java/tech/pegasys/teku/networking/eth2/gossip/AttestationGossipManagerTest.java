@@ -19,7 +19,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.google.common.eventbus.EventBus;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -53,8 +52,7 @@ public class AttestationGossipManagerTest {
   private final OperationProcessor<ValidateableAttestation> gossipedAttestationProcessor =
       mock(OperationProcessor.class);
 
-  private final RecentChainData recentChainData =
-      MemoryOnlyRecentChainData.create(spec, mock(EventBus.class));
+  private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(spec);
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   private AttestationGossipManager attestationGossipManager;

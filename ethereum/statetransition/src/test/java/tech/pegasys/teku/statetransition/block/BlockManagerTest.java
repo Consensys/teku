@@ -53,7 +53,6 @@ public class BlockManagerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(2);
   private final EventBus localEventBus = new EventBus();
-  private final EventBus remoteEventBus = new EventBus();
   private final UInt64 historicalBlockTolerance = UInt64.valueOf(5);
   private final UInt64 futureBlockTolerance = UInt64.valueOf(2);
   private final int maxPendingBlocks = 10;
@@ -64,9 +63,9 @@ public class BlockManagerTest {
       FutureItems.create(SignedBeaconBlock::getSlot);
 
   private final RecentChainData localRecentChainData =
-      MemoryOnlyRecentChainData.builder().eventBus(localEventBus).specProvider(spec).build();
+      MemoryOnlyRecentChainData.builder().specProvider(spec).build();
   private final RecentChainData remoteRecentChainData =
-      MemoryOnlyRecentChainData.builder().eventBus(remoteEventBus).specProvider(spec).build();
+      MemoryOnlyRecentChainData.builder().specProvider(spec).build();
   private final BeaconChainUtil localChain =
       BeaconChainUtil.create(localRecentChainData, validatorKeys);
   private final BeaconChainUtil remoteChain =

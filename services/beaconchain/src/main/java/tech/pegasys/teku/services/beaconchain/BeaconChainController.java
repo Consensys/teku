@@ -204,7 +204,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   protected SafeFuture<?> doStart() {
     LOG.debug("Starting {}", this.getClass().getSimpleName());
     forkChoiceExecutor.start();
-    this.eventBus.register(this);
     return initialize()
         .thenCompose(
             (__) -> SafeFuture.fromRunnable(() -> beaconRestAPI.ifPresent(BeaconRestApi::start)));
@@ -245,7 +244,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   protected SafeFuture<?> doStop() {
     LOG.debug("Stopping {}", this.getClass().getSimpleName());
     return SafeFuture.allOf(
-            SafeFuture.fromRunnable(() -> eventBus.unregister(this)),
             SafeFuture.fromRunnable(() -> beaconRestAPI.ifPresent(BeaconRestApi::stop)),
             syncService.stop(),
             blockManager.stop(),
@@ -277,7 +275,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                     eventChannels.getPublisher(ProtoArrayStorageChannel.class, beaconAsyncRunner),
                     eventChannels.getPublisher(FinalizedCheckpointChannel.class, beaconAsyncRunner),
                     coalescingChainHeadChannel,
-                    eventBus,
                     spec))
         .thenCompose(
             client -> {

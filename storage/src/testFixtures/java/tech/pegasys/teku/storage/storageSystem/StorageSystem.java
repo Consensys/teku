@@ -86,8 +86,7 @@ public class StorageSystem implements AutoCloseable {
     final EventBus eventBus = new EventBus();
 
     // Create and start storage server
-    final ChainStorage chainStorageServer = ChainStorage.create(eventBus, database, spec);
-    chainStorageServer.start();
+    final ChainStorage chainStorageServer = ChainStorage.create(database, spec);
 
     // Create recent chain data
     final FinalizedCheckpointChannel finalizedCheckpointChannel =
@@ -104,7 +103,6 @@ public class StorageSystem implements AutoCloseable {
             ProtoArrayStorageChannel.NO_OP,
             finalizedCheckpointChannel,
             reorgEventChannel,
-            eventBus,
             spec);
 
     // Create combined client

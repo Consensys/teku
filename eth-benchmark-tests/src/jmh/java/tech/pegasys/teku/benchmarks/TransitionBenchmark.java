@@ -85,7 +85,7 @@ public abstract class TransitionBenchmark {
     EventBus localEventBus = mock(EventBus.class);
     spec = TestSpecFactory.createMainnetPhase0();
     wsValidator = WeakSubjectivityFactory.lenientValidator();
-    recentChainData = MemoryOnlyRecentChainData.create(spec, localEventBus);
+    recentChainData = MemoryOnlyRecentChainData.create(spec);
     ForkChoice forkChoice = ForkChoice.create(spec, new InlineEventThread(), recentChainData);
     localChain = BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);
     localChain.initializeStorage();

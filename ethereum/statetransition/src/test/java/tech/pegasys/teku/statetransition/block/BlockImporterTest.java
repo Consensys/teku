@@ -68,7 +68,7 @@ public class BlockImporterTest {
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(8);
   private final EventBus localEventBus = mock(EventBus.class);
   private final RecentChainData recentChainData =
-      MemoryOnlyRecentChainData.builder().eventBus(localEventBus).specProvider(spec).build();
+      MemoryOnlyRecentChainData.builder().specProvider(spec).build();
   private final WeakSubjectivityValidator weakSubjectivityValidator =
       mock(WeakSubjectivityValidator.class);
   private final ForkChoice forkChoice =
@@ -76,8 +76,7 @@ public class BlockImporterTest {
   private final BeaconChainUtil localChain =
       BeaconChainUtil.create(spec, recentChainData, validatorKeys, forkChoice, false);
 
-  private final EventBus otherEventBus = mock(EventBus.class);
-  private final RecentChainData otherStorage = MemoryOnlyRecentChainData.create(otherEventBus);
+  private final RecentChainData otherStorage = MemoryOnlyRecentChainData.create();
   private final BeaconChainUtil otherChain =
       BeaconChainUtil.create(otherStorage, validatorKeys, false);
 

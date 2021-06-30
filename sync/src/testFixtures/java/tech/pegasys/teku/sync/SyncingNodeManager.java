@@ -89,7 +89,7 @@ public class SyncingNodeManager {
     final EventBus eventBus = new EventBus();
     final EventChannels eventChannels =
         EventChannels.createSyncChannels(TEST_EXCEPTION_HANDLER, new NoOpMetricsSystem());
-    final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(spec, eventBus);
+    final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(spec);
 
     final BeaconChainUtil chainUtil = BeaconChainUtil.create(spec, recentChainData, validatorKeys);
     chainUtil.initializeStorage();

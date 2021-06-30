@@ -103,7 +103,7 @@ public class EpochTransitionBenchmark {
     epochProcessor = spec.getGenesisSpec().getEpochProcessor();
     wsValidator = WeakSubjectivityFactory.lenientValidator();
 
-    recentChainData = MemoryOnlyRecentChainData.create(spec, localEventBus);
+    recentChainData = MemoryOnlyRecentChainData.create(spec);
     ForkChoice forkChoice = ForkChoice.create(spec, new InlineEventThread(), recentChainData);
     localChain = BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);
     localChain.initializeStorage();

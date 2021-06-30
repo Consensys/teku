@@ -346,7 +346,7 @@ public class Eth2P2PNetworkFactory {
                 .DEFAULT_ETH2_RPC_OUTSTANDING_PING_THRESHOLD;
       }
       if (recentChainData == null) {
-        recentChainData = MemoryOnlyRecentChainData.create(eventBus);
+        recentChainData = MemoryOnlyRecentChainData.create();
         BeaconChainUtil.create(spec, 0, recentChainData).initializeStorage();
       }
       if (processedAttestationSubscriptionProvider == null) {

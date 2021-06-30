@@ -15,7 +15,6 @@ package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import static org.mockito.Mockito.mock;
 
-import com.google.common.eventbus.EventBus;
 import org.junit.jupiter.api.BeforeEach;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
@@ -32,10 +31,8 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public abstract class AbstractTopicHandlerTest<T> {
   protected final Spec spec = TestSpecFactory.createMinimalPhase0();
   protected final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  protected final EventBus eventBus = mock(EventBus.class);
   protected final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
-  protected final RecentChainData recentChainData =
-      MemoryOnlyRecentChainData.create(spec, eventBus);
+  protected final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(spec);
   protected final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   protected final BeaconChainUtil beaconChainUtil = createBeaconChainUtil();
 
