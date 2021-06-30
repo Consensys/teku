@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.util.time.channels;
+package tech.pegasys.teku.infrastructure.time;
 
 import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
 
