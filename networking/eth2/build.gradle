@@ -3,6 +3,7 @@ dependencies {
   implementation project(':bls')
   implementation project(':data')
   implementation project(':ethereum:core')
+  implementation project(':ethereum:events')
   implementation project(':ethereum:spec')
   implementation project(':ethereum:statetransition')
   implementation project(':infrastructure:async')
