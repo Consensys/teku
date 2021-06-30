@@ -18,11 +18,13 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
 
+import java.time.Duration;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -42,12 +44,14 @@ class SignedContributionAndProofValidatorTest {
   private final StorageSystem storageSystem =
       InMemoryStorageSystemBuilder.create().specProvider(spec).numberOfValidators(10).build();
   private final ChainBuilder chainBuilder = storageSystem.chainBuilder();
+  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
 
   private final SignedContributionAndProofValidator validator =
       new SignedContributionAndProofValidator(
           spec,
           storageSystem.recentChainData(),
-          new SyncCommitteeStateUtils(spec, storageSystem.recentChainData()));
+          new SyncCommitteeStateUtils(spec, storageSystem.recentChainData()),
+          timeProvider);
 
   @BeforeEach
   void setUp() {
@@ -72,6 +76,8 @@ class SignedContributionAndProofValidatorTest {
     final UInt64 period2StartSlot = spec.computeStartSlotAtEpoch(period2StartEpoch);
     final UInt64 period3StartSlot = spec.computeStartSlotAtEpoch(period3StartEpoch);
     final UInt64 lastSlotOfPeriod = period3StartSlot.minus(1);
+    final UInt64 slotSeconds = lastSlotOfPeriod.times(spec.getSecondsPerSlot(lastSlotOfPeriod));
+    timeProvider.advanceTimeBy(Duration.ofSeconds(slotSeconds.longValue()));
 
     // The first two sync committees are the same so advance the chain into the second period
     // so we can test going into the third period which is actually different
@@ -89,6 +95,11 @@ class SignedContributionAndProofValidatorTest {
   void shouldIgnoreWhenContributionIsNotFromTheCurrentSlot() {
     final SignedContributionAndProof message =
         chainBuilder.createValidSignedContributionAndProofBuilder().build();
+    final UInt64 slot = message.getMessage().getContribution().getSlot().plus(1);
+    // disparity is 500 millis, so 1 second into next slot will be time
+    final UInt64 slotSeconds = slot.times(spec.getSecondsPerSlot(slot)).plus(1);
+    timeProvider.advanceTimeBy(Duration.ofSeconds(slotSeconds.longValue()));
+
     storageSystem
         .chainUpdater()
         .setCurrentSlot(message.getMessage().getContribution().getSlot().plus(1));
@@ -180,7 +191,10 @@ class SignedContributionAndProofValidatorTest {
   @Test
   void shouldHandleBeaconBlockRootBeingFromBeforeCurrentSyncCommitteePeriod() {
     final Bytes32 blockRoot = chainBuilder.getLatestBlockAndState().getRoot();
-    final int slot = config.getEpochsPerSyncCommitteePeriod() * config.getSlotsPerEpoch() + 1;
+    final UInt64 slot =
+        UInt64.valueOf(config.getEpochsPerSyncCommitteePeriod() * config.getSlotsPerEpoch() + 1);
+    final UInt64 slotSeconds = slot.times(spec.getSecondsPerSlot(slot));
+    timeProvider.advanceTimeBy(Duration.ofSeconds(slotSeconds.longValue()));
     storageSystem.chainUpdater().advanceChain(slot);
 
     final SignedContributionAndProof message =

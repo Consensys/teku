@@ -14,11 +14,9 @@
 package tech.pegasys.teku.statetransition.synccommittee;
 
 import static java.util.stream.Collectors.toList;
-import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
-import static tech.pegasys.teku.util.config.Constants.MAXIMUM_GOSSIP_CLOCK_DISPARITY;
 import static tech.pegasys.teku.util.config.Constants.VALID_SYNC_COMMITTEE_SIGNATURE_SET_SIZE;
 
 import java.util.List;
@@ -48,9 +46,8 @@ public class SyncCommitteeSignatureValidator {
   private final Set<UniquenessKey> seenIndices =
       LimitedSet.create(VALID_SYNC_COMMITTEE_SIGNATURE_SET_SIZE);
   private final Spec spec;
-  private final RecentChainData recentChainData;
   private final SyncCommitteeStateUtils syncCommitteeStateUtils;
-  private final TimeProvider timeProvider;
+  private final SyncCommitteeCurrentSlotUtil slotUtil;
 
   public SyncCommitteeSignatureValidator(
       final Spec spec,
@@ -58,9 +55,8 @@ public class SyncCommitteeSignatureValidator {
       final SyncCommitteeStateUtils syncCommitteeStateUtils,
       final TimeProvider timeProvider) {
     this.spec = spec;
-    this.recentChainData = recentChainData;
     this.syncCommitteeStateUtils = syncCommitteeStateUtils;
-    this.timeProvider = timeProvider;
+    slotUtil = new SyncCommitteeCurrentSlotUtil(recentChainData, spec, timeProvider);
   }
 
   public SafeFuture<InternalValidationResult> validate(
@@ -81,13 +77,17 @@ public class SyncCommitteeSignatureValidator {
     // [IGNORE] The signature's slot is for the current slot(with a MAXIMUM_GOSSIP_CLOCK_DISPARITY
     // allowance),
     // i.e. sync_committee_signature.slot == current_slot.
-    if (!isSignatureForCurrentSlot(signature.getSlot())) {
+    if (!slotUtil.isForCurrentSlot(signature.getSlot())) {
       LOG.trace("Ignoring sync committee signature because it is not from the current slot");
       return SafeFuture.completedFuture(IGNORE);
     }
 
     // [IGNORE] There has been no other valid sync committee signature for the declared slot for the
     // validator referenced by sync_committee_signature.validator_index.
+    // (this requires maintaining a cache of size `SYNC_COMMITTEE_SIZE //
+    // SYNC_COMMITTEE_SUBNET_COUNT` for each subnet that can be flushed after each slot).
+    // Note this validation is _per topic_ so that for a given `slot`, multiple messages could be
+    // forwarded with the same `validator_index` as long as the `subnet_id`s are distinct.
     final Optional<UniquenessKey> uniquenessKey;
     if (validateableSignature.getReceivedSubnetId().isPresent()) {
       final UniquenessKey key =
@@ -98,13 +98,6 @@ public class SyncCommitteeSignatureValidator {
       uniquenessKey = Optional.of(key);
     } else {
       uniquenessKey = Optional.empty();
-    }
-
-    // [IGNORE] The block being signed over (sync_committee_signature.beacon_block_root) has been
-    // seen (via both gossip and non-gossip sources).
-    if (!recentChainData.containsBlock(signature.getBeaconBlockRoot())) {
-      LOG.trace("Ignoring sync committee signature because beacon block is not known");
-      return SafeFuture.completedFuture(IGNORE);
     }
 
     return syncCommitteeStateUtils
@@ -120,22 +113,6 @@ public class SyncCommitteeSignatureValidator {
               return validateWithState(
                   validateableSignature, signature, syncCommitteeUtil, state, uniquenessKey);
             });
-  }
-
-  boolean isSignatureForCurrentSlot(final UInt64 slot) {
-    if (recentChainData.getCurrentSlot().isEmpty()) {
-      return false;
-    }
-    final UInt64 slotMillis = secondsToMillis(spec.atSlot(slot).getConfig().getSecondsPerSlot());
-    final UInt64 slotStartTimeMillis =
-        secondsToMillis(spec.getSlotStartTime(slot, recentChainData.getGenesisTime()));
-    final UInt64 slotEndTimeMillis = slotStartTimeMillis.plus(slotMillis);
-    final UInt64 currentTimeMillis = timeProvider.getTimeInMillis();
-
-    return currentTimeMillis.isGreaterThanOrEqualTo(
-            slotStartTimeMillis.minusMinZero(MAXIMUM_GOSSIP_CLOCK_DISPARITY))
-        && currentTimeMillis.isLessThanOrEqualTo(
-            slotEndTimeMillis.plus(MAXIMUM_GOSSIP_CLOCK_DISPARITY));
   }
 
   private InternalValidationResult validateWithState(
