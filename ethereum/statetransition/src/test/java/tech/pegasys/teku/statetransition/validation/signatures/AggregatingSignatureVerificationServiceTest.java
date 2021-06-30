@@ -39,16 +39,22 @@ import tech.pegasys.teku.service.serviceutils.ServiceCapacityExceededException;
 import tech.pegasys.teku.statetransition.validation.signatures.AggregatingSignatureVerificationService.SignatureTask;
 
 public class AggregatingSignatureVerificationServiceTest {
-  private static List<BLSKeyPair> KEYS = BLSKeyGenerator.generateKeyPairs(10);
+  private static List<BLSKeyPair> KEYS = BLSKeyGenerator.generateKeyPairs(50);
 
-  private final int queueCapacity = 10;
-  private final int batchSize = 5;
+  private final int queueCapacity = 50;
+  private final int batchSize = 25;
+  private final int minBatchSizeToSplit = 5;
   private final int numThreads = 2;
 
   private final StubAsyncRunnerFactory asyncRunnerFactory = new StubAsyncRunnerFactory();
   private AggregatingSignatureVerificationService service =
       new AggregatingSignatureVerificationService(
-          new StubMetricsSystem(), asyncRunnerFactory, numThreads, queueCapacity, batchSize);
+          new StubMetricsSystem(),
+          asyncRunnerFactory,
+          numThreads,
+          queueCapacity,
+          batchSize,
+          minBatchSizeToSplit);
 
   @Test
   public void start_shouldQueueTasks() {
@@ -107,11 +113,20 @@ public class AggregatingSignatureVerificationServiceTest {
   }
 
   @Test
-  public void verify_multipleValidSignatures() {
+  public void verify_validSignatures_fullBatch() {
+    verifyValidSignatures(queueCapacity);
+  }
+
+  @Test
+  public void verify_validSignatures_smallBatch() {
+    verifyValidSignatures(minBatchSizeToSplit - 1);
+  }
+
+  public void verifyValidSignatures(final int batchSize) {
     startService();
 
     final List<SafeFuture<Boolean>> futures = new ArrayList<>();
-    for (int j = 0; j < queueCapacity; j++) {
+    for (int j = 0; j < batchSize; j++) {
       futures.add(executeValidVerify(j, j));
     }
 
@@ -126,11 +141,20 @@ public class AggregatingSignatureVerificationServiceTest {
   }
 
   @Test
-  public void verify_multipleMixedSignatures() {
+  public void verify_mixedSignatures_fullBatch() {
+    verifyMixedSignatures(queueCapacity);
+  }
+
+  @Test
+  public void verify_mixedSignatures_smallBatch() {
+    verifyMixedSignatures(minBatchSizeToSplit - 1);
+  }
+
+  private void verifyMixedSignatures(final int batchSize) {
     startService();
 
     final List<SafeFuture<Boolean>> futures = new ArrayList<>();
-    for (int j = 0; j < queueCapacity; j++) {
+    for (int j = 0; j < batchSize; j++) {
       if (j % 3 == 0) {
         futures.add(executeInvalidVerify(j, j));
       } else {
@@ -143,7 +167,7 @@ public class AggregatingSignatureVerificationServiceTest {
     }
     runPendingTasks();
 
-    for (int j = 0; j < queueCapacity; j++) {
+    for (int j = 0; j < batchSize; j++) {
       final SafeFuture<Boolean> future = futures.get(j);
       if (j % 3 == 0) {
         assertThat(future).isCompletedWithValue(false);
@@ -160,7 +184,7 @@ public class AggregatingSignatureVerificationServiceTest {
         AsyncRunnerFactory.createDefault(new MetricTrackingExecutorFactory(metrics));
     service =
         new AggregatingSignatureVerificationService(
-            metrics, realRunnerFactory, 1, queueCapacity, batchSize);
+            metrics, realRunnerFactory, 1, queueCapacity, batchSize, minBatchSizeToSplit);
     startService();
 
     final Random random = new Random(1);
@@ -184,6 +208,61 @@ public class AggregatingSignatureVerificationServiceTest {
       validFutures.forEach(f -> assertThat(f).isCompletedWithValue(true));
       invalidFutures.forEach(f -> assertThat(f).isCompletedWithValue(false));
     }
+  }
+
+  @SuppressWarnings("FutureReturnValueIgnored")
+  @Test
+  public void splitTasks_evenNumber() {
+    startService();
+
+    final int taskCount = 8;
+    for (int i = 0; i < taskCount; i++) {
+      executeValidVerify(0, i);
+    }
+
+    final List<SignatureTask> tasks = getPendingTasks();
+    assertThat(tasks.size()).isEqualTo(taskCount);
+    final List<List<SignatureTask>> split = service.splitTasks(tasks);
+
+    assertThat(split.size()).isEqualTo(2);
+    assertThat(split.get(0).size()).isEqualTo(4);
+    assertThat(split.get(1).size()).isEqualTo(4);
+    assertThat(split.get(0)).doesNotContainAnyElementsOf(split.get(1));
+  }
+
+  @SuppressWarnings("FutureReturnValueIgnored")
+  @Test
+  public void splitTasks_oddNumber() {
+    startService();
+
+    final int taskCount = 7;
+    for (int i = 0; i < taskCount; i++) {
+      executeValidVerify(0, i);
+    }
+
+    final List<SignatureTask> tasks = getPendingTasks();
+    assertThat(tasks.size()).isEqualTo(taskCount);
+    final List<List<SignatureTask>> split = service.splitTasks(tasks);
+
+    assertThat(split.size()).isEqualTo(2);
+    assertThat(split.get(0).size()).isEqualTo(4);
+    assertThat(split.get(1).size()).isEqualTo(3);
+    assertThat(split.get(0)).doesNotContainAnyElementsOf(split.get(1));
+  }
+
+  @SuppressWarnings("FutureReturnValueIgnored")
+  @Test
+  public void splitTasks_singleTask() {
+    startService();
+
+    executeValidVerify(0, 0);
+
+    final List<SignatureTask> tasks = getPendingTasks();
+    assertThat(tasks.size()).isEqualTo(1);
+    final List<List<SignatureTask>> split = service.splitTasks(tasks);
+
+    assertThat(split.size()).isEqualTo(1);
+    assertThat(split.get(0).size()).isEqualTo(1);
   }
 
   private void startService() {
@@ -228,9 +307,14 @@ public class AggregatingSignatureVerificationServiceTest {
 
   private void runPendingTasks() {
     // Get pending tasks
+    final List<SignatureTask> tasks = getPendingTasks();
+    service.batchVerifySignatures(tasks);
+  }
+
+  private List<SignatureTask> getPendingTasks() {
     final List<SignatureTask> pendingTasks = new ArrayList<>();
     service.batchSignatureTasks.drainTo(pendingTasks);
-    service.batchVerifySignatures(pendingTasks);
+    return pendingTasks;
   }
 
   private StubAsyncRunner getRunner() {
