@@ -60,7 +60,8 @@ public class AttestationGossipManagerTest {
   private AttestationGossipManager attestationGossipManager;
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
-  private final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
+  private final ForkInfo forkInfo =
+      new ForkInfo(spec.fork(UInt64.ZERO), dataStructureUtil.randomBytes32());
   private final AttestationSubnetSubscriptions attestationSubnetSubscriptions =
       new AttestationSubnetSubscriptions(
           asyncRunner,
@@ -79,6 +80,9 @@ public class AttestationGossipManagerTest {
 
   @Test
   public void onNewAttestation_afterMatchingAssignment() {
+    // Create a new DataStructureUtil so that generated attestations are not subject to change
+    // when access to the global DataStructureUtil changes
+    DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     final Attestation attestation = dataStructureUtil.randomAttestation(3);
     final Attestation attestation2 =
         new Attestation(
@@ -186,6 +190,6 @@ public class AttestationGossipManagerTest {
 
   private String getSubnetTopic(final int subnetId) {
     return GossipTopics.getAttestationSubnetTopic(
-        forkInfo.getForkDigest(), subnetId, gossipEncoding);
+        forkInfo.getForkDigest(spec), subnetId, gossipEncoding);
   }
 }

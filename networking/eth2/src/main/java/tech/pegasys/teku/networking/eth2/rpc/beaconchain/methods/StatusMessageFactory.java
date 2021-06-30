@@ -40,7 +40,7 @@ public class StatusMessageFactory {
 
     return Optional.of(
         new StatusMessage(
-            forkInfo.getForkDigest(),
+            forkInfo.getForkDigest(recentChainData.getSpec()),
             finalizedCheckpoint.getRoot(),
             finalizedCheckpoint.getEpoch(),
             chainHead.getRoot(),

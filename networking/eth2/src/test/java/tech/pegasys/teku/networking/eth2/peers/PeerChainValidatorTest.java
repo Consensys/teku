@@ -20,6 +20,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
@@ -35,6 +36,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.type.Bytes4;
@@ -44,14 +46,17 @@ import tech.pegasys.teku.util.config.Constants;
 
 public class PeerChainValidatorTest {
   private final Spec spec = TestSpecFactory.createDefault();
+  private final List<Fork> forks = spec.getForkSchedule().getForks();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final Eth2Peer peer = mock(Eth2Peer.class);
   private final CombinedChainDataClient combinedChainData = mock(CombinedChainDataClient.class);
   private final UpdatableStore store = mock(UpdatableStore.class);
 
-  private final ForkInfo remoteForkInfo = dataStructureUtil.randomForkInfo();
-  private final Bytes4 remoteFork = remoteForkInfo.getForkDigest();
-  private final ForkInfo otherForkInfo = dataStructureUtil.randomForkInfo();
+  private final ForkInfo remoteForkInfo =
+      new ForkInfo(forks.get(0), dataStructureUtil.randomBytes32());
+  private final Bytes4 remoteFork = remoteForkInfo.getForkDigest(spec);
+  private final ForkInfo otherForkInfo =
+      new ForkInfo(forks.get(0), dataStructureUtil.randomBytes32());
 
   private final UInt64 genesisEpoch = UInt64.valueOf(Constants.GENESIS_EPOCH);
   private final UInt64 remoteFinalizedEpoch = UInt64.valueOf(10L);

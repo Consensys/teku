@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.genesis;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_EPOCH;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -38,28 +39,28 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.util.config.Constants;
 
 // Note that genesis generation is also covered by the initialization acceptance test
 class GenesisGeneratorTest {
   private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(16);
-  private static final List<DepositData> INITIAL_DEPOSIT_DATA =
-      new MockStartDepositGenerator(new DepositGenerator(true)).createDeposits(VALIDATOR_KEYS);
-  private static final List<Deposit> INITIAL_DEPOSITS =
-      IntStream.range(0, INITIAL_DEPOSIT_DATA.size())
-          .mapToObj(
-              index -> {
-                final DepositData data = INITIAL_DEPOSIT_DATA.get(index);
-                return new DepositWithIndex(data, UInt64.valueOf(index));
-              })
-          .collect(toList());
-  public static final UInt64 GENESIS_EPOCH = UInt64.valueOf(Constants.GENESIS_EPOCH);
 
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final SpecVersion genesisSpec = spec.getGenesisSpec();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final GenesisGenerator genesisGenerator =
       new GenesisGenerator(genesisSpec, spec.fork(UInt64.ZERO));
+
+  private final List<DepositData> initialDepositData =
+      new MockStartDepositGenerator(new DepositGenerator(spec, true))
+          .createDeposits(VALIDATOR_KEYS);
+  private final List<Deposit> initialDeposits =
+      IntStream.range(0, initialDepositData.size())
+          .mapToObj(
+              index -> {
+                final DepositData data = initialDepositData.get(index);
+                return new DepositWithIndex(data, UInt64.valueOf(index));
+              })
+          .collect(toList());
 
   @Test
   void initializeBeaconStateFromEth1_shouldIgnoreInvalidSignedDeposits() {
@@ -94,13 +95,13 @@ class GenesisGeneratorTest {
     final UInt64 genesisTime = UInt64.valueOf(982928293223232L);
 
     final BeaconState expectedState =
-        spec.initializeBeaconStateFromEth1(eth1BlockHash2, genesisTime, INITIAL_DEPOSITS);
+        spec.initializeBeaconStateFromEth1(eth1BlockHash2, genesisTime, initialDeposits);
 
     genesisGenerator.updateCandidateState(
-        eth1BlockHash1, genesisTime.minus(UInt64.ONE), INITIAL_DEPOSITS.subList(0, 8));
+        eth1BlockHash1, genesisTime.minus(UInt64.ONE), initialDeposits.subList(0, 8));
 
     genesisGenerator.updateCandidateState(
-        eth1BlockHash2, genesisTime, INITIAL_DEPOSITS.subList(8, INITIAL_DEPOSITS.size()));
+        eth1BlockHash2, genesisTime, initialDeposits.subList(8, initialDeposits.size()));
 
     final BeaconState actualState = genesisGenerator.getGenesisState();
     assertThat(actualState).isEqualTo(expectedState);
@@ -111,9 +112,9 @@ class GenesisGeneratorTest {
 
   @Test
   public void shouldIncrementallyAddValidators() {
-    for (int i = 0; i < INITIAL_DEPOSITS.size(); i++) {
+    for (int i = 0; i < initialDeposits.size(); i++) {
       genesisGenerator.updateCandidateState(
-          Bytes32.ZERO, UInt64.ZERO, Collections.singletonList(INITIAL_DEPOSITS.get(i)));
+          Bytes32.ZERO, UInt64.ZERO, Collections.singletonList(initialDeposits.get(i)));
 
       final BeaconState state = genesisGenerator.getGenesisState();
       assertThat(spec.getActiveValidatorIndices(state, GENESIS_EPOCH)).hasSize(i + 1);
@@ -124,7 +125,7 @@ class GenesisGeneratorTest {
   @Test
   public void shouldActivateToppedUpValidator() {
     MockStartDepositGenerator mockStartDepositGenerator =
-        new MockStartDepositGenerator(new DepositGenerator(true));
+        new MockStartDepositGenerator(new DepositGenerator(spec, true));
     DepositData PARTIAL_DEPOSIT_DATA =
         mockStartDepositGenerator
             .createDeposits(VALIDATOR_KEYS.subList(0, 1), UInt64.valueOf(1000000000L))
@@ -155,7 +156,7 @@ class GenesisGeneratorTest {
 
   @Test
   public void shouldIgnoreInvalidDeposits() {
-    List<Deposit> deposits = new ArrayList<>(INITIAL_DEPOSITS);
+    List<Deposit> deposits = new ArrayList<>(initialDeposits);
     // Add an invalid deposit at the start with the same key as a later, valid deposit
     final int expectedIndex = 3;
     final DepositData validData = deposits.get(expectedIndex).getData();
