@@ -14,13 +14,15 @@
 package tech.pegasys.teku.spec.datastructures.merkletree;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.is_valid_merkle_branch;
 
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.util.MerkleTree;
 import tech.pegasys.teku.spec.datastructures.util.OptimizedMerkleTree;
 import tech.pegasys.teku.ssz.collections.SszBytes32Vector;
@@ -28,6 +30,8 @@ import tech.pegasys.teku.ssz.schema.collections.SszBytes32VectorSchema;
 
 public class MerkleTreeTest {
 
+  private final Spec spec = TestSpecFactory.createDefault();
+  private final SpecVersion genesisSpec = spec.getGenesisSpec();
   private MerkleTree merkleTree1;
   private MerkleTree merkleTree2;
   private final int treeDepth = 4;
@@ -62,12 +66,14 @@ public class MerkleTreeTest {
       Bytes32 root = merkleTree1.getRoot();
 
       results.add(
-          is_valid_merkle_branch(
-              leaf,
-              toSszBytes32Vector(merkleTree1.getProof(leaf)),
-              treeDepth + 1, // Add 1 for the `List` length mix-in
-              index,
-              root));
+          genesisSpec
+              .predicates()
+              .isValidMerkleBranch(
+                  leaf,
+                  toSszBytes32Vector(merkleTree1.getProof(leaf)),
+                  treeDepth + 1, // Add 1 for the `List` length mix-in
+                  index,
+                  root));
     }
     assertThat(results).allSatisfy(Assertions::assertTrue);
   }
@@ -92,12 +98,14 @@ public class MerkleTreeTest {
       Bytes32 root = merkleTree1.getRoot();
 
       results.add(
-          is_valid_merkle_branch(
-              leaf,
-              toSszBytes32Vector(merkleTree2.getProofWithViewBoundary(leaf, index + 1)),
-              treeDepth + 1, // Add 1 for the `List` length mix-in
-              index,
-              root));
+          genesisSpec
+              .predicates()
+              .isValidMerkleBranch(
+                  leaf,
+                  toSszBytes32Vector(merkleTree2.getProofWithViewBoundary(leaf, index + 1)),
+                  treeDepth + 1, // Add 1 for the `List` length mix-in
+                  index,
+                  root));
     }
     assertThat(results).allSatisfy(Assertions::assertTrue);
   }
@@ -120,12 +128,14 @@ public class MerkleTreeTest {
     List<Boolean> results = new ArrayList<>();
     for (int index = 0; index < 10; index++) {
       results.add(
-          is_valid_merkle_branch(
-              leaves.get(index),
-              toSszBytes32Vector(merkleTree2.getProofWithViewBoundary(index, 10)),
-              treeDepth + 1, // Add 1 for the `List` length mix-in
-              index,
-              root));
+          genesisSpec
+              .predicates()
+              .isValidMerkleBranch(
+                  leaves.get(index),
+                  toSszBytes32Vector(merkleTree2.getProofWithViewBoundary(index, 10)),
+                  treeDepth + 1, // Add 1 for the `List` length mix-in
+                  index,
+                  root));
     }
     assertThat(results).allSatisfy(Assertions::assertTrue);
   }

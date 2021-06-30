@@ -288,6 +288,12 @@ public class Spec {
     return atBlock(block).miscHelpers().computeSigningRoot(block, domain);
   }
 
+  public Bytes4 computeForkDigest(Bytes4 currentVersion, Bytes32 genesisValidatorsRoot) {
+    return atForkVersion(currentVersion)
+        .miscHelpers()
+        .computeForkDigest(currentVersion, genesisValidatorsRoot);
+  }
+
   public int getBeaconProposerIndex(final BeaconState state, final UInt64 slot) {
     return atState(state).beaconStateAccessors().getBeaconProposerIndex(state, slot);
   }
@@ -588,6 +594,16 @@ public class Spec {
 
   private SpecVersion atBlock(final BeaconBlockSummary blockSummary) {
     return atSlot(blockSummary.getSlot());
+  }
+
+  private SpecVersion atForkVersion(final Bytes4 forkVersion) {
+    final SpecMilestone milestone =
+        forkSchedule
+            .getSpecMilestoneAtForkVersion(forkVersion)
+            .orElseThrow(
+                () -> new IllegalArgumentException("Unknown fork version: " + forkVersion));
+
+    return forMilestone(milestone);
   }
 
   @Override

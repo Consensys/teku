@@ -19,14 +19,15 @@ import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
 import java.util.List;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 
 public class MockStartDepositGenerator {
   private final DepositGenerator depositGenerator;
 
-  public MockStartDepositGenerator() {
-    this(new DepositGenerator());
+  public MockStartDepositGenerator(final Spec spec) {
+    this(new DepositGenerator(spec));
   }
 
   public MockStartDepositGenerator(DepositGenerator depositGenerator) {

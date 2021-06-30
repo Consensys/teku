@@ -182,7 +182,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
 
   private Eth2Context getEth2Context() {
     final StateAndBlockSummary chainHead = recentChainData.getChainHead().orElseThrow();
-    final Bytes4 forkDigest = chainHead.getState().getForkInfo().getForkDigest();
+    final Bytes4 forkDigest = chainHead.getState().getForkInfo().getForkDigest(spec);
     final UInt64 currentSlot = recentChainData.getCurrentSlot().orElseThrow();
     final UInt64 currentEpoch = spec.computeEpochAtSlot(currentSlot);
 
