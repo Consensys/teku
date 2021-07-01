@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
@@ -116,12 +115,10 @@ public class GossipMessageHandlerIntegrationTest {
   }
 
   @Test
-  @Disabled("Not currently implemented - see https://github.com/ConsenSys/teku/issues/4126")
   public void shouldNotGossipInvalidBlocks() throws Exception {
     final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
     final UInt64 blockSlot = UInt64.valueOf(2L);
 
-    final Set<SignedBeaconBlock> node2ReceivedBlocks = new HashSet<>();
     final Set<SignedBeaconBlock> node3ReceivedBlocks = new HashSet<>();
 
     // Setup network 1
@@ -135,8 +132,8 @@ public class GossipMessageHandlerIntegrationTest {
                 b1.gossipEncoding(gossipEncoding)
                     .gossipedBlockProcessor(
                         block -> {
-                          node2ReceivedBlocks.add(block);
-                          return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
+                          // Report block as invalid
+                          return SafeFuture.completedFuture(InternalValidationResult.REJECT);
                         }));
     node2.chainUtil().setSlot(blockSlot);
 
@@ -150,7 +147,7 @@ public class GossipMessageHandlerIntegrationTest {
                           node3ReceivedBlocks.add(block);
                           return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
                         }));
-    node2.chainUtil().setSlot(blockSlot);
+    node3.chainUtil().setSlot(blockSlot);
 
     // Connect networks 1 -> 2 -> 3
     waitFor(node1.connect(node2));
@@ -172,7 +169,8 @@ public class GossipMessageHandlerIntegrationTest {
     node1.gossipBlock(newBlock);
 
     // Wait for blocks to propagate
-    ensureConditionRemainsMet(() -> assertThat(node2ReceivedBlocks).isEmpty(), 10000);
+    assertThat(node1.network().getPeerCount()).isEqualTo(1);
+    // Node2 receives the block from node1 but doesn't not gossip it on to node3 as it's invalid
     ensureConditionRemainsMet(() -> assertThat(node3ReceivedBlocks).isEmpty(), 10000);
   }
 
