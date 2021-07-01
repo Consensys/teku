@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.validation.signatures;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -38,10 +39,12 @@ class AggregatingSignatureVerificationService extends SignatureVerificationServi
 
   static final int DEFAULT_QUEUE_CAPACITY = 5_000;
   static final int DEFAULT_MAX_BATCH_SIZE = 250;
+  static final int DEFAULT_MIN_BATCH_SIZE_TO_SPLIT = 25;
   static final int DEFAULT_THREAD_COUNT = 2;
 
   private final int numThreads;
   private final int maxBatchSize;
+  private final int minBatchSizeToSplit;
 
   @VisibleForTesting final BlockingQueue<SignatureTask> batchSignatureTasks;
   private final AsyncRunner asyncRunner;
@@ -52,12 +55,14 @@ class AggregatingSignatureVerificationService extends SignatureVerificationServi
       final AsyncRunnerFactory asyncRunnerFactory,
       final int numThreads,
       final int queueCapacity,
-      final int maxBatchSize) {
+      final int maxBatchSize,
+      final int minBatchSizeToSplit) {
     this.numThreads = Math.min(numThreads, Runtime.getRuntime().availableProcessors());
     this.asyncRunner = asyncRunnerFactory.create(this.getClass().getSimpleName(), this.numThreads);
     this.maxBatchSize = maxBatchSize;
 
     this.batchSignatureTasks = new ArrayBlockingQueue<>(queueCapacity);
+    this.minBatchSizeToSplit = minBatchSizeToSplit;
     metricsSystem.createGauge(
         TekuMetricCategory.EXECUTOR,
         "signature_verifications_queue_size",
@@ -72,7 +77,8 @@ class AggregatingSignatureVerificationService extends SignatureVerificationServi
         asyncRunnerFactory,
         DEFAULT_THREAD_COUNT,
         DEFAULT_QUEUE_CAPACITY,
-        DEFAULT_MAX_BATCH_SIZE);
+        DEFAULT_MAX_BATCH_SIZE,
+        DEFAULT_MIN_BATCH_SIZE_TO_SPLIT);
   }
 
   @Override
@@ -153,6 +159,12 @@ class AggregatingSignatureVerificationService extends SignatureVerificationServi
     } else if (tasks.size() == 1) {
       // We only had 1 signature, so it must be invalid
       tasks.get(0).result.complete(false);
+    } else if (tasks.size() >= minBatchSizeToSplit) {
+      // Split up tasks and try to verify in smaller batches
+      final List<List<SignatureTask>> splitTasks = splitTasks(tasks);
+      for (List<SignatureTask> splitTask : splitTasks) {
+        batchVerifySignatures(splitTask);
+      }
     } else {
       // Validate each signature individually
       for (SignatureTask task : tasks) {
@@ -161,6 +173,12 @@ class AggregatingSignatureVerificationService extends SignatureVerificationServi
         task.result.complete(taskIsValid);
       }
     }
+  }
+
+  @VisibleForTesting
+  List<List<SignatureTask>> splitTasks(final List<SignatureTask> tasks) {
+    final int splitListSize = Math.toIntExact((long) Math.ceil(tasks.size() / 2.0));
+    return Lists.partition(tasks, splitListSize);
   }
 
   private double getQueueSize() {

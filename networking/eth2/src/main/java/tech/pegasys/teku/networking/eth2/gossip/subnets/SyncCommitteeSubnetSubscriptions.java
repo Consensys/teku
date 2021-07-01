@@ -52,7 +52,7 @@ public class SyncCommitteeSubnetSubscriptions extends CommitteeSubnetSubscriptio
   public SafeFuture<?> gossip(final SyncCommitteeSignature signature, final int subnetId) {
     return gossipNetwork.gossip(
         GossipTopics.getSyncCommitteeSubnetTopic(
-            forkInfo.getForkDigest(), subnetId, gossipEncoding),
+            forkInfo.getForkDigest(spec), subnetId, gossipEncoding),
         gossipEncoding.encode(signature));
   }
 
@@ -66,7 +66,7 @@ public class SyncCommitteeSubnetSubscriptions extends CommitteeSubnetSubscriptio
         asyncRunner,
         convertingProcessor,
         gossipEncoding,
-        forkInfo.getForkDigest(),
+        forkInfo.getForkDigest(spec),
         GossipTopicName.getSyncCommitteeSubnetTopicName(subnetId),
         schemaDefinitions.getSyncCommitteeSignatureSchema());
   }

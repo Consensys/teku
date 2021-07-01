@@ -210,7 +210,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
             forkAndMilestone -> {
               final Fork fork = forkAndMilestone.getFork();
               final ForkInfo forkInfo = new ForkInfo(fork, genesisValidatorsRoot);
-              final Bytes4 forkDigest = forkInfo.getForkDigest();
+              final Bytes4 forkDigest = forkInfo.getForkDigest(spec);
               this.forkDigestToMilestone.put(forkDigest, forkAndMilestone.getSpecMilestone());
               this.milestoneToForkDigest.put(forkAndMilestone.getSpecMilestone(), forkDigest);
             });

@@ -19,6 +19,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNode.Config;
 
 public class StartupAcceptanceTest extends AcceptanceTestBase {
 
@@ -73,7 +74,7 @@ public class StartupAcceptanceTest extends AcceptanceTestBase {
     final TekuNode tekuNode = createTekuNode(config -> config.withDepositsFrom(eth1Node));
     tekuNode.start();
 
-    createTekuDepositSender().sendValidatorDeposits(eth1Node, 4);
+    createTekuDepositSender(Config.DEFAULT_NETWORK_NAME).sendValidatorDeposits(eth1Node, 4);
     tekuNode.waitForGenesis();
   }
 }

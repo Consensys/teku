@@ -51,7 +51,7 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
             asyncRunner,
             processor,
             gossipEncoding,
-            forkInfo.getForkDigest(),
+            forkInfo.getForkDigest(recentChainData.getSpec()),
             topicName,
             getGossipType());
     this.channel = gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);

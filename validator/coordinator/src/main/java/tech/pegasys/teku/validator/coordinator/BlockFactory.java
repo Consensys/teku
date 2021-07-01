@@ -100,7 +100,7 @@ public class BlockFactory {
     }
     SszList<Attestation> attestations =
         attestationPool.getAttestationsForBlock(
-            blockSlotState, new AttestationForkChecker(blockSlotState));
+            blockSlotState, new AttestationForkChecker(spec, blockSlotState));
 
     // Collect slashings to include
     final SszList<ProposerSlashing> proposerSlashings =
