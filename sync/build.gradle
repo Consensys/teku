@@ -28,14 +28,12 @@ dependencies {
     testImplementation testFixtures(project(':infrastructure:time'))
     testImplementation testFixtures(project('::networking:eth2'))
     testImplementation testFixtures(project('::networking:p2p'))
-    testImplementation testFixtures(project(':util'))
     testImplementation 'org.hyperledger.besu.internal:metrics-core'
 
     integrationTestImplementation testFixtures(project(':bls'))
     integrationTestImplementation testFixtures(project(':ethereum:statetransition'))
     integrationTestImplementation testFixtures(project('::networking:eth2'))
     integrationTestImplementation testFixtures(project(':sync'))
-    integrationTestImplementation testFixtures(project(':util'))
 
     testFixturesImplementation project(':services:serviceutils')
     testFixturesImplementation project(':ethereum:statetransition')

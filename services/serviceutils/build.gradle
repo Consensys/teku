@@ -1,6 +1,7 @@
 dependencies {
   implementation project(':infrastructure:metrics')
   implementation project(':infrastructure:events')
+  implementation project(':infrastructure:exceptions')
   implementation project(':infrastructure:async')
   implementation project(':infrastructure:logging')
   implementation project(':util')
@@ -12,5 +13,4 @@ dependencies {
   implementation 'org.hyperledger.besu:plugin-api'
 
   testImplementation testFixtures(project(':infrastructure:async'))
-  testImplementation testFixtures(project(':util'))
 }

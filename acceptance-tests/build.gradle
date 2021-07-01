@@ -10,7 +10,6 @@ dependencies {
   testFixturesImplementation project(':pow')
   testFixturesImplementation project(':infrastructure:async')
   testFixturesImplementation testFixtures(project(':infrastructure:async'))
-  testFixturesImplementation testFixtures(project(':util'))
   testFixturesImplementation project(':util')
   testFixturesImplementation project(':teku')
 

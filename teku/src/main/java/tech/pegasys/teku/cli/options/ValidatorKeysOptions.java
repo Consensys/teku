@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import picocli.CommandLine;
 import tech.pegasys.teku.config.TekuConfiguration;
-import tech.pegasys.teku.util.config.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
 public class ValidatorKeysOptions {
 

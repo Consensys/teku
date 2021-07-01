@@ -18,9 +18,9 @@ import java.util.Iterator;
 import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
-import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 public class SyncCommitteeSubscriptionManager implements SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger();

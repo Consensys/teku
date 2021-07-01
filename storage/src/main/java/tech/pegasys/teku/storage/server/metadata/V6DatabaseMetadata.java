@@ -26,7 +26,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Optional;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration;
-import tech.pegasys.teku.util.serialization.JsonExplicit;
 
 /**
  * Defines the configuration for a database. The configuration used when a database is created is

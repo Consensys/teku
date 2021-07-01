@@ -4,11 +4,13 @@ dependencies {
   implementation project(':infrastructure:metrics')
   implementation project(':data:provider')
   implementation project(':ethereum:core')
+  implementation project(':ethereum:events')
   implementation project(':ethereum:networks')
   implementation project(':ethereum:spec')
   implementation project(':ethereum:statetransition')
   implementation project(':ethereum:weaksubjectivity')
   implementation project(':infrastructure:async')
+  implementation project(':infrastructure:exceptions')
   implementation project(':infrastructure:http')
   implementation project(':infrastructure:logging')
   implementation project(':infrastructure:version')
@@ -18,6 +20,7 @@ dependencies {
   implementation project(':protoarray')
   implementation project(':services:serviceutils')
   implementation project(':services:powchain')
+  implementation project(':services:timer')
   implementation project(':ssz')
   implementation project(':storage')
   implementation project(':storage:api')
@@ -32,7 +35,6 @@ dependencies {
   testImplementation testFixtures(project(':ethereum:spec'))
   testImplementation testFixtures(project(':ethereum:networks'))
   testImplementation testFixtures(project(':infrastructure:metrics'))
-  testImplementation testFixtures(project(':util'))
 
   implementation 'io.libp2p:jvm-libp2p-minimal'
   implementation 'io.vertx:vertx-core'
