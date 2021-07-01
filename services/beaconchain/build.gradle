@@ -19,6 +19,7 @@ dependencies {
   implementation project(':protoarray')
   implementation project(':services:serviceutils')
   implementation project(':services:powchain')
+  implementation project(':services:timer')
   implementation project(':ssz')
   implementation project(':storage')
   implementation project(':storage:api')
