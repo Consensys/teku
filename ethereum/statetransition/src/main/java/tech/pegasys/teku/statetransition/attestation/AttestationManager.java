@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.statetransition.attestation;
 
-import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -27,7 +25,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationLis
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
-import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
+import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
@@ -38,13 +36,13 @@ import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
-public class AttestationManager extends Service implements SlotEventsChannel {
+public class AttestationManager extends Service
+    implements SlotEventsChannel, BlockImportNotifications {
 
   private static final Logger LOG = LogManager.getLogger();
   private static final SafeFuture<AttestationProcessingResult> ATTESTATION_SAVED_FOR_FUTURE_RESULT =
       SafeFuture.completedFuture(AttestationProcessingResult.SAVED_FOR_FUTURE);
 
-  private final EventBus eventBus;
   private final ForkChoice attestationProcessor;
 
   private final PendingPool<ValidateableAttestation> pendingAttestations;
@@ -63,7 +61,6 @@ public class AttestationManager extends Service implements SlotEventsChannel {
   private final SignatureVerificationService signatureVerificationService;
 
   AttestationManager(
-      final EventBus eventBus,
       final ForkChoice attestationProcessor,
       final PendingPool<ValidateableAttestation> pendingAttestations,
       final FutureItems<ValidateableAttestation> futureAttestations,
@@ -71,7 +68,6 @@ public class AttestationManager extends Service implements SlotEventsChannel {
       final AttestationValidator attestationValidator,
       final AggregateAttestationValidator aggregateValidator,
       final SignatureVerificationService signatureVerificationService) {
-    this.eventBus = eventBus;
     this.attestationProcessor = attestationProcessor;
     this.pendingAttestations = pendingAttestations;
     this.futureAttestations = futureAttestations;
@@ -82,7 +78,6 @@ public class AttestationManager extends Service implements SlotEventsChannel {
   }
 
   public static AttestationManager create(
-      final EventBus eventBus,
       final PendingPool<ValidateableAttestation> pendingAttestations,
       final FutureItems<ValidateableAttestation> futureAttestations,
       final ForkChoice attestationProcessor,
@@ -91,7 +86,6 @@ public class AttestationManager extends Service implements SlotEventsChannel {
       final AggregateAttestationValidator aggregateValidator,
       final SignatureVerificationService signatureVerificationService) {
     return new AttestationManager(
-        eventBus,
         attestationProcessor,
         pendingAttestations,
         futureAttestations,
@@ -168,10 +162,8 @@ public class AttestationManager extends Service implements SlotEventsChannel {
             });
   }
 
-  @Subscribe
-  @SuppressWarnings("unused")
-  private void onBlockImported(final ImportedBlockEvent blockImportedEvent) {
-    final SignedBeaconBlock block = blockImportedEvent.getBlock();
+  @Override
+  public void onBlockImported(final SignedBeaconBlock block) {
     final Bytes32 blockRoot = block.getMessage().hashTreeRoot();
     pendingAttestations
         .getItemsDependingOn(blockRoot, false)
@@ -251,13 +243,11 @@ public class AttestationManager extends Service implements SlotEventsChannel {
 
   @Override
   protected SafeFuture<?> doStart() {
-    eventBus.register(this);
     return signatureVerificationService.start();
   }
 
   @Override
   protected SafeFuture<?> doStop() {
-    eventBus.unregister(this);
     return signatureVerificationService.stop();
   }
 }

@@ -21,7 +21,6 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.BEACON;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
-import com.google.common.eventbus.EventBus;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -71,8 +70,7 @@ class BeaconChainMetricsTest {
   private final NodeSlot nodeSlot = new NodeSlot(NODE_SLOT_VALUE);
 
   private final RecentChainData recentChainData = mock(RecentChainData.class);
-  private final RecentChainData preGenesisChainData =
-      MemoryOnlyRecentChainData.create(mock(EventBus.class));
+  private final RecentChainData preGenesisChainData = MemoryOnlyRecentChainData.create();
   private final Eth2P2PNetwork eth2P2PNetwork = mock(Eth2P2PNetwork.class);
   private final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
   private final Checkpoint finalizedCheckpoint = dataStructureUtil.randomCheckpoint();
@@ -113,10 +111,7 @@ class BeaconChainMetricsTest {
   private void setBlockRoots(List<Bytes32> newBlockRoots) {
     state =
         state
-            .updated(
-                s -> {
-                  s.getBlock_roots().setAllElements(newBlockRoots);
-                })
+            .updated(s -> s.getBlock_roots().setAllElements(newBlockRoots))
             .toVersionPhase0()
             .orElseThrow();
   }

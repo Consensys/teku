@@ -15,8 +15,6 @@ package tech.pegasys.teku.statetransition.block;
 
 import static tech.pegasys.teku.infrastructure.logging.LogFormatter.formatBlock;
 
-import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -32,7 +30,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.ReceivedBlockListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
-import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
@@ -41,10 +38,10 @@ import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
-public class BlockManager extends Service implements SlotEventsChannel, BlockImportChannel {
+public class BlockManager extends Service
+    implements SlotEventsChannel, BlockImportChannel, BlockImportNotifications {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final EventBus eventBus;
   private final RecentChainData recentChainData;
   private final BlockImporter blockImporter;
   private final PendingPool<SignedBeaconBlock> pendingBlocks;
@@ -56,13 +53,11 @@ public class BlockManager extends Service implements SlotEventsChannel, BlockImp
       Subscribers.create(true);
 
   BlockManager(
-      final EventBus eventBus,
       final RecentChainData recentChainData,
       final BlockImporter blockImporter,
       final PendingPool<SignedBeaconBlock> pendingBlocks,
       final FutureItems<SignedBeaconBlock> futureBlocks,
       final BlockValidator validator) {
-    this.eventBus = eventBus;
     this.recentChainData = recentChainData;
     this.blockImporter = blockImporter;
     this.pendingBlocks = pendingBlocks;
@@ -71,25 +66,21 @@ public class BlockManager extends Service implements SlotEventsChannel, BlockImp
   }
 
   public static BlockManager create(
-      final EventBus eventBus,
       final PendingPool<SignedBeaconBlock> pendingBlocks,
       final FutureItems<SignedBeaconBlock> futureBlocks,
       final RecentChainData recentChainData,
       final BlockImporter blockImporter,
       final BlockValidator validator) {
-    return new BlockManager(
-        eventBus, recentChainData, blockImporter, pendingBlocks, futureBlocks, validator);
+    return new BlockManager(recentChainData, blockImporter, pendingBlocks, futureBlocks, validator);
   }
 
   @Override
   public SafeFuture<?> doStart() {
-    this.eventBus.register(this);
     return SafeFuture.COMPLETE;
   }
 
   @Override
   protected SafeFuture<?> doStop() {
-    eventBus.unregister(this);
     return SafeFuture.COMPLETE;
   }
 
@@ -128,11 +119,9 @@ public class BlockManager extends Service implements SlotEventsChannel, BlockImp
     receivedBlockSubscribers.forEach(s -> s.accept(signedBeaconBlock));
   }
 
-  @Subscribe
-  @SuppressWarnings("unused")
-  void onBlockImported(ImportedBlockEvent blockImportedEvent) {
+  @Override
+  public void onBlockImported(final SignedBeaconBlock block) {
     // Check if any pending blocks can now be imported
-    final SignedBeaconBlock block = blockImportedEvent.getBlock();
     final Bytes32 blockRoot = block.getRoot();
     pendingBlocks.remove(block);
     final List<SignedBeaconBlock> children = pendingBlocks.getItemsDependingOn(blockRoot, false);

@@ -15,7 +15,6 @@ package tech.pegasys.teku.benchmarks;
 
 import static org.mockito.Mockito.mock;
 
-import com.google.common.eventbus.EventBus;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -43,6 +42,7 @@ import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
+import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
@@ -84,14 +84,15 @@ public class ProfilingRun {
     final WeakSubjectivityValidator wsValidator = WeakSubjectivityFactory.lenientValidator();
 
     while (true) {
-      EventBus localEventBus = mock(EventBus.class);
-      RecentChainData recentChainData = MemoryOnlyRecentChainData.create(spec, localEventBus);
+      final BlockImportNotifications blockImportNotifications =
+          mock(BlockImportNotifications.class);
+      RecentChainData recentChainData = MemoryOnlyRecentChainData.create(spec);
       recentChainData.initializeFromGenesis(initialState, UInt64.ZERO);
       ForkChoice forkChoice = ForkChoice.create(spec, new InlineEventThread(), recentChainData);
       BeaconChainUtil localChain =
           BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);
       BlockImporter blockImporter =
-          new BlockImporter(recentChainData, forkChoice, wsValidator, localEventBus);
+          new BlockImporter(blockImportNotifications, recentChainData, forkChoice, wsValidator);
 
       System.out.println("Start blocks import from " + blocksFile);
       int blockCount = 0;
@@ -156,14 +157,15 @@ public class ProfilingRun {
     final WeakSubjectivityValidator wsValidator = WeakSubjectivityFactory.lenientValidator();
 
     while (true) {
-      EventBus localEventBus = mock(EventBus.class);
-      RecentChainData recentChainData = MemoryOnlyRecentChainData.create(localEventBus);
+      final BlockImportNotifications blockImportNotifications =
+          mock(BlockImportNotifications.class);
+      RecentChainData recentChainData = MemoryOnlyRecentChainData.create();
       BeaconChainUtil localChain = BeaconChainUtil.create(recentChainData, validatorKeys, false);
       recentChainData.initializeFromGenesis(initialState, UInt64.ZERO);
       initialState = null;
       ForkChoice forkChoice = ForkChoice.create(spec, new InlineEventThread(), recentChainData);
       BlockImporter blockImporter =
-          new BlockImporter(recentChainData, forkChoice, wsValidator, localEventBus);
+          new BlockImporter(blockImportNotifications, recentChainData, forkChoice, wsValidator);
 
       System.out.println("Start blocks import from " + blocksFile);
       int counter = 1;

@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.storage.server;
 
-import com.google.common.eventbus.EventBus;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
@@ -42,34 +41,20 @@ import tech.pegasys.teku.storage.server.state.FinalizedStateCache;
 import tech.pegasys.teku.storage.store.StoreBuilder;
 
 public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel, VoteUpdateChannel {
-  private final EventBus eventBus;
 
   private final Database database;
   private final FinalizedStateCache finalizedStateCache;
   private volatile Optional<StoreBuilder> cachedStore = Optional.empty();
 
-  private ChainStorage(
-      final EventBus eventBus,
-      final Database database,
-      final FinalizedStateCache finalizedStateCache) {
-    this.eventBus = eventBus;
+  private ChainStorage(final Database database, final FinalizedStateCache finalizedStateCache) {
     this.database = database;
     this.finalizedStateCache = finalizedStateCache;
   }
 
-  public static ChainStorage create(
-      final EventBus eventBus, final Database database, final Spec spec) {
+  public static ChainStorage create(final Database database, final Spec spec) {
     final int finalizedStateCacheSize = spec.getSlotsPerEpoch(SpecConfig.GENESIS_EPOCH) * 3;
     return new ChainStorage(
-        eventBus, database, new FinalizedStateCache(spec, database, finalizedStateCacheSize, true));
-  }
-
-  public void start() {
-    eventBus.register(this);
-  }
-
-  public void stop() {
-    eventBus.unregister(this);
+        database, new FinalizedStateCache(spec, database, finalizedStateCacheSize, true));
   }
 
   private synchronized Optional<StoreBuilder> getStore() {
@@ -121,9 +106,7 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel, 
   @Override
   public SafeFuture<Void> onWeakSubjectivityUpdate(WeakSubjectivityUpdate weakSubjectivityUpdate) {
     return SafeFuture.fromRunnable(
-        () -> {
-          database.updateWeakSubjectivityState(weakSubjectivityUpdate);
-        });
+        () -> database.updateWeakSubjectivityState(weakSubjectivityUpdate));
   }
 
   @Override
