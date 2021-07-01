@@ -37,7 +37,6 @@ dependencies {
   testImplementation testFixtures(project(':infrastructure:async'))
   testImplementation testFixtures(project(':infrastructure:time'))
   testImplementation testFixtures(project(':networking:p2p'))
-  testImplementation testFixtures(project(':util'))
   testImplementation testFixtures(project(':storage'))
 
   testImplementation 'org.hyperledger.besu.internal:metrics-core'
@@ -46,7 +45,6 @@ dependencies {
   integrationTestImplementation testFixtures(project(':ethereum:spec'))
   integrationTestImplementation testFixtures(project(':ethereum:statetransition'))
   integrationTestImplementation testFixtures(project(':networking:eth2'))
-  integrationTestImplementation testFixtures(project(':util'))
   integrationTestImplementation testFixtures(project(':infrastructure:events'))
 
   testFixturesImplementation testFixtures(project(':ethereum:spec'))
@@ -55,7 +53,6 @@ dependencies {
   testFixturesImplementation project(':ethereum:networks')
   testFixturesImplementation testFixtures(project(':networking:p2p'))
   testFixturesImplementation testFixtures(project(':infrastructure:async'))
-  testFixturesImplementation testFixtures(project(':util'))
   testFixturesImplementation testFixtures(project(':infrastructure:events'))
   testFixturesImplementation testFixtures(project(':infrastructure:time'))
   testFixturesImplementation testFixtures(project(':storage'))

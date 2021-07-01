@@ -17,7 +17,6 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.apache.tuweni:tuweni-units'
 
-  testImplementation testFixtures(project(':util'))
   testImplementation testFixtures(project(':infrastructure:async'))
   testImplementation testFixtures(project(':infrastructure:time'))
   testImplementation testFixtures(project(':infrastructure:metrics'))

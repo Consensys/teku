@@ -35,7 +35,6 @@ dependencies {
   testImplementation testFixtures(project(':infrastructure:async'))
   testImplementation testFixtures(project(':infrastructure:time'))
   testImplementation testFixtures(project(':infrastructure:metrics'))
-  testImplementation testFixtures(project(':util'))
   testImplementation testFixtures(project(':storage'))
   testImplementation 'org.hyperledger.besu.internal:metrics-core'
 
@@ -48,6 +47,5 @@ dependencies {
   testFixturesImplementation testFixtures(project(':protoarray'))
   testFixturesImplementation testFixtures(project(':ethereum:core'))
   testFixturesImplementation testFixtures(project(':ethereum:spec'))
-  testFixturesImplementation testFixtures(project(':util'))
   testFixturesImplementation project(':validator:client')
 }

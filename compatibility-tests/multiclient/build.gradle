@@ -4,7 +4,6 @@ dependencies {
 
   compatibilityTestImplementation testFixtures(project('::networking:eth2'))
   compatibilityTestImplementation testFixtures(project(':infrastructure:async'))
-  compatibilityTestImplementation testFixtures(project(':util'))
 
   compatibilityTestImplementation 'io.libp2p:jvm-libp2p-minimal'
   compatibilityTestImplementation 'org.apache.tuweni:tuweni-ssz'
