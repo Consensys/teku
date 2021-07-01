@@ -119,20 +119,11 @@ public class GossipMessageHandlerIntegrationTest {
     final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
     final UInt64 blockSlot = UInt64.valueOf(2L);
 
-    final Set<SignedBeaconBlock> node1ReceivedBlocks = new HashSet<>();
     final Set<SignedBeaconBlock> node2ReceivedBlocks = new HashSet<>();
     final Set<SignedBeaconBlock> node3ReceivedBlocks = new HashSet<>();
 
     // Setup network 1
-    NodeManager node1 =
-        createNodeManager(
-            b ->
-                b.gossipEncoding(gossipEncoding)
-                    .gossipedBlockProcessor(
-                        block -> {
-                          node1ReceivedBlocks.add(block);
-                          return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
-                        }));
+    NodeManager node1 = createNodeManager(b -> b.gossipEncoding(gossipEncoding));
     node1.chainUtil().setSlot(blockSlot);
 
     // Setup network 2
