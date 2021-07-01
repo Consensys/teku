@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
@@ -115,6 +116,7 @@ public class GossipMessageHandlerIntegrationTest {
   }
 
   @Test
+  @Disabled("Not currently implemented - see https://github.com/ConsenSys/teku/issues/4126")
   public void shouldNotGossipInvalidBlocks() throws Exception {
     final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
     final UInt64 blockSlot = UInt64.valueOf(2L);
