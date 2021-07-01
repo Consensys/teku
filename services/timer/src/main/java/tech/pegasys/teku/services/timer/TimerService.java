@@ -28,7 +28,6 @@ import org.quartz.impl.StdSchedulerFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
-import tech.pegasys.teku.util.time.channels.TimeTickChannel;
 
 public class TimerService extends Service {
 

@@ -1,0 +1,11 @@
+dependencies {
+  implementation project(':infrastructure:events')
+  testFixturesImplementation project(':infrastructure:unsigned')
+}
+
+
+publishing {
+  publications {
+    mavenJava(MavenPublication) { artifactId 'ethereum-events' }
+  }
+}

@@ -19,7 +19,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
-import tech.pegasys.teku.util.config.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
 public class ValidatorClientOptions {
 

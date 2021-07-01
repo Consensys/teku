@@ -23,10 +23,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.StableSubnetSubscriber;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 public class ActiveValidatorTracker implements SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger();

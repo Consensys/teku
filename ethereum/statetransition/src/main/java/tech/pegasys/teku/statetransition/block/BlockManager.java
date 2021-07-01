@@ -21,6 +21,7 @@ import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
@@ -36,7 +37,6 @@ import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 public class BlockManager extends Service
     implements SlotEventsChannel, BlockImportChannel, BlockImportNotifications {

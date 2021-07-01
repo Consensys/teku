@@ -29,8 +29,8 @@ import tech.pegasys.teku.cli.options.ValidatorClientOptions;
 import tech.pegasys.teku.cli.options.ValidatorOptions;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
-import tech.pegasys.teku.util.config.InvalidConfigurationException;
 
 @Command(
     name = "validator-client",

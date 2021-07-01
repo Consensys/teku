@@ -13,8 +13,9 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.config;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 import static tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig.DEFAULT_D;
-import static tech.pegasys.teku.util.DoubleAssert.assertThatDouble;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.Spec;
@@ -27,6 +28,6 @@ public class ScoringConfigTest {
 
   @Test
   public void maxPositiveScore() {
-    assertThatDouble(scoringConfig.getMaxPositiveScore()).isApproximately(107.5);
+    assertThat(scoringConfig.getMaxPositiveScore()).isCloseTo(107.5, within(0.00005));
   }
 }

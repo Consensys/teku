@@ -31,11 +31,8 @@ dependencies {
   testImplementation testFixtures(project(':infrastructure:metrics'))
   testImplementation testFixtures(project(':infrastructure:async'))
   testImplementation testFixtures(project(':infrastructure:time'))
-  testImplementation testFixtures(project(':util'))
 
   testImplementation 'org.hyperledger.besu.internal:metrics-core'
-
-  integrationTestImplementation testFixtures(project(':util'))
 
   testFixturesApi 'org.apache.tuweni:tuweni-bytes'
 
@@ -47,7 +44,6 @@ dependencies {
   testFixturesImplementation testFixtures(project(':infrastructure:async'))
   testFixturesImplementation testFixtures(project(':infrastructure:time'))
   testFixturesImplementation project(':infrastructure:subscribers')
-  testFixturesImplementation testFixtures(project(':util'))
 
   testFixturesImplementation 'org.hyperledger.besu:plugin-api'
   testFixturesImplementation 'org.hyperledger.besu.internal:metrics-core'

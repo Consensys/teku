@@ -25,7 +25,7 @@ import java.nio.file.Path;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import tech.pegasys.teku.util.config.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
 public class KeystoreLockerTest {
 

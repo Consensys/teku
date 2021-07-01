@@ -17,6 +17,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import com.google.common.annotations.VisibleForTesting;
+import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
@@ -26,7 +27,6 @@ import tech.pegasys.teku.statetransition.EpochCachePrimer;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.forward.ForwardSync;
-import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 public class SlotProcessor {
 

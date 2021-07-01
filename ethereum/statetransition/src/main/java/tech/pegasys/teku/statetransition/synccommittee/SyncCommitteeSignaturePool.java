@@ -27,6 +27,7 @@ import java.util.TreeMap;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -36,7 +37,6 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.Validate
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.statetransition.OperationPool.OperationAddedSubscriber;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
-import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 public class SyncCommitteeSignaturePool implements SlotEventsChannel {
 
