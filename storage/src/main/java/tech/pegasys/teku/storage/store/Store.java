@@ -607,6 +607,7 @@ class Store implements UpdatableStore {
                 treeBuilder.build(),
                 blockProvider,
                 new StateRegenerationBaseSelector(
+                    spec,
                     Optional.ofNullable(latestEpochBoundary.get()),
                     () -> getClosestAvailableBlockRootAndState(blockRoot),
                     stateProvider,
