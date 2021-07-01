@@ -17,7 +17,6 @@ import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
-import com.google.common.eventbus.EventBus;
 import java.util.Optional;
 import java.util.concurrent.TimeoutException;
 import org.apache.logging.log4j.LogManager;
@@ -56,7 +55,6 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final ProtoArrayStorageChannel protoArrayStorageChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
-      final EventBus eventBus,
       final Spec spec) {
     super(
         asyncRunner,
@@ -69,13 +67,11 @@ public class StorageBackedRecentChainData extends RecentChainData {
         protoArrayStorageChannel,
         finalizedCheckpointChannel,
         chainHeadChannel,
-        eventBus,
         spec);
     this.storeConfig = storeConfig;
     this.storageQueryChannel = storageQueryChannel;
     this.blockProvider = storageQueryChannel::getHotBlocksByRoot;
     this.stateProvider = storageQueryChannel::getHotStateAndBlockSummaryByBlockRoot;
-    eventBus.register(this);
   }
 
   public static SafeFuture<RecentChainData> create(
@@ -88,7 +84,6 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final ProtoArrayStorageChannel protoArrayStorageChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
-      final EventBus eventBus,
       final Spec spec) {
     StorageBackedRecentChainData client =
         new StorageBackedRecentChainData(
@@ -101,7 +96,6 @@ public class StorageBackedRecentChainData extends RecentChainData {
             protoArrayStorageChannel,
             finalizedCheckpointChannel,
             chainHeadChannel,
-            eventBus,
             spec);
 
     return client.initializeFromStorageWithRetry(asyncRunner);
@@ -118,7 +112,6 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final ProtoArrayStorageChannel protoArrayStorageChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
-      final EventBus eventBus,
       final Spec spec) {
     StorageBackedRecentChainData client =
         new StorageBackedRecentChainData(
@@ -131,7 +124,6 @@ public class StorageBackedRecentChainData extends RecentChainData {
             protoArrayStorageChannel,
             finalizedCheckpointChannel,
             chainHeadChannel,
-            eventBus,
             spec);
 
     return client.initializeFromStorage().join();

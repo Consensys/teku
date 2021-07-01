@@ -22,7 +22,6 @@ import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.IGNORE;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.REJECT;
 
-import com.google.common.eventbus.EventBus;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -53,7 +52,7 @@ public class VoluntaryExitValidatorTest {
 
   @BeforeEach
   void beforeEach() {
-    recentChainData = MemoryOnlyRecentChainData.create(spec, new EventBus());
+    recentChainData = MemoryOnlyRecentChainData.create(spec);
     beaconChainUtil = BeaconChainUtil.create(spec, recentChainData, VALIDATOR_KEYS, true);
 
     voluntaryExitValidator = new VoluntaryExitValidator(mockSpec, recentChainData);

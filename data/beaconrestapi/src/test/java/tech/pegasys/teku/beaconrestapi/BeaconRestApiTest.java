@@ -21,7 +21,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.google.common.eventbus.EventBus;
 import io.javalin.Javalin;
 import io.javalin.core.JavalinServer;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,7 +45,7 @@ import tech.pegasys.teku.sync.SyncService;
 @SuppressWarnings("unchecked")
 class BeaconRestApiTest {
 
-  private final RecentChainData storageClient = MemoryOnlyRecentChainData.create(new EventBus());
+  private final RecentChainData storageClient = MemoryOnlyRecentChainData.create();
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
   private final JavalinServer server = mock(JavalinServer.class);

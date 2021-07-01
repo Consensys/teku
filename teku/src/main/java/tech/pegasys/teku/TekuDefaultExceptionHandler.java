@@ -15,8 +15,6 @@ package tech.pegasys.teku;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
-import com.google.common.eventbus.SubscriberExceptionContext;
-import com.google.common.eventbus.SubscriberExceptionHandler;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.lang.reflect.Method;
 import java.nio.channels.ClosedChannelException;
@@ -33,7 +31,7 @@ import tech.pegasys.teku.storage.server.DatabaseStorageException;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 
 public final class TekuDefaultExceptionHandler
-    implements SubscriberExceptionHandler, ChannelExceptionHandler, UncaughtExceptionHandler {
+    implements ChannelExceptionHandler, UncaughtExceptionHandler {
   private static final Logger LOG = LogManager.getLogger();
 
   private final StatusLogger statusLog;
@@ -45,21 +43,6 @@ public final class TekuDefaultExceptionHandler
   @VisibleForTesting
   TekuDefaultExceptionHandler(final StatusLogger statusLog) {
     this.statusLog = statusLog;
-  }
-
-  @Override
-  public void handleException(final Throwable exception, final SubscriberExceptionContext context) {
-    handleException(
-        exception,
-        "event '"
-            + context.getEvent().getClass().getName()
-            + "'"
-            + " in handler '"
-            + context.getSubscriber().getClass().getName()
-            + "'"
-            + " (method  '"
-            + context.getSubscriberMethod().getName()
-            + "')");
   }
 
   @Override

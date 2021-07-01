@@ -15,7 +15,6 @@ package tech.pegasys.teku.sync;
 
 import static tech.pegasys.teku.infrastructure.events.TestExceptionHandler.TEST_EXCEPTION_HANDLER;
 
-import com.google.common.eventbus.EventBus;
 import java.util.List;
 import java.util.function.Consumer;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
@@ -36,6 +35,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
+import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -54,7 +54,6 @@ import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityFactory;
 
 public class SyncingNodeManager {
-  private final EventBus eventBus;
   private final EventChannels eventChannels;
   private final RecentChainData storageClient;
   private final BeaconChainUtil chainUtil;
@@ -63,13 +62,11 @@ public class SyncingNodeManager {
   private final BlockGossipChannel blockGossipChannel;
 
   private SyncingNodeManager(
-      final EventBus eventBus,
       final EventChannels eventChannels,
       final RecentChainData storageClient,
       final BeaconChainUtil chainUtil,
       final Eth2P2PNetwork eth2P2PNetwork,
       final ForwardSync syncService) {
-    this.eventBus = eventBus;
     this.eventChannels = eventChannels;
     this.storageClient = storageClient;
     this.chainUtil = chainUtil;
@@ -86,10 +83,9 @@ public class SyncingNodeManager {
       Consumer<Eth2P2PNetworkBuilder> configureNetwork)
       throws Exception {
     final Spec spec = TestSpecFactory.createMinimalPhase0();
-    final EventBus eventBus = new EventBus();
     final EventChannels eventChannels =
         EventChannels.createSyncChannels(TEST_EXCEPTION_HANDLER, new NoOpMetricsSystem());
-    final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(spec, eventBus);
+    final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(spec);
 
     final BeaconChainUtil chainUtil = BeaconChainUtil.create(spec, recentChainData, validatorKeys);
     chainUtil.initializeStorage();
@@ -97,7 +93,10 @@ public class SyncingNodeManager {
     ForkChoice forkChoice = ForkChoice.create(spec, new InlineEventThread(), recentChainData);
     BlockImporter blockImporter =
         new BlockImporter(
-            recentChainData, forkChoice, WeakSubjectivityFactory.lenientValidator(), eventBus);
+            eventChannels.getPublisher(BlockImportNotifications.class),
+            recentChainData,
+            forkChoice,
+            WeakSubjectivityFactory.lenientValidator());
 
     BlockValidator blockValidator = new BlockValidator(spec, recentChainData);
     final PendingPool<SignedBeaconBlock> pendingBlocks = PendingPool.createForBlocks(spec);
@@ -105,18 +104,18 @@ public class SyncingNodeManager {
         FutureItems.create(SignedBeaconBlock::getSlot);
     BlockManager blockManager =
         BlockManager.create(
-            eventBus, pendingBlocks, futureBlocks, recentChainData, blockImporter, blockValidator);
+            pendingBlocks, futureBlocks, recentChainData, blockImporter, blockValidator);
 
     eventChannels
         .subscribe(SlotEventsChannel.class, blockManager)
         .subscribe(BlockImportChannel.class, blockManager)
+        .subscribe(BlockImportNotifications.class, blockManager)
         .subscribe(FinalizedCheckpointChannel.class, pendingBlocks);
 
     final Eth2P2PNetworkBuilder networkBuilder =
         networkFactory
             .builder()
             .spec(spec)
-            .eventBus(eventBus)
             .eventChannels(eventChannels)
             .recentChainData(recentChainData)
             .gossipedBlockProcessor(blockManager::validateAndImportBlock);
@@ -141,7 +140,7 @@ public class SyncingNodeManager {
     syncService.start().join();
 
     return new SyncingNodeManager(
-        eventBus, eventChannels, recentChainData, chainUtil, eth2P2PNetwork, syncService);
+        eventChannels, recentChainData, chainUtil, eth2P2PNetwork, syncService);
   }
 
   public SafeFuture<Peer> connect(final SyncingNodeManager peer) {
@@ -152,10 +151,6 @@ public class SyncingNodeManager {
 
   public EventChannels eventChannels() {
     return eventChannels;
-  }
-
-  public EventBus eventBus() {
-    return eventBus;
   }
 
   public BeaconChainUtil chainUtil() {

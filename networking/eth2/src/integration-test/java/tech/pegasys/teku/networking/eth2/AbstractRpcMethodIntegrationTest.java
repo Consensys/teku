@@ -92,7 +92,6 @@ public abstract class AbstractRpcMethodIntegrationTest {
           networkFactory
               .builder()
               .rpcEncoding(RpcEncoding.SSZ_SNAPPY)
-              .eventBus(peerStorage.eventBus())
               .recentChainData(peerStorage.recentChainData())
               .historicalChainData(peerStorage.chainStorage())
               .spec(remoteSpec)

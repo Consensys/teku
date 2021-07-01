@@ -27,7 +27,6 @@ import static tech.pegasys.teku.spec.datastructures.util.AttestationProcessingRe
 import static tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult.SUCCESSFUL;
 import static tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult.UNKNOWN_BLOCK;
 
-import com.google.common.eventbus.EventBus;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
@@ -47,7 +46,6 @@ import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
@@ -58,7 +56,6 @@ import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerifica
 class AttestationManagerTest {
   private final Spec spec = TestSpecFactory.createDefault();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final EventBus eventBus = new EventBus();
 
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
   private final ForkChoice forkChoice = mock(ForkChoice.class);
@@ -70,7 +67,6 @@ class AttestationManagerTest {
       mock(SignatureVerificationService.class);
   private final AttestationManager attestationManager =
       new AttestationManager(
-          eventBus,
           forkChoice,
           pendingAttestations,
           futureAttestations,
@@ -173,10 +169,10 @@ class AttestationManagerTest {
     verifyNoMoreInteractions(forkChoice);
 
     // Importing a different block shouldn't cause the attestation to be processed
-    eventBus.post(new ImportedBlockEvent(dataStructureUtil.randomSignedBeaconBlock(2)));
+    attestationManager.onBlockImported(dataStructureUtil.randomSignedBeaconBlock(2));
     verifyNoMoreInteractions(forkChoice);
 
-    eventBus.post(new ImportedBlockEvent(block));
+    attestationManager.onBlockImported(block);
     verify(forkChoice, times(2)).onAttestation(captor.getValue());
     assertThat(futureAttestations.size()).isZero();
     assertThat(pendingAttestations.size()).isZero();
