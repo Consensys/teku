@@ -113,7 +113,7 @@ jobs:
       - run:
           name: Assemble
           command: |
-            ./gradlew --no-daemon --parallel clean compileJava compileTestJava compileJmhJava compileIntegrationTestJava compileAcceptanceTestJava compileCompatibilityTestJava assemble
+            ./gradlew --no-daemon --parallel clean compileJava compileTestJava compileJmhJava compileIntegrationTestJava compileAcceptanceTestJava assemble
       - save_cache:
           name: Caching gradle dependencies
           key: deps-{{ checksum "build.gradle" }}-{{ .Branch }}-{{ .Revision }}
@@ -267,19 +267,6 @@ jobs:
               exit 1
             fi
             ./gradlew --no-daemon --parallel -x generateReferenceTestClasses -x processReferenceTestResources -x cleanReferenceTestClasses referenceTest $GRADLE_ARGS
-      - capture_test_results
-
-  compatibilityTests:
-    executor: machine_executor
-    steps:
-      - prepare
-      - attach_workspace:
-          at: ~/project
-      - run:
-          name: CompatibilityTests
-          no_output_timeout: 20m
-          command: |
-            ./gradlew --no-daemon --parallel compatibilityTest
       - capture_test_results
 
   docker:
