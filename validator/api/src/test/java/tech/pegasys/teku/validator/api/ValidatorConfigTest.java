@@ -20,7 +20,7 @@ import java.util.List;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSTestUtil;
-import tech.pegasys.teku.util.config.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
 class ValidatorConfigTest {
 

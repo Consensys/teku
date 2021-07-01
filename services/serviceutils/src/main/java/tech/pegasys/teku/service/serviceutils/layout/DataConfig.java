@@ -15,7 +15,7 @@ package tech.pegasys.teku.service.serviceutils.layout;
 
 import java.nio.file.Path;
 import java.util.Optional;
-import tech.pegasys.teku.util.config.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
 public class DataConfig {
   private final Path dataBasePath;

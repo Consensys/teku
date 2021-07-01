@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.apache.commons.lang3.tuple.Pair;
-import tech.pegasys.teku.util.config.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
 public class ValidatorConfig {
 

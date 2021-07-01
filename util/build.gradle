@@ -6,6 +6,7 @@ dependencies {
 
   implementation project(':bls')
   implementation project(':infrastructure:async')
+  implementation project(':infrastructure:exceptions')
   implementation project(':infrastructure:io')
   implementation project(':infrastructure:logging')
   implementation project(':infrastructure:subscribers')
