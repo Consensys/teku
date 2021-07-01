@@ -19,7 +19,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.google.common.eventbus.EventBus;
 import io.javalin.Javalin;
 import io.javalin.core.JavalinServer;
 import io.javalin.http.Handler;
@@ -99,7 +98,7 @@ import tech.pegasys.teku.sync.SyncService;
 
 @SuppressWarnings("unchecked")
 public class BeaconRestApiV1Test {
-  private final RecentChainData storageClient = MemoryOnlyRecentChainData.create(new EventBus());
+  private final RecentChainData storageClient = MemoryOnlyRecentChainData.create();
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
   private final JavalinServer server = mock(JavalinServer.class);

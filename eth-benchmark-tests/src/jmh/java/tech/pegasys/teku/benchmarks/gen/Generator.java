@@ -13,11 +13,9 @@
 
 package tech.pegasys.teku.benchmarks.gen;
 
-import static org.mockito.Mockito.mock;
 import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
 import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_current_epoch;
 
-import com.google.common.eventbus.EventBus;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -67,8 +65,7 @@ public class Generator {
 
     System.out.println("Keypairs done.");
 
-    EventBus localEventBus = mock(EventBus.class);
-    RecentChainData localStorage = MemoryOnlyRecentChainData.create(localEventBus);
+    RecentChainData localStorage = MemoryOnlyRecentChainData.create();
     BeaconChainUtil localChain =
         BeaconChainUtil.builder()
             .specProvider(spec)

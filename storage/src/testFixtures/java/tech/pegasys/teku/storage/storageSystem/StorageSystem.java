@@ -15,7 +15,6 @@ package tech.pegasys.teku.storage.storageSystem;
 
 import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
 
-import com.google.common.eventbus.EventBus;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.pow.api.TrackingEth1EventsChannel;
@@ -40,7 +39,6 @@ public class StorageSystem implements AutoCloseable {
   private final ChainUpdater chainUpdater;
   private final TrackingEth1EventsChannel eth1EventsChannel = new TrackingEth1EventsChannel();
 
-  private final EventBus eventBus;
   private final TrackingChainHeadChannel reorgEventChannel;
   private final StubMetricsSystem metricsSystem;
   private final RecentChainData recentChainData;
@@ -52,7 +50,6 @@ public class StorageSystem implements AutoCloseable {
 
   private StorageSystem(
       final StubMetricsSystem metricsSystem,
-      final EventBus eventBus,
       final TrackingChainHeadChannel reorgEventChannel,
       final StateStorageMode storageMode,
       final ChainStorage chainStorage,
@@ -64,7 +61,6 @@ public class StorageSystem implements AutoCloseable {
     this.metricsSystem = metricsSystem;
     this.chainStorage = chainStorage;
     this.recentChainData = recentChainData;
-    this.eventBus = eventBus;
     this.reorgEventChannel = reorgEventChannel;
     this.storageMode = storageMode;
     this.database = database;
@@ -83,11 +79,9 @@ public class StorageSystem implements AutoCloseable {
       final Spec spec,
       final ChainBuilder chainBuilder) {
     final StubMetricsSystem metricsSystem = new StubMetricsSystem();
-    final EventBus eventBus = new EventBus();
 
     // Create and start storage server
-    final ChainStorage chainStorageServer = ChainStorage.create(eventBus, database, spec);
-    chainStorageServer.start();
+    final ChainStorage chainStorageServer = ChainStorage.create(database, spec);
 
     // Create recent chain data
     final FinalizedCheckpointChannel finalizedCheckpointChannel =
@@ -104,7 +98,6 @@ public class StorageSystem implements AutoCloseable {
             ProtoArrayStorageChannel.NO_OP,
             finalizedCheckpointChannel,
             reorgEventChannel,
-            eventBus,
             spec);
 
     // Create combined client
@@ -114,7 +107,6 @@ public class StorageSystem implements AutoCloseable {
     // Return storage system
     return new StorageSystem(
         metricsSystem,
-        eventBus,
         reorgEventChannel,
         storageMode,
         chainStorageServer,
@@ -172,10 +164,6 @@ public class StorageSystem implements AutoCloseable {
 
   public CombinedChainDataClient combinedChainDataClient() {
     return combinedChainDataClient;
-  }
-
-  public EventBus eventBus() {
-    return eventBus;
   }
 
   public TrackingChainHeadChannel reorgEventChannel() {

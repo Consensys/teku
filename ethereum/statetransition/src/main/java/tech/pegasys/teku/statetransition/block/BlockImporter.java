@@ -14,7 +14,6 @@
 package tech.pegasys.teku.statetransition.block;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.eventbus.EventBus;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -34,7 +33,6 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
-import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
@@ -42,10 +40,10 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
 public class BlockImporter {
   private static final Logger LOG = LogManager.getLogger();
+  private final BlockImportNotifications blockImportNotifications;
   private final RecentChainData recentChainData;
   private final ForkChoice forkChoice;
   private final WeakSubjectivityValidator weakSubjectivityValidator;
-  private final EventBus eventBus;
 
   private final Subscribers<VerifiedBlockOperationsListener<Attestation>> attestationSubscribers =
       Subscribers.create(true);
@@ -60,14 +58,14 @@ public class BlockImporter {
       new AtomicReference<>(null);
 
   public BlockImporter(
+      final BlockImportNotifications blockImportNotifications,
       final RecentChainData recentChainData,
       final ForkChoice forkChoice,
-      final WeakSubjectivityValidator weakSubjectivityValidator,
-      final EventBus eventBus) {
+      final WeakSubjectivityValidator weakSubjectivityValidator) {
+    this.blockImportNotifications = blockImportNotifications;
     this.recentChainData = recentChainData;
     this.forkChoice = forkChoice;
     this.weakSubjectivityValidator = weakSubjectivityValidator;
-    this.eventBus = eventBus;
   }
 
   @CheckReturnValue
@@ -97,7 +95,7 @@ public class BlockImporter {
               }
               LOG.trace("Successfully imported block {}", () -> formatBlock(block));
 
-              eventBus.post(new ImportedBlockEvent(block));
+              blockImportNotifications.onBlockImported(block);
 
               // Notify operation pools to remove operations only
               // if the block is on our canonical chain

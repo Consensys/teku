@@ -22,7 +22,6 @@ import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.IGNORE;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.REJECT;
 
-import com.google.common.eventbus.EventBus;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,15 +45,14 @@ public class ProposerSlashingValidatorTest {
       new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 25);
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final Spec mockSpec = mock(Spec.class);
-  private DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private RecentChainData recentChainData;
   private BeaconChainUtil beaconChainUtil;
   private ProposerSlashingValidator proposerSlashingValidator;
 
   @BeforeEach
   void beforeEach() {
-    recentChainData =
-        MemoryOnlyRecentChainData.builder().eventBus(new EventBus()).specProvider(spec).build();
+    recentChainData = MemoryOnlyRecentChainData.builder().specProvider(spec).build();
     beaconChainUtil = BeaconChainUtil.create(spec, recentChainData, VALIDATOR_KEYS, true);
     proposerSlashingValidator = new ProposerSlashingValidator(mockSpec, recentChainData);
   }

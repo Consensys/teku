@@ -16,7 +16,6 @@ package tech.pegasys.teku.storage.client;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
 
-import com.google.common.eventbus.EventBus;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
@@ -40,7 +39,6 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final StoreConfig storeConfig,
-      final EventBus eventBus,
       final StorageUpdateChannel storageUpdateChannel,
       final VoteUpdateChannel voteUpdateChannel,
       final ProtoArrayStorageChannel protoArrayStorageChannel,
@@ -58,7 +56,6 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
         protoArrayStorageChannel,
         finalizedCheckpointChannel,
         chainHeadChannel,
-        eventBus,
         spec);
   }
 
@@ -66,24 +63,21 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
     return new Builder();
   }
 
-  public static RecentChainData create(final Spec spec, final EventBus eventBus) {
-    return builder().specProvider(spec).eventBus(eventBus).build();
+  public static RecentChainData create() {
+    return builder().build();
   }
 
-  @Deprecated
-  public static RecentChainData create(final EventBus eventBus) {
-    return builder().eventBus(eventBus).build();
+  public static RecentChainData create(final Spec spec) {
+    return builder().specProvider(spec).build();
   }
 
-  public static RecentChainData create(
-      final EventBus eventBus, final ChainHeadChannel chainHeadChannel) {
-    return builder().eventBus(eventBus).reorgEventChannel(chainHeadChannel).build();
+  public static RecentChainData create(final ChainHeadChannel chainHeadChannel) {
+    return builder().reorgEventChannel(chainHeadChannel).build();
   }
 
   public static class Builder {
     private StoreConfig storeConfig = StoreConfig.createDefault();
     private Spec spec = TestSpecFactory.createMinimalPhase0();
-    private EventBus eventBus = new EventBus();
     private StorageUpdateChannel storageUpdateChannel = new StubStorageUpdateChannel();
     private FinalizedCheckpointChannel finalizedCheckpointChannel =
         new StubFinalizedCheckpointChannel();
@@ -94,7 +88,6 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
           SYNC_RUNNER,
           new NoOpMetricsSystem(),
           storeConfig,
-          eventBus,
           storageUpdateChannel,
           votes -> {},
           ProtoArrayStorageChannel.NO_OP,
@@ -112,12 +105,6 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
     public Builder specProvider(final Spec spec) {
       checkNotNull(spec);
       this.spec = spec;
-      return this;
-    }
-
-    public Builder eventBus(final EventBus eventBus) {
-      checkNotNull(eventBus);
-      this.eventBus = eventBus;
       return this;
     }
 

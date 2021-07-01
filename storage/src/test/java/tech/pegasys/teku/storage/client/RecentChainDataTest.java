@@ -23,7 +23,6 @@ import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 import static tech.pegasys.teku.storage.store.MockStoreHelper.mockChainData;
 import static tech.pegasys.teku.storage.store.MockStoreHelper.mockGenesis;
 
-import com.google.common.eventbus.EventBus;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -61,7 +60,6 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
-import tech.pegasys.teku.util.EventSink;
 
 class RecentChainDataTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
@@ -302,14 +300,11 @@ class RecentChainDataTest {
   @Test
   public void startStoreTransaction_doNotMutateFinalizedCheckpoint() {
     initPostGenesis();
-    final EventBus eventBus = storageSystem.eventBus();
-    final List<Checkpoint> checkpointEvents = EventSink.capture(eventBus, Checkpoint.class);
     final Checkpoint originalCheckpoint = recentChainData.getStore().getFinalizedCheckpoint();
 
     final StoreTransaction tx = recentChainData.startStoreTransaction();
     tx.setTime(UInt64.valueOf(11L));
     tx.commit().reportExceptions();
-    assertThat(checkpointEvents).isEmpty();
 
     final Checkpoint currentCheckpoint = recentChainData.getStore().getFinalizedCheckpoint();
     assertThat(currentCheckpoint).isEqualTo(originalCheckpoint);
