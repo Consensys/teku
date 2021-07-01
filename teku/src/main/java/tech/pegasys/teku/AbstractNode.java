@@ -15,8 +15,6 @@ package tech.pegasys.teku;
 
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
-import com.google.common.eventbus.AsyncEventBus;
-import com.google.common.eventbus.EventBus;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.vertx.core.Vertx;
 import java.util.concurrent.ExecutorService;
@@ -63,7 +61,6 @@ public abstract class AbstractNode implements Node {
     final TekuDefaultExceptionHandler subscriberExceptionHandler =
         new TekuDefaultExceptionHandler();
     this.eventChannels = new EventChannels(subscriberExceptionHandler, metricsSystem);
-    final EventBus eventBus = new AsyncEventBus(threadPool, subscriberExceptionHandler);
 
     asyncRunnerFactory =
         AsyncRunnerFactory.createDefault(new MetricTrackingExecutorFactory(metricsSystem));
@@ -71,7 +68,6 @@ public abstract class AbstractNode implements Node {
         new ServiceConfig(
             asyncRunnerFactory,
             new SystemTimeProvider(),
-            eventBus,
             eventChannels,
             metricsSystem,
             DataDirLayout.createFrom(tekuConfig.dataConfig()));

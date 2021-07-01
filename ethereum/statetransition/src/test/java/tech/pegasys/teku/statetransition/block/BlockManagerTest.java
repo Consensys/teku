@@ -14,13 +14,14 @@
 package tech.pegasys.teku.statetransition.block;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.FutureUtil.ignoreFuture;
 
-import com.google.common.eventbus.EventBus;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
@@ -52,8 +53,8 @@ public class BlockManagerTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(2);
-  private final EventBus localEventBus = new EventBus();
-  private final EventBus remoteEventBus = new EventBus();
+  private final BlockImportNotifications blockImportNotifications =
+      mock(BlockImportNotifications.class);
   private final UInt64 historicalBlockTolerance = UInt64.valueOf(5);
   private final UInt64 futureBlockTolerance = UInt64.valueOf(2);
   private final int maxPendingBlocks = 10;
@@ -64,9 +65,9 @@ public class BlockManagerTest {
       FutureItems.create(SignedBeaconBlock::getSlot);
 
   private final RecentChainData localRecentChainData =
-      MemoryOnlyRecentChainData.builder().eventBus(localEventBus).specProvider(spec).build();
+      MemoryOnlyRecentChainData.builder().specProvider(spec).build();
   private final RecentChainData remoteRecentChainData =
-      MemoryOnlyRecentChainData.builder().eventBus(remoteEventBus).specProvider(spec).build();
+      MemoryOnlyRecentChainData.builder().specProvider(spec).build();
   private final BeaconChainUtil localChain =
       BeaconChainUtil.create(localRecentChainData, validatorKeys);
   private final BeaconChainUtil remoteChain =
@@ -76,13 +77,12 @@ public class BlockManagerTest {
 
   private final BlockImporter blockImporter =
       new BlockImporter(
+          blockImportNotifications,
           localRecentChainData,
           forkChoice,
-          WeakSubjectivityFactory.lenientValidator(),
-          localEventBus);
+          WeakSubjectivityFactory.lenientValidator());
   private final BlockManager blockManager =
       new BlockManager(
-          localEventBus,
           localRecentChainData,
           blockImporter,
           pendingBlocks,
@@ -94,9 +94,20 @@ public class BlockManagerTest {
 
   @BeforeEach
   public void setup() {
+    forwardBlockImportedNotificationsTo(blockManager);
     localChain.initializeStorage();
     remoteChain.initializeStorage();
     assertThat(blockManager.start()).isCompleted();
+  }
+
+  private void forwardBlockImportedNotificationsTo(final BlockManager blockManager) {
+    doAnswer(
+            invocation -> {
+              blockManager.onBlockImported(invocation.getArgument(0));
+              return null;
+            })
+        .when(blockImportNotifications)
+        .onBlockImported(any());
   }
 
   @AfterEach
@@ -136,12 +147,12 @@ public class BlockManagerTest {
     final RecentChainData localRecentChainData = mock(RecentChainData.class);
     final BlockManager blockManager =
         new BlockManager(
-            localEventBus,
             localRecentChainData,
             blockImporter,
             pendingBlocks,
             futureBlocks,
             mock(BlockValidator.class));
+    forwardBlockImportedNotificationsTo(blockManager);
     assertThat(blockManager.start()).isCompleted();
 
     final UInt64 nextSlot = genesisSlot.plus(UInt64.ONE);
