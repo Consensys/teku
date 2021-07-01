@@ -38,7 +38,6 @@ def buildAliases = [
     'compileTestJava',
     'compileJmhJava',
     'compileIntegrationTestJava',
-    'compileCompatibilityTestJava',
     'compileReferenceTestJava',
     'spotlessApply',
     'build',
@@ -456,14 +455,6 @@ subprojects {
       }
       resources.srcDir file('src/acceptance-test/resources')
     }
-    compatibilityTest {
-      java {
-        compileClasspath += main.output
-        runtimeClasspath += main.output
-        srcDir file('src/compatibility-test/java')
-      }
-      resources.srcDir file('src/compatibility-test/resources')
-    }
     referenceTest {
       java {
         srcDir file('src/referenceTest/generated_tests')
@@ -488,8 +479,6 @@ subprojects {
       testSourceDirs += project.sourceSets.integrationTest.resources.srcDirs
       testSourceDirs += project.sourceSets.acceptanceTest.java.srcDirs
       testSourceDirs += project.sourceSets.acceptanceTest.resources.srcDirs
-      testSourceDirs += project.sourceSets.compatibilityTest.java.srcDirs
-      testSourceDirs += project.sourceSets.compatibilityTest.resources.srcDirs
       testSourceDirs += project.sourceSets.referenceTest.java.srcDirs
       testSourceDirs += project.sourceSets.referenceTest.resources.srcDirs
     }
@@ -547,12 +536,10 @@ subprojects {
   configurations {
     integrationTestImplementation.extendsFrom testImplementation
     acceptanceTestImplementation.extendsFrom testImplementation
-    compatibilityTestImplementation.extendsFrom testImplementation
     referenceTestImplementation.extendsFrom testImplementation
 
     integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
     acceptanceTestRuntimeOnly.extendsFrom testRuntimeOnly
-    compatibilityTestRuntimeOnly.extendsFrom testRuntimeOnly
     referenceTestRuntimeOnly.extendsFrom testRuntimeOnly
   }
 
@@ -617,14 +604,6 @@ subprojects {
     systemProperty "teku.testArtifactDir", new File(project.buildDir, "test-artifacts").getAbsolutePath()
     testClassesDirs = sourceSets.acceptanceTest.output.classesDirs
     classpath = sourceSets.acceptanceTest.runtimeClasspath
-  }
-
-  task compatibilityTest(type: Test, dependsOn:["compileCompatibilityTestJava"]){
-    group = "verification"
-    description = "Runs the Teku compatibility tests"
-
-    testClassesDirs = sourceSets.compatibilityTest.output.classesDirs
-    classpath = sourceSets.compatibilityTest.runtimeClasspath
   }
 
   task referenceTest(type: Test, dependsOn:["compileReferenceTestJava"]){
