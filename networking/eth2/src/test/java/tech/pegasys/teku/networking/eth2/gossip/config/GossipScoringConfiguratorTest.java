@@ -14,7 +14,7 @@
 package tech.pegasys.teku.networking.eth2.gossip.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.util.DoubleAssert.assertThatDouble;
+import static org.assertj.core.api.Assertions.within;
 import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 
 import java.time.Duration;
@@ -37,6 +37,7 @@ import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class GossipScoringConfiguratorTest {
 
+  private static final double TOLERANCE = 0.00005;
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   private final Bytes4 forkDigest = Bytes4.fromHexString("0x01020304");
   private final Spec spec = TestSpecFactory.createMainnetPhase0();
@@ -65,11 +66,11 @@ public class GossipScoringConfiguratorTest {
 
     final GossipPeerScoringConfig peerScoring = scoringConfig.getPeerScoringConfig();
 
-    assertThatDouble(peerScoring.getTopicScoreCap()).isApproximately(53.75);
-    assertThatDouble(peerScoring.getIpColocationFactorWeight()).isApproximately(-53.75);
+    assertThat(peerScoring.getTopicScoreCap()).isCloseTo(53.75, within(TOLERANCE));
+    assertThat(peerScoring.getIpColocationFactorWeight()).isCloseTo(-53.75, within(TOLERANCE));
     assertThat(peerScoring.getIpColocationFactorThreshold()).isEqualTo(3);
-    assertThatDouble(peerScoring.getBehaviourPenaltyDecay()).isApproximately(0.9857);
-    assertThatDouble(peerScoring.getBehaviourPenaltyWeight()).isApproximately(-15.8793);
+    assertThat(peerScoring.getBehaviourPenaltyDecay()).isCloseTo(0.9857, within(TOLERANCE));
+    assertThat(peerScoring.getBehaviourPenaltyWeight()).isCloseTo(-15.8793, within(TOLERANCE));
     assertThat(peerScoring.getBehaviourPenaltyThreshold()).isEqualTo(6.0);
     assertThat(peerScoring.getDecayToZero()).isEqualTo(0.01);
     assertThat(peerScoring.getDecayInterval().toSeconds()).isEqualTo(12);
@@ -119,14 +120,14 @@ public class GossipScoringConfiguratorTest {
     assertMessageRatePenaltiesDisabled(params);
 
     assertThat(params.getTopicWeight()).isEqualTo(0.05);
-    assertThatDouble(params.getTimeInMeshWeight()).isApproximately(0.03333);
+    assertThat(params.getTimeInMeshWeight()).isCloseTo(0.03333, within(TOLERANCE));
     assertThat(params.getTimeInMeshQuantum()).isEqualTo(Duration.ofSeconds(12));
     assertThat(params.getTimeInMeshCap()).isEqualTo(300.0);
-    assertThatDouble(params.getFirstMessageDeliveriesWeight()).isApproximately(1.8407);
-    assertThatDouble(params.getFirstMessageDeliveriesDecay()).isApproximately(0.99856);
-    assertThatDouble(params.getFirstMessageDeliveriesCap()).isApproximately(21.73035);
-    assertThatDouble(params.getInvalidMessageDeliveriesWeight()).isApproximately(-2150.0);
-    assertThatDouble(params.getInvalidMessageDeliveriesDecay()).isApproximately(0.99713);
+    assertThat(params.getFirstMessageDeliveriesWeight()).isCloseTo(1.8407, within(TOLERANCE));
+    assertThat(params.getFirstMessageDeliveriesDecay()).isCloseTo(0.99856, within(TOLERANCE));
+    assertThat(params.getFirstMessageDeliveriesCap()).isCloseTo(21.73035, within(TOLERANCE));
+    assertThat(params.getInvalidMessageDeliveriesWeight()).isCloseTo(-2150.0, within(TOLERANCE));
+    assertThat(params.getInvalidMessageDeliveriesDecay()).isCloseTo(0.99713, within(TOLERANCE));
   }
 
   private void validateSlashingTopicParams(final Map<String, GossipTopicScoringConfig> allTopics) {
@@ -143,14 +144,14 @@ public class GossipScoringConfiguratorTest {
     assertMessageRatePenaltiesDisabled(params);
 
     assertThat(params.getTopicWeight()).isEqualTo(0.05);
-    assertThatDouble(params.getTimeInMeshWeight()).isApproximately(0.03333);
+    assertThat(params.getTimeInMeshWeight()).isCloseTo(0.03333, within(TOLERANCE));
     assertThat(params.getTimeInMeshQuantum()).isEqualTo(Duration.ofSeconds(12));
     assertThat(params.getTimeInMeshCap()).isEqualTo(300.0);
-    assertThatDouble(params.getFirstMessageDeliveriesWeight()).isApproximately(36.81486);
-    assertThatDouble(params.getFirstMessageDeliveriesDecay()).isApproximately(0.998561);
-    assertThatDouble(params.getFirstMessageDeliveriesCap()).isApproximately(1.08652);
-    assertThatDouble(params.getInvalidMessageDeliveriesWeight()).isApproximately(-2150.0);
-    assertThatDouble(params.getInvalidMessageDeliveriesDecay()).isApproximately(0.99713);
+    assertThat(params.getFirstMessageDeliveriesWeight()).isCloseTo(36.81486, within(TOLERANCE));
+    assertThat(params.getFirstMessageDeliveriesDecay()).isCloseTo(0.998561, within(TOLERANCE));
+    assertThat(params.getFirstMessageDeliveriesCap()).isCloseTo(1.08652, within(TOLERANCE));
+    assertThat(params.getInvalidMessageDeliveriesWeight()).isCloseTo(-2150.0, within(TOLERANCE));
+    assertThat(params.getInvalidMessageDeliveriesDecay()).isCloseTo(0.99713, within(TOLERANCE));
   }
 
   private void validateAggregateTopicParams(
@@ -158,26 +159,26 @@ public class GossipScoringConfiguratorTest {
     final GossipTopicScoringConfig params = getAggregateTopicScoring(allTopics);
 
     assertThat(params.getTopicWeight()).isEqualTo(0.5);
-    assertThatDouble(params.getTimeInMeshWeight()).isApproximately(0.03333);
+    assertThat(params.getTimeInMeshWeight()).isCloseTo(0.03333, within(TOLERANCE));
     assertThat(params.getTimeInMeshQuantum()).isEqualTo(Duration.ofSeconds(12));
     assertThat(params.getTimeInMeshCap()).isEqualTo(300.0);
-    assertThatDouble(params.getFirstMessageDeliveriesWeight()).isApproximately(0.33509);
-    assertThatDouble(params.getFirstMessageDeliveriesDecay()).isApproximately(0.86596);
-    assertThatDouble(params.getFirstMessageDeliveriesCap()).isApproximately(119.3712);
-    assertThatDouble(params.getInvalidMessageDeliveriesWeight()).isApproximately(-215.0);
-    assertThatDouble(params.getInvalidMessageDeliveriesDecay()).isApproximately(0.99713);
+    assertThat(params.getFirstMessageDeliveriesWeight()).isCloseTo(0.33509, within(TOLERANCE));
+    assertThat(params.getFirstMessageDeliveriesDecay()).isCloseTo(0.86596, within(TOLERANCE));
+    assertThat(params.getFirstMessageDeliveriesCap()).isCloseTo(119.3712, within(TOLERANCE));
+    assertThat(params.getInvalidMessageDeliveriesWeight()).isCloseTo(-215.0, within(TOLERANCE));
+    assertThat(params.getInvalidMessageDeliveriesDecay()).isCloseTo(0.99713, within(TOLERANCE));
 
     // Check message rate penalty params
-    assertThatDouble(params.getMeshMessageDeliveriesDecay()).isApproximately(0.930572);
-    assertThatDouble(params.getMeshMessageDeliveriesCap()).isApproximately(68.6255);
+    assertThat(params.getMeshMessageDeliveriesDecay()).isCloseTo(0.930572, within(TOLERANCE));
+    assertThat(params.getMeshMessageDeliveriesCap()).isCloseTo(68.6255, within(TOLERANCE));
     assertThat(params.getMeshMessageDeliveriesActivation()).isEqualTo(Duration.ofSeconds(384));
     assertThat(params.getMeshMessageDeliveryWindow()).isEqualTo(Duration.ofSeconds(2));
-    assertThatDouble(params.getMeshFailurePenaltyWeight()).isApproximately(-0.73044);
-    assertThatDouble(params.getMeshFailurePenaltyDecay()).isApproximately(0.93057);
+    assertThat(params.getMeshFailurePenaltyWeight()).isCloseTo(-0.73044, within(TOLERANCE));
+    assertThat(params.getMeshFailurePenaltyDecay()).isCloseTo(0.93057, within(TOLERANCE));
 
     if (penaltiesActive) {
-      assertThatDouble(params.getMeshMessageDeliveriesWeight()).isApproximately(-0.7304);
-      assertThatDouble(params.getMeshMessageDeliveriesThreshold()).isApproximately(17.15638);
+      assertThat(params.getMeshMessageDeliveriesWeight()).isCloseTo(-0.7304, within(TOLERANCE));
+      assertThat(params.getMeshMessageDeliveriesThreshold()).isCloseTo(17.15638, within(TOLERANCE));
     } else {
       assertThat(params.getMeshMessageDeliveriesWeight()).isEqualTo(0.0);
       assertThat(params.getMeshMessageDeliveriesThreshold()).isEqualTo(0.0);
@@ -194,26 +195,26 @@ public class GossipScoringConfiguratorTest {
   private void validateAttestationSubnetTopicParams(
       final GossipTopicScoringConfig params, final boolean penaltiesActive) {
     assertThat(params.getTopicWeight()).isEqualTo(0.015625);
-    assertThatDouble(params.getTimeInMeshWeight()).isApproximately(0.03333);
+    assertThat(params.getTimeInMeshWeight()).isCloseTo(0.03333, within(TOLERANCE));
     assertThat(params.getTimeInMeshQuantum()).isEqualTo(Duration.ofSeconds(12));
     assertThat(params.getTimeInMeshCap()).isEqualTo(300.0);
-    assertThatDouble(params.getFirstMessageDeliveriesWeight()).isApproximately(2.6807);
-    assertThatDouble(params.getFirstMessageDeliveriesDecay()).isApproximately(0.86596);
-    assertThatDouble(params.getFirstMessageDeliveriesCap()).isApproximately(14.9214);
-    assertThatDouble(params.getInvalidMessageDeliveriesWeight()).isApproximately(-6880.0);
-    assertThatDouble(params.getInvalidMessageDeliveriesDecay()).isApproximately(0.99713);
+    assertThat(params.getFirstMessageDeliveriesWeight()).isCloseTo(2.6807, within(TOLERANCE));
+    assertThat(params.getFirstMessageDeliveriesDecay()).isCloseTo(0.86596, within(TOLERANCE));
+    assertThat(params.getFirstMessageDeliveriesCap()).isCloseTo(14.9214, within(TOLERANCE));
+    assertThat(params.getInvalidMessageDeliveriesWeight()).isCloseTo(-6880.0, within(TOLERANCE));
+    assertThat(params.getInvalidMessageDeliveriesDecay()).isCloseTo(0.99713, within(TOLERANCE));
 
     // Check message rate penalty params
-    assertThatDouble(params.getMeshMessageDeliveriesDecay()).isApproximately(0.96466);
-    assertThatDouble(params.getMeshMessageDeliveriesCap()).isApproximately(69.88248);
+    assertThat(params.getMeshMessageDeliveriesDecay()).isCloseTo(0.96466, within(TOLERANCE));
+    assertThat(params.getMeshMessageDeliveriesCap()).isCloseTo(69.88248, within(TOLERANCE));
     assertThat(params.getMeshMessageDeliveriesActivation()).isEqualTo(Duration.ofSeconds(204));
     assertThat(params.getMeshMessageDeliveryWindow()).isEqualTo(Duration.ofSeconds(2));
-    assertThatDouble(params.getMeshFailurePenaltyWeight()).isApproximately(-360.6548);
-    assertThatDouble(params.getMeshFailurePenaltyDecay()).isApproximately(0.96466);
+    assertThat(params.getMeshFailurePenaltyWeight()).isCloseTo(-360.6548, within(TOLERANCE));
+    assertThat(params.getMeshFailurePenaltyDecay()).isCloseTo(0.96466, within(TOLERANCE));
 
     if (penaltiesActive) {
-      assertThatDouble(params.getMeshMessageDeliveriesWeight()).isApproximately(-360.6548);
-      assertThatDouble(params.getMeshMessageDeliveriesThreshold()).isApproximately(4.367655);
+      assertThat(params.getMeshMessageDeliveriesWeight()).isCloseTo(-360.6548, within(TOLERANCE));
+      assertThat(params.getMeshMessageDeliveriesThreshold()).isCloseTo(4.367655, within(TOLERANCE));
     } else {
       assertThat(params.getMeshMessageDeliveriesWeight()).isEqualTo(0.0);
       assertThat(params.getMeshMessageDeliveriesThreshold()).isEqualTo(0.0);
@@ -225,29 +226,38 @@ public class GossipScoringConfiguratorTest {
     final GossipTopicScoringConfig blockTopicScoring = getBlockTopicScoring(allTopics);
 
     assertThat(blockTopicScoring.getTopicWeight()).isEqualTo(0.5);
-    assertThatDouble(blockTopicScoring.getTimeInMeshWeight()).isApproximately(0.03333);
+    assertThat(blockTopicScoring.getTimeInMeshWeight()).isCloseTo(0.03333, within(TOLERANCE));
     assertThat(blockTopicScoring.getTimeInMeshQuantum()).isEqualTo(Duration.ofSeconds(12));
     assertThat(blockTopicScoring.getTimeInMeshCap()).isEqualTo(300.0);
-    assertThatDouble(blockTopicScoring.getFirstMessageDeliveriesWeight()).isApproximately(1.14716);
-    assertThatDouble(blockTopicScoring.getFirstMessageDeliveriesDecay()).isApproximately(0.99283);
-    assertThatDouble(blockTopicScoring.getFirstMessageDeliveriesCap()).isApproximately(34.8687);
-    assertThatDouble(blockTopicScoring.getInvalidMessageDeliveriesWeight()).isApproximately(-215.0);
-    assertThatDouble(blockTopicScoring.getInvalidMessageDeliveriesDecay()).isApproximately(0.99713);
+    assertThat(blockTopicScoring.getFirstMessageDeliveriesWeight())
+        .isCloseTo(1.14716, within(TOLERANCE));
+    assertThat(blockTopicScoring.getFirstMessageDeliveriesDecay())
+        .isCloseTo(0.99283, within(TOLERANCE));
+    assertThat(blockTopicScoring.getFirstMessageDeliveriesCap())
+        .isCloseTo(34.8687, within(TOLERANCE));
+    assertThat(blockTopicScoring.getInvalidMessageDeliveriesWeight())
+        .isCloseTo(-215.0, within(TOLERANCE));
+    assertThat(blockTopicScoring.getInvalidMessageDeliveriesDecay())
+        .isCloseTo(0.99713, within(TOLERANCE));
 
     // Check message rate penalty params
-    assertThatDouble(blockTopicScoring.getMeshMessageDeliveriesDecay()).isApproximately(0.97163);
-    assertThatDouble(blockTopicScoring.getMeshMessageDeliveriesCap()).isApproximately(2.0547574);
+    assertThat(blockTopicScoring.getMeshMessageDeliveriesDecay())
+        .isCloseTo(0.97163, within(TOLERANCE));
+    assertThat(blockTopicScoring.getMeshMessageDeliveriesCap())
+        .isCloseTo(2.0547574, within(TOLERANCE));
     assertThat(blockTopicScoring.getMeshMessageDeliveriesActivation())
         .isEqualTo(Duration.ofSeconds(384));
     assertThat(blockTopicScoring.getMeshMessageDeliveryWindow()).isEqualTo(Duration.ofSeconds(2));
-    assertThatDouble(blockTopicScoring.getMeshFailurePenaltyWeight()).isApproximately(-458.31055);
-    assertThatDouble(blockTopicScoring.getMeshFailurePenaltyDecay()).isApproximately(0.97163);
+    assertThat(blockTopicScoring.getMeshFailurePenaltyWeight())
+        .isCloseTo(-458.31055, within(TOLERANCE));
+    assertThat(blockTopicScoring.getMeshFailurePenaltyDecay())
+        .isCloseTo(0.97163, within(TOLERANCE));
 
     if (penaltiesActive) {
-      assertThatDouble(blockTopicScoring.getMeshMessageDeliveriesWeight())
-          .isApproximately(-458.31055);
-      assertThatDouble(blockTopicScoring.getMeshMessageDeliveriesThreshold())
-          .isApproximately(0.68491);
+      assertThat(blockTopicScoring.getMeshMessageDeliveriesWeight())
+          .isCloseTo(-458.31055, within(TOLERANCE));
+      assertThat(blockTopicScoring.getMeshMessageDeliveriesThreshold())
+          .isCloseTo(0.68491, within(TOLERANCE));
     } else {
       assertThat(blockTopicScoring.getMeshMessageDeliveriesWeight()).isEqualTo(0.0);
       assertThat(blockTopicScoring.getMeshMessageDeliveriesThreshold()).isEqualTo(0.0);
