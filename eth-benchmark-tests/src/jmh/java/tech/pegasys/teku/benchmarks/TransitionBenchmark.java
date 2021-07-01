@@ -15,7 +15,6 @@ package tech.pegasys.teku.benchmarks;
 
 import static org.mockito.Mockito.mock;
 
-import com.google.common.eventbus.EventBus;
 import java.util.Iterator;
 import java.util.List;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -40,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
+import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
@@ -82,7 +82,7 @@ public abstract class TransitionBenchmark {
     List<BLSKeyPair> validatorKeys =
         BlsKeyPairIO.createReaderForResource(keysFile).readAll(validatorsCount);
 
-    EventBus localEventBus = mock(EventBus.class);
+    final BlockImportNotifications blockImportNotifications = mock(BlockImportNotifications.class);
     spec = TestSpecFactory.createMainnetPhase0();
     wsValidator = WeakSubjectivityFactory.lenientValidator();
     recentChainData = MemoryOnlyRecentChainData.create(spec);
@@ -90,7 +90,8 @@ public abstract class TransitionBenchmark {
     localChain = BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);
     localChain.initializeStorage();
 
-    blockImporter = new BlockImporter(recentChainData, forkChoice, wsValidator, localEventBus);
+    blockImporter =
+        new BlockImporter(blockImportNotifications, recentChainData, forkChoice, wsValidator);
     blockIterator = BlockIO.createResourceReader(spec, blocksFile).iterator();
     System.out.println("Importing blocks from " + blocksFile);
   }

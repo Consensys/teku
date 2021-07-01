@@ -21,7 +21,6 @@ import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Throwables;
-import com.google.common.eventbus.EventBus;
 import java.net.BindException;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -75,6 +74,7 @@ import tech.pegasys.teku.statetransition.OperationsReOrgManager;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
+import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -141,7 +141,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private final MetricsSystem metricsSystem;
   private final AsyncRunner beaconAsyncRunner;
   private final TimeProvider timeProvider;
-  private final EventBus eventBus;
   private final SlotEventsChannel slotEventsChannelPublisher;
   private final AsyncRunner networkAsyncRunner;
   private final AsyncRunnerFactory asyncRunnerFactory;
@@ -193,7 +192,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     this.eventAsyncRunner = serviceConfig.createAsyncRunner("events", 10);
     this.networkAsyncRunner = serviceConfig.createAsyncRunner("p2p", 10);
     this.timeProvider = serviceConfig.getTimeProvider();
-    this.eventBus = serviceConfig.getEventBus();
     this.eventChannels = serviceConfig.getEventChannels();
     this.metricsSystem = serviceConfig.getMetricsSystem();
     this.slotEventsChannelPublisher = eventChannels.getPublisher(SlotEventsChannel.class);
@@ -540,7 +538,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                         ValidateableAttestation.from(spec, attestation))));
     attestationManager =
         AttestationManager.create(
-            eventBus,
             pendingAttestations,
             futureAttestations,
             forkChoice,
@@ -550,7 +547,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             signatureVerificationService);
     eventChannels
         .subscribe(SlotEventsChannel.class, attestationManager)
-        .subscribe(FinalizedCheckpointChannel.class, pendingAttestations);
+        .subscribe(FinalizedCheckpointChannel.class, pendingAttestations)
+        .subscribe(BlockImportNotifications.class, attestationManager);
   }
 
   private void initSyncCommitteePools() {
@@ -712,7 +710,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   public void initBlockImporter() {
     LOG.debug("BeaconChainController.initBlockImporter()");
     blockImporter =
-        new BlockImporter(recentChainData, forkChoice, weakSubjectivityValidator, eventBus);
+        new BlockImporter(
+            eventChannels.getPublisher(BlockImportNotifications.class),
+            recentChainData,
+            forkChoice,
+            weakSubjectivityValidator);
   }
 
   public void initBlockManager() {
@@ -722,10 +724,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     BlockValidator blockValidator = new BlockValidator(spec, recentChainData);
     blockManager =
         BlockManager.create(
-            eventBus, pendingBlocks, futureBlocks, recentChainData, blockImporter, blockValidator);
+            pendingBlocks, futureBlocks, recentChainData, blockImporter, blockValidator);
     eventChannels
         .subscribe(SlotEventsChannel.class, blockManager)
-        .subscribe(BlockImportChannel.class, blockManager);
+        .subscribe(BlockImportChannel.class, blockManager)
+        .subscribe(BlockImportNotifications.class, blockManager);
   }
 
   public void initSyncService() {

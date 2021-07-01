@@ -22,7 +22,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.google.common.eventbus.EventBus;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -66,7 +65,8 @@ public class BlockImporterTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final SpecConfig genesisConfig = spec.getGenesisSpecConfig();
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(8);
-  private final EventBus localEventBus = mock(EventBus.class);
+  private final BlockImportNotifications blockImportNotifications =
+      mock(BlockImportNotifications.class);
   private final RecentChainData recentChainData =
       MemoryOnlyRecentChainData.builder().specProvider(spec).build();
   private final WeakSubjectivityValidator weakSubjectivityValidator =
@@ -81,7 +81,8 @@ public class BlockImporterTest {
       BeaconChainUtil.create(otherStorage, validatorKeys, false);
 
   private final BlockImporter blockImporter =
-      new BlockImporter(recentChainData, forkChoice, weakSubjectivityValidator, localEventBus);
+      new BlockImporter(
+          blockImportNotifications, recentChainData, forkChoice, weakSubjectivityValidator);
 
   @BeforeAll
   public static void init() {
@@ -352,7 +353,8 @@ public class BlockImporterTest {
     final WeakSubjectivityValidator weakSubjectivityValidator =
         WeakSubjectivityValidator.lenient(wsConfig);
     final BlockImporter blockImporter =
-        new BlockImporter(recentChainData, forkChoice, weakSubjectivityValidator, localEventBus);
+        new BlockImporter(
+            blockImportNotifications, recentChainData, forkChoice, weakSubjectivityValidator);
 
     final BlockImportResult result = blockImporter.importBlock(otherBlock).get();
     assertImportFailed(result, FailureReason.FAILED_WEAK_SUBJECTIVITY_CHECKS);
@@ -376,7 +378,8 @@ public class BlockImporterTest {
     final WeakSubjectivityValidator weakSubjectivityValidator =
         WeakSubjectivityValidator.lenient(wsConfig);
     final BlockImporter blockImporter =
-        new BlockImporter(recentChainData, forkChoice, weakSubjectivityValidator, localEventBus);
+        new BlockImporter(
+            blockImportNotifications, recentChainData, forkChoice, weakSubjectivityValidator);
 
     // Import wsBlock
     final BlockImportResult result = blockImporter.importBlock(wsBlock).get();
@@ -394,10 +397,10 @@ public class BlockImporterTest {
         ForkChoice.create(spec, new InlineEventThread(), storageSystem.recentChainData());
     final BlockImporter blockImporter =
         new BlockImporter(
+            blockImportNotifications,
             storageSystem.recentChainData(),
             forkChoice,
-            weakSubjectivityValidator,
-            storageSystem.eventBus());
+            weakSubjectivityValidator);
 
     // The current slot is far ahead of the block being imported
     final UInt64 wsPeriod = UInt64.valueOf(10);
@@ -430,10 +433,10 @@ public class BlockImporterTest {
         ForkChoice.create(spec, new InlineEventThread(), storageSystem.recentChainData());
     final BlockImporter blockImporter =
         new BlockImporter(
+            blockImportNotifications,
             storageSystem.recentChainData(),
             forkChoice,
-            weakSubjectivityValidator,
-            storageSystem.eventBus());
+            weakSubjectivityValidator);
 
     // Set current time to be several WSP's ahead of finalized checkpoint
     final UInt64 wsPeriod = UInt64.valueOf(10);
@@ -474,10 +477,10 @@ public class BlockImporterTest {
         ForkChoice.create(spec, new InlineEventThread(), storageSystem.recentChainData());
     final BlockImporter blockImporter =
         new BlockImporter(
+            blockImportNotifications,
             storageSystem.recentChainData(),
             forkChoice,
-            weakSubjectivityValidator,
-            storageSystem.eventBus());
+            weakSubjectivityValidator);
 
     // Set current time to be several WSP's ahead of finalized checkpoint
     final UInt64 wsPeriod = UInt64.valueOf(10);
@@ -510,10 +513,10 @@ public class BlockImporterTest {
         ForkChoice.create(spec, new InlineEventThread(), storageSystem.recentChainData());
     final BlockImporter blockImporter =
         new BlockImporter(
+            blockImportNotifications,
             storageSystem.recentChainData(),
             forkChoice,
-            weakSubjectivityValidator,
-            storageSystem.eventBus());
+            weakSubjectivityValidator);
 
     final SignedBlockAndState genesis = storageSystem.chainUpdater().initializeGenesis();
 
@@ -534,10 +537,10 @@ public class BlockImporterTest {
         ForkChoice.create(spec, new InlineEventThread(), storageSystem.recentChainData());
     final BlockImporter blockImporter =
         new BlockImporter(
+            blockImportNotifications,
             storageSystem.recentChainData(),
             forkChoice,
-            weakSubjectivityValidator,
-            storageSystem.eventBus());
+            weakSubjectivityValidator);
 
     final SignedBlockAndState genesis = storageSystem.chainUpdater().initializeGenesis();
 

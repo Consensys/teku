@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.google.common.eventbus.EventBus;
 import java.net.BindException;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -111,7 +110,6 @@ public class Eth2P2PNetworkFactory {
 
     protected List<Eth2P2PNetwork> peers = new ArrayList<>();
     protected AsyncRunner asyncRunner;
-    protected EventBus eventBus;
     protected EventChannels eventChannels;
     protected RecentChainData recentChainData;
     protected StorageQueryChannel historicalChainData = new StubStorageQueryChannel();
@@ -317,9 +315,6 @@ public class Eth2P2PNetworkFactory {
     }
 
     private void setDefaults() {
-      if (eventBus == null) {
-        eventBus = new EventBus();
-      }
       if (eventChannels == null) {
         eventChannels =
             EventChannels.createSyncChannels(
@@ -413,12 +408,6 @@ public class Eth2P2PNetworkFactory {
 
     public Eth2P2PNetworkBuilder peer(final Eth2P2PNetwork peer) {
       this.peers.add(peer);
-      return this;
-    }
-
-    public Eth2P2PNetworkBuilder eventBus(final EventBus eventBus) {
-      checkNotNull(eventBus);
-      this.eventBus = eventBus;
       return this;
     }
 

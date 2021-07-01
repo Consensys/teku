@@ -119,18 +119,44 @@ public class GossipMessageHandlerIntegrationTest {
     final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
     final UInt64 blockSlot = UInt64.valueOf(2L);
 
-    final Consumer<Eth2P2PNetworkBuilder> networkBuilder = b -> b.gossipEncoding(gossipEncoding);
+    final Set<SignedBeaconBlock> node1ReceivedBlocks = new HashSet<>();
+    final Set<SignedBeaconBlock> node2ReceivedBlocks = new HashSet<>();
+    final Set<SignedBeaconBlock> node3ReceivedBlocks = new HashSet<>();
 
     // Setup network 1
-    NodeManager node1 = createNodeManager(networkBuilder);
+    NodeManager node1 =
+        createNodeManager(
+            b ->
+                b.gossipEncoding(gossipEncoding)
+                    .gossipedBlockProcessor(
+                        block -> {
+                          node1ReceivedBlocks.add(block);
+                          return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
+                        }));
     node1.chainUtil().setSlot(blockSlot);
 
     // Setup network 2
-    NodeManager node2 = createNodeManager(networkBuilder);
+    NodeManager node2 =
+        createNodeManager(
+            b1 ->
+                b1.gossipEncoding(gossipEncoding)
+                    .gossipedBlockProcessor(
+                        block -> {
+                          node2ReceivedBlocks.add(block);
+                          return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
+                        }));
     node2.chainUtil().setSlot(blockSlot);
 
     // Setup network 3
-    NodeManager node3 = createNodeManager(networkBuilder);
+    NodeManager node3 =
+        createNodeManager(
+            b ->
+                b.gossipEncoding(gossipEncoding)
+                    .gossipedBlockProcessor(
+                        block -> {
+                          node3ReceivedBlocks.add(block);
+                          return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
+                        }));
     node2.chainUtil().setSlot(blockSlot);
 
     // Connect networks 1 -> 2 -> 3
@@ -152,13 +178,9 @@ public class GossipMessageHandlerIntegrationTest {
         node1.chainUtil().createBlockAtSlotFromInvalidProposer(blockSlot);
     node1.gossipBlock(newBlock);
 
-    // Listen for new block event to arrive on networks 2 and 3
-    final GossipedBlockCollector network2Blocks = new GossipedBlockCollector(node2.eventBus());
-    final GossipedBlockCollector network3Blocks = new GossipedBlockCollector(node3.eventBus());
-
     // Wait for blocks to propagate
-    ensureConditionRemainsMet(() -> assertThat(network2Blocks.getBlocks()).isEmpty(), 10000);
-    ensureConditionRemainsMet(() -> assertThat(network3Blocks.getBlocks()).isEmpty(), 10000);
+    ensureConditionRemainsMet(() -> assertThat(node2ReceivedBlocks).isEmpty(), 10000);
+    ensureConditionRemainsMet(() -> assertThat(node3ReceivedBlocks).isEmpty(), 10000);
   }
 
   @Test
@@ -360,6 +382,7 @@ public class GossipMessageHandlerIntegrationTest {
   private NodeManager createNodeManager(final Consumer<Eth2P2PNetworkBuilder> networkBuilder)
       throws Exception {
     return NodeManager.create(
+        spec,
         networkFactory,
         validatorKeys,
         c -> {

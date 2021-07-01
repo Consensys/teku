@@ -16,7 +16,6 @@ package tech.pegasys.teku.networking.eth2;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.async.Waiter.waitFor;
 
-import com.google.common.eventbus.EventBus;
 import java.time.Duration;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
@@ -59,7 +58,6 @@ public class PeerStatusIntegrationTest {
   @Test
   public void shouldExchangeStatusMessagesOnConnection() throws Exception {
     final RpcEncoding encoding = RpcEncoding.SSZ_SNAPPY;
-    final EventBus eventBus2 = new EventBus();
     final RecentChainData recentChainData2 = MemoryOnlyRecentChainData.create();
     BeaconChainUtil.create(recentChainData2, VALIDATOR_KEYS).initializeStorage();
 
@@ -75,7 +73,6 @@ public class PeerStatusIntegrationTest {
             .builder()
             .spec(spec)
             .rpcEncoding(encoding)
-            .eventBus(eventBus2)
             .recentChainData(recentChainData2)
             .startNetwork();
 
@@ -105,7 +102,6 @@ public class PeerStatusIntegrationTest {
             .recentChainData(recentChainData1)
             .startNetwork();
 
-    final EventBus eventBus2 = new EventBus();
     final RecentChainData recentChainData2 = MemoryOnlyRecentChainData.create();
     BeaconChainUtil.create(recentChainData2, VALIDATOR_KEYS).initializeStorage();
     final Eth2P2PNetwork network2 =
@@ -113,7 +109,6 @@ public class PeerStatusIntegrationTest {
             .builder()
             .spec(spec)
             .rpcEncoding(encoding)
-            .eventBus(eventBus2)
             .recentChainData(recentChainData2)
             .peer(network1)
             .startNetwork();
@@ -143,7 +138,6 @@ public class PeerStatusIntegrationTest {
             .recentChainData(recentChainData1)
             .startNetwork();
 
-    final EventBus eventBus2 = new EventBus();
     final RecentChainData recentChainData2 = MemoryOnlyRecentChainData.create();
     BeaconChainUtil.create(recentChainData2, VALIDATOR_KEYS).initializeStorage();
     final Eth2P2PNetwork network2 =
@@ -151,7 +145,6 @@ public class PeerStatusIntegrationTest {
             .builder()
             .spec(spec)
             .rpcEncoding(encoding)
-            .eventBus(eventBus2)
             .eth2StatusUpdateInterval(statusUpdateInterval)
             .recentChainData(recentChainData2)
             .peer(network1)
