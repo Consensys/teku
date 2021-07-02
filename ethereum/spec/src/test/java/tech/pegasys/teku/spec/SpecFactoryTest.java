@@ -14,6 +14,8 @@
 package tech.pegasys.teku.spec;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.spec.SpecMilestone.ALTAIR;
+import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 
 import java.util.Arrays;
 import java.util.stream.Stream;
@@ -21,6 +23,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.TestConfigLoader;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class SpecFactoryTest {
@@ -28,19 +33,32 @@ public class SpecFactoryTest {
   @Test
   public void defaultFactoryShouldOnlySupportPhase0_mainnet() {
     final Spec spec = SpecFactory.create("mainnet");
-    assertThat(spec.getForkSchedule().getSupportedMilestones())
-        .containsExactly(SpecMilestone.PHASE0);
+    assertThat(spec.getForkSchedule().getSupportedMilestones()).containsExactly(PHASE0);
   }
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("getKnownConfigNames")
   public void defaultFactoryShouldOnlySupportPhase0(final String configName) {
     final Spec spec = SpecFactory.create(configName);
-    assertThat(spec.getForkSchedule().getSupportedMilestones())
-        .containsExactly(SpecMilestone.PHASE0);
+    assertThat(spec.getForkSchedule().getSupportedMilestones()).containsExactly(PHASE0);
   }
 
-  public static Stream<Arguments> getKnownConfigNames() {
+  @Test
+  void shouldSupportAltairWhenForkEpochSetInConfig() {
+    final SpecConfig config =
+        TestConfigLoader.loadConfig(
+            "mainnet",
+            phase0Builder ->
+                phase0Builder.altairBuilder(
+                    altairBuilder -> altairBuilder.altairForkEpoch(UInt64.valueOf(10))));
+    final Spec spec = SpecFactory.create(config);
+    assertThat(spec.getForkSchedule().getSupportedMilestones()).containsExactly(PHASE0, ALTAIR);
+    assertThat(spec.getForkSchedule().getSpecMilestoneAtEpoch(UInt64.valueOf(10)))
+        .isEqualTo(ALTAIR);
+  }
+
+  @SuppressWarnings("unused")
+  static Stream<Arguments> getKnownConfigNames() {
     return Arrays.stream(Eth2Network.values()).map(Eth2Network::configName).map(Arguments::of);
   }
 }
