@@ -61,6 +61,7 @@ class AggregatingAttestationPoolTest {
     // Fwd some calls to the real spec
     when(mockSpec.computeEpochAtSlot(any()))
         .thenAnswer(i -> spec.computeEpochAtSlot(i.getArgument(0)));
+    when(mockSpec.getSlotsPerEpoch(any())).thenAnswer(i -> spec.getSlotsPerEpoch(i.getArgument(0)));
     when(mockSpec.getCurrentEpoch(any())).thenAnswer(i -> spec.getCurrentEpoch(i.getArgument(0)));
   }
 
