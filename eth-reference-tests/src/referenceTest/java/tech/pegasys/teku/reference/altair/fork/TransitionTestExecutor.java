@@ -17,7 +17,6 @@ import static tech.pegasys.teku.ssz.SszDataAssert.assertThatSszData;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
-import java.util.Optional;
 import org.assertj.core.api.Assertions;
 import org.opentest4j.TestAbortedException;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
@@ -61,7 +60,7 @@ public class TransitionTestExecutor implements TestExecutor {
         TestConfigLoader.loadConfig(
             testDefinition.getConfigName(),
             c -> c.altairBuilder(a -> a.altairForkEpoch(forkEpoch)));
-    final Spec spec = SpecFactory.create(config, Optional.of(forkEpoch));
+    final Spec spec = SpecFactory.create(config);
     final BeaconState preState =
         TestDataUtils.loadSsz(testDefinition, "pre.ssz_snappy", spec::deserializeBeaconState);
     final BeaconState postState =
