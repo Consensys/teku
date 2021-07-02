@@ -97,6 +97,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
       final SchemaDefinitionsSupplier currentSchemaDefinitionsSupplier) {
     final DiscoveryService discoveryService =
         createDiscoveryService(
+            asyncRunner,
             discoveryConfig,
             p2pConfig,
             kvStore,
@@ -117,6 +118,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   }
 
   private static DiscoveryService createDiscoveryService(
+      final AsyncRunner asyncRunner,
       final DiscoveryConfig discoConfig,
       final NetworkConfig p2pConfig,
       final KeyValueStore<String, Bytes> kvStore,
@@ -125,8 +127,13 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
     final DiscoveryService discoveryService;
     if (discoConfig.isDiscoveryEnabled()) {
       discoveryService =
-          DiscV5Service.create(
-              discoConfig, p2pConfig, kvStore, privateKey, currentSchemaDefinitionsSupplier);
+          new DiscV5Service(
+              asyncRunner,
+              discoConfig,
+              p2pConfig,
+              kvStore,
+              privateKey,
+              currentSchemaDefinitionsSupplier);
     } else {
       discoveryService = new NoOpDiscoveryService();
     }
