@@ -13,9 +13,14 @@
 
 package tech.pegasys.teku.spec;
 
+import static tech.pegasys.teku.spec.SpecMilestone.ALTAIR;
+import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
+import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
+
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigBuilder;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 
@@ -32,7 +37,7 @@ public class SpecFactory {
             builder ->
                 altairForkEpoch.ifPresent(
                     forkEpoch -> overrideAltairForkEpoch(builder, forkEpoch)));
-    return create(config, altairForkEpoch);
+    return create(config);
   }
 
   private static void overrideAltairForkEpoch(
@@ -40,9 +45,12 @@ public class SpecFactory {
     builder.altairBuilder(altairBuilder -> altairBuilder.altairForkEpoch(forkEpoch));
   }
 
-  public static Spec create(final SpecConfig config, final Optional<UInt64> altairForkEpoch) {
+  public static Spec create(final SpecConfig config) {
+    final UInt64 altairForkEpoch =
+        config.toVersionAltair().map(SpecConfigAltair::getAltairForkEpoch).orElse(FAR_FUTURE_EPOCH);
+
     final SpecMilestone highestMilestoneSupported =
-        altairForkEpoch.map(__ -> SpecMilestone.ALTAIR).orElse(SpecMilestone.PHASE0);
+        altairForkEpoch.equals(FAR_FUTURE_EPOCH) ? PHASE0 : ALTAIR;
     return Spec.create(config, highestMilestoneSupported);
   }
 }
