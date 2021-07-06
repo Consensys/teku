@@ -438,6 +438,13 @@ subprojects {
     options.incremental = true
   }
 
+  tasks.withType(Copy) {
+    // For some (un-spotted) reasons module resource path could be included twice
+    // In such cases gradle 7.0+ build just fails as there is no deduplication strategy
+    // Refer to https://github.com/gradle/gradle/issues/17236
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+  }
+
   sourceSets {
     integrationTest {
       java {
