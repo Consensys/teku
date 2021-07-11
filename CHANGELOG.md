@@ -20,6 +20,7 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Bug Fixes
 - Fix an issue where new peers would not be found after a network outage.
+- `/eth/v1/beacon/pool/sync_committees` incorrectly returned 503 when there were no errors instead of 200.
 
 
 ### Experimental: New Altair REST APIs
