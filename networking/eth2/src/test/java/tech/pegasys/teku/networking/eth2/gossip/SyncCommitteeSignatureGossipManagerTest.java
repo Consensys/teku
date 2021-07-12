@@ -99,8 +99,7 @@ class SyncCommitteeSignatureGossipManagerTest {
 
     final UInt64 dutyEpoch = UInt64.valueOf(333);
     final BeaconStateAltair state = dataStructureUtil.stateBuilderAltair().build();
-    when(syncCommitteeStateUtils.getStateForSyncCommittee(
-            signature.getSlot(), signature.getBeaconBlockRoot()))
+    when(syncCommitteeStateUtils.getStateForSyncCommittee(signature.getSlot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
     when(syncCommitteeUtil.getEpochForDutiesAtSlot(any())).thenReturn(dutyEpoch);
     when(syncCommitteeUtil.getSubcommitteeAssignments(any(), any(), any()))
