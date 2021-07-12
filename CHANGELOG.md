@@ -20,6 +20,7 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Bug Fixes
 - Fix an issue where new peers would not be found after a network outage.
+- Fix a file handle leak in jvm-libp2p.
 
 
 ### Experimental: New Altair REST APIs
