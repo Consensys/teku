@@ -75,7 +75,7 @@ public class SyncCommitteeSignatureGossipManager implements GossipManager {
         publish(signature, subcommitteeAssignments.get().getAssignedSubcommittees());
       } else {
         syncCommitteeStateUtils
-            .getStateForSyncCommittee(signature.getSlot(), signature.getBeaconBlockRoot())
+            .getStateForSyncCommittee(signature.getSlot())
             .finish(
                 maybeState ->
                     maybeState.ifPresentOrElse(

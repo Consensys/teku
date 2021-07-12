@@ -26,7 +26,6 @@ import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
@@ -37,6 +36,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncComm
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeSignature;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
+import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -47,16 +47,19 @@ public class SyncCommitteeSignatureValidator {
       LimitedSet.create(VALID_SYNC_COMMITTEE_SIGNATURE_SET_SIZE);
   private final Spec spec;
   private final SyncCommitteeStateUtils syncCommitteeStateUtils;
+  private final AsyncBLSSignatureVerifier signatureVerifier;
   private final SyncCommitteeCurrentSlotUtil slotUtil;
 
   public SyncCommitteeSignatureValidator(
       final Spec spec,
       final RecentChainData recentChainData,
       final SyncCommitteeStateUtils syncCommitteeStateUtils,
+      final AsyncBLSSignatureVerifier signatureVerifier,
       final TimeProvider timeProvider) {
     this.spec = spec;
     this.syncCommitteeStateUtils = syncCommitteeStateUtils;
-    slotUtil = new SyncCommitteeCurrentSlotUtil(recentChainData, spec, timeProvider);
+    this.signatureVerifier = signatureVerifier;
+    this.slotUtil = new SyncCommitteeCurrentSlotUtil(recentChainData, spec, timeProvider);
   }
 
   public SafeFuture<InternalValidationResult> validate(
@@ -101,13 +104,13 @@ public class SyncCommitteeSignatureValidator {
     }
 
     return syncCommitteeStateUtils
-        .getStateForSyncCommittee(signature.getSlot(), signature.getBeaconBlockRoot())
-        .thenApply(
+        .getStateForSyncCommittee(signature.getSlot())
+        .thenCompose(
             maybeState -> {
               if (maybeState.isEmpty()) {
                 LOG.trace(
                     "Ignoring sync committee signature because state is not available or not from Altair fork");
-                return IGNORE;
+                return SafeFuture.completedFuture(IGNORE);
               }
               final BeaconStateAltair state = maybeState.get();
               return validateWithState(
@@ -115,7 +118,7 @@ public class SyncCommitteeSignatureValidator {
             });
   }
 
-  private InternalValidationResult validateWithState(
+  private SafeFuture<InternalValidationResult> validateWithState(
       final ValidateableSyncCommitteeSignature validateableSignature,
       final SyncCommitteeSignature signature,
       final SyncCommitteeUtil syncCommitteeUtil,
@@ -134,7 +137,7 @@ public class SyncCommitteeSignatureValidator {
     if (assignedSubcommittees.isEmpty()) {
       LOG.trace(
           "Rejecting sync committee signature because validator is not in the sync committee");
-      return REJECT;
+      return SafeFuture.completedFuture(REJECT);
     }
 
     // For signatures received via gossip, it has to be unique based on the subnet it was on
@@ -151,7 +154,7 @@ public class SyncCommitteeSignatureValidator {
     // [IGNORE] There has been no other valid sync committee signature for the declared slot for the
     // validator referenced by sync_committee_signature.validator_index.
     if (seenIndices.containsAll(uniquenessKeys)) {
-      return IGNORE;
+      return SafeFuture.completedFuture(IGNORE);
     }
 
     // [REJECT] The subnet_id is correct, i.e. subnet_id in
@@ -161,14 +164,14 @@ public class SyncCommitteeSignatureValidator {
             .getAssignedSubcommittees()
             .contains(validateableSignature.getReceivedSubnetId().getAsInt())) {
       LOG.trace("Rejecting sync committee signature because subnet id is incorrect");
-      return REJECT;
+      return SafeFuture.completedFuture(REJECT);
     }
 
     final Optional<BLSPublicKey> maybeValidatorPublicKey =
         spec.getValidatorPubKey(state, signature.getValidatorIndex());
     if (maybeValidatorPublicKey.isEmpty()) {
       LOG.trace("Rejecting sync committee signature because the validator index is unknown");
-      return REJECT;
+      return SafeFuture.completedFuture(REJECT);
     }
 
     // [REJECT] The signature is valid for the message beacon_block_root for the validator
@@ -176,16 +179,21 @@ public class SyncCommitteeSignatureValidator {
     final Bytes32 signingRoot =
         syncCommitteeUtil.getSyncCommitteeSignatureSigningRoot(
             signature.getBeaconBlockRoot(), signatureEpoch, state.getForkInfo());
-    if (!BLS.verify(maybeValidatorPublicKey.get(), signingRoot, signature.getSignature())) {
-      LOG.trace("Rejecting sync committee signature because the signature is invalid");
-      return REJECT;
-    }
-
-    if (!seenIndices.addAll(uniquenessKeys)) {
-      LOG.trace("Ignoring sync committee signature as a duplicate was processed during validation");
-      return IGNORE;
-    }
-    return ACCEPT;
+    return signatureVerifier
+        .verify(maybeValidatorPublicKey.get(), signingRoot, signature.getSignature())
+        .thenApply(
+            signatureValid -> {
+              if (!signatureValid) {
+                LOG.trace("Rejecting sync committee signature because the signature is invalid");
+                return REJECT;
+              }
+              if (!seenIndices.addAll(uniquenessKeys)) {
+                LOG.trace(
+                    "Ignoring sync committee signature as a duplicate was processed during validation");
+                return IGNORE;
+              }
+              return ACCEPT;
+            });
   }
 
   private UniquenessKey getUniquenessKey(

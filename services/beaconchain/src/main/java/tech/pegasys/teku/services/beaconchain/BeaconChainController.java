@@ -307,6 +307,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     initEth1DataCache();
     initDepositProvider();
     initGenesisHandler();
+    initSignatureVerificationService();
     initAttestationManager();
     initPendingBlocks();
     initBlockManager();
@@ -515,17 +516,20 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         Eth1EventsChannel.class, new GenesisHandler(recentChainData, timeProvider, spec));
   }
 
+  private void initSignatureVerificationService() {
+    signatureVerificationService =
+        beaconConfig.p2pConfig().batchVerifyAttestationSignatures()
+            ? SignatureVerificationService.createAggregatingService(
+                metricsSystem, asyncRunnerFactory)
+            : SignatureVerificationService.createSimple();
+  }
+
   private void initAttestationManager() {
     final PendingPool<ValidateableAttestation> pendingAttestations =
         PendingPool.createForAttestations(spec);
     final FutureItems<ValidateableAttestation> futureAttestations =
         FutureItems.create(
             ValidateableAttestation::getEarliestSlotForForkChoiceProcessing, UInt64.valueOf(3));
-    signatureVerificationService =
-        beaconConfig.p2pConfig().batchVerifyAttestationSignatures()
-            ? SignatureVerificationService.createAggregatingService(
-                metricsSystem, asyncRunnerFactory)
-            : SignatureVerificationService.createSimple();
     AttestationValidator attestationValidator =
         new AttestationValidator(spec, recentChainData, signatureVerificationService);
     AggregateAttestationValidator aggregateValidator =
@@ -564,7 +568,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         new SyncCommitteeSignaturePool(
             spec,
             new SyncCommitteeSignatureValidator(
-                spec, recentChainData, syncCommitteeStateUtils, timeProvider));
+                spec,
+                recentChainData,
+                syncCommitteeStateUtils,
+                signatureVerificationService,
+                timeProvider));
     eventChannels
         .subscribe(SlotEventsChannel.class, syncCommitteeContributionPool)
         .subscribe(SlotEventsChannel.class, syncCommitteeSignaturePool);
