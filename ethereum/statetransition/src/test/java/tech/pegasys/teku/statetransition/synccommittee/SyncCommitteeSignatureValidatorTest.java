@@ -106,6 +106,7 @@ class SyncCommitteeSignatureValidatorTest {
     final SignedBlockAndState chainHead =
         storageSystem.chainUpdater().advanceChainUntil(period2StartSlot);
     storageSystem.chainUpdater().setCurrentSlot(lastSlotOfPeriod);
+    storageSystem.chainUpdater().updateBestBlock(chainHead);
 
     final SyncCommitteeSignature signature =
         chainBuilder.createSyncCommitteeSignature(lastSlotOfPeriod, chainHead.getRoot());
@@ -206,12 +207,12 @@ class SyncCommitteeSignatureValidatorTest {
   }
 
   @Test
-  void shouldIgnoreWhenBeaconBlockIsNotKnown() {
+  void shouldAcceptWhenValidButBeaconBlockIsUnknown() {
     final SyncCommitteeSignature signature =
         chainBuilder.createSyncCommitteeSignature(
             chainBuilder.getLatestSlot(), dataStructureUtil.randomBytes32());
     assertThat(validator.validate(ValidateableSyncCommitteeSignature.fromValidator(signature)))
-        .isCompletedWithValue(IGNORE);
+        .isCompletedWithValue(ACCEPT);
   }
 
   @Test

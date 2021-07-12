@@ -16,11 +16,11 @@ package tech.pegasys.teku.statetransition.synccommittee;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
@@ -36,33 +36,37 @@ public class SyncCommitteeStateUtils {
     this.recentChainData = recentChainData;
   }
 
-  public SafeFuture<Optional<BeaconStateAltair>> getStateForSyncCommittee(
-      final UInt64 slot, final Bytes32 beaconBlockRoot) {
-    final Optional<UInt64> blockSlot = recentChainData.getSlotForBlockRoot(beaconBlockRoot);
-    if (blockSlot.isEmpty()) {
+  public SafeFuture<Optional<BeaconStateAltair>> getStateForSyncCommittee(final UInt64 slot) {
+    final Optional<StateAndBlockSummary> chainHead = recentChainData.getChainHead();
+    if (chainHead.isEmpty()) {
       return SafeFuture.completedFuture(Optional.empty());
     }
-    return getStateForBlockAtSlot(slot, beaconBlockRoot, blockSlot.get());
+    return getStateForBlockAtSlot(slot, chainHead.get());
   }
 
   private SafeFuture<Optional<BeaconStateAltair>> getStateForBlockAtSlot(
-      final UInt64 slot, final Bytes32 beaconBlockRoot, final UInt64 blockSlot) {
+      final UInt64 slot, final StateAndBlockSummary chainHead) {
+    final UInt64 chainHeadSlot = chainHead.getSlot();
     final SyncCommitteeUtil syncCommitteeUtil = spec.getSyncCommitteeUtilRequired(slot);
     final UInt64 requiredEpoch =
         syncCommitteeUtil.getMinEpochForSyncCommitteeAssignments(spec.computeEpochAtSlot(slot));
 
     final UInt64 requiredSlot = spec.computeStartSlotAtEpoch(requiredEpoch);
-    if (blockSlot.plus(spec.getSlotsPerEpoch(blockSlot)).isLessThan(requiredSlot)) {
+
+    if (chainHeadSlot.isGreaterThanOrEqualTo(requiredSlot)) {
+      return SafeFuture.completedFuture(chainHead.getState().toVersionAltair());
+    }
+    if (chainHeadSlot.plus(spec.getSlotsPerEpoch(chainHeadSlot)).isLessThan(requiredSlot)) {
       LOG.warn(
-          "Ignoring sync committee gossip because it refers to a block that is too old. "
-              + "Block root {} from slot {} is more than an epoch before the required slot {}",
-          beaconBlockRoot,
-          blockSlot,
+          "Ignoring sync committee gossip because the chain head is too old. "
+              + "Chain head slot {} is more than an epoch before the required slot {}",
+          chainHeadSlot,
           requiredSlot);
       return SafeFuture.completedFuture(Optional.empty());
     }
     return recentChainData
-        .retrieveStateAtSlot(new SlotAndBlockRoot(blockSlot.max(requiredSlot), beaconBlockRoot))
+        .retrieveStateAtSlot(
+            new SlotAndBlockRoot(chainHeadSlot.max(requiredSlot), chainHead.getRoot()))
         .thenApply(maybeState -> maybeState.flatMap(BeaconState::toVersionAltair));
   }
 }
