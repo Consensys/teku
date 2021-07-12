@@ -28,7 +28,10 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.TestConfigLoader;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -60,22 +63,22 @@ class SyncCommitteeStateUtilsTest {
       new SyncCommitteeStateUtils(spec, recentChainData);
 
   @Test
-  void shouldReturnEmptyWhenBlockSlotIsNotAvailable() {
-    when(recentChainData.getSlotForBlockRoot(blockRoot)).thenReturn(Optional.empty());
-    assertThatSafeFuture(stateUtils.getStateForSyncCommittee(UInt64.ONE, blockRoot))
+  void shouldReturnEmptyWhenChainHeadIsNotAvailable() {
+    when(recentChainData.getChainHead()).thenReturn(Optional.empty());
+    assertThatSafeFuture(stateUtils.getStateForSyncCommittee(UInt64.ONE))
         .isCompletedWithEmptyOptional();
   }
 
   @Test
-  void shouldUseStateFromBeaconBlockRootWhenSlotEqualToBlockSlot() {
+  void shouldUseChainHeadStateWhenSlotEqualToRequestedSlot() {
     final UInt64 slot = UInt64.valueOf(500);
-    // State from same slot as block so definitely within the committee period.
+    // State from same slot as signature so definitely within the committee period.
     final BeaconStateAltair state = dataStructureUtil.stateBuilderAltair().slot(slot).build();
     assertRetrievedStateIsSuitable(slot, state);
   }
 
   @Test
-  void shouldUseStateFromBeaconBlockRootWhenBlockSlotWithinSameCommitteePeriod() {
+  void shouldUseChainHeadStateWhenBlockSlotWithinSameCommitteePeriod() {
     final UInt64 slot = UInt64.valueOf(500);
     // Few skip slots but still in the right region
     final BeaconStateAltair state =
@@ -84,7 +87,7 @@ class SyncCommitteeStateUtilsTest {
   }
 
   @Test
-  void shouldUseStateFromBeaconBlockRootWhenBlockSlotInMinimumRequiredEpoch() {
+  void shouldUseChainHeadStateWhenInMinimumRequiredEpoch() {
     final UInt64 slot = UInt64.valueOf(500);
     final UInt64 epoch = spec.computeEpochAtSlot(slot);
     final UInt64 stateSlot =
@@ -99,23 +102,39 @@ class SyncCommitteeStateUtilsTest {
   void shouldProcessSlotsIfStateIsWithinAnEpochOfForkSlot() {
     final UInt64 slot = spec.computeStartSlotAtEpoch(ALTAIR_FORK_EPOCH);
     // Block is from before the Altair for sow we will need to process slots up to the fork slot
-    final UInt64 blockSlot = UInt64.ZERO;
-    final UInt64 stateSlot =
+    final UInt64 generatedStateSlot =
         spec.computeStartSlotAtEpoch(
             syncCommitteeUtil.getMinEpochForSyncCommitteeAssignments(ALTAIR_FORK_EPOCH));
-    when(recentChainData.getSlotForBlockRoot(blockRoot)).thenReturn(Optional.of(blockSlot));
-    final BeaconStateAltair state = dataStructureUtil.stateBuilderAltair().slot(stateSlot).build();
-    when(recentChainData.retrieveStateAtSlot(new SlotAndBlockRoot(stateSlot, blockRoot)))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
+
+    final BeaconStateAltair headState =
+        dataStructureUtil
+            .stateBuilderAltair()
+            .slot(UInt64.ZERO)
+            .latestBlockHeader(
+                new BeaconBlockHeader(
+                    UInt64.ZERO,
+                    dataStructureUtil.randomUInt64(),
+                    dataStructureUtil.randomBytes32(),
+                    Bytes32.ZERO,
+                    dataStructureUtil.randomBytes32()))
+            .build();
+    final StateAndBlockSummary chainHead = StateAndBlockSummary.create(headState);
+    when(recentChainData.getChainHead()).thenReturn(Optional.of(chainHead));
+
+    final BeaconStateAltair generatedState =
+        dataStructureUtil.stateBuilderAltair().slot(generatedStateSlot).build();
+    when(recentChainData.retrieveStateAtSlot(
+            new SlotAndBlockRoot(generatedStateSlot, chainHead.getRoot())))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(generatedState)));
 
     final SafeFuture<Optional<BeaconStateAltair>> result =
-        stateUtils.getStateForSyncCommittee(slot, blockRoot);
+        stateUtils.getStateForSyncCommittee(slot);
 
-    assertThatSafeFuture(result).isCompletedWithOptionalContaining(state);
+    assertThatSafeFuture(result).isCompletedWithOptionalContaining(generatedState);
   }
 
   @Test
-  void shouldReturnEmptyWhenBlockStateIsTooOld() {
+  void shouldReturnEmptyWhenChainHeadStateIsTooOld() {
     final UInt64 slot = UInt64.valueOf(500);
     final UInt64 epoch = spec.computeEpochAtSlot(slot);
     final UInt64 blockSlot =
@@ -124,19 +143,17 @@ class SyncCommitteeStateUtilsTest {
             .minus(1);
     when(recentChainData.getSlotForBlockRoot(blockRoot)).thenReturn(Optional.of(blockSlot));
 
-    assertThatSafeFuture(stateUtils.getStateForSyncCommittee(slot, blockRoot))
-        .isCompletedWithEmptyOptional();
+    assertThatSafeFuture(stateUtils.getStateForSyncCommittee(slot)).isCompletedWithEmptyOptional();
     verify(recentChainData, never()).retrieveStateAtSlot(any());
   }
 
-  private void assertRetrievedStateIsSuitable(final UInt64 slot, final BeaconStateAltair state) {
-    when(recentChainData.getSlotForBlockRoot(blockRoot)).thenReturn(Optional.of(state.getSlot()));
-    when(recentChainData.retrieveStateAtSlot(new SlotAndBlockRoot(state.getSlot(), blockRoot)))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
+  private void assertRetrievedStateIsSuitable(final UInt64 slot, final BeaconState state) {
+    final StateAndBlockSummary chainHead = StateAndBlockSummary.create(state);
+    when(recentChainData.getChainHead()).thenReturn(Optional.of(chainHead));
 
     final SafeFuture<Optional<BeaconStateAltair>> result =
-        stateUtils.getStateForSyncCommittee(slot, blockRoot);
+        stateUtils.getStateForSyncCommittee(slot);
 
-    assertThatSafeFuture(result).isCompletedWithOptionalContaining(state);
+    assertThatSafeFuture(result).isCompletedWithOptionalContaining(chainHead.getState());
   }
 }

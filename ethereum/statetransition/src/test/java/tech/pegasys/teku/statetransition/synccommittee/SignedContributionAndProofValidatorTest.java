@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -81,8 +82,10 @@ class SignedContributionAndProofValidatorTest {
 
     // The first two sync committees are the same so advance the chain into the second period
     // so we can test going into the third period which is actually different
-    storageSystem.chainUpdater().advanceChainUntil(period2StartSlot);
+    final SignedBlockAndState chainHead =
+        storageSystem.chainUpdater().advanceChainUntil(period2StartSlot);
     storageSystem.chainUpdater().setCurrentSlot(lastSlotOfPeriod);
+    storageSystem.chainUpdater().updateBestBlock(chainHead);
     // Contributions from the last slot of the sync committee period should be valid according to
     // the next sync committee since that's when they'll be included in blocks
     final SignedContributionAndProof message =
@@ -109,14 +112,14 @@ class SignedContributionAndProofValidatorTest {
   }
 
   @Test
-  void shouldIgnoreWhenBeaconBlockRootIsUnknown() {
+  void shouldAcceptWhenValidButBeaconBlockRootIsUnknown() {
     final SignedContributionAndProof message =
         chainBuilder
-            .createValidSignedContributionAndProofBuilder()
-            .beaconBlockRoot(dataStructureUtil.randomBytes32())
+            .createValidSignedContributionAndProofBuilder(
+                UInt64.ZERO, dataStructureUtil.randomBytes32())
             .build();
     final SafeFuture<InternalValidationResult> result = validator.validate(message);
-    assertThat(result).isCompletedWithValue(IGNORE);
+    assertThat(result).isCompletedWithValue(ACCEPT);
   }
 
   @Test

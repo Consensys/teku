@@ -19,6 +19,8 @@ For information on changes in released versions of Teku, see the [releases page]
   the `dependent-root` field to detect re-orgs instead of depending on the beacon chain publishing re-org events when empty slots are later filled.
 
 ### Bug Fixes
+- Fix an issue where new peers would not be found after a network outage.
+- Fix a file handle leak in jvm-libp2p.
 
 
 ### Experimental: New Altair REST APIs

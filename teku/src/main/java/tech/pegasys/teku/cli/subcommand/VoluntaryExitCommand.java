@@ -181,7 +181,7 @@ public class VoluntaryExitCommand implements Runnable {
       return apiClient
           .getConfigSpec()
           .map(response -> SpecConfigLoader.loadConfig(response.data))
-          .map(specConfig -> SpecFactory.create(specConfig, Optional.empty()))
+          .map(SpecFactory::create)
           .orElseThrow();
     } catch (Exception ex) {
       SUB_COMMAND_LOG.error(

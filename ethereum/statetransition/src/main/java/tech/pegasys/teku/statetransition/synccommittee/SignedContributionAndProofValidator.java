@@ -102,7 +102,7 @@ public class SignedContributionAndProofValidator {
     }
 
     return syncCommitteeStateUtils
-        .getStateForSyncCommittee(contribution.getSlot(), contribution.getBeaconBlockRoot())
+        .getStateForSyncCommittee(contribution.getSlot())
         .thenApply(
             maybeState -> {
               if (maybeState.isEmpty()) {

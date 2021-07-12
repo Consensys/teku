@@ -115,7 +115,13 @@ abstract class AbstractBeaconStateBuilder<
     genesisValidatorsRoot = dataStructureUtil.randomBytes32();
     slot = dataStructureUtil.randomUInt64();
     fork = dataStructureUtil.randomFork();
-    latestBlockHeader = dataStructureUtil.randomBeaconBlockHeader();
+    latestBlockHeader =
+        new BeaconBlockHeader(
+            slot,
+            dataStructureUtil.randomUInt64(),
+            dataStructureUtil.randomBytes32(),
+            Bytes32.ZERO,
+            dataStructureUtil.randomBytes32());
     blockRoots =
         dataStructureUtil.randomSszBytes32Vector(
             dataStructureUtil.getBeaconStateSchema().getBlockRootsSchema(),
