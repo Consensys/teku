@@ -28,6 +28,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -40,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.Validate
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
+import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -65,7 +67,11 @@ class SyncCommitteeSignatureValidatorTest {
 
   private final SyncCommitteeSignatureValidator validator =
       new SyncCommitteeSignatureValidator(
-          spec, recentChainData, new SyncCommitteeStateUtils(spec, recentChainData), timeProvider);
+          spec,
+          recentChainData,
+          new SyncCommitteeStateUtils(spec, recentChainData),
+          AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE),
+          timeProvider);
 
   @BeforeEach
   void setUp() {
@@ -136,6 +142,7 @@ class SyncCommitteeSignatureValidatorTest {
             phase0Spec,
             recentChainData,
             new SyncCommitteeStateUtils(phase0Spec, recentChainData),
+            AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE),
             timeProvider);
     final SyncCommitteeSignature signature = chainBuilder.createValidSyncCommitteeSignature();
 
