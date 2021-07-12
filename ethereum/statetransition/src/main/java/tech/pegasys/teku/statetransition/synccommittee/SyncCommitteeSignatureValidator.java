@@ -101,7 +101,7 @@ public class SyncCommitteeSignatureValidator {
     }
 
     return syncCommitteeStateUtils
-        .getStateForSyncCommittee(signature.getSlot(), signature.getBeaconBlockRoot())
+        .getStateForSyncCommittee(signature.getSlot())
         .thenApply(
             maybeState -> {
               if (maybeState.isEmpty()) {
