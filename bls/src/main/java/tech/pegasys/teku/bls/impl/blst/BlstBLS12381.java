@@ -16,9 +16,9 @@ package tech.pegasys.teku.bls.impl.blst;
 import static tech.pegasys.teku.bls.impl.blst.HashToCurve.ETH2_DST;
 
 import java.math.BigInteger;
+import java.security.SecureRandom;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -32,19 +32,17 @@ import tech.pegasys.teku.bls.impl.BLS12381;
 import tech.pegasys.teku.bls.impl.KeyPair;
 import tech.pegasys.teku.bls.impl.PublicKey;
 import tech.pegasys.teku.bls.impl.Signature;
+import tech.pegasys.teku.infrastructure.crypto.SecureRandomProvider;
 
 public class BlstBLS12381 implements BLS12381 {
 
   private static final int BATCH_RANDOM_BYTES = 8;
+  // Note: SecureRandom is thread-safe.
+  // We avoid creating new instances as that reads from /dev/random which may block on entropy
+  private static final SecureRandom random = SecureRandomProvider.createSecureRandom();
 
   private static Random getRND() {
-    // Milagro RAND has some issues with generating 'small' random numbers
-    // and is not thread safe
-    // Using non-secure random due to the JDK Linux secure random issue:
-    // https://bugs.java.com/bugdatabase/view_bug.do?bug_id=6521844
-    // A potential attack here has a very limited application and is not feasible
-    // Thus using non-secure random doesn't significantly mitigate the security
-    return ThreadLocalRandom.current();
+    return random;
   }
 
   public static BlstSignature sign(BlstSecretKey secretKey, Bytes message) {
