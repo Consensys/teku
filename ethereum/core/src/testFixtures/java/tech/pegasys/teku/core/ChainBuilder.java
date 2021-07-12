@@ -420,9 +420,13 @@ public class ChainBuilder {
 
   public SignedContributionAndProofTestBuilder createValidSignedContributionAndProofBuilder(
       final UInt64 slot) {
+    return createValidSignedContributionAndProofBuilder(slot, getLatestBlockAndState().getRoot());
+  }
+
+  public SignedContributionAndProofTestBuilder createValidSignedContributionAndProofBuilder(
+      final UInt64 slot, final Bytes32 beaconBlockRoot) {
     final SyncCommitteeUtil syncCommitteeUtil = spec.getSyncCommitteeUtilRequired(slot);
     final SignedBlockAndState latestBlockAndState = getLatestBlockAndState();
-    final Bytes32 beaconBlockRoot = latestBlockAndState.getRoot();
     final UInt64 epoch = syncCommitteeUtil.getEpochForDutiesAtSlot(slot);
 
     final Map<UInt64, SyncSubcommitteeAssignments> subcommitteeAssignments =
