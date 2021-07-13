@@ -13,19 +13,20 @@
 
 package tech.pegasys.teku.dataproviders.generators;
 
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
-
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.state.BlockRootAndState;
 
 public class StateRegenerationBaseSelector {
+
+  private final Spec spec;
   private final Optional<SlotAndBlockRoot> latestEpochBoundary;
   private final Supplier<Optional<BlockRootAndState>> closestAvailableStateSupplier;
   private final StateAndBlockSummaryProvider stateAndBlockProvider;
@@ -36,14 +37,16 @@ public class StateRegenerationBaseSelector {
    * if we a reasonably close option, prefer replaying blocks over loading the state from disk. This
    * defines what "reasonably close" means in epochs.
    */
-  private final int replayToleranceToAvoidLoadingInEpochs;
+  private final long replayToleranceToAvoidLoadingInEpochs;
 
   public StateRegenerationBaseSelector(
+      final Spec spec,
       final Optional<SlotAndBlockRoot> latestEpochBoundary,
       final Supplier<Optional<BlockRootAndState>> closestAvailableStateSupplier,
       final StateAndBlockSummaryProvider stateAndBlockProvider,
       final Optional<StateAndBlockSummary> rebasedStartingPoint,
-      final int replayToleranceToAvoidLoadingInEpochs) {
+      final long replayToleranceToAvoidLoadingInEpochs) {
+    this.spec = spec;
     this.latestEpochBoundary = latestEpochBoundary;
     this.closestAvailableStateSupplier = closestAvailableStateSupplier;
     this.stateAndBlockProvider = stateAndBlockProvider;
@@ -56,6 +59,7 @@ public class StateRegenerationBaseSelector {
     if (isBetterThanCurrentRebasedStartingPoint(blockAndState)
         && isEqualToOrBetterThanLatestEpochBoundary(blockAndState)) {
       return new StateRegenerationBaseSelector(
+          spec,
           latestEpochBoundary,
           closestAvailableStateSupplier,
           stateAndBlockProvider,
@@ -125,7 +129,10 @@ public class StateRegenerationBaseSelector {
       final Optional<SlotAndBlockRoot> latestEpochBoundary) {
     return latestEpochBoundary
         .map(SlotAndBlockRoot::getSlot)
-        .map(slot -> slot.minusMinZero(replayToleranceToAvoidLoadingInEpochs * SLOTS_PER_EPOCH));
+        .map(
+            slot ->
+                slot.minusMinZero(
+                    replayToleranceToAvoidLoadingInEpochs * spec.getSlotsPerEpoch(slot)));
   }
 
   @SafeVarargs

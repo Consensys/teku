@@ -13,9 +13,6 @@
 
 package tech.pegasys.teku.statetransition.attestation;
 
-import static tech.pegasys.teku.util.config.Constants.ATTESTATION_RETENTION_EPOCHS;
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
-
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -51,6 +48,7 @@ import tech.pegasys.teku.util.config.Constants;
  * included.
  */
 public class AggregatingAttestationPool implements SlotEventsChannel {
+  static final long ATTESTATION_RETENTION_EPOCHS = 2;
   private static final SszListSchema<Attestation, ?> ATTESTATIONS_SCHEMA =
       SszListSchema.create(Attestation.SSZ_SCHEMA, Constants.MAX_ATTESTATIONS);
 
@@ -101,7 +99,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   @Override
   public synchronized void onSlot(final UInt64 slot) {
     final UInt64 attestationRetentionSlots =
-        UInt64.valueOf(SLOTS_PER_EPOCH * ATTESTATION_RETENTION_EPOCHS);
+        UInt64.valueOf(spec.getSlotsPerEpoch(slot) * ATTESTATION_RETENTION_EPOCHS);
     if (slot.compareTo(attestationRetentionSlots) <= 0) {
       return;
     }

@@ -27,7 +27,6 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.util.config.Constants;
 
 public class VoluntaryExitGenerator {
 
@@ -85,7 +84,7 @@ public class VoluntaryExitGenerator {
             .getValidators()
             .get(validatorIndex)
             .getActivation_epoch()
-            .plus(Constants.SHARD_COMMITTEE_PERIOD)
+            .plus(spec.getSpecConfig(spec.getCurrentEpoch(state)).getShardCommitteePeriod())
             .compareTo(compute_epoch_at_slot(state.getSlot()))
         >= 0) {
       throw new IllegalStateException(

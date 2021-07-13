@@ -26,6 +26,8 @@ import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
@@ -35,7 +37,9 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 class StateRegenerationBaseSelectorTest {
 
   private static final int REPLAY_TOLERANCE_TO_AVOID_LOADING_IN_EPOCHS = 2;
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+
+  private final Spec spec = TestSpecFactory.createDefault();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @SuppressWarnings("unchecked")
   private final Supplier<Optional<BlockRootAndState>> closestAvailableStateSupplier =
@@ -259,6 +263,7 @@ class StateRegenerationBaseSelectorTest {
                 .thenReturn(SafeFuture.completedFuture(Optional.of(blockAndState))));
 
     return new StateRegenerationBaseSelector(
+        spec,
         latestEpochBoundary.map(
             blockAndState ->
                 new SlotAndBlockRoot(blockAndState.getSlot(), blockAndState.getRoot())),

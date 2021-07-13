@@ -32,7 +32,6 @@ dependencies {
     implementation project(':infrastructure:io')
     implementation project(':infrastructure:logging')
     implementation project(':ethereum:pow:api')
-    implementation project(':util')
 
     implementation 'com.google.code.gson:gson'
     implementation 'org.apache.tuweni:tuweni-bytes'
