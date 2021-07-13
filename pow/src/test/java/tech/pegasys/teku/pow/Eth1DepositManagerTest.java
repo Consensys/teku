@@ -15,10 +15,10 @@ package tech.pegasys.teku.pow;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.COMPLETE;
@@ -30,6 +30,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
@@ -37,6 +38,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.TrackingUncaughtExceptionHandler;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.pow.Eth1HeadTracker.HeadUpdatedSubscriber;
 import tech.pegasys.teku.service.serviceutils.FatalServiceFailureException;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.schema.ReplayDepositsResult;
@@ -58,6 +60,7 @@ class Eth1DepositManagerTest {
       mock(DepositProcessingController.class);
   private final MinimumGenesisTimeBlockFinder minimumGenesisTimeBlockFinder =
       mock(MinimumGenesisTimeBlockFinder.class);
+  private final Eth1HeadTracker eth1HeadTracker = mock(Eth1HeadTracker.class);
   private final TrackingUncaughtExceptionHandler exceptionHandler =
       new TrackingUncaughtExceptionHandler();
 
@@ -76,7 +79,8 @@ class Eth1DepositManagerTest {
           eth1DepositStorageChannel,
           depositProcessingController,
           minimumGenesisTimeBlockFinder,
-          Optional.empty());
+          Optional.empty(),
+          eth1HeadTracker);
 
   @BeforeAll
   static void setConstants() {
@@ -97,10 +101,11 @@ class Eth1DepositManagerTest {
   void shouldStartWithNoStoredDepositsAndHeadBeforeMinGenesisTime() {
     final BigInteger headBlockNumber = BigInteger.valueOf(100);
     when(eth1DepositStorageChannel.replayDepositEvents()).thenReturn(NOTHING_REPLAYED);
-    withFollowDistanceHead(headBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP - 1);
     when(depositProcessingController.fetchDepositsInRange(any(), any())).thenReturn(COMPLETE);
 
     manager.start();
+
+    notifyHeadBlock(headBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP - 1);
 
     verify(eth1EventsChannel, never()).setLatestPublishedDeposit(any());
     inOrder.verify(eth1DepositStorageChannel).replayDepositEvents();
@@ -122,23 +127,24 @@ class Eth1DepositManagerTest {
 
     final BigInteger headBlockNumber = BigInteger.valueOf(100);
     when(eth1DepositStorageChannel.replayDepositEvents()).thenReturn(NOTHING_REPLAYED);
-    // simulate major issue on getGuaranteedLatestEth1Block
-    when(eth1Provider.getGuaranteedLatestEth1Block())
-        .thenReturn(SafeFuture.failedFuture(new IllegalStateException("Unknown Error")));
     when(depositProcessingController.fetchDepositsInRange(any(), any())).thenReturn(COMPLETE);
 
     manager.start();
 
+    // Notify head block but retrieving it will fail
+    notifyHeadBlockAndFailToRetrieve(headBlockNumber);
+
     // Set up initial request to eth1 node to fail
     // We should retry until it succeeds
     for (int i = 0; i < retryCount; i++) {
-      assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
+      assertThat(asyncRunner.countDelayedActions()).describedAs("on attempt " + i).isEqualTo(1);
       asyncRunner.executeQueuedActions();
+      notifyHeadBlockAndFailToRetrieve(headBlockNumber);
     }
-    // Set up next getHead request to succeed
-    withFollowDistanceHead(headBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP - 1);
     assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
+    // Next getHead request succeeds
     asyncRunner.executeQueuedActions();
+    notifyHeadBlock(headBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP - 1);
 
     inOrder.verify(eth1DepositStorageChannel).replayDepositEvents();
     // Process blocks up to the current chain head
@@ -153,16 +159,24 @@ class Eth1DepositManagerTest {
     assertNoUncaughtExceptions();
   }
 
+  private void notifyHeadBlockAndFailToRetrieve(final BigInteger headBlockNumber) {
+    when(eth1Provider.getGuaranteedEth1Block(any(UInt64.class)))
+        .thenReturn(SafeFuture.failedFuture(new IllegalStateException("Unknown Error")));
+    final ArgumentCaptor<HeadUpdatedSubscriber> captor =
+        ArgumentCaptor.forClass(HeadUpdatedSubscriber.class);
+    verify(eth1HeadTracker, atLeastOnce()).subscribe(captor.capture());
+    captor.getValue().onHeadUpdated(UInt64.valueOf(headBlockNumber));
+  }
+
   @Test
   void shouldFailIfStorageReplayFails() {
-    final BigInteger headBlockNumber = BigInteger.valueOf(100);
     when(eth1DepositStorageChannel.replayDepositEvents())
         .thenReturn(SafeFuture.failedFuture(new IllegalStateException("Fail")));
-    withFollowDistanceHead(headBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP - 1);
     when(depositProcessingController.fetchDepositsInRange(any(), any())).thenReturn(COMPLETE);
 
     manager.start();
 
+    verify(eth1HeadTracker, never()).subscribe(any());
     inOrder.verify(eth1DepositStorageChannel).replayDepositEvents();
     inOrder.verifyNoMoreInteractions();
     assertThat(exceptionHandler.getUncaughtExceptions()).hasSize(1);
@@ -179,10 +193,10 @@ class Eth1DepositManagerTest {
         .thenReturn(
             SafeFuture.completedFuture(
                 ReplayDepositsResult.create(lastReplayedBlock, lastReplayedDepositIndex, false)));
-    withFollowDistanceHead(headBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP - 1);
     when(depositProcessingController.fetchDepositsInRange(any(), any())).thenReturn(COMPLETE);
 
     manager.start();
+    notifyHeadBlock(headBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP - 1);
 
     verify(eth1EventsChannel).setLatestPublishedDeposit(UInt64.valueOf(lastReplayedDepositIndex));
     inOrder.verify(eth1DepositStorageChannel).replayDepositEvents();
@@ -210,11 +224,11 @@ class Eth1DepositManagerTest {
         .thenReturn(
             SafeFuture.completedFuture(
                 ReplayDepositsResult.create(lastReplayedBlock, lastReplayedDepositIndex, false)));
-    withFollowDistanceHead(headBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP + 1000);
     withMinGenesisBlock(headBlockNumber, minGenesisBlockNumber);
     when(depositProcessingController.fetchDepositsInRange(any(), any())).thenReturn(COMPLETE);
 
     manager.start();
+    notifyHeadBlock(headBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP + 1000);
 
     verify(eth1EventsChannel).setLatestPublishedDeposit(UInt64.valueOf(lastReplayedDepositIndex));
     inOrder.verify(eth1DepositStorageChannel).replayDepositEvents();
@@ -250,11 +264,11 @@ class Eth1DepositManagerTest {
     final BigInteger headBlockNumber = BigInteger.valueOf(100);
     final BigInteger minGenesisBlockNumber = BigInteger.valueOf(60);
     when(eth1DepositStorageChannel.replayDepositEvents()).thenReturn(NOTHING_REPLAYED);
-    withFollowDistanceHead(headBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP + 1000);
     withMinGenesisBlock(headBlockNumber, minGenesisBlockNumber);
     when(depositProcessingController.fetchDepositsInRange(any(), any())).thenReturn(COMPLETE);
 
     manager.start();
+    notifyHeadBlock(headBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP + 1000);
 
     inOrder.verify(eth1DepositStorageChannel).replayDepositEvents();
     // Find min genesis block
@@ -293,10 +307,10 @@ class Eth1DepositManagerTest {
         .thenReturn(
             SafeFuture.completedFuture(
                 ReplayDepositsResult.create(lastReplayedBlock, lastReplayedDepositIndex, true)));
-    withFollowDistanceHead(headBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP + 1000);
     when(depositProcessingController.fetchDepositsInRange(any(), any())).thenReturn(COMPLETE);
 
     manager.start();
+    notifyHeadBlock(headBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP + 1000);
 
     verify(eth1EventsChannel).setLatestPublishedDeposit(UInt64.valueOf(lastReplayedDepositIndex));
     inOrder.verify(eth1DepositStorageChannel).replayDepositEvents();
@@ -318,10 +332,10 @@ class Eth1DepositManagerTest {
         .thenReturn(
             SafeFuture.completedFuture(
                 ReplayDepositsResult.create(lastReplayedBlock, lastReplayedDepositIndex, true)));
-    withFollowDistanceHead(headBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP + 1000);
     when(depositProcessingController.fetchDepositsInRange(any(), any())).thenReturn(COMPLETE);
 
     manager.start();
+    notifyHeadBlock(headBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP + 1000);
 
     verify(eth1EventsChannel).setLatestPublishedDeposit(UInt64.valueOf(lastReplayedDepositIndex));
     inOrder.verify(eth1DepositStorageChannel).replayDepositEvents();
@@ -343,10 +357,10 @@ class Eth1DepositManagerTest {
         .thenReturn(
             SafeFuture.completedFuture(
                 ReplayDepositsResult.create(lastReplayedBlock, lastReplayedDepositIndex, false)));
-    withFollowDistanceHead(headBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP + 1000);
     when(depositProcessingController.fetchDepositsInRange(any(), any())).thenReturn(COMPLETE);
 
     manager.start();
+    notifyHeadBlock(headBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP + 1000);
 
     verify(eth1EventsChannel).setLatestPublishedDeposit(UInt64.valueOf(lastReplayedDepositIndex));
     inOrder.verify(eth1DepositStorageChannel).replayDepositEvents();
@@ -359,39 +373,6 @@ class Eth1DepositManagerTest {
     assertNoUncaughtExceptions();
   }
 
-  @Test
-  void shouldRetryWhenEth1ChainIsLessThanEth1FollowDistance() {
-    // Initial latest block number is less than ETH1_FOLLOW_DISTANCE
-    final BigInteger firstEth1BlockNumber = BigInteger.valueOf(60);
-    final Block firstLatestBlock = block(firstEth1BlockNumber, 100000);
-
-    // Second latest block number is greater than ETH1_FOLLOW_DISTANCE
-    final BigInteger secondEth1BlockNumber = BigInteger.valueOf(101);
-    final Block secondLatestBlock = block(secondEth1BlockNumber, 150000);
-
-    when(eth1Provider.getGuaranteedLatestEth1Block())
-        .thenReturn(SafeFuture.completedFuture(firstLatestBlock));
-
-    when(eth1Provider.getLatestEth1Block())
-        .thenReturn(SafeFuture.completedFuture(secondLatestBlock));
-
-    Constants.ETH1_FOLLOW_DISTANCE = UInt64.valueOf(100);
-    when(eth1DepositStorageChannel.replayDepositEvents()).thenReturn(NOTHING_REPLAYED);
-
-    manager.start();
-
-    inOrder.verify(eth1DepositStorageChannel).replayDepositEvents();
-    verify(eth1Provider).getGuaranteedLatestEth1Block();
-    verify(eth1Provider, never()).getGuaranteedEth1Block((UInt64) any());
-
-    assertThat(asyncRunner.hasDelayedActions()).isTrue();
-    asyncRunner.executeQueuedActions();
-
-    verify(eth1Provider, times(1)).getLatestEth1Block();
-    verify(eth1Provider).getGuaranteedEth1Block((UInt64) any());
-    assertNoUncaughtExceptions();
-  }
-
   private void withMinGenesisBlock(
       final BigInteger headBlockNumber, final BigInteger minGenesisBlockNumber) {
     final Block minGenesisBlock = block(minGenesisBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP);
@@ -400,22 +381,23 @@ class Eth1DepositManagerTest {
         .thenReturn(SafeFuture.completedFuture(minGenesisBlock));
   }
 
-  private void withFollowDistanceHead(final BigInteger number, final long timestamp) {
-    final Block latestBlock =
-        block(number.add(Constants.ETH1_FOLLOW_DISTANCE.bigIntegerValue()), timestamp + 100000);
-    final Block followDistanceHead = block(number, timestamp);
-    when(eth1Provider.getGuaranteedLatestEth1Block())
-        .thenReturn(SafeFuture.completedFuture(latestBlock));
-    when(eth1Provider.getGuaranteedEth1Block(UInt64.valueOf(number)))
-        .thenReturn(SafeFuture.completedFuture(followDistanceHead));
-  }
-
   private Block block(final BigInteger number, final long timestamp) {
     final Block block = mock(Block.class);
     when(block.getNumber()).thenReturn(number);
     when(block.getTimestamp()).thenReturn(BigInteger.valueOf(timestamp));
     when(block.getHash()).thenReturn(Bytes32.ZERO.toHexString());
     return block;
+  }
+
+  private void notifyHeadBlock(final BigInteger blockNumber, final long timestamp) {
+    final Block latestBlock = block(blockNumber, timestamp);
+    when(eth1Provider.getGuaranteedEth1Block(UInt64.valueOf(blockNumber)))
+        .thenReturn(SafeFuture.completedFuture(latestBlock));
+
+    final ArgumentCaptor<HeadUpdatedSubscriber> captor =
+        ArgumentCaptor.forClass(HeadUpdatedSubscriber.class);
+    verify(eth1HeadTracker, atLeastOnce()).subscribe(captor.capture());
+    captor.getValue().onHeadUpdated(UInt64.valueOf(blockNumber));
   }
 
   private void assertNoUncaughtExceptions() {
