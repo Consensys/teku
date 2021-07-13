@@ -22,7 +22,6 @@ import java.util.Optional;
 import java.util.concurrent.RejectedExecutionException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.ethereum.pow.api.InvalidDepositEventsException;
 import tech.pegasys.teku.infrastructure.events.ChannelExceptionHandler;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
@@ -90,8 +89,6 @@ public final class TekuDefaultExceptionHandler
     } else if (Throwables.getRootCause(exception) instanceof RejectedExecutionException) {
       LOG.error(
           "Unexpected rejected execution due to full task queue in {}", subscriberDescription);
-    } else if (Throwables.getRootCause(exception) instanceof InvalidDepositEventsException) {
-      statusLog.eth1DepositEventsFailure(exception);
     } else if (isSpecFailure(exception)) {
       statusLog.specificationFailure(subscriberDescription, exception);
     } else {
