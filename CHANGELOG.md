@@ -22,6 +22,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - Fix an issue where new peers would not be found after a network outage.
 - Fix a file handle leak in jvm-libp2p.
 - `/eth/v1/beacon/pool/sync_committees` incorrectly returned 503 when there were no errors instead of 200.
+- Fix an issue where deposits for the PoW chain could be loaded out of order on restart.
 
 
 ### Experimental: New Altair REST APIs
