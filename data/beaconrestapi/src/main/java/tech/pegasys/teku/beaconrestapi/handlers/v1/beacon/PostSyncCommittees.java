@@ -14,7 +14,6 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
@@ -33,7 +32,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
@@ -89,11 +87,13 @@ public class PostSyncCommittees extends AbstractHandler {
       final String body = ctx.body();
       final List<SyncCommitteeSignature> signatures =
           Arrays.asList(jsonProvider.jsonToObject(body, SyncCommitteeSignature[].class));
-      final SafeFuture<Optional<SubmitCommitteeSignaturesResult>> future =
+      final SafeFuture<SubmitCommitteeSignaturesResult> future =
           provider.submitCommitteeSignatures(signatures);
 
-      handleOptionalResult(
-          ctx, future, this::handleResult, this::handleError, SC_SERVICE_UNAVAILABLE);
+      ctx.result(
+          future
+              .thenApplyChecked(response -> handleResult(ctx, response))
+              .exceptionallyCompose(error -> handleError(ctx, error)));
 
     } catch (final IllegalArgumentException | JsonMappingException e) {
       ctx.result(BadRequest.badRequest(jsonProvider, e.getMessage()));
@@ -101,12 +101,12 @@ public class PostSyncCommittees extends AbstractHandler {
     }
   }
 
-  private Optional<String> handleResult(Context ctx, final SubmitCommitteeSignaturesResult response)
+  private String handleResult(Context ctx, final SubmitCommitteeSignaturesResult response)
       throws JsonProcessingException {
     final List<SubmitCommitteeSignatureError> errors = response.getErrors();
     if (errors.isEmpty()) {
       ctx.status(SC_OK);
-      return Optional.empty();
+      return null;
     }
 
     final PostSyncCommitteeFailureResponse data =
@@ -117,7 +117,7 @@ public class PostSyncCommittees extends AbstractHandler {
                 .map(e -> new PostSyncCommitteeFailure(e.getIndex(), e.getMessage()))
                 .collect(Collectors.toList()));
     ctx.status(SC_BAD_REQUEST);
-    return Optional.of(jsonProvider.objectToJSON(data));
+    return jsonProvider.objectToJSON(data);
   }
 
   private SafeFuture<String> handleError(final Context ctx, final Throwable error) {
