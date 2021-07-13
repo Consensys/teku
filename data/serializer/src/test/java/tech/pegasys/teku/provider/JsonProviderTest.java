@@ -120,7 +120,19 @@ class JsonProviderTest {
   @Test
   public void deserializeToBytesShouldRejectValuesThatAreTooLarge() {
     assertThatThrownBy(() -> jsonProvider.jsonToObject("[\"256\"]", byte[].class))
-        .hasMessage("Expected 256 to be a byte value between 0 and 255 inclusive");
+        .hasMessage("Expected \"256\" to be a byte value between 0 and 255 inclusive");
+  }
+
+  @Test
+  public void deserializeToBytesShouldRejectValuesThatAreBelowZero() {
+    assertThatThrownBy(() -> jsonProvider.jsonToObject("[\"-999\"]", byte[].class))
+        .hasMessage("Expected \"-999\" to be a byte value between 0 and 255 inclusive");
+  }
+
+  @Test
+  public void deserializeToBytesShouldRejectValuesThatNotNumeric() {
+    assertThatThrownBy(() -> jsonProvider.jsonToObject("[\"a\"]", byte[].class))
+        .hasMessage("Expected \"a\" to be a byte value between 0 and 255 inclusive");
   }
 
   @Test
