@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.test.acceptance.dsl;
 
-import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
-
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -48,7 +46,8 @@ public class TekuDepositSender extends Node {
   public ValidatorKeystores sendValidatorDeposits(
       final BesuNode eth1Node, final int numberOfValidators)
       throws InterruptedException, ExecutionException, TimeoutException {
-    return sendValidatorDeposits(eth1Node, numberOfValidators, MAX_EFFECTIVE_BALANCE);
+    return sendValidatorDeposits(
+        eth1Node, numberOfValidators, spec.getGenesisSpecConfig().getMaxEffectiveBalance());
   }
 
   public ValidatorKeystores sendValidatorDeposits(
@@ -88,5 +87,13 @@ public class TekuDepositSender extends Node {
   public List<ValidatorKeys> generateValidatorKeys(int numberOfValidators) {
     final ValidatorKeyGenerator generator = new ValidatorKeyGenerator(numberOfValidators);
     return generator.generateKeysStream().collect(Collectors.toList());
+  }
+
+  public UInt64 getMinDepositAmount() {
+    return spec.getGenesisSpecConfig().getMinDepositAmount();
+  }
+
+  public UInt64 getMaxEffectiveBalance() {
+    return spec.getGenesisSpecConfig().getMaxEffectiveBalance();
   }
 }

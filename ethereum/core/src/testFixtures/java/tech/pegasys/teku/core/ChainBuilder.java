@@ -60,7 +60,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTrans
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.ssz.SszList;
-import tech.pegasys.teku.util.config.Constants;
 
 /** A utility for building small, valid chains of blocks with states for testing */
 public class ChainBuilder {
@@ -229,7 +228,8 @@ public class ChainBuilder {
   }
 
   public SignedBlockAndState generateGenesis(final UInt64 genesisTime, final boolean signDeposits) {
-    return generateGenesis(genesisTime, signDeposits, Constants.MAX_EFFECTIVE_BALANCE);
+    return generateGenesis(
+        genesisTime, signDeposits, spec.getGenesisSpecConfig().getMaxEffectiveBalance());
   }
 
   public SignedBlockAndState generateGenesis(
@@ -339,9 +339,8 @@ public class ChainBuilder {
     final UInt64 slotsPerEpoch = UInt64.valueOf(spec.getGenesisSpecConfig().getSlotsPerEpoch());
     final UInt64 minAssignedSlot =
         slot.compareTo(slotsPerEpoch) <= 0 ? UInt64.ZERO : slot.minus(slotsPerEpoch);
-    final UInt64 minInclusionDiff = UInt64.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY);
-    final UInt64 maxAssignedSlot =
-        slot.compareTo(minInclusionDiff) <= 0 ? slot : slot.minus(minInclusionDiff);
+    final int minInclusionDiff = spec.getSpecConfig(currentEpoch).getMinAttestationInclusionDelay();
+    final UInt64 maxAssignedSlot = slot.minusMinZero(minInclusionDiff);
 
     // Generate stream of consistent, valid attestations for inclusion
     return LongStream.rangeClosed(minAssignedSlot.longValue(), maxAssignedSlot.longValue())

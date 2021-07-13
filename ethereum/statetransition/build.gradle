@@ -19,7 +19,6 @@ dependencies {
   implementation project(':ssz')
   implementation project(':storage')
   implementation project(':storage:api')
-  implementation project(':util')
 
   implementation 'com.google.code.gson:gson'
   implementation 'org.apache.tuweni:tuweni-config'

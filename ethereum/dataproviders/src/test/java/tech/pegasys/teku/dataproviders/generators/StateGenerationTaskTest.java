@@ -141,6 +141,7 @@ class StateGenerationTaskTest {
         tree,
         blockProvider,
         new StateRegenerationBaseSelector(
+            spec,
             epochBoundaryRoot,
             () ->
                 Optional.of(
