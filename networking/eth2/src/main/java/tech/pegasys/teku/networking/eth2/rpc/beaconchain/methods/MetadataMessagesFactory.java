@@ -25,7 +25,6 @@ public class MetadataMessagesFactory {
   private final AtomicLong seqNumberGenerator = new AtomicLong(0L);
   private Iterable<Integer> attestationSubnetIds = Collections.emptyList();
   private Iterable<Integer> syncCommitteeSubnetIds = Collections.emptyList();
-  private MetadataMessage currentMetadata;
 
   public synchronized void updateAttestationSubnetIds(Iterable<Integer> attestationSubnetIds) {
     this.attestationSubnetIds = attestationSubnetIds;
@@ -39,17 +38,10 @@ public class MetadataMessagesFactory {
 
   private void handleUpdate() {
     seqNumberGenerator.incrementAndGet();
-    // Clear cache
-    currentMetadata = null;
   }
 
   public synchronized MetadataMessage createMetadataMessage(MetadataMessageSchema<?> schema) {
-    if (currentMetadata == null) {
-      currentMetadata =
-          schema.create(getCurrentSeqNumber(), attestationSubnetIds, syncCommitteeSubnetIds);
-    }
-
-    return currentMetadata;
+    return schema.create(getCurrentSeqNumber(), attestationSubnetIds, syncCommitteeSubnetIds);
   }
 
   public PingMessage createPingMessage() {

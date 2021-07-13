@@ -460,7 +460,6 @@ subprojects {
         srcDir file('src/referenceTest/generated_tests')
         srcDir file('src/referenceTest/java')
       }
-      resources.srcDir file('src/referenceTest/resources')
     }
   }
 
