@@ -53,6 +53,9 @@ public class JsonProvider {
     module.addDeserializer(UInt64.class, new UInt64Deserializer());
     module.addSerializer(UInt64.class, new UInt64Serializer());
 
+    module.addSerializer(byte[].class, new ByteArraySerializer());
+    module.addDeserializer(byte[].class, new ByteArrayDeserializer());
+
     module.addDeserializer(
         GetNewBlockResponseV2.class, new GetNewBlockResponseV2Deserializer(objectMapper));
     module.addDeserializer(
