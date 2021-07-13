@@ -168,10 +168,10 @@ public class Eth1DepositManager {
   }
 
   private SafeFuture<EthBlock.Block> getHead() {
-    final SafeFuture<UInt64> headBlockNumber = new SafeFuture<>();
-    final long subscriberId = headTracker.subscribe(headBlockNumber::complete);
+    final SafeFuture<UInt64> headBlockNumberFuture = new SafeFuture<>();
+    final long subscriberId = headTracker.subscribe(headBlockNumberFuture::complete);
 
-    return headBlockNumber
+    return headBlockNumberFuture
         .thenPeek(__ -> headTracker.unsubscribe(subscriberId))
         .thenCompose(eth1Provider::getGuaranteedEth1Block)
         .exceptionallyCompose(
