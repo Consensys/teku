@@ -14,10 +14,13 @@
 package tech.pegasys.teku.beaconrestapi.v1.beacon;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import okhttp3.Response;
@@ -63,6 +66,27 @@ public class PostSyncCommitteesIntegrationTest extends AbstractDataBackedRestAPI
         jsonProvider.jsonToObject(response.body().string(), PostSyncCommitteeFailureResponse.class);
 
     assertThat(responseBody.failures.get(0).message).isEqualTo(errorString);
+  }
+
+  @Test
+  void shouldGet200OkWhenThereAreNoErrors() throws Exception {
+    spec = TestSpecFactory.createMinimalAltair();
+    DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    startRestAPIAtGenesis(SpecMilestone.ALTAIR);
+    final List<SyncCommitteeSignature> requestBody =
+        List.of(
+            new SyncCommitteeSignature(
+                UInt64.ONE,
+                dataStructureUtil.randomBytes32(),
+                dataStructureUtil.randomUInt64(),
+                new BLSSignature(dataStructureUtil.randomSignature())));
+    final SafeFuture<List<SubmitCommitteeSignatureError>> future =
+        SafeFuture.completedFuture(Collections.emptyList());
+    when(validatorApiChannel.sendSyncCommitteeSignatures(any())).thenReturn(future);
+    Response response = post(PostSyncCommittees.ROUTE, jsonProvider.objectToJSON(requestBody));
+
+    assertThat(response.code()).isEqualTo(SC_OK);
+    assertThat(response.body().string()).isEmpty();
   }
 
   @Test
