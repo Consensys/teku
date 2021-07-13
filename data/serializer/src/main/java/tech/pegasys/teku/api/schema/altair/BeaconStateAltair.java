@@ -23,8 +23,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.BeaconBlockHeader;
@@ -38,7 +36,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.collections.SszBitvector;
-import tech.pegasys.teku.ssz.impl.AbstractSszPrimitive;
 import tech.pegasys.teku.ssz.primitive.SszByte;
 
 public class BeaconStateAltair extends BeaconState implements State {
@@ -113,18 +110,8 @@ public class BeaconStateAltair extends BeaconState implements State {
     super(beaconState);
     final tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair
         altair = beaconState.toVersionAltair().orElseThrow();
-    Byte[] previousEpochParticipationArray =
-        altair.getPreviousEpochParticipation().stream()
-            .map(AbstractSszPrimitive::get)
-            .collect(Collectors.toList())
-            .toArray(new Byte[altair.getPreviousEpochParticipation().size()]);
-    this.previous_epoch_participation = ArrayUtils.toPrimitive(previousEpochParticipationArray);
-    Byte[] currentEpochParticipationArray =
-        altair.getCurrentEpochParticipation().stream()
-            .map(AbstractSszPrimitive::get)
-            .collect(Collectors.toList())
-            .toArray(new Byte[altair.getPreviousEpochParticipation().size()]);
-    this.current_epoch_participation = ArrayUtils.toPrimitive(currentEpochParticipationArray);
+    this.previous_epoch_participation = toByteArray(altair.getPreviousEpochParticipation());
+    this.current_epoch_participation = toByteArray(altair.getCurrentEpochParticipation());
     this.inactivity_scores = altair.getInactivityScores().asListUnboxed();
     this.current_sync_committee = new SyncCommittee(altair.getCurrentSyncCommittee());
     this.next_sync_committee = new SyncCommittee(altair.getNextSyncCommittee());
@@ -182,5 +169,13 @@ public class BeaconStateAltair extends BeaconState implements State {
     result = 31 * result + Arrays.hashCode(previous_epoch_participation);
     result = 31 * result + Arrays.hashCode(current_epoch_participation);
     return result;
+  }
+
+  private byte[] toByteArray(final SszList<SszByte> byteList) {
+    final byte[] array = new byte[byteList.size()];
+    for (int i = 0; i < array.length; i++) {
+      array[i] = byteList.get(i).get();
+    }
+    return array;
   }
 }
