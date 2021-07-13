@@ -146,7 +146,8 @@ public class PowchainService extends Service {
             eth1DepositStorageChannel,
             depositProcessingController,
             new MinimumGenesisTimeBlockFinder(eth1Provider, eth1DepositContractDeployBlock),
-            eth1DepositContractDeployBlock);
+            eth1DepositContractDeployBlock,
+            headTracker);
 
     eth1ProviderMonitor = new Eth1ProviderMonitor(eth1ProviderSelector, asyncRunner);
   }
