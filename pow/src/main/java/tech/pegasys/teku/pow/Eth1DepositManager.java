@@ -42,6 +42,7 @@ public class Eth1DepositManager {
   private final DepositProcessingController depositProcessingController;
   private final MinimumGenesisTimeBlockFinder minimumGenesisTimeBlockFinder;
   private final Optional<UInt64> depositContractDeployBlock;
+  private final Eth1HeadTracker headTracker;
 
   public Eth1DepositManager(
       final Eth1Provider eth1Provider,
@@ -50,7 +51,8 @@ public class Eth1DepositManager {
       final Eth1DepositStorageChannel eth1DepositStorageChannel,
       final DepositProcessingController depositProcessingController,
       final MinimumGenesisTimeBlockFinder minimumGenesisTimeBlockFinder,
-      final Optional<UInt64> depositContractDeployBlock) {
+      final Optional<UInt64> depositContractDeployBlock,
+      final Eth1HeadTracker headTracker) {
     this.eth1Provider = eth1Provider;
     this.asyncRunner = asyncRunner;
     this.eth1EventsPublisher = eth1EventsPublisher;
@@ -58,6 +60,7 @@ public class Eth1DepositManager {
     this.depositProcessingController = depositProcessingController;
     this.minimumGenesisTimeBlockFinder = minimumGenesisTimeBlockFinder;
     this.depositContractDeployBlock = depositContractDeployBlock;
+    this.headTracker = headTracker;
   }
 
   public void start() {
@@ -165,12 +168,11 @@ public class Eth1DepositManager {
   }
 
   private SafeFuture<EthBlock.Block> getHead() {
-    return eth1Provider
-        .getGuaranteedLatestEth1Block()
-        .thenApply(EthBlock.Block::getNumber)
-        .thenApply(UInt64::valueOf)
-        .thenCompose(this::waitForEth1ChainToReachFollowDistanceIfNecessary)
-        .thenApply(number -> number.minus(Constants.ETH1_FOLLOW_DISTANCE))
+    final SafeFuture<UInt64> headBlockNumber = new SafeFuture<>();
+    final long subscriberId = headTracker.subscribe(headBlockNumber::complete);
+
+    return headBlockNumber
+        .thenPeek(__ -> headTracker.unsubscribe(subscriberId))
         .thenCompose(eth1Provider::getGuaranteedEth1Block)
         .exceptionallyCompose(
             (err) -> {
@@ -180,28 +182,9 @@ public class Eth1DepositManager {
                   Constants.ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT.toSeconds(),
                   err);
 
-              return asyncRunner
-                  .getDelayedFuture(Constants.ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT)
-                  .thenCompose((__) -> getHead());
+              return asyncRunner.runAfterDelay(
+                  this::getHead, Constants.ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT);
             });
-  }
-
-  private SafeFuture<UInt64> getLatestEth1BlockNumber() {
-    return eth1Provider
-        .getLatestEth1Block()
-        .thenApply(EthBlock.Block::getNumber)
-        .thenApply(UInt64::valueOf);
-  }
-
-  private SafeFuture<UInt64> waitForEth1ChainToReachFollowDistanceIfNecessary(UInt64 number) {
-    if (number.isLessThan(Constants.ETH1_FOLLOW_DISTANCE)) {
-      return asyncRunner
-          .getDelayedFuture(Constants.ETH1_LOCAL_CHAIN_BEHIND_FOLLOW_DISTANCE_WAIT)
-          .thenCompose(__ -> getLatestEth1BlockNumber())
-          .thenCompose(this::waitForEth1ChainToReachFollowDistanceIfNecessary);
-    } else {
-      return SafeFuture.completedFuture(number);
-    }
   }
 
   private BigInteger getFirstUnprocessedBlockNumber(
