@@ -13,13 +13,14 @@
 
 package tech.pegasys.teku.api.schema.altair;
 
-import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES_SSZ;
 import static tech.pegasys.teku.api.schema.SchemaConstants.EXAMPLE_UINT64;
+import static tech.pegasys.teku.api.schema.SchemaConstants.EXAMPLE_UINT8;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
@@ -38,11 +39,11 @@ import tech.pegasys.teku.ssz.collections.SszBitvector;
 import tech.pegasys.teku.ssz.primitive.SszByte;
 
 public class BeaconStateAltair extends BeaconState implements State {
-  @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES_SSZ)
-  public final Bytes previous_epoch_participation;
+  @ArraySchema(schema = @Schema(type = "string", example = EXAMPLE_UINT8))
+  public final byte[] previous_epoch_participation;
 
-  @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES_SSZ)
-  public final Bytes current_epoch_participation;
+  @ArraySchema(schema = @Schema(type = "string", example = EXAMPLE_UINT8))
+  public final byte[] current_epoch_participation;
 
   @JsonProperty("inactivity_scores")
   @ArraySchema(schema = @Schema(type = "string", example = EXAMPLE_UINT64))
@@ -68,8 +69,8 @@ public class BeaconStateAltair extends BeaconState implements State {
       @JsonProperty("balances") final List<UInt64> balances,
       @JsonProperty("randao_mixes") final List<Bytes32> randao_mixes,
       @JsonProperty("slashings") final List<UInt64> slashings,
-      @JsonProperty("previous_epoch_participation") final Bytes previous_epoch_participation,
-      @JsonProperty("current_epoch_participation") final Bytes current_epoch_participation,
+      @JsonProperty("previous_epoch_participation") final byte[] previous_epoch_participation,
+      @JsonProperty("current_epoch_participation") final byte[] current_epoch_participation,
       @JsonProperty("justification_bits") final SszBitvector justification_bits,
       @JsonProperty("previous_justified_checkpoint") final Checkpoint previous_justified_checkpoint,
       @JsonProperty("current_justified_checkpoint") final Checkpoint current_justified_checkpoint,
@@ -109,8 +110,8 @@ public class BeaconStateAltair extends BeaconState implements State {
     super(beaconState);
     final tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair
         altair = beaconState.toVersionAltair().orElseThrow();
-    this.previous_epoch_participation = altair.getPreviousEpochParticipation().sszSerialize();
-    this.current_epoch_participation = altair.getCurrentEpochParticipation().sszSerialize();
+    this.previous_epoch_participation = toByteArray(altair.getPreviousEpochParticipation());
+    this.current_epoch_participation = toByteArray(altair.getCurrentEpochParticipation());
     this.inactivity_scores = altair.getInactivityScores().asListUnboxed();
     this.current_sync_committee = new SyncCommittee(altair.getCurrentSyncCommittee());
     this.next_sync_committee = new SyncCommittee(altair.getNextSyncCommittee());
@@ -129,12 +130,12 @@ public class BeaconStateAltair extends BeaconState implements State {
                   beaconStateAltair
                       .getPreviousEpochParticipation()
                       .getSchema()
-                      .sszDeserialize(previous_epoch_participation);
+                      .sszDeserialize(Bytes.wrap(previous_epoch_participation));
               final SszList<SszByte> currentEpochParticipation =
                   beaconStateAltair
                       .getCurrentEpochParticipation()
                       .getSchema()
-                      .sszDeserialize(current_epoch_participation);
+                      .sszDeserialize(Bytes.wrap(current_epoch_participation));
 
               beaconStateAltair.setPreviousEpochParticipation(previousEpochParticipation);
               beaconStateAltair.setCurrentEpochParticipation(currentEpochParticipation);
@@ -155,12 +156,26 @@ public class BeaconStateAltair extends BeaconState implements State {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     final BeaconStateAltair that = (BeaconStateAltair) o;
-    return Objects.equals(previous_epoch_participation, that.previous_epoch_participation)
-        && Objects.equals(current_epoch_participation, that.current_epoch_participation);
+    return Arrays.equals(previous_epoch_participation, that.previous_epoch_participation)
+        && Arrays.equals(current_epoch_participation, that.current_epoch_participation)
+        && Objects.equals(inactivity_scores, that.inactivity_scores)
+        && Objects.equals(current_sync_committee, that.current_sync_committee)
+        && Objects.equals(next_sync_committee, that.next_sync_committee);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(previous_epoch_participation, current_epoch_participation);
+    int result = Objects.hash(inactivity_scores, current_sync_committee, next_sync_committee);
+    result = 31 * result + Arrays.hashCode(previous_epoch_participation);
+    result = 31 * result + Arrays.hashCode(current_epoch_participation);
+    return result;
+  }
+
+  private byte[] toByteArray(final SszList<SszByte> byteList) {
+    final byte[] array = new byte[byteList.size()];
+    for (int i = 0; i < array.length; i++) {
+      array[i] = byteList.get(i).get();
+    }
+    return array;
   }
 }
