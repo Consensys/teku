@@ -33,6 +33,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
+import tech.pegasys.teku.ethereum.pow.api.InvalidDepositEventsException;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -98,7 +99,9 @@ public class DepositFetcher {
                   err);
 
               final Throwable rootCause = Throwables.getRootCause(err);
-              if (rootCause instanceof Eth1RequestException
+              if (rootCause instanceof InvalidDepositEventsException) {
+                STATUS_LOG.eth1DepositEventsFailure(rootCause);
+              } else if (rootCause instanceof Eth1RequestException
                   && ((Eth1RequestException) rootCause)
                       .containsExceptionSolvableWithSmallerRange()) {
                 STATUS_LOG.eth1FetchDepositsRequiresSmallerRange(fetchState.batchSize);
