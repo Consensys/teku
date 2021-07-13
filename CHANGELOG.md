@@ -21,6 +21,8 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Bug Fixes
 - Fix an issue where new peers would not be found after a network outage.
 - Fix a file handle leak in jvm-libp2p.
+- Fix `previous_epoch_participation` and `current_epoch_participation` representation in 
+  `/eth/v2/debug/beacon/states/:state_id` so that it comes back as an array rather than a byte string.
 
 
 ### Experimental: New Altair REST APIs

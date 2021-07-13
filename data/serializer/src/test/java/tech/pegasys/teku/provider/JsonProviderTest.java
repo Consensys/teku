@@ -14,11 +14,13 @@
 package tech.pegasys.teku.provider;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.schema.BLSPubKey;
@@ -101,6 +103,24 @@ class JsonProviderTest {
   public void stringShouldSerializeToJson() throws JsonProcessingException {
     String data = "test";
     assertEquals(Q + data + Q, jsonProvider.objectToJSON(data));
+  }
+
+  @Test
+  public void byteArrayShouldSerializeToJson() throws JsonProcessingException {
+    final byte[] bytes = Bytes.fromHexString("0x00A0F0FF").toArray();
+    assertEquals("[\"0\",\"160\",\"240\",\"255\"]", jsonProvider.objectToJSON(bytes));
+  }
+
+  @Test
+  public void deserializeToBytesShouldHandleSignedBits() throws JsonProcessingException {
+    assertThat(jsonProvider.jsonToObject("[\"0\",\"160\",\"240\",\"255\"]", byte[].class))
+        .isEqualTo(Bytes.fromHexString("0x00A0F0FF").toArray());
+  }
+
+  @Test
+  public void deserializeToBytesShouldRejectValuesThatAreTooLarge() {
+    assertThatThrownBy(() -> jsonProvider.jsonToObject("[\"256\"]", byte[].class))
+        .hasMessage("Expected 256 to be a byte value between 0 and 255 inclusive");
   }
 
   @Test
