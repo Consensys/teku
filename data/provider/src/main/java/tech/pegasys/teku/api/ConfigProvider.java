@@ -24,6 +24,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.Domain;
+import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.constants.ValidatorConstants;
 
 public class ConfigProvider {
@@ -82,6 +83,9 @@ public class ConfigProvider {
                   "TARGET_AGGREGATORS_PER_SYNC_SUBCOMMITTEE",
                   Integer.toString(
                       ValidatorConstants.TARGET_AGGREGATORS_PER_SYNC_SUBCOMMITTEE, 10));
+              configAttributes.put(
+                  "SYNC_COMMITTEE_SUBNET_COUNT",
+                  Integer.toString(NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT, 10));
             });
 
     return new GetSpecResponse(configAttributes);
