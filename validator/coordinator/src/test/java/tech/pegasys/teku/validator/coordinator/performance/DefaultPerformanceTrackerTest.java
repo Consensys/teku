@@ -74,7 +74,7 @@ public class DefaultPerformanceTrackerTest {
   void beforeEach() {
     when(validatorTracker.getNumberOfValidatorsForEpoch(any())).thenReturn(0);
     when(syncCommitteePerformanceTracker.calculatePerformance(any()))
-        .thenReturn(SafeFuture.completedFuture(new SyncCommitteePerformance(0, 0, 0)));
+        .thenReturn(SafeFuture.completedFuture(new SyncCommitteePerformance(0, 0, 0, 0)));
     chainUpdater.initializeGenesis();
     performanceTracker.start(UInt64.ZERO);
   }
@@ -326,7 +326,7 @@ public class DefaultPerformanceTrackerTest {
 
   @Test
   void shouldReportSyncCommitteePerformance() {
-    final SyncCommitteePerformance performance = new SyncCommitteePerformance(10, 9, 8);
+    final SyncCommitteePerformance performance = new SyncCommitteePerformance(10, 9, 8, 7);
     final UInt64 epoch = UInt64.valueOf(2);
     when(syncCommitteePerformanceTracker.calculatePerformance(epoch.minus(1)))
         .thenReturn(SafeFuture.completedFuture(performance));

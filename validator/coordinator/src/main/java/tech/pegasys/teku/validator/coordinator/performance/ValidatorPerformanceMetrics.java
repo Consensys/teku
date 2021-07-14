@@ -37,6 +37,7 @@ public class ValidatorPerformanceMetrics {
   // Sync Committee Performance Metrics
   private final SettableGauge numberOfExpectedSignatures;
   private final SettableGauge numberOfProducedSignatures;
+  private final SettableGauge numberOfCorrectSignatures;
   private final SettableGauge numberOfIncludedSignatures;
 
   public ValidatorPerformanceMetrics(final MetricsSystem metricsSystem) {
@@ -124,6 +125,12 @@ public class ValidatorPerformanceMetrics {
             TekuMetricCategory.VALIDATOR_PERFORMANCE,
             "produced_sync_committee_signatures",
             "Number of produced sync committee signatures");
+    numberOfCorrectSignatures =
+        SettableGauge.create(
+            metricsSystem,
+            TekuMetricCategory.VALIDATOR_PERFORMANCE,
+            "correct_sync_committee_signatures",
+            "Number of produced sync committee signatures with the correct block root");
     numberOfIncludedSignatures =
         SettableGauge.create(
             metricsSystem,
@@ -153,6 +160,7 @@ public class ValidatorPerformanceMetrics {
   public void updateSyncCommitteePerformance(final SyncCommitteePerformance performance) {
     numberOfExpectedSignatures.set(performance.getNumberOfExpectedSignatures());
     numberOfProducedSignatures.set(performance.getNumberOfProducedSignatures());
+    numberOfCorrectSignatures.set(performance.getNumberOfCorrectSignatures());
     numberOfIncludedSignatures.set(performance.getNumberOfIncludedSignatures());
   }
 }
