@@ -194,7 +194,7 @@ public class BeaconChainMetrics implements SlotEventsChannel, ChainHeadChannel {
         SettableGauge.create(
             metricsSystem,
             TekuMetricCategory.BEACON,
-            "head_live_synccommittee",
+            "head_live_sync_committee",
             "Number of sync committee participant signatures included in the current head block");
 
     final String version = VersionProvider.IMPLEMENTATION_VERSION.replaceAll("^v", "");
