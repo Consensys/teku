@@ -32,10 +32,12 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.analysis.ValidatorStats.CorrectAndLiveValidators;
+import tech.pegasys.teku.storage.api.ChainHeadChannel;
+import tech.pegasys.teku.storage.api.ReorgContext;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
 
-public class BeaconChainMetrics implements SlotEventsChannel {
+public class BeaconChainMetrics implements SlotEventsChannel, ChainHeadChannel {
   private static final long NOT_SET = 0L;
   private final RecentChainData recentChainData;
   private final NodeSlot nodeSlot;
@@ -61,6 +63,9 @@ public class BeaconChainMetrics implements SlotEventsChannel {
 
   private final SettableGauge previousEpochParticipationWeight;
   private final SettableGauge previousEpochTotalWeight;
+
+  private final SettableGauge headLiveSyncCommittee;
+
   private final Spec spec;
 
   public BeaconChainMetrics(
@@ -185,6 +190,13 @@ public class BeaconChainMetrics implements SlotEventsChannel {
             "previous_epoch_total_weight",
             "Total effective balance of all active validators in the previous epoch");
 
+    headLiveSyncCommittee =
+        SettableGauge.create(
+            metricsSystem,
+            TekuMetricCategory.BEACON,
+            "head_live_synccommittee",
+            "Number of sync committee participant signatures included in the current head block");
+
     final String version = VersionProvider.IMPLEMENTATION_VERSION.replaceAll("^v", "");
     final LabelledMetric<Counter> versionCounter =
         metricsSystem.createLabelledCounter(
@@ -193,6 +205,24 @@ public class BeaconChainMetrics implements SlotEventsChannel {
             "Teku version in use",
             "version");
     versionCounter.labels(version).inc();
+  }
+
+  @Override
+  public void chainHeadUpdated(
+      final UInt64 slot,
+      final Bytes32 stateRoot,
+      final Bytes32 bestBlockRoot,
+      final boolean epochTransition,
+      final Bytes32 previousDutyDependentRoot,
+      final Bytes32 currentDutyDependentRoot,
+      final Optional<ReorgContext> optionalReorgContext) {
+    recentChainData
+        .getHeadBlock()
+        .flatMap(block -> block.getMessage().getBody().toVersionAltair())
+        .ifPresent(
+            body ->
+                headLiveSyncCommittee.set(
+                    body.getSyncAggregate().getSyncCommitteeBits().getBitCount()));
   }
 
   @Override
