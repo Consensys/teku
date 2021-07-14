@@ -24,6 +24,7 @@ public class ValidatorPerformanceMetricsTest {
 
   private static final int NUMBER_OF_EXPECTED_SIGNATURES = 64;
   private static final int NUMBER_OF_PRODUCED_SIGNATURES = 60;
+  private static final int NUMBER_OF_CORRECT_SIGNATURES = 55;
   private static final int NUMBER_OF_INCLUDED_SIGNATURES = 52;
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   public final ValidatorPerformanceMetrics validatorPerformanceMetrics =
@@ -61,6 +62,7 @@ public class ValidatorPerformanceMetricsTest {
       new SyncCommitteePerformance(
           NUMBER_OF_EXPECTED_SIGNATURES,
           NUMBER_OF_PRODUCED_SIGNATURES,
+          NUMBER_OF_CORRECT_SIGNATURES,
           NUMBER_OF_INCLUDED_SIGNATURES);
 
   @BeforeEach
@@ -153,6 +155,15 @@ public class ValidatorPerformanceMetricsTest {
                 .getGauge(VALIDATOR_PERFORMANCE, "produced_sync_committee_signatures")
                 .getValue())
         .isEqualTo(NUMBER_OF_PRODUCED_SIGNATURES);
+  }
+
+  @Test
+  void getCorrectSignatures() {
+    assertThat(
+            metricsSystem
+                .getGauge(VALIDATOR_PERFORMANCE, "correct_sync_committee_signatures")
+                .getValue())
+        .isEqualTo(NUMBER_OF_CORRECT_SIGNATURES);
   }
 
   @Test

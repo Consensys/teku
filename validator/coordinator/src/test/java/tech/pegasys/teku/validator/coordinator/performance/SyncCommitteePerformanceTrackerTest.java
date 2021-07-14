@@ -15,7 +15,10 @@ package tech.pegasys.teku.validator.coordinator.performance;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -32,17 +35,21 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignatureSchema;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 class SyncCommitteePerformanceTrackerTest {
 
   private final Spec spec = TestSpecFactory.createMinimalAltair();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
 
@@ -51,7 +58,7 @@ class SyncCommitteePerformanceTrackerTest {
   private final SyncCommitteeSignatureSchema signatureSchema =
       schemaDefinitionsAltair.getSyncCommitteeSignatureSchema();
 
-  private final SyncCommitteePerformanceTracker tracker =
+  private SyncCommitteePerformanceTracker tracker =
       new SyncCommitteePerformanceTracker(spec, combinedChainDataClient);
 
   @BeforeEach
@@ -63,7 +70,7 @@ class SyncCommitteePerformanceTrackerTest {
   @Test
   void shouldCalculatePerformanceWhenNoSyncCommitteeDutiesExpectedInEpoch() {
     assertThat(tracker.calculatePerformance(UInt64.ONE))
-        .isCompletedWithValue(new SyncCommitteePerformance(0, 0, 0));
+        .isCompletedWithValue(new SyncCommitteePerformance(0, 0, 0, 0));
     verifyNoInteractions(combinedChainDataClient);
   }
 
@@ -86,6 +93,30 @@ class SyncCommitteePerformanceTrackerTest {
   }
 
   @Test
+  void shouldCountNumberOfCorrectSignatures() {
+    final Spec specSpy = spy(spec);
+    tracker = new SyncCommitteePerformanceTracker(specSpy, combinedChainDataClient);
+    final Bytes32 slot1Hash = dataStructureUtil.randomBytes32();
+    final Bytes32 wrongBlockRoot = dataStructureUtil.randomBytes32();
+    final SignedBlockAndState chainHead = dataStructureUtil.randomSignedBlockAndState(3);
+    when(combinedChainDataClient.getChainHead())
+        .thenReturn(Optional.of(StateAndBlockSummary.create(chainHead)));
+    doReturn(dataStructureUtil.randomBytes32())
+        .when(specSpy)
+        .getBlockRootAtSlot(eq(chainHead.getState()), any());
+    doReturn(slot1Hash).when(specSpy).getBlockRootAtSlot(chainHead.getState(), UInt64.ONE);
+
+    tracker.saveExpectedSyncCommitteeParticipant(1, Set.of(2, 7, 8), UInt64.valueOf(3));
+    tracker.saveProducedSyncCommitteeSignature(createSignature(1, 1, slot1Hash));
+    tracker.saveProducedSyncCommitteeSignature(createSignature(1, 2, wrongBlockRoot));
+    tracker.saveProducedSyncCommitteeSignature(createSignature(1, 3, wrongBlockRoot));
+    tracker.saveProducedSyncCommitteeSignature(createSignature(1, 4, chainHead.getRoot()));
+
+    // Slots 1 and 4 are correct, 2 and 3 are incorrect.
+    assertThat(calculatePerformance(UInt64.ZERO).getNumberOfCorrectSignatures()).isEqualTo(6);
+  }
+
+  @Test
   void shouldCountNumberOfIncludedSignatures() {
     tracker.saveExpectedSyncCommitteeParticipant(1, Set.of(2, 7, 8), UInt64.valueOf(3));
 
@@ -104,8 +135,13 @@ class SyncCommitteePerformanceTrackerTest {
   }
 
   private SyncCommitteeSignature createSignature(final int validatorIndex, final int slot) {
+    return createSignature(validatorIndex, slot, Bytes32.ZERO);
+  }
+
+  private SyncCommitteeSignature createSignature(
+      final int validatorIndex, final int slot, final Bytes32 blockRoot) {
     return signatureSchema.create(
-        UInt64.valueOf(slot), Bytes32.ZERO, UInt64.valueOf(validatorIndex), BLSSignature.empty());
+        UInt64.valueOf(slot), blockRoot, UInt64.valueOf(validatorIndex), BLSSignature.empty());
   }
 
   private SyncCommitteePerformance calculatePerformance(final UInt64 epoch) {
