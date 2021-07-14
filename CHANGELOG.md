@@ -25,6 +25,7 @@ For information on changes in released versions of Teku, see the [releases page]
   `/eth/v2/debug/beacon/states/:state_id` so that it comes back as an array rather than a byte string.
 - `/eth/v1/beacon/pool/sync_committees` incorrectly returned 503 when there were no errors instead of 200.
 - Fix an issue where deposits for the PoW chain could be loaded out of order on restart.
+- Add `SYNC_COMMITTEE_SUBNET_COUNT` to `/eth/v1/config/spec`, as it was missing.
 
 ### Experimental: New Altair REST APIs
 - implement POST `/eth/v1/beacon/pool/sync_committees` to allow validators to submit sync committee signatures to the beacon node.
