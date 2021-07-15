@@ -16,9 +16,9 @@ package tech.pegasys.teku.statetransition.synccommittee;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
 import static tech.pegasys.teku.util.config.Constants.VALID_CONTRIBUTION_AND_PROOF_SET_SIZE;
 
+import com.google.errorprone.annotations.FormatMethod;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -44,6 +44,7 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BatchSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class SignedContributionAndProofValidator {
@@ -80,10 +81,9 @@ public class SignedContributionAndProofValidator {
     final Optional<SyncCommitteeUtil> maybeSyncCommitteeUtil =
         spec.getSyncCommitteeUtil(contribution.getSlot());
     if (maybeSyncCommitteeUtil.isEmpty()) {
-      LOG.trace(
-          "Rejecting proof because the fork active at slot {} does not support sync committees",
+      return futureFailureResult(
+          "Rejecting proof because the fork active at slot %s does not support sync committees",
           contribution.getSlot());
-      return SafeFuture.completedFuture(REJECT);
     }
     final SyncCommitteeUtil syncCommitteeUtil = maybeSyncCommitteeUtil.get();
 
@@ -97,8 +97,9 @@ public class SignedContributionAndProofValidator {
     // [REJECT] The subcommittee index is in the allowed range
     // i.e. contribution.subcommittee_index < SYNC_COMMITTEE_SUBNET_COUNT.
     if (contribution.getSubcommitteeIndex().isGreaterThanOrEqualTo(SYNC_COMMITTEE_SUBNET_COUNT)) {
-      LOG.trace("Rejecting proof because subcommittee index is too big");
-      return SafeFuture.completedFuture(REJECT);
+      return futureFailureResult(
+          "Rejecting proof because subcommittee index %s is too big",
+          contribution.getSubcommitteeIndex());
     }
 
     return syncCommitteeStateUtils
@@ -119,6 +120,19 @@ public class SignedContributionAndProofValidator {
             });
   }
 
+  @FormatMethod
+  private SafeFuture<InternalValidationResult> futureFailureResult(
+      final String message, Object... args) {
+    return SafeFuture.completedFuture(failureResult(message, args));
+  }
+
+  @FormatMethod
+  private InternalValidationResult failureResult(final String message, Object... args) {
+    final String contextMessage = String.format(message, args);
+    LOG.trace(contextMessage);
+    return InternalValidationResult.create(ValidationResultCode.REJECT, contextMessage);
+  }
+
   private InternalValidationResult validateWithState(
       final SignedContributionAndProof proof,
       final ContributionAndProof contributionAndProof,
@@ -127,11 +141,9 @@ public class SignedContributionAndProofValidator {
       final UniquenessKey uniquenessKey,
       final BeaconStateAltair state) {
     if (state.getSlot().isGreaterThan(contribution.getSlot())) {
-      LOG.trace(
-          "Rejecting proof because referenced beacon block {} is after contribution slot {}",
-          state.getSlot(),
-          contribution.getSignature());
-      return REJECT;
+      return failureResult(
+          "Rejecting proof because referenced beacon block %s is after contribution slot %s",
+          contribution.getBeaconBlockRoot(), contribution.getSlot());
     }
 
     final BeaconStateAccessors beaconStateAccessors =
@@ -140,10 +152,9 @@ public class SignedContributionAndProofValidator {
     final Optional<BLSPublicKey> aggregatorPublicKey =
         beaconStateAccessors.getValidatorPubKey(state, contributionAndProof.getAggregatorIndex());
     if (aggregatorPublicKey.isEmpty()) {
-      LOG.trace(
-          "Rejecting proof because aggregator index {} is an unknown validator",
+      return failureResult(
+          "Rejecting proof because aggregator index %s is an unknown validator",
           contributionAndProof.getAggregatorIndex());
-      return REJECT;
     }
     final UInt64 contributionEpoch =
         syncCommitteeUtil.getEpochForDutiesAtSlot(contribution.getSlot());
@@ -157,16 +168,18 @@ public class SignedContributionAndProofValidator {
         state,
         contributionEpoch,
         contributionAndProof.getAggregatorIndex())) {
-      LOG.trace("Rejecting proof because aggregator is not in the current sync subcommittee");
-      return REJECT;
+      return failureResult(
+          "Rejecting proof because aggregator index %s is not in the current sync subcommittee",
+          contributionAndProof.getAggregatorIndex());
     }
 
     // [REJECT] contribution_and_proof.selection_proof selects the validator as an
     // aggregator for the slot -- i.e. is_sync_committee_aggregator(state,
     // contribution.slot, contribution_and_proof.selection_proof) returns True.
     if (!syncCommitteeUtil.isSyncCommitteeAggregator(contributionAndProof.getSelectionProof())) {
-      LOG.trace("Rejecting proof because selection proof is not an aggregator");
-      return REJECT;
+      return failureResult(
+          "Rejecting proof because selection proof %s is not an aggregator",
+          contributionAndProof.getSelectionProof());
     }
 
     final BatchSignatureVerifier signatureVerifier = new BatchSignatureVerifier();
@@ -181,8 +194,9 @@ public class SignedContributionAndProofValidator {
             state.getForkInfo());
     if (!signatureVerifier.verify(
         aggregatorPublicKey.get(), signingRoot, contributionAndProof.getSelectionProof())) {
-      LOG.trace("Rejecting proof because selection proof is invalid");
-      return REJECT;
+      return failureResult(
+          "Rejecting proof at slot %s for subcommittee index %s because selection proof is invalid",
+          contribution.getSlot(), contribution.getSubcommitteeIndex());
     }
 
     // [REJECT] The aggregator signature, signed_contribution_and_proof.signature, is
@@ -191,8 +205,8 @@ public class SignedContributionAndProofValidator {
         aggregatorPublicKey.get(),
         syncCommitteeUtil.getContributionAndProofSigningRoot(state, contributionAndProof),
         proof.getSignature())) {
-      LOG.trace("Rejecting proof because aggregator signature is invalid");
-      return REJECT;
+      return failureResult(
+          "Rejecting proof %s because aggregator signature is invalid", proof.getSignature());
     }
 
     final SpecConfigAltair config =
@@ -219,13 +233,14 @@ public class SignedContributionAndProofValidator {
         syncCommitteeUtil.getSyncCommitteeSignatureSigningRoot(
             contribution.getBeaconBlockRoot(), contributionEpoch, state.getForkInfo()),
         contribution.getSignature())) {
-      LOG.trace("Rejecting proof because aggregate signature is invalid");
-      return REJECT;
+      return failureResult(
+          "Rejecting proof because aggregate signature %s is invalid", contribution.getSignature());
     }
 
     if (!signatureVerifier.batchVerify()) {
-      LOG.trace("Rejecting proof because batch signature check failed");
-      return REJECT;
+      return failureResult(
+          "Rejecting proof with signature %s because batch signature check failed",
+          contribution.getSignature());
     }
 
     if (!seenIndices.add(uniquenessKey)) {

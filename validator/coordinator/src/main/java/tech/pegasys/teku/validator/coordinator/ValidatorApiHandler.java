@@ -566,7 +566,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                       .collect(toList());
               if (!errorMessages.isEmpty()) {
                 throw new IllegalArgumentException(
-                    "Invalid contribution and proofs: \n" + String.join("\n", errorMessages));
+                    "Invalid contribution and proofs: ;" + String.join(";", errorMessages));
               }
             });
   }
