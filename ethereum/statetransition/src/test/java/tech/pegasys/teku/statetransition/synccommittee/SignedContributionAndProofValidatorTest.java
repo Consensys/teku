@@ -16,7 +16,6 @@ package tech.pegasys.teku.statetransition.synccommittee;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
 
 import java.time.Duration;
 import org.apache.tuweni.bytes.Bytes32;
@@ -130,7 +129,7 @@ class SignedContributionAndProofValidatorTest {
             .subcommitteeIndex(NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT + 1)
             .build();
     final SafeFuture<InternalValidationResult> result = validator.validate(message);
-    assertThat(result).isCompletedWithValue(REJECT);
+    assertThat(result).isCompletedWithValueMatching(InternalValidationResult::isReject);
   }
 
   @Test
@@ -148,7 +147,8 @@ class SignedContributionAndProofValidatorTest {
             .createValidSignedContributionAndProofBuilder()
             .aggregatorIndex(UInt64.valueOf(10_000))
             .build();
-    assertThat(validator.validate(message)).isCompletedWithValue(REJECT);
+    assertThat(validator.validate(message))
+        .isCompletedWithValueMatching(InternalValidationResult::isReject);
   }
 
   @Test
@@ -158,7 +158,8 @@ class SignedContributionAndProofValidatorTest {
             .createValidSignedContributionAndProofBuilder()
             .aggregatorNotInSyncSubcommittee()
             .build();
-    assertThat(validator.validate(message)).isCompletedWithValue(REJECT);
+    assertThat(validator.validate(message))
+        .isCompletedWithValueMatching(InternalValidationResult::isReject);
   }
 
   @Test
@@ -168,7 +169,8 @@ class SignedContributionAndProofValidatorTest {
             .createValidSignedContributionAndProofBuilder()
             .selectionProof(dataStructureUtil.randomSignature())
             .build();
-    assertThat(validator.validate(message)).isCompletedWithValue(REJECT);
+    assertThat(validator.validate(message))
+        .isCompletedWithValueMatching(InternalValidationResult::isReject);
   }
 
   @Test
@@ -178,7 +180,8 @@ class SignedContributionAndProofValidatorTest {
             .createValidSignedContributionAndProofBuilder()
             .signedContributionAndProofSignature(dataStructureUtil.randomSignature())
             .build();
-    assertThat(validator.validate(message)).isCompletedWithValue(REJECT);
+    assertThat(validator.validate(message))
+        .isCompletedWithValueMatching(InternalValidationResult::isReject);
   }
 
   @Test
@@ -188,7 +191,8 @@ class SignedContributionAndProofValidatorTest {
             .createValidSignedContributionAndProofBuilder()
             .addParticipantSignature(dataStructureUtil.randomSignature())
             .build();
-    assertThat(validator.validate(message)).isCompletedWithValue(REJECT);
+    assertThat(validator.validate(message))
+        .isCompletedWithValueMatching(InternalValidationResult::isReject);
   }
 
   @Test
