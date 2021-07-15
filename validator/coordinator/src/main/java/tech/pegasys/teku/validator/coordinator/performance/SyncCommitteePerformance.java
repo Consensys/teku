@@ -20,14 +20,17 @@ import java.util.Objects;
 public class SyncCommitteePerformance {
   private final int numberOfExpectedSignatures;
   private final int numberOfProducedSignatures;
+  private final int numberOfCorrectSignatures;
   private final int numberOfIncludedSignatures;
 
   public SyncCommitteePerformance(
       final int numberOfExpectedSignatures,
       final int numberOfProducedSignatures,
+      final int numberOfCorrectSignatures,
       final int numberOfIncludedSignatures) {
     this.numberOfExpectedSignatures = numberOfExpectedSignatures;
     this.numberOfProducedSignatures = numberOfProducedSignatures;
+    this.numberOfCorrectSignatures = numberOfCorrectSignatures;
     this.numberOfIncludedSignatures = numberOfIncludedSignatures;
   }
 
@@ -37,6 +40,10 @@ public class SyncCommitteePerformance {
 
   public int getNumberOfProducedSignatures() {
     return numberOfProducedSignatures;
+  }
+
+  public int getNumberOfCorrectSignatures() {
+    return numberOfCorrectSignatures;
   }
 
   public int getNumberOfIncludedSignatures() {
@@ -54,21 +61,26 @@ public class SyncCommitteePerformance {
     final SyncCommitteePerformance that = (SyncCommitteePerformance) o;
     return numberOfExpectedSignatures == that.numberOfExpectedSignatures
         && numberOfProducedSignatures == that.numberOfProducedSignatures
+        && numberOfCorrectSignatures == that.numberOfCorrectSignatures
         && numberOfIncludedSignatures == that.numberOfIncludedSignatures;
   }
 
   @Override
   public int hashCode() {
     return Objects.hash(
-        numberOfExpectedSignatures, numberOfProducedSignatures, numberOfIncludedSignatures);
+        numberOfExpectedSignatures,
+        numberOfProducedSignatures,
+        numberOfCorrectSignatures,
+        numberOfIncludedSignatures);
   }
 
   @Override
   public String toString() {
     return String.format(
-        "Sync committee performance: " + "expected %d, produced %d, included %d (%d%%)",
+        "Sync committee performance: " + "expected %d, produced %d, correct %d, included %d (%d%%)",
         numberOfExpectedSignatures,
         numberOfProducedSignatures,
+        numberOfCorrectSignatures,
         numberOfIncludedSignatures,
         getPercentage(numberOfIncludedSignatures, numberOfProducedSignatures));
   }

@@ -55,7 +55,8 @@ public class SpecConfigReader {
           "MERGE_FORK_EPOCH",
           "SHARDING_FORK_VERSION",
           "SHARDING_FORK_EPOCH",
-          "TRANSITION_TOTAL_DIFFICULTY");
+          "TRANSITION_TOTAL_DIFFICULTY",
+          "MIN_ANCHOR_POW_BLOCK_DIFFICULTY");
   private static final ImmutableSet<String> CONSTANT_KEYS =
       ImmutableSet.of(
           // Phase0 constants which may exist in legacy config files, but should now be ignored

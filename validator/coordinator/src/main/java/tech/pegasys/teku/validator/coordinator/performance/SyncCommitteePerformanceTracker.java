@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.Set;
@@ -24,6 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -53,8 +55,8 @@ public class SyncCommitteePerformanceTracker {
   private final NavigableMap<UInt64, Map<UInt64, Set<Integer>>>
       expectedSyncCommitteeParticipantsByPeriodEndEpoch = new ConcurrentSkipListMap<>();
 
-  // Slot to set of indices of validators that produced a signature for that slot
-  private final NavigableMap<UInt64, Set<UInt64>> signatureProducersBySlot =
+  // Slot to block root to set of indices of validators that produced a signature for that slot+root
+  private final NavigableMap<UInt64, Map<Bytes32, Set<UInt64>>> signatureProducersBySlot =
       new ConcurrentSkipListMap<>();
 
   private final Spec spec;
@@ -72,10 +74,10 @@ public class SyncCommitteePerformanceTracker {
             .map(expectedSyncCommitteeParticipantsByPeriodEndEpoch::get)
             .orElse(Collections.emptyMap());
 
-    final Map<UInt64, Set<UInt64>> producingValidatorsBySlot =
+    final Map<UInt64, Map<Bytes32, Set<UInt64>>> producingValidatorsBySlotAndBlock =
         getProducingValidatorsForEpoch(epoch);
     return calculateSyncCommitteePerformance(
-            epoch, expectedSyncCommitteeParticipants, producingValidatorsBySlot)
+            epoch, expectedSyncCommitteeParticipants, producingValidatorsBySlotAndBlock)
         .thenPeek(__ -> clearReportedData(epoch));
   }
 
@@ -94,7 +96,8 @@ public class SyncCommitteePerformanceTracker {
    * @param epoch the epoch to get producing validators for.
    * @return map of slot to set of validators that produced a signature.
    */
-  private NavigableMap<UInt64, Set<UInt64>> getProducingValidatorsForEpoch(final UInt64 epoch) {
+  private NavigableMap<UInt64, Map<Bytes32, Set<UInt64>>> getProducingValidatorsForEpoch(
+      final UInt64 epoch) {
     final UInt64 lastSlotOfEpoch = getLastSlotOfEpoch(epoch);
     return signatureProducersBySlot.subMap(
         spec.computeStartSlotAtEpoch(epoch).minusMinZero(1), true, lastSlotOfEpoch, false);
@@ -110,39 +113,64 @@ public class SyncCommitteePerformanceTracker {
   private SafeFuture<SyncCommitteePerformance> calculateSyncCommitteePerformance(
       final UInt64 epoch,
       final Map<UInt64, Set<Integer>> assignedSubcommitteeIndicesByValidatorIndex,
-      final Map<UInt64, Set<UInt64>> producingValidatorsBySlot) {
+      final Map<UInt64, Map<Bytes32, Set<UInt64>>> producingValidatorsBySlotAndBlock) {
 
     final int numberOfExpectedSignatures =
         assignedSubcommitteeIndicesByValidatorIndex.values().stream().mapToInt(Set::size).sum()
             * spec.atEpoch(epoch).getSlotsPerEpoch();
 
     int producedSignatureCount = 0;
+    int correctSignatureCount = 0;
     final List<SafeFuture<Integer>> includedSignatureCountFutures = new ArrayList<>();
-    for (Map.Entry<UInt64, Set<UInt64>> entry : producingValidatorsBySlot.entrySet()) {
+    for (Map.Entry<UInt64, Map<Bytes32, Set<UInt64>>> entry :
+        producingValidatorsBySlotAndBlock.entrySet()) {
       final UInt64 slot = entry.getKey();
-      final Set<UInt64> producingValidators = entry.getValue();
+      final Map<Bytes32, Set<UInt64>> producingValidatorsByBlock = entry.getValue();
 
-      producedSignatureCount +=
-          countProducedSignatures(
-              assignedSubcommitteeIndicesByValidatorIndex, slot, producingValidators);
+      final Optional<Bytes32> correctBlockRoot =
+          combinedChainDataClient
+              .getChainHead()
+              .map(
+                  head -> {
+                    if (slot.isGreaterThanOrEqualTo(head.getSlot())) {
+                      return head.getRoot();
+                    } else {
+                      return spec.getBlockRootAtSlot(head.getState(), slot);
+                    }
+                  });
 
-      final UInt64 inclusionSlot = slot.plus(1);
-      includedSignatureCountFutures.add(
-          getSyncAggregateAtSlot(inclusionSlot)
-              .thenApply(
-                  maybeSyncAggregate ->
-                      maybeSyncAggregate
-                          .map(
-                              syncAggregate ->
-                                  countIncludedSignatures(
-                                      assignedSubcommitteeIndicesByValidatorIndex,
-                                      slot,
-                                      producingValidators,
-                                      syncAggregate))
-                          .orElse(0)));
+      for (Entry<Bytes32, Set<UInt64>> blockEntry : producingValidatorsByBlock.entrySet()) {
+        final Bytes32 blockRoot = blockEntry.getKey();
+        final Set<UInt64> producingValidators = blockEntry.getValue();
+        final int producedSignatureCountForBlock =
+            countProducedSignatures(
+                assignedSubcommitteeIndicesByValidatorIndex, slot, producingValidators);
+
+        if (correctBlockRoot.isPresent() && correctBlockRoot.get().equals(blockRoot)) {
+          correctSignatureCount += producedSignatureCountForBlock;
+        }
+
+        producedSignatureCount += producedSignatureCountForBlock;
+
+        final UInt64 inclusionSlot = slot.plus(1);
+        includedSignatureCountFutures.add(
+            getSyncAggregateAtSlot(inclusionSlot)
+                .thenApply(
+                    maybeSyncAggregate ->
+                        maybeSyncAggregate
+                            .map(
+                                syncAggregate ->
+                                    countIncludedSignatures(
+                                        assignedSubcommitteeIndicesByValidatorIndex,
+                                        slot,
+                                        producingValidators,
+                                        syncAggregate))
+                            .orElse(0)));
+      }
     }
 
     final int numberOfProducedSignatures = producedSignatureCount;
+    final int numberOfCorrectSignatures = correctSignatureCount;
     return SafeFuture.collectAll(includedSignatureCountFutures.stream())
         .thenApply(
             includedSignatureCounts -> includedSignatureCounts.stream().mapToInt(a -> a).sum())
@@ -151,6 +179,7 @@ public class SyncCommitteePerformanceTracker {
                 new SyncCommitteePerformance(
                     numberOfExpectedSignatures,
                     numberOfProducedSignatures,
+                    numberOfCorrectSignatures,
                     numberOfIncludedSignatures));
   }
 
@@ -225,8 +254,10 @@ public class SyncCommitteePerformanceTracker {
 
   public void saveProducedSyncCommitteeSignature(final SyncCommitteeSignature signature) {
     signatureProducersBySlot
+        .computeIfAbsent(signature.getSlot(), __ -> new ConcurrentHashMap<>())
         .computeIfAbsent(
-            signature.getSlot(), __ -> Collections.newSetFromMap(new ConcurrentHashMap<>()))
+            signature.getBeaconBlockRoot(),
+            __ -> Collections.newSetFromMap(new ConcurrentHashMap<>()))
         .add(signature.getValidatorIndex());
   }
 
