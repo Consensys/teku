@@ -23,8 +23,10 @@ public class InternalValidationResult {
       InternalValidationResult.create(ValidationResultCode.ACCEPT);
   public static InternalValidationResult IGNORE =
       InternalValidationResult.create(ValidationResultCode.IGNORE);
+
   public static InternalValidationResult REJECT =
-      InternalValidationResult.create(ValidationResultCode.REJECT);
+      InternalValidationResult.create(ValidationResultCode.REJECT, "Failed validation");
+
   public static InternalValidationResult SAVE_FOR_FUTURE =
       InternalValidationResult.create(ValidationResultCode.SAVE_FOR_FUTURE);
 
