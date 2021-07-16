@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
@@ -34,7 +35,7 @@ public class SyncCommitteeMetrics {
 
   private final SettableGauge previousLiveSyncCommittee;
 
-  private UInt64 lastProcessedEpoch = UInt64.ZERO;
+  private UInt64 lastProcessedEpoch;
 
   public SyncCommitteeMetrics(
       final Spec spec, final RecentChainData recentChainData, final MetricsSystem metricsSystem) {
@@ -45,19 +46,23 @@ public class SyncCommitteeMetrics {
         SettableGauge.create(
             metricsSystem,
             TekuMetricCategory.BEACON,
-            "previous_live_synccommittee",
+            "previous_live_sync_committee",
             "Number of sync committee participant signatures that were included on chain during previous epoch");
   }
 
   public void updateSyncCommitteeMetrics(final UInt64 slot, final StateAndBlockSummary chainHead) {
     final UInt64 previousEpoch = spec.computeEpochAtSlot(slot).minusMinZero(1);
     final UInt64 previousEpochStartSlot = spec.computeStartSlotAtEpoch(previousEpoch);
-    if (previousEpoch.isLessThanOrEqualTo(lastProcessedEpoch)
-        || chainHead.getState().toVersionAltair().isEmpty()
-        || chainHead.getSlot().isLessThan(previousEpochStartSlot)) {
+    if ((lastProcessedEpoch != null && previousEpoch.isLessThanOrEqualTo(lastProcessedEpoch))
+        || chainHead.getState().toVersionAltair().isEmpty()) {
       return;
     }
 
+    if (chainHead.getSlot().isLessThan(previousEpochStartSlot)) {
+      // There were no blocks in the epoch so can't have included any signatures
+      previousLiveSyncCommittee.set(0);
+      return;
+    }
     SafeFuture.collectAll(
             UInt64.range(
                     previousEpochStartSlot.min(chainHead.getSlot()),
@@ -72,10 +77,14 @@ public class SyncCommitteeMetrics {
   }
 
   private SafeFuture<Optional<BeaconBlock>> getBlockAtSlotExact(
-      final StateAndBlockSummary chainHead, final UInt64 slotInEpoch) {
-    return recentChainData
-        .retrieveBlockByRoot(spec.getBlockRootAtSlot(chainHead.getState(), slotInEpoch))
-        .thenApply(maybeBlock -> maybeBlock.filter(block -> block.getSlot().equals(slotInEpoch)));
+      final StateAndBlockSummary chainHead, final UInt64 slot) {
+    final Bytes32 blockRoot = spec.getBlockRootAtSlot(chainHead.getState(), slot);
+    final Optional<UInt64> blockSlot = recentChainData.getSlotForBlockRoot(blockRoot);
+    if (blockSlot.isPresent() && blockSlot.get().equals(slot)) {
+      return recentChainData.retrieveBlockByRoot(blockRoot);
+    } else {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
   }
 
   private void updateSyncCommitteeMetrics(final List<Optional<BeaconBlock>> blocks) {

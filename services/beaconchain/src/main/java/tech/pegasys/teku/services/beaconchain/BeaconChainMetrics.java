@@ -42,6 +42,7 @@ public class BeaconChainMetrics implements SlotEventsChannel, ChainHeadChannel {
   private final RecentChainData recentChainData;
   private final NodeSlot nodeSlot;
   private final Eth1DataCache eth1DataCache;
+  private final SyncCommitteeMetrics syncCommitteeMetrics;
 
   private final SettableGauge currentActiveValidators;
   private final SettableGauge previousActiveValidators;
@@ -74,11 +75,13 @@ public class BeaconChainMetrics implements SlotEventsChannel, ChainHeadChannel {
       final NodeSlot nodeSlot,
       final MetricsSystem metricsSystem,
       final Eth2P2PNetwork p2pNetwork,
-      final Eth1DataCache eth1DataCache) {
+      final Eth1DataCache eth1DataCache,
+      final SyncCommitteeMetrics syncCommitteeMetrics) {
     this.spec = spec;
     this.recentChainData = recentChainData;
     this.nodeSlot = nodeSlot;
     this.eth1DataCache = eth1DataCache;
+    this.syncCommitteeMetrics = syncCommitteeMetrics;
 
     metricsSystem.createGauge(
         TekuMetricCategory.BEACON,
@@ -227,10 +230,11 @@ public class BeaconChainMetrics implements SlotEventsChannel, ChainHeadChannel {
 
   @Override
   public void onSlot(final UInt64 slot) {
-    recentChainData.getChainHead().ifPresent(this::updateMetrics);
+    recentChainData.getChainHead().ifPresent(head -> updateMetrics(slot, head));
   }
 
-  private void updateMetrics(final StateAndBlockSummary head) {
+  private void updateMetrics(final UInt64 slot, final StateAndBlockSummary head) {
+    syncCommitteeMetrics.updateSyncCommitteeMetrics(slot, head);
     final BeaconState state = head.getState();
     BeaconStateCache.getTransitionCaches(state)
         .getLatestTotalBalances()

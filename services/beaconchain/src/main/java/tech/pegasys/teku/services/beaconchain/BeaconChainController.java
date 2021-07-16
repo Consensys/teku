@@ -418,7 +418,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             slotProcessor.getNodeSlot(),
             metricsSystem,
             p2pNetwork,
-            eth1DataCache);
+            eth1DataCache,
+            new SyncCommitteeMetrics(spec, recentChainData, metricsSystem));
     eventChannels
         .subscribe(SlotEventsChannel.class, beaconChainMetrics)
         .subscribe(ChainHeadChannel.class, beaconChainMetrics);
