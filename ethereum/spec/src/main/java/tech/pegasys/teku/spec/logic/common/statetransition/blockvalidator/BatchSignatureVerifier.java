@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.List;
@@ -57,6 +59,8 @@ public class BatchSignatureVerifier implements BLSSignatureVerifier {
   public synchronized boolean verify(
       List<BLSPublicKey> publicKeys, Bytes message, BLSSignature signature) {
     if (complete) throw new IllegalStateException("Reuse of disposable instance");
+
+    checkArgument(!publicKeys.isEmpty(), "No public keys supplied for verify");
     toVerify.add(new Job(toVerify.size(), publicKeys, message, signature));
     return true;
   }
