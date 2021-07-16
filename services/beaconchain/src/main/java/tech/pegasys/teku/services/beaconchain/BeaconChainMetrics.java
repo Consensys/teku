@@ -198,10 +198,10 @@ public class BeaconChainMetrics implements SlotEventsChannel {
 
   @Override
   public void onSlot(final UInt64 slot) {
-    recentChainData.getChainHead().ifPresent(head -> updateMetrics(slot, head));
+    recentChainData.getChainHead().ifPresent(this::updateMetrics);
   }
 
-  private void updateMetrics(final UInt64 slot, final StateAndBlockSummary head) {
+  private void updateMetrics(final StateAndBlockSummary head) {
     final BeaconState state = head.getState();
     BeaconStateCache.getTransitionCaches(state)
         .getLatestTotalBalances()
