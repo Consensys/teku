@@ -162,8 +162,8 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     } catch (final IllegalArgumentException | BlockProcessingException e) {
       LOG.warn(
           String.format(
-              "State transition error while importing block %s (%s). Block data: %s",
-              signedBlock.getSlot(), signedBlock.getRoot(), signedBlock.sszSerialize()),
+              "State transition error while importing block %s (%s)",
+              signedBlock.getSlot(), signedBlock.getRoot()),
           e);
       throw new StateTransitionException(e);
     }
