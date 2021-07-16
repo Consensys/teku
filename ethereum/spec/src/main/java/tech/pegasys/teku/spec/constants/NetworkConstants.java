@@ -15,5 +15,5 @@ package tech.pegasys.teku.spec.constants;
 
 public class NetworkConstants {
 
-  public static final int SYNC_COMMITTEE_SUBNET_COUNT = 16;
+  public static final int SYNC_COMMITTEE_SUBNET_COUNT = 4;
 }
