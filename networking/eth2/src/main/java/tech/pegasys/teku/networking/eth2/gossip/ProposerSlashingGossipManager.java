@@ -41,11 +41,8 @@ public class ProposerSlashingGossipManager extends AbstractGossipManager<Propose
         gossipEncoding,
         forkInfo,
         processor,
-        publisher);
+        publisher,
+        ProposerSlashing.SSZ_SCHEMA);
   }
 
-  @Override
-  protected SszSchema<ProposerSlashing> getGossipType() {
-    return ProposerSlashing.SSZ_SCHEMA;
-  }
 }

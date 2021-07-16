@@ -31,6 +31,7 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
 
   private final GossipEncoding gossipEncoding;
   private final GossipPublisher<T> publisher;
+  private final SszSchema<T> gossipType;
 
   private final AtomicBoolean shutdown = new AtomicBoolean(false);
   private final TopicChannel channel;
@@ -44,7 +45,8 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
       final OperationProcessor<T> processor,
-      final GossipPublisher<T> publisher) {
+      final GossipPublisher<T> publisher,
+      final SszSchema<T> gossipType) {
     final Eth2TopicHandler<?> topicHandler =
         new Eth2TopicHandler<>(
             recentChainData,
@@ -53,10 +55,11 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
             gossipEncoding,
             forkInfo.getForkDigest(recentChainData.getSpec()),
             topicName,
-            getGossipType());
+            gossipType);
     this.channel = gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
     this.gossipEncoding = gossipEncoding;
     this.publisher = publisher;
+    this.gossipType = gossipType;
 
     this.subscriberId = publisher.subscribe(this::publishMessage);
   }
@@ -69,7 +72,8 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
       final OperationProcessor<T> processor,
-      final GossipPublisher<T> publisher) {
+      final GossipPublisher<T> publisher,
+      final SszSchema<T> gossipType) {
     this(
         recentChainData,
         topicName.toString(),
@@ -78,10 +82,14 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
         gossipEncoding,
         forkInfo,
         processor,
-        publisher);
+        publisher,
+        gossipType);
   }
 
-  protected abstract SszSchema<T> getGossipType();
+  // legacy, maybe remove this
+  protected SszSchema<T> getGossipType() {
+    return gossipType;
+  }
 
   protected void publishMessage(T message) {
     final Bytes data = gossipEncoding.encode(message);

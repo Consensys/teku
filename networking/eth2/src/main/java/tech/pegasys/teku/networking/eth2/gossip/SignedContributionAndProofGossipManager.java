@@ -27,8 +27,6 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class SignedContributionAndProofGossipManager
     extends AbstractGossipManager<SignedContributionAndProof> {
 
-  private final SszSchema<SignedContributionAndProof> gossipType;
-
   public SignedContributionAndProofGossipManager(
       final RecentChainData recentChainData,
       final SchemaDefinitionsAltair schemaDefinitions,
@@ -46,12 +44,8 @@ public class SignedContributionAndProofGossipManager
         gossipEncoding,
         forkInfo,
         processor,
-        publisher);
-    gossipType = schemaDefinitions.getSignedContributionAndProofSchema();
+        publisher,
+        schemaDefinitions.getSignedContributionAndProofSchema());
   }
 
-  @Override
-  protected SszSchema<SignedContributionAndProof> getGossipType() {
-    return gossipType;
-  }
 }

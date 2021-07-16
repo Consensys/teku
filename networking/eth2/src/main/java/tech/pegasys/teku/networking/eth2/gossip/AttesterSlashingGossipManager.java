@@ -41,11 +41,8 @@ public class AttesterSlashingGossipManager extends AbstractGossipManager<Atteste
         gossipEncoding,
         forkInfo,
         processor,
-        publisher);
+        publisher,
+        AttesterSlashing.SSZ_SCHEMA);
   }
 
-  @Override
-  protected SszSchema<AttesterSlashing> getGossipType() {
-    return AttesterSlashing.SSZ_SCHEMA;
-  }
 }

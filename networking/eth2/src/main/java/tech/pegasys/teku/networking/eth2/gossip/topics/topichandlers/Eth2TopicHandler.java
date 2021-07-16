@@ -130,7 +130,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
   protected ValidationResult handleMessageProcessingError(Throwable err) {
     final ValidationResult response;
     if (ExceptionUtil.getCause(err, DecodingException.class).isPresent()) {
-      LOG.trace("Received malformed gossip message on {}", getTopic());
+      LOG.warn("Received malformed gossip message on {}", getTopic());
       response = ValidationResult.Invalid;
     } else if (ExceptionUtil.getCause(err, RejectedExecutionException.class).isPresent()) {
       LOG.warn(
