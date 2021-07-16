@@ -65,7 +65,8 @@ class ConstantsReader {
           "DOMAIN_DEPOSIT",
           "DOMAIN_VOLUNTARY_EXIT",
           "DOMAIN_SELECTION_PROOF",
-          "DOMAIN_AGGREGATE_AND_PROOF");
+          "DOMAIN_AGGREGATE_AND_PROOF",
+          "MIN_ANCHOR_POW_BLOCK_DIFFICULTY");
 
   private static final ImmutableMap<Class<?>, Function<Object, ?>> PARSERS =
       ImmutableMap.<Class<?>, Function<Object, ?>>builder()

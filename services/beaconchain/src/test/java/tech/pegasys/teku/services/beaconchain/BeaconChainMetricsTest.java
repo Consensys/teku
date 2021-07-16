@@ -76,18 +76,11 @@ class BeaconChainMetricsTest {
   private final Checkpoint finalizedCheckpoint = dataStructureUtil.randomCheckpoint();
   private final Checkpoint currentJustifiedCheckpoint = dataStructureUtil.randomCheckpoint();
   private final Checkpoint previousJustifiedCheckpoint = dataStructureUtil.randomCheckpoint();
-  private final SyncCommitteeMetrics syncCommitteeMetrics = mock(SyncCommitteeMetrics.class);
 
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   private final BeaconChainMetrics beaconChainMetrics =
       new BeaconChainMetrics(
-          spec,
-          recentChainData,
-          nodeSlot,
-          metricsSystem,
-          eth2P2PNetwork,
-          eth1DataCache,
-          syncCommitteeMetrics);
+          spec, recentChainData, nodeSlot, metricsSystem, eth2P2PNetwork, eth1DataCache);
 
   @BeforeEach
   void setUp() {

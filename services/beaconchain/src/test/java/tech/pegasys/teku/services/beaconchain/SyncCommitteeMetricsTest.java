@@ -69,7 +69,7 @@ class SyncCommitteeMetricsTest {
   @Test
   void shouldNotUpdateWhenChainHeadIsNotInAltair() {
     final BeaconBlockAndState chainHead = dataStructureUtil.randomBlockAndState(50);
-    syncCommitteeMetrics.updateSyncCommitteeMetrics(chainHead.getSlot(), chainHead);
+    syncCommitteeMetrics.updateSlotBasedMetrics(chainHead.getSlot(), chainHead);
 
     verifyNoInteractions(recentChainData);
   }
@@ -78,7 +78,7 @@ class SyncCommitteeMetricsTest {
   void shouldUpdatePreviousLiveSyncCommittee() {
     fillBlocks();
 
-    syncCommitteeMetrics.updateSyncCommitteeMetrics(state.getSlot(), altairChainHead);
+    syncCommitteeMetrics.updateSlotBasedMetrics(state.getSlot(), altairChainHead);
 
     final int expected = 3 * slotsPerEpoch;
     assertPreviousLiveSyncCommitteeMetric(expected);
@@ -92,7 +92,7 @@ class SyncCommitteeMetricsTest {
     final Bytes32 slot5Root = spec.getBlockRootAtSlot(state, UInt64.valueOf(5));
     when(recentChainData.getSlotForBlockRoot(slot5Root)).thenReturn(Optional.of(UInt64.valueOf(4)));
 
-    syncCommitteeMetrics.updateSyncCommitteeMetrics(state.getSlot(), altairChainHead);
+    syncCommitteeMetrics.updateSlotBasedMetrics(state.getSlot(), altairChainHead);
 
     verify(recentChainData, never()).retrieveBlockByRoot(slot5Root);
     assertPreviousLiveSyncCommitteeMetric(3 * (slotsPerEpoch - 1));
@@ -101,11 +101,11 @@ class SyncCommitteeMetricsTest {
   @Test
   void shouldSetPreviousLiveToZeroWhenChainHeadIsBeforePreviousEpoch() {
     fillBlocks();
-    syncCommitteeMetrics.updateSyncCommitteeMetrics(state.getSlot(), altairChainHead);
+    syncCommitteeMetrics.updateSlotBasedMetrics(state.getSlot(), altairChainHead);
     assertPreviousLiveSyncCommitteeMetric(3 * slotsPerEpoch);
 
     // Time progresses but with no update to chain head
-    syncCommitteeMetrics.updateSyncCommitteeMetrics(
+    syncCommitteeMetrics.updateSlotBasedMetrics(
         state.getSlot().plus(slotsPerEpoch * 3L), altairChainHead);
     assertPreviousLiveSyncCommitteeMetric(0);
   }

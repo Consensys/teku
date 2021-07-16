@@ -32,17 +32,14 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.analysis.ValidatorStats.CorrectAndLiveValidators;
-import tech.pegasys.teku.storage.api.ChainHeadChannel;
-import tech.pegasys.teku.storage.api.ReorgContext;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
 
-public class BeaconChainMetrics implements SlotEventsChannel, ChainHeadChannel {
+public class BeaconChainMetrics implements SlotEventsChannel {
   private static final long NOT_SET = 0L;
   private final RecentChainData recentChainData;
   private final NodeSlot nodeSlot;
   private final Eth1DataCache eth1DataCache;
-  private final SyncCommitteeMetrics syncCommitteeMetrics;
 
   private final SettableGauge currentActiveValidators;
   private final SettableGauge previousActiveValidators;
@@ -65,8 +62,6 @@ public class BeaconChainMetrics implements SlotEventsChannel, ChainHeadChannel {
   private final SettableGauge previousEpochParticipationWeight;
   private final SettableGauge previousEpochTotalWeight;
 
-  private final SettableGauge headLiveSyncCommittee;
-
   private final Spec spec;
 
   public BeaconChainMetrics(
@@ -75,13 +70,11 @@ public class BeaconChainMetrics implements SlotEventsChannel, ChainHeadChannel {
       final NodeSlot nodeSlot,
       final MetricsSystem metricsSystem,
       final Eth2P2PNetwork p2pNetwork,
-      final Eth1DataCache eth1DataCache,
-      final SyncCommitteeMetrics syncCommitteeMetrics) {
+      final Eth1DataCache eth1DataCache) {
     this.spec = spec;
     this.recentChainData = recentChainData;
     this.nodeSlot = nodeSlot;
     this.eth1DataCache = eth1DataCache;
-    this.syncCommitteeMetrics = syncCommitteeMetrics;
 
     metricsSystem.createGauge(
         TekuMetricCategory.BEACON,
@@ -193,13 +186,6 @@ public class BeaconChainMetrics implements SlotEventsChannel, ChainHeadChannel {
             "previous_epoch_total_weight",
             "Total effective balance of all active validators in the previous epoch");
 
-    headLiveSyncCommittee =
-        SettableGauge.create(
-            metricsSystem,
-            TekuMetricCategory.BEACON,
-            "head_live_sync_committee",
-            "Number of sync committee participant signatures included in the current head block");
-
     final String version = VersionProvider.IMPLEMENTATION_VERSION.replaceAll("^v", "");
     final LabelledMetric<Counter> versionCounter =
         metricsSystem.createLabelledCounter(
@@ -211,30 +197,11 @@ public class BeaconChainMetrics implements SlotEventsChannel, ChainHeadChannel {
   }
 
   @Override
-  public void chainHeadUpdated(
-      final UInt64 slot,
-      final Bytes32 stateRoot,
-      final Bytes32 bestBlockRoot,
-      final boolean epochTransition,
-      final Bytes32 previousDutyDependentRoot,
-      final Bytes32 currentDutyDependentRoot,
-      final Optional<ReorgContext> optionalReorgContext) {
-    recentChainData
-        .getHeadBlock()
-        .flatMap(block -> block.getMessage().getBody().toVersionAltair())
-        .ifPresent(
-            body ->
-                headLiveSyncCommittee.set(
-                    body.getSyncAggregate().getSyncCommitteeBits().getBitCount()));
-  }
-
-  @Override
   public void onSlot(final UInt64 slot) {
     recentChainData.getChainHead().ifPresent(head -> updateMetrics(slot, head));
   }
 
   private void updateMetrics(final UInt64 slot, final StateAndBlockSummary head) {
-    syncCommitteeMetrics.updateSyncCommitteeMetrics(slot, head);
     final BeaconState state = head.getState();
     BeaconStateCache.getTransitionCaches(state)
         .getLatestTotalBalances()

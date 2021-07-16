@@ -411,6 +411,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   public void initMetrics() {
     LOG.debug("BeaconChainController.initMetrics()");
+    final SyncCommitteeMetrics syncCommitteeMetrics =
+        new SyncCommitteeMetrics(spec, recentChainData, metricsSystem);
     final BeaconChainMetrics beaconChainMetrics =
         new BeaconChainMetrics(
             spec,
@@ -418,11 +420,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             slotProcessor.getNodeSlot(),
             metricsSystem,
             p2pNetwork,
-            eth1DataCache,
-            new SyncCommitteeMetrics(spec, recentChainData, metricsSystem));
+            eth1DataCache);
     eventChannels
         .subscribe(SlotEventsChannel.class, beaconChainMetrics)
-        .subscribe(ChainHeadChannel.class, beaconChainMetrics);
+        .subscribe(SlotEventsChannel.class, syncCommitteeMetrics)
+        .subscribe(ChainHeadChannel.class, syncCommitteeMetrics);
   }
 
   public void initDepositProvider() {
