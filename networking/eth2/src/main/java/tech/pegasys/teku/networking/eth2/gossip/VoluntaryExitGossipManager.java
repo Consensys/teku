@@ -43,5 +43,4 @@ public class VoluntaryExitGossipManager extends AbstractGossipManager<SignedVolu
         publisher,
         SignedVoluntaryExit.SSZ_SCHEMA);
   }
-
 }

@@ -31,7 +31,6 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
 
   private final GossipEncoding gossipEncoding;
   private final GossipPublisher<T> publisher;
-  private final SszSchema<T> gossipType;
 
   private final AtomicBoolean shutdown = new AtomicBoolean(false);
   private final TopicChannel channel;
@@ -59,7 +58,6 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
     this.channel = gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
     this.gossipEncoding = gossipEncoding;
     this.publisher = publisher;
-    this.gossipType = gossipType;
 
     this.subscriberId = publisher.subscribe(this::publishMessage);
   }

@@ -21,7 +21,6 @@ import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
-import tech.pegasys.teku.ssz.schema.SszSchema;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class SignedContributionAndProofGossipManager
@@ -47,5 +46,4 @@ public class SignedContributionAndProofGossipManager
         publisher,
         schemaDefinitions.getSignedContributionAndProofSchema());
   }
-
 }
