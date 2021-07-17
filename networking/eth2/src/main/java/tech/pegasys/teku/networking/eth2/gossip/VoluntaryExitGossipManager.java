@@ -20,7 +20,6 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
-import tech.pegasys.teku.ssz.schema.SszSchema;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class VoluntaryExitGossipManager extends AbstractGossipManager<SignedVoluntaryExit> {
@@ -41,11 +40,7 @@ public class VoluntaryExitGossipManager extends AbstractGossipManager<SignedVolu
         gossipEncoding,
         forkInfo,
         processor,
-        publisher);
-  }
-
-  @Override
-  protected SszSchema<SignedVoluntaryExit> getGossipType() {
-    return SignedVoluntaryExit.SSZ_SCHEMA;
+        publisher,
+        SignedVoluntaryExit.SSZ_SCHEMA);
   }
 }
