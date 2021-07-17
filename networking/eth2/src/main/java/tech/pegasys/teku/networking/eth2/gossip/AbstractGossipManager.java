@@ -86,11 +86,6 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
         gossipType);
   }
 
-  // legacy, maybe remove this
-  protected SszSchema<T> getGossipType() {
-    return gossipType;
-  }
-
   protected void publishMessage(T message) {
     final Bytes data = gossipEncoding.encode(message);
     channel.gossip(data);
