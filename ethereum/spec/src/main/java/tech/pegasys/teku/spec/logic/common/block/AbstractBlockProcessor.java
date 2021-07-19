@@ -160,7 +160,11 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
 
       return postState;
     } catch (final IllegalArgumentException | BlockProcessingException e) {
-      LOG.warn("State Transition error", e);
+      LOG.warn(
+          String.format(
+              "State transition error while importing block %s (%s)",
+              signedBlock.getSlot(), signedBlock.getRoot()),
+          e);
       throw new StateTransitionException(e);
     }
   }

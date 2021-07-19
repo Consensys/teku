@@ -21,13 +21,10 @@ import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
-import tech.pegasys.teku.ssz.schema.SszSchema;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class SignedContributionAndProofGossipManager
     extends AbstractGossipManager<SignedContributionAndProof> {
-
-  private final SszSchema<SignedContributionAndProof> gossipType;
 
   public SignedContributionAndProofGossipManager(
       final RecentChainData recentChainData,
@@ -46,12 +43,7 @@ public class SignedContributionAndProofGossipManager
         gossipEncoding,
         forkInfo,
         processor,
-        publisher);
-    gossipType = schemaDefinitions.getSignedContributionAndProofSchema();
-  }
-
-  @Override
-  protected SszSchema<SignedContributionAndProof> getGossipType() {
-    return gossipType;
+        publisher,
+        schemaDefinitions.getSignedContributionAndProofSchema());
   }
 }
