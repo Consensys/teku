@@ -19,5 +19,5 @@ public class ValidatorConstants {
   public static final int RANDOM_SUBNETS_PER_VALIDATOR = 1;
   public static final int EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION = 256;
   // Altair
-  public static final int TARGET_AGGREGATORS_PER_SYNC_SUBCOMMITTEE = 4;
+  public static final int TARGET_AGGREGATORS_PER_SYNC_SUBCOMMITTEE = 16;
 }
