@@ -83,6 +83,11 @@ public class MockMessageApi implements MessageApi {
             final Bytes decoded = Bytes.of(protoMessage.getData().toByteArray());
             return DecodedMessageResult.successful(decoded);
           }
+
+          @Override
+          public Bytes getOriginalMessage() {
+            return Bytes.wrapByteBuf(data);
+          }
         };
     return new PreparedPubsubMessage(protoMessage, preparedMessage);
   }
