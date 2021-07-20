@@ -36,8 +36,8 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.TestConfigLoader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeSignature;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
@@ -48,7 +48,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
-class SyncCommitteeSignatureValidatorTest {
+class SyncCommitteeMessageValidatorTest {
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
 
   private final Spec spec =
@@ -65,8 +65,8 @@ class SyncCommitteeSignatureValidatorTest {
   private final ChainBuilder chainBuilder = storageSystem.chainBuilder();
   private final RecentChainData recentChainData = storageSystem.recentChainData();
 
-  private final SyncCommitteeSignatureValidator validator =
-      new SyncCommitteeSignatureValidator(
+  private final SyncCommitteeMessageValidator validator =
+      new SyncCommitteeMessageValidator(
           spec,
           recentChainData,
           new SyncCommitteeStateUtils(spec, recentChainData),
@@ -80,20 +80,20 @@ class SyncCommitteeSignatureValidatorTest {
 
   @Test
   void shouldAcceptWhenValid() {
-    final SyncCommitteeSignature signature = chainBuilder.createValidSyncCommitteeSignature();
+    final SyncCommitteeMessage message = chainBuilder.createValidSyncCommitteeMessage();
     final SyncSubcommitteeAssignments assignments =
         spec.getSyncCommitteeUtilRequired(UInt64.ZERO)
             .getSubcommitteeAssignments(
                 chainBuilder.getLatestBlockAndState().getState(),
                 chainBuilder.getLatestEpoch(),
-                signature.getValidatorIndex());
+                message.getValidatorIndex());
     final int validSubnetId = assignments.getAssignedSubcommittees().iterator().next();
-    final ValidateableSyncCommitteeSignature validateableSignature =
-        ValidateableSyncCommitteeSignature.fromNetwork(signature, validSubnetId);
+    final ValidateableSyncCommitteeMessage validateableMessage =
+        ValidateableSyncCommitteeMessage.fromNetwork(message, validSubnetId);
 
-    assertThat(validator.validate(validateableSignature)).isCompletedWithValue(ACCEPT);
+    assertThat(validator.validate(validateableMessage)).isCompletedWithValue(ACCEPT);
     // Should store the computed subcommittee assignments for the validator.
-    assertThat(validateableSignature.getSubcommitteeAssignments()).contains(assignments);
+    assertThat(validateableMessage.getSubcommitteeAssignments()).contains(assignments);
   }
 
   @Test
@@ -114,111 +114,111 @@ class SyncCommitteeSignatureValidatorTest {
     storageSystem.chainUpdater().setCurrentSlot(lastSlotOfPeriod);
     storageSystem.chainUpdater().updateBestBlock(chainHead);
 
-    final SyncCommitteeSignature signature =
-        chainBuilder.createSyncCommitteeSignature(lastSlotOfPeriod, chainHead.getRoot());
+    final SyncCommitteeMessage message =
+        chainBuilder.createSyncCommitteeMessage(lastSlotOfPeriod, chainHead.getRoot());
     final SyncSubcommitteeAssignments assignments =
         syncCommitteeUtil.getSubcommitteeAssignments(
             chainHead.getState(),
             syncCommitteeUtil.getEpochForDutiesAtSlot(lastSlotOfPeriod),
-            signature.getValidatorIndex());
+            message.getValidatorIndex());
     final int validSubnetId = assignments.getAssignedSubcommittees().iterator().next();
-    final ValidateableSyncCommitteeSignature validateableSignature =
-        ValidateableSyncCommitteeSignature.fromNetwork(signature, validSubnetId);
+    final ValidateableSyncCommitteeMessage validateableMessage =
+        ValidateableSyncCommitteeMessage.fromNetwork(message, validSubnetId);
     timeProvider.advanceTimeByMillis(
         spec.getSlotStartTime(lastSlotOfPeriod, recentChainData.getGenesisTime())
             .times(1000)
             .longValue());
 
-    assertThat(validator.validate(validateableSignature)).isCompletedWithValue(ACCEPT);
+    assertThat(validator.validate(validateableMessage)).isCompletedWithValue(ACCEPT);
     // Should store the computed subcommittee assignments for the validator.
-    assertThat(validateableSignature.getSubcommitteeAssignments()).contains(assignments);
+    assertThat(validateableMessage.getSubcommitteeAssignments()).contains(assignments);
   }
 
   @Test
   void shouldRejectWhenAltairIsNotActiveAtSlot() {
     final Spec phase0Spec = TestSpecFactory.createMinimalPhase0();
-    final SyncCommitteeSignatureValidator validator =
-        new SyncCommitteeSignatureValidator(
+    final SyncCommitteeMessageValidator validator =
+        new SyncCommitteeMessageValidator(
             phase0Spec,
             recentChainData,
             new SyncCommitteeStateUtils(phase0Spec, recentChainData),
             AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE),
             timeProvider);
-    final SyncCommitteeSignature signature = chainBuilder.createValidSyncCommitteeSignature();
+    final SyncCommitteeMessage message = chainBuilder.createValidSyncCommitteeMessage();
 
-    assertThat(validator.validate(ValidateableSyncCommitteeSignature.fromValidator(signature)))
+    assertThat(validator.validate(ValidateableSyncCommitteeMessage.fromValidator(message)))
         .isCompletedWithValue(REJECT);
   }
 
   @Test
   void shouldRejectWhenNotForTheCurrentSlot() {
     final SignedBlockAndState latestBlockAndState = chainBuilder.getLatestBlockAndState();
-    final SyncCommitteeSignature signature =
-        chainBuilder.createSyncCommitteeSignature(
+    final SyncCommitteeMessage message =
+        chainBuilder.createSyncCommitteeMessage(
             latestBlockAndState.getSlot().plus(1), latestBlockAndState.getRoot());
 
-    assertThat(validator.validate(ValidateableSyncCommitteeSignature.fromValidator(signature)))
+    assertThat(validator.validate(ValidateableSyncCommitteeMessage.fromValidator(message)))
         .isCompletedWithValue(IGNORE);
   }
 
   @Test
-  void shouldIgnoreDuplicateSignatures() {
-    final SyncCommitteeSignature signature = chainBuilder.createValidSyncCommitteeSignature();
+  void shouldIgnoreDuplicateMessages() {
+    final SyncCommitteeMessage message = chainBuilder.createValidSyncCommitteeMessage();
 
-    assertThat(validator.validate(ValidateableSyncCommitteeSignature.fromValidator(signature)))
+    assertThat(validator.validate(ValidateableSyncCommitteeMessage.fromValidator(message)))
         .isCompletedWithValue(ACCEPT);
-    assertThat(validator.validate(ValidateableSyncCommitteeSignature.fromValidator(signature)))
+    assertThat(validator.validate(ValidateableSyncCommitteeMessage.fromValidator(message)))
         .isCompletedWithValue(IGNORE);
   }
 
   @Test
-  void shouldAllowDuplicateSignaturesForDistinctSubnets() {
-    final SyncCommitteeSignature signature = chainBuilder.createValidSyncCommitteeSignature();
+  void shouldAllowDuplicateMessagesForDistinctSubnets() {
+    final SyncCommitteeMessage message = chainBuilder.createValidSyncCommitteeMessage();
 
-    assertThat(validator.validate(fromNetworkSpy(signature, 1, Set.of(1, 2))))
+    assertThat(validator.validate(fromNetworkSpy(message, 1, Set.of(1, 2))))
         .isCompletedWithValue(ACCEPT);
-    assertThat(validator.validate(fromNetworkSpy(signature, 2, Set.of(1, 2))))
+    assertThat(validator.validate(fromNetworkSpy(message, 2, Set.of(1, 2))))
         .isCompletedWithValue(ACCEPT);
   }
 
   @Test
-  void shouldIgnoreDuplicateSignaturesForSameSubnet() {
-    final SyncCommitteeSignature signature = chainBuilder.createValidSyncCommitteeSignature();
+  void shouldIgnoreDuplicateMessagesForSameSubnet() {
+    final SyncCommitteeMessage message = chainBuilder.createValidSyncCommitteeMessage();
 
-    assertThat(validator.validate(fromNetworkSpy(signature, 1, Set.of(1, 2))))
+    assertThat(validator.validate(fromNetworkSpy(message, 1, Set.of(1, 2))))
         .isCompletedWithValue(ACCEPT);
-    assertThat(validator.validate(fromNetworkSpy(signature, 1, Set.of(1, 2))))
+    assertThat(validator.validate(fromNetworkSpy(message, 1, Set.of(1, 2))))
         .isCompletedWithValue(IGNORE);
   }
 
   @Test
-  void shouldIgnoreDuplicateSignaturesForLocalValidatorsInMultipleSubnets() {
-    final SyncCommitteeSignature signature = chainBuilder.createValidSyncCommitteeSignature();
+  void shouldIgnoreDuplicateMessagesForLocalValidatorsInMultipleSubnets() {
+    final SyncCommitteeMessage message = chainBuilder.createValidSyncCommitteeMessage();
 
-    assertThat(validator.validate(fromValidatorSpy(signature, Set.of(1, 2))))
+    assertThat(validator.validate(fromValidatorSpy(message, Set.of(1, 2))))
         .isCompletedWithValue(ACCEPT);
-    assertThat(validator.validate(fromValidatorSpy(signature, Set.of(2, 1))))
+    assertThat(validator.validate(fromValidatorSpy(message, Set.of(2, 1))))
         .isCompletedWithValue(IGNORE);
   }
 
   @Test
-  void shouldIgnoreDuplicateSignaturesForLocalValidatorsWhenReceivedAgainFromAnySubnet() {
-    final SyncCommitteeSignature signature = chainBuilder.createValidSyncCommitteeSignature();
+  void shouldIgnoreDuplicateMessagesForLocalValidatorsWhenReceivedAgainFromAnySubnet() {
+    final SyncCommitteeMessage message = chainBuilder.createValidSyncCommitteeMessage();
 
-    assertThat(validator.validate(fromValidatorSpy(signature, Set.of(1, 2))))
+    assertThat(validator.validate(fromValidatorSpy(message, Set.of(1, 2))))
         .isCompletedWithValue(ACCEPT);
-    assertThat(validator.validate(fromNetworkSpy(signature, 1, Set.of(2, 1))))
+    assertThat(validator.validate(fromNetworkSpy(message, 1, Set.of(2, 1))))
         .isCompletedWithValue(IGNORE);
-    assertThat(validator.validate(fromNetworkSpy(signature, 2, Set.of(2, 1))))
+    assertThat(validator.validate(fromNetworkSpy(message, 2, Set.of(2, 1))))
         .isCompletedWithValue(IGNORE);
   }
 
   @Test
   void shouldAcceptWhenValidButBeaconBlockIsUnknown() {
-    final SyncCommitteeSignature signature =
-        chainBuilder.createSyncCommitteeSignature(
+    final SyncCommitteeMessage message =
+        chainBuilder.createSyncCommitteeMessage(
             chainBuilder.getLatestSlot(), dataStructureUtil.randomBytes32());
-    assertThat(validator.validate(ValidateableSyncCommitteeSignature.fromValidator(signature)))
+    assertThat(validator.validate(ValidateableSyncCommitteeMessage.fromValidator(message)))
         .isCompletedWithValue(ACCEPT);
   }
 
@@ -236,26 +236,26 @@ class SyncCommitteeSignatureValidatorTest {
             .findAny()
             .orElseThrow();
 
-    final SyncCommitteeSignature signature =
-        chainBuilder.createSyncCommitteeSignature(
+    final SyncCommitteeMessage message =
+        chainBuilder.createSyncCommitteeMessage(
             target.getSlot(), target.getRoot(), state, validatorPublicKey);
 
-    assertThat(validator.validate(ValidateableSyncCommitteeSignature.fromValidator(signature)))
+    assertThat(validator.validate(ValidateableSyncCommitteeMessage.fromValidator(message)))
         .isCompletedWithValue(REJECT);
   }
 
   @Test
   void shouldRejectWhenReceivedOnIncorrectSubnet() {
-    final SyncCommitteeSignature signature = chainBuilder.createValidSyncCommitteeSignature();
+    final SyncCommitteeMessage message = chainBuilder.createValidSyncCommitteeMessage();
     // 9 is never a valid subnet
-    assertThat(validator.validate(ValidateableSyncCommitteeSignature.fromNetwork(signature, 9)))
+    assertThat(validator.validate(ValidateableSyncCommitteeMessage.fromNetwork(message, 9)))
         .isCompletedWithValue(REJECT);
   }
 
   @Test
   void shouldRejectWhenValidatorIsUnknown() {
-    final SyncCommitteeSignature template = chainBuilder.createValidSyncCommitteeSignature();
-    final SyncCommitteeSignature signature =
+    final SyncCommitteeMessage template = chainBuilder.createValidSyncCommitteeMessage();
+    final SyncCommitteeMessage message =
         template
             .getSchema()
             .create(
@@ -264,14 +264,14 @@ class SyncCommitteeSignatureValidatorTest {
                 // There's only 16 validators
                 UInt64.valueOf(25),
                 template.getSignature());
-    assertThat(validator.validate(ValidateableSyncCommitteeSignature.fromValidator(signature)))
+    assertThat(validator.validate(ValidateableSyncCommitteeMessage.fromValidator(message)))
         .isCompletedWithValue(REJECT);
   }
 
   @Test
   void shouldRejectWhenSignatureIsInvalid() {
-    final SyncCommitteeSignature template = chainBuilder.createValidSyncCommitteeSignature();
-    final SyncCommitteeSignature signature =
+    final SyncCommitteeMessage template = chainBuilder.createValidSyncCommitteeMessage();
+    final SyncCommitteeMessage message =
         template
             .getSchema()
             .create(
@@ -279,44 +279,41 @@ class SyncCommitteeSignatureValidatorTest {
                 template.getBeaconBlockRoot(),
                 template.getValidatorIndex(),
                 dataStructureUtil.randomSignature());
-    assertThat(validator.validate(ValidateableSyncCommitteeSignature.fromValidator(signature)))
+    assertThat(validator.validate(ValidateableSyncCommitteeMessage.fromValidator(message)))
         .isCompletedWithValue(REJECT);
   }
 
-  private ValidateableSyncCommitteeSignature fromValidatorSpy(
-      SyncCommitteeSignature signature, final Set<Integer> subcommitteeIds) {
-    final ValidateableSyncCommitteeSignature validateableSignature =
-        ValidateableSyncCommitteeSignature.fromValidator(signature);
-    return createSpy(validateableSignature, subcommitteeIds);
+  private ValidateableSyncCommitteeMessage fromValidatorSpy(
+      SyncCommitteeMessage message, final Set<Integer> subcommitteeIds) {
+    final ValidateableSyncCommitteeMessage validateableMessage =
+        ValidateableSyncCommitteeMessage.fromValidator(message);
+    return createSpy(validateableMessage, subcommitteeIds);
   }
 
-  private ValidateableSyncCommitteeSignature fromNetworkSpy(
-      SyncCommitteeSignature signature,
+  private ValidateableSyncCommitteeMessage fromNetworkSpy(
+      SyncCommitteeMessage message,
       final int receivedSubnetId,
       final Set<Integer> subcommitteeIds) {
-    final ValidateableSyncCommitteeSignature validateableSignature =
-        ValidateableSyncCommitteeSignature.fromNetwork(signature, receivedSubnetId);
-    return createSpy(validateableSignature, subcommitteeIds);
+    final ValidateableSyncCommitteeMessage validateableMessage =
+        ValidateableSyncCommitteeMessage.fromNetwork(message, receivedSubnetId);
+    return createSpy(validateableMessage, subcommitteeIds);
   }
 
-  private ValidateableSyncCommitteeSignature createSpy(
-      ValidateableSyncCommitteeSignature validateableSignature,
-      final Set<Integer> subcommitteeIds) {
+  private ValidateableSyncCommitteeMessage createSpy(
+      ValidateableSyncCommitteeMessage validateableMessage, final Set<Integer> subcommitteeIds) {
     // Create spies
-    final ValidateableSyncCommitteeSignature validateableSignatureSpy = spy(validateableSignature);
-    validateableSignature.calculateAssignments(
+    final ValidateableSyncCommitteeMessage validateableMessageSpy = spy(validateableMessage);
+    validateableMessage.calculateAssignments(
         spec, chainBuilder.getLatestBlockAndState().getState());
     SyncSubcommitteeAssignments assignments =
-        validateableSignature.getSubcommitteeAssignments().orElseThrow();
+        validateableMessage.getSubcommitteeAssignments().orElseThrow();
     SyncSubcommitteeAssignments assignmentsSpy = spy(assignments);
 
     // Overwrite some functionality
-    doReturn(assignmentsSpy).when(validateableSignatureSpy).calculateAssignments(any(), any());
-    doReturn(Optional.of(assignmentsSpy))
-        .when(validateableSignatureSpy)
-        .getSubcommitteeAssignments();
+    doReturn(assignmentsSpy).when(validateableMessageSpy).calculateAssignments(any(), any());
+    doReturn(Optional.of(assignmentsSpy)).when(validateableMessageSpy).getSubcommitteeAssignments();
     doReturn(subcommitteeIds).when(assignmentsSpy).getAssignedSubcommittees();
 
-    return validateableSignatureSpy;
+    return validateableMessageSpy;
   }
 }

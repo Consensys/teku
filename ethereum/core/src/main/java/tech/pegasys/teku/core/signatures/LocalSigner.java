@@ -80,12 +80,12 @@ public class LocalSigner implements Signer {
   }
 
   @Override
-  public SafeFuture<BLSSignature> signSyncCommitteeSignature(
+  public SafeFuture<BLSSignature> signSyncCommitteeMessage(
       final UInt64 slot, final Bytes32 beaconBlockRoot, final ForkInfo forkInfo) {
     return signingRootFromSyncCommitteeUtils(
             slot,
             utils ->
-                utils.getSyncCommitteeSignatureSigningRoot(
+                utils.getSyncCommitteeMessageSigningRoot(
                     beaconBlockRoot, spec.computeEpochAtSlot(slot), forkInfo))
         .thenCompose(this::sign);
   }

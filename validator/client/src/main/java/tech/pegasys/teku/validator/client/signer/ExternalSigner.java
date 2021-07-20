@@ -187,24 +187,24 @@ public class ExternalSigner implements Signer {
   }
 
   @Override
-  public SafeFuture<BLSSignature> signSyncCommitteeSignature(
+  public SafeFuture<BLSSignature> signSyncCommitteeMessage(
       final UInt64 slot, final Bytes32 beaconBlockRoot, final ForkInfo forkInfo) {
     return signingRootFromSyncCommitteeUtils(
             slot,
             utils ->
-                utils.getSyncCommitteeSignatureSigningRoot(
+                utils.getSyncCommitteeMessageSigningRoot(
                     beaconBlockRoot, spec.computeEpochAtSlot(slot), forkInfo))
         .thenCompose(
             signingRoot ->
                 sign(
                     signingRoot,
-                    SignType.SYNC_COMMITTEE_SIGNATURE,
+                    SignType.SYNC_COMMITTEE_MESSAGE,
                     Map.of(
-                        "sync_committee_signature",
+                        "sync_committee_message",
                         Map.of("beacon_block_root", beaconBlockRoot, "slot", slot),
                         FORK_INFO,
                         forkInfo(forkInfo)),
-                    slashableGenericMessage("sync committee signature")));
+                    slashableGenericMessage("sync committee message")));
   }
 
   @Override

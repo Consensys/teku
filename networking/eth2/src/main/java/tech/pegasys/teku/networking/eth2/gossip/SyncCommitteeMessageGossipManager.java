@@ -24,30 +24,30 @@ import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubnetSubscriptions;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeSignature;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeStateUtils;
 
-public class SyncCommitteeSignatureGossipManager implements GossipManager {
+public class SyncCommitteeMessageGossipManager implements GossipManager {
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
   private final SyncCommitteeStateUtils syncCommitteeStateUtils;
   private final SyncCommitteeSubnetSubscriptions subnetSubscriptions;
-  private final GossipPublisher<ValidateableSyncCommitteeSignature> gossipPublisher;
+  private final GossipPublisher<ValidateableSyncCommitteeMessage> gossipPublisher;
 
   private final AtomicBoolean shutdown = new AtomicBoolean(false);
   private final Counter publishSuccessCounter;
   private final Counter publishFailureCounter;
   private final long subscriberId;
 
-  public SyncCommitteeSignatureGossipManager(
+  public SyncCommitteeMessageGossipManager(
       final MetricsSystem metricsSystem,
       final Spec spec,
       final SyncCommitteeStateUtils syncCommitteeStateUtils,
       final SyncCommitteeSubnetSubscriptions subnetSubscriptions,
-      final GossipPublisher<ValidateableSyncCommitteeSignature> gossipPublisher) {
+      final GossipPublisher<ValidateableSyncCommitteeMessage> gossipPublisher) {
     this.spec = spec;
     this.syncCommitteeStateUtils = syncCommitteeStateUtils;
     this.subnetSubscriptions = subnetSubscriptions;
@@ -55,69 +55,66 @@ public class SyncCommitteeSignatureGossipManager implements GossipManager {
     final LabelledMetric<Counter> publishedSyncCommitteeCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.BEACON,
-            "published_sync_committee_signature_total",
-            "Total number of sync committee signatures sent to the gossip network",
+            "published_sync_committee_message_total",
+            "Total number of sync committee messages sent to the gossip network",
             "result");
     publishSuccessCounter = publishedSyncCommitteeCounter.labels("success");
     publishFailureCounter = publishedSyncCommitteeCounter.labels("failure");
     this.subscriberId = gossipPublisher.subscribe(this::publish);
   }
 
-  public void publish(final ValidateableSyncCommitteeSignature signature) {
-    if (signature.getReceivedSubnetId().isPresent()) {
+  public void publish(final ValidateableSyncCommitteeMessage message) {
+    if (message.getReceivedSubnetId().isPresent()) {
       // Republish only on the subnet we received it on
-      publish(signature.getSignature(), signature.getReceivedSubnetId().getAsInt());
+      publish(message.getMessage(), message.getReceivedSubnetId().getAsInt());
     } else {
-      // Publish locally produced signatures to all applicable subnets
+      // Publish locally produced messages to all applicable subnets
       final Optional<SyncSubcommitteeAssignments> subcommitteeAssignments =
-          signature.getSubcommitteeAssignments();
+          message.getSubcommitteeAssignments();
       if (subcommitteeAssignments.isPresent()) {
-        publish(signature, subcommitteeAssignments.get().getAssignedSubcommittees());
+        publish(message, subcommitteeAssignments.get().getAssignedSubcommittees());
       } else {
         syncCommitteeStateUtils
-            .getStateForSyncCommittee(signature.getSlot())
+            .getStateForSyncCommittee(message.getSlot())
             .finish(
                 maybeState ->
                     maybeState.ifPresentOrElse(
                         state ->
                             publish(
-                                signature,
-                                signature
+                                message,
+                                message
                                     .calculateAssignments(spec, state)
                                     .getAssignedSubcommittees()),
                         () ->
                             LOG.error(
-                                "Failed to publish sync committee signature for slot {} because the applicable subnets could not be calculated",
-                                signature.getSlot())),
+                                "Failed to publish sync committee message for slot {} because the applicable subnets could not be calculated",
+                                message.getSlot())),
                 error ->
                     LOG.error(
-                        "Failed to retrieve state for sync committee signature at slot {}",
-                        signature.getSlot(),
+                        "Failed to retrieve state for sync committee message at slot {}",
+                        message.getSlot(),
                         error));
       }
     }
   }
 
   private void publish(
-      final ValidateableSyncCommitteeSignature signature, final Set<Integer> subnetIds) {
-    subnetIds.forEach(subnetId -> publish(signature.getSignature(), subnetId));
+      final ValidateableSyncCommitteeMessage message, final Set<Integer> subnetIds) {
+    subnetIds.forEach(subnetId -> publish(message.getMessage(), subnetId));
   }
 
-  private void publish(final SyncCommitteeSignature signature, final int subnetId) {
+  private void publish(final SyncCommitteeMessage message, final int subnetId) {
     subnetSubscriptions
-        .gossip(signature, subnetId)
+        .gossip(message, subnetId)
         .finish(
             __ -> {
               LOG.trace(
-                  "Successfully published sync committee signature for slot {}",
-                  signature.getSlot());
+                  "Successfully published sync committee message for slot {}", message.getSlot());
               publishSuccessCounter.inc();
             },
             error -> {
               LOG.trace(
-                  "Failed to publish sync committee signature for slot {}",
-                  signature.getSlot(),
-                  error);
+                  "Failed to publish sync committee message for slot {}", message.getSlot(), error);
               publishFailureCounter.inc();
             });
   }

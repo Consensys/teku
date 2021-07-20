@@ -39,7 +39,7 @@ import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
-import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeSignaturePool;
+import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.server.StateStorageMode;
@@ -75,8 +75,8 @@ public class ValidatorApiHandlerIntegrationTest {
   private final ForkChoiceTrigger forkChoiceTrigger = mock(ForkChoiceTrigger.class);
 
   private final ChainUpdater chainUpdater = storageSystem.chainUpdater();
-  private final SyncCommitteeSignaturePool syncCommitteeSignaturePool =
-      mock(SyncCommitteeSignaturePool.class);
+  private final SyncCommitteeMessagePool syncCommitteeMessagePool =
+      mock(SyncCommitteeMessagePool.class);
   private final SyncCommitteeContributionPool syncCommitteeContributionPool =
       mock(SyncCommitteeContributionPool.class);
   private final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager =
@@ -97,7 +97,7 @@ public class ValidatorApiHandlerIntegrationTest {
           performanceTracker,
           spec,
           forkChoiceTrigger,
-          syncCommitteeSignaturePool,
+          syncCommitteeMessagePool,
           syncCommitteeContributionPool,
           syncCommitteeSubscriptionManager);
 

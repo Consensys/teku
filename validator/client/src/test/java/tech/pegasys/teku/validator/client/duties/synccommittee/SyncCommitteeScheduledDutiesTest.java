@@ -112,7 +112,7 @@ class SyncCommitteeScheduledDutiesTest {
         .thenReturn(Optional.of(dataStructureUtil.randomBytes32()));
 
     final DutyResult expectedDutyResult = DutyResult.success(blockRoot);
-    when(productionDuty.produceSignatures(slot, blockRoot))
+    when(productionDuty.produceMessages(slot, blockRoot))
         .thenReturn(SafeFuture.completedFuture(expectedDutyResult));
     when(aggregationDuty.produceAggregates(slot, blockRoot))
         .thenReturn(SafeFuture.completedFuture(expectedDutyResult));
@@ -122,7 +122,7 @@ class SyncCommitteeScheduledDutiesTest {
     assertThat(duties.performProductionDuty(slot)).isCompletedWithValue(expectedDutyResult);
     assertThat(duties.performAggregationDuty(slot)).isCompletedWithValue(expectedDutyResult);
 
-    verify(productionDuty).produceSignatures(slot, blockRoot);
+    verify(productionDuty).produceMessages(slot, blockRoot);
     verify(aggregationDuty).produceAggregates(slot, blockRoot);
   }
 

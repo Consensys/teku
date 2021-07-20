@@ -61,7 +61,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -76,7 +76,7 @@ import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
-import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeSignaturePool;
+import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -89,7 +89,7 @@ import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
-import tech.pegasys.teku.validator.api.SubmitCommitteeSignatureError;
+import tech.pegasys.teku.validator.api.SubmitCommitteeMessageError;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
@@ -118,8 +118,8 @@ class ValidatorApiHandlerTest {
   private final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
   private final DutyMetrics dutyMetrics = mock(DutyMetrics.class);
   private final ForkChoiceTrigger forkChoiceTrigger = mock(ForkChoiceTrigger.class);
-  private final SyncCommitteeSignaturePool syncCommitteeSignaturePool =
-      mock(SyncCommitteeSignaturePool.class);
+  private final SyncCommitteeMessagePool syncCommitteeMessagePool =
+      mock(SyncCommitteeMessagePool.class);
   private final SyncCommitteeContributionPool syncCommitteeContributionPool =
       mock(SyncCommitteeContributionPool.class);
   private final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager =
@@ -141,7 +141,7 @@ class ValidatorApiHandlerTest {
           performanceTracker,
           spec,
           forkChoiceTrigger,
-          syncCommitteeSignaturePool,
+          syncCommitteeMessagePool,
           syncCommitteeContributionPool,
           syncCommitteeSubscriptionManager);
 
@@ -386,7 +386,7 @@ class ValidatorApiHandlerTest {
             performanceTracker,
             spec,
             forkChoiceTrigger,
-            syncCommitteeSignaturePool,
+            syncCommitteeMessagePool,
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager);
     // Best state is still in Phase0
@@ -724,38 +724,38 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
-  void sendSyncCommitteeSignatures_shouldAllowEmptyRequest() {
-    final List<SyncCommitteeSignature> signatures = List.of();
-    final SafeFuture<List<SubmitCommitteeSignatureError>> result =
-        validatorApiHandler.sendSyncCommitteeSignatures(signatures);
+  void sendSyncCommitteeMessages_shouldAllowEmptyRequest() {
+    final List<SyncCommitteeMessage> messages = List.of();
+    final SafeFuture<List<SubmitCommitteeMessageError>> result =
+        validatorApiHandler.sendSyncCommitteeMessages(messages);
     assertThat(result).isCompleted();
   }
 
   @Test
-  void sendSyncCommitteeSignatures_shouldAddSignaturesToPool() {
-    final SyncCommitteeSignature signature = dataStructureUtil.randomSyncCommitteeSignature();
-    final List<SyncCommitteeSignature> signatures = List.of(signature);
-    when(syncCommitteeSignaturePool.add(any()))
+  void sendSyncCommitteeMessages_shouldAddMessagesToPool() {
+    final SyncCommitteeMessage message = dataStructureUtil.randomSyncCommitteeMessage();
+    final List<SyncCommitteeMessage> messages = List.of(message);
+    when(syncCommitteeMessagePool.add(any()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
-    final SafeFuture<List<SubmitCommitteeSignatureError>> result =
-        validatorApiHandler.sendSyncCommitteeSignatures(signatures);
+    final SafeFuture<List<SubmitCommitteeMessageError>> result =
+        validatorApiHandler.sendSyncCommitteeMessages(messages);
     assertThat(result).isCompletedWithValue(emptyList());
-    verify(performanceTracker).saveProducedSyncCommitteeSignature(signature);
+    verify(performanceTracker).saveProducedSyncCommitteeMessage(message);
   }
 
   @Test
-  void sendSyncCommitteeSignatures_shouldRaiseErrors() {
-    final SyncCommitteeSignature signature = dataStructureUtil.randomSyncCommitteeSignature();
-    final List<SyncCommitteeSignature> signatures = List.of(signature);
-    when(syncCommitteeSignaturePool.add(any()))
+  void sendSyncCommitteeMessages_shouldRaiseErrors() {
+    final SyncCommitteeMessage message = dataStructureUtil.randomSyncCommitteeMessage();
+    final List<SyncCommitteeMessage> messages = List.of(message);
+    when(syncCommitteeMessagePool.add(any()))
         .thenReturn(
             SafeFuture.completedFuture(
                 InternalValidationResult.create(ValidationResultCode.REJECT, "Rejected")));
-    final SafeFuture<List<SubmitCommitteeSignatureError>> result =
-        validatorApiHandler.sendSyncCommitteeSignatures(signatures);
+    final SafeFuture<List<SubmitCommitteeMessageError>> result =
+        validatorApiHandler.sendSyncCommitteeMessages(messages);
     assertThat(result)
-        .isCompletedWithValue(List.of(new SubmitCommitteeSignatureError(UInt64.ZERO, "Rejected")));
-    verify(performanceTracker, never()).saveProducedSyncCommitteeSignature(signature);
+        .isCompletedWithValue(List.of(new SubmitCommitteeMessageError(UInt64.ZERO, "Rejected")));
+    verify(performanceTracker, never()).saveProducedSyncCommitteeMessage(message);
   }
 
   @Test

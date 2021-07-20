@@ -18,36 +18,36 @@ import static tech.pegasys.teku.validator.coordinator.performance.DefaultPerform
 import java.util.Objects;
 
 public class SyncCommitteePerformance {
-  private final int numberOfExpectedSignatures;
-  private final int numberOfProducedSignatures;
-  private final int numberOfCorrectSignatures;
-  private final int numberOfIncludedSignatures;
+  private final int numberOfExpectedMessages;
+  private final int numberOfProducedMessages;
+  private final int numberOfCorrectMessages;
+  private final int numberOfIncludedMessages;
 
   public SyncCommitteePerformance(
-      final int numberOfExpectedSignatures,
-      final int numberOfProducedSignatures,
-      final int numberOfCorrectSignatures,
-      final int numberOfIncludedSignatures) {
-    this.numberOfExpectedSignatures = numberOfExpectedSignatures;
-    this.numberOfProducedSignatures = numberOfProducedSignatures;
-    this.numberOfCorrectSignatures = numberOfCorrectSignatures;
-    this.numberOfIncludedSignatures = numberOfIncludedSignatures;
+      final int numberOfExpectedMessages,
+      final int numberOfProducedMessages,
+      final int numberOfCorrectMessages,
+      final int numberOfIncludedMessages) {
+    this.numberOfExpectedMessages = numberOfExpectedMessages;
+    this.numberOfProducedMessages = numberOfProducedMessages;
+    this.numberOfCorrectMessages = numberOfCorrectMessages;
+    this.numberOfIncludedMessages = numberOfIncludedMessages;
   }
 
-  public int getNumberOfExpectedSignatures() {
-    return numberOfExpectedSignatures;
+  public int getNumberOfExpectedMessages() {
+    return numberOfExpectedMessages;
   }
 
-  public int getNumberOfProducedSignatures() {
-    return numberOfProducedSignatures;
+  public int getNumberOfProducedMessages() {
+    return numberOfProducedMessages;
   }
 
-  public int getNumberOfCorrectSignatures() {
-    return numberOfCorrectSignatures;
+  public int getNumberOfCorrectMessages() {
+    return numberOfCorrectMessages;
   }
 
-  public int getNumberOfIncludedSignatures() {
-    return numberOfIncludedSignatures;
+  public int getNumberOfIncludedMessages() {
+    return numberOfIncludedMessages;
   }
 
   @Override
@@ -59,29 +59,29 @@ public class SyncCommitteePerformance {
       return false;
     }
     final SyncCommitteePerformance that = (SyncCommitteePerformance) o;
-    return numberOfExpectedSignatures == that.numberOfExpectedSignatures
-        && numberOfProducedSignatures == that.numberOfProducedSignatures
-        && numberOfCorrectSignatures == that.numberOfCorrectSignatures
-        && numberOfIncludedSignatures == that.numberOfIncludedSignatures;
+    return numberOfExpectedMessages == that.numberOfExpectedMessages
+        && numberOfProducedMessages == that.numberOfProducedMessages
+        && numberOfCorrectMessages == that.numberOfCorrectMessages
+        && numberOfIncludedMessages == that.numberOfIncludedMessages;
   }
 
   @Override
   public int hashCode() {
     return Objects.hash(
-        numberOfExpectedSignatures,
-        numberOfProducedSignatures,
-        numberOfCorrectSignatures,
-        numberOfIncludedSignatures);
+        numberOfExpectedMessages,
+        numberOfProducedMessages,
+        numberOfCorrectMessages,
+        numberOfIncludedMessages);
   }
 
   @Override
   public String toString() {
     return String.format(
         "Sync committee performance: " + "expected %d, produced %d, correct %d, included %d (%d%%)",
-        numberOfExpectedSignatures,
-        numberOfProducedSignatures,
-        numberOfCorrectSignatures,
-        numberOfIncludedSignatures,
-        getPercentage(numberOfIncludedSignatures, numberOfProducedSignatures));
+        numberOfExpectedMessages,
+        numberOfProducedMessages,
+        numberOfCorrectMessages,
+        numberOfIncludedMessages,
+        getPercentage(numberOfIncludedMessages, numberOfProducedMessages));
   }
 }

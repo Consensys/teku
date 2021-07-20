@@ -198,7 +198,7 @@ public class SyncCommitteeUtil {
     return committeeIndices.stream().map(index -> index / subcommitteeSize).collect(toSet());
   }
 
-  public Bytes32 getSyncCommitteeSignatureSigningRoot(
+  public Bytes32 getSyncCommitteeMessageSigningRoot(
       final Bytes32 blockRoot, final UInt64 epoch, final ForkInfo forkInfo) {
     final Bytes32 domain =
         beaconStateAccessors.getDomain(

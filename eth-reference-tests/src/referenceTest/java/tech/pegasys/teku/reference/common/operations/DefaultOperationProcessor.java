@@ -95,6 +95,6 @@ public class DefaultOperationProcessor implements OperationProcessor {
   public void processSyncCommittee(final MutableBeaconState state, final SyncAggregate aggregate)
       throws BlockProcessingException {
     spec.getBlockProcessor(state.getSlot())
-        .processSyncCommittee(state, aggregate, BLSSignatureVerifier.SIMPLE);
+        .processSyncAggregate(state, aggregate, BLSSignatureVerifier.SIMPLE);
   }
 }

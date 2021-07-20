@@ -73,7 +73,7 @@ import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
@@ -351,22 +351,22 @@ public final class DataStructureUtil {
     return validators.get(index).getPublicKey();
   }
 
-  public SyncCommitteeSignature randomSyncCommitteeSignature() {
-    return randomSyncCommitteeSignature(randomUInt64());
+  public SyncCommitteeMessage randomSyncCommitteeMessage() {
+    return randomSyncCommitteeMessage(randomUInt64());
   }
 
-  public SyncCommitteeSignature randomSyncCommitteeSignature(final long slot) {
-    return randomSyncCommitteeSignature(UInt64.valueOf(slot));
+  public SyncCommitteeMessage randomSyncCommitteeMessage(final long slot) {
+    return randomSyncCommitteeMessage(UInt64.valueOf(slot));
   }
 
-  public SyncCommitteeSignature randomSyncCommitteeSignature(final UInt64 slot) {
-    return randomSyncCommitteeSignature(slot, randomBytes32());
+  public SyncCommitteeMessage randomSyncCommitteeMessage(final UInt64 slot) {
+    return randomSyncCommitteeMessage(slot, randomBytes32());
   }
 
-  public SyncCommitteeSignature randomSyncCommitteeSignature(
+  public SyncCommitteeMessage randomSyncCommitteeMessage(
       final UInt64 slot, final Bytes32 beaconBlockRoot) {
     return getAltairSchemaDefinitions(UInt64.ZERO)
-        .getSyncCommitteeSignatureSchema()
+        .getSyncCommitteeMessageSchema()
         .create(slot, beaconBlockRoot, randomUInt64(), randomSignature());
   }
 

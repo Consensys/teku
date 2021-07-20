@@ -98,7 +98,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
     final BeaconBlockBodyAltair blockBody = BeaconBlockBodyAltair.required(block.getBody());
 
     super.processBlock(state, block, indexedAttestationCache, signatureVerifier);
-    processSyncCommittee(state, blockBody.getSyncAggregate(), signatureVerifier);
+    processSyncAggregate(state, blockBody.getSyncAggregate(), signatureVerifier);
   }
 
   @Override
@@ -168,7 +168,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
   }
 
   @Override
-  public void processSyncCommittee(
+  public void processSyncAggregate(
       final MutableBeaconState baseState,
       final SyncAggregate aggregate,
       final BLSSignatureVerifier signatureVerifier)

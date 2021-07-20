@@ -40,63 +40,62 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeSignature;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.OperationPool.OperationAddedSubscriber;
 
-class SyncCommitteeSignaturePoolTest {
+class SyncCommitteeMessagePoolTest {
 
   private final Spec spec = TestSpecFactory.createMinimalAltair();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final SyncCommitteeSignatureValidator validator =
-      mock(SyncCommitteeSignatureValidator.class);
+  private final SyncCommitteeMessageValidator validator = mock(SyncCommitteeMessageValidator.class);
 
-  private final ValidateableSyncCommitteeSignature signature =
-      ValidateableSyncCommitteeSignature.fromValidator(
-          dataStructureUtil.randomSyncCommitteeSignature());
+  private final ValidateableSyncCommitteeMessage message =
+      ValidateableSyncCommitteeMessage.fromValidator(
+          dataStructureUtil.randomSyncCommitteeMessage());
 
   @SuppressWarnings("unchecked")
-  private final OperationAddedSubscriber<ValidateableSyncCommitteeSignature> subscriber =
+  private final OperationAddedSubscriber<ValidateableSyncCommitteeMessage> subscriber =
       mock(OperationAddedSubscriber.class);
 
-  private final SyncCommitteeSignaturePool pool = new SyncCommitteeSignaturePool(spec, validator);
+  private final SyncCommitteeMessagePool pool = new SyncCommitteeMessagePool(spec, validator);
 
   @BeforeEach
   void setUp() {
     when(validator.validate(any())).thenReturn(SafeFuture.completedFuture(ACCEPT));
-    signature.setSubcommitteeAssignments(SyncSubcommitteeAssignments.NONE);
+    message.setSubcommitteeAssignments(SyncSubcommitteeAssignments.NONE);
   }
 
   @Test
-  void shouldNotifySubscriberWhenValidSignatureAdded() {
+  void shouldNotifySubscriberWhenValidMessageAdded() {
     pool.subscribeOperationAdded(subscriber);
-    when(validator.validate(signature)).thenReturn(SafeFuture.completedFuture(ACCEPT));
+    when(validator.validate(message)).thenReturn(SafeFuture.completedFuture(ACCEPT));
 
-    assertThat(pool.add(signature)).isCompletedWithValue(ACCEPT);
-    verify(subscriber).onOperationAdded(signature, ACCEPT);
+    assertThat(pool.add(message)).isCompletedWithValue(ACCEPT);
+    verify(subscriber).onOperationAdded(message, ACCEPT);
   }
 
   @Test
-  void shouldNotNotifySubscriberWhenInvalidSignatureAdded() {
+  void shouldNotNotifySubscriberWhenInvalidMessageAdded() {
     pool.subscribeOperationAdded(subscriber);
-    when(validator.validate(signature)).thenReturn(SafeFuture.completedFuture(REJECT));
+    when(validator.validate(message)).thenReturn(SafeFuture.completedFuture(REJECT));
 
-    assertThat(pool.add(signature)).isCompletedWithValue(REJECT);
+    assertThat(pool.add(message)).isCompletedWithValue(REJECT);
     verifyNoInteractions(subscriber);
   }
 
   @Test
-  void shouldNotNotifySubscriberWhenIgnoredSignatureAdded() {
+  void shouldNotNotifySubscriberWhenIgnoredMessageAdded() {
     pool.subscribeOperationAdded(subscriber);
-    when(validator.validate(signature)).thenReturn(SafeFuture.completedFuture(IGNORE));
+    when(validator.validate(message)).thenReturn(SafeFuture.completedFuture(IGNORE));
 
-    assertThat(pool.add(signature)).isCompletedWithValue(IGNORE);
+    assertThat(pool.add(message)).isCompletedWithValue(IGNORE);
     verifyNoInteractions(subscriber);
   }
 
   @Test
-  void shouldCreateEmptyContributionWhenNoSignaturesAvailable() {
+  void shouldCreateEmptyContributionWhenNoMessagesAvailable() {
     final UInt64 slot = dataStructureUtil.randomUInt64();
     final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
     final Optional<SyncCommitteeContribution> contribution =
@@ -106,165 +105,164 @@ class SyncCommitteeSignaturePoolTest {
   }
 
   @Test
-  void shouldCreateContributionFromSingleMatchingSignature() {
-    final ValidateableSyncCommitteeSignature signature =
-        ValidateableSyncCommitteeSignature.fromValidator(
-            dataStructureUtil.randomSyncCommitteeSignature());
+  void shouldCreateContributionFromSingleMatchingMessage() {
+    final ValidateableSyncCommitteeMessage message =
+        ValidateableSyncCommitteeMessage.fromValidator(
+            dataStructureUtil.randomSyncCommitteeMessage());
     final int subcommitteeIndex = 3;
-    signature.setSubcommitteeAssignments(
+    message.setSubcommitteeAssignments(
         SyncSubcommitteeAssignments.builder()
             .addAssignment(1, 1)
             .addAssignment(subcommitteeIndex, 3)
             .build());
 
-    addValid(signature);
+    addValid(message);
 
     final Optional<SyncCommitteeContribution> contribution =
-        pool.createContribution(
-            signature.getSlot(), signature.getBeaconBlockRoot(), subcommitteeIndex);
+        pool.createContribution(message.getSlot(), message.getBeaconBlockRoot(), subcommitteeIndex);
 
-    assertThat(contribution).contains(createContributionFrom(subcommitteeIndex, signature));
+    assertThat(contribution).contains(createContributionFrom(subcommitteeIndex, message));
   }
 
   @Test
-  void shouldCreateContributionAggregatingMultipleMatchingSignatures() {
+  void shouldCreateContributionAggregatingMultipleMatchingMessages() {
     final int subcommitteeIndex = 3;
-    final ValidateableSyncCommitteeSignature signature1 =
-        ValidateableSyncCommitteeSignature.fromValidator(
-            dataStructureUtil.randomSyncCommitteeSignature());
-    signature1.setSubcommitteeAssignments(
+    final ValidateableSyncCommitteeMessage message1 =
+        ValidateableSyncCommitteeMessage.fromValidator(
+            dataStructureUtil.randomSyncCommitteeMessage());
+    message1.setSubcommitteeAssignments(
         SyncSubcommitteeAssignments.builder()
             .addAssignment(1, 1)
             .addAssignment(subcommitteeIndex, 3)
             .build());
-    addValid(signature1);
-    final ValidateableSyncCommitteeSignature signature2 =
-        ValidateableSyncCommitteeSignature.fromValidator(
-            dataStructureUtil.randomSyncCommitteeSignature(
-                signature1.getSlot(), signature1.getBeaconBlockRoot()));
-    signature2.setSubcommitteeAssignments(
+    addValid(message1);
+    final ValidateableSyncCommitteeMessage message2 =
+        ValidateableSyncCommitteeMessage.fromValidator(
+            dataStructureUtil.randomSyncCommitteeMessage(
+                message1.getSlot(), message1.getBeaconBlockRoot()));
+    message2.setSubcommitteeAssignments(
         SyncSubcommitteeAssignments.builder()
             .addAssignment(subcommitteeIndex, 2)
             .addAssignment(5, 1)
             .build());
-    addValid(signature2);
+    addValid(message2);
 
     final Optional<SyncCommitteeContribution> contribution =
         pool.createContribution(
-            signature1.getSlot(), signature1.getBeaconBlockRoot(), subcommitteeIndex);
+            message1.getSlot(), message1.getBeaconBlockRoot(), subcommitteeIndex);
 
     assertThat(contribution)
-        .contains(createContributionFrom(subcommitteeIndex, signature1, signature2));
+        .contains(createContributionFrom(subcommitteeIndex, message1, message2));
   }
 
   @Test
-  void shouldIncludeSignatureInContributionForAllApplicableSubnets() {
-    final ValidateableSyncCommitteeSignature signature =
-        ValidateableSyncCommitteeSignature.fromValidator(
-            dataStructureUtil.randomSyncCommitteeSignature());
-    signature.setSubcommitteeAssignments(
+  void shouldIncludeMessageInContributionForAllApplicableSubnets() {
+    final ValidateableSyncCommitteeMessage message =
+        ValidateableSyncCommitteeMessage.fromValidator(
+            dataStructureUtil.randomSyncCommitteeMessage());
+    message.setSubcommitteeAssignments(
         SyncSubcommitteeAssignments.builder()
             .addAssignment(1, 1)
             .addAssignment(3, 3)
             .addAssignment(5, 3)
             .build());
 
-    addValid(signature);
+    addValid(message);
 
-    final UInt64 slot = signature.getSlot();
-    final Bytes32 blockRoot = signature.getBeaconBlockRoot();
+    final UInt64 slot = message.getSlot();
+    final Bytes32 blockRoot = message.getBeaconBlockRoot();
 
-    // One signature but gets included for all three subnets.
+    // One message but gets included for all three subnets.
     assertThat(pool.createContribution(slot, blockRoot, 1))
-        .contains(createContributionFrom(1, signature));
+        .contains(createContributionFrom(1, message));
     assertThat(pool.createContribution(slot, blockRoot, 3))
-        .contains(createContributionFrom(3, signature));
+        .contains(createContributionFrom(3, message));
     assertThat(pool.createContribution(slot, blockRoot, 5))
-        .contains(createContributionFrom(5, signature));
+        .contains(createContributionFrom(5, message));
   }
 
   @Test
-  void shouldExcludeSignaturesWhereSlotDoesNotMatch() {
-    final ValidateableSyncCommitteeSignature signature =
-        ValidateableSyncCommitteeSignature.fromValidator(
-            dataStructureUtil.randomSyncCommitteeSignature());
+  void shouldExcludeMessagesWhereSlotDoesNotMatch() {
+    final ValidateableSyncCommitteeMessage message =
+        ValidateableSyncCommitteeMessage.fromValidator(
+            dataStructureUtil.randomSyncCommitteeMessage());
     final int subcommitteeIndex = 3;
-    signature.setSubcommitteeAssignments(
+    message.setSubcommitteeAssignments(
         SyncSubcommitteeAssignments.builder().addAssignment(subcommitteeIndex, 3).build());
 
-    addValid(signature);
+    addValid(message);
 
     final Optional<SyncCommitteeContribution> contribution =
-        pool.createContribution(UInt64.ZERO, signature.getBeaconBlockRoot(), subcommitteeIndex);
+        pool.createContribution(UInt64.ZERO, message.getBeaconBlockRoot(), subcommitteeIndex);
     assertThat(contribution).isEmpty();
   }
 
   @Test
-  void shouldExcludeSignaturesWhereBlockRootDoesNotMatch() {
-    final ValidateableSyncCommitteeSignature signature =
-        ValidateableSyncCommitteeSignature.fromValidator(
-            dataStructureUtil.randomSyncCommitteeSignature());
+  void shouldExcludeMessagesWhereBlockRootDoesNotMatch() {
+    final ValidateableSyncCommitteeMessage message =
+        ValidateableSyncCommitteeMessage.fromValidator(
+            dataStructureUtil.randomSyncCommitteeMessage());
     final int subcommitteeIndex = 3;
-    signature.setSubcommitteeAssignments(
+    message.setSubcommitteeAssignments(
         SyncSubcommitteeAssignments.builder().addAssignment(subcommitteeIndex, 3).build());
 
-    addValid(signature);
+    addValid(message);
 
     final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
     final Optional<SyncCommitteeContribution> contribution =
-        pool.createContribution(signature.getSlot(), blockRoot, subcommitteeIndex);
+        pool.createContribution(message.getSlot(), blockRoot, subcommitteeIndex);
     assertThat(contribution).isEmpty();
   }
 
   @Test
-  void shouldExcludeSignaturesWhereSubcommitteeIndexDoesNotMatch() {
-    final ValidateableSyncCommitteeSignature signature =
-        ValidateableSyncCommitteeSignature.fromValidator(
-            dataStructureUtil.randomSyncCommitteeSignature());
+  void shouldExcludeMessagesWhereSubcommitteeIndexDoesNotMatch() {
+    final ValidateableSyncCommitteeMessage message =
+        ValidateableSyncCommitteeMessage.fromValidator(
+            dataStructureUtil.randomSyncCommitteeMessage());
     final int subcommitteeIndex = 3;
-    signature.setSubcommitteeAssignments(
+    message.setSubcommitteeAssignments(
         SyncSubcommitteeAssignments.builder().addAssignment(subcommitteeIndex, 3).build());
 
-    addValid(signature);
+    addValid(message);
 
     final Optional<SyncCommitteeContribution> contribution =
-        pool.createContribution(signature.getSlot(), signature.getBeaconBlockRoot(), 1);
+        pool.createContribution(message.getSlot(), message.getBeaconBlockRoot(), 1);
     assertThat(contribution).isEmpty();
   }
 
   @Test
-  void shouldPruneSignaturesFromOlderSlots() {
+  void shouldPruneMessagesFromOlderSlots() {
     final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
     final int subcommitteeIndex = 2;
-    final ValidateableSyncCommitteeSignature signature0 =
-        createSignatureInSlot(blockRoot, subcommitteeIndex, 0);
-    final ValidateableSyncCommitteeSignature signature1 =
-        createSignatureInSlot(blockRoot, subcommitteeIndex, 1);
-    final ValidateableSyncCommitteeSignature signature2 =
-        createSignatureInSlot(blockRoot, subcommitteeIndex, 2);
+    final ValidateableSyncCommitteeMessage message0 =
+        createMessageInSlot(blockRoot, subcommitteeIndex, 0);
+    final ValidateableSyncCommitteeMessage message1 =
+        createMessageInSlot(blockRoot, subcommitteeIndex, 1);
+    final ValidateableSyncCommitteeMessage message2 =
+        createMessageInSlot(blockRoot, subcommitteeIndex, 2);
 
-    addValid(signature0);
-    addValid(signature1);
-    addValid(signature2);
+    addValid(message0);
+    addValid(message1);
+    addValid(message2);
 
     pool.onSlot(UInt64.ZERO);
-    assertSignaturesPresentForSlots(blockRoot, subcommitteeIndex, 0, 1, 2);
+    assertMessagesPresentForSlots(blockRoot, subcommitteeIndex, 0, 1, 2);
 
     // Should keep current and previous slot
     pool.onSlot(UInt64.valueOf(2));
-    assertSignaturesPresentForSlots(blockRoot, subcommitteeIndex, 1, 2);
-    assertSignaturesAbsentForSlots(blockRoot, subcommitteeIndex, 0);
+    assertMessagesPresentForSlots(blockRoot, subcommitteeIndex, 1, 2);
+    assertMessagesAbsentForSlots(blockRoot, subcommitteeIndex, 0);
 
-    // Should be able to remove all signatures
+    // Should be able to remove all messages
     pool.onSlot(UInt64.valueOf(4));
-    assertSignaturesAbsentForSlots(blockRoot, subcommitteeIndex, 0, 1, 2);
+    assertMessagesAbsentForSlots(blockRoot, subcommitteeIndex, 0, 1, 2);
   }
 
-  private void addValid(final ValidateableSyncCommitteeSignature signature0) {
-    assertThat(pool.add(signature0)).isCompletedWithValue(ACCEPT);
+  private void addValid(final ValidateableSyncCommitteeMessage message0) {
+    assertThat(pool.add(message0)).isCompletedWithValue(ACCEPT);
   }
 
-  private void assertSignaturesPresentForSlots(
+  private void assertMessagesPresentForSlots(
       final Bytes32 blockRoot, final int subcommitteeIndex, final int... slots) {
     IntStream.of(slots)
         .forEach(
@@ -277,7 +275,7 @@ class SyncCommitteeSignaturePoolTest {
                     .isFalse());
   }
 
-  private void assertSignaturesAbsentForSlots(
+  private void assertMessagesAbsentForSlots(
       final Bytes32 blockRoot, final int subcommitteeIndex, final int... slots) {
     IntStream.of(slots)
         .forEach(
@@ -288,29 +286,26 @@ class SyncCommitteeSignaturePoolTest {
                     .isEmpty());
   }
 
-  private ValidateableSyncCommitteeSignature createSignatureInSlot(
+  private ValidateableSyncCommitteeMessage createMessageInSlot(
       final Bytes32 blockRoot, final int subcommitteeIndex, final int slot) {
-    final ValidateableSyncCommitteeSignature signature =
-        ValidateableSyncCommitteeSignature.fromValidator(
-            dataStructureUtil.randomSyncCommitteeSignature(UInt64.valueOf(slot), blockRoot));
-    signature.setSubcommitteeAssignments(
+    final ValidateableSyncCommitteeMessage message =
+        ValidateableSyncCommitteeMessage.fromValidator(
+            dataStructureUtil.randomSyncCommitteeMessage(UInt64.valueOf(slot), blockRoot));
+    message.setSubcommitteeAssignments(
         SyncSubcommitteeAssignments.builder().addAssignment(subcommitteeIndex, 1).build());
-    return signature;
+    return message;
   }
 
   private SyncCommitteeContribution createContributionFrom(
-      final int subnetId, final ValidateableSyncCommitteeSignature... signatures) {
-    checkArgument(signatures.length > 0, "Must specify at least one signature");
-    final ValidateableSyncCommitteeSignature template = signatures[0];
+      final int subnetId, final ValidateableSyncCommitteeMessage... messages) {
+    checkArgument(messages.length > 0, "Must specify at least one message");
+    final ValidateableSyncCommitteeMessage template = messages[0];
     final Set<Integer> participantIds = new HashSet<>();
     final List<BLSSignature> blsSignatures = new ArrayList<>();
-    for (ValidateableSyncCommitteeSignature signature : signatures) {
+    for (ValidateableSyncCommitteeMessage message : messages) {
       participantIds.addAll(
-          signature
-              .getSubcommitteeAssignments()
-              .orElseThrow()
-              .getParticipationBitIndices(subnetId));
-      blsSignatures.add(signature.getSignature().getSignature());
+          message.getSubcommitteeAssignments().orElseThrow().getParticipationBitIndices(subnetId));
+      blsSignatures.add(message.getMessage().getSignature());
     }
     return spec.getSyncCommitteeUtilRequired(template.getSlot())
         .createSyncCommitteeContribution(

@@ -47,7 +47,7 @@ import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFa
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionData;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
@@ -461,22 +461,22 @@ public class ChainBuilder {
     throw new IllegalStateException("No valid sync subcommittee aggregators found");
   }
 
-  public SyncCommitteeSignature createValidSyncCommitteeSignature() {
+  public SyncCommitteeMessage createValidSyncCommitteeMessage() {
     final SignedBlockAndState target = getLatestBlockAndState();
-    return createSyncCommitteeSignature(target.getSlot(), target.getRoot());
+    return createSyncCommitteeMessage(target.getSlot(), target.getRoot());
   }
 
-  public SyncCommitteeSignature createSyncCommitteeSignature(
+  public SyncCommitteeMessage createSyncCommitteeMessage(
       final UInt64 slot, final Bytes32 blockRoot) {
     final BeaconStateAltair state =
         BeaconStateAltair.required(getLatestBlockAndStateAtSlot(slot).getState());
 
     final BLSPublicKey pubKey =
         state.getCurrentSyncCommittee().getPubkeys().get(0).getBLSPublicKey();
-    return createSyncCommitteeSignature(slot, blockRoot, state, pubKey);
+    return createSyncCommitteeMessage(slot, blockRoot, state, pubKey);
   }
 
-  public SyncCommitteeSignature createSyncCommitteeSignature(
+  public SyncCommitteeMessage createSyncCommitteeMessage(
       final UInt64 slot,
       final Bytes32 blockRoot,
       final BeaconStateAltair state,
@@ -484,10 +484,10 @@ public class ChainBuilder {
     final int validatorIndex = spec.getValidatorIndex(state, validatorPublicKey).orElseThrow();
     final BLSSignature signature =
         getSigner(validatorIndex)
-            .signSyncCommitteeSignature(slot, blockRoot, state.getForkInfo())
+            .signSyncCommitteeMessage(slot, blockRoot, state.getForkInfo())
             .join();
     return SchemaDefinitionsAltair.required(spec.atSlot(slot).getSchemaDefinitions())
-        .getSyncCommitteeSignatureSchema()
+        .getSyncCommitteeMessageSchema()
         .create(slot, blockRoot, UInt64.valueOf(validatorIndex), signature);
   }
 

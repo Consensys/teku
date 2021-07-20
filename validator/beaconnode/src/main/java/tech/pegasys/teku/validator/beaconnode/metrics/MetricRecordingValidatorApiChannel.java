@@ -35,13 +35,13 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
-import tech.pegasys.teku.validator.api.SubmitCommitteeSignatureError;
+import tech.pegasys.teku.validator.api.SubmitCommitteeMessageError;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
@@ -77,8 +77,8 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   public static final String PUBLISHED_BLOCK_COUNTER_NAME = "beacon_node_published_block_total";
   public static final String SYNC_COMMITTEE_SUBNET_SUBSCRIPTION_NAME =
       "beacon_node_subscribe_sync_committee_subnet_total";
-  public static final String SYNC_COMMITTEE_SEND_SIGNATURES_NAME =
-      "beacon_node_send_sync_committee_signatures_total";
+  public static final String SYNC_COMMITTEE_SEND_MESSAGES_NAME =
+      "beacon_node_send_sync_committee_messages_total";
   public static final String SYNC_COMMITTEE_SEND_CONTRIBUTIONS_NAME =
       "beacon_node_send_sync_committee_contributions_total";
   private final ValidatorApiChannel delegate;
@@ -97,7 +97,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   private final Counter sendAttestationRequestCounter;
   private final Counter sendAggregateRequestCounter;
   private final Counter sendBlockRequestCounter;
-  private final Counter sendSyncCommitteeSignaturesRequestCounter;
+  private final Counter sendSyncCommitteeMessagesRequestCounter;
   private final Counter sendContributionAndProofsRequestCounter;
 
   public MetricRecordingValidatorApiChannel(
@@ -179,11 +179,11 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
             TekuMetricCategory.VALIDATOR,
             SYNC_COMMITTEE_SUBNET_SUBSCRIPTION_NAME,
             "Counter recording the number of subscription requests for sync committee subnets sent to the beacon node");
-    sendSyncCommitteeSignaturesRequestCounter =
+    sendSyncCommitteeMessagesRequestCounter =
         metricsSystem.createCounter(
             TekuMetricCategory.VALIDATOR,
-            SYNC_COMMITTEE_SEND_SIGNATURES_NAME,
-            "Counter recording the number of signed blocks sent to the beacon node");
+            SYNC_COMMITTEE_SEND_MESSAGES_NAME,
+            "Counter recording the number of sync committee messages sent to the beacon node");
     sendContributionAndProofsRequestCounter =
         metricsSystem.createCounter(
             TekuMetricCategory.VALIDATOR,
@@ -303,10 +303,10 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<List<SubmitCommitteeSignatureError>> sendSyncCommitteeSignatures(
-      final List<SyncCommitteeSignature> syncCommitteeSignatures) {
-    sendSyncCommitteeSignaturesRequestCounter.inc();
-    return delegate.sendSyncCommitteeSignatures(syncCommitteeSignatures);
+  public SafeFuture<List<SubmitCommitteeMessageError>> sendSyncCommitteeMessages(
+      final List<SyncCommitteeMessage> syncCommitteeMessages) {
+    sendSyncCommitteeMessagesRequestCounter.inc();
+    return delegate.sendSyncCommitteeMessages(syncCommitteeMessages);
   }
 
   @Override

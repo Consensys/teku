@@ -24,15 +24,14 @@ import tech.pegasys.teku.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 
-public class SyncCommitteeSignatureSchema
-    extends ContainerSchema4<
-        SyncCommitteeSignature, SszUInt64, SszBytes32, SszUInt64, SszSignature> {
+public class SyncCommitteeMessageSchema
+    extends ContainerSchema4<SyncCommitteeMessage, SszUInt64, SszBytes32, SszUInt64, SszSignature> {
 
-  public static final SyncCommitteeSignatureSchema INSTANCE = new SyncCommitteeSignatureSchema();
+  public static final SyncCommitteeMessageSchema INSTANCE = new SyncCommitteeMessageSchema();
 
-  private SyncCommitteeSignatureSchema() {
+  private SyncCommitteeMessageSchema() {
     super(
-        "SyncCommitteeSignature",
+        "SyncCommitteeMessage",
         namedSchema("slot", SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema("beacon_block_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema("validator_index", SszPrimitiveSchemas.UINT64_SCHEMA),
@@ -40,16 +39,16 @@ public class SyncCommitteeSignatureSchema
   }
 
   @Override
-  public SyncCommitteeSignature createFromBackingNode(final TreeNode node) {
-    return new SyncCommitteeSignature(this, node);
+  public SyncCommitteeMessage createFromBackingNode(final TreeNode node) {
+    return new SyncCommitteeMessage(this, node);
   }
 
-  public SyncCommitteeSignature create(
+  public SyncCommitteeMessage create(
       final UInt64 slot,
       final Bytes32 beaconBlockRoot,
       final UInt64 validatorIndex,
       final BLSSignature signature) {
-    return new SyncCommitteeSignature(
+    return new SyncCommitteeMessage(
         this,
         SszUInt64.of(slot),
         SszBytes32.of(beaconBlockRoot),
