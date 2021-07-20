@@ -172,8 +172,15 @@ public class SignedContributionAndProofTestBuilder {
     return addParticipant(aggregatorIndex, aggregatorSigner);
   }
 
+  public SignedContributionAndProofTestBuilder removeAllParticipants() {
+    syncSignatures.clear();
+    subcommitteeParticipationIndices.clear();
+    return this;
+  }
+
   public SignedContributionAndProof build() {
-    final BLSSignature aggregateSignature = BLS.aggregate(syncSignatures);
+    final BLSSignature aggregateSignature =
+        syncSignatures.isEmpty() ? BLSSignature.infinity() : BLS.aggregate(syncSignatures);
 
     final SyncCommitteeContribution syncCommitteeContribution =
         syncCommitteeUtil.createSyncCommitteeContribution(
