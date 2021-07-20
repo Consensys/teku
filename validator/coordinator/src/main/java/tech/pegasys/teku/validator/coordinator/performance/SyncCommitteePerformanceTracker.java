@@ -31,22 +31,22 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.ssz.collections.SszBitvector;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 /**
- * Tracks and reports validator performance metrics for production of sync committee signatures.
+ * Tracks and reports validator performance metrics for production of sync committee messages.
  *
  * <p>The tracking is done based on the rewards paid, which may be different to the number of
- * signatures actually produced, signed and published to gossip. This is done so that the percent of
+ * messages actually produced, signed and published to gossip. This is done so that the percent of
  * available rewards earned can be accurately calculated from these reports.
  *
  * <p>The difference comes from the fact that validators may be appear multiple times in the same
  * sync subcommittee, including multiple times in the same subcommittee. A validator in the sync
- * committee will always produce one signature per slot. The beacon node will publish that same
- * signature to each subcommittee the validator is assigned to. The {@link SyncAggregate} actually
- * included in blocks includes that same signature multiple times - once for each time the validator
+ * committee will always produce one message per slot. The beacon node will publish that same
+ * message to each subcommittee the validator is assigned to. The {@link SyncAggregate} actually
+ * included in blocks includes that same message multiple times - once for each time the validator
  * is in the sync committee.
  */
 public class SyncCommitteePerformanceTracker {
@@ -55,8 +55,8 @@ public class SyncCommitteePerformanceTracker {
   private final NavigableMap<UInt64, Map<UInt64, Set<Integer>>>
       expectedSyncCommitteeParticipantsByPeriodEndEpoch = new ConcurrentSkipListMap<>();
 
-  // Slot to block root to set of indices of validators that produced a signature for that slot+root
-  private final NavigableMap<UInt64, Map<Bytes32, Set<UInt64>>> signatureProducersBySlot =
+  // Slot to block root to set of indices of validators that produced a message for that slot+root
+  private final NavigableMap<UInt64, Map<Bytes32, Set<UInt64>>> messageProducersBySlot =
       new ConcurrentSkipListMap<>();
 
   private final Spec spec;
@@ -86,27 +86,27 @@ public class SyncCommitteePerformanceTracker {
   }
 
   /**
-   * Gets the set of validators that produces signatures by slot, for inclusion in the specified
+   * Gets the set of validators that produces messages by slot, for inclusion in the specified
    * epoch.
    *
-   * <p>Note that validators produce sync committee signatures from the slot before the epoch starts
+   * <p>Note that validators produce sync committee messages from the slot before the epoch starts
    * up to and not including the last slot of the epoch. See {@link
    * tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil#getEpochForDutiesAtSlot(UInt64)}
    *
    * @param epoch the epoch to get producing validators for.
-   * @return map of slot to set of validators that produced a signature.
+   * @return map of slot to set of validators that produced a message.
    */
   private NavigableMap<UInt64, Map<Bytes32, Set<UInt64>>> getProducingValidatorsForEpoch(
       final UInt64 epoch) {
     final UInt64 lastSlotOfEpoch = getLastSlotOfEpoch(epoch);
-    return signatureProducersBySlot.subMap(
+    return messageProducersBySlot.subMap(
         spec.computeStartSlotAtEpoch(epoch).minusMinZero(1), true, lastSlotOfEpoch, false);
   }
 
   private void clearReportedData(final UInt64 epoch) {
     // Clear data that has been reported on.
     final UInt64 lastSlotOfEpoch = getLastSlotOfEpoch(epoch);
-    signatureProducersBySlot.headMap(lastSlotOfEpoch, false).clear();
+    messageProducersBySlot.headMap(lastSlotOfEpoch, false).clear();
     expectedSyncCommitteeParticipantsByPeriodEndEpoch.headMap(epoch, true).clear();
   }
 
@@ -115,13 +115,13 @@ public class SyncCommitteePerformanceTracker {
       final Map<UInt64, Set<Integer>> assignedSubcommitteeIndicesByValidatorIndex,
       final Map<UInt64, Map<Bytes32, Set<UInt64>>> producingValidatorsBySlotAndBlock) {
 
-    final int numberOfExpectedSignatures =
+    final int numberOfExpectedMessages =
         assignedSubcommitteeIndicesByValidatorIndex.values().stream().mapToInt(Set::size).sum()
             * spec.atEpoch(epoch).getSlotsPerEpoch();
 
-    int producedSignatureCount = 0;
-    int correctSignatureCount = 0;
-    final List<SafeFuture<Integer>> includedSignatureCountFutures = new ArrayList<>();
+    int producedMessageCount = 0;
+    int correctMessageCount = 0;
+    final List<SafeFuture<Integer>> includedMessageCountFutures = new ArrayList<>();
     for (Map.Entry<UInt64, Map<Bytes32, Set<UInt64>>> entry :
         producingValidatorsBySlotAndBlock.entrySet()) {
       final UInt64 slot = entry.getKey();
@@ -142,25 +142,25 @@ public class SyncCommitteePerformanceTracker {
       for (Entry<Bytes32, Set<UInt64>> blockEntry : producingValidatorsByBlock.entrySet()) {
         final Bytes32 blockRoot = blockEntry.getKey();
         final Set<UInt64> producingValidators = blockEntry.getValue();
-        final int producedSignatureCountForBlock =
-            countProducedSignatures(
+        final int producedMessageCountForBlock =
+            countProducedMessages(
                 assignedSubcommitteeIndicesByValidatorIndex, slot, producingValidators);
 
         if (correctBlockRoot.isPresent() && correctBlockRoot.get().equals(blockRoot)) {
-          correctSignatureCount += producedSignatureCountForBlock;
+          correctMessageCount += producedMessageCountForBlock;
         }
 
-        producedSignatureCount += producedSignatureCountForBlock;
+        producedMessageCount += producedMessageCountForBlock;
 
         final UInt64 inclusionSlot = slot.plus(1);
-        includedSignatureCountFutures.add(
+        includedMessageCountFutures.add(
             getSyncAggregateAtSlot(inclusionSlot)
                 .thenApply(
                     maybeSyncAggregate ->
                         maybeSyncAggregate
                             .map(
                                 syncAggregate ->
-                                    countIncludedSignatures(
+                                    countIncludedMessages(
                                         assignedSubcommitteeIndicesByValidatorIndex,
                                         slot,
                                         producingValidators,
@@ -169,65 +169,64 @@ public class SyncCommitteePerformanceTracker {
       }
     }
 
-    final int numberOfProducedSignatures = producedSignatureCount;
-    final int numberOfCorrectSignatures = correctSignatureCount;
-    return SafeFuture.collectAll(includedSignatureCountFutures.stream())
+    final int numberOfProducedMessages = producedMessageCount;
+    final int numberOfCorrectMessages = correctMessageCount;
+    return SafeFuture.collectAll(includedMessageCountFutures.stream())
+        .thenApply(includedMessageCounts -> includedMessageCounts.stream().mapToInt(a -> a).sum())
         .thenApply(
-            includedSignatureCounts -> includedSignatureCounts.stream().mapToInt(a -> a).sum())
-        .thenApply(
-            numberOfIncludedSignatures ->
+            numberOfIncludedMessages ->
                 new SyncCommitteePerformance(
-                    numberOfExpectedSignatures,
-                    numberOfProducedSignatures,
-                    numberOfCorrectSignatures,
-                    numberOfIncludedSignatures));
+                    numberOfExpectedMessages,
+                    numberOfProducedMessages,
+                    numberOfCorrectMessages,
+                    numberOfIncludedMessages));
   }
 
-  private synchronized int countIncludedSignatures(
+  private synchronized int countIncludedMessages(
       final Map<UInt64, Set<Integer>> assignedSubcommitteeIndicesByValidatorIndex,
       final UInt64 slot,
       final Set<UInt64> producingValidators,
       final SyncAggregate syncAggregate) {
 
     final SszBitvector syncCommitteeBits = syncAggregate.getSyncCommitteeBits();
-    int numberOfIncludedSignatures = 0;
+    int numberOfIncludedMessages = 0;
     for (UInt64 producingValidatorIndex : producingValidators) {
       final Set<Integer> committeeIndices =
           assignedSubcommitteeIndicesByValidatorIndex.get(producingValidatorIndex);
       if (committeeIndices == null) {
         LOG.debug(
-            "Validator {} produced a SyncCommitteeSignature in slot {} but wasn't expected to",
+            "Validator {} produced a SyncCommitteeMessage in slot {} but wasn't expected to",
             producingValidatorIndex,
             slot);
         continue;
       }
       for (Integer committeeIndex : committeeIndices) {
         if (syncCommitteeBits.getBit(committeeIndex)) {
-          numberOfIncludedSignatures++;
+          numberOfIncludedMessages++;
         }
       }
     }
-    return numberOfIncludedSignatures;
+    return numberOfIncludedMessages;
   }
 
-  private int countProducedSignatures(
+  private int countProducedMessages(
       final Map<UInt64, Set<Integer>> assignedSubcommitteeIndicesByValidatorIndex,
       final UInt64 slot,
       final Set<UInt64> producingValidators) {
-    int numberOfProducedSignatures = 0;
+    int numberOfProducedMessages = 0;
     for (UInt64 producingValidatorIndex : producingValidators) {
       final Set<Integer> committeeIndices =
           assignedSubcommitteeIndicesByValidatorIndex.get(producingValidatorIndex);
       if (committeeIndices == null) {
         LOG.debug(
-            "Validator {} produced a SyncCommitteeSignature in slot {} but wasn't expected to",
+            "Validator {} produced a SyncCommitteeMessage in slot {} but wasn't expected to",
             producingValidatorIndex,
             slot);
         continue;
       }
-      numberOfProducedSignatures += committeeIndices.size();
+      numberOfProducedMessages += committeeIndices.size();
     }
-    return numberOfProducedSignatures;
+    return numberOfProducedMessages;
   }
 
   private SafeFuture<Optional<SyncAggregate>> getSyncAggregateAtSlot(final UInt64 slot) {
@@ -252,13 +251,13 @@ public class SyncCommitteePerformanceTracker {
                     .put(UInt64.valueOf(validatorIndex), syncCommitteeIndices));
   }
 
-  public void saveProducedSyncCommitteeSignature(final SyncCommitteeSignature signature) {
-    signatureProducersBySlot
-        .computeIfAbsent(signature.getSlot(), __ -> new ConcurrentHashMap<>())
+  public void saveProducedSyncCommitteeMessage(final SyncCommitteeMessage message) {
+    messageProducersBySlot
+        .computeIfAbsent(message.getSlot(), __ -> new ConcurrentHashMap<>())
         .computeIfAbsent(
-            signature.getBeaconBlockRoot(),
+            message.getBeaconBlockRoot(),
             __ -> Collections.newSetFromMap(new ConcurrentHashMap<>()))
-        .add(signature.getValidatorIndex());
+        .add(message.getValidatorIndex());
   }
 
   private Optional<UInt64> getPeriodEndEpoch(final UInt64 epoch) {

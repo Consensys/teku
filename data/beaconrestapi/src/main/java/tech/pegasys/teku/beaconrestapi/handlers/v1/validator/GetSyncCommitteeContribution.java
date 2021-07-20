@@ -80,7 +80,7 @@ public class GetSyncCommitteeContribution extends AbstractHandler {
             required = true)
       },
       description =
-          "Returns a `SyncCommitteeContribution` that is the aggregate of `SyncCommitteeSignature` "
+          "Returns a `SyncCommitteeContribution` that is the aggregate of `SyncCommitteeMessage` "
               + "values known to this node matching the specified slot, subcommittee index and beacon block root.",
       responses = {
         @OpenApiResponse(

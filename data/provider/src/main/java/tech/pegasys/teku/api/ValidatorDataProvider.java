@@ -40,7 +40,7 @@ import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
 import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
 import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
-import tech.pegasys.teku.api.schema.altair.SyncCommitteeSignature;
+import tech.pegasys.teku.api.schema.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -58,7 +58,7 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuty;
-import tech.pegasys.teku.validator.api.SubmitCommitteeSignaturesResult;
+import tech.pegasys.teku.validator.api.SubmitCommitteeMessagesResult;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
@@ -185,14 +185,14 @@ public class ValidatorDataProvider {
             });
   }
 
-  public SafeFuture<SubmitCommitteeSignaturesResult> submitCommitteeSignatures(
-      final List<SyncCommitteeSignature> signatures) {
+  public SafeFuture<SubmitCommitteeMessagesResult> submitCommitteeSignatures(
+      final List<SyncCommitteeMessage> messages) {
     return validatorApiChannel
-        .sendSyncCommitteeSignatures(
-            signatures.stream()
-                .flatMap(signature -> signature.asInternalCommitteeSignature(spec).stream())
+        .sendSyncCommitteeMessages(
+            messages.stream()
+                .flatMap(message -> message.asInternalCommitteeSignature(spec).stream())
                 .collect(Collectors.toList()))
-        .thenApply(SubmitCommitteeSignaturesResult::new);
+        .thenApply(SubmitCommitteeMessagesResult::new);
   }
 
   public SafeFuture<Optional<Attestation>> createAggregate(

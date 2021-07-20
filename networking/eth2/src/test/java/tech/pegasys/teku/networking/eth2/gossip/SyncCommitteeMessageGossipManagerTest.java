@@ -30,14 +30,14 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubnetSubscriptions;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeSignature;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeStateUtils;
 
-class SyncCommitteeSignatureGossipManagerTest {
+class SyncCommitteeMessageGossipManagerTest {
   private final MetricsSystem metricsSystem = new NoOpMetricsSystem();
   private final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createMinimalAltair());
@@ -51,11 +51,11 @@ class SyncCommitteeSignatureGossipManagerTest {
       mock(SyncCommitteeSubnetSubscriptions.class);
 
   @SuppressWarnings("unchecked")
-  private final GossipPublisher<ValidateableSyncCommitteeSignature> publisher =
+  private final GossipPublisher<ValidateableSyncCommitteeMessage> publisher =
       mock(GossipPublisher.class);
 
-  private final SyncCommitteeSignatureGossipManager gossipManager =
-      new SyncCommitteeSignatureGossipManager(
+  private final SyncCommitteeMessageGossipManager gossipManager =
+      new SyncCommitteeMessageGossipManager(
           metricsSystem, spec, syncCommitteeStateUtils, subnetSubscriptions, publisher);
 
   @BeforeEach
@@ -68,38 +68,38 @@ class SyncCommitteeSignatureGossipManagerTest {
   @Test
   void shouldPublishToReceivedSubnetWhenPresent() {
     final int subnetId = 3;
-    final ValidateableSyncCommitteeSignature signature =
-        ValidateableSyncCommitteeSignature.fromNetwork(
-            dataStructureUtil.randomSyncCommitteeSignature(), subnetId);
+    final ValidateableSyncCommitteeMessage message =
+        ValidateableSyncCommitteeMessage.fromNetwork(
+            dataStructureUtil.randomSyncCommitteeMessage(), subnetId);
 
-    gossipManager.publish(signature);
+    gossipManager.publish(message);
 
-    verify(subnetSubscriptions).gossip(signature.getSignature(), subnetId);
+    verify(subnetSubscriptions).gossip(message.getMessage(), subnetId);
   }
 
   @Test
   void shouldPublishToAllApplicableSubnetsWhenNoReceivedSubnetsPresent() {
-    final ValidateableSyncCommitteeSignature signature =
-        ValidateableSyncCommitteeSignature.fromValidator(
-            dataStructureUtil.randomSyncCommitteeSignature());
+    final ValidateableSyncCommitteeMessage message =
+        ValidateableSyncCommitteeMessage.fromValidator(
+            dataStructureUtil.randomSyncCommitteeMessage());
 
-    withApplicableSubnets(signature, 1, 3, 5);
-    gossipManager.publish(signature);
+    withApplicableSubnets(message, 1, 3, 5);
+    gossipManager.publish(message);
 
-    verify(subnetSubscriptions).gossip(signature.getSignature(), 1);
-    verify(subnetSubscriptions).gossip(signature.getSignature(), 3);
-    verify(subnetSubscriptions).gossip(signature.getSignature(), 5);
+    verify(subnetSubscriptions).gossip(message.getMessage(), 1);
+    verify(subnetSubscriptions).gossip(message.getMessage(), 3);
+    verify(subnetSubscriptions).gossip(message.getMessage(), 5);
   }
 
   @Test
   void shouldCalculateAndPublishToAllApplicableSubnetsWhenAlreadyNotCached() {
-    final ValidateableSyncCommitteeSignature signature =
-        ValidateableSyncCommitteeSignature.fromValidator(
-            dataStructureUtil.randomSyncCommitteeSignature());
+    final ValidateableSyncCommitteeMessage message =
+        ValidateableSyncCommitteeMessage.fromValidator(
+            dataStructureUtil.randomSyncCommitteeMessage());
 
     final UInt64 dutyEpoch = UInt64.valueOf(333);
     final BeaconStateAltair state = dataStructureUtil.stateBuilderAltair().build();
-    when(syncCommitteeStateUtils.getStateForSyncCommittee(signature.getSlot()))
+    when(syncCommitteeStateUtils.getStateForSyncCommittee(message.getSlot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
     when(syncCommitteeUtil.getEpochForDutiesAtSlot(any())).thenReturn(dutyEpoch);
     when(syncCommitteeUtil.getSubcommitteeAssignments(any(), any(), any()))
@@ -110,20 +110,20 @@ class SyncCommitteeSignatureGossipManagerTest {
                 .addAssignment(5, 1)
                 .build());
 
-    gossipManager.publish(signature);
+    gossipManager.publish(message);
 
     verify(syncCommitteeUtil)
-        .getSubcommitteeAssignments(state, dutyEpoch, signature.getSignature().getValidatorIndex());
-    verify(subnetSubscriptions).gossip(signature.getSignature(), 1);
-    verify(subnetSubscriptions).gossip(signature.getSignature(), 3);
-    verify(subnetSubscriptions).gossip(signature.getSignature(), 5);
+        .getSubcommitteeAssignments(state, dutyEpoch, message.getMessage().getValidatorIndex());
+    verify(subnetSubscriptions).gossip(message.getMessage(), 1);
+    verify(subnetSubscriptions).gossip(message.getMessage(), 3);
+    verify(subnetSubscriptions).gossip(message.getMessage(), 5);
   }
 
   private void withApplicableSubnets(
-      final ValidateableSyncCommitteeSignature signature, final int... subnetIds) {
+      final ValidateableSyncCommitteeMessage message, final int... subnetIds) {
     final SyncSubcommitteeAssignments.Builder assignmentBuilder =
         SyncSubcommitteeAssignments.builder();
     IntStream.of(subnetIds).forEach(subnetId -> assignmentBuilder.addAssignment(subnetId, 1));
-    signature.setSubcommitteeAssignments(assignmentBuilder.build());
+    message.setSubcommitteeAssignments(assignmentBuilder.build());
   }
 }

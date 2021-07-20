@@ -25,7 +25,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.Contribu
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProofSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionDataSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContributionSchema;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignatureSchema;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessageSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 
 public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
@@ -102,8 +102,8 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
     return signedContributionAndProofSchema;
   }
 
-  public SyncCommitteeSignatureSchema getSyncCommitteeSignatureSchema() {
-    return SyncCommitteeSignatureSchema.INSTANCE;
+  public SyncCommitteeMessageSchema getSyncCommitteeMessageSchema() {
+    return SyncCommitteeMessageSchema.INSTANCE;
   }
 
   public SyncAggregatorSelectionDataSchema getSyncAggregatorSelectionDataSchema() {

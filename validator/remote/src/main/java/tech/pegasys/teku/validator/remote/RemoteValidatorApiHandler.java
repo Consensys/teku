@@ -53,7 +53,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.AttesterDuty;
@@ -61,7 +61,7 @@ import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
-import tech.pegasys.teku.validator.api.SubmitCommitteeSignatureError;
+import tech.pegasys.teku.validator.api.SubmitCommitteeMessageError;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
@@ -274,23 +274,23 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<List<SubmitCommitteeSignatureError>> sendSyncCommitteeSignatures(
-      final List<SyncCommitteeSignature> syncCommitteeSignatures) {
+  public SafeFuture<List<SubmitCommitteeMessageError>> sendSyncCommitteeMessages(
+      final List<SyncCommitteeMessage> syncCommitteeMessages) {
     return sendRequest(
         () ->
             apiClient
-                .sendSyncCommitteeSignatures(
-                    syncCommitteeSignatures.stream()
+                .sendSyncCommitteeMessages(
+                    syncCommitteeMessages.stream()
                         .map(
                             signature ->
-                                new tech.pegasys.teku.api.schema.altair.SyncCommitteeSignature(
+                                new tech.pegasys.teku.api.schema.altair.SyncCommitteeMessage(
                                     signature.getSlot(),
                                     signature.getBeaconBlockRoot(),
                                     signature.getValidatorIndex(),
                                     new tech.pegasys.teku.api.schema.BLSSignature(
                                         signature.getSignature())))
                         .collect(Collectors.toList()))
-                .map(this::responseToSyncCommitteeSignatures)
+                .map(this::responseToSyncCommitteeMessages)
                 .orElse(emptyList()));
   }
 
@@ -331,10 +331,10 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
         new tech.pegasys.teku.api.schema.BLSSignature(contribution.getSignature()));
   }
 
-  private List<SubmitCommitteeSignatureError> responseToSyncCommitteeSignatures(
+  private List<SubmitCommitteeMessageError> responseToSyncCommitteeMessages(
       final PostSyncCommitteeFailureResponse postSyncCommitteeFailureResponse) {
     return postSyncCommitteeFailureResponse.failures.stream()
-        .map(i -> new SubmitCommitteeSignatureError(i.index, i.message))
+        .map(i -> new SubmitCommitteeMessageError(i.index, i.message))
         .collect(Collectors.toList());
   }
 

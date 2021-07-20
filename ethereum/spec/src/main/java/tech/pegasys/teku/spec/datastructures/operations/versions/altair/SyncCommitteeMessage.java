@@ -22,15 +22,15 @@ import tech.pegasys.teku.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 
-public class SyncCommitteeSignature
-    extends Container4<SyncCommitteeSignature, SszUInt64, SszBytes32, SszUInt64, SszSignature> {
+public class SyncCommitteeMessage
+    extends Container4<SyncCommitteeMessage, SszUInt64, SszBytes32, SszUInt64, SszSignature> {
 
-  SyncCommitteeSignature(final SyncCommitteeSignatureSchema schema, final TreeNode backingNode) {
+  SyncCommitteeMessage(final SyncCommitteeMessageSchema schema, final TreeNode backingNode) {
     super(schema, backingNode);
   }
 
-  public SyncCommitteeSignature(
-      final SyncCommitteeSignatureSchema schema,
+  public SyncCommitteeMessage(
+      final SyncCommitteeMessageSchema schema,
       final SszUInt64 slot,
       final SszBytes32 beaconBlockRoot,
       final SszUInt64 validatorIndex,
@@ -55,7 +55,7 @@ public class SyncCommitteeSignature
   }
 
   @Override
-  public SyncCommitteeSignatureSchema getSchema() {
-    return (SyncCommitteeSignatureSchema) super.getSchema();
+  public SyncCommitteeMessageSchema getSchema() {
+    return (SyncCommitteeMessageSchema) super.getSchema();
   }
 }

@@ -64,7 +64,7 @@ public class NoOpSigner implements Signer {
   }
 
   @Override
-  public SafeFuture<BLSSignature> signSyncCommitteeSignature(
+  public SafeFuture<BLSSignature> signSyncCommitteeMessage(
       final UInt64 slot, final Bytes32 beaconBlockRoot, final ForkInfo forkInfo) {
     return new SafeFuture<>();
   }
