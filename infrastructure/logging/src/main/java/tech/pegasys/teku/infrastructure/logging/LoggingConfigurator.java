@@ -35,6 +35,7 @@ public class LoggingConfigurator {
   static final String EVENT_LOGGER_NAME = "teku-event-log";
   static final String STATUS_LOGGER_NAME = "teku-status-log";
   static final String VALIDATOR_LOGGER_NAME = "teku-validator-log";
+  static final String P2P_LOGGER_NAME = "teku-p2p-log";
 
   private static final String LOG4J_CONFIG_FILE_KEY = "LOG4J_CONFIGURATION_FILE";
   private static final String LOG4J_LEGACY_CONFIG_FILE_KEY = "log4j.configurationFile";
@@ -47,6 +48,7 @@ public class LoggingConfigurator {
   private static LoggingDestination DESTINATION;
   private static boolean INCLUDE_EVENTS;
   private static boolean INCLUDE_VALIDATOR_DUTIES;
+  private static boolean INCLUDE_P2P_WARNINGS;
   private static String FILE;
   private static String FILE_PATTERN;
   private static Level ROOT_LOG_LEVEL = Level.INFO;
@@ -79,6 +81,7 @@ public class LoggingConfigurator {
     DESTINATION = configuration.getDestination();
     INCLUDE_EVENTS = configuration.isIncludeEventsEnabled();
     INCLUDE_VALIDATOR_DUTIES = configuration.isIncludeValidatorDutiesEnabled();
+    INCLUDE_P2P_WARNINGS = configuration.isIncludeP2pWarningsEnabled();
     FILE = configuration.getLogFile();
     FILE_PATTERN = configuration.getLogFileNamePattern();
 
@@ -115,6 +118,7 @@ public class LoggingConfigurator {
         setUpStatusLogger(consoleAppender);
         setUpEventsLogger(consoleAppender);
         setUpValidatorLogger(consoleAppender);
+        setUpP2pLogger(consoleAppender);
 
         addAppenderToRootLogger(configuration, consoleAppender);
         break;
@@ -124,6 +128,7 @@ public class LoggingConfigurator {
         setUpStatusLogger(fileAppender);
         setUpEventsLogger(fileAppender);
         setUpValidatorLogger(fileAppender);
+        setUpP2pLogger(fileAppender);
 
         addAppenderToRootLogger(configuration, fileAppender);
         break;
@@ -137,9 +142,11 @@ public class LoggingConfigurator {
         final LoggerConfig eventsLogger = setUpEventsLogger(consoleAppender);
         final LoggerConfig statusLogger = setUpStatusLogger(consoleAppender);
         final LoggerConfig validatorLogger = setUpValidatorLogger(consoleAppender);
+        final LoggerConfig p2pLogger = setUpP2pLogger(consoleAppender);
         configuration.addLogger(eventsLogger.getName(), eventsLogger);
         configuration.addLogger(statusLogger.getName(), statusLogger);
         configuration.addLogger(validatorLogger.getName(), validatorLogger);
+        configuration.addLogger(p2pLogger.getName(), p2pLogger);
 
         fileAppender = fileAppender(configuration);
 
@@ -234,6 +241,17 @@ public class LoggingConfigurator {
             ? ROOT_LOG_LEVEL
             : Level.ERROR;
     final LoggerConfig logger = new LoggerConfig(VALIDATOR_LOGGER_NAME, validatorLogLevel, true);
+    logger.addAppender(appender, ROOT_LOG_LEVEL, null);
+    return logger;
+  }
+
+  private static LoggerConfig setUpP2pLogger(final Appender appender) {
+    // Don't disable p2p error logs unless the root log level disables error.
+    final Level p2pLogLevel =
+        INCLUDE_P2P_WARNINGS || ROOT_LOG_LEVEL.isMoreSpecificThan(Level.ERROR)
+            ? ROOT_LOG_LEVEL
+            : Level.ERROR;
+    final LoggerConfig logger = new LoggerConfig(P2P_LOGGER_NAME, p2pLogLevel, true);
     logger.addAppender(appender, ROOT_LOG_LEVEL, null);
     return logger;
   }

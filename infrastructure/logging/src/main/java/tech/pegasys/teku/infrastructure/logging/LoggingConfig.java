@@ -18,6 +18,7 @@ public class LoggingConfig {
   private final boolean colorEnabled;
   private final boolean includeEventsEnabled;
   private final boolean includeValidatorDutiesEnabled;
+  private final boolean includeP2pWarningsEnabled;
   private final LoggingDestination destination;
   private final String logFile;
   private final String logFileNamePattern;
@@ -26,12 +27,14 @@ public class LoggingConfig {
       final boolean colorEnabled,
       final boolean includeEventsEnabled,
       final boolean includeValidatorDutiesEnabled,
+      final boolean includeP2pWarningsEnabled,
       final LoggingDestination destination,
       final String logFile,
       final String logFileNamePattern) {
     this.colorEnabled = colorEnabled;
     this.includeEventsEnabled = includeEventsEnabled;
     this.includeValidatorDutiesEnabled = includeValidatorDutiesEnabled;
+    this.includeP2pWarningsEnabled = includeP2pWarningsEnabled;
     this.destination = destination;
     this.logFile = logFile;
     this.logFileNamePattern = logFileNamePattern;
@@ -53,6 +56,10 @@ public class LoggingConfig {
     return includeValidatorDutiesEnabled;
   }
 
+  public boolean isIncludeP2pWarningsEnabled() {
+    return includeP2pWarningsEnabled;
+  }
+
   public LoggingDestination getDestination() {
     return destination;
   }
@@ -70,6 +77,7 @@ public class LoggingConfig {
     private boolean colorEnabled;
     private boolean includeEventsEnabled;
     private boolean includeValidatorDutiesEnabled;
+    private boolean includeP2pWarningsEnabled;
     private LoggingDestination destination;
     private String logFile;
     private String logFileNamePattern;
@@ -89,6 +97,11 @@ public class LoggingConfig {
     public LoggingConfigBuilder includeValidatorDutiesEnabled(
         boolean includeValidatorDutiesEnabled) {
       this.includeValidatorDutiesEnabled = includeValidatorDutiesEnabled;
+      return this;
+    }
+
+    public LoggingConfigBuilder includeP2pWarningsEnabled(final boolean includeP2pWarningsEnabled) {
+      this.includeP2pWarningsEnabled = includeP2pWarningsEnabled;
       return this;
     }
 
@@ -112,6 +125,7 @@ public class LoggingConfig {
           colorEnabled,
           includeEventsEnabled,
           includeValidatorDutiesEnabled,
+          includeP2pWarningsEnabled,
           destination,
           logFile,
           logFileNamePattern);

@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers;
 
+import static tech.pegasys.teku.infrastructure.logging.P2PLogger.P2P_LOG;
+
 import io.libp2p.core.pubsub.ValidationResult;
 import java.util.concurrent.RejectedExecutionException;
 import org.apache.logging.log4j.LogManager;
@@ -95,18 +97,25 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
                             .process(deserialized)
                             .thenApply(
                                 internalValidation -> {
-                                  processMessage(internalValidation);
+                                  processMessage(internalValidation, message);
                                   return GossipSubValidationUtil.fromInternalValidationResult(
                                       internalValidation);
                                 })))
-        .exceptionally(this::handleMessageProcessingError);
+        .exceptionally(error -> handleMessageProcessingError(message, error));
   }
 
-  private void processMessage(final InternalValidationResult internalValidationResult) {
+  private void processMessage(
+      final InternalValidationResult internalValidationResult,
+      final PreparedGossipMessage message) {
     switch (internalValidationResult.code()) {
       case REJECT:
+        P2P_LOG.onGossipRejected(
+            getTopic(),
+            message.getDecodedMessage().getDecodedMessage().orElse(Bytes.EMPTY),
+            internalValidationResult.getDescription());
+        break;
       case IGNORE:
-        LOG.trace("Received invalid message for topic: {}", this::getTopic);
+        LOG.trace("Ignoring message for topic: {}", this::getTopic);
         break;
       case SAVE_FOR_FUTURE:
         LOG.trace("Deferring message for topic: {}", this::getTopic);
@@ -127,10 +136,11 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
     return messageType;
   }
 
-  protected ValidationResult handleMessageProcessingError(Throwable err) {
+  protected ValidationResult handleMessageProcessingError(
+      final PreparedGossipMessage message, final Throwable err) {
     final ValidationResult response;
     if (ExceptionUtil.getCause(err, DecodingException.class).isPresent()) {
-      LOG.debug("Received malformed gossip message on {}", getTopic());
+      P2P_LOG.onGossipMessageDecodingError(getTopic(), message.getOriginalMessage(), err);
       response = ValidationResult.Invalid;
     } else if (ExceptionUtil.getCause(err, RejectedExecutionException.class).isPresent()) {
       LOG.warn(
