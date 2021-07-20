@@ -132,11 +132,11 @@ public class ExternalSignerAltairIntegrationTest {
     final SigningRequestBody signingRequestBody =
         new SigningRequestBody(
             expectedSigningRoot,
-            SignType.SYNC_COMMITTEE_SIGNATURE,
+            SignType.SYNC_COMMITTEE_MESSAGE,
             Map.of(
                 "fork_info",
                 createForkInfo(forkInfo),
-                "sync_committee_signature",
+                "sync_committee_message",
                 Map.of("beacon_block_root", beaconBlockRoot, "slot", slot)));
 
     verifySignRequest(client, KEYPAIR.getPublicKey().toString(), signingRequestBody);
