@@ -17,6 +17,8 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class P2PLogger {
   public static final P2PLogger P2P_LOG = new P2PLogger(LoggingConfigurator.P2P_LOGGER_NAME);
@@ -44,5 +46,20 @@ public class P2PLogger {
         topic,
         description.orElse("failed validation"),
         decodedMessage);
+  }
+
+  public void onInvalidBlock(
+      final UInt64 slot,
+      final Bytes32 blockRoot,
+      final Bytes blockSsz,
+      final String failureReason,
+      final Optional<Throwable> failureCause) {
+    log.warn(
+        "Rejecting invalid block at slot {} with root {} because {}. Full block data: {}",
+        slot,
+        blockRoot,
+        failureReason,
+        blockSsz,
+        failureCause.orElse(null));
   }
 }
