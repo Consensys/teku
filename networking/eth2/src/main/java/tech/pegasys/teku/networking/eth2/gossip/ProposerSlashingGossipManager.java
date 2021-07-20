@@ -20,7 +20,6 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
-import tech.pegasys.teku.ssz.schema.SszSchema;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class ProposerSlashingGossipManager extends AbstractGossipManager<ProposerSlashing> {
@@ -41,11 +40,7 @@ public class ProposerSlashingGossipManager extends AbstractGossipManager<Propose
         gossipEncoding,
         forkInfo,
         processor,
-        publisher);
-  }
-
-  @Override
-  protected SszSchema<ProposerSlashing> getGossipType() {
-    return ProposerSlashing.SSZ_SCHEMA;
+        publisher,
+        ProposerSlashing.SSZ_SCHEMA);
   }
 }
