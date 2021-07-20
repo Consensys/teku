@@ -21,8 +21,8 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopics;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeSignature;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -31,7 +31,7 @@ public class SyncCommitteeSubnetSubscriptions extends CommitteeSubnetSubscriptio
 
   private final SchemaDefinitionsAltair schemaDefinitions;
   private final AsyncRunner asyncRunner;
-  private final OperationProcessor<ValidateableSyncCommitteeSignature> processor;
+  private final OperationProcessor<ValidateableSyncCommitteeMessage> processor;
   private final ForkInfo forkInfo;
 
   public SyncCommitteeSubnetSubscriptions(
@@ -40,7 +40,7 @@ public class SyncCommitteeSubnetSubscriptions extends CommitteeSubnetSubscriptio
       final GossipEncoding gossipEncoding,
       final SchemaDefinitionsAltair schemaDefinitions,
       final AsyncRunner asyncRunner,
-      final OperationProcessor<ValidateableSyncCommitteeSignature> processor,
+      final OperationProcessor<ValidateableSyncCommitteeMessage> processor,
       final ForkInfo forkInfo) {
     super(recentChainData, gossipNetwork, gossipEncoding);
     this.schemaDefinitions = schemaDefinitions;
@@ -49,18 +49,18 @@ public class SyncCommitteeSubnetSubscriptions extends CommitteeSubnetSubscriptio
     this.forkInfo = forkInfo;
   }
 
-  public SafeFuture<?> gossip(final SyncCommitteeSignature signature, final int subnetId) {
+  public SafeFuture<?> gossip(final SyncCommitteeMessage message, final int subnetId) {
     return gossipNetwork.gossip(
         GossipTopics.getSyncCommitteeSubnetTopic(
             forkInfo.getForkDigest(spec), subnetId, gossipEncoding),
-        gossipEncoding.encode(signature));
+        gossipEncoding.encode(message));
   }
 
   @Override
   protected Eth2TopicHandler<?> createTopicHandler(final int subnetId) {
-    final OperationProcessor<SyncCommitteeSignature> convertingProcessor =
+    final OperationProcessor<SyncCommitteeMessage> convertingProcessor =
         message ->
-            processor.process(ValidateableSyncCommitteeSignature.fromNetwork(message, subnetId));
+            processor.process(ValidateableSyncCommitteeMessage.fromNetwork(message, subnetId));
     return new Eth2TopicHandler<>(
         recentChainData,
         asyncRunner,
@@ -68,6 +68,6 @@ public class SyncCommitteeSubnetSubscriptions extends CommitteeSubnetSubscriptio
         gossipEncoding,
         forkInfo.getForkDigest(spec),
         GossipTopicName.getSyncCommitteeSubnetTopicName(subnetId),
-        schemaDefinitions.getSyncCommitteeSignatureSchema());
+        schemaDefinitions.getSyncCommitteeMessageSchema());
   }
 }

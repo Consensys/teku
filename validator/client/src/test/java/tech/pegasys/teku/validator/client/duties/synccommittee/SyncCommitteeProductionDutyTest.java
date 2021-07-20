@@ -38,11 +38,11 @@ import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.validator.api.SubmitCommitteeSignatureError;
+import tech.pegasys.teku.validator.api.SubmitCommitteeMessageError;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
@@ -50,7 +50,7 @@ import tech.pegasys.teku.validator.client.duties.DutyResult;
 
 class SyncCommitteeProductionDutyTest {
 
-  private static final String SIGNATURE_TYPE = "sync committee signature";
+  private static final String MESSAGE_TYPE = "sync committee message";
   private final Spec spec = TestSpecFactory.createMinimalAltair();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
@@ -64,37 +64,34 @@ class SyncCommitteeProductionDutyTest {
   @BeforeEach
   void setUp() {
     when(forkProvider.getForkInfo(any())).thenReturn(SafeFuture.completedFuture(forkInfo));
-    when(validatorApiChannel.sendSyncCommitteeSignatures(any()))
+    when(validatorApiChannel.sendSyncCommitteeMessages(any()))
         .thenReturn(SafeFuture.completedFuture(emptyList()));
   }
 
   @Test
   void shouldReturnNoOpWhenNoValidatorsAssigned() {
     final SyncCommitteeProductionDuty duties = createDuty();
-    assertThat(duties.produceSignatures(UInt64.ONE, blockRoot))
+    assertThat(duties.produceMessages(UInt64.ONE, blockRoot))
         .isCompletedWithValue(DutyResult.NO_OP);
     verifyNoInteractions(validatorApiChannel);
   }
 
   @Test
-  void shouldFailToProduceSignaturesWhenForkProviderFails() {
+  void shouldFailToProduceMessagesWhenForkProviderFails() {
     final SyncCommitteeProductionDuty duty = createDuty(committeeAssignment(validator, 55, 1));
     final UInt64 slot = UInt64.valueOf(25);
     final Exception exception = new RuntimeException("Oh dang");
     when(forkProvider.getForkInfo(any())).thenReturn(SafeFuture.failedFuture(exception));
 
-    produceSignaturesAndReport(duty, slot);
+    produceMessagesAndReport(duty, slot);
 
     verify(validatorLogger)
         .dutyFailed(
-            SIGNATURE_TYPE,
-            slot,
-            Set.of(validator.getPublicKey().toAbbreviatedString()),
-            exception);
+            MESSAGE_TYPE, slot, Set.of(validator.getPublicKey().toAbbreviatedString()), exception);
   }
 
   @Test
-  void shouldReportPartialSuccessWhenSomeSignaturesAreProducedAndOthersFail() {
+  void shouldReportPartialSuccessWhenSomeMessagesAreProducedAndOthersFail() {
     final UInt64 slot = UInt64.valueOf(48);
     final int validatorIndex1 = 11;
     final int validatorIndex2 = 22;
@@ -106,26 +103,23 @@ class SyncCommitteeProductionDutyTest {
             committeeAssignment(validator, validatorIndex1, 1, 2, 3),
             committeeAssignment(validator2, validatorIndex2, 1, 5));
 
-    when(validator.getSigner().signSyncCommitteeSignature(slot, blockRoot, forkInfo))
+    when(validator.getSigner().signSyncCommitteeMessage(slot, blockRoot, forkInfo))
         .thenReturn(SafeFuture.completedFuture(signature1));
-    when(validator2.getSigner().signSyncCommitteeSignature(slot, blockRoot, forkInfo))
+    when(validator2.getSigner().signSyncCommitteeMessage(slot, blockRoot, forkInfo))
         .thenReturn(SafeFuture.failedFuture(exception));
 
-    produceSignaturesAndReport(duties, slot);
+    produceMessagesAndReport(duties, slot);
 
-    assertSentSignatures(createSignature(slot, blockRoot, validatorIndex1, signature1));
+    assertSentMessages(createMessage(slot, blockRoot, validatorIndex1, signature1));
 
-    verify(validatorLogger).dutyCompleted(SIGNATURE_TYPE, slot, 1, Set.of(blockRoot));
+    verify(validatorLogger).dutyCompleted(MESSAGE_TYPE, slot, 1, Set.of(blockRoot));
     verify(validatorLogger)
         .dutyFailed(
-            SIGNATURE_TYPE,
-            slot,
-            Set.of(validator2.getPublicKey().toAbbreviatedString()),
-            exception);
+            MESSAGE_TYPE, slot, Set.of(validator2.getPublicKey().toAbbreviatedString()), exception);
   }
 
   @Test
-  void shouldReportPartialFailureWhenBeaconNodeRejectsSomeSignatures() {
+  void shouldReportPartialFailureWhenBeaconNodeRejectsSomeMessages() {
     final UInt64 slot = UInt64.valueOf(48);
     final int validatorIndex1 = 11;
     final int validatorIndex2 = 22;
@@ -137,52 +131,52 @@ class SyncCommitteeProductionDutyTest {
             committeeAssignment(validator, validatorIndex1, 1, 2, 3),
             committeeAssignment(validator2, validatorIndex2, 1, 5));
 
-    when(validator.getSigner().signSyncCommitteeSignature(slot, blockRoot, forkInfo))
+    when(validator.getSigner().signSyncCommitteeMessage(slot, blockRoot, forkInfo))
         .thenReturn(SafeFuture.completedFuture(signature1));
-    when(validator2.getSigner().signSyncCommitteeSignature(slot, blockRoot, forkInfo))
+    when(validator2.getSigner().signSyncCommitteeMessage(slot, blockRoot, forkInfo))
         .thenReturn(SafeFuture.completedFuture(signature2));
 
-    when(validatorApiChannel.sendSyncCommitteeSignatures(any()))
+    when(validatorApiChannel.sendSyncCommitteeMessages(any()))
         .thenReturn(
             SafeFuture.completedFuture(
-                List.of(new SubmitCommitteeSignatureError(UInt64.ZERO, "API Rejected"))));
+                List.of(new SubmitCommitteeMessageError(UInt64.ZERO, "API Rejected"))));
 
-    produceSignaturesAndReport(duties, slot);
+    produceMessagesAndReport(duties, slot);
 
-    assertSentSignatures(
-        createSignature(slot, blockRoot, validatorIndex1, signature1),
-        createSignature(slot, blockRoot, validatorIndex2, signature2));
+    assertSentMessages(
+        createMessage(slot, blockRoot, validatorIndex1, signature1),
+        createMessage(slot, blockRoot, validatorIndex2, signature2));
 
-    verify(validatorLogger).dutyCompleted(SIGNATURE_TYPE, slot, 1, Set.of(blockRoot));
+    verify(validatorLogger).dutyCompleted(MESSAGE_TYPE, slot, 1, Set.of(blockRoot));
     verify(validatorLogger)
         .dutyFailed(
-            eq(SIGNATURE_TYPE),
+            eq(MESSAGE_TYPE),
             eq(slot),
             eq(Set.of(validator.getPublicKey().toAbbreviatedString())),
             argThat(error -> error.getMessage().equals("API Rejected")));
   }
 
   @Test
-  void shouldProduceSignature() {
+  void shouldProduceMessage() {
     final UInt64 slot = UInt64.valueOf(25);
     final int validatorIndex = 23;
     final BLSSignature signature = dataStructureUtil.randomSignature();
     final SyncCommitteeProductionDuty duties =
         createDuty(committeeAssignment(validator, validatorIndex, 1));
 
-    when(validator.getSigner().signSyncCommitteeSignature(slot, blockRoot, forkInfo))
+    when(validator.getSigner().signSyncCommitteeMessage(slot, blockRoot, forkInfo))
         .thenReturn(SafeFuture.completedFuture(signature));
 
-    produceSignaturesAndReport(duties, slot);
+    produceMessagesAndReport(duties, slot);
 
     verify(validatorApiChannel)
-        .sendSyncCommitteeSignatures(
-            List.of(createSignature(slot, blockRoot, validatorIndex, signature)));
-    verify(validatorLogger).dutyCompleted(SIGNATURE_TYPE, slot, 1, Set.of(blockRoot));
+        .sendSyncCommitteeMessages(
+            List.of(createMessage(slot, blockRoot, validatorIndex, signature)));
+    verify(validatorLogger).dutyCompleted(MESSAGE_TYPE, slot, 1, Set.of(blockRoot));
   }
 
   @Test
-  void shouldProduceOneSignatureForEachValidator() {
+  void shouldProduceOneMessageForEachValidator() {
     final UInt64 slot = UInt64.valueOf(48);
     final int validatorIndex1 = 11;
     final int validatorIndex2 = 22;
@@ -194,44 +188,43 @@ class SyncCommitteeProductionDutyTest {
             committeeAssignment(validator, validatorIndex1, 1, 2, 3),
             committeeAssignment(validator2, validatorIndex2, 1, 5));
 
-    when(validator.getSigner().signSyncCommitteeSignature(slot, blockRoot, forkInfo))
+    when(validator.getSigner().signSyncCommitteeMessage(slot, blockRoot, forkInfo))
         .thenReturn(SafeFuture.completedFuture(signature1));
-    when(validator2.getSigner().signSyncCommitteeSignature(slot, blockRoot, forkInfo))
+    when(validator2.getSigner().signSyncCommitteeMessage(slot, blockRoot, forkInfo))
         .thenReturn(SafeFuture.completedFuture(signature2));
 
-    produceSignaturesAndReport(duties, slot);
+    produceMessagesAndReport(duties, slot);
 
-    assertSentSignatures(
-        createSignature(slot, blockRoot, validatorIndex1, signature1),
-        createSignature(slot, blockRoot, validatorIndex2, signature2));
+    assertSentMessages(
+        createMessage(slot, blockRoot, validatorIndex1, signature1),
+        createMessage(slot, blockRoot, validatorIndex2, signature2));
 
-    verify(validatorLogger).dutyCompleted(SIGNATURE_TYPE, slot, 2, Set.of(blockRoot));
+    verify(validatorLogger).dutyCompleted(MESSAGE_TYPE, slot, 2, Set.of(blockRoot));
   }
 
   @SuppressWarnings("unchecked")
-  private void assertSentSignatures(final SyncCommitteeSignature... signatures) {
-    ArgumentCaptor<List<SyncCommitteeSignature>> argumentCaptor =
-        ArgumentCaptor.forClass(List.class);
-    verify(validatorApiChannel).sendSyncCommitteeSignatures(argumentCaptor.capture());
+  private void assertSentMessages(final SyncCommitteeMessage... messages) {
+    ArgumentCaptor<List<SyncCommitteeMessage>> argumentCaptor = ArgumentCaptor.forClass(List.class);
+    verify(validatorApiChannel).sendSyncCommitteeMessages(argumentCaptor.capture());
 
-    assertThat(argumentCaptor.getValue()).containsExactlyInAnyOrder(signatures);
+    assertThat(argumentCaptor.getValue()).containsExactlyInAnyOrder(messages);
   }
 
-  private SyncCommitteeSignature createSignature(
+  private SyncCommitteeMessage createMessage(
       final UInt64 slot,
       final Bytes32 blockRoot,
       final int validatorIndex,
       final BLSSignature signature) {
     return SchemaDefinitionsAltair.required(spec.getGenesisSchemaDefinitions())
-        .getSyncCommitteeSignatureSchema()
+        .getSyncCommitteeMessageSchema()
         .create(slot, blockRoot, UInt64.valueOf(validatorIndex), signature);
   }
 
-  private void produceSignaturesAndReport(
+  private void produceMessagesAndReport(
       final SyncCommitteeProductionDuty duties, final UInt64 slot) {
-    final SafeFuture<DutyResult> result = duties.produceSignatures(slot, blockRoot);
+    final SafeFuture<DutyResult> result = duties.produceMessages(slot, blockRoot);
     assertThat(result).isCompleted();
-    result.join().report(SIGNATURE_TYPE, slot, validatorLogger);
+    result.join().report(MESSAGE_TYPE, slot, validatorLogger);
   }
 
   private SyncCommitteeProductionDuty createDuty(

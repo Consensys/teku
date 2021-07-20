@@ -39,7 +39,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.ssz.collections.SszBitlist;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -155,7 +155,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
     if (!currentEpoch.isZero()) {
       final SyncCommitteePerformance syncCommitteePerformance =
           syncCommitteePerformanceTracker.calculatePerformance(currentEpoch.minus(1)).join();
-      if (syncCommitteePerformance.getNumberOfExpectedSignatures() > 0) {
+      if (syncCommitteePerformance.getNumberOfExpectedMessages() > 0) {
         if (mode.isLoggingEnabled()) {
           statusLogger.performance(syncCommitteePerformance.toString());
         }
@@ -356,8 +356,8 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
   }
 
   @Override
-  public void saveProducedSyncCommitteeSignature(final SyncCommitteeSignature signature) {
-    syncCommitteePerformanceTracker.saveProducedSyncCommitteeSignature(signature);
+  public void saveProducedSyncCommitteeMessage(final SyncCommitteeMessage message) {
+    syncCommitteePerformanceTracker.saveProducedSyncCommitteeMessage(message);
   }
 
   static long getPercentage(final long numerator, final long denominator) {

@@ -17,7 +17,7 @@ import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
-import static tech.pegasys.teku.util.config.Constants.VALID_SYNC_COMMITTEE_SIGNATURE_SET_SIZE;
+import static tech.pegasys.teku.util.config.Constants.VALID_SYNC_COMMITTEE_MESSAGE_SET_SIZE;
 
 import java.util.List;
 import java.util.Objects;
@@ -32,8 +32,8 @@ import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeSignature;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
@@ -41,16 +41,16 @@ import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class SyncCommitteeSignatureValidator {
+public class SyncCommitteeMessageValidator {
   private static final Logger LOG = LogManager.getLogger();
   private final Set<UniquenessKey> seenIndices =
-      LimitedSet.create(VALID_SYNC_COMMITTEE_SIGNATURE_SET_SIZE);
+      LimitedSet.create(VALID_SYNC_COMMITTEE_MESSAGE_SET_SIZE);
   private final Spec spec;
   private final SyncCommitteeStateUtils syncCommitteeStateUtils;
   private final AsyncBLSSignatureVerifier signatureVerifier;
   private final SyncCommitteeCurrentSlotUtil slotUtil;
 
-  public SyncCommitteeSignatureValidator(
+  public SyncCommitteeMessageValidator(
       final Spec spec,
       final RecentChainData recentChainData,
       final SyncCommitteeStateUtils syncCommitteeStateUtils,
@@ -63,38 +63,38 @@ public class SyncCommitteeSignatureValidator {
   }
 
   public SafeFuture<InternalValidationResult> validate(
-      final ValidateableSyncCommitteeSignature validateableSignature) {
+      final ValidateableSyncCommitteeMessage validateableMessage) {
 
-    final SyncCommitteeSignature signature = validateableSignature.getSignature();
+    final SyncCommitteeMessage message = validateableMessage.getMessage();
 
     final Optional<SyncCommitteeUtil> maybeSyncCommitteeUtil =
-        spec.getSyncCommitteeUtil(signature.getSlot());
+        spec.getSyncCommitteeUtil(message.getSlot());
     if (maybeSyncCommitteeUtil.isEmpty()) {
       LOG.trace(
-          "Rejecting sync committee signature because the fork active at slot {} does not support sync committees",
-          signature.getSlot());
+          "Rejecting sync committee message because the fork active at slot {} does not support sync committees",
+          message.getSlot());
       return SafeFuture.completedFuture(REJECT);
     }
     final SyncCommitteeUtil syncCommitteeUtil = maybeSyncCommitteeUtil.get();
 
-    // [IGNORE] The signature's slot is for the current slot(with a MAXIMUM_GOSSIP_CLOCK_DISPARITY
+    // [IGNORE] The message's slot is for the current slot(with a MAXIMUM_GOSSIP_CLOCK_DISPARITY
     // allowance),
-    // i.e. sync_committee_signature.slot == current_slot.
-    if (!slotUtil.isForCurrentSlot(signature.getSlot())) {
-      LOG.trace("Ignoring sync committee signature because it is not from the current slot");
+    // i.e. sync_committee_message.slot == current_slot.
+    if (!slotUtil.isForCurrentSlot(message.getSlot())) {
+      LOG.trace("Ignoring sync committee message because it is not from the current slot");
       return SafeFuture.completedFuture(IGNORE);
     }
 
-    // [IGNORE] There has been no other valid sync committee signature for the declared slot for the
-    // validator referenced by sync_committee_signature.validator_index.
+    // [IGNORE] There has been no other valid sync committee message for the declared slot for the
+    // validator referenced by sync_committee_message.validator_index.
     // (this requires maintaining a cache of size `SYNC_COMMITTEE_SIZE //
     // SYNC_COMMITTEE_SUBNET_COUNT` for each subnet that can be flushed after each slot).
     // Note this validation is _per topic_ so that for a given `slot`, multiple messages could be
     // forwarded with the same `validator_index` as long as the `subnet_id`s are distinct.
     final Optional<UniquenessKey> uniquenessKey;
-    if (validateableSignature.getReceivedSubnetId().isPresent()) {
+    if (validateableMessage.getReceivedSubnetId().isPresent()) {
       final UniquenessKey key =
-          getUniquenessKey(signature, validateableSignature.getReceivedSubnetId().getAsInt());
+          getUniquenessKey(message, validateableMessage.getReceivedSubnetId().getAsInt());
       if (seenIndices.contains(key)) {
         return SafeFuture.completedFuture(IGNORE);
       }
@@ -104,101 +104,99 @@ public class SyncCommitteeSignatureValidator {
     }
 
     return syncCommitteeStateUtils
-        .getStateForSyncCommittee(signature.getSlot())
+        .getStateForSyncCommittee(message.getSlot())
         .thenCompose(
             maybeState -> {
               if (maybeState.isEmpty()) {
                 LOG.trace(
-                    "Ignoring sync committee signature because state is not available or not from Altair fork");
+                    "Ignoring sync committee message because state is not available or not from Altair fork");
                 return SafeFuture.completedFuture(IGNORE);
               }
               final BeaconStateAltair state = maybeState.get();
               return validateWithState(
-                  validateableSignature, signature, syncCommitteeUtil, state, uniquenessKey);
+                  validateableMessage, message, syncCommitteeUtil, state, uniquenessKey);
             });
   }
 
   private SafeFuture<InternalValidationResult> validateWithState(
-      final ValidateableSyncCommitteeSignature validateableSignature,
-      final SyncCommitteeSignature signature,
+      final ValidateableSyncCommitteeMessage validateableMessage,
+      final SyncCommitteeMessage message,
       final SyncCommitteeUtil syncCommitteeUtil,
       final BeaconStateAltair state,
       final Optional<UniquenessKey> maybeUniquenessKey) {
-    final UInt64 signatureEpoch = spec.computeEpochAtSlot(signature.getSlot());
+    final UInt64 messageEpoch = spec.computeEpochAtSlot(message.getSlot());
 
     // Always calculate the applicable subcommittees to ensure they are cached and can be used to
     // send the gossip.
     final SyncSubcommitteeAssignments assignedSubcommittees =
-        validateableSignature.calculateAssignments(spec, state);
+        validateableMessage.calculateAssignments(spec, state);
 
-    // [REJECT] The validator producing this sync_committee_signature is in the current sync
-    // committee, i.e. state.validators[sync_committee_signature.validator_index].pubkey in
+    // [REJECT] The validator producing this sync_committee_message is in the current sync
+    // committee, i.e. state.validators[sync_committee_message.validator_index].pubkey in
     // state.current_sync_committee.pubkeys.
     if (assignedSubcommittees.isEmpty()) {
-      LOG.trace(
-          "Rejecting sync committee signature because validator is not in the sync committee");
+      LOG.trace("Rejecting sync committee message because validator is not in the sync committee");
       return SafeFuture.completedFuture(REJECT);
     }
 
-    // For signatures received via gossip, it has to be unique based on the subnet it was on
-    // For locally produced signatures we should accept it if it hasn't been seen on any subnet
+    // For messages received via gossip, it has to be unique based on the subnet it was on
+    // For locally produced messages we should accept it if it hasn't been seen on any subnet
     final List<UniquenessKey> uniquenessKeys =
         maybeUniquenessKey
             .map(List::of)
             .orElseGet(
                 () ->
                     assignedSubcommittees.getAssignedSubcommittees().stream()
-                        .map(subnetId -> getUniquenessKey(signature, subnetId))
+                        .map(subnetId -> getUniquenessKey(message, subnetId))
                         .collect(toList()));
 
-    // [IGNORE] There has been no other valid sync committee signature for the declared slot for the
-    // validator referenced by sync_committee_signature.validator_index.
+    // [IGNORE] There has been no other valid sync committee message for the declared slot for the
+    // validator referenced by sync_committee_message.validator_index.
     if (seenIndices.containsAll(uniquenessKeys)) {
       return SafeFuture.completedFuture(IGNORE);
     }
 
     // [REJECT] The subnet_id is correct, i.e. subnet_id in
-    // compute_subnets_for_sync_committee(state, sync_committee_signature.validator_index).
-    if (validateableSignature.getReceivedSubnetId().isPresent()
+    // compute_subnets_for_sync_committee(state, sync_committee_message.validator_index).
+    if (validateableMessage.getReceivedSubnetId().isPresent()
         && !assignedSubcommittees
             .getAssignedSubcommittees()
-            .contains(validateableSignature.getReceivedSubnetId().getAsInt())) {
-      LOG.trace("Rejecting sync committee signature because subnet id is incorrect");
+            .contains(validateableMessage.getReceivedSubnetId().getAsInt())) {
+      LOG.trace("Rejecting sync committee message because subnet id is incorrect");
       return SafeFuture.completedFuture(REJECT);
     }
 
     final Optional<BLSPublicKey> maybeValidatorPublicKey =
-        spec.getValidatorPubKey(state, signature.getValidatorIndex());
+        spec.getValidatorPubKey(state, message.getValidatorIndex());
     if (maybeValidatorPublicKey.isEmpty()) {
-      LOG.trace("Rejecting sync committee signature because the validator index is unknown");
+      LOG.trace("Rejecting sync committee message because the validator index is unknown");
       return SafeFuture.completedFuture(REJECT);
     }
 
-    // [REJECT] The signature is valid for the message beacon_block_root for the validator
+    // [REJECT] The message is valid for the message beacon_block_root for the validator
     // referenced by validator_index.
     final Bytes32 signingRoot =
-        syncCommitteeUtil.getSyncCommitteeSignatureSigningRoot(
-            signature.getBeaconBlockRoot(), signatureEpoch, state.getForkInfo());
+        syncCommitteeUtil.getSyncCommitteeMessageSigningRoot(
+            message.getBeaconBlockRoot(), messageEpoch, state.getForkInfo());
     return signatureVerifier
-        .verify(maybeValidatorPublicKey.get(), signingRoot, signature.getSignature())
+        .verify(maybeValidatorPublicKey.get(), signingRoot, message.getSignature())
         .thenApply(
             signatureValid -> {
               if (!signatureValid) {
-                LOG.trace("Rejecting sync committee signature because the signature is invalid");
+                LOG.trace("Rejecting sync committee message because the signature is invalid");
                 return REJECT;
               }
               if (!seenIndices.addAll(uniquenessKeys)) {
                 LOG.trace(
-                    "Ignoring sync committee signature as a duplicate was processed during validation");
+                    "Ignoring sync committee message as a duplicate was processed during validation");
                 return IGNORE;
               }
               return ACCEPT;
             });
   }
 
-  private UniquenessKey getUniquenessKey(
-      final SyncCommitteeSignature signature, final int subnetId) {
-    return new UniquenessKey(signature.getValidatorIndex(), signature.getSlot(), subnetId);
+  private UniquenessKey getUniquenessKey(final SyncCommitteeMessage message, final int subnetId) {
+    return new UniquenessKey(message.getValidatorIndex(), message.getSlot(), subnetId);
   }
 
   private static class UniquenessKey {

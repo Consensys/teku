@@ -83,7 +83,7 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
   }
 
   @Override
-  public void processSyncCommittee(
+  public void processSyncAggregate(
       final MutableBeaconState state,
       final SyncAggregate syncAggregate,
       final BLSSignatureVerifier signatureVerifier)

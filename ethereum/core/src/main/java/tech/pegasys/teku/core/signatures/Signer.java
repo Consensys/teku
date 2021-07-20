@@ -40,7 +40,7 @@ public interface Signer {
 
   SafeFuture<BLSSignature> signVoluntaryExit(VoluntaryExit voluntaryExit, ForkInfo forkInfo);
 
-  SafeFuture<BLSSignature> signSyncCommitteeSignature(
+  SafeFuture<BLSSignature> signSyncCommitteeMessage(
       UInt64 slot, Bytes32 beaconBlockRoot, ForkInfo forkInfo);
 
   SafeFuture<BLSSignature> signSyncCommitteeSelectionProof(

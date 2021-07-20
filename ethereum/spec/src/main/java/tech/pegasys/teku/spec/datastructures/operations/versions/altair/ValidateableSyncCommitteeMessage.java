@@ -23,29 +23,28 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 
-public class ValidateableSyncCommitteeSignature {
-  private final SyncCommitteeSignature signature;
+public class ValidateableSyncCommitteeMessage {
+  private final SyncCommitteeMessage message;
   private final OptionalInt receivedSubnetId;
   private volatile Optional<SyncSubcommitteeAssignments> subcommitteeAssignments = Optional.empty();
 
-  private ValidateableSyncCommitteeSignature(
-      final SyncCommitteeSignature signature, final OptionalInt receivedSubnetId) {
-    this.signature = signature;
+  private ValidateableSyncCommitteeMessage(
+      final SyncCommitteeMessage message, final OptionalInt receivedSubnetId) {
+    this.message = message;
     this.receivedSubnetId = receivedSubnetId;
   }
 
-  public static ValidateableSyncCommitteeSignature fromValidator(
-      final SyncCommitteeSignature signature) {
-    return new ValidateableSyncCommitteeSignature(signature, OptionalInt.empty());
+  public static ValidateableSyncCommitteeMessage fromValidator(final SyncCommitteeMessage message) {
+    return new ValidateableSyncCommitteeMessage(message, OptionalInt.empty());
   }
 
-  public static ValidateableSyncCommitteeSignature fromNetwork(
-      final SyncCommitteeSignature signature, final int receivedSubnetId) {
-    return new ValidateableSyncCommitteeSignature(signature, OptionalInt.of(receivedSubnetId));
+  public static ValidateableSyncCommitteeMessage fromNetwork(
+      final SyncCommitteeMessage message, final int receivedSubnetId) {
+    return new ValidateableSyncCommitteeMessage(message, OptionalInt.of(receivedSubnetId));
   }
 
-  public SyncCommitteeSignature getSignature() {
-    return signature;
+  public SyncCommitteeMessage getMessage() {
+    return message;
   }
 
   public OptionalInt getReceivedSubnetId() {
@@ -62,13 +61,13 @@ public class ValidateableSyncCommitteeSignature {
     if (currentValue.isPresent()) {
       return currentValue.get();
     }
-    final UInt64 signatureSlot = signature.getSlot();
-    final SyncCommitteeUtil syncCommitteeUtil = spec.getSyncCommitteeUtilRequired(signatureSlot);
+    final UInt64 messageSlot = message.getSlot();
+    final SyncCommitteeUtil syncCommitteeUtil = spec.getSyncCommitteeUtilRequired(messageSlot);
     final SyncSubcommitteeAssignments assignments =
         syncCommitteeUtil.getSubcommitteeAssignments(
             state,
-            syncCommitteeUtil.getEpochForDutiesAtSlot(signatureSlot),
-            signature.getValidatorIndex());
+            syncCommitteeUtil.getEpochForDutiesAtSlot(messageSlot),
+            message.getValidatorIndex());
 
     this.subcommitteeAssignments = Optional.of(assignments);
     return assignments;
@@ -80,10 +79,10 @@ public class ValidateableSyncCommitteeSignature {
   }
 
   public UInt64 getSlot() {
-    return signature.getSlot();
+    return message.getSlot();
   }
 
   public Bytes32 getBeaconBlockRoot() {
-    return signature.getBeaconBlockRoot();
+    return message.getBeaconBlockRoot();
   }
 }
