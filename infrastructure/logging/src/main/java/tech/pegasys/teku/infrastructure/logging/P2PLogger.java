@@ -21,6 +21,7 @@ import org.apache.tuweni.bytes.Bytes;
 public class P2PLogger {
   public static final P2PLogger P2P_LOG = new P2PLogger(LoggingConfigurator.P2P_LOGGER_NAME);
 
+  @SuppressWarnings("PrivateStaticFinalLoggers")
   private final Logger log;
 
   public P2PLogger(final String name) {
