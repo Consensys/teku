@@ -111,6 +111,14 @@ class SignedContributionAndProofValidatorTest {
   }
 
   @Test
+  void shouldRejectWhenAggregationBitsAreEmpty() {
+    final SignedContributionAndProof message =
+        chainBuilder.createValidSignedContributionAndProofBuilder().removeAllParticipants().build();
+    final SafeFuture<InternalValidationResult> result = validator.validate(message);
+    assertThat(result).isCompletedWithValueMatching(InternalValidationResult::isReject);
+  }
+
+  @Test
   void shouldAcceptWhenValidButBeaconBlockRootIsUnknown() {
     final SignedContributionAndProof message =
         chainBuilder
