@@ -55,8 +55,8 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeSignature;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
@@ -69,7 +69,7 @@ import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
-import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeSignaturePool;
+import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.sync.events.SyncStateProvider;
@@ -80,7 +80,7 @@ import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
-import tech.pegasys.teku.validator.api.SubmitCommitteeSignatureError;
+import tech.pegasys.teku.validator.api.SubmitCommitteeMessageError;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
@@ -111,7 +111,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final PerformanceTracker performanceTracker;
   private final Spec spec;
   private final ForkChoiceTrigger forkChoiceTrigger;
-  private final SyncCommitteeSignaturePool syncCommitteeSignaturePool;
+  private final SyncCommitteeMessagePool syncCommitteeMessagePool;
   private final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager;
   private final SyncCommitteeContributionPool syncCommitteeContributionPool;
 
@@ -130,7 +130,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final PerformanceTracker performanceTracker,
       final Spec spec,
       final ForkChoiceTrigger forkChoiceTrigger,
-      final SyncCommitteeSignaturePool syncCommitteeSignaturePool,
+      final SyncCommitteeMessagePool syncCommitteeMessagePool,
       final SyncCommitteeContributionPool syncCommitteeContributionPool,
       final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager) {
     this.chainDataProvider = chainDataProvider;
@@ -147,7 +147,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     this.performanceTracker = performanceTracker;
     this.spec = spec;
     this.forkChoiceTrigger = forkChoiceTrigger;
-    this.syncCommitteeSignaturePool = syncCommitteeSignaturePool;
+    this.syncCommitteeMessagePool = syncCommitteeMessagePool;
     this.syncCommitteeContributionPool = syncCommitteeContributionPool;
     this.syncCommitteeSubscriptionManager = syncCommitteeSubscriptionManager;
   }
@@ -396,7 +396,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   public SafeFuture<Optional<SyncCommitteeContribution>> createSyncCommitteeContribution(
       final UInt64 slot, final int subcommitteeIndex, final Bytes32 beaconBlockRoot) {
     return SafeFuture.completedFuture(
-        syncCommitteeSignaturePool.createContribution(slot, beaconBlockRoot, subcommitteeIndex));
+        syncCommitteeMessagePool.createContribution(slot, beaconBlockRoot, subcommitteeIndex));
   }
 
   @Override
@@ -517,36 +517,36 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<List<SubmitCommitteeSignatureError>> sendSyncCommitteeSignatures(
-      final List<SyncCommitteeSignature> syncCommitteeSignatures) {
+  public SafeFuture<List<SubmitCommitteeMessageError>> sendSyncCommitteeMessages(
+      final List<SyncCommitteeMessage> syncCommitteeMessages) {
 
-    final List<SafeFuture<InternalValidationResult>> addedSignatures =
-        syncCommitteeSignatures.stream()
-            .map(ValidateableSyncCommitteeSignature::fromValidator)
-            .map(this::processSyncCommitteeSignature)
+    final List<SafeFuture<InternalValidationResult>> addedMessages =
+        syncCommitteeMessages.stream()
+            .map(ValidateableSyncCommitteeMessage::fromValidator)
+            .map(this::processSyncCommitteeMessage)
             .collect(toList());
 
-    return SafeFuture.collectAll(addedSignatures.stream())
+    return SafeFuture.collectAll(addedMessages.stream())
         .thenApply(this::getSendSyncCommitteesResultFromFutures);
   }
 
-  private SafeFuture<InternalValidationResult> processSyncCommitteeSignature(
-      final ValidateableSyncCommitteeSignature signature) {
-    return syncCommitteeSignaturePool
-        .add(signature)
+  private SafeFuture<InternalValidationResult> processSyncCommitteeMessage(
+      final ValidateableSyncCommitteeMessage message) {
+    return syncCommitteeMessagePool
+        .add(message)
         .thenPeek(
             result -> {
               if (result.isAccept() || result.isSaveForFuture()) {
-                performanceTracker.saveProducedSyncCommitteeSignature(signature.getSignature());
+                performanceTracker.saveProducedSyncCommitteeMessage(message.getMessage());
               }
             });
   }
 
-  private List<SubmitCommitteeSignatureError> getSendSyncCommitteesResultFromFutures(
+  private List<SubmitCommitteeMessageError> getSendSyncCommitteesResultFromFutures(
       final List<InternalValidationResult> internalValidationResults) {
-    final List<SubmitCommitteeSignatureError> errorList = new ArrayList<>();
+    final List<SubmitCommitteeMessageError> errorList = new ArrayList<>();
     for (int index = 0; index < internalValidationResults.size(); index++) {
-      final Optional<SubmitCommitteeSignatureError> maybeError =
+      final Optional<SubmitCommitteeMessageError> maybeError =
           fromInternalValidationResult(internalValidationResults.get(index), index);
       maybeError.ifPresent(errorList::add);
     }
@@ -571,13 +571,13 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             });
   }
 
-  private Optional<SubmitCommitteeSignatureError> fromInternalValidationResult(
+  private Optional<SubmitCommitteeMessageError> fromInternalValidationResult(
       final InternalValidationResult internalValidationResult, final int resultIndex) {
     if (!internalValidationResult.isReject()) {
       return Optional.empty();
     }
     return Optional.of(
-        new SubmitCommitteeSignatureError(
+        new SubmitCommitteeMessageError(
             UInt64.valueOf(resultIndex),
             internalValidationResult.getDescription().orElse("Rejected")));
   }

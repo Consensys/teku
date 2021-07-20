@@ -113,19 +113,19 @@ public class ExternalSignerAltairIntegrationTest {
   }
 
   @Test
-  public void shouldSignSyncCommitteeSignature() throws Exception {
+  public void shouldSignSyncCommitteeMessage() throws Exception {
     final Bytes expectedSigningRoot =
         signingRootFromSyncCommitteeUtils(
                 slot,
                 utils ->
-                    utils.getSyncCommitteeSignatureSigningRoot(
+                    utils.getSyncCommitteeMessageSigningRoot(
                         beaconBlockRoot, spec.computeEpochAtSlot(slot), forkInfo))
             .get();
     final BLSSignature expectedSignature = BLS.sign(KEYPAIR.getSecretKey(), expectedSigningRoot);
     client.when(request()).respond(response().withBody(expectedSignature.toString()));
 
     final BLSSignature response =
-        externalSigner.signSyncCommitteeSignature(slot, beaconBlockRoot, forkInfo).join();
+        externalSigner.signSyncCommitteeMessage(slot, beaconBlockRoot, forkInfo).join();
 
     assertThat(response).isEqualTo(expectedSignature);
 

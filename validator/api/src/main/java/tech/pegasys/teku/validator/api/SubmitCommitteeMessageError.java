@@ -16,11 +16,11 @@ package tech.pegasys.teku.validator.api;
 import java.util.Objects;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class SubmitCommitteeSignatureError {
+public class SubmitCommitteeMessageError {
   private final UInt64 index;
   private final String message;
 
-  public SubmitCommitteeSignatureError(final UInt64 index, final String message) {
+  public SubmitCommitteeMessageError(final UInt64 index, final String message) {
     this.index = index;
     this.message = message;
   }
@@ -29,7 +29,7 @@ public class SubmitCommitteeSignatureError {
   public boolean equals(final Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    final SubmitCommitteeSignatureError that = (SubmitCommitteeSignatureError) o;
+    final SubmitCommitteeMessageError that = (SubmitCommitteeMessageError) o;
     return Objects.equals(index, that.index) && Objects.equals(message, that.message);
   }
 

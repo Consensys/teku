@@ -230,7 +230,7 @@ public class SignedContributionAndProofValidator {
 
     if (!signatureVerifier.verify(
         contributorPublicKeys,
-        syncCommitteeUtil.getSyncCommitteeSignatureSigningRoot(
+        syncCommitteeUtil.getSyncCommitteeMessageSigningRoot(
             contribution.getBeaconBlockRoot(), contributionEpoch, state.getForkInfo()),
         contribution.getSignature())) {
       return failureResult(

@@ -61,7 +61,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeSignature;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
@@ -103,9 +103,9 @@ public class Eth2P2PNetworkBuilder {
   private OperationProcessor<SignedContributionAndProof>
       gossipedSignedContributionAndProofProcessor;
   private GossipPublisher<SignedContributionAndProof> signedContributionAndProofGossipPublisher;
-  private OperationProcessor<ValidateableSyncCommitteeSignature>
-      gossipedSyncCommitteeSignatureProcessor;
-  private GossipPublisher<ValidateableSyncCommitteeSignature> syncCommitteeSignatureGossipPublisher;
+  private OperationProcessor<ValidateableSyncCommitteeMessage>
+      gossipedSyncCommitteeMessageProcessor;
+  private GossipPublisher<ValidateableSyncCommitteeMessage> syncCommitteeMessageGossipPublisher;
 
   private Eth2P2PNetworkBuilder() {}
 
@@ -218,8 +218,8 @@ public class Eth2P2PNetworkBuilder {
             voluntaryExitGossipPublisher,
             gossipedSignedContributionAndProofProcessor,
             signedContributionAndProofGossipPublisher,
-            gossipedSyncCommitteeSignatureProcessor,
-            syncCommitteeSignatureGossipPublisher);
+            gossipedSyncCommitteeMessageProcessor,
+            syncCommitteeMessageGossipPublisher);
       default:
         throw new UnsupportedOperationException(
             "Gossip not supported for fork " + forkAndSpecMilestone.getSpecMilestone());
@@ -302,9 +302,8 @@ public class Eth2P2PNetworkBuilder {
         "signedContributionAndProofGossipPublisher", signedContributionAndProofGossipPublisher);
     assertNotNull(
         "gossipedSignedContributionAndProofProcessor", gossipedSignedContributionAndProofProcessor);
-    assertNotNull(
-        "gossipedSyncCommitteeSignatureProcessor", gossipedSyncCommitteeSignatureProcessor);
-    assertNotNull("syncCommitteeSignatureGossipPublisher", syncCommitteeSignatureGossipPublisher);
+    assertNotNull("gossipedSyncCommitteeMessageProcessor", gossipedSyncCommitteeMessageProcessor);
+    assertNotNull("syncCommitteeMessageGossipPublisher", syncCommitteeMessageGossipPublisher);
   }
 
   private void assertNotNull(String fieldName, Object fieldValue) {
@@ -426,19 +425,18 @@ public class Eth2P2PNetworkBuilder {
     return this;
   }
 
-  public Eth2P2PNetworkBuilder gossipedSyncCommitteeSignatureProcessor(
-      final OperationProcessor<ValidateableSyncCommitteeSignature>
-          gossipedSyncCommitteeSignatureProcessor) {
-    checkNotNull(gossipedSyncCommitteeSignatureProcessor);
-    this.gossipedSyncCommitteeSignatureProcessor = gossipedSyncCommitteeSignatureProcessor;
+  public Eth2P2PNetworkBuilder gossipedSyncCommitteeMessageProcessor(
+      final OperationProcessor<ValidateableSyncCommitteeMessage>
+          gossipedSyncCommitteeMessageProcessor) {
+    checkNotNull(gossipedSyncCommitteeMessageProcessor);
+    this.gossipedSyncCommitteeMessageProcessor = gossipedSyncCommitteeMessageProcessor;
     return this;
   }
 
-  public Eth2P2PNetworkBuilder syncCommitteeSignatureGossipPublisher(
-      final GossipPublisher<ValidateableSyncCommitteeSignature>
-          syncCommitteeSignatureGossipPublisher) {
-    checkNotNull(syncCommitteeSignatureGossipPublisher);
-    this.syncCommitteeSignatureGossipPublisher = syncCommitteeSignatureGossipPublisher;
+  public Eth2P2PNetworkBuilder syncCommitteeMessageGossipPublisher(
+      final GossipPublisher<ValidateableSyncCommitteeMessage> syncCommitteeMessageGossipPublisher) {
+    checkNotNull(syncCommitteeMessageGossipPublisher);
+    this.syncCommitteeMessageGossipPublisher = syncCommitteeMessageGossipPublisher;
     return this;
   }
 

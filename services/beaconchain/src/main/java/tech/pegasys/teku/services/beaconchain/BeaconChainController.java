@@ -68,7 +68,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeSignature;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.statetransition.EpochCachePrimer;
@@ -85,8 +85,8 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
 import tech.pegasys.teku.statetransition.synccommittee.SignedContributionAndProofValidator;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
-import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeSignaturePool;
-import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeSignatureValidator;
+import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
+import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessageValidator;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeStateUtils;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
@@ -167,7 +167,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile OperationPool<ProposerSlashing> proposerSlashingPool;
   private volatile OperationPool<SignedVoluntaryExit> voluntaryExitPool;
   private volatile SyncCommitteeContributionPool syncCommitteeContributionPool;
-  private volatile SyncCommitteeSignaturePool syncCommitteeSignaturePool;
+  private volatile SyncCommitteeMessagePool syncCommitteeMessagePool;
   private volatile OperationsReOrgManager operationsReOrgManager;
   private volatile WeakSubjectivityValidator weakSubjectivityValidator;
   private volatile PerformanceTracker performanceTracker;
@@ -489,7 +489,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             performanceTracker,
             spec,
             forkChoiceTrigger,
-            syncCommitteeSignaturePool,
+            syncCommitteeMessagePool,
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager);
     eventChannels
@@ -566,10 +566,10 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             new SignedContributionAndProofValidator(
                 spec, recentChainData, syncCommitteeStateUtils, timeProvider));
 
-    syncCommitteeSignaturePool =
-        new SyncCommitteeSignaturePool(
+    syncCommitteeMessagePool =
+        new SyncCommitteeMessagePool(
             spec,
-            new SyncCommitteeSignatureValidator(
+            new SyncCommitteeMessageValidator(
                 spec,
                 recentChainData,
                 syncCommitteeStateUtils,
@@ -577,7 +577,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                 timeProvider));
     eventChannels
         .subscribe(SlotEventsChannel.class, syncCommitteeContributionPool)
-        .subscribe(SlotEventsChannel.class, syncCommitteeSignaturePool);
+        .subscribe(SlotEventsChannel.class, syncCommitteeMessagePool);
   }
 
   public void initP2PNetwork() {
@@ -597,8 +597,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         new GossipPublisher<>();
     final GossipPublisher<SignedContributionAndProof> signedContributionAndProofGossipPublisher =
         new GossipPublisher<>();
-    final GossipPublisher<ValidateableSyncCommitteeSignature>
-        syncCommitteeSignatureGossipPublisher = new GossipPublisher<>();
+    final GossipPublisher<ValidateableSyncCommitteeMessage> syncCommitteeMessageGossipPublisher =
+        new GossipPublisher<>();
 
     // Set up gossip for voluntary exits
     voluntaryExitPool.subscribeOperationAdded(
@@ -627,10 +627,10 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             signedContributionAndProofGossipPublisher.publish(item);
           }
         });
-    syncCommitteeSignaturePool.subscribeOperationAdded(
+    syncCommitteeMessagePool.subscribeOperationAdded(
         (item, result) -> {
           if (result.code() == ValidationResultCode.ACCEPT) {
-            syncCommitteeSignatureGossipPublisher.publish(item);
+            syncCommitteeMessageGossipPublisher.publish(item);
           }
         });
 
@@ -653,8 +653,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             .voluntaryExitGossipPublisher(voluntaryExitGossipPublisher)
             .signedContributionAndProofGossipPublisher(signedContributionAndProofGossipPublisher)
             .gossipedSignedContributionAndProofProcessor(syncCommitteeContributionPool::add)
-            .gossipedSyncCommitteeSignatureProcessor(syncCommitteeSignaturePool::add)
-            .syncCommitteeSignatureGossipPublisher(syncCommitteeSignatureGossipPublisher)
+            .gossipedSyncCommitteeMessageProcessor(syncCommitteeMessagePool::add)
+            .syncCommitteeMessageGossipPublisher(syncCommitteeMessageGossipPublisher)
             .processedAttestationSubscriptionProvider(
                 attestationManager::subscribeToAttestationsToSend)
             .historicalChainData(

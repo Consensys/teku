@@ -18,7 +18,7 @@ import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 
 public interface PerformanceTracker extends SlotEventsChannel {
 
@@ -33,5 +33,5 @@ public interface PerformanceTracker extends SlotEventsChannel {
   void saveExpectedSyncCommitteeParticipant(
       int validatorIndex, Set<Integer> syncCommitteeIndices, UInt64 periodEndEpoch);
 
-  void saveProducedSyncCommitteeSignature(SyncCommitteeSignature signature);
+  void saveProducedSyncCommitteeMessage(SyncCommitteeMessage message);
 }

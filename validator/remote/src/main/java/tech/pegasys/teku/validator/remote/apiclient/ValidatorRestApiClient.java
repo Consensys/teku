@@ -34,7 +34,7 @@ import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.api.schema.SubnetSubscription;
 import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeContribution;
-import tech.pegasys.teku.api.schema.altair.SyncCommitteeSignature;
+import tech.pegasys.teku.api.schema.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
@@ -70,8 +70,8 @@ public interface ValidatorRestApiClient {
 
   void subscribeToPersistentSubnets(Set<SubnetSubscription> subnetSubscriptions);
 
-  Optional<PostSyncCommitteeFailureResponse> sendSyncCommitteeSignatures(
-      List<SyncCommitteeSignature> syncCommitteeSignatures);
+  Optional<PostSyncCommitteeFailureResponse> sendSyncCommitteeMessages(
+      List<SyncCommitteeMessage> syncCommitteeMessages);
 
   Optional<PostSyncDutiesResponse> getSyncCommitteeDuties(
       UInt64 epoch, Collection<Integer> validatorIndices);

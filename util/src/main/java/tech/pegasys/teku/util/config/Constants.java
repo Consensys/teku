@@ -148,7 +148,7 @@ public class Constants {
   public static final int VALID_AGGREGATE_SET_SIZE = 1000;
   public static final int VALID_VALIDATOR_SET_SIZE = 10000;
   public static final int VALID_CONTRIBUTION_AND_PROOF_SET_SIZE = 10000;
-  public static final int VALID_SYNC_COMMITTEE_SIGNATURE_SET_SIZE = 10000;
+  public static final int VALID_SYNC_COMMITTEE_MESSAGE_SET_SIZE = 10000;
   public static final int NETWORKING_FAILURE_REPEAT_INTERVAL = 3; // in sec
 
   // Teku specific

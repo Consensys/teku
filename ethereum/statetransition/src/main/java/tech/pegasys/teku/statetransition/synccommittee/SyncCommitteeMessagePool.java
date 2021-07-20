@@ -33,18 +33,18 @@ import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeSignature;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.statetransition.OperationPool.OperationAddedSubscriber;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
-public class SyncCommitteeSignaturePool implements SlotEventsChannel {
+public class SyncCommitteeMessagePool implements SlotEventsChannel {
 
-  private final Subscribers<OperationAddedSubscriber<ValidateableSyncCommitteeSignature>>
+  private final Subscribers<OperationAddedSubscriber<ValidateableSyncCommitteeMessage>>
       subscribers = Subscribers.create(true);
 
   private final Spec spec;
-  private final SyncCommitteeSignatureValidator validator;
+  private final SyncCommitteeMessageValidator validator;
   /**
    * Effectively provides a mapping from (slot, blockRoot, subcommitteeIndex) -> ContributionData
    * but using a nested map under slot so that pruning based on slot is efficient.
@@ -52,47 +52,45 @@ public class SyncCommitteeSignaturePool implements SlotEventsChannel {
   private final NavigableMap<UInt64, Map<BlockRootAndCommitteeIndex, ContributionData>>
       committeeContributionData = new TreeMap<>();
 
-  public SyncCommitteeSignaturePool(
-      final Spec spec, final SyncCommitteeSignatureValidator validator) {
+  public SyncCommitteeMessagePool(final Spec spec, final SyncCommitteeMessageValidator validator) {
     this.spec = spec;
     this.validator = validator;
   }
 
   public void subscribeOperationAdded(
-      OperationAddedSubscriber<ValidateableSyncCommitteeSignature> subscriber) {
+      OperationAddedSubscriber<ValidateableSyncCommitteeMessage> subscriber) {
     subscribers.subscribe(subscriber);
   }
 
-  public SafeFuture<InternalValidationResult> add(
-      final ValidateableSyncCommitteeSignature signature) {
+  public SafeFuture<InternalValidationResult> add(final ValidateableSyncCommitteeMessage message) {
     return validator
-        .validate(signature)
+        .validate(message)
         .thenPeek(
             result -> {
               if (result.isAccept()) {
-                subscribers.forEach(subscriber -> subscriber.onOperationAdded(signature, result));
-                doAdd(signature);
+                subscribers.forEach(subscriber -> subscriber.onOperationAdded(message, result));
+                doAdd(message);
               }
             });
   }
 
-  private synchronized void doAdd(final ValidateableSyncCommitteeSignature signature) {
+  private synchronized void doAdd(final ValidateableSyncCommitteeMessage message) {
     final SyncSubcommitteeAssignments assignments =
-        signature.getSubcommitteeAssignments().orElseThrow();
-    final Map<BlockRootAndCommitteeIndex, ContributionData> blockRootAndCommitteeIndexToSignatures =
-        committeeContributionData.computeIfAbsent(signature.getSlot(), __ -> new HashMap<>());
+        message.getSubcommitteeAssignments().orElseThrow();
+    final Map<BlockRootAndCommitteeIndex, ContributionData> blockRootAndCommitteeIndexToMessages =
+        committeeContributionData.computeIfAbsent(message.getSlot(), __ -> new HashMap<>());
     assignments
         .getAssignedSubcommittees()
         .forEach(
             subcommitteeIndex ->
-                blockRootAndCommitteeIndexToSignatures
+                blockRootAndCommitteeIndexToMessages
                     .computeIfAbsent(
                         new BlockRootAndCommitteeIndex(
-                            signature.getBeaconBlockRoot(), subcommitteeIndex),
+                            message.getBeaconBlockRoot(), subcommitteeIndex),
                         __ -> new ContributionData())
                     .add(
                         assignments.getParticipationBitIndices(subcommitteeIndex),
-                        signature.getSignature().getSignature()));
+                        message.getMessage().getSignature()));
   }
 
   public synchronized Optional<SyncCommitteeContribution> createContribution(
@@ -110,8 +108,8 @@ public class SyncCommitteeSignaturePool implements SlotEventsChannel {
   }
 
   /**
-   * Prunes by removing all signatures more than one slot old. Theoretically only the current slot
-   * signatures are required but we provide a one slot tolerance.
+   * Prunes by removing all messages more than one slot old. Theoretically only the current slot
+   * messages are required but we provide a one slot tolerance.
    *
    * @param slot the current node slot
    */

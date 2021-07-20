@@ -27,7 +27,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 
-public class SyncCommitteeSignature {
+public class SyncCommitteeMessage {
   @Schema(type = "string", format = "uint64")
   @JsonProperty("slot")
   public final UInt64 slot;
@@ -45,7 +45,7 @@ public class SyncCommitteeSignature {
   public final BLSSignature signature;
 
   @JsonCreator
-  public SyncCommitteeSignature(
+  public SyncCommitteeMessage(
       @JsonProperty("slot") final UInt64 slot,
       @JsonProperty("beacon_block_root") final Bytes32 beaconBlockRoot,
       @JsonProperty("validator_index") final UInt64 validatorIndex,
@@ -60,7 +60,7 @@ public class SyncCommitteeSignature {
   public boolean equals(final Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    final SyncCommitteeSignature that = (SyncCommitteeSignature) o;
+    final SyncCommitteeMessage that = (SyncCommitteeMessage) o;
     return Objects.equals(slot, that.slot)
         && Objects.equals(beaconBlockRoot, that.beaconBlockRoot)
         && Objects.equals(validatorIndex, that.validatorIndex)
@@ -73,7 +73,7 @@ public class SyncCommitteeSignature {
   }
 
   public Optional<
-          tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature>
+          tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage>
       asInternalCommitteeSignature(final Spec spec) {
     final Optional<SchemaDefinitionsAltair> maybeSchema =
         spec.atSlot(slot).getSchemaDefinitions().toVersionAltair();
@@ -87,7 +87,7 @@ public class SyncCommitteeSignature {
     return maybeSchema.map(
         schema ->
             schema
-                .getSyncCommitteeSignatureSchema()
+                .getSyncCommitteeMessageSchema()
                 .create(slot, beaconBlockRoot, validatorIndex, signature.asInternalBLSSignature()));
   }
 }
