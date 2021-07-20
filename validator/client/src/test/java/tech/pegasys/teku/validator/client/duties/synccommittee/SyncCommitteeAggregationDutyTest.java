@@ -99,7 +99,8 @@ class SyncCommitteeAggregationDutyTest {
             "minimal",
             modifier ->
                 modifier.altairBuilder(
-                    altairModifier -> altairModifier.altairForkEpoch(UInt64.ZERO)))
+                    altairModifier ->
+                        altairModifier.altairForkEpoch(UInt64.ZERO).syncCommitteeSize(512)))
         .toVersionAltair()
         .orElseThrow();
   }
@@ -160,7 +161,7 @@ class SyncCommitteeAggregationDutyTest {
   @Test
   void shouldCreateAndSendSignedContributionAndProof() {
     final int committeeIndex = 9;
-    final int subcommitteeIndex = 1;
+    final int subcommitteeIndex = 0;
     withValidatorAggregatingSubnet(validator1, subcommitteeIndex);
 
     final SyncCommitteeAggregationDuty duty =
