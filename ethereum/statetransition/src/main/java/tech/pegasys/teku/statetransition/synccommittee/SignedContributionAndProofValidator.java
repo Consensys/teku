@@ -87,6 +87,11 @@ public class SignedContributionAndProofValidator {
     }
     final SyncCommitteeUtil syncCommitteeUtil = maybeSyncCommitteeUtil.get();
 
+    if (proof.getMessage().getContribution().getAggregationBits().getBitCount() == 0) {
+      return SafeFuture.completedFuture(
+          failureResult("Rejecting proof because participant set is empty"));
+    }
+
     // [IGNORE] The contribution's slot is for the current slot (with a
     // `MAXIMUM_GOSSIP_CLOCK_DISPARITY` allowance), i.e. `contribution.slot == current_slot`.
     if (!slotUtil.isForCurrentSlot(contribution.getSlot())) {
