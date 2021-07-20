@@ -307,11 +307,15 @@ public final class DataStructureUtil {
   }
 
   public SyncAggregate randomSyncAggregate() {
+    return randomSyncAggregate(randomInt(4), randomInt(4));
+  }
+
+  public SyncAggregate randomSyncAggregate(final Integer... participantIndices) {
     final SyncAggregateSchema schema =
         BeaconBlockBodySchemaAltair.required(
                 spec.getGenesisSchemaDefinitions().getBeaconBlockBodySchema())
             .getSyncAggregateSchema();
-    return schema.create(List.of(randomInt(4), randomInt(4)), randomSignature());
+    return schema.create(List.of(participantIndices), randomSignature());
   }
 
   public SyncCommittee randomSyncCommittee() {
@@ -484,6 +488,11 @@ public final class DataStructureUtil {
     final BeaconBlock block =
         new BeaconBlock(blockSchema, slotNum, randomUInt64(), randomBytes32(), stateRoot, body);
     return signedBlock(block);
+  }
+
+  public BeaconBlockBuilder blockBuilder(final long slot) {
+    final SpecVersion specVersion = spec.atSlot(UInt64.valueOf(slot));
+    return new BeaconBlockBuilder(specVersion, this);
   }
 
   public BeaconBlock randomBeaconBlock(long slotNum) {
