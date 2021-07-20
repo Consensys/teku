@@ -109,6 +109,11 @@ class SnappyPreparedGossipMessage implements PreparedGossipMessage {
     }
   }
 
+  @Override
+  public Bytes getOriginalMessage() {
+    return compressedData;
+  }
+
   private Optional<Bytes> getUncompressed() {
     return decodedResult.get().getDecodedMessage();
   }

@@ -32,6 +32,8 @@ public interface PreparedGossipMessage {
   /** @return Returns the decoded message content */
   DecodedMessageResult getDecodedMessage();
 
+  Bytes getOriginalMessage();
+
   class DecodedMessageResult {
     private final Optional<Bytes> decodedMessage;
     private final Optional<Throwable> decodingException;
