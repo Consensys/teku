@@ -55,7 +55,7 @@ public class SpecConfigReader {
           CONFIG_NAME_KEY,
           // Unsupported, upcoming fork-related keys
           "SHARDING_FORK_VERSION",
-          "SHARDING_FORK_EPOCH");
+          "SHARDING_FORK_EPOCH",
           "SHARDING_FORK_EPOCH",
           "MIN_ANCHOR_POW_BLOCK_DIFFICULTY");
   private static final ImmutableSet<String> CONSTANT_KEYS =
