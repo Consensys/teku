@@ -13,12 +13,12 @@
 
 package tech.pegasys.teku.networking.p2p.discovery.discv5;
 
+import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.networking.p2p.discovery.discv5.NodeRecordConverter.convertToDiscoveryPeer;
 
 import java.time.Duration;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -149,9 +149,19 @@ public class DiscV5Service extends Service implements DiscoveryService {
 
   @Override
   public SafeFuture<Collection<DiscoveryPeer>> searchForPeers() {
-    // Current version of discovery doesn't return the found peers but next version will
     return SafeFuture.of(discoverySystem.searchForNewPeers())
-        .thenApply(__ -> Collections.emptyList());
+        // Current version of discovery doesn't return the found peers but next version will
+        .<Collection<NodeRecord>>thenApply(__ -> emptyList())
+        .thenApply(this::convertToDiscoveryPeers);
+  }
+
+  private List<DiscoveryPeer> convertToDiscoveryPeers(final Collection<NodeRecord> foundNodes) {
+    LOG.debug("Found {} nodes prior to filtering", foundNodes.size());
+    final SchemaDefinitions schemaDefinitions =
+        currentSchemaDefinitionsSupplier.getSchemaDefinitions();
+    return foundNodes.stream()
+        .flatMap(nodeRecord -> convertToDiscoveryPeer(nodeRecord, schemaDefinitions).stream())
+        .collect(toList());
   }
 
   @Override
