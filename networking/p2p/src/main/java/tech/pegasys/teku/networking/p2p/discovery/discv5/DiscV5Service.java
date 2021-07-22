@@ -13,10 +13,14 @@
 
 package tech.pegasys.teku.networking.p2p.discovery.discv5;
 
+import static java.util.stream.Collectors.toList;
+import static tech.pegasys.teku.networking.p2p.discovery.discv5.NodeRecordConverter.convertToDiscoveryPeer;
+
 import java.time.Duration;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -76,7 +80,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
     this.bootnodes =
         discoConfig.getBootnodes().stream()
             .map(NodeRecordFactory.DEFAULT::fromEnr)
-            .collect(Collectors.toList());
+            .collect(toList());
     this.discoverySystem =
         new DiscoverySystemBuilder()
             .listen(listenAddress, listenPort)
@@ -140,14 +144,14 @@ public class DiscV5Service extends Service implements DiscoveryService {
   public Stream<DiscoveryPeer> streamKnownPeers() {
     final SchemaDefinitions schemaDefinitions =
         currentSchemaDefinitionsSupplier.getSchemaDefinitions();
-    return activeNodes()
-        .map(n -> NodeRecordConverter.convertToDiscoveryPeer(n, schemaDefinitions))
-        .flatMap(Optional::stream);
+    return activeNodes().flatMap(node -> convertToDiscoveryPeer(node, schemaDefinitions).stream());
   }
 
   @Override
-  public SafeFuture<Void> searchForPeers() {
-    return SafeFuture.of(discoverySystem.searchForNewPeers());
+  public SafeFuture<Collection<DiscoveryPeer>> searchForPeers() {
+    // Current version of discovery doesn't return the found peers but next version will
+    return SafeFuture.of(discoverySystem.searchForNewPeers())
+        .thenApply(__ -> Collections.emptyList());
   }
 
   @Override
