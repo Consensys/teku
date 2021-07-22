@@ -23,6 +23,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigBuilder;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
+import tech.pegasys.teku.spec.config.SpecConfigMerge;
 
 public class SpecFactory {
 
@@ -37,15 +38,11 @@ public class SpecFactory {
     final SpecConfig config =
         SpecConfigLoader.loadConfig(
             configName,
-            builder ->
-                altairForkEpoch.ifPresent(
-                    forkEpoch -> overrideAltairForkEpoch(builder, forkEpoch)));
-    return create(config);
             builder -> {
               altairForkEpoch.ifPresent(forkEpoch -> overrideAltairForkEpoch(builder, forkEpoch));
               mergeForkEpoch.ifPresent(forkEpoch -> overrideMergeForkEpoch(builder, forkEpoch));
             });
-    return create(config, mergeForkEpoch);
+    return create(config);
   }
 
   private static void overrideAltairForkEpoch(
@@ -58,10 +55,11 @@ public class SpecFactory {
     builder.mergeBuilder(mergeBuilder -> mergeBuilder.mergeForkEpoch(forkEpoch));
   }
 
-  public static Spec create(final SpecConfig config,
-      final Optional<UInt64> mergeForkEpoch) {
+  public static Spec create(final SpecConfig config) {
     final UInt64 altairForkEpoch =
         config.toVersionAltair().map(SpecConfigAltair::getAltairForkEpoch).orElse(FAR_FUTURE_EPOCH);
+    final Optional<UInt64> mergeForkEpoch = config.toVersionMerge()
+        .map(SpecConfigMerge::getMergeForkEpoch);
 
     // Merge takes precedence in the prototype
     if (mergeForkEpoch.isPresent()) {

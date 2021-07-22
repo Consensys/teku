@@ -60,7 +60,7 @@ public class TransitionTestExecutor implements TestExecutor {
         TestConfigLoader.loadConfig(
             testDefinition.getConfigName(),
             c -> c.altairBuilder(a -> a.altairForkEpoch(forkEpoch)));
-    final Spec spec = SpecFactory.create(config, Optional.empty());
+    final Spec spec = SpecFactory.create(config);
     final BeaconState preState =
         TestDataUtils.loadSsz(testDefinition, "pre.ssz_snappy", spec::deserializeBeaconState);
     final BeaconState postState =
