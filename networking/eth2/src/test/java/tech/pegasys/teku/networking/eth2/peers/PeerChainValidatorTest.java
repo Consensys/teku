@@ -19,9 +19,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
+import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
@@ -31,10 +30,13 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.type.Bytes4;
@@ -43,25 +45,29 @@ import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.util.config.Constants;
 
 public class PeerChainValidatorTest {
-
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final Spec spec = TestSpecFactory.createDefault();
+  private final List<Fork> forks = spec.getForkSchedule().getForks();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final Eth2Peer peer = mock(Eth2Peer.class);
   private final CombinedChainDataClient combinedChainData = mock(CombinedChainDataClient.class);
   private final UpdatableStore store = mock(UpdatableStore.class);
 
-  private final ForkInfo remoteForkInfo = dataStructureUtil.randomForkInfo();
-  private final Bytes4 remoteFork = remoteForkInfo.getForkDigest();
-  private final ForkInfo otherForkInfo = dataStructureUtil.randomForkInfo();
+  private final ForkInfo remoteForkInfo =
+      new ForkInfo(forks.get(0), dataStructureUtil.randomBytes32());
+  private final Bytes4 remoteFork = remoteForkInfo.getForkDigest(spec);
+  private final ForkInfo otherForkInfo =
+      new ForkInfo(forks.get(0), dataStructureUtil.randomBytes32());
 
   private final UInt64 genesisEpoch = UInt64.valueOf(Constants.GENESIS_EPOCH);
   private final UInt64 remoteFinalizedEpoch = UInt64.valueOf(10L);
   private final UInt64 earlierEpoch = UInt64.valueOf(8L);
   private final UInt64 laterEpoch = UInt64.valueOf(12L);
 
-  private final UInt64 genesisSlot = compute_start_slot_at_epoch(genesisEpoch);
-  private final UInt64 remoteFinalizedEpochSlot = compute_start_slot_at_epoch(remoteFinalizedEpoch);
-  private final UInt64 earlierEpochSlot = compute_start_slot_at_epoch(earlierEpoch);
-  private final UInt64 laterEpochSlot = compute_start_slot_at_epoch(laterEpoch);
+  private final UInt64 genesisSlot = spec.computeStartSlotAtEpoch(genesisEpoch);
+  private final UInt64 remoteFinalizedEpochSlot =
+      spec.computeStartSlotAtEpoch(remoteFinalizedEpoch);
+  private final UInt64 earlierEpochSlot = spec.computeStartSlotAtEpoch(earlierEpoch);
+  private final UInt64 laterEpochSlot = spec.computeStartSlotAtEpoch(laterEpoch);
 
   // Offset slots from epoch to simulate skipped blocks
   private final UInt64 remoteFinalizedBlockSlot = remoteFinalizedEpochSlot.minus(UInt64.ONE);
@@ -87,12 +93,13 @@ public class PeerChainValidatorTest {
       new Checkpoint(laterEpoch, laterBlockAndState.getRoot());
 
   private final AnchorPoint genesisAnchor =
-      AnchorPoint.create(genesisCheckpoint, genesisBlockAndState);
+      AnchorPoint.create(spec, genesisCheckpoint, genesisBlockAndState);
   private final AnchorPoint remoteFinalizedAnchor =
-      AnchorPoint.create(remoteFinalizedCheckpoint, remoteFinalizedBlockAndState);
+      AnchorPoint.create(spec, remoteFinalizedCheckpoint, remoteFinalizedBlockAndState);
   private final AnchorPoint earlierAnchor =
-      AnchorPoint.create(earlierCheckpoint, earlierBlockAndState);
-  private final AnchorPoint laterAnchor = AnchorPoint.create(laterCheckpoint, laterBlockAndState);
+      AnchorPoint.create(spec, earlierCheckpoint, earlierBlockAndState);
+  private final AnchorPoint laterAnchor =
+      AnchorPoint.create(spec, laterCheckpoint, laterBlockAndState);
 
   private PeerStatus remoteStatus;
   private PeerChainValidator peerChainValidator;
@@ -104,7 +111,7 @@ public class PeerChainValidatorTest {
     when(peer.hasStatus()).thenReturn(true);
     when(peer.disconnectCleanly(any())).thenReturn(SafeFuture.completedFuture(null));
 
-    when(combinedChainData.getCurrentEpoch()).thenReturn(compute_epoch_at_slot(laterBlockSlot));
+    when(combinedChainData.getCurrentEpoch()).thenReturn(spec.computeEpochAtSlot(laterBlockSlot));
     when(combinedChainData.getStore()).thenReturn(store);
   }
 
@@ -303,7 +310,7 @@ public class PeerChainValidatorTest {
     forksMatch();
     finalizedCheckpointsMatch();
     final SignedBeaconBlock nonMatchingBlock =
-        dataStructureUtil.randomSignedBeaconBlock(earlierCheckpoint.getEpochStartSlot());
+        dataStructureUtil.randomSignedBeaconBlock(earlierCheckpoint.getEpochStartSlot(spec));
     when(peer.requestBlockByRoot(requiredCheckpoint.getRoot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(earlierBlockAndState.getBlock())));
     when(peer.requestBlockBySlot(earlierBlockAndState.getSlot()))
@@ -342,7 +349,8 @@ public class PeerChainValidatorTest {
   @Test
   public void remoteChainIsBehindLocalAnchorPoint_disallow() {
     peerChainValidator =
-        PeerChainValidator.create(new NoOpMetricsSystem(), combinedChainData, Optional.empty());
+        PeerChainValidator.create(
+            spec, new NoOpMetricsSystem(), combinedChainData, Optional.empty());
 
     // Setup mocks
     forksMatch();
@@ -490,7 +498,7 @@ public class PeerChainValidatorTest {
     } else {
       final AnchorPoint anchorMissingBlock =
           AnchorPoint.create(
-              finalizedAnchor.getCheckpoint(), finalizedAnchor.getState(), Optional.empty());
+              spec, finalizedAnchor.getCheckpoint(), finalizedAnchor.getState(), Optional.empty());
       when(store.getLatestFinalized()).thenReturn(anchorMissingBlock);
     }
   }
@@ -518,6 +526,7 @@ public class PeerChainValidatorTest {
 
     remoteStatus = status;
     peerChainValidator =
-        PeerChainValidator.create(new NoOpMetricsSystem(), combinedChainData, requiredCheckpoint);
+        PeerChainValidator.create(
+            spec, new NoOpMetricsSystem(), combinedChainData, requiredCheckpoint);
   }
 }

@@ -30,7 +30,7 @@ import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 import org.opentest4j.TestAbortedException;
-import tech.pegasys.teku.util.config.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
 public class KeyStoreFilesLocatorTest {
   private static final String PATH_SEP = System.getProperty("path.separator");

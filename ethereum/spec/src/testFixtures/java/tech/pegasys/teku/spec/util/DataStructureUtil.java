@@ -73,7 +73,7 @@ import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
@@ -307,11 +307,15 @@ public final class DataStructureUtil {
   }
 
   public SyncAggregate randomSyncAggregate() {
+    return randomSyncAggregate(randomInt(4), randomInt(4));
+  }
+
+  public SyncAggregate randomSyncAggregate(final Integer... participantIndices) {
     final SyncAggregateSchema schema =
         BeaconBlockBodySchemaAltair.required(
                 spec.getGenesisSchemaDefinitions().getBeaconBlockBodySchema())
             .getSyncAggregateSchema();
-    return schema.create(List.of(randomInt(4), randomInt(4)), randomSignature());
+    return schema.create(List.of(participantIndices), randomSignature());
   }
 
   public SyncCommittee randomSyncCommittee() {
@@ -347,22 +351,22 @@ public final class DataStructureUtil {
     return validators.get(index).getPublicKey();
   }
 
-  public SyncCommitteeSignature randomSyncCommitteeSignature() {
-    return randomSyncCommitteeSignature(randomUInt64());
+  public SyncCommitteeMessage randomSyncCommitteeMessage() {
+    return randomSyncCommitteeMessage(randomUInt64());
   }
 
-  public SyncCommitteeSignature randomSyncCommitteeSignature(final long slot) {
-    return randomSyncCommitteeSignature(UInt64.valueOf(slot));
+  public SyncCommitteeMessage randomSyncCommitteeMessage(final long slot) {
+    return randomSyncCommitteeMessage(UInt64.valueOf(slot));
   }
 
-  public SyncCommitteeSignature randomSyncCommitteeSignature(final UInt64 slot) {
-    return randomSyncCommitteeSignature(slot, randomBytes32());
+  public SyncCommitteeMessage randomSyncCommitteeMessage(final UInt64 slot) {
+    return randomSyncCommitteeMessage(slot, randomBytes32());
   }
 
-  public SyncCommitteeSignature randomSyncCommitteeSignature(
+  public SyncCommitteeMessage randomSyncCommitteeMessage(
       final UInt64 slot, final Bytes32 beaconBlockRoot) {
     return getAltairSchemaDefinitions(UInt64.ZERO)
-        .getSyncCommitteeSignatureSchema()
+        .getSyncCommitteeMessageSchema()
         .create(slot, beaconBlockRoot, randomUInt64(), randomSignature());
   }
 
@@ -484,6 +488,11 @@ public final class DataStructureUtil {
     final BeaconBlock block =
         new BeaconBlock(blockSchema, slotNum, randomUInt64(), randomBytes32(), stateRoot, body);
     return signedBlock(block);
+  }
+
+  public BeaconBlockBuilder blockBuilder(final long slot) {
+    final SpecVersion specVersion = spec.atSlot(UInt64.valueOf(slot));
+    return new BeaconBlockBuilder(specVersion, this);
   }
 
   public BeaconBlock randomBeaconBlock(long slotNum) {
@@ -767,7 +776,7 @@ public final class DataStructureUtil {
 
   public List<DepositWithIndex> newDeposits(int numDeposits) {
     List<DepositWithIndex> deposits = new ArrayList<>();
-    final DepositGenerator depositGenerator = new DepositGenerator();
+    final DepositGenerator depositGenerator = new DepositGenerator(spec);
 
     for (int i = 0; i < numDeposits; i++) {
       BLSKeyPair keypair = BLSTestUtil.randomKeyPair(i);
@@ -843,7 +852,15 @@ public final class DataStructureUtil {
   public AnchorPoint randomAnchorPoint(final UInt64 epoch) {
     final SignedBlockAndState anchorBlockAndState =
         randomSignedBlockAndState(computeStartSlotAtEpoch(epoch));
-    return AnchorPoint.fromInitialBlockAndState(anchorBlockAndState);
+    return AnchorPoint.fromInitialBlockAndState(spec, anchorBlockAndState);
+  }
+
+  public AnchorPoint randomAnchorPoint(final UInt64 epoch, final Fork currentFork) {
+    UInt64 slot = computeStartSlotAtEpoch(epoch);
+    final BeaconBlockAndState blockAndState =
+        randomBlockAndState(
+            slot, stateBuilderPhase0().slot(slot).fork(currentFork).build(), randomBytes32());
+    return AnchorPoint.fromInitialBlockAndState(spec, toSigned(blockAndState));
   }
 
   public AnchorPoint createAnchorFromState(final BeaconState anchorState) {
@@ -865,7 +882,7 @@ public final class DataStructureUtil {
     final UInt64 anchorEpoch = spec.getCurrentEpoch(anchorState);
     final Checkpoint anchorCheckpoint = new Checkpoint(anchorEpoch, anchorRoot);
 
-    return AnchorPoint.create(anchorCheckpoint, signedAnchorBlock, anchorState);
+    return AnchorPoint.create(spec, anchorCheckpoint, signedAnchorBlock, anchorState);
   }
 
   public SignedContributionAndProof randomSignedContributionAndProof(final long slot) {

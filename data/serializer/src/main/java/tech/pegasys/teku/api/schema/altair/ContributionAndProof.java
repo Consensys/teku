@@ -44,6 +44,15 @@ public class ContributionAndProof {
     this.contribution = contribution;
   }
 
+  public ContributionAndProof(
+      tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof
+          contributionAndProof) {
+    this(
+        contributionAndProof.getAggregatorIndex(),
+        new BLSSignature(contributionAndProof.getSelectionProof()),
+        new SyncCommitteeContribution(contributionAndProof.getContribution()));
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) return true;

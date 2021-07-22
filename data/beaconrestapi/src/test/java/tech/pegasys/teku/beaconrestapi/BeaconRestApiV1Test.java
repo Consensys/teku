@@ -19,7 +19,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.google.common.eventbus.EventBus;
 import io.javalin.Javalin;
 import io.javalin.core.JavalinServer;
 import io.javalin.http.Handler;
@@ -33,6 +32,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.Liveness;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.PutLogLevel;
+import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.Readiness;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetAllBlocksAtSlot;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetSszState;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetStateByBlockRoot;
@@ -98,7 +98,7 @@ import tech.pegasys.teku.sync.SyncService;
 
 @SuppressWarnings("unchecked")
 public class BeaconRestApiV1Test {
-  private final RecentChainData storageClient = MemoryOnlyRecentChainData.create(new EventBus());
+  private final RecentChainData storageClient = MemoryOnlyRecentChainData.create();
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
   private final JavalinServer server = mock(JavalinServer.class);
@@ -225,6 +225,7 @@ public class BeaconRestApiV1Test {
     builder.add(Arguments.of(GetSszState.ROUTE, GetSszState.class));
     builder.add(Arguments.of(GetStateByBlockRoot.ROUTE, GetStateByBlockRoot.class));
     builder.add(Arguments.of(Liveness.ROUTE, Liveness.class));
+    builder.add(Arguments.of(Readiness.ROUTE, Readiness.class));
     builder.add(Arguments.of(GetAllBlocksAtSlot.ROUTE, GetAllBlocksAtSlot.class));
 
     return builder.build();

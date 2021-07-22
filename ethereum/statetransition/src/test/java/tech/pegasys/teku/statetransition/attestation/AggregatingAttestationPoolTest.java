@@ -18,9 +18,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool.ATTESTATION_RETENTION_EPOCHS;
 import static tech.pegasys.teku.statetransition.attestation.AggregatorUtil.aggregateAttestations;
-import static tech.pegasys.teku.util.config.Constants.ATTESTATION_RETENTION_EPOCHS;
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -62,6 +61,7 @@ class AggregatingAttestationPoolTest {
     // Fwd some calls to the real spec
     when(mockSpec.computeEpochAtSlot(any()))
         .thenAnswer(i -> spec.computeEpochAtSlot(i.getArgument(0)));
+    when(mockSpec.getSlotsPerEpoch(any())).thenAnswer(i -> spec.getSlotsPerEpoch(i.getArgument(0)));
     when(mockSpec.getCurrentEpoch(any())).thenAnswer(i -> spec.getCurrentEpoch(i.getArgument(0)));
   }
 
@@ -259,7 +259,9 @@ class AggregatingAttestationPoolTest {
     aggregatingPool.onSlot(
         pruneAttestationData
             .getSlot()
-            .plus(SLOTS_PER_EPOCH * ATTESTATION_RETENTION_EPOCHS)
+            .plus(
+                spec.getSlotsPerEpoch(pruneAttestationData.getSlot())
+                    * ATTESTATION_RETENTION_EPOCHS)
             .plus(ONE));
 
     assertThat(
@@ -292,7 +294,7 @@ class AggregatingAttestationPoolTest {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
 
     final Attestation attestation = addAttestationFromValidators(attestationData, 1, 2, 3, 4);
-    aggregatingPool.add(ValidateableAttestation.from(attestation));
+    aggregatingPool.add(ValidateableAttestation.from(spec, attestation));
     assertThat(aggregatingPool.getSize()).isEqualTo(1);
   }
 
@@ -408,7 +410,8 @@ class AggregatingAttestationPoolTest {
         Attestation.SSZ_SCHEMA.getAggregationBitsSchema().ofBits(20, validators);
     final Attestation attestation =
         new Attestation(bitlist, data, dataStructureUtil.randomSignature());
-    ValidateableAttestation validateableAttestation = ValidateableAttestation.from(attestation);
+    ValidateableAttestation validateableAttestation =
+        ValidateableAttestation.from(spec, attestation);
     validateableAttestation.saveCommitteeShufflingSeed(
         dataStructureUtil.randomBeaconState(100, 15));
     aggregatingPool.add(validateableAttestation);

@@ -47,7 +47,7 @@ import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFa
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionData;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
@@ -60,7 +60,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTrans
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.ssz.SszList;
-import tech.pegasys.teku.util.config.Constants;
 
 /** A utility for building small, valid chains of blocks with states for testing */
 public class ChainBuilder {
@@ -229,7 +228,8 @@ public class ChainBuilder {
   }
 
   public SignedBlockAndState generateGenesis(final UInt64 genesisTime, final boolean signDeposits) {
-    return generateGenesis(genesisTime, signDeposits, Constants.MAX_EFFECTIVE_BALANCE);
+    return generateGenesis(
+        genesisTime, signDeposits, spec.getGenesisSpecConfig().getMaxEffectiveBalance());
   }
 
   public SignedBlockAndState generateGenesis(
@@ -238,7 +238,7 @@ public class ChainBuilder {
 
     // Generate genesis state
     final List<DepositData> initialDepositData =
-        new MockStartDepositGenerator(new DepositGenerator(signDeposits))
+        new MockStartDepositGenerator(new DepositGenerator(spec, signDeposits))
             .createDeposits(validatorKeys, depositAmount);
     BeaconState genesisState =
         new MockStartBeaconStateGenerator(spec)
@@ -339,9 +339,8 @@ public class ChainBuilder {
     final UInt64 slotsPerEpoch = UInt64.valueOf(spec.getGenesisSpecConfig().getSlotsPerEpoch());
     final UInt64 minAssignedSlot =
         slot.compareTo(slotsPerEpoch) <= 0 ? UInt64.ZERO : slot.minus(slotsPerEpoch);
-    final UInt64 minInclusionDiff = UInt64.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY);
-    final UInt64 maxAssignedSlot =
-        slot.compareTo(minInclusionDiff) <= 0 ? slot : slot.minus(minInclusionDiff);
+    final int minInclusionDiff = spec.getSpecConfig(currentEpoch).getMinAttestationInclusionDelay();
+    final UInt64 maxAssignedSlot = slot.minusMinZero(minInclusionDiff);
 
     // Generate stream of consistent, valid attestations for inclusion
     return LongStream.rangeClosed(minAssignedSlot.longValue(), maxAssignedSlot.longValue())
@@ -420,9 +419,13 @@ public class ChainBuilder {
 
   public SignedContributionAndProofTestBuilder createValidSignedContributionAndProofBuilder(
       final UInt64 slot) {
+    return createValidSignedContributionAndProofBuilder(slot, getLatestBlockAndState().getRoot());
+  }
+
+  public SignedContributionAndProofTestBuilder createValidSignedContributionAndProofBuilder(
+      final UInt64 slot, final Bytes32 beaconBlockRoot) {
     final SyncCommitteeUtil syncCommitteeUtil = spec.getSyncCommitteeUtilRequired(slot);
     final SignedBlockAndState latestBlockAndState = getLatestBlockAndState();
-    final Bytes32 beaconBlockRoot = latestBlockAndState.getRoot();
     final UInt64 epoch = syncCommitteeUtil.getEpochForDutiesAtSlot(slot);
 
     final Map<UInt64, SyncSubcommitteeAssignments> subcommitteeAssignments =
@@ -458,22 +461,22 @@ public class ChainBuilder {
     throw new IllegalStateException("No valid sync subcommittee aggregators found");
   }
 
-  public SyncCommitteeSignature createValidSyncCommitteeSignature() {
+  public SyncCommitteeMessage createValidSyncCommitteeMessage() {
     final SignedBlockAndState target = getLatestBlockAndState();
-    return createSyncCommitteeSignature(target.getSlot(), target.getRoot());
+    return createSyncCommitteeMessage(target.getSlot(), target.getRoot());
   }
 
-  public SyncCommitteeSignature createSyncCommitteeSignature(
+  public SyncCommitteeMessage createSyncCommitteeMessage(
       final UInt64 slot, final Bytes32 blockRoot) {
     final BeaconStateAltair state =
         BeaconStateAltair.required(getLatestBlockAndStateAtSlot(slot).getState());
 
     final BLSPublicKey pubKey =
         state.getCurrentSyncCommittee().getPubkeys().get(0).getBLSPublicKey();
-    return createSyncCommitteeSignature(slot, blockRoot, state, pubKey);
+    return createSyncCommitteeMessage(slot, blockRoot, state, pubKey);
   }
 
-  public SyncCommitteeSignature createSyncCommitteeSignature(
+  public SyncCommitteeMessage createSyncCommitteeMessage(
       final UInt64 slot,
       final Bytes32 blockRoot,
       final BeaconStateAltair state,
@@ -481,10 +484,10 @@ public class ChainBuilder {
     final int validatorIndex = spec.getValidatorIndex(state, validatorPublicKey).orElseThrow();
     final BLSSignature signature =
         getSigner(validatorIndex)
-            .signSyncCommitteeSignature(slot, blockRoot, state.getForkInfo())
+            .signSyncCommitteeMessage(slot, blockRoot, state.getForkInfo())
             .join();
     return SchemaDefinitionsAltair.required(spec.atSlot(slot).getSchemaDefinitions())
-        .getSyncCommitteeSignatureSchema()
+        .getSyncCommitteeMessageSchema()
         .create(slot, blockRoot, UInt64.valueOf(validatorIndex), signature);
   }
 

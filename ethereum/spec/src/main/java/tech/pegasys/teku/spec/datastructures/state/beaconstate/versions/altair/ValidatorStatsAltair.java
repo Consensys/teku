@@ -30,21 +30,17 @@ interface ValidatorStatsAltair extends BeaconStateAltair {
   }
 
   private CorrectAndLiveValidators getValidatorStats(final SszList<SszByte> participationFlags) {
-
-    final int numberOfCorrectValidators =
-        Math.toIntExact(
-            participationFlags.stream()
-                .map(SszByte::get)
-                .filter(ParticipationFlags::isTimelyTarget)
-                .count());
-
-    final int numberOfLiveValidators =
-        Math.toIntExact(
-            participationFlags.stream()
-                .map(SszByte::get)
-                .filter(ParticipationFlags::isAnyFlagSet)
-                .count());
-
+    int numberOfCorrectValidators = 0;
+    int numberOfLiveValidators = 0;
+    for (SszByte participationFlag : participationFlags) {
+      final byte flag = participationFlag.get();
+      if (ParticipationFlags.isTimelyTarget(flag)) {
+        numberOfCorrectValidators++;
+      }
+      if (ParticipationFlags.isAnyFlagSet(flag)) {
+        numberOfLiveValidators++;
+      }
+    }
     return new CorrectAndLiveValidators(numberOfCorrectValidators, numberOfLiveValidators);
   }
 }

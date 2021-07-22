@@ -21,7 +21,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
 
-import com.google.common.eventbus.EventBus;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
@@ -75,7 +74,6 @@ public class StorageBackedRecentChainDataTest {
     SafeFuture<Optional<StoreBuilder>> storeRequestFuture = new SafeFuture<>();
     when(storageQueryChannel.onStoreRequest()).thenReturn(storeRequestFuture);
 
-    final EventBus eventBus = new EventBus();
     final StoreConfig storeConfig =
         StoreConfig.builder().hotStatePersistenceFrequencyInEpochs(5).build();
     final SafeFuture<RecentChainData> client =
@@ -89,7 +87,6 @@ public class StorageBackedRecentChainDataTest {
             ProtoArrayStorageChannel.NO_OP,
             finalizedCheckpointChannel,
             chainHeadChannel,
-            eventBus,
             spec);
 
     // We should have posted a request to get the store from storage
@@ -125,7 +122,6 @@ public class StorageBackedRecentChainDataTest {
     SafeFuture<Optional<StoreBuilder>> storeRequestFuture = new SafeFuture<>();
     when(storageQueryChannel.onStoreRequest()).thenReturn(storeRequestFuture);
 
-    final EventBus eventBus = new EventBus();
     final StoreConfig storeConfig =
         StoreConfig.builder().hotStatePersistenceFrequencyInEpochs(5).build();
     final ProtoArrayStorageChannel protoArrayStorageChannel = mock(ProtoArrayStorageChannel.class);
@@ -143,7 +139,6 @@ public class StorageBackedRecentChainDataTest {
             protoArrayStorageChannel,
             finalizedCheckpointChannel,
             chainHeadChannel,
-            eventBus,
             spec);
 
     // We should have posted a request to get the store from storage
@@ -153,7 +148,7 @@ public class StorageBackedRecentChainDataTest {
     assertThat(client).isNotDone();
 
     // Post a store response to complete initialization
-    final AnchorPoint anchorPoint = AnchorPoint.fromInitialBlockAndState(blockAndState);
+    final AnchorPoint anchorPoint = AnchorPoint.fromInitialBlockAndState(spec, blockAndState);
 
     final StoreBuilder storeBuilder =
         StoreBuilder.create()
@@ -193,7 +188,6 @@ public class StorageBackedRecentChainDataTest {
     SafeFuture<Optional<StoreBuilder>> storeRequestFuture = new SafeFuture<>();
     when(storageQueryChannel.onStoreRequest()).thenReturn(storeRequestFuture);
 
-    final EventBus eventBus = new EventBus();
     final StoreConfig storeConfig =
         StoreConfig.builder().hotStatePersistenceFrequencyInEpochs(5).build();
     final SafeFuture<RecentChainData> client =
@@ -207,7 +201,6 @@ public class StorageBackedRecentChainDataTest {
             ProtoArrayStorageChannel.NO_OP,
             finalizedCheckpointChannel,
             chainHeadChannel,
-            eventBus,
             spec);
 
     // We should have posted a request to get the store from storage
@@ -247,7 +240,6 @@ public class StorageBackedRecentChainDataTest {
         .thenReturn(SafeFuture.failedFuture(new TimeoutException()))
         .thenReturn(storeRequestFuture);
 
-    final EventBus eventBus = new EventBus();
     final SafeFuture<RecentChainData> client =
         StorageBackedRecentChainData.create(
             new StubMetricsSystem(),
@@ -259,7 +251,6 @@ public class StorageBackedRecentChainDataTest {
             ProtoArrayStorageChannel.NO_OP,
             finalizedCheckpointChannel,
             chainHeadChannel,
-            eventBus,
             spec);
 
     // We should have posted a request to get the store from storage
@@ -294,7 +285,6 @@ public class StorageBackedRecentChainDataTest {
         .thenReturn(SafeFuture.failedFuture(new IOException()))
         .thenReturn(storeRequestFuture);
 
-    final EventBus eventBus = new EventBus();
     final SafeFuture<RecentChainData> client =
         StorageBackedRecentChainData.create(
             new StubMetricsSystem(),
@@ -306,7 +296,6 @@ public class StorageBackedRecentChainDataTest {
             ProtoArrayStorageChannel.NO_OP,
             finalizedCheckpointChannel,
             chainHeadChannel,
-            eventBus,
             spec);
 
     // We should have posted a request to get the store from storage

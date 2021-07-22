@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.sync.forward.singlepeer;
 
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.util.config.Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE;
 
 import com.google.common.base.Throwables;
@@ -36,6 +35,7 @@ import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeResponseInvalidResponseException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
@@ -64,6 +64,7 @@ public class PeerSync {
   static final int MAX_THROTTLED_REQUESTS = 10;
 
   private final AtomicBoolean stopped = new AtomicBoolean(false);
+  private final Spec spec;
   private final RecentChainData storageClient;
   private final BlockImporter blockImporter;
 
@@ -79,6 +80,7 @@ public class PeerSync {
       final RecentChainData storageClient,
       final BlockImporter blockImporter,
       final MetricsSystem metricsSystem) {
+    this.spec = storageClient.getSpec();
     this.asyncRunner = asyncRunner;
     this.storageClient = storageClient;
     this.blockImporter = blockImporter;
@@ -96,7 +98,7 @@ public class PeerSync {
     LOG.debug("Start syncing to peer {}", peer);
     // Begin requesting blocks at our first non-finalized slot
     final UInt64 finalizedEpoch = storageClient.getFinalizedEpoch();
-    final UInt64 latestFinalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
+    final UInt64 latestFinalizedSlot = spec.computeStartSlotAtEpoch(finalizedEpoch);
     final UInt64 firstNonFinalSlot = latestFinalizedSlot.plus(UInt64.ONE);
 
     this.startingSlot = firstNonFinalSlot;
@@ -240,7 +242,9 @@ public class PeerSync {
   }
 
   private boolean hasPeerFinalizedBlock(final SignedBeaconBlock block, final PeerStatus status) {
-    return block.getSlot().isLessThanOrEqualTo(status.getFinalizedCheckpoint().getEpochStartSlot());
+    return block
+        .getSlot()
+        .isLessThanOrEqualTo(status.getFinalizedCheckpoint().getEpochStartSlot(spec));
   }
 
   private SafeFuture<PeerSyncResult> completeSyncWithPeer(

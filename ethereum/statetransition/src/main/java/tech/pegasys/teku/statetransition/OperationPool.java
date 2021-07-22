@@ -28,10 +28,10 @@ import tech.pegasys.teku.ssz.schema.SszListSchema;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.OperationValidator;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
-import tech.pegasys.teku.util.config.Constants;
 
 public class OperationPool<T extends SszData> {
-  private final Set<T> operations = LimitedSet.create(Constants.OPERATION_POOL_SIZE);
+  private static final int OPERATION_POOL_SIZE = 1000;
+  private final Set<T> operations = LimitedSet.create(OPERATION_POOL_SIZE);
   private final Function<UInt64, SszListSchema<T, ?>> slotToSszListSchemaSupplier;
   private final OperationValidator<T> operationValidator;
   private final Subscribers<OperationAddedSubscriber<T>> subscribers = Subscribers.create(true);

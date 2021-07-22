@@ -13,9 +13,14 @@
 
 package tech.pegasys.teku.spec;
 
+import static tech.pegasys.teku.spec.SpecMilestone.ALTAIR;
+import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
+import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
+
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigBuilder;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 
@@ -32,11 +37,15 @@ public class SpecFactory {
     final SpecConfig config =
         SpecConfigLoader.loadConfig(
             configName,
+            builder ->
+                altairForkEpoch.ifPresent(
+                    forkEpoch -> overrideAltairForkEpoch(builder, forkEpoch)));
+    return create(config);
             builder -> {
               altairForkEpoch.ifPresent(forkEpoch -> overrideAltairForkEpoch(builder, forkEpoch));
               mergeForkEpoch.ifPresent(forkEpoch -> overrideMergeForkEpoch(builder, forkEpoch));
             });
-    return create(config, altairForkEpoch, mergeForkEpoch);
+    return create(config, mergeForkEpoch);
   }
 
   private static void overrideAltairForkEpoch(
@@ -49,10 +58,11 @@ public class SpecFactory {
     builder.mergeBuilder(mergeBuilder -> mergeBuilder.mergeForkEpoch(forkEpoch));
   }
 
-  public static Spec create(
-      final SpecConfig config,
-      final Optional<UInt64> altairForkEpoch,
+  public static Spec create(final SpecConfig config,
       final Optional<UInt64> mergeForkEpoch) {
+    final UInt64 altairForkEpoch =
+        config.toVersionAltair().map(SpecConfigAltair::getAltairForkEpoch).orElse(FAR_FUTURE_EPOCH);
+
     // Merge takes precedence in the prototype
     if (mergeForkEpoch.isPresent()) {
       if (mergeForkEpoch.get().equals(UInt64.ZERO)) {
@@ -62,7 +72,7 @@ public class SpecFactory {
     }
 
     final SpecMilestone highestMilestoneSupported =
-        altairForkEpoch.map(__ -> SpecMilestone.ALTAIR).orElse(SpecMilestone.PHASE0);
+        altairForkEpoch.equals(FAR_FUTURE_EPOCH) ? PHASE0 : ALTAIR;
     return Spec.create(config, highestMilestoneSupported);
   }
 }

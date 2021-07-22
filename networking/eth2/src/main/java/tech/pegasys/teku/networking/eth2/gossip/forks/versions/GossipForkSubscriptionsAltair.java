@@ -17,7 +17,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
 import tech.pegasys.teku.networking.eth2.gossip.SignedContributionAndProofGossipManager;
-import tech.pegasys.teku.networking.eth2.gossip.SyncCommitteeSignatureGossipManager;
+import tech.pegasys.teku.networking.eth2.gossip.SyncCommitteeMessageGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubnetSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
@@ -29,7 +29,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeSignature;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
@@ -42,11 +42,11 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
       signedContributionAndProofOperationProcessor;
   private final GossipPublisher<SignedContributionAndProof>
       signedContributionAndProofGossipPublisher;
-  private final OperationProcessor<ValidateableSyncCommitteeSignature>
-      syncCommitteeSignatureOperationProcessor;
-  private final GossipPublisher<ValidateableSyncCommitteeSignature>
-      syncCommitteeSignatureGossipPublisher;
-  private SyncCommitteeSignatureGossipManager syncCommitteeSignatureGossipManager;
+  private final OperationProcessor<ValidateableSyncCommitteeMessage>
+      syncCommitteeMessageOperationProcessor;
+  private final GossipPublisher<ValidateableSyncCommitteeMessage>
+      syncCommitteeMessageGossipPublisher;
+  private SyncCommitteeMessageGossipManager syncCommitteeMessageGossipManager;
 
   public GossipForkSubscriptionsAltair(
       final Fork fork,
@@ -68,10 +68,9 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
       final OperationProcessor<SignedContributionAndProof>
           signedContributionAndProofOperationProcessor,
       final GossipPublisher<SignedContributionAndProof> signedContributionAndProofGossipPublisher,
-      final OperationProcessor<ValidateableSyncCommitteeSignature>
-          syncCommitteeSignatureOperationProcessor,
-      final GossipPublisher<ValidateableSyncCommitteeSignature>
-          syncCommitteeSignatureGossipPublisher) {
+      final OperationProcessor<ValidateableSyncCommitteeMessage>
+          syncCommitteeMessageOperationProcessor,
+      final GossipPublisher<ValidateableSyncCommitteeMessage> syncCommitteeMessageGossipPublisher) {
     super(
         fork,
         spec,
@@ -92,8 +91,8 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
     this.signedContributionAndProofOperationProcessor =
         signedContributionAndProofOperationProcessor;
     this.signedContributionAndProofGossipPublisher = signedContributionAndProofGossipPublisher;
-    this.syncCommitteeSignatureOperationProcessor = syncCommitteeSignatureOperationProcessor;
-    this.syncCommitteeSignatureGossipPublisher = syncCommitteeSignatureGossipPublisher;
+    this.syncCommitteeMessageOperationProcessor = syncCommitteeMessageOperationProcessor;
+    this.syncCommitteeMessageGossipPublisher = syncCommitteeMessageGossipPublisher;
   }
 
   @Override
@@ -103,6 +102,7 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
         SchemaDefinitionsAltair.required(spec.atEpoch(getActivationEpoch()).getSchemaDefinitions());
     addGossipManager(
         new SignedContributionAndProofGossipManager(
+            recentChainData,
             schemaDefinitions,
             asyncRunner,
             discoveryNetwork,
@@ -113,34 +113,35 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
 
     final SyncCommitteeSubnetSubscriptions syncCommitteeSubnetSubscriptions =
         new SyncCommitteeSubnetSubscriptions(
+            recentChainData,
             discoveryNetwork,
             gossipEncoding,
             schemaDefinitions,
             asyncRunner,
-            syncCommitteeSignatureOperationProcessor,
+            syncCommitteeMessageOperationProcessor,
             forkInfo);
-    syncCommitteeSignatureGossipManager =
-        new SyncCommitteeSignatureGossipManager(
+    syncCommitteeMessageGossipManager =
+        new SyncCommitteeMessageGossipManager(
             metricsSystem,
             spec,
             new SyncCommitteeStateUtils(spec, recentChainData),
             syncCommitteeSubnetSubscriptions,
-            syncCommitteeSignatureGossipPublisher);
-    addGossipManager(syncCommitteeSignatureGossipManager);
+            syncCommitteeMessageGossipPublisher);
+    addGossipManager(syncCommitteeMessageGossipManager);
   }
 
   @Override
-  public void publishSyncCommitteeSignature(final ValidateableSyncCommitteeSignature signature) {
-    syncCommitteeSignatureGossipManager.publish(signature);
+  public void publishSyncCommitteeMessage(final ValidateableSyncCommitteeMessage message) {
+    syncCommitteeMessageGossipManager.publish(message);
   }
 
   @Override
-  public void subscribeToSyncCommitteeSignatureSubnet(final int subnetId) {
-    syncCommitteeSignatureGossipManager.subscribeToSubnetId(subnetId);
+  public void subscribeToSyncCommitteeSubnet(final int subnetId) {
+    syncCommitteeMessageGossipManager.subscribeToSubnetId(subnetId);
   }
 
   @Override
-  public void unsubscribeFromSyncCommitteeSignatureSubnet(final int subnetId) {
-    syncCommitteeSignatureGossipManager.unsubscribeFromSubnetId(subnetId);
+  public void unsubscribeFromSyncCommitteeSubnet(final int subnetId) {
+    syncCommitteeMessageGossipManager.unsubscribeFromSubnetId(subnetId);
   }
 }

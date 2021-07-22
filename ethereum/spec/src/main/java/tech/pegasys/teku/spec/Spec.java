@@ -26,6 +26,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -64,6 +65,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProce
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.versions.merge.helpers.MiscHelpersMerge;
@@ -287,6 +289,11 @@ public class Spec {
     return atState(state).beaconStateAccessors().getPreviousEpoch(state);
   }
 
+  public Bytes32 getSeed(BeaconState state, UInt64 epoch, Bytes4 domainType)
+      throws IllegalArgumentException {
+    return atState(state).beaconStateAccessors().getSeed(state, epoch, domainType);
+  }
+
   public UInt64 computeStartSlotAtEpoch(final UInt64 epoch) {
     return atEpoch(epoch).miscHelpers().computeStartSlotAtEpoch(epoch);
   }
@@ -301,6 +308,12 @@ public class Spec {
 
   public Bytes computeSigningRoot(BeaconBlock block, Bytes32 domain) {
     return atBlock(block).miscHelpers().computeSigningRoot(block, domain);
+  }
+
+  public Bytes4 computeForkDigest(Bytes4 currentVersion, Bytes32 genesisValidatorsRoot) {
+    return atForkVersion(currentVersion)
+        .miscHelpers()
+        .computeForkDigest(currentVersion, genesisValidatorsRoot);
   }
 
   public int getBeaconProposerIndex(final BeaconState state, final UInt64 slot) {
@@ -589,13 +602,13 @@ public class Spec {
         .getGenericAttestationData(slot, state, block, committeeIndex);
   }
 
-  public AttestationProcessingResult isValidIndexedAttestation(
+  public SafeFuture<AttestationProcessingResult> isValidIndexedAttestation(
       BeaconState state,
       ValidateableAttestation attestation,
-      BLSSignatureVerifier blsSignatureVerifier) {
+      AsyncBLSSignatureVerifier blsSignatureVerifier) {
     return atState(state)
         .getAttestationUtil()
-        .isValidIndexedAttestation(state, attestation, blsSignatureVerifier);
+        .isValidIndexedAttestationAsync(state, attestation, blsSignatureVerifier);
   }
 
   // Misc helpers
@@ -615,6 +628,16 @@ public class Spec {
 
   private SpecVersion atBlock(final BeaconBlockSummary blockSummary) {
     return atSlot(blockSummary.getSlot());
+  }
+
+  private SpecVersion atForkVersion(final Bytes4 forkVersion) {
+    final SpecMilestone milestone =
+        forkSchedule
+            .getSpecMilestoneAtForkVersion(forkVersion)
+            .orElseThrow(
+                () -> new IllegalArgumentException("Unknown fork version: " + forkVersion));
+
+    return forMilestone(milestone);
   }
 
   @Override

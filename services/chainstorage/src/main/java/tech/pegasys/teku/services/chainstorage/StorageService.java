@@ -61,8 +61,7 @@ public class StorageService extends Service {
                   config.getSpec());
           database = dbFactory.createDatabase();
 
-          chainStorage =
-              ChainStorage.create(serviceConfig.getEventBus(), database, config.getSpec());
+          chainStorage = ChainStorage.create(database, config.getSpec());
           final DepositStorage depositStorage =
               DepositStorage.create(
                   serviceConfig.getEventChannels().getPublisher(Eth1EventsChannel.class), database);
@@ -77,8 +76,6 @@ public class StorageService extends Service {
               .subscribe(ProtoArrayStorageChannel.class, protoArrayStorage)
               .subscribeMultithreaded(
                   StorageQueryChannel.class, chainStorage, STORAGE_QUERY_CHANNEL_PARALLELISM);
-
-          chainStorage.start();
         });
   }
 
@@ -86,7 +83,6 @@ public class StorageService extends Service {
   protected SafeFuture<?> doStop() {
     return SafeFuture.fromRunnable(
         () -> {
-          chainStorage.stop();
           database.close();
         });
   }

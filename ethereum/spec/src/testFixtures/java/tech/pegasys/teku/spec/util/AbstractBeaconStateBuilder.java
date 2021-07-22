@@ -14,7 +14,9 @@
 package tech.pegasys.teku.spec.util;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.stream.Collectors.toList;
 
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -115,7 +117,13 @@ abstract class AbstractBeaconStateBuilder<
     genesisValidatorsRoot = dataStructureUtil.randomBytes32();
     slot = dataStructureUtil.randomUInt64();
     fork = dataStructureUtil.randomFork();
-    latestBlockHeader = dataStructureUtil.randomBeaconBlockHeader();
+    latestBlockHeader =
+        new BeaconBlockHeader(
+            slot,
+            dataStructureUtil.randomUInt64(),
+            dataStructureUtil.randomBytes32(),
+            Bytes32.ZERO,
+            dataStructureUtil.randomBytes32());
     blockRoots =
         dataStructureUtil.randomSszBytes32Vector(
             dataStructureUtil.getBeaconStateSchema().getBlockRootsSchema(),
@@ -202,9 +210,29 @@ abstract class AbstractBeaconStateBuilder<
     return (TBuilder) this;
   }
 
+  public TBuilder blockRoots(final List<Bytes32> roots) {
+    checkNotNull(roots);
+    this.blockRoots =
+        spec.getSchemaDefinitions()
+            .getBeaconStateSchema()
+            .getBlockRootsSchema()
+            .createFromElements(roots.stream().map(SszBytes32::of).collect(toList()));
+    return (TBuilder) this;
+  }
+
   public TBuilder stateRoots(final SszBytes32Vector stateRoots) {
     checkNotNull(stateRoots);
     this.stateRoots = stateRoots;
+    return (TBuilder) this;
+  }
+
+  public TBuilder historicalRoots(final List<Bytes32> roots) {
+    checkNotNull(roots);
+    this.historicalRoots =
+        spec.getSchemaDefinitions()
+            .getBeaconStateSchema()
+            .getHistoricalRootsSchema()
+            .createFromElements(roots.stream().map(SszBytes32::of).collect(toList()));
     return (TBuilder) this;
   }
 

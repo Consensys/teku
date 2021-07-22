@@ -36,6 +36,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.core.AttestationGenerator;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -50,6 +51,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
+import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.ssz.collections.SszBitlist;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -89,8 +91,11 @@ class AttestationValidatorTest {
       new ChainUpdater(storageSystem.recentChainData(), chainBuilder);
   private final AttestationGenerator attestationGenerator =
       new AttestationGenerator(spec, chainBuilder.getValidatorKeys());
+  private final AsyncBLSSignatureVerifier signatureVerifier =
+      AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE);
 
-  private final AttestationValidator validator = new AttestationValidator(spec, recentChainData);
+  private final AttestationValidator validator =
+      new AttestationValidator(spec, recentChainData, signatureVerifier);
 
   @BeforeAll
   public static void init() {
@@ -305,10 +310,11 @@ class AttestationValidatorTest {
         spec.computeSubnetForAttestation(blockAndState.getState(), attestation);
     assertThat(
             validator.validate(
-                ValidateableAttestation.fromNetwork(attestation, expectedSubnetId + 1)))
+                ValidateableAttestation.fromNetwork(spec, attestation, expectedSubnetId + 1)))
         .isCompletedWithValue(InternalValidationResult.REJECT);
     assertThat(
-            validator.validate(ValidateableAttestation.fromNetwork(attestation, expectedSubnetId)))
+            validator.validate(
+                ValidateableAttestation.fromNetwork(spec, attestation, expectedSubnetId)))
         .isCompletedWithValue(InternalValidationResult.ACCEPT);
   }
 
@@ -322,6 +328,7 @@ class AttestationValidatorTest {
     assertThat(
             validator.validate(
                 ValidateableAttestation.fromNetwork(
+                    spec,
                     new Attestation(
                         attestation.getAggregation_bits(),
                         new AttestationData(
@@ -346,6 +353,7 @@ class AttestationValidatorTest {
     assertThat(
             validator.validate(
                 ValidateableAttestation.fromNetwork(
+                    spec,
                     new Attestation(
                         attestation.getAggregation_bits(),
                         new AttestationData(
@@ -363,20 +371,23 @@ class AttestationValidatorTest {
   public void shouldRejectAttestationsThatHaveLMDVotesInconsistentWithTargetRoot() {
     Spec spec = mock(Spec.class);
     when(spec.getAncestor(any(), any(), any())).thenReturn(Optional.of(Bytes32.ZERO));
-    final AttestationValidator validator = new AttestationValidator(spec, recentChainData);
+    final AttestationValidator validator =
+        new AttestationValidator(spec, recentChainData, signatureVerifier);
     final StateAndBlockSummary blockAndState = recentChainData.getChainHead().orElseThrow();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     final int expectedSubnetId =
         spec.computeSubnetForAttestation(blockAndState.getState(), attestation);
     assertThat(
-            validator.validate(ValidateableAttestation.fromNetwork(attestation, expectedSubnetId)))
+            validator.validate(
+                ValidateableAttestation.fromNetwork(spec, attestation, expectedSubnetId)))
         .isCompletedWithValue(InternalValidationResult.REJECT);
   }
 
   @Test
   public void shouldRejectAttestationsThatHaveLMDVotesInconsistentWithFinalizedCheckpointRoot() {
     Spec spec = mock(Spec.class);
-    final AttestationValidator validator = new AttestationValidator(spec, recentChainData);
+    final AttestationValidator validator =
+        new AttestationValidator(spec, recentChainData, signatureVerifier);
     final StateAndBlockSummary blockAndState = recentChainData.getChainHead().orElseThrow();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     when(spec.getAncestor(any(), any(), any()))
@@ -385,7 +396,8 @@ class AttestationValidatorTest {
     final int expectedSubnetId =
         spec.computeSubnetForAttestation(blockAndState.getState(), attestation);
     assertThat(
-            validator.validate(ValidateableAttestation.fromNetwork(attestation, expectedSubnetId)))
+            validator.validate(
+                ValidateableAttestation.fromNetwork(spec, attestation, expectedSubnetId)))
         .isCompletedWithValue(InternalValidationResult.REJECT);
   }
 
@@ -394,7 +406,7 @@ class AttestationValidatorTest {
     return validator
         .validate(
             ValidateableAttestation.fromNetwork(
-                attestation, spec.computeSubnetForAttestation(state, attestation)))
+                spec, attestation, spec.computeSubnetForAttestation(state, attestation)))
         .join();
   }
 

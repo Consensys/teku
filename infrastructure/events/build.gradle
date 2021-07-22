@@ -6,3 +6,9 @@ dependencies {
   testImplementation 'org.hyperledger.besu.internal:metrics-core'
   testImplementation testFixtures(project(':infrastructure:async'))
 }
+
+publishing {
+  publications {
+    mavenJava(MavenPublication) { artifactId 'infrastructure-events' }
+  }
+}

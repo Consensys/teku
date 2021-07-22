@@ -13,10 +13,14 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.encoding;
 
+import java.util.Map;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.schema.SszSchema;
+import tech.pegasys.teku.ssz.type.Bytes4;
 
 public interface GossipEncoding {
 
@@ -37,36 +41,27 @@ public interface GossipEncoding {
    */
   <T extends SszData> Bytes encode(T value);
 
-  /**
-   * Preprocess the raw Gossip message. The returned preprocessed message will be later passed to
-   * {@link #decodeMessage(PreparedGossipMessage, SszSchema)}
-   *
-   * <p>If there is a problem while preprocessing a message the error should be memorized and later
-   * be thrown as {@link DecodingException} from {@link #decodeMessage(PreparedGossipMessage,
-   * SszSchema)}
-   *
-   * @param data Data received over gossip to be deserialized
-   * @param valueType The concrete type to deserialize to
-   */
-  <T extends SszData> PreparedGossipMessage prepareMessage(Bytes data, SszSchema<T> valueType);
-
-  /**
-   * Fallback for {@link #prepareMessage(Bytes, SszSchema)} for the case when decoded {@code
-   * valueType} is unknown
-   *
-   * @param data raw Gossip message data
-   */
-  PreparedGossipMessage prepareUnknownMessage(Bytes data);
+  /** @return A factory for creating PreparedGossipMessages */
+  Eth2PreparedGossipMessageFactory createPreparedGossipMessageFactory(
+      ForkDigestToMilestone forkDigestToMilestone);
 
   /**
    * Decodes preprocessed message
    *
-   * @param message preprocessed raw bytes message returned earlier by {@link #prepareMessage(Bytes,
-   *     SszSchema)}
+   * @param message preprocessed raw bytes message returned earlier by {@link
+   *     Eth2PreparedGossipMessageFactory#create(String, Bytes, SszSchema)}
    * @param valueType The concrete type to deserialize to
    * @return The deserialized value
    * @throws DecodingException If deserialization fails
    */
   <T extends SszData> T decodeMessage(PreparedGossipMessage message, SszSchema<T> valueType)
       throws DecodingException;
+
+  interface ForkDigestToMilestone {
+    static ForkDigestToMilestone fromMap(final Map<Bytes4, SpecMilestone> map) {
+      return (forkDigest) -> Optional.ofNullable(map.get(forkDigest));
+    }
+
+    Optional<SpecMilestone> getMilestone(final Bytes4 forkDigest);
+  }
 }

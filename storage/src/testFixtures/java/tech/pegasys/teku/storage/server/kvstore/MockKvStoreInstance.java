@@ -19,7 +19,6 @@ import static com.google.common.base.Preconditions.checkState;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
@@ -63,7 +62,7 @@ public class MockKvStoreInstance implements KvStoreAccessor {
   }
 
   public static MockKvStoreInstance createEmpty(
-      final Collection<KvStoreColumn<?, ?>> columns, List<KvStoreVariable<?>> variables) {
+      final Collection<KvStoreColumn<?, ?>> columns, Collection<KvStoreVariable<?>> variables) {
     checkArgument(columns.size() > 0, "No columns attached to schema");
 
     final Map<KvStoreColumn<?, ?>, NavigableMap<Bytes, Bytes>> columnData =
@@ -75,11 +74,14 @@ public class MockKvStoreInstance implements KvStoreAccessor {
 
   @Override
   public <T> Optional<T> get(final KvStoreVariable<T> variable) {
+    return getRaw(variable).map(Bytes::toArrayUnsafe).map(variable.getSerializer()::deserialize);
+  }
+
+  @Override
+  public Optional<Bytes> getRaw(final KvStoreVariable<?> variable) {
     assertOpen();
     assertValidVariable(variable);
-    return Optional.ofNullable(variableData.get(variable))
-        .map(Bytes::toArrayUnsafe)
-        .map(variable.getSerializer()::deserialize);
+    return Optional.ofNullable(variableData.get(variable));
   }
 
   @Override
@@ -128,11 +130,21 @@ public class MockKvStoreInstance implements KvStoreAccessor {
 
   @Override
   public <K, V> Stream<ColumnEntry<K, V>> stream(final KvStoreColumn<K, V> column) {
+    return streamRaw(column)
+        .map(
+            entry ->
+                ColumnEntry.create(
+                    column.getKeySerializer().deserialize(entry.getKey().toArrayUnsafe()),
+                    column.getValueSerializer().deserialize(entry.getValue().toArrayUnsafe())));
+  }
+
+  @Override
+  public Stream<ColumnEntry<Bytes, Bytes>> streamRaw(final KvStoreColumn<?, ?> column) {
     assertOpen();
     assertValidColumn(column);
     return columnData.get(column).entrySet().stream()
         .peek(value -> assertOpen())
-        .map(e -> columnEntry(column, e));
+        .map(entry -> columnEntry(entry));
   }
 
   @Override
@@ -169,6 +181,10 @@ public class MockKvStoreInstance implements KvStoreAccessor {
     final K key = columnKey(column, entry.getKey());
     final V value = columnValue(column, entry.getValue()).get();
     return ColumnEntry.create(key, value);
+  }
+
+  private ColumnEntry<Bytes, Bytes> columnEntry(final Map.Entry<Bytes, Bytes> entry) {
+    return ColumnEntry.create(entry.getKey(), entry.getValue());
   }
 
   private <K, V> Bytes keyToBytes(final KvStoreColumn<K, V> column, K key) {
@@ -212,20 +228,31 @@ public class MockKvStoreInstance implements KvStoreAccessor {
 
     @Override
     public <T> void put(final KvStoreVariable<T> variable, final T value) {
+      final Bytes valueBytes = Bytes.wrap(variable.getSerializer().serialize(value));
+      putRaw(variable, valueBytes);
+    }
+
+    @Override
+    public <T> void putRaw(final KvStoreVariable<T> variable, final Bytes value) {
       assertOpen();
       dbInstance.assertValidVariable(variable);
-      final Bytes valueBytes = Bytes.wrap(variable.getSerializer().serialize(value));
-      variableUpdates.put(variable, Optional.of(valueBytes));
+      variableUpdates.put(variable, Optional.of(value));
     }
 
     @Override
     public <K, V> void put(final KvStoreColumn<K, V> column, final K key, final V value) {
+      final Bytes keyBytes = dbInstance.keyToBytes(column, key);
+      final Bytes valueBytes = dbInstance.valueToBytes(column, value);
+      putRaw(column, keyBytes, valueBytes);
+    }
+
+    @Override
+    public <K, V> void putRaw(
+        final KvStoreColumn<K, V> column, final Bytes keyBytes, final Bytes valueBytes) {
       assertOpen();
       dbInstance.assertValidColumn(column);
       final Map<Bytes, Bytes> updates =
           columnUpdates.computeIfAbsent(column, (col) -> new HashMap<>());
-      final Bytes keyBytes = dbInstance.keyToBytes(column, key);
-      final Bytes valueBytes = dbInstance.valueToBytes(column, value);
       updates.put(keyBytes, valueBytes);
     }
 

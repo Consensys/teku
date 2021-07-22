@@ -29,12 +29,13 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
 class ConstantsReader {
-  private static ImmutableList<String> PRESETS = ImmutableList.of("mainnet", "minimal");
+  private static final ImmutableList<String> PRESETS = ImmutableList.of("mainnet", "minimal");
   private static final String PRESET_PATH = "presets/";
   private static final String CONFIG_PATH = "configs/";
   private static final String PRESET_FIELD = "PRESET_BASE";
@@ -52,6 +53,8 @@ class ConstantsReader {
           "MERGE_FORK_EPOCH",
           "SHARDING_FORK_VERSION",
           "SHARDING_FORK_EPOCH",
+          "TRANSITION_TOTAL_DIFFICULTY",
+          "MIN_ANCHOR_POW_BLOCK_DIFFICULTY",
           "TARGET_SECONDS_TO_MERGE",
           "MIN_ANCHOR_POW_BLOCK_DIFFICULTY",
           // Phase0 constants which may exist in legacy config files, but should now be ignored

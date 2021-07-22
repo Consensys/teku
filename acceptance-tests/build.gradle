@@ -1,6 +1,7 @@
 dependencies {
-  acceptanceTestImplementation project(":util")
   acceptanceTestImplementation project(":bls")
+  acceptanceTestImplementation project(':infrastructure:time')
+
   testFixturesImplementation project(':bls')
   testFixturesImplementation project(':data:provider')
   testFixturesImplementation project(':data:serializer')
@@ -10,8 +11,6 @@ dependencies {
   testFixturesImplementation project(':pow')
   testFixturesImplementation project(':infrastructure:async')
   testFixturesImplementation testFixtures(project(':infrastructure:async'))
-  testFixturesImplementation testFixtures(project(':util'))
-  testFixturesImplementation project(':util')
   testFixturesImplementation project(':teku')
 
   testFixturesImplementation 'tech.pegasys.signers.internal:bls-keystore'

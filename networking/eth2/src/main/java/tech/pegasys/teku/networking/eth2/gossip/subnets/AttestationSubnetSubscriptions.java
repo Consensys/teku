@@ -35,7 +35,6 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions {
 
   private final AsyncRunner asyncRunner;
-  private final RecentChainData recentChainData;
   private final OperationProcessor<ValidateableAttestation> processor;
   private final ForkInfo forkInfo;
 
@@ -48,9 +47,8 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
       final RecentChainData recentChainData,
       final OperationProcessor<ValidateableAttestation> processor,
       final ForkInfo forkInfo) {
-    super(gossipNetwork, gossipEncoding);
+    super(recentChainData, gossipNetwork, gossipEncoding);
     this.asyncRunner = asyncRunner;
-    this.recentChainData = recentChainData;
     this.processor = processor;
     this.forkInfo = forkInfo;
   }
@@ -67,7 +65,7 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
               }
               final String topic =
                   GossipTopics.getAttestationSubnetTopic(
-                      forkInfo.getForkDigest(), subnetId.get(), gossipEncoding);
+                      forkInfo.getForkDigest(spec), subnetId.get(), gossipEncoding);
               return gossipNetwork.gossip(topic, gossipEncoding.encode(attestation));
             });
   }
@@ -82,7 +80,13 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
   protected Eth2TopicHandler<?> createTopicHandler(final int subnetId) {
     final String topicName = GossipTopicName.getAttestationSubnetTopicName(subnetId);
     return SingleAttestationTopicHandler.createHandler(
-        asyncRunner, processor, gossipEncoding, forkInfo.getForkDigest(), topicName, subnetId);
+        recentChainData,
+        asyncRunner,
+        processor,
+        gossipEncoding,
+        forkInfo.getForkDigest(spec),
+        topicName,
+        subnetId);
   }
 
   private SafeFuture<Optional<Integer>> computeSubnetForAttestation(final Attestation attestation) {

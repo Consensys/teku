@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
+import org.apache.tuweni.bytes.Bytes;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.TransactionDB;
@@ -52,11 +53,16 @@ public class RocksDbTransaction implements KvStoreTransaction {
 
   @Override
   public <T> void put(KvStoreVariable<T> variable, T value) {
+    final Bytes serialized = Bytes.wrap(variable.getSerializer().serialize(value));
+    putRaw(variable, serialized);
+  }
+
+  @Override
+  public <T> void putRaw(final KvStoreVariable<T> variable, final Bytes value) {
     applyUpdate(
         () -> {
-          final byte[] serialized = variable.getSerializer().serialize(value);
           try {
-            rocksDbTx.put(defaultHandle, variable.getId().toArrayUnsafe(), serialized);
+            rocksDbTx.put(defaultHandle, variable.getId().toArrayUnsafe(), value.toArrayUnsafe());
           } catch (RocksDBException e) {
             throw RocksDbExceptionUtil.wrapException("Failed to put variable", e);
           }
@@ -65,13 +71,19 @@ public class RocksDbTransaction implements KvStoreTransaction {
 
   @Override
   public <K, V> void put(KvStoreColumn<K, V> column, K key, V value) {
+    final Bytes keyBytes = Bytes.wrap(column.getKeySerializer().serialize(key));
+    final Bytes valueBytes = Bytes.wrap(column.getValueSerializer().serialize(value));
+    putRaw(column, keyBytes, valueBytes);
+  }
+
+  @Override
+  public <K, V> void putRaw(
+      final KvStoreColumn<K, V> column, final Bytes keyBytes, final Bytes valueBytes) {
     applyUpdate(
         () -> {
-          final byte[] keyBytes = column.getKeySerializer().serialize(key);
-          final byte[] valueBytes = column.getValueSerializer().serialize(value);
           final ColumnFamilyHandle handle = columnHandles.get(column);
           try {
-            rocksDbTx.put(handle, keyBytes, valueBytes);
+            rocksDbTx.put(handle, keyBytes.toArrayUnsafe(), valueBytes.toArrayUnsafe());
           } catch (RocksDBException e) {
             throw RocksDbExceptionUtil.wrapException("Failed to put column data", e);
           }

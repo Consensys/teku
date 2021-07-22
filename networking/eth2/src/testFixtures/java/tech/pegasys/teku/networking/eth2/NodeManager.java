@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2;
 
-import com.google.common.eventbus.EventBus;
 import java.util.List;
 import java.util.function.Consumer;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
@@ -35,19 +34,16 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class NodeManager {
   private static final Spec DEFAULT_SPEC = TestSpecFactory.createMinimalPhase0();
 
-  private final EventBus eventBus;
   private final BlockGossipChannel blockGossipChannel;
   private final RecentChainData storageClient;
   private final BeaconChainUtil chainUtil;
   private final Eth2P2PNetwork eth2P2PNetwork;
 
   private NodeManager(
-      final EventBus eventBus,
       final BlockGossipChannel blockGossipChannel,
       final RecentChainData storageClient,
       final BeaconChainUtil chainUtil,
       final Eth2P2PNetwork eth2P2PNetwork) {
-    this.eventBus = eventBus;
     this.blockGossipChannel = blockGossipChannel;
     this.storageClient = storageClient;
     this.chainUtil = chainUtil;
@@ -75,11 +71,10 @@ public class NodeManager {
       final List<BLSKeyPair> validatorKeys,
       Consumer<Eth2P2PNetworkBuilder> configureNetwork)
       throws Exception {
-    final EventBus eventBus = new EventBus();
     final EventChannels eventChannels =
         EventChannels.createSyncChannels(
             ChannelExceptionHandler.THROWING_HANDLER, new NoOpMetricsSystem());
-    final RecentChainData storageClient = MemoryOnlyRecentChainData.create(spec, eventBus);
+    final RecentChainData storageClient = MemoryOnlyRecentChainData.create(spec);
 
     final BeaconChainUtil chainUtil = BeaconChainUtil.create(spec, storageClient, validatorKeys);
     chainUtil.initializeStorage();
@@ -88,7 +83,6 @@ public class NodeManager {
         networkFactory
             .builder()
             .spec(spec)
-            .eventBus(eventBus)
             .eventChannels(eventChannels)
             .recentChainData(storageClient);
 
@@ -98,17 +92,13 @@ public class NodeManager {
         eventChannels.getPublisher(BlockGossipChannel.class);
 
     final Eth2P2PNetwork eth2P2PNetwork = networkBuilder.startNetwork();
-    return new NodeManager(eventBus, blockGossipChannel, storageClient, chainUtil, eth2P2PNetwork);
+    return new NodeManager(blockGossipChannel, storageClient, chainUtil, eth2P2PNetwork);
   }
 
   public SafeFuture<Peer> connect(final NodeManager peer) {
     final PeerAddress peerAddress =
         eth2P2PNetwork.createPeerAddress(peer.network().getNodeAddress());
     return eth2P2PNetwork.connect(peerAddress);
-  }
-
-  public EventBus eventBus() {
-    return eventBus;
   }
 
   public BeaconChainUtil chainUtil() {

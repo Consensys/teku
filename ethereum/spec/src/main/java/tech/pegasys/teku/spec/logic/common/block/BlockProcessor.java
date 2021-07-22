@@ -108,7 +108,7 @@ public interface BlockProcessor {
       BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException;
 
-  void processSyncCommittee(
+  void processSyncAggregate(
       MutableBeaconState state, SyncAggregate syncAggregate, BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException;
 

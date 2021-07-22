@@ -18,7 +18,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.google.common.eventbus.EventBus;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -165,8 +164,7 @@ public class ForkChoiceTestExecutor {
   void runForkChoiceTests(
       BeaconState genesis, List<Object> steps, String testName, boolean protoArrayFC) {
 
-    EventBus eventBus = new EventBus();
-    RecentChainData storageClient = MemoryOnlyRecentChainData.create(SPEC, eventBus);
+    RecentChainData storageClient = MemoryOnlyRecentChainData.create(SPEC);
     storageClient.initializeFromGenesis(genesis, UInt64.ZERO);
 
     final InlineEventThread forkChoiceExecutor = new InlineEventThread();
@@ -260,7 +258,7 @@ public class ForkChoiceTestExecutor {
 
   private boolean processAttestation(ForkChoice fc, Attestation step) {
     AttestationProcessingResult attestationProcessingResult =
-        fc.onAttestation(ValidateableAttestation.from(step)).join();
+        fc.onAttestation(ValidateableAttestation.from(SPEC, step)).join();
     return attestationProcessingResult.isSuccessful();
   }
 

@@ -65,11 +65,11 @@ public class PeerSyncTest extends AbstractSyncTest {
               PEER_HEAD_BLOCK_ROOT,
               PEER_HEAD_SLOT));
 
-  private final PeerSync peerSync =
-      new PeerSync(asyncRunner, storageClient, blockImporter, new NoOpMetricsSystem());
+  private PeerSync peerSync;
 
   @BeforeEach
   public void setUp() {
+    super.setup();
     when(storageClient.getFinalizedEpoch()).thenReturn(UInt64.ZERO);
     when(peer.getStatus()).thenReturn(PEER_STATUS);
     when(peer.disconnectCleanly(any())).thenReturn(SafeFuture.completedFuture(null));
@@ -79,6 +79,8 @@ public class PeerSyncTest extends AbstractSyncTest {
         SafeFuture.completedFuture(BlockImportResult.successful(block));
     when(blockImporter.importBlock(any())).thenReturn(result);
     when(storageClient.getHeadSlot()).thenReturn(UInt64.ONE);
+
+    peerSync = new PeerSync(asyncRunner, storageClient, blockImporter, new NoOpMetricsSystem());
   }
 
   @Test
@@ -97,7 +99,7 @@ public class PeerSyncTest extends AbstractSyncTest {
   void sync_failedImport_unknownParent_fromNonFinalRange() {
     final SignedBeaconBlock block =
         dataStructureUtil.randomSignedBeaconBlock(
-            PEER_STATUS.getFinalizedCheckpoint().getEpochStartSlot().plus(1));
+            PEER_STATUS.getFinalizedCheckpoint().getEpochStartSlot(spec).plus(1));
     testFailedBlockImport(() -> BlockImportResult.FAILED_UNKNOWN_PARENT, false, block);
   }
 

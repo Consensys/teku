@@ -18,7 +18,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
-import com.google.common.eventbus.EventBus;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,11 +42,9 @@ import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 public class BlockValidatorTest {
-  private final EventBus eventBus = new EventBus();
-
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final RecentChainData recentChainData =
-      MemoryOnlyRecentChainData.builder().eventBus(eventBus).specProvider(spec).build();
+      MemoryOnlyRecentChainData.builder().specProvider(spec).build();
   private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(spec, 10, recentChainData);
 
   private BlockValidator blockValidator;

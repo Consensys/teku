@@ -17,7 +17,6 @@ import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
-import tech.pegasys.teku.util.time.channels.TimeTickChannel;
 
 public class ScheduledTimeEvent implements Job {
 

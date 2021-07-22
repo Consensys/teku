@@ -21,6 +21,7 @@ import org.apache.tuweni.bytes.Bytes;
  * Simple interface to enable pluggable variants of BLS verifier. In a {@link #SIMPLE} case it's
  * just static {@link BLS} methods
  */
+@FunctionalInterface
 public interface BLSSignatureVerifier {
 
   /** Just delegates verify to {@link BLS#fastAggregateVerify(List, Bytes, BLSSignature)} */

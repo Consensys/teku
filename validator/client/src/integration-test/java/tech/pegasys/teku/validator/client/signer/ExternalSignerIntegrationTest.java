@@ -16,16 +16,16 @@ package tech.pegasys.teku.validator.client.signer;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockserver.matchers.MatchType.STRICT;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
-import static org.mockserver.model.JsonBody.json;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_PRECONDITION_FAILED;
 import static tech.pegasys.teku.validator.client.signer.ExternalSigner.slashableAttestationMessage;
 import static tech.pegasys.teku.validator.client.signer.ExternalSigner.slashableBlockMessage;
 import static tech.pegasys.teku.validator.client.signer.ExternalSigner.slashableGenericMessage;
+import static tech.pegasys.teku.validator.client.signer.ExternalSignerTestUtil.createForkInfo;
+import static tech.pegasys.teku.validator.client.signer.ExternalSignerTestUtil.validateMetrics;
+import static tech.pegasys.teku.validator.client.signer.ExternalSignerTestUtil.verifySignRequest;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
@@ -39,19 +39,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.junit.jupiter.MockServerExtension;
 import org.mockserver.model.Delay;
-import org.mockserver.model.MediaType;
-import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.core.signatures.SigningRootUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
-import tech.pegasys.teku.infrastructure.metrics.StubCounter;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -70,7 +66,6 @@ public class ExternalSignerIntegrationTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final ForkInfo fork = dataStructureUtil.randomForkInfo();
-  private final JsonProvider jsonProvider = new JsonProvider();
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   private final ThrottlingTaskQueue queue =
       new ThrottlingTaskQueue(8, metricsSystem, TekuMetricCategory.VALIDATOR, "externalSignerTest");
@@ -116,7 +111,7 @@ public class ExternalSignerIntegrationTest {
         .hasMessageEndingWith(
             "External signer failed to sign and returned invalid response status code: 404");
 
-    validateMetrics(0, 1, 0);
+    validateMetrics(metricsSystem, 0, 1, 0);
   }
 
   @Test
@@ -131,7 +126,7 @@ public class ExternalSignerIntegrationTest {
         .hasMessageEndingWith(
             "External signer failed to sign due to java.net.http.HttpTimeoutException: request timed out");
 
-    validateMetrics(0, 0, 1);
+    validateMetrics(metricsSystem, 0, 0, 1);
   }
 
   @Test
@@ -144,7 +139,7 @@ public class ExternalSignerIntegrationTest {
         .hasMessageEndingWith(
             "External signer returned an invalid signature: Illegal character 'I' found at index 0 in hex binary representation");
 
-    validateMetrics(0, 1, 0);
+    validateMetrics(metricsSystem, 0, 1, 0);
   }
 
   @Test
@@ -156,7 +151,7 @@ public class ExternalSignerIntegrationTest {
         .hasCauseInstanceOf(ExternalSignerException.class)
         .hasMessageEndingWith(slashableBlockMessage(block).get());
 
-    validateMetrics(0, 1, 0);
+    validateMetrics(metricsSystem, 0, 1, 0);
   }
 
   @Test
@@ -168,7 +163,7 @@ public class ExternalSignerIntegrationTest {
         .hasCauseInstanceOf(ExternalSignerException.class)
         .hasMessageEndingWith(slashableAttestationMessage(attestationData).get());
 
-    validateMetrics(0, 1, 0);
+    validateMetrics(metricsSystem, 0, 1, 0);
   }
 
   @Test
@@ -180,7 +175,7 @@ public class ExternalSignerIntegrationTest {
         .hasCauseInstanceOf(ExternalSignerException.class)
         .hasMessageEndingWith(slashableGenericMessage("randao reveal").get());
 
-    validateMetrics(0, 1, 0);
+    validateMetrics(metricsSystem, 0, 1, 0);
   }
 
   @Test
@@ -201,13 +196,13 @@ public class ExternalSignerIntegrationTest {
             SignType.BLOCK,
             Map.of(
                 "fork_info",
-                createForkInfo(),
+                createForkInfo(fork),
                 "block",
                 new tech.pegasys.teku.api.schema.BeaconBlock(block)));
 
-    verifySignRequest(KEYPAIR.getPublicKey().toString(), signingRequestBody);
+    verifySignRequest(client, KEYPAIR.getPublicKey().toString(), signingRequestBody);
 
-    validateMetrics(1, 0, 0);
+    validateMetrics(metricsSystem, 1, 0, 0);
   }
 
   @Test
@@ -228,13 +223,13 @@ public class ExternalSignerIntegrationTest {
             SignType.ATTESTATION,
             Map.of(
                 "fork_info",
-                createForkInfo(),
+                createForkInfo(fork),
                 "attestation",
                 new tech.pegasys.teku.api.schema.AttestationData(attestationData)));
 
-    verifySignRequest(KEYPAIR.getPublicKey().toString(), signingRequestBody);
+    verifySignRequest(client, KEYPAIR.getPublicKey().toString(), signingRequestBody);
 
-    validateMetrics(1, 0, 0);
+    validateMetrics(metricsSystem, 1, 0, 0);
   }
 
   @Test
@@ -253,10 +248,10 @@ public class ExternalSignerIntegrationTest {
         new SigningRequestBody(
             signingRootUtil.signingRootForRandaoReveal(epoch, fork),
             SignType.RANDAO_REVEAL,
-            Map.of("fork_info", createForkInfo(), "randao_reveal", Map.of("epoch", epoch)));
-    verifySignRequest(KEYPAIR.getPublicKey().toString(), signingRequestBody);
+            Map.of("fork_info", createForkInfo(fork), "randao_reveal", Map.of("epoch", epoch)));
+    verifySignRequest(client, KEYPAIR.getPublicKey().toString(), signingRequestBody);
 
-    validateMetrics(1, 0, 0);
+    validateMetrics(metricsSystem, 1, 0, 0);
   }
 
   @Test
@@ -276,9 +271,9 @@ public class ExternalSignerIntegrationTest {
         new SigningRequestBody(
             signingRootUtil.signingRootForSignAggregationSlot(slot, fork),
             SignType.AGGREGATION_SLOT,
-            Map.of("fork_info", createForkInfo(), "aggregation_slot", Map.of("slot", slot)));
-    verifySignRequest(KEYPAIR.getPublicKey().toString(), signingRequestBody);
-    validateMetrics(1, 0, 0);
+            Map.of("fork_info", createForkInfo(fork), "aggregation_slot", Map.of("slot", slot)));
+    verifySignRequest(client, KEYPAIR.getPublicKey().toString(), signingRequestBody);
+    validateMetrics(metricsSystem, 1, 0, 0);
   }
 
   @Test
@@ -301,11 +296,11 @@ public class ExternalSignerIntegrationTest {
             SignType.AGGREGATE_AND_PROOF,
             Map.of(
                 "fork_info",
-                createForkInfo(),
+                createForkInfo(fork),
                 "aggregate_and_proof",
                 new tech.pegasys.teku.api.schema.AggregateAndProof(aggregateAndProof)));
-    verifySignRequest(KEYPAIR.getPublicKey().toString(), signingRequestBody);
-    validateMetrics(1, 0, 0);
+    verifySignRequest(client, KEYPAIR.getPublicKey().toString(), signingRequestBody);
+    validateMetrics(metricsSystem, 1, 0, 0);
   }
 
   @Test
@@ -325,38 +320,10 @@ public class ExternalSignerIntegrationTest {
             SignType.VOLUNTARY_EXIT,
             Map.of(
                 "fork_info",
-                createForkInfo(),
+                createForkInfo(fork),
                 "voluntary_exit",
                 new tech.pegasys.teku.api.schema.VoluntaryExit(voluntaryExit)));
-    verifySignRequest(KEYPAIR.getPublicKey().toString(), signingRequestBody);
-    validateMetrics(1, 0, 0);
-  }
-
-  private Map<String, Object> createForkInfo() {
-    return Map.of(
-        "genesis_validators_root",
-        fork.getGenesisValidatorsRoot(),
-        "fork",
-        new Fork(fork.getFork()));
-  }
-
-  private void verifySignRequest(
-      final String publicKey, final SigningRequestBody signingRequestBody)
-      throws JsonProcessingException {
-    client.verify(
-        request()
-            .withMethod("POST")
-            .withContentType(MediaType.APPLICATION_JSON)
-            .withBody(json(jsonProvider.objectToJSON(signingRequestBody), STRICT))
-            .withPath(ExternalSigner.EXTERNAL_SIGNER_ENDPOINT + "/" + publicKey));
-  }
-
-  private void validateMetrics(
-      final long successCount, final long failCount, final long timeoutCount) {
-    final StubCounter labelledCounter =
-        metricsSystem.getCounter(TekuMetricCategory.VALIDATOR, "external_signer_requests");
-    assertThat(labelledCounter.getValue("success")).isEqualTo(successCount);
-    assertThat(labelledCounter.getValue("failed")).isEqualTo(failCount);
-    assertThat(labelledCounter.getValue("timeout")).isEqualTo(timeoutCount);
+    verifySignRequest(client, KEYPAIR.getPublicKey().toString(), signingRequestBody);
+    validateMetrics(metricsSystem, 1, 0, 0);
   }
 }

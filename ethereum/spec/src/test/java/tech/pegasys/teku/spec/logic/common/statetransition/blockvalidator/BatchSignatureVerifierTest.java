@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.Collections;
 import java.util.List;
@@ -31,6 +32,32 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
 
 public class BatchSignatureVerifierTest {
+
+  @Test
+  public void shouldRaiseExceptionIfNoValidPublicKeys() {
+    BatchSignatureVerifier verifier = new BatchSignatureVerifier();
+
+    verifier.verify(
+        List.of(BLSPublicKey.empty()),
+        Bytes.wrap("Hello, world!".getBytes(UTF_8)),
+        BLSTestUtil.randomSignature(43));
+
+    // a case that should probably be handled differently, but equally doesnt seem to occur
+    assertThatThrownBy(verifier::batchVerify).isInstanceOf(IndexOutOfBoundsException.class);
+  }
+
+  @Test
+  public void shouldRaiseExceptionIfNoSuppliedPublicKeys() {
+    BatchSignatureVerifier verifier = new BatchSignatureVerifier();
+
+    assertThatThrownBy(
+            () ->
+                verifier.verify(
+                    List.of(),
+                    Bytes.wrap("Hello, world!".getBytes(UTF_8)),
+                    BLSTestUtil.randomSignature(42)))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
 
   @Test
   public void testParallel() throws Exception {

@@ -25,20 +25,21 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   void shouldChangeValidatorStatusAfterSubmittingVoluntaryExit() throws Exception {
+    final String networkName = "less-swift";
     final BesuNode eth1Node = createBesuNode();
     eth1Node.start();
 
     final ValidatorKeystores validatorKeystores =
-        createTekuDepositSender().sendValidatorDeposits(eth1Node, 4);
+        createTekuDepositSender(networkName).sendValidatorDeposits(eth1Node, 4);
 
     final TekuNode beaconNode =
-        createTekuNode(config -> config.withNetwork("less-swift").withDepositsFrom(eth1Node));
+        createTekuNode(config -> config.withNetwork(networkName).withDepositsFrom(eth1Node));
 
     final TekuValidatorNode validatorClient =
         createValidatorNode(
                 config ->
                     config
-                        .withNetwork("less-swift")
+                        .withNetwork(networkName)
                         .withInteropModeDisabled()
                         .withBeaconNode(beaconNode))
             .withValidatorKeystores(validatorKeystores);

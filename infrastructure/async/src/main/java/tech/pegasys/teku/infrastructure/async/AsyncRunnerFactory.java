@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -14,25 +14,14 @@
 package tech.pegasys.teku.infrastructure.async;
 
 import java.util.Collection;
-import java.util.concurrent.CopyOnWriteArrayList;
 
-public class AsyncRunnerFactory {
-  private final Collection<AsyncRunner> asyncRunners = new CopyOnWriteArrayList<>();
-
-  private final MetricTrackingExecutorFactory executorFactory;
-
-  public AsyncRunnerFactory(final MetricTrackingExecutorFactory executorFactory) {
-    this.executorFactory = executorFactory;
+public interface AsyncRunnerFactory {
+  static DefaultAsyncRunnerFactory createDefault(
+      final MetricTrackingExecutorFactory executorFactory) {
+    return new DefaultAsyncRunnerFactory(executorFactory);
   }
 
-  public AsyncRunner create(final String name, final int maxThreads) {
-    final AsyncRunner asyncRunner =
-        ScheduledExecutorAsyncRunner.create(name, maxThreads, executorFactory);
-    asyncRunners.add(asyncRunner);
-    return asyncRunner;
-  }
+  AsyncRunner create(String name, int maxThreads);
 
-  public Collection<AsyncRunner> getAsyncRunners() {
-    return asyncRunners;
-  }
+  Collection<AsyncRunner> getAsyncRunners();
 }

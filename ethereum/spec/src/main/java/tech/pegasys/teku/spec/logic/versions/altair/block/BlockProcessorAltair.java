@@ -98,7 +98,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
     final BeaconBlockBodyAltair blockBody = BeaconBlockBodyAltair.required(block.getBody());
 
     super.processBlock(state, block, indexedAttestationCache, signatureVerifier);
-    processSyncCommittee(state, blockBody.getSyncAggregate(), signatureVerifier);
+    processSyncAggregate(state, blockBody.getSyncAggregate(), signatureVerifier);
   }
 
   @Override
@@ -168,7 +168,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
   }
 
   @Override
-  public void processSyncCommittee(
+  public void processSyncAggregate(
       final MutableBeaconState baseState,
       final SyncAggregate aggregate,
       final BLSSignatureVerifier signatureVerifier)
@@ -241,13 +241,17 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
             });
   }
 
-  private boolean eth2FastAggregateVerify(
+  static boolean eth2FastAggregateVerify(
       final BLSSignatureVerifier signatureVerifier,
       List<BLSPublicKey> pubkeys,
       Bytes32 message,
       BLSSignature signature) {
-    if (pubkeys.isEmpty() && signature.isInfinity()) {
-      return true;
+    // BLS verify logic would throw if we pass in an empty list of public keys,
+    // so if the keys list is empty, return the isInfinity of the signature.
+    // this is equivalent to the spec, and removes the possibility of an empty list
+    // causing an exception in the signature verifier.
+    if (pubkeys.isEmpty()) {
+      return signature.isInfinity();
     }
     return signatureVerifier.verify(pubkeys, message, signature);
   }

@@ -22,8 +22,10 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.AggregateAt
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class AggregateGossipManager implements GossipManager {
 
@@ -33,15 +35,17 @@ public class AggregateGossipManager implements GossipManager {
   private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
   public AggregateGossipManager(
+      final RecentChainData recentChainData,
       final AsyncRunner asyncRunner,
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
       final OperationProcessor<ValidateableAttestation> processor) {
+    final Spec spec = recentChainData.getSpec();
     this.gossipEncoding = gossipEncoding;
     final Eth2TopicHandler<?> aggregateAttestationTopicHandler =
         AggregateAttestationTopicHandler.createHandler(
-            asyncRunner, processor, gossipEncoding, forkInfo.getForkDigest());
+            recentChainData, asyncRunner, processor, gossipEncoding, forkInfo.getForkDigest(spec));
     this.channel =
         gossipNetwork.subscribe(
             aggregateAttestationTopicHandler.getTopic(), aggregateAttestationTopicHandler);

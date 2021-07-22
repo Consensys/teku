@@ -148,7 +148,7 @@ public class Constants {
   public static final int VALID_AGGREGATE_SET_SIZE = 1000;
   public static final int VALID_VALIDATOR_SET_SIZE = 10000;
   public static final int VALID_CONTRIBUTION_AND_PROOF_SET_SIZE = 10000;
-  public static final int VALID_SYNC_COMMITTEE_SIGNATURE_SET_SIZE = 10000;
+  public static final int VALID_SYNC_COMMITTEE_MESSAGE_SET_SIZE = 10000;
   public static final int NETWORKING_FAILURE_REPEAT_INTERVAL = 3; // in sec
 
   // Teku specific
@@ -169,8 +169,6 @@ public class Constants {
   public static final Duration STORAGE_REQUEST_TIMEOUT = Duration.ofSeconds(60);
   public static final int STORAGE_QUERY_CHANNEL_PARALLELISM = 10; // # threads
   public static final int PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD = 256;
-  public static final int ATTESTATION_RETENTION_EPOCHS = 2;
-  public static final int OPERATION_POOL_SIZE = 1000;
 
   // Teku Sync
   public static final UInt64 MAX_BLOCK_BY_RANGE_REQUEST_SIZE = UInt64.valueOf(200);
@@ -178,8 +176,6 @@ public class Constants {
   public static final int MAX_BLOCKS_PER_MINUTE = 500;
 
   // Teku Validator Client Specific
-  public static final Duration FORK_RETRY_DELAY = Duration.ofSeconds(10);
-  public static final Duration FORK_REFRESH_TIME = Duration.ofMinutes(5);
   public static final Duration GENESIS_DATA_RETRY_DELAY = Duration.ofSeconds(10);
 
   static {

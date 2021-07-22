@@ -468,7 +468,7 @@ class Store implements UpdatableStore {
   @Override
   public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(Checkpoint checkpoint) {
     return checkpointStates.perform(
-        new StateAtSlotTask(spec, checkpoint.toSlotAndBlockRoot(), this::retrieveBlockState));
+        new StateAtSlotTask(spec, checkpoint.toSlotAndBlockRoot(spec), this::retrieveBlockState));
   }
 
   @Override
@@ -491,10 +491,11 @@ class Store implements UpdatableStore {
     return checkpointStates
         .perform(
             new StateAtSlotTask(
-                spec, finalized.getCheckpoint().toSlotAndBlockRoot(), fromAnchor(finalized)))
+                spec, finalized.getCheckpoint().toSlotAndBlockRoot(spec), fromAnchor(finalized)))
         .thenApply(
             maybeState ->
                 CheckpointState.create(
+                    spec,
                     finalized.getCheckpoint(),
                     finalized.getBlockSummary(),
                     maybeState.orElseThrow()));
@@ -506,7 +507,7 @@ class Store implements UpdatableStore {
     return checkpointStates.perform(
         new StateAtSlotTask(
             spec,
-            checkpoint.toSlotAndBlockRoot(),
+            checkpoint.toSlotAndBlockRoot(spec),
             blockRoot -> SafeFuture.completedFuture(Optional.of(latestStateAtEpoch))));
   }
 
@@ -606,6 +607,7 @@ class Store implements UpdatableStore {
                 treeBuilder.build(),
                 blockProvider,
                 new StateRegenerationBaseSelector(
+                    spec,
                     Optional.ofNullable(latestEpochBoundary.get()),
                     () -> getClosestAvailableBlockRootAndState(blockRoot),
                     stateProvider,

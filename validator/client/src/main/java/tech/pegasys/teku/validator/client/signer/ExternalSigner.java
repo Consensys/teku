@@ -187,20 +187,24 @@ public class ExternalSigner implements Signer {
   }
 
   @Override
-  public SafeFuture<BLSSignature> signSyncCommitteeSignature(
+  public SafeFuture<BLSSignature> signSyncCommitteeMessage(
       final UInt64 slot, final Bytes32 beaconBlockRoot, final ForkInfo forkInfo) {
     return signingRootFromSyncCommitteeUtils(
             slot,
             utils ->
-                utils.getSyncCommitteeSignatureSigningRoot(
+                utils.getSyncCommitteeMessageSigningRoot(
                     beaconBlockRoot, spec.computeEpochAtSlot(slot), forkInfo))
         .thenCompose(
             signingRoot ->
                 sign(
                     signingRoot,
-                    SignType.SYNC_COMMITTEE_SIGNATURE,
-                    Map.of("beacon_block_root", beaconBlockRoot, FORK_INFO, forkInfo(forkInfo)),
-                    slashableGenericMessage("sync committee signature")));
+                    SignType.SYNC_COMMITTEE_MESSAGE,
+                    Map.of(
+                        "sync_committee_message",
+                        Map.of("beacon_block_root", beaconBlockRoot, "slot", slot),
+                        FORK_INFO,
+                        forkInfo(forkInfo)),
+                    slashableGenericMessage("sync committee message")));
   }
 
   @Override
@@ -215,10 +219,12 @@ public class ExternalSigner implements Signer {
                     signingRoot,
                     SignType.SYNC_COMMITTEE_SELECTION_PROOF,
                     Map.of(
-                        "slot",
-                        selectionData.getSlot(),
-                        "subcommittee_index",
-                        selectionData.getSubcommitteeIndex(),
+                        "sync_aggregator_selection_data",
+                        Map.of(
+                            "slot",
+                            selectionData.getSlot(),
+                            "subcommittee_index",
+                            selectionData.getSubcommitteeIndex()),
                         FORK_INFO,
                         forkInfo(forkInfo)),
                     slashableGenericMessage("sync committee selection proof")));
@@ -235,7 +241,12 @@ public class ExternalSigner implements Signer {
                 sign(
                     signingRoot,
                     SignType.SYNC_COMMITTEE_CONTRIBUTION_AND_PROOF,
-                    Map.of(FORK_INFO, forkInfo(forkInfo)),
+                    Map.of(
+                        "contribution_and_proof",
+                        new tech.pegasys.teku.api.schema.altair.ContributionAndProof(
+                            contributionAndProof),
+                        FORK_INFO,
+                        forkInfo(forkInfo)),
                     slashableGenericMessage("sync committee contribution and proof")));
   }
 

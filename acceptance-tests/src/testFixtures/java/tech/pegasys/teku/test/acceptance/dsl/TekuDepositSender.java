@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.test.acceptance.dsl;
 
-import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
-
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -28,6 +26,7 @@ import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.DepositGenerator;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.DepositSenderService;
@@ -37,15 +36,18 @@ import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class TekuDepositSender extends Node {
   private static final Logger LOG = LogManager.getLogger();
+  private final Spec spec;
 
-  public TekuDepositSender(final Network network) {
+  public TekuDepositSender(final Network network, final Spec spec) {
     super(network, TekuNode.TEKU_DOCKER_IMAGE, LOG);
+    this.spec = spec;
   }
 
   public ValidatorKeystores sendValidatorDeposits(
       final BesuNode eth1Node, final int numberOfValidators)
       throws InterruptedException, ExecutionException, TimeoutException {
-    return sendValidatorDeposits(eth1Node, numberOfValidators, MAX_EFFECTIVE_BALANCE);
+    return sendValidatorDeposits(
+        eth1Node, numberOfValidators, spec.getGenesisSpecConfig().getMaxEffectiveBalance());
   }
 
   public ValidatorKeystores sendValidatorDeposits(
@@ -55,6 +57,7 @@ public class TekuDepositSender extends Node {
     final Credentials eth1Credentials = Credentials.create(eth1Node.getRichBenefactorKey());
     try (final DepositGenerator depositGenerator =
         new DepositGenerator(
+            spec,
             eth1Node.getExternalJsonRpcUrl(),
             eth1Address,
             eth1Credentials,
@@ -73,7 +76,7 @@ public class TekuDepositSender extends Node {
     final Credentials eth1Credentials = Credentials.create(eth1Node.getRichBenefactorKey());
     final DepositSenderService depositSenderService =
         new DepositSenderService(
-            eth1Node.getExternalJsonRpcUrl(), eth1Credentials, eth1Address, amount);
+            spec, eth1Node.getExternalJsonRpcUrl(), eth1Credentials, eth1Address, amount);
     final List<SafeFuture<TransactionReceipt>> transactionReceipts =
         validatorKeys.stream().map(depositSenderService::sendDeposit).collect(Collectors.toList());
     final SafeFuture<Void> future =
@@ -84,5 +87,13 @@ public class TekuDepositSender extends Node {
   public List<ValidatorKeys> generateValidatorKeys(int numberOfValidators) {
     final ValidatorKeyGenerator generator = new ValidatorKeyGenerator(numberOfValidators);
     return generator.generateKeysStream().collect(Collectors.toList());
+  }
+
+  public UInt64 getMinDepositAmount() {
+    return spec.getGenesisSpecConfig().getMinDepositAmount();
+  }
+
+  public UInt64 getMaxEffectiveBalance() {
+    return spec.getGenesisSpecConfig().getMaxEffectiveBalance();
   }
 }

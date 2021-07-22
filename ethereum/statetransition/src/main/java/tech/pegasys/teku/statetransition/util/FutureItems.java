@@ -22,9 +22,9 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 /** Holds items with slots that are in the future relative to our node's current slot */
 public class FutureItems<T> implements SlotEventsChannel {

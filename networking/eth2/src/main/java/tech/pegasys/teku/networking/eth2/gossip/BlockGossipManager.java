@@ -26,6 +26,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlockGossipManager implements GossipManager {
 
@@ -35,6 +36,7 @@ public class BlockGossipManager implements GossipManager {
   private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
   public BlockGossipManager(
+      final RecentChainData recentChainData,
       final Spec spec,
       final AsyncRunner asyncRunner,
       final GossipNetwork gossipNetwork,
@@ -50,10 +52,11 @@ public class BlockGossipManager implements GossipManager {
             .getSignedBeaconBlockSchema();
     final Eth2TopicHandler<SignedBeaconBlock> topicHandler =
         new Eth2TopicHandler<>(
+            recentChainData,
             asyncRunner,
             processor,
             gossipEncoding,
-            forkInfo.getForkDigest(),
+            forkInfo.getForkDigest(spec),
             GossipTopicName.BEACON_BLOCK,
             signedBeaconBlockSchema);
     this.channel = gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);

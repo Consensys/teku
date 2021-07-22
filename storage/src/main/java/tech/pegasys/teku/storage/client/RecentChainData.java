@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.storage.client;
 
-import com.google.common.eventbus.EventBus;
 import java.util.Collections;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -71,7 +70,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
   private final BlockProvider blockProvider;
   private final StateAndBlockSummaryProvider stateProvider;
-  protected final EventBus eventBus;
   protected final FinalizedCheckpointChannel finalizedCheckpointChannel;
   protected final StorageUpdateChannel storageUpdateChannel;
   protected final VoteUpdateChannel voteUpdateChannel;
@@ -106,7 +104,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       final ProtoArrayStorageChannel protoArrayStorageChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
-      final EventBus eventBus,
       final Spec spec) {
     this.asyncRunner = asyncRunner;
     this.metricsSystem = metricsSystem;
@@ -115,7 +112,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     this.stateProvider = stateProvider;
     this.voteUpdateChannel = voteUpdateChannel;
     this.chainHeadChannel = chainHeadChannel;
-    this.eventBus = eventBus;
     this.storageUpdateChannel = storageUpdateChannel;
     this.protoArrayStorageChannel = protoArrayStorageChannel;
     this.finalizedCheckpointChannel = finalizedCheckpointChannel;
@@ -159,7 +155,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       throw new IllegalStateException(
           "Failed to initialize from state: store has already been initialized");
     }
-    eventBus.post(anchorPoint);
 
     // Set the head to the anchor point
     updateHead(anchorPoint.getRoot(), anchorPoint.getEpochStartSlot());
@@ -210,7 +205,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
             forkAndMilestone -> {
               final Fork fork = forkAndMilestone.getFork();
               final ForkInfo forkInfo = new ForkInfo(fork, genesisValidatorsRoot);
-              final Bytes4 forkDigest = forkInfo.getForkDigest();
+              final Bytes4 forkDigest = forkInfo.getForkDigest(spec);
               this.forkDigestToMilestone.put(forkDigest, forkAndMilestone.getSpecMilestone());
               this.milestoneToForkDigest.put(forkAndMilestone.getSpecMilestone(), forkDigest);
             });

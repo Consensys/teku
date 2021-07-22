@@ -445,12 +445,13 @@ public class TekuNode extends Node {
   }
 
   public static class Config {
+    public static String DEFAULT_NETWORK_NAME = "swift";
 
     private final PrivKey privateKey = KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1();
     private final PeerId peerId = PeerId.fromPubKey(privateKey.publicKey());
     private static final int DEFAULT_VALIDATOR_COUNT = 64;
 
-    private String networkName = "swift";
+    private String networkName = DEFAULT_NETWORK_NAME;
     private final Map<String, Object> configMap = new HashMap<>();
     private final List<File> tarballsToCopy = new ArrayList<>();
 

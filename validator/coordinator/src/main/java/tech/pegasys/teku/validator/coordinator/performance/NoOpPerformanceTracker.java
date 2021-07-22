@@ -17,7 +17,7 @@ import java.util.Set;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeSignature;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 
 public class NoOpPerformanceTracker implements PerformanceTracker {
 
@@ -40,7 +40,7 @@ public class NoOpPerformanceTracker implements PerformanceTracker {
       final UInt64 periodEndEpoch) {}
 
   @Override
-  public void saveProducedSyncCommitteeSignature(final SyncCommitteeSignature signature) {}
+  public void saveProducedSyncCommitteeMessage(final SyncCommitteeMessage message) {}
 
   @Override
   public void onSlot(UInt64 slot) {}

@@ -4,6 +4,7 @@ dependencies {
 
   implementation project(':bls')
   implementation project(':ethereum:spec')
+  implementation project(':util')
 
   testImplementation project(':data:provider')
   testImplementation testFixtures(project(':ethereum:spec'))

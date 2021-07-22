@@ -59,7 +59,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
         InMemoryStorageSystemBuilder.create().specProvider(spec).build();
     final RecentChainData recentChainData = storageSystem.recentChainData();
     recentChainData.initializeFromAnchorPoint(
-        AnchorPoint.fromInitialBlockAndState(new SignedBlockAndState(anchorBlock, anchorState)),
+        AnchorPoint.fromInitialBlockAndState(
+            spec, new SignedBlockAndState(anchorBlock, anchorState)),
         spec.getSlotStartTime(anchorBlock.getSlot(), anchorState.getGenesis_time()));
 
     final ForkChoice forkChoice =
@@ -116,7 +117,9 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     final Attestation attestation =
         TestDataUtils.loadSsz(
             testDefinition, attestationName + ".ssz_snappy", Attestation.SSZ_SCHEMA);
-    assertThat(forkChoice.onAttestation(ValidateableAttestation.from(attestation))).isCompleted();
+    final Spec spec = testDefinition.getSpec();
+    assertThat(forkChoice.onAttestation(ValidateableAttestation.from(spec, attestation)))
+        .isCompleted();
   }
 
   private void applyBlock(

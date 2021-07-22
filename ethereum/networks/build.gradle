@@ -7,6 +7,5 @@ dependencies {
 
     testFixturesImplementation project(':ethereum:spec')
     testFixturesImplementation project(':infrastructure:io')
-    testFixturesImplementation project(':util')
     testFixturesImplementation 'com.google.guava:guava'
 }

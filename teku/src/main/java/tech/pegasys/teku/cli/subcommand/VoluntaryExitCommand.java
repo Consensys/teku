@@ -42,6 +42,7 @@ import tech.pegasys.teku.core.signatures.RejectingSlashingProtector;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -49,7 +50,6 @@ import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
-import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 import tech.pegasys.teku.validator.client.loader.PublicKeyLoader;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
@@ -181,7 +181,7 @@ public class VoluntaryExitCommand implements Runnable {
       return apiClient
           .getConfigSpec()
           .map(response -> SpecConfigLoader.loadConfig(response.data))
-          .map(specConfig -> SpecFactory.create(specConfig, Optional.empty(), Optional.empty()))
+          .map(specConfig -> SpecFactory.create(specConfig, Optional.empty()))
           .orElseThrow();
     } catch (Exception ex) {
       SUB_COMMAND_LOG.error(
@@ -204,7 +204,7 @@ public class VoluntaryExitCommand implements Runnable {
   private void initialise() {
     config = tekuConfiguration();
     final AsyncRunnerFactory asyncRunnerFactory =
-        new AsyncRunnerFactory(new MetricTrackingExecutorFactory(metricsSystem));
+        AsyncRunnerFactory.createDefault(new MetricTrackingExecutorFactory(metricsSystem));
     final AsyncRunner asyncRunner = asyncRunnerFactory.create("voluntary-exits", 8);
 
     apiClient =

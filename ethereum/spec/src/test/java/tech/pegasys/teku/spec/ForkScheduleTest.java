@@ -25,6 +25,7 @@ import tech.pegasys.teku.spec.config.TestConfigLoader;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.networks.Eth2Network;
+import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class ForkScheduleTest {
   private static final SpecConfig MINIMAL_CONFIG =
@@ -50,6 +51,12 @@ public class ForkScheduleTest {
   // Set up default config
   private static final SpecConfig PHASE0_CONFIG =
       TestConfigLoader.loadPhase0Config(Eth2Network.MINIMAL.configName());
+
+  // Fork versions
+  static final Bytes4 PHASE_0_FORK_VERSION = TRANSITION_CONFIG.getGenesisForkVersion();
+  static final Bytes4 ALTAIR_FORK_VERSION =
+      TRANSITION_CONFIG.toVersionAltair().orElseThrow().getAltairForkVersion();
+  static final Bytes4 UNKNOWN_FORK_VERSION = Bytes4.fromHexStringLenient("0xFFFFFFFF");
 
   @Test
   public void build_validScheduleWithAltairTransition() {
@@ -410,6 +417,37 @@ public class ForkScheduleTest {
         .isEqualTo(SpecMilestone.ALTAIR);
     assertThat(forkSchedule.getSpecMilestoneAtTime(UInt64.ZERO, UInt64.MAX_VALUE))
         .isEqualTo(SpecMilestone.ALTAIR);
+  }
+
+  @Test
+  public void getSpecMilestoneAtForkVersion_withTransition() {
+    final ForkSchedule forkSchedule = buildForkSchedule(TRANSITION_CONFIG);
+
+    assertThat(forkSchedule.getSpecMilestoneAtForkVersion(PHASE_0_FORK_VERSION))
+        .contains(SpecMilestone.PHASE0);
+    assertThat(forkSchedule.getSpecMilestoneAtForkVersion(ALTAIR_FORK_VERSION))
+        .contains(SpecMilestone.ALTAIR);
+    assertThat(forkSchedule.getSpecMilestoneAtForkVersion(UNKNOWN_FORK_VERSION)).isEmpty();
+  }
+
+  @Test
+  public void getSpecMilestoneAtForkVersion_phase0Only() {
+    final ForkSchedule forkSchedule = buildForkSchedule(PHASE0_CONFIG);
+
+    assertThat(forkSchedule.getSpecMilestoneAtForkVersion(PHASE_0_FORK_VERSION))
+        .contains(SpecMilestone.PHASE0);
+    assertThat(forkSchedule.getSpecMilestoneAtForkVersion(ALTAIR_FORK_VERSION)).isEmpty();
+    assertThat(forkSchedule.getSpecMilestoneAtForkVersion(UNKNOWN_FORK_VERSION)).isEmpty();
+  }
+
+  @Test
+  public void getSpecMilestoneAtForkVersion_altairOnly() {
+    final ForkSchedule forkSchedule = buildForkSchedule(ALTAIR_CONFIG);
+
+    assertThat(forkSchedule.getSpecMilestoneAtForkVersion(PHASE_0_FORK_VERSION)).isEmpty();
+    assertThat(forkSchedule.getSpecMilestoneAtForkVersion(ALTAIR_FORK_VERSION))
+        .contains(SpecMilestone.ALTAIR);
+    assertThat(forkSchedule.getSpecMilestoneAtForkVersion(UNKNOWN_FORK_VERSION)).isEmpty();
   }
 
   private ForkSchedule buildForkSchedule(final SpecConfig specConfig) {

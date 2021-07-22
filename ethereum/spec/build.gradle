@@ -34,7 +34,6 @@ dependencies {
     implementation project(':infrastructure:io')
     implementation project(':infrastructure:logging')
     implementation project(':ethereum:pow:api')
-    implementation project(':util')
 
     implementation 'com.google.code.gson:gson'
     implementation 'org.apache.tuweni:tuweni-bytes'
@@ -43,7 +42,6 @@ dependencies {
     implementation 'org.apache.tuweni:tuweni-ssz'
 
     testImplementation testFixtures(project(':bls'))
-    testImplementation testFixtures(project(':util'))
     testImplementation testFixtures(project(':ssz'))
 
     testImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'

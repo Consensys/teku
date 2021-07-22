@@ -21,7 +21,6 @@ import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Throwables;
-import com.google.common.eventbus.EventBus;
 import java.net.BindException;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -34,11 +33,13 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApi;
+import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
@@ -57,6 +58,7 @@ import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
+import tech.pegasys.teku.services.timer.TimeTickChannel;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
@@ -68,7 +70,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeSignature;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineService;
@@ -79,6 +81,7 @@ import tech.pegasys.teku.statetransition.OperationsReOrgManager;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
+import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -86,8 +89,8 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
 import tech.pegasys.teku.statetransition.synccommittee.SignedContributionAndProofValidator;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
-import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeSignaturePool;
-import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeSignatureValidator;
+import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
+import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessageValidator;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeStateUtils;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
@@ -98,6 +101,7 @@ import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.statetransition.validation.ProposerSlashingValidator;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.statetransition.validation.VoluntaryExitValidator;
+import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
@@ -112,9 +116,6 @@ import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.sync.SyncServiceFactory;
 import tech.pegasys.teku.sync.events.CoalescingChainHeadChannel;
-import tech.pegasys.teku.util.config.InvalidConfigurationException;
-import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
-import tech.pegasys.teku.util.time.channels.TimeTickChannel;
 import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorPerformanceTrackingMode;
@@ -144,7 +145,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private final MetricsSystem metricsSystem;
   private final AsyncRunner beaconAsyncRunner;
   private final TimeProvider timeProvider;
-  private final EventBus eventBus;
   private final SlotEventsChannel slotEventsChannelPublisher;
   private final AsyncRunner networkAsyncRunner;
   private final AsyncRunnerFactory asyncRunnerFactory;
@@ -163,6 +163,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile DepositProvider depositProvider;
   private volatile SyncService syncService;
   private volatile AttestationManager attestationManager;
+  private volatile SignatureVerificationService signatureVerificationService;
   private volatile CombinedChainDataClient combinedChainDataClient;
   private volatile Eth1DataCache eth1DataCache;
   private volatile SlotProcessor slotProcessor;
@@ -170,7 +171,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile OperationPool<ProposerSlashing> proposerSlashingPool;
   private volatile OperationPool<SignedVoluntaryExit> voluntaryExitPool;
   private volatile SyncCommitteeContributionPool syncCommitteeContributionPool;
-  private volatile SyncCommitteeSignaturePool syncCommitteeSignaturePool;
+  private volatile SyncCommitteeMessagePool syncCommitteeMessagePool;
   private volatile OperationsReOrgManager operationsReOrgManager;
   private volatile WeakSubjectivityValidator weakSubjectivityValidator;
   private volatile PerformanceTracker performanceTracker;
@@ -196,7 +197,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     this.eventAsyncRunner = serviceConfig.createAsyncRunner("events", 10);
     this.networkAsyncRunner = serviceConfig.createAsyncRunner("p2p", 10);
     this.timeProvider = serviceConfig.getTimeProvider();
-    this.eventBus = serviceConfig.getEventBus();
     this.eventChannels = serviceConfig.getEventChannels();
     this.metricsSystem = serviceConfig.getMetricsSystem();
     this.slotEventsChannelPublisher = eventChannels.getPublisher(SlotEventsChannel.class);
@@ -207,7 +207,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   protected SafeFuture<?> doStart() {
     LOG.debug("Starting {}", this.getClass().getSimpleName());
     forkChoiceExecutor.start();
-    this.eventBus.register(this);
     return initialize()
         .thenCompose(
             (__) -> SafeFuture.fromRunnable(() -> beaconRestAPI.ifPresent(BeaconRestApi::start)));
@@ -248,7 +247,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   protected SafeFuture<?> doStop() {
     LOG.debug("Stopping {}", this.getClass().getSimpleName());
     return SafeFuture.allOf(
-            SafeFuture.fromRunnable(() -> eventBus.unregister(this)),
             SafeFuture.fromRunnable(() -> beaconRestAPI.ifPresent(BeaconRestApi::stop)),
             syncService.stop(),
             blockManager.stop(),
@@ -280,7 +278,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                     eventChannels.getPublisher(ProtoArrayStorageChannel.class, beaconAsyncRunner),
                     eventChannels.getPublisher(FinalizedCheckpointChannel.class, beaconAsyncRunner),
                     coalescingChainHeadChannel,
-                    eventBus,
                     spec))
         .thenCompose(
             client -> {
@@ -316,6 +313,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     initEth1DataCache();
     initDepositProvider();
     initGenesisHandler();
+    initSignatureVerificationService();
     initAttestationManager();
     initPendingBlocks();
     initBlockManager();
@@ -334,7 +332,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private void initPendingBlocks() {
     LOG.debug("BeaconChainController.initPendingBlocks()");
-    pendingBlocks = PendingPool.createForBlocks();
+    pendingBlocks = PendingPool.createForBlocks(spec);
     eventChannels.subscribe(FinalizedCheckpointChannel.class, pendingBlocks);
   }
 
@@ -419,10 +417,20 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   public void initMetrics() {
     LOG.debug("BeaconChainController.initMetrics()");
-    eventChannels.subscribe(
-        SlotEventsChannel.class,
+    final SyncCommitteeMetrics syncCommitteeMetrics =
+        new SyncCommitteeMetrics(spec, recentChainData, metricsSystem);
+    final BeaconChainMetrics beaconChainMetrics =
         new BeaconChainMetrics(
-            spec, recentChainData, slotProcessor.getNodeSlot(), metricsSystem, p2pNetwork));
+            spec,
+            recentChainData,
+            slotProcessor.getNodeSlot(),
+            metricsSystem,
+            p2pNetwork,
+            eth1DataCache);
+    eventChannels
+        .subscribe(SlotEventsChannel.class, beaconChainMetrics)
+        .subscribe(SlotEventsChannel.class, syncCommitteeMetrics)
+        .subscribe(ChainHeadChannel.class, syncCommitteeMetrics);
   }
 
   public void initDepositProvider() {
@@ -435,7 +443,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private void initEth1DataCache() {
     LOG.debug("BeaconChainController.initEth1DataCache");
-    eth1DataCache = new Eth1DataCache(new Eth1VotingPeriod(spec));
+    eth1DataCache = new Eth1DataCache(metricsSystem, new Eth1VotingPeriod(spec));
   }
 
   private void initAttestationTopicSubscriber() {
@@ -490,7 +498,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             performanceTracker,
             spec,
             forkChoiceTrigger,
-            syncCommitteeSignaturePool,
+            syncCommitteeMessagePool,
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager);
     eventChannels
@@ -519,13 +527,22 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         Eth1EventsChannel.class, new GenesisHandler(recentChainData, timeProvider, spec));
   }
 
+  private void initSignatureVerificationService() {
+    signatureVerificationService =
+        beaconConfig.p2pConfig().batchVerifyAttestationSignatures()
+            ? SignatureVerificationService.createAggregatingService(
+                metricsSystem, asyncRunnerFactory)
+            : SignatureVerificationService.createSimple();
+  }
+
   private void initAttestationManager() {
     final PendingPool<ValidateableAttestation> pendingAttestations =
-        PendingPool.createForAttestations();
+        PendingPool.createForAttestations(spec);
     final FutureItems<ValidateableAttestation> futureAttestations =
         FutureItems.create(
             ValidateableAttestation::getEarliestSlotForForkChoiceProcessing, UInt64.valueOf(3));
-    AttestationValidator attestationValidator = new AttestationValidator(spec, recentChainData);
+    AttestationValidator attestationValidator =
+        new AttestationValidator(spec, recentChainData, signatureVerificationService);
     AggregateAttestationValidator aggregateValidator =
         new AggregateAttestationValidator(recentChainData, attestationValidator, spec);
     blockImporter.subscribeToVerifiedBlockAttestations(
@@ -533,19 +550,20 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             attestations.forEach(
                 attestation ->
                     aggregateValidator.addSeenAggregate(
-                        ValidateableAttestation.from(attestation))));
+                        ValidateableAttestation.from(spec, attestation))));
     attestationManager =
         AttestationManager.create(
-            eventBus,
             pendingAttestations,
             futureAttestations,
             forkChoice,
             attestationPool,
             attestationValidator,
-            aggregateValidator);
+            aggregateValidator,
+            signatureVerificationService);
     eventChannels
         .subscribe(SlotEventsChannel.class, attestationManager)
-        .subscribe(FinalizedCheckpointChannel.class, pendingAttestations);
+        .subscribe(FinalizedCheckpointChannel.class, pendingAttestations)
+        .subscribe(BlockImportNotifications.class, attestationManager);
   }
 
   private void initSyncCommitteePools() {
@@ -555,16 +573,20 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         new SyncCommitteeContributionPool(
             spec,
             new SignedContributionAndProofValidator(
-                spec, recentChainData, syncCommitteeStateUtils));
-
-    syncCommitteeSignaturePool =
-        new SyncCommitteeSignaturePool(
-            spec,
-            new SyncCommitteeSignatureValidator(
                 spec, recentChainData, syncCommitteeStateUtils, timeProvider));
+
+    syncCommitteeMessagePool =
+        new SyncCommitteeMessagePool(
+            spec,
+            new SyncCommitteeMessageValidator(
+                spec,
+                recentChainData,
+                syncCommitteeStateUtils,
+                signatureVerificationService,
+                timeProvider));
     eventChannels
         .subscribe(SlotEventsChannel.class, syncCommitteeContributionPool)
-        .subscribe(SlotEventsChannel.class, syncCommitteeSignaturePool);
+        .subscribe(SlotEventsChannel.class, syncCommitteeMessagePool);
   }
 
   public void initP2PNetwork() {
@@ -584,8 +606,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         new GossipPublisher<>();
     final GossipPublisher<SignedContributionAndProof> signedContributionAndProofGossipPublisher =
         new GossipPublisher<>();
-    final GossipPublisher<ValidateableSyncCommitteeSignature>
-        syncCommitteeSignatureGossipPublisher = new GossipPublisher<>();
+    final GossipPublisher<ValidateableSyncCommitteeMessage> syncCommitteeMessageGossipPublisher =
+        new GossipPublisher<>();
 
     // Set up gossip for voluntary exits
     voluntaryExitPool.subscribeOperationAdded(
@@ -614,10 +636,10 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             signedContributionAndProofGossipPublisher.publish(item);
           }
         });
-    syncCommitteeSignaturePool.subscribeOperationAdded(
+    syncCommitteeMessagePool.subscribeOperationAdded(
         (item, result) -> {
           if (result.code() == ValidationResultCode.ACCEPT) {
-            syncCommitteeSignatureGossipPublisher.publish(item);
+            syncCommitteeMessageGossipPublisher.publish(item);
           }
         });
 
@@ -640,8 +662,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             .voluntaryExitGossipPublisher(voluntaryExitGossipPublisher)
             .signedContributionAndProofGossipPublisher(signedContributionAndProofGossipPublisher)
             .gossipedSignedContributionAndProofProcessor(syncCommitteeContributionPool::add)
-            .gossipedSyncCommitteeSignatureProcessor(syncCommitteeSignaturePool::add)
-            .syncCommitteeSignatureGossipPublisher(syncCommitteeSignatureGossipPublisher)
+            .gossipedSyncCommitteeMessageProcessor(syncCommitteeMessagePool::add)
+            .syncCommitteeMessageGossipPublisher(syncCommitteeMessageGossipPublisher)
             .processedAttestationSubscriptionProvider(
                 attestationManager::subscribeToAttestationsToSend)
             .historicalChainData(
@@ -707,7 +729,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   public void initBlockImporter() {
     LOG.debug("BeaconChainController.initBlockImporter()");
     blockImporter =
-        new BlockImporter(recentChainData, forkChoice, weakSubjectivityValidator, eventBus);
+        new BlockImporter(
+            eventChannels.getPublisher(BlockImportNotifications.class),
+            recentChainData,
+            forkChoice,
+            weakSubjectivityValidator);
   }
 
   public void initBlockManager() {
@@ -717,10 +743,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     BlockValidator blockValidator = new BlockValidator(spec, recentChainData);
     blockManager =
         BlockManager.create(
-            eventBus, pendingBlocks, futureBlocks, recentChainData, blockImporter, blockValidator);
+            pendingBlocks, futureBlocks, recentChainData, blockImporter, blockValidator);
     eventChannels
         .subscribe(SlotEventsChannel.class, blockManager)
-        .subscribe(BlockImportChannel.class, blockManager);
+        .subscribe(BlockImportChannel.class, blockManager)
+        .subscribe(BlockImportNotifications.class, blockManager);
   }
 
   public void initSyncService() {
@@ -833,7 +860,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     initialAnchor.ifPresent(
         anchor -> {
           final UInt64 currentSlot = getCurrentSlot(anchor.getState().getGenesis_time());
-          wsInitializer.validateInitialAnchor(anchor, currentSlot);
+          wsInitializer.validateInitialAnchor(anchor, currentSlot, spec);
         });
 
     if (initialAnchor.isPresent()) {

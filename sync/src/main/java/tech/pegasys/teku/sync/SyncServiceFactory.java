@@ -131,6 +131,7 @@ public class SyncServiceFactory {
     final AsyncRunner asyncRunner =
         asyncRunnerFactory.create(HistoricalBlockSyncService.class.getSimpleName(), 1);
     return HistoricalBlockSyncService.create(
+        recentChainData.getSpec(),
         metrics,
         storageUpdateChannel,
         asyncRunner,

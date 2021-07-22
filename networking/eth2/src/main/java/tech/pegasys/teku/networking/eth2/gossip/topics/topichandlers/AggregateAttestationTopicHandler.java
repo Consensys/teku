@@ -20,10 +20,12 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.ssz.type.Bytes4;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class AggregateAttestationTopicHandler {
 
   public static Eth2TopicHandler<?> createHandler(
+      final RecentChainData recentChainData,
       final AsyncRunner asyncRunner,
       final OperationProcessor<ValidateableAttestation> operationProcessor,
       final GossipEncoding gossipEncoding,
@@ -31,8 +33,12 @@ public class AggregateAttestationTopicHandler {
 
     OperationProcessor<SignedAggregateAndProof> convertingProcessor =
         proofMessage ->
-            operationProcessor.process(ValidateableAttestation.aggregateFromNetwork(proofMessage));
+            operationProcessor.process(
+                ValidateableAttestation.aggregateFromNetwork(
+                    recentChainData.getSpec(), proofMessage));
+
     return new Eth2TopicHandler<>(
+        recentChainData,
         asyncRunner,
         convertingProcessor,
         gossipEncoding,

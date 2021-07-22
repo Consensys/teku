@@ -31,7 +31,7 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import org.apache.commons.lang3.tuple.Pair;
 import tech.pegasys.teku.infrastructure.crypto.SecureRandomProvider;
-import tech.pegasys.teku.util.config.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 
 public class HttpClientExternalSignerFactory implements Supplier<HttpClient> {

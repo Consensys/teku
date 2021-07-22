@@ -20,7 +20,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateAssert.assertThatSyncAggregate;
 
-import com.google.common.eventbus.EventBus;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -99,7 +98,7 @@ class BlockFactoryTest {
     final UInt64 newSlot = UInt64.valueOf(blockSlot);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     final BeaconBlockBodyLists blockBodyLists = BeaconBlockBodyLists.ofSpec(spec);
-    final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(spec, new EventBus());
+    final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(spec);
     final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(spec, 1, recentChainData);
     final SszList<Deposit> deposits = blockBodyLists.createDeposits();
     final SszList<Attestation> attestations = blockBodyLists.createAttestations();

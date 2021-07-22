@@ -38,7 +38,6 @@ def buildAliases = [
     'compileTestJava',
     'compileJmhJava',
     'compileIntegrationTestJava',
-    'compileCompatibilityTestJava',
     'compileReferenceTestJava',
     'spotlessApply',
     'build',
@@ -227,7 +226,7 @@ allprojects {
 }
 
 // Note: v1.0.0 tests were republished to fix an initial error. Reset the cache?
-def refTestVersion = 'v1.1.0-alpha.7'
+def refTestVersion = 'v1.1.0-beta.1'
 def refTestBaseUrl = 'https://github.com/ethereum/eth2.0-spec-tests/releases/download'
 def refTestDownloadDir = "${buildDir}/refTests/${refTestVersion}"
 def refTestExpandDir = "${project.rootDir}/eth-reference-tests/src/referenceTest/resources/eth2.0-spec-tests/"
@@ -456,20 +455,11 @@ subprojects {
       }
       resources.srcDir file('src/acceptance-test/resources')
     }
-    compatibilityTest {
-      java {
-        compileClasspath += main.output
-        runtimeClasspath += main.output
-        srcDir file('src/compatibility-test/java')
-      }
-      resources.srcDir file('src/compatibility-test/resources')
-    }
     referenceTest {
       java {
         srcDir file('src/referenceTest/generated_tests')
         srcDir file('src/referenceTest/java')
       }
-      resources.srcDir file('src/referenceTest/resources')
     }
   }
 
@@ -488,8 +478,6 @@ subprojects {
       testSourceDirs += project.sourceSets.integrationTest.resources.srcDirs
       testSourceDirs += project.sourceSets.acceptanceTest.java.srcDirs
       testSourceDirs += project.sourceSets.acceptanceTest.resources.srcDirs
-      testSourceDirs += project.sourceSets.compatibilityTest.java.srcDirs
-      testSourceDirs += project.sourceSets.compatibilityTest.resources.srcDirs
       testSourceDirs += project.sourceSets.referenceTest.java.srcDirs
       testSourceDirs += project.sourceSets.referenceTest.resources.srcDirs
     }
@@ -547,12 +535,10 @@ subprojects {
   configurations {
     integrationTestImplementation.extendsFrom testImplementation
     acceptanceTestImplementation.extendsFrom testImplementation
-    compatibilityTestImplementation.extendsFrom testImplementation
     referenceTestImplementation.extendsFrom testImplementation
 
     integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
     acceptanceTestRuntimeOnly.extendsFrom testRuntimeOnly
-    compatibilityTestRuntimeOnly.extendsFrom testRuntimeOnly
     referenceTestRuntimeOnly.extendsFrom testRuntimeOnly
   }
 
@@ -617,14 +603,6 @@ subprojects {
     systemProperty "teku.testArtifactDir", new File(project.buildDir, "test-artifacts").getAbsolutePath()
     testClassesDirs = sourceSets.acceptanceTest.output.classesDirs
     classpath = sourceSets.acceptanceTest.runtimeClasspath
-  }
-
-  task compatibilityTest(type: Test, dependsOn:["compileCompatibilityTestJava"]){
-    group = "verification"
-    description = "Runs the Teku compatibility tests"
-
-    testClassesDirs = sourceSets.compatibilityTest.output.classesDirs
-    classpath = sourceSets.compatibilityTest.runtimeClasspath
   }
 
   task referenceTest(type: Test, dependsOn:["compileReferenceTestJava"]){

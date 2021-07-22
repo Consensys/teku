@@ -157,7 +157,7 @@ public class SignedContributionAndProofTestBuilder {
         validatorIndex,
         subcommitteeIndex);
     final BLSSignature syncSignature =
-        signer.signSyncCommitteeSignature(slot, beaconBlockRoot, state.getForkInfo()).join();
+        signer.signSyncCommitteeMessage(slot, beaconBlockRoot, state.getForkInfo()).join();
     final Set<Integer> participationIndices =
         assignments.getParticipationBitIndices(subcommitteeIndex);
     // Have to add signature once for each time the validator appears in the subcommittee
@@ -172,8 +172,15 @@ public class SignedContributionAndProofTestBuilder {
     return addParticipant(aggregatorIndex, aggregatorSigner);
   }
 
+  public SignedContributionAndProofTestBuilder removeAllParticipants() {
+    syncSignatures.clear();
+    subcommitteeParticipationIndices.clear();
+    return this;
+  }
+
   public SignedContributionAndProof build() {
-    final BLSSignature aggregateSignature = BLS.aggregate(syncSignatures);
+    final BLSSignature aggregateSignature =
+        syncSignatures.isEmpty() ? BLSSignature.infinity() : BLS.aggregate(syncSignatures);
 
     final SyncCommitteeContribution syncCommitteeContribution =
         syncCommitteeUtil.createSyncCommitteeContribution(

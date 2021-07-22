@@ -34,6 +34,7 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.service.serviceutils.Service;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -49,6 +50,7 @@ public class HistoricalBlockSyncService extends Service {
   private static final Duration RETRY_TIMEOUT = Duration.ofMinutes(1);
   private static final UInt64 BATCH_SIZE = UInt64.valueOf(50);
 
+  private final Spec spec;
   private final SettableGauge historicSyncGauge;
   private final StorageUpdateChannel storageUpdateChannel;
   private final AsyncRunner asyncRunner;
@@ -65,6 +67,7 @@ public class HistoricalBlockSyncService extends Service {
 
   @VisibleForTesting
   HistoricalBlockSyncService(
+      final Spec spec,
       final MetricsSystem metricsSystem,
       final StorageUpdateChannel storageUpdateChannel,
       final AsyncRunner asyncRunner,
@@ -72,6 +75,7 @@ public class HistoricalBlockSyncService extends Service {
       final CombinedChainDataClient chainData,
       final SyncStateProvider syncStateProvider,
       final UInt64 batchSize) {
+    this.spec = spec;
     this.storageUpdateChannel = storageUpdateChannel;
 
     this.asyncRunner = asyncRunner;
@@ -98,6 +102,7 @@ public class HistoricalBlockSyncService extends Service {
   }
 
   public static HistoricalBlockSyncService create(
+      final Spec spec,
       final MetricsSystem metricsSystem,
       final StorageUpdateChannel storageUpdateChannel,
       final AsyncRunner asyncRunner,
@@ -105,6 +110,7 @@ public class HistoricalBlockSyncService extends Service {
       final CombinedChainDataClient chainData,
       final SyncStateProvider syncStateProvider) {
     return new HistoricalBlockSyncService(
+        spec,
         metricsSystem,
         storageUpdateChannel,
         asyncRunner,
@@ -248,7 +254,7 @@ public class HistoricalBlockSyncService extends Service {
             p ->
                 p.getStatus()
                     .getFinalizedCheckpoint()
-                    .getEpochStartSlot()
+                    .getEpochStartSlot(spec)
                     .isGreaterThan(earliestBlock.getSlot()))
         .findAny();
   }

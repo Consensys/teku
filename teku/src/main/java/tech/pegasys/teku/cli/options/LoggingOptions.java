@@ -48,6 +48,15 @@ public class LoggingOptions {
   private boolean logIncludeValidatorDutiesEnabled = true;
 
   @CommandLine.Option(
+      names = {"--Xlog-include-p2p-warnings-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Whether warnings are logged for invalid P2P messages",
+      hidden = true,
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean logIncludeP2pWarningsEnabled = false;
+
+  @CommandLine.Option(
       names = {"--log-destination"},
       paramLabel = "<LOG_DESTINATION>",
       description =
@@ -111,44 +120,12 @@ public class LoggingOptions {
       arity = "0..1")
   private boolean logWireGossipEnabled = false;
 
-  public boolean isLogColorEnabled() {
-    return logColorEnabled;
-  }
-
-  public boolean isLogIncludeEventsEnabled() {
-    return logIncludeEventsEnabled;
-  }
-
-  public boolean isLogIncludeValidatorDutiesEnabled() {
-    return logIncludeValidatorDutiesEnabled;
-  }
-
-  public LoggingDestination getLogDestination() {
-    return logDestination;
-  }
-
   public Optional<String> getMaybeLogFile() {
     return Optional.ofNullable(logFile);
   }
 
   public Optional<String> getMaybeLogPattern() {
     return Optional.ofNullable(logFileNamePattern);
-  }
-
-  public boolean isLogWireCipherEnabled() {
-    return logWireCipherEnabled;
-  }
-
-  public boolean isLogWirePlainEnabled() {
-    return logWirePlainEnabled;
-  }
-
-  public boolean isLogWireMuxEnabled() {
-    return logWireMuxEnabled;
-  }
-
-  public boolean isLogWireGossipEnabled() {
-    return logWireGossipEnabled;
   }
 
   public TekuConfiguration.Builder configure(
@@ -178,6 +155,7 @@ public class LoggingOptions {
                     .colorEnabled(logColorEnabled)
                     .includeEventsEnabled(logIncludeEventsEnabled)
                     .includeValidatorDutiesEnabled(logIncludeValidatorDutiesEnabled)
+                    .includeP2pWarningsEnabled(logIncludeP2pWarningsEnabled)
                     .destination(logDestination)
                     .logFile(logFile)
                     .logFileNamePattern(logFileNamePattern))

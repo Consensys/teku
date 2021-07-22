@@ -78,7 +78,7 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
     lastSignatureBlockRoot = chainHeadTracker.getCurrentChainHead(slot);
     lastSignatureSlot = Optional.of(slot);
     return lastSignatureBlockRoot
-        .map(blockRoot -> productionDuty.produceSignatures(slot, blockRoot))
+        .map(blockRoot -> productionDuty.produceMessages(slot, blockRoot))
         .orElseGet(() -> headUnavailableFailure(slot));
   }
 

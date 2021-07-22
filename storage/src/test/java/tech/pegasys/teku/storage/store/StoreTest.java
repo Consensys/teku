@@ -61,7 +61,7 @@ class StoreTest extends AbstractStoreTest {
                     Optional.empty(),
                     genesisTime.minus(1),
                     genesisTime,
-                    AnchorPoint.create(genesisCheckpoint, genesis),
+                    AnchorPoint.create(spec, genesisCheckpoint, genesis),
                     genesisCheckpoint,
                     genesisCheckpoint,
                     Collections.emptyMap(),
@@ -157,7 +157,7 @@ class StoreTest extends AbstractStoreTest {
     final SafeFuture<Optional<BeaconState>> result = store.retrieveCheckpointState(checkpoint);
     assertThatSafeFuture(result).isCompletedWithNonEmptyOptional();
     final BeaconState checkpointState = result.join().orElseThrow();
-    assertThat(checkpointState.getSlot()).isEqualTo(checkpoint.getEpochStartSlot());
+    assertThat(checkpointState.getSlot()).isEqualTo(checkpoint.getEpochStartSlot(spec));
     assertThat(checkpointState.getLatest_block_header().hashTreeRoot())
         .isEqualTo(checkpoint.getRoot());
   }
@@ -186,7 +186,7 @@ class StoreTest extends AbstractStoreTest {
     assertThatSafeFuture(resultFuture).isCompletedWithNonEmptyOptional();
     final BeaconState result = resultFuture.join().orElseThrow();
     assertThat(result.getSlot()).isGreaterThan(baseState.getSlot());
-    assertThat(result.getSlot()).isEqualTo(checkpoint.getEpochStartSlot());
+    assertThat(result.getSlot()).isEqualTo(checkpoint.getEpochStartSlot(spec));
     assertThat(result.getLatest_block_header().hashTreeRoot()).isEqualTo(checkpoint.getRoot());
   }
 
@@ -322,7 +322,7 @@ class StoreTest extends AbstractStoreTest {
 
     // Check store is updated
     chainBuilder
-        .streamBlocksAndStates(checkpoint3.getEpochStartSlot(), chainBuilder.getLatestSlot())
+        .streamBlocksAndStates(checkpoint3.getEpochStartSlot(spec), chainBuilder.getLatestSlot())
         .forEach(
             b ->
                 assertThat(store.retrieveBlockAndState(b.getRoot()))
@@ -343,7 +343,7 @@ class StoreTest extends AbstractStoreTest {
     // Check store was pruned as expected
     final List<Bytes32> expectedBlockRoots =
         chainBuilder
-            .streamBlocksAndStates(checkpoint1.getEpochStartSlot())
+            .streamBlocksAndStates(checkpoint1.getEpochStartSlot(spec))
             .map(SignedBlockAndState::getRoot)
             .collect(Collectors.toList());
     assertThat(store.getOrderedBlockRoots()).containsExactlyElementsOf(expectedBlockRoots);

@@ -35,9 +35,10 @@ public class ValidatorPerformanceMetrics {
   private final SettableGauge numberOfIncludedBlocks;
 
   // Sync Committee Performance Metrics
-  private final SettableGauge numberOfExpectedSignatures;
-  private final SettableGauge numberOfProducedSignatures;
-  private final SettableGauge numberOfIncludedSignatures;
+  private final SettableGauge numberOfExpectedMessages;
+  private final SettableGauge numberOfProducedMessages;
+  private final SettableGauge numberOfCorrectMessages;
+  private final SettableGauge numberOfIncludedMessages;
 
   public ValidatorPerformanceMetrics(final MetricsSystem metricsSystem) {
 
@@ -112,24 +113,30 @@ public class ValidatorPerformanceMetrics {
             "Number of included blocks");
 
     // Sync Committee Performance Metrics
-    numberOfExpectedSignatures =
+    numberOfExpectedMessages =
         SettableGauge.create(
             metricsSystem,
             TekuMetricCategory.VALIDATOR_PERFORMANCE,
-            "expected_sync_committee_signatures",
-            "Number of expected sync committee signatures");
-    numberOfProducedSignatures =
+            "expected_sync_committee_messages",
+            "Number of expected sync committee messages");
+    numberOfProducedMessages =
         SettableGauge.create(
             metricsSystem,
             TekuMetricCategory.VALIDATOR_PERFORMANCE,
-            "produced_sync_committee_signatures",
-            "Number of produced sync committee signatures");
-    numberOfIncludedSignatures =
+            "produced_sync_committee_messages",
+            "Number of produced sync committee messages");
+    numberOfCorrectMessages =
         SettableGauge.create(
             metricsSystem,
             TekuMetricCategory.VALIDATOR_PERFORMANCE,
-            "included_sync_committee_signatures",
-            "Number of included sync committee signatures");
+            "correct_sync_committee_messages",
+            "Number of produced sync committee messages with the correct block root");
+    numberOfIncludedMessages =
+        SettableGauge.create(
+            metricsSystem,
+            TekuMetricCategory.VALIDATOR_PERFORMANCE,
+            "included_sync_committee_messages",
+            "Number of included sync committee messages");
   }
 
   public void updateAttestationPerformanceMetrics(
@@ -151,8 +158,9 @@ public class ValidatorPerformanceMetrics {
   }
 
   public void updateSyncCommitteePerformance(final SyncCommitteePerformance performance) {
-    numberOfExpectedSignatures.set(performance.getNumberOfExpectedSignatures());
-    numberOfProducedSignatures.set(performance.getNumberOfProducedSignatures());
-    numberOfIncludedSignatures.set(performance.getNumberOfIncludedSignatures());
+    numberOfExpectedMessages.set(performance.getNumberOfExpectedMessages());
+    numberOfProducedMessages.set(performance.getNumberOfProducedMessages());
+    numberOfCorrectMessages.set(performance.getNumberOfCorrectMessages());
+    numberOfIncludedMessages.set(performance.getNumberOfIncludedMessages());
   }
 }

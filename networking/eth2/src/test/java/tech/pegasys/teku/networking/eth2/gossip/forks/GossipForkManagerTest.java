@@ -35,7 +35,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeSignature;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -192,13 +192,15 @@ class GossipForkManagerTest {
     manager.configureGossipForEpoch(UInt64.ZERO);
 
     final ValidateableAttestation firstForkAttestation =
-        ValidateableAttestation.fromValidator(dataStructureUtil.randomAttestation(0));
+        ValidateableAttestation.fromValidator(spec, dataStructureUtil.randomAttestation(0));
     final ValidateableAttestation secondForkAttestation =
         ValidateableAttestation.fromValidator(
+            spec,
             dataStructureUtil.randomAttestation(
                 spec.computeStartSlotAtEpoch(UInt64.ONE).longValue()));
     final ValidateableAttestation thirdForkAttestation =
         ValidateableAttestation.fromValidator(
+            spec,
             dataStructureUtil.randomAttestation(
                 spec.computeStartSlotAtEpoch(UInt64.valueOf(2)).longValue()));
 
@@ -228,6 +230,7 @@ class GossipForkManagerTest {
 
     final ValidateableAttestation attestation =
         ValidateableAttestation.fromValidator(
+            spec,
             dataStructureUtil.randomAttestation(
                 spec.computeStartSlotAtEpoch(secondFork.getActivationEpoch()).longValue()));
 
@@ -269,7 +272,7 @@ class GossipForkManagerTest {
   }
 
   @Test
-  void shouldPublishSyncCommitteeSignatureToForkForSignatureSlot() {
+  void shouldPublishSyncCommitteeMessageToForkForSignatureSlot() {
     final GossipForkSubscriptions firstFork = forkAtEpoch(0);
     final GossipForkSubscriptions secondFork = forkAtEpoch(1);
     final GossipForkSubscriptions thirdFork = forkAtEpoch(2);
@@ -277,51 +280,50 @@ class GossipForkManagerTest {
     final GossipForkManager manager = managerForForks(firstFork, secondFork, thirdFork);
     manager.configureGossipForEpoch(UInt64.ZERO);
 
-    final ValidateableSyncCommitteeSignature firstForkSignature =
-        ValidateableSyncCommitteeSignature.fromValidator(
-            dataStructureUtil.randomSyncCommitteeSignature(0));
-    final ValidateableSyncCommitteeSignature secondForkSignature =
-        ValidateableSyncCommitteeSignature.fromValidator(
-            dataStructureUtil.randomSyncCommitteeSignature(
-                spec.computeStartSlotAtEpoch(UInt64.ONE)));
-    final ValidateableSyncCommitteeSignature thirdForkSignature =
-        ValidateableSyncCommitteeSignature.fromValidator(
-            dataStructureUtil.randomSyncCommitteeSignature(
+    final ValidateableSyncCommitteeMessage firstForkMessage =
+        ValidateableSyncCommitteeMessage.fromValidator(
+            dataStructureUtil.randomSyncCommitteeMessage(0));
+    final ValidateableSyncCommitteeMessage secondForkMessage =
+        ValidateableSyncCommitteeMessage.fromValidator(
+            dataStructureUtil.randomSyncCommitteeMessage(spec.computeStartSlotAtEpoch(UInt64.ONE)));
+    final ValidateableSyncCommitteeMessage thirdForkMessage =
+        ValidateableSyncCommitteeMessage.fromValidator(
+            dataStructureUtil.randomSyncCommitteeMessage(
                 spec.computeStartSlotAtEpoch(UInt64.valueOf(2))));
 
-    manager.publishSyncCommitteeSignature(firstForkSignature);
-    verify(firstFork).publishSyncCommitteeSignature(firstForkSignature);
-    verify(secondFork, never()).publishSyncCommitteeSignature(firstForkSignature);
-    verify(thirdFork, never()).publishSyncCommitteeSignature(firstForkSignature);
+    manager.publishSyncCommitteeMessage(firstForkMessage);
+    verify(firstFork).publishSyncCommitteeMessage(firstForkMessage);
+    verify(secondFork, never()).publishSyncCommitteeMessage(firstForkMessage);
+    verify(thirdFork, never()).publishSyncCommitteeMessage(firstForkMessage);
 
-    manager.publishSyncCommitteeSignature(secondForkSignature);
-    verify(firstFork, never()).publishSyncCommitteeSignature(secondForkSignature);
-    verify(secondFork).publishSyncCommitteeSignature(secondForkSignature);
-    verify(thirdFork, never()).publishSyncCommitteeSignature(secondForkSignature);
+    manager.publishSyncCommitteeMessage(secondForkMessage);
+    verify(firstFork, never()).publishSyncCommitteeMessage(secondForkMessage);
+    verify(secondFork).publishSyncCommitteeMessage(secondForkMessage);
+    verify(thirdFork, never()).publishSyncCommitteeMessage(secondForkMessage);
 
-    manager.publishSyncCommitteeSignature(thirdForkSignature);
-    verify(firstFork, never()).publishSyncCommitteeSignature(thirdForkSignature);
-    verify(secondFork, never()).publishSyncCommitteeSignature(thirdForkSignature);
-    verify(thirdFork).publishSyncCommitteeSignature(thirdForkSignature);
+    manager.publishSyncCommitteeMessage(thirdForkMessage);
+    verify(firstFork, never()).publishSyncCommitteeMessage(thirdForkMessage);
+    verify(secondFork, never()).publishSyncCommitteeMessage(thirdForkMessage);
+    verify(thirdFork).publishSyncCommitteeMessage(thirdForkMessage);
   }
 
   @Test
-  void shouldNotPublishSyncCommitteeSignaturesToForksThatAreNotActive() {
+  void shouldNotPublishSyncCommitteeMessagesToForksThatAreNotActive() {
     final GossipForkSubscriptions firstFork = forkAtEpoch(0);
     final GossipForkSubscriptions secondFork = forkAtEpoch(10);
 
     final GossipForkManager manager = managerForForks(firstFork, secondFork);
     manager.configureGossipForEpoch(UInt64.ZERO);
 
-    final ValidateableSyncCommitteeSignature signature =
-        ValidateableSyncCommitteeSignature.fromValidator(
-            dataStructureUtil.randomSyncCommitteeSignature(
+    final ValidateableSyncCommitteeMessage message =
+        ValidateableSyncCommitteeMessage.fromValidator(
+            dataStructureUtil.randomSyncCommitteeMessage(
                 spec.computeStartSlotAtEpoch(secondFork.getActivationEpoch())));
 
-    manager.publishSyncCommitteeSignature(signature);
+    manager.publishSyncCommitteeMessage(message);
 
-    verify(firstFork, never()).publishSyncCommitteeSignature(signature);
-    verify(secondFork, never()).publishSyncCommitteeSignature(signature);
+    verify(firstFork, never()).publishSyncCommitteeMessage(message);
+    verify(secondFork, never()).publishSyncCommitteeMessage(message);
   }
 
   @ParameterizedTest
@@ -472,12 +474,10 @@ class GossipForkManagerTest {
             "sync committee",
             GossipForkManager::subscribeToSyncCommitteeSubnetId,
             GossipForkManager::unsubscribeFromSyncCommitteeSubnetId,
+            (manager, subnetId) -> verify(manager).subscribeToSyncCommitteeSubnet(subnetId),
             (manager, subnetId) ->
-                verify(manager).subscribeToSyncCommitteeSignatureSubnet(subnetId),
-            (manager, subnetId) ->
-                verify(manager, never()).subscribeToSyncCommitteeSignatureSubnet(subnetId),
-            (manager, subnetId) ->
-                verify(manager).unsubscribeFromSyncCommitteeSignatureSubnet(subnetId)));
+                verify(manager, never()).subscribeToSyncCommitteeSubnet(subnetId),
+            (manager, subnetId) -> verify(manager).unsubscribeFromSyncCommitteeSubnet(subnetId)));
   }
 
   private static class SubscriptionType {

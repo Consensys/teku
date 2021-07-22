@@ -25,6 +25,7 @@ import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.schema.SszSchema;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
 public abstract class AbstractGossipManager<T extends SszData> implements GossipManager {
 
@@ -36,21 +37,24 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
   private final long subscriberId;
 
   protected AbstractGossipManager(
+      final RecentChainData recentChainData,
       final String topicName,
       final AsyncRunner asyncRunner,
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
       final OperationProcessor<T> processor,
-      final GossipPublisher<T> publisher) {
+      final GossipPublisher<T> publisher,
+      final SszSchema<T> gossipType) {
     final Eth2TopicHandler<?> topicHandler =
         new Eth2TopicHandler<>(
+            recentChainData,
             asyncRunner,
             processor,
             gossipEncoding,
-            forkInfo.getForkDigest(),
+            forkInfo.getForkDigest(recentChainData.getSpec()),
             topicName,
-            getGossipType());
+            gossipType);
     this.channel = gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
     this.gossipEncoding = gossipEncoding;
     this.publisher = publisher;
@@ -59,24 +63,26 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
   }
 
   protected AbstractGossipManager(
+      final RecentChainData recentChainData,
       final GossipTopicName topicName,
       final AsyncRunner asyncRunner,
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
       final OperationProcessor<T> processor,
-      final GossipPublisher<T> publisher) {
+      final GossipPublisher<T> publisher,
+      final SszSchema<T> gossipType) {
     this(
+        recentChainData,
         topicName.toString(),
         asyncRunner,
         gossipNetwork,
         gossipEncoding,
         forkInfo,
         processor,
-        publisher);
+        publisher,
+        gossipType);
   }
-
-  protected abstract SszSchema<T> getGossipType();
 
   protected void publishMessage(T message) {
     final Bytes data = gossipEncoding.encode(message);

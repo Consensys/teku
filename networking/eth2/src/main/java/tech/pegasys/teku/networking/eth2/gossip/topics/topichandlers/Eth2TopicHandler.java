@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers;
 
+import static tech.pegasys.teku.infrastructure.logging.P2PLogger.P2P_LOG;
+
 import io.libp2p.core.pubsub.ValidationResult;
 import java.util.concurrent.RejectedExecutionException;
 import org.apache.logging.log4j.LogManager;
@@ -22,6 +24,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.DecodingException;
+import tech.pegasys.teku.networking.eth2.gossip.encoding.Eth2PreparedGossipMessageFactory;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipSubValidationUtil;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
@@ -33,6 +36,7 @@ import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.schema.SszSchema;
 import tech.pegasys.teku.ssz.type.Bytes4;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler {
   private static final Logger LOG = LogManager.getLogger();
@@ -42,8 +46,10 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
   private final Bytes4 forkDigest;
   private final String topicName;
   private final SszSchema<MessageT> messageType;
+  private final Eth2PreparedGossipMessageFactory preparedGossipMessageFactory;
 
   public Eth2TopicHandler(
+      final RecentChainData recentChainData,
       AsyncRunner asyncRunner,
       OperationProcessor<MessageT> processor,
       GossipEncoding gossipEncoding,
@@ -56,16 +62,28 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
     this.forkDigest = forkDigest;
     this.topicName = topicName;
     this.messageType = messageType;
+
+    this.preparedGossipMessageFactory =
+        gossipEncoding.createPreparedGossipMessageFactory(
+            recentChainData::getMilestoneByForkDigest);
   }
 
   public Eth2TopicHandler(
+      final RecentChainData recentChainData,
       AsyncRunner asyncRunner,
       OperationProcessor<MessageT> processor,
       GossipEncoding gossipEncoding,
       Bytes4 forkDigest,
       GossipTopicName topicName,
       SszSchema<MessageT> messageType) {
-    this(asyncRunner, processor, gossipEncoding, forkDigest, topicName.toString(), messageType);
+    this(
+        recentChainData,
+        asyncRunner,
+        processor,
+        gossipEncoding,
+        forkDigest,
+        topicName.toString(),
+        messageType);
   }
 
   @Override
@@ -79,18 +97,25 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
                             .process(deserialized)
                             .thenApply(
                                 internalValidation -> {
-                                  processMessage(internalValidation);
+                                  processMessage(internalValidation, message);
                                   return GossipSubValidationUtil.fromInternalValidationResult(
                                       internalValidation);
                                 })))
-        .exceptionally(this::handleMessageProcessingError);
+        .exceptionally(error -> handleMessageProcessingError(message, error));
   }
 
-  private void processMessage(final InternalValidationResult internalValidationResult) {
+  private void processMessage(
+      final InternalValidationResult internalValidationResult,
+      final PreparedGossipMessage message) {
     switch (internalValidationResult.code()) {
       case REJECT:
+        P2P_LOG.onGossipRejected(
+            getTopic(),
+            message.getDecodedMessage().getDecodedMessage().orElse(Bytes.EMPTY),
+            internalValidationResult.getDescription());
+        break;
       case IGNORE:
-        LOG.trace("Received invalid message for topic: {}", this::getTopic);
+        LOG.trace("Ignoring message for topic: {}", this::getTopic);
         break;
       case SAVE_FOR_FUTURE:
         LOG.trace("Deferring message for topic: {}", this::getTopic);
@@ -111,10 +136,11 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
     return messageType;
   }
 
-  protected ValidationResult handleMessageProcessingError(Throwable err) {
+  protected ValidationResult handleMessageProcessingError(
+      final PreparedGossipMessage message, final Throwable err) {
     final ValidationResult response;
     if (ExceptionUtil.getCause(err, DecodingException.class).isPresent()) {
-      LOG.trace("Received malformed gossip message on {}", getTopic());
+      P2P_LOG.onGossipMessageDecodingError(getTopic(), message.getOriginalMessage(), err);
       response = ValidationResult.Invalid;
     } else if (ExceptionUtil.getCause(err, RejectedExecutionException.class).isPresent()) {
       LOG.warn(
@@ -130,7 +156,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
 
   @Override
   public PreparedGossipMessage prepareMessage(Bytes payload) {
-    return getGossipEncoding().prepareMessage(payload, getMessageType());
+    return preparedGossipMessageFactory.create(getTopic(), payload, getMessageType());
   }
 
   protected MessageT deserialize(PreparedGossipMessage message) throws DecodingException {

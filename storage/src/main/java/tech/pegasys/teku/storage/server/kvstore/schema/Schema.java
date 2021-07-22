@@ -14,13 +14,13 @@
 package tech.pegasys.teku.storage.server.kvstore.schema;
 
 import java.nio.charset.StandardCharsets;
-import java.util.List;
+import java.util.Collection;
 import org.apache.tuweni.bytes.Bytes;
 
 public interface Schema {
   Bytes DEFAULT_COLUMN_ID = Bytes.wrap("default".getBytes(StandardCharsets.UTF_8));
 
-  List<KvStoreColumn<?, ?>> getAllColumns();
+  Collection<KvStoreColumn<?, ?>> getAllColumns();
 
-  List<KvStoreVariable<?>> getAllVariables();
+  Collection<KvStoreVariable<?>> getAllVariables();
 }

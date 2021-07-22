@@ -32,6 +32,7 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class DepositSender implements AutoCloseable {
@@ -51,6 +52,7 @@ public class DepositSender implements AutoCloseable {
   private final Consumer<String> commandErrorOutput;
 
   public DepositSender(
+      final Spec spec,
       final String eth1NodeUrl,
       final Credentials eth1Credentials,
       final Eth1Address contractAddress,
@@ -67,16 +69,16 @@ public class DepositSender implements AutoCloseable {
     this.amount = amount;
     this.shutdownFunction = shutdownFunction;
     this.consoleAdapter = consoleAdapter;
-    this.sender = createTransactionSender();
+    this.sender = createTransactionSender(spec);
   }
 
-  private DepositTransactionSender createTransactionSender() {
+  private DepositTransactionSender createTransactionSender(final Spec spec) {
     httpClient = new OkHttpClient.Builder().connectionPool(new ConnectionPool()).build();
     executorService =
         Executors.newScheduledThreadPool(
             1, new ThreadFactoryBuilder().setDaemon(true).setNameFormat("web3j-%d").build());
     web3j = Web3j.build(new HttpService(eth1NodeUrl, httpClient), 1000, executorService);
-    return new DepositTransactionSender(web3j, contractAddress, eth1Credentials);
+    return new DepositTransactionSender(spec, web3j, contractAddress, eth1Credentials);
   }
 
   @Override

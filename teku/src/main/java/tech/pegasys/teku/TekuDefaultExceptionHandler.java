@@ -15,8 +15,6 @@ package tech.pegasys.teku;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
-import com.google.common.eventbus.SubscriberExceptionContext;
-import com.google.common.eventbus.SubscriberExceptionHandler;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.lang.reflect.Method;
 import java.nio.channels.ClosedChannelException;
@@ -24,7 +22,6 @@ import java.util.Optional;
 import java.util.concurrent.RejectedExecutionException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.ethereum.pow.api.InvalidDepositEventsException;
 import tech.pegasys.teku.infrastructure.events.ChannelExceptionHandler;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
@@ -33,7 +30,7 @@ import tech.pegasys.teku.storage.server.DatabaseStorageException;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 
 public final class TekuDefaultExceptionHandler
-    implements SubscriberExceptionHandler, ChannelExceptionHandler, UncaughtExceptionHandler {
+    implements ChannelExceptionHandler, UncaughtExceptionHandler {
   private static final Logger LOG = LogManager.getLogger();
 
   private final StatusLogger statusLog;
@@ -45,21 +42,6 @@ public final class TekuDefaultExceptionHandler
   @VisibleForTesting
   TekuDefaultExceptionHandler(final StatusLogger statusLog) {
     this.statusLog = statusLog;
-  }
-
-  @Override
-  public void handleException(final Throwable exception, final SubscriberExceptionContext context) {
-    handleException(
-        exception,
-        "event '"
-            + context.getEvent().getClass().getName()
-            + "'"
-            + " in handler '"
-            + context.getSubscriber().getClass().getName()
-            + "'"
-            + " (method  '"
-            + context.getSubscriberMethod().getName()
-            + "')");
   }
 
   @Override
@@ -107,8 +89,6 @@ public final class TekuDefaultExceptionHandler
     } else if (Throwables.getRootCause(exception) instanceof RejectedExecutionException) {
       LOG.error(
           "Unexpected rejected execution due to full task queue in {}", subscriberDescription);
-    } else if (Throwables.getRootCause(exception) instanceof InvalidDepositEventsException) {
-      statusLog.eth1DepositEventsFailure(exception);
     } else if (isSpecFailure(exception)) {
       statusLog.specificationFailure(subscriberDescription, exception);
     } else {

@@ -14,7 +14,6 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
@@ -33,19 +32,18 @@ import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.response.v1.beacon.PostSyncCommitteeFailure;
 import tech.pegasys.teku.api.response.v1.beacon.PostSyncCommitteeFailureResponse;
-import tech.pegasys.teku.api.schema.altair.SyncCommitteeSignature;
+import tech.pegasys.teku.api.schema.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.validator.api.SubmitCommitteeSignatureError;
-import tech.pegasys.teku.validator.api.SubmitCommitteeSignaturesResult;
+import tech.pegasys.teku.validator.api.SubmitCommitteeMessageError;
+import tech.pegasys.teku.validator.api.SubmitCommitteeMessagesResult;
 
 public class PostSyncCommittees extends AbstractHandler {
   public static final String ROUTE = "/eth/v1/beacon/pool/sync_committees";
@@ -63,23 +61,23 @@ public class PostSyncCommittees extends AbstractHandler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.POST,
-      summary = "Submit sync committee signatures to node",
+      summary = "Submit sync committee messages to node",
       tags = {TAG_EXPERIMENTAL},
       requestBody =
           @OpenApiRequestBody(
-              content = {@OpenApiContent(from = SyncCommitteeSignature.class, isArray = true)}),
+              content = {@OpenApiContent(from = SyncCommitteeMessage.class, isArray = true)}),
       description =
-          "Submits sync committee signature objects to the node.\n\n"
-              + "Sync committee signatures are not present in phase0, but are required for Altair networks.\n\n"
-              + "If a sync committee signature is validated successfully the node MUST publish that sync committee signature on all applicable subnets.\n\n"
-              + "If one or more sync committee signatures fail validation the node MUST return a 400 error with details of which sync committee signatures have failed, and why.",
+          "Submits sync committee message objects to the node.\n\n"
+              + "Sync committee messages are not present in phase0, but are required for Altair networks.\n\n"
+              + "If a sync committee message is validated successfully the node MUST publish that sync committee message on all applicable subnets.\n\n"
+              + "If one or more sync committee messages fail validation the node MUST return a 400 error with details of which sync committee messages have failed, and why.",
       responses = {
         @OpenApiResponse(
             status = RES_OK,
-            description = "The sync committee signatures were accepted, validated, and submitted"),
+            description = "The sync committee messages were accepted, validated, and submitted"),
         @OpenApiResponse(
             status = RES_BAD_REQUEST,
-            description = "Errors with one or more sync committee signature",
+            description = "Errors with one or more sync committee messages",
             content = @OpenApiContent(from = PostSyncCommitteeFailureResponse.class)),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
@@ -87,13 +85,15 @@ public class PostSyncCommittees extends AbstractHandler {
   public void handle(final Context ctx) throws Exception {
     try {
       final String body = ctx.body();
-      final List<SyncCommitteeSignature> signatures =
-          Arrays.asList(jsonProvider.jsonToObject(body, SyncCommitteeSignature[].class));
-      final SafeFuture<Optional<SubmitCommitteeSignaturesResult>> future =
-          provider.submitCommitteeSignatures(signatures);
+      final List<SyncCommitteeMessage> messages =
+          Arrays.asList(jsonProvider.jsonToObject(body, SyncCommitteeMessage[].class));
+      final SafeFuture<SubmitCommitteeMessagesResult> future =
+          provider.submitCommitteeSignatures(messages);
 
-      handleOptionalResult(
-          ctx, future, this::handleResult, this::handleError, SC_SERVICE_UNAVAILABLE);
+      ctx.result(
+          future
+              .thenApplyChecked(response -> handleResult(ctx, response))
+              .exceptionallyCompose(error -> handleError(ctx, error)));
 
     } catch (final IllegalArgumentException | JsonMappingException e) {
       ctx.result(BadRequest.badRequest(jsonProvider, e.getMessage()));
@@ -101,12 +101,12 @@ public class PostSyncCommittees extends AbstractHandler {
     }
   }
 
-  private Optional<String> handleResult(Context ctx, final SubmitCommitteeSignaturesResult response)
+  private String handleResult(Context ctx, final SubmitCommitteeMessagesResult response)
       throws JsonProcessingException {
-    final List<SubmitCommitteeSignatureError> errors = response.getErrors();
+    final List<SubmitCommitteeMessageError> errors = response.getErrors();
     if (errors.isEmpty()) {
       ctx.status(SC_OK);
-      return Optional.empty();
+      return null;
     }
 
     final PostSyncCommitteeFailureResponse data =
@@ -117,7 +117,7 @@ public class PostSyncCommittees extends AbstractHandler {
                 .map(e -> new PostSyncCommitteeFailure(e.getIndex(), e.getMessage()))
                 .collect(Collectors.toList()));
     ctx.status(SC_BAD_REQUEST);
-    return Optional.of(jsonProvider.objectToJSON(data));
+    return jsonProvider.objectToJSON(data);
   }
 
   private SafeFuture<String> handleError(final Context ctx, final Throwable error) {

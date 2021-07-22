@@ -30,7 +30,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeSignature;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 /**
@@ -50,7 +50,7 @@ public class GossipForkManager {
   private final NavigableMap<UInt64, GossipForkSubscriptions> forksByActivationEpoch;
   private final Set<GossipForkSubscriptions> activeSubscriptions = new HashSet<>();
   private final Set<Integer> currentAttestationSubnets = new HashSet<>();
-  private final Set<Integer> currentSyncCommitteeSignatureSubnets = new HashSet<>();
+  private final Set<Integer> currentSyncCommitteeSubnets = new HashSet<>();
 
   private Optional<UInt64> currentEpoch = Optional.empty();
 
@@ -150,16 +150,16 @@ public class GossipForkManager {
                     block.getSlot()));
   }
 
-  public synchronized void publishSyncCommitteeSignature(
-      final ValidateableSyncCommitteeSignature signature) {
-    getSubscriptionActiveAtSlot(signature.getSlot())
+  public synchronized void publishSyncCommitteeMessage(
+      final ValidateableSyncCommitteeMessage message) {
+    getSubscriptionActiveAtSlot(message.getSlot())
         .filter(this::isActive)
         .ifPresentOrElse(
-            subscription -> subscription.publishSyncCommitteeSignature(signature),
+            subscription -> subscription.publishSyncCommitteeMessage(message),
             () ->
                 LOG.warn(
-                    "Not publishing sync committee signature because no gossip subscriptions are active for slot {}",
-                    signature.getSlot()));
+                    "Not publishing sync committee message because no gossip subscriptions are active for slot {}",
+                    message.getSlot()));
   }
 
   public synchronized void subscribeToAttestationSubnetId(final int subnetId) {
@@ -177,16 +177,16 @@ public class GossipForkManager {
   }
 
   public void subscribeToSyncCommitteeSubnetId(final int subnetId) {
-    if (currentSyncCommitteeSignatureSubnets.add(subnetId)) {
+    if (currentSyncCommitteeSubnets.add(subnetId)) {
       activeSubscriptions.forEach(
-          subscription -> subscription.subscribeToSyncCommitteeSignatureSubnet(subnetId));
+          subscription -> subscription.subscribeToSyncCommitteeSubnet(subnetId));
     }
   }
 
   public void unsubscribeFromSyncCommitteeSubnetId(final int subnetId) {
-    if (currentSyncCommitteeSignatureSubnets.remove(subnetId)) {
+    if (currentSyncCommitteeSubnets.remove(subnetId)) {
       activeSubscriptions.forEach(
-          subscription -> subscription.unsubscribeFromSyncCommitteeSignatureSubnet(subnetId));
+          subscription -> subscription.unsubscribeFromSyncCommitteeSubnet(subnetId));
     }
   }
 
@@ -199,8 +199,7 @@ public class GossipForkManager {
       subscription.startGossip(
           recentChainData.getGenesisData().orElseThrow().getGenesisValidatorsRoot());
       currentAttestationSubnets.forEach(subscription::subscribeToAttestationSubnetId);
-      currentSyncCommitteeSignatureSubnets.forEach(
-          subscription::subscribeToSyncCommitteeSignatureSubnet);
+      currentSyncCommitteeSubnets.forEach(subscription::subscribeToSyncCommitteeSubnet);
     }
   }
 

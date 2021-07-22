@@ -102,7 +102,8 @@ public abstract class AbstractStoreTest {
       Checkpoint checkpoint = chainBuilder.getCurrentCheckpointForEpoch(i);
       SignedBlockAndState blockAndState = chainBuilder.getBlockAndState(checkpoint.getRoot()).get();
       allCheckpoints.add(
-          CheckpointState.create(checkpoint, blockAndState.getBlock(), blockAndState.getState()));
+          CheckpointState.create(
+              spec, checkpoint, blockAndState.getBlock(), blockAndState.getState()));
     }
     assertThat(allCheckpoints.size()).isEqualTo(epochsToProcess + 1);
 
@@ -141,7 +142,7 @@ public abstract class AbstractStoreTest {
         .anchor(Optional.empty())
         .genesisTime(genesis.getState().getGenesis_time())
         .time(genesis.getState().getGenesis_time())
-        .latestFinalized(AnchorPoint.create(genesisCheckpoint, genesis))
+        .latestFinalized(AnchorPoint.create(spec, genesisCheckpoint, genesis))
         .justifiedCheckpoint(genesisCheckpoint)
         .bestJustifiedCheckpoint(genesisCheckpoint)
         .blockInformation(

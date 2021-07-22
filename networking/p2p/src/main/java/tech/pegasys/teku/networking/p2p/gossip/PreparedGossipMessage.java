@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.p2p.gossip;
 
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 
 /**
@@ -27,4 +28,60 @@ public interface PreparedGossipMessage {
    * is should performed lazily by implementation class
    */
   Bytes getMessageId();
+
+  /** @return Returns the decoded message content */
+  DecodedMessageResult getDecodedMessage();
+
+  Bytes getOriginalMessage();
+
+  class DecodedMessageResult {
+    private final Optional<Bytes> decodedMessage;
+    private final Optional<Throwable> decodingException;
+
+    private DecodedMessageResult(
+        final Optional<Bytes> decodedMessage, final Optional<Throwable> decodingException) {
+      this.decodedMessage = decodedMessage;
+      this.decodingException = decodingException;
+    }
+
+    public static DecodedMessageResult successful(final Bytes uncompressedMessage) {
+      return new DecodedMessageResult(Optional.of(uncompressedMessage), Optional.empty());
+    }
+
+    public static DecodedMessageResult failed(final Throwable decodingException) {
+      return new DecodedMessageResult(Optional.empty(), Optional.of(decodingException));
+    }
+
+    public static DecodedMessageResult failed() {
+      return new DecodedMessageResult(Optional.empty(), Optional.empty());
+    }
+
+    public Optional<Bytes> getDecodedMessage() {
+      return decodedMessage;
+    }
+
+    public Bytes getDecodedMessageOrElseThrow() {
+      return decodedMessage.orElseThrow(this::getGossipDecodingException);
+    }
+
+    private GossipDecodingException getGossipDecodingException() {
+      return decodingException
+          .map(GossipDecodingException::new)
+          .orElseGet(() -> new GossipDecodingException("Failed to decode gossip message"));
+    }
+
+    public Optional<Throwable> getDecodingException() {
+      return decodingException;
+    }
+  }
+
+  class GossipDecodingException extends RuntimeException {
+    public GossipDecodingException(final String message) {
+      super(message);
+    }
+
+    public GossipDecodingException(final Throwable cause) {
+      super(cause);
+    }
+  }
 }
