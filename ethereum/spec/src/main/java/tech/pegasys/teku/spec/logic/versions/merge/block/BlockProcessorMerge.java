@@ -99,8 +99,9 @@ public class BlockProcessorMerge extends AbstractBlockProcessor {
   }
 
   @Override
-  public void processSyncAggregate(MutableBeaconState state, SyncAggregate syncAggregate,
-      BLSSignatureVerifier signatureVerifier) throws BlockProcessingException {
+  public void processSyncAggregate(
+      MutableBeaconState state, SyncAggregate syncAggregate, BLSSignatureVerifier signatureVerifier)
+      throws BlockProcessingException {
     throw new UnsupportedOperationException("No SyncCommittee in merge");
   }
 
