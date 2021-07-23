@@ -87,7 +87,7 @@ public class AggregateTopicHandlerTest extends AbstractTopicHandlerTest<Validate
         ValidateableAttestation.aggregateFromValidator(
             spec, dataStructureUtil.randomSignedAggregateAndProof());
     when(processor.process(aggregate))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.REJECT));
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.reject("Nope")));
 
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(
