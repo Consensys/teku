@@ -270,7 +270,7 @@ class SignedAggregateAndProofValidatorTest {
     assertThat(
             validator.validate(
                 ValidateableAttestation.aggregateFromValidator(spec, aggregateAndProof2)))
-        .isCompletedWithValue(InternalValidationResult.IGNORE);
+        .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
   }
 
   @Test
@@ -301,7 +301,7 @@ class SignedAggregateAndProofValidatorTest {
     assertThat(validator.validate(attestation1))
         .isCompletedWithValue(InternalValidationResult.ACCEPT);
     assertThat(validator.validate(attestation2))
-        .isCompletedWithValue(InternalValidationResult.IGNORE);
+        .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
   }
 
   @Test
@@ -331,7 +331,7 @@ class SignedAggregateAndProofValidatorTest {
 
     validator.addSeenAggregate(attestation1);
     assertThat(validator.validate(attestation2))
-        .isCompletedWithValue(InternalValidationResult.IGNORE);
+        .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
   }
 
   @Test
