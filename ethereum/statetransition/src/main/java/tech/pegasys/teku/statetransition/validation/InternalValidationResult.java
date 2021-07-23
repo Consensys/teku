@@ -46,18 +46,10 @@ public class InternalValidationResult {
     return new InternalValidationResult(validationResultCode, Optional.of(description));
   }
 
-  public static InternalValidationResult reject(final String description) {
-    return create(ValidationResultCode.REJECT, description);
-  }
-
   @FormatMethod
   public static InternalValidationResult reject(
       final String descriptionTemplate, final Object... args) {
     return create(ValidationResultCode.REJECT, String.format(descriptionTemplate, args));
-  }
-
-  public static InternalValidationResult ignore(final String description) {
-    return create(ValidationResultCode.IGNORE, description);
   }
 
   @FormatMethod

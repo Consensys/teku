@@ -173,7 +173,8 @@ public class AttestationValidator {
                       != receivedOnSubnetId.getAsInt()) {
                 return completedFuture(
                     InternalValidationResult.reject(
-                        "Attestation received on incorrect subnet for specified committee index"));
+                        "Attestation received on incorrect subnet (%s) for specified committee index (%s)",
+                        attestation.getData().getIndex(), receivedOnSubnetId.getAsInt()));
               }
 
               // The check below is not specified in the Eth2 networking spec, yet an attestation
@@ -209,7 +210,7 @@ public class AttestationValidator {
                                     ancestorOfLMDVote.equals(data.getTarget().getRoot()))
                             .orElse(false)) {
                           return InternalValidationResult.reject(
-                              "Attestation target block is not an ancestor of LMD vote block");
+                              "Attestation LMD vote block does not descend from target block");
                         }
 
                         // The current finalized_checkpoint is an ancestor of the block defined by
