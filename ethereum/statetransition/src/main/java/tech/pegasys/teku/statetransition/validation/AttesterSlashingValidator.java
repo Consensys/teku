@@ -47,8 +47,10 @@ public class AttesterSlashingValidator implements OperationValidator<AttesterSla
     }
 
     BeaconState state = getState();
-    if (!validateForStateTransition(state, slashing)) {
-      return InternalValidationResult.REJECT;
+    final Optional<OperationInvalidReason> invalidReason =
+        validateForStateTransition(state, slashing);
+    if (invalidReason.isPresent()) {
+      return InternalValidationResult.reject(invalidReason.get().describe());
     }
 
     if (seenIndices.addAll(slashing.getIntersectingValidatorIndices())) {
@@ -60,16 +62,9 @@ public class AttesterSlashingValidator implements OperationValidator<AttesterSla
   }
 
   @Override
-  public boolean validateForStateTransition(BeaconState state, AttesterSlashing slashing) {
-    Optional<OperationInvalidReason> invalidReason = spec.validateAttesterSlashing(state, slashing);
-
-    if (invalidReason.isPresent()) {
-      LOG.trace(
-          "AttesterSlashingValidator: Slashing fails process attester slashing conditions {}.",
-          invalidReason.get().describe());
-      return false;
-    }
-    return true;
+  public Optional<OperationInvalidReason> validateForStateTransition(
+      BeaconState state, AttesterSlashing slashing) {
+    return spec.validateAttesterSlashing(state, slashing);
   }
 
   private boolean includesUnseenIndexToSlash(Set<UInt64> intersectingIndices) {

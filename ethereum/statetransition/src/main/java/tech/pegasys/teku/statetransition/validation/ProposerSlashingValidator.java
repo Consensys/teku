@@ -26,6 +26,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
+import tech.pegasys.teku.spec.logic.common.operations.validation.ProposerSlashingValidator.ProposerSlashingInvalidReason;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class ProposerSlashingValidator implements OperationValidator<ProposerSlashing> {
@@ -49,8 +50,10 @@ public class ProposerSlashingValidator implements OperationValidator<ProposerSla
       return InternalValidationResult.IGNORE;
     }
 
-    if (!passesProcessProposerSlashingConditions(slashing)) {
-      return InternalValidationResult.REJECT;
+    final Optional<OperationInvalidReason> invalidReason =
+        passesProcessProposerSlashingConditions(slashing);
+    if (invalidReason.isPresent()) {
+      return InternalValidationResult.reject(invalidReason.get().describe());
     }
 
     if (receivedValidSlashingForProposerSet.add(
@@ -64,30 +67,24 @@ public class ProposerSlashingValidator implements OperationValidator<ProposerSla
   }
 
   @Override
-  public boolean validateForStateTransition(BeaconState state, ProposerSlashing slashing) {
-    Optional<OperationInvalidReason> invalidReason = spec.validateProposerSlashing(state, slashing);
-
-    if (invalidReason.isPresent()) {
-      LOG.trace(
-          "ProposerSlashingValidator: Slashing fails process proposer slashing conditions {}.",
-          invalidReason.get().describe());
-      return false;
-    }
-
-    return true;
+  public Optional<OperationInvalidReason> validateForStateTransition(
+      BeaconState state, ProposerSlashing slashing) {
+    return spec.validateProposerSlashing(state, slashing);
   }
 
-  private boolean passesProcessProposerSlashingConditions(ProposerSlashing slashing) {
+  private Optional<OperationInvalidReason> passesProcessProposerSlashingConditions(
+      ProposerSlashing slashing) {
     final BeaconState state = getState();
-    if (!validateForStateTransition(state, slashing)) {
-      return false;
+    final Optional<OperationInvalidReason> invalidReason =
+        validateForStateTransition(state, slashing);
+    if (invalidReason.isPresent()) {
+      return invalidReason;
     }
 
     if (!spec.verifyProposerSlashingSignature(state, slashing, BLSSignatureVerifier.SIMPLE)) {
-      LOG.trace("ProposerSlashingValidator: Slashing fails signature verification.");
-      return false;
+      return Optional.of(ProposerSlashingInvalidReason.INVALID_SIGNATURE);
     }
-    return true;
+    return Optional.empty();
   }
 
   private boolean isFirstValidSlashingForValidator(ProposerSlashing slashing) {

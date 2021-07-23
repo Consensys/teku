@@ -62,7 +62,7 @@ public class PostProposerSlashingTest {
         new ProposerSlashing(dataStructureUtil.randomProposerSlashing());
     when(context.body()).thenReturn(jsonProvider.objectToJSON(slashing));
     when(provider.postProposerSlashing(slashing))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.REJECT));
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.reject("Oops")));
     handler.handle(context);
 
     verify(provider).postProposerSlashing(slashing);

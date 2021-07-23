@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.validation;
 
 import com.google.common.base.MoreObjects;
+import com.google.errorprone.annotations.FormatMethod;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -23,9 +24,6 @@ public class InternalValidationResult {
       InternalValidationResult.create(ValidationResultCode.ACCEPT);
   public static InternalValidationResult IGNORE =
       InternalValidationResult.create(ValidationResultCode.IGNORE);
-
-  public static InternalValidationResult REJECT =
-      InternalValidationResult.create(ValidationResultCode.REJECT, "Failed validation");
 
   public static InternalValidationResult SAVE_FOR_FUTURE =
       InternalValidationResult.create(ValidationResultCode.SAVE_FOR_FUTURE);
@@ -46,6 +44,26 @@ public class InternalValidationResult {
   public static InternalValidationResult create(
       final ValidationResultCode validationResultCode, final String description) {
     return new InternalValidationResult(validationResultCode, Optional.of(description));
+  }
+
+  public static InternalValidationResult reject(final String description) {
+    return create(ValidationResultCode.REJECT, description);
+  }
+
+  @FormatMethod
+  public static InternalValidationResult reject(
+      final String descriptionTemplate, final Object... args) {
+    return create(ValidationResultCode.REJECT, String.format(descriptionTemplate, args));
+  }
+
+  public static InternalValidationResult ignore(final String description) {
+    return create(ValidationResultCode.IGNORE, description);
+  }
+
+  @FormatMethod
+  public static InternalValidationResult ignore(
+      final String descriptionTemplate, final Object... args) {
+    return create(ValidationResultCode.IGNORE, String.format(descriptionTemplate, args));
   }
 
   public ValidationResultCode code() {
@@ -95,9 +113,7 @@ public class InternalValidationResult {
     MoreObjects.ToStringHelper helper =
         MoreObjects.toStringHelper(this).add("validationResultCode", validationResultCode);
 
-    if (description.isPresent()) {
-      helper.add("description", description.get());
-    }
+    description.ifPresent(s -> helper.add("description", s));
 
     return helper.toString();
   }

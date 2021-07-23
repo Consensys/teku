@@ -14,9 +14,12 @@
 package tech.pegasys.teku.statetransition.validation;
 
 import static java.lang.Math.toIntExact;
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_domain;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ignore;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 import static tech.pegasys.teku.util.config.Constants.DOMAIN_SELECTION_PROOF;
 import static tech.pegasys.teku.util.config.Constants.VALID_AGGREGATE_SET_SIZE;
 
@@ -81,13 +84,11 @@ public class AggregateAttestationValidator {
         new AggregatorIndexAndEpoch(
             aggregateAndProof.getIndex(), compute_epoch_at_slot(aggregateSlot));
     if (receivedAggregatorIndexAndEpochs.contains(aggregatorIndexAndEpoch)) {
-      LOG.trace("Ignoring duplicate aggregate");
-      return SafeFuture.completedFuture(InternalValidationResult.IGNORE);
+      return completedFuture(ignore("Ignoring duplicate aggregate"));
     }
 
     if (receivedValidAggregations.contains(attestation.hash_tree_root())) {
-      LOG.trace("Ignoring duplicate aggregate based on hash tree root");
-      return SafeFuture.completedFuture(InternalValidationResult.IGNORE);
+      return completedFuture(ignore("Ignoring duplicate aggregate based on hash tree root"));
     }
 
     final BatchSignatureVerifier signatureVerifier = new BatchSignatureVerifier();
@@ -96,7 +97,7 @@ public class AggregateAttestationValidator {
             aggregateInternalValidationResult -> {
               if (aggregateInternalValidationResult.isNotProcessable()) {
                 LOG.trace("Rejecting aggregate because attestation failed validation");
-                return SafeFuture.completedFuture(aggregateInternalValidationResult);
+                return completedFuture(aggregateInternalValidationResult);
               }
 
               return recentChainData
@@ -104,7 +105,7 @@ public class AggregateAttestationValidator {
                   .thenCompose(
                       maybeState ->
                           maybeState.isEmpty()
-                              ? SafeFuture.completedFuture(Optional.empty())
+                              ? completedFuture(Optional.empty())
                               : attestationValidator.resolveStateForAttestation(
                                   aggregate, maybeState.get()))
                   .thenApply(
@@ -118,8 +119,7 @@ public class AggregateAttestationValidator {
                         final Optional<BLSPublicKey> aggregatorPublicKey =
                             spec.getValidatorPubKey(state, aggregateAndProof.getIndex());
                         if (aggregatorPublicKey.isEmpty()) {
-                          LOG.trace("Rejecting aggregate with invalid index");
-                          return InternalValidationResult.REJECT;
+                          return reject("Rejecting aggregate with invalid index");
                         }
 
                         if (!isSelectionProofValid(
@@ -128,8 +128,7 @@ public class AggregateAttestationValidator {
                             state,
                             aggregatorPublicKey.get(),
                             aggregateAndProof.getSelection_proof())) {
-                          LOG.trace("Rejecting aggregate with incorrect selection proof");
-                          return InternalValidationResult.REJECT;
+                          return reject("Rejecting aggregate with incorrect selection proof");
                         }
 
                         final List<Integer> beaconCommittee =
@@ -144,37 +143,31 @@ public class AggregateAttestationValidator {
                             .getValidatorsUtil()
                             .isAggregator(
                                 aggregateAndProof.getSelection_proof(), aggregatorModulo)) {
-                          LOG.trace(
+                          return reject(
                               "Rejecting aggregate because selection proof does not select validator as aggregator");
-                          return InternalValidationResult.REJECT;
                         }
                         if (!beaconCommittee.contains(
                             toIntExact(aggregateAndProof.getIndex().longValue()))) {
-                          LOG.trace(
-                              "Rejecting aggregate because attester is not in committee. Should have been one of {}",
+                          return reject(
+                              "Rejecting aggregate because attester is not in committee. Should have been one of %s",
                               beaconCommittee);
-                          return InternalValidationResult.REJECT;
                         }
 
                         if (!validateSignature(
                             signatureVerifier, signedAggregate, state, aggregatorPublicKey.get())) {
-                          LOG.trace("Rejecting aggregate with invalid signature");
-                          return InternalValidationResult.REJECT;
+                          return reject("Rejecting aggregate with invalid signature");
                         }
 
                         if (!signatureVerifier.batchVerify()) {
-                          LOG.trace("Rejecting aggregate with invalid batch signature");
-                          return InternalValidationResult.REJECT;
+                          return reject("Rejecting aggregate with invalid batch signature");
                         }
 
                         if (!receivedAggregatorIndexAndEpochs.add(aggregatorIndexAndEpoch)) {
-                          LOG.trace("Ignoring duplicate aggregate");
-                          return InternalValidationResult.IGNORE;
+                          return ignore("Ignoring duplicate aggregate");
                         }
 
                         if (!receivedValidAggregations.add(attestation.hash_tree_root())) {
-                          LOG.trace("Ignoring duplicate aggregate based on hash tree root");
-                          return InternalValidationResult.IGNORE;
+                          return ignore("Ignoring duplicate aggregate based on hash tree root");
                         }
 
                         return aggregateInternalValidationResult;

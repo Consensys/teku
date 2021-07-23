@@ -209,6 +209,6 @@ public class BlockValidatorTest {
     chainUpdater.saveBlockTime(blockAndState);
     final SafeFuture<InternalValidationResult> result =
         blockValidator.validate(blockAndState.getBlock());
-    assertThat(result).isCompletedWithValue(InternalValidationResult.REJECT);
+    assertThat(result).isCompletedWithValueMatching(InternalValidationResult::isReject);
   }
 }
