@@ -99,8 +99,9 @@ public class AttestationValidator {
   private InternalValidationResult singleAttestationChecks(final Attestation attestation) {
     // The attestation is unaggregated -- that is, it has exactly one participating validator
     // (len([bit for bit in attestation.aggregation_bits if bit == 0b1]) == 1).
-    if (attestation.getAggregation_bits().getBitCount() != 1) {
-      return InternalValidationResult.REJECT;
+    final int bitCount = attestation.getAggregation_bits().getBitCount();
+    if (bitCount != 1) {
+      return InternalValidationResult.reject("Attestation has %s bits set instead of 1", bitCount);
     }
 
     // The attestation is the first valid attestation received for the participating validator for
@@ -120,7 +121,10 @@ public class AttestationValidator {
     final AttestationData data = attestation.getData();
     // The attestation's epoch matches its target
     if (!data.getTarget().getEpoch().equals(spec.computeEpochAtSlot(data.getSlot()))) {
-      return completedFuture(InternalValidationResult.REJECT);
+      return completedFuture(
+          InternalValidationResult.reject(
+              "Attestation slot %s is not from target epoch %s",
+              data.getSlot(), data.getTarget().getEpoch()));
     }
 
     // attestation.data.slot is within the last ATTESTATION_PROPAGATION_SLOT_RANGE slots (within a
@@ -157,7 +161,9 @@ public class AttestationValidator {
               if (data.getIndex()
                   .isGreaterThanOrEqualTo(
                       spec.getCommitteeCountPerSlot(state, data.getTarget().getEpoch()))) {
-                return completedFuture(InternalValidationResult.REJECT);
+                return completedFuture(
+                    InternalValidationResult.reject(
+                        "Committee index %s is out of range", data.getIndex()));
               }
 
               // The attestation's committee index (attestation.data.index) is for the correct
@@ -165,7 +171,10 @@ public class AttestationValidator {
               if (receivedOnSubnetId.isPresent()
                   && spec.computeSubnetForAttestation(state, attestation)
                       != receivedOnSubnetId.getAsInt()) {
-                return completedFuture(InternalValidationResult.REJECT);
+                return completedFuture(
+                    InternalValidationResult.reject(
+                        "Attestation received on incorrect subnet (%s) for specified committee index (%s)",
+                        attestation.getData().getIndex(), receivedOnSubnetId.getAsInt()));
               }
 
               // The check below is not specified in the Eth2 networking spec, yet an attestation
@@ -174,7 +183,10 @@ public class AttestationValidator {
               final List<Integer> committee =
                   spec.getBeaconCommittee(state, data.getSlot(), data.getIndex());
               if (committee.size() != attestation.getAggregation_bits().size()) {
-                return completedFuture(InternalValidationResult.REJECT);
+                return completedFuture(
+                    InternalValidationResult.reject(
+                        "Aggregation bit size %s is greater than committee size %s",
+                        attestation.getAggregation_bits().size(), committee.size()));
               }
 
               return spec.isValidIndexedAttestation(
@@ -182,7 +194,9 @@ public class AttestationValidator {
                   .thenApply(
                       signatureResult -> {
                         if (!signatureResult.isSuccessful()) {
-                          return InternalValidationResult.REJECT;
+                          return InternalValidationResult.reject(
+                              "Attestation is not a valid indexed attestation: %s",
+                              signatureResult.getInvalidReason());
                         }
 
                         // The attestation's target block is an ancestor of the block named in the
@@ -195,7 +209,8 @@ public class AttestationValidator {
                                 ancestorOfLMDVote ->
                                     ancestorOfLMDVote.equals(data.getTarget().getRoot()))
                             .orElse(false)) {
-                          return InternalValidationResult.REJECT;
+                          return InternalValidationResult.reject(
+                              "Attestation LMD vote block does not descend from target block");
                         }
 
                         // The current finalized_checkpoint is an ancestor of the block defined by
@@ -210,7 +225,8 @@ public class AttestationValidator {
                                 ancestorOfLMDVote ->
                                     ancestorOfLMDVote.equals(finalizedCheckpoint.getRoot()))
                             .orElse(false)) {
-                          return InternalValidationResult.REJECT;
+                          return InternalValidationResult.reject(
+                              "Attestation block root does not descent from finalized checkpoint");
                         }
 
                         // Save committee shuffling seed since the state is available and

@@ -22,6 +22,7 @@ import static org.mockito.Mockito.when;
 import com.google.common.base.Function;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,6 +34,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.operations.validation.VoluntaryExitValidator.ExitInvalidReason;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.schema.SszListSchema;
@@ -73,7 +75,7 @@ public class OperationPoolTest {
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getVoluntaryExitsSchema),
             validator);
     when(validator.validateFully(any())).thenReturn(InternalValidationResult.ACCEPT);
-    when(validator.validateForStateTransition(any(), any())).thenReturn(true);
+    when(validator.validateForStateTransition(any(), any())).thenReturn(Optional.empty());
     for (int i = 0; i < Constants.MAX_VOLUNTARY_EXITS + 1; i++) {
       pool.add(dataStructureUtil.randomSignedVoluntaryExit());
     }
@@ -90,7 +92,7 @@ public class OperationPoolTest {
     OperationPool<AttesterSlashing> pool =
         new OperationPool<>(__ -> attesterSlashingsSchema, validator);
     when(validator.validateFully(any())).thenReturn(InternalValidationResult.ACCEPT);
-    when(validator.validateForStateTransition(any(), any())).thenReturn(true);
+    when(validator.validateForStateTransition(any(), any())).thenReturn(Optional.empty());
     SszList<AttesterSlashing> attesterSlashings =
         Stream.generate(() -> dataStructureUtil.randomAttesterSlashing())
             .limit(attesterSlashingsSchema.getMaxLength())
@@ -115,8 +117,9 @@ public class OperationPoolTest {
     pool.add(slashing1);
     pool.add(slashing2);
 
-    when(validator.validateForStateTransition(any(), eq(slashing1))).thenReturn(false);
-    when(validator.validateForStateTransition(any(), eq(slashing2))).thenReturn(true);
+    when(validator.validateForStateTransition(any(), eq(slashing1)))
+        .thenReturn(Optional.of(ExitInvalidReason.SUBMITTED_TOO_EARLY));
+    when(validator.validateForStateTransition(any(), eq(slashing2))).thenReturn(Optional.empty());
 
     assertThat(pool.getItemsForBlock(state)).containsOnly(slashing2);
   }
@@ -141,7 +144,7 @@ public class OperationPoolTest {
 
     when(validator.validateFully(slashing1)).thenReturn(InternalValidationResult.ACCEPT);
     when(validator.validateFully(slashing2)).thenReturn(InternalValidationResult.SAVE_FOR_FUTURE);
-    when(validator.validateFully(slashing3)).thenReturn(InternalValidationResult.REJECT);
+    when(validator.validateFully(slashing3)).thenReturn(InternalValidationResult.reject("Nah"));
     when(validator.validateFully(slashing4)).thenReturn(InternalValidationResult.IGNORE);
 
     pool.add(slashing1);

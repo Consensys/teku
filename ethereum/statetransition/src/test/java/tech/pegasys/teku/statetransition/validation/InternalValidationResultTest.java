@@ -39,7 +39,7 @@ public class InternalValidationResultTest {
   void isAccept() {
     assertTrue(InternalValidationResult.ACCEPT.isAccept());
     assertFalse(InternalValidationResult.IGNORE.isAccept());
-    assertFalse(InternalValidationResult.REJECT.isAccept());
+    assertFalse(InternalValidationResult.reject("").isAccept());
     assertFalse(InternalValidationResult.SAVE_FOR_FUTURE.isAccept());
   }
 
@@ -47,7 +47,7 @@ public class InternalValidationResultTest {
   void isIgnore() {
     assertFalse(InternalValidationResult.ACCEPT.isIgnore());
     assertTrue(InternalValidationResult.IGNORE.isIgnore());
-    assertFalse(InternalValidationResult.REJECT.isIgnore());
+    assertFalse(InternalValidationResult.reject("").isIgnore());
     assertFalse(InternalValidationResult.SAVE_FOR_FUTURE.isIgnore());
   }
 
@@ -55,7 +55,7 @@ public class InternalValidationResultTest {
   void isReject() {
     assertFalse(InternalValidationResult.ACCEPT.isReject());
     assertFalse(InternalValidationResult.IGNORE.isReject());
-    assertTrue(InternalValidationResult.REJECT.isReject());
+    assertTrue(InternalValidationResult.reject("").isReject());
     assertFalse(InternalValidationResult.SAVE_FOR_FUTURE.isReject());
   }
 
@@ -63,7 +63,7 @@ public class InternalValidationResultTest {
   void isSaveForFuture() {
     assertFalse(InternalValidationResult.ACCEPT.isSaveForFuture());
     assertFalse(InternalValidationResult.IGNORE.isSaveForFuture());
-    assertFalse(InternalValidationResult.REJECT.isSaveForFuture());
+    assertFalse(InternalValidationResult.reject("").isSaveForFuture());
     assertTrue(InternalValidationResult.SAVE_FOR_FUTURE.isSaveForFuture());
   }
 
@@ -71,7 +71,7 @@ public class InternalValidationResultTest {
   void isNotProcessable() {
     assertFalse(InternalValidationResult.ACCEPT.isNotProcessable());
     assertTrue(InternalValidationResult.IGNORE.isNotProcessable());
-    assertTrue(InternalValidationResult.REJECT.isNotProcessable());
+    assertTrue(InternalValidationResult.reject("").isNotProcessable());
     assertFalse(InternalValidationResult.SAVE_FOR_FUTURE.isNotProcessable());
   }
 }

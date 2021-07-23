@@ -53,7 +53,8 @@ public class OperationPool<T extends SszData> {
     // evicting the oldest entries when the size is exceeded as we only ever access via iteration.
     return operations.stream()
         .limit(schema.getMaxLength())
-        .filter(item -> operationValidator.validateForStateTransition(stateAtBlockSlot, item))
+        .filter(
+            item -> operationValidator.validateForStateTransition(stateAtBlockSlot, item).isEmpty())
         .collect(schema.collector());
   }
 
