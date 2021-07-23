@@ -53,7 +53,8 @@ public class ProposerSlashingValidator implements OperationValidator<ProposerSla
     final Optional<OperationInvalidReason> invalidReason =
         passesProcessProposerSlashingConditions(slashing);
     if (invalidReason.isPresent()) {
-      return InternalValidationResult.reject(invalidReason.get().describe());
+      return InternalValidationResult.create(
+          ValidationResultCode.REJECT, invalidReason.get().describe());
     }
 
     if (receivedValidSlashingForProposerSet.add(

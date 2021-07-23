@@ -50,7 +50,8 @@ public class AttesterSlashingValidator implements OperationValidator<AttesterSla
     final Optional<OperationInvalidReason> invalidReason =
         validateForStateTransition(state, slashing);
     if (invalidReason.isPresent()) {
-      return InternalValidationResult.reject(invalidReason.get().describe());
+      return InternalValidationResult.create(
+          ValidationResultCode.REJECT, invalidReason.get().describe());
     }
 
     if (seenIndices.addAll(slashing.getIntersectingValidatorIndices())) {
