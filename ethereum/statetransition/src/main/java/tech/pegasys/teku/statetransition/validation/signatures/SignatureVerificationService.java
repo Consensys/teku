@@ -13,8 +13,13 @@
 
 package tech.pegasys.teku.statetransition.validation.signatures;
 
+import java.util.List;
+import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 
@@ -28,4 +33,9 @@ public abstract class SignatureVerificationService extends Service
   public static SignatureVerificationService createSimple() {
     return new SimpleSignatureVerificationService();
   }
+
+  public abstract SafeFuture<Void> verify(
+      final List<List<BLSPublicKey>> publicKeys,
+      final List<Bytes> signingRoots,
+      final List<BLSSignature> signatures);
 }

@@ -185,6 +185,19 @@ class AggregatingSignatureVerificationService extends SignatureVerificationServi
     return batchSignatureTasks.size();
   }
 
+  @Override
+  public SafeFuture<Void> verify(
+      final List<List<BLSPublicKey>> publicKeys,
+      final List<Bytes> signingRoots,
+      final List<BLSSignature> signatures) {
+    final boolean verifyResult = BLSSignatureVerifier.verify(publicKeys, signingRoots, signatures);
+    if (verifyResult) {
+      return SafeFuture.COMPLETE;
+    }
+    return SafeFuture.failedFuture(
+        new IllegalArgumentException("Block signatures are invalid"));
+  }
+
   @VisibleForTesting
   static class SignatureTask {
     final SafeFuture<Boolean> result = new SafeFuture<>();

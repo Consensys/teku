@@ -45,4 +45,11 @@ public interface BLSSignatureVerifier {
   default boolean verify(BLSPublicKey publicKey, Bytes message, BLSSignature signature) {
     return verify(Collections.singletonList(publicKey), message, signature);
   }
+
+  static boolean verify(
+      final List<List<BLSPublicKey>> publicKeys,
+      final List<Bytes> signingRoots,
+      final List<BLSSignature> signatures) {
+    return BLS.batchVerify(publicKeys, signingRoots, signatures);
+  }
 }

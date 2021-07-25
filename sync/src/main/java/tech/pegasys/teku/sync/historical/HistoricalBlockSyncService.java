@@ -36,6 +36,7 @@ import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
+import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.sync.events.SyncStateProvider;
@@ -62,6 +63,7 @@ public class HistoricalBlockSyncService extends Service {
   private final AtomicLong syncStateSubscription = new AtomicLong(-1);
   private final AtomicBoolean requestInProgress = new AtomicBoolean(false);
 
+  private final SignatureVerificationService signatureVerificationService;
   private volatile BeaconBlockSummary earliestBlock;
   final Set<NodeId> badPeerCache;
 
@@ -74,6 +76,7 @@ public class HistoricalBlockSyncService extends Service {
       final P2PNetwork<Eth2Peer> network,
       final CombinedChainDataClient chainData,
       final SyncStateProvider syncStateProvider,
+      final SignatureVerificationService signatureVerificationService,
       final UInt64 batchSize) {
     this.spec = spec;
     this.storageUpdateChannel = storageUpdateChannel;
@@ -83,6 +86,7 @@ public class HistoricalBlockSyncService extends Service {
     this.chainData = chainData;
     this.syncStateProvider = syncStateProvider;
     this.batchSize = batchSize;
+    this.signatureVerificationService = signatureVerificationService;
 
     this.badPeerCache =
         Collections.newSetFromMap(
@@ -108,6 +112,7 @@ public class HistoricalBlockSyncService extends Service {
       final AsyncRunner asyncRunner,
       final P2PNetwork<Eth2Peer> network,
       final CombinedChainDataClient chainData,
+      final SignatureVerificationService signatureVerificationService,
       final SyncStateProvider syncStateProvider) {
     return new HistoricalBlockSyncService(
         spec,
@@ -117,6 +122,7 @@ public class HistoricalBlockSyncService extends Service {
         network,
         chainData,
         syncStateProvider,
+        signatureVerificationService,
         BATCH_SIZE);
   }
 
@@ -216,8 +222,15 @@ public class HistoricalBlockSyncService extends Service {
 
   private HistoricalBatchFetcher createFetcher(
       final Eth2Peer peer, final MaxMissingBlockParams params) {
-    return HistoricalBatchFetcher.create(
-        storageUpdateChannel, peer, params.getMaxSlot(), params.getBlockRoot(), batchSize);
+    return new HistoricalBatchFetcher(
+        storageUpdateChannel,
+        signatureVerificationService,
+        chainData,
+        spec,
+        peer,
+        params.getMaxSlot(),
+        params.getBlockRoot(),
+        batchSize);
   }
 
   private boolean isSyncDone() {

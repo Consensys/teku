@@ -37,4 +37,16 @@ class SimpleSignatureVerificationService extends SignatureVerificationService {
   protected SafeFuture<?> doStop() {
     return SafeFuture.COMPLETE;
   }
+
+  @Override
+  public SafeFuture<Void> verify(
+      final List<List<BLSPublicKey>> publicKeys,
+      final List<Bytes> signingRoots,
+      final List<BLSSignature> signatures) {
+    final boolean result = BLSSignatureVerifier.verify(publicKeys, signingRoots, signatures);
+    if (result) {
+      return SafeFuture.COMPLETE;
+    }
+    return SafeFuture.failedFuture(new IllegalArgumentException("Block signatures are invalid"));
+  }
 }
