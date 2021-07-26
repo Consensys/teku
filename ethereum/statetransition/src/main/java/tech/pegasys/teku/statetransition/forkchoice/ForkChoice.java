@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.forkchoice;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.infrastructure.logging.P2PLogger.P2P_LOG;
 import static tech.pegasys.teku.statetransition.forkchoice.StateRootCollector.addParentStateRoots;
 
 import com.google.common.base.Throwables;
@@ -43,6 +44,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -190,6 +192,15 @@ public class ForkChoice {
               spec.onBlock(transaction, block, blockSlotState.get(), indexedAttestationCache);
 
           if (!result.isSuccessful()) {
+            if (result.getFailureReason() != FailureReason.BLOCK_IS_FROM_FUTURE) {
+              // Blocks from the future are not invalid, just not ready for processing yet
+              P2P_LOG.onInvalidBlock(
+                  block.getSlot(),
+                  block.getRoot(),
+                  block.sszSerialize(),
+                  result.getFailureReason().name(),
+                  result.getFailureCause());
+            }
             return result;
           }
           // Note: not using thenRun here because we want to ensure each step is on the event thread

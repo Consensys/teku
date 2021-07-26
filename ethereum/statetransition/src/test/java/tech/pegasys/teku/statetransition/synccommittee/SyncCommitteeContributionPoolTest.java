@@ -22,7 +22,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
 import static tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateAssert.assertThatSyncAggregate;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -79,8 +79,8 @@ class SyncCommitteeContributionPoolTest {
     pool.subscribeOperationAdded(subscriber);
 
     final SignedContributionAndProof proof = dataStructureUtil.randomSignedContributionAndProof(10);
-    when(validator.validate(proof)).thenReturn(SafeFuture.completedFuture(REJECT));
-    assertThat(pool.add(proof)).isCompletedWithValue(REJECT);
+    when(validator.validate(proof)).thenReturn(SafeFuture.completedFuture(reject("Bad")));
+    assertThat(pool.add(proof)).isCompletedWithValue(reject("Bad"));
 
     verifyNoInteractions(subscriber);
   }

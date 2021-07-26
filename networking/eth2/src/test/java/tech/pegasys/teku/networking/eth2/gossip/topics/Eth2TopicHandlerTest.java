@@ -75,7 +75,7 @@ public class Eth2TopicHandlerTest {
             recentChainData,
             spec,
             asyncRunner,
-            (b) -> SafeFuture.completedFuture(InternalValidationResult.REJECT));
+            (b) -> SafeFuture.completedFuture(InternalValidationResult.reject("Nope")));
 
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(topicHandler.prepareMessage(blockBytes));

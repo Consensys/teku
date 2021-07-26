@@ -19,7 +19,6 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
 
 import java.util.List;
 import java.util.Optional;
@@ -44,6 +43,7 @@ import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
@@ -147,7 +147,7 @@ class SyncCommitteeMessageValidatorTest {
     final SyncCommitteeMessage message = chainBuilder.createValidSyncCommitteeMessage();
 
     assertThat(validator.validate(ValidateableSyncCommitteeMessage.fromValidator(message)))
-        .isCompletedWithValue(REJECT);
+        .isCompletedWithValueMatching(InternalValidationResult::isReject);
   }
 
   @Test
@@ -241,7 +241,7 @@ class SyncCommitteeMessageValidatorTest {
             target.getSlot(), target.getRoot(), state, validatorPublicKey);
 
     assertThat(validator.validate(ValidateableSyncCommitteeMessage.fromValidator(message)))
-        .isCompletedWithValue(REJECT);
+        .isCompletedWithValueMatching(InternalValidationResult::isReject);
   }
 
   @Test
@@ -249,7 +249,7 @@ class SyncCommitteeMessageValidatorTest {
     final SyncCommitteeMessage message = chainBuilder.createValidSyncCommitteeMessage();
     // 9 is never a valid subnet
     assertThat(validator.validate(ValidateableSyncCommitteeMessage.fromNetwork(message, 9)))
-        .isCompletedWithValue(REJECT);
+        .isCompletedWithValueMatching(InternalValidationResult::isReject);
   }
 
   @Test
@@ -265,7 +265,7 @@ class SyncCommitteeMessageValidatorTest {
                 UInt64.valueOf(25),
                 template.getSignature());
     assertThat(validator.validate(ValidateableSyncCommitteeMessage.fromValidator(message)))
-        .isCompletedWithValue(REJECT);
+        .isCompletedWithValueMatching(InternalValidationResult::isReject);
   }
 
   @Test
@@ -280,7 +280,7 @@ class SyncCommitteeMessageValidatorTest {
                 template.getValidatorIndex(),
                 dataStructureUtil.randomSignature());
     assertThat(validator.validate(ValidateableSyncCommitteeMessage.fromValidator(message)))
-        .isCompletedWithValue(REJECT);
+        .isCompletedWithValueMatching(InternalValidationResult::isReject);
   }
 
   private ValidateableSyncCommitteeMessage fromValidatorSpy(

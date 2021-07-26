@@ -62,7 +62,7 @@ public class PostAttesterSlashingTest {
         new AttesterSlashing(dataStructureUtil.randomAttesterSlashing());
     when(context.body()).thenReturn(jsonProvider.objectToJSON(slashing));
     when(provider.postAttesterSlashing(slashing))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.REJECT));
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.reject("Nope")));
     handler.handle(context);
 
     verify(provider).postAttesterSlashing(slashing);

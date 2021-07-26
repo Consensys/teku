@@ -62,7 +62,7 @@ public class PostVoluntaryExitTest {
         new SignedVoluntaryExit(dataStructureUtil.randomSignedVoluntaryExit());
     when(context.body()).thenReturn(jsonProvider.objectToJSON(exit));
     when(provider.postVoluntaryExit(exit))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.REJECT));
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.reject("Oh dear")));
     handler.handle(context);
 
     verify(provider).postVoluntaryExit(exit);
