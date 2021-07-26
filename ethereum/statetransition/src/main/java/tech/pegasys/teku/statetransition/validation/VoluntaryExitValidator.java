@@ -14,7 +14,6 @@
 package tech.pegasys.teku.statetransition.validation;
 
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.IGNORE;
-import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.REJECT;
 import static tech.pegasys.teku.util.config.Constants.VALID_VALIDATOR_SET_SIZE;
 
 import java.util.Optional;
@@ -28,6 +27,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
+import tech.pegasys.teku.spec.logic.common.operations.validation.VoluntaryExitValidator.ExitInvalidReason;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class VoluntaryExitValidator implements OperationValidator<SignedVoluntaryExit> {
@@ -55,9 +55,11 @@ public class VoluntaryExitValidator implements OperationValidator<SignedVoluntar
               exit.getMessage().getValidator_index()));
     }
 
-    final Optional<String> failureReason = getFailureReason(exit);
+    final Optional<OperationInvalidReason> failureReason = getFailureReason(exit);
     if (failureReason.isPresent()) {
-      return InternalValidationResult.create(REJECT, failureReason.get());
+      return InternalValidationResult.reject(
+          "Exit for validator %s is invalid: %s",
+          exit.getMessage().getValidator_index(), failureReason.get().describe());
     }
 
     if (receivedValidExitSet.add(exit.getMessage().getValidator_index())) {
@@ -75,35 +77,26 @@ public class VoluntaryExitValidator implements OperationValidator<SignedVoluntar
   }
 
   @Override
-  public boolean validateForStateTransition(BeaconState state, SignedVoluntaryExit exit) {
-    return getFailureReason(state, exit, false).isEmpty();
+  public Optional<OperationInvalidReason> validateForStateTransition(
+      BeaconState state, SignedVoluntaryExit exit) {
+    return getFailureReason(state, exit, false);
   }
 
-  private Optional<String> getFailureReason(SignedVoluntaryExit exit) {
+  private Optional<OperationInvalidReason> getFailureReason(SignedVoluntaryExit exit) {
     final BeaconState state = getState();
     return getFailureReason(state, exit, true);
   }
 
-  private Optional<String> getFailureReason(
+  private Optional<OperationInvalidReason> getFailureReason(
       final BeaconState state, final SignedVoluntaryExit exit, final boolean verifySignature) {
     Optional<OperationInvalidReason> invalidReason = spec.validateVoluntaryExit(state, exit);
     if (invalidReason.isPresent()) {
-      final String message =
-          String.format(
-              "Exit for validator %s fails process voluntary exit conditions %s.",
-              exit.getMessage().getValidator_index(), invalidReason.get().describe());
-      LOG.debug("VoluntaryExitValidator: " + message);
-      return Optional.of(message);
+      return invalidReason;
     }
 
     if (verifySignature
         && !spec.verifyVoluntaryExitSignature(state, exit, BLSSignatureVerifier.SIMPLE)) {
-      final String message =
-          String.format(
-              "Exit for validator %s fails signature verification.",
-              exit.getMessage().getValidator_index());
-      LOG.trace("VoluntaryExitValidator: " + message);
-      return Optional.of(message);
+      return Optional.of(ExitInvalidReason.INVALID_SIGNATURE);
     }
     return Optional.empty();
   }

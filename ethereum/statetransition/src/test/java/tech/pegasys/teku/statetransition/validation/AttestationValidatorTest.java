@@ -311,7 +311,7 @@ class AttestationValidatorTest {
     assertThat(
             validator.validate(
                 ValidateableAttestation.fromNetwork(spec, attestation, expectedSubnetId + 1)))
-        .isCompletedWithValue(InternalValidationResult.REJECT);
+        .isCompletedWithValueMatching(InternalValidationResult::isReject);
     assertThat(
             validator.validate(
                 ValidateableAttestation.fromNetwork(spec, attestation, expectedSubnetId)))
@@ -340,7 +340,7 @@ class AttestationValidatorTest {
                             data.getTarget()),
                         attestation.getAggregate_signature()),
                     expectedSubnetId)))
-        .isCompletedWithValue(InternalValidationResult.REJECT);
+        .isCompletedWithValueMatching(InternalValidationResult::isReject);
   }
 
   @Test
@@ -364,7 +364,7 @@ class AttestationValidatorTest {
                             new Checkpoint(data.getTarget().getEpoch().plus(2), Bytes32.ZERO)),
                         attestation.getAggregate_signature()),
                     expectedSubnetId)))
-        .isCompletedWithValue(InternalValidationResult.REJECT);
+        .isCompletedWithValueMatching(InternalValidationResult::isReject);
   }
 
   @Test
@@ -380,7 +380,7 @@ class AttestationValidatorTest {
     assertThat(
             validator.validate(
                 ValidateableAttestation.fromNetwork(spec, attestation, expectedSubnetId)))
-        .isCompletedWithValue(InternalValidationResult.REJECT);
+        .isCompletedWithValueMatching(InternalValidationResult::isReject);
   }
 
   @Test
@@ -398,7 +398,7 @@ class AttestationValidatorTest {
     assertThat(
             validator.validate(
                 ValidateableAttestation.fromNetwork(spec, attestation, expectedSubnetId)))
-        .isCompletedWithValue(InternalValidationResult.REJECT);
+        .isCompletedWithValueMatching(InternalValidationResult::isReject);
   }
 
   private InternalValidationResult validate(final Attestation attestation) {

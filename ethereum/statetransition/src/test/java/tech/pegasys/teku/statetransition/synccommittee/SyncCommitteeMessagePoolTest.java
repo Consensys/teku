@@ -22,7 +22,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -79,9 +79,9 @@ class SyncCommitteeMessagePoolTest {
   @Test
   void shouldNotNotifySubscriberWhenInvalidMessageAdded() {
     pool.subscribeOperationAdded(subscriber);
-    when(validator.validate(message)).thenReturn(SafeFuture.completedFuture(REJECT));
+    when(validator.validate(message)).thenReturn(SafeFuture.completedFuture(reject("Bad")));
 
-    assertThat(pool.add(message)).isCompletedWithValue(REJECT);
+    assertThat(pool.add(message)).isCompletedWithValue(reject("Bad"));
     verifyNoInteractions(subscriber);
   }
 

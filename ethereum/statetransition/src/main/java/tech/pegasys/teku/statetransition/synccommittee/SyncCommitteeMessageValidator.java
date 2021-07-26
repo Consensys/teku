@@ -16,7 +16,7 @@ package tech.pegasys.teku.statetransition.synccommittee;
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.REJECT;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 import static tech.pegasys.teku.util.config.Constants.VALID_SYNC_COMMITTEE_MESSAGE_SET_SIZE;
 
 import java.util.List;
@@ -70,10 +70,10 @@ public class SyncCommitteeMessageValidator {
     final Optional<SyncCommitteeUtil> maybeSyncCommitteeUtil =
         spec.getSyncCommitteeUtil(message.getSlot());
     if (maybeSyncCommitteeUtil.isEmpty()) {
-      LOG.trace(
-          "Rejecting sync committee message because the fork active at slot {} does not support sync committees",
-          message.getSlot());
-      return SafeFuture.completedFuture(REJECT);
+      return SafeFuture.completedFuture(
+          reject(
+              "Rejecting sync committee message because the fork active at slot %s does not support sync committees",
+              message.getSlot()));
     }
     final SyncCommitteeUtil syncCommitteeUtil = maybeSyncCommitteeUtil.get();
 
@@ -135,8 +135,9 @@ public class SyncCommitteeMessageValidator {
     // committee, i.e. state.validators[sync_committee_message.validator_index].pubkey in
     // state.current_sync_committee.pubkeys.
     if (assignedSubcommittees.isEmpty()) {
-      LOG.trace("Rejecting sync committee message because validator is not in the sync committee");
-      return SafeFuture.completedFuture(REJECT);
+      return SafeFuture.completedFuture(
+          reject(
+              "Rejecting sync committee message because validator is not in the sync committee"));
     }
 
     // For messages received via gossip, it has to be unique based on the subnet it was on
@@ -162,15 +163,15 @@ public class SyncCommitteeMessageValidator {
         && !assignedSubcommittees
             .getAssignedSubcommittees()
             .contains(validateableMessage.getReceivedSubnetId().getAsInt())) {
-      LOG.trace("Rejecting sync committee message because subnet id is incorrect");
-      return SafeFuture.completedFuture(REJECT);
+      return SafeFuture.completedFuture(
+          reject("Rejecting sync committee message because subnet id is incorrect"));
     }
 
     final Optional<BLSPublicKey> maybeValidatorPublicKey =
         spec.getValidatorPubKey(state, message.getValidatorIndex());
     if (maybeValidatorPublicKey.isEmpty()) {
-      LOG.trace("Rejecting sync committee message because the validator index is unknown");
-      return SafeFuture.completedFuture(REJECT);
+      return SafeFuture.completedFuture(
+          reject("Rejecting sync committee message because the validator index is unknown"));
     }
 
     // [REJECT] The message is valid for the message beacon_block_root for the validator
@@ -183,13 +184,11 @@ public class SyncCommitteeMessageValidator {
         .thenApply(
             signatureValid -> {
               if (!signatureValid) {
-                LOG.trace("Rejecting sync committee message because the signature is invalid");
-                return REJECT;
+                return reject("Rejecting sync committee message because the signature is invalid");
               }
               if (!seenIndices.addAll(uniquenessKeys)) {
-                LOG.trace(
+                return reject(
                     "Ignoring sync committee message as a duplicate was processed during validation");
-                return IGNORE;
               }
               return ACCEPT;
             });

@@ -71,7 +71,8 @@ public class ProposerSlashingValidator
     PROPOSER_INDICES_DIFFERENT("Header proposer indices don't match"),
     SAME_HEADER("Headers are not different"),
     INVALID_PROPOSER("Invalid proposer index"),
-    PROPOSER_NOT_SLASHABLE("Proposer is not slashable");
+    PROPOSER_NOT_SLASHABLE("Proposer is not slashable"),
+    INVALID_SIGNATURE("Slashing fails signature verification");
 
     private final String description;
 

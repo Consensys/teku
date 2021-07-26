@@ -88,7 +88,8 @@ public class VoluntaryExitValidator
     VALIDATOR_INACTIVE("Validator is not active"),
     EXIT_INITIATED("Validator has already initiated exit"),
     SUBMITTED_TOO_EARLY("Specified exit epoch is still in the future"),
-    VALIDATOR_TOO_YOUNG("Validator has not been active long enough");
+    VALIDATOR_TOO_YOUNG("Validator has not been active long enough"),
+    INVALID_SIGNATURE("Signature is invalid");
 
     private final String description;
 
