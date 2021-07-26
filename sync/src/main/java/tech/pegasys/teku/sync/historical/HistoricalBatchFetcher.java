@@ -15,8 +15,7 @@ package tech.pegasys.teku.sync.historical;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
-
- import java.util.ArrayList;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.List;
@@ -258,7 +257,14 @@ public class HistoricalBatchFetcher {
           }
         });
 
-    return signatureVerificationService.verify(proposerPublicKeys, signingRoots, signatures);
+    return signatureVerificationService
+        .verify(proposerPublicKeys, signingRoots, signatures)
+        .thenAccept(
+            signaturesValid -> {
+              if (!signaturesValid) {
+                throw new IllegalArgumentException("Batch signature verification failed");
+              }
+            });
   }
 
   private RequestParameters calculateRequestParams() {

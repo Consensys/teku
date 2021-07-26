@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.statetransition.validation.signatures;
 
+import static java.util.Collections.singletonList;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import java.util.ArrayList;
@@ -103,8 +105,16 @@ class AggregatingSignatureVerificationService extends SignatureVerificationServi
   @Override
   public SafeFuture<Boolean> verify(
       final List<BLSPublicKey> publicKeys, final Bytes message, final BLSSignature signature) {
+    return verify(singletonList(publicKeys), singletonList(message), singletonList(signature));
+  }
+
+  @Override
+  public SafeFuture<Boolean> verify(
+      final List<List<BLSPublicKey>> publicKeys,
+      final List<Bytes> messages,
+      final List<BLSSignature> signatures) {
     assertIsRunning("verify");
-    final SignatureTask task = new SignatureTask(publicKeys, message, signature);
+    final SignatureTask task = new SignatureTask(publicKeys, messages, signatures);
     if (!batchSignatureTasks.offer(task)) {
       // Queue is full
       final Throwable error =
@@ -146,9 +156,9 @@ class AggregatingSignatureVerificationService extends SignatureVerificationServi
     final List<BLSSignature> allSignatures = new ArrayList<>();
 
     for (SignatureTask task : tasks) {
-      allKeys.add(task.publicKeys);
-      allMessages.add(task.message);
-      allSignatures.add(task.signature);
+      allKeys.addAll(task.publicKeys);
+      allMessages.addAll(task.messages);
+      allSignatures.addAll(task.signatures);
     }
 
     final boolean batchIsValid = BLS.batchVerify(allKeys, allMessages, allSignatures);
@@ -169,7 +179,7 @@ class AggregatingSignatureVerificationService extends SignatureVerificationServi
       // Validate each signature individually
       for (SignatureTask task : tasks) {
         final boolean taskIsValid =
-            BLSSignatureVerifier.SIMPLE.verify(task.publicKeys, task.message, task.signature);
+            BLSSignatureVerifier.SIMPLE.verify(task.publicKeys, task.messages, task.signatures);
         task.result.complete(taskIsValid);
       }
     }
@@ -185,31 +195,20 @@ class AggregatingSignatureVerificationService extends SignatureVerificationServi
     return batchSignatureTasks.size();
   }
 
-  @Override
-  public SafeFuture<Void> verify(
-      final List<List<BLSPublicKey>> publicKeys,
-      final List<Bytes> signingRoots,
-      final List<BLSSignature> signatures) {
-    final boolean verifyResult = BLSSignatureVerifier.verify(publicKeys, signingRoots, signatures);
-    if (verifyResult) {
-      return SafeFuture.COMPLETE;
-    }
-    return SafeFuture.failedFuture(
-        new IllegalArgumentException("Block signatures are invalid"));
-  }
-
   @VisibleForTesting
   static class SignatureTask {
     final SafeFuture<Boolean> result = new SafeFuture<>();
-    final List<BLSPublicKey> publicKeys;
-    final Bytes message;
-    final BLSSignature signature;
+    final List<List<BLSPublicKey>> publicKeys;
+    final List<Bytes> messages;
+    final List<BLSSignature> signatures;
 
     private SignatureTask(
-        final List<BLSPublicKey> publicKeys, final Bytes message, final BLSSignature signature) {
+        final List<List<BLSPublicKey>> publicKeys,
+        final List<Bytes> messages,
+        final List<BLSSignature> signatures) {
       this.publicKeys = publicKeys;
-      this.message = message;
-      this.signature = signature;
+      this.messages = messages;
+      this.signatures = signatures;
     }
   }
 }

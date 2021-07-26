@@ -16,6 +16,7 @@ package tech.pegasys.teku.sync.historical;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -29,7 +30,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -117,8 +117,19 @@ public class HistoricalBatchFetcherTest {
     when(beaconState.getForkInfo()).thenReturn(forkInfo);
     when(forkInfo.getGenesisValidatorsRoot()).thenReturn(Bytes32.ZERO);
 
-    when(signatureVerificationService.verify(any(), any(), (List<BLSSignature>) any()))
-        .thenReturn(SafeFuture.COMPLETE);
+    when(signatureVerificationService.verify(any(), any(), anyList()))
+        .thenReturn(SafeFuture.completedFuture(true));
+  }
+
+  @Test
+  public void run_failsWhenInvalidSignatureFound() {
+    when(signatureVerificationService.verify(any(), any(), anyList()))
+        .thenReturn(SafeFuture.completedFuture(false));
+
+    assertThat(peer.getOutstandingRequests()).isEqualTo(0);
+    final SafeFuture<BeaconBlockSummary> future = fetcher.run();
+    peer.completePendingRequests();
+    assertThat(future).isCompletedExceptionally();
   }
 
   @Test

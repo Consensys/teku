@@ -103,7 +103,7 @@ public class HistoricalBlockSyncServiceTest {
         .thenAnswer((i) -> syncStateSubscribers.unsubscribe(i.getArgument(0)));
     when(syncStateProvider.getCurrentSyncState()).thenAnswer(i -> currentSyncState.get());
     when(signatureVerificationService.verify(any(), any(), (List<BLSSignature>) any()))
-        .thenReturn(SafeFuture.COMPLETE);
+        .thenReturn(SafeFuture.completedFuture(true));
   }
 
   @Test
