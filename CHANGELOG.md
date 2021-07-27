@@ -27,6 +27,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - Fix an issue where deposits for the PoW chain could be loaded out of order on restart.
 - Fix `/eth/v1/validator/contribution_and_proofs` to return errors.
 - Add `SYNC_COMMITTEE_SUBNET_COUNT` to `/eth/v1/config/spec`, as it was missing.
+- Fixed `ConcurrentModificationException` in validator performance reporting.
 - Upgraded the discovery library, providing better memory management and standards compliance. 
 
 ### Experimental: New Altair REST APIs
