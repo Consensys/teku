@@ -29,6 +29,15 @@ class SimpleSignatureVerificationService extends SignatureVerificationService {
   }
 
   @Override
+  public SafeFuture<Boolean> verify(
+      final List<List<BLSPublicKey>> publicKeys,
+      final List<Bytes> messages,
+      final List<BLSSignature> signatures) {
+    return SafeFuture.completedFuture(
+        BLSSignatureVerifier.SIMPLE.verify(publicKeys, messages, signatures));
+  }
+
+  @Override
   protected SafeFuture<?> doStart() {
     return SafeFuture.COMPLETE;
   }
