@@ -42,7 +42,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
+import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -54,11 +54,9 @@ public class HistoricalBatchFetcherTest {
   private final Spec spec = TestSpecFactory.createDefault();
   private final ChainBuilder chainBuilder = ChainBuilder.create(spec);
   private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
-  private final SignatureVerificationService signatureVerificationService =
-      mock(SignatureVerificationService.class);
+  private final AsyncBLSSignatureVerifier signatureVerifier = mock(AsyncBLSSignatureVerifier.class);
   private ChainBuilder forkBuilder;
 
-  @SuppressWarnings("unchecked")
   private final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
 
   @SuppressWarnings("unchecked")
@@ -76,7 +74,6 @@ public class HistoricalBatchFetcherTest {
   private RespondingEth2Peer peer;
 
   @BeforeEach
-  @SuppressWarnings("unchecked")
   public void setup() {
     storageSystem.chainUpdater().initializeGenesis();
     when(storageUpdateChannel.onFinalizedBlocks(any())).thenReturn(SafeFuture.COMPLETE);
@@ -104,7 +101,7 @@ public class HistoricalBatchFetcherTest {
     fetcher =
         new HistoricalBatchFetcher(
             storageUpdateChannel,
-            signatureVerificationService,
+            signatureVerifier,
             chainDataClient,
             spec,
             peer,
@@ -117,13 +114,13 @@ public class HistoricalBatchFetcherTest {
     when(beaconState.getForkInfo()).thenReturn(forkInfo);
     when(forkInfo.getGenesisValidatorsRoot()).thenReturn(Bytes32.ZERO);
 
-    when(signatureVerificationService.verify(any(), any(), anyList()))
+    when(signatureVerifier.verify(any(), any(), anyList()))
         .thenReturn(SafeFuture.completedFuture(true));
   }
 
   @Test
   public void run_failsWhenInvalidSignatureFound() {
-    when(signatureVerificationService.verify(any(), any(), anyList()))
+    when(signatureVerifier.verify(any(), any(), anyList()))
         .thenReturn(SafeFuture.completedFuture(false));
 
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
@@ -188,7 +185,7 @@ public class HistoricalBatchFetcherTest {
     fetcher =
         new HistoricalBatchFetcher(
             storageUpdateChannel,
-            signatureVerificationService,
+            signatureVerifier,
             chainDataClient,
             spec,
             peer,
@@ -215,7 +212,7 @@ public class HistoricalBatchFetcherTest {
     fetcher =
         new HistoricalBatchFetcher(
             storageUpdateChannel,
-            signatureVerificationService,
+            signatureVerifier,
             chainDataClient,
             spec,
             peer,
@@ -249,7 +246,7 @@ public class HistoricalBatchFetcherTest {
     fetcher =
         new HistoricalBatchFetcher(
             storageUpdateChannel,
-            signatureVerificationService,
+            signatureVerifier,
             chainDataClient,
             spec,
             peer,

@@ -43,7 +43,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
+import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
@@ -63,7 +63,7 @@ public class HistoricalBatchFetcher {
   private final SafeFuture<BeaconBlockSummary> future = new SafeFuture<>();
   private final Deque<SignedBeaconBlock> blocksToImport = new ConcurrentLinkedDeque<>();
   private final AtomicInteger requestCount = new AtomicInteger(0);
-  private final SignatureVerificationService signatureVerificationService;
+  private final AsyncBLSSignatureVerifier signatureVerificationService;
   private final CombinedChainDataClient chainDataClient;
 
   /**
@@ -75,7 +75,7 @@ public class HistoricalBatchFetcher {
    */
   public HistoricalBatchFetcher(
       final StorageUpdateChannel storageUpdateChannel,
-      final SignatureVerificationService signatureVerificationService,
+      final AsyncBLSSignatureVerifier signatureVerifier,
       final CombinedChainDataClient chainDataClient,
       final Spec spec,
       final Eth2Peer peer,
@@ -84,7 +84,7 @@ public class HistoricalBatchFetcher {
       final UInt64 batchSize) {
     this(
         storageUpdateChannel,
-        signatureVerificationService,
+        signatureVerifier,
         chainDataClient,
         spec,
         peer,
@@ -97,7 +97,7 @@ public class HistoricalBatchFetcher {
   @VisibleForTesting
   HistoricalBatchFetcher(
       final StorageUpdateChannel storageUpdateChannel,
-      final SignatureVerificationService signatureVerificationService,
+      final AsyncBLSSignatureVerifier signatureVerifier,
       final CombinedChainDataClient chainDataClient,
       final Spec spec,
       final Eth2Peer peer,
@@ -106,7 +106,7 @@ public class HistoricalBatchFetcher {
       final UInt64 batchSize,
       final int maxRequests) {
     this.storageUpdateChannel = storageUpdateChannel;
-    this.signatureVerificationService = signatureVerificationService;
+    this.signatureVerificationService = signatureVerifier;
     this.chainDataClient = chainDataClient;
     this.spec = spec;
     this.peer = peer;
