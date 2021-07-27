@@ -20,8 +20,10 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.util.PendingPool;
+import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -47,6 +49,7 @@ public class SyncServiceFactory {
   private final BlockImporter blockImporter;
   private final PendingPool<SignedBeaconBlock> pendingBlocks;
   private final int getStartupTargetPeerCount;
+  private final AsyncBLSSignatureVerifier signatureVerifier;
   private final Duration startupTimeout;
 
   private SyncServiceFactory(
@@ -62,6 +65,7 @@ public class SyncServiceFactory {
       final BlockImporter blockImporter,
       final PendingPool<SignedBeaconBlock> pendingBlocks,
       final int getStartupTargetPeerCount,
+      final SignatureVerificationService signatureVerifier,
       final Duration startupTimeout) {
     this.syncConfig = syncConfig;
     this.metrics = metrics;
@@ -75,6 +79,7 @@ public class SyncServiceFactory {
     this.blockImporter = blockImporter;
     this.pendingBlocks = pendingBlocks;
     this.getStartupTargetPeerCount = getStartupTargetPeerCount;
+    this.signatureVerifier = signatureVerifier;
     this.startupTimeout = startupTimeout;
   }
 
@@ -91,6 +96,7 @@ public class SyncServiceFactory {
       final BlockImporter blockImporter,
       final PendingPool<SignedBeaconBlock> pendingBlocks,
       final int getStartupTargetPeerCount,
+      final SignatureVerificationService signatureVerificationService,
       final Duration startupTimeout) {
     final SyncServiceFactory factory =
         new SyncServiceFactory(
@@ -106,6 +112,7 @@ public class SyncServiceFactory {
             blockImporter,
             pendingBlocks,
             getStartupTargetPeerCount,
+            signatureVerificationService,
             startupTimeout);
     return factory.create();
   }
@@ -137,6 +144,7 @@ public class SyncServiceFactory {
         asyncRunner,
         p2pNetwork,
         combinedChainDataClient,
+        signatureVerifier,
         syncStateProvider);
   }
 

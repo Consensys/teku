@@ -13,12 +13,10 @@
 
 package tech.pegasys.teku.storage.server.kvstore;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Iterables;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -38,12 +36,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.bls.BLS;
-import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
@@ -52,9 +46,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 import tech.pegasys.teku.protoarray.StoredBlockMetadata;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.constants.Domain;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
@@ -66,7 +57,6 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
-import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.events.WeakSubjectivityState;
@@ -252,53 +242,10 @@ public class KvStoreDatabase implements Database {
       expectedRoot = block.getParentRoot();
     }
 
-    // Check block signatures are valid for blocks except the genesis block
-    boolean isGenesisBlockIncluded =
-        Iterables.getLast(sorted).getSlot().equals(SpecConfig.GENESIS_SLOT);
-    checkArgument(
-        batchVerifyHistoricalBlockSignatures(
-            isGenesisBlockIncluded ? sorted.subList(0, sorted.size() - 1) : sorted),
-        "Block signatures are invalid");
-
     try (final FinalizedUpdater updater = finalizedDao.finalizedUpdater()) {
-      sorted.forEach(updater::addFinalizedBlock);
+      blocks.forEach(updater::addFinalizedBlock);
       updater.commit();
     }
-  }
-
-  boolean batchVerifyHistoricalBlockSignatures(final Collection<SignedBeaconBlock> blocks) {
-    BeaconState finalizedState =
-        this.hotDao
-            .getLatestFinalizedState()
-            .orElseThrow(
-                () ->
-                    new IllegalStateException(
-                        "Finalized state is required to sync finalized historical blocks"));
-    List<BLSSignature> signatures = new ArrayList<>();
-    List<Bytes> signingRoots = new ArrayList<>();
-    List<List<BLSPublicKey>> proposerPublicKeys = new ArrayList<>();
-
-    final Bytes32 genesisValidatorsRoot = finalizedState.getForkInfo().getGenesisValidatorsRoot();
-
-    blocks.forEach(
-        signedBlock -> {
-          final BeaconBlock block = signedBlock.getMessage();
-          final UInt64 epoch = spec.computeEpochAtSlot(block.getSlot());
-          final Fork fork = spec.fork(epoch);
-          final Bytes32 domain =
-              spec.getDomain(Domain.BEACON_PROPOSER, epoch, fork, genesisValidatorsRoot);
-          signatures.add(signedBlock.getSignature());
-          signingRoots.add(spec.computeSigningRoot(block, domain));
-          BLSPublicKey proposerPublicKey =
-              spec.getValidatorPubKey(finalizedState, block.getProposerIndex())
-                  .orElseThrow(
-                      () ->
-                          new IllegalStateException(
-                              "Proposer has to be in the state since state is more recent than the block proposed"));
-          proposerPublicKeys.add(List.of(proposerPublicKey));
-        });
-
-    return BLS.batchVerify(proposerPublicKeys, signingRoots, signatures);
   }
 
   @Override

@@ -16,6 +16,7 @@ package tech.pegasys.teku.sync.historical;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -25,6 +26,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -38,19 +40,31 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
+import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
+import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 public class HistoricalBatchFetcherTest {
   private final Spec spec = TestSpecFactory.createDefault();
   private final ChainBuilder chainBuilder = ChainBuilder.create(spec);
+  private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
+  private final AsyncBLSSignatureVerifier signatureVerifier = mock(AsyncBLSSignatureVerifier.class);
   private ChainBuilder forkBuilder;
 
-  @SuppressWarnings("unchecked")
   private final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
 
   @SuppressWarnings("unchecked")
   private final ArgumentCaptor<Collection<SignedBeaconBlock>> blockCaptor =
       ArgumentCaptor.forClass(Collection.class);
+
+  private CombinedChainDataClient chainDataClient;
+  private final BeaconState beaconState = mock(BeaconState.class);
 
   private final int maxRequests = 5;
   private List<SignedBeaconBlock> blockBatch;
@@ -61,6 +75,7 @@ public class HistoricalBatchFetcherTest {
 
   @BeforeEach
   public void setup() {
+    storageSystem.chainUpdater().initializeGenesis();
     when(storageUpdateChannel.onFinalizedBlocks(any())).thenReturn(SafeFuture.COMPLETE);
 
     // Set up main chain and fork chain
@@ -78,16 +93,40 @@ public class HistoricalBatchFetcherTest {
             .collect(Collectors.toList());
     lastBlockInBatch = chainBuilder.getLatestBlockAndState().getBlock();
     firstBlockInBatch = blockBatch.get(0);
+    final StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
+    final RecentChainData recentChainData = storageSystem.recentChainData();
+    chainDataClient = new CombinedChainDataClient(recentChainData, historicalChainData, spec);
 
     peer = RespondingEth2Peer.create(spec, chainBuilder);
     fetcher =
         new HistoricalBatchFetcher(
             storageUpdateChannel,
+            signatureVerifier,
+            chainDataClient,
+            spec,
             peer,
             lastBlockInBatch.getSlot(),
             lastBlockInBatch.getRoot(),
             UInt64.valueOf(blockBatch.size()),
             maxRequests);
+
+    final ForkInfo forkInfo = mock(ForkInfo.class);
+    when(beaconState.getForkInfo()).thenReturn(forkInfo);
+    when(forkInfo.getGenesisValidatorsRoot()).thenReturn(Bytes32.ZERO);
+
+    when(signatureVerifier.verify(any(), any(), anyList()))
+        .thenReturn(SafeFuture.completedFuture(true));
+  }
+
+  @Test
+  public void run_failsWhenInvalidSignatureFound() {
+    when(signatureVerifier.verify(any(), any(), anyList()))
+        .thenReturn(SafeFuture.completedFuture(false));
+
+    assertThat(peer.getOutstandingRequests()).isEqualTo(0);
+    final SafeFuture<BeaconBlockSummary> future = fetcher.run();
+    peer.completePendingRequests();
+    assertThat(future).isCompletedExceptionally();
   }
 
   @Test
@@ -146,6 +185,9 @@ public class HistoricalBatchFetcherTest {
     fetcher =
         new HistoricalBatchFetcher(
             storageUpdateChannel,
+            signatureVerifier,
+            chainDataClient,
+            spec,
             peer,
             latestBlock.getSlot(),
             latestBlock.getRoot(),
@@ -170,6 +212,9 @@ public class HistoricalBatchFetcherTest {
     fetcher =
         new HistoricalBatchFetcher(
             storageUpdateChannel,
+            signatureVerifier,
+            chainDataClient,
+            spec,
             peer,
             // Slot & batch size define an empty set of blocks
             lastBlockInBatch.getSlot().plus(batchSize * 2),
@@ -201,6 +246,9 @@ public class HistoricalBatchFetcherTest {
     fetcher =
         new HistoricalBatchFetcher(
             storageUpdateChannel,
+            signatureVerifier,
+            chainDataClient,
+            spec,
             peer,
             lastBlockInBatch.getSlot(),
             lastBlockInBatch.getRoot(),
