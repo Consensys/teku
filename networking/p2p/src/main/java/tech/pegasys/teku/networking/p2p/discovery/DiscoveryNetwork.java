@@ -97,6 +97,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
       final SchemaDefinitionsSupplier currentSchemaDefinitionsSupplier) {
     final DiscoveryService discoveryService =
         createDiscoveryService(
+            metricsSystem,
             asyncRunner,
             discoveryConfig,
             p2pConfig,
@@ -118,6 +119,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   }
 
   private static DiscoveryService createDiscoveryService(
+      final MetricsSystem metricsSystem,
       final AsyncRunner asyncRunner,
       final DiscoveryConfig discoConfig,
       final NetworkConfig p2pConfig,
@@ -128,6 +130,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
     if (discoConfig.isDiscoveryEnabled()) {
       discoveryService =
           new DiscV5Service(
+              metricsSystem,
               asyncRunner,
               discoConfig,
               p2pConfig,

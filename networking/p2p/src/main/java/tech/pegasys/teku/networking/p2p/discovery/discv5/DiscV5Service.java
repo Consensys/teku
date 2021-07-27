@@ -32,12 +32,12 @@ import org.ethereum.beacon.discovery.schema.EnrField;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.ethereum.beacon.discovery.schema.NodeRecordBuilder;
 import org.ethereum.beacon.discovery.schema.NodeRecordFactory;
-import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
-import org.ethereum.beacon.discovery.schema.NodeStatus;
 import org.ethereum.beacon.discovery.storage.NewAddressHandler;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
@@ -61,6 +61,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
   private volatile Cancellable bootnodeRefreshTask;
 
   public DiscV5Service(
+      final MetricsSystem metricsSystem,
       final AsyncRunner asyncRunner,
       final DiscoveryConfig discoConfig,
       final NetworkConfig p2pConfig,
@@ -96,6 +97,11 @@ public class DiscV5Service extends Service implements DiscoveryService {
             .localNodeRecordListener(this::localNodeRecordUpdated)
             .build();
     this.kvStore = kvStore;
+    metricsSystem.createIntegerGauge(
+        TekuMetricCategory.DISCOVERY,
+        "live_nodes_current",
+        "Current number of live nodes tracked by the discovery system",
+        () -> discoverySystem.getBucketStats().getTotalLiveNodeCount());
   }
 
   private NewAddressHandler maybeUpdateNodeRecord(boolean userExplicitlySetAdvertisedIpOrPort) {
@@ -192,9 +198,6 @@ public class DiscV5Service extends Service implements DiscoveryService {
   }
 
   private Stream<NodeRecord> activeNodes() {
-    return discoverySystem
-        .streamKnownNodes()
-        .filter(record -> record.getStatus() == NodeStatus.ACTIVE)
-        .map(NodeRecordInfo::getNode);
+    return discoverySystem.streamLiveNodes();
   }
 }
