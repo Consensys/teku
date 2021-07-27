@@ -52,11 +52,14 @@ import tech.pegasys.teku.validator.coordinator.ActiveValidatorTracker;
 public class DefaultPerformanceTracker implements PerformanceTracker {
 
   @VisibleForTesting
-  final NavigableMap<UInt64, Set<SlotAndBlockRoot>> producedBlocksByEpoch = new ConcurrentSkipListMap<>();
+  final NavigableMap<UInt64, Set<SlotAndBlockRoot>> producedBlocksByEpoch =
+      new ConcurrentSkipListMap<>();
 
-  final NavigableMap<UInt64, Set<Attestation>> producedAttestationsByEpoch = new ConcurrentSkipListMap<>();
+  final NavigableMap<UInt64, Set<Attestation>> producedAttestationsByEpoch =
+      new ConcurrentSkipListMap<>();
 
-  final NavigableMap<UInt64, AtomicInteger> blockProductionAttemptsByEpoch = new ConcurrentSkipListMap<>();
+  final NavigableMap<UInt64, AtomicInteger> blockProductionAttemptsByEpoch =
+      new ConcurrentSkipListMap<>();
 
   @VisibleForTesting
   static final UInt64 BLOCK_PERFORMANCE_EVALUATION_INTERVAL = UInt64.valueOf(2); // epochs
