@@ -761,6 +761,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             blockImporter,
             pendingBlocks,
             beaconConfig.eth2NetworkConfig().getStartupTargetPeerCount(),
+            signatureVerificationService,
             Duration.ofSeconds(beaconConfig.eth2NetworkConfig().getStartupTimeoutSeconds()));
 
     syncService.getForwardSync().subscribeToSyncChanges(coalescingChainHeadChannel);

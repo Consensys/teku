@@ -21,12 +21,24 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
-@FunctionalInterface
 public interface AsyncBLSSignatureVerifier {
   static AsyncBLSSignatureVerifier wrap(BLSSignatureVerifier syncVerifier) {
-    return (List<BLSPublicKey> publicKeys, Bytes message, BLSSignature signature) -> {
-      final boolean result = syncVerifier.verify(publicKeys, message, signature);
-      return SafeFuture.completedFuture(result);
+    return new AsyncBLSSignatureVerifier() {
+      @Override
+      public SafeFuture<Boolean> verify(
+          final List<BLSPublicKey> publicKeys, final Bytes message, final BLSSignature signature) {
+        final boolean result = syncVerifier.verify(publicKeys, message, signature);
+        return SafeFuture.completedFuture(result);
+      }
+
+      @Override
+      public SafeFuture<Boolean> verify(
+          final List<List<BLSPublicKey>> publicKeys,
+          final List<Bytes> messages,
+          final List<BLSSignature> signatures) {
+        final boolean result = syncVerifier.verify(publicKeys, messages, signatures);
+        return SafeFuture.completedFuture(result);
+      }
     };
   }
 
@@ -46,4 +58,9 @@ public interface AsyncBLSSignatureVerifier {
       BLSPublicKey publicKey, Bytes message, BLSSignature signature) {
     return verify(Collections.singletonList(publicKey), message, signature);
   }
+
+  SafeFuture<Boolean> verify(
+      final List<List<BLSPublicKey>> publicKeys,
+      final List<Bytes> messages,
+      final List<BLSSignature> signatures);
 }
