@@ -705,7 +705,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             attestationManager,
             attesterSlashingPool,
             proposerSlashingPool,
-            voluntaryExitPool);
+            voluntaryExitPool,
+            syncCommitteeContributionPool);
     if (beaconConfig.beaconRestApiConfig().isRestApiEnabled()) {
 
       beaconRestAPI =

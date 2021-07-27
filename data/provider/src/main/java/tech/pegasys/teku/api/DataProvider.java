@@ -22,6 +22,7 @@ import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockManager;
+import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.SyncService;
@@ -47,7 +48,8 @@ public class DataProvider {
       final AttestationManager attestationManager,
       final OperationPool<AttesterSlashing> attesterSlashingPool,
       final OperationPool<ProposerSlashing> proposerSlashingPool,
-      final OperationPool<SignedVoluntaryExit> voluntaryExitPool) {
+      final OperationPool<SignedVoluntaryExit> voluntaryExitPool,
+      final SyncCommitteeContributionPool syncCommitteeContributionPool) {
     this.configProvider = new ConfigProvider(spec);
     networkDataProvider = new NetworkDataProvider(p2pNetwork);
     nodeDataProvider =
@@ -56,6 +58,7 @@ public class DataProvider {
             attesterSlashingPool,
             proposerSlashingPool,
             voluntaryExitPool,
+            syncCommitteeContributionPool,
             blockManager,
             attestationManager);
     chainDataProvider = new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
