@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.p2p.discovery;
 
+import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -26,6 +27,7 @@ import static org.mockito.Mockito.when;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
@@ -242,8 +244,8 @@ class ConnectionManagerTest {
 
   @Test
   public void shouldPeriodicallyTriggerNewDiscoverySearch() {
-    final SafeFuture<Void> search1 = new SafeFuture<>();
-    final SafeFuture<Void> search2 = new SafeFuture<>();
+    final SafeFuture<Collection<DiscoveryPeer>> search1 = new SafeFuture<>();
+    final SafeFuture<Collection<DiscoveryPeer>> search2 = new SafeFuture<>();
     when(discoveryService.searchForPeers()).thenReturn(search1).thenReturn(search2);
 
     final ConnectionManager manager = createManager();
@@ -251,7 +253,7 @@ class ConnectionManagerTest {
 
     verify(discoveryService, times(1)).searchForPeers();
 
-    search1.complete(null);
+    search1.complete(emptyList());
     verify(discoveryService, times(1)).searchForPeers(); // Shouldn't immediately search again
 
     asyncRunner.executeQueuedActions();
@@ -260,8 +262,8 @@ class ConnectionManagerTest {
 
   @Test
   public void shouldTriggerNewDiscoverySearchAfterFailure() {
-    final SafeFuture<Void> search1 = new SafeFuture<>();
-    final SafeFuture<Void> search2 = new SafeFuture<>();
+    final SafeFuture<Collection<DiscoveryPeer>> search1 = new SafeFuture<>();
+    final SafeFuture<Collection<DiscoveryPeer>> search2 = new SafeFuture<>();
     when(discoveryService.searchForPeers()).thenReturn(search1).thenReturn(search2);
 
     final ConnectionManager manager = createManager();
@@ -278,8 +280,8 @@ class ConnectionManagerTest {
 
   @Test
   public void shouldStopTriggeringDiscoverySearchesWhenStopped() {
-    final SafeFuture<Void> search1 = new SafeFuture<>();
-    final SafeFuture<Void> search2 = new SafeFuture<>();
+    final SafeFuture<Collection<DiscoveryPeer>> search1 = new SafeFuture<>();
+    final SafeFuture<Collection<DiscoveryPeer>> search2 = new SafeFuture<>();
     when(discoveryService.searchForPeers()).thenReturn(search1).thenReturn(search2);
     final ConnectionManager manager = createManager();
 
@@ -288,7 +290,7 @@ class ConnectionManagerTest {
 
     manager.stop().join();
 
-    search1.complete(null);
+    search1.complete(emptyList());
 
     asyncRunner.executeQueuedActions();
     verify(discoveryService, times(1)).searchForPeers(); // Shouldn't search again
@@ -296,7 +298,7 @@ class ConnectionManagerTest {
 
   @Test
   public void shouldConnectToKnownPeersWhenDiscoverySearchCompletes() {
-    final SafeFuture<Void> search1 = new SafeFuture<>();
+    final SafeFuture<Collection<DiscoveryPeer>> search1 = new SafeFuture<>();
     when(network.connect(any(PeerAddress.class))).thenReturn(new SafeFuture<>());
     when(discoveryService.searchForPeers()).thenReturn(search1);
     when(discoveryService.streamKnownPeers())
@@ -307,7 +309,26 @@ class ConnectionManagerTest {
     manager.start().join();
     verify(discoveryService).searchForPeers();
 
-    search1.complete(null);
+    search1.complete(emptyList());
+
+    verify(network).connect(PEER1);
+    verify(network).connect(PEER2);
+  }
+
+  @Test
+  public void shouldConsiderNewlyFoundPeersForConnectionWhenDiscoverySearchCompletes() {
+    final SafeFuture<Collection<DiscoveryPeer>> search1 = new SafeFuture<>();
+    when(network.connect(any(PeerAddress.class))).thenReturn(new SafeFuture<>());
+    when(discoveryService.searchForPeers()).thenReturn(search1);
+    when(discoveryService.streamKnownPeers())
+        .thenReturn(Stream.empty()) // No known peers at startup
+        .thenReturn(Stream.of(DISCOVERY_PEER2)); // Search found some new peers
+    final ConnectionManager manager = createManager();
+
+    manager.start().join();
+    verify(discoveryService).searchForPeers();
+
+    search1.complete(List.of(DISCOVERY_PEER1));
 
     verify(network).connect(PEER1);
     verify(network).connect(PEER2);
