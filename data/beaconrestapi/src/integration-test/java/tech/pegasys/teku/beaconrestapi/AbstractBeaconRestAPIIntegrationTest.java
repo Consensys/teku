@@ -45,6 +45,7 @@ import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockManager;
+import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -79,6 +80,8 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
   private final OperationPool<AttesterSlashing> attesterSlashingPool = mock(OperationPool.class);
   private final OperationPool<ProposerSlashing> proposerSlashingPool = mock(OperationPool.class);
   private final OperationPool<SignedVoluntaryExit> voluntaryExitPool = mock(OperationPool.class);
+  protected final SyncCommitteeContributionPool syncCommitteeContributionPool =
+      mock(SyncCommitteeContributionPool.class);
   protected final EventChannels eventChannels = mock(EventChannels.class);
 
   protected CombinedChainDataClient combinedChainDataClient =
@@ -102,7 +105,8 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
             attestationManager,
             attesterSlashingPool,
             proposerSlashingPool,
-            voluntaryExitPool);
+            voluntaryExitPool,
+            syncCommitteeContributionPool);
 
     beaconRestApi =
         new BeaconRestApi(dataProvider, restApiConfig, eventChannels, SyncAsyncRunner.SYNC_RUNNER);

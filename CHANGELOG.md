@@ -25,3 +25,4 @@ For information on changes in released versions of Teku, see the [releases page]
 - implement GET `/eth/v1/beacon/states/{state_id}/sync_committees` for Altair fork.
 - `/eth/v1/validator/blocks/{slot}` will now produce an altair block if an altair slot is requested.
 - `/eth/v1/node/identity` will now include syncnets in metadata
+- implement event channel for `/eth/v1/events&topic=contribution_and_proof` for Altair fork.

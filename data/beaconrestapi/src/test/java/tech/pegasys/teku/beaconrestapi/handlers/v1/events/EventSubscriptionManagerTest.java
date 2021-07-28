@@ -55,6 +55,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -62,7 +63,7 @@ import tech.pegasys.teku.storage.api.ReorgContext;
 import tech.pegasys.teku.sync.events.SyncState;
 
 public class EventSubscriptionManagerTest {
-  private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private final Spec spec = TestSpecFactory.createMinimalAltair();
   private final SpecConfig specConfig = spec.getGenesisSpecConfig();
   private final JsonProvider jsonProvider = new JsonProvider();
   private final DataStructureUtil data = new DataStructureUtil(spec);
@@ -93,6 +94,8 @@ public class EventSubscriptionManagerTest {
           false,
           data.randomBytes32(),
           data.randomBytes32());
+  private final SignedContributionAndProof contributionAndProof =
+      data.randomSignedContributionAndProof(0L);
 
   private final FinalizedCheckpointEvent sampleCheckpointEvent =
       new FinalizedCheckpointEvent(data.randomBytes32(), data.randomBytes32(), epoch);
@@ -163,6 +166,17 @@ public class EventSubscriptionManagerTest {
         jsonProvider.jsonToObject(eventString.substring(eventString.indexOf("{")), HeadEvent.class);
 
     assertThat(event).isEqualTo(headEvent);
+  }
+
+  @Test
+  void shouldPropagateContributions() throws IOException {
+    when(req.getQueryString()).thenReturn("&topics=contribution_and_proof");
+    manager.registerClient(client1);
+
+    triggerContributionEvent();
+    verify(outputStream).print(stringArgs.capture());
+    final String eventString = stringArgs.getValue();
+    assertThat(eventString).contains("event: contribution_and_proof\n");
   }
 
   @Test
@@ -377,6 +391,11 @@ public class EventSubscriptionManagerTest {
         headEvent.previousDutyDependentRoot,
         headEvent.currentDutyDependentRoot,
         Optional.empty());
+    asyncRunner.executeQueuedActions();
+  }
+
+  private void triggerContributionEvent() {
+    manager.onSyncCommitteeContribution(contributionAndProof, InternalValidationResult.ACCEPT);
     asyncRunner.executeQueuedActions();
   }
 }

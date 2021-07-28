@@ -23,7 +23,8 @@ public enum EventType {
   voluntary_exit,
   finalized_checkpoint,
   chain_reorg,
-  sync_state;
+  sync_state,
+  contribution_and_proof;
 
   public static List<EventType> getTopics(List<String> topics) {
     return topics.stream().map(EventType::valueOf).collect(Collectors.toList());
