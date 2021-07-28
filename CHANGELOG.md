@@ -9,24 +9,10 @@ For information on changes in released versions of Teku, see the [releases page]
 ## Unreleased Changes
 
 ### Breaking Changes
-- Teku no longer publishes a `head` event on the REST API 4 seconds into a slot if a block has not been received. 
-  The `--Xvalidators-dependent-root-enabled=false` option can be used to restore the old behaviour.
-  Note: this should be applied to both the beacon node and validator client if running separately.
 
 ### Additions and Improvements
-- Added `migrate-data` subcommand to allow users to migrate to a leveldb relatively easily without requiring a full re-sync.
-- Improved compatibility of the validator client with other beacon nodes using the REST API by using 
-  the `dependent-root` field to detect re-orgs instead of depending on the beacon chain publishing re-org events when empty slots are later filled.
 
 ### Bug Fixes
-- Fix an issue where new peers would not be found after a network outage.
-- Fix a file handle leak in jvm-libp2p.
-- Fix `previous_epoch_participation` and `current_epoch_participation` representation in 
-  `/eth/v2/debug/beacon/states/:state_id` so that it comes back as an array rather than a byte string.
-- `/eth/v1/beacon/pool/sync_committees` incorrectly returned 503 when there were no errors instead of 200.
-- Fix an issue where deposits for the PoW chain could be loaded out of order on restart.
-- Fix `/eth/v1/validator/contribution_and_proofs` to return errors.
-- Add `SYNC_COMMITTEE_SUBNET_COUNT` to `/eth/v1/config/spec`, as it was missing.
 - Fixed `ConcurrentModificationException` in validator performance reporting.
 - Upgraded the discovery library, providing better memory management and standards compliance. 
 
