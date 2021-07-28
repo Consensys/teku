@@ -36,6 +36,7 @@ import tech.pegasys.teku.api.response.v1.HeadEvent;
 import tech.pegasys.teku.api.response.v1.SyncStateChangeEvent;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
+import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
 import tech.pegasys.teku.beaconrestapi.ListQueryParameterUtils;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
@@ -81,6 +82,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
     nodeDataProvider.subscribeToReceivedBlocks(this::onNewBlock);
     nodeDataProvider.subscribeToValidAttestations(this::onNewAttestation);
     nodeDataProvider.subscribeToNewVoluntaryExits(this::onNewVoluntaryExit);
+    nodeDataProvider.subscribeToSyncCommitteeContributions(this::onSyncCommitteeContribution);
   }
 
   public void registerClient(final SseClient sseClient) {
@@ -140,6 +142,18 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
       final InternalValidationResult result) {
     final SignedVoluntaryExit voluntaryExitEvent = new SignedVoluntaryExit(exit);
     notifySubscribersOfEvent(EventType.voluntary_exit, voluntaryExitEvent);
+  }
+
+  protected void onSyncCommitteeContribution(
+      final tech.pegasys.teku.spec.datastructures.operations.versions.altair
+              .SignedContributionAndProof
+          proof,
+      final InternalValidationResult result) {
+    if (result.isAccept()) {
+      final SignedContributionAndProof signedContributionAndProof =
+          new SignedContributionAndProof(proof);
+      notifySubscribersOfEvent(EventType.contribution_and_proof, signedContributionAndProof);
+    }
   }
 
   protected void onNewAttestation(final ValidateableAttestation attestation) {
