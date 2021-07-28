@@ -1,4 +1,4 @@
-FROM openjdk:14-slim-buster
+FROM openjdk:16-slim-buster
 
 RUN apt-get -y update
 RUN apt-get -y install curl
