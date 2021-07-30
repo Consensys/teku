@@ -35,6 +35,7 @@ import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class PostContributionAndProofs extends AbstractHandler implements Handler {
@@ -72,8 +73,15 @@ public class PostContributionAndProofs extends AbstractHandler implements Handle
       })
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
-    final SignedContributionAndProof[] signedContributionAndProofs =
+    final SignedContributionAndProof[] signedContributionAndProofs;
+    try {
+      signedContributionAndProofs =
         parseRequestBody(ctx.body(), SignedContributionAndProof[].class);
+    } catch(IllegalArgumentException e) {
+      ctx.result(BadRequest.badRequest(jsonProvider, e.getMessage()));
+      ctx.status(HttpStatusCodes.SC_BAD_REQUEST);
+      return;
+    }
     final SafeFuture<Void> future =
         provider.sendContributionAndProofs(asList(signedContributionAndProofs));
 
