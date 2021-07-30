@@ -79,7 +79,7 @@ public class TekuNode extends Node {
   private final Config config;
   private final JsonProvider jsonProvider = new JsonProvider();
   private final Spec spec;
-  private Optional<EventStreamListener> maybeEventStreamListener;
+  private Optional<EventStreamListener> maybeEventStreamListener = Optional.empty();
 
   private boolean started = false;
   private Set<File> configFiles;
