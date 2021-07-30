@@ -1,5 +1,8 @@
 FROM openjdk:15-slim-buster
 
+RUN apt-get -y update
+RUN apt-get -y install curl
+RUN rm -rf /var/lib/api/lists/*
 RUN adduser --disabled-password --gecos "" --home /opt/teku teku && \
     chown teku:teku /opt/teku
 
