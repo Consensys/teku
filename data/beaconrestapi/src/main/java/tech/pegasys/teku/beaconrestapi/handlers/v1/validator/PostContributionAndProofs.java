@@ -76,8 +76,8 @@ public class PostContributionAndProofs extends AbstractHandler implements Handle
     final SignedContributionAndProof[] signedContributionAndProofs;
     try {
       signedContributionAndProofs =
-        parseRequestBody(ctx.body(), SignedContributionAndProof[].class);
-    } catch(IllegalArgumentException e) {
+          parseRequestBody(ctx.body(), SignedContributionAndProof[].class);
+    } catch (IllegalArgumentException e) {
       ctx.result(BadRequest.badRequest(jsonProvider, e.getMessage()));
       ctx.status(HttpStatusCodes.SC_BAD_REQUEST);
       return;
