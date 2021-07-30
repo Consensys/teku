@@ -22,7 +22,6 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 
-import com.fasterxml.jackson.databind.JsonMappingException;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
@@ -72,12 +71,11 @@ public class PostAttestation extends AbstractHandler {
   @Override
   public void handle(final Context ctx) throws Exception {
     try {
-      final String body = ctx.body();
       final List<Attestation> attestations =
-          Arrays.asList(jsonProvider.jsonToObject(body, Attestation[].class));
+          Arrays.asList(parseRequestBody(ctx.body(), Attestation[].class));
       provider.submitAttestations(attestations);
       ctx.status(SC_OK);
-    } catch (final IllegalArgumentException | JsonMappingException e) {
+    } catch (final IllegalArgumentException e) {
       ctx.result(BadRequest.badRequest(jsonProvider, e.getMessage()));
       ctx.status(SC_BAD_REQUEST);
     }

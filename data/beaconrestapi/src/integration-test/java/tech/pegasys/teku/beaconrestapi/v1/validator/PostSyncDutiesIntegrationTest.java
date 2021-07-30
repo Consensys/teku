@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi.v1.validator;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
@@ -37,6 +38,15 @@ import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 
 public class PostSyncDutiesIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
   final List<Integer> validators = List.of(1);
+
+  @Test
+  public void shouldReturnBadRequestWhenRequestBodyIsEmpty() throws Exception {
+    startRestAPIAtGenesis(SpecMilestone.ALTAIR);
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
+    Response response =
+        post(PostSyncDuties.ROUTE.replace(":epoch", "1"), jsonProvider.objectToJSON(""));
+    Assertions.assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
+  }
 
   @Test
   void shouldGetSyncCommitteeDuties() throws IOException {
