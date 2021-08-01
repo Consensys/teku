@@ -17,6 +17,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,7 +44,13 @@ public class PostVoluntaryExitIntegrationTest extends AbstractDataBackedRestAPII
   public void shouldReturnBadRequestWhenRequestBodyIsInvalid() throws Exception {
     Response response =
         post(PostVoluntaryExit.ROUTE, jsonProvider.objectToJSON("{\"foo\": \"bar\"}"));
-    assertThat(response.code()).isEqualTo(400);
+    assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
+  }
+
+  @Test
+  public void shouldReturnBadRequestWhenRequestBodyIsEmpty() throws Exception {
+    Response response = post(PostVoluntaryExit.ROUTE, jsonProvider.objectToJSON(""));
+    assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
   }
 
   @Test
@@ -54,7 +63,7 @@ public class PostVoluntaryExitIntegrationTest extends AbstractDataBackedRestAPII
     doThrow(new RuntimeException()).when(voluntaryExitPool).add(signedVoluntaryExit);
 
     Response response = post(PostVoluntaryExit.ROUTE, jsonProvider.objectToJSON(schemaExit));
-    assertThat(response.code()).isEqualTo(500);
+    assertThat(response.code()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
   }
 
   @Test
@@ -71,6 +80,6 @@ public class PostVoluntaryExitIntegrationTest extends AbstractDataBackedRestAPII
 
     verify(voluntaryExitPool).add(signedVoluntaryExit);
 
-    assertThat(response.code()).isEqualTo(200);
+    assertThat(response.code()).isEqualTo(SC_OK);
   }
 }

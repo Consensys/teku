@@ -17,8 +17,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 
 import okhttp3.Response;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.schema.ProposerSlashing;
@@ -35,6 +37,12 @@ public class PostProposerSlashingIntegrationTest extends AbstractDataBackedRestA
   @BeforeEach
   public void setup() {
     startRestAPIAtGenesis();
+  }
+
+  @Test
+  public void shouldReturnBadRequestWhenRequestBodyIsEmpty() throws Exception {
+    Response response = post(PostProposerSlashing.ROUTE, jsonProvider.objectToJSON(""));
+    Assertions.assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
   }
 
   @Test

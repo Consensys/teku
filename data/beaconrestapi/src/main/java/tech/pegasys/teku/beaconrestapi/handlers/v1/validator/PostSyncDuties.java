@@ -99,8 +99,7 @@ public class PostSyncDuties extends AbstractHandler implements Handler {
     final Map<String, String> parameters = ctx.pathParamMap();
     try {
       final UInt64 epoch = UInt64.valueOf(parameters.get(EPOCH));
-      final List<Integer> indexes =
-          Arrays.asList(jsonProvider.jsonToObject(ctx.body(), Integer[].class));
+      final List<Integer> indexes = Arrays.asList(parseRequestBody(ctx.body(), Integer[].class));
 
       SafeFuture<Optional<PostSyncDutiesResponse>> future =
           validatorDataProvider.getSyncDuties(epoch, indexes);
