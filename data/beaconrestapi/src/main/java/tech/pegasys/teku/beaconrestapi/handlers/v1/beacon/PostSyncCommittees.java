@@ -22,7 +22,6 @@ import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.common.base.Throwables;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -84,9 +83,8 @@ public class PostSyncCommittees extends AbstractHandler {
   @Override
   public void handle(final Context ctx) throws Exception {
     try {
-      final String body = ctx.body();
       final List<SyncCommitteeMessage> messages =
-          Arrays.asList(jsonProvider.jsonToObject(body, SyncCommitteeMessage[].class));
+          Arrays.asList(parseRequestBody(ctx.body(), SyncCommitteeMessage[].class));
       final SafeFuture<SubmitCommitteeMessagesResult> future =
           provider.submitCommitteeSignatures(messages);
 
@@ -95,7 +93,7 @@ public class PostSyncCommittees extends AbstractHandler {
               .thenApplyChecked(response -> handleResult(ctx, response))
               .exceptionallyCompose(error -> handleError(ctx, error)));
 
-    } catch (final IllegalArgumentException | JsonMappingException e) {
+    } catch (final IllegalArgumentException e) {
       ctx.result(BadRequest.badRequest(jsonProvider, e.getMessage()));
       ctx.status(SC_BAD_REQUEST);
     }

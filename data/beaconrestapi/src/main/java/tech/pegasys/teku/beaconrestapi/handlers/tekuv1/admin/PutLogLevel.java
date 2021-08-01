@@ -21,7 +21,6 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERRO
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_TEKU;
 
-import com.fasterxml.jackson.databind.JsonMappingException;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -30,18 +29,17 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import tech.pegasys.teku.api.schema.LogLevel;
+import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.provider.JsonProvider;
 
-public class PutLogLevel implements Handler {
+public class PutLogLevel extends AbstractHandler implements Handler {
 
   public static final String ROUTE = "/teku/v1/admin/log_level";
 
-  private final JsonProvider jsonProvider;
-
   public PutLogLevel(final JsonProvider jsonProvider) {
-    this.jsonProvider = jsonProvider;
+    super(jsonProvider);
   }
 
   @OpenApi(
@@ -66,9 +64,8 @@ public class PutLogLevel implements Handler {
       })
   @Override
   public void handle(final Context ctx) throws Exception {
-
     try {
-      final LogLevel params = jsonProvider.jsonToObject(ctx.body(), LogLevel.class);
+      final LogLevel params = parseRequestBody(ctx.body(), LogLevel.class);
 
       final String[] logFilters = params.getLogFilter().orElseGet(() -> new String[] {""});
 
@@ -77,7 +74,7 @@ public class PutLogLevel implements Handler {
       }
 
       ctx.status(SC_NO_CONTENT);
-    } catch (final IllegalArgumentException | JsonMappingException e) {
+    } catch (final IllegalArgumentException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
       ctx.status(SC_BAD_REQUEST);
     }

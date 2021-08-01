@@ -72,7 +72,7 @@ public class PostProposerSlashing extends AbstractHandler {
   public void handle(final Context ctx) throws Exception {
     try {
       final ProposerSlashing proposerSlashing =
-          jsonProvider.jsonToObject(ctx.body(), ProposerSlashing.class);
+          parseRequestBody(ctx.body(), ProposerSlashing.class);
       InternalValidationResult result =
           nodeDataProvider.postProposerSlashing(proposerSlashing).join();
       if (result.code().equals(ValidationResultCode.IGNORE)
