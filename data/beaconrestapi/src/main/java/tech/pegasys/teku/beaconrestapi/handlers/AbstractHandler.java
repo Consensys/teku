@@ -29,7 +29,7 @@ public abstract class AbstractHandler implements Handler {
     this.jsonProvider = jsonProvider;
   }
 
-  public <T> T parseRequestBody(String json, Class<T> clazz) {
+  protected <T> T parseRequestBody(String json, Class<T> clazz) {
     try {
       return jsonProvider.jsonToObject(json, clazz);
     } catch (JsonProcessingException ex) {
