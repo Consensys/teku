@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import java.io.ByteArrayInputStream;
@@ -26,6 +27,15 @@ public abstract class AbstractHandler implements Handler {
 
   protected AbstractHandler(final JsonProvider jsonProvider) {
     this.jsonProvider = jsonProvider;
+  }
+
+  protected <T> T parseRequestBody(String json, Class<T> clazz) {
+    try {
+      return jsonProvider.jsonToObject(json, clazz);
+    } catch (JsonProcessingException ex) {
+      throw new IllegalArgumentException(
+          "Could read request body to get required data. " + ex.getMessage());
+    }
   }
 
   protected <T> void handleOptionalResult(

@@ -71,8 +71,7 @@ public class PostVoluntaryExit extends AbstractHandler {
   @Override
   public void handle(final Context ctx) throws Exception {
     try {
-      final SignedVoluntaryExit exit =
-          jsonProvider.jsonToObject(ctx.body(), SignedVoluntaryExit.class);
+      final SignedVoluntaryExit exit = parseRequestBody(ctx.body(), SignedVoluntaryExit.class);
       InternalValidationResult result = nodeDataProvider.postVoluntaryExit(exit).join();
       if (result.code().equals(ValidationResultCode.IGNORE)
           || result.code().equals(ValidationResultCode.REJECT)) {
