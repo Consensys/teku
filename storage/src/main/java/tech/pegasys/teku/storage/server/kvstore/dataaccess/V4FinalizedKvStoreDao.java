@@ -13,7 +13,8 @@
 
 package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 
-import com.google.common.base.Preconditions;
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Collection;
 import java.util.HashSet;
@@ -23,12 +24,21 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
+import tech.pegasys.teku.ssz.schema.SszSchema.BackingNodeSource;
+import tech.pegasys.teku.ssz.tree.BranchNode;
+import tech.pegasys.teku.ssz.tree.LeafDataNode;
+import tech.pegasys.teku.ssz.tree.TreeNode;
+import tech.pegasys.teku.ssz.tree.TreeUtil;
 import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransaction;
@@ -37,15 +47,22 @@ import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalized;
 
 public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
+
+  private final Spec spec;
   private final KvStoreAccessor db;
   private final SchemaFinalized schema;
-  private final UInt64 stateStorageFrequency;
+
+  private final Set<Bytes32> knownStoredMerkleLeaves = LimitedSet.create(100_000);
+  private final Set<Bytes32> knownStoredMerkleBranches = LimitedSet.create(100_000);
 
   public V4FinalizedKvStoreDao(
-      final KvStoreAccessor db, final SchemaFinalized schema, final long stateStorageFrequency) {
+      final Spec spec,
+      final KvStoreAccessor db,
+      final SchemaFinalized schema,
+      @SuppressWarnings("unused") final long stateStorageFrequency) {
+    this.spec = spec;
     this.db = db;
     this.schema = schema;
-    this.stateStorageFrequency = UInt64.valueOf(stateStorageFrequency);
   }
 
   @Override
@@ -85,8 +102,44 @@ public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
 
   @Override
   public Optional<BeaconState> getLatestAvailableFinalizedState(final UInt64 maxSlot) {
-    return db.getFloorEntry(schema.getColumnFinalizedStatesBySlot(), maxSlot)
-        .map(ColumnEntry::getValue);
+    return db.getFloorEntry(schema.getColumnFinalizedStateRootsBySlot(), maxSlot)
+        .map(ColumnEntry::getValue)
+        .map(this::recreateState);
+  }
+
+  private BeaconState recreateState(final Bytes32 stateRoot) {
+    final UInt64 slot = getSlotForFinalizedStateRoot(stateRoot).orElseThrow();
+    final BeaconStateSchema<?, ?> stateSchema =
+        spec.atSlot(slot).getSchemaDefinitions().getBeaconStateSchema();
+    final TreeNode backingTree =
+        stateSchema.loadBackingNodes(
+            new BackingNodeSource() {
+              @Override
+              public Pair<Bytes32, Bytes32> getBranchData(final Bytes32 root) {
+                return db.get(schema.getColumnFinalizedStateMerkleTrieBranches(), root)
+                    .map(
+                        data -> {
+                          checkArgument(
+                              data.size() == Bytes32.SIZE * 2,
+                              "Branch data was too short %s",
+                              data);
+                          return Pair.of(
+                              Bytes32.wrap(data.slice(0, Bytes32.SIZE)),
+                              Bytes32.wrap(data.slice(Bytes32.SIZE)));
+                        })
+                    .orElseThrow(
+                        () -> new IllegalStateException("Missing branch data for root " + root));
+              }
+
+              @Override
+              public Bytes getLeafData(final Bytes32 root) {
+                return db.get(schema.getColumnFinalizedStateMerkleTrieLeaves(), root)
+                    .orElseThrow(
+                        () -> new IllegalStateException("Missing leaf data for root " + root));
+              }
+            },
+            stateRoot);
+    return stateSchema.createFromBackingNode(backingTree);
   }
 
   @Override
@@ -125,8 +178,8 @@ public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
   @Override
   public void ingest(
       final KvStoreFinalizedDao finalizedDao, final int batchSize, final Consumer<String> logger) {
-    Preconditions.checkArgument(batchSize > 1, "Batch size must be greater than 1 element");
-    Preconditions.checkArgument(
+    checkArgument(batchSize > 1, "Batch size must be greater than 1 element");
+    checkArgument(
         finalizedDao instanceof V4FinalizedKvStoreDao,
         "Expected instance of V4FinalizedKvStoreDao");
     final V4FinalizedKvStoreDao dao = (V4FinalizedKvStoreDao) finalizedDao;
@@ -176,29 +229,29 @@ public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
   @Override
   @MustBeClosed
   public FinalizedUpdater finalizedUpdater() {
-    return new V4FinalizedKvStoreDao.V4FinalizedUpdater(db, schema, stateStorageFrequency);
+    return new V4FinalizedKvStoreDao.V4FinalizedUpdater(
+        db, schema, knownStoredMerkleLeaves, knownStoredMerkleBranches);
   }
 
   static class V4FinalizedUpdater implements FinalizedUpdater {
     private final KvStoreTransaction transaction;
     private final KvStoreAccessor db;
     private final SchemaFinalized schema;
-    private final UInt64 stateStorageFrequency;
-    private Optional<UInt64> lastStateStoredSlot = Optional.empty();
-    private boolean loadedLastStoreState = false;
-
-    KvStoreTransaction getTransaction() {
-      return transaction;
-    }
+    private final Set<Bytes32> previouslyStoredMerkleLeaves;
+    private final Set<Bytes32> previouslyStoredMerkleBranches;
+    private final Set<Bytes32> newlyStoredMerkleLeaves = new HashSet<>();
+    private final Set<Bytes32> newlyStoredMerkleBranches = new HashSet<>();
 
     V4FinalizedUpdater(
         final KvStoreAccessor db,
         final SchemaFinalized schema,
-        final UInt64 stateStorageFrequency) {
+        final Set<Bytes32> previouslyStoredMerkleLeaves,
+        final Set<Bytes32> previouslyStoredMerkleBranches) {
       this.transaction = db.startTransaction();
       this.db = db;
       this.schema = schema;
-      this.stateStorageFrequency = stateStorageFrequency;
+      this.previouslyStoredMerkleLeaves = previouslyStoredMerkleLeaves;
+      this.previouslyStoredMerkleBranches = previouslyStoredMerkleBranches;
     }
 
     @Override
@@ -223,18 +276,40 @@ public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
 
     @Override
     public void addFinalizedState(final Bytes32 blockRoot, final BeaconState state) {
-      if (!loadedLastStoreState) {
-        lastStateStoredSlot = db.getLastKey(schema.getColumnFinalizedStatesBySlot());
-        loadedLastStoreState = true;
-      }
-      if (lastStateStoredSlot.isPresent()) {
-        UInt64 nextStorageSlot = lastStateStoredSlot.get().plus(stateStorageFrequency);
-        if (state.getSlot().compareTo(nextStorageSlot) >= 0) {
-          addFinalizedState(state);
-        }
-      } else {
-        addFinalizedState(state);
-      }
+      transaction.put(
+          schema.getColumnFinalizedStateRootsBySlot(), state.getSlot(), state.hashTreeRoot());
+      TreeUtil.iterateNonZero(
+          state.getBackingNode(),
+          n -> {
+            final Bytes32 root = n.hashTreeRoot();
+            if (n instanceof LeafDataNode) {
+              if (previouslyStoredMerkleLeaves.contains(root)
+                  || newlyStoredMerkleLeaves.contains(root)) {
+                // Already stored
+                return;
+              }
+              newlyStoredMerkleLeaves.add(root);
+              transaction.put(
+                  schema.getColumnFinalizedStateMerkleTrieLeaves(),
+                  root,
+                  ((LeafDataNode) n).getData());
+            } else if (n instanceof BranchNode) {
+              if (previouslyStoredMerkleBranches.contains(root)
+                  || newlyStoredMerkleBranches.contains(root)) {
+                // Already stored
+                // TODO: Find a way to skip all nodes under this one as they're already stored too
+                return;
+              }
+              newlyStoredMerkleBranches.add(root);
+              final BranchNode node = (BranchNode) n;
+              transaction.put(
+                  schema.getColumnFinalizedStateMerkleTrieBranches(),
+                  root,
+                  Bytes.wrap(node.left().hashTreeRoot(), node.right().hashTreeRoot()));
+            } else {
+              throw new IllegalArgumentException("Unknown node type: " + n.getClass());
+            }
+          });
     }
 
     @Override
@@ -242,15 +317,12 @@ public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
       transaction.put(schema.getColumnSlotsByFinalizedStateRoot(), stateRoot, slot);
     }
 
-    private void addFinalizedState(final BeaconState state) {
-      transaction.put(schema.getColumnFinalizedStatesBySlot(), state.getSlot(), state);
-      lastStateStoredSlot = Optional.of(state.getSlot());
-    }
-
     @Override
     public void commit() {
       // Commit db updates
       transaction.commit();
+      previouslyStoredMerkleLeaves.addAll(newlyStoredMerkleLeaves);
+      previouslyStoredMerkleBranches.addAll(newlyStoredMerkleBranches);
       close();
     }
 

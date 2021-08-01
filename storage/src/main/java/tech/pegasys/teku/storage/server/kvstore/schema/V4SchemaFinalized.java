@@ -15,35 +15,41 @@ package tech.pegasys.teku.storage.server.kvstore.schema;
 
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.BLOCK_ROOTS_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.BYTES32_SERIALIZER;
+import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.BYTES_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.UINT64_SERIALIZER;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer;
 
 public class V4SchemaFinalized implements SchemaFinalized {
   private static final KvStoreColumn<Bytes32, UInt64> SLOTS_BY_FINALIZED_ROOT =
       KvStoreColumn.create(1, BYTES32_SERIALIZER, UINT64_SERIALIZER);
   private final KvStoreColumn<UInt64, SignedBeaconBlock> finalizedBlocksBySlot;
-  private final KvStoreColumn<UInt64, BeaconState> finalizedStatesBySlot;
+  private final KvStoreColumn<UInt64, Bytes32> finalizedStateRootsBySlot;
   private final KvStoreColumn<Bytes32, SignedBeaconBlock> nonCanonicalBlocksByRoot;
   private static final KvStoreColumn<Bytes32, UInt64> SLOTS_BY_FINALIZED_STATE_ROOT =
       KvStoreColumn.create(4, BYTES32_SERIALIZER, UINT64_SERIALIZER);
   private static final KvStoreColumn<UInt64, Set<Bytes32>> NON_CANONICAL_BLOCK_ROOTS_BY_SLOT =
       KvStoreColumn.create(6, UINT64_SERIALIZER, BLOCK_ROOTS_SERIALIZER);
 
+  private static final KvStoreColumn<Bytes32, Bytes> finalizedStateMerkleTrieLeaves =
+      KvStoreColumn.create(7, BYTES32_SERIALIZER, BYTES_SERIALIZER);
+
+  private static final KvStoreColumn<Bytes32, Bytes> finalizedStateMerkleTrieBranches =
+      KvStoreColumn.create(8, BYTES32_SERIALIZER, BYTES_SERIALIZER);
+
   private V4SchemaFinalized(final Spec spec) {
     finalizedBlocksBySlot =
         KvStoreColumn.create(
             2, UINT64_SERIALIZER, KvStoreSerializer.createSignedBlockSerializer(spec));
-    this.finalizedStatesBySlot =
-        KvStoreColumn.create(3, UINT64_SERIALIZER, KvStoreSerializer.createStateSerializer(spec));
+    this.finalizedStateRootsBySlot = KvStoreColumn.create(3, UINT64_SERIALIZER, BYTES32_SERIALIZER);
     nonCanonicalBlocksByRoot =
         KvStoreColumn.create(
             5, BYTES32_SERIALIZER, KvStoreSerializer.createSignedBlockSerializer(spec));
@@ -64,8 +70,18 @@ public class V4SchemaFinalized implements SchemaFinalized {
   }
 
   @Override
-  public KvStoreColumn<UInt64, BeaconState> getColumnFinalizedStatesBySlot() {
-    return finalizedStatesBySlot;
+  public KvStoreColumn<UInt64, Bytes32> getColumnFinalizedStateRootsBySlot() {
+    return finalizedStateRootsBySlot;
+  }
+
+  @Override
+  public KvStoreColumn<Bytes32, Bytes> getColumnFinalizedStateMerkleTrieLeaves() {
+    return finalizedStateMerkleTrieLeaves;
+  }
+
+  @Override
+  public KvStoreColumn<Bytes32, Bytes> getColumnFinalizedStateMerkleTrieBranches() {
+    return finalizedStateMerkleTrieBranches;
   }
 
   @Override

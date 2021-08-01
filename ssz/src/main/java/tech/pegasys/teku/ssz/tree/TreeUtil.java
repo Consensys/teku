@@ -16,17 +16,19 @@ package tech.pegasys.teku.ssz.tree;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.tree.TreeNodeImpl.BranchNodeImpl;
 import tech.pegasys.teku.ssz.tree.TreeNodeImpl.LeafNodeImpl;
 
 /** Misc Backing binary tree utils */
 public class TreeUtil {
 
-  static class ZeroLeafNode extends LeafNodeImpl {
+  public static class ZeroLeafNode extends LeafNodeImpl {
     public ZeroLeafNode(int size) {
       super(Bytes.wrap(new byte[size]));
     }
@@ -37,12 +39,20 @@ public class TreeUtil {
     }
   }
 
-  private static class ZeroBranchNode extends BranchNodeImpl {
+  public static class ZeroBranchNode extends BranchNodeImpl {
     private final int height;
 
     public ZeroBranchNode(TreeNode left, TreeNode right, int height) {
       super(left, right);
       this.height = height;
+    }
+
+    @Override
+    public boolean iterate(
+        final long thisGeneralizedIndex,
+        final long startGeneralizedIndex,
+        final TreeVisitor visitor) {
+      return true;
     }
 
     @Override
@@ -53,13 +63,18 @@ public class TreeUtil {
 
   @VisibleForTesting public static final TreeNode[] ZERO_TREES;
 
+  public static final ImmutableMap<Bytes32, TreeNode> ZERO_TREES_BY_ROOT;
+
   static {
+    final ImmutableMap.Builder<Bytes32, TreeNode> builder = ImmutableMap.builder();
     ZERO_TREES = new TreeNode[64];
     ZERO_TREES[0] = LeafNode.EMPTY_LEAF;
+    builder.put(ZERO_TREES[0].hashTreeRoot(), ZERO_TREES[0]);
     for (int i = 1; i < ZERO_TREES.length; i++) {
       ZERO_TREES[i] = new ZeroBranchNode(ZERO_TREES[i - 1], ZERO_TREES[i - 1], i);
-      ZERO_TREES[i].hashTreeRoot(); // pre-cache
+      builder.put(ZERO_TREES[i].hashTreeRoot(), ZERO_TREES[i]);
     }
+    ZERO_TREES_BY_ROOT = builder.build();
   }
 
   public static int bitsCeilToBytes(int bits) {
@@ -154,6 +169,26 @@ public class TreeUtil {
 
   public static int treeDepth(long maxChunks) {
     return Long.bitCount(nextPowerOf2(maxChunks) - 1);
+  }
+
+  /**
+   * Iterates but not descending into zero trees since they are uninteresting and excluding them
+   * saves iterating through vast numbers of nodes in the validator registry.
+   */
+  public static void iterateNonZero(final TreeNode node, final Consumer<TreeNode> visitor) {
+    final TreeNode zeroNode = ZERO_TREES_BY_ROOT.get(node.hashTreeRoot());
+    if (zeroNode != null) {
+      visitor.accept(zeroNode);
+    } else if (node instanceof LeafDataNode) {
+      visitor.accept(node);
+    } else if (node instanceof BranchNode) {
+      visitor.accept(node);
+      final BranchNode branch = (BranchNode) node;
+      iterateNonZero(branch.left(), visitor);
+      iterateNonZero(branch.right(), visitor);
+    } else {
+      throw new IllegalArgumentException("Unrecognized node type: " + node.getClass());
+    }
   }
 
   /**

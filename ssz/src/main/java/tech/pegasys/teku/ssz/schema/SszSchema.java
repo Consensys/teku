@@ -13,7 +13,9 @@
 
 package tech.pegasys.teku.ssz.schema;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszReader;
@@ -49,6 +51,10 @@ public interface SszSchema<SszDataT extends SszData> extends SszType {
    */
   SszDataT createFromBackingNode(TreeNode node);
 
+  default TreeNode loadBackingNodes(BackingNodeSource source, Bytes32 rootHash) {
+    throw new UnsupportedOperationException("Not implemented");
+  }
+
   /** Returns the default immutable structure of this scheme */
   default SszDataT getDefault() {
     return createFromBackingNode(getDefaultTree());
@@ -70,5 +76,11 @@ public interface SszSchema<SszDataT extends SszData> extends SszType {
 
   default SszDataT sszDeserialize(Bytes ssz) throws SszDeserializeException {
     return sszDeserialize(SszReader.fromBytes(ssz));
+  }
+
+  interface BackingNodeSource {
+    Pair<Bytes32, Bytes32> getBranchData(Bytes32 root);
+
+    Bytes getLeafData(Bytes32 root);
   }
 }

@@ -24,6 +24,8 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.SszContainer;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.schema.SszContainerSchema;
@@ -33,6 +35,8 @@ import tech.pegasys.teku.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
+import tech.pegasys.teku.ssz.tree.BranchNode;
+import tech.pegasys.teku.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 import tech.pegasys.teku.ssz.tree.TreeUtil;
 
@@ -153,6 +157,33 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
 
   @Override
   public abstract C createFromBackingNode(TreeNode node);
+
+  @Override
+  public TreeNode loadBackingNodes(final BackingNodeSource source, final Bytes32 rootHash) {
+    return loadBackingNodes(source, rootHash, GIndexUtil.SELF_G_INDEX, treeDepth());
+  }
+
+  private TreeNode loadBackingNodes(
+      final BackingNodeSource source,
+      final Bytes32 rootHash,
+      final long generalizedIndex,
+      final int depth) {
+    if (TreeUtil.ZERO_TREES_BY_ROOT.containsKey(rootHash)) {
+      return getDefaultTree().get(generalizedIndex);
+    }
+    if (depth == 0) {
+      // Load leaf data
+      final int childIndex = GIndexUtil.gIdxGetChildIndex(generalizedIndex, treeDepth());
+      final SszSchema<?> childSchema = getChildSchema(childIndex);
+      return childSchema.loadBackingNodes(source, rootHash);
+    }
+    final Pair<Bytes32, Bytes32> branch = source.getBranchData(rootHash);
+    return BranchNode.create(
+        loadBackingNodes(
+            source, branch.getLeft(), GIndexUtil.gIdxLeftGIndex(generalizedIndex), depth - 1),
+        loadBackingNodes(
+            source, branch.getRight(), GIndexUtil.gIdxRightGIndex(generalizedIndex), depth - 1));
+  }
 
   @Override
   public long getMaxLength() {

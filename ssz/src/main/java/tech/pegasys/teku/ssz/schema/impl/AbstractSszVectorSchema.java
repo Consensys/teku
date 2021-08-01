@@ -17,9 +17,12 @@ import static java.util.Collections.emptyList;
 import static tech.pegasys.teku.ssz.tree.TreeUtil.bitsCeilToBytes;
 
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.SszVector;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
@@ -31,6 +34,8 @@ import tech.pegasys.teku.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
+import tech.pegasys.teku.ssz.tree.BranchNode;
+import tech.pegasys.teku.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.ssz.tree.LeafNode;
 import tech.pegasys.teku.ssz.tree.SszSuperNode;
 import tech.pegasys.teku.ssz.tree.TreeNode;
@@ -101,6 +106,63 @@ public abstract class AbstractSszVectorSchema<
 
   @Override
   public abstract SszVectorT createFromBackingNode(TreeNode node);
+
+  @Override
+  public TreeNode loadBackingNodes(final BackingNodeSource source, final Bytes32 rootHash) {
+    // TODO: Support super nodes
+    System.out.println("Loading " + getClass().getSimpleName() + " from hash " + rootHash);
+    if (isListBacking) {
+      final Optional<SszSuperNodeHint> sszSuperNodeHint =
+          getHints().getHint(SszSuperNodeHint.class);
+      if (sszSuperNodeHint.isPresent()) {
+        int superNodeDepth = sszSuperNodeHint.get().getDepth();
+
+        int binaryDepth = treeDepth() - superNodeDepth;
+        return loadBackingNodes(
+            source, rootHash, GIndexUtil.SELF_G_INDEX, binaryDepth, OptionalInt.of(superNodeDepth));
+      }
+    }
+    return loadBackingNodes(
+        source, rootHash, GIndexUtil.SELF_G_INDEX, treeDepth(), OptionalInt.empty());
+  }
+
+  private TreeNode loadBackingNodes(
+      final BackingNodeSource source,
+      final Bytes32 rootHash,
+      final long generalizedIndex,
+      final int depth,
+      final OptionalInt superNodeDepth) {
+    if (TreeUtil.ZERO_TREES_BY_ROOT.containsKey(rootHash)) {
+      return getDefaultTree().get(generalizedIndex);
+    }
+    if (depth == 0) {
+      // Load leaf data
+      if (superNodeDepth.isPresent()) {
+        return new SszSuperNode(
+            superNodeDepth.getAsInt(),
+            elementSszSupernodeTemplate.get(),
+            source.getLeafData(rootHash));
+      } else if (getElementSchema().isPrimitive()) {
+        return LeafNode.create(source.getLeafData(rootHash));
+      } else {
+        return getElementSchema().loadBackingNodes(source, rootHash);
+      }
+    }
+    final Pair<Bytes32, Bytes32> branch = source.getBranchData(rootHash);
+    return BranchNode.create(
+        loadBackingNodes(
+            source,
+            branch.getLeft(),
+            GIndexUtil.gIdxLeftGIndex(generalizedIndex),
+            depth - 1,
+            superNodeDepth),
+        loadBackingNodes(
+            source,
+            branch.getRight(),
+            GIndexUtil.gIdxRightGIndex(generalizedIndex),
+            depth - 1,
+            superNodeDepth));
+  }
 
   @Override
   public int getLength() {

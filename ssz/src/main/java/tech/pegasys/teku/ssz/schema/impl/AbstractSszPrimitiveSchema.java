@@ -18,6 +18,7 @@ import static tech.pegasys.teku.ssz.tree.TreeUtil.bitsCeilToBytes;
 
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.SszPrimitive;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchema;
@@ -56,6 +57,16 @@ public abstract class AbstractSszPrimitiveSchema<
   @Override
   public SszDataT createFromBackingNode(TreeNode node) {
     return createFromPackedNode(node, 0);
+  }
+
+  @Override
+  public TreeNode loadBackingNodes(final BackingNodeSource source, final Bytes32 rootHash) {
+    System.out.println("Loading " + getClass().getName() + " from hash " + rootHash);
+    if (rootHash.isZero()) {
+      return getDefaultTree();
+    } else {
+      return LeafNode.create(source.getLeafData(rootHash));
+    }
   }
 
   @Override

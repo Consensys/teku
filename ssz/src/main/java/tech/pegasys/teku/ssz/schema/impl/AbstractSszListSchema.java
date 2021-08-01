@@ -16,7 +16,9 @@ package tech.pegasys.teku.ssz.schema.impl;
 import static tech.pegasys.teku.ssz.tree.TreeUtil.bitsCeilToBytes;
 
 import java.nio.ByteOrder;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.schema.SszListSchema;
@@ -64,6 +66,22 @@ public abstract class AbstractSszListSchema<
 
   @Override
   public abstract SszListT createFromBackingNode(TreeNode node);
+
+  @Override
+  public TreeNode loadBackingNodes(final BackingNodeSource source, final Bytes32 rootHash) {
+    // Lists start with a branch with the data on the left and length on the right
+    final Pair<Bytes32, Bytes32> branchData = source.getBranchData(rootHash);
+    final Bytes32 lengthHash = branchData.getRight();
+    final TreeNode lengthNode;
+    if (lengthHash.isZero()) {
+      lengthNode = toLengthNode(0);
+    } else {
+      lengthNode = LeafNode.create(source.getLeafData(lengthHash));
+    }
+    final TreeNode dataNode =
+        getCompatibleVectorSchema().loadBackingNodes(source, branchData.getLeft());
+    return BranchNode.create(dataNode, lengthNode);
+  }
 
   protected AbstractSszVectorSchema<ElementDataT, ?> getCompatibleVectorSchema() {
     return compatibleVectorSchema;

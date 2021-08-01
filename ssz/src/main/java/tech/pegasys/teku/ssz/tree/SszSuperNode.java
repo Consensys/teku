@@ -15,8 +15,8 @@ package tech.pegasys.teku.ssz.tree;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;

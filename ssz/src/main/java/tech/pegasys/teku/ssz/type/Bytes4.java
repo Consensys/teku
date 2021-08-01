@@ -22,6 +22,7 @@ import org.apache.tuweni.bytes.MutableBytes;
 
 public class Bytes4 {
   public static final int SIZE = 4;
+  public static final Bytes4 ZERO = Bytes4.fromHexString("0x00000000");
 
   private Bytes bytes;
 

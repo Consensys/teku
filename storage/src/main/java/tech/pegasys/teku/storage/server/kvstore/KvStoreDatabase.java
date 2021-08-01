@@ -107,7 +107,7 @@ public class KvStoreDatabase implements Database {
     final V4HotKvStoreDao dao = new V4HotKvStoreDao(hotDb, V4SchemaHot.create(spec));
     final V4FinalizedKvStoreDao finalizedDbDao =
         new V4FinalizedKvStoreDao(
-            finalizedDb, V4SchemaFinalized.create(spec), stateStorageFrequency);
+            spec, finalizedDb, V4SchemaFinalized.create(spec), stateStorageFrequency);
     return new KvStoreDatabase(
         metricsSystem,
         dao,
@@ -131,7 +131,7 @@ public class KvStoreDatabase implements Database {
       final Spec spec) {
     final V4HotKvStoreDao dao = new V4HotKvStoreDao(hotDb, schemaHot);
     final V4FinalizedKvStoreDao finalizedDbDao =
-        new V4FinalizedKvStoreDao(finalizedDb, schemaFinalized, stateStorageFrequency);
+        new V4FinalizedKvStoreDao(spec, finalizedDb, schemaFinalized, stateStorageFrequency);
     return new KvStoreDatabase(
         metricsSystem,
         dao,

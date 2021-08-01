@@ -17,17 +17,21 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public interface SchemaFinalized extends Schema {
   KvStoreColumn<Bytes32, UInt64> getColumnSlotsByFinalizedRoot();
 
   KvStoreColumn<UInt64, SignedBeaconBlock> getColumnFinalizedBlocksBySlot();
 
-  KvStoreColumn<UInt64, BeaconState> getColumnFinalizedStatesBySlot();
+  KvStoreColumn<UInt64, Bytes32> getColumnFinalizedStateRootsBySlot();
+
+  KvStoreColumn<Bytes32, Bytes> getColumnFinalizedStateMerkleTrieLeaves();
+
+  KvStoreColumn<Bytes32, Bytes> getColumnFinalizedStateMerkleTrieBranches();
 
   KvStoreColumn<Bytes32, UInt64> getColumnSlotsByFinalizedStateRoot();
 
@@ -44,7 +48,9 @@ public interface SchemaFinalized extends Schema {
     return Map.of(
         "SLOTS_BY_FINALIZED_ROOT", getColumnSlotsByFinalizedRoot(),
         "FINALIZED_BLOCKS_BY_SLOT", getColumnFinalizedBlocksBySlot(),
-        "FINALIZED_STATES_BY_SLOT", getColumnFinalizedStatesBySlot(),
+        "FINALIZED_STATES_BY_SLOT", getColumnFinalizedStateRootsBySlot(),
+        "FINALIZED_STATE_TREE_LEAVES_BY_ROOT", getColumnFinalizedStateMerkleTrieLeaves(),
+        "FINALIZED_STATE_TREE_BRANCHES_BY_ROOT", getColumnFinalizedStateMerkleTrieBranches(),
         "SLOTS_BY_FINALIZED_STATE_ROOT", getColumnSlotsByFinalizedStateRoot(),
         "NON_CANONICAL_BLOCKS_BY_ROOT", getColumnNonCanonicalBlocksByRoot(),
         "NON_CANONICAL_BLOCK_ROOTS_BY_SLOT", getColumnNonCanonicalRootsBySlot());
