@@ -73,14 +73,14 @@ public class SyncCommitteeGossipAcceptanceTest extends AcceptanceTestBase {
 
     // primary node has validators 1-7, expect gossip from aggregators 8-15 coming through
     assertThat(
-            primaryNode.getContributionAndProofEvents().stream()
-                .filter(proof -> proof.message.aggregatorIndex.isGreaterThanOrEqualTo(8))
+            primaryNode.getContributionAndProofAggregators().stream()
+                .filter(aggregatorIndex -> aggregatorIndex.isGreaterThanOrEqualTo(8))
                 .count())
         .isGreaterThan(0);
     // secondary node has remote validators 8-15, expect gossip from aggregators 1-7
     assertThat(
-            secondaryNode.getContributionAndProofEvents().stream()
-                .filter(proof -> proof.message.aggregatorIndex.isLessThan(8))
+            secondaryNode.getContributionAndProofAggregators().stream()
+                .filter(aggregatorIndex -> aggregatorIndex.isLessThan(8))
                 .count())
         .isGreaterThan(0);
   }

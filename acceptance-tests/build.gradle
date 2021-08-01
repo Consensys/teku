@@ -1,7 +1,6 @@
 dependencies {
   acceptanceTestImplementation project(":bls")
   acceptanceTestImplementation project(':infrastructure:time')
-  acceptanceTestImplementation project(':data:serializer')
 
   testFixturesImplementation project(':bls')
   testFixturesImplementation project(':data:provider')
