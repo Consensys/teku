@@ -140,7 +140,7 @@ public class TekuNode extends Node {
     maybeEventStreamListener = Optional.of(new EventStreamListener(getEventUrl(eventTypes)));
   }
 
-  public List<UInt64> getContributionAndProofAggregators() {
+  public List<SignedContributionAndProof> getContributionAndProofEvents() {
     if (maybeEventStreamListener.isEmpty()) {
       return Collections.emptyList();
     }
@@ -150,7 +150,6 @@ public class TekuNode extends Node {
                 packedMessage.getEvent().equals(EventType.contribution_and_proof.name()))
         .map(this::optionalProof)
         .flatMap(Optional::stream)
-        .map(proof -> proof.message.aggregatorIndex)
         .collect(Collectors.toList());
   }
 
