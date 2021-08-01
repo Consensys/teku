@@ -14,7 +14,6 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static java.util.Arrays.asList;
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
@@ -23,8 +22,8 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_SERVICE_UNAVA
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 
-import com.fasterxml.jackson.databind.JsonMappingException;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
@@ -80,13 +79,13 @@ public class PostSubscribeToBeaconCommitteeSubnet extends AbstractHandler {
   public void handle(final Context ctx) throws Exception {
     try {
       final BeaconCommitteeSubscriptionRequest[] request =
-          jsonProvider.jsonToObject(ctx.body(), BeaconCommitteeSubscriptionRequest[].class);
+          parseRequestBody(ctx.body(), BeaconCommitteeSubscriptionRequest[].class);
 
       provider.subscribeToBeaconCommittee(asList(request));
       ctx.status(SC_OK);
-    } catch (final JsonMappingException e) {
-      ctx.status(SC_BAD_REQUEST);
+    } catch (IllegalArgumentException e) {
       ctx.result(BadRequest.badRequest(jsonProvider, e.getMessage()));
+      ctx.status(SC_BAD_REQUEST);
     }
   }
 }
