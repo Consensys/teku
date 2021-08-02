@@ -42,9 +42,12 @@ class EventSourceHandler implements EventHandler {
   private final Counter invalidEventCounter;
   private final Counter timeoutCounter;
   private final Counter errorCounter;
+  private final boolean generateEarlyAttestations;
 
   public EventSourceHandler(
-      final ValidatorTimingChannel validatorTimingChannel, final MetricsSystem metricsSystem) {
+      final ValidatorTimingChannel validatorTimingChannel,
+      final MetricsSystem metricsSystem,
+      final boolean generateEarlyAttestations) {
     this.validatorTimingChannel = validatorTimingChannel;
     invalidEventCounter =
         metricsSystem.createCounter(
@@ -61,6 +64,7 @@ class EventSourceHandler implements EventHandler {
     disconnectCounter = eventSourceMetrics.labels("disconnect");
     timeoutCounter = eventSourceMetrics.labels("timeout");
     errorCounter = eventSourceMetrics.labels("error");
+    this.generateEarlyAttestations = generateEarlyAttestations;
   }
 
   @Override
@@ -107,7 +111,9 @@ class EventSourceHandler implements EventHandler {
         headEvent.previousDutyDependentRoot,
         headEvent.currentDutyDependentRoot,
         headEvent.block);
-    validatorTimingChannel.onAttestationCreationDue(headEvent.slot);
+    if (generateEarlyAttestations) {
+      validatorTimingChannel.onAttestationCreationDue(headEvent.slot);
+    }
   }
 
   private void handleChainReorgEvent(final MessageEvent messageEvent)

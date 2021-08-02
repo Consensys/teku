@@ -51,7 +51,8 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
       final AsyncRunner asyncRunner,
       final URI beaconNodeApiEndpoint,
       final Spec spec,
-      final boolean useIndependentAttestationTiming) {
+      final boolean useIndependentAttestationTiming,
+      final boolean generateEarlyAttestations) {
 
     final int readTimeoutInSeconds = getReadTimeoutInSeconds(spec, useIndependentAttestationTiming);
     final OkHttpClient.Builder httpClientBuilder =
@@ -84,7 +85,8 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
                 useIndependentAttestationTiming,
                 spec),
             validatorTimingChannel,
-            serviceConfig.getMetricsSystem());
+            serviceConfig.getMetricsSystem(),
+            generateEarlyAttestations);
 
     return new RemoteBeaconNodeApi(beaconChainEventAdapter, validatorApiChannel);
   }

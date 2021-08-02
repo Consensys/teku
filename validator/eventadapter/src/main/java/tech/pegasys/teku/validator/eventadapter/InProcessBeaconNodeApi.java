@@ -44,6 +44,7 @@ public class InProcessBeaconNodeApi implements BeaconNodeApi {
       final ServiceConfig services,
       final AsyncRunner asyncRunner,
       final boolean useIndependentAttestationTiming,
+      final boolean generateEarlyAttestations,
       final Spec spec) {
     final MetricsSystem metricsSystem = services.getMetricsSystem();
     final EventChannels eventChannels = services.getEventChannels();
@@ -62,7 +63,10 @@ public class InProcessBeaconNodeApi implements BeaconNodeApi {
             spec);
     final BeaconChainEventAdapter beaconChainEventAdapter =
         new IndependentTimerEventChannelEventAdapter(
-            eventChannels, timeBasedEventAdapter, validatorTimingChannel);
+            eventChannels,
+            generateEarlyAttestations,
+            timeBasedEventAdapter,
+            validatorTimingChannel);
     return new InProcessBeaconNodeApi(validatorApiChannel, beaconChainEventAdapter);
   }
 
