@@ -55,7 +55,9 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
                 + EventType.chain_reorg);
     this.eventSource =
         new EventSource.Builder(
-                new EventSourceHandler(validatorTimingChannel, metricsSystem, generateEarlyAttestations), eventSourceUrl)
+                new EventSourceHandler(
+                    validatorTimingChannel, metricsSystem, generateEarlyAttestations),
+                eventSourceUrl)
             .maxReconnectTime(Duration.ofSeconds(Constants.SECONDS_PER_SLOT))
             .client(okHttpClient)
             .requestTransformer(request -> applyBasicAuthentication(eventSourceUrl, request))

@@ -20,7 +20,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.launchdarkly.eventsource.MessageEvent;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -135,7 +134,8 @@ class EventSourceHandlerTest {
             false,
             previousDutyDependentRoot,
             currentDutyDependentRoot);
-    onTimeHandler.onMessage(EventType.head.name(), new MessageEvent(jsonProvider.objectToJSON(event)));
+    onTimeHandler.onMessage(
+        EventType.head.name(), new MessageEvent(jsonProvider.objectToJSON(event)));
 
     verify(validatorTimingChannel)
         .onHeadUpdate(
