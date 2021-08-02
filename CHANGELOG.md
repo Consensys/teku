@@ -15,8 +15,8 @@ For information on changes in released versions of Teku, see the [releases page]
 - Docker images now include `curl` to support adding health checks.
 
 ### Bug Fixes
-- Fixed `ConcurrentModificationException` in validator performance reporting.
-- Upgraded the discovery library, providing better memory management and standards compliance. 
+- Fixed `ConcurrentModificationException` and `NoSuchElementException` in validator performance reporting.
+- Upgraded the discovery library, providing better memory management and standards compliance.
 
 ### Experimental: New Altair REST APIs
 - implement POST `/eth/v1/beacon/pool/sync_committees` to allow validators to submit sync committee signatures to the beacon node.

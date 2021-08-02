@@ -74,7 +74,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
   private final SyncCommitteePerformanceTracker syncCommitteePerformanceTracker;
   private final Spec spec;
 
-  private Optional<UInt64> nodeStartEpoch = Optional.empty();
+  private volatile Optional<UInt64> nodeStartEpoch = Optional.empty();
   private final AtomicReference<UInt64> latestAnalyzedEpoch = new AtomicReference<>(UInt64.ZERO);
 
   public DefaultPerformanceTracker(
@@ -101,6 +101,8 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
 
   @Override
   public void onSlot(UInt64 slot) {
+    // Ensure a consistent view as the field is volatile.
+    final Optional<UInt64> nodeStartEpoch = this.nodeStartEpoch;
     if (nodeStartEpoch.isEmpty()) {
       return;
     }
