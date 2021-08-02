@@ -43,7 +43,8 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
       final OkHttpClient okHttpClient,
       final BeaconChainEventAdapter timeBasedEventAdapter,
       final ValidatorTimingChannel validatorTimingChannel,
-      final MetricsSystem metricsSystem) {
+      final MetricsSystem metricsSystem,
+      final boolean generateEarlyAttestations) {
     this.timeBasedEventAdapter = timeBasedEventAdapter;
     final HttpUrl eventSourceUrl =
         baseEndpoint.resolve(
@@ -54,7 +55,7 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
                 + EventType.chain_reorg);
     this.eventSource =
         new EventSource.Builder(
-                new EventSourceHandler(validatorTimingChannel, metricsSystem), eventSourceUrl)
+                new EventSourceHandler(validatorTimingChannel, metricsSystem, generateEarlyAttestations), eventSourceUrl)
             .maxReconnectTime(Duration.ofSeconds(Constants.SECONDS_PER_SLOT))
             .client(okHttpClient)
             .requestTransformer(request -> applyBasicAuthentication(eventSourceUrl, request))
