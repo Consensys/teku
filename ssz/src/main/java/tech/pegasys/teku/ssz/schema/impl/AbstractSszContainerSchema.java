@@ -35,8 +35,8 @@ import tech.pegasys.teku.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
-import tech.pegasys.teku.ssz.tree.BranchNode;
 import tech.pegasys.teku.ssz.tree.GIndexUtil;
+import tech.pegasys.teku.ssz.tree.LazyBranchNode;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 import tech.pegasys.teku.ssz.tree.TreeUtil;
 
@@ -178,11 +178,19 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
       return childSchema.loadBackingNodes(source, rootHash);
     }
     final Pair<Bytes32, Bytes32> branch = source.getBranchData(rootHash);
-    return BranchNode.create(
-        loadBackingNodes(
-            source, branch.getLeft(), GIndexUtil.gIdxLeftGIndex(generalizedIndex), depth - 1),
-        loadBackingNodes(
-            source, branch.getRight(), GIndexUtil.gIdxRightGIndex(generalizedIndex), depth - 1));
+    return new LazyBranchNode(
+        rootHash,
+        branch.getLeft(),
+        branch.getRight(),
+        () ->
+            loadBackingNodes(
+                source, branch.getLeft(), GIndexUtil.gIdxLeftGIndex(generalizedIndex), depth - 1),
+        () ->
+            loadBackingNodes(
+                source,
+                branch.getRight(),
+                GIndexUtil.gIdxRightGIndex(generalizedIndex),
+                depth - 1));
   }
 
   @Override

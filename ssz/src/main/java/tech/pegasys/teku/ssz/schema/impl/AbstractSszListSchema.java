@@ -30,6 +30,7 @@ import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 import tech.pegasys.teku.ssz.tree.BranchNode;
 import tech.pegasys.teku.ssz.tree.GIndexUtil;
+import tech.pegasys.teku.ssz.tree.LazyBranchNode;
 import tech.pegasys.teku.ssz.tree.LeafNode;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 
@@ -72,15 +73,18 @@ public abstract class AbstractSszListSchema<
     // Lists start with a branch with the data on the left and length on the right
     final Pair<Bytes32, Bytes32> branchData = source.getBranchData(rootHash);
     final Bytes32 lengthHash = branchData.getRight();
-    final TreeNode lengthNode;
-    if (lengthHash.isZero()) {
-      lengthNode = toLengthNode(0);
-    } else {
-      lengthNode = LeafNode.create(source.getLeafData(lengthHash));
-    }
-    final TreeNode dataNode =
-        getCompatibleVectorSchema().loadBackingNodes(source, branchData.getLeft());
-    return BranchNode.create(dataNode, lengthNode);
+    return new LazyBranchNode(
+        rootHash,
+        branchData.getLeft(),
+        branchData.getRight(),
+        () -> getCompatibleVectorSchema().loadBackingNodes(source, branchData.getLeft()),
+        () -> {
+          if (lengthHash.isZero()) {
+            return toLengthNode(0);
+          } else {
+            return LeafNode.create(source.getLeafData(lengthHash));
+          }
+        });
   }
 
   protected AbstractSszVectorSchema<ElementDataT, ?> getCompatibleVectorSchema() {

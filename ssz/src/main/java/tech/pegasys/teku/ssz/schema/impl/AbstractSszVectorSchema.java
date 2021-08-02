@@ -34,8 +34,8 @@ import tech.pegasys.teku.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
-import tech.pegasys.teku.ssz.tree.BranchNode;
 import tech.pegasys.teku.ssz.tree.GIndexUtil;
+import tech.pegasys.teku.ssz.tree.LazyBranchNode;
 import tech.pegasys.teku.ssz.tree.LeafNode;
 import tech.pegasys.teku.ssz.tree.SszSuperNode;
 import tech.pegasys.teku.ssz.tree.TreeNode;
@@ -109,8 +109,6 @@ public abstract class AbstractSszVectorSchema<
 
   @Override
   public TreeNode loadBackingNodes(final BackingNodeSource source, final Bytes32 rootHash) {
-    // TODO: Support super nodes
-    System.out.println("Loading " + getClass().getSimpleName() + " from hash " + rootHash);
     if (isListBacking) {
       final Optional<SszSuperNodeHint> sszSuperNodeHint =
           getHints().getHint(SszSuperNodeHint.class);
@@ -149,19 +147,24 @@ public abstract class AbstractSszVectorSchema<
       }
     }
     final Pair<Bytes32, Bytes32> branch = source.getBranchData(rootHash);
-    return BranchNode.create(
-        loadBackingNodes(
-            source,
-            branch.getLeft(),
-            GIndexUtil.gIdxLeftGIndex(generalizedIndex),
-            depth - 1,
-            superNodeDepth),
-        loadBackingNodes(
-            source,
-            branch.getRight(),
-            GIndexUtil.gIdxRightGIndex(generalizedIndex),
-            depth - 1,
-            superNodeDepth));
+    return new LazyBranchNode(
+        rootHash,
+        branch.getLeft(),
+        branch.getRight(),
+        () ->
+            loadBackingNodes(
+                source,
+                branch.getLeft(),
+                GIndexUtil.gIdxLeftGIndex(generalizedIndex),
+                depth - 1,
+                superNodeDepth),
+        () ->
+            loadBackingNodes(
+                source,
+                branch.getRight(),
+                GIndexUtil.gIdxRightGIndex(generalizedIndex),
+                depth - 1,
+                superNodeDepth));
   }
 
   @Override

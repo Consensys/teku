@@ -61,7 +61,6 @@ public abstract class AbstractSszPrimitiveSchema<
 
   @Override
   public TreeNode loadBackingNodes(final BackingNodeSource source, final Bytes32 rootHash) {
-    System.out.println("Loading " + getClass().getName() + " from hash " + rootHash);
     if (rootHash.isZero()) {
       return getDefaultTree();
     } else {
