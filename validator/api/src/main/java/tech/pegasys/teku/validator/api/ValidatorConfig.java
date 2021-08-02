@@ -142,7 +142,7 @@ public class ValidatorConfig {
     return processor.getFilePairs();
   }
 
-  public boolean isGenerateEarlyAttestations() {
+  public boolean generateEarlyAttestations() {
     return generateEarlyAttestations;
   }
 

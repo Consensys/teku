@@ -83,7 +83,7 @@ public class ValidatorClientService extends Service {
     final AsyncRunner asyncRunner = services.createAsyncRunner("validator");
     final boolean useDependentRoots = config.getValidatorConfig().useDependentRoots();
     final boolean generateEarlyAttestations =
-        config.getValidatorConfig().isGenerateEarlyAttestations();
+        config.getValidatorConfig().generateEarlyAttestations();
     final BeaconNodeApi beaconNodeApi =
         config
             .getValidatorConfig()
