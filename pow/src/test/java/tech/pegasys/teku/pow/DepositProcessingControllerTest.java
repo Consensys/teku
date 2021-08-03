@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.pow;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -169,6 +170,28 @@ public class DepositProcessingControllerTest {
     // Second request brings us up to date with the latest block so we notify the block fetcher
     secondDepositsRequest.complete(null);
     verify(eth1BlockFetcher).onInSync(UInt64.valueOf(1010));
+  }
+
+  /**
+   * Can happen if we're still walking forward to find the latest canonical head and have replayed
+   * deposits from storage past the current canonical head
+   */
+  @Test
+  void shouldNotFetchDepositsWhenCanonicalHeadIsBeforeLatestSuccessfullyQueriedBlock() {
+    when(depositFetcher.fetchDepositsInRange(any(), any())).thenReturn(new SafeFuture<>());
+    depositProcessingController.startSubscription(BigInteger.valueOf(10_000));
+    pushLatestCanonicalBlockWithNumber(5000);
+    verifyNoInteractions(depositFetcher);
+  }
+
+  @Test
+  void
+      shouldNotFetchDepositsWhenCanonicalHeadIsBeforeLatestSuccessfullyQueriedBlock_blockByBlockMode() {
+    when(depositFetcher.fetchDepositsInRange(any(), any())).thenReturn(new SafeFuture<>());
+    depositProcessingController.switchToBlockByBlockMode();
+    depositProcessingController.startSubscription(BigInteger.valueOf(10_000));
+    pushLatestCanonicalBlockWithNumber(5000);
+    verifyNoInteractions(depositFetcher);
   }
 
   private void mockBlockForEth1Provider(String blockHash, long blockNumber, long timestamp) {
