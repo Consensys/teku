@@ -81,11 +81,21 @@ public class ValidatorOptions {
       names = {"--Xvalidators-dependent-root-enabled"},
       paramLabel = "<BOOLEAN>",
       description =
-          "Invalidate validator duties based on the dependent root information instead of chain re-org events. Default: false",
+          "Invalidate validator duties based on the dependent root information instead of chain re-org events. Default: true",
       hidden = true,
       fallbackValue = "true",
       arity = "0..1")
   private boolean useDependentRoots = true;
+
+  @Option(
+      names = {"--Xvalidators-early-attestations-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description =
+          "Generate attestations as soon as a block is known, rather than delaying until the attestation is due. Default: true",
+      hidden = true,
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean generateEarlyAttestations = true;
 
   public void configure(TekuConfiguration.Builder builder) {
     if (validatorPerformanceTrackingEnabled != null) {
@@ -107,7 +117,8 @@ public class ValidatorOptions {
                     .graffitiProvider(
                         new FileBackedGraffitiProvider(
                             Optional.ofNullable(graffiti), Optional.ofNullable(graffitiFile)))
-                    .useDependentRoots(useDependentRoots))
+                    .useDependentRoots(useDependentRoots)
+                    .generateEarlyAttestations(generateEarlyAttestations))
         // We don't need to update head for empty slots when using dependent roots
         .store(b -> b.updateHeadForEmptySlots(!useDependentRoots));
     validatorKeysOptions.configure(builder);
