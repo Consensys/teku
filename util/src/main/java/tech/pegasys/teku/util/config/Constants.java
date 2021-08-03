@@ -106,9 +106,6 @@ public class Constants {
   public static Bytes DEPOSIT_CONTRACT_ADDRESS =
       Bytes.fromHexString("0x1234567890123456789012345678901234567890");
 
-  // SSZ
-  public static final UInt64 BYTES_PER_LENGTH_OFFSET = UInt64.valueOf(4L);
-
   // Networking
   public static final int GOSSIP_MAX_SIZE = 1048576; // bytes
   public static final int MAX_REQUEST_BLOCKS = 1024;
