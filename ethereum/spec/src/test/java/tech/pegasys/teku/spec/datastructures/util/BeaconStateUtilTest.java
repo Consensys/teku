@@ -23,7 +23,6 @@ import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute
 import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_shuffled_index;
 import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.util.config.Constants.GENESIS_SLOT;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import java.util.ArrayList;
@@ -45,6 +44,7 @@ import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
@@ -121,9 +121,7 @@ class BeaconStateUtilTest {
             depositData.getAmount());
     Bytes32 domain =
         BeaconStateUtil.get_domain(
-            createBeaconState(),
-            Constants.DOMAIN_DEPOSIT,
-            UInt64.fromLongBits(Constants.GENESIS_EPOCH));
+            createBeaconState(), Constants.DOMAIN_DEPOSIT, SpecConfig.GENESIS_EPOCH);
     Bytes signing_root = compute_signing_root(depositMessage, domain);
 
     assertTrue(BLS.verify(pubkey, signing_root, depositData.getSignature()));
@@ -141,9 +139,7 @@ class BeaconStateUtilTest {
             depositData.getAmount());
     Bytes32 domain =
         BeaconStateUtil.get_domain(
-            createBeaconState(),
-            Constants.DOMAIN_DEPOSIT,
-            UInt64.fromLongBits(Constants.GENESIS_EPOCH));
+            createBeaconState(), Constants.DOMAIN_DEPOSIT, SpecConfig.GENESIS_EPOCH);
     Bytes signing_root = compute_signing_root(depositMessage, domain);
 
     assertFalse(BLS.verify(pubkey, signing_root, depositData.getSignature()));
@@ -172,9 +168,8 @@ class BeaconStateUtilTest {
   @Test
   void succeedsWhenGetPreviousSlotReturnsGenesisSlot1() {
     BeaconState beaconState =
-        createBeaconState().updated(state -> state.setSlot(UInt64.valueOf(GENESIS_SLOT)));
-    assertEquals(
-        UInt64.valueOf(Constants.GENESIS_EPOCH), BeaconStateUtil.get_previous_epoch(beaconState));
+        createBeaconState().updated(state -> state.setSlot(SpecConfig.GENESIS_SLOT));
+    assertEquals(SpecConfig.GENESIS_EPOCH, BeaconStateUtil.get_previous_epoch(beaconState));
   }
 
   @Test
@@ -182,9 +177,8 @@ class BeaconStateUtilTest {
     BeaconState beaconState =
         createBeaconState()
             .updated(
-                state -> state.setSlot(UInt64.valueOf(GENESIS_SLOT + Constants.SLOTS_PER_EPOCH)));
-    assertEquals(
-        UInt64.valueOf(Constants.GENESIS_EPOCH), BeaconStateUtil.get_previous_epoch(beaconState));
+                state -> state.setSlot(SpecConfig.GENESIS_SLOT.plus(Constants.SLOTS_PER_EPOCH)));
+    assertEquals(SpecConfig.GENESIS_EPOCH, BeaconStateUtil.get_previous_epoch(beaconState));
   }
 
   @Test
@@ -193,18 +187,15 @@ class BeaconStateUtilTest {
         createBeaconState()
             .updated(
                 state ->
-                    state.setSlot(UInt64.valueOf(GENESIS_SLOT + 2 * Constants.SLOTS_PER_EPOCH)));
-    assertEquals(
-        UInt64.valueOf(Constants.GENESIS_EPOCH + 1),
-        BeaconStateUtil.get_previous_epoch(beaconState));
+                    state.setSlot(SpecConfig.GENESIS_SLOT.plus(2 * Constants.SLOTS_PER_EPOCH)));
+    assertEquals(SpecConfig.GENESIS_EPOCH.plus(1), BeaconStateUtil.get_previous_epoch(beaconState));
   }
 
   @Test
   void succeedsWhenGetNextEpochReturnsTheEpochPlusOne() {
     BeaconState beaconState =
-        createBeaconState().updated(state -> state.setSlot(UInt64.valueOf(GENESIS_SLOT)));
-    assertEquals(
-        UInt64.valueOf(Constants.GENESIS_EPOCH + 1), BeaconStateUtil.get_next_epoch(beaconState));
+        createBeaconState().updated(state -> state.setSlot(SpecConfig.GENESIS_SLOT));
+    assertEquals(SpecConfig.GENESIS_EPOCH.plus(1), BeaconStateUtil.get_next_epoch(beaconState));
   }
 
   @Test
@@ -369,7 +360,7 @@ class BeaconStateUtilTest {
                   new Fork(
                       Constants.GENESIS_FORK_VERSION,
                       Constants.GENESIS_FORK_VERSION,
-                      UInt64.valueOf(Constants.GENESIS_EPOCH)));
+                      SpecConfig.GENESIS_EPOCH));
 
               List<Validator> validatorList =
                   new ArrayList<>(

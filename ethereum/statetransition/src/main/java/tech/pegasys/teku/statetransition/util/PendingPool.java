@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.statetransition.util;
 
+import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
+
 import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -50,7 +52,6 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
   private static final UInt64 DEFAULT_HISTORICAL_SLOT_TOLERANCE =
       UInt64.valueOf(Constants.SLOTS_PER_EPOCH * 10);
   private static final int DEFAULT_MAX_ITEMS = 5000;
-  private static final UInt64 GENESIS_SLOT = UInt64.valueOf(Constants.GENESIS_SLOT);
 
   private final Spec spec;
   private final Subscribers<RequiredBlockRootSubscriber> requiredBlockRootSubscribers =
@@ -72,7 +73,7 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
   private final Function<T, UInt64> targetSlotFunction;
 
   private volatile UInt64 currentSlot = UInt64.ZERO;
-  private volatile UInt64 latestFinalizedSlot = UInt64.valueOf(Constants.GENESIS_SLOT);
+  private volatile UInt64 latestFinalizedSlot = GENESIS_SLOT;
 
   PendingPool(
       final Spec spec,

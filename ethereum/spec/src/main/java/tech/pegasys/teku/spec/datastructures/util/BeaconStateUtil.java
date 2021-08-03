@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil.decrease_balance;
 import static tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 import static tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil.increase_balance;
@@ -22,8 +23,6 @@ import static tech.pegasys.teku.util.config.Constants.DOMAIN_BEACON_PROPOSER;
 import static tech.pegasys.teku.util.config.Constants.EFFECTIVE_BALANCE_INCREMENT;
 import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_HISTORICAL_VECTOR;
 import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_SLASHINGS_VECTOR;
-import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
-import static tech.pegasys.teku.util.config.Constants.GENESIS_EPOCH;
 import static tech.pegasys.teku.util.config.Constants.MAX_COMMITTEES_PER_SLOT;
 import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
 import static tech.pegasys.teku.util.config.Constants.MAX_SEED_LOOKAHEAD;
@@ -48,6 +47,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkData;
 import tech.pegasys.teku.spec.datastructures.state.SigningData;
@@ -197,8 +197,8 @@ public class BeaconStateUtil {
   @Deprecated
   public static UInt64 get_previous_epoch(BeaconState state) {
     UInt64 current_epoch = get_current_epoch(state);
-    return current_epoch.equals(UInt64.valueOf(GENESIS_EPOCH))
-        ? UInt64.valueOf(GENESIS_EPOCH)
+    return current_epoch.equals(SpecConfig.GENESIS_EPOCH)
+        ? SpecConfig.GENESIS_EPOCH
         : current_epoch.minus(UInt64.ONE);
   }
 

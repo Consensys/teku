@@ -21,6 +21,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.FutureUtil.ignoreFuture;
+import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,7 +46,6 @@ import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityFactory;
 
 @SuppressWarnings("FutureReturnValueIgnored")
@@ -89,8 +89,7 @@ public class BlockManagerTest {
           futureBlocks,
           mock(BlockValidator.class));
 
-  private final UInt64 genesisSlot = UInt64.valueOf(Constants.GENESIS_SLOT);
-  private UInt64 currentSlot = genesisSlot;
+  private UInt64 currentSlot = GENESIS_SLOT;
 
   @BeforeEach
   public void setup() {
@@ -117,7 +116,7 @@ public class BlockManagerTest {
 
   @Test
   public void shouldImport() throws Exception {
-    final UInt64 nextSlot = genesisSlot.plus(UInt64.ONE);
+    final UInt64 nextSlot = GENESIS_SLOT.plus(UInt64.ONE);
     final SignedBeaconBlock nextBlock = localChain.createBlockAtSlot(nextSlot);
     incrementSlot();
 
@@ -127,7 +126,7 @@ public class BlockManagerTest {
 
   @Test
   public void shouldPutUnattachedBlockToPending() throws Exception {
-    final UInt64 nextSlot = genesisSlot.plus(UInt64.ONE);
+    final UInt64 nextSlot = GENESIS_SLOT.plus(UInt64.ONE);
     final UInt64 nextNextSlot = nextSlot.plus(UInt64.ONE);
     // Create 2 blocks
     remoteChain.createAndImportBlockAtSlot(nextSlot);
@@ -155,7 +154,7 @@ public class BlockManagerTest {
     forwardBlockImportedNotificationsTo(blockManager);
     assertThat(blockManager.start()).isCompleted();
 
-    final UInt64 nextSlot = genesisSlot.plus(UInt64.ONE);
+    final UInt64 nextSlot = GENESIS_SLOT.plus(UInt64.ONE);
     final UInt64 nextNextSlot = nextSlot.plus(UInt64.ONE);
     // Create 2 blocks
     remoteChain.createAndImportBlockAtSlot(nextSlot);
@@ -183,7 +182,7 @@ public class BlockManagerTest {
 
   @Test
   public void onGossipedBlock_futureBlock() throws Exception {
-    final UInt64 nextSlot = genesisSlot.plus(UInt64.ONE);
+    final UInt64 nextSlot = GENESIS_SLOT.plus(UInt64.ONE);
     final SignedBeaconBlock nextBlock = remoteChain.createAndImportBlockAtSlot(nextSlot);
 
     blockManager.importBlock(nextBlock).join();
@@ -194,7 +193,7 @@ public class BlockManagerTest {
 
   @Test
   public void onGossipedBlock_unattachedFutureBlock() throws Exception {
-    final UInt64 nextSlot = genesisSlot.plus(UInt64.ONE);
+    final UInt64 nextSlot = GENESIS_SLOT.plus(UInt64.ONE);
     final UInt64 nextNextSlot = nextSlot.plus(UInt64.ONE);
     // Create 2 blocks
     remoteChain.createAndImportBlockAtSlot(nextSlot);
@@ -209,7 +208,7 @@ public class BlockManagerTest {
 
   @Test
   public void onProposedBlock_shouldImport() throws Exception {
-    final UInt64 nextSlot = genesisSlot.plus(UInt64.ONE);
+    final UInt64 nextSlot = GENESIS_SLOT.plus(UInt64.ONE);
     final SignedBeaconBlock nextBlock = localChain.createBlockAtSlot(nextSlot);
     incrementSlot();
 
@@ -219,7 +218,7 @@ public class BlockManagerTest {
 
   @Test
   public void onProposedBlock_futureBlock() throws Exception {
-    final UInt64 nextSlot = genesisSlot.plus(UInt64.ONE);
+    final UInt64 nextSlot = GENESIS_SLOT.plus(UInt64.ONE);
     final SignedBeaconBlock nextBlock = remoteChain.createAndImportBlockAtSlot(nextSlot);
 
     assertThat(blockManager.importBlock(nextBlock)).isCompleted();
@@ -319,7 +318,7 @@ public class BlockManagerTest {
     // Update local slot to match the first new block
     incrementSlot();
     for (int i = 0; i < blockCount; i++) {
-      final UInt64 nextSlot = genesisSlot.plus(i + 1);
+      final UInt64 nextSlot = GENESIS_SLOT.plus(i + 1);
       blocks.add(remoteChain.createAndImportBlockAtSlot(nextSlot));
     }
 
