@@ -20,7 +20,6 @@ import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute
 import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
 import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
-import static tech.pegasys.teku.util.config.Constants.DOMAIN_BEACON_PROPOSER;
 import static tech.pegasys.teku.util.config.Constants.MAXIMUM_GOSSIP_CLOCK_DISPARITY;
 import static tech.pegasys.teku.util.config.Constants.VALID_BLOCK_SET_SIZE;
 
@@ -36,6 +35,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -147,7 +147,7 @@ public class BlockValidator {
 
   private boolean blockSignatureIsValidWithRespectToProposerIndex(
       SignedBeaconBlock block, BeaconState postState) {
-    final Bytes32 domain = get_domain(postState, DOMAIN_BEACON_PROPOSER);
+    final Bytes32 domain = get_domain(postState, Domain.BEACON_PROPOSER);
     final Bytes signing_root = compute_signing_root(block.getMessage(), domain);
     final BLSSignature signature = block.getSignature();
 

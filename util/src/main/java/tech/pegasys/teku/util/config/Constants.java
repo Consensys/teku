@@ -25,10 +25,6 @@ public class Constants {
   public static final ImmutableList<String> NETWORK_DEFINITIONS =
       ImmutableList.of("mainnet", "minimal", "swift", "pyrmont", "prater", "less-swift");
 
-  // Non-configurable constants
-  @Deprecated public static final long GENESIS_SLOT = 0;
-  @Deprecated public static final long GENESIS_EPOCH = 0;
-  @Deprecated public static final UInt64 FAR_FUTURE_EPOCH = UInt64.MAX_VALUE;
   @Deprecated public static final UInt64 BASE_REWARDS_PER_EPOCH = UInt64.valueOf(4);
   @Deprecated public static final int DEPOSIT_CONTRACT_TREE_DEPTH = 32;
   @Deprecated public static final int JUSTIFICATION_BITS_LENGTH = 4;
@@ -38,27 +34,6 @@ public class Constants {
   @Deprecated public static final int TARGET_AGGREGATORS_PER_COMMITTEE = 16;
   @Deprecated public static final int RANDOM_SUBNETS_PER_VALIDATOR = 1;
   @Deprecated public static final int EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION = 256;
-
-  @Deprecated
-  public static final Bytes4 DOMAIN_BEACON_PROPOSER = new Bytes4(Bytes.fromHexString("0x00000000"));
-
-  @Deprecated
-  public static final Bytes4 DOMAIN_BEACON_ATTESTER = new Bytes4(Bytes.fromHexString("0x01000000"));
-
-  @Deprecated
-  public static final Bytes4 DOMAIN_RANDAO = new Bytes4(Bytes.fromHexString("0x02000000"));
-
-  @Deprecated
-  public static final Bytes4 DOMAIN_DEPOSIT = new Bytes4(Bytes.fromHexString("0x03000000"));
-
-  @Deprecated
-  public static final Bytes4 DOMAIN_VOLUNTARY_EXIT = new Bytes4(Bytes.fromHexString("0x04000000"));
-
-  @Deprecated
-  public static final Bytes4 DOMAIN_SELECTION_PROOF = Bytes4.fromHexString("0x05000000");
-
-  @Deprecated
-  public static final Bytes4 DOMAIN_AGGREGATE_AND_PROOF = Bytes4.fromHexString("0x06000000");
 
   // Misc
   @Deprecated public static UInt64 ETH1_FOLLOW_DISTANCE = UInt64.valueOf(1024);
@@ -130,9 +105,6 @@ public class Constants {
   @Deprecated
   public static Bytes DEPOSIT_CONTRACT_ADDRESS =
       Bytes.fromHexString("0x1234567890123456789012345678901234567890");
-
-  // SSZ
-  public static final UInt64 BYTES_PER_LENGTH_OFFSET = UInt64.valueOf(4L);
 
   // Networking
   public static final int GOSSIP_MAX_SIZE = 1048576; // bytes

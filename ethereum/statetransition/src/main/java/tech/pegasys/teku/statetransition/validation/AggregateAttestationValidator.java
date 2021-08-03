@@ -20,7 +20,6 @@ import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute
 import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ignore;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
-import static tech.pegasys.teku.util.config.Constants.DOMAIN_SELECTION_PROOF;
 import static tech.pegasys.teku.util.config.Constants.VALID_AGGREGATE_SET_SIZE;
 
 import java.util.List;
@@ -40,6 +39,7 @@ import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -48,7 +48,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BatchSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.config.Constants;
 
 public class AggregateAttestationValidator {
   private static final Logger LOG = LogManager.getLogger();
@@ -183,7 +182,7 @@ public class AggregateAttestationValidator {
     final AggregateAndProof aggregateAndProof = signedAggregate.getMessage();
     final Bytes32 domain =
         get_domain(
-            Constants.DOMAIN_AGGREGATE_AND_PROOF,
+            Domain.AGGREGATE_AND_PROOF,
             compute_epoch_at_slot(aggregateAndProof.getAggregate().getData().getSlot()),
             state.getFork(),
             state.getGenesis_validators_root());
@@ -200,7 +199,7 @@ public class AggregateAttestationValidator {
       final BLSSignature selectionProof) {
     final Bytes32 domain =
         get_domain(
-            DOMAIN_SELECTION_PROOF,
+            Domain.SELECTION_PROOF,
             compute_epoch_at_slot(aggregateSlot),
             state.getFork(),
             state.getGenesis_validators_root());

@@ -16,7 +16,6 @@ package tech.pegasys.teku.protoarray;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.util.config.Constants.GENESIS_EPOCH;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -31,6 +30,7 @@ import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -43,7 +43,7 @@ abstract class AbstractBlockMetadataStoreTest {
   private final ChainBuilder chainBuilder = ChainBuilder.create(spec);
   private final SignedBlockAndState genesis = chainBuilder.generateGenesis();
   private final Checkpoint genesisCheckpoint =
-      new Checkpoint(UInt64.valueOf(GENESIS_EPOCH), genesis.getRoot());
+      new Checkpoint(SpecConfig.GENESIS_EPOCH, genesis.getRoot());
 
   @Test
   void contains_shouldOnlyContainBlocksThatExist() {
