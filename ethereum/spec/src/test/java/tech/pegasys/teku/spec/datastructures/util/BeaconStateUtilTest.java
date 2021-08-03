@@ -45,6 +45,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
@@ -120,8 +121,7 @@ class BeaconStateUtilTest {
             depositData.getWithdrawal_credentials(),
             depositData.getAmount());
     Bytes32 domain =
-        BeaconStateUtil.get_domain(
-            createBeaconState(), Constants.DOMAIN_DEPOSIT, SpecConfig.GENESIS_EPOCH);
+        BeaconStateUtil.get_domain(createBeaconState(), Domain.DEPOSIT, SpecConfig.GENESIS_EPOCH);
     Bytes signing_root = compute_signing_root(depositMessage, domain);
 
     assertTrue(BLS.verify(pubkey, signing_root, depositData.getSignature()));
@@ -138,8 +138,7 @@ class BeaconStateUtilTest {
             depositData.getWithdrawal_credentials(),
             depositData.getAmount());
     Bytes32 domain =
-        BeaconStateUtil.get_domain(
-            createBeaconState(), Constants.DOMAIN_DEPOSIT, SpecConfig.GENESIS_EPOCH);
+        BeaconStateUtil.get_domain(createBeaconState(), Domain.DEPOSIT, SpecConfig.GENESIS_EPOCH);
     Bytes signing_root = compute_signing_root(depositMessage, domain);
 
     assertFalse(BLS.verify(pubkey, signing_root, depositData.getSignature()));

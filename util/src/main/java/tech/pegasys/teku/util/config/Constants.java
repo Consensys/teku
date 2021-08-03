@@ -35,27 +35,6 @@ public class Constants {
   @Deprecated public static final int RANDOM_SUBNETS_PER_VALIDATOR = 1;
   @Deprecated public static final int EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION = 256;
 
-  @Deprecated
-  public static final Bytes4 DOMAIN_BEACON_PROPOSER = new Bytes4(Bytes.fromHexString("0x00000000"));
-
-  @Deprecated
-  public static final Bytes4 DOMAIN_BEACON_ATTESTER = new Bytes4(Bytes.fromHexString("0x01000000"));
-
-  @Deprecated
-  public static final Bytes4 DOMAIN_RANDAO = new Bytes4(Bytes.fromHexString("0x02000000"));
-
-  @Deprecated
-  public static final Bytes4 DOMAIN_DEPOSIT = new Bytes4(Bytes.fromHexString("0x03000000"));
-
-  @Deprecated
-  public static final Bytes4 DOMAIN_VOLUNTARY_EXIT = new Bytes4(Bytes.fromHexString("0x04000000"));
-
-  @Deprecated
-  public static final Bytes4 DOMAIN_SELECTION_PROOF = Bytes4.fromHexString("0x05000000");
-
-  @Deprecated
-  public static final Bytes4 DOMAIN_AGGREGATE_AND_PROOF = Bytes4.fromHexString("0x06000000");
-
   // Misc
   @Deprecated public static UInt64 ETH1_FOLLOW_DISTANCE = UInt64.valueOf(1024);
   @Deprecated public static int MAX_COMMITTEES_PER_SLOT;

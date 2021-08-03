@@ -19,7 +19,6 @@ import static tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil.decrease
 import static tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 import static tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil.increase_balance;
 import static tech.pegasys.teku.util.config.Constants.CHURN_LIMIT_QUOTIENT;
-import static tech.pegasys.teku.util.config.Constants.DOMAIN_BEACON_PROPOSER;
 import static tech.pegasys.teku.util.config.Constants.EFFECTIVE_BALANCE_INCREMENT;
 import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_HISTORICAL_VECTOR;
 import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_SLASHINGS_VECTOR;
@@ -48,6 +47,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkData;
 import tech.pegasys.teku.spec.datastructures.state.SigningData;
@@ -439,7 +439,7 @@ public class BeaconStateUtil {
               Bytes32 seed =
                   Hash.sha2_256(
                       Bytes.concatenate(
-                          get_seed(state, epoch, DOMAIN_BEACON_PROPOSER),
+                          get_seed(state, epoch, Domain.BEACON_PROPOSER),
                           uint_to_bytes(slot.longValue(), 8)));
               List<Integer> indices = get_active_validator_indices(state, epoch);
               return compute_proposer_index(state, indices, seed);
