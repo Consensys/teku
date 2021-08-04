@@ -11,7 +11,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Breaking Changes
 
 ### Additions and Improvements
-- Updated default docker image to Java 16.
+- Updated default docker image to Java 16 using AdoptOpenJDK Ubuntu based images.
 - Docker images now include `curl` to support adding health checks.
 
 ### Bug Fixes
