@@ -17,6 +17,7 @@ import java.net.BindException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -87,7 +88,11 @@ public class DiscoveryNetworkFactory {
         final DiscoveryConfig discoveryConfig =
             DiscoveryConfig.builder().staticPeers(staticPeers).bootnodes(bootnodes).build();
         final NetworkConfig config =
-            NetworkConfig.builder().listenPort(port).networkInterface("127.0.0.1").build();
+            NetworkConfig.builder()
+                .listenPort(port)
+                .advertisedIp(Optional.of("127.0.0.1"))
+                .networkInterface("127.0.0.1")
+                .build();
         final NoOpMetricsSystem metricsSystem = new NoOpMetricsSystem();
         final ReputationManager reputationManager =
             new ReputationManager(
