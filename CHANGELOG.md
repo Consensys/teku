@@ -11,6 +11,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Breaking Changes
 
 ### Additions and Improvements
+- Scheduled Altair upgrade on the Pyrmont testnet at epoch 61650.
 - Updated default docker image to Java 16.
 - Docker images now include `curl` to support adding health checks.
 
