@@ -15,7 +15,7 @@ dependencyManagement {
 
     dependency 'tech.pegasys.tools.epchecks:errorprone-checks:1.0.0'
 
-    dependency 'com.google.guava:guava:29.0-jre'
+    dependency 'com.google.guava:guava:30.1.1-jre'
     dependency 'com.google.code.gson:gson:2.8.6'
 
     dependency 'com.googlecode.json-simple:json-simple:1.1.1'
@@ -30,7 +30,7 @@ dependencyManagement {
 
     dependency 'info.picocli:picocli:4.4.0'
 
-    dependencySet(group: 'io.javalin', version: '3.12.0') {
+    dependencySet(group: 'io.javalin', version: '3.13.10') {
       entry 'javalin'
       entry('javalin-openapi') {
         exclude 'org.webjars.npm:redoc'
@@ -60,7 +60,7 @@ dependencyManagement {
     }
     dependency 'io.github.classgraph:classgraph:4.8.87'
 
-    dependencySet(group: 'io.netty', version: '4.1.51.Final') {
+    dependencySet(group: 'io.netty', version: '4.1.66.Final') {
       entry 'netty-all'
     }
 
@@ -103,8 +103,8 @@ dependencyManagement {
 
     dependency 'org.apache.commons:commons-text:1.8'
     dependency 'org.apache.commons:commons-lang3:3.10'
-    dependency 'commons-io:commons-io:2.6'
-    dependency 'org.apache.commons:commons-compress:1.20'
+    dependency 'commons-io:commons-io:2.11.0'
+    dependency 'org.apache.commons:commons-compress:1.21'
 
     dependencySet(group: 'org.apache.logging.log4j', version: '2.13.3') {
       entry 'log4j-api'
@@ -116,9 +116,9 @@ dependencyManagement {
 
     dependency 'org.awaitility:awaitility:4.0.3'
 
-    dependency 'org.bouncycastle:bcprov-jdk15on:1.66'
+    dependency 'org.bouncycastle:bcprov-jdk15on:1.69'
 
-    dependency 'org.java-websocket:Java-WebSocket:1.3.8'
+    dependency 'org.java-websocket:Java-WebSocket:1.5.2'
 
     dependencySet(group: 'org.junit.jupiter', version: '5.6.2') {
       entry 'junit-jupiter-api'
@@ -137,7 +137,7 @@ dependencyManagement {
     dependency 'org.rocksdb:rocksdbjni:6.11.4'
     dependency 'org.fusesource.leveldbjni:leveldbjni-all:1.8'
 
-    dependencySet(group: "org.web3j", version: "4.6.2") {
+    dependencySet(group: "org.web3j", version: "4.8.7") {
       entry 'core'
       entry 'abi'
       entry 'crypto'
