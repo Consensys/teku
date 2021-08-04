@@ -14,11 +14,6 @@
 package tech.pegasys.teku.statetransition.validation;
 
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_signing_root;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 import static tech.pegasys.teku.util.config.Constants.MAXIMUM_GOSSIP_CLOCK_DISPARITY;
 import static tech.pegasys.teku.util.config.Constants.VALID_BLOCK_SET_SIZE;
@@ -99,7 +94,7 @@ public class BlockValidator {
               }
 
               final UInt64 firstSlotInBlockEpoch =
-                  compute_start_slot_at_epoch(compute_epoch_at_slot(block.getSlot()));
+                  spec.computeStartSlotAtEpoch(spec.computeEpochAtSlot(block.getSlot()));
               return recentChainData
                   .retrieveStateAtSlot(
                       new SlotAndBlockRoot(
@@ -147,8 +142,13 @@ public class BlockValidator {
 
   private boolean blockSignatureIsValidWithRespectToProposerIndex(
       SignedBeaconBlock block, BeaconState postState) {
-    final Bytes32 domain = get_domain(postState, Domain.BEACON_PROPOSER);
-    final Bytes signing_root = compute_signing_root(block.getMessage(), domain);
+    final Bytes32 domain =
+        spec.getDomain(
+            Domain.BEACON_PROPOSER,
+            spec.getCurrentEpoch(postState),
+            postState.getFork(),
+            postState.getGenesis_validators_root());
+    final Bytes signing_root = spec.computeSigningRoot(block.getMessage(), domain);
     final BLSSignature signature = block.getSignature();
 
     boolean signatureValid =
@@ -161,7 +161,7 @@ public class BlockValidator {
 
   private boolean blockIsProposedByTheExpectedProposer(
       SignedBeaconBlock block, BeaconState postState) {
-    final int proposerIndex = get_beacon_proposer_index(postState, block.getSlot());
+    final int proposerIndex = spec.getBeaconProposerIndex(postState, block.getSlot());
     return proposerIndex == block.getMessage().getProposerIndex().longValue();
   }
 
