@@ -66,6 +66,7 @@ public class GetState extends AbstractHandler implements Handler {
 
   @OpenApi(
       path = ROUTE,
+      deprecated = true,
       method = HttpMethod.GET,
       summary = "Get state",
       tags = {TAG_DEBUG},
