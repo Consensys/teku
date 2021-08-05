@@ -13,6 +13,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Additions and Improvements
 - Updated default docker image to Java 16.
 - Docker images now include `curl` to support adding health checks.
+- Increased the rest api maximum request length to 65535 bytes, was previously 8192 bytes.
 
 ### Bug Fixes
 - Fixed `ConcurrentModificationException` and `NoSuchElementException` in validator performance reporting.
