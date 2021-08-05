@@ -17,7 +17,8 @@ import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_EXPERIMENTAL;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_BEACON;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
@@ -61,7 +62,7 @@ public class PostSyncCommittees extends AbstractHandler {
       path = ROUTE,
       method = HttpMethod.POST,
       summary = "Submit sync committee messages to node",
-      tags = {TAG_EXPERIMENTAL},
+      tags = {TAG_BEACON, TAG_VALIDATOR_REQUIRED},
       requestBody =
           @OpenApiRequestBody(
               content = {@OpenApiContent(from = SyncCommitteeMessage.class, isArray = true)}),
