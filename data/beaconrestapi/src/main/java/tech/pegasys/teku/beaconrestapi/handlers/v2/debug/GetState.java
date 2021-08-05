@@ -24,7 +24,7 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_NOT_FOUND;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SERVICE_UNAVAILABLE;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_EXPERIMENTAL;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_DEBUG;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -66,7 +66,7 @@ public class GetState extends AbstractHandler implements Handler {
       path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get state",
-      tags = {TAG_EXPERIMENTAL},
+      tags = {TAG_DEBUG},
       description =
           "Returns full BeaconState object for given state_id.\n\n"
               + "Use Accept header to select `application/octet-stream` if SSZ response type is required.",

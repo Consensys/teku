@@ -60,6 +60,7 @@ public class GetBlock extends AbstractHandler implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
+      deprecated = true,
       summary = "Get block",
       tags = {TAG_BEACON},
       description =
