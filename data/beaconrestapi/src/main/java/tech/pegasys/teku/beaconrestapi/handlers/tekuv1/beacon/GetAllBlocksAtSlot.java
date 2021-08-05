@@ -21,7 +21,8 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_EXPERIMENTAL;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 
 import io.javalin.core.util.Header;
@@ -64,7 +65,7 @@ public class GetAllBlocksAtSlot implements Handler {
       path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get blocks at slot",
-      tags = {TAG_EXPERIMENTAL},
+      tags = {TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED},
       description = "Get all blocks (canonical and non-canonical) by slot.",
       pathParams = {@OpenApiParam(name = SLOT, description = "slot of the blocks to retrieve.")},
       responses = {

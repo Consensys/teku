@@ -68,11 +68,13 @@ public class GetNewBlock extends AbstractHandler implements Handler {
 
   @OpenApi(
       path = ROUTE,
+      deprecated = true,
       method = HttpMethod.GET,
       summary = "Produce unsigned block",
       tags = {TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED},
       description =
-          "Requests a beacon node to produce a valid block, which can then be signed by a validator.",
+          "Requests a beacon node to produce a valid block, which can then be signed by a validator.\n\n"
+              + "__NOTE__: deprecated, switch to using `/eth/v2/validator/blocks/{slot}` for multiple milestone support.",
       pathParams = {
         @OpenApiParam(
             name = SLOT,
