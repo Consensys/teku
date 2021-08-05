@@ -27,6 +27,7 @@ public class BeaconRestApiConfig {
   private final List<String> restApiHostAllowlist;
   private final List<String> restApiCorsAllowedOrigins;
   private final Eth1Address eth1DepositContractAddress;
+  private final int maxUrlLength;
   private final int maxPendingEvents;
 
   private BeaconRestApiConfig(
@@ -37,6 +38,7 @@ public class BeaconRestApiConfig {
       final List<String> restApiHostAllowlist,
       final List<String> restApiCorsAllowedOrigins,
       final Eth1Address eth1DepositContractAddress,
+      final int maxUrlLength,
       final int maxPendingEvents) {
     this.restApiPort = restApiPort;
     this.restApiDocsEnabled = restApiDocsEnabled;
@@ -45,6 +47,7 @@ public class BeaconRestApiConfig {
     this.restApiHostAllowlist = restApiHostAllowlist;
     this.restApiCorsAllowedOrigins = restApiCorsAllowedOrigins;
     this.eth1DepositContractAddress = eth1DepositContractAddress;
+    this.maxUrlLength = maxUrlLength;
     this.maxPendingEvents = maxPendingEvents;
   }
 
@@ -80,6 +83,10 @@ public class BeaconRestApiConfig {
     return maxPendingEvents;
   }
 
+  public int getMaxUrlLength() {
+    return maxUrlLength;
+  }
+
   public static BeaconRestApiConfigBuilder builder() {
     return new BeaconRestApiConfigBuilder();
   }
@@ -94,6 +101,7 @@ public class BeaconRestApiConfig {
     private List<String> restApiCorsAllowedOrigins;
     private Eth1Address eth1DepositContractAddress;
     private int maxPendingEvents;
+    private int maxUrlLength;
 
     private BeaconRestApiConfigBuilder() {}
 
@@ -150,7 +158,13 @@ public class BeaconRestApiConfig {
           restApiHostAllowlist,
           restApiCorsAllowedOrigins,
           eth1DepositContractAddress,
+          maxUrlLength,
           maxPendingEvents);
+    }
+
+    public BeaconRestApiConfigBuilder maxUrlLength(final int maxUrlLength) {
+      this.maxUrlLength = maxUrlLength;
+      return this;
     }
   }
 }
