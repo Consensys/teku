@@ -257,7 +257,8 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
     return post(
         SEND_SYNC_COMMITTEE_MESSAGES,
         syncCommitteeMessages,
-        createHandler(PostSyncCommitteeFailureResponse.class));
+        ResponseHandler.createForEmptyOkAndContentInBadResponse(
+            jsonProvider, PostSyncCommitteeFailureResponse.class));
   }
 
   @Override
