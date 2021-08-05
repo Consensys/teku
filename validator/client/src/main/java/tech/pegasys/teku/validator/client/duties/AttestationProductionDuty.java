@@ -148,10 +148,7 @@ public class AttestationProductionDuty implements Duty {
         .getSigner()
         .signAttestationData(attestationData, forkInfo)
         .thenApply(signature -> createSignedAttestation(attestationData, validator, signature))
-        .thenAccept(
-            signedAttestation ->
-                validatorApiChannel.sendSignedAttestation(
-                    signedAttestation, Optional.of(validator.getValidatorIndex())))
+        .thenAccept(validatorApiChannel::sendSignedAttestation)
         .thenApply(__ -> DutyResult.success(attestationData.getBeacon_block_root()));
   }
 

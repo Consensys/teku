@@ -284,13 +284,6 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
-  public void sendSignedAttestation(
-      final Attestation attestation, Optional<Integer> validatorIndex) {
-    sendAttestationRequestCounter.inc();
-    delegate.sendSignedAttestation(attestation, validatorIndex);
-  }
-
-  @Override
   public void sendAggregateAndProof(final SignedAggregateAndProof aggregateAndProof) {
     sendAggregateRequestCounter.inc();
     delegate.sendAggregateAndProof(aggregateAndProof);

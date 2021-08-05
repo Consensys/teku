@@ -354,22 +354,6 @@ class RemoteValidatorApiHandlerTest {
   }
 
   @Test
-  public void sendSignedAttestation_IgnoresValidatorIndexParameter_AndInvokeApi() {
-    final Attestation attestation = dataStructureUtil.randomAttestation();
-    final tech.pegasys.teku.api.schema.Attestation schemaAttestation =
-        new tech.pegasys.teku.api.schema.Attestation(attestation);
-
-    ArgumentCaptor<tech.pegasys.teku.api.schema.Attestation> argumentCaptor =
-        ArgumentCaptor.forClass(tech.pegasys.teku.api.schema.Attestation.class);
-
-    apiHandler.sendSignedAttestation(attestation, Optional.of(1));
-    asyncRunner.executeQueuedActions();
-
-    verify(apiClient).sendSignedAttestation(argumentCaptor.capture());
-    assertThat(argumentCaptor.getValue()).usingRecursiveComparison().isEqualTo(schemaAttestation);
-  }
-
-  @Test
   public void createUnsignedBlock_WhenNoneFound_ReturnsEmpty() {
     final BLSSignature blsSignature = dataStructureUtil.randomSignature();
 
