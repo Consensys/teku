@@ -34,6 +34,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Server;
 import tech.pegasys.teku.api.DataProvider;
@@ -119,9 +120,12 @@ public class BeaconRestApi {
             jettyServer = new Server(configuration.getRestApiPort());
             LOG.debug("Setting Max URL length to {}", configuration.getMaxUrlLength());
             for (Connector c : jettyServer.getConnectors()) {
-              c.getConnectionFactory(HttpConnectionFactory.class)
-                  .getHttpConfiguration()
-                  .setRequestHeaderSize(configuration.getMaxUrlLength());
+              final HttpConfiguration httpConfiguration =
+                  c.getConnectionFactory(HttpConnectionFactory.class).getHttpConfiguration();
+
+              if (httpConfiguration != null) {
+                httpConfiguration.setRequestHeaderSize(configuration.getMaxUrlLength());
+              }
             }
             return jettyServer;
           });
