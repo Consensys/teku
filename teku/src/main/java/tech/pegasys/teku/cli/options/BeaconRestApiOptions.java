@@ -81,7 +81,10 @@ public class BeaconRestApiOptions {
 
   @Option(
       names = {"--Xrest-api-max-url-length"},
+      description = "Set the maximum url length for rest api requests",
       paramLabel = "<INTEGER>",
+      defaultValue = "65535",
+      showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
       hidden = true)
   public void setMaxUrlLength(int maxUrlLength) {
     if (maxUrlLength < 4096 || maxUrlLength > 1052672) {
