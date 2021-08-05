@@ -18,6 +18,7 @@ import static tech.pegasys.teku.storage.server.VersionedDatabaseFactory.DEFAULT_
 
 import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -109,24 +110,26 @@ public class DatabaseMigrater {
   @VisibleForTesting
   void swapActiveDatabase() throws DatabaseMigraterError {
     try {
-      Files.move(
-          dataDirLayout.getBeaconDataDirectory(),
-          getMovedOldBeaconFolderPath(),
-          StandardCopyOption.ATOMIC_MOVE);
+      atomicMoveIfPossible(dataDirLayout.getBeaconDataDirectory(), getMovedOldBeaconFolderPath());
     } catch (IOException ex) {
       statusUpdater.accept(ex.getMessage());
       throw new DatabaseMigraterError(
           "Failed to move old database to " + getMovedOldBeaconFolderPath().toString());
     }
     try {
-      Files.move(
-          getNewBeaconFolderPath(),
-          dataDirLayout.getBeaconDataDirectory(),
-          StandardCopyOption.ATOMIC_MOVE);
+      atomicMoveIfPossible(getNewBeaconFolderPath(), dataDirLayout.getBeaconDataDirectory());
     } catch (IOException ex) {
       statusUpdater.accept(ex.getMessage());
       throw new DatabaseMigraterError(
           "Failed to move new database to " + dataDirLayout.getBeaconDataDirectory().toString());
+    }
+  }
+
+  private void atomicMoveIfPossible(final Path source, final Path target) throws IOException {
+    try {
+      Files.move(source, target, StandardCopyOption.ATOMIC_MOVE);
+    } catch (AtomicMoveNotSupportedException ex) {
+      Files.move(source, target);
     }
   }
 
