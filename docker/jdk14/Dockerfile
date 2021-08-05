@@ -1,4 +1,4 @@
-FROM openjdk:14-slim-buster
+FROM adoptopenjdk:14-jre-hotspot
 
 RUN apt-get -y update
 RUN apt-get -y install curl

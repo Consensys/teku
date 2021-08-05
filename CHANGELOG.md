@@ -12,13 +12,14 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Additions and Improvements
 - Scheduled Altair upgrade on the Pyrmont testnet at epoch 61650.
-- Updated default docker image to Java 16.
+- Updated default docker image to Java 16 using AdoptOpenJDK Ubuntu based images.
 - Docker images now include `curl` to support adding health checks.
 
 ### Bug Fixes
 - Fixed `ConcurrentModificationException` and `NoSuchElementException` in validator performance reporting.
 - Upgraded the discovery library, providing better memory management and standards compliance.
 - Fixed `InvalidDepositEventsException` error after restart.
+- Improve compatibility with Lighthouse bootnodes by not including the local address in the local ENR until the external address has been determined.
 
 ### Experimental: New Altair REST APIs
 - implement POST `/eth/v1/beacon/pool/sync_committees` to allow validators to submit sync committee signatures to the beacon node.
