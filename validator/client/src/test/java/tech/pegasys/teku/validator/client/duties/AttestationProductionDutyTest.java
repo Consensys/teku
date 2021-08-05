@@ -126,7 +126,7 @@ class AttestationProductionDutyTest {
     assertThat(attestationResult1).isCompletedWithValue(Optional.empty());
     assertThat(attestationResult2).isCompletedWithValue(Optional.of(attestationData));
 
-    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation, Optional.of(10));
+    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation);
     verify(validatorLogger)
         .dutyCompleted(TYPE, SLOT, 1, Set.of(attestationData.getBeacon_block_root()));
     verify(validatorLogger)
@@ -172,7 +172,7 @@ class AttestationProductionDutyTest {
     assertThatThrownBy(attestationResult1::join).hasRootCause(failure);
     assertThat(attestationResult2).isCompletedWithValue(Optional.of(attestationData));
 
-    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation, Optional.of(10));
+    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation);
 
     verify(validatorLogger)
         .dutyCompleted(TYPE, SLOT, 1, Set.of(attestationData.getBeacon_block_root()));
@@ -209,7 +209,7 @@ class AttestationProductionDutyTest {
     assertThat(attestationResult1).isCompletedWithValue(Optional.of(attestationData));
     assertThat(attestationResult2).isCompletedWithValue(Optional.of(attestationData));
 
-    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation, Optional.of(10));
+    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation);
 
     verify(validatorLogger)
         .dutyCompleted(TYPE, SLOT, 1, Set.of(attestationData.getBeacon_block_root()));
@@ -235,7 +235,7 @@ class AttestationProductionDutyTest {
     performAndReportDuty();
     assertThat(attestationResult).isCompletedWithValue(Optional.of(attestationData));
 
-    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation, Optional.of(10));
+    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation);
     verify(validatorLogger)
         .dutyCompleted(TYPE, SLOT, 1, Set.of(attestationData.getBeacon_block_root()));
     verifyNoMoreInteractions(validatorLogger);
@@ -277,9 +277,9 @@ class AttestationProductionDutyTest {
     assertThat(attestationResult2).isCompletedWithValue(Optional.of(attestationData));
     assertThat(attestationResult3).isCompletedWithValue(Optional.of(attestationData));
 
-    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation1, Optional.of(10));
-    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation2, Optional.of(10));
-    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation3, Optional.of(10));
+    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation1);
+    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation2);
+    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation3);
 
     // Should have only needed to create one unsigned attestation and reused it for each validator
     verify(validatorApiChannel, times(1)).createAttestationData(any(), anyInt());
@@ -328,9 +328,9 @@ class AttestationProductionDutyTest {
     assertThat(attestationResult2).isCompletedWithValue(Optional.of(unsignedAttestation2));
     assertThat(attestationResult3).isCompletedWithValue(Optional.of(unsignedAttestation1));
 
-    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation1, Optional.of(10));
-    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation2, Optional.of(10));
-    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation3, Optional.of(10));
+    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation1);
+    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation2);
+    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation3);
 
     // Need to create an unsigned attestation for each committee
     verify(validatorApiChannel, times(2)).createAttestationData(any(), anyInt());
@@ -372,10 +372,10 @@ class AttestationProductionDutyTest {
   public Attestation createExpectedAttestation(
       final AttestationData attestationData,
       final int committeePosition,
-      final int commiteeSize,
+      final int committeeSize,
       final BLSSignature signature) {
     final SszBitlist expectedAggregationBits =
-        Attestation.SSZ_SCHEMA.getAggregationBitsSchema().ofBits(commiteeSize, committeePosition);
+        Attestation.SSZ_SCHEMA.getAggregationBitsSchema().ofBits(committeeSize, committeePosition);
     return new Attestation(expectedAggregationBits, attestationData, signature);
   }
 
