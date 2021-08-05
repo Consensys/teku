@@ -32,6 +32,7 @@ public class ResponseHandler<T> {
   private final Map<Integer, Handler<T>> handlers = new HashMap<>();
   private final JsonProvider jsonProvider;
   private final Class<T> responseClass;
+  private Class<T> badReqeustResponseClass;
 
   public ResponseHandler(final JsonProvider jsonProvider, final Class<T> responseClass) {
     this.jsonProvider = jsonProvider;
@@ -42,6 +43,13 @@ public class ResponseHandler<T> {
     withHandler(SC_SERVICE_UNAVAILABLE, this::noValueHandler);
     withHandler(SC_BAD_REQUEST, this::defaultBadRequestHandler);
     withHandler(SC_TOO_MANY_REQUESTS, this::defaultTooManyRequestsHandler);
+  }
+
+  public static <T> ResponseHandler<T> createForEmptyOkAndContentInBadResponse(
+      final JsonProvider jsonProvider, final Class<T> badRequestResponseClass) {
+    final ResponseHandler<T> handler = new ResponseHandler<>(jsonProvider, null);
+    handler.badReqeustResponseClass = badRequestResponseClass;
+    return handler;
   }
 
   public ResponseHandler<T> withHandler(final int responseCode, final Handler<T> handler) {
@@ -75,6 +83,9 @@ public class ResponseHandler<T> {
 
   private Optional<T> defaultBadRequestHandler(final Request request, final Response response)
       throws IOException {
+    if (badReqeustResponseClass != null) {
+      return parseResponse(response, badReqeustResponseClass);
+    }
     throw new IllegalArgumentException(
         "Invalid params response from Beacon Node API (url = "
             + request.url()
@@ -84,6 +95,11 @@ public class ResponseHandler<T> {
   }
 
   private Optional<T> defaultOkHandler(final Request request, final Response response)
+      throws IOException {
+    return parseResponse(response, responseClass);
+  }
+
+  private Optional<T> parseResponse(final Response response, final Class<T> responseClass)
       throws IOException {
     if (responseClass != null) {
       final T responseObj = jsonProvider.jsonToObject(response.body().string(), responseClass);

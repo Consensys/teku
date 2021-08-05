@@ -248,12 +248,6 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public void sendSignedAttestation(
-      final Attestation attestation, final Optional<Integer> validatorIndex) {
-    sendSignedAttestation(attestation);
-  }
-
-  @Override
   public SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(
       final UInt64 slot, final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
     return sendRequest(
