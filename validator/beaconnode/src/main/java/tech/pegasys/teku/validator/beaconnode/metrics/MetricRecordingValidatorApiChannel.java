@@ -278,9 +278,10 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
-  public void sendSignedAttestation(final Attestation attestation) {
+  public SafeFuture<List<SubmitCommitteeMessageError>> sendSignedAttestations(
+      final List<Attestation> attestations) {
     sendAttestationRequestCounter.inc();
-    delegate.sendSignedAttestation(attestation);
+    return delegate.sendSignedAttestations(attestations);
   }
 
   @Override

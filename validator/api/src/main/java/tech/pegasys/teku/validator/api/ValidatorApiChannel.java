@@ -71,7 +71,8 @@ public interface ValidatorApiChannel extends ChannelInterface {
 
   void subscribeToPersistentSubnets(Set<SubnetSubscription> subnetSubscriptions);
 
-  void sendSignedAttestation(Attestation attestation);
+  SafeFuture<List<SubmitCommitteeMessageError>> sendSignedAttestations(
+      List<Attestation> attestation);
 
   void sendAggregateAndProof(SignedAggregateAndProof aggregateAndProof);
 

@@ -622,7 +622,7 @@ class ValidatorApiHandlerTest {
     final Attestation attestation = dataStructureUtil.randomAttestation();
     when(attestationManager.onAttestation(any(ValidateableAttestation.class)))
         .thenReturn(completedFuture(SUCCESSFUL));
-    validatorApiHandler.sendSignedAttestation(attestation);
+    validatorApiHandler.sendSignedAttestations(List.of(attestation));
 
     verify(attestationManager).onAttestation(ValidateableAttestation.from(spec, attestation));
   }
@@ -632,7 +632,7 @@ class ValidatorApiHandlerTest {
     final Attestation attestation = dataStructureUtil.randomAttestation();
     when(attestationManager.onAttestation(any(ValidateableAttestation.class)))
         .thenReturn(completedFuture(AttestationProcessingResult.SAVED_FOR_FUTURE));
-    validatorApiHandler.sendSignedAttestation(attestation);
+    validatorApiHandler.sendSignedAttestations(List.of(attestation));
 
     verify(dutyMetrics).onAttestationPublished(attestation.getData().getSlot());
     verify(performanceTracker).saveProducedAttestation(attestation);
@@ -643,7 +643,7 @@ class ValidatorApiHandlerTest {
     final Attestation attestation = dataStructureUtil.randomAttestation();
     when(attestationManager.onAttestation(any(ValidateableAttestation.class)))
         .thenReturn(completedFuture(AttestationProcessingResult.invalid("Bad juju")));
-    validatorApiHandler.sendSignedAttestation(attestation);
+    validatorApiHandler.sendSignedAttestations(List.of(attestation));
 
     verify(dutyMetrics, never()).onAttestationPublished(attestation.getData().getSlot());
     verify(performanceTracker, never()).saveProducedAttestation(attestation);

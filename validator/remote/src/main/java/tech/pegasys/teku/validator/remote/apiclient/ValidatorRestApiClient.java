@@ -58,7 +58,7 @@ public interface ValidatorRestApiClient {
 
   Optional<AttestationData> createAttestationData(UInt64 slot, int committeeIndex);
 
-  void sendSignedAttestation(Attestation attestation);
+  Optional<PostSyncCommitteeFailureResponse> sendSignedAttestations(List<Attestation> attestation);
 
   void sendVoluntaryExit(SignedVoluntaryExit voluntaryExit);
 

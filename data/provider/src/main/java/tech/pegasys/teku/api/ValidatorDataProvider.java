@@ -131,15 +131,12 @@ public class ValidatorDataProvider {
         .thenApply(maybeAttestation -> maybeAttestation.map(AttestationData::new));
   }
 
-  public void submitAttestations(List<Attestation> attestations) {
-    attestations.forEach(this::submitAttestation);
-  }
-
-  public void submitAttestation(Attestation attestation) {
-    if (attestation.signature.asInternalBLSSignature().toSSZBytes().isZero()) {
-      throw new IllegalArgumentException("Signed attestations must have a non zero signature");
-    }
-    validatorApiChannel.sendSignedAttestation(attestation.asInternalAttestation());
+  public SafeFuture<SubmitCommitteeMessagesResult> submitAttestations(
+      List<Attestation> attestations) {
+    return validatorApiChannel
+        .sendSignedAttestations(
+            attestations.stream().map(Attestation::asInternalAttestation).collect(toList()))
+        .thenApply(SubmitCommitteeMessagesResult::new);
   }
 
   public SignedBeaconBlock parseBlock(final JsonProvider jsonProvider, final String jsonBlock)

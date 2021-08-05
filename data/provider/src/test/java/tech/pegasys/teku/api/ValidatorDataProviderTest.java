@@ -64,8 +64,9 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class ValidatorDataProviderTest {
 
-  private final ArgumentCaptor<tech.pegasys.teku.spec.datastructures.operations.Attestation> args =
-      ArgumentCaptor.forClass(tech.pegasys.teku.spec.datastructures.operations.Attestation.class);
+  @SuppressWarnings("unchecked")
+  private final ArgumentCaptor<List<tech.pegasys.teku.spec.datastructures.operations.Attestation>>
+      args = ArgumentCaptor.forClass(List.class);
 
   private final JsonProvider jsonProvider = new JsonProvider();
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
@@ -206,10 +207,11 @@ public class ValidatorDataProviderTest {
         dataStructureUtil.randomAttestation();
     Attestation attestation = new Attestation(internalAttestation);
 
-    provider.submitAttestation(attestation);
+    provider.submitAttestations(List.of(attestation));
 
-    verify(validatorApiChannel).sendSignedAttestation(args.capture());
-    assertThatSszData(args.getValue()).isEqualByAllMeansTo(internalAttestation);
+    verify(validatorApiChannel).sendSignedAttestations(args.capture());
+    assertThat(args.getValue()).hasSize(1);
+    assertThatSszData(args.getValue().get(0)).isEqualByAllMeansTo(internalAttestation);
   }
 
   @Test
@@ -225,7 +227,7 @@ public class ValidatorDataProviderTest {
 
     final Attestation attestation = new Attestation(internalAttestation);
 
-    assertThatThrownBy(() -> provider.submitAttestation(attestation))
+    assertThatThrownBy(() -> provider.submitAttestations(List.of(attestation)))
         .isInstanceOf(IllegalArgumentException.class);
   }
 

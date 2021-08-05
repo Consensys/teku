@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -127,7 +128,8 @@ class MetricRecordingValidatorApiChannelTest {
             MetricRecordingValidatorApiChannel.PERSISTENT_SUBSCRIPTION_COUNTER_NAME),
         noResponseTest(
             "sendSignedAttestation",
-            channel -> channel.sendSignedAttestation(dataStructureUtil.randomAttestation()),
+            channel ->
+                channel.sendSignedAttestations(List.of(dataStructureUtil.randomAttestation())),
             MetricRecordingValidatorApiChannel.PUBLISHED_ATTESTATION_COUNTER_NAME),
         noResponseTest(
             "sendAggregateAndProof",

@@ -201,8 +201,13 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   }
 
   @Override
-  public void sendSignedAttestation(final Attestation attestation) {
-    post(SEND_SIGNED_ATTESTATION, List.of(attestation), createHandler());
+  public Optional<PostSyncCommitteeFailureResponse> sendSignedAttestations(
+      final List<Attestation> attestations) {
+    return post(
+        SEND_SIGNED_ATTESTATION,
+        attestations,
+        ResponseHandler.createForEmptyOkAndContentInBadResponse(
+            jsonProvider, PostSyncCommitteeFailureResponse.class));
   }
 
   @Override
@@ -257,7 +262,8 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
     return post(
         SEND_SYNC_COMMITTEE_MESSAGES,
         syncCommitteeMessages,
-        createHandler(PostSyncCommitteeFailureResponse.class));
+        ResponseHandler.createForEmptyOkAndContentInBadResponse(
+            jsonProvider, PostSyncCommitteeFailureResponse.class));
   }
 
   @Override

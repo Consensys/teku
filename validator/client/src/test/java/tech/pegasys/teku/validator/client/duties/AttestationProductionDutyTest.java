@@ -27,6 +27,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
@@ -126,7 +127,7 @@ class AttestationProductionDutyTest {
     assertThat(attestationResult1).isCompletedWithValue(Optional.empty());
     assertThat(attestationResult2).isCompletedWithValue(Optional.of(attestationData));
 
-    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation);
+    verify(validatorApiChannel).sendSignedAttestations(List.of(expectedAttestation));
     verify(validatorLogger)
         .dutyCompleted(TYPE, SLOT, 1, Set.of(attestationData.getBeacon_block_root()));
     verify(validatorLogger)
@@ -172,7 +173,7 @@ class AttestationProductionDutyTest {
     assertThatThrownBy(attestationResult1::join).hasRootCause(failure);
     assertThat(attestationResult2).isCompletedWithValue(Optional.of(attestationData));
 
-    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation);
+    verify(validatorApiChannel).sendSignedAttestations(List.of(expectedAttestation));
 
     verify(validatorLogger)
         .dutyCompleted(TYPE, SLOT, 1, Set.of(attestationData.getBeacon_block_root()));
@@ -209,7 +210,7 @@ class AttestationProductionDutyTest {
     assertThat(attestationResult1).isCompletedWithValue(Optional.of(attestationData));
     assertThat(attestationResult2).isCompletedWithValue(Optional.of(attestationData));
 
-    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation);
+    verify(validatorApiChannel).sendSignedAttestations(List.of(expectedAttestation));
 
     verify(validatorLogger)
         .dutyCompleted(TYPE, SLOT, 1, Set.of(attestationData.getBeacon_block_root()));
@@ -235,7 +236,7 @@ class AttestationProductionDutyTest {
     performAndReportDuty();
     assertThat(attestationResult).isCompletedWithValue(Optional.of(attestationData));
 
-    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation);
+    verify(validatorApiChannel).sendSignedAttestations(List.of(expectedAttestation));
     verify(validatorLogger)
         .dutyCompleted(TYPE, SLOT, 1, Set.of(attestationData.getBeacon_block_root()));
     verifyNoMoreInteractions(validatorLogger);
@@ -277,9 +278,9 @@ class AttestationProductionDutyTest {
     assertThat(attestationResult2).isCompletedWithValue(Optional.of(attestationData));
     assertThat(attestationResult3).isCompletedWithValue(Optional.of(attestationData));
 
-    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation1);
-    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation2);
-    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation3);
+    verify(validatorApiChannel).sendSignedAttestations(List.of(expectedAttestation1));
+    verify(validatorApiChannel).sendSignedAttestations(List.of(expectedAttestation2));
+    verify(validatorApiChannel).sendSignedAttestations(List.of(expectedAttestation3));
 
     // Should have only needed to create one unsigned attestation and reused it for each validator
     verify(validatorApiChannel, times(1)).createAttestationData(any(), anyInt());
@@ -328,9 +329,9 @@ class AttestationProductionDutyTest {
     assertThat(attestationResult2).isCompletedWithValue(Optional.of(unsignedAttestation2));
     assertThat(attestationResult3).isCompletedWithValue(Optional.of(unsignedAttestation1));
 
-    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation1);
-    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation2);
-    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation3);
+    verify(validatorApiChannel).sendSignedAttestations(List.of(expectedAttestation1));
+    verify(validatorApiChannel).sendSignedAttestations(List.of(expectedAttestation2));
+    verify(validatorApiChannel).sendSignedAttestations(List.of(expectedAttestation3));
 
     // Need to create an unsigned attestation for each committee
     verify(validatorApiChannel, times(2)).createAttestationData(any(), anyInt());

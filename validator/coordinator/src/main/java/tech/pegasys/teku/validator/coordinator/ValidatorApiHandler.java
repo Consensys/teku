@@ -58,6 +58,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncComm
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
@@ -442,10 +443,17 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public void sendSignedAttestation(final Attestation attestation) {
-    attestationManager
+  public SafeFuture<List<SubmitCommitteeMessageError>> sendSignedAttestations(
+      final List<Attestation> attestations) {
+    return SafeFuture.collectAll(attestations.stream().map(this::processAttestation))
+        .thenApply(this::convertAttestationProcessingResultsToErrorList);
+  }
+
+  private SafeFuture<AttestationProcessingResult> processAttestation(
+      final Attestation attestation) {
+    return attestationManager
         .onAttestation(ValidateableAttestation.fromValidator(spec, attestation))
-        .finish(
+        .thenPeek(
             result -> {
               if (!result.isInvalid()) {
                 dutyMetrics.onAttestationPublished(attestation.getData().getSlot());
@@ -454,12 +462,28 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                 VALIDATOR_LOGGER.producedInvalidAttestation(
                     attestation.getData().getSlot(), result.getInvalidReason());
               }
-            },
-            err ->
-                LOG.error(
-                    "Failed to send signed attestation for slot {}, block {}",
-                    attestation.getData().getSlot(),
-                    attestation.getData().getBeacon_block_root()));
+            })
+        .exceptionally(
+            error -> {
+              LOG.error(
+                  "Failed to send signed attestation for slot {}, block {}",
+                  attestation.getData().getSlot(),
+                  attestation.getData().getBeacon_block_root());
+              return AttestationProcessingResult.invalid("Unexpected error");
+            });
+  }
+
+  private List<SubmitCommitteeMessageError> convertAttestationProcessingResultsToErrorList(
+      final List<AttestationProcessingResult> results) {
+    final List<SubmitCommitteeMessageError> errorList = new ArrayList<>();
+    for (int index = 0; index < results.size(); index++) {
+      final AttestationProcessingResult result = results.get(index);
+      if (result.isInvalid()) {
+        errorList.add(
+            new SubmitCommitteeMessageError(UInt64.valueOf(index), result.getInvalidReason()));
+      }
+    }
+    return errorList;
   }
 
   @Override

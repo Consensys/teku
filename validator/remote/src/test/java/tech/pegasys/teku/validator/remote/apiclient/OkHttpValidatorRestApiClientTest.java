@@ -385,7 +385,7 @@ class OkHttpValidatorRestApiClientTest {
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK));
 
-    apiClient.sendSignedAttestation(attestation);
+    apiClient.sendSignedAttestations(List.of(attestation));
 
     RecordedRequest request = mockWebServer.takeRequest();
 
@@ -402,7 +402,7 @@ class OkHttpValidatorRestApiClientTest {
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
 
-    assertThatThrownBy(() -> apiClient.sendSignedAttestation(attestation))
+    assertThatThrownBy(() -> apiClient.sendSignedAttestations(List.of(attestation)))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
@@ -412,7 +412,7 @@ class OkHttpValidatorRestApiClientTest {
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
 
-    assertThatThrownBy(() -> apiClient.sendSignedAttestation(attestation))
+    assertThatThrownBy(() -> apiClient.sendSignedAttestations(List.of(attestation)))
         .isInstanceOf(RuntimeException.class)
         .hasMessageContaining("Unexpected response from Beacon Node API");
   }

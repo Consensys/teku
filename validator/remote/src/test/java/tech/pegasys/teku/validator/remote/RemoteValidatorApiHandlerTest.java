@@ -343,14 +343,17 @@ class RemoteValidatorApiHandlerTest {
     final tech.pegasys.teku.api.schema.Attestation schemaAttestation =
         new tech.pegasys.teku.api.schema.Attestation(attestation);
 
-    ArgumentCaptor<tech.pegasys.teku.api.schema.Attestation> argumentCaptor =
-        ArgumentCaptor.forClass(tech.pegasys.teku.api.schema.Attestation.class);
+    @SuppressWarnings("unchecked")
+    ArgumentCaptor<List<tech.pegasys.teku.api.schema.Attestation>> argumentCaptor =
+        ArgumentCaptor.forClass(List.class);
 
-    apiHandler.sendSignedAttestation(attestation);
+    apiHandler.sendSignedAttestations(List.of(attestation));
     asyncRunner.executeQueuedActions();
 
-    verify(apiClient).sendSignedAttestation(argumentCaptor.capture());
-    assertThat(argumentCaptor.getValue()).usingRecursiveComparison().isEqualTo(schemaAttestation);
+    verify(apiClient).sendSignedAttestations(argumentCaptor.capture());
+    assertThat(argumentCaptor.getValue())
+        .usingRecursiveComparison()
+        .isEqualTo(List.of(schemaAttestation));
   }
 
   @Test
