@@ -126,8 +126,8 @@ dependencyManagement {
       entry 'junit-jupiter-params'
     }
 
-    dependency 'org.mockito:mockito-core:3.3.3'
-    dependency 'org.mockito:mockito-junit-jupiter:3.3.3'
+    dependency 'org.mockito:mockito-core:3.11.2'
+    dependency 'org.mockito:mockito-junit-jupiter:3.11.2'
 
     dependencySet(group: "org.openjdk.jmh", version: "1.27") {
       entry 'jmh-core'
