@@ -14,7 +14,6 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.INVALID_BODY_SUPPLIED;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
@@ -90,7 +89,6 @@ public class PostAttestation extends AbstractHandler {
           future
               .thenApplyChecked(response -> handleResult(ctx, response))
               .exceptionallyCompose(error -> handleError(ctx, error)));
-      ctx.status(SC_OK);
     } catch (final IllegalArgumentException e) {
       ctx.result(BadRequest.badRequest(jsonProvider, e.getMessage()));
       ctx.status(SC_BAD_REQUEST);
