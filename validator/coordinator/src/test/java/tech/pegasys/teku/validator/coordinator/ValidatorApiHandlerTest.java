@@ -618,11 +618,13 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
-  public void sendSignedAttestation_shouldAddAttestationToAttestationManager() {
+  public void sendSignedAttestations_shouldAddAttestationToAttestationManager() {
     final Attestation attestation = dataStructureUtil.randomAttestation();
     when(attestationManager.onAttestation(any(ValidateableAttestation.class)))
         .thenReturn(completedFuture(SUCCESSFUL));
-    validatorApiHandler.sendSignedAttestations(List.of(attestation));
+    final SafeFuture<List<SubmitCommitteeMessageError>> result =
+        validatorApiHandler.sendSignedAttestations(List.of(attestation));
+    assertThat(result).isCompletedWithValue(emptyList());
 
     verify(attestationManager).onAttestation(ValidateableAttestation.from(spec, attestation));
   }
@@ -632,7 +634,10 @@ class ValidatorApiHandlerTest {
     final Attestation attestation = dataStructureUtil.randomAttestation();
     when(attestationManager.onAttestation(any(ValidateableAttestation.class)))
         .thenReturn(completedFuture(AttestationProcessingResult.SAVED_FOR_FUTURE));
-    validatorApiHandler.sendSignedAttestations(List.of(attestation));
+
+    final SafeFuture<List<SubmitCommitteeMessageError>> result =
+        validatorApiHandler.sendSignedAttestations(List.of(attestation));
+    assertThat(result).isCompletedWithValue(emptyList());
 
     verify(dutyMetrics).onAttestationPublished(attestation.getData().getSlot());
     verify(performanceTracker).saveProducedAttestation(attestation);
@@ -643,7 +648,11 @@ class ValidatorApiHandlerTest {
     final Attestation attestation = dataStructureUtil.randomAttestation();
     when(attestationManager.onAttestation(any(ValidateableAttestation.class)))
         .thenReturn(completedFuture(AttestationProcessingResult.invalid("Bad juju")));
-    validatorApiHandler.sendSignedAttestations(List.of(attestation));
+
+    final SafeFuture<List<SubmitCommitteeMessageError>> result =
+        validatorApiHandler.sendSignedAttestations(List.of(attestation));
+    assertThat(result)
+        .isCompletedWithValue(List.of(new SubmitCommitteeMessageError(ZERO, "Bad juju")));
 
     verify(dutyMetrics, never()).onAttestationPublished(attestation.getData().getSlot());
     verify(performanceTracker, never()).saveProducedAttestation(attestation);
