@@ -33,7 +33,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.SchemaObjectProvider;
-import tech.pegasys.teku.api.response.v1.beacon.PostSyncCommitteeFailureResponse;
+import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.response.v1.validator.PostSyncDutiesResponse;
@@ -62,7 +62,7 @@ import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
-import tech.pegasys.teku.validator.api.SubmitCommitteeMessageError;
+import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
@@ -238,7 +238,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<List<SubmitCommitteeMessageError>> sendSignedAttestations(
+  public SafeFuture<List<SubmitDataError>> sendSignedAttestations(
       final List<Attestation> attestations) {
     final List<tech.pegasys.teku.api.schema.Attestation> schemaAttestations =
         attestations.stream().map(tech.pegasys.teku.api.schema.Attestation::new).collect(toList());
@@ -272,7 +272,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<List<SubmitCommitteeMessageError>> sendSyncCommitteeMessages(
+  public SafeFuture<List<SubmitDataError>> sendSyncCommitteeMessages(
       final List<SyncCommitteeMessage> syncCommitteeMessages) {
     return sendRequest(
         () ->
@@ -329,10 +329,10 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
         new tech.pegasys.teku.api.schema.BLSSignature(contribution.getSignature()));
   }
 
-  private List<SubmitCommitteeMessageError> responseToSyncCommitteeMessages(
-      final PostSyncCommitteeFailureResponse postSyncCommitteeFailureResponse) {
-    return postSyncCommitteeFailureResponse.failures.stream()
-        .map(i -> new SubmitCommitteeMessageError(i.index, i.message))
+  private List<SubmitDataError> responseToSyncCommitteeMessages(
+      final PostDataFailureResponse postDataFailureResponse) {
+    return postDataFailureResponse.failures.stream()
+        .map(i -> new SubmitDataError(i.index, i.message))
         .collect(toList());
   }
 

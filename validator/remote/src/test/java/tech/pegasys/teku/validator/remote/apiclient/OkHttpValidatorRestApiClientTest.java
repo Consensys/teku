@@ -43,8 +43,8 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionRequest;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
-import tech.pegasys.teku.api.response.v1.beacon.PostSyncCommitteeFailure;
-import tech.pegasys.teku.api.response.v1.beacon.PostSyncCommitteeFailureResponse;
+import tech.pegasys.teku.api.response.v1.beacon.PostDataFailure;
+import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAttestationDataResponse;
@@ -687,11 +687,9 @@ class OkHttpValidatorRestApiClientTest {
 
   @Test
   void sendSyncCommitteeMessages_shouldReturnErrorsFromBadResponse() {
-    final PostSyncCommitteeFailureResponse response =
-        new PostSyncCommitteeFailureResponse(
-            SC_BAD_REQUEST,
-            "Computer said no",
-            List.of(new PostSyncCommitteeFailure(UInt64.ZERO, "Bad")));
+    final PostDataFailureResponse response =
+        new PostDataFailureResponse(
+            SC_BAD_REQUEST, "Computer said no", List.of(new PostDataFailure(UInt64.ZERO, "Bad")));
     mockWebServer.enqueue(
         new MockResponse().setResponseCode(SC_BAD_REQUEST).setBody(asJson(response)));
 

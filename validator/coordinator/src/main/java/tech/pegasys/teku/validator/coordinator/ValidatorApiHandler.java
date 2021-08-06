@@ -81,7 +81,7 @@ import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
-import tech.pegasys.teku.validator.api.SubmitCommitteeMessageError;
+import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
@@ -443,7 +443,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<List<SubmitCommitteeMessageError>> sendSignedAttestations(
+  public SafeFuture<List<SubmitDataError>> sendSignedAttestations(
       final List<Attestation> attestations) {
     return SafeFuture.collectAll(attestations.stream().map(this::processAttestation))
         .thenApply(this::convertAttestationProcessingResultsToErrorList);
@@ -473,14 +473,13 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             });
   }
 
-  private List<SubmitCommitteeMessageError> convertAttestationProcessingResultsToErrorList(
+  private List<SubmitDataError> convertAttestationProcessingResultsToErrorList(
       final List<AttestationProcessingResult> results) {
-    final List<SubmitCommitteeMessageError> errorList = new ArrayList<>();
+    final List<SubmitDataError> errorList = new ArrayList<>();
     for (int index = 0; index < results.size(); index++) {
       final AttestationProcessingResult result = results.get(index);
       if (result.isInvalid()) {
-        errorList.add(
-            new SubmitCommitteeMessageError(UInt64.valueOf(index), result.getInvalidReason()));
+        errorList.add(new SubmitDataError(UInt64.valueOf(index), result.getInvalidReason()));
       }
     }
     return errorList;
@@ -535,7 +534,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<List<SubmitCommitteeMessageError>> sendSyncCommitteeMessages(
+  public SafeFuture<List<SubmitDataError>> sendSyncCommitteeMessages(
       final List<SyncCommitteeMessage> syncCommitteeMessages) {
 
     final List<SafeFuture<InternalValidationResult>> addedMessages =
@@ -560,11 +559,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             });
   }
 
-  private List<SubmitCommitteeMessageError> getSendSyncCommitteesResultFromFutures(
+  private List<SubmitDataError> getSendSyncCommitteesResultFromFutures(
       final List<InternalValidationResult> internalValidationResults) {
-    final List<SubmitCommitteeMessageError> errorList = new ArrayList<>();
+    final List<SubmitDataError> errorList = new ArrayList<>();
     for (int index = 0; index < internalValidationResults.size(); index++) {
-      final Optional<SubmitCommitteeMessageError> maybeError =
+      final Optional<SubmitDataError> maybeError =
           fromInternalValidationResult(internalValidationResults.get(index), index);
       maybeError.ifPresent(errorList::add);
     }
@@ -589,13 +588,13 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             });
   }
 
-  private Optional<SubmitCommitteeMessageError> fromInternalValidationResult(
+  private Optional<SubmitDataError> fromInternalValidationResult(
       final InternalValidationResult internalValidationResult, final int resultIndex) {
     if (!internalValidationResult.isReject()) {
       return Optional.empty();
     }
     return Optional.of(
-        new SubmitCommitteeMessageError(
+        new SubmitDataError(
             UInt64.valueOf(resultIndex),
             internalValidationResult.getDescription().orElse("Rejected")));
   }

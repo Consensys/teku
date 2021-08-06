@@ -41,7 +41,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.validator.api.SubmitCommitteeMessageError;
+import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.beaconnode.metrics.BeaconChainRequestCounter.RequestOutcome;
 
@@ -219,8 +219,8 @@ class MetricRecordingValidatorApiChannelTest {
   public static Stream<Arguments> getSendDataArguments() {
     final DataStructureUtil dataStructureUtil =
         new DataStructureUtil(TestSpecFactory.createMinimalAltair());
-    final List<SubmitCommitteeMessageError> submissionErrors =
-        List.of(new SubmitCommitteeMessageError(UInt64.ZERO, "Nope"));
+    final List<SubmitDataError> submissionErrors =
+        List.of(new SubmitDataError(UInt64.ZERO, "Nope"));
     final List<Attestation> attestations = List.of(dataStructureUtil.randomAttestation());
     final List<SyncCommitteeMessage> syncCommitteeMessages =
         List.of(dataStructureUtil.randomSyncCommitteeMessage());

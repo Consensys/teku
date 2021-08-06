@@ -29,15 +29,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.ValidatorDataProvider;
-import tech.pegasys.teku.api.response.v1.beacon.PostSyncCommitteeFailure;
-import tech.pegasys.teku.api.response.v1.beacon.PostSyncCommitteeFailureResponse;
+import tech.pegasys.teku.api.response.v1.beacon.PostDataFailure;
+import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.validator.api.SubmitCommitteeMessageError;
-import tech.pegasys.teku.validator.api.SubmitCommitteeMessagesResult;
+import tech.pegasys.teku.validator.api.SubmitDataError;
+import tech.pegasys.teku.validator.api.SubmitDataResult;
 
 public class PostAttestationTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -55,7 +55,7 @@ public class PostAttestationTest {
   @Test
   void shouldBeAbleToSubmitAttestation() throws Exception {
     when(provider.submitAttestations(any()))
-        .thenReturn(SafeFuture.completedFuture(new SubmitCommitteeMessagesResult(emptyList())));
+        .thenReturn(SafeFuture.completedFuture(new SubmitDataResult(emptyList())));
     when(context.body()).thenReturn(jsonProvider.objectToJSON(List.of(attestation)));
     handler.handle(context);
 
@@ -67,8 +67,7 @@ public class PostAttestationTest {
     when(provider.submitAttestations(any()))
         .thenReturn(
             SafeFuture.completedFuture(
-                new SubmitCommitteeMessagesResult(
-                    List.of(new SubmitCommitteeMessageError(UInt64.ZERO, "Darn")))));
+                new SubmitDataResult(List.of(new SubmitDataError(UInt64.ZERO, "Darn")))));
     when(context.body()).thenReturn(jsonProvider.objectToJSON(List.of(attestation)));
     handler.handle(context);
 
@@ -81,10 +80,10 @@ public class PostAttestationTest {
     final CompletableFuture<Object> bodyResult = captor.getValue();
     final String value =
         jsonProvider.objectToJSON(
-            new PostSyncCommitteeFailureResponse(
+            new PostDataFailureResponse(
                 SC_BAD_REQUEST,
                 "Some attestations failed to publish, refer to errors for details",
-                List.of(new PostSyncCommitteeFailure(UInt64.ZERO, "Darn"))));
+                List.of(new PostDataFailure(UInt64.ZERO, "Darn"))));
     assertThat(bodyResult).isCompletedWithValue(value);
   }
 

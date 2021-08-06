@@ -30,7 +30,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
-import tech.pegasys.teku.validator.api.SubmitCommitteeMessageError;
+import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.duties.DutyResult;
@@ -109,7 +109,7 @@ public class SyncCommitteeProductionDuty {
   }
 
   private void replaceResult(
-      final List<ProductionResult> sentResults, final SubmitCommitteeMessageError error) {
+      final List<ProductionResult> sentResults, final SubmitDataError error) {
     if (error.getIndex().isGreaterThanOrEqualTo(sentResults.size())) {
       LOG.error(
           "Beacon node reported an error sending sync committee message at index {} with message '{}' but only {} messages were sent",

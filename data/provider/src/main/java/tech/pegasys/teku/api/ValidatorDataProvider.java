@@ -58,7 +58,7 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuty;
-import tech.pegasys.teku.validator.api.SubmitCommitteeMessagesResult;
+import tech.pegasys.teku.validator.api.SubmitDataResult;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
@@ -131,12 +131,11 @@ public class ValidatorDataProvider {
         .thenApply(maybeAttestation -> maybeAttestation.map(AttestationData::new));
   }
 
-  public SafeFuture<SubmitCommitteeMessagesResult> submitAttestations(
-      List<Attestation> attestations) {
+  public SafeFuture<SubmitDataResult> submitAttestations(List<Attestation> attestations) {
     return validatorApiChannel
         .sendSignedAttestations(
             attestations.stream().map(Attestation::asInternalAttestation).collect(toList()))
-        .thenApply(SubmitCommitteeMessagesResult::new);
+        .thenApply(SubmitDataResult::new);
   }
 
   public SignedBeaconBlock parseBlock(final JsonProvider jsonProvider, final String jsonBlock)
@@ -182,14 +181,14 @@ public class ValidatorDataProvider {
             });
   }
 
-  public SafeFuture<SubmitCommitteeMessagesResult> submitCommitteeSignatures(
+  public SafeFuture<SubmitDataResult> submitCommitteeSignatures(
       final List<SyncCommitteeMessage> messages) {
     return validatorApiChannel
         .sendSyncCommitteeMessages(
             messages.stream()
                 .flatMap(message -> message.asInternalCommitteeSignature(spec).stream())
                 .collect(Collectors.toList()))
-        .thenApply(SubmitCommitteeMessagesResult::new);
+        .thenApply(SubmitDataResult::new);
   }
 
   public SafeFuture<Optional<Attestation>> createAggregate(

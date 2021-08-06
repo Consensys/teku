@@ -89,7 +89,7 @@ import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
-import tech.pegasys.teku.validator.api.SubmitCommitteeMessageError;
+import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
@@ -622,7 +622,7 @@ class ValidatorApiHandlerTest {
     final Attestation attestation = dataStructureUtil.randomAttestation();
     when(attestationManager.onAttestation(any(ValidateableAttestation.class)))
         .thenReturn(completedFuture(SUCCESSFUL));
-    final SafeFuture<List<SubmitCommitteeMessageError>> result =
+    final SafeFuture<List<SubmitDataError>> result =
         validatorApiHandler.sendSignedAttestations(List.of(attestation));
     assertThat(result).isCompletedWithValue(emptyList());
 
@@ -635,7 +635,7 @@ class ValidatorApiHandlerTest {
     when(attestationManager.onAttestation(any(ValidateableAttestation.class)))
         .thenReturn(completedFuture(AttestationProcessingResult.SAVED_FOR_FUTURE));
 
-    final SafeFuture<List<SubmitCommitteeMessageError>> result =
+    final SafeFuture<List<SubmitDataError>> result =
         validatorApiHandler.sendSignedAttestations(List.of(attestation));
     assertThat(result).isCompletedWithValue(emptyList());
 
@@ -649,10 +649,9 @@ class ValidatorApiHandlerTest {
     when(attestationManager.onAttestation(any(ValidateableAttestation.class)))
         .thenReturn(completedFuture(AttestationProcessingResult.invalid("Bad juju")));
 
-    final SafeFuture<List<SubmitCommitteeMessageError>> result =
+    final SafeFuture<List<SubmitDataError>> result =
         validatorApiHandler.sendSignedAttestations(List.of(attestation));
-    assertThat(result)
-        .isCompletedWithValue(List.of(new SubmitCommitteeMessageError(ZERO, "Bad juju")));
+    assertThat(result).isCompletedWithValue(List.of(new SubmitDataError(ZERO, "Bad juju")));
 
     verify(dutyMetrics, never()).onAttestationPublished(attestation.getData().getSlot());
     verify(performanceTracker, never()).saveProducedAttestation(attestation);
@@ -735,7 +734,7 @@ class ValidatorApiHandlerTest {
   @Test
   void sendSyncCommitteeMessages_shouldAllowEmptyRequest() {
     final List<SyncCommitteeMessage> messages = List.of();
-    final SafeFuture<List<SubmitCommitteeMessageError>> result =
+    final SafeFuture<List<SubmitDataError>> result =
         validatorApiHandler.sendSyncCommitteeMessages(messages);
     assertThat(result).isCompleted();
   }
@@ -746,7 +745,7 @@ class ValidatorApiHandlerTest {
     final List<SyncCommitteeMessage> messages = List.of(message);
     when(syncCommitteeMessagePool.add(any()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
-    final SafeFuture<List<SubmitCommitteeMessageError>> result =
+    final SafeFuture<List<SubmitDataError>> result =
         validatorApiHandler.sendSyncCommitteeMessages(messages);
     assertThat(result).isCompletedWithValue(emptyList());
     verify(performanceTracker).saveProducedSyncCommitteeMessage(message);
@@ -760,10 +759,9 @@ class ValidatorApiHandlerTest {
         .thenReturn(
             SafeFuture.completedFuture(
                 InternalValidationResult.create(ValidationResultCode.REJECT, "Rejected")));
-    final SafeFuture<List<SubmitCommitteeMessageError>> result =
+    final SafeFuture<List<SubmitDataError>> result =
         validatorApiHandler.sendSyncCommitteeMessages(messages);
-    assertThat(result)
-        .isCompletedWithValue(List.of(new SubmitCommitteeMessageError(UInt64.ZERO, "Rejected")));
+    assertThat(result).isCompletedWithValue(List.of(new SubmitDataError(UInt64.ZERO, "Rejected")));
     verify(performanceTracker, never()).saveProducedSyncCommitteeMessage(message);
   }
 

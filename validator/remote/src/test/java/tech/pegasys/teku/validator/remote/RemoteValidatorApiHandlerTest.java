@@ -44,8 +44,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
-import tech.pegasys.teku.api.response.v1.beacon.PostSyncCommitteeFailure;
-import tech.pegasys.teku.api.response.v1.beacon.PostSyncCommitteeFailureResponse;
+import tech.pegasys.teku.api.response.v1.beacon.PostDataFailure;
+import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
@@ -72,7 +72,7 @@ import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
-import tech.pegasys.teku.validator.api.SubmitCommitteeMessageError;
+import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.remote.apiclient.RateLimitedException;
 import tech.pegasys.teku.validator.remote.apiclient.SchemaObjectsTestFixture;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorRestApiClient;
@@ -345,9 +345,9 @@ class RemoteValidatorApiHandlerTest {
   public void sendSignedAttestation_InvokeApiWithCorrectRequest() {
     final Attestation attestation = dataStructureUtil.randomAttestation();
 
-    final PostSyncCommitteeFailureResponse failureResponse =
-        new PostSyncCommitteeFailureResponse(
-            SC_BAD_REQUEST, "Oh no", List.of(new PostSyncCommitteeFailure(UInt64.ZERO, "Bad")));
+    final PostDataFailureResponse failureResponse =
+        new PostDataFailureResponse(
+            SC_BAD_REQUEST, "Oh no", List.of(new PostDataFailure(UInt64.ZERO, "Bad")));
     when(apiClient.sendSignedAttestations(any())).thenReturn(Optional.of(failureResponse));
 
     final tech.pegasys.teku.api.schema.Attestation schemaAttestation =
@@ -357,7 +357,7 @@ class RemoteValidatorApiHandlerTest {
     ArgumentCaptor<List<tech.pegasys.teku.api.schema.Attestation>> argumentCaptor =
         ArgumentCaptor.forClass(List.class);
 
-    final SafeFuture<List<SubmitCommitteeMessageError>> result =
+    final SafeFuture<List<SubmitDataError>> result =
         apiHandler.sendSignedAttestations(List.of(attestation));
     asyncRunner.executeQueuedActions();
 
@@ -365,8 +365,7 @@ class RemoteValidatorApiHandlerTest {
     assertThat(argumentCaptor.getValue())
         .usingRecursiveComparison()
         .isEqualTo(List.of(schemaAttestation));
-    assertThat(result)
-        .isCompletedWithValue(List.of(new SubmitCommitteeMessageError(UInt64.ZERO, "Bad")));
+    assertThat(result).isCompletedWithValue(List.of(new SubmitDataError(UInt64.ZERO, "Bad")));
   }
 
   @Test

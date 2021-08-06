@@ -14,7 +14,6 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.INVALID_BODY_SUPPLIED;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
@@ -35,16 +34,16 @@ import java.util.List;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
-import tech.pegasys.teku.api.response.v1.beacon.PostSyncCommitteeFailure;
-import tech.pegasys.teku.api.response.v1.beacon.PostSyncCommitteeFailureResponse;
+import tech.pegasys.teku.api.response.v1.beacon.PostDataFailure;
+import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.validator.api.SubmitCommitteeMessageError;
-import tech.pegasys.teku.validator.api.SubmitCommitteeMessagesResult;
+import tech.pegasys.teku.validator.api.SubmitDataError;
+import tech.pegasys.teku.validator.api.SubmitDataResult;
 
 public class PostAttestation extends AbstractHandler {
   public static final String ROUTE = "/eth/v1/beacon/pool/attestations";
@@ -74,7 +73,10 @@ public class PostAttestation extends AbstractHandler {
         @OpenApiResponse(
             status = RES_OK,
             description = "The Attestation was accepted, validated, and submitted"),
-        @OpenApiResponse(status = RES_BAD_REQUEST, description = INVALID_BODY_SUPPLIED),
+        @OpenApiResponse(
+            status = RES_BAD_REQUEST,
+            description = "Errors with one or more sync committee messages",
+            content = @OpenApiContent(from = PostDataFailureResponse.class)),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
@@ -82,8 +84,7 @@ public class PostAttestation extends AbstractHandler {
     try {
       final List<Attestation> attestations =
           Arrays.asList(parseRequestBody(ctx.body(), Attestation[].class));
-      final SafeFuture<SubmitCommitteeMessagesResult> future =
-          provider.submitAttestations(attestations);
+      final SafeFuture<SubmitDataResult> future = provider.submitAttestations(attestations);
 
       ctx.result(
           future
@@ -95,20 +96,20 @@ public class PostAttestation extends AbstractHandler {
     }
   }
 
-  private String handleResult(Context ctx, final SubmitCommitteeMessagesResult response)
+  private String handleResult(Context ctx, final SubmitDataResult response)
       throws JsonProcessingException {
-    final List<SubmitCommitteeMessageError> errors = response.getErrors();
+    final List<SubmitDataError> errors = response.getErrors();
     if (errors.isEmpty()) {
       ctx.status(HttpStatusCodes.SC_OK);
       return null;
     }
 
-    final PostSyncCommitteeFailureResponse data =
-        new PostSyncCommitteeFailureResponse(
+    final PostDataFailureResponse data =
+        new PostDataFailureResponse(
             SC_BAD_REQUEST,
             "Some attestations failed to publish, refer to errors for details",
             errors.stream()
-                .map(e -> new PostSyncCommitteeFailure(e.getIndex(), e.getMessage()))
+                .map(e -> new PostDataFailure(e.getIndex(), e.getMessage()))
                 .collect(Collectors.toList()));
     ctx.status(SC_BAD_REQUEST);
     return jsonProvider.objectToJSON(data);

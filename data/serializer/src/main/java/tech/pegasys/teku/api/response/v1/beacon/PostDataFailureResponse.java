@@ -19,18 +19,18 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class PostSyncCommitteeFailureResponse {
+public class PostDataFailureResponse {
   @Schema(type = "string", format = "uint64")
   public final UInt64 code;
 
   public final String message;
-  public final List<PostSyncCommitteeFailure> failures;
+  public final List<PostDataFailure> failures;
 
   @JsonCreator
-  public PostSyncCommitteeFailureResponse(
+  public PostDataFailureResponse(
       @JsonProperty("code") final int code,
       @JsonProperty("message") final String message,
-      @JsonProperty("failures") final List<PostSyncCommitteeFailure> failures) {
+      @JsonProperty("failures") final List<PostDataFailure> failures) {
     this.code = UInt64.valueOf(code);
     this.message = message;
     this.failures = failures;

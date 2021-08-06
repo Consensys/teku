@@ -46,7 +46,7 @@ import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.collections.SszBitlist;
 import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
-import tech.pegasys.teku.validator.api.SubmitCommitteeMessageError;
+import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
@@ -261,7 +261,7 @@ class AttestationProductionDutyTest {
     when(validatorApiChannel.sendSignedAttestations(List.of(expectedAttestation)))
         .thenReturn(
             SafeFuture.completedFuture(
-                List.of(new SubmitCommitteeMessageError(UInt64.ZERO, "Naughty attestation"))));
+                List.of(new SubmitDataError(UInt64.ZERO, "Naughty attestation"))));
 
     final SafeFuture<Optional<AttestationData>> attestationResult =
         duty.addValidator(validator, committeeIndex, committeePosition, 10, committeeSize);

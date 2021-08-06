@@ -35,15 +35,15 @@ import java.util.List;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
-import tech.pegasys.teku.api.response.v1.beacon.PostSyncCommitteeFailure;
-import tech.pegasys.teku.api.response.v1.beacon.PostSyncCommitteeFailureResponse;
+import tech.pegasys.teku.api.response.v1.beacon.PostDataFailure;
+import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.validator.api.SubmitCommitteeMessageError;
-import tech.pegasys.teku.validator.api.SubmitCommitteeMessagesResult;
+import tech.pegasys.teku.validator.api.SubmitDataError;
+import tech.pegasys.teku.validator.api.SubmitDataResult;
 
 public class PostSyncCommittees extends AbstractHandler {
   public static final String ROUTE = "/eth/v1/beacon/pool/sync_committees";
@@ -78,7 +78,7 @@ public class PostSyncCommittees extends AbstractHandler {
         @OpenApiResponse(
             status = RES_BAD_REQUEST,
             description = "Errors with one or more sync committee messages",
-            content = @OpenApiContent(from = PostSyncCommitteeFailureResponse.class)),
+            content = @OpenApiContent(from = PostDataFailureResponse.class)),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
@@ -86,8 +86,7 @@ public class PostSyncCommittees extends AbstractHandler {
     try {
       final List<SyncCommitteeMessage> messages =
           Arrays.asList(parseRequestBody(ctx.body(), SyncCommitteeMessage[].class));
-      final SafeFuture<SubmitCommitteeMessagesResult> future =
-          provider.submitCommitteeSignatures(messages);
+      final SafeFuture<SubmitDataResult> future = provider.submitCommitteeSignatures(messages);
 
       ctx.result(
           future
@@ -100,20 +99,20 @@ public class PostSyncCommittees extends AbstractHandler {
     }
   }
 
-  private String handleResult(Context ctx, final SubmitCommitteeMessagesResult response)
+  private String handleResult(Context ctx, final SubmitDataResult response)
       throws JsonProcessingException {
-    final List<SubmitCommitteeMessageError> errors = response.getErrors();
+    final List<SubmitDataError> errors = response.getErrors();
     if (errors.isEmpty()) {
       ctx.status(SC_OK);
       return null;
     }
 
-    final PostSyncCommitteeFailureResponse data =
-        new PostSyncCommitteeFailureResponse(
+    final PostDataFailureResponse data =
+        new PostDataFailureResponse(
             SC_BAD_REQUEST,
             "Some sync committee subscriptions failed, refer to errors for details",
             errors.stream()
-                .map(e -> new PostSyncCommitteeFailure(e.getIndex(), e.getMessage()))
+                .map(e -> new PostDataFailure(e.getIndex(), e.getMessage()))
                 .collect(Collectors.toList()));
     ctx.status(SC_BAD_REQUEST);
     return jsonProvider.objectToJSON(data);

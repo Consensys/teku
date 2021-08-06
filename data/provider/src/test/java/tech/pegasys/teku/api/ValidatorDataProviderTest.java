@@ -58,8 +58,8 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
-import tech.pegasys.teku.validator.api.SubmitCommitteeMessageError;
-import tech.pegasys.teku.validator.api.SubmitCommitteeMessagesResult;
+import tech.pegasys.teku.validator.api.SubmitDataError;
+import tech.pegasys.teku.validator.api.SubmitDataResult;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class ValidatorDataProviderTest {
@@ -206,13 +206,12 @@ public class ValidatorDataProviderTest {
     tech.pegasys.teku.spec.datastructures.operations.Attestation internalAttestation =
         dataStructureUtil.randomAttestation();
     Attestation attestation = new Attestation(internalAttestation);
-    final List<SubmitCommitteeMessageError> errors =
-        List.of(new SubmitCommitteeMessageError(ZERO, "Nope"));
-    final SafeFuture<List<SubmitCommitteeMessageError>> result = SafeFuture.completedFuture(errors);
+    final List<SubmitDataError> errors = List.of(new SubmitDataError(ZERO, "Nope"));
+    final SafeFuture<List<SubmitDataError>> result = SafeFuture.completedFuture(errors);
     when(validatorApiChannel.sendSignedAttestations(any())).thenReturn(result);
 
     assertThat(provider.submitAttestations(List.of(attestation)))
-        .isCompletedWithValue(new SubmitCommitteeMessagesResult(errors));
+        .isCompletedWithValue(new SubmitDataResult(errors));
 
     verify(validatorApiChannel).sendSignedAttestations(args.capture());
     assertThat(args.getValue()).hasSize(1);
