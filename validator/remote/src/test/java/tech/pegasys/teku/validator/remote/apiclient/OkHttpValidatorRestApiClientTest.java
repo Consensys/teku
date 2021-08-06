@@ -403,10 +403,17 @@ class OkHttpValidatorRestApiClientTest {
   public void sendSignedAttestation_WhenBadParameters_ThrowsIllegalArgumentException() {
     final Attestation attestation = schemaObjects.attestation();
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
+    final PostDataFailureResponse response =
+        new PostDataFailureResponse(
+            SC_BAD_REQUEST, "Computer said no", List.of(new PostDataFailure(UInt64.ZERO, "Bad")));
+    mockWebServer.enqueue(
+        new MockResponse().setResponseCode(SC_BAD_REQUEST).setBody(asJson(response)));
 
-    assertThatThrownBy(() -> apiClient.sendSignedAttestations(List.of(attestation)))
-        .isInstanceOf(IllegalArgumentException.class);
+    assertThat(apiClient.sendSignedAttestations(List.of(attestation)))
+        .isPresent()
+        .get()
+        .usingRecursiveComparison()
+        .isEqualTo(response);
   }
 
   @Test
