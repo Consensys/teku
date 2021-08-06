@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -27,6 +28,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -44,6 +46,7 @@ import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.collections.SszBitlist;
 import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
+import tech.pegasys.teku.validator.api.SubmitCommitteeMessageError;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
@@ -66,6 +69,8 @@ class AttestationProductionDutyTest {
   @BeforeEach
   public void setUp() {
     when(forkProvider.getForkInfo(any())).thenReturn(completedFuture(fork));
+    when(validatorApiChannel.sendSignedAttestations(any()))
+        .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
   }
 
   @Test
@@ -239,6 +244,40 @@ class AttestationProductionDutyTest {
     verify(validatorApiChannel).sendSignedAttestations(List.of(expectedAttestation));
     verify(validatorLogger)
         .dutyCompleted(TYPE, SLOT, 1, Set.of(attestationData.getBeacon_block_root()));
+    verifyNoMoreInteractions(validatorLogger);
+  }
+
+  @Test
+  void shouldReportFailureWhenAttestationIsInvalid() {
+    final int committeeIndex = 3;
+    final int committeePosition = 6;
+    final int committeeSize = 22;
+    final Validator validator = createValidator();
+
+    final AttestationData attestationData = expectCreateAttestationData(committeeIndex);
+    final Attestation expectedAttestation =
+        expectSignAttestation(validator, committeePosition, committeeSize, attestationData);
+
+    when(validatorApiChannel.sendSignedAttestations(List.of(expectedAttestation)))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                List.of(new SubmitCommitteeMessageError(UInt64.ZERO, "Naughty attestation"))));
+
+    final SafeFuture<Optional<AttestationData>> attestationResult =
+        duty.addValidator(validator, committeeIndex, committeePosition, 10, committeeSize);
+    performAndReportDuty();
+    assertThat(attestationResult).isCompletedWithValue(Optional.of(attestationData));
+
+    verify(validatorApiChannel).sendSignedAttestations(List.of(expectedAttestation));
+    verify(validatorLogger)
+        .dutyFailed(
+            eq(TYPE),
+            eq(SLOT),
+            eq(Set.of(validator.getPublicKey().toAbbreviatedString())),
+            argThat(
+                error ->
+                    error instanceof RestApiReportedException
+                        && error.getMessage().equals("Naughty attestation")));
     verifyNoMoreInteractions(validatorLogger);
   }
 
