@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.remote.apiclient;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -42,6 +43,8 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionRequest;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
+import tech.pegasys.teku.api.response.v1.beacon.PostSyncCommitteeFailure;
+import tech.pegasys.teku.api.response.v1.beacon.PostSyncCommitteeFailureResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAttestationDataResponse;
@@ -673,6 +676,30 @@ class OkHttpValidatorRestApiClientTest {
     mockWebServer.enqueue(new MockResponse().setResponseCode(429));
 
     assertThatThrownBy(() -> apiClient.getGenesis()).isInstanceOf(RateLimitedException.class);
+  }
+
+  @Test
+  void sendSyncCommitteeMessages_shouldReturnEmptyWhenResponseIsOk() {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK));
+
+    assertThat(apiClient.sendSyncCommitteeMessages(emptyList())).isEmpty();
+  }
+
+  @Test
+  void sendSyncCommitteeMessages_shouldReturnErrorsFromBadResponse() {
+    final PostSyncCommitteeFailureResponse response =
+        new PostSyncCommitteeFailureResponse(
+            SC_BAD_REQUEST,
+            "Computer said no",
+            List.of(new PostSyncCommitteeFailure(UInt64.ZERO, "Bad")));
+    mockWebServer.enqueue(
+        new MockResponse().setResponseCode(SC_BAD_REQUEST).setBody(asJson(response)));
+
+    assertThat(apiClient.sendSyncCommitteeMessages(emptyList()))
+        .isPresent()
+        .get()
+        .usingRecursiveComparison()
+        .isEqualTo(response);
   }
 
   private String asJson(Object object) {

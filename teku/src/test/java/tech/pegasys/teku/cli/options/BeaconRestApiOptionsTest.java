@@ -38,6 +38,7 @@ public class BeaconRestApiOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(config.getRestApiHostAllowlist()).containsExactly("test.domain.com", "11.12.13.14");
     assertThat(config.getRestApiCorsAllowedOrigins())
         .containsExactly("127.1.2.3", "origin.allowed.com");
+    assertThat(config.getMaxUrlLength()).isEqualTo(65535);
   }
 
   @Test
@@ -102,5 +103,43 @@ public class BeaconRestApiOptionsTest extends AbstractBeaconNodeCommandTest {
     final BeaconRestApiConfig config =
         getConfig(getTekuConfigurationFromArguments("--rest-api-cors-origins", "*"));
     assertThat(config.getRestApiCorsAllowedOrigins()).containsOnly("*");
+  }
+
+  @Test
+  public void maxUrlLength_shouldAcceptLowerBound() {
+    final BeaconRestApiConfig config =
+        getConfig(getTekuConfigurationFromArguments("--Xrest-api-max-url-length", "4096"));
+    assertThat(config.getMaxUrlLength()).isEqualTo(4096);
+  }
+
+  @Test
+  public void maxUrlLength_shouldAcceptUpperBound() {
+    final BeaconRestApiConfig config =
+        getConfig(getTekuConfigurationFromArguments("--Xrest-api-max-url-length", "1052672"));
+    assertThat(config.getMaxUrlLength()).isEqualTo(1052672);
+  }
+
+  @Test
+  public void maxUrlLength_shouldEnforceMinimumLength() {
+    final String[] args = {"--Xrest-api-max-url-length", "2047"};
+    beaconNodeCommand.parse(args);
+    final String output = getCommandLineOutput();
+    assertThat(output).contains("Invalid value '2047'");
+  }
+
+  @Test
+  public void maxUrlLength_shouldRejectNegativeNumbers() {
+    final String[] args = {"--Xrest-api-max-url-length", "-2048"};
+    beaconNodeCommand.parse(args);
+    final String output = getCommandLineOutput();
+    assertThat(output).contains("Invalid value '-2048'");
+  }
+
+  @Test
+  public void maxUrlLength_shouldEnforceMaximumLength() {
+    final String[] args = {"--Xrest-api-max-url-length", "1052673"};
+    beaconNodeCommand.parse(args);
+    final String output = getCommandLineOutput();
+    assertThat(output).contains("Invalid value '1052673'");
   }
 }

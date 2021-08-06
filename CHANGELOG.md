@@ -17,6 +17,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - Scheduled Altair upgrade on the Pyrmont testnet at epoch 61650.
 - Updated default docker image to Java 16 using AdoptOpenJDK Ubuntu based images.
 - Docker images now include `curl` to support adding health checks.
+- Increased the rest api maximum request length to 65535 bytes, was previously 8192 bytes.
 - Rest Api's for Altair have been moved out of 'experimental', and are now stable.
   - implement POST `/eth/v1/beacon/pool/sync_committees` to allow validators to submit sync committee signatures to the beacon node.
   - implement POST `/eth/v1/validator/duties/sync/{epoch}` for Altair fork.
