@@ -35,6 +35,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - Upgraded the discovery library, providing better memory management and standards compliance.
 - Fixed `InvalidDepositEventsException` error after restart.
 - Improve compatibility with Lighthouse bootnodes by not including the local address in the local ENR until the external address has been determined.
+- Posting attestations that fail validation to `/eth/v1/beacon/pool/attestations` will now result in `SC_BAD_REQUEST` response, with details of the invalid attestations in the response body. 
 
 ### Experimental: New Altair REST APIs
 - implement POST `/eth/v1/beacon/pool/sync_committees` to allow validators to submit sync committee signatures to the beacon node.
