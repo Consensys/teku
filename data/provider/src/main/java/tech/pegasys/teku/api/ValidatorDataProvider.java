@@ -27,6 +27,8 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionRequest;
+import tech.pegasys.teku.api.response.v1.beacon.PostDataFailure;
+import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostSyncDutiesResponse;
@@ -43,6 +45,7 @@ import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
@@ -58,7 +61,7 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuty;
-import tech.pegasys.teku.validator.api.SubmitDataResult;
+import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
@@ -68,6 +71,8 @@ public class ValidatorDataProvider {
       "Cannot produce a block for a historic slot.";
   public static final String NO_SLOT_PROVIDED = "No slot was provided.";
   public static final String NO_RANDAO_PROVIDED = "No randao_reveal was provided.";
+  static final String PARTIAL_PUBLISH_FAILURE_MESSAGE =
+      "Some items failed to publish, refer to errors for details";
   private final ValidatorApiChannel validatorApiChannel;
   private final CombinedChainDataClient combinedChainDataClient;
   private final SchemaObjectProvider schemaObjectProvider;
@@ -131,11 +136,12 @@ public class ValidatorDataProvider {
         .thenApply(maybeAttestation -> maybeAttestation.map(AttestationData::new));
   }
 
-  public SafeFuture<SubmitDataResult> submitAttestations(List<Attestation> attestations) {
+  public SafeFuture<Optional<PostDataFailureResponse>> submitAttestations(
+      List<Attestation> attestations) {
     return validatorApiChannel
         .sendSignedAttestations(
             attestations.stream().map(Attestation::asInternalAttestation).collect(toList()))
-        .thenApply(SubmitDataResult::new);
+        .thenApply(this::convertToPostDataFailureResponse);
   }
 
   public SignedBeaconBlock parseBlock(final JsonProvider jsonProvider, final String jsonBlock)
@@ -181,14 +187,28 @@ public class ValidatorDataProvider {
             });
   }
 
-  public SafeFuture<SubmitDataResult> submitCommitteeSignatures(
+  public SafeFuture<Optional<PostDataFailureResponse>> submitCommitteeSignatures(
       final List<SyncCommitteeMessage> messages) {
     return validatorApiChannel
         .sendSyncCommitteeMessages(
             messages.stream()
                 .flatMap(message -> message.asInternalCommitteeSignature(spec).stream())
                 .collect(Collectors.toList()))
-        .thenApply(SubmitDataResult::new);
+        .thenApply(this::convertToPostDataFailureResponse);
+  }
+
+  private Optional<PostDataFailureResponse> convertToPostDataFailureResponse(
+      final List<SubmitDataError> errors) {
+    if (errors.isEmpty()) {
+      return Optional.empty();
+    }
+    return Optional.of(
+        new PostDataFailureResponse(
+            HttpStatusCodes.SC_BAD_REQUEST,
+            PARTIAL_PUBLISH_FAILURE_MESSAGE,
+            errors.stream()
+                .map(e -> new PostDataFailure(e.getIndex(), e.getMessage()))
+                .collect(Collectors.toList())));
   }
 
   public SafeFuture<Optional<Attestation>> createAggregate(

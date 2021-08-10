@@ -17,6 +17,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
+import java.util.Objects;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class PostDataFailureResponse {
@@ -34,5 +35,24 @@ public class PostDataFailureResponse {
     this.code = UInt64.valueOf(code);
     this.message = message;
     this.failures = failures;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final PostDataFailureResponse that = (PostDataFailureResponse) o;
+    return Objects.equals(code, that.code)
+        && Objects.equals(message, that.message)
+        && Objects.equals(failures, that.failures);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(code, message, failures);
   }
 }

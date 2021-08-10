@@ -24,6 +24,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
@@ -38,6 +40,8 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import tech.pegasys.teku.api.response.v1.beacon.PostDataFailure;
+import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.BLSPubKey;
@@ -59,7 +63,6 @@ import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
-import tech.pegasys.teku.validator.api.SubmitDataResult;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class ValidatorDataProviderTest {
@@ -210,8 +213,12 @@ public class ValidatorDataProviderTest {
     final SafeFuture<List<SubmitDataError>> result = SafeFuture.completedFuture(errors);
     when(validatorApiChannel.sendSignedAttestations(any())).thenReturn(result);
 
-    assertThat(provider.submitAttestations(List.of(attestation)))
-        .isCompletedWithValue(new SubmitDataResult(errors));
+    assertThatSafeFuture(provider.submitAttestations(List.of(attestation)))
+        .isCompletedWithOptionalContaining(
+            new PostDataFailureResponse(
+                SC_BAD_REQUEST,
+                ValidatorDataProvider.PARTIAL_PUBLISH_FAILURE_MESSAGE,
+                List.of(new PostDataFailure(ZERO, "Nope"))));
 
     verify(validatorApiChannel).sendSignedAttestations(args.capture());
     assertThat(args.getValue()).hasSize(1);

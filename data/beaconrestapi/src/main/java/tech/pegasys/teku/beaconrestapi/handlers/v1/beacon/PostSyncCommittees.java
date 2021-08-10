@@ -19,11 +19,7 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERRO
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
-import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.base.Throwables;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
@@ -32,18 +28,15 @@ import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Optional;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
-import tech.pegasys.teku.api.response.v1.beacon.PostDataFailure;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.validator.api.SubmitDataError;
-import tech.pegasys.teku.validator.api.SubmitDataResult;
 
 public class PostSyncCommittees extends AbstractHandler {
   public static final String ROUTE = "/eth/v1/beacon/pool/sync_committees";
@@ -86,45 +79,14 @@ public class PostSyncCommittees extends AbstractHandler {
     try {
       final List<SyncCommitteeMessage> messages =
           Arrays.asList(parseRequestBody(ctx.body(), SyncCommitteeMessage[].class));
-      final SafeFuture<SubmitDataResult> future = provider.submitCommitteeSignatures(messages);
+      final SafeFuture<Optional<PostDataFailureResponse>> future =
+          provider.submitCommitteeSignatures(messages);
 
-      ctx.result(
-          future
-              .thenApplyChecked(response -> handleResult(ctx, response))
-              .exceptionallyCompose(error -> handleError(ctx, error)));
+      handlePostDataResult(ctx, future);
 
     } catch (final IllegalArgumentException e) {
       ctx.result(BadRequest.badRequest(jsonProvider, e.getMessage()));
       ctx.status(SC_BAD_REQUEST);
-    }
-  }
-
-  private String handleResult(Context ctx, final SubmitDataResult response)
-      throws JsonProcessingException {
-    final List<SubmitDataError> errors = response.getErrors();
-    if (errors.isEmpty()) {
-      ctx.status(SC_OK);
-      return null;
-    }
-
-    final PostDataFailureResponse data =
-        new PostDataFailureResponse(
-            SC_BAD_REQUEST,
-            "Some sync committee subscriptions failed, refer to errors for details",
-            errors.stream()
-                .map(e -> new PostDataFailure(e.getIndex(), e.getMessage()))
-                .collect(Collectors.toList()));
-    ctx.status(SC_BAD_REQUEST);
-    return jsonProvider.objectToJSON(data);
-  }
-
-  private SafeFuture<String> handleError(final Context ctx, final Throwable error) {
-    final Throwable rootCause = Throwables.getRootCause(error);
-    if (rootCause instanceof IllegalArgumentException) {
-      ctx.status(SC_BAD_REQUEST);
-      return SafeFuture.of(() -> BadRequest.badRequest(jsonProvider, rootCause.getMessage()));
-    } else {
-      return failedFuture(error);
     }
   }
 }

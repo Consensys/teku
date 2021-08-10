@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
-import static java.util.Collections.emptyList;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -24,6 +23,7 @@ import static org.mockito.Mockito.when;
 
 import io.javalin.http.Context;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,8 +36,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.validator.api.SubmitDataError;
-import tech.pegasys.teku.validator.api.SubmitDataResult;
 
 public class PostAttestationTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -55,7 +53,7 @@ public class PostAttestationTest {
   @Test
   void shouldBeAbleToSubmitAttestation() throws Exception {
     when(provider.submitAttestations(any()))
-        .thenReturn(SafeFuture.completedFuture(new SubmitDataResult(emptyList())));
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
     when(context.body()).thenReturn(jsonProvider.objectToJSON(List.of(attestation)));
     handler.handle(context);
 
@@ -64,10 +62,13 @@ public class PostAttestationTest {
 
   @Test
   void shouldReportInvalidAttestations() throws Exception {
+    final PostDataFailureResponse failureResponse =
+        new PostDataFailureResponse(
+            SC_BAD_REQUEST,
+            "Some attestations failed to publish, refer to errors for details",
+            List.of(new PostDataFailure(UInt64.ZERO, "Darn")));
     when(provider.submitAttestations(any()))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                new SubmitDataResult(List.of(new SubmitDataError(UInt64.ZERO, "Darn")))));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(failureResponse)));
     when(context.body()).thenReturn(jsonProvider.objectToJSON(List.of(attestation)));
     handler.handle(context);
 
@@ -78,12 +79,7 @@ public class PostAttestationTest {
     verify(context).result(captor.capture());
     verify(context).status(SC_BAD_REQUEST);
     final CompletableFuture<Object> bodyResult = captor.getValue();
-    final String value =
-        jsonProvider.objectToJSON(
-            new PostDataFailureResponse(
-                SC_BAD_REQUEST,
-                "Some attestations failed to publish, refer to errors for details",
-                List.of(new PostDataFailure(UInt64.ZERO, "Darn"))));
+    final String value = jsonProvider.objectToJSON(failureResponse);
     assertThat(bodyResult).isCompletedWithValue(value);
   }
 

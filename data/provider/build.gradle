@@ -8,6 +8,7 @@ dependencies {
     implementation project(':ethereum:spec')
     implementation project(':ethereum:statetransition')
     implementation project(':infrastructure:async')
+    implementation project(':infrastructure:http')
     implementation project(':networking:eth2')
     implementation project(':services:serviceutils')
     implementation project(':ssz')
