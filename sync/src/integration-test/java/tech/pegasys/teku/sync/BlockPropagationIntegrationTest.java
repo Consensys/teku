@@ -30,8 +30,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkFactory;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.util.config.Constants;
 
 public class BlockPropagationIntegrationTest {
   private final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
@@ -47,7 +47,7 @@ public class BlockPropagationIntegrationTest {
   public void shouldFetchUnknownAncestorsOfPropagatedBlock() throws Exception {
     final RpcEncoding encoding = RpcEncoding.SSZ_SNAPPY;
     final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
-    UInt64 currentSlot = UInt64.valueOf(Constants.GENESIS_SLOT);
+    UInt64 currentSlot = SpecConfig.GENESIS_SLOT;
 
     // Setup node 1
     SyncingNodeManager node1 =

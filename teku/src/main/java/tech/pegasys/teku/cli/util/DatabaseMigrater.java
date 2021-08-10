@@ -20,7 +20,6 @@ import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.function.Consumer;
 import org.apache.commons.io.FileUtils;
@@ -109,20 +108,14 @@ public class DatabaseMigrater {
   @VisibleForTesting
   void swapActiveDatabase() throws DatabaseMigraterError {
     try {
-      Files.move(
-          dataDirLayout.getBeaconDataDirectory(),
-          getMovedOldBeaconFolderPath(),
-          StandardCopyOption.ATOMIC_MOVE);
+      Files.move(dataDirLayout.getBeaconDataDirectory(), getMovedOldBeaconFolderPath());
     } catch (IOException ex) {
       statusUpdater.accept(ex.getMessage());
       throw new DatabaseMigraterError(
           "Failed to move old database to " + getMovedOldBeaconFolderPath().toString());
     }
     try {
-      Files.move(
-          getNewBeaconFolderPath(),
-          dataDirLayout.getBeaconDataDirectory(),
-          StandardCopyOption.ATOMIC_MOVE);
+      Files.move(getNewBeaconFolderPath(), dataDirLayout.getBeaconDataDirectory());
     } catch (IOException ex) {
       statusUpdater.accept(ex.getMessage());
       throw new DatabaseMigraterError(

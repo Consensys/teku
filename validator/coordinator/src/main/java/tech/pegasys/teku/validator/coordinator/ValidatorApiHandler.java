@@ -442,8 +442,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public void sendSignedAttestation(
-      final Attestation attestation, final Optional<Integer> expectedValidatorIndex) {
+  public void sendSignedAttestation(final Attestation attestation) {
     attestationManager
         .onAttestation(ValidateableAttestation.fromValidator(spec, attestation))
         .finish(
@@ -461,11 +460,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                     "Failed to send signed attestation for slot {}, block {}",
                     attestation.getData().getSlot(),
                     attestation.getData().getBeacon_block_root()));
-  }
-
-  @Override
-  public void sendSignedAttestation(final Attestation attestation) {
-    sendSignedAttestation(attestation, Optional.empty());
   }
 
   @Override

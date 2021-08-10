@@ -39,7 +39,7 @@ class EventSourceHandlerTest {
   final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
   private final EventSourceHandler handler =
-      new EventSourceHandler(validatorTimingChannel, metricsSystem);
+      new EventSourceHandler(validatorTimingChannel, metricsSystem, true);
 
   @Test
   void onOpen_shouldNotifyOfPotentialMissedEvents() {
@@ -115,5 +115,31 @@ class EventSourceHandlerTest {
     final MessageEvent messageEvent = new MessageEvent("{this isn't json!}");
     assertDoesNotThrow(() -> handler.onMessage(EventType.chain_reorg.name(), messageEvent));
     verifyNoInteractions(validatorTimingChannel);
+  }
+
+  @Test
+  void onHeadEvent_shouldNotGenerateEarlyAttestationsIfNotEnabled() throws Exception {
+    final EventSourceHandler onTimeHandler =
+        new EventSourceHandler(validatorTimingChannel, metricsSystem, false);
+
+    final UInt64 slot = UInt64.valueOf(134);
+    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 previousDutyDependentRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 currentDutyDependentRoot = dataStructureUtil.randomBytes32();
+    final HeadEvent event =
+        new HeadEvent(
+            slot,
+            blockRoot,
+            dataStructureUtil.randomBytes32(),
+            false,
+            previousDutyDependentRoot,
+            currentDutyDependentRoot);
+    onTimeHandler.onMessage(
+        EventType.head.name(), new MessageEvent(jsonProvider.objectToJSON(event)));
+
+    verify(validatorTimingChannel)
+        .onHeadUpdate(
+            eq(slot), eq(previousDutyDependentRoot), eq(currentDutyDependentRoot), eq(blockRoot));
+    verifyNoMoreInteractions(validatorTimingChannel);
   }
 }

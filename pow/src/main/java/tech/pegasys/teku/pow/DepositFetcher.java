@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.pow;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
@@ -72,7 +73,11 @@ public class DepositFetcher {
   // Inclusive on both sides
   public synchronized SafeFuture<Void> fetchDepositsInRange(
       BigInteger fromBlockNumber, BigInteger toBlockNumber) {
-
+    checkArgument(
+        fromBlockNumber.compareTo(toBlockNumber) <= 0,
+        "From block number (%s) must be less than or equal to block number (%s)",
+        fromBlockNumber,
+        toBlockNumber);
     LOG.trace(
         "Attempting to fetch deposit events for block numbers in the range ({}, {})",
         fromBlockNumber,

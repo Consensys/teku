@@ -15,7 +15,7 @@ dependencyManagement {
 
     dependency 'tech.pegasys.tools.epchecks:errorprone-checks:1.0.0'
 
-    dependency 'com.google.guava:guava:29.0-jre'
+    dependency 'com.google.guava:guava:30.1.1-jre'
     dependency 'com.google.code.gson:gson:2.8.6'
 
     dependency 'com.googlecode.json-simple:json-simple:1.1.1'
@@ -30,7 +30,7 @@ dependencyManagement {
 
     dependency 'info.picocli:picocli:4.4.0'
 
-    dependencySet(group: 'io.javalin', version: '3.12.0') {
+    dependencySet(group: 'io.javalin', version: '3.13.10') {
       entry 'javalin'
       entry('javalin-openapi') {
         exclude 'org.webjars.npm:redoc'
@@ -64,7 +64,7 @@ dependencyManagement {
       entry 'netty-all'
     }
 
-    dependencySet(group: 'io.vertx', version: '3.9.1') {
+    dependencySet(group: 'io.vertx', version: '3.9.7') {
       entry 'vertx-codegen'
       entry('vertx-core') {
         // We include netty-all so omit the separated jars
@@ -103,8 +103,8 @@ dependencyManagement {
 
     dependency 'org.apache.commons:commons-text:1.8'
     dependency 'org.apache.commons:commons-lang3:3.10'
-    dependency 'commons-io:commons-io:2.6'
-    dependency 'org.apache.commons:commons-compress:1.20'
+    dependency 'commons-io:commons-io:2.11.0'
+    dependency 'org.apache.commons:commons-compress:1.21'
 
     dependencySet(group: 'org.apache.logging.log4j', version: '2.13.3') {
       entry 'log4j-api'
@@ -116,9 +116,9 @@ dependencyManagement {
 
     dependency 'org.awaitility:awaitility:4.0.3'
 
-    dependency 'org.bouncycastle:bcprov-jdk15on:1.66'
+    dependency 'org.bouncycastle:bcprov-jdk15on:1.69'
 
-    dependency 'org.java-websocket:Java-WebSocket:1.3.8'
+    dependency 'org.java-websocket:Java-WebSocket:1.5.2'
 
     dependencySet(group: 'org.junit.jupiter', version: '5.6.2') {
       entry 'junit-jupiter-api'
@@ -126,8 +126,8 @@ dependencyManagement {
       entry 'junit-jupiter-params'
     }
 
-    dependency 'org.mockito:mockito-core:3.3.3'
-    dependency 'org.mockito:mockito-junit-jupiter:3.3.3'
+    dependency 'org.mockito:mockito-core:3.11.2'
+    dependency 'org.mockito:mockito-junit-jupiter:3.11.2'
 
     dependencySet(group: "org.openjdk.jmh", version: "1.27") {
       entry 'jmh-core'
@@ -137,7 +137,7 @@ dependencyManagement {
     dependency 'org.rocksdb:rocksdbjni:6.11.4'
     dependency 'org.fusesource.leveldbjni:leveldbjni-all:1.8'
 
-    dependencySet(group: "org.web3j", version: "4.6.2") {
+    dependencySet(group: "org.web3j", version: "4.8.7") {
       entry 'core'
       entry 'abi'
       entry 'crypto'
@@ -153,7 +153,7 @@ dependencyManagement {
     dependency "org.testcontainers:testcontainers:1.15.3"
     dependency "org.testcontainers:junit-jupiter:1.15.3"
 
-    dependency 'tech.pegasys.discovery:discovery:0.4.8'
+    dependency 'tech.pegasys.discovery:discovery:0.4.9'
 
     dependency 'tech.pegasys.signers.internal:bls-keystore:1.0.15'
 

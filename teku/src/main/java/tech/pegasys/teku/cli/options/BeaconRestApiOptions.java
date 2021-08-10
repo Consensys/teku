@@ -16,13 +16,16 @@ package tech.pegasys.teku.cli.options;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import picocli.CommandLine;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
 
 public class BeaconRestApiOptions {
+  @CommandLine.Spec CommandLine.Model.CommandSpec cliSpec;
 
   public static final int DEFAULT_REST_API_PORT = 5051;
   public static final int DEFAULT_MAX_EVENT_QUEUE_SIZE = 250;
+  private int maxUrlLength = 65535;
 
   @Option(
       names = {"--rest-api-port"},
@@ -76,6 +79,25 @@ public class BeaconRestApiOptions {
       hidden = true)
   private int maxPendingEvents = DEFAULT_MAX_EVENT_QUEUE_SIZE;
 
+  @Option(
+      names = {"--Xrest-api-max-url-length"},
+      description = "Set the maximum url length for rest api requests",
+      paramLabel = "<INTEGER>",
+      defaultValue = "65535",
+      showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
+      hidden = true)
+  public void setMaxUrlLength(int maxUrlLength) {
+    if (maxUrlLength < 4096 || maxUrlLength > 1052672) {
+      throw new CommandLine.ParameterException(
+          cliSpec.commandLine(),
+          String.format(
+              "Invalid value '%s' for option '--Xrest-api-max-url-length': "
+                  + "value outside of the expected range (min: 4096, max: 1052672)",
+              maxUrlLength));
+    }
+    this.maxUrlLength = maxUrlLength;
+  }
+
   public void configure(final TekuConfiguration.Builder builder) {
     builder.restApi(
         restApiBuilder ->
@@ -86,6 +108,7 @@ public class BeaconRestApiOptions {
                 .restApiInterface(restApiInterface)
                 .restApiHostAllowlist(restApiHostAllowlist)
                 .restApiCorsAllowedOrigins(restApiCorsAllowedOrigins)
+                .maxUrlLength(maxUrlLength)
                 .maxPendingEvents(maxPendingEvents));
   }
 }

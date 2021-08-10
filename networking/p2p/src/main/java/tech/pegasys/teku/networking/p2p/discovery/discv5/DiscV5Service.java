@@ -53,6 +53,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
   private static final String SEQ_NO_STORE_KEY = "local-enr-seqno";
   private static final Duration BOOTNODE_REFRESH_DELAY = Duration.ofMinutes(2);
   private final AsyncRunner asyncRunner;
+  private final Bytes localNodePrivateKey;
   private final SchemaDefinitionsSupplier currentSchemaDefinitionsSupplier;
 
   private final DiscoverySystem discoverySystem;
@@ -69,6 +70,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
       final Bytes privateKey,
       final SchemaDefinitionsSupplier currentSchemaDefinitionsSupplier) {
     this.asyncRunner = asyncRunner;
+    this.localNodePrivateKey = privateKey;
     this.currentSchemaDefinitionsSupplier = currentSchemaDefinitionsSupplier;
     final String listenAddress = p2pConfig.getNetworkInterface();
     final int listenPort = p2pConfig.getListenPort();
@@ -77,22 +79,23 @@ public class DiscV5Service extends Service implements DiscoveryService {
     final UInt64 seqNo =
         kvStore.get(SEQ_NO_STORE_KEY).map(UInt64::fromBytes).orElse(UInt64.ZERO).add(1);
     final NewAddressHandler maybeUpdateNodeRecordHandler =
-        maybeUpdateNodeRecord(p2pConfig.hasUserExplicitlySetAdvertisedIp());
+        maybeUpdateNodeRecord(p2pConfig.hasUserExplicitlySetAdvertisedIp(), advertisedPort);
     this.bootnodes =
         discoConfig.getBootnodes().stream()
             .map(NodeRecordFactory.DEFAULT::fromEnr)
             .collect(toList());
+    final NodeRecordBuilder nodeRecordBuilder =
+        new NodeRecordBuilder().privateKey(privateKey).seq(seqNo);
+    if (p2pConfig.hasUserExplicitlySetAdvertisedIp()) {
+      nodeRecordBuilder.address(advertisedAddress, advertisedPort);
+    }
+    final NodeRecord localNodeRecord = nodeRecordBuilder.build();
     this.discoverySystem =
         new DiscoverySystemBuilder()
             .listen(listenAddress, listenPort)
             .privateKey(privateKey)
             .bootnodes(bootnodes)
-            .localNodeRecord(
-                new NodeRecordBuilder()
-                    .privateKey(privateKey)
-                    .address(advertisedAddress, advertisedPort)
-                    .seq(seqNo)
-                    .build())
+            .localNodeRecord(localNodeRecord)
             .newAddressHandler(maybeUpdateNodeRecordHandler)
             .localNodeRecordListener(this::localNodeRecordUpdated)
             .build();
@@ -104,14 +107,16 @@ public class DiscV5Service extends Service implements DiscoveryService {
         () -> discoverySystem.getBucketStats().getTotalLiveNodeCount());
   }
 
-  private NewAddressHandler maybeUpdateNodeRecord(boolean userExplicitlySetAdvertisedIpOrPort) {
-    return (oldRecord, proposedNewRecord) -> {
-      if (userExplicitlySetAdvertisedIpOrPort) {
-        return Optional.of(oldRecord);
-      } else {
-        return Optional.of(proposedNewRecord);
-      }
-    };
+  private NewAddressHandler maybeUpdateNodeRecord(
+      boolean userExplicitlySetAdvertisedIpOrPort, final int advertisedTcpPort) {
+    if (userExplicitlySetAdvertisedIpOrPort) {
+      return (oldRecord, newAddress) -> Optional.of(oldRecord);
+    } else {
+      return (oldRecord, newAddress) ->
+          Optional.of(
+              oldRecord.withNewAddress(
+                  newAddress, Optional.of(advertisedTcpPort), localNodePrivateKey));
+    }
   }
 
   private void localNodeRecordUpdated(NodeRecord oldRecord, NodeRecord newRecord) {
