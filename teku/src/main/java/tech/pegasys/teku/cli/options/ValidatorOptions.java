@@ -88,11 +88,10 @@ public class ValidatorOptions {
   private boolean useDependentRoots = true;
 
   @Option(
-      names = {"--Xvalidators-early-attestations-enabled"},
+      names = {"--validators-early-attestations-enabled"},
       paramLabel = "<BOOLEAN>",
       description =
           "Generate attestations as soon as a block is known, rather than delaying until the attestation is due. Default: true",
-      hidden = true,
       fallbackValue = "true",
       arity = "0..1")
   private boolean generateEarlyAttestations = true;
