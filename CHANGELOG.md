@@ -15,8 +15,7 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Additions and Improvements
  - Added command line option `--validators-early-attestations-enabled`, which defaults to true. 
-   For validator clients that are having low effectiveness when using a load balanced beacon 
-   nodes such as Infura, consider disabling this option.
+   When using a load balanced beacon node, this option should be disabled.
 
 ### Bug Fixes
 
