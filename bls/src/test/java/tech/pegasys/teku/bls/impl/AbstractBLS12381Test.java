@@ -117,6 +117,27 @@ public abstract class AbstractBLS12381Test {
   }
 
   @Test
+  void aggregateVerifyDuplicateMessages() {
+    Bytes message1 = Bytes.wrap("Hello, world 1!".getBytes(UTF_8));
+    Bytes message2 = Bytes.wrap("Hello, world 2!".getBytes(UTF_8));
+    KeyPair keyPair1 = getBls().generateKeyPair(1);
+    KeyPair keyPair2 = getBls().generateKeyPair(2);
+    KeyPair keyPair3 = getBls().generateKeyPair(3);
+
+    List<PublicKey> publicKeys =
+        Arrays.asList(keyPair1.getPublicKey(), keyPair2.getPublicKey(), keyPair3.getPublicKey());
+    List<Bytes> messages = Arrays.asList(message1, message2, message2);
+    List<Signature> signatures =
+        Arrays.asList(
+            keyPair1.getSecretKey().sign(message1),
+            keyPair2.getSecretKey().sign(message2),
+            keyPair3.getSecretKey().sign(message2));
+    Signature aggregatedSignature = getBls().aggregateSignatures(signatures);
+
+    assertFalse(aggregatedSignature.verify(PublicKeyMessagePair.fromLists(publicKeys, messages)));
+  }
+
+  @Test
   void batchVerifyPositiveSimpleTest() {
     // positive simple case
     for (int sigCnt = 0; sigCnt < 6; sigCnt++) {
