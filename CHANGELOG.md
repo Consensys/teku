@@ -19,4 +19,4 @@ For information on changes in released versions of Teku, see the [releases page]
  - Added additional bootnodes for the Prater testnet to improve peer discovery.
 
 ### Bug Fixes
-
+ - Updated syncing message to include slots remaining.
