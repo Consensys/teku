@@ -79,15 +79,15 @@ public class EventLogger {
   public void syncEvent(final UInt64 nodeSlot, final UInt64 headSlot, final int numPeers) {
     final String syncEventLog =
         String.format(
-            "Sync Event  *** Current slot: %s, Head slot: %s, Connected peers: %d",
-            nodeSlot, headSlot.toString(), numPeers);
+            "Syncing     *** Target slot: %s, Head slot: %s, Remaining slots: %s, Connected peers: %s",
+            nodeSlot, headSlot, nodeSlot.minusMinZero(headSlot), numPeers);
     info(syncEventLog, Color.WHITE);
   }
 
   public void weakSubjectivityFailedEvent(final Bytes32 blockRoot, final UInt64 slot) {
     final String weakSubjectivityFailedEventLog =
         String.format(
-            "Sync Event  *** Weak subjectivity check failed block: %s, slot: %s",
+            "Syncing     *** Weak subjectivity check failed block: %s, slot: %s",
             LogFormatter.formatHashRoot(blockRoot), slot.toString());
     warn(weakSubjectivityFailedEventLog, Color.RED);
   }
@@ -107,10 +107,10 @@ public class EventLogger {
     final String slotEventLog =
         String.format(
             "Slot Event  *** Slot: %s, Block: %s, Epoch: %s, Finalized checkpoint: %s, Finalized root: %s, Peers: %d",
-            nodeSlot.toString(),
+            nodeSlot,
             blockRoot,
-            nodeEpoch.toString(),
-            finalizedCheckpoint.toString(),
+            nodeEpoch,
+            finalizedCheckpoint,
             LogFormatter.formatHashRoot(finalizedRoot),
             numPeers);
     info(slotEventLog, Color.WHITE);
