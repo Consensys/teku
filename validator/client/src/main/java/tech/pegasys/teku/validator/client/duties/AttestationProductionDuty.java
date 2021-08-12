@@ -147,9 +147,19 @@ public class AttestationProductionDuty implements Duty {
     return validator
         .getSigner()
         .signAttestationData(attestationData, forkInfo)
-        .thenApply(signature -> createSignedAttestation(attestationData, validator, signature))
-        .thenAccept(validatorApiChannel::sendSignedAttestation)
-        .thenApply(__ -> DutyResult.success(attestationData.getBeacon_block_root()));
+        .thenApply(
+            signature -> List.of(createSignedAttestation(attestationData, validator, signature)))
+        .thenCompose(validatorApiChannel::sendSignedAttestations)
+        .thenApply(
+            errors -> {
+              if (errors.isEmpty()) {
+                return DutyResult.success(attestationData.getBeacon_block_root());
+              } else {
+                return DutyResult.forError(
+                    validator.getPublicKey(),
+                    new RestApiReportedException(errors.get(0).getMessage()));
+              }
+            });
   }
 
   private Attestation createSignedAttestation(

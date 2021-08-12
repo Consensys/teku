@@ -30,10 +30,11 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
-import tech.pegasys.teku.validator.api.SubmitCommitteeMessageError;
+import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.duties.DutyResult;
+import tech.pegasys.teku.validator.client.duties.RestApiReportedException;
 
 public class SyncCommitteeProductionDuty {
   private static final Logger LOG = LogManager.getLogger();
@@ -108,7 +109,7 @@ public class SyncCommitteeProductionDuty {
   }
 
   private void replaceResult(
-      final List<ProductionResult> sentResults, final SubmitCommitteeMessageError error) {
+      final List<ProductionResult> sentResults, final SubmitDataError error) {
     if (error.getIndex().isGreaterThanOrEqualTo(sentResults.size())) {
       LOG.error(
           "Beacon node reported an error sending sync committee message at index {} with message '{}' but only {} messages were sent",
@@ -175,18 +176,6 @@ public class SyncCommitteeProductionDuty {
       this.validatorPublicKey = validatorPublicKey;
       this.result = result;
       this.message = Optional.empty();
-    }
-  }
-
-  private static class RestApiReportedException extends Exception {
-    public RestApiReportedException(final String message) {
-      super(message);
-    }
-
-    @Override
-    public synchronized Throwable fillInStackTrace() {
-      // Stack trace is meaningless as the rejection started in the beacon node so don't fill in
-      return this;
     }
   }
 }
