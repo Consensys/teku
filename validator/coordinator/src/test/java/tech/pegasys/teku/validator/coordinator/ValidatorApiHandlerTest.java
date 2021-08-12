@@ -17,6 +17,7 @@ import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -89,7 +90,7 @@ import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
-import tech.pegasys.teku.validator.api.SubmitCommitteeMessageError;
+import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
@@ -618,11 +619,13 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
-  public void sendSignedAttestation_shouldAddAttestationToAttestationManager() {
+  public void sendSignedAttestations_shouldAddAttestationToAttestationManager() {
     final Attestation attestation = dataStructureUtil.randomAttestation();
     when(attestationManager.onAttestation(any(ValidateableAttestation.class)))
         .thenReturn(completedFuture(SUCCESSFUL));
-    validatorApiHandler.sendSignedAttestation(attestation);
+    final SafeFuture<List<SubmitDataError>> result =
+        validatorApiHandler.sendSignedAttestations(List.of(attestation));
+    assertThat(result).isCompletedWithValue(emptyList());
 
     verify(attestationManager).onAttestation(ValidateableAttestation.from(spec, attestation));
   }
@@ -632,7 +635,10 @@ class ValidatorApiHandlerTest {
     final Attestation attestation = dataStructureUtil.randomAttestation();
     when(attestationManager.onAttestation(any(ValidateableAttestation.class)))
         .thenReturn(completedFuture(AttestationProcessingResult.SAVED_FOR_FUTURE));
-    validatorApiHandler.sendSignedAttestation(attestation);
+
+    final SafeFuture<List<SubmitDataError>> result =
+        validatorApiHandler.sendSignedAttestations(List.of(attestation));
+    assertThat(result).isCompletedWithValue(emptyList());
 
     verify(dutyMetrics).onAttestationPublished(attestation.getData().getSlot());
     verify(performanceTracker).saveProducedAttestation(attestation);
@@ -643,10 +649,37 @@ class ValidatorApiHandlerTest {
     final Attestation attestation = dataStructureUtil.randomAttestation();
     when(attestationManager.onAttestation(any(ValidateableAttestation.class)))
         .thenReturn(completedFuture(AttestationProcessingResult.invalid("Bad juju")));
-    validatorApiHandler.sendSignedAttestation(attestation);
+
+    final SafeFuture<List<SubmitDataError>> result =
+        validatorApiHandler.sendSignedAttestations(List.of(attestation));
+    assertThat(result).isCompletedWithValue(List.of(new SubmitDataError(ZERO, "Bad juju")));
 
     verify(dutyMetrics, never()).onAttestationPublished(attestation.getData().getSlot());
     verify(performanceTracker, never()).saveProducedAttestation(attestation);
+  }
+
+  @Test
+  void sendSignedAttestations_shouldProcessMixOfValidAndInvalidAttestations() {
+    final Attestation invalidAttestation = dataStructureUtil.randomAttestation();
+    final Attestation validAttestation = dataStructureUtil.randomAttestation();
+    when(attestationManager.onAttestation(validatableAttestationOf(invalidAttestation)))
+        .thenReturn(completedFuture(AttestationProcessingResult.invalid("Bad juju")));
+    when(attestationManager.onAttestation(validatableAttestationOf(validAttestation)))
+        .thenReturn(completedFuture(SUCCESSFUL));
+
+    final SafeFuture<List<SubmitDataError>> result =
+        validatorApiHandler.sendSignedAttestations(List.of(invalidAttestation, validAttestation));
+    assertThat(result).isCompletedWithValue(List.of(new SubmitDataError(ZERO, "Bad juju")));
+
+    verify(dutyMetrics, never()).onAttestationPublished(invalidAttestation.getData().getSlot());
+    verify(dutyMetrics).onAttestationPublished(validAttestation.getData().getSlot());
+    verify(performanceTracker, never()).saveProducedAttestation(invalidAttestation);
+    verify(performanceTracker).saveProducedAttestation(validAttestation);
+  }
+
+  private ValidateableAttestation validatableAttestationOf(final Attestation validAttestation) {
+    return argThat(
+        argument -> argument != null && argument.getAttestation().equals(validAttestation));
   }
 
   @Test
@@ -726,7 +759,7 @@ class ValidatorApiHandlerTest {
   @Test
   void sendSyncCommitteeMessages_shouldAllowEmptyRequest() {
     final List<SyncCommitteeMessage> messages = List.of();
-    final SafeFuture<List<SubmitCommitteeMessageError>> result =
+    final SafeFuture<List<SubmitDataError>> result =
         validatorApiHandler.sendSyncCommitteeMessages(messages);
     assertThat(result).isCompleted();
   }
@@ -737,7 +770,7 @@ class ValidatorApiHandlerTest {
     final List<SyncCommitteeMessage> messages = List.of(message);
     when(syncCommitteeMessagePool.add(any()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
-    final SafeFuture<List<SubmitCommitteeMessageError>> result =
+    final SafeFuture<List<SubmitDataError>> result =
         validatorApiHandler.sendSyncCommitteeMessages(messages);
     assertThat(result).isCompletedWithValue(emptyList());
     verify(performanceTracker).saveProducedSyncCommitteeMessage(message);
@@ -751,10 +784,9 @@ class ValidatorApiHandlerTest {
         .thenReturn(
             SafeFuture.completedFuture(
                 InternalValidationResult.create(ValidationResultCode.REJECT, "Rejected")));
-    final SafeFuture<List<SubmitCommitteeMessageError>> result =
+    final SafeFuture<List<SubmitDataError>> result =
         validatorApiHandler.sendSyncCommitteeMessages(messages);
-    assertThat(result)
-        .isCompletedWithValue(List.of(new SubmitCommitteeMessageError(UInt64.ZERO, "Rejected")));
+    assertThat(result).isCompletedWithValue(List.of(new SubmitDataError(UInt64.ZERO, "Rejected")));
     verify(performanceTracker, never()).saveProducedSyncCommitteeMessage(message);
   }
 

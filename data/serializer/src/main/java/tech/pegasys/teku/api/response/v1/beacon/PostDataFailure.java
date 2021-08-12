@@ -11,16 +11,23 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.api;
+package tech.pegasys.teku.api.response.v1.beacon;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class SubmitCommitteeMessageError {
-  private final UInt64 index;
-  private final String message;
+public class PostDataFailure {
+  @Schema(type = "string", format = "uint64")
+  public final UInt64 index;
 
-  public SubmitCommitteeMessageError(final UInt64 index, final String message) {
+  public final String message;
+
+  @JsonCreator
+  public PostDataFailure(
+      @JsonProperty("index") final UInt64 index, @JsonProperty("message") final String message) {
     this.index = index;
     this.message = message;
   }
@@ -29,20 +36,12 @@ public class SubmitCommitteeMessageError {
   public boolean equals(final Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    final SubmitCommitteeMessageError that = (SubmitCommitteeMessageError) o;
+    final PostDataFailure that = (PostDataFailure) o;
     return Objects.equals(index, that.index) && Objects.equals(message, that.message);
   }
 
   @Override
   public int hashCode() {
     return Objects.hash(index, message);
-  }
-
-  public UInt64 getIndex() {
-    return index;
-  }
-
-  public String getMessage() {
-    return message;
   }
 }

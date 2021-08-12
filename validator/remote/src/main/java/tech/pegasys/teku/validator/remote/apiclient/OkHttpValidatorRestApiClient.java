@@ -61,7 +61,7 @@ import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionReq
 import tech.pegasys.teku.api.response.v1.beacon.GetBlockHeaderResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
-import tech.pegasys.teku.api.response.v1.beacon.PostSyncCommitteeFailureResponse;
+import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.config.GetSpecResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationResponse;
@@ -201,8 +201,13 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   }
 
   @Override
-  public void sendSignedAttestation(final Attestation attestation) {
-    post(SEND_SIGNED_ATTESTATION, List.of(attestation), createHandler());
+  public Optional<PostDataFailureResponse> sendSignedAttestations(
+      final List<Attestation> attestations) {
+    return post(
+        SEND_SIGNED_ATTESTATION,
+        attestations,
+        ResponseHandler.createForEmptyOkAndContentInBadResponse(
+            jsonProvider, PostDataFailureResponse.class));
   }
 
   @Override
@@ -252,13 +257,13 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   }
 
   @Override
-  public Optional<PostSyncCommitteeFailureResponse> sendSyncCommitteeMessages(
+  public Optional<PostDataFailureResponse> sendSyncCommitteeMessages(
       final List<SyncCommitteeMessage> syncCommitteeMessages) {
     return post(
         SEND_SYNC_COMMITTEE_MESSAGES,
         syncCommitteeMessages,
         ResponseHandler.createForEmptyOkAndContentInBadResponse(
-            jsonProvider, PostSyncCommitteeFailureResponse.class));
+            jsonProvider, PostDataFailureResponse.class));
   }
 
   @Override

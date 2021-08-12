@@ -16,10 +16,10 @@ package tech.pegasys.teku.validator.api;
 import java.util.List;
 import java.util.Objects;
 
-public class SubmitCommitteeMessagesResult {
-  private final List<SubmitCommitteeMessageError> errors;
+public class SubmitDataResult {
+  private final List<SubmitDataError> errors;
 
-  public SubmitCommitteeMessagesResult(final List<SubmitCommitteeMessageError> errors) {
+  public SubmitDataResult(final List<SubmitDataError> errors) {
     this.errors = errors;
   }
 
@@ -27,7 +27,7 @@ public class SubmitCommitteeMessagesResult {
   public boolean equals(final Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    final SubmitCommitteeMessagesResult that = (SubmitCommitteeMessagesResult) o;
+    final SubmitDataResult that = (SubmitDataResult) o;
     return Objects.equals(errors, that.errors);
   }
 
@@ -36,7 +36,7 @@ public class SubmitCommitteeMessagesResult {
     return Objects.hash(errors);
   }
 
-  public List<SubmitCommitteeMessageError> getErrors() {
+  public List<SubmitDataError> getErrors() {
     return errors;
   }
 }

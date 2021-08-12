@@ -200,13 +200,50 @@ public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
     if (newColumns.size() > 0) {
       final Map<String, KvStoreColumn<?, ?>> oldColumns = dao.schema.getColumnMap();
       for (String key : newColumns.keySet()) {
-        logger.accept(String.format("Copy column %s", key));
+        final Optional<UInt64> maybeCount = displayCopyColumnMessage(key, oldColumns, dao, logger);
         try (final Stream<ColumnEntry<Bytes, Bytes>> oldEntryStream =
                 dao.streamRawColumn(oldColumns.get(key));
-            BatchWriter batchWriter = new BatchWriter(batchSize, logger, db)) {
+            BatchWriter batchWriter = new BatchWriter(batchSize, logger, db, maybeCount)) {
           oldEntryStream.forEach(entry -> batchWriter.add(newColumns.get(key), entry));
         }
       }
+    }
+  }
+
+  private Optional<UInt64> displayCopyColumnMessage(
+      final String key,
+      final Map<String, KvStoreColumn<?, ?>> oldColumns,
+      final V4FinalizedKvStoreDao dao,
+      final Consumer<String> logger) {
+    final Optional<UInt64> maybeCount = getObjectCountForColumn(key, oldColumns, dao);
+    maybeCount.ifPresentOrElse(
+        (count) -> logger.accept(String.format("Copy column %s - %s objects", key, count)),
+        () -> logger.accept(String.format("Copy column %s", key)));
+
+    return maybeCount;
+  }
+
+  private Optional<UInt64> getObjectCountForColumn(
+      final String key,
+      final Map<String, KvStoreColumn<?, ?>> oldColumns,
+      final V4FinalizedKvStoreDao dao) {
+    switch (key) {
+      case ("FINALIZED_STATES_BY_SLOT"):
+      case ("SLOTS_BY_FINALIZED_STATE_ROOT"):
+      case ("SLOTS_BY_FINALIZED_ROOT"):
+        return getEntityCountFromColumn(oldColumns.get(key), dao);
+      case ("FINALIZED_BLOCKS_BY_SLOT"):
+        return getEntityCountFromColumn(oldColumns.get("SLOTS_BY_FINALIZED_ROOT"), dao);
+      default:
+        break;
+    }
+    return Optional.empty();
+  }
+
+  Optional<UInt64> getEntityCountFromColumn(
+      final KvStoreColumn<?, ?> column, final V4FinalizedKvStoreDao dao) {
+    try (final Stream<ColumnEntry<Bytes, Bytes>> oldEntryStream = dao.streamRawColumn(column)) {
+      return Optional.of(UInt64.valueOf(oldEntryStream.count()));
     }
   }
 

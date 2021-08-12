@@ -24,6 +24,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
@@ -38,6 +40,8 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import tech.pegasys.teku.api.response.v1.beacon.PostDataFailure;
+import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.BLSPubKey;
@@ -52,20 +56,20 @@ import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
+import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class ValidatorDataProviderTest {
 
-  private final ArgumentCaptor<tech.pegasys.teku.spec.datastructures.operations.Attestation> args =
-      ArgumentCaptor.forClass(tech.pegasys.teku.spec.datastructures.operations.Attestation.class);
+  @SuppressWarnings("unchecked")
+  private final ArgumentCaptor<List<tech.pegasys.teku.spec.datastructures.operations.Attestation>>
+      args = ArgumentCaptor.forClass(List.class);
 
   private final JsonProvider jsonProvider = new JsonProvider();
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
@@ -205,28 +209,20 @@ public class ValidatorDataProviderTest {
     tech.pegasys.teku.spec.datastructures.operations.Attestation internalAttestation =
         dataStructureUtil.randomAttestation();
     Attestation attestation = new Attestation(internalAttestation);
+    final List<SubmitDataError> errors = List.of(new SubmitDataError(ZERO, "Nope"));
+    final SafeFuture<List<SubmitDataError>> result = SafeFuture.completedFuture(errors);
+    when(validatorApiChannel.sendSignedAttestations(any())).thenReturn(result);
 
-    provider.submitAttestation(attestation);
+    assertThatSafeFuture(provider.submitAttestations(List.of(attestation)))
+        .isCompletedWithOptionalContaining(
+            new PostDataFailureResponse(
+                SC_BAD_REQUEST,
+                ValidatorDataProvider.PARTIAL_PUBLISH_FAILURE_MESSAGE,
+                List.of(new PostDataFailure(ZERO, "Nope"))));
 
-    verify(validatorApiChannel).sendSignedAttestation(args.capture());
-    assertThatSszData(args.getValue()).isEqualByAllMeansTo(internalAttestation);
-  }
-
-  @Test
-  public void submitAttestation_shouldThrowIllegalArgumentExceptionWhenSignatureIsEmpty() {
-    final AttestationData attestationData = dataStructureUtil.randomAttestationData();
-    final int maxValidatorsPerCommittee =
-        spec.atSlot(attestationData.getSlot()).getConfig().getMaxValidatorsPerCommittee();
-    final tech.pegasys.teku.spec.datastructures.operations.Attestation internalAttestation =
-        new tech.pegasys.teku.spec.datastructures.operations.Attestation(
-            SszBitlistSchema.create(maxValidatorsPerCommittee).ofBits(4),
-            attestationData,
-            tech.pegasys.teku.bls.BLSSignature.empty());
-
-    final Attestation attestation = new Attestation(internalAttestation);
-
-    assertThatThrownBy(() -> provider.submitAttestation(attestation))
-        .isInstanceOf(IllegalArgumentException.class);
+    verify(validatorApiChannel).sendSignedAttestations(args.capture());
+    assertThat(args.getValue()).hasSize(1);
+    assertThatSszData(args.getValue().get(0)).isEqualByAllMeansTo(internalAttestation);
   }
 
   @Test
