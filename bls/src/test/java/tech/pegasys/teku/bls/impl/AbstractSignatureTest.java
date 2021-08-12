@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import java.util.Collections;
 import org.junit.jupiter.api.Test;
 
-public abstract class SignatureTest {
+public abstract class AbstractSignatureTest {
 
   protected abstract BLS12381 getBls();
 

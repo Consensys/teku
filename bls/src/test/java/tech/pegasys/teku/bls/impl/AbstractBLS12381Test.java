@@ -29,7 +29,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BatchSemiAggregate;
 
-public abstract class BLS12381Test {
+public abstract class AbstractBLS12381Test {
 
   private final List<KeyPair> keys =
       IntStream.range(0, 8).mapToObj(getBls()::generateKeyPair).collect(Collectors.toList());
@@ -57,7 +57,7 @@ public abstract class BLS12381Test {
   private final int aggrIndex;
   private final int invalidIndex;
 
-  protected BLS12381Test() {
+  protected AbstractBLS12381Test() {
     aggrIndex = pubKeys.size();
     pubKeys.add(aggrSigPubkeys);
     messages.add(aggrSigMsg);
@@ -114,27 +114,6 @@ public abstract class BLS12381Test {
     Signature aggregatedSignature = getBls().aggregateSignatures(signatures);
 
     assertTrue(aggregatedSignature.verify(publicKeys, message));
-  }
-
-  @Test
-  void aggregateVerifyDuplicateMessages() {
-    Bytes message1 = Bytes.wrap("Hello, world 1!".getBytes(UTF_8));
-    Bytes message2 = Bytes.wrap("Hello, world 2!".getBytes(UTF_8));
-    KeyPair keyPair1 = getBls().generateKeyPair(1);
-    KeyPair keyPair2 = getBls().generateKeyPair(2);
-    KeyPair keyPair3 = getBls().generateKeyPair(3);
-
-    List<PublicKey> publicKeys =
-        Arrays.asList(keyPair1.getPublicKey(), keyPair2.getPublicKey(), keyPair3.getPublicKey());
-    List<Bytes> messages = Arrays.asList(message1, message2, message2);
-    List<Signature> signatures =
-        Arrays.asList(
-            keyPair1.getSecretKey().sign(message1),
-            keyPair2.getSecretKey().sign(message2),
-            keyPair3.getSecretKey().sign(message2));
-    Signature aggregatedSignature = getBls().aggregateSignatures(signatures);
-
-    assertFalse(aggregatedSignature.verify(PublicKeyMessagePair.fromLists(publicKeys, messages)));
   }
 
   @Test
