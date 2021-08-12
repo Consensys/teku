@@ -20,6 +20,7 @@ import static tech.pegasys.teku.networking.p2p.connection.PeerPools.PeerPool.RAN
 import static tech.pegasys.teku.networking.p2p.connection.PeerPools.PeerPool.SCORE_BASED;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -64,7 +65,7 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
   public List<PeerAddress> selectPeersToConnect(
       final P2PNetwork<?> network,
       final PeerPools peerPools,
-      final Supplier<List<DiscoveryPeer>> candidates) {
+      final Supplier<? extends Collection<DiscoveryPeer>> candidates) {
     final PeerSubnetSubscriptions peerSubnetSubscriptions =
         peerSubnetSubscriptionsFactory.create(network);
     final int peersRequiredForPeerCount =
