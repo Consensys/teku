@@ -145,12 +145,6 @@ public class SignedContributionAndProofValidator {
       final SyncCommitteeUtil syncCommitteeUtil,
       final UniquenessKey uniquenessKey,
       final BeaconStateAltair state) {
-    if (state.getSlot().isGreaterThan(contribution.getSlot())) {
-      return failureResult(
-          "Rejecting proof because referenced beacon block %s is after contribution slot %s",
-          contribution.getBeaconBlockRoot(), contribution.getSlot());
-    }
-
     final BeaconStateAccessors beaconStateAccessors =
         spec.atSlot(contribution.getSlot()).beaconStateAccessors();
 
