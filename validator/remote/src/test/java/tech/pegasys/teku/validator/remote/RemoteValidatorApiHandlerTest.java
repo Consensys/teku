@@ -27,6 +27,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.ssz.SszDataAssert.assertThatSszData;
 import static tech.pegasys.teku.validator.remote.RemoteValidatorApiHandler.MAX_PUBLIC_KEY_BATCH_SIZE;
 import static tech.pegasys.teku.validator.remote.RemoteValidatorApiHandler.MAX_RATE_LIMITING_RETRIES;
@@ -43,6 +44,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
+import tech.pegasys.teku.api.response.v1.beacon.PostDataFailure;
+import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
@@ -69,6 +72,7 @@ import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
+import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.remote.apiclient.RateLimitedException;
 import tech.pegasys.teku.validator.remote.apiclient.SchemaObjectsTestFixture;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorRestApiClient;
@@ -340,17 +344,28 @@ class RemoteValidatorApiHandlerTest {
   @Test
   public void sendSignedAttestation_InvokeApiWithCorrectRequest() {
     final Attestation attestation = dataStructureUtil.randomAttestation();
+
+    final PostDataFailureResponse failureResponse =
+        new PostDataFailureResponse(
+            SC_BAD_REQUEST, "Oh no", List.of(new PostDataFailure(UInt64.ZERO, "Bad")));
+    when(apiClient.sendSignedAttestations(any())).thenReturn(Optional.of(failureResponse));
+
     final tech.pegasys.teku.api.schema.Attestation schemaAttestation =
         new tech.pegasys.teku.api.schema.Attestation(attestation);
 
-    ArgumentCaptor<tech.pegasys.teku.api.schema.Attestation> argumentCaptor =
-        ArgumentCaptor.forClass(tech.pegasys.teku.api.schema.Attestation.class);
+    @SuppressWarnings("unchecked")
+    ArgumentCaptor<List<tech.pegasys.teku.api.schema.Attestation>> argumentCaptor =
+        ArgumentCaptor.forClass(List.class);
 
-    apiHandler.sendSignedAttestation(attestation);
+    final SafeFuture<List<SubmitDataError>> result =
+        apiHandler.sendSignedAttestations(List.of(attestation));
     asyncRunner.executeQueuedActions();
 
-    verify(apiClient).sendSignedAttestation(argumentCaptor.capture());
-    assertThat(argumentCaptor.getValue()).usingRecursiveComparison().isEqualTo(schemaAttestation);
+    verify(apiClient).sendSignedAttestations(argumentCaptor.capture());
+    assertThat(argumentCaptor.getValue())
+        .usingRecursiveComparison()
+        .isEqualTo(List.of(schemaAttestation));
+    assertThat(result).isCompletedWithValue(List.of(new SubmitDataError(UInt64.ZERO, "Bad")));
   }
 
   @Test

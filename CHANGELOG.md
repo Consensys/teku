@@ -23,4 +23,5 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Bug Fixes
  - Added a column size and percentage complete to migrate-database command, where columns contain block or state objects, as they can be time consuming to copy.
  - Fixed issue in Altair where sync committee contribution gossip could be incorrectly rejected when received at the very end of the slot.
+ - Posting attestations that fail validation to `/eth/v1/beacon/pool/attestations` will now result in `SC_BAD_REQUEST` response, with details of the invalid attestations in the response body. 
 

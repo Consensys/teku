@@ -71,13 +71,13 @@ public interface ValidatorApiChannel extends ChannelInterface {
 
   void subscribeToPersistentSubnets(Set<SubnetSubscription> subnetSubscriptions);
 
-  void sendSignedAttestation(Attestation attestation);
+  SafeFuture<List<SubmitDataError>> sendSignedAttestations(List<Attestation> attestation);
 
   void sendAggregateAndProof(SignedAggregateAndProof aggregateAndProof);
 
   SafeFuture<SendSignedBlockResult> sendSignedBlock(SignedBeaconBlock block);
 
-  SafeFuture<List<SubmitCommitteeMessageError>> sendSyncCommitteeMessages(
+  SafeFuture<List<SubmitDataError>> sendSyncCommitteeMessages(
       List<SyncCommitteeMessage> syncCommitteeMessages);
 
   SafeFuture<Void> sendSignedContributionAndProofs(

@@ -19,7 +19,7 @@ import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
-import tech.pegasys.teku.api.response.v1.beacon.PostSyncCommitteeFailureResponse;
+import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
@@ -58,7 +58,7 @@ public interface ValidatorRestApiClient {
 
   Optional<AttestationData> createAttestationData(UInt64 slot, int committeeIndex);
 
-  void sendSignedAttestation(Attestation attestation);
+  Optional<PostDataFailureResponse> sendSignedAttestations(List<Attestation> attestation);
 
   void sendVoluntaryExit(SignedVoluntaryExit voluntaryExit);
 
@@ -70,7 +70,7 @@ public interface ValidatorRestApiClient {
 
   void subscribeToPersistentSubnets(Set<SubnetSubscription> subnetSubscriptions);
 
-  Optional<PostSyncCommitteeFailureResponse> sendSyncCommitteeMessages(
+  Optional<PostDataFailureResponse> sendSyncCommitteeMessages(
       List<SyncCommitteeMessage> syncCommitteeMessages);
 
   Optional<PostSyncDutiesResponse> getSyncCommitteeDuties(

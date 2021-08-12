@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import okhttp3.Response;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.beacon.PostSyncCommitteeFailureResponse;
+import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
@@ -35,7 +35,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.validator.api.SubmitCommitteeMessageError;
+import tech.pegasys.teku.validator.api.SubmitDataError;
 
 public class PostSyncCommitteesIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
   private final String errorString = "The Error Description";
@@ -52,9 +52,8 @@ public class PostSyncCommitteesIntegrationTest extends AbstractDataBackedRestAPI
                 dataStructureUtil.randomBytes32(),
                 dataStructureUtil.randomUInt64(),
                 new BLSSignature(dataStructureUtil.randomSignature())));
-    final SafeFuture<List<SubmitCommitteeMessageError>> future =
-        SafeFuture.completedFuture(
-            List.of(new SubmitCommitteeMessageError(UInt64.ZERO, errorString)));
+    final SafeFuture<List<SubmitDataError>> future =
+        SafeFuture.completedFuture(List.of(new SubmitDataError(UInt64.ZERO, errorString)));
     when(validatorApiChannel.sendSyncCommitteeMessages(
             requestBody.get(0).asInternalCommitteeSignature(spec).stream()
                 .collect(Collectors.toList())))
@@ -62,8 +61,8 @@ public class PostSyncCommitteesIntegrationTest extends AbstractDataBackedRestAPI
     Response response = post(PostSyncCommittees.ROUTE, jsonProvider.objectToJSON(requestBody));
 
     assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
-    final PostSyncCommitteeFailureResponse responseBody =
-        jsonProvider.jsonToObject(response.body().string(), PostSyncCommitteeFailureResponse.class);
+    final PostDataFailureResponse responseBody =
+        jsonProvider.jsonToObject(response.body().string(), PostDataFailureResponse.class);
 
     assertThat(responseBody.failures.get(0).message).isEqualTo(errorString);
   }
@@ -80,7 +79,7 @@ public class PostSyncCommitteesIntegrationTest extends AbstractDataBackedRestAPI
                 dataStructureUtil.randomBytes32(),
                 dataStructureUtil.randomUInt64(),
                 new BLSSignature(dataStructureUtil.randomSignature())));
-    final SafeFuture<List<SubmitCommitteeMessageError>> future =
+    final SafeFuture<List<SubmitDataError>> future =
         SafeFuture.completedFuture(Collections.emptyList());
     when(validatorApiChannel.sendSyncCommitteeMessages(any())).thenReturn(future);
     Response response = post(PostSyncCommittees.ROUTE, jsonProvider.objectToJSON(requestBody));
