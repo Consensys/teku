@@ -17,18 +17,18 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Optional;
 import java.util.Scanner;
 import picocli.CommandLine;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
-import tech.pegasys.teku.cli.options.DataStorageOptions;
-import tech.pegasys.teku.cli.options.Eth2NetworkOptions;
-import tech.pegasys.teku.cli.options.ValidatorClientDataOptions;
 import tech.pegasys.teku.cli.util.DatabaseMigrater;
 import tech.pegasys.teku.cli.util.DatabaseMigraterError;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
+import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
+import tech.pegasys.teku.storage.server.StateStorageMode;
 
 @CommandLine.Command(
     name = "migrate-database",
@@ -44,14 +44,36 @@ import tech.pegasys.teku.storage.server.DatabaseVersion;
 public class MigrateDatabaseCommand implements Runnable {
   public static final SubCommandLogger SUB_COMMAND_LOG = new SubCommandLogger();
 
-  @CommandLine.Mixin(name = "Data Storage")
-  private DataStorageOptions dataStorageOptions;
+  @CommandLine.Option(
+      names = {"--data-base-path", "--data-path"},
+      paramLabel = "<string>",
+      required = true,
+      description = "The path to the teku database.",
+      arity = "1")
+  private Path dataPath;
 
-  @CommandLine.Mixin(name = "Network")
-  private Eth2NetworkOptions eth2NetworkOptions;
+  @CommandLine.Option(
+      names = {"--data-beacon-path"},
+      paramLabel = "<FILENAME>",
+      description = "Path to beacon node data\n  Default: <data-base-path>/beacon",
+      arity = "1")
+  private Path dataBeaconPath;
 
-  @CommandLine.Mixin(name = "Data")
-  private ValidatorClientDataOptions dataOptions;
+  @CommandLine.Option(
+      names = {"--Xdata-storage-mode"},
+      paramLabel = "<STORAGE_MODE>",
+      hidden = true,
+      description =
+          "Sets the strategy for handling historical chain data.  (Valid values: ${COMPLETION-CANDIDATES})",
+      arity = "1")
+  private StateStorageMode dataStorageMode = StateStorageMode.ARCHIVE;
+
+  @CommandLine.Option(
+      names = {"-n", "--network"},
+      paramLabel = "<NETWORK>",
+      description = "Represents which network to use. (default: mainnet)",
+      arity = "1")
+  private String network = "mainnet";
 
   // Use Cases
   // - I have a rocksdb database and want to update to the latest leveldb database version
@@ -78,6 +100,8 @@ public class MigrateDatabaseCommand implements Runnable {
       arity = "1")
   private Integer batchSize = 100;
 
+  private DataDirLayout dataDirLayout;
+
   // OVERVIEW
   // teku folder has a 'beacon' folder
   // If the user wants to change the type of database stored in 'beacon',
@@ -103,22 +127,27 @@ public class MigrateDatabaseCommand implements Runnable {
     // validate there is no old database instance present
     // If a previous migrate-data was run, the 'beacon' would have been renamed to 'beacon.old'
     // and advice given to the user to cleanup 'beacon.old' manually.
-    if (Files.isDirectory(dataOptions.getDataBasePath().resolve("beacon.old"))) {
+    if (Files.isDirectory(dataPath.resolve("beacon.old"))) {
       SUB_COMMAND_LOG.exit(
           1,
           "There is an existing folder in "
-              + dataOptions.getDataBasePath().resolve("beacon.old").toFile()
+              + dataPath.resolve("beacon.old").toFile()
               + ", review this folder and remove before continuing.");
     }
+
+    dataDirLayout =
+        DataDirLayout.createFrom(
+            DataConfig.builder().dataBasePath(dataPath).beaconDataPath(dataBeaconPath).build());
+
     // validate source database exists
     final DatabaseVersion sourceDatabaseVersion =
         confirmAndCheckOriginalDb(maybeOutputVersion.get());
 
     final DatabaseMigrater dbMigrater =
         DatabaseMigrater.builder()
-            .dataOptions(dataOptions)
-            .dataStorageOptions(dataStorageOptions)
-            .eth2NetworkOptions(eth2NetworkOptions)
+            .dataDirLayout(dataDirLayout)
+            .network(network)
+            .storageMode(dataStorageMode)
             .batchSize(batchSize)
             .statusUpdater(SUB_COMMAND_LOG::display)
             .build();
@@ -168,18 +197,13 @@ public class MigrateDatabaseCommand implements Runnable {
   }
 
   private void displaySourceDatabaseDetails(final DatabaseVersion sourceDatabaseVersion) {
-    final DataDirLayout dataDirLayout = DataDirLayout.createFrom(dataOptions.getDataConfig());
-
     SUB_COMMAND_LOG.display("Current database path: " + dataDirLayout.getBeaconDataDirectory());
     SUB_COMMAND_LOG.display("Current Database Version: " + sourceDatabaseVersion.getValue());
   }
 
   private DatabaseVersion validateSourceDatabase(final DatabaseVersion databaseVersion) {
     final File currentDatabasePath =
-        DataDirLayout.createFrom(dataOptions.getDataConfig())
-            .getBeaconDataDirectory()
-            .toAbsolutePath()
-            .toFile();
+        dataDirLayout.getBeaconDataDirectory().toAbsolutePath().toFile();
     if (!currentDatabasePath.isDirectory()) {
       SUB_COMMAND_LOG.exit(
           1, "Could not locate the existing database to migrate from: " + currentDatabasePath);
