@@ -19,4 +19,5 @@ For information on changes in released versions of Teku, see the [releases page]
  - Added additional bootnodes for the Prater testnet to improve peer discovery.
 
 ### Bug Fixes
+ - Added a column size and percentage complete to migrate-database command columns that contain large amounts of data.
 
