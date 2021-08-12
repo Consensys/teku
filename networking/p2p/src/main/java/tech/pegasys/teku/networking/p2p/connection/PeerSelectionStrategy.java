@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.p2p.connection;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Supplier;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
@@ -22,7 +23,9 @@ import tech.pegasys.teku.networking.p2p.peer.Peer;
 
 public interface PeerSelectionStrategy {
   List<PeerAddress> selectPeersToConnect(
-      P2PNetwork<?> network, PeerPools peerPools, Supplier<List<DiscoveryPeer>> candidates);
+      P2PNetwork<?> network,
+      PeerPools peerPools,
+      Supplier<? extends Collection<DiscoveryPeer>> candidates);
 
   List<Peer> selectPeersToDisconnect(P2PNetwork<?> network, PeerPools peerPools);
 }

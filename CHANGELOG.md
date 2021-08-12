@@ -17,6 +17,7 @@ For information on changes in released versions of Teku, see the [releases page]
  - Added command line option `--validators-early-attestations-enabled`, which defaults to true. 
    When using a load balanced beacon node, this option should be disabled.
  - Added additional bootnodes for the Prater testnet to improve peer discovery.
+ - Improved peer discovery. All authenticated node sessions are evaluated as potential peers to connect.
 
 ### Bug Fixes
  - Added a column size and percentage complete to migrate-database command columns that contain large amounts of data.
