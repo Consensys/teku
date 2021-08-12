@@ -17,6 +17,7 @@ import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -655,6 +656,30 @@ class ValidatorApiHandlerTest {
 
     verify(dutyMetrics, never()).onAttestationPublished(attestation.getData().getSlot());
     verify(performanceTracker, never()).saveProducedAttestation(attestation);
+  }
+
+  @Test
+  void sendSignedAttestations_shouldProcessMixOfValidAndInvalidAttestations() {
+    final Attestation invalidAttestation = dataStructureUtil.randomAttestation();
+    final Attestation validAttestation = dataStructureUtil.randomAttestation();
+    when(attestationManager.onAttestation(validatableAttestationOf(invalidAttestation)))
+        .thenReturn(completedFuture(AttestationProcessingResult.invalid("Bad juju")));
+    when(attestationManager.onAttestation(validatableAttestationOf(validAttestation)))
+        .thenReturn(completedFuture(SUCCESSFUL));
+
+    final SafeFuture<List<SubmitDataError>> result =
+        validatorApiHandler.sendSignedAttestations(List.of(invalidAttestation, validAttestation));
+    assertThat(result).isCompletedWithValue(List.of(new SubmitDataError(ZERO, "Bad juju")));
+
+    verify(dutyMetrics, never()).onAttestationPublished(invalidAttestation.getData().getSlot());
+    verify(dutyMetrics).onAttestationPublished(validAttestation.getData().getSlot());
+    verify(performanceTracker, never()).saveProducedAttestation(invalidAttestation);
+    verify(performanceTracker).saveProducedAttestation(validAttestation);
+  }
+
+  private ValidateableAttestation validatableAttestationOf(final Attestation validAttestation) {
+    return argThat(
+        argument -> argument != null && argument.getAttestation().equals(validAttestation));
   }
 
   @Test
