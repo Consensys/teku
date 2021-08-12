@@ -111,6 +111,22 @@ class SignedContributionAndProofValidatorTest {
   }
 
   @Test
+  void shouldAcceptWhenContributionIsStillValidatingAfterSlotEnds() {
+    final SignedContributionAndProof message =
+        chainBuilder.createValidSignedContributionAndProofBuilder().build();
+    // When we check the current time it's in the right slot
+    // But by the time we request the state it's one slot ahead.
+    final SignedBlockAndState bestBlock =
+        storageSystem
+            .chainUpdater()
+            .advanceChainUntil(message.getMessage().getContribution().getSlot().plus(1));
+    storageSystem.chainUpdater().updateBestBlock(bestBlock);
+
+    final SafeFuture<InternalValidationResult> result = validator.validate(message);
+    assertThat(result).isCompletedWithValue(ACCEPT);
+  }
+
+  @Test
   void shouldRejectWhenAggregationBitsAreEmpty() {
     final SignedContributionAndProof message =
         chainBuilder.createValidSignedContributionAndProofBuilder().removeAllParticipants().build();
