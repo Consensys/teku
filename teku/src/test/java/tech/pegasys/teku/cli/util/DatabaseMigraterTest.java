@@ -15,7 +15,6 @@ package tech.pegasys.teku.cli.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -24,41 +23,26 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.function.Consumer;
 import org.apache.commons.io.FileUtils;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import tech.pegasys.teku.cli.options.DataStorageOptions;
-import tech.pegasys.teku.cli.options.Eth2NetworkOptions;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
-import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
+import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.kvstore.TestKvStoreDatabase;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreHotDao;
 
 public class DatabaseMigraterTest {
-  private final Eth2NetworkOptions eth2NetworkOptions = mock(Eth2NetworkOptions.class);
-  private final DataStorageOptions dataStorageOptions = mock(DataStorageOptions.class);
-  private final Eth2NetworkConfiguration networkConfiguration =
-      mock(Eth2NetworkConfiguration.class);
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final SubCommandLogger subCommandLogger = mock(SubCommandLogger.class);
   private final Consumer<String> logger = subCommandLogger::display;
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-
-  @BeforeEach
-  void setup() {
-    when(eth2NetworkOptions.getNetworkConfiguration()).thenReturn(networkConfiguration);
-    when(networkConfiguration.getEth1DepositContractAddress())
-        .thenReturn(Eth1Address.fromHexString("0x1234567890123456789012345678901234567890"));
-  }
 
   @Test
   void shouldSupplyOriginalDatabasePath(@TempDir Path tmpDir) throws IOException {
@@ -190,9 +174,9 @@ public class DatabaseMigraterTest {
   private DatabaseMigrater getDatabaseMigrater(final DataDirLayout dataDirLayout) {
     return DatabaseMigrater.builder()
         .dataDirLayout(dataDirLayout)
-        .dataStorageOptions(dataStorageOptions)
+        .storageMode(StateStorageMode.ARCHIVE)
+        .network("minimal")
         .spec(spec)
-        .eth2NetworkOptions(eth2NetworkOptions)
         .statusUpdater(logger)
         .build();
   }
