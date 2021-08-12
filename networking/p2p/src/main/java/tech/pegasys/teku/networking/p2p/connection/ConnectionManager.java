@@ -14,7 +14,6 @@
 package tech.pegasys.teku.networking.p2p.connection;
 
 import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.toList;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -24,6 +23,7 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -111,7 +111,7 @@ public class ConnectionManager extends Service {
                 Stream.concat(
                         additionalPeersToConsider.stream(), discoveryService.streamKnownPeers())
                     .filter(this::isPeerValid)
-                    .collect(toList()))
+                    .collect(Collectors.toSet()))
         .forEach(this::attemptConnection);
   }
 
@@ -123,7 +123,7 @@ public class ConnectionManager extends Service {
     LOG.trace("Searching for peers");
     discoveryService
         .searchForPeers()
-        .orTimeout(10, TimeUnit.SECONDS)
+        .orTimeout(30, TimeUnit.SECONDS)
         .finish(
             this::connectToBestPeers,
             error -> {
