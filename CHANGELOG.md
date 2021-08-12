@@ -14,6 +14,9 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Breaking Changes
 
 ### Additions and Improvements
+ - Added command line option `--validators-early-attestations-enabled`, which defaults to true. 
+   When using a load balanced beacon node, this option should be disabled.
+ - Added additional bootnodes for the Prater testnet to improve peer discovery.
 
 ### Bug Fixes
 
