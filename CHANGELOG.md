@@ -20,5 +20,5 @@ For information on changes in released versions of Teku, see the [releases page]
  - Improved peer discovery. All authenticated node sessions are evaluated as potential peers to connect.
 
 ### Bug Fixes
- - Added a column size and percentage complete to migrate-database command columns that contain large amounts of data.
+ - Added a column size and percentage complete to migrate-database command, where columns contain block or state objects, as they can be time consuming to copy.
 
