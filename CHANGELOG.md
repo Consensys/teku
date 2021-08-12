@@ -14,36 +14,14 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Breaking Changes
 
 ### Additions and Improvements
-- Scheduled Altair upgrade on the Pyrmont testnet at epoch 61650.
-- Updated default docker image to Java 16 using AdoptOpenJDK Ubuntu based images.
-- Docker images now include `curl` to support adding health checks.
-- Increased the rest api maximum request length to 65535 bytes, was previously 8192 bytes.
-- Rest Api's for Altair have been moved out of 'experimental', and are now stable.
-  - implement POST `/eth/v1/beacon/pool/sync_committees` to allow validators to submit sync committee signatures to the beacon node.
-  - implement POST `/eth/v1/validator/duties/sync/{epoch}` for Altair fork.
-  - implement GET and POST `/eth/v1/validator/sync_committee_subscriptions` for Altair fork.
-  - implement GET `/eth/v2/validator/blocks/{slot}` for Altair fork.
-  - implement GET `/eth/v2/debug/beacon/states/:state_id` for Altair fork.
-  - implement GET `/eth/v1/beacon/states/{state_id}/sync_committees` for Altair fork.
-  - `/eth/v1/validator/blocks/{slot}` will now produce an altair block if an altair slot is requested.
-  - `/eth/v1/node/identity` will now include syncnets in metadata
-  - implement event channel for `/eth/v1/events&topic=contribution_and_proof` for Altair fork.
-- Rest Api's that are not supported in Altair have been marked as deprecated.
+ - Added command line option `--validators-early-attestations-enabled`, which defaults to true. 
+   When using a load balanced beacon node, this option should be disabled.
+ - Added additional bootnodes for the Prater testnet to improve peer discovery.
+ - Improved peer discovery. All authenticated node sessions are evaluated as potential peers to connect.
+ - Improved clarity of sync progress log messages.
 
 ### Bug Fixes
-- Fixed `ConcurrentModificationException` and `NoSuchElementException` in validator performance reporting.
-- Upgraded the discovery library, providing better memory management and standards compliance.
-- Fixed `InvalidDepositEventsException` error after restart.
-- Improve compatibility with Lighthouse bootnodes by not including the local address in the local ENR until the external address has been determined.
-- Posting attestations that fail validation to `/eth/v1/beacon/pool/attestations` will now result in `SC_BAD_REQUEST` response, with details of the invalid attestations in the response body. 
+ - Added a column size and percentage complete to migrate-database command, where columns contain block or state objects, as they can be time consuming to copy.
+ - Fixed issue in Altair where sync committee contribution gossip could be incorrectly rejected when received at the very end of the slot.
+ - Posting attestations that fail validation to `/eth/v1/beacon/pool/attestations` will now result in `SC_BAD_REQUEST` response, with details of the invalid attestations in the response body. 
 
-### Experimental: New Altair REST APIs
-- implement POST `/eth/v1/beacon/pool/sync_committees` to allow validators to submit sync committee signatures to the beacon node.
-- implement POST `/eth/v1/validator/duties/sync/{epoch}` for Altair fork.
-- implement GET and POST `/eth/v1/validator/sync_committee_subscriptions` for Altair fork.
-- implement GET `/eth/v2/validator/blocks/{slot}` for Altair fork.
-- implement GET `/eth/v2/debug/beacon/states/:state_id` for Altair fork.
-- implement GET `/eth/v1/beacon/states/{state_id}/sync_committees` for Altair fork.
-- `/eth/v1/validator/blocks/{slot}` will now produce an altair block if an altair slot is requested.
-- `/eth/v1/node/identity` will now include syncnets in metadata
-- implement event channel for `/eth/v1/events&topic=contribution_and_proof` for Altair fork.

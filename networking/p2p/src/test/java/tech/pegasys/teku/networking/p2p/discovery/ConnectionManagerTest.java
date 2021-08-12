@@ -79,7 +79,8 @@ class ConnectionManagerTest {
     when(peerSelectionStrategy.selectPeersToConnect(eq(network), any(), any()))
         .thenAnswer(
             invocation -> {
-              final Supplier<List<DiscoveryPeer>> candidateSupplier = invocation.getArgument(2);
+              final Supplier<? extends Collection<DiscoveryPeer>> candidateSupplier =
+                  invocation.getArgument(2);
               return candidateSupplier.get().stream()
                   .map(peer -> new PeerAddress(new MockNodeId(peer.getPublicKey())))
                   .collect(toList());

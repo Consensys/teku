@@ -13,8 +13,10 @@
 
 package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 
+import java.util.Optional;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
@@ -30,16 +32,26 @@ class BatchWriter implements AutoCloseable {
   private long transactionCounter = 0;
   private long entryCounter = 0;
   private long bytes = 0;
+  private final Optional<UInt64> maybeExpectedCount;
 
+  BatchWriter(final int targetBatchSize, final Consumer<String> logger, final KvStoreAccessor db) {
+    this(targetBatchSize, logger, db, Optional.empty());
+  }
   /**
    * @param targetBatchSize target size (MB) for a batch
    * @param db database accessor object
+   * @param maybeExpectedCount the expected number of objects across all objects
    */
-  BatchWriter(final int targetBatchSize, final Consumer<String> logger, final KvStoreAccessor db) {
+  BatchWriter(
+      final int targetBatchSize,
+      final Consumer<String> logger,
+      final KvStoreAccessor db,
+      final Optional<UInt64> maybeExpectedCount) {
     // target batch size comes in MB, can store in Bytes to make life simpler for comparison
     this.targetBatchSize = targetBatchSize * 1_000_000L;
     this.logger = logger;
     this.db = db;
+    this.maybeExpectedCount = maybeExpectedCount;
   }
 
   void startTransaction() {
@@ -71,7 +83,13 @@ class BatchWriter implements AutoCloseable {
       bytes = 0;
       transactionCounter++;
       if (transactionCounter % OUTPUT_PER_TRANSACTION_COUNT == 0L) {
-        logger.accept(String.format(" -- %,d...", entryCounter));
+        maybeExpectedCount.ifPresentOrElse(
+            (expectedTotal) ->
+                logger.accept(
+                    String.format(
+                        " -- %,d (%d %%)...",
+                        entryCounter, (entryCounter * 100) / expectedTotal.longValue())),
+            () -> logger.accept(String.format(" -- %,d...", entryCounter)));
       }
     }
   }
