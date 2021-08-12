@@ -69,6 +69,11 @@ public abstract class AbstractSszPrimitiveSchema<
   }
 
   @Override
+  public void storeBackingNodes(final TreeNode backingNode, final BackingNodeStore store) {
+    store.storeLeafNode((LeafDataNode) backingNode);
+  }
+
+  @Override
   public final SszDataT createFromPackedNode(TreeNode node, int internalIndex) {
     assert node instanceof LeafDataNode;
     return createFromLeafBackingNode((LeafDataNode) node, internalIndex);

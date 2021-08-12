@@ -16,6 +16,8 @@ package tech.pegasys.teku.ssz.schema.impl;
 import static java.util.Collections.emptyList;
 import static tech.pegasys.teku.ssz.tree.TreeUtil.bitsCeilToBytes;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.stream.Collectors;
@@ -25,6 +27,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.SszVector;
+import tech.pegasys.teku.ssz.schema.SszCompositeSchema;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.schema.SszSchema;
 import tech.pegasys.teku.ssz.schema.SszSchemaHints;
@@ -165,6 +168,31 @@ public abstract class AbstractSszVectorSchema<
                 GIndexUtil.gIdxRightGIndex(generalizedIndex),
                 depth - 1,
                 superNodeDepth));
+  }
+
+  @Override
+  public void storeBackingNodes(final TreeNode backingNode, final BackingNodeStore store) {
+    final int depth = treeDepth();
+    SszCompositeSchema.storeNonZeroBranchNodes(
+        backingNode,
+        store,
+        Math.max(0, depth - MAX_DEPTH_COMPRESSION),
+        nodeForCompression -> {
+          final int childDepth = Math.min(depth, MAX_DEPTH_COMPRESSION);
+          final int chunkCount = 1 << childDepth;
+          final List<Bytes32> childHashes = new ArrayList<>();
+          for (int childIndex = 0; childIndex < chunkCount; childIndex++) {
+            final long childGIndex =
+                GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, childIndex, childDepth);
+            final TreeNode childNode = nodeForCompression.get(childGIndex);
+            if (!TreeUtil.ZERO_TREES_BY_ROOT.containsKey(childNode.hashTreeRoot())) {
+              childHashes.add(childNode.hashTreeRoot());
+              getElementSchema().storeBackingNodes(childNode, store);
+            }
+          }
+          store.storeCompressedBranch(
+              backingNode.hashTreeRoot(), depth, childHashes.toArray(new Bytes32[0]));
+        });
   }
 
   @Override

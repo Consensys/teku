@@ -35,7 +35,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.ssz.schema.SszSchema.BackingNodeSource;
-import tech.pegasys.teku.ssz.tree.BranchNode;
+import tech.pegasys.teku.ssz.schema.SszSchema.BackingNodeStore;
 import tech.pegasys.teku.ssz.tree.LeafDataNode;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 import tech.pegasys.teku.ssz.tree.TreeUtil;
@@ -315,38 +315,41 @@ public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
     public void addFinalizedState(final Bytes32 blockRoot, final BeaconState state) {
       transaction.put(
           schema.getColumnFinalizedStateRootsBySlot(), state.getSlot(), state.hashTreeRoot());
-      TreeUtil.iterateNonZero(
-          state.getBackingNode(),
-          n -> {
-            final Bytes32 root = n.hashTreeRoot();
-            if (n instanceof LeafDataNode) {
-              if (previouslyStoredMerkleLeaves.contains(root)
-                  || newlyStoredMerkleLeaves.contains(root)) {
-                // Already stored
-                return;
-              }
-              newlyStoredMerkleLeaves.add(root);
-              transaction.put(
-                  schema.getColumnFinalizedStateMerkleTrieLeaves(),
-                  root,
-                  ((LeafDataNode) n).getData());
-            } else if (n instanceof BranchNode) {
-              if (previouslyStoredMerkleBranches.contains(root)
-                  || newlyStoredMerkleBranches.contains(root)) {
-                // Already stored
-                // TODO: Find a way to skip all nodes under this one as they're already stored too
-                return;
-              }
-              newlyStoredMerkleBranches.add(root);
-              final BranchNode node = (BranchNode) n;
-              transaction.put(
-                  schema.getColumnFinalizedStateMerkleTrieBranches(),
-                  root,
-                  Bytes.wrap(node.left().hashTreeRoot(), node.right().hashTreeRoot()));
-            } else {
-              throw new IllegalArgumentException("Unknown node type: " + n.getClass());
-            }
-          });
+      state
+          .getSchema()
+          .storeBackingNodes(
+              state.getBackingNode(),
+              new BackingNodeStore() {
+                @Override
+                public void storeCompressedBranch(
+                    final Bytes32 root, final int depth, final Bytes32[] children) {
+                  if (TreeUtil.ZERO_TREES_BY_ROOT.containsKey(root)
+                      || previouslyStoredMerkleBranches.contains(root)
+                      || newlyStoredMerkleBranches.contains(root)) {
+                    // Already stored
+                    return;
+                  }
+                  newlyStoredMerkleBranches.add(root);
+                  transaction.put(
+                      schema.getColumnFinalizedStateMerkleTrieBranches(),
+                      root,
+                      Bytes.wrap(Bytes.ofUnsignedInt(depth), Bytes.wrap(children)));
+                }
+
+                @Override
+                public void storeLeafNode(final LeafDataNode node) {
+                  final Bytes32 root = node.hashTreeRoot();
+                  if (root.isZero()
+                      || previouslyStoredMerkleLeaves.contains(root)
+                      || newlyStoredMerkleLeaves.contains(root)
+                      || node.getData().size() <= Bytes32.SIZE) {
+                    // Already stored
+                    return;
+                  }
+                  transaction.put(
+                      schema.getColumnFinalizedStateMerkleTrieLeaves(), root, node.getData());
+                }
+              });
     }
 
     @Override

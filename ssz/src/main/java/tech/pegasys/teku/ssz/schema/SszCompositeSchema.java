@@ -13,7 +13,10 @@
 
 package tech.pegasys.teku.ssz.schema;
 
+import java.util.function.Consumer;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.SszComposite;
+import tech.pegasys.teku.ssz.tree.BranchNode;
 import tech.pegasys.teku.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 import tech.pegasys.teku.ssz.tree.TreeUtil;
@@ -21,6 +24,43 @@ import tech.pegasys.teku.ssz.tree.TreeUtil;
 /** Abstract schema of {@link SszComposite} subclasses */
 public interface SszCompositeSchema<SszCompositeT extends SszComposite<?>>
     extends SszSchema<SszCompositeT> {
+  int MAX_DEPTH_COMPRESSION = 8;
+
+  @Override
+  default void storeBackingNodes(final TreeNode backingNode, final BackingNodeStore store) {
+    final int depth = treeDepth();
+    final Bytes32[] childHashes = new Bytes32[getChunks((int) getMaxLength())];
+    if (childHashes.length > 100) {
+      System.out.println("WARN: " + getClass().getSimpleName() + " has a lot of children");
+    }
+    for (int childIndex = 0; childIndex < childHashes.length; childIndex++) {
+      final TreeNode childNode = backingNode.get(getChildGeneralizedIndex(childIndex));
+      childHashes[childIndex] = childNode.hashTreeRoot();
+      getChildSchema(childIndex).storeBackingNodes(childNode, store);
+    }
+    store.storeCompressedBranch(backingNode.hashTreeRoot(), depth, childHashes);
+  }
+
+  static void storeNonZeroBranchNodes(
+      final TreeNode rootNode,
+      final BackingNodeStore store,
+      final int remainingDepth,
+      final Consumer<TreeNode> storeCompressed) {
+    if (TreeUtil.ZERO_TREES_BY_ROOT.containsKey(rootNode.hashTreeRoot())) {
+      return;
+    }
+    if (remainingDepth == 0) {
+      storeCompressed.accept(rootNode);
+      return;
+    }
+    final BranchNode branchNode = (BranchNode) rootNode;
+    storeNonZeroBranchNodes(branchNode.left(), store, remainingDepth - 1, storeCompressed);
+    storeNonZeroBranchNodes(branchNode.right(), store, remainingDepth - 1, storeCompressed);
+    store.storeCompressedBranch(
+        branchNode.hashTreeRoot(),
+        1,
+        new Bytes32[] {branchNode.left().hashTreeRoot(), branchNode.right().hashTreeRoot()});
+  }
 
   /**
    * Returns the maximum number of elements in ssz structures of this scheme. For structures with

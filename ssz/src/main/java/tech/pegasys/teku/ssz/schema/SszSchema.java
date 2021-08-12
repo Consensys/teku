@@ -20,6 +20,7 @@ import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
+import tech.pegasys.teku.ssz.tree.LeafDataNode;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 
 /**
@@ -55,6 +56,10 @@ public interface SszSchema<SszDataT extends SszData> extends SszType {
     throw new UnsupportedOperationException("Not implemented");
   }
 
+  default void storeBackingNodes(TreeNode backingNode, BackingNodeStore store) {
+    throw new UnsupportedOperationException("Not implemented");
+  }
+
   /** Returns the default immutable structure of this scheme */
   default SszDataT getDefault() {
     return createFromBackingNode(getDefaultTree());
@@ -82,5 +87,11 @@ public interface SszSchema<SszDataT extends SszData> extends SszType {
     Pair<Bytes32, Bytes32> getBranchData(Bytes32 root);
 
     Bytes getLeafData(Bytes32 root);
+  }
+
+  interface BackingNodeStore {
+    void storeCompressedBranch(Bytes32 root, int depth, Bytes32[] children);
+
+    void storeLeafNode(LeafDataNode node);
   }
 }

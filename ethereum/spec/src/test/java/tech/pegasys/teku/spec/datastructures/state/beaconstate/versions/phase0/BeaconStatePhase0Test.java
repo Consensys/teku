@@ -20,19 +20,23 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.text.NumberFormat;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.crypto.Hash;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateTest;
 import tech.pegasys.teku.ssz.SszData;
@@ -40,6 +44,7 @@ import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.SszVector;
 import tech.pegasys.teku.ssz.schema.SszListSchema;
 import tech.pegasys.teku.ssz.schema.SszSchema.BackingNodeSource;
+import tech.pegasys.teku.ssz.schema.SszSchema.BackingNodeStore;
 import tech.pegasys.teku.ssz.schema.SszVectorSchema;
 import tech.pegasys.teku.ssz.tree.BranchNode;
 import tech.pegasys.teku.ssz.tree.LeafDataNode;
@@ -189,19 +194,6 @@ public class BeaconStatePhase0Test
   }
 
   @Test
-  void shouldHashDifferently() {
-    final Bytes leafData =
-        Bytes.fromHexString("0x4b363db94e286120d76eb905340fdd4e54bfe9f06bf33ff6cf5ad27f511bfe95");
-    final Bytes leftRoot =
-        Bytes.fromHexString("0xaa7437fc4869fc670c3e8255187207c0236ca7478e232b63af461ae2f824d8b1");
-    final Bytes rightRoot =
-        Bytes.fromHexString("0x4752000000000000000000000000000000000000000000000000000000000000");
-
-    System.out.println(leafData);
-    System.out.println(Hash.sha2_256(Bytes.concatenate(leftRoot, rightRoot)));
-  }
-
-  @Test
   void shouldRoundTripListWithNonPowerOfTwoLength() {
     final SszListSchema<Checkpoint, ?> schema = SszListSchema.create(Checkpoint.SSZ_SCHEMA, 5);
     final SszList<Checkpoint> data =
@@ -221,6 +213,139 @@ public class BeaconStatePhase0Test
 
     assertThat(actualBytes.toString()).isEqualTo(expectedBytes.toString());
     assertThat(rebuiltTree.hashTreeRoot()).isEqualTo(data.hashTreeRoot());
+  }
+
+  @Test
+  void shouldStoreVectorWithNonPowerOfTwoLength() {
+    final SszVectorSchema<Checkpoint, ?> schema = SszVectorSchema.create(Checkpoint.SSZ_SCHEMA, 3);
+    final SszVector<Checkpoint> data =
+        schema.createFromElements(
+            List.of(
+                new Checkpoint(UInt64.valueOf(1), Bytes32.fromHexString("0x1111")),
+                new Checkpoint(UInt64.valueOf(2), Bytes32.fromHexString("0x2222")),
+                new Checkpoint(UInt64.valueOf(3), Bytes32.fromHexString("0x3333"))));
+
+    final ByteArrayOutputStream expectedBytes = new ByteArrayOutputStream();
+    printTree(new PrintStream(expectedBytes), data.getBackingNode(), "");
+
+    data.getSchema()
+        .storeBackingNodes(
+            data.getBackingNode(),
+            new BackingNodeStore() {
+              @Override
+              public void storeCompressedBranch(
+                  final Bytes32 root, final int depth, final Bytes32[] children) {
+                System.out.println(
+                    "Branch: " + root + " - " + depth + " - " + Arrays.toString(children));
+              }
+
+              @Override
+              public void storeLeafNode(final LeafDataNode node) {
+                System.out.println("Leaf: " + node.hashTreeRoot() + " - " + node.getData());
+              }
+            });
+  }
+
+  @Test
+  void shouldStoreNotFullList() {
+    final SszListSchema<Checkpoint, ?> schema = SszListSchema.create(Checkpoint.SSZ_SCHEMA, 5000);
+    final SszList<Checkpoint> data =
+        schema.createFromElements(
+            List.of(
+                new Checkpoint(UInt64.valueOf(1), Bytes32.fromHexString("0x1111")),
+                new Checkpoint(UInt64.valueOf(2), Bytes32.fromHexString("0x2222")),
+                new Checkpoint(UInt64.valueOf(3), Bytes32.fromHexString("0x3333"))));
+
+    final ByteArrayOutputStream expectedBytes = new ByteArrayOutputStream();
+    printTree(new PrintStream(expectedBytes), data.getBackingNode(), "");
+
+    data.getSchema()
+        .storeBackingNodes(
+            data.getBackingNode(),
+            new BackingNodeStore() {
+              @Override
+              public void storeCompressedBranch(
+                  final Bytes32 root, final int depth, final Bytes32[] children) {
+                System.out.println(
+                    "Branch: " + root + " - " + depth + " - " + Arrays.toString(children));
+              }
+
+              @Override
+              public void storeLeafNode(final LeafDataNode node) {
+                if (node.getData().size() > Bytes32.SIZE) {
+                  System.out.println("Leaf: " + node.hashTreeRoot() + " - " + node.getData());
+                }
+              }
+            });
+  }
+
+  @Test
+  void shouldStoreState() throws Exception {
+    final BeaconState mainNetState =
+        dataStructureUtil
+            .getSpec()
+            .deserializeBeaconState(
+                Bytes.wrap(
+                    Files.readAllBytes(
+                        Paths.get("/Users/aj/Documents/code/teku/tmp/mainnet.ssz"))));
+    final SszData data = mainNetState;
+
+    //    final SszListSchema<Checkpoint, ?> schema = SszListSchema.create(Checkpoint.SSZ_SCHEMA,
+    // 3);
+    //    final SszList<Checkpoint> data =
+    //        schema.createFromElements(
+    //            List.of(
+    //                new Checkpoint(UInt64.valueOf(1), Bytes32.fromHexString("0x1111")),
+    //                new Checkpoint(UInt64.valueOf(2), Bytes32.fromHexString("0x2222")),
+    //                new Checkpoint(UInt64.valueOf(3), Bytes32.fromHexString("0x3333"))));
+    final ByteArrayOutputStream expectedBytes = new ByteArrayOutputStream();
+    printTree(new PrintStream(expectedBytes), data.getBackingNode(), "");
+
+    final AtomicLong storedBytes = new AtomicLong();
+    final AtomicLong capturedBranchNodes = new AtomicLong();
+
+    data.getSchema()
+        .storeBackingNodes(
+            data.getBackingNode(),
+            new BackingNodeStore() {
+              @Override
+              public void storeCompressedBranch(
+                  final Bytes32 root, final int depth, final Bytes32[] children) {
+                if (TreeUtil.ZERO_TREES_BY_ROOT.containsKey(root)) {
+                  return;
+                }
+                //                if (children.length > 256) {
+                //                  System.out.println("WARN: Serializing a lot of children");
+                //                }
+                storedBytes.addAndGet(
+                    root.size() + children.length * (long) Bytes32.SIZE + UInt64.BYTES);
+                capturedBranchNodes.incrementAndGet();
+                //                System.out.println("Branch: " + root + " - " + depth + " - " +
+                // children.length);
+              }
+
+              @Override
+              public void storeLeafNode(final LeafDataNode node) {
+                if (node.getData().size() > Bytes32.SIZE
+                    && !TreeUtil.ZERO_TREES_BY_ROOT.containsKey(node.hashTreeRoot())) {
+                  storedBytes.addAndGet(node.getData().size());
+                  // System.out.println("Leaf: " + node.hashTreeRoot() + " - " + node.getData());
+                }
+              }
+            });
+    System.out.println(
+        "Stored: "
+            + format(storedBytes.get())
+            + " (ssz length: "
+            + format(data.sszSerialize().size())
+            + ")");
+    System.out.println(
+        "Captured " + format(capturedBranchNodes.get()) + " compressed branch nodes");
+    captureNodes(data.getBackingNode());
+  }
+
+  private String format(final long number) {
+    return NumberFormat.getIntegerInstance().format(number);
   }
 
   private void printTree(final PrintStream out, final TreeNode node, final String indent) {
@@ -260,6 +385,13 @@ public class BeaconStatePhase0Test
     }
     TreeUtil.iterateNonZero(root, node -> captureNode(branchData, leafData, node));
 
+    final long capturedSize =
+        (branchData.size() * 3L * Bytes32.SIZE)
+            + leafData.entrySet().stream()
+                .mapToLong(entry -> entry.getKey().size() + entry.getValue().size())
+                .sum();
+    System.out.println("Captured " + format(capturedSize) + " bytes with all branches");
+    System.out.println("Captured " + format(branchData.size()) + " branch nodes");
     return new BackingNodeSource() {
       @Override
       public Pair<Bytes32, Bytes32> getBranchData(final Bytes32 root) {

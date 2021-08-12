@@ -16,23 +16,30 @@ package tech.pegasys.teku.ssz.schema.impl;
 import static tech.pegasys.teku.ssz.tree.TreeUtil.bitsCeilToBytes;
 
 import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.ssz.schema.SszCompositeSchema;
 import tech.pegasys.teku.ssz.schema.SszListSchema;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.schema.SszSchema;
 import tech.pegasys.teku.ssz.schema.SszSchemaHints;
+import tech.pegasys.teku.ssz.schema.SszSchemaHints.SszSuperNodeHint;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 import tech.pegasys.teku.ssz.tree.BranchNode;
 import tech.pegasys.teku.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.ssz.tree.LazyBranchNode;
+import tech.pegasys.teku.ssz.tree.LeafDataNode;
 import tech.pegasys.teku.ssz.tree.LeafNode;
 import tech.pegasys.teku.ssz.tree.TreeNode;
+import tech.pegasys.teku.ssz.tree.TreeUtil;
 
 public abstract class AbstractSszListSchema<
         ElementDataT extends SszData, SszListT extends SszList<ElementDataT>>
@@ -89,6 +96,62 @@ public abstract class AbstractSszListSchema<
 
   protected AbstractSszVectorSchema<ElementDataT, ?> getCompatibleVectorSchema() {
     return compatibleVectorSchema;
+  }
+
+  @Override
+  public void storeBackingNodes(final TreeNode backingNode, final BackingNodeStore store) {
+    // Lists start with a branch with the data on the left and length on the right
+    final TreeNode vectorNode = getVectorNode(backingNode);
+    final TreeNode lengthNode = backingNode.get(GIndexUtil.RIGHT_CHILD_G_INDEX);
+
+    // Then store length node
+    store.storeLeafNode((LeafDataNode) lengthNode);
+
+    // And store vector data (omitting empty list items at the end...)
+    storeVectorNodes(backingNode, store, vectorNode);
+
+    // Store list root not
+    store.storeCompressedBranch(
+        backingNode.hashTreeRoot(),
+        1,
+        new Bytes32[] {vectorNode.hashTreeRoot(), lengthNode.hashTreeRoot()});
+  }
+
+  private void storeVectorNodes(
+      final TreeNode backingNode, final BackingNodeStore store, final TreeNode vectorNode) {
+    final AbstractSszVectorSchema<ElementDataT, ?> vectorSchema = getCompatibleVectorSchema();
+    final Optional<SszSuperNodeHint> sszSuperNodeHint =
+        vectorSchema.getHints().getHint(SszSuperNodeHint.class);
+    if (sszSuperNodeHint.isPresent()) {
+      final SszSuperNodeHint hint = sszSuperNodeHint.get();
+      final int depth = treeDepth() - hint.getDepth();
+      SszCompositeSchema.storeNonZeroBranchNodes(
+          vectorNode, store, depth, superNode -> store.storeLeafNode((LeafDataNode) superNode));
+    } else {
+      final int depth = vectorSchema.treeDepth();
+      final int remainingDepth = Math.max(0, depth - MAX_DEPTH_COMPRESSION);
+      SszCompositeSchema.storeNonZeroBranchNodes(
+          vectorNode,
+          store,
+          remainingDepth,
+          nodeForCompression -> {
+            final int childDepth = Math.min(depth, MAX_DEPTH_COMPRESSION);
+            final int chunkCount = 1 << childDepth;
+            final List<Bytes32> childHashes = new ArrayList<>();
+            for (int childIndex = 0; childIndex < chunkCount; childIndex++) {
+              final long childGIndex =
+                  GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, childIndex, childDepth);
+              final TreeNode childNode = nodeForCompression.get(childGIndex);
+              //                childHashes[childIndex] = childNode.hashTreeRoot();
+              if (!TreeUtil.ZERO_TREES_BY_ROOT.containsKey(childNode.hashTreeRoot())) {
+                childHashes.add(childNode.hashTreeRoot());
+                vectorSchema.getElementSchema().storeBackingNodes(childNode, store);
+              }
+            }
+            store.storeCompressedBranch(
+                backingNode.hashTreeRoot(), depth, childHashes.toArray(new Bytes32[0]));
+          });
+    }
   }
 
   @Override
