@@ -135,11 +135,9 @@ public class MigrateDatabaseCommand implements Runnable {
               + ", review this folder and remove before continuing.");
     }
 
-    DataConfig.Builder dataConfigBuilder = DataConfig.builder().dataBasePath(dataPath);
-    if (dataBeaconPath != null) {
-      dataConfigBuilder.beaconDataPath(dataBeaconPath);
-    }
-    dataDirLayout = DataDirLayout.createFrom(dataConfigBuilder.build());
+    dataDirLayout =
+        DataDirLayout.createFrom(
+            DataConfig.builder().dataBasePath(dataPath).beaconDataPath(dataBeaconPath).build());
 
     // validate source database exists
     final DatabaseVersion sourceDatabaseVersion =
