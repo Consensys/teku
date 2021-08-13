@@ -24,7 +24,6 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.SszContainer;
 import tech.pegasys.teku.ssz.SszData;
@@ -177,20 +176,49 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
       final SszSchema<?> childSchema = getChildSchema(childIndex);
       return childSchema.loadBackingNodes(source, rootHash);
     }
-    final Pair<Bytes32, Bytes32> branch = source.getBranchData(rootHash);
-    return new LazyBranchNode(
-        rootHash,
-        branch.getLeft(),
-        branch.getRight(),
-        () ->
-            loadBackingNodes(
-                source, branch.getLeft(), GIndexUtil.gIdxLeftGIndex(generalizedIndex), depth - 1),
-        () ->
-            loadBackingNodes(
-                source,
-                branch.getRight(),
-                GIndexUtil.gIdxRightGIndex(generalizedIndex),
-                depth - 1));
+    return loadBranchNode(source, rootHash, generalizedIndex, depth);
+  }
+
+  private TreeNode loadBranchNode(
+      final BackingNodeSource source,
+      final Bytes32 rootHash,
+      final long generalizedIndex,
+      final int depth) {
+    final CompressedBranchInfo branch = source.getBranchData(rootHash);
+    final int buildNodesAtDepth = branch.getDepth() - 1;
+    final List<TreeNode> childNodes = new ArrayList<>();
+    final Bytes32[] childHashes = branch.getChildren();
+    final TreeNode defaultNode =
+        getDefaultTree().get(GIndexUtil.gIdxChildGIndex(generalizedIndex, 0, buildNodesAtDepth));
+    for (int i = 0; i < childHashes.length; i += 2) {
+      final long branchNodeGIndex =
+          GIndexUtil.gIdxChildGIndex(generalizedIndex, i / 2, buildNodesAtDepth);
+      final Bytes32 leftHash = childHashes[i];
+      final Bytes32 rightHash;
+      if (i + 1 < childHashes.length) {
+        rightHash = childHashes[i + 1];
+      } else {
+        rightHash =
+            defaultNode.get(GIndexUtil.gIdxRightGIndex(GIndexUtil.SELF_G_INDEX)).hashTreeRoot();
+      }
+      childNodes.add(
+          LazyBranchNode.createWithUnknownHash(
+              leftHash,
+              rightHash,
+              () ->
+                  loadBackingNodes(
+                      source,
+                      leftHash,
+                      GIndexUtil.gIdxLeftGIndex(branchNodeGIndex),
+                      depth - branch.getDepth()),
+              () ->
+                  loadBackingNodes(
+                      source,
+                      rightHash,
+                      GIndexUtil.gIdxRightGIndex(branchNodeGIndex),
+                      depth - branch.getDepth())));
+    }
+    return TreeUtil.createTree(childNodes, defaultNode, buildNodesAtDepth);
   }
 
   @Override

@@ -13,18 +13,17 @@
 
 package tech.pegasys.teku.ssz.schema.impl;
 
+import static com.google.common.base.Preconditions.checkState;
+import static tech.pegasys.teku.ssz.schema.SszCompositeSchema.divCeil;
+import static tech.pegasys.teku.ssz.schema.SszCompositeSchema.storeNodesAtDepth;
 import static tech.pegasys.teku.ssz.tree.TreeUtil.bitsCeilToBytes;
 
 import java.nio.ByteOrder;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.SszList;
-import tech.pegasys.teku.ssz.schema.SszCompositeSchema;
 import tech.pegasys.teku.ssz.schema.SszListSchema;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.schema.SszSchema;
@@ -39,7 +38,6 @@ import tech.pegasys.teku.ssz.tree.LazyBranchNode;
 import tech.pegasys.teku.ssz.tree.LeafDataNode;
 import tech.pegasys.teku.ssz.tree.LeafNode;
 import tech.pegasys.teku.ssz.tree.TreeNode;
-import tech.pegasys.teku.ssz.tree.TreeUtil;
 
 public abstract class AbstractSszListSchema<
         ElementDataT extends SszData, SszListT extends SszList<ElementDataT>>
@@ -78,19 +76,25 @@ public abstract class AbstractSszListSchema<
   @Override
   public TreeNode loadBackingNodes(final BackingNodeSource source, final Bytes32 rootHash) {
     // Lists start with a branch with the data on the left and length on the right
-    final Pair<Bytes32, Bytes32> branchData = source.getBranchData(rootHash);
-    final Bytes32 lengthHash = branchData.getRight();
+    final CompressedBranchInfo branchData = source.getBranchData(rootHash);
+    checkState(
+        branchData.getChildren().length == 2, "List root node must have exactly two children");
+    checkState(branchData.getDepth() == 1, "List root node must have depth of 1");
+    final Bytes32 vectorHash = branchData.getChildren()[0];
+    final Bytes32 lengthHash = branchData.getChildren()[1];
+    final int length = source.getLeafData(lengthHash).getInt(0, ByteOrder.LITTLE_ENDIAN);
     return new LazyBranchNode(
         rootHash,
-        branchData.getLeft(),
-        branchData.getRight(),
-        () -> getCompatibleVectorSchema().loadBackingNodes(source, branchData.getLeft()),
+        vectorHash,
+        lengthHash,
+        () -> getCompatibleVectorSchema().loadBackingNodes(source, vectorHash, length),
         () -> {
-          if (lengthHash.isZero()) {
-            return toLengthNode(0);
-          } else {
-            return LeafNode.create(source.getLeafData(lengthHash));
-          }
+          return toLengthNode(length);
+          //          if (lengthHash.isZero()) {
+          //            return toLengthNode(0);
+          //          } else {
+          //            return LeafNode.create(source.getLeafData(lengthHash));
+          //          }
         });
   }
 
@@ -108,7 +112,7 @@ public abstract class AbstractSszListSchema<
     store.storeLeafNode((LeafDataNode) lengthNode);
 
     // And store vector data (omitting empty list items at the end...)
-    storeVectorNodes(backingNode, store, vectorNode);
+    storeVectorNodes(store, vectorNode, getLength(backingNode));
 
     // Store list root not
     store.storeCompressedBranch(
@@ -118,39 +122,30 @@ public abstract class AbstractSszListSchema<
   }
 
   private void storeVectorNodes(
-      final TreeNode backingNode, final BackingNodeStore store, final TreeNode vectorNode) {
+      final BackingNodeStore store, final TreeNode vectorNode, final int length) {
     final AbstractSszVectorSchema<ElementDataT, ?> vectorSchema = getCompatibleVectorSchema();
     final Optional<SszSuperNodeHint> sszSuperNodeHint =
         vectorSchema.getHints().getHint(SszSuperNodeHint.class);
     if (sszSuperNodeHint.isPresent()) {
       final SszSuperNodeHint hint = sszSuperNodeHint.get();
       final int depth = treeDepth() - hint.getDepth();
-      SszCompositeSchema.storeNonZeroBranchNodes(
-          vectorNode, store, depth, superNode -> store.storeLeafNode((LeafDataNode) superNode));
-    } else {
-      final int depth = vectorSchema.treeDepth();
-      final int remainingDepth = Math.max(0, depth - MAX_DEPTH_COMPRESSION);
-      SszCompositeSchema.storeNonZeroBranchNodes(
+      final int elementsPerSuperNode = 1 << hint.getDepth();
+      storeNodesAtDepth(
           vectorNode,
           store,
-          remainingDepth,
-          nodeForCompression -> {
-            final int childDepth = Math.min(depth, MAX_DEPTH_COMPRESSION);
-            final int chunkCount = 1 << childDepth;
-            final List<Bytes32> childHashes = new ArrayList<>();
-            for (int childIndex = 0; childIndex < chunkCount; childIndex++) {
-              final long childGIndex =
-                  GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, childIndex, childDepth);
-              final TreeNode childNode = nodeForCompression.get(childGIndex);
-              //                childHashes[childIndex] = childNode.hashTreeRoot();
-              if (!TreeUtil.ZERO_TREES_BY_ROOT.containsKey(childNode.hashTreeRoot())) {
-                childHashes.add(childNode.hashTreeRoot());
-                vectorSchema.getElementSchema().storeBackingNodes(childNode, store);
-              }
-            }
-            store.storeCompressedBranch(
-                backingNode.hashTreeRoot(), depth, childHashes.toArray(new Bytes32[0]));
-          });
+          depth,
+          1L << depth,
+          divCeil(length, elementsPerSuperNode),
+          superNode -> store.storeLeafNode((LeafDataNode) superNode));
+    } else {
+      final int depth = vectorSchema.treeDepth();
+      storeNodesAtDepth(
+          vectorNode,
+          store,
+          depth,
+          getElementsPerChunk() * (1L << depth),
+          length,
+          node -> vectorSchema.getElementSchema().storeBackingNodes(node, store));
     }
   }
 

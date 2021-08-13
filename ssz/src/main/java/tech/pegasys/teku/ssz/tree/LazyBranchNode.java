@@ -43,6 +43,18 @@ public class LazyBranchNode implements BranchNode {
     this.rightLoader = Suppliers.memoize(rightLoader::get);
   }
 
+  public static LazyBranchNode createWithUnknownHash(
+      final Bytes32 leftRoot,
+      final Bytes32 rightRoot,
+      final Supplier<TreeNode> leftLoader,
+      final Supplier<TreeNode> rightLoader) {
+    return new LazyBranchNode(
+        leftRoot,
+        rightRoot,
+        Suppliers.memoize(leftLoader::get),
+        Suppliers.memoize(rightLoader::get));
+  }
+
   private LazyBranchNode(
       final Bytes32 leftRoot,
       final Bytes32 rightRoot,

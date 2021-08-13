@@ -64,7 +64,8 @@ public abstract class AbstractSszPrimitiveSchema<
     if (rootHash.isZero()) {
       return getDefaultTree();
     } else {
-      return LeafNode.create(source.getLeafData(rootHash));
+      final Bytes leafData = source.getLeafData(rootHash).slice(0, sszSize);
+      return LeafNode.create(leafData);
     }
   }
 

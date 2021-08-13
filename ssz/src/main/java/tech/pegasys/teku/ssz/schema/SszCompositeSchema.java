@@ -16,7 +16,6 @@ package tech.pegasys.teku.ssz.schema;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.SszComposite;
-import tech.pegasys.teku.ssz.tree.BranchNode;
 import tech.pegasys.teku.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 import tech.pegasys.teku.ssz.tree.TreeUtil;
@@ -24,7 +23,7 @@ import tech.pegasys.teku.ssz.tree.TreeUtil;
 /** Abstract schema of {@link SszComposite} subclasses */
 public interface SszCompositeSchema<SszCompositeT extends SszComposite<?>>
     extends SszSchema<SszCompositeT> {
-  int MAX_DEPTH_COMPRESSION = 8;
+  int MAX_DEPTH_COMPRESSION = 6;
 
   @Override
   default void storeBackingNodes(final TreeNode backingNode, final BackingNodeStore store) {
@@ -41,25 +40,55 @@ public interface SszCompositeSchema<SszCompositeT extends SszComposite<?>>
     store.storeCompressedBranch(backingNode.hashTreeRoot(), depth, childHashes);
   }
 
-  static void storeNonZeroBranchNodes(
+  static void storeNodesAtDepth(
       final TreeNode rootNode,
       final BackingNodeStore store,
       final int remainingDepth,
-      final Consumer<TreeNode> storeCompressed) {
-    if (TreeUtil.ZERO_TREES_BY_ROOT.containsKey(rootNode.hashTreeRoot())) {
-      return;
+      final long elementsPerNodeAtRootLevel,
+      final long maxElementsToStore,
+      final Consumer<TreeNode> storeNodeAtTargetDepth) {
+    if (remainingDepth <= MAX_DEPTH_COMPRESSION) {
+      // We've reached the target depth
+      final long elementsPerNodeAtTargetDepth = elementsPerNodeAtRootLevel / (1L << remainingDepth);
+      final int nodesToStore = divCeil(maxElementsToStore, elementsPerNodeAtTargetDepth);
+      final Bytes32[] childHashes = new Bytes32[nodesToStore];
+      for (int nodeIndex = 0; nodeIndex < nodesToStore; nodeIndex++) {
+        final long nodeGIndex =
+            GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, nodeIndex, remainingDepth);
+        final TreeNode node = rootNode.get(nodeGIndex);
+        storeNodeAtTargetDepth.accept(node);
+        childHashes[nodeIndex] = node.hashTreeRoot();
+      }
+      store.storeCompressedBranch(rootNode.hashTreeRoot(), remainingDepth, childHashes);
+    } else {
+      // Store a compressed branch node for the first few levels then recurse to get to target depth
+      final long elementsPerNodeAtTargetDepth =
+          elementsPerNodeAtRootLevel / (1 << MAX_DEPTH_COMPRESSION);
+      final int nodesToStore = divCeil(maxElementsToStore, elementsPerNodeAtTargetDepth);
+      long remainingElementsToStore = Math.toIntExact(maxElementsToStore);
+      final Bytes32[] childHashes = new Bytes32[nodesToStore];
+      for (int nodeIndex = 0; nodeIndex < nodesToStore; nodeIndex++) {
+        final long nodeGIndex =
+            GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, nodeIndex, MAX_DEPTH_COMPRESSION);
+        final TreeNode node = rootNode.get(nodeGIndex);
+        final long elementsToStoreFromNode =
+            Math.min(remainingElementsToStore, elementsPerNodeAtTargetDepth);
+        storeNodesAtDepth(
+            node,
+            store,
+            remainingDepth - MAX_DEPTH_COMPRESSION,
+            elementsPerNodeAtTargetDepth,
+            elementsToStoreFromNode,
+            storeNodeAtTargetDepth);
+        remainingElementsToStore -= elementsToStoreFromNode;
+        childHashes[nodeIndex] = node.hashTreeRoot();
+      }
+      store.storeCompressedBranch(rootNode.hashTreeRoot(), MAX_DEPTH_COMPRESSION, childHashes);
     }
-    if (remainingDepth == 0) {
-      storeCompressed.accept(rootNode);
-      return;
-    }
-    final BranchNode branchNode = (BranchNode) rootNode;
-    storeNonZeroBranchNodes(branchNode.left(), store, remainingDepth - 1, storeCompressed);
-    storeNonZeroBranchNodes(branchNode.right(), store, remainingDepth - 1, storeCompressed);
-    store.storeCompressedBranch(
-        branchNode.hashTreeRoot(),
-        1,
-        new Bytes32[] {branchNode.left().hashTreeRoot(), branchNode.right().hashTreeRoot()});
+  }
+
+  static int divCeil(final long a, final long b) {
+    return Math.toIntExact((a + b - 1) / b);
   }
 
   /**

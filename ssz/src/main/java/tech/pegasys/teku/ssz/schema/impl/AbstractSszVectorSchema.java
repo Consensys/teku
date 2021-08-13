@@ -14,6 +14,7 @@
 package tech.pegasys.teku.ssz.schema.impl;
 
 import static java.util.Collections.emptyList;
+import static tech.pegasys.teku.ssz.schema.SszCompositeSchema.storeNodesAtDepth;
 import static tech.pegasys.teku.ssz.tree.TreeUtil.bitsCeilToBytes;
 
 import java.util.ArrayList;
@@ -22,12 +23,10 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.SszVector;
-import tech.pegasys.teku.ssz.schema.SszCompositeSchema;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.schema.SszSchema;
 import tech.pegasys.teku.ssz.schema.SszSchemaHints;
@@ -112,6 +111,11 @@ public abstract class AbstractSszVectorSchema<
 
   @Override
   public TreeNode loadBackingNodes(final BackingNodeSource source, final Bytes32 rootHash) {
+    return loadBackingNodes(source, rootHash, getLength());
+  }
+
+  public TreeNode loadBackingNodes(
+      final BackingNodeSource source, final Bytes32 rootHash, final int length) {
     if (isListBacking) {
       final Optional<SszSuperNodeHint> sszSuperNodeHint =
           getHints().getHint(SszSuperNodeHint.class);
@@ -120,11 +124,16 @@ public abstract class AbstractSszVectorSchema<
 
         int binaryDepth = treeDepth() - superNodeDepth;
         return loadBackingNodes(
-            source, rootHash, GIndexUtil.SELF_G_INDEX, binaryDepth, OptionalInt.of(superNodeDepth));
+            source,
+            rootHash,
+            GIndexUtil.SELF_G_INDEX,
+            binaryDepth,
+            OptionalInt.of(superNodeDepth),
+            length);
       }
     }
     return loadBackingNodes(
-        source, rootHash, GIndexUtil.SELF_G_INDEX, treeDepth(), OptionalInt.empty());
+        source, rootHash, GIndexUtil.SELF_G_INDEX, treeDepth(), OptionalInt.empty(), length);
   }
 
   private TreeNode loadBackingNodes(
@@ -132,7 +141,8 @@ public abstract class AbstractSszVectorSchema<
       final Bytes32 rootHash,
       final long generalizedIndex,
       final int depth,
-      final OptionalInt superNodeDepth) {
+      final OptionalInt superNodeDepth,
+      final int length) {
     if (TreeUtil.ZERO_TREES_BY_ROOT.containsKey(rootHash)) {
       return getDefaultTree().get(generalizedIndex);
     }
@@ -144,55 +154,89 @@ public abstract class AbstractSszVectorSchema<
             elementSszSupernodeTemplate.get(),
             source.getLeafData(rootHash));
       } else if (getElementSchema().isPrimitive()) {
-        return LeafNode.create(source.getLeafData(rootHash));
+        final Bytes leafData = source.getLeafData(rootHash);
+        if (leafData.size() > Bytes32.SIZE) {
+          return LeafNode.create(leafData);
+        } else {
+          final int fullNodeCount = length / getElementsPerChunk();
+          int lastNodeElementCount = length % getElementsPerChunk();
+          if (lastNodeElementCount == 0) {
+            return LeafNode.create(leafData);
+          }
+          final long lastNodeGIndex =
+              GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, fullNodeCount, treeDepth());
+          if (lastNodeGIndex != generalizedIndex) {
+            return LeafNode.create(leafData);
+          }
+          // Need to trim the data
+          int lastNodeSizeBytes = bitsCeilToBytes(lastNodeElementCount * getSszElementBitSize());
+          return LeafNode.create(leafData.slice(0, lastNodeSizeBytes));
+        }
       } else {
         return getElementSchema().loadBackingNodes(source, rootHash);
       }
     }
-    final Pair<Bytes32, Bytes32> branch = source.getBranchData(rootHash);
-    return new LazyBranchNode(
-        rootHash,
-        branch.getLeft(),
-        branch.getRight(),
-        () ->
-            loadBackingNodes(
-                source,
-                branch.getLeft(),
-                GIndexUtil.gIdxLeftGIndex(generalizedIndex),
-                depth - 1,
-                superNodeDepth),
-        () ->
-            loadBackingNodes(
-                source,
-                branch.getRight(),
-                GIndexUtil.gIdxRightGIndex(generalizedIndex),
-                depth - 1,
-                superNodeDepth));
+    return loadBranchNode(source, rootHash, generalizedIndex, depth, superNodeDepth, length);
+  }
+
+  private TreeNode loadBranchNode(
+      final BackingNodeSource source,
+      final Bytes32 rootHash,
+      final long generalizedIndex,
+      final int depth,
+      final OptionalInt superNodeDepth,
+      final int length) {
+    final CompressedBranchInfo branch = source.getBranchData(rootHash);
+    final int buildNodesAtDepth = branch.getDepth() - 1;
+    final List<TreeNode> childNodes = new ArrayList<>();
+    final Bytes32[] childHashes = branch.getChildren();
+    final TreeNode defaultNode =
+        getDefaultTree().get(GIndexUtil.gIdxChildGIndex(generalizedIndex, 0, buildNodesAtDepth));
+    for (int i = 0; i < childHashes.length; i += 2) {
+      final long branchNodeGIndex =
+          GIndexUtil.gIdxChildGIndex(generalizedIndex, i / 2, buildNodesAtDepth);
+      final Bytes32 leftHash = childHashes[i];
+      final Bytes32 rightHash;
+      if (i + 1 < childHashes.length) {
+        rightHash = childHashes[i + 1];
+      } else {
+        rightHash =
+            defaultNode.get(GIndexUtil.gIdxRightGIndex(GIndexUtil.SELF_G_INDEX)).hashTreeRoot();
+      }
+      childNodes.add(
+          LazyBranchNode.createWithUnknownHash(
+              leftHash,
+              rightHash,
+              () ->
+                  loadBackingNodes(
+                      source,
+                      leftHash,
+                      GIndexUtil.gIdxLeftGIndex(branchNodeGIndex),
+                      depth - branch.getDepth(),
+                      superNodeDepth,
+                      length),
+              () ->
+                  loadBackingNodes(
+                      source,
+                      rightHash,
+                      GIndexUtil.gIdxRightGIndex(branchNodeGIndex),
+                      depth - branch.getDepth(),
+                      superNodeDepth,
+                      length)));
+    }
+    return TreeUtil.createTree(childNodes, defaultNode, buildNodesAtDepth);
   }
 
   @Override
   public void storeBackingNodes(final TreeNode backingNode, final BackingNodeStore store) {
     final int depth = treeDepth();
-    SszCompositeSchema.storeNonZeroBranchNodes(
+    storeNodesAtDepth(
         backingNode,
         store,
-        Math.max(0, depth - MAX_DEPTH_COMPRESSION),
-        nodeForCompression -> {
-          final int childDepth = Math.min(depth, MAX_DEPTH_COMPRESSION);
-          final int chunkCount = 1 << childDepth;
-          final List<Bytes32> childHashes = new ArrayList<>();
-          for (int childIndex = 0; childIndex < chunkCount; childIndex++) {
-            final long childGIndex =
-                GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, childIndex, childDepth);
-            final TreeNode childNode = nodeForCompression.get(childGIndex);
-            if (!TreeUtil.ZERO_TREES_BY_ROOT.containsKey(childNode.hashTreeRoot())) {
-              childHashes.add(childNode.hashTreeRoot());
-              getElementSchema().storeBackingNodes(childNode, store);
-            }
-          }
-          store.storeCompressedBranch(
-              backingNode.hashTreeRoot(), depth, childHashes.toArray(new Bytes32[0]));
-        });
+        depth,
+        getElementsPerChunk() * (1L << depth),
+        getMaxLength(),
+        node -> getElementSchema().storeBackingNodes(node, store));
   }
 
   @Override

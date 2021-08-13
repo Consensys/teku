@@ -13,7 +13,8 @@
 
 package tech.pegasys.teku.ssz.schema;
 
-import org.apache.commons.lang3.tuple.Pair;
+import static com.google.common.base.Preconditions.checkArgument;
+
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.SszData;
@@ -84,7 +85,7 @@ public interface SszSchema<SszDataT extends SszData> extends SszType {
   }
 
   interface BackingNodeSource {
-    Pair<Bytes32, Bytes32> getBranchData(Bytes32 root);
+    CompressedBranchInfo getBranchData(Bytes32 root);
 
     Bytes getLeafData(Bytes32 root);
   }
@@ -93,5 +94,44 @@ public interface SszSchema<SszDataT extends SszData> extends SszType {
     void storeCompressedBranch(Bytes32 root, int depth, Bytes32[] children);
 
     void storeLeafNode(LeafDataNode node);
+  }
+
+  class CompressedBranchInfo {
+    private final int depth;
+    private final Bytes32[] children;
+
+    public CompressedBranchInfo(final int depth, final Bytes32[] children) {
+      this.depth = depth;
+      this.children = children;
+    }
+
+    public int getDepth() {
+      return depth;
+    }
+
+    public Bytes32[] getChildren() {
+      return children;
+    }
+
+    public static Bytes serialize(final int depth, final Bytes32[] children) {
+      return Bytes.wrap(Bytes.ofUnsignedInt(depth), Bytes.wrap(children));
+    }
+
+    public static CompressedBranchInfo deserialize(final Bytes data) {
+      checkArgument(
+          (data.size() - Integer.BYTES) % Bytes32.SIZE == 0,
+          "Branch data was an invalid length %s",
+          data);
+      // Take unsigned int from front (depth)
+      final int depth = data.getInt(0);
+      // Then split remaining into 32 byte chunks (children)
+      final Bytes childHashes = data.slice(Integer.BYTES);
+      final Bytes32[] children = new Bytes32[childHashes.size() / Bytes32.SIZE];
+      for (int i = 0; i < children.length; i++) {
+        final Bytes32 child = Bytes32.wrap(childHashes.slice(i * Bytes32.SIZE, Bytes32.SIZE));
+        children[i] = child;
+      }
+      return new CompressedBranchInfo(depth, children);
+    }
   }
 }

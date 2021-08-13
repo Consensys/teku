@@ -24,7 +24,6 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
@@ -36,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.ssz.schema.SszSchema.BackingNodeSource;
 import tech.pegasys.teku.ssz.schema.SszSchema.BackingNodeStore;
+import tech.pegasys.teku.ssz.schema.SszSchema.CompressedBranchInfo;
 import tech.pegasys.teku.ssz.tree.LeafDataNode;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 import tech.pegasys.teku.ssz.tree.TreeUtil;
@@ -115,27 +115,16 @@ public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
         stateSchema.loadBackingNodes(
             new BackingNodeSource() {
               @Override
-              public Pair<Bytes32, Bytes32> getBranchData(final Bytes32 root) {
+              public CompressedBranchInfo getBranchData(final Bytes32 root) {
                 return db.get(schema.getColumnFinalizedStateMerkleTrieBranches(), root)
-                    .map(
-                        data -> {
-                          checkArgument(
-                              data.size() == Bytes32.SIZE * 2,
-                              "Branch data was too short %s",
-                              data);
-                          return Pair.of(
-                              Bytes32.wrap(data.slice(0, Bytes32.SIZE)),
-                              Bytes32.wrap(data.slice(Bytes32.SIZE)));
-                        })
+                    .map(CompressedBranchInfo::deserialize)
                     .orElseThrow(
                         () -> new IllegalStateException("Missing branch data for root " + root));
               }
 
               @Override
               public Bytes getLeafData(final Bytes32 root) {
-                return db.get(schema.getColumnFinalizedStateMerkleTrieLeaves(), root)
-                    .orElseThrow(
-                        () -> new IllegalStateException("Missing leaf data for root " + root));
+                return db.get(schema.getColumnFinalizedStateMerkleTrieLeaves(), root).orElse(root);
               }
             },
             stateRoot);
@@ -333,7 +322,7 @@ public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
                   transaction.put(
                       schema.getColumnFinalizedStateMerkleTrieBranches(),
                       root,
-                      Bytes.wrap(Bytes.ofUnsignedInt(depth), Bytes.wrap(children)));
+                      CompressedBranchInfo.serialize(depth, children));
                 }
 
                 @Override
