@@ -109,13 +109,6 @@ public class BlstSignature implements Signature {
   @Override
   public boolean verify(List<PublicKeyMessagePair> keysToMessages) {
 
-    // according to BLS spec aggregateVerify allows only distinct messages
-    // https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-bls-signature-04#section-3.1.1
-    if (keysToMessages.stream().map(PublicKeyMessagePair::getMessage).distinct().count()
-        < keysToMessages.size()) {
-      return false;
-    }
-
     boolean isAnyPublicKeyInfinity =
         keysToMessages.stream()
             .anyMatch(pair -> ((BlstPublicKey) pair.getPublicKey()).isInfinity());
