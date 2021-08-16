@@ -285,8 +285,6 @@ task cleanRefTestsBls(type: Delete) {
 }
 
 task expandRefTestsBls(type: Copy, dependsOn: [cleanRefTestsBls, downloadBlsRefTests]) {
-  println "${blsRefTestDownloadDir}/bls_tests_yaml.tar.gz"
-  println refTestExpandDir
   from tarTree("${blsRefTestDownloadDir}/bls_tests_yaml.tar.gz")
   into "${refTestExpandDir}/tests/bls"
 }
