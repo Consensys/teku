@@ -99,11 +99,15 @@ public class Eth1DataCacheTest {
   }
 
   @Test
-  void shouldIgnoreEmptyBlocksWithNoEarlierDeposits() {
+  void shouldUseEmptyMerkleTrieRootForBlocksWithNoEarlierDeposits() {
     final Bytes32 emptyBlockHash = dataStructureUtil.randomBytes32();
     eth1DataCache.onEth1Block(emptyBlockHash, IN_RANGE_TIMESTAMP_1);
 
-    assertThat(getCacheSize()).isZero();
+    final BeaconState beaconState = createBeaconStateWithVotes();
+    when(beaconState.getEth1_data()).thenReturn(new Eth1Data(Bytes32.ZERO, ZERO, Bytes32.ZERO));
+
+    final Eth1Data eth1Vote = eth1DataCache.getEth1Vote(beaconState);
+    assertThat(eth1Vote).isEqualTo(new Eth1Data(Eth1Data.EMPTY_DEPOSIT_ROOT, ZERO, emptyBlockHash));
   }
 
   @Test
