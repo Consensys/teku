@@ -225,13 +225,15 @@ allprojects {
   }
 }
 
-// Note: v1.0.0 tests were republished to fix an initial error. Reset the cache?
 def refTestVersion = 'v1.1.0-beta.2'
+def blsRefTestVersion = 'v0.1.0'
 def refTestBaseUrl = 'https://github.com/ethereum/eth2.0-spec-tests/releases/download'
+def blsRefTestBaseUrl = 'https://github.com/ethereum/bls12-381-tests/releases/download'
 def refTestDownloadDir = "${buildDir}/refTests/${refTestVersion}"
+def blsRefTestDownloadDir = "${buildDir}/blsRefTests/${blsRefTestVersion}"
 def refTestExpandDir = "${project.rootDir}/eth-reference-tests/src/referenceTest/resources/eth2.0-spec-tests/"
 
-task downloadRefTests(type: Download) {
+task downloadEthRefTests(type: Download) {
   src([
       "${refTestBaseUrl}/${refTestVersion}/general.tar.gz",
       "${refTestBaseUrl}/${refTestVersion}/minimal.tar.gz",
@@ -241,11 +243,21 @@ task downloadRefTests(type: Download) {
   overwrite false
 }
 
+task downloadBlsRefTests(type: Download) {
+  src([
+      "${blsRefTestBaseUrl}/${blsRefTestVersion}/bls_tests_yaml.tar.gz"
+  ])
+  dest "${blsRefTestDownloadDir}/bls_tests_yaml.tar.gz"
+  overwrite false
+}
+
+task downloadRefTests(dependsOn: [downloadEthRefTests, downloadBlsRefTests])
+
 task cleanRefTestsGeneral(type: Delete) {
   delete "${refTestExpandDir}/tests/general"
 }
 
-task expandRefTestsGeneral(type: Copy, dependsOn: [cleanRefTestsGeneral, downloadRefTests]) {
+task expandRefTestsGeneral(type: Copy, dependsOn: [cleanRefTestsGeneral, downloadEthRefTests]) {
   from tarTree("${refTestDownloadDir}/general.tar.gz")
   into refTestExpandDir
 }
@@ -254,7 +266,7 @@ task cleanRefTestsMainnet(type: Delete) {
   delete "${refTestExpandDir}/tests/mainnet"
 }
 
-task expandRefTestsMainnet(type: Copy, dependsOn: [cleanRefTestsMainnet, downloadRefTests]) {
+task expandRefTestsMainnet(type: Copy, dependsOn: [cleanRefTestsMainnet, downloadEthRefTests]) {
   from tarTree("${refTestDownloadDir}/mainnet.tar.gz")
   into refTestExpandDir
 }
@@ -263,13 +275,24 @@ task cleanRefTestsMinimal(type: Delete) {
   delete "${refTestExpandDir}/tests/minimal"
 }
 
-task expandRefTestsMinimal(type: Copy, dependsOn: [cleanRefTestsMinimal, downloadRefTests]) {
+task expandRefTestsMinimal(type: Copy, dependsOn: [cleanRefTestsMinimal, downloadEthRefTests]) {
   from tarTree("${refTestDownloadDir}/minimal.tar.gz")
   into refTestExpandDir
 }
 
-task expandRefTests(dependsOn: [expandRefTestsGeneral, expandRefTestsMainnet, expandRefTestsMinimal])
-task cleanRefTests(dependsOn: [cleanRefTestsGeneral, cleanRefTestsMainnet, cleanRefTestsMinimal])
+task cleanRefTestsBls(type: Delete) {
+  delete "${refTestExpandDir}/tests/bls"
+}
+
+task expandRefTestsBls(type: Copy, dependsOn: [cleanRefTestsBls, downloadBlsRefTests]) {
+  println "${blsRefTestDownloadDir}/bls_tests_yaml.tar.gz"
+  println refTestExpandDir
+  from tarTree("${blsRefTestDownloadDir}/bls_tests_yaml.tar.gz")
+  into "${refTestExpandDir}/tests/bls"
+}
+
+task expandRefTests(dependsOn: [expandRefTestsGeneral, expandRefTestsMainnet, expandRefTestsMinimal, expandRefTestsBls])
+task cleanRefTests(dependsOn: [cleanRefTestsGeneral, cleanRefTestsMainnet, cleanRefTestsMinimal, cleanRefTestsBls])
 
 task deploy() {}
 
