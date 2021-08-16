@@ -110,7 +110,6 @@ public class SyncController {
           "Ignoring sync complete because another sync is already active. Result: {}", result);
       return;
     }
-    eventLogger.syncCompleted();
     LOG.debug(
         "Completed sync to chain {} with result {}",
         currentSync.map(Objects::toString).orElse("<unknown>"),
@@ -120,6 +119,7 @@ public class SyncController {
     if (!isSyncActive()) {
       currentSync = Optional.empty();
       notifySubscribers(false);
+      eventLogger.syncCompleted();
     }
   }
 
