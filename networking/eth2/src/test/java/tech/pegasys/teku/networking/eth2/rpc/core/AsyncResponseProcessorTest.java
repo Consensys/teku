@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.networking.eth2.rpc.core.AsyncResponseProcessor.AsyncProcessingErrorHandler;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.AdditionalDataReceivedException;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 
 public class AsyncResponseProcessorTest {
@@ -45,7 +46,7 @@ public class AsyncResponseProcessorTest {
       new AsyncResponseProcessor<>(asyncRunner, responseStream, errorConsumer);
 
   @Test
-  public void processMultipleResponsesSuccessfully() {
+  public void processMultipleResponsesSuccessfully() throws Exception {
     asyncResponseProcessor.processResponse("a");
     assertThat(asyncResponseProcessor.getResponseCount()).isEqualTo(1);
     asyncResponseProcessor.processResponse("b");
@@ -65,7 +66,7 @@ public class AsyncResponseProcessorTest {
   }
 
   @Test
-  public void dropsRemainingResponsesOnError() {
+  public void dropsRemainingResponsesOnError() throws Exception {
     asyncResponseProcessor.processResponse("a");
     asyncResponseProcessor.processResponse("b");
     asyncResponseProcessor.processResponse("c");
@@ -91,7 +92,7 @@ public class AsyncResponseProcessorTest {
   }
 
   @Test
-  public void finishProcessingWhileSomeResponsesStillQueue() {
+  public void finishProcessingWhileSomeResponsesStillQueue() throws Exception {
     asyncResponseProcessor.processResponse("a");
     asyncResponseProcessor.processResponse("b");
     asyncResponseProcessor.processResponse("c");
@@ -110,7 +111,7 @@ public class AsyncResponseProcessorTest {
   }
 
   @Test
-  public void finishProcessingWhileSomeResponsesStillQueueWhenErrorIsThrown() {
+  public void finishProcessingWhileSomeResponsesStillQueueWhenErrorIsThrown() throws Exception {
     asyncResponseProcessor.processResponse("a");
     asyncResponseProcessor.processResponse("b");
     asyncResponseProcessor.processResponse("c");
@@ -141,7 +142,6 @@ public class AsyncResponseProcessorTest {
   public void shouldThrowIfResponsesSubmittedAfterFinishedProcessing() {
     asyncResponseProcessor.finishProcessing().reportExceptions();
     assertThatThrownBy(() -> asyncResponseProcessor.processResponse("a"))
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessageContaining("New response submitted after closing");
+        .isInstanceOf(AdditionalDataReceivedException.class);
   }
 }
