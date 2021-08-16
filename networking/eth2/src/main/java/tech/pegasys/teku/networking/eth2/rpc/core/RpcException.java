@@ -100,7 +100,6 @@ public class RpcException extends Exception {
   // Unavailable data
 
   public static class ResourceUnavailableException extends RpcException {
-
     public ResourceUnavailableException(final String errorMessage) {
       super(RESOURCE_UNAVAILABLE, errorMessage);
     }
