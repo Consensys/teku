@@ -33,13 +33,12 @@ public class BlsRefTestFinder implements TestFinder {
     }
     return Files.list(testRoot)
         .filter(path -> path.toFile().isDirectory())
-        .flatMap(unchecked(path -> findBlsTests(fork, spec, testRoot, path)));
+        .flatMap(unchecked(path -> findBlsTests(spec, testRoot, path)));
   }
 
   @MustBeClosed
   private Stream<TestDefinition> findBlsTests(
-      final String fork, final String spec, final Path testRoot, final Path testCategoryDir)
-      throws IOException {
+      final String spec, final Path testRoot, final Path testCategoryDir) throws IOException {
     final String testType = "bls/" + testRoot.relativize(testCategoryDir).toString();
     return Files.list(testCategoryDir)
         .filter(file -> file.toFile().getName().endsWith(".yaml"))
