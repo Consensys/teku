@@ -19,6 +19,7 @@ For information on changes in released versions of Teku, see the [releases page]
  - Added additional bootnodes for the Prater testnet to improve peer discovery.
  - Improved peer discovery. All authenticated node sessions are evaluated as potential peers to connect.
  - Improved clarity of sync progress log messages.
+ - Logged a message to indicate when the node is in sync.
 
 ### Bug Fixes
  - Added a column size and percentage complete to migrate-database command, where columns contain block or state objects, as they can be time consuming to copy.

@@ -84,6 +84,10 @@ public class EventLogger {
     info(syncEventLog, Color.WHITE);
   }
 
+  public void syncCompleted() {
+    info("Syncing completed", Color.GREEN);
+  }
+
   public void weakSubjectivityFailedEvent(final Bytes32 blockRoot, final UInt64 slot) {
     final String weakSubjectivityFailedEventLog =
         String.format(
