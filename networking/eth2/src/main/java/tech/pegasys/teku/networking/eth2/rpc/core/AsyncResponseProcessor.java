@@ -21,6 +21,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.AdditionalDataReceivedException;
 
 class AsyncResponseProcessor<TResponse> {
   private static final Logger LOG = LogManager.getLogger();
@@ -46,13 +47,9 @@ class AsyncResponseProcessor<TResponse> {
     this.onError = onError;
   }
 
-  public void processResponse(TResponse response) {
+  public void processResponse(TResponse response) throws RpcException {
     if (allResponsesDelivered.get()) {
-      throw new IllegalStateException(
-          "New response submitted after closing "
-              + this.getClass().getSimpleName()
-              + " for new responses: "
-              + response);
+      throw new AdditionalDataReceivedException();
     }
     if (cancelled.get()) {
       LOG.trace("Request cancelled, dropping response: {}", response);
