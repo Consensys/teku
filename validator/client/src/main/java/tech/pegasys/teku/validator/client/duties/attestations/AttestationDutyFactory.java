@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.client.duties;
+package tech.pegasys.teku.validator.client.duties.attestations;
 
 import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 
@@ -19,6 +19,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
+import tech.pegasys.teku.validator.client.duties.DutyFactory;
 
 public class AttestationDutyFactory
     implements DutyFactory<AttestationProductionDuty, AggregationDuty> {
@@ -35,7 +36,8 @@ public class AttestationDutyFactory
   @Override
   public AttestationProductionDuty createProductionDuty(
       final UInt64 slot, final Validator validator) {
-    return new AttestationProductionDuty(slot, forkProvider, validatorApiChannel);
+    return new AttestationProductionDuty(
+        slot, forkProvider, new IndividualAttestationProductionStrategy(validatorApiChannel));
   }
 
   @Override
