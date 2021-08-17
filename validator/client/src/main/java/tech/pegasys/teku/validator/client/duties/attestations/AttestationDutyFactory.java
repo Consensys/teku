@@ -26,18 +26,26 @@ public class AttestationDutyFactory
 
   private final ForkProvider forkProvider;
   private final ValidatorApiChannel validatorApiChannel;
+  private final boolean sendAttestationsAsBatch;
 
   public AttestationDutyFactory(
-      final ForkProvider forkProvider, final ValidatorApiChannel validatorApiChannel) {
+      final ForkProvider forkProvider,
+      final ValidatorApiChannel validatorApiChannel,
+      final boolean sendAttestationsAsBatch) {
     this.forkProvider = forkProvider;
     this.validatorApiChannel = validatorApiChannel;
+    this.sendAttestationsAsBatch = sendAttestationsAsBatch;
   }
 
   @Override
   public AttestationProductionDuty createProductionDuty(
       final UInt64 slot, final Validator validator) {
     return new AttestationProductionDuty(
-        slot, forkProvider, new IndividualAttestationProductionStrategy(validatorApiChannel));
+        slot,
+        forkProvider,
+        sendAttestationsAsBatch
+            ? new BatchAttestationProductionStrategy(validatorApiChannel)
+            : new IndividualAttestationProductionStrategy(validatorApiChannel));
   }
 
   @Override
