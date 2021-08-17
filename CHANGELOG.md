@@ -15,6 +15,7 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Additions and Improvements
  - Logged a message to indicate when the node is in sync.
+ - Upgraded jdk16 and default docker image to use eclipse-tumerin builds of OpenJDK.
 
 ### Bug Fixes
  - Fixed `IllegalStateException: New response submitted after closing AsyncResponseProcessor` errors.
