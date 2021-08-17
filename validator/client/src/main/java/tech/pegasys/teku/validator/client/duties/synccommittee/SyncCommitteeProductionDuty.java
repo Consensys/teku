@@ -13,13 +13,9 @@
 
 package tech.pegasys.teku.validator.client.duties.synccommittee;
 
-import static java.util.stream.Collectors.toList;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -29,15 +25,12 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
-import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.duties.DutyResult;
 import tech.pegasys.teku.validator.client.duties.ProductionResult;
-import tech.pegasys.teku.validator.client.duties.RestApiReportedException;
 
 public class SyncCommitteeProductionDuty {
-  private static final Logger LOG = LogManager.getLogger();
   private final ForkProvider forkProvider;
   private final Collection<ValidatorAndCommitteeIndices> assignments;
 
@@ -81,55 +74,7 @@ public class SyncCommitteeProductionDuty {
 
   private SafeFuture<DutyResult> sendSignatures(
       final List<ProductionResult<SyncCommitteeMessage>> results) {
-    // Split into results that produced a signature vs those that failed already
-    final List<ProductionResult<SyncCommitteeMessage>> signatureCreated =
-        results.stream().filter(ProductionResult::producedMessage).collect(toList());
-    final DutyResult combinedFailures =
-        combineResults(
-            results.stream().filter(ProductionResult::failedToProduceMessage).collect(toList()));
-
-    if (signatureCreated.isEmpty()) {
-      return SafeFuture.completedFuture(combinedFailures);
-    }
-
-    return validatorApiChannel
-        .sendSyncCommitteeMessages(
-            signatureCreated.stream()
-                .map(result -> result.getMessage().orElseThrow())
-                .collect(toList()))
-        .thenApply(
-            errors -> {
-              errors.forEach(error -> replaceResult(signatureCreated, error));
-              return combineResults(signatureCreated).combine(combinedFailures);
-            });
-  }
-
-  private DutyResult combineResults(final List<ProductionResult<SyncCommitteeMessage>> results) {
-    return results.stream()
-        .map(ProductionResult::getResult)
-        .reduce(DutyResult::combine)
-        .orElse(DutyResult.NO_OP);
-  }
-
-  private void replaceResult(
-      final List<ProductionResult<SyncCommitteeMessage>> sentResults, final SubmitDataError error) {
-    if (error.getIndex().isGreaterThanOrEqualTo(sentResults.size())) {
-      LOG.error(
-          "Beacon node reported an error sending sync committee message at index {} with message '{}' but only {} messages were sent",
-          error.getIndex(),
-          error.getMessage(),
-          sentResults.size());
-      return;
-    }
-    final int index = error.getIndex().intValue();
-    final ProductionResult<SyncCommitteeMessage> originalResult = sentResults.get(index);
-    sentResults.set(
-        index,
-        new ProductionResult<>(
-            originalResult.getValidatorPublicKey(),
-            DutyResult.forError(
-                originalResult.getValidatorPublicKey(),
-                new RestApiReportedException(error.getMessage()))));
+    return ProductionResult.send(results, validatorApiChannel::sendSyncCommitteeMessages);
   }
 
   private SafeFuture<ProductionResult<SyncCommitteeMessage>> produceMessage(
@@ -144,14 +89,11 @@ public class SyncCommitteeProductionDuty {
         .signSyncCommitteeMessage(slot, blockRoot, forkInfo)
         .thenApply(
             signature ->
-                new ProductionResult<>(
+                ProductionResult.success(
                     validatorPublicKey,
                     blockRoot,
                     createSyncCommitteeMessage(slot, blockRoot, assignment, signature)))
-        .exceptionally(
-            error ->
-                new ProductionResult<>(
-                    validatorPublicKey, DutyResult.forError(validatorPublicKey, error)));
+        .exceptionally(error -> ProductionResult.failure(validatorPublicKey, error));
   }
 
   private SyncCommitteeMessage createSyncCommitteeMessage(

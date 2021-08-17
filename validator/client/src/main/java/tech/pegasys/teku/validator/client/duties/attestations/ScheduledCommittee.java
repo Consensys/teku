@@ -14,11 +14,14 @@
 package tech.pegasys.teku.validator.client.duties.attestations;
 
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.validator.client.Validator;
@@ -45,6 +48,12 @@ class ScheduledCommittee {
 
   public List<ValidatorWithCommitteePositionAndIndex> getValidators() {
     return validators;
+  }
+
+  public Set<BLSPublicKey> getValidatorPublicKeys() {
+    return validators.stream()
+        .map(ValidatorWithCommitteePositionAndIndex::getPublicKey)
+        .collect(toSet());
   }
 
   public SafeFuture<Optional<AttestationData>> getAttestationDataFuture() {
