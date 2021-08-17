@@ -66,7 +66,7 @@ public abstract class Eth2ReferenceTestCase {
   }
 
   private void setConstants(final String spec) {
-    if (!spec.equals("general")) {
+    if (!spec.equals("general") && !spec.equals("bls")) {
       Constants.setConstants(spec);
       SpecDependent.resetAll();
     }
