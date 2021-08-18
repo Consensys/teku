@@ -139,6 +139,15 @@ jobs:
           command: |
             ./gradlew --no-daemon --parallel checkMavenCoordinateCollisions spotlessCheck
 
+  dockerScan:
+    executor: small_executor
+    steps:
+      - prepare
+      - run:
+          name: Spotless
+          command: |
+            ./gradlew --no-daemon --parallel dockerScan
+
   unitTests:
     parallelism: 2
     executor: medium_plus_executor
@@ -481,3 +490,13 @@ workflows:
             - docker
             - extractAPISpec
             - spotless
+  nightly:
+    triggers:
+      - schedule:
+          cron: "0 0 * * *"
+          filters:
+            branches:
+              only:
+                - master
+    jobs:
+      - dockerScan
