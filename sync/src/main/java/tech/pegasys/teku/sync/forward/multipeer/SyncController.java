@@ -119,7 +119,6 @@ public class SyncController {
     if (!isSyncActive()) {
       currentSync = Optional.empty();
       notifySubscribers(false);
-      eventLogger.syncCompleted();
     }
   }
 
@@ -145,6 +144,11 @@ public class SyncController {
 
   private void notifySubscribers(final boolean syncing) {
     subscriberExecutor.execute(() -> subscribers.deliver(SyncSubscriber::onSyncingChange, syncing));
+    if (syncing) {
+      eventLogger.syncStart();
+    } else {
+      eventLogger.syncCompleted();
+    }
   }
 
   private InProgressSync startSync(final SyncTarget syncTarget) {

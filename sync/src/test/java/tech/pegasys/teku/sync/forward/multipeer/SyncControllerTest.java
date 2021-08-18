@@ -17,9 +17,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.FutureUtil.ignoreFuture;
@@ -67,6 +67,17 @@ class SyncControllerTest {
   }
 
   @Test
+  void shouldNotBeSyncingWhenSyncCompletes() {
+    final SafeFuture<SyncResult> syncResult = startFinalizedSync();
+
+    assertThat(syncController.isSyncActive()).isTrue();
+
+    syncResult.complete(SyncResult.COMPLETE);
+
+    assertNotSyncing();
+  }
+
+  @Test
   void shouldStartFinalizedSyncWhenTargetChainsUpdatedWithSuitableFinalizedChain() {
     ignoreFuture(startFinalizedSync());
 
@@ -76,17 +87,6 @@ class SyncControllerTest {
     assertThat(syncController.getSyncStatus())
         .isEqualTo(
             new SyncingStatus(true, HEAD_SLOT, HEAD_SLOT, targetChain.getChainHead().getSlot()));
-  }
-
-  @Test
-  void shouldNotBeSyncingWhenSyncCompletes() {
-    final SafeFuture<SyncResult> syncResult = startFinalizedSync();
-
-    assertThat(syncController.isSyncActive()).isTrue();
-
-    syncResult.complete(SyncResult.COMPLETE);
-
-    assertNotSyncing();
   }
 
   @Test
@@ -231,10 +231,19 @@ class SyncControllerTest {
     final SafeFuture<SyncResult> syncResult = startFinalizedSync();
 
     assertThat(syncController.isSyncActive()).isTrue();
-    verifyNoInteractions(eventLogger);
+    verify(eventLogger, never()).syncCompleted();
     syncResult.complete(SyncResult.COMPLETE);
     assertNotSyncing();
     verify(eventLogger, times(1)).syncCompleted();
+  }
+
+  @Test
+  void shouldExecuteStartSyncMessage() {
+    final SyncSubscriber subscriber = mock(SyncSubscriber.class);
+    syncController.subscribeToSyncChanges(subscriber);
+    verify(eventLogger, never()).syncStart();
+    ignoreFuture(startFinalizedSync());
+    verify(eventLogger, times(1)).syncStart();
   }
 
   private void assertSyncSubscriberNotified(
