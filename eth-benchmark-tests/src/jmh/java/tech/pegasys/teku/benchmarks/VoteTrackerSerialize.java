@@ -26,24 +26,8 @@ import tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer;
 public class VoteTrackerSerialize {
 
   private static VoteTracker votes = new DataStructureUtil().randomVoteTracker();
-  private static Bytes votesSerialized = votes.sszSerialize();
   private static KvStoreSerializer<VoteTracker> serializer = KvStoreSerializer.VOTES_SERIALIZER;
-
-  @Benchmark
-  @Warmup(iterations = 1, time = 100, timeUnit = TimeUnit.MILLISECONDS)
-  @Measurement(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
-  @OutputTimeUnit(TimeUnit.MILLISECONDS)
-  public void genericSerialization() {
-    checkSize(votes.sszSerialize());
-  }
-
-  @Benchmark
-  @Warmup(iterations = 2, time = 100, timeUnit = TimeUnit.MILLISECONDS)
-  @Measurement(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
-  @OutputTimeUnit(TimeUnit.MILLISECONDS)
-  public void genericDeserialization() {
-    checkEpoch(VoteTracker.SSZ_SCHEMA.sszDeserialize(votesSerialized));
-  }
+  private static Bytes votesSerialized = Bytes.wrap(serializer.serialize(votes));
 
   @Benchmark
   @Warmup(iterations = 2, time = 100, timeUnit = TimeUnit.MILLISECONDS)
