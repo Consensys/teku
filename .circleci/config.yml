@@ -144,7 +144,7 @@ jobs:
     steps:
       - prepare
       - run:
-          name: Spotless
+          name: "Scan docker images"
           command: |
             ./gradlew --no-daemon --parallel dockerScan
 
