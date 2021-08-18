@@ -13,13 +13,13 @@
 
 package tech.pegasys.teku.validator.client.duties.attestations;
 
-import java.util.Map;
+import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.validator.client.duties.DutyResult;
+import tech.pegasys.teku.validator.client.duties.ProductionResult;
 
-public interface AttestationProductionStrategy {
-  SafeFuture<DutyResult> produceAttestations(
-      UInt64 slot, ForkInfo forkInfo, Map<Integer, ScheduledCommittee> validatorsByCommitteeIndex);
+public interface AttestationSendingStrategy {
+  SafeFuture<DutyResult> sendAttestations(
+      Stream<SafeFuture<ProductionResult<Attestation>>> attestations);
 }

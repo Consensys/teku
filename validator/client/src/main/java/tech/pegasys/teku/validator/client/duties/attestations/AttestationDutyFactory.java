@@ -43,9 +43,10 @@ public class AttestationDutyFactory
     return new AttestationProductionDuty(
         slot,
         forkProvider,
+        validatorApiChannel,
         sendAttestationsAsBatch
-            ? new BatchAttestationProductionStrategy(validatorApiChannel)
-            : new IndividualAttestationProductionStrategy(validatorApiChannel));
+            ? new BatchAttestationSendingStrategy(validatorApiChannel)
+            : new IndividualAttestationSendingStrategy(validatorApiChannel));
   }
 
   @Override
