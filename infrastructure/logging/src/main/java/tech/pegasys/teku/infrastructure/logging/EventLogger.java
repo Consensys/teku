@@ -89,7 +89,7 @@ public class EventLogger {
   }
 
   public void syncStart() {
-    info("Syncing started", Color.GREEN);
+    info("Syncing started", Color.YELLOW);
   }
 
   public void weakSubjectivityFailedEvent(final Bytes32 blockRoot, final UInt64 slot) {

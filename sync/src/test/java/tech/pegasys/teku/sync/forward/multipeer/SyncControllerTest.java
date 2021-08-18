@@ -67,17 +67,6 @@ class SyncControllerTest {
   }
 
   @Test
-  void shouldNotBeSyncingWhenSyncCompletes() {
-    final SafeFuture<SyncResult> syncResult = startFinalizedSync();
-
-    assertThat(syncController.isSyncActive()).isTrue();
-
-    syncResult.complete(SyncResult.COMPLETE);
-
-    assertNotSyncing();
-  }
-
-  @Test
   void shouldStartFinalizedSyncWhenTargetChainsUpdatedWithSuitableFinalizedChain() {
     ignoreFuture(startFinalizedSync());
 
@@ -87,6 +76,17 @@ class SyncControllerTest {
     assertThat(syncController.getSyncStatus())
         .isEqualTo(
             new SyncingStatus(true, HEAD_SLOT, HEAD_SLOT, targetChain.getChainHead().getSlot()));
+  }
+
+  @Test
+  void shouldNotBeSyncingWhenSyncCompletes() {
+    final SafeFuture<SyncResult> syncResult = startFinalizedSync();
+
+    assertThat(syncController.isSyncActive()).isTrue();
+
+    syncResult.complete(SyncResult.COMPLETE);
+
+    assertNotSyncing();
   }
 
   @Test
