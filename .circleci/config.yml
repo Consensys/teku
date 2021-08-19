@@ -159,6 +159,7 @@ jobs:
       - run:
           name: "Scan docker images"
           command: |
+            docker login --username "${DOCKER_USER_RW}" --password "${DOCKER_PASSWORD_RW}"
             ./gradlew --no-daemon --parallel dockerScan
 
   unitTests:
