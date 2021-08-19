@@ -36,6 +36,7 @@ public abstract class AbstractSszListSchema<
     extends AbstractSszCollectionSchema<ElementDataT, SszListT>
     implements SszListSchema<ElementDataT, SszListT> {
   private final SszVectorSchemaImpl<ElementDataT> compatibleVectorSchema;
+  private final SszLengthBounds sszLengthBounds;
 
   protected AbstractSszListSchema(SszSchema<ElementDataT> elementSchema, long maxLength) {
     this(elementSchema, maxLength, SszSchemaHints.none());
@@ -45,7 +46,8 @@ public abstract class AbstractSszListSchema<
       SszSchema<ElementDataT> elementSchema, long maxLength, SszSchemaHints hints) {
     super(maxLength, elementSchema, hints);
     this.compatibleVectorSchema =
-        new SszVectorSchemaImpl<>(getElementSchema(), getMaxLength(), true, getHints());
+        new SszVectorSchemaImpl<>(elementSchema, getMaxLength(), true, getHints());
+    this.sszLengthBounds = computeSszLengthBounds(elementSchema, maxLength);
   }
 
   @Override
@@ -148,15 +150,20 @@ public abstract class AbstractSszListSchema<
 
   @Override
   public SszLengthBounds getSszLengthBounds() {
-    SszLengthBounds elementLengthBounds = getElementSchema().getSszLengthBounds();
+    return sszLengthBounds;
+  }
+
+  private static SszLengthBounds computeSszLengthBounds(
+      final SszSchema<?> elementSchema, final long maxLength) {
+    SszLengthBounds elementLengthBounds = elementSchema.getSszLengthBounds();
     // if elements are of dynamic size the offset size should be added for every element
     SszLengthBounds elementAndOffsetLengthBounds =
-        elementLengthBounds.addBytes(getElementSchema().isFixedSize() ? 0 : SSZ_LENGTH_SIZE);
+        elementLengthBounds.addBytes(elementSchema.isFixedSize() ? 0 : SSZ_LENGTH_SIZE);
     SszLengthBounds maxLenBounds =
-        SszLengthBounds.ofBits(0, elementAndOffsetLengthBounds.mul(getMaxLength()).getMaxBits());
+        SszLengthBounds.ofBits(0, elementAndOffsetLengthBounds.mul(maxLength).getMaxBits());
     // adding 1 boundary bit for BitlistImpl
     return maxLenBounds
-        .addBits(getElementSchema() == SszPrimitiveSchemas.BIT_SCHEMA ? 1 : 0)
+        .addBits(elementSchema == SszPrimitiveSchemas.BIT_SCHEMA ? 1 : 0)
         .ceilToBytes();
   }
 
