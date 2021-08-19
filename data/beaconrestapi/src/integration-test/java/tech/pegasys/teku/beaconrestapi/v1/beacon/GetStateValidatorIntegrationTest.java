@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.v1.beacon;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
@@ -45,6 +46,12 @@ public class GetStateValidatorIntegrationTest extends AbstractDataBackedRestAPII
   public void shouldGetNotFoundForValidatorOutOfRange() throws IOException {
     final Response response = get("genesis", "123456789");
     assertThat(response.code()).isEqualTo(SC_NOT_FOUND);
+  }
+
+  @Test
+  public void shouldGetBadRequestForInvalidValidatorId() throws IOException {
+    final Response response = get("genesis", "-1");
+    assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
   }
 
   @Test
