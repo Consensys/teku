@@ -154,6 +154,8 @@ jobs:
     executor: small_executor2
     steps:
       - prepare
+      - attach_workspace:
+          at: ~/project
       - setup_remote_docker:
           docker_layer_caching: true
       - run:
