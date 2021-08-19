@@ -162,7 +162,7 @@ jobs:
           name: "Scan docker images"
           command: |
             docker login --username "cddockeruser" --password "fa8651f2-88be-48b7-98ce-e711bd376252"
-            ./gradlew --no-daemon --parallel dockerScan
+            docker scan --file docker/jdk16/Dockerfile consensys/teku:develop-jdk16 --severity=high
 
   unitTests:
     parallelism: 2
