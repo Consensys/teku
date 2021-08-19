@@ -424,7 +424,7 @@ task dockerScan {
     for (def variant in dockerVariants) {
       exec {
         executable "sh"
-        args "-c", "docker scan --file docker/${variant}/Dockerfile consensys/teku:develop-${variant} --severity=high"
+        args "-c", "docker scan --accept-license --file docker/${variant}/Dockerfile consensys/teku:develop-${variant} --severity=high"
       }
     }
   }
