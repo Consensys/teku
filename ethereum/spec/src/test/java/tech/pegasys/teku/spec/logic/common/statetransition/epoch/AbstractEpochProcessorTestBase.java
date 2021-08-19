@@ -54,7 +54,7 @@ abstract class AbstractEpochProcessorTestBase {
             .balances(maxEffectiveBalance.times(2))
             .validators(validator)
             .build();
-    final BeaconState updated = state.updated(processor::processEffectiveBalanceUpdates);
+    state.updated(processor::processEffectiveBalanceUpdates);
     verify(validator, never()).withEffective_balance(any());
   }
 }
