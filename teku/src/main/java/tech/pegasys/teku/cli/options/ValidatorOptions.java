@@ -17,6 +17,7 @@ import java.nio.file.Path;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import picocli.CommandLine;
+import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.cli.converter.GraffitiConverter;
 import tech.pegasys.teku.config.TekuConfiguration;
@@ -65,6 +66,7 @@ public class ValidatorOptions {
   @Option(
       names = {"--validators-keystore-locking-enabled"},
       paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
       description = "Enable locking validator keystore files",
       arity = "1")
   private boolean validatorKeystoreLockingEnabled = true;
@@ -72,6 +74,7 @@ public class ValidatorOptions {
   @Option(
       names = {"--validators-external-signer-slashing-protection-enabled"},
       paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
       description = "Enable internal slashing protection for external signers. Default: true",
       fallbackValue = "true",
       arity = "0..1")
@@ -90,6 +93,7 @@ public class ValidatorOptions {
   @Option(
       names = {"--validators-early-attestations-enabled"},
       paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
       description =
           "Generate attestations as soon as a block is known, rather than delaying until the attestation is due. Default: true",
       fallbackValue = "true",

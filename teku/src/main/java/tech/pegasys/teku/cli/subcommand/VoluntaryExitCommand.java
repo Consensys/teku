@@ -95,6 +95,7 @@ public class VoluntaryExitCommand implements Runnable {
       names = {"--confirmation-enabled"},
       description = "Request confirmation before submitting voluntary exits.",
       paramLabel = "<BOOLEAN>",
+      showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
       arity = "1")
   private boolean confirmationEnabled = true;
 

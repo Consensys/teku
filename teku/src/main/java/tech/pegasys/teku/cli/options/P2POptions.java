@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
+import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
 
@@ -28,6 +29,7 @@ public class P2POptions {
   @Option(
       names = {"--p2p-enabled"},
       paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
       description = "Enables P2P",
       fallbackValue = "true",
       arity = "0..1")
@@ -50,6 +52,7 @@ public class P2POptions {
   @Option(
       names = {"--p2p-discovery-enabled"},
       paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
       description = "Enables discv5 discovery",
       fallbackValue = "true",
       arity = "0..1")
@@ -134,6 +137,7 @@ public class P2POptions {
   @Option(
       names = {"--p2p-subscribe-all-subnets-enabled"},
       paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
       description = "",
       arity = "0..1",
       fallbackValue = "true")
@@ -150,7 +154,7 @@ public class P2POptions {
 
   @Option(
       names = {"--Xp2p-batch-verify-attestation-signatures-enabled"},
-      paramLabel = "<Boolean>",
+      paramLabel = "<BOOLEAN>",
       description = "If true, turn on batch verification for gossiped attestation signatures",
       hidden = true,
       arity = "0..1")
