@@ -80,8 +80,6 @@ class ProtoArrayScoreCalculator {
     // There is no need to create a score change if the validator has never voted
     // or both their votes are for the zero hash (alias to the genesis block).
     if (vote.getCurrentRoot().equals(Bytes32.ZERO) && vote.getNextRoot().equals(Bytes32.ZERO)) {
-      //      LOG.warn("ProtoArrayForkChoiceStrategy: Unexpected zero hashes in voted validator
-      // votes");
       return;
     }
 
@@ -92,7 +90,6 @@ class ProtoArrayScoreCalculator {
         oldBalances.size() > validatorIndexInt ? oldBalances.get(validatorIndexInt) : UInt64.ZERO;
 
     // If the validator vote is not known in the newBalances, then use a balance of zero.
-    //
     // It is possible that there is a vote for an unknown validator if we change our
     // justified state to a new state with a higher epoch that is on a different fork
     // because that may have on-boarded less validators than the prior fork.
