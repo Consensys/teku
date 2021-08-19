@@ -1,4 +1,6 @@
 version: 2.1
+orbs:
+  anchore-engine: anchore/anchore-engine@1.0.0
 executors:
   small_executor:
     docker:
@@ -138,15 +140,6 @@ jobs:
           name: Spotless
           command: |
             ./gradlew --no-daemon --parallel checkMavenCoordinateCollisions spotlessCheck
-
-  dockerScan:
-    executor: small_executor
-    steps:
-      - prepare
-      - run:
-          name: "Scan docker images"
-          command: |
-            ./gradlew --no-daemon --parallel dockerScan
 
   unitTests:
     parallelism: 2
@@ -493,10 +486,12 @@ workflows:
   nightly:
     triggers:
       - schedule:
-          cron: "0 0 * * *"
+          cron: "4 0 * * *"
           filters:
             branches:
               only:
                 - master
     jobs:
-      - dockerScan
+      - anchore/image_scan:
+          image_name: consensys/teku:develop-jdk16:latest
+          timeout: '300'
