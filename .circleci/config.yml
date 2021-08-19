@@ -13,9 +13,9 @@ executors:
       JAVA_TOOL_OPTIONS: -Xmx2g
       GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=2
 
-  small_tumerin_executor:
+  small_executor2:
     docker:
-      - image: circleci/eclipse-temurin:16
+      - image: cimg/openjdk:latest
         auth:
           <<: *docker-auth
           # Don't panic, throw away account to avoid Docker rate limits when downloading.
@@ -154,7 +154,7 @@ jobs:
             ./gradlew --no-daemon --parallel checkMavenCoordinateCollisions spotlessCheck
 
   dockerScan:
-    executor: small_tumerin_executor
+    executor: small_executor2
     steps:
       - prepare
       - run:
@@ -406,6 +406,10 @@ workflows:
             tags: &filters-release-tags
               only: /^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?/
       - spotless:
+          filters:
+            tags:
+              <<: *filters-release-tags
+      - dockerScan:
           filters:
             tags:
               <<: *filters-release-tags
