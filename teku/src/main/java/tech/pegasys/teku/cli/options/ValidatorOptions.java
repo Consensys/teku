@@ -75,7 +75,7 @@ public class ValidatorOptions {
       names = {"--validators-external-signer-slashing-protection-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
-      description = "Enable internal slashing protection for external signers. Default: true",
+      description = "Enable internal slashing protection for external signers",
       fallbackValue = "true",
       arity = "0..1")
   private boolean validatorExternalSignerSlashingProtectionEnabled = true;
@@ -84,7 +84,7 @@ public class ValidatorOptions {
       names = {"--Xvalidators-dependent-root-enabled"},
       paramLabel = "<BOOLEAN>",
       description =
-          "Invalidate validator duties based on the dependent root information instead of chain re-org events. Default: true",
+          "Invalidate validator duties based on the dependent root information instead of chain re-org events",
       hidden = true,
       fallbackValue = "true",
       arity = "0..1")
@@ -95,7 +95,7 @@ public class ValidatorOptions {
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
       description =
-          "Generate attestations as soon as a block is known, rather than delaying until the attestation is due. Default: true",
+          "Generate attestations as soon as a block is known, rather than delaying until the attestation is due",
       fallbackValue = "true",
       arity = "0..1")
   private boolean generateEarlyAttestations = true;
