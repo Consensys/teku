@@ -139,6 +139,15 @@ jobs:
           command: |
             ./gradlew --no-daemon --parallel checkMavenCoordinateCollisions spotlessCheck
 
+  dockerScan:
+    executor: small_executor
+    steps:
+      - prepare
+      - run:
+          name: "Scan docker images"
+          command: |
+            ./gradlew --no-daemon --parallel dockerScan
+
   unitTests:
     parallelism: 2
     executor: medium_plus_executor

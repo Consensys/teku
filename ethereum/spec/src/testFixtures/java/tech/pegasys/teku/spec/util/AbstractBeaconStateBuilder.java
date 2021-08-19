@@ -260,10 +260,19 @@ abstract class AbstractBeaconStateBuilder<
     return (TBuilder) this;
   }
 
+  public TBuilder validators(final Validator... validators) {
+    return validators(
+        dataStructureUtil.getBeaconStateSchema().getValidatorsSchema().of(validators));
+  }
+
   public TBuilder validators(final SszList<Validator> validators) {
     checkNotNull(validators);
     this.validators = validators;
     return (TBuilder) this;
+  }
+
+  public TBuilder balances(final UInt64... balances) {
+    return balances(dataStructureUtil.getBeaconStateSchema().getBalancesSchema().of(balances));
   }
 
   public TBuilder balances(final SszUInt64List balances) {
