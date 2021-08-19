@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.common;
 
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -66,14 +67,14 @@ public class TransitionCaches {
     return NO_OP_INSTANCE;
   }
 
-  private final Cache<UInt64, List<Integer>> activeValidators;
+  private final Cache<UInt64, IntList> activeValidators;
   private final Cache<UInt64, Integer> beaconProposerIndex;
-  private final Cache<TekuPair<UInt64, UInt64>, List<Integer>> beaconCommittee;
+  private final Cache<TekuPair<UInt64, UInt64>, IntList> beaconCommittee;
   private final Cache<UInt64, UInt64> attestersTotalBalance;
   private final Cache<UInt64, UInt64> totalActiveBalance;
   private final Cache<UInt64, BLSPublicKey> validatorsPubKeys;
   private final ValidatorIndexCache validatorIndexCache;
-  private final Cache<Bytes32, List<Integer>> committeeShuffle;
+  private final Cache<Bytes32, IntList> committeeShuffle;
   private final Cache<UInt64, List<UInt64>> effectiveBalances;
 
   private final Cache<UInt64, Map<UInt64, SyncSubcommitteeAssignments>> syncCommitteeCache;
@@ -94,14 +95,14 @@ public class TransitionCaches {
   }
 
   private TransitionCaches(
-      Cache<UInt64, List<Integer>> activeValidators,
+      Cache<UInt64, IntList> activeValidators,
       Cache<UInt64, Integer> beaconProposerIndex,
-      Cache<TekuPair<UInt64, UInt64>, List<Integer>> beaconCommittee,
+      Cache<TekuPair<UInt64, UInt64>, IntList> beaconCommittee,
       Cache<UInt64, UInt64> attestersTotalBalance,
       Cache<UInt64, UInt64> totalActiveBalance,
       Cache<UInt64, BLSPublicKey> validatorsPubKeys,
       ValidatorIndexCache validatorIndexCache,
-      Cache<Bytes32, List<Integer>> committeeShuffle,
+      Cache<Bytes32, IntList> committeeShuffle,
       Cache<UInt64, List<UInt64>> effectiveBalances,
       Cache<UInt64, Map<UInt64, SyncSubcommitteeAssignments>> syncCommitteeCache) {
     this.activeValidators = activeValidators;
@@ -125,7 +126,7 @@ public class TransitionCaches {
   }
 
   /** (epoch) -> (active validators) cache */
-  public Cache<UInt64, List<Integer>> getActiveValidators() {
+  public Cache<UInt64, IntList> getActiveValidators() {
     return activeValidators;
   }
 
@@ -135,7 +136,7 @@ public class TransitionCaches {
   }
 
   /** (slot, committeeIndex) -> (committee) cache */
-  public Cache<TekuPair<UInt64, UInt64>, List<Integer>> getBeaconCommittee() {
+  public Cache<TekuPair<UInt64, UInt64>, IntList> getBeaconCommittee() {
     return beaconCommittee;
   }
 
@@ -166,7 +167,7 @@ public class TransitionCaches {
   }
 
   /** (epoch committee seed) -> (validators shuffle for epoch) cache */
-  public Cache<Bytes32, List<Integer>> getCommitteeShuffle() {
+  public Cache<Bytes32, IntList> getCommitteeShuffle() {
     return committeeShuffle;
   }
 
