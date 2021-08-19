@@ -16,7 +16,7 @@ package tech.pegasys.teku.spec.logic.common.util;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.bytesToUInt64;
 
-import java.util.List;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Optional;
 import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -110,7 +110,7 @@ public class ValidatorsUtil {
       for (UInt64 index = UInt64.ZERO;
           index.compareTo(committeeCountPerSlot) < 0;
           index = index.plus(UInt64.ONE)) {
-        final List<Integer> committee = beaconStateAccessors.getBeaconCommittee(state, slot, index);
+        final IntList committee = beaconStateAccessors.getBeaconCommittee(state, slot, index);
         if (committee.contains(validator_index)) {
           return Optional.of(new CommitteeAssignment(committee, index, slot));
         }

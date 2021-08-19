@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -263,7 +264,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
         "process_attestations: %s",
         invalidReason.map(OperationInvalidReason::describe).orElse(""));
 
-    List<Integer> committee =
+    IntList committee =
         beaconStateAccessors.getBeaconCommittee(state, data.getSlot(), data.getIndex());
     checkArgument(
         attestation.getAggregation_bits().size() == committee.size(),

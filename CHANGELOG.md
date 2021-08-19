@@ -21,6 +21,7 @@ For information on changes in released versions of Teku, see the [releases page]
  - jdk14 and jdk15 docker images have been upgraded to use the latest Ubuntu. Note that these images will be removed in future versions.
  - Reduced memory usage and GC pressure created while tracking the latest attestations for each validator.
  - Reduced CPU and GC pressure during epoch processing by avoiding setting validator effective balances to an unchanged value.
+ - Reduced memory usage and GC pressure created by state caches.
 
 ### Bug Fixes
  - Fixed `IllegalStateException: New response submitted after closing AsyncResponseProcessor` errors.
