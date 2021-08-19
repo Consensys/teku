@@ -355,7 +355,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
             balance
                 .minus(balance.mod(specConfig.getEffectiveBalanceIncrement()))
                 .min(specConfig.getMaxEffectiveBalance());
-        state.getValidators().set(index, validator.withEffective_balance(newEffectiveBalance));
+        validators.set(index, validator.withEffective_balance(newEffectiveBalance));
       }
     }
   }
@@ -366,10 +366,10 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
       final UInt64 currentEffectiveBalance) {
     final UInt64 upwardThreshold =
         hysteresisIncrement.times(specConfig.getHysteresisUpwardMultiplier());
-    return currentEffectiveBalance.plus(upwardThreshold).isLessThan(balance)
-        // This condition doesn't match the spec but is an optimisation to avoid creating a new
-        // validator with the same effective balance when it's already at the maximum.
-        && !currentEffectiveBalance.equals(specConfig.getMaxEffectiveBalance());
+    // This condition doesn't match the spec but is an optimisation to avoid creating a new
+    // validator with the same effective balance when it's already at the maximum.
+    return !currentEffectiveBalance.equals(specConfig.getMaxEffectiveBalance())
+        && currentEffectiveBalance.plus(upwardThreshold).isLessThan(balance);
   }
 
   private boolean shouldDecreaseEffectiveBalance(
