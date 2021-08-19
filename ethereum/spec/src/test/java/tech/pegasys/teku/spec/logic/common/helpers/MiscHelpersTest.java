@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -85,7 +86,7 @@ class MiscHelpersTest {
     int[] indexes = IntStream.range(0, index_count).toArray();
     miscHelpers.shuffleList(indexes, seed);
 
-    List<Integer> indexList = IntStream.range(0, index_count).boxed().collect(Collectors.toList());
+    IntList indexList = IntList.of(IntStream.range(0, index_count).toArray());
     final List<Integer> result = miscHelpers.shuffleList(indexList, seed);
 
     assertThat(result)
