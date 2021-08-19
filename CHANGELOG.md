@@ -20,6 +20,7 @@ For information on changes in released versions of Teku, see the [releases page]
  - Upgraded jdk16 and default docker image to use eclipse-tumerin builds of OpenJDK.
  - jdk14 and jdk15 docker images have been upgraded to use the latest Ubuntu. Note that these images will be removed in future versions.
  - Reduced memory usage and GC pressure created while tracking the latest attestations for each validator.
+ - Reduced CPU and GC pressure during epoch processing by avoiding setting validator effective balances to an unchanged value.
  - Reduced memory usage and GC pressure created by state caches.
  - Optimised length validation of gossip and RPC messages.
 
