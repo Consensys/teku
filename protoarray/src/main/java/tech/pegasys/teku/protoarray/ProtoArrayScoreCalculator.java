@@ -23,8 +23,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProposerWeighting;
@@ -32,7 +30,6 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 
 class ProtoArrayScoreCalculator {
-  private static final Logger LOG = LogManager.getLogger();
 
   /**
    * Returns a list of `deltas`, where there is one delta for each of the indices in
