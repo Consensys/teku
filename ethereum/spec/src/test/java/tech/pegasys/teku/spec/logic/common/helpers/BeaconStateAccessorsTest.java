@@ -20,7 +20,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_EPOCH;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
-import java.util.Arrays;
+import it.unimi.dsi.fastutil.ints.IntList;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -66,7 +66,7 @@ public class BeaconStateAccessorsTest {
   void getTotalBalanceAddsAndReturnsEffectiveTotalBalancesCorrectly() {
     // Data Setup
     BeaconState state = createBeaconState();
-    Committee committee = new Committee(UInt64.ONE, Arrays.asList(0, 1, 2));
+    Committee committee = new Committee(UInt64.ONE, IntList.of(0, 1, 2));
 
     // Calculate Expected Results
     UInt64 expectedBalance = UInt64.ZERO;

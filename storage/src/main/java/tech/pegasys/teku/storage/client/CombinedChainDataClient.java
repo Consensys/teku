@@ -18,6 +18,7 @@ import static com.google.common.base.Verify.verifyNotNull;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 
 import com.google.common.annotations.VisibleForTesting;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NavigableMap;
@@ -364,7 +365,7 @@ public class CombinedChainDataClient {
       UInt64 slot = startingSlot.plus(i);
       for (int j = 0; j < committeeCount; j++) {
         UInt64 idx = UInt64.valueOf(j);
-        List<Integer> committee = spec.getBeaconCommittee(state, slot, idx);
+        IntList committee = spec.getBeaconCommittee(state, slot, idx);
         result.add(new CommitteeAssignment(committee, idx, slot));
       }
     }

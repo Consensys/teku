@@ -25,6 +25,7 @@ import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute
 import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -148,7 +149,7 @@ class BeaconStateUtilTest {
   void getTotalBalanceAddsAndReturnsEffectiveTotalBalancesCorrectly() {
     // Data Setup
     BeaconState state = createBeaconState();
-    Committee committee = new Committee(UInt64.ONE, Arrays.asList(0, 1, 2));
+    Committee committee = new Committee(UInt64.ONE, IntList.of(0, 1, 2));
 
     // Calculate Expected Results
     UInt64 expectedBalance = UInt64.ZERO;
