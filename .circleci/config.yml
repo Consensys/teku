@@ -15,7 +15,7 @@ executors:
 
   small_executor2:
     docker:
-      - image: cimg/openjdk:latest
+      - image: cimg/openjdk:16.0.2
         auth:
           <<: *docker-auth
           # Don't panic, throw away account to avoid Docker rate limits when downloading.
