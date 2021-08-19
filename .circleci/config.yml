@@ -18,9 +18,6 @@ executors:
       - image: cimg/openjdk:16.0.2
         auth:
           <<: *docker-auth
-          # Don't panic, throw away account to avoid Docker rate limits when downloading.
-          username: "cddockeruser"
-          password: "fa8651f2-88be-48b7-98ce-e711bd376252"
     resource_class: small
     working_directory: ~/project
     environment:
