@@ -25,6 +25,7 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.service.serviceutils.Service;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.util.PendingPool;
@@ -66,7 +67,8 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
       final RecentChainData recentChainData,
       final PendingPool<SignedBeaconBlock> pendingBlocks,
       final P2PNetwork<Eth2Peer> p2pNetwork,
-      final BlockImporter blockImporter) {
+      final BlockImporter blockImporter,
+      final Spec spec) {
     LOG.info("Using multipeer sync");
     final EventThread eventThread = new AsyncRunnerEventThread("sync", asyncRunnerFactory);
 
@@ -79,7 +81,7 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
             new BatchImporter(blockImporter, asyncRunner),
             new BatchFactory(eventThread, new PeerScoringConflictResolutionStrategy()),
             Constants.SYNC_BATCH_SIZE,
-            MultipeerCommonAncestorFinder.create(recentChainData, eventThread),
+            MultipeerCommonAncestorFinder.create(recentChainData, eventThread, spec),
             timeProvider);
     final SyncController syncController =
         new SyncController(
@@ -91,7 +93,7 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
                 pendingBlocks,
                 finalizedTargetChains,
                 nonfinalizedTargetChains,
-                Constants.SLOTS_PER_EPOCH),
+                spec.getSlotsPerEpoch(recentChainData.getFinalizedEpoch())),
             batchSync);
     final PeerChainTracker peerChainTracker =
         new PeerChainTracker(

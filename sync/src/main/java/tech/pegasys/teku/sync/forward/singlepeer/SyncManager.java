@@ -14,8 +14,6 @@
 package tech.pegasys.teku.sync.forward.singlepeer;
 
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
@@ -38,6 +36,7 @@ import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.service.serviceutils.Service;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.events.SyncingStatus;
@@ -47,8 +46,6 @@ public class SyncManager extends Service {
   private static final Duration SHORT_DELAY = Duration.ofSeconds(5);
   private static final Duration LONG_DELAY = Duration.ofSeconds(20);
   private static final UInt64 SYNC_THRESHOLD_IN_EPOCHS = UInt64.ONE;
-  private static final UInt64 SYNC_THRESHOLD_IN_SLOTS =
-      SYNC_THRESHOLD_IN_EPOCHS.times(SLOTS_PER_EPOCH);
 
   private static final Logger LOG = LogManager.getLogger();
   private final P2PNetwork<Eth2Peer> network;
@@ -70,16 +67,19 @@ public class SyncManager extends Service {
 
   private final AsyncRunner asyncRunner;
   private final Set<NodeId> peersWithSyncErrors = new HashSet<>();
+  private final Spec spec;
 
   SyncManager(
       final AsyncRunner asyncRunner,
       final P2PNetwork<Eth2Peer> network,
       final RecentChainData storageClient,
-      final PeerSync peerSync) {
+      final PeerSync peerSync,
+      final Spec spec) {
     this.asyncRunner = asyncRunner;
     this.network = network;
     this.storageClient = storageClient;
     this.peerSync = peerSync;
+    this.spec = spec;
   }
 
   public static SyncManager create(
@@ -87,12 +87,14 @@ public class SyncManager extends Service {
       final P2PNetwork<Eth2Peer> network,
       final RecentChainData storageClient,
       final BlockImporter blockImporter,
-      final MetricsSystem metricsSystem) {
+      final MetricsSystem metricsSystem,
+      final Spec spec) {
     return new SyncManager(
         asyncRunner,
         network,
         storageClient,
-        new PeerSync(asyncRunner, storageClient, blockImporter, metricsSystem));
+        new PeerSync(asyncRunner, storageClient, blockImporter, metricsSystem),
+        spec);
   }
 
   @Override
@@ -270,7 +272,8 @@ public class SyncManager extends Service {
   /** Make sure remote peer is not broadcasting a chain state from the future. */
   private boolean peerStatusIsConsistentWithOurNode(final PeerStatus peerStatus) {
     final UInt64 currentSlot = storageClient.getCurrentSlot().orElse(UInt64.ZERO);
-    final UInt64 currentEpoch = compute_epoch_at_slot(currentSlot);
+    final UInt64 currentEpoch =
+        currentSlot.dividedBy(spec.getSlotsPerEpoch(storageClient.getFinalizedEpoch()));
     final UInt64 slotErrorThreshold = UInt64.ONE;
 
     return peerStatus.getFinalizedEpoch().isLessThanOrEqualTo(currentEpoch)
@@ -287,7 +290,11 @@ public class SyncManager extends Service {
 
   private boolean isPeerHeadSlotAhead(final PeerStatus peerStatus) {
     final UInt64 ourHeadSlot = storageClient.getHeadSlot();
-    final UInt64 headSlotThreshold = ourHeadSlot.plus(SYNC_THRESHOLD_IN_SLOTS);
+
+    final UInt64 syncThresholdInSlots =
+        SYNC_THRESHOLD_IN_EPOCHS.times(spec.getSlotsPerEpoch(storageClient.getFinalizedEpoch()));
+
+    final UInt64 headSlotThreshold = ourHeadSlot.plus(syncThresholdInSlots);
 
     return peerStatus.getHeadSlot().isGreaterThan(headSlotThreshold);
   }
