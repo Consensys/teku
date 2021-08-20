@@ -28,6 +28,8 @@ import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.StubSyncSource;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -42,9 +44,10 @@ class MultipeerCommonAncestorFinderTest {
   private final InlineEventThread eventThread = new InlineEventThread();
   private final SyncSource syncSource1 = new StubSyncSource();
   private final SyncSource syncSource2 = new StubSyncSource();
+  final Spec spec = TestSpecFactory.createMinimalPhase0();
 
   private final MultipeerCommonAncestorFinder commonAncestorFinder =
-      new MultipeerCommonAncestorFinder(recentChainData, commonAncestor, eventThread);
+      new MultipeerCommonAncestorFinder(recentChainData, commonAncestor, eventThread, spec);
   private static final UInt64 FINALIZED_EPOCH = UInt64.valueOf(10);
   private static final UInt64 FINALIZED_SLOT = compute_start_slot_at_epoch(FINALIZED_EPOCH);
 
