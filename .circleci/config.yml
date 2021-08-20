@@ -16,6 +16,8 @@ executors:
   trivy_executor:
     docker:
       - image: docker:stable-git
+    resource_class: small
+    working_directory: ~/project
 
   medium_executor:
     docker:
@@ -509,3 +511,13 @@ workflows:
             - docker
             - extractAPISpec
             - spotless
+  nightly:
+    triggers:
+      - schedule:
+          cron: "0 19 * * *"
+          filters:
+            branches:
+              only:
+                - master
+    jobs:
+      - dockerScan
