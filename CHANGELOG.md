@@ -26,4 +26,5 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Bug Fixes
  - Fixed `IllegalStateException: New response submitted after closing AsyncResponseProcessor` errors.
+ - Get validator from state should return `404` code rather than a `400` code.
 
