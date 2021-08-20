@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.benchmarks;
 
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.apache.tuweni.bytes.Bytes;
@@ -40,7 +41,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.Transition
 @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
 public class TransitionCachesBenchmark {
 
-  private static final List<Integer> SOME_INT_LIST = List.of(1, 2, 3, 43, 4, 5);
+  private static final IntList SOME_INT_LIST = IntList.of(1, 2, 3, 43, 4, 5);
 
   @Param({"1048576"})
   int validatorsCount;
@@ -94,7 +95,7 @@ public class TransitionCachesBenchmark {
     if (counter >= 10064) {
       counter = 10000;
     }
-    Cache<TekuPair<UInt64, UInt64>, List<Integer>> cache = fullCache.getBeaconCommittee();
+    Cache<TekuPair<UInt64, UInt64>, IntList> cache = fullCache.getBeaconCommittee();
     List<Integer> res =
         cache.get(TekuPair.of(UInt64.valueOf(counter), UInt64.ZERO), __ -> SOME_INT_LIST);
     bh.consume(res);
@@ -106,7 +107,7 @@ public class TransitionCachesBenchmark {
       counter = 10064;
     }
     counter++;
-    Cache<TekuPair<UInt64, UInt64>, List<Integer>> cache = fullCache.getBeaconCommittee();
+    Cache<TekuPair<UInt64, UInt64>, IntList> cache = fullCache.getBeaconCommittee();
     List<Integer> res =
         cache.get(TekuPair.of(UInt64.valueOf(counter), UInt64.ZERO), __ -> SOME_INT_LIST);
     bh.consume(res);

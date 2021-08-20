@@ -527,4 +527,9 @@ public final class UInt64 implements Comparable<UInt64> {
   public static Stream<UInt64> range(final UInt64 fromInclusive, final UInt64 toExclusive) {
     return Stream.iterate(fromInclusive, value -> value.isLessThan(toExclusive), UInt64::increment);
   }
+
+  public static Stream<UInt64> rangeClosed(final UInt64 fromInclusive, final UInt64 toInclusive) {
+    return Stream.iterate(
+        fromInclusive, value -> value.isLessThanOrEqualTo(toInclusive), UInt64::increment);
+  }
 }

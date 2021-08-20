@@ -24,7 +24,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
-import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -70,7 +69,6 @@ public class IsVariableTest {
         Arguments.of(Checkpoint.SSZ_SCHEMA),
         Arguments.of(Fork.SSZ_SCHEMA),
         Arguments.of(HistoricalBatch.SSZ_SCHEMA.get()),
-        Arguments.of(VoteTracker.SSZ_SCHEMA),
         Arguments.of(Validator.SSZ_SCHEMA));
   }
 
