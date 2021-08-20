@@ -89,4 +89,29 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
 
     assertThat(config.getGraffitiProvider().get()).isEqualTo(Optional.of(graffiti));
   }
+
+  @Test
+  void shouldDisableSendAttestationsAsBatchByDefault() {
+    final ValidatorConfig config =
+        getTekuConfigurationFromArguments().validatorClient().getValidatorConfig();
+    assertThat(config.sendAttestationsAsBatch()).isFalse();
+  }
+
+  @Test
+  void shouldEnableSendAttestationsAsBatch() {
+    final ValidatorConfig config =
+        getTekuConfigurationFromArguments("--Xvalidators-batch-attestations-enabled")
+            .validatorClient()
+            .getValidatorConfig();
+    assertThat(config.sendAttestationsAsBatch()).isTrue();
+  }
+
+  @Test
+  void shouldDisableSendAttestationsAsBatch() {
+    final ValidatorConfig config =
+        getTekuConfigurationFromArguments("--Xvalidators-batch-attestations-enabled=false")
+            .validatorClient()
+            .getValidatorConfig();
+    assertThat(config.sendAttestationsAsBatch()).isFalse();
+  }
 }

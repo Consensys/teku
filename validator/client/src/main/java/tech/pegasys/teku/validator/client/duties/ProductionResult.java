@@ -91,7 +91,7 @@ public class ProductionResult<T> {
             });
   }
 
-  public static <T> void replaceResult(
+  private static <T> void replaceResult(
       final List<ProductionResult<T>> sentResults, final SubmitDataError error) {
     if (error.getIndex().isGreaterThanOrEqualTo(sentResults.size())) {
       LOG.error(
@@ -110,7 +110,7 @@ public class ProductionResult<T> {
             new RestApiReportedException(error.getMessage())));
   }
 
-  public static <T> DutyResult combineResults(final List<ProductionResult<T>> results) {
+  private static <T> DutyResult combineResults(final List<ProductionResult<T>> results) {
     return results.stream()
         .map(ProductionResult::getResult)
         .reduce(DutyResult::combine)

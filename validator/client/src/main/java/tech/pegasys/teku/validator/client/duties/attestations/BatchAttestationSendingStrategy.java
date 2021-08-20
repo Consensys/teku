@@ -28,14 +28,14 @@ public class BatchAttestationSendingStrategy implements AttestationSendingStrate
     this.validatorApiChannel = validatorApiChannel;
   }
 
-  private SafeFuture<DutyResult> sendAttestationsAsBatch(
-      final List<ProductionResult<Attestation>> results) {
-    return ProductionResult.send(results, validatorApiChannel::sendSignedAttestations);
-  }
-
   @Override
   public SafeFuture<DutyResult> sendAttestations(
       final Stream<SafeFuture<ProductionResult<Attestation>>> attestations) {
     return SafeFuture.collectAll(attestations).thenCompose(this::sendAttestationsAsBatch);
+  }
+
+  private SafeFuture<DutyResult> sendAttestationsAsBatch(
+      final List<ProductionResult<Attestation>> results) {
+    return ProductionResult.send(results, validatorApiChannel::sendSignedAttestations);
   }
 }

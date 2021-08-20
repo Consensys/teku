@@ -17,11 +17,13 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.Sets;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
@@ -152,6 +154,26 @@ public class DutyResult {
         + '}';
   }
 
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final DutyResult that = (DutyResult) o;
+    return successCount == that.successCount
+        && nodeSyncingCount == that.nodeSyncingCount
+        && Objects.equals(roots, that.roots)
+        && Objects.equals(failures, that.failures);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(successCount, nodeSyncingCount, roots, failures);
+  }
+
   private static class FailureRecord {
     private final Throwable error;
     private final Set<BLSPublicKey> validatorKeys;
@@ -163,6 +185,14 @@ public class DutyResult {
 
     public static FailureRecord merge(final FailureRecord a, final FailureRecord b) {
       return new FailureRecord(a.error, Sets.union(a.validatorKeys, b.validatorKeys));
+    }
+
+    @Override
+    public String toString() {
+      return MoreObjects.toStringHelper(this)
+          .add("error", error)
+          .add("validatorKeys", validatorKeys)
+          .toString();
     }
   }
 }
