@@ -35,10 +35,10 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.beaconnode.BeaconNodeApi;
 import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
-import tech.pegasys.teku.validator.client.duties.AttestationDutyFactory;
 import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
 import tech.pegasys.teku.validator.client.duties.BlockDutyFactory;
 import tech.pegasys.teku.validator.client.duties.SlotBasedScheduledDuties;
+import tech.pegasys.teku.validator.client.duties.attestations.AttestationDutyFactory;
 import tech.pegasys.teku.validator.client.duties.synccommittee.ChainHeadTracker;
 import tech.pegasys.teku.validator.client.duties.synccommittee.SyncCommitteeScheduledDuties;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
@@ -157,7 +157,10 @@ public class ValidatorClientService extends Service {
     final BlockDutyFactory blockDutyFactory =
         new BlockDutyFactory(forkProvider, validatorApiChannel, spec);
     final AttestationDutyFactory attestationDutyFactory =
-        new AttestationDutyFactory(forkProvider, validatorApiChannel);
+        new AttestationDutyFactory(
+            forkProvider,
+            validatorApiChannel,
+            config.getValidatorConfig().sendAttestationsAsBatch());
     final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =
         new BeaconCommitteeSubscriptions(validatorApiChannel);
     final DutyLoader<?> attestationDutyLoader =

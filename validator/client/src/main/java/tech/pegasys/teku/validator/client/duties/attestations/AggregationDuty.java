@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.client.duties;
+package tech.pegasys.teku.validator.client.duties.attestations;
 
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.validator.client.duties.DutyResult.combine;
@@ -34,6 +34,8 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
+import tech.pegasys.teku.validator.client.duties.Duty;
+import tech.pegasys.teku.validator.client.duties.DutyResult;
 
 public class AggregationDuty implements Duty {
   private static final Logger LOG = LogManager.getLogger();
