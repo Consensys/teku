@@ -15,6 +15,7 @@ package tech.pegasys.teku.ssz.schema.impl;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import com.google.common.base.Suppliers;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import tech.pegasys.teku.ssz.SszContainer;
@@ -66,6 +68,8 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
     return new NamedSchema<>(fieldName, schema);
   }
 
+  private final Supplier<SszLengthBounds> sszLengthBounds =
+      Suppliers.memoize(this::computeSszLengthBounds);
   private final String containerName;
   private final List<String> childrenNames = new ArrayList<>();
   private final Map<String, Integer> childrenNamesToFieldIndex = new HashMap<>();
@@ -142,7 +146,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
   /**
    * Get the index of a field by name
    *
-   * @param fieldName
+   * @param fieldName the name of the field
    * @return The index if it exists, otherwise -1
    */
   @Override
@@ -310,6 +314,10 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
 
   @Override
   public SszLengthBounds getSszLengthBounds() {
+    return sszLengthBounds.get();
+  }
+
+  private SszLengthBounds computeSszLengthBounds() {
     return IntStream.range(0, getFieldsCount())
         .mapToObj(this::getChildSchema)
         // dynamic sized children need 4-byte offset
