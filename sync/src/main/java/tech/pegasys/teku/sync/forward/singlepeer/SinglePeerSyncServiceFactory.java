@@ -17,6 +17,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.forward.ForwardSyncService;
@@ -27,9 +28,11 @@ public class SinglePeerSyncServiceFactory {
       final AsyncRunner asyncRunner,
       final P2PNetwork<Eth2Peer> p2pNetwork,
       final RecentChainData recentChainData,
-      final BlockImporter blockImporter) {
+      final BlockImporter blockImporter,
+      final Spec spec) {
     final SyncManager syncManager =
-        SyncManager.create(asyncRunner, p2pNetwork, recentChainData, blockImporter, metricsSystem);
+        SyncManager.create(
+            asyncRunner, p2pNetwork, recentChainData, blockImporter, metricsSystem, spec);
     return new SinglePeerSyncService(syncManager, recentChainData);
   }
 }
