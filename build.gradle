@@ -419,17 +419,6 @@ task distDocker  {
   }
 }
 
-task dockerScan {
-  doLast {
-    for (def variant in dockerVariants) {
-      exec {
-        executable "sh"
-        args "-c", "docker scan --file docker/${variant}/Dockerfile consensys/teku:develop-${variant} --severity=high"
-      }
-    }
-  }
-}
-
 subprojects {
   tasks.withType(Test) {
     // If GRADLE_MAX_TEST_FORKS is not set, use half the available processors
