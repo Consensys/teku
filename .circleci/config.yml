@@ -412,10 +412,6 @@ workflows:
           filters:
             tags:
               <<: *filters-release-tags
-      - dockerScan:
-          filters:
-            tags:
-              <<: *filters-release-tags
       - referenceTestsPrep:
           requires:
             - assemble
