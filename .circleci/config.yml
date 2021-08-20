@@ -150,21 +150,18 @@ jobs:
       - setup_remote_docker:
           docker_layer_caching: true
       - run:
-          name: Build image
-          command: docker build -t trivy-ci-test:${CIRCLE_SHA1} .
-      - run:
           name: Install trivy
           command: |
             apk add --update-cache --upgrade curl
             curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
       - run:
-          name: Scan the local image with trivy
+          name: Scan with trivy
+          shell: /bin/sh
           command: |
-          cd docker
-          for FILE in `ls -d *`
-          do
-            trivy image --exit-code 1 --no-progress --severity MEDIUM,HIGH,CRITICAL "consensys/teku:develop-$FILE"
-          done
+            for FILE in $(ls docker)
+            do
+              trivy image --exit-code 1 --no-progress --severity MEDIUM,HIGH,CRITICAL "consensys/teku:develop-$FILE"
+            done
 
   unitTests:
     parallelism: 2
