@@ -160,7 +160,7 @@ jobs:
           command: |
             for FILE in $(ls docker)
             do
-              trivy image --exit-code 1 --no-progress --severity MEDIUM,HIGH,CRITICAL "consensys/teku:develop-$FILE"
+              trivy -q image --exit-code 1 --no-progress --severity HIGH,CRITICAL "consensys/teku:develop-$FILE"
             done
 
   unitTests:
