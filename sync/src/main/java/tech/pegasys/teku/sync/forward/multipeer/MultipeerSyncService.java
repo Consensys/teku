@@ -22,6 +22,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.service.serviceutils.Service;
@@ -93,7 +94,7 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
                 pendingBlocks,
                 finalizedTargetChains,
                 nonfinalizedTargetChains,
-                spec.getSlotsPerEpoch(recentChainData.getFinalizedEpoch())),
+                spec.getSlotsPerEpoch(recentChainData.getCurrentSlot().orElse(UInt64.ZERO))),
             batchSync);
     final PeerChainTracker peerChainTracker =
         new PeerChainTracker(

@@ -54,9 +54,8 @@ public class MultipeerCommonAncestorFinder {
   public SafeFuture<UInt64> findCommonAncestor(final TargetChain targetChain) {
     eventThread.checkOnEventThread();
     final UInt64 latestFinalizedSlot =
-        recentChainData
-            .getFinalizedEpoch()
-            .times(spec.getSlotsPerEpoch(recentChainData.getFinalizedEpoch()));
+        spec.computeStartSlotAtEpoch(recentChainData.getFinalizedEpoch());
+
     if (targetChain.getPeerCount() == 0) {
       // No sources to find a common ancestor with, assume its the finalized slot
       return SafeFuture.completedFuture(latestFinalizedSlot);

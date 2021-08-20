@@ -273,7 +273,8 @@ public class SyncManager extends Service {
   private boolean peerStatusIsConsistentWithOurNode(final PeerStatus peerStatus) {
     final UInt64 currentSlot = storageClient.getCurrentSlot().orElse(UInt64.ZERO);
     final UInt64 currentEpoch =
-        currentSlot.dividedBy(spec.getSlotsPerEpoch(storageClient.getFinalizedEpoch()));
+        currentSlot.dividedBy(
+            spec.getSlotsPerEpoch(storageClient.getCurrentSlot().orElse(UInt64.ZERO)));
     final UInt64 slotErrorThreshold = UInt64.ONE;
 
     return peerStatus.getFinalizedEpoch().isLessThanOrEqualTo(currentEpoch)
@@ -292,7 +293,7 @@ public class SyncManager extends Service {
     final UInt64 ourHeadSlot = storageClient.getHeadSlot();
 
     final UInt64 syncThresholdInSlots =
-        SYNC_THRESHOLD_IN_EPOCHS.times(spec.getSlotsPerEpoch(storageClient.getFinalizedEpoch()));
+        SYNC_THRESHOLD_IN_EPOCHS.times(spec.getSlotsPerEpoch(ourHeadSlot));
 
     final UInt64 headSlotThreshold = ourHeadSlot.plus(syncThresholdInSlots);
 
