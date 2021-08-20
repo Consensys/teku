@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.datastructures.forkchoice;
 
 import java.util.List;
-import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -23,7 +22,7 @@ public interface VoteUpdater {
 
   VoteTracker getVote(final UInt64 validatorIndex);
 
-  Set<UInt64> getVotedValidatorIndices();
+  UInt64 getHighestVotedValidatorIndex();
 
   void putVote(UInt64 validatorIndex, VoteTracker vote);
 
