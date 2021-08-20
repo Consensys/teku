@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec;
 
 import com.google.common.base.Preconditions;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -526,7 +527,7 @@ public class Spec {
     return atState(state).beaconStateAccessors().getMaxLookaheadEpoch(state);
   }
 
-  public List<Integer> getActiveValidatorIndices(final BeaconState state, final UInt64 epoch) {
+  public IntList getActiveValidatorIndices(final BeaconState state, final UInt64 epoch) {
     return atEpoch(epoch).beaconStateAccessors().getActiveValidatorIndices(state, epoch);
   }
 
@@ -538,7 +539,7 @@ public class Spec {
     return atState(state).beaconStateAccessors().getPreviousEpochAttestationCapacity(state);
   }
 
-  public List<Integer> getBeaconCommittee(BeaconState state, UInt64 slot, UInt64 index) {
+  public IntList getBeaconCommittee(BeaconState state, UInt64 slot, UInt64 index) {
     return atState(state).beaconStateAccessors().getBeaconCommittee(state, slot, index);
   }
 
@@ -563,8 +564,7 @@ public class Spec {
   }
 
   // Attestation helpers
-  public List<Integer> getAttestingIndices(
-      BeaconState state, AttestationData data, SszBitlist bits) {
+  public IntList getAttestingIndices(BeaconState state, AttestationData data, SszBitlist bits) {
     return atState(state).getAttestationUtil().getAttestingIndices(state, data, bits);
   }
 

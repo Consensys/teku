@@ -23,8 +23,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProposerWeighting;
@@ -32,7 +30,6 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 
 class ProtoArrayScoreCalculator {
-  private static final Logger LOG = LogManager.getLogger();
 
   /**
    * Returns a list of `deltas`, where there is one delta for each of the indices in
@@ -58,45 +55,55 @@ class ProtoArrayScoreCalculator {
       List<ProposerWeighting> removedProposerWeightings) {
     List<Long> deltas = new ArrayList<>(Collections.nCopies(protoArraySize, 0L));
 
-    for (UInt64 validatorIndex : store.getVotedValidatorIndices()) {
-      VoteTracker vote = store.getVote(validatorIndex);
-
-      // There is no need to create a score change if the validator has never voted
-      // or both their votes are for the zero hash (alias to the genesis block).
-      if (vote.getCurrentRoot().equals(Bytes32.ZERO) && vote.getNextRoot().equals(Bytes32.ZERO)) {
-        LOG.warn("ProtoArrayForkChoiceStrategy: Unexpected zero hashes in voted validator votes");
-        continue;
-      }
-
-      int validatorIndexInt = toIntExact(validatorIndex.longValue());
-      // If the validator was not included in the oldBalances (i.e. it did not exist yet)
-      // then say its balance was zero.
-      UInt64 oldBalance =
-          oldBalances.size() > validatorIndexInt ? oldBalances.get(validatorIndexInt) : UInt64.ZERO;
-
-      // If the validator vote is not known in the newBalances, then use a balance of zero.
-      //
-      // It is possible that there is a vote for an unknown validator if we change our
-      // justified state to a new state with a higher epoch that is on a different fork
-      // because that may have on-boarded less validators than the prior fork.
-      UInt64 newBalance =
-          newBalances.size() > validatorIndexInt ? newBalances.get(validatorIndexInt) : UInt64.ZERO;
-
-      if (!vote.getCurrentRoot().equals(vote.getNextRoot()) || !oldBalance.equals(newBalance)) {
-        subtractBalance(getIndexByRoot, deltas, vote.getCurrentRoot(), oldBalance);
-        addBalance(getIndexByRoot, deltas, vote.getNextRoot(), newBalance);
-
-        VoteTracker newVote =
-            new VoteTracker(vote.getNextRoot(), vote.getNextRoot(), vote.getNextEpoch());
-        store.putVote(validatorIndex, newVote);
-      }
-    }
+    UInt64.rangeClosed(UInt64.ZERO, store.getHighestVotedValidatorIndex())
+        .forEach(
+            validatorIndex ->
+                computeDelta(
+                    store, getIndexByRoot, oldBalances, newBalances, deltas, validatorIndex));
 
     removedProposerWeightings.forEach(
         weighting ->
             subtractBalance(
                 getIndexByRoot, deltas, weighting.getTargetRoot(), weighting.getWeight()));
     return deltas;
+  }
+
+  private static void computeDelta(
+      final VoteUpdater store,
+      final Function<Bytes32, Optional<Integer>> getIndexByRoot,
+      final List<UInt64> oldBalances,
+      final List<UInt64> newBalances,
+      final List<Long> deltas,
+      final UInt64 validatorIndex) {
+    VoteTracker vote = store.getVote(validatorIndex);
+
+    // There is no need to create a score change if the validator has never voted
+    // or both their votes are for the zero hash (alias to the genesis block).
+    if (vote.getCurrentRoot().equals(Bytes32.ZERO) && vote.getNextRoot().equals(Bytes32.ZERO)) {
+      return;
+    }
+
+    int validatorIndexInt = toIntExact(validatorIndex.longValue());
+    // If the validator was not included in the oldBalances (i.e. it did not exist yet)
+    // then say its balance was zero.
+    UInt64 oldBalance =
+        oldBalances.size() > validatorIndexInt ? oldBalances.get(validatorIndexInt) : UInt64.ZERO;
+
+    // If the validator vote is not known in the newBalances, then use a balance of zero.
+    // It is possible that there is a vote for an unknown validator if we change our
+    // justified state to a new state with a higher epoch that is on a different fork
+    // because that may have on-boarded less validators than the prior fork.
+    UInt64 newBalance =
+        newBalances.size() > validatorIndexInt ? newBalances.get(validatorIndexInt) : UInt64.ZERO;
+
+    if (!vote.getCurrentRoot().equals(vote.getNextRoot()) || !oldBalance.equals(newBalance)) {
+      subtractBalance(getIndexByRoot, deltas, vote.getCurrentRoot(), oldBalance);
+      addBalance(getIndexByRoot, deltas, vote.getNextRoot(), newBalance);
+
+      VoteTracker newVote =
+          new VoteTracker(vote.getNextRoot(), vote.getNextRoot(), vote.getNextEpoch());
+      store.putVote(validatorIndex, newVote);
+    }
   }
 
   private static void addBalance(

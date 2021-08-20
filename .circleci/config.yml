@@ -13,6 +13,12 @@ executors:
       JAVA_TOOL_OPTIONS: -Xmx2g
       GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=2
 
+  trivy_executor:
+    docker:
+      - image: docker:stable-git
+    resource_class: small
+    working_directory: ~/project
+
   medium_executor:
     docker:
       - image: circleci/openjdk:11.0.8-jdk-buster
@@ -140,13 +146,24 @@ jobs:
             ./gradlew --no-daemon --parallel checkMavenCoordinateCollisions spotlessCheck
 
   dockerScan:
-    executor: small_executor
+    executor: trivy_executor
     steps:
       - prepare
+      - setup_remote_docker:
+          docker_layer_caching: true
       - run:
-          name: "Scan docker images"
+          name: Install trivy
           command: |
-            ./gradlew --no-daemon --parallel dockerScan
+            apk add --update-cache --upgrade curl
+            curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+      - run:
+          name: Scan with trivy
+          shell: /bin/sh
+          command: |
+            for FILE in $(ls docker)
+            do
+              trivy -q image --exit-code 1 --no-progress --severity HIGH,CRITICAL "consensys/teku:develop-$FILE"
+            done
 
   unitTests:
     parallelism: 2
@@ -493,7 +510,7 @@ workflows:
   nightly:
     triggers:
       - schedule:
-          cron: "0 0 * * *"
+          cron: "0 19 * * *"
           filters:
             branches:
               only:

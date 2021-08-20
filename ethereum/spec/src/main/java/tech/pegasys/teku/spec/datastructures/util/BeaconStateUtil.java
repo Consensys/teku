@@ -37,6 +37,7 @@ import static tech.pegasys.teku.util.config.Constants.TARGET_COMMITTEE_SIZE;
 import static tech.pegasys.teku.util.config.Constants.WHISTLEBLOWER_REWARD_QUOTIENT;
 
 import com.google.common.primitives.UnsignedBytes;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.nio.ByteOrder;
 import java.util.Collection;
 import java.util.Collections;
@@ -384,7 +385,7 @@ public class BeaconStateUtil {
    */
   @Deprecated
   public static UInt64 get_committee_count_per_slot(BeaconState state, UInt64 epoch) {
-    List<Integer> active_validator_indices = get_active_validator_indices(state, epoch);
+    IntList active_validator_indices = get_active_validator_indices(state, epoch);
     return get_committee_count_per_slot(active_validator_indices.size());
   }
 
@@ -441,7 +442,7 @@ public class BeaconStateUtil {
                       Bytes.concatenate(
                           get_seed(state, epoch, Domain.BEACON_PROPOSER),
                           uint_to_bytes(slot.longValue(), 8)));
-              List<Integer> indices = get_active_validator_indices(state, epoch);
+              IntList indices = get_active_validator_indices(state, epoch);
               return compute_proposer_index(state, indices, seed);
             });
   }
@@ -712,15 +713,14 @@ public class BeaconStateUtil {
    * @return
    */
   @Deprecated
-  private static int compute_proposer_index(
-      BeaconState state, List<Integer> indices, Bytes32 seed) {
+  private static int compute_proposer_index(BeaconState state, IntList indices, Bytes32 seed) {
     checkArgument(!indices.isEmpty(), "compute_proposer_index indices must not be empty");
     UInt64 MAX_RANDOM_BYTE = UInt64.valueOf(255); // Math.pow(2, 8) - 1;
     int i = 0;
     final int total = indices.size();
     Bytes32 hash = null;
     while (true) {
-      int candidate_index = indices.get(compute_shuffled_index(i % total, total, seed));
+      int candidate_index = indices.getInt(compute_shuffled_index(i % total, total, seed));
       if (i % 32 == 0) {
         hash = Hash.sha2_256(Bytes.concatenate(seed, uint_to_bytes(Math.floorDiv(i, 32), 8)));
       }

@@ -36,6 +36,8 @@ import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.events.SyncingStatus;
@@ -61,7 +63,9 @@ public class SyncManagerTest {
   private Eth2P2PNetwork network = mock(Eth2P2PNetwork.class);
   private final PeerSync peerSync = mock(PeerSync.class);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
-  private SyncManager syncManager = new SyncManager(asyncRunner, network, storageClient, peerSync);
+  private final Spec spec = TestSpecFactory.createDefault();
+  private SyncManager syncManager =
+      new SyncManager(asyncRunner, network, storageClient, peerSync, spec);
   private final Eth2Peer peer = mock(Eth2Peer.class);
   private final SyncSubscriber syncSubscriber = mock(SyncSubscriber.class);
 

@@ -303,9 +303,11 @@ public class ProtoArrayScoreCalculatorTest {
   }
 
   private void votesShouldBeUpdated(VoteUpdater store) {
-    for (UInt64 i : store.getVotedValidatorIndices()) {
-      VoteTracker vote = store.getVote(i);
-      assertThat(vote.getCurrentRoot()).isEqualTo(vote.getNextRoot());
-    }
+    UInt64.rangeClosed(ZERO, store.getHighestVotedValidatorIndex())
+        .forEach(
+            i -> {
+              VoteTracker vote = store.getVote(i);
+              assertThat(vote.getCurrentRoot()).isEqualTo(vote.getNextRoot());
+            });
   }
 }

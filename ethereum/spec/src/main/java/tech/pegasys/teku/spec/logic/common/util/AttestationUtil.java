@@ -18,6 +18,7 @@ import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 
 import com.google.common.collect.Comparators;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -107,21 +108,20 @@ public class AttestationUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_attesting_indices</a>
    */
-  public List<Integer> getAttestingIndices(
-      BeaconState state, AttestationData data, SszBitlist bits) {
-    return streamAttestingIndices(state, data, bits).boxed().collect(toList());
+  public IntList getAttestingIndices(BeaconState state, AttestationData data, SszBitlist bits) {
+    return IntList.of(streamAttestingIndices(state, data, bits).toArray());
   }
 
   public IntStream streamAttestingIndices(
       BeaconState state, AttestationData data, SszBitlist bits) {
-    List<Integer> committee =
+    IntList committee =
         beaconStateAccessors.getBeaconCommittee(state, data.getSlot(), data.getIndex());
     checkArgument(
         bits.size() == committee.size(),
         "Aggregation bitlist size (%s) does not match committee size (%s)",
         bits.size(),
         committee.size());
-    return IntStream.range(0, committee.size()).filter(bits::getBit).map(committee::get);
+    return IntStream.range(0, committee.size()).filter(bits::getBit).map(committee::getInt);
   }
 
   public AttestationProcessingResult isValidIndexedAttestation(

@@ -21,7 +21,7 @@ import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.
 import static tech.pegasys.teku.util.config.Constants.ATTESTATION_PROPAGATION_SLOT_RANGE;
 import static tech.pegasys.teku.util.config.Constants.VALID_ATTESTATION_SET_SIZE;
 
-import java.util.List;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -180,7 +180,7 @@ public class AttestationValidator {
               // The check below is not specified in the Eth2 networking spec, yet an attestation
               // with aggregation bits size greater/less than the committee size is invalid. So we
               // reject those attestations at the networking layer.
-              final List<Integer> committee =
+              final IntList committee =
                   spec.getBeaconCommittee(state, data.getSlot(), data.getIndex());
               if (committee.size() != attestation.getAggregation_bits().size()) {
                 return completedFuture(
