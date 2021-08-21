@@ -201,7 +201,7 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
   @Override
   public void onAttestationAggregationDue(final UInt64 slot) {
     if (!isAbleToVerifyEpoch(slot)) {
-      LOG.info("Not performing {} duties for slot {}, unable to verify its epoch", dutyType, slot);
+      LOG.info("Not performing {} aggregation duties for slot {}, unable to verify its epoch", dutyType, slot);
       return;
     }
 
