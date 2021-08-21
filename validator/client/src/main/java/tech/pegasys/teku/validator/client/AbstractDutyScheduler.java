@@ -165,7 +165,7 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
 
   protected void onProductionDue(final UInt64 slot) {
     // Check slot being null for the edge case of genesis slot (i.e. slot 0)
-    if (lastProductionSlot != null && slot.compareTo(lastProductionSlot) <= 0) {
+    if (lastProductionSlot != null && slot.compareTo(lastProductionSlot) < 0) {
       LOG.debug(
           "Not performing {} duties for slot {} because last production slot {} is beyond that.",
           dutyType,
@@ -174,14 +174,25 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
       return;
     }
 
-    if (!isAbleToVerifyEpoch(slot)) {
-      LOG.info(
-          "Not performing {} duties for slot {} because it is too far ahead of the current slot {}",
-          dutyType,
+    if (lastProductionSlot != null && slot.compareTo(lastProductionSlot) == 0) {
+      LOG.debug(
+          "{} duties for slot {} already performed, last production slot {}",
+          dutyType.substring(0, 1).toUpperCase() + dutyType.substring(1),
           slot,
-          getCurrentEpoch().map(UInt64::toString).orElse("UNDEFINED"));
+          lastProductionSlot);
       return;
     }
+
+    if (!isAbleToVerifyEpoch(slot)) {
+      LOG.info("Not performing {} duties for slot {}, unable to verify its epoch", dutyType, slot);
+      return;
+    }
+
+    LOG.debug(
+        "Performing {} duties for slot {}, last production slot {}",
+        dutyType,
+        slot,
+        lastProductionSlot);
 
     lastProductionSlot = slot;
     notifyEpochDuties(PendingDuties::onProductionDue, slot);
@@ -190,11 +201,7 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
   @Override
   public void onAttestationAggregationDue(final UInt64 slot) {
     if (!isAbleToVerifyEpoch(slot)) {
-      LOG.info(
-          "Not performing {} aggregation duties for slot {} because it is too far ahead of the current slot {}",
-          dutyType,
-          slot,
-          getCurrentEpoch().map(UInt64::toString).orElse("UNDEFINED"));
+      LOG.info("Not performing {} duties for slot {}, unable to verify its epoch", dutyType, slot);
       return;
     }
 
