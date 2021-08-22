@@ -59,6 +59,7 @@ import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient
 @CommandLine.Command(
     name = "voluntary-exit",
     description = "Create and sign a voluntary exit for a specified validator.",
+    showDefaultValues = true,
     mixinStandardHelpOptions = true,
     abbreviateSynopsis = true,
     versionProvider = PicoCliVersionProvider.class,
