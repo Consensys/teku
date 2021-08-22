@@ -69,21 +69,24 @@ public class P2POptions {
   @Option(
       names = {"--p2p-advertised-ip"},
       paramLabel = "<NETWORK>",
-      description = "P2P advertised IP",
+      description = "P2P advertised IP (Default: 127.0.0.1)",
       arity = "1")
   private String p2pAdvertisedIp;
 
   @Option(
       names = {"--p2p-advertised-port"},
       paramLabel = "<INTEGER>",
-      description = "P2P advertised port",
+      description = "P2P advertised port. The default is the port specified in --p2p-port",
       arity = "1")
   private Integer p2pAdvertisedPort;
 
   @Option(
       names = {"--p2p-private-key-file"},
       paramLabel = "<FILENAME>",
-      description = "This node's private key file",
+      description =
+          "This node's private key file. If one is not specified, the system looks for a previously generated key in the key-value store "
+              + "(i.e. <beacon-data-dir>/kvstore/generated-node-key.dat) and uses that if available. "
+              + "If not, then a new key is generated for use and persisted in the key-value store.",
       arity = "1")
   private String p2pPrivateKeyFile = null;
 

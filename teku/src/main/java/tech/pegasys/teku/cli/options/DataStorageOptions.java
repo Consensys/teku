@@ -31,7 +31,9 @@ public class DataStorageOptions {
   @CommandLine.Option(
       names = {"--data-storage-archive-frequency"},
       paramLabel = "<FREQUENCY>",
-      description = "Sets the frequency, in slots, at which to store finalized states to disk.",
+      description =
+          "Sets the frequency, in slots, at which to store finalized states to disk. "
+              + "This option is ignored if --data-storage-mode is set to PRUNE",
       arity = "1")
   private long dataStorageFrequency = VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY;
 
