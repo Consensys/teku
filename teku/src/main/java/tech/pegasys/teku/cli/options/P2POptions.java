@@ -84,9 +84,7 @@ public class P2POptions {
       names = {"--p2p-private-key-file"},
       paramLabel = "<FILENAME>",
       description =
-          "This node's private key file. If one is not specified, the system looks for a previously generated key in the key-value store "
-              + "(i.e. <beacon-data-dir>/kvstore/generated-node-key.dat) and uses that if available. "
-              + "If not, then a new key is generated for use and persisted in the key-value store.",
+          "This node's private key file. If not specified, uses or generates a key which is stored within the <beacon-data-dir>.",
       arity = "1")
   private String p2pPrivateKeyFile = null;
 
