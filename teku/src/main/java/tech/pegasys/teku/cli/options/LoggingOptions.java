@@ -74,7 +74,7 @@ public class LoggingOptions {
       description =
           "Path containing the location (relative or absolute) and the log filename. If not set "
               + "will default to <data-path>/logs/teku.log",
-      showDefaultValue = CommandLine.Help.Visibility.NEVER,
+      showDefaultValue = Visibility.NEVER,
       arity = "1")
   private String logFile;
 

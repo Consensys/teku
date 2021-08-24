@@ -14,6 +14,7 @@
 package tech.pegasys.teku.cli.options;
 
 import picocli.CommandLine;
+import picocli.CommandLine.Help.Visibility;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StateStorageMode;
@@ -48,7 +49,7 @@ public class DataStorageOptions {
   @CommandLine.Option(
       names = {"--Xdata-storage-non-canonical-blocks-enabled"},
       paramLabel = "<BOOLEAN>",
-      showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
+      showDefaultValue = Visibility.ALWAYS,
       description = "Store non-canonical blocks",
       fallbackValue = "true",
       arity = "0..1")
