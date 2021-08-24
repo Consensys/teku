@@ -27,15 +27,12 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
       arity = "1")
   private Path dataBeaconPath;
 
-
   @Option(
       names = {"--max-compression-depth"},
       paramLabel = "<NUMBER>",
       description = "Hackity hackity",
       arity = "1")
   private int maxCompressionDepth = 6;
-
-
 
   @Override
   protected DataConfig.Builder configure(final DataConfig.Builder config) {
