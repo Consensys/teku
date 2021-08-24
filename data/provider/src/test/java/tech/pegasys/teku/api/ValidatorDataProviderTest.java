@@ -40,6 +40,7 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailure;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
@@ -51,6 +52,7 @@ import tech.pegasys.teku.api.schema.ValidatorBlockResult;
 import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
@@ -129,6 +131,19 @@ public class ValidatorDataProviderTest {
     verify(validatorApiChannel).createUnsignedBlock(ONE, signatureInternal, Optional.empty());
     assertThat(data).isCompleted();
     assertThat(data.getNow(null).orElseThrow()).usingRecursiveComparison().isEqualTo(block);
+  }
+
+  @Test
+  void getAttestationDataAtSlot_shouldThrowIfFutureSlotRequested() {
+    when(combinedChainDataClient.isStoreAvailable()).thenReturn(true);
+    when(validatorApiChannel.createAttestationData(ONE, 0))
+        .thenReturn(SafeFuture.failedFuture(new IllegalArgumentException("Computer says no")));
+
+    final SafeFuture<Optional<tech.pegasys.teku.api.schema.AttestationData>> result =
+        provider.createAttestationDataAtSlot(ONE, 0);
+    verify(validatorApiChannel).createAttestationData(ONE, 0);
+    SafeFutureAssert.assertThatSafeFuture(result)
+        .isCompletedExceptionallyWith(BadRequestException.class);
   }
 
   @Test

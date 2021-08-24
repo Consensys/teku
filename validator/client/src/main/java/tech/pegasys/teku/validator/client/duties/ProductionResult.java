@@ -65,6 +65,10 @@ public class ProductionResult<T> {
     return new ProductionResult<>(validatorPublicKeys, result);
   }
 
+  public static <T> ProductionResult<T> noop(final BLSPublicKey validatorPublicKey) {
+    return new ProductionResult<>(Set.of(validatorPublicKey), DutyResult.NO_OP);
+  }
+
   public static <T> SafeFuture<DutyResult> send(
       final List<ProductionResult<T>> results,
       final Function<List<T>, SafeFuture<List<SubmitDataError>>> submitFunction) {
