@@ -68,13 +68,6 @@ cd teku && ./gradlew
 
 ```
 
-Or clone it manually:
-
-```shell script
-git clone https://github.com/ConsenSys/teku.git
-cd teku && ./gradlew
-```
-
 After a successful build, distribution packages are available in `build/distributions`.
 
 ### Other Useful Gradle Targets

@@ -16,9 +16,8 @@ package tech.pegasys.teku.spec.datastructures.util;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.util.config.Constants.MAX_SEED_LOOKAHEAD;
 
-import java.util.List;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -54,7 +53,7 @@ class ValidatorsUtil {
    * @return A list of indices representing the active validators for the given epoch.
    */
   @Deprecated
-  static List<Integer> get_active_validator_indices(BeaconState state, UInt64 epoch) {
+  static IntList get_active_validator_indices(BeaconState state, UInt64 epoch) {
     final UInt64 stateEpoch = BeaconStateUtil.get_current_epoch(state);
     final UInt64 maxLookaheadEpoch = getMaxLookaheadEpoch(stateEpoch);
     checkArgument(
@@ -68,10 +67,10 @@ class ValidatorsUtil {
             epoch,
             e -> {
               SszList<Validator> validators = state.getValidators();
-              return IntStream.range(0, validators.size())
-                  .filter(index -> is_active_validator(validators.get(index), epoch))
-                  .boxed()
-                  .collect(Collectors.toList());
+              return IntList.of(
+                  IntStream.range(0, validators.size())
+                      .filter(index -> is_active_validator(validators.get(index), epoch))
+                      .toArray());
             });
   }
 

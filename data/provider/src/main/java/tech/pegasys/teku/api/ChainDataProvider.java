@@ -362,19 +362,23 @@ public class ChainDataProvider {
     return defaultStateSelectorFactory
         .defaultStateSelector(stateIdParam)
         .getState()
-        .thenApply(
-            maybeState -> maybeState.map(state -> getValidatorFromState(state, validatorIdParam)));
+        .thenApply(maybeState -> getValidatorFromState(maybeState, validatorIdParam));
   }
 
-  private ValidatorResponse getValidatorFromState(
-      final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state,
+  private Optional<ValidatorResponse> getValidatorFromState(
+      final Optional<tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState>
+          maybeState,
       final String validatorIdParam) {
+    if (maybeState.isEmpty()) {
+      return Optional.empty();
+    }
+    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state =
+        maybeState.get();
     final UInt64 epoch = spec.getCurrentEpoch(state);
     return getValidatorSelector(state, List.of(validatorIdParam))
         .mapToObj(index -> ValidatorResponse.fromState(state, index, epoch, FAR_FUTURE_EPOCH))
         .flatMap(Optional::stream)
-        .findFirst()
-        .orElseThrow(() -> new BadRequestException("Validator not found: " + validatorIdParam));
+        .findFirst();
   }
 
   public SafeFuture<Optional<List<EpochCommitteeResponse>>> getStateCommittees(

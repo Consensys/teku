@@ -96,6 +96,16 @@ public class ValidatorOptions {
       arity = "0..1")
   private boolean generateEarlyAttestations = true;
 
+  @Option(
+      names = {"--Xvalidators-batch-attestations-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description =
+          "Send all attestations for a slot to the beacon node in a single batch. Default: false",
+      fallbackValue = "true",
+      hidden = true,
+      arity = "0..1")
+  private boolean sendAttestationsAsBatch = false;
+
   public void configure(TekuConfiguration.Builder builder) {
     if (validatorPerformanceTrackingEnabled != null) {
       if (validatorPerformanceTrackingEnabled) {
@@ -117,7 +127,8 @@ public class ValidatorOptions {
                         new FileBackedGraffitiProvider(
                             Optional.ofNullable(graffiti), Optional.ofNullable(graffitiFile)))
                     .useDependentRoots(useDependentRoots)
-                    .generateEarlyAttestations(generateEarlyAttestations))
+                    .generateEarlyAttestations(generateEarlyAttestations)
+                    .sendAttestationsAsBatch(sendAttestationsAsBatch))
         // We don't need to update head for empty slots when using dependent roots
         .store(b -> b.updateHeadForEmptySlots(!useDependentRoots));
     validatorKeysOptions.configure(builder);

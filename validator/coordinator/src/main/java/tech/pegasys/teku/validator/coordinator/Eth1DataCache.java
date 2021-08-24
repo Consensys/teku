@@ -22,8 +22,6 @@ import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
@@ -33,8 +31,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class Eth1DataCache {
-  private static final Logger LOG = LogManager.getLogger();
-
   static final String CACHE_SIZE_METRIC_NAME = "eth1_block_cache_size";
   static final String VOTES_MAX_METRIC_NAME = "eth1_current_period_votes_max";
   static final String VOTES_TOTAL_METRIC_NAME = "eth1_current_period_votes_total";
@@ -99,17 +95,13 @@ public class Eth1DataCache {
 
   public void onEth1Block(final Bytes32 blockHash, final UInt64 blockTimestamp) {
     final Map.Entry<UInt64, Eth1Data> previousBlock = eth1ChainCache.floorEntry(blockTimestamp);
+    final Eth1Data data;
     if (previousBlock == null) {
-      // This block is either before any deposits so will never be voted for
-      // or before the cache period so would be immediately pruned anyway.
-      LOG.debug(
-          "Not adding eth1 block {} with timestamp {} to cache because it is before all current entries",
-          blockHash,
-          blockTimestamp);
-      return;
+      data = new Eth1Data(Eth1Data.EMPTY_DEPOSIT_ROOT, UInt64.ZERO, blockHash);
+    } else {
+      data = previousBlock.getValue().withBlockHash(blockHash);
     }
-    final Eth1Data data = previousBlock.getValue();
-    eth1ChainCache.put(blockTimestamp, data.withBlockHash(blockHash));
+    eth1ChainCache.put(blockTimestamp, data);
     prune(blockTimestamp);
   }
 

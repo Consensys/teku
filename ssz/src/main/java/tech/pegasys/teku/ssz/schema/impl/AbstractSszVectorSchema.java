@@ -50,6 +50,7 @@ public abstract class AbstractSszVectorSchema<
 
   private final boolean isListBacking;
   private final int fixedPartSize;
+  private SszLengthBounds sszLengthBounds;
 
   protected AbstractSszVectorSchema(SszSchema<SszElementT> elementType, long vectorLength) {
     this(elementType, vectorLength, false);
@@ -68,6 +69,7 @@ public abstract class AbstractSszVectorSchema<
     super(vectorLength, elementSchema, hints);
     this.isListBacking = isListBacking;
     this.fixedPartSize = calcSszFixedPartSize();
+    this.sszLengthBounds = computeSszLengthBounds(elementSchema, vectorLength);
   }
 
   @Override
@@ -301,11 +303,16 @@ public abstract class AbstractSszVectorSchema<
 
   @Override
   public SszLengthBounds getSszLengthBounds() {
-    return getElementSchema()
+    return sszLengthBounds;
+  }
+
+  private static SszLengthBounds computeSszLengthBounds(
+      final SszSchema<?> elementSchema, final long length) {
+    return elementSchema
         .getSszLengthBounds()
         // if elements are of dynamic size the offset size should be added for every element
-        .addBytes(getElementSchema().isFixedSize() ? 0 : SSZ_LENGTH_SIZE)
-        .mul(getLength())
+        .addBytes(elementSchema.isFixedSize() ? 0 : SSZ_LENGTH_SIZE)
+        .mul(length)
         .ceilToBytes();
   }
 

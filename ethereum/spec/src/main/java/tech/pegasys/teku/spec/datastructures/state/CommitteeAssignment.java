@@ -13,22 +13,22 @@
 
 package tech.pegasys.teku.spec.datastructures.state;
 
-import java.util.List;
+import it.unimi.dsi.fastutil.ints.IntList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class CommitteeAssignment {
 
-  private List<Integer> committee;
+  private IntList committee;
   private UInt64 committeeIndex;
   private UInt64 slot;
 
-  public CommitteeAssignment(List<Integer> committee, UInt64 committeeIndex, UInt64 slot) {
+  public CommitteeAssignment(IntList committee, UInt64 committeeIndex, UInt64 slot) {
     this.committee = committee;
     this.committeeIndex = committeeIndex;
     this.slot = slot;
   }
 
-  public List<Integer> getCommittee() {
+  public IntList getCommittee() {
     return committee;
   }
 

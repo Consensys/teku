@@ -20,12 +20,14 @@ import static java.util.stream.Collectors.toSet;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Throwables;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionRequest;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailure;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
@@ -133,7 +135,15 @@ public class ValidatorDataProvider {
     }
     return validatorApiChannel
         .createAttestationData(slot, committeeIndex)
-        .thenApply(maybeAttestation -> maybeAttestation.map(AttestationData::new));
+        .thenApply(maybeAttestation -> maybeAttestation.map(AttestationData::new))
+        .exceptionallyCompose(
+            error -> {
+              final Throwable rootCause = Throwables.getRootCause(error);
+              if (rootCause instanceof IllegalArgumentException) {
+                return SafeFuture.failedFuture(new BadRequestException(rootCause.getMessage()));
+              }
+              return SafeFuture.failedFuture(error);
+            });
   }
 
   public SafeFuture<Optional<PostDataFailureResponse>> submitAttestations(

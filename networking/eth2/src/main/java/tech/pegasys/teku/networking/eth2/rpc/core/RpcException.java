@@ -78,6 +78,12 @@ public class RpcException extends Exception {
     }
   }
 
+  public static class AdditionalDataReceivedException extends RpcException {
+    public AdditionalDataReceivedException() {
+      super(INVALID_REQUEST_CODE, "Received additional response after request completed");
+    }
+  }
+
   // Constraint violation
   public static class ChunkTooLongException extends RpcException {
     public ChunkTooLongException() {
@@ -94,7 +100,6 @@ public class RpcException extends Exception {
   // Unavailable data
 
   public static class ResourceUnavailableException extends RpcException {
-
     public ResourceUnavailableException(final String errorMessage) {
       super(RESOURCE_UNAVAILABLE, errorMessage);
     }
