@@ -21,44 +21,28 @@ import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.duties.DutyResult;
 import tech.pegasys.teku.validator.client.duties.ProductionResult;
 import tech.pegasys.teku.validator.client.duties.RestApiReportedException;
 
 public class IndividualSendingStrategy<T> implements SendingStrategy<T> {
-  private final Function<ProductionResult<T>, SafeFuture<DutyResult>> sendFunction;
+  private final Function<List<T>, SafeFuture<List<SubmitDataError>>> sendFunction;
 
   IndividualSendingStrategy(
-      final Function<ProductionResult<T>, SafeFuture<DutyResult>> sendFunction) {
+      final Function<List<T>, SafeFuture<List<SubmitDataError>>> sendFunction) {
     this.sendFunction = sendFunction;
   }
 
   public static IndividualSendingStrategy<Attestation> createAttestationSender(
       final ValidatorApiChannel validatorApiChannel) {
-    return new IndividualSendingStrategy<>(
-        result ->
-            validatorApiChannel
-                .sendSignedAttestations(List.of(result.getMessage().orElseThrow()))
-                .thenApply(
-                    errors -> {
-                      if (errors.isEmpty()) {
-                        return result.getResult();
-                      } else {
-                        return DutyResult.forError(
-                            result.getValidatorPublicKeys(),
-                            new RestApiReportedException(errors.get(0).getMessage()));
-                      }
-                    }));
+    return new IndividualSendingStrategy<>(validatorApiChannel::sendSignedAttestations);
   }
 
   public static IndividualSendingStrategy<SignedAggregateAndProof> createAggregateSender(
       final ValidatorApiChannel validatorApiChannel) {
-    return new IndividualSendingStrategy<>(
-        result -> {
-          validatorApiChannel.sendAggregateAndProof(result.getMessage().orElseThrow());
-          return SafeFuture.completedFuture(result.getResult());
-        });
+    return new IndividualSendingStrategy<>(validatorApiChannel::sendAggregateAndProofs);
   }
 
   @Override
@@ -77,7 +61,17 @@ public class IndividualSendingStrategy<T> implements SendingStrategy<T> {
 
   private SafeFuture<DutyResult> sendAttestation(final ProductionResult<T> result) {
     return sendFunction
-        .apply(result)
+        .apply(List.of(result.getMessage().orElseThrow()))
+        .thenApply(
+            errors -> {
+              if (errors.isEmpty()) {
+                return result.getResult();
+              } else {
+                return DutyResult.forError(
+                    result.getValidatorPublicKeys(),
+                    new RestApiReportedException(errors.get(0).getMessage()));
+              }
+            })
         .exceptionally(error -> DutyResult.forError(result.getValidatorPublicKeys(), error));
   }
 }

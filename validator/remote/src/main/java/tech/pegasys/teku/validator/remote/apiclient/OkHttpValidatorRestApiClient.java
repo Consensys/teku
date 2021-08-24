@@ -231,8 +231,13 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   }
 
   @Override
-  public void sendAggregateAndProofs(final List<SignedAggregateAndProof> signedAggregateAndProof) {
-    post(SEND_SIGNED_AGGREGATE_AND_PROOF, signedAggregateAndProof, createHandler());
+  public Optional<PostDataFailureResponse> sendAggregateAndProofs(
+      final List<SignedAggregateAndProof> signedAggregateAndProof) {
+    return post(
+        SEND_SIGNED_AGGREGATE_AND_PROOF,
+        signedAggregateAndProof,
+        ResponseHandler.createForEmptyOkAndContentInBadResponse(
+            jsonProvider, PostDataFailureResponse.class));
   }
 
   @Override

@@ -360,14 +360,17 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public void sendAggregateAndProof(final SignedAggregateAndProof aggregateAndProof) {
-    sendRequest(
-            () ->
-                apiClient.sendAggregateAndProofs(
-                    List.of(
-                        new tech.pegasys.teku.api.schema.SignedAggregateAndProof(
-                            aggregateAndProof))))
-        .finish(error -> LOG.error("Failed to send aggregate and proof", error));
+  public SafeFuture<List<SubmitDataError>> sendAggregateAndProofs(
+      final List<SignedAggregateAndProof> aggregateAndProofs) {
+    return sendRequest(
+        () ->
+            apiClient
+                .sendAggregateAndProofs(
+                    aggregateAndProofs.stream()
+                        .map(tech.pegasys.teku.api.schema.SignedAggregateAndProof::new)
+                        .collect(toList()))
+                .map(this::responseToSyncCommitteeMessages)
+                .orElse(emptyList()));
   }
 
   @Override

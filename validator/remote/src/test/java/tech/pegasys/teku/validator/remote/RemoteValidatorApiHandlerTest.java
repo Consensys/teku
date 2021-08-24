@@ -454,7 +454,7 @@ class RemoteValidatorApiHandlerTest {
 
   @SuppressWarnings("unchecked")
   @Test
-  public void sendSAggregateAndProof_InvokeApiWithCorrectRequest() {
+  public void sendsAggregateAndProof_InvokeApiWithCorrectRequest() {
     final AggregateAndProof aggregateAndProof = dataStructureUtil.randomAggregateAndProof();
     final BLSSignature signature = dataStructureUtil.randomSignature();
     final SignedAggregateAndProof signedAggregateAndProof =
@@ -466,13 +466,15 @@ class RemoteValidatorApiHandlerTest {
     ArgumentCaptor<List<tech.pegasys.teku.api.schema.SignedAggregateAndProof>> argumentCaptor =
         ArgumentCaptor.forClass(List.class);
 
-    apiHandler.sendAggregateAndProof(signedAggregateAndProof);
+    final SafeFuture<List<SubmitDataError>> result =
+        apiHandler.sendAggregateAndProofs(List.of(signedAggregateAndProof));
     asyncRunner.executeQueuedActions();
 
     verify(apiClient).sendAggregateAndProofs(argumentCaptor.capture());
     assertThat(argumentCaptor.getValue())
         .usingRecursiveComparison()
         .isEqualTo(List.of(schemaSignedAggAndProof));
+    assertThat(result).isCompletedWithValue(emptyList());
   }
 
   @Test

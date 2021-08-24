@@ -28,4 +28,5 @@ For information on changes in released versions of Teku, see the [releases page]
  - Fixed `IllegalStateException: New response submitted after closing AsyncResponseProcessor` errors.
  - Get validator from state should return `404` code rather than a `400` code.
  - Produce attestation data (`/eth/v1/validator/attestation_data`) should return `400` error for future slots, rather than a `500`.
+ - Posting aggregates that fail validation to `/eth/v1/validator/aggregate_and_proofs` will now result in `SC_BAD_REQUEST` response, with details of the invalid aggregates in the response body.
 

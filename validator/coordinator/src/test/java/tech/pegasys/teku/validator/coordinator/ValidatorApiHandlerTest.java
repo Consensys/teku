@@ -726,7 +726,9 @@ class ValidatorApiHandlerTest {
         dataStructureUtil.randomSignedAggregateAndProof();
     when(attestationManager.onAttestation(any(ValidateableAttestation.class)))
         .thenReturn(completedFuture(SUCCESSFUL));
-    validatorApiHandler.sendAggregateAndProof(aggregateAndProof);
+    final SafeFuture<List<SubmitDataError>> result =
+        validatorApiHandler.sendAggregateAndProofs(List.of(aggregateAndProof));
+    assertThat(result).isCompletedWithValue(emptyList());
 
     verify(attestationManager)
         .onAttestation(ValidateableAttestation.aggregateFromValidator(spec, aggregateAndProof));

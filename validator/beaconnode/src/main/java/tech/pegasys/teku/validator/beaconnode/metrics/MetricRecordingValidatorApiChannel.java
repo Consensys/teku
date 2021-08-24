@@ -285,9 +285,10 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
-  public void sendAggregateAndProof(final SignedAggregateAndProof aggregateAndProof) {
+  public SafeFuture<List<SubmitDataError>> sendAggregateAndProofs(
+      final List<SignedAggregateAndProof> aggregateAndProofs) {
     sendAggregateRequestCounter.inc();
-    delegate.sendAggregateAndProof(aggregateAndProof);
+    return delegate.sendAggregateAndProofs(aggregateAndProofs);
   }
 
   @Override
