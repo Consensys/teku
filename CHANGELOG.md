@@ -14,6 +14,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ## Unreleased Changes
 
 ### Breaking Changes
+ - If you have `--Xdata-storage-non-canonical-blocks-enabled` set, this option has been renamed to `--data-storage-non-canonical-blocks-enabled`.
 
 ### Additions and Improvements
  - Logged a message to indicate when the node starts and finishes the sync.
@@ -28,4 +29,5 @@ For information on changes in released versions of Teku, see the [releases page]
  - Fixed `IllegalStateException: New response submitted after closing AsyncResponseProcessor` errors.
  - Get validator from state should return `404` code rather than a `400` code.
  - Produce attestation data (`/eth/v1/validator/attestation_data`) should return `400` error for future slots, rather than a `500`.
+ - Fixed command-line option `--Xdata-storage-non-canonical-blocks-enabled` which was marked as a development option (-X) but not hidden.
 
