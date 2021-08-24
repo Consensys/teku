@@ -41,10 +41,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
+import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import picocli.CommandLine;
 import tech.pegasys.teku.cli.options.BeaconRestApiOptions;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
@@ -94,6 +96,36 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     assertThat(str).contains("Description:");
     assertThat(str).contains("Default");
     assertThat(str).doesNotContain("To display full help:");
+  }
+
+  @Test
+  public void helpShouldShowDefaultsForBooleanOptions() {
+    final Pattern optPattern = Pattern.compile("(?i)--\\S+=<boolean>");
+    final Pattern optDefValPattern = Pattern.compile("(?i)Default: (?:true|false)");
+    checkAllBoolOptionsHaveVisibleDefaults(
+        new CommandLine(beaconNodeCommand), optPattern, optDefValPattern, "");
+  }
+
+  private void checkAllBoolOptionsHaveVisibleDefaults(
+      CommandLine cmd, Pattern optPattern, Pattern optDefValPattern, String parentCmds) {
+    String usageMsg = cmd.getUsageMessage();
+    var numBoolOptions = optPattern.matcher(usageMsg).results().count();
+    var numBoolDefaults = optDefValPattern.matcher(usageMsg).results().count();
+
+    assertThat(numBoolOptions)
+        .withFailMessage(
+            "one or more boolean options for command '%s%s' does not display a default value",
+            parentCmds, cmd.getCommandName())
+        .isLessThanOrEqualTo(numBoolDefaults);
+
+    // check all nested subcommands
+    for (CommandLine subCmd : cmd.getSubcommands().values()) {
+      checkAllBoolOptionsHaveVisibleDefaults(
+          subCmd,
+          optPattern,
+          optDefValPattern,
+          String.format("%s%s ", parentCmds, cmd.getCommandName()));
+    }
   }
 
   @Test

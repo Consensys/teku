@@ -26,6 +26,7 @@ import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 @CommandLine.Command(
     name = "export",
     description = "Export slashing protection database in minimal format.",
+    showDefaultValues = true,
     mixinStandardHelpOptions = true,
     abbreviateSynopsis = true,
     versionProvider = PicoCliVersionProvider.class,
