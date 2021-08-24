@@ -171,7 +171,7 @@ jobs:
           command: |
             for FILE in $(ls docker)
             do
-              trivy -q image --exit-code 1 --no-progress --severity MEDIUM,HIGH,CRITICAL "consensys/teku:develop-$FILE"
+              trivy -q image --exit-code 1 --no-progress --severity HIGH,CRITICAL "consensys/teku:develop-$FILE"
             done
       - notify
 
@@ -517,10 +517,11 @@ workflows:
             - docker
             - extractAPISpec
             - spotless
+      - notify
   nightly:
     triggers:
       - schedule:
-          cron: "0 02 * * *"
+          cron: "0 19 * * *"
           filters:
             branches:
               only:
