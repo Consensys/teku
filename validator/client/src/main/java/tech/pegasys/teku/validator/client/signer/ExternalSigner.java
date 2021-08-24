@@ -36,6 +36,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
+import tech.pegasys.teku.api.SchemaObjectProvider;
 import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -67,6 +68,7 @@ public class ExternalSigner implements Signer {
   private final HttpClient httpClient;
   private final ThrottlingTaskQueue taskQueue;
   private final SigningRootUtil signingRootUtil;
+  private final SchemaObjectProvider schemaObjectProvider;
 
   private final Counter successCounter;
   private final Counter failedCounter;
@@ -87,6 +89,7 @@ public class ExternalSigner implements Signer {
     this.timeout = timeout;
     this.taskQueue = taskQueue;
     this.signingRootUtil = new SigningRootUtil(spec);
+    schemaObjectProvider = new SchemaObjectProvider(spec);
 
     final LabelledMetric<Counter> labelledCounter =
         metricsSystem.createLabelledCounter(
@@ -115,7 +118,9 @@ public class ExternalSigner implements Signer {
         SignType.BLOCK,
         Map.of(
             "block",
-            new tech.pegasys.teku.api.schema.BeaconBlock(block),
+            new BlockRequestBody(
+                spec.atSlot(block.getSlot()).getMilestone(),
+                schemaObjectProvider.getBeaconBlock(block)),
             FORK_INFO,
             forkInfo(forkInfo)),
         slashableBlockMessage(block));

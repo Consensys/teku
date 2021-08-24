@@ -34,10 +34,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.junit.jupiter.MockServerExtension;
+import tech.pegasys.teku.api.SchemaObjectProvider;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
+import tech.pegasys.teku.core.signatures.SigningRootUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -45,6 +47,7 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionData;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
@@ -59,6 +62,9 @@ public class ExternalSignerAltairIntegrationTest {
   private static final Duration TIMEOUT = Duration.ofMillis(500);
   private final Spec spec = TestSpecFactory.createMinimalAltair();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final SigningRootUtil signingRootUtil = new SigningRootUtil(spec);
+  private final SchemaObjectProvider schemaObjectProvider = new SchemaObjectProvider(spec);
+  private final ForkInfo fork = dataStructureUtil.randomForkInfo();
   private final SyncCommitteeUtil syncCommitteeUtil =
       spec.getSyncCommitteeUtilRequired(UInt64.ZERO);
   private final UInt64 slot = UInt64.ZERO;
@@ -110,6 +116,35 @@ public class ExternalSignerAltairIntegrationTest {
   @AfterEach
   void tearDown() {
     client.reset();
+  }
+
+  @Test
+  void shouldSignAltairBlock() throws Exception {
+    final BeaconBlock block = dataStructureUtil.randomBeaconBlock(10);
+    final BLSSignature expectedSignature =
+        BLSSignature.fromBytesCompressed(
+            Bytes.fromBase64String(
+                "luIZGEgsjSbFo4MEPVeqaqqm1AnnTODcxFy9gPmdAywVmDIpqkzYed8DJ2l4zx5WAejUTox+NO5HQ4M2APMNovd7FuqnCSVUEftrL4WtJqegPrING2ZCtVTrcaUzFpUQ"));
+    client.when(request()).respond(response().withBody(expectedSignature.toString()));
+
+    final BLSSignature response = externalSigner.signBlock(block, fork).join();
+    assertThat(response).isEqualTo(expectedSignature);
+
+    final SigningRequestBody signingRequestBody =
+        new SigningRequestBody(
+            signingRootUtil.signingRootForSignBlock(block, fork),
+            SignType.BLOCK,
+            Map.of(
+                "fork_info",
+                createForkInfo(fork),
+                "block",
+                new BlockRequestBody(
+                    spec.atSlot(block.getSlot()).getMilestone(),
+                    schemaObjectProvider.getBeaconBlock(block))));
+
+    verifySignRequest(client, KEYPAIR.getPublicKey().toString(), signingRequestBody);
+
+    validateMetrics(metricsSystem, 1, 0, 0);
   }
 
   @Test
