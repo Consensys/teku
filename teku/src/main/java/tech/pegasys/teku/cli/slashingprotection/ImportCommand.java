@@ -28,6 +28,7 @@ import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
     name = "import",
     description =
         "Import slashing protection database. Supports minimal or complete interchange format.",
+    showDefaultValues = true,
     mixinStandardHelpOptions = true,
     abbreviateSynopsis = true,
     versionProvider = PicoCliVersionProvider.class,
