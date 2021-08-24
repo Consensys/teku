@@ -18,6 +18,7 @@ import static tech.pegasys.teku.infrastructure.logging.LoggingDestination.DEFAUL
 import java.nio.file.Path;
 import java.util.Optional;
 import picocli.CommandLine;
+import picocli.CommandLine.Help.Visibility;
 import tech.pegasys.teku.cli.util.LoggingPathBuilder;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
@@ -26,6 +27,7 @@ public class LoggingOptions {
   @CommandLine.Option(
       names = {"--log-color-enabled"},
       paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
       description = "Whether Status and Event log messages include a console color display code",
       fallbackValue = "true",
       arity = "0..1")
@@ -34,6 +36,7 @@ public class LoggingOptions {
   @CommandLine.Option(
       names = {"--log-include-events-enabled"},
       paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
       description = "Whether frequent update events are logged (e.g. every slot and epoch event)",
       fallbackValue = "true",
       arity = "0..1")
@@ -42,6 +45,7 @@ public class LoggingOptions {
   @CommandLine.Option(
       names = {"--log-include-validator-duties-enabled"},
       paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
       description = "Whether events are logged when validators perform duties",
       fallbackValue = "true",
       arity = "0..1")
@@ -70,7 +74,7 @@ public class LoggingOptions {
       description =
           "Path containing the location (relative or absolute) and the log filename. If not set "
               + "will default to <data-path>/logs/teku.log",
-      showDefaultValue = CommandLine.Help.Visibility.NEVER,
+      showDefaultValue = Visibility.NEVER,
       arity = "1")
   private String logFile;
 
