@@ -46,6 +46,7 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.duties.attestations.AggregationDuty;
+import tech.pegasys.teku.validator.client.duties.attestations.IndividualAggregateSendingStrategy;
 
 class AggregationDutyTest {
   private static final String TYPE = "aggregate";
@@ -63,7 +64,12 @@ class AggregationDutyTest {
   private final ValidatorLogger validatorLogger = mock(ValidatorLogger.class);
 
   private final AggregationDuty duty =
-      new AggregationDuty(SLOT, validatorApiChannel, forkProvider, validatorLogger);
+      new AggregationDuty(
+          SLOT,
+          validatorApiChannel,
+          forkProvider,
+          validatorLogger,
+          new IndividualAggregateSendingStrategy(validatorApiChannel));
 
   @BeforeEach
   public void setUp() {

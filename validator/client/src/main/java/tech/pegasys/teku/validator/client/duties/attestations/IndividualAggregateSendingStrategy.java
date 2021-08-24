@@ -15,30 +15,30 @@ package tech.pegasys.teku.validator.client.duties.attestations;
 
 import static java.util.stream.Collectors.toList;
 
-import java.util.List;
 import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.duties.DutyResult;
 import tech.pegasys.teku.validator.client.duties.ProductionResult;
-import tech.pegasys.teku.validator.client.duties.RestApiReportedException;
 
-public class IndividualAttestationSendingStrategy implements SendingStrategy<Attestation> {
+public class IndividualAggregateSendingStrategy
+    implements SendingStrategy<SignedAggregateAndProof> {
   private final ValidatorApiChannel validatorApiChannel;
 
-  public IndividualAttestationSendingStrategy(final ValidatorApiChannel validatorApiChannel) {
+  public IndividualAggregateSendingStrategy(final ValidatorApiChannel validatorApiChannel) {
     this.validatorApiChannel = validatorApiChannel;
   }
 
   @Override
   public SafeFuture<DutyResult> send(
-      final Stream<SafeFuture<ProductionResult<Attestation>>> attestations) {
+      final Stream<SafeFuture<ProductionResult<SignedAggregateAndProof>>> attestations) {
     return DutyResult.combine(
         attestations.map(future -> future.thenCompose(this::sendIfNotFailed)).collect(toList()));
   }
 
-  private SafeFuture<DutyResult> sendIfNotFailed(final ProductionResult<Attestation> result) {
+  private SafeFuture<DutyResult> sendIfNotFailed(
+      final ProductionResult<SignedAggregateAndProof> result) {
     if (result.failedToProduceMessage()) {
       return SafeFuture.completedFuture(result.getResult());
     } else {
@@ -46,19 +46,11 @@ public class IndividualAttestationSendingStrategy implements SendingStrategy<Att
     }
   }
 
-  private SafeFuture<DutyResult> sendAttestation(final ProductionResult<Attestation> result) {
-    final Attestation attestation = result.getMessage().orElseThrow();
-    return validatorApiChannel
-        .sendSignedAttestations(List.of(attestation))
-        .thenApply(
-            errors -> {
-              if (errors.isEmpty()) {
-                return DutyResult.success(attestation.getData().getBeacon_block_root());
-              } else {
-                return DutyResult.forError(
-                    result.getValidatorPublicKeys(),
-                    new RestApiReportedException(errors.get(0).getMessage()));
-              }
-            });
+  private SafeFuture<DutyResult> sendAttestation(
+      final ProductionResult<SignedAggregateAndProof> result) {
+    final SignedAggregateAndProof aggregate = result.getMessage().orElseThrow();
+    validatorApiChannel.sendAggregateAndProof(aggregate);
+    return SafeFuture.completedFuture(
+        DutyResult.success(aggregate.getMessage().getAggregate().getData().getBeacon_block_root()));
   }
 }

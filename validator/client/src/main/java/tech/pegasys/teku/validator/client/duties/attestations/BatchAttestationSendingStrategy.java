@@ -21,7 +21,7 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.duties.DutyResult;
 import tech.pegasys.teku.validator.client.duties.ProductionResult;
 
-public class BatchAttestationSendingStrategy implements AttestationSendingStrategy {
+public class BatchAttestationSendingStrategy implements SendingStrategy<Attestation> {
   private final ValidatorApiChannel validatorApiChannel;
 
   public BatchAttestationSendingStrategy(final ValidatorApiChannel validatorApiChannel) {
@@ -29,7 +29,7 @@ public class BatchAttestationSendingStrategy implements AttestationSendingStrate
   }
 
   @Override
-  public SafeFuture<DutyResult> sendAttestations(
+  public SafeFuture<DutyResult> send(
       final Stream<SafeFuture<ProductionResult<Attestation>>> attestations) {
     return SafeFuture.collectAll(attestations).thenCompose(this::sendAttestationsAsBatch);
   }

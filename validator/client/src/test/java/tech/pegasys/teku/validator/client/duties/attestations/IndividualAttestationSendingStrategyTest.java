@@ -58,8 +58,7 @@ class IndividualAttestationSendingStrategyTest {
     final Attestation attestation2 = dataStructureUtil.randomAttestation();
     final Attestation attestation3 = dataStructureUtil.randomAttestation();
 
-    final SafeFuture<DutyResult> result =
-        strategy.sendAttestations(Stream.of(future1, future2, future3));
+    final SafeFuture<DutyResult> result = strategy.send(Stream.of(future1, future2, future3));
 
     assertThat(result).isNotDone();
 

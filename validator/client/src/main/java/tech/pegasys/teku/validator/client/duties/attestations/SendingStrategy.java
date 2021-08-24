@@ -15,11 +15,9 @@ package tech.pegasys.teku.validator.client.duties.attestations;
 
 import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.validator.client.duties.DutyResult;
 import tech.pegasys.teku.validator.client.duties.ProductionResult;
 
-public interface AttestationSendingStrategy {
-  SafeFuture<DutyResult> sendAttestations(
-      Stream<SafeFuture<ProductionResult<Attestation>>> attestations);
+public interface SendingStrategy<T> {
+  SafeFuture<DutyResult> send(Stream<SafeFuture<ProductionResult<T>>> messages);
 }

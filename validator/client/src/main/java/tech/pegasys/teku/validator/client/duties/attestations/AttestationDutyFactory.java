@@ -51,7 +51,12 @@ public class AttestationDutyFactory
 
   @Override
   public AggregationDuty createAggregationDuty(final UInt64 slot, final Validator validator) {
-    return new AggregationDuty(slot, validatorApiChannel, forkProvider, VALIDATOR_LOGGER);
+    return new AggregationDuty(
+        slot,
+        validatorApiChannel,
+        forkProvider,
+        VALIDATOR_LOGGER,
+        new IndividualAggregateSendingStrategy(validatorApiChannel));
   }
 
   @Override
