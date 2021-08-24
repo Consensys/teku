@@ -39,7 +39,6 @@ class IndividualSendingStrategyTest {
   private final Function<ProductionResult<String>, SafeFuture<DutyResult>> sendFunction =
       mock(Function.class);
 
-  // TODO: Should make this use a mock send function
   private final IndividualSendingStrategy<String> strategy =
       new IndividualSendingStrategy<>(sendFunction);
 
