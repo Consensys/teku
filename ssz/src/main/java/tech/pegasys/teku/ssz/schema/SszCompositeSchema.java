@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.ssz.schema;
 
+import static tech.pegasys.teku.ssz.schema.HorribleGlobalSetting.MAX_DEPTH_COMPRESSION;
+
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.SszComposite;
@@ -23,15 +25,11 @@ import tech.pegasys.teku.ssz.tree.TreeUtil;
 /** Abstract schema of {@link SszComposite} subclasses */
 public interface SszCompositeSchema<SszCompositeT extends SszComposite<?>>
     extends SszSchema<SszCompositeT> {
-  int MAX_DEPTH_COMPRESSION = 6;
 
   @Override
   default void storeBackingNodes(final TreeNode backingNode, final BackingNodeStore store) {
     final int depth = treeDepth();
     final Bytes32[] childHashes = new Bytes32[getChunks((int) getMaxLength())];
-    if (childHashes.length > 100) {
-      System.out.println("WARN: " + getClass().getSimpleName() + " has a lot of children");
-    }
     for (int childIndex = 0; childIndex < childHashes.length; childIndex++) {
       final TreeNode childNode = backingNode.get(getChildGeneralizedIndex(childIndex));
       childHashes[childIndex] = childNode.hashTreeRoot();

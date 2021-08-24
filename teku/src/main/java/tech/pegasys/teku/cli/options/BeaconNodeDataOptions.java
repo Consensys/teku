@@ -16,6 +16,7 @@ package tech.pegasys.teku.cli.options;
 import java.nio.file.Path;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
+import tech.pegasys.teku.ssz.schema.HorribleGlobalSetting;
 
 public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
 
@@ -26,8 +27,19 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
       arity = "1")
   private Path dataBeaconPath;
 
+
+  @Option(
+      names = {"--max-compression-depth"},
+      paramLabel = "<NUMBER>",
+      description = "Hackity hackity",
+      arity = "1")
+  private int maxCompressionDepth = 6;
+
+
+
   @Override
   protected DataConfig.Builder configure(final DataConfig.Builder config) {
+    HorribleGlobalSetting.MAX_DEPTH_COMPRESSION = maxCompressionDepth;
     return super.configure(config).beaconDataPath(dataBeaconPath);
   }
 }
