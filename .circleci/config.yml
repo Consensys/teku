@@ -333,6 +333,7 @@ jobs:
           name: Publish to Cloudsmith
           command: |
             ./gradlew --no-daemon --parallel cloudsmithUpload publish
+      - notify
 
   publishDocker:
     executor: medium_executor
@@ -347,6 +348,7 @@ jobs:
           command: |
             docker login --username "${DOCKER_USER_RW}" --password "${DOCKER_PASSWORD_RW}"
             ./gradlew --no-daemon --parallel "-Pbranch=${CIRCLE_BRANCH}" dockerUpload
+      - notify
 
   extractAPISpec:
     executor: medium_executor
@@ -517,7 +519,6 @@ workflows:
             - docker
             - extractAPISpec
             - spotless
-      - notify
   nightly:
     triggers:
       - schedule:
