@@ -47,7 +47,7 @@ public class DataStorageOptions {
   private String createDbVersion = DatabaseVersion.DEFAULT_VERSION.getValue();
 
   @CommandLine.Option(
-      names = {"--Xdata-storage-non-canonical-blocks-enabled"},
+      names = {"--data-storage-non-canonical-blocks-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
       description = "Store non-canonical blocks",
