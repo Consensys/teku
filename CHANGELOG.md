@@ -17,6 +17,7 @@ For information on changes in released versions of Teku, see the [releases page]
  - If you have `--Xdata-storage-non-canonical-blocks-enabled` set, this option has been renamed to `--data-storage-non-canonical-blocks-enabled`.
 
 ### Additions and Improvements
+ - Scheduled Altair upgrade on the Prater testnet at epoch 36660.
  - Logged a message to indicate when the node starts and finishes the sync.
  - Upgraded jdk16 and default docker image to use eclipse-tumerin builds of OpenJDK.
  - jdk14 and jdk15 docker images have been upgraded to use the latest Ubuntu. Note that these images will be removed in future versions.
