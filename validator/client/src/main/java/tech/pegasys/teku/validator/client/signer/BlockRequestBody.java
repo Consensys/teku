@@ -13,27 +13,30 @@
 
 package tech.pegasys.teku.validator.client.signer;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import tech.pegasys.teku.api.schema.BeaconBlock;
+import tech.pegasys.teku.spec.SpecMilestone;
 
-public enum SignType {
-  @JsonProperty("randao_reveal")
-  RANDAO_REVEAL,
+public class BlockRequestBody {
+  private final SpecMilestone version;
+  private final BeaconBlock beaconBlock;
+
+  @JsonCreator
+  public BlockRequestBody(
+      @JsonProperty("version") final SpecMilestone version,
+      @JsonProperty("block") final BeaconBlock beaconBlock) {
+    this.version = version;
+    this.beaconBlock = beaconBlock;
+  }
+
+  @JsonProperty("version")
+  public SpecMilestone getVersion() {
+    return version;
+  }
+
   @JsonProperty("block")
-  BLOCK,
-  @JsonProperty("block_v2")
-  BLOCK_V2,
-  @JsonProperty("attestation")
-  ATTESTATION,
-  @JsonProperty("aggregation_slot")
-  AGGREGATION_SLOT,
-  @JsonProperty("aggregate_and_proof")
-  AGGREGATE_AND_PROOF,
-  @JsonProperty("voluntary_exit")
-  VOLUNTARY_EXIT,
-  @JsonProperty("sync_committee_message")
-  SYNC_COMMITTEE_MESSAGE,
-  @JsonProperty("sync_committee_selection_proof")
-  SYNC_COMMITTEE_SELECTION_PROOF,
-  @JsonProperty("sync_committee_contribution_and_proof")
-  SYNC_COMMITTEE_CONTRIBUTION_AND_PROOF
+  public BeaconBlock getBeaconBlock() {
+    return beaconBlock;
+  }
 }

@@ -110,14 +110,13 @@ public class ExternalSigner implements Signer {
 
   @Override
   public SafeFuture<BLSSignature> signBlock(final BeaconBlock block, final ForkInfo forkInfo) {
+    final ExternalSignerBlockRequestProvider blockRequestProvider =
+        new ExternalSignerBlockRequestProvider(spec, block);
+
     return sign(
         signingRootUtil.signingRootForSignBlock(block, forkInfo),
-        SignType.BLOCK,
-        Map.of(
-            "block",
-            new tech.pegasys.teku.api.schema.BeaconBlock(block),
-            FORK_INFO,
-            forkInfo(forkInfo)),
+        blockRequestProvider.getSignType(),
+        blockRequestProvider.getBlockMetadata(Map.of(FORK_INFO, forkInfo(forkInfo))),
         slashableBlockMessage(block));
   }
 

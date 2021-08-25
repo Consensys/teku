@@ -25,6 +25,9 @@ For information on changes in released versions of Teku, see the [releases page]
  - Reduced CPU and GC pressure during epoch processing by avoiding setting validator effective balances to an unchanged value.
  - Reduced memory usage and GC pressure created by state caches.
  - Optimised length validation of gossip and RPC messages.
+ - Introduced new sign type for block signing requests for external signers, `block_v2`, to support Altair and future 
+milestones. Existing Sign type `block` is backward compatible with phase0.
+
 
 ### Bug Fixes
  - Fixed `IllegalStateException: New response submitted after closing AsyncResponseProcessor` errors.

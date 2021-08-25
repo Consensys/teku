@@ -14,14 +14,18 @@
 package tech.pegasys.teku.ssz.schema;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.ssz.RandomSszDataGenerator;
 import tech.pegasys.teku.ssz.SszDataAssert;
 import tech.pegasys.teku.ssz.SszPrimitive;
+import tech.pegasys.teku.ssz.primitive.SszBit;
+import tech.pegasys.teku.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.ssz.tree.LeafNode;
 
 public class SszPrimitiveSchemaTest implements SszSchemaTestBase {
@@ -71,5 +75,20 @@ public class SszPrimitiveSchemaTest implements SszSchemaTestBase {
     assertThat(SszPrimitiveSchemas.UINT64_SCHEMA.getBitsSize()).isEqualTo(64);
     assertThat(SszPrimitiveSchemas.BYTES4_SCHEMA.getBitsSize()).isEqualTo(32);
     assertThat(SszPrimitiveSchemas.BYTES32_SCHEMA.getBitsSize()).isEqualTo(256);
+  }
+
+  @Test
+  void sszDeserializeTree_shouldRejectValuesPaddedWithNonZero() {
+    assertThatThrownBy(
+            () -> SszPrimitiveSchemas.BIT_SCHEMA.sszDeserialize(Bytes.fromHexString("0xda")))
+        .isInstanceOf(SszDeserializeException.class);
+  }
+
+  @Test
+  void sszDeserializeTree_shouldAcceptValuesPaddedWithZero() {
+    assertThat(SszPrimitiveSchemas.BIT_SCHEMA.sszDeserialize(Bytes.fromHexString("0x01")))
+        .isSameAs(SszBit.of(true));
+    assertThat(SszPrimitiveSchemas.BIT_SCHEMA.sszDeserialize(Bytes.fromHexString("0x00")))
+        .isSameAs(SszBit.of(false));
   }
 }
