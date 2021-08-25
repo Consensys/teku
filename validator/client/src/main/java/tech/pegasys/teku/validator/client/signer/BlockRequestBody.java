@@ -25,7 +25,7 @@ public class BlockRequestBody {
   @JsonCreator
   public BlockRequestBody(
       @JsonProperty("version") final SpecMilestone version,
-      @JsonProperty("beaconBlock") final BeaconBlock beaconBlock) {
+      @JsonProperty("block") final BeaconBlock beaconBlock) {
     this.version = version;
     this.beaconBlock = beaconBlock;
   }
@@ -35,7 +35,7 @@ public class BlockRequestBody {
     return version;
   }
 
-  @JsonProperty("beaconBlock")
+  @JsonProperty("block")
   public BeaconBlock getBeaconBlock() {
     return beaconBlock;
   }
