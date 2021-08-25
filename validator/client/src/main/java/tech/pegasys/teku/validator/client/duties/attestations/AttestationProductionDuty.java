@@ -43,17 +43,17 @@ public class AttestationProductionDuty implements Duty {
   private final UInt64 slot;
   private final ForkProvider forkProvider;
   private final ValidatorApiChannel validatorApiChannel;
-  private final AttestationSendingStrategy attestationSendingStrategy;
+  private final SendingStrategy<Attestation> sendingStrategy;
 
   public AttestationProductionDuty(
       final UInt64 slot,
       final ForkProvider forkProvider,
       final ValidatorApiChannel validatorApiChannel,
-      final AttestationSendingStrategy attestationSendingStrategy) {
+      final SendingStrategy<Attestation> sendingStrategy) {
     this.slot = slot;
     this.forkProvider = forkProvider;
     this.validatorApiChannel = validatorApiChannel;
-    this.attestationSendingStrategy = attestationSendingStrategy;
+    this.sendingStrategy = sendingStrategy;
   }
 
   /**
@@ -89,7 +89,7 @@ public class AttestationProductionDuty implements Duty {
         .getForkInfo(slot)
         .thenCompose(
             forkInfo ->
-                attestationSendingStrategy.sendAttestations(
+                sendingStrategy.send(
                     produceAllAttestations(slot, forkInfo, validatorsByCommitteeIndex)));
   }
 
