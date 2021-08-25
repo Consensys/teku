@@ -91,12 +91,12 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   private final BeaconChainRequestCounter aggregateRequestsCounter;
   private final BeaconChainRequestCounter createSyncCommitteeContributionCounter;
   private final BeaconChainRequestCounter sendAttestationRequestCounter;
+  private final BeaconChainRequestCounter sendAggregateRequestCounter;
   private final BeaconChainRequestCounter sendSyncCommitteeMessagesRequestCounter;
   private final Counter getValidatorIndicesRequestCounter;
   private final Counter subscribeAggregationRequestCounter;
   private final Counter subscribePersistentRequestCounter;
   private final Counter subscribeSyncCommitteeRequestCounter;
-  private final Counter sendAggregateRequestCounter;
   private final Counter sendBlockRequestCounter;
   private final Counter sendContributionAndProofsRequestCounter;
 
@@ -165,8 +165,8 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
             PUBLISHED_ATTESTATION_COUNTER_NAME,
             "Counter recording the number of signed attestations sent to the beacon node");
     sendAggregateRequestCounter =
-        metricsSystem.createCounter(
-            TekuMetricCategory.VALIDATOR,
+        BeaconChainRequestCounter.create(
+            metricsSystem,
             PUBLISHED_AGGREGATE_COUNTER_NAME,
             "Counter recording the number of signed aggregate attestations sent to the beacon node");
     sendBlockRequestCounter =
@@ -287,8 +287,8 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   @Override
   public SafeFuture<List<SubmitDataError>> sendAggregateAndProofs(
       final List<SignedAggregateAndProof> aggregateAndProofs) {
-    sendAggregateRequestCounter.inc();
-    return delegate.sendAggregateAndProofs(aggregateAndProofs);
+    return countSendRequest(
+        delegate.sendAggregateAndProofs(aggregateAndProofs), sendAggregateRequestCounter);
   }
 
   @Override

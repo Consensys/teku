@@ -27,6 +27,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -197,6 +198,8 @@ class AggregationDutyTest {
 
     when(validatorApiChannel.createAggregate(SLOT, attestationData.hashTreeRoot()))
         .thenReturn(completedFuture(Optional.of(aggregate)));
+    when(validatorApiChannel.sendAggregateAndProofs(anyList()))
+        .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
 
     final AggregateAndProof aggregateAndProof =
         new AggregateAndProof(UInt64.valueOf(validator1Index), aggregate, validator1Proof);
