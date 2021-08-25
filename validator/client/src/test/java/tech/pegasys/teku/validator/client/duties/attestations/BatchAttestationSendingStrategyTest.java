@@ -39,8 +39,8 @@ class BatchAttestationSendingStrategyTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
 
-  private final BatchAttestationSendingStrategy strategy =
-      new BatchAttestationSendingStrategy(validatorApiChannel);
+  private final BatchAttestationSendingStrategy<Attestation> strategy =
+      new BatchAttestationSendingStrategy<>(validatorApiChannel::sendSignedAttestations);
 
   @BeforeEach
   void setUp() {

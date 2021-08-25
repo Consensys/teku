@@ -19,10 +19,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.validator.api.SubmitDataError;
-import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.duties.DutyResult;
 import tech.pegasys.teku.validator.client.duties.ProductionResult;
 import tech.pegasys.teku.validator.client.duties.RestApiReportedException;
@@ -30,19 +27,9 @@ import tech.pegasys.teku.validator.client.duties.RestApiReportedException;
 public class IndividualSendingStrategy<T> implements SendingStrategy<T> {
   private final Function<List<T>, SafeFuture<List<SubmitDataError>>> sendFunction;
 
-  IndividualSendingStrategy(
+  public IndividualSendingStrategy(
       final Function<List<T>, SafeFuture<List<SubmitDataError>>> sendFunction) {
     this.sendFunction = sendFunction;
-  }
-
-  public static IndividualSendingStrategy<Attestation> createAttestationSender(
-      final ValidatorApiChannel validatorApiChannel) {
-    return new IndividualSendingStrategy<>(validatorApiChannel::sendSignedAttestations);
-  }
-
-  public static IndividualSendingStrategy<SignedAggregateAndProof> createAggregateSender(
-      final ValidatorApiChannel validatorApiChannel) {
-    return new IndividualSendingStrategy<>(validatorApiChannel::sendAggregateAndProofs);
   }
 
   @Override

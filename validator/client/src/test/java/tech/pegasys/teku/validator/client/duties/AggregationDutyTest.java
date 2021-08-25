@@ -72,7 +72,7 @@ class AggregationDutyTest {
           validatorApiChannel,
           forkProvider,
           validatorLogger,
-          IndividualSendingStrategy.createAggregateSender(validatorApiChannel));
+          new IndividualSendingStrategy<>(validatorApiChannel::sendAggregateAndProofs));
 
   @BeforeEach
   public void setUp() {
