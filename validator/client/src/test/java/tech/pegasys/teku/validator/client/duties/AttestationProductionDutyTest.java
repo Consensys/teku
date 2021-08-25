@@ -50,10 +50,12 @@ import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
+import tech.pegasys.teku.validator.client.duties.attestations.AttestationProductionDuty;
+import tech.pegasys.teku.validator.client.duties.attestations.IndividualSendingStrategy;
 
 class AttestationProductionDutyTest {
 
-  private static final String TYPE = "attesation";
+  private static final String TYPE = "attestation";
   private static final UInt64 SLOT = UInt64.valueOf(1488);
 
   private final DataStructureUtil dataStructureUtil =
@@ -64,7 +66,11 @@ class AttestationProductionDutyTest {
   private final ValidatorLogger validatorLogger = mock(ValidatorLogger.class);
 
   private final AttestationProductionDuty duty =
-      new AttestationProductionDuty(SLOT, forkProvider, validatorApiChannel);
+      new AttestationProductionDuty(
+          SLOT,
+          forkProvider,
+          validatorApiChannel,
+          IndividualSendingStrategy.createAttestationSender(validatorApiChannel));
 
   @BeforeEach
   public void setUp() {

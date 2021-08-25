@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.sync.forward.multipeer;
 
+import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
+
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import java.util.Optional;
@@ -21,6 +23,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
+import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -38,6 +41,7 @@ public class SyncController {
   private final RecentChainData recentChainData;
   private final SyncTargetSelector syncTargetSelector;
   private final Sync sync;
+  private final EventLogger eventLogger;
 
   /**
    * The current sync. When empty, no sync has started, otherwise contains the details of the last
@@ -54,11 +58,22 @@ public class SyncController {
       final RecentChainData recentChainData,
       final SyncTargetSelector syncTargetSelector,
       final Sync sync) {
+    this(eventThread, subscriberExecutor, recentChainData, syncTargetSelector, sync, EVENT_LOG);
+  }
+
+  SyncController(
+      final EventThread eventThread,
+      final Executor subscriberExecutor,
+      final RecentChainData recentChainData,
+      final SyncTargetSelector syncTargetSelector,
+      final Sync sync,
+      final EventLogger eventLogger) {
     this.eventThread = eventThread;
     this.subscriberExecutor = subscriberExecutor;
     this.recentChainData = recentChainData;
     this.syncTargetSelector = syncTargetSelector;
     this.sync = sync;
+    this.eventLogger = eventLogger;
   }
 
   /**
@@ -88,6 +103,7 @@ public class SyncController {
 
   private void onSyncComplete(final SyncResult result) {
     eventThread.checkOnEventThread();
+
     if (isSyncActive() || result == SyncResult.TARGET_CHANGED) {
       // A different sync is now running so ignore this change.
       LOG.debug(
@@ -128,6 +144,11 @@ public class SyncController {
 
   private void notifySubscribers(final boolean syncing) {
     subscriberExecutor.execute(() -> subscribers.deliver(SyncSubscriber::onSyncingChange, syncing));
+    if (syncing) {
+      eventLogger.syncStart();
+    } else {
+      eventLogger.syncCompleted();
+    }
   }
 
   private InProgressSync startSync(final SyncTarget syncTarget) {

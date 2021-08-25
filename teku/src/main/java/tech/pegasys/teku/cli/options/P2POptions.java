@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
+import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
 
@@ -28,6 +29,7 @@ public class P2POptions {
   @Option(
       names = {"--p2p-enabled"},
       paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
       description = "Enables P2P",
       fallbackValue = "true",
       arity = "0..1")
@@ -50,6 +52,7 @@ public class P2POptions {
   @Option(
       names = {"--p2p-discovery-enabled"},
       paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
       description = "Enables discv5 discovery",
       fallbackValue = "true",
       arity = "0..1")
@@ -66,21 +69,22 @@ public class P2POptions {
   @Option(
       names = {"--p2p-advertised-ip"},
       paramLabel = "<NETWORK>",
-      description = "P2P advertised IP",
+      description = "P2P advertised IP (Default: 127.0.0.1)",
       arity = "1")
   private String p2pAdvertisedIp;
 
   @Option(
       names = {"--p2p-advertised-port"},
       paramLabel = "<INTEGER>",
-      description = "P2P advertised port",
+      description = "P2P advertised port. The default is the port specified in --p2p-port",
       arity = "1")
   private Integer p2pAdvertisedPort;
 
   @Option(
       names = {"--p2p-private-key-file"},
       paramLabel = "<FILENAME>",
-      description = "This node's private key file",
+      description =
+          "This node's private key file. If not specified, uses or generates a key which is stored within the <beacon-data-dir>.",
       arity = "1")
   private String p2pPrivateKeyFile = null;
 
@@ -134,6 +138,7 @@ public class P2POptions {
   @Option(
       names = {"--p2p-subscribe-all-subnets-enabled"},
       paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
       description = "",
       arity = "0..1",
       fallbackValue = "true")
@@ -150,7 +155,7 @@ public class P2POptions {
 
   @Option(
       names = {"--Xp2p-batch-verify-attestation-signatures-enabled"},
-      paramLabel = "<Boolean>",
+      paramLabel = "<BOOLEAN>",
       description = "If true, turn on batch verification for gossiped attestation signatures",
       hidden = true,
       arity = "0..1")

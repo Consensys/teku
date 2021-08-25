@@ -18,6 +18,7 @@ dependencies {
   implementation project(':validator:remote')
   implementation project(':util')
   implementation project(':data:serializer')
+  implementation project(':data:provider')
 
   implementation 'org.apache.tuweni:tuweni-bytes'
 
