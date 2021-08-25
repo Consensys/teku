@@ -190,15 +190,15 @@ public class ExternalSignerIntegrationTest {
     final BLSSignature response = externalSigner.signBlock(block, fork).join();
     assertThat(response).isEqualTo(expectedSignature);
 
+    final ExternalSignerBlockRequestProvider externalSignerBlockRequestProvider =
+        new ExternalSignerBlockRequestProvider(spec, block);
+
     final SigningRequestBody signingRequestBody =
         new SigningRequestBody(
             signingRootUtil.signingRootForSignBlock(block, fork),
-            SignType.BLOCK,
-            Map.of(
-                "fork_info",
-                createForkInfo(fork),
-                "block",
-                new tech.pegasys.teku.api.schema.BeaconBlock(block)));
+            externalSignerBlockRequestProvider.getSignType(),
+            externalSignerBlockRequestProvider.getBlockMetadata(
+                Map.of("fork_info", createForkInfo(fork))));
 
     verifySignRequest(client, KEYPAIR.getPublicKey().toString(), signingRequestBody);
 
