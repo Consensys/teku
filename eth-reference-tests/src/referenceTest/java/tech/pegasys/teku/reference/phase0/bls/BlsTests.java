@@ -30,7 +30,8 @@ public class BlsTests {
           .put("bls/fast_aggregate_verify", new BlsFastAggregateVerifyTestExecutor())
           .put("bls/deserialization_G1", new BlsDeserializationG1TestExecutor())
           .put("bls/deserialization_G2", new BlsDeserializationG2TestExecutor())
-          .put("bls/hash_to_G2", new BlsHashToG2TestExecutor())
+          // Hash to G2 is an internal detail of our BLS library so we can't run these tests
+          .put("bls/hash_to_G2", TestExecutor.IGNORE_TESTS)
           .build();
 
   public static BLSSignature parseSignature(final String value) {
