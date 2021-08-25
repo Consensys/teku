@@ -530,13 +530,20 @@ class OkHttpValidatorRestApiClientTest {
   }
 
   @Test
-  public void sendAggregateAndProofs_WhenBadParameters_ThrowsIllegalArgumentException() {
+  public void sendAggregateAndProofs_WhenBadParameters_ReturnsErrorResponse() {
     final SignedAggregateAndProof signedAggregateAndProof = schemaObjects.signedAggregateAndProof();
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
+    final PostDataFailureResponse response =
+        new PostDataFailureResponse(
+            SC_BAD_REQUEST, "Computer said no", List.of(new PostDataFailure(UInt64.ZERO, "Bad")));
+    mockWebServer.enqueue(
+        new MockResponse().setResponseCode(SC_BAD_REQUEST).setBody(asJson(response)));
 
-    assertThatThrownBy(() -> apiClient.sendAggregateAndProofs(List.of(signedAggregateAndProof)))
-        .isInstanceOf(IllegalArgumentException.class);
+    assertThat(apiClient.sendAggregateAndProofs(List.of(signedAggregateAndProof)))
+        .isPresent()
+        .get()
+        .usingRecursiveComparison()
+        .isEqualTo(response);
   }
 
   @Test
