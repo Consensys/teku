@@ -30,10 +30,11 @@ public class ExternalSignerBlockRequestProvider {
     this.spec = spec;
     this.block = block;
     schemaObjectProvider = new SchemaObjectProvider(spec);
-    if (spec.isMilestoneSupported(SpecMilestone.ALTAIR)) {
-      signType = SignType.BLOCK_V2;
-    } else {
+    // backward compatible with phase 0
+    if (spec.atSlot(block.getSlot()).getMilestone().equals(SpecMilestone.PHASE0)) {
       signType = SignType.BLOCK;
+    } else {
+      signType = SignType.BLOCK_V2;
     }
   }
 
