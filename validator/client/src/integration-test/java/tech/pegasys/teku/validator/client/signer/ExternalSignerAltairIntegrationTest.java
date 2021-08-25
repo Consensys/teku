@@ -34,7 +34,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.junit.jupiter.MockServerExtension;
-import tech.pegasys.teku.api.SchemaObjectProvider;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -63,7 +62,6 @@ public class ExternalSignerAltairIntegrationTest {
   private final Spec spec = TestSpecFactory.createMinimalAltair();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final SigningRootUtil signingRootUtil = new SigningRootUtil(spec);
-  private final SchemaObjectProvider schemaObjectProvider = new SchemaObjectProvider(spec);
   private final ForkInfo fork = dataStructureUtil.randomForkInfo();
   private final SyncCommitteeUtil syncCommitteeUtil =
       spec.getSyncCommitteeUtilRequired(UInt64.ZERO);
@@ -130,17 +128,15 @@ public class ExternalSignerAltairIntegrationTest {
     final BLSSignature response = externalSigner.signBlock(block, fork).join();
     assertThat(response).isEqualTo(expectedSignature);
 
+    final ExternalSignerBlockRequestProvider externalSignerBlockRequestProvider =
+        new ExternalSignerBlockRequestProvider(spec, block);
+
     final SigningRequestBody signingRequestBody =
         new SigningRequestBody(
             signingRootUtil.signingRootForSignBlock(block, fork),
-            SignType.BLOCK,
-            Map.of(
-                "fork_info",
-                createForkInfo(fork),
-                "block",
-                new BlockRequestBody(
-                    spec.atSlot(block.getSlot()).getMilestone(),
-                    schemaObjectProvider.getBeaconBlock(block))));
+            externalSignerBlockRequestProvider.getSignType(),
+            externalSignerBlockRequestProvider.getBlockMetadata(
+                Map.of("fork_info", createForkInfo(fork))));
 
     verifySignRequest(client, KEYPAIR.getPublicKey().toString(), signingRequestBody);
 

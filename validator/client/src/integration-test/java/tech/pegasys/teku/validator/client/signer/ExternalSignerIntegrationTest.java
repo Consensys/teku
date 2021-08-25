@@ -39,7 +39,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.junit.jupiter.MockServerExtension;
 import org.mockserver.model.Delay;
-import tech.pegasys.teku.api.SchemaObjectProvider;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
@@ -65,7 +64,6 @@ public class ExternalSignerIntegrationTest {
   private static final Duration TIMEOUT = Duration.ofMillis(500);
   private static final BLSKeyPair KEYPAIR = BLSTestUtil.randomKeyPair(1234);
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
-  private final SchemaObjectProvider schemaObjectProvider = new SchemaObjectProvider(spec);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final ForkInfo fork = dataStructureUtil.randomForkInfo();
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
@@ -192,17 +190,15 @@ public class ExternalSignerIntegrationTest {
     final BLSSignature response = externalSigner.signBlock(block, fork).join();
     assertThat(response).isEqualTo(expectedSignature);
 
+    final ExternalSignerBlockRequestProvider externalSignerBlockRequestProvider =
+        new ExternalSignerBlockRequestProvider(spec, block);
+
     final SigningRequestBody signingRequestBody =
         new SigningRequestBody(
             signingRootUtil.signingRootForSignBlock(block, fork),
-            SignType.BLOCK,
-            Map.of(
-                "fork_info",
-                createForkInfo(fork),
-                "block",
-                new BlockRequestBody(
-                    spec.atSlot(block.getSlot()).getMilestone(),
-                    schemaObjectProvider.getBeaconBlock(block))));
+            externalSignerBlockRequestProvider.getSignType(),
+            externalSignerBlockRequestProvider.getBlockMetadata(
+                Map.of("fork_info", createForkInfo(fork))));
 
     verifySignRequest(client, KEYPAIR.getPublicKey().toString(), signingRequestBody);
 

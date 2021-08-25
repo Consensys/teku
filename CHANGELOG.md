@@ -7,7 +7,6 @@
 - The `/eth/v1/validator/blocks/:slot` endpoint has been deprecated in favor of the v2 Altair endpoint `/eth/v2/validator/blocks/:slot`
 - The `-jdk14` and `-jdk15` docker image variants will be removed in a future release. JDK 14 and 15 are no longer receiving security updates from upstream vendors.
   Note that the default docker image usage JDK 16 and is still receiving security updates.
-- Signing requests to external signers will not be backward compatible because of change in schema of block signing to support Altair fork.
 
 ## Current Releases
 For information on changes in released versions of Teku, see the [releases page](https://github.com/ConsenSys/teku/releases).
@@ -15,8 +14,6 @@ For information on changes in released versions of Teku, see the [releases page]
 ## Unreleased Changes
 
 ### Breaking Changes
-
- - Block signing requests to external signers now sends milestone type and appropriate beacon block to support Altair fork.
 
 ### Additions and Improvements
  - Logged a message to indicate when the node starts and finishes the sync.
@@ -26,6 +23,9 @@ For information on changes in released versions of Teku, see the [releases page]
  - Reduced CPU and GC pressure during epoch processing by avoiding setting validator effective balances to an unchanged value.
  - Reduced memory usage and GC pressure created by state caches.
  - Optimised length validation of gossip and RPC messages.
+ - Introduced new sign type for block signing requests for external signers, `block_v2`, to support Altair and future 
+milestones. Existing Sign type `block` is backward compatible with phase0.
+
 
 ### Bug Fixes
  - Fixed `IllegalStateException: New response submitted after closing AsyncResponseProcessor` errors.
