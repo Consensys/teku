@@ -13,12 +13,12 @@
 
 package tech.pegasys.teku.reference.phase0.bls;
 
-import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.bls.impl.DeserializeException;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 
 public class BlsDeserializationG2TestExecutor extends BlsTestExecutor {
@@ -29,16 +29,15 @@ public class BlsDeserializationG2TestExecutor extends BlsTestExecutor {
     final String signature = data.input.getSignature();
     final boolean expectedResult = data.getOutput();
 
-    if (expectedResult) {
-      assertThatCode(() -> validateSignature(signature)).doesNotThrowAnyException();
-    } else {
-      assertThatThrownBy(() -> validateSignature(signature))
-          .isInstanceOf(IllegalArgumentException.class);
-    }
+    assertThat(expectedResult).isEqualTo(validateSignature(signature));
   }
 
-  private void validateSignature(final String signature) {
-    BLSSignature.fromBytesCompressed(Bytes.fromHexString(signature)).isInfinity();
+  private boolean validateSignature(final String signature) {
+    try {
+      return BLSSignature.fromBytesCompressed(Bytes.fromHexString(signature)).isValid();
+    } catch (DeserializeException e) {
+      return false;
+    }
   }
 
   private static class Data {

@@ -21,8 +21,16 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.bls.impl.DeserializeException;
 
 abstract class BLSSignatureTest {
+
+  private static final Bytes INFINITY_BYTES =
+      Bytes.fromHexString(
+          "0x"
+              + "c000000000000000000000000000000000000000000000000000000000000000"
+              + "0000000000000000000000000000000000000000000000000000000000000000"
+              + "0000000000000000000000000000000000000000000000000000000000000000");
 
   @Test
   void succeedsWhenEqualsReturnsTrueForTheSameEmptySignature() {
@@ -54,19 +62,21 @@ abstract class BLSSignatureTest {
     Bytes emptyBytesSsz = SSZ.encode(writer -> writer.writeFixedBytes(zeroBytes));
     BLSSignature deserializedSignature = BLSSignature.fromSSZBytes(emptyBytesSsz);
     assertEquals(emptySignature, deserializedSignature);
+    assertThat(deserializedSignature.isValid()).isFalse();
   }
 
   @Test
   void succeedsIfDeserializationThrowsWithTooFewBytes() {
     Bytes tooFewBytes = Bytes.wrap(new byte[95]);
     assertThrows(
-        IllegalArgumentException.class, () -> BLSSignature.fromBytesCompressed(tooFewBytes));
+        DeserializeException.class,
+        () -> BLSSignature.fromBytesCompressed(tooFewBytes).getSignature());
   }
 
   @Test
   void succeedsIfSSZDeserializationThrowsWithTooFewBytes() {
     Bytes tooFewBytes = Bytes.wrap(new byte[95]);
-    assertThrows(IllegalArgumentException.class, () -> BLSSignature.fromSSZBytes(tooFewBytes));
+    assertThrows(DeserializeException.class, () -> BLSSignature.fromSSZBytes(tooFewBytes));
   }
 
   @Test
@@ -116,6 +126,8 @@ abstract class BLSSignatureTest {
     final Bytes rawData = Bytes.fromHexString("11".repeat(96));
     final BLSSignature signature1 = BLSSignature.fromBytesCompressed(rawData);
     final BLSSignature signature2 = BLSSignature.fromBytesCompressed(rawData);
+    assertThat(signature1.isValid()).isFalse();
+    assertThat(signature2.isValid()).isFalse();
     assertEquals(signature1, signature2);
     assertEquals(signature1.hashCode(), signature2.hashCode());
   }
@@ -131,26 +143,22 @@ abstract class BLSSignatureTest {
 
   @Test
   void succeedsWhenInfiniteSignatureIsInfinite() {
-    final BLSSignature signature =
-        BLSSignature.fromBytesCompressed(
-            Bytes.fromHexString(
-                "0x"
-                    + "c000000000000000000000000000000000000000000000000000000000000000"
-                    + "0000000000000000000000000000000000000000000000000000000000000000"
-                    + "0000000000000000000000000000000000000000000000000000000000000000"));
+    final BLSSignature signature = BLSSignature.fromBytesCompressed(INFINITY_BYTES);
     assertThat(signature.isInfinity()).isTrue();
+    assertThat(signature.isValid()).isTrue();
+  }
+
+  @Test
+  void succeedsWhenBadSignatureDeserialisesToInvalid() {
+    final BLSSignature signature =
+        BLSSignature.fromBytesCompressed(Bytes.fromHexString("33".repeat(96)));
+    assertThat(signature.isInfinity()).isFalse();
+    assertThat(signature.isValid()).isFalse();
   }
 
   @Test
   void succeedsWhenNonInfiniteSignatureIsNotInfinite() {
     BLSSignature signature = BLSTestUtil.randomSignature(513);
-    assertThat(signature.isInfinity()).isFalse();
-  }
-
-  @Test
-  void succeedsWhenInvalidSignatureIsNotInfinite() {
-    final BLSSignature signature =
-        BLSSignature.fromBytesCompressed(Bytes.fromHexString("11".repeat(96)));
     assertThat(signature.isInfinity()).isFalse();
   }
 }
