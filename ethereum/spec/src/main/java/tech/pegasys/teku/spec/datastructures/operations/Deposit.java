@@ -13,12 +13,13 @@
 
 package tech.pegasys.teku.spec.datastructures.operations;
 
+import static tech.pegasys.teku.spec.constants.NetworkConstants.DEPOSIT_CONTRACT_TREE_DEPTH;
+
 import tech.pegasys.teku.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.ssz.containers.Container2;
 import tech.pegasys.teku.ssz.containers.ContainerSchema2;
 import tech.pegasys.teku.ssz.schema.collections.SszBytes32VectorSchema;
 import tech.pegasys.teku.ssz.tree.TreeNode;
-import tech.pegasys.teku.util.config.Constants;
 
 public class Deposit extends Container2<Deposit, SszBytes32Vector, DepositData> {
 
@@ -28,8 +29,7 @@ public class Deposit extends Container2<Deposit, SszBytes32Vector, DepositData> 
     public DepositSchema() {
       super(
           "Deposit",
-          namedSchema(
-              "proof", SszBytes32VectorSchema.create(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1)),
+          namedSchema("proof", SszBytes32VectorSchema.create(DEPOSIT_CONTRACT_TREE_DEPTH + 1)),
           namedSchema("data", DepositData.SSZ_SCHEMA));
     }
 

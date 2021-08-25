@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import picocli.CommandLine;
+import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
 
@@ -37,6 +38,7 @@ public class BeaconRestApiOptions {
   @Option(
       names = {"--rest-api-docs-enabled"},
       paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
       description = "Enable swagger-docs and swagger-ui endpoints",
       fallbackValue = "true",
       arity = "0..1")
@@ -45,6 +47,7 @@ public class BeaconRestApiOptions {
   @Option(
       names = {"--rest-api-enabled"},
       paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
       description = "Enables Beacon Rest API",
       fallbackValue = "true",
       arity = "0..1")
@@ -84,7 +87,7 @@ public class BeaconRestApiOptions {
       description = "Set the maximum url length for rest api requests",
       paramLabel = "<INTEGER>",
       defaultValue = "65535",
-      showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
+      showDefaultValue = Visibility.ALWAYS,
       hidden = true)
   public void setMaxUrlLength(int maxUrlLength) {
     if (maxUrlLength < 4096 || maxUrlLength > 1052672) {

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.cli.options;
 
 import picocli.CommandLine;
+import picocli.CommandLine.Help.Visibility;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StateStorageMode;
@@ -31,7 +32,9 @@ public class DataStorageOptions {
   @CommandLine.Option(
       names = {"--data-storage-archive-frequency"},
       paramLabel = "<FREQUENCY>",
-      description = "Sets the frequency, in slots, at which to store finalized states to disk.",
+      description =
+          "Sets the frequency, in slots, at which to store finalized states to disk. "
+              + "This option is ignored if --data-storage-mode is set to PRUNE",
       arity = "1")
   private long dataStorageFrequency = VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY;
 
@@ -44,8 +47,9 @@ public class DataStorageOptions {
   private String createDbVersion = DatabaseVersion.DEFAULT_VERSION.getValue();
 
   @CommandLine.Option(
-      names = {"--Xdata-storage-non-canonical-blocks-enabled"},
+      names = {"--data-storage-non-canonical-blocks-enabled"},
       paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
       description = "Store non-canonical blocks",
       fallbackValue = "true",
       arity = "0..1")
