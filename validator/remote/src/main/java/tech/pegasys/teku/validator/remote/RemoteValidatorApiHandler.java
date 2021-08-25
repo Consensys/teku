@@ -247,7 +247,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
         () ->
             apiClient
                 .sendSignedAttestations(schemaAttestations)
-                .map(this::responseToSyncCommitteeMessages)
+                .map(this::convertPostDataFailureResponseToSubmitDataErrors)
                 .orElse(emptyList()));
   }
 
@@ -288,7 +288,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
                                     new tech.pegasys.teku.api.schema.BLSSignature(
                                         signature.getSignature())))
                         .collect(toList()))
-                .map(this::responseToSyncCommitteeMessages)
+                .map(this::convertPostDataFailureResponseToSubmitDataErrors)
                 .orElse(emptyList()));
   }
 
@@ -329,7 +329,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
         new tech.pegasys.teku.api.schema.BLSSignature(contribution.getSignature()));
   }
 
-  private List<SubmitDataError> responseToSyncCommitteeMessages(
+  private List<SubmitDataError> convertPostDataFailureResponseToSubmitDataErrors(
       final PostDataFailureResponse postDataFailureResponse) {
     return postDataFailureResponse.failures.stream()
         .map(i -> new SubmitDataError(i.index, i.message))
@@ -369,7 +369,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
                     aggregateAndProofs.stream()
                         .map(tech.pegasys.teku.api.schema.SignedAggregateAndProof::new)
                         .collect(toList()))
-                .map(this::responseToSyncCommitteeMessages)
+                .map(this::convertPostDataFailureResponseToSubmitDataErrors)
                 .orElse(emptyList()));
   }
 
