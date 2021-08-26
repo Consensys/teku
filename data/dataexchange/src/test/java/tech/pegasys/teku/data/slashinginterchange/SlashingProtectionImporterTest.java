@@ -58,7 +58,7 @@ public class SlashingProtectionImporterTest {
   private String loadAndGetErrorText(final String resourceFile)
       throws URISyntaxException, IOException {
     final SubCommandLogger logger = mock(SubCommandLogger.class);
-    SlashingProtectionImporter importer = new SlashingProtectionImporter(logger);
+    SlashingProtectionImporter importer = new SlashingProtectionImporter(logger, resourceFile);
 
     importer.initialise(new File(Resources.getResource(resourceFile).toURI()));
 

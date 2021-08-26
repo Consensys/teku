@@ -15,17 +15,61 @@ package tech.pegasys.teku.infrastructure.io;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
 /**
  * A wrapper class for reading and writing files, ensuring that the contents is immediately flushed
  * to disk.
  */
 public class SyncDataAccessor {
+
+  private static final Logger LOG = LogManager.getLogger();
+  private boolean atomicFileMoveSupport;
+
+  SyncDataAccessor(final boolean atomicFileMoveSupport) {
+    this.atomicFileMoveSupport = atomicFileMoveSupport;
+  }
+
+  public static SyncDataAccessor create(final Path path) {
+    boolean atomicFileMoveSupport = false;
+    final Path absolutePath = path.toAbsolutePath();
+    final Path tmpFile = Paths.get(absolutePath.toString(), "_temp.tmp");
+    final Path tmpDstFile = Paths.get(absolutePath.toString(), "__temp.tmp");
+
+    try {
+      // creates a temporary file in the given path.
+      nonAtomicSyncedWrite(tmpFile, Bytes.fromHexString("0x00"));
+      // executes a file atomic move operation.
+      Files.move(
+          tmpFile, tmpDstFile, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+      atomicFileMoveSupport = true;
+    } catch (AtomicMoveNotSupportedException e) {
+      // case the atomic file move fails, it disables the atomic move operation.
+      LOG.debug("File system doesn't support atomic move");
+      atomicFileMoveSupport = false;
+    } catch (IOException e) {
+      throw new InvalidConfigurationException(String.format("Cannot write to folder %s", path), e);
+    } finally {
+      // remove the temp files.
+      try {
+        Files.deleteIfExists(tmpDstFile);
+        Files.deleteIfExists(tmpFile);
+      } catch (IOException e) {
+        LOG.debug("Failed to delete the temporary file ", e);
+      }
+    }
+    return new SyncDataAccessor(atomicFileMoveSupport);
+  }
 
   /**
    * Reads the content of the specified path, if it exists.
@@ -45,13 +89,23 @@ public class SyncDataAccessor {
 
   /**
    * Writes data to the specified path, ensuring both the file content and metadata is immediately
-   * flushed to hardware storage. If the file exists it is overwritten, otherwise it is created.
+   * flushed to hardware storage. If the filesystem support atomic operation it creates a temporary
+   * file before writing the actual file. If the file exists it is overwritten, otherwise it is
+   * created.
    *
    * @param path the path to write to
    * @param data the data to write
    * @exception IOException if an IO error occurs while writing
    */
   public void syncedWrite(final Path path, final Bytes data) throws IOException {
+    if (atomicFileMoveSupport) {
+      atomicSyncedWrite(path, data);
+    } else {
+      nonAtomicSyncedWrite(path, data);
+    }
+  }
+
+  private static void nonAtomicSyncedWrite(final Path path, final Bytes data) throws IOException {
     final Path absolutePath = path.toAbsolutePath();
     if (absolutePath.getParent() != null) {
       final File parentDirectory = absolutePath.getParent().toFile();
@@ -65,5 +119,22 @@ public class SyncDataAccessor {
         StandardOpenOption.SYNC,
         StandardOpenOption.CREATE,
         StandardOpenOption.TRUNCATE_EXISTING);
+  }
+
+  private void atomicSyncedWrite(final Path path, final Bytes data) throws IOException {
+    final Path absolutePath = path.toAbsolutePath();
+    final Path tmpFile = Paths.get(path.toString() + ".tmp");
+    nonAtomicSyncedWrite(tmpFile, data);
+    try {
+      Files.move(
+          tmpFile,
+          absolutePath,
+          StandardCopyOption.ATOMIC_MOVE,
+          StandardCopyOption.REPLACE_EXISTING);
+    } catch (AtomicMoveNotSupportedException e) {
+      LOG.error("System doesn't support atomic file move operation", e);
+      // for some reason the file system changed and doesn't support atomic move operation
+      nonAtomicSyncedWrite(path, data);
+    }
   }
 }
