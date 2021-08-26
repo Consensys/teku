@@ -70,7 +70,7 @@ class AttestationProductionDutyTest {
           SLOT,
           forkProvider,
           validatorApiChannel,
-          IndividualSendingStrategy.createAttestationSender(validatorApiChannel));
+          new IndividualSendingStrategy<>(validatorApiChannel::sendSignedAttestations));
 
   @BeforeEach
   public void setUp() {

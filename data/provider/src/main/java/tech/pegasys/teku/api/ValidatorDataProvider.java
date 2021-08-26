@@ -228,10 +228,14 @@ public class ValidatorDataProvider {
         .thenApply(maybeAttestation -> maybeAttestation.map(Attestation::new));
   }
 
-  public void sendAggregateAndProofs(List<SignedAggregateAndProof> aggregateAndProofs) {
-    aggregateAndProofs.stream()
-        .map(SignedAggregateAndProof::asInternalSignedAggregateAndProof)
-        .forEach(validatorApiChannel::sendAggregateAndProof);
+  public SafeFuture<Optional<PostDataFailureResponse>> sendAggregateAndProofs(
+      List<SignedAggregateAndProof> aggregateAndProofs) {
+    return validatorApiChannel
+        .sendAggregateAndProofs(
+            aggregateAndProofs.stream()
+                .map(SignedAggregateAndProof::asInternalSignedAggregateAndProof)
+                .collect(toList()))
+        .thenApply(this::convertToPostDataFailureResponse);
   }
 
   public void subscribeToBeaconCommittee(final List<BeaconCommitteeSubscriptionRequest> requests) {
