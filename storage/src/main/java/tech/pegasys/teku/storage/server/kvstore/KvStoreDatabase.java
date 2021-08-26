@@ -72,8 +72,12 @@ import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreHotDao.HotUpda
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreProtoArrayDao;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedKvStoreDao;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedStateSnapshotStorageLogic;
+import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedStateStorageLogic;
+import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedStateTrieStorageLogic;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4HotKvStoreDao;
+import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalized;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedSnapshotState;
+import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedTrieState;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaHot;
 import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaFinalized;
 import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaHot;
@@ -105,24 +109,19 @@ public class KvStoreDatabase implements Database {
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
       final Spec spec) {
-    final V4HotKvStoreDao dao = new V4HotKvStoreDao(hotDb, V4SchemaHot.create(spec));
-    final KvStoreFinalizedDao finalizedDbDao =
-        new V4FinalizedKvStoreDao<>(
-            finalizedDb,
-            new V4SchemaFinalized(spec),
-            new V4FinalizedStateSnapshotStorageLogic(stateStorageFrequency));
-    return new KvStoreDatabase(
+    return createWithStateSnapshots(
         metricsSystem,
-        dao,
-        finalizedDbDao,
-        dao,
-        dao,
+        hotDb,
+        finalizedDb,
+        V4SchemaHot.create(spec),
+        new V4SchemaFinalized(spec),
         stateStorageMode,
+        stateStorageFrequency,
         storeNonCanonicalBlocks,
         spec);
   }
 
-  public static Database createV6(
+  public static Database createWithStateSnapshots(
       final MetricsSystem metricsSystem,
       final KvStoreAccessor hotDb,
       final KvStoreAccessor finalizedDb,
@@ -132,12 +131,56 @@ public class KvStoreDatabase implements Database {
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
       final Spec spec) {
+    final V4FinalizedStateSnapshotStorageLogic finalizedStateStorageLogic =
+        new V4FinalizedStateSnapshotStorageLogic(stateStorageFrequency);
+    return create(
+        metricsSystem,
+        hotDb,
+        finalizedDb,
+        schemaHot,
+        schemaFinalized,
+        stateStorageMode,
+        storeNonCanonicalBlocks,
+        spec,
+        finalizedStateStorageLogic);
+  }
+
+  public static Database createWithStateTrie(
+      final MetricsSystem metricsSystem,
+      final KvStoreAccessor hotDb,
+      final KvStoreAccessor finalizedDb,
+      final SchemaHot schemaHot,
+      final SchemaFinalizedTrieState schemaFinalized,
+      final StateStorageMode stateStorageMode,
+      final boolean storeNonCanonicalBlocks,
+      final Spec spec) {
+    final V4FinalizedStateStorageLogic<SchemaFinalizedTrieState> finalizedStateStorageLogic =
+        new V4FinalizedStateTrieStorageLogic();
+    return create(
+        metricsSystem,
+        hotDb,
+        finalizedDb,
+        schemaHot,
+        schemaFinalized,
+        stateStorageMode,
+        storeNonCanonicalBlocks,
+        spec,
+        finalizedStateStorageLogic);
+  }
+
+  private static <S extends SchemaFinalized> KvStoreDatabase create(
+      final MetricsSystem metricsSystem,
+      final KvStoreAccessor hotDb,
+      final KvStoreAccessor finalizedDb,
+      final SchemaHot schemaHot,
+      final S schemaFinalized,
+      final StateStorageMode stateStorageMode,
+      final boolean storeNonCanonicalBlocks,
+      final Spec spec,
+      final V4FinalizedStateStorageLogic<S> finalizedStateStorageLogic) {
     final V4HotKvStoreDao dao = new V4HotKvStoreDao(hotDb, schemaHot);
     final KvStoreFinalizedDao finalizedDbDao =
-        new V4FinalizedKvStoreDao<>(
-            finalizedDb,
-            schemaFinalized,
-            new V4FinalizedStateSnapshotStorageLogic(stateStorageFrequency));
+        new V4FinalizedKvStoreDao<>(finalizedDb, schemaFinalized, finalizedStateStorageLogic);
     return new KvStoreDatabase(
         metricsSystem,
         dao,

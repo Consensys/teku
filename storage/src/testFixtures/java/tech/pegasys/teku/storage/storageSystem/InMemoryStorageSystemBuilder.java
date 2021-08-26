@@ -30,7 +30,7 @@ import tech.pegasys.teku.storage.server.kvstore.InMemoryKvStoreDatabaseFactory;
 import tech.pegasys.teku.storage.server.kvstore.MockKvStoreInstance;
 import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaFinalized;
 import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaHot;
-import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaFinalized;
+import tech.pegasys.teku.storage.server.kvstore.schema.V6SnapshotSchemaFinalized;
 import tech.pegasys.teku.storage.store.StoreConfig;
 
 public class InMemoryStorageSystemBuilder {
@@ -171,10 +171,10 @@ public class InMemoryStorageSystemBuilder {
           MockKvStoreInstance.createEmpty(
               concat(
                   V4SchemaHot.create(spec).getAllColumns(),
-                  new V6SchemaFinalized(spec).getAllColumns()),
+                  new V6SnapshotSchemaFinalized(spec).getAllColumns()),
               concat(
                   V4SchemaHot.create(spec).getAllVariables(),
-                  new V6SchemaFinalized(spec).getAllVariables()));
+                  new V6SnapshotSchemaFinalized(spec).getAllVariables()));
       coldDb = hotDb;
     }
     return InMemoryKvStoreDatabaseFactory.createV6(

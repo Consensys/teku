@@ -18,7 +18,6 @@ import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAG
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_HOT_DB;
 
 import java.util.ArrayList;
-import java.util.Optional;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.server.Database;
@@ -67,7 +66,6 @@ public class RocksDbDatabaseFactory {
   public static Database createV6(
       final MetricsSystem metricsSystem,
       final KvStoreConfiguration hotConfiguration,
-      final Optional<KvStoreConfiguration> finalizedConfiguration,
       final SchemaHot schemaHot,
       final SchemaFinalizedSnapshotState schemaFinalized,
       final StateStorageMode stateStorageMode,
@@ -77,25 +75,13 @@ public class RocksDbDatabaseFactory {
     final KvStoreAccessor hotDb;
     final KvStoreAccessor finalizedDb;
 
-    if (finalizedConfiguration.isPresent()) {
-      hotDb =
-          RocksDbInstanceFactory.create(
-              metricsSystem, STORAGE_HOT_DB, hotConfiguration, schemaHot.getAllColumns());
-      finalizedDb =
-          RocksDbInstanceFactory.create(
-              metricsSystem,
-              STORAGE_FINALIZED_DB,
-              finalizedConfiguration.get(),
-              schemaFinalized.getAllColumns());
-    } else {
+    ArrayList<KvStoreColumn<?, ?>> allColumns = new ArrayList<>(schemaHot.getAllColumns());
+    allColumns.addAll(schemaFinalized.getAllColumns());
+    finalizedDb =
+        RocksDbInstanceFactory.create(metricsSystem, STORAGE, hotConfiguration, allColumns);
+    hotDb = finalizedDb;
 
-      ArrayList<KvStoreColumn<?, ?>> allColumns = new ArrayList<>(schemaHot.getAllColumns());
-      allColumns.addAll(schemaFinalized.getAllColumns());
-      finalizedDb =
-          RocksDbInstanceFactory.create(metricsSystem, STORAGE, hotConfiguration, allColumns);
-      hotDb = finalizedDb;
-    }
-    return KvStoreDatabase.createV6(
+    return KvStoreDatabase.createWithStateSnapshots(
         metricsSystem,
         hotDb,
         finalizedDb,
