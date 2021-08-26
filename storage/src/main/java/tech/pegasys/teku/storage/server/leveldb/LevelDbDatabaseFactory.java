@@ -28,7 +28,7 @@ import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreDatabase;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
-import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalized;
+import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedSnapshotState;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaHot;
 import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaFinalized;
 
@@ -43,7 +43,7 @@ public class LevelDbDatabaseFactory {
       final boolean storeNonCanonicalBlocks,
       final Spec spec) {
     final Collection<KvStoreColumn<?, ?>> v4FinalizedColumns =
-        V4SchemaFinalized.create(spec).getAllColumns();
+        new V4SchemaFinalized(spec).getAllColumns();
     final KvStoreAccessor hotDb =
         LevelDbInstanceFactory.create(
             metricsSystem, STORAGE_HOT_DB, hotConfiguration, v4FinalizedColumns);
@@ -65,7 +65,7 @@ public class LevelDbDatabaseFactory {
       final KvStoreConfiguration hotConfiguration,
       final Optional<KvStoreConfiguration> finalizedConfiguration,
       final SchemaHot schemaHot,
-      final SchemaFinalized schemaFinalized,
+      final SchemaFinalizedSnapshotState schemaFinalized,
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,

@@ -171,10 +171,10 @@ public class InMemoryStorageSystemBuilder {
           MockKvStoreInstance.createEmpty(
               concat(
                   V4SchemaHot.create(spec).getAllColumns(),
-                  V6SchemaFinalized.create(spec).getAllColumns()),
+                  new V6SchemaFinalized(spec).getAllColumns()),
               concat(
                   V4SchemaHot.create(spec).getAllVariables(),
-                  V6SchemaFinalized.create(spec).getAllVariables()));
+                  new V6SchemaFinalized(spec).getAllVariables()));
       coldDb = hotDb;
     }
     return InMemoryKvStoreDatabaseFactory.createV6(
@@ -188,15 +188,16 @@ public class InMemoryStorageSystemBuilder {
 
   private Database createV4Database() {
     if (hotDb == null) {
+      final V4SchemaHot v4SchemaHot = V4SchemaHot.create(spec);
       hotDb =
           MockKvStoreInstance.createEmpty(
-              V4SchemaHot.create(spec).getAllColumns(), V4SchemaHot.create(spec).getAllVariables());
+              v4SchemaHot.getAllColumns(), v4SchemaHot.getAllVariables());
     }
     if (coldDb == null) {
+      final V4SchemaFinalized v4SchemaFinalized = new V4SchemaFinalized(spec);
       coldDb =
           MockKvStoreInstance.createEmpty(
-              V4SchemaFinalized.create(spec).getAllColumns(),
-              V4SchemaFinalized.create(spec).getAllVariables());
+              v4SchemaFinalized.getAllColumns(), v4SchemaFinalized.getAllVariables());
     }
     return InMemoryKvStoreDatabaseFactory.createV4(
         hotDb, coldDb, storageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);

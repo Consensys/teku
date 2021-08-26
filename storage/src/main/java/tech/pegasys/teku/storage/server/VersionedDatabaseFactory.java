@@ -277,15 +277,15 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
 
       final KvStoreConfiguration hotOrSingleDBConfiguration =
           metaData.isSingleDB()
-              ? metaData.getSingleDbConfiguration().get().getConfiguration()
-              : metaData.getSeparateDbConfiguration().get().getHotDbConfiguration();
+              ? metaData.getSingleDbConfiguration().orElseThrow().getConfiguration()
+              : metaData.getSeparateDbConfiguration().orElseThrow().getHotDbConfiguration();
 
       final Optional<KvStoreConfiguration> finalizedConfiguration =
           v6ArchiveDirectory.map(
               dir ->
                   metaData
                       .getSeparateDbConfiguration()
-                      .get()
+                      .orElseThrow()
                       .getArchiveDbConfiguration()
                       .withDatabaseDir(dir.toPath()));
 
@@ -294,7 +294,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           hotOrSingleDBConfiguration.withDatabaseDir(dbDirectory.toPath()),
           finalizedConfiguration,
           V4SchemaHot.create(spec),
-          V6SchemaFinalized.create(spec),
+          new V6SchemaFinalized(spec),
           stateStorageMode,
           stateStorageFrequency,
           storeNonCanonicalBlocks,
@@ -369,7 +369,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           hotOrSingleDBConfiguration.withDatabaseDir(dbDirectory.toPath()),
           finalizedConfiguration,
           V4SchemaHot.create(spec),
-          V6SchemaFinalized.create(spec),
+          new V6SchemaFinalized(spec),
           stateStorageMode,
           stateStorageFrequency,
           storeNonCanonicalBlocks,

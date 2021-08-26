@@ -51,7 +51,7 @@ public class InMemoryKvStoreDatabaseFactory {
         hotDb,
         coldDb,
         V4SchemaHot.create(spec),
-        V6SchemaFinalized.create(spec),
+        new V6SchemaFinalized(spec),
         storageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,

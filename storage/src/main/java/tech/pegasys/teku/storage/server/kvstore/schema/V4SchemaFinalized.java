@@ -27,7 +27,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer;
 
-public class V4SchemaFinalized implements SchemaFinalized {
+public class V4SchemaFinalized implements SchemaFinalizedSnapshotState {
   private static final KvStoreColumn<Bytes32, UInt64> SLOTS_BY_FINALIZED_ROOT =
       KvStoreColumn.create(1, BYTES32_SERIALIZER, UINT64_SERIALIZER);
   private final KvStoreColumn<UInt64, SignedBeaconBlock> finalizedBlocksBySlot;
@@ -38,7 +38,7 @@ public class V4SchemaFinalized implements SchemaFinalized {
   private static final KvStoreColumn<UInt64, Set<Bytes32>> NON_CANONICAL_BLOCK_ROOTS_BY_SLOT =
       KvStoreColumn.create(6, UINT64_SERIALIZER, BLOCK_ROOTS_SERIALIZER);
 
-  private V4SchemaFinalized(final Spec spec) {
+  public V4SchemaFinalized(final Spec spec) {
     finalizedBlocksBySlot =
         KvStoreColumn.create(
             2, UINT64_SERIALIZER, KvStoreSerializer.createSignedBlockSerializer(spec));
@@ -47,10 +47,6 @@ public class V4SchemaFinalized implements SchemaFinalized {
     nonCanonicalBlocksByRoot =
         KvStoreColumn.create(
             5, BYTES32_SERIALIZER, KvStoreSerializer.createSignedBlockSerializer(spec));
-  }
-
-  public static SchemaFinalized create(final Spec spec) {
-    return new V4SchemaFinalized(spec);
   }
 
   @Override

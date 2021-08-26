@@ -29,7 +29,7 @@ import tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer;
  * The same as {@link V4SchemaFinalized} but with other column ids which are distinct from {@link
  * V4SchemaHot}
  */
-public class V6SchemaFinalized implements SchemaFinalized {
+public class V6SchemaFinalized implements SchemaFinalizedSnapshotState {
   // column ids should be distinct across different DAOs to make possible using
   // schemes both for a single and separated DBs
   private static final int ID_OFFSET = 128;
@@ -44,7 +44,7 @@ public class V6SchemaFinalized implements SchemaFinalized {
   private static final KvStoreColumn<UInt64, Set<Bytes32>> NON_CANONICAL_BLOCK_ROOTS_BY_SLOT =
       KvStoreColumn.create(ID_OFFSET + 6, UINT64_SERIALIZER, BLOCK_ROOTS_SERIALIZER);
 
-  private V6SchemaFinalized(final Spec spec) {
+  public V6SchemaFinalized(final Spec spec) {
     finalizedBlocksBySlot =
         KvStoreColumn.create(
             ID_OFFSET + 2, UINT64_SERIALIZER, KvStoreSerializer.createSignedBlockSerializer(spec));
@@ -54,10 +54,6 @@ public class V6SchemaFinalized implements SchemaFinalized {
     nonCanonicalBlocksByRoot =
         KvStoreColumn.create(
             ID_OFFSET + 5, BYTES32_SERIALIZER, KvStoreSerializer.createSignedBlockSerializer(spec));
-  }
-
-  public static SchemaFinalized create(final Spec spec) {
-    return new V6SchemaFinalized(spec);
   }
 
   @Override
