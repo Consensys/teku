@@ -21,6 +21,7 @@ public interface SchemaFinalizedSnapshotState extends SchemaFinalized {
 
   KvStoreColumn<UInt64, BeaconState> getColumnFinalizedStatesBySlot();
 
+  @Override
   default Map<String, KvStoreColumn<?, ?>> getColumnMap() {
     return Map.of(
         "SLOTS_BY_FINALIZED_ROOT", getColumnSlotsByFinalizedRoot(),

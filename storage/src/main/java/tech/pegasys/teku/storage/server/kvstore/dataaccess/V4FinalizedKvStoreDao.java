@@ -161,7 +161,7 @@ public class V4FinalizedKvStoreDao<S extends SchemaFinalized> implements KvStore
   private Optional<UInt64> displayCopyColumnMessage(
       final String key,
       final Map<String, KvStoreColumn<?, ?>> oldColumns,
-      final V4FinalizedKvStoreDao dao,
+      final V4FinalizedKvStoreDao<?> dao,
       final Consumer<String> logger) {
     final Optional<UInt64> maybeCount = getObjectCountForColumn(key, oldColumns, dao);
     maybeCount.ifPresentOrElse(
@@ -174,7 +174,7 @@ public class V4FinalizedKvStoreDao<S extends SchemaFinalized> implements KvStore
   private Optional<UInt64> getObjectCountForColumn(
       final String key,
       final Map<String, KvStoreColumn<?, ?>> oldColumns,
-      final V4FinalizedKvStoreDao dao) {
+      final V4FinalizedKvStoreDao<?> dao) {
     switch (key) {
       case ("FINALIZED_STATES_BY_SLOT"):
       case ("SLOTS_BY_FINALIZED_STATE_ROOT"):
@@ -189,7 +189,7 @@ public class V4FinalizedKvStoreDao<S extends SchemaFinalized> implements KvStore
   }
 
   Optional<UInt64> getEntityCountFromColumn(
-      final KvStoreColumn<?, ?> column, final V4FinalizedKvStoreDao dao) {
+      final KvStoreColumn<?, ?> column, final V4FinalizedKvStoreDao<?> dao) {
     try (final Stream<ColumnEntry<Bytes, Bytes>> oldEntryStream = dao.streamRawColumn(column)) {
       return Optional.of(UInt64.valueOf(oldEntryStream.count()));
     }

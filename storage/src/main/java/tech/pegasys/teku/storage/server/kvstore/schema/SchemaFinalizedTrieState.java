@@ -26,6 +26,7 @@ public interface SchemaFinalizedTrieState extends SchemaFinalized {
 
   KvStoreColumn<Bytes32, Bytes> getColumnFinalizedStateMerkleTrieBranches();
 
+  @Override
   default Map<String, KvStoreColumn<?, ?>> getColumnMap() {
     return Map.of(
         "SLOTS_BY_FINALIZED_ROOT", getColumnSlotsByFinalizedRoot(),
