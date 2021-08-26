@@ -18,6 +18,7 @@ import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAG
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_HOT_DB;
 
 import java.util.ArrayList;
+import java.util.List;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.server.Database;
@@ -74,7 +75,7 @@ public class RocksDbDatabaseFactory {
       final Spec spec) {
     final KvStoreAccessor finalizedDb;
 
-    ArrayList<KvStoreColumn<?, ?>> allColumns = new ArrayList<>(schemaHot.getAllColumns());
+    final List<KvStoreColumn<?, ?>> allColumns = new ArrayList<>(schemaHot.getAllColumns());
     allColumns.addAll(schemaFinalized.getAllColumns());
     finalizedDb =
         RocksDbInstanceFactory.create(metricsSystem, STORAGE, hotConfiguration, allColumns);
