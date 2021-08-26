@@ -61,7 +61,7 @@ public interface SszCompositeSchema<SszCompositeT extends SszComposite<?>>
     } else {
       // Store a compressed branch node for the first few levels then recurse to get to target depth
       final long elementsPerNodeAtTargetDepth =
-          elementsPerNodeAtRootLevel / (1 << MAX_DEPTH_COMPRESSION);
+          elementsPerNodeAtRootLevel / (1L << MAX_DEPTH_COMPRESSION);
       final int nodesToStore = divCeil(maxElementsToStore, elementsPerNodeAtTargetDepth);
       long remainingElementsToStore = Math.toIntExact(maxElementsToStore);
       final Bytes32[] childHashes = new Bytes32[nodesToStore];
