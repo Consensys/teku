@@ -13,9 +13,13 @@
 
 package tech.pegasys.teku.reference.phase0.bls;
 
+import static tech.pegasys.teku.ethtests.finder.BlsTestFinder.BLS_DATA_FILE;
+
+import java.io.IOException;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.impl.blst.BlstLoader;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
+import tech.pegasys.teku.reference.TestDataUtils;
 import tech.pegasys.teku.reference.TestExecutor;
 
 public abstract class BlsTestExecutor implements TestExecutor {
@@ -30,6 +34,15 @@ public abstract class BlsTestExecutor implements TestExecutor {
         BLS.resetBlsImplementation();
       }
     }
+  }
+
+  protected <T> T loadDataFile(final TestDefinition testDefinition, final Class<T> type)
+      throws IOException {
+    String dataFile =
+        testDefinition.getTestName().endsWith(".yaml")
+            ? testDefinition.getTestName()
+            : BLS_DATA_FILE;
+    return TestDataUtils.loadYaml(testDefinition, dataFile, type);
   }
 
   protected abstract void runTestImpl(TestDefinition testDefinition) throws Throwable;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -24,17 +24,17 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 
-public class BlsAggregateVerifyTestExecutor extends BlsTestExecutor {
+public class BlsBatchVerifyTestExecutor extends BlsTestExecutor {
 
   @Override
-  public void runTestImpl(final TestDefinition testDefinition) throws Throwable {
+  protected void runTestImpl(final TestDefinition testDefinition) throws Throwable {
     final Data data = loadDataFile(testDefinition, Data.class);
-    final List<BLSPublicKey> publicKeys = data.input.getPublicKeys();
+    final List<List<BLSPublicKey>> publicKeys = data.input.getPublicKeys();
     final List<Bytes> messages = data.input.getMessages();
-    final BLSSignature signature = data.input.getSignature();
+    final List<BLSSignature> signatures = data.input.getSignatures();
     final boolean expectedResult = data.getOutput();
 
-    assertThat(BLS.aggregateVerify(publicKeys, messages, signature)).isEqualTo(expectedResult);
+    assertThat(BLS.batchVerify(publicKeys, messages, signatures)).isEqualTo(expectedResult);
   }
 
   private static class Data {
@@ -50,19 +50,18 @@ public class BlsAggregateVerifyTestExecutor extends BlsTestExecutor {
   }
 
   private static class Input {
-    @JsonProperty(value = "pubkeys", required = true)
+    @JsonProperty(value = "pubkey", required = true)
     private List<String> publicKeys;
 
-    @JsonProperty(value = "messages", required = true)
+    @JsonProperty(value = "message", required = true)
     private List<String> messages;
 
     @JsonProperty(value = "signature", required = true)
-    private String signature;
+    private List<String> signatures;
 
-    public List<BLSPublicKey> getPublicKeys() {
+    public List<List<BLSPublicKey>> getPublicKeys() {
       return publicKeys.stream()
-          .map(Bytes::fromHexString)
-          .map(BLSPublicKey::fromSSZBytes)
+          .map(publicKey -> List.of(BLSPublicKey.fromSSZBytes(Bytes.fromHexString(publicKey))))
           .collect(toList());
     }
 
@@ -70,8 +69,8 @@ public class BlsAggregateVerifyTestExecutor extends BlsTestExecutor {
       return messages.stream().map(Bytes::fromHexString).collect(toList());
     }
 
-    public BLSSignature getSignature() {
-      return BlsTests.parseSignature(signature);
+    public List<BLSSignature> getSignatures() {
+      return signatures.stream().map(BlsTests::parseSignature).collect(toList());
     }
   }
 }

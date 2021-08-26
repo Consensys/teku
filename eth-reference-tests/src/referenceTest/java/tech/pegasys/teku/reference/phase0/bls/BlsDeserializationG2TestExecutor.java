@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -14,44 +14,50 @@
 package tech.pegasys.teku.reference.phase0.bls;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.reference.phase0.bls.BlsTests.parseSignature;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.List;
-import java.util.stream.Collectors;
-import tech.pegasys.teku.bls.BLS;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.bls.impl.DeserializeException;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 
-public class BlsAggregateTestExecutor extends BlsTestExecutor {
+public class BlsDeserializationG2TestExecutor extends BlsTestExecutor {
 
   @Override
-  public void runTestImpl(final TestDefinition testDefinition) throws Throwable {
+  protected void runTestImpl(final TestDefinition testDefinition) throws Throwable {
     final Data data = loadDataFile(testDefinition, Data.class);
-    final List<BLSSignature> signatures = data.getInput();
-    final BLSSignature expectedSignature = data.getOutput();
-    BLSSignature actualSignature;
+    final String signature = data.input.getSignature();
+    final boolean expectedResult = data.getOutput();
+
+    assertThat(expectedResult).isEqualTo(validateSignature(signature));
+  }
+
+  private boolean validateSignature(final String signature) {
     try {
-      actualSignature = BLS.aggregate(signatures);
-    } catch (RuntimeException e) {
-      actualSignature = null;
+      return BLSSignature.fromBytesCompressed(Bytes.fromHexString(signature)).isValid();
+    } catch (DeserializeException e) {
+      return false;
     }
-    assertThat(actualSignature).isEqualTo(expectedSignature);
   }
 
   private static class Data {
     @JsonProperty(value = "input", required = true)
-    private List<String> input;
+    private Input input;
 
     @JsonProperty(value = "output", required = true)
-    private String output;
+    private boolean output;
 
-    public List<BLSSignature> getInput() {
-      return input.stream().map(BlsTests::parseSignature).collect(Collectors.toList());
+    public boolean getOutput() {
+      return output;
     }
+  }
 
-    public BLSSignature getOutput() {
-      return output == null ? null : parseSignature(output);
+  private static class Input {
+    @JsonProperty(value = "signature", required = true)
+    private String signature;
+
+    public String getSignature() {
+      return signature;
     }
   }
 }
