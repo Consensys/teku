@@ -39,10 +39,10 @@ public class ManualReferenceTestRunner extends Eth2ReferenceTestCase {
    * <p>e.g. set to "ssz_static" to run only ssz static tests or "ssz_static/Attestation" for only
    * attestation ssz tests.
    */
-  private static final String TEST_TYPE = "fork/fork";
+  private static final String TEST_TYPE = "";
 
   /** Filter test to run to those from the specified spec. One of general, minimal or mainnet */
-  private static final String SPEC = "";
+  private static final String SPEC = "bls";
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("loadReferenceTests")

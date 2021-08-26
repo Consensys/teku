@@ -23,10 +23,15 @@ public class BlsTests {
   public static ImmutableMap<String, TestExecutor> BLS_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
           .put("bls/verify", new BlsVerifyTestExecutor())
+          .put("bls/batch_verify", new BlsBatchVerifyTestExecutor())
           .put("bls/aggregate", new BlsAggregateTestExecutor())
           .put("bls/aggregate_verify", new BlsAggregateVerifyTestExecutor())
           .put("bls/sign", new BlsSignTestExecutor())
           .put("bls/fast_aggregate_verify", new BlsFastAggregateVerifyTestExecutor())
+          .put("bls/deserialization_G1", new BlsDeserializationG1TestExecutor())
+          .put("bls/deserialization_G2", new BlsDeserializationG2TestExecutor())
+          // Hash to G2 is an internal detail of our BLS library so we can't run these tests
+          .put("bls/hash_to_G2", TestExecutor.IGNORE_TESTS)
           .build();
 
   public static BLSSignature parseSignature(final String value) {

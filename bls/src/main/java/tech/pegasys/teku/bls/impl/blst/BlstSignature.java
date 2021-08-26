@@ -31,31 +31,19 @@ import tech.pegasys.teku.bls.impl.Signature;
 public class BlstSignature implements Signature {
   private static final int COMPRESSED_SIG_SIZE = 96;
 
-  private static final Bytes INFINITY_BYTES =
-      Bytes.fromHexString(
-          "0x"
-              + "c000000000000000000000000000000000000000000000000000000000000000"
-              + "0000000000000000000000000000000000000000000000000000000000000000"
-              + "0000000000000000000000000000000000000000000000000000000000000000");
-  static final BlstSignature INFINITY;
-
-  static {
-    P2_Affine ec2Point = new P2_Affine(INFINITY_BYTES.toArrayUnsafe());
-    INFINITY = new BlstSignature(ec2Point, true);
-  }
+  // The valid infinite signature
+  static final BlstSignature INFINITY = new BlstSignature(new P2_Affine(), true);
 
   public static BlstSignature fromBytes(Bytes compressed) {
-    if (compressed.equals(INFINITY_BYTES)) {
-      return INFINITY;
-    }
     checkArgument(
         compressed.size() == COMPRESSED_SIG_SIZE,
         "Expected " + COMPRESSED_SIG_SIZE + " bytes of input but got %s",
         compressed.size());
     try {
       P2_Affine ec2Point = new P2_Affine(compressed.toArrayUnsafe());
-      return new BlstSignature(ec2Point, true);
+      return new BlstSignature(ec2Point, ec2Point.in_group());
     } catch (Exception e) {
+      // Return an invalid infinite signature if deserialisation fails
       return new BlstSignature(new P2_Affine(), false);
     }
   }
@@ -77,9 +65,10 @@ public class BlstSignature implements Signature {
           "Can't aggregate invalid signature: " + invalidSignature.get());
     }
 
+    // We've done the group check, so we can add() rather than aggregate() here
     P2 sum = new P2();
     for (BlstSignature finiteSignature : signatures) {
-      sum.aggregate(finiteSignature.ec2Point);
+      sum.add(finiteSignature.ec2Point);
     }
 
     return new BlstSignature(sum.to_affine(), true);
@@ -156,10 +145,14 @@ public class BlstSignature implements Signature {
     return BlstBLS12381.verify(BlstPublicKey.fromPublicKey(publicKey), message, this, dst);
   }
 
-  @SuppressWarnings("ReferenceEquality")
   @Override
   public boolean isInfinity() {
-    return this == INFINITY;
+    return isValid && ec2Point.is_inf();
+  }
+
+  @Override
+  public boolean isValid() {
+    return isValid;
   }
 
   @Override
