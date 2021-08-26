@@ -57,9 +57,7 @@ public interface SszSchema<SszDataT extends SszData> extends SszType {
     throw new UnsupportedOperationException("Not implemented");
   }
 
-  default void storeBackingNodes(TreeNode backingNode, BackingNodeStore store) {
-    throw new UnsupportedOperationException("Not implemented");
-  }
+  void storeBackingNodes(TreeNode backingNode, BackingNodeStore store);
 
   /** Returns the default immutable structure of this scheme */
   default SszDataT getDefault() {

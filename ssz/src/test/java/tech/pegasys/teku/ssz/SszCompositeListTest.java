@@ -51,6 +51,9 @@ public class SszCompositeListTest {
         }
 
         @Override
+        public void storeBackingNodes(final TreeNode backingNode, final BackingNodeStore store) {}
+
+        @Override
         public boolean isPrimitive() {
           return false;
         }
