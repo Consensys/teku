@@ -13,7 +13,11 @@
 
 package tech.pegasys.teku.spec.constants;
 
+import org.apache.tuweni.bytes.Bytes;
+
 public class NetworkConstants {
 
   public static final int SYNC_COMMITTEE_SUBNET_COUNT = 4;
+  public static final Bytes BLS_WITHDRAWAL_PREFIX = Bytes.fromHexString("0x00");
+  public static final int DEPOSIT_CONTRACT_TREE_DEPTH = 32;
 }

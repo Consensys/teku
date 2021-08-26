@@ -122,7 +122,6 @@ public abstract class AbstractSszPrimitiveSchema<
 
   @Override
   public int sszSerializeTree(TreeNode node, SszWriter writer) {
-    int sszBytesSize = getSSZBytesSize();
     final Bytes nodeData;
     if (node instanceof LeafDataNode) {
       // small perf optimization
@@ -130,16 +129,20 @@ public abstract class AbstractSszPrimitiveSchema<
     } else {
       nodeData = node.hashTreeRoot();
     }
-    writer.write(nodeData.toArrayUnsafe(), 0, sszBytesSize);
-    return sszBytesSize;
+    writer.write(nodeData.toArrayUnsafe(), 0, sszSize);
+    return sszSize;
   }
 
   @Override
   public TreeNode sszDeserializeTree(SszReader reader) {
-    Bytes bytes = reader.read(getSSZBytesSize());
+    Bytes bytes = reader.read(sszSize);
     if (reader.getAvailableBytes() > 0) {
       throw new SszDeserializeException("Extra " + reader.getAvailableBytes() + " bytes found");
     }
+    return createNodeFromSszBytes(bytes);
+  }
+
+  protected LeafNode createNodeFromSszBytes(final Bytes bytes) {
     return LeafNode.create(bytes);
   }
 
