@@ -53,9 +53,7 @@ public interface SszSchema<SszDataT extends SszData> extends SszType {
    */
   SszDataT createFromBackingNode(TreeNode node);
 
-  default TreeNode loadBackingNodes(BackingNodeSource source, Bytes32 rootHash) {
-    throw new UnsupportedOperationException("Not implemented");
-  }
+  TreeNode loadBackingNodes(BackingNodeSource source, Bytes32 rootHash);
 
   void storeBackingNodes(TreeNode backingNode, BackingNodeStore store);
 

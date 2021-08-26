@@ -51,6 +51,11 @@ public class SszCompositeListTest {
         }
 
         @Override
+        public TreeNode loadBackingNodes(final BackingNodeSource source, final Bytes32 rootHash) {
+          throw new UnsupportedOperationException();
+        }
+
+        @Override
         public void storeBackingNodes(final TreeNode backingNode, final BackingNodeStore store) {}
 
         @Override
