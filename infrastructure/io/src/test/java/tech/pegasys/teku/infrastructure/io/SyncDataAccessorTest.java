@@ -14,8 +14,7 @@
 package tech.pegasys.teku.infrastructure.io;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -42,17 +41,12 @@ public class SyncDataAccessorTest {
 
     Files.setPosixFilePermissions(tempDir, perms);
 
-    Exception exception =
-        assertThrows(
-            InvalidConfigurationException.class,
+    assertThatThrownBy(
             () -> {
               SyncDataAccessor.create(tempDir);
-            });
-
-    String msg = "Cannot write to folder";
-    String expected = exception.getMessage();
-
-    assertTrue(expected.contains(msg));
+            })
+        .isInstanceOf(InvalidConfigurationException.class)
+        .hasMessageContaining("Cannot write to folder");
   }
 
   @ParameterizedTest
