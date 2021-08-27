@@ -14,7 +14,6 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static java.util.Arrays.asList;
-import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
@@ -29,11 +28,14 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.Optional;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
+import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class PostAggregateAndProofs extends AbstractHandler implements Handler {
@@ -73,8 +75,10 @@ public class PostAggregateAndProofs extends AbstractHandler implements Handler {
       final SignedAggregateAndProof[] signedAggregateAndProofs =
           parseRequestBody(ctx.body(), SignedAggregateAndProof[].class);
 
-      provider.sendAggregateAndProofs(asList(signedAggregateAndProofs));
-      ctx.status(SC_OK);
+      final SafeFuture<Optional<PostDataFailureResponse>> future =
+          provider.sendAggregateAndProofs(asList(signedAggregateAndProofs));
+
+      handlePostDataResult(ctx, future);
     } catch (IllegalArgumentException e) {
       ctx.result(BadRequest.badRequest(jsonProvider, e.getMessage()));
       ctx.status(SC_BAD_REQUEST);

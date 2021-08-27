@@ -15,6 +15,7 @@ package tech.pegasys.teku.bls;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -259,6 +260,26 @@ public abstract class BLSTest {
     BLSSignature sigAggr = BLS.aggregate(List.of(sig1, infinityG2()));
     boolean res1 = BLS.verify(pubKeyAggr, message, sigAggr);
     assertFalse(res1);
+  }
+
+  @Test
+  void aggregateSignatureNotInG2() {
+    // Create a signature from a point on the curve but not in G2
+    final BLSSignature signatureInvalid =
+        BLSSignature.fromBytesCompressed(
+            Bytes.fromHexString(
+                "0x"
+                    + "8000000000000000000000000000000000000000000000000000000000000000"
+                    + "0000000000000000000000000000000000000000000000000000000000000000"
+                    + "0000000000000000000000000000000000000000000000000000000000000004"));
+    assertThat(signatureInvalid.isValid()).isFalse();
+
+    final BLSSignature signatureValid = BLSTestUtil.randomSignature(98765);
+    assertThat(signatureValid.isValid()).isTrue();
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> BLS.aggregate(List.of(signatureValid, signatureInvalid)));
   }
 
   @Test

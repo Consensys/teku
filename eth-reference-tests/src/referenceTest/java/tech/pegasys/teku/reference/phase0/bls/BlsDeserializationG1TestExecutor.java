@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -14,25 +14,38 @@
 package tech.pegasys.teku.reference.phase0.bls;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.bls.BLS;
+import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 
-public class BlsVerifyTestExecutor extends BlsTestExecutor {
+public class BlsDeserializationG1TestExecutor extends BlsTestExecutor {
 
   @Override
-  public void runTestImpl(final TestDefinition testDefinition) throws Throwable {
+  protected void runTestImpl(final TestDefinition testDefinition) throws Throwable {
     final Data data = loadDataFile(testDefinition, Data.class);
-    final BLSPublicKey publicKey = data.input.getPublicKey();
-    final Bytes message = data.input.getMessage();
-    final BLSSignature signature = data.input.getSignature();
+    final String publicKey = data.input.getPublicKey();
     final boolean expectedResult = data.getOutput();
 
-    assertThat(BLS.verify(publicKey, message, signature)).isEqualTo(expectedResult);
+    if (expectedResult) {
+      assertThat(parseKey(publicKey).isInGroup()).isTrue();
+    } else {
+      assertThatThrownBy(
+              () -> {
+                if (!parseKey(publicKey).isInGroup()) {
+                  // Reference tests don't differentiate between being unable to parse and not being
+                  // in group
+                  throw new IllegalArgumentException("Not in group");
+                }
+              })
+          .isInstanceOf(IllegalArgumentException.class);
+    }
+  }
+
+  private BLSPublicKey parseKey(final String publicKey) {
+    return BLSPublicKey.fromBytesCompressed(Bytes48.fromHexString(publicKey));
   }
 
   private static class Data {
@@ -51,22 +64,8 @@ public class BlsVerifyTestExecutor extends BlsTestExecutor {
     @JsonProperty(value = "pubkey", required = true)
     private String publicKey;
 
-    @JsonProperty(value = "message", required = true)
-    private String message;
-
-    @JsonProperty(value = "signature", required = true)
-    private String signature;
-
-    public BLSPublicKey getPublicKey() {
-      return BLSPublicKey.fromSSZBytes(Bytes.fromHexString(publicKey));
-    }
-
-    public Bytes getMessage() {
-      return Bytes.fromHexString(message);
-    }
-
-    public BLSSignature getSignature() {
-      return BlsTests.parseSignature(signature);
+    public String getPublicKey() {
+      return publicKey;
     }
   }
 }

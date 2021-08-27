@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.SubmitDataError;
@@ -155,7 +156,6 @@ class MetricRecordingValidatorApiChannelTest {
   }
 
   public static Stream<Arguments> getNoResponseCallArguments() {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
     return Stream.of(
         noResponseTest(
             "subscribeToBeaconCommitteeForAggregation",
@@ -164,12 +164,7 @@ class MetricRecordingValidatorApiChannelTest {
         noResponseTest(
             "subscribeToPersistentSubnets",
             channel -> channel.subscribeToPersistentSubnets(emptySet()),
-            MetricRecordingValidatorApiChannel.PERSISTENT_SUBSCRIPTION_COUNTER_NAME),
-        noResponseTest(
-            "sendAggregateAndProof",
-            channel ->
-                channel.sendAggregateAndProof(dataStructureUtil.randomSignedAggregateAndProof()),
-            MetricRecordingValidatorApiChannel.PUBLISHED_AGGREGATE_COUNTER_NAME));
+            MetricRecordingValidatorApiChannel.PERSISTENT_SUBSCRIPTION_COUNTER_NAME));
   }
 
   private static Arguments noResponseTest(
@@ -224,6 +219,8 @@ class MetricRecordingValidatorApiChannelTest {
     final List<Attestation> attestations = List.of(dataStructureUtil.randomAttestation());
     final List<SyncCommitteeMessage> syncCommitteeMessages =
         List.of(dataStructureUtil.randomSyncCommitteeMessage());
+    final List<SignedAggregateAndProof> aggregateAndProofs =
+        List.of(dataStructureUtil.randomSignedAggregateAndProof());
     return Stream.of(
         sendDataTest(
             "sendSignedAttestations",
@@ -234,6 +231,11 @@ class MetricRecordingValidatorApiChannelTest {
             "sendSyncCommitteeMessages",
             channel -> channel.sendSyncCommitteeMessages(syncCommitteeMessages),
             MetricRecordingValidatorApiChannel.SYNC_COMMITTEE_SEND_MESSAGES_NAME,
+            submissionErrors),
+        sendDataTest(
+            "sendAggregateAndProofs",
+            channel -> channel.sendAggregateAndProofs(aggregateAndProofs),
+            MetricRecordingValidatorApiChannel.PUBLISHED_AGGREGATE_COUNTER_NAME,
             submissionErrors));
   }
 

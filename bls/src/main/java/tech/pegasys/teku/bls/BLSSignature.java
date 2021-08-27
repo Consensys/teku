@@ -13,13 +13,13 @@
 
 package tech.pegasys.teku.bls;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.isNull;
 
 import com.google.common.base.Suppliers;
 import java.util.Objects;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.ssz.InvalidSSZTypeException;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.bls.impl.DeserializeException;
 import tech.pegasys.teku.bls.impl.Signature;
@@ -48,20 +48,16 @@ public class BLSSignature {
   }
 
   public static BLSSignature fromBytesCompressed(Bytes bytes) {
-    checkArgument(
-        bytes.size() == BLSConstants.BLS_SIGNATURE_SIZE,
-        "Expected " + BLSConstants.BLS_SIGNATURE_SIZE + " bytes but received %s.",
-        bytes.size());
     return new BLSSignature(bytes);
   }
 
   public static BLSSignature fromSSZBytes(Bytes bytes) {
-    checkArgument(
-        bytes.size() == SSZ_BLS_SIGNATURE_SIZE,
-        "Expected " + SSZ_BLS_SIGNATURE_SIZE + " bytes but received %s.",
-        bytes.size());
-    return SSZ.decode(
-        bytes, reader -> new BLSSignature(reader.readFixedBytes(SSZ_BLS_SIGNATURE_SIZE)));
+    try {
+      return SSZ.decode(
+          bytes, reader -> new BLSSignature(reader.readFixedBytes(SSZ_BLS_SIGNATURE_SIZE)));
+    } catch (InvalidSSZTypeException e) {
+      throw new DeserializeException("Failed to create signature from SSZ.");
+    }
   }
 
   // Sometimes we are dealing with random, invalid signature points, e.g. when testing.
@@ -108,12 +104,25 @@ public class BLSSignature {
   }
 
   Signature getSignature() {
-    return signature.get();
+    try {
+      return signature.get();
+    } catch (final IllegalArgumentException e) {
+      throw new DeserializeException(e.getMessage());
+    }
   }
 
   public boolean isInfinity() {
     try {
-      return getSignature().isInfinity();
+      Signature signature = getSignature();
+      return signature.isInfinity();
+    } catch (final DeserializeException e) {
+      return false;
+    }
+  }
+
+  public boolean isValid() {
+    try {
+      return getSignature().isValid();
     } catch (final DeserializeException e) {
       return false;
     }
