@@ -47,20 +47,17 @@ public class SyncDataAccessor {
     final Path tmpDstFile = Paths.get(absolutePath.toString(), "__temp.tmp");
 
     try {
-      // creates a temporary file in the given path.
       nonAtomicSyncedWrite(tmpFile, Bytes.fromHexString("0x00"));
-      // executes a file atomic move operation.
+
       Files.move(
           tmpFile, tmpDstFile, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
       atomicFileMoveSupport = true;
     } catch (AtomicMoveNotSupportedException e) {
-      // case the atomic file move fails, it disables the atomic move operation.
       LOG.debug("File system doesn't support atomic move");
       atomicFileMoveSupport = false;
     } catch (IOException e) {
       throw new InvalidConfigurationException(String.format("Cannot write to folder %s", path), e);
     } finally {
-      // remove the temp files.
       try {
         Files.deleteIfExists(tmpDstFile);
         Files.deleteIfExists(tmpFile);
@@ -133,7 +130,6 @@ public class SyncDataAccessor {
           StandardCopyOption.REPLACE_EXISTING);
     } catch (AtomicMoveNotSupportedException e) {
       LOG.error("System doesn't support atomic file move operation", e);
-      // for some reason the file system changed and doesn't support atomic move operation
       nonAtomicSyncedWrite(path, data);
     }
   }

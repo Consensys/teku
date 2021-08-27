@@ -18,4 +18,4 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Bug Fixes
  - Posting aggregates that fail validation to `/eth/v1/validator/aggregate_and_proofs` will now result in `SC_BAD_REQUEST` response, with details of the invalid aggregates in the response body.
- - Using atomic move for signing records to avoid corrupted files for the slashing protection.
+ - Use atomic move when writing slashing protection records, if supported by the file system.

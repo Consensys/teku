@@ -35,7 +35,7 @@ import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException
 public class SyncDataAccessorTest {
 
   @Test
-  public void shouldFailMove(@TempDir Path tempDir) throws IOException {
+  public void shouldFailToMoveFile(@TempDir Path tempDir) throws IOException {
     Set<PosixFilePermission> perms = new HashSet<>();
     perms.add(PosixFilePermission.OWNER_READ);
     perms.add(PosixFilePermission.OWNER_EXECUTE);
