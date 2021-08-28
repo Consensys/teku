@@ -354,6 +354,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     LOG.debug("BeaconChainController.initAttesterSlashingPool()");
     attesterSlashingPool =
         new OperationPool<>(
+            metricsSystem,
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getAttesterSlashingsSchema),
             new AttesterSlashingValidator(recentChainData, spec));
     blockImporter.subscribeToVerifiedBlockAttesterSlashings(attesterSlashingPool::removeAll);
@@ -364,6 +365,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     ProposerSlashingValidator validator = new ProposerSlashingValidator(spec, recentChainData);
     proposerSlashingPool =
         new OperationPool<>(
+            metricsSystem,
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getProposerSlashingsSchema),
             validator);
     blockImporter.subscribeToVerifiedBlockProposerSlashings(proposerSlashingPool::removeAll);
@@ -374,6 +376,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     VoluntaryExitValidator validator = new VoluntaryExitValidator(spec, recentChainData);
     voluntaryExitPool =
         new OperationPool<>(
+            metricsSystem,
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getVoluntaryExitsSchema),
             validator);
     blockImporter.subscribeToVerifiedBlockVoluntaryExits(voluntaryExitPool::removeAll);

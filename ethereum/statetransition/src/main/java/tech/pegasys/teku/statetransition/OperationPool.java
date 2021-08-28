@@ -16,8 +16,12 @@ package tech.pegasys.teku.statetransition;
 import java.util.Collections;
 import java.util.Set;
 import java.util.function.Function;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -31,16 +35,29 @@ import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 
 public class OperationPool<T extends SszData> {
   private static final int OPERATION_POOL_SIZE = 1000;
+  private static final String OPERATION_POOL_SIZE_METRIC_NAME = "eth1_operation_pool_count";
   private final Set<T> operations = LimitedSet.create(OPERATION_POOL_SIZE);
   private final Function<UInt64, SszListSchema<T, ?>> slotToSszListSchemaSupplier;
   private final OperationValidator<T> operationValidator;
   private final Subscribers<OperationAddedSubscriber<T>> subscribers = Subscribers.create(true);
+  private final LabelledMetric<Counter> validationReasonCounter;
 
   public OperationPool(
+      MetricsSystem metricsSystem,
       Function<UInt64, SszListSchema<T, ?>> slotToSszListSchemaSupplier,
       OperationValidator<T> operationValidator) {
     this.slotToSszListSchemaSupplier = slotToSszListSchemaSupplier;
     this.operationValidator = operationValidator;
+    metricsSystem.createIntegerGauge(
+        TekuMetricCategory.BEACON,
+        OPERATION_POOL_SIZE_METRIC_NAME,
+        "record how many items are present in each type of pool",
+        this::size);
+    validationReasonCounter =
+        metricsSystem.createLabelledCounter(
+            TekuMetricCategory.BEACON,
+            "eth1_operation_pool_validation_reason",
+            "track validation reason");
   }
 
   public void subscribeOperationAdded(OperationAddedSubscriber<T> subscriber) {
@@ -60,6 +77,7 @@ public class OperationPool<T extends SszData> {
 
   public SafeFuture<InternalValidationResult> add(T item) {
     InternalValidationResult result = operationValidator.validateFully(item);
+    validationReasonCounter.labels(result.code().toString()).inc();
     if (result.code().equals(ValidationResultCode.ACCEPT)
         || result.code().equals(ValidationResultCode.SAVE_FOR_FUTURE)) {
       operations.add(item);
@@ -83,5 +101,9 @@ public class OperationPool<T extends SszData> {
 
   public interface OperationAddedSubscriber<T> {
     void onOperationAdded(T operation, InternalValidationResult validationStatus);
+  }
+
+  private int size() {
+    return operations.size();
   }
 }
