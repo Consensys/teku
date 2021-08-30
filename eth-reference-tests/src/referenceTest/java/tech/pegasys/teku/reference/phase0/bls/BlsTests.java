@@ -28,6 +28,8 @@ public class BlsTests {
           .put("bls/aggregate_verify", new BlsAggregateVerifyTestExecutor())
           .put("bls/sign", new BlsSignTestExecutor())
           .put("bls/fast_aggregate_verify", new BlsFastAggregateVerifyTestExecutor())
+          .put("bls/eth_aggregate_pubkeys", TestExecutor.IGNORE_TESTS)
+          .put("bls/eth_fast_aggregate_verify", TestExecutor.IGNORE_TESTS)
           .put("bls/deserialization_G1", new BlsDeserializationG1TestExecutor())
           .put("bls/deserialization_G2", new BlsDeserializationG2TestExecutor())
           // Hash to G2 is an internal detail of our BLS library so we can't run these tests
