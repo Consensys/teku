@@ -25,6 +25,7 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
 /**
@@ -44,22 +45,16 @@ public class SyncDataAccessor {
     boolean atomicFileMoveSupport = false;
     final Path absolutePath = path.toAbsolutePath();
     final Path tmpFile = Paths.get(absolutePath.toString(), "_temp.tmp");
-    final Path tmpDstFile = Paths.get(absolutePath.toString(), "__temp.tmp");
 
     try {
-      nonAtomicSyncedWrite(tmpFile, Bytes.fromHexString("0x00"));
+      atomicSyncedWrite(tmpFile, Bytes32.ZERO);
 
-      Files.move(
-          tmpFile, tmpDstFile, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
       atomicFileMoveSupport = true;
     } catch (AtomicMoveNotSupportedException e) {
       LOG.debug("File system doesn't support atomic move");
       atomicFileMoveSupport = false;
-    } catch (IOException e) {
-      throw new InvalidConfigurationException(String.format("Cannot write to folder %s", path), e);
     } finally {
       try {
-        Files.deleteIfExists(tmpDstFile);
         Files.deleteIfExists(tmpFile);
       } catch (IOException e) {
         LOG.debug("Failed to delete the temporary file ", e);
@@ -96,7 +91,11 @@ public class SyncDataAccessor {
    */
   public void syncedWrite(final Path path, final Bytes data) throws IOException {
     if (atomicFileMoveSupport) {
-      atomicSyncedWrite(path, data);
+      try {
+        atomicSyncedWrite(path, data);
+      } catch (AtomicMoveNotSupportedException e) {
+        nonAtomicSyncedWrite(path, data);
+      }
     } else {
       nonAtomicSyncedWrite(path, data);
     }
@@ -118,19 +117,22 @@ public class SyncDataAccessor {
         StandardOpenOption.TRUNCATE_EXISTING);
   }
 
-  private void atomicSyncedWrite(final Path path, final Bytes data) throws IOException {
+  private static void atomicSyncedWrite(final Path path, final Bytes data)
+      throws AtomicMoveNotSupportedException {
     final Path absolutePath = path.toAbsolutePath();
     final Path tmpFile = Paths.get(path.toString() + ".tmp");
-    nonAtomicSyncedWrite(tmpFile, data);
     try {
+      nonAtomicSyncedWrite(tmpFile, data);
       Files.move(
           tmpFile,
           absolutePath,
           StandardCopyOption.ATOMIC_MOVE,
           StandardCopyOption.REPLACE_EXISTING);
     } catch (AtomicMoveNotSupportedException e) {
-      LOG.error("System doesn't support atomic file move operation", e);
-      nonAtomicSyncedWrite(path, data);
+      throw e;
+    } catch (IOException e) {
+      LOG.error(String.format("Failed to write in %s", path), e);
+      throw new InvalidConfigurationException(String.format("Cannot write to folder %s", path), e);
     }
   }
 }
