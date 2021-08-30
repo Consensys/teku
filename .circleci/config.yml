@@ -226,8 +226,6 @@ jobs:
     executor: machine_executor
     steps:
       - prepare
-      - setup_remote_docker:
-          docker_layer_caching: true
       - attach_workspace:
           at: ~/project
       - run:
@@ -464,7 +462,6 @@ workflows:
       - acceptanceTests:
           requires:
             - assemble
-            - docker
           filters:
             tags:
               <<: *filters-release-tags
