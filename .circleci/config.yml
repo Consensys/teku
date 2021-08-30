@@ -319,7 +319,9 @@ jobs:
       - attach_workspace:
           at: ~/project
       - setup_remote_docker:
-          docker_layer_caching: true
+          # we need to make sure the image is built and up to date, so
+          # for this specific task layer caching is disabled
+          docker_layer_caching: false
       - run:
           name: Docker
           command: |
@@ -536,6 +538,6 @@ workflows:
           filters:
             branches:
               only:
-                - gh-pages
+                - master
     jobs:
       - dockerScan
