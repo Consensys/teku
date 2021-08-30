@@ -22,9 +22,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.google.common.base.MoreObjects;
 import java.io.File;
 import java.io.IOException;
-import java.util.Optional;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration;
 
 /**
@@ -70,47 +70,8 @@ public class V6DatabaseMetadata {
     }
   }
 
-  @JsonIgnoreProperties(ignoreUnknown = true)
-  @JsonExplicit
-  public static class SeparateDBMetadata {
-    @JsonProperty("hotDbConfiguration")
-    private KvStoreConfiguration hotDbConfiguration;
-
-    @JsonProperty("archiveDbConfiguration")
-    private KvStoreConfiguration archiveDbConfiguration;
-
-    public SeparateDBMetadata() {}
-
-    public SeparateDBMetadata(
-        KvStoreConfiguration hotDbConfiguration, KvStoreConfiguration archiveDbConfiguration) {
-      this.hotDbConfiguration = hotDbConfiguration;
-      this.archiveDbConfiguration = archiveDbConfiguration;
-    }
-
-    public KvStoreConfiguration getHotDbConfiguration() {
-      return hotDbConfiguration;
-    }
-
-    public KvStoreConfiguration getArchiveDbConfiguration() {
-      return archiveDbConfiguration;
-    }
-
-    @Override
-    public String toString() {
-      return "SeparateDBMetadata{"
-          + "hotDbConfiguration="
-          + hotDbConfiguration
-          + ", archiveDbConfiguration="
-          + archiveDbConfiguration
-          + '}';
-    }
-  }
-
-  @JsonProperty("singleDb")
+  @JsonProperty(value = "singleDb", required = true)
   private SingleDBMetadata singleDb;
-
-  @JsonProperty("separateDb")
-  private SeparateDBMetadata separateDb;
 
   public V6DatabaseMetadata() {}
 
@@ -118,30 +79,12 @@ public class V6DatabaseMetadata {
     this.singleDb = new SingleDBMetadata(singleDbConfiguration);
   }
 
-  private V6DatabaseMetadata(
-      KvStoreConfiguration hotDbConfiguration, KvStoreConfiguration archiveDbConfiguration) {
-    this.separateDb = new SeparateDBMetadata(hotDbConfiguration, archiveDbConfiguration);
-  }
-
   public static V6DatabaseMetadata singleDBDefault() {
     return new V6DatabaseMetadata(KvStoreConfiguration.v6SingleDefaults());
   }
 
-  public static V6DatabaseMetadata separateDBDefault() {
-    return new V6DatabaseMetadata(
-        KvStoreConfiguration.v5HotDefaults(), KvStoreConfiguration.v5ArchiveDefaults());
-  }
-
-  public Optional<SingleDBMetadata> getSingleDbConfiguration() {
-    return Optional.ofNullable(singleDb);
-  }
-
-  public Optional<SeparateDBMetadata> getSeparateDbConfiguration() {
-    return Optional.ofNullable(separateDb);
-  }
-
-  public boolean isSingleDB() {
-    return getSingleDbConfiguration().isPresent();
+  public SingleDBMetadata getSingleDbConfiguration() {
+    return singleDb;
   }
 
   public static V6DatabaseMetadata init(final File source, final V6DatabaseMetadata defaultValue)
@@ -158,9 +101,6 @@ public class V6DatabaseMetadata {
 
   @Override
   public String toString() {
-    return getSingleDbConfiguration()
-        .map(Object::toString)
-        .or(() -> getSeparateDbConfiguration().map(Object::toString))
-        .orElseThrow();
+    return MoreObjects.toStringHelper(this).add("singleDb", singleDb).toString();
   }
 }

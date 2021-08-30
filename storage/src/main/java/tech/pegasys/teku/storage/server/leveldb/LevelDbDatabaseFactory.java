@@ -19,7 +19,6 @@ import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAG
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Optional;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.server.Database;
@@ -63,38 +62,20 @@ public class LevelDbDatabaseFactory {
   public static Database createLevelDbV2(
       final MetricsSystem metricsSystem,
       final KvStoreConfiguration hotConfiguration,
-      final Optional<KvStoreConfiguration> finalizedConfiguration,
       final SchemaHot schemaHot,
       final SchemaFinalized schemaFinalized,
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
       final Spec spec) {
-    final KvStoreAccessor hotDb;
-    final KvStoreAccessor finalizedDb;
 
-    if (finalizedConfiguration.isPresent()) {
-      hotDb =
-          LevelDbInstanceFactory.create(
-              metricsSystem, STORAGE_HOT_DB, hotConfiguration, schemaHot.getAllColumns());
-      finalizedDb =
-          LevelDbInstanceFactory.create(
-              metricsSystem,
-              STORAGE_FINALIZED_DB,
-              finalizedConfiguration.get(),
-              schemaFinalized.getAllColumns());
-    } else {
-
-      ArrayList<KvStoreColumn<?, ?>> allColumns = new ArrayList<>(schemaHot.getAllColumns());
-      allColumns.addAll(schemaFinalized.getAllColumns());
-      finalizedDb =
-          LevelDbInstanceFactory.create(metricsSystem, STORAGE, hotConfiguration, allColumns);
-      hotDb = finalizedDb;
-    }
+    ArrayList<KvStoreColumn<?, ?>> allColumns = new ArrayList<>(schemaHot.getAllColumns());
+    allColumns.addAll(schemaFinalized.getAllColumns());
+    final KvStoreAccessor db =
+        LevelDbInstanceFactory.create(metricsSystem, STORAGE, hotConfiguration, allColumns);
     return KvStoreDatabase.createV6(
         metricsSystem,
-        hotDb,
-        finalizedDb,
+        db,
         schemaHot,
         schemaFinalized,
         stateStorageMode,
