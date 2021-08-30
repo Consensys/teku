@@ -206,23 +206,37 @@ public class ForkChoice {
           // Note: not using thenRun here because we want to ensure each step is on the event thread
           transaction.commit().join();
           updateForkChoiceForImportedBlock(block, blockSlotState.get(), result, forkChoiceStrategy);
-          applyVotesFromBlock(forkChoiceStrategy, indexedAttestationCache);
+          final UInt64 currentEpoch = spec.computeEpochAtSlot(spec.getCurrentSlot(transaction));
+          if (spec.computeEpochAtSlot(block.getSlot())
+              .plus(1)
+              .isGreaterThanOrEqualTo(currentEpoch)) {
+            // No attestations will be applicable if the block is from prior to the previous epoch
+            applyVotesFromBlock(forkChoiceStrategy, currentEpoch, indexedAttestationCache);
+          }
           return result;
         });
   }
 
   private void applyVotesFromBlock(
       final ForkChoiceStrategy forkChoiceStrategy,
+      final UInt64 currentEpoch,
       final CapturingIndexedAttestationCache indexedAttestationProvider) {
     final VoteUpdater voteUpdater = recentChainData.startVoteUpdate();
     indexedAttestationProvider.getIndexedAttestations().stream()
         .filter(
-            attestation ->
-                forkChoiceStrategy.contains(attestation.getData().getBeacon_block_root()))
-        .forEach(
-            indexedAttestation ->
-                forkChoiceStrategy.onAttestation(voteUpdater, indexedAttestation));
+            attestation -> validateBlockAttestation(forkChoiceStrategy, currentEpoch, attestation))
+        .forEach(attestation -> forkChoiceStrategy.onAttestation(voteUpdater, attestation));
     voteUpdater.commit();
+  }
+
+  private boolean validateBlockAttestation(
+      final ForkChoiceStrategy forkChoiceStrategy,
+      final UInt64 currentEpoch,
+      final IndexedAttestation attestation) {
+    return spec.atSlot(attestation.getData().getSlot())
+        .getForkChoiceUtil()
+        .validateOnAttestation(forkChoiceStrategy, currentEpoch, attestation.getData())
+        .isSuccessful();
   }
 
   private void updateForkChoiceForImportedBlock(
