@@ -464,6 +464,7 @@ workflows:
       - acceptanceTests:
           requires:
             - assemble
+            - docker
           filters:
             tags:
               <<: *filters-release-tags
