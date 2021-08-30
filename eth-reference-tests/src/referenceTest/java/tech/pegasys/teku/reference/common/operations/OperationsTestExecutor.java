@@ -73,6 +73,9 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
           .put(
               "operations/sync_aggregate",
               new OperationsTestExecutor<>("sync_aggregate.ssz_snappy", Operation.SYNC_AGGREGATE))
+          .put(
+              "operations/sync_aggregate_random",
+              new OperationsTestExecutor<>("sync_aggregate.ssz_snappy", Operation.SYNC_AGGREGATE))
           .build();
 
   private final String dataFileName;
