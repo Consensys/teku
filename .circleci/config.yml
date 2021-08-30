@@ -530,10 +530,6 @@ workflows:
             - docker
             - extractAPISpec
             - spotless
-      - dockerScan:
-          filters:
-            tags:
-              <<: *filters-release-tags
   nightly:
     triggers:
       - schedule:
