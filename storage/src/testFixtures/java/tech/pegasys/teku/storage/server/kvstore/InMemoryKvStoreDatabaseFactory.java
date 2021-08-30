@@ -40,16 +40,14 @@ public class InMemoryKvStoreDatabaseFactory {
   }
 
   public static Database createV6(
-      MockKvStoreInstance hotDb,
-      MockKvStoreInstance coldDb,
+      MockKvStoreInstance db,
       final StateStorageMode storageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
       final Spec spec) {
     return KvStoreDatabase.createV6(
         new StubMetricsSystem(),
-        hotDb,
-        coldDb,
+        db,
         V4SchemaHot.create(spec),
         V6SchemaFinalized.create(spec),
         storageMode,
