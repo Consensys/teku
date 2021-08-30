@@ -226,6 +226,8 @@ jobs:
     executor: machine_executor
     steps:
       - prepare
+      - setup_remote_docker:
+          docker_layer_caching: true
       - attach_workspace:
           at: ~/project
       - run:
@@ -319,9 +321,7 @@ jobs:
       - attach_workspace:
           at: ~/project
       - setup_remote_docker:
-          # we need to make sure the image is built and up to date, so
-          # for this specific task layer caching is disabled
-          docker_layer_caching: false
+          docker_layer_caching: true
       - run:
           name: Docker
           command: |
@@ -352,7 +352,7 @@ jobs:
       - attach_workspace:
           at: ~/project
       - setup_remote_docker:
-          docker_layer_caching: true
+          docker_layer_caching: false
       - run:
           name: Publish Docker
           command: |
