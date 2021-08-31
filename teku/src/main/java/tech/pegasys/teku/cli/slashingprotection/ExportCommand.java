@@ -58,7 +58,7 @@ public class ExportCommand implements Runnable {
         SUB_COMMAND_LOG, slashProtectionPath);
 
     SlashingProtectionExporter slashingProtectionExporter =
-        new SlashingProtectionExporter(SUB_COMMAND_LOG);
+        new SlashingProtectionExporter(SUB_COMMAND_LOG, toFileName);
 
     SUB_COMMAND_LOG.display("Reading slashing protection data from: " + slashProtectionPath);
     slashingProtectionExporter.initialise(slashProtectionPath);

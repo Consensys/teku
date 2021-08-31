@@ -30,12 +30,13 @@ import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
  */
 public class FileKeyValueStore implements KeyValueStore<String, Bytes> {
 
-  private final SyncDataAccessor syncDataAccessor = new SyncDataAccessor();
+  private final SyncDataAccessor syncDataAccessor;
   private final Path dataDir;
   private final ConcurrentMap<String, Object> keyMutexes = new ConcurrentHashMap<>();
 
   public FileKeyValueStore(Path dataDir) {
     this.dataDir = dataDir;
+    this.syncDataAccessor = SyncDataAccessor.create(dataDir);
   }
 
   private Object keyMutex(String key) {
