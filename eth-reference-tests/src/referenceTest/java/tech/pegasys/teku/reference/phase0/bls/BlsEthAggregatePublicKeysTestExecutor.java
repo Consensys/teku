@@ -15,66 +15,58 @@ package tech.pegasys.teku.reference.phase0.bls;
 
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.bls.BLS;
+import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 
-public class BlsFastAggregateVerifyTestExecutor extends BlsTestExecutor {
+public class BlsEthAggregatePublicKeysTestExecutor extends BlsTestExecutor {
 
   @Override
   public void runTestImpl(final TestDefinition testDefinition) throws Throwable {
     final Data data = loadDataFile(testDefinition, Data.class);
-    final List<BLSPublicKey> publicKeys = data.input.getPublicKeys();
-    final Bytes message = data.input.getMessage();
-    final BLSSignature signature = data.input.getSignature();
-    final boolean expectedResult = data.getOutput();
-    assertThat(BLS.fastAggregateVerify(publicKeys, message, signature))
-        .describedAs("Public keys %s message %s signature %s", publicKeys, message, signature)
-        .isEqualTo(expectedResult);
+    final Optional<BLSPublicKey> output = data.getOutput();
+
+    if (output.isPresent()) {
+      final List<BLSPublicKey> input = data.getInput();
+      assertThat(BLSPublicKey.aggregate(input))
+          .describedAs("Public keys %s", input)
+          .isEqualTo(output.get());
+    } else {
+      assertThatThrownBy(
+              () -> {
+                if (!BLSPublicKey.aggregate(data.getInput()).isValid()) {
+                  // Tests don't differentiate between
+                  throw new IllegalArgumentException("Resulting public key not in group");
+                }
+              })
+          .isInstanceOf(IllegalArgumentException.class);
+    }
   }
 
   private static class Data {
     @JsonProperty(value = "input", required = true)
-    private Input input;
+    private List<String> input;
 
     @JsonProperty(value = "output", required = true)
-    private boolean output;
+    private String output;
 
-    public boolean getOutput() {
-      return output;
-    }
-  }
-
-  private static class Input {
-    @JsonProperty(value = "pubkeys", required = true)
-    private List<String> publicKeys;
-
-    @JsonProperty(value = "message", required = true)
-    @JsonAlias({"messages"})
-    private String message;
-
-    @JsonProperty(value = "signature", required = true)
-    private String signature;
-
-    public List<BLSPublicKey> getPublicKeys() {
-      return publicKeys.stream()
+    public List<BLSPublicKey> getInput() {
+      return input.stream()
           .map(Bytes::fromHexString)
           .map(BLSPublicKey::fromSSZBytes)
           .collect(toList());
     }
 
-    public Bytes getMessage() {
-      return Bytes.fromHexString(message);
-    }
-
-    public BLSSignature getSignature() {
-      return BlsTests.parseSignature(signature);
+    public Optional<BLSPublicKey> getOutput() {
+      return output == null || output.isEmpty()
+          ? Optional.empty()
+          : Optional.of(BLSPublicKey.fromSSZBytes(Bytes48.fromHexString(output)));
     }
   }
 }
