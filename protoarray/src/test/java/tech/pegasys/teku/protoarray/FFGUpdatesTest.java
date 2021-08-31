@@ -15,7 +15,6 @@ package tech.pegasys.teku.protoarray;
 
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.protoarray.ProtoArrayTestUtil.createProtoArrayForkChoiceStrategy;
@@ -182,12 +181,11 @@ public class FFGUpdatesTest {
                 store, unsigned(2), getHash(0), unsigned(0), balances, proposerWeightings))
         .isEqualTo(getHash(10));
 
-    // Same as above, but with justified epoch 3 (should be invalid).
-    assertThatThrownBy(
-            () ->
-                forkChoice.applyPendingVotes(
-                    store, unsigned(3), getHash(0), unsigned(0), balances, proposerWeightings))
-        .hasMessage("ProtoArray: Best node is not viable for head");
+    // Same as above, but with justified epoch 3 (should invalidate all nodes so return justified).
+    assertThat(
+            forkChoice.applyPendingVotes(
+                store, unsigned(3), getHash(0), unsigned(0), balances, proposerWeightings))
+        .isEqualTo(getHash(0));
 
     // Add a vote to 1.
     //
@@ -228,12 +226,11 @@ public class FFGUpdatesTest {
                 store, unsigned(2), getHash(0), unsigned(0), balances, proposerWeightings))
         .isEqualTo(getHash(9));
 
-    // Same as above but justified epoch 3 (should fail).
-    assertThatThrownBy(
-            () ->
-                forkChoice.applyPendingVotes(
-                    store, unsigned(3), getHash(0), unsigned(0), balances, proposerWeightings))
-        .hasMessage("ProtoArray: Best node is not viable for head");
+    // Same as above but justified epoch 3 (should invalidate all and return justified).
+    assertThat(
+            forkChoice.applyPendingVotes(
+                store, unsigned(3), getHash(0), unsigned(0), balances, proposerWeightings))
+        .isEqualTo(getHash(0));
 
     // Add a vote to 2.
     //
@@ -274,12 +271,11 @@ public class FFGUpdatesTest {
                 store, unsigned(2), getHash(0), unsigned(0), balances, proposerWeightings))
         .isEqualTo(getHash(10));
 
-    // Same as above but justified epoch 3 (should fail).
-    assertThatThrownBy(
-            () ->
-                forkChoice.applyPendingVotes(
-                    store, unsigned(3), getHash(0), unsigned(0), balances, proposerWeightings))
-        .hasMessage("ProtoArray: Best node is not viable for head");
+    // Same as above but justified epoch 3 (should invalidate all and return justified).
+    assertThat(
+            forkChoice.applyPendingVotes(
+                store, unsigned(3), getHash(0), unsigned(0), balances, proposerWeightings))
+        .isEqualTo(getHash(0));
 
     // Ensure that if we start at 1 we find 9 (just: 0, fin: 0).
     //
@@ -305,12 +301,11 @@ public class FFGUpdatesTest {
                 store, unsigned(2), getHash(1), unsigned(0), balances, proposerWeightings))
         .isEqualTo(getHash(9));
 
-    // Same as above but justified epoch 3 (should fail).
-    assertThatThrownBy(
-            () ->
-                forkChoice.applyPendingVotes(
-                    store, unsigned(3), getHash(1), unsigned(0), balances, proposerWeightings))
-        .hasMessage("ProtoArray: Best node is not viable for head");
+    // Same as above but justified epoch 3 (should invalidate all so return justified).
+    assertThat(
+            forkChoice.applyPendingVotes(
+                store, unsigned(3), getHash(1), unsigned(0), balances, proposerWeightings))
+        .isEqualTo(getHash(1));
 
     // Ensure that if we start at 2 we find 10 (just: 0, fin: 0).
     //
@@ -336,12 +331,11 @@ public class FFGUpdatesTest {
                 store, unsigned(2), getHash(2), unsigned(0), balances, proposerWeightings))
         .isEqualTo(getHash(10));
 
-    // Same as above but justified epoch 3 (should fail).
-    assertThatThrownBy(
-            () ->
-                forkChoice.applyPendingVotes(
-                    store, unsigned(3), getHash(2), unsigned(0), balances, proposerWeightings))
-        .hasMessage("ProtoArray: Best node is not viable for head");
+    // Same as above but justified epoch 3 (should invalidate all so return justified).
+    assertThat(
+            forkChoice.applyPendingVotes(
+                store, unsigned(3), getHash(2), unsigned(0), balances, proposerWeightings))
+        .isEqualTo(getHash(2));
   }
 
   private UInt64 unsigned(final int i) {
