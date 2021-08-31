@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 import java.nio.file.Path;
-import java.util.Optional;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.spec.Spec;
@@ -43,7 +42,6 @@ public class FileBackedStorageSystemBuilder {
   private Path dataDir;
   private Path hotDir;
   private Path archiveDir;
-  private Optional<Path> v6ArchiveDir = Optional.empty();
   private long stateStorageFrequency = 1L;
   private boolean storeNonCanonicalBlocks = false;
 
@@ -89,7 +87,6 @@ public class FileBackedStorageSystemBuilder {
     return create()
         .version(version)
         .dataDir(dataDir)
-        .v6ArchiveDir(v6ArchiveDir)
         .storageMode(storageMode)
         .stateStorageFrequency(stateStorageFrequency)
         .storeConfig(storeConfig);
@@ -121,17 +118,6 @@ public class FileBackedStorageSystemBuilder {
     this.dataDir = dataDir;
     this.hotDir = dataDir.resolve("hot");
     this.archiveDir = dataDir.resolve("archive");
-    return this;
-  }
-
-  private FileBackedStorageSystemBuilder v6ArchiveDir(Optional<Path> v6ArchiveDir) {
-    this.v6ArchiveDir = v6ArchiveDir;
-    return this;
-  }
-
-  public FileBackedStorageSystemBuilder v6ArchiveDir(Path v6ArchiveDir) {
-    checkNotNull(dataDir);
-    this.v6ArchiveDir = Optional.of(v6ArchiveDir.resolve("archive"));
     return this;
   }
 
@@ -168,17 +154,10 @@ public class FileBackedStorageSystemBuilder {
   }
 
   private Database createV6Database() {
-    KvStoreConfiguration hotConfigDefault =
-        v6ArchiveDir.isPresent()
-            ? KvStoreConfiguration.v5HotDefaults()
-            : KvStoreConfiguration.v6SingleDefaults();
-    Optional<KvStoreConfiguration> coldConfig =
-        v6ArchiveDir.map(dir -> KvStoreConfiguration.v5ArchiveDefaults().withDatabaseDir(dir));
-
+    KvStoreConfiguration dbConfigDefault = KvStoreConfiguration.v6SingleDefaults();
     return RocksDbDatabaseFactory.createV6(
         new StubMetricsSystem(),
-        hotConfigDefault.withDatabaseDir(hotDir),
-        coldConfig,
+        dbConfigDefault.withDatabaseDir(hotDir),
         V4SchemaHot.create(spec),
         V6SchemaFinalized.create(spec),
         storageMode,
@@ -188,17 +167,11 @@ public class FileBackedStorageSystemBuilder {
   }
 
   private Database createLevelDb2Database() {
-    KvStoreConfiguration hotConfigDefault =
-        v6ArchiveDir.isPresent()
-            ? KvStoreConfiguration.v5HotDefaults()
-            : KvStoreConfiguration.v6SingleDefaults();
-    Optional<KvStoreConfiguration> coldConfig =
-        v6ArchiveDir.map(dir -> KvStoreConfiguration.v5ArchiveDefaults().withDatabaseDir(dir));
+    KvStoreConfiguration dbConfigDefault = KvStoreConfiguration.v6SingleDefaults();
 
     return LevelDbDatabaseFactory.createLevelDbV2(
         new StubMetricsSystem(),
-        hotConfigDefault.withDatabaseDir(hotDir),
-        coldConfig,
+        dbConfigDefault.withDatabaseDir(hotDir),
         V4SchemaHot.create(spec),
         V6SchemaFinalized.create(spec),
         storageMode,
