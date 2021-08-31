@@ -207,10 +207,12 @@ public class ForkChoice {
           transaction.commit().join();
           updateForkChoiceForImportedBlock(block, blockSlotState.get(), result, forkChoiceStrategy);
           final UInt64 currentEpoch = spec.computeEpochAtSlot(spec.getCurrentSlot(transaction));
+
+          // We only need to apply attestations from the current or previous epoch
+          // If the block is from before that, none of the attestations will be applicable so just
+          // skip the whole step.
           if (spec.computeEpochAtSlot(block.getSlot())
-              .plus(1)
-              .isGreaterThanOrEqualTo(currentEpoch)) {
-            // No attestations will be applicable if the block is from prior to the previous epoch
+              .isGreaterThanOrEqualTo(currentEpoch.minusMinZero(1))) {
             applyVotesFromBlock(forkChoiceStrategy, currentEpoch, indexedAttestationCache);
           }
           return result;
