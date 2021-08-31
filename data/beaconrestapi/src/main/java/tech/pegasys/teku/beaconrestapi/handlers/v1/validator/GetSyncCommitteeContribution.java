@@ -111,6 +111,10 @@ public class GetSyncCommitteeContribution extends AbstractHandler {
                 NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT - 1, subcommitteeIndex));
       }
 
+      if (provider.isPhase0Slot(slot)) {
+        throw new IllegalArgumentException(String.format("Slot %s is not an Altair slot", slot));
+      }
+
       final SafeFuture<Optional<SyncCommitteeContribution>> future =
           provider.createSyncCommitteeContribution(slot, subcommitteeIndex, blockRoot);
       handleOptionalResult(ctx, future, this::processResult, SC_BAD_REQUEST);
