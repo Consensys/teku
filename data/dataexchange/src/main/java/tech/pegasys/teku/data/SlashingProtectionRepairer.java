@@ -33,15 +33,17 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class SlashingProtectionRepairer {
   private final List<SigningHistory> signingHistoryList = new ArrayList<>();
   private final Set<String> invalidRecords = new HashSet<>();
-  private final SyncDataAccessor syncDataAccessor = new SyncDataAccessor();
+  private final SyncDataAccessor syncDataAccessor;
   private final List<String> errorList = new ArrayList<>();
   private final SubCommandLogger log;
   private Path slashingProtectionPath;
   private final boolean updateAllEnabled;
 
-  public SlashingProtectionRepairer(final SubCommandLogger log, final boolean updateAllEnabled) {
+  public SlashingProtectionRepairer(
+      final SubCommandLogger log, final boolean updateAllEnabled, final Path path) {
     this.log = log;
     this.updateAllEnabled = updateAllEnabled;
+    this.syncDataAccessor = SyncDataAccessor.create(path);
   }
 
   public static SlashingProtectionRepairer create(
@@ -49,7 +51,7 @@ public class SlashingProtectionRepairer {
       final Path slashProtectionPath,
       final boolean updateAllEnabled) {
     final SlashingProtectionRepairer repairer =
-        new SlashingProtectionRepairer(subCommandLog, updateAllEnabled);
+        new SlashingProtectionRepairer(subCommandLog, updateAllEnabled, slashProtectionPath);
     repairer.initialise(slashProtectionPath);
     return repairer;
   }

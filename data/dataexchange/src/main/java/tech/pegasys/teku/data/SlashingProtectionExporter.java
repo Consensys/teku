@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -40,11 +41,12 @@ public class SlashingProtectionExporter {
   private final JsonProvider jsonProvider = new JsonProvider();
   private final List<SigningHistory> signingHistoryList = new ArrayList<>();
   private Bytes32 genesisValidatorsRoot = null;
-  private final SyncDataAccessor syncDataAccessor = new SyncDataAccessor();
+  private final SyncDataAccessor syncDataAccessor;
   private final SubCommandLogger log;
 
-  public SlashingProtectionExporter(final SubCommandLogger log) {
+  public SlashingProtectionExporter(final SubCommandLogger log, final String path) {
     this.log = log;
+    this.syncDataAccessor = SyncDataAccessor.create(Paths.get(path));
   }
 
   public void initialise(final Path slashProtectionPath) {
