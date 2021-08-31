@@ -136,7 +136,8 @@ public class ValidatorClientService extends Service {
       final ServiceConfig services) {
     final Path slashingProtectionPath = getSlashingProtectionPath(services.getDataDirLayout());
     final SlashingProtector slashingProtector =
-        new LocalSlashingProtector(new SyncDataAccessor(), slashingProtectionPath);
+        new LocalSlashingProtector(
+            SyncDataAccessor.create(slashingProtectionPath), slashingProtectionPath);
     return ValidatorLoader.create(
         config.getSpec(),
         config.getValidatorConfig(),

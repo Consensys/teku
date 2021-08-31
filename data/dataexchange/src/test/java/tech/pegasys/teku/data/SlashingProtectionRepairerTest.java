@@ -40,7 +40,7 @@ public class SlashingProtectionRepairerTest {
   final ValidatorSigningRecord validatorSigningRecord =
       new ValidatorSigningRecord(null, ONE, ONE, ONE);
   private final UInt64 TWO = UInt64.valueOf(2);
-  private final SyncDataAccessor syncDataAccessor = new SyncDataAccessor();
+  private SyncDataAccessor syncDataAccessor;
   private final SubCommandLogger subCommandLogger = mock(SubCommandLogger.class);
   final Spec spec = TestSpecFactory.createMinimalPhase0();
   final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
@@ -173,6 +173,7 @@ public class SlashingProtectionRepairerTest {
   }
 
   private Optional<ValidatorSigningRecord> fileContents(final Path file) throws IOException {
+    syncDataAccessor = SyncDataAccessor.create(file.getParent());
     return syncDataAccessor.read(file).map(ValidatorSigningRecord::fromBytes);
   }
 
@@ -188,6 +189,7 @@ public class SlashingProtectionRepairerTest {
   private void setupPathForTest(
       Path slashingProtectionPath, Map<String, Optional<ValidatorSigningRecord>> records)
       throws IOException {
+    syncDataAccessor = SyncDataAccessor.create(slashingProtectionPath);
     for (Map.Entry<String, Optional<ValidatorSigningRecord>> entry : records.entrySet()) {
       Path outputFile = slashingProtectionPath.resolve(entry.getKey());
       final Optional<ValidatorSigningRecord> maybeSigningRecord = entry.getValue();
