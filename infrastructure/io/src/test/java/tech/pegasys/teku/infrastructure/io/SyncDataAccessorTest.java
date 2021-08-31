@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -34,24 +33,22 @@ import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException
 public class SyncDataAccessorTest {
 
   @Test
-  public void shouldFailToMoveFile(@TempDir Path tempDir) throws IOException {
+  public void shouldThrowInvalidConfigurationExceptionWhenDirectoryNotWritable(
+      @TempDir Path tempDir) throws IOException {
     Set<PosixFilePermission> perms = new HashSet<>();
     perms.add(PosixFilePermission.OWNER_READ);
     perms.add(PosixFilePermission.OWNER_EXECUTE);
 
     Files.setPosixFilePermissions(tempDir, perms);
 
-    assertThatThrownBy(
-            () -> {
-              SyncDataAccessor.create(tempDir);
-            })
+    assertThatThrownBy(() -> SyncDataAccessor.create(tempDir))
         .isInstanceOf(InvalidConfigurationException.class)
         .hasMessageContaining("Cannot write to folder");
   }
 
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
-  public void shouldMoveFile(final boolean useAtomicMove, @TempDir Path tempDir)
+  public void shouldWriteAndOverwriteFileContent(final boolean useAtomicMove, @TempDir Path tempDir)
       throws IOException {
     final Path filePath = Paths.get(tempDir.toString() + "/myfile.tmp");
     assertThat(Files.exists(filePath)).isFalse();
@@ -59,7 +56,13 @@ public class SyncDataAccessorTest {
     syncDataAccessor.syncedWrite(filePath, Bytes.fromHexString("0x41"));
     assertThat(Files.exists(filePath)).isTrue();
 
-    String content = new String(Files.readAllBytes(filePath), StandardCharsets.UTF_8);
+    String content = Files.readString(filePath);
     assertThat(content).isEqualTo("A");
+
+    assertThat(Files.exists(filePath)).isTrue();
+    syncDataAccessor.syncedWrite(filePath, Bytes.fromHexString("0x42"));
+
+    content = Files.readString(filePath);
+    assertThat(content).isEqualTo("B");
   }
 }

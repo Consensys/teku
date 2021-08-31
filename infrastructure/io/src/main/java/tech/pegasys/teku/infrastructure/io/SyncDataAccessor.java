@@ -43,8 +43,7 @@ public class SyncDataAccessor {
 
   public static SyncDataAccessor create(final Path path) {
     boolean atomicFileMoveSupport = false;
-    final Path absolutePath = path.toAbsolutePath();
-    final Path tmpFile = Paths.get(absolutePath.toString(), "_temp.tmp");
+    final Path tmpFile = path.resolve("syncWriteTest.tmp");
 
     try {
       atomicSyncedWrite(tmpFile, Bytes32.ZERO);
@@ -53,6 +52,9 @@ public class SyncDataAccessor {
     } catch (AtomicMoveNotSupportedException e) {
       LOG.debug("File system doesn't support atomic move");
       atomicFileMoveSupport = false;
+    } catch (IOException e) {
+      LOG.error(String.format("Failed to write in %s", path), e);
+      throw new InvalidConfigurationException(String.format("Cannot write to folder %s", path), e);
     } finally {
       try {
         Files.deleteIfExists(tmpFile);
@@ -91,11 +93,7 @@ public class SyncDataAccessor {
    */
   public void syncedWrite(final Path path, final Bytes data) throws IOException {
     if (atomicFileMoveSupport) {
-      try {
-        atomicSyncedWrite(path, data);
-      } catch (AtomicMoveNotSupportedException e) {
-        nonAtomicSyncedWrite(path, data);
-      }
+      atomicSyncedWrite(path, data);
     } else {
       nonAtomicSyncedWrite(path, data);
     }
@@ -117,22 +115,11 @@ public class SyncDataAccessor {
         StandardOpenOption.TRUNCATE_EXISTING);
   }
 
-  private static void atomicSyncedWrite(final Path path, final Bytes data)
-      throws AtomicMoveNotSupportedException {
+  private static void atomicSyncedWrite(final Path path, final Bytes data) throws IOException {
     final Path absolutePath = path.toAbsolutePath();
-    final Path tmpFile = Paths.get(path.toString() + ".tmp");
-    try {
-      nonAtomicSyncedWrite(tmpFile, data);
-      Files.move(
-          tmpFile,
-          absolutePath,
-          StandardCopyOption.ATOMIC_MOVE,
-          StandardCopyOption.REPLACE_EXISTING);
-    } catch (AtomicMoveNotSupportedException e) {
-      throw e;
-    } catch (IOException e) {
-      LOG.error(String.format("Failed to write in %s", path), e);
-      throw new InvalidConfigurationException(String.format("Cannot write to folder %s", path), e);
-    }
+    final Path tmpFile = Paths.get(path + ".tmp");
+    nonAtomicSyncedWrite(tmpFile, data);
+    Files.move(
+        tmpFile, absolutePath, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
   }
 }
