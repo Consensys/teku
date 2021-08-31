@@ -102,7 +102,8 @@ class BlstPublicKey implements PublicKey {
     return ecPoint.is_inf();
   }
 
-  boolean isValid() {
+  @Override
+  public boolean isValid() {
     return !isInfinity.get() && isInGroup.get();
   }
 
