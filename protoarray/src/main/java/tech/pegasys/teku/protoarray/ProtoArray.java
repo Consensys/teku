@@ -178,7 +178,7 @@ public class ProtoArray {
     }
 
     // Perform a sanity check that the node is indeed valid to be the head.
-    if (!nodeIsViableForHead(bestNode)) {
+    if (bestNode != justifiedNode && !nodeIsViableForHead(bestNode)) {
       throw new RuntimeException("ProtoArray: Best node is not viable for head");
     }
 

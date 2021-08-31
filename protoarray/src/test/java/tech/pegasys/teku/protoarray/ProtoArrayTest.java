@@ -37,7 +37,7 @@ class ProtoArrayTest {
       new DataStructureUtil(TestSpecFactory.createMinimalPhase0());
   private final VoteUpdater voteUpdater = mock(VoteUpdater.class);
 
-  private final ProtoArray protoArray =
+  private ProtoArray protoArray =
       new ProtoArrayBuilder()
           .justifiedCheckpoint(GENESIS_CHECKPOINT)
           .finalizedCheckpoint(GENESIS_CHECKPOINT)
@@ -119,6 +119,24 @@ class ProtoArrayTest {
     protoArray.applyProposerWeighting(
         new ProposerWeighting(dataStructureUtil.randomBytes32(), UInt64.valueOf(500)));
     assertAllWeightsAreZero();
+  }
+
+  @Test
+  void findHead_shouldAlwaysConsiderJustifiedNodeAsViableHead() {
+    // The justified checkpoint is the default chain head to use when there are no other blocks
+    // considered viable, so ensure we always accept it as head
+    final Bytes32 justifiedRoot = dataStructureUtil.randomBytes32();
+    protoArray =
+        new ProtoArrayBuilder()
+            .justifiedCheckpoint(new Checkpoint(UInt64.ONE, justifiedRoot))
+            .finalizedCheckpoint(new Checkpoint(UInt64.ONE, justifiedRoot))
+            .initialEpoch(UInt64.ZERO)
+            .build();
+    // Justified block will have justified and finalized epoch of 0 which doesn't match the current
+    // so would normally be not viable, but we should allow it anyway.
+    addBlock(12, justifiedRoot, dataStructureUtil.randomBytes32());
+    final ProtoNode head = protoArray.findHead(justifiedRoot, UInt64.ONE, UInt64.ONE);
+    assertThat(head).isEqualTo(protoArray.getProtoNode(justifiedRoot).orElseThrow());
   }
 
   private void addBlock(final long slot, final Bytes32 blockRoot, final Bytes32 parentRoot) {
