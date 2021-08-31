@@ -41,7 +41,7 @@ public class BlsEthAggregatePublicKeysTestExecutor extends BlsTestExecutor {
       assertThatThrownBy(
               () -> {
                 if (!BLSPublicKey.aggregate(data.getInput()).isValid()) {
-                  // Tests don't differentiate between
+                  // Tests don't differentiate between unparsable and invalid
                   throw new IllegalArgumentException("Resulting public key not in group");
                 }
               })
