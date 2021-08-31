@@ -139,7 +139,6 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
             "Created V6 Hot and Finalized database ({}) at {}",
             dbVersion.getValue(),
             dbDirectory.getAbsolutePath());
-
         break;
       case LEVELDB1:
         database = createLevelDbV1Database();

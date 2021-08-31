@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.EPOCH;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.EPOCH_QUERY_DESCRIPTION;
@@ -90,6 +91,11 @@ public class GetStateSyncCommittees extends AbstractHandler implements Handler {
       final Map<String, List<String>> queryParameters = ctx.queryParamMap();
       final Optional<UInt64> epoch =
           SingleQueryParameterUtils.getParameterValueAsUInt64IfPresent(queryParameters, EPOCH);
+
+      if (!chainDataProvider.stateParameterMaySupportAltair(pathParams.get(PARAM_STATE_ID))) {
+        ctx.status(SC_OK);
+        ctx.result(jsonProvider.objectToJSON(List.of()));
+      }
 
       final SafeFuture<Optional<StateSyncCommittees>> future =
           chainDataProvider.getStateSyncCommittees(pathParams.get(PARAM_STATE_ID), epoch);

@@ -68,20 +68,17 @@ public class LevelDbDatabaseFactory {
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
       final Spec spec) {
-    final KvStoreAccessor hotDb;
-    final KvStoreAccessor finalizedDb;
+    final KvStoreAccessor db;
     final V4SchemaHot schemaHot = V4SchemaHot.create(spec);
     final V6SnapshotSchemaFinalized schemaFinalized = new V6SnapshotSchemaFinalized(spec);
     final List<KvStoreColumn<?, ?>> allColumns = new ArrayList<>(schemaHot.getAllColumns());
     allColumns.addAll(schemaFinalized.getAllColumns());
-    finalizedDb =
-        LevelDbInstanceFactory.create(metricsSystem, STORAGE, hotConfiguration, allColumns);
-    hotDb = finalizedDb;
+    db = LevelDbInstanceFactory.create(metricsSystem, STORAGE, hotConfiguration, allColumns);
 
     return KvStoreDatabase.createWithStateSnapshots(
         metricsSystem,
-        hotDb,
-        finalizedDb,
+        db,
+        db,
         schemaHot,
         schemaFinalized,
         stateStorageMode,
@@ -96,20 +93,18 @@ public class LevelDbDatabaseFactory {
       final StateStorageMode stateStorageMode,
       final boolean storeNonCanonicalBlocks,
       final Spec spec) {
-    final KvStoreAccessor hotDb;
-    final KvStoreAccessor finalizedDb;
+
     final V4SchemaHot schemaHot = V4SchemaHot.create(spec);
     final V6TrieSchemaFinalized schemaFinalized = new V6TrieSchemaFinalized(spec);
     final List<KvStoreColumn<?, ?>> allColumns = new ArrayList<>(schemaHot.getAllColumns());
     allColumns.addAll(schemaFinalized.getAllColumns());
-    finalizedDb =
+    final KvStoreAccessor db =
         LevelDbInstanceFactory.create(metricsSystem, STORAGE, hotConfiguration, allColumns);
-    hotDb = finalizedDb;
 
     return KvStoreDatabase.createWithStateTrie(
         metricsSystem,
-        hotDb,
-        finalizedDb,
+        db,
+        db,
         schemaHot,
         schemaFinalized,
         stateStorageMode,

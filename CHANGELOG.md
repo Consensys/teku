@@ -13,26 +13,10 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ## Unreleased Changes
 
-### Breaking Changes
- - If you have `--Xdata-storage-non-canonical-blocks-enabled` set, this option has been renamed to `--data-storage-non-canonical-blocks-enabled`.
-
 ### Additions and Improvements
- - Scheduled Altair upgrade on the Prater testnet at epoch 36660.
- - Logged a message to indicate when the node starts and finishes the sync.
- - Upgraded jdk16 and default docker image to use eclipse-tumerin builds of OpenJDK.
- - jdk14 and jdk15 docker images have been upgraded to use the latest Ubuntu. Note that these images will be removed in future versions.
- - Reduced memory usage and GC pressure created while tracking the latest attestations for each validator.
- - Reduced CPU and GC pressure during epoch processing by avoiding setting validator effective balances to an unchanged value.
- - Reduced memory usage and GC pressure created by state caches.
- - Optimised length validation of gossip and RPC messages.
- - Introduced new sign type for block signing requests for external signers, `block_v2`, to support Altair and future 
-milestones. Existing Sign type `block` is backward compatible with phase0.
+ - Updated BLST library.
 
 
 ### Bug Fixes
- - Fixed `IllegalStateException: New response submitted after closing AsyncResponseProcessor` errors.
- - Get validator from state should return `404` code rather than a `400` code.
- - Produce attestation data (`/eth/v1/validator/attestation_data`) should return `400` error for future slots, rather than a `500`.
- - Fixed command-line option `--Xdata-storage-non-canonical-blocks-enabled` which was marked as a development option (-X) but not hidden.
  - Posting aggregates that fail validation to `/eth/v1/validator/aggregate_and_proofs` will now result in `SC_BAD_REQUEST` response, with details of the invalid aggregates in the response body.
-
+ - Use atomic move when writing slashing protection records, if supported by the file system.

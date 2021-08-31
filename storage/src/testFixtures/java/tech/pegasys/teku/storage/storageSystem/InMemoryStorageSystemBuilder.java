@@ -175,10 +175,9 @@ public class InMemoryStorageSystemBuilder {
               concat(
                   V4SchemaHot.create(spec).getAllVariables(),
                   new V6SnapshotSchemaFinalized(spec).getAllVariables()));
-      coldDb = hotDb;
     }
     return InMemoryKvStoreDatabaseFactory.createV6(
-        hotDb, coldDb, storageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
+        hotDb, storageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
   }
 
   // V5 only differs by the RocksDB configuration which doesn't apply to the in-memory version

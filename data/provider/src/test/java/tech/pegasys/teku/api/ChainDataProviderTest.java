@@ -556,6 +556,21 @@ public class ChainDataProviderTest {
         .containsExactly(new Attestation(attestation1), new Attestation(attestation2));
   }
 
+  @Test
+  void pathParamMaySupportAltair_shouldBeFalseIfAltairNotSupported() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
+    assertThat(provider.stateParameterMaySupportAltair("genesis")).isFalse();
+  }
+
+  @Test
+  void pathParamMaySupportAltair_shouldBeTrueIfAltairSupported() {
+    final ChainDataProvider provider = setupAltairState();
+    assertThat(provider.stateParameterMaySupportAltair("genesis")).isTrue();
+    assertThat(provider.stateParameterMaySupportAltair("1")).isTrue();
+    assertThat(provider.stateParameterMaySupportAltair("0x00")).isTrue();
+  }
+
   private ChainDataProvider setupAltairState() {
     final Spec altair = TestSpecFactory.createMinimalAltair();
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(altair);

@@ -20,21 +20,25 @@ import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.bls.BLS;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
+import tech.pegasys.teku.spec.logic.versions.altair.block.BlockProcessorAltair;
 
-public class BlsFastAggregateVerifyTestExecutor extends BlsTestExecutor {
+public class BlsEthFastAggregateVerifyTestExecutor extends BlsTestExecutor {
 
   @Override
   public void runTestImpl(final TestDefinition testDefinition) throws Throwable {
     final Data data = loadDataFile(testDefinition, Data.class);
     final List<BLSPublicKey> publicKeys = data.input.getPublicKeys();
-    final Bytes message = data.input.getMessage();
+    final Bytes32 message = data.input.getMessage();
     final BLSSignature signature = data.input.getSignature();
     final boolean expectedResult = data.getOutput();
-    assertThat(BLS.fastAggregateVerify(publicKeys, message, signature))
+    assertThat(
+            BlockProcessorAltair.eth2FastAggregateVerify(
+                BLSSignatureVerifier.SIMPLE, publicKeys, message, signature))
         .describedAs("Public keys %s message %s signature %s", publicKeys, message, signature)
         .isEqualTo(expectedResult);
   }
@@ -69,8 +73,8 @@ public class BlsFastAggregateVerifyTestExecutor extends BlsTestExecutor {
           .collect(toList());
     }
 
-    public Bytes getMessage() {
-      return Bytes.fromHexString(message);
+    public Bytes32 getMessage() {
+      return Bytes32.fromHexString(message);
     }
 
     public BLSSignature getSignature() {
