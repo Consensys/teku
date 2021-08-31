@@ -236,7 +236,7 @@ public class ForkChoiceUtil {
     final Checkpoint target = attestationData.getTarget();
 
     // Use GENESIS_EPOCH for previous when genesis to avoid underflow
-    UInt64 previousEpoch =
+    final UInt64 previousEpoch =
         currentEpoch.isGreaterThan(SpecConfig.GENESIS_EPOCH)
             ? currentEpoch.minus(UInt64.ONE)
             : SpecConfig.GENESIS_EPOCH;
@@ -256,7 +256,7 @@ public class ForkChoiceUtil {
       return AttestationProcessingResult.UNKNOWN_BLOCK;
     }
 
-    Optional<UInt64> blockSlot =
+    final Optional<UInt64> blockSlot =
         forkChoiceStrategy.blockSlot(attestationData.getBeacon_block_root());
     if (blockSlot.isEmpty()) {
       // Attestations must be for a known block. If block is unknown, delay consideration until the
