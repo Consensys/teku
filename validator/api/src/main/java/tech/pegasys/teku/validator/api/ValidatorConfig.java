@@ -42,6 +42,7 @@ public class ValidatorConfig {
   private final int validatorExternalSignerConcurrentRequestLimit;
   private final boolean useDependentRoots;
   private final boolean generateEarlyAttestations;
+  private final boolean sendAttestationsAsBatch;
 
   private ValidatorConfig(
       final List<String> validatorKeys,
@@ -59,7 +60,8 @@ public class ValidatorConfig {
       final boolean validatorExternalSignerSlashingProtectionEnabled,
       final int validatorExternalSignerConcurrentRequestLimit,
       final boolean useDependentRoots,
-      final boolean generateEarlyAttestations) {
+      final boolean generateEarlyAttestations,
+      final boolean sendAttestationsAsBatch) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
@@ -79,6 +81,7 @@ public class ValidatorConfig {
         validatorExternalSignerConcurrentRequestLimit;
     this.useDependentRoots = useDependentRoots;
     this.generateEarlyAttestations = generateEarlyAttestations;
+    this.sendAttestationsAsBatch = sendAttestationsAsBatch;
   }
 
   public static Builder builder() {
@@ -150,6 +153,10 @@ public class ValidatorConfig {
     return useDependentRoots;
   }
 
+  public boolean sendAttestationsAsBatch() {
+    return sendAttestationsAsBatch;
+  }
+
   public static final class Builder {
 
     private List<String> validatorKeys = new ArrayList<>();
@@ -168,6 +175,7 @@ public class ValidatorConfig {
     private boolean validatorExternalSignerSlashingProtectionEnabled = true;
     private boolean useDependentRoots = false;
     private boolean generateEarlyAttestations = true;
+    private boolean sendAttestationsAsBatch = false;
 
     private Builder() {}
 
@@ -261,6 +269,11 @@ public class ValidatorConfig {
       return this;
     }
 
+    public Builder sendAttestationsAsBatch(final boolean sendAttestationsAsBatch) {
+      this.sendAttestationsAsBatch = sendAttestationsAsBatch;
+      return this;
+    }
+
     public ValidatorConfig build() {
       validateExternalSignerUrlAndPublicKeys();
       validateExternalSignerKeystoreAndPasswordFileConfig();
@@ -282,7 +295,8 @@ public class ValidatorConfig {
           validatorExternalSignerSlashingProtectionEnabled,
           validatorExternalSignerConcurrentRequestLimit,
           useDependentRoots,
-          generateEarlyAttestations);
+          generateEarlyAttestations,
+          sendAttestationsAsBatch);
     }
 
     private void validateExternalSignerUrlAndPublicKeys() {

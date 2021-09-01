@@ -45,6 +45,7 @@ import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
+import tech.pegasys.teku.validator.client.duties.attestations.AggregationDuty;
 
 class AggregationDutyTest {
   private static final String TYPE = "aggregate";

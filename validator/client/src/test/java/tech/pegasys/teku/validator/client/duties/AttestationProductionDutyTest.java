@@ -50,6 +50,8 @@ import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
+import tech.pegasys.teku.validator.client.duties.attestations.AttestationProductionDuty;
+import tech.pegasys.teku.validator.client.duties.attestations.IndividualAttestationSendingStrategy;
 
 class AttestationProductionDutyTest {
 
@@ -64,7 +66,11 @@ class AttestationProductionDutyTest {
   private final ValidatorLogger validatorLogger = mock(ValidatorLogger.class);
 
   private final AttestationProductionDuty duty =
-      new AttestationProductionDuty(SLOT, forkProvider, validatorApiChannel);
+      new AttestationProductionDuty(
+          SLOT,
+          forkProvider,
+          validatorApiChannel,
+          new IndividualAttestationSendingStrategy(validatorApiChannel));
 
   @BeforeEach
   public void setUp() {
