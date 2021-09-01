@@ -1,4 +1,6 @@
 version: 2.1
+orbs:
+  slack: circleci/slack@3.4.2
 executors:
   small_executor:
     docker:
@@ -111,6 +113,13 @@ commands:
       - store_artifacts:
           path: build/test-artifacts
 
+  notify:
+    description: "Notify Slack"
+    steps:
+      - slack/status:
+          mentions: "team-centaur"
+          fail_only: true
+          only_for_branches: 'master'
 jobs:
   assemble:
     executor: medium_executor
@@ -162,8 +171,9 @@ jobs:
           command: |
             for FILE in $(ls docker)
             do
-              trivy -q image --exit-code 1 --no-progress --severity HIGH,CRITICAL "consensys/teku:develop-$FILE"
+              trivy -q image --exit-code 1 --no-progress --severity MEDIUM,HIGH,CRITICAL "consensys/teku:develop-$FILE"
             done
+      - notify
 
   unitTests:
     parallelism: 2
@@ -510,7 +520,7 @@ workflows:
   nightly:
     triggers:
       - schedule:
-          cron: "0 19 * * *"
+          cron: "0 02 * * *"
           filters:
             branches:
               only:
