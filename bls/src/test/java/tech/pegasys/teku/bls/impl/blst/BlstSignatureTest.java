@@ -1,9 +1,5 @@
 /*
-<<<<<<< HEAD
  * Copyright 2020 ConsenSys AG.
-=======
- * Copyright 2021 ConsenSys AG.
->>>>>>> Make use of abstract unit tests for BLST implementation
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -17,16 +13,14 @@
 
 package tech.pegasys.teku.bls.impl.blst;
 
-<<<<<<< HEAD
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.bls.impl.blst.BlstSignature.INFINITY;
 
+import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.impl.AbstractSignatureTest;
 import tech.pegasys.teku.bls.impl.BLS12381;
-
-import org.apache.tuweni.bytes.Bytes;
-import org.junit.jupiter.api.Test;
 
 public class BlstSignatureTest extends AbstractSignatureTest {
   private static BLS12381 BLS;
