@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.server.kvstore.serialization;
 
 import java.util.Set;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
@@ -29,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public interface KvStoreSerializer<T> {
   KvStoreSerializer<UInt64> UINT64_SERIALIZER = new UInt64Serializer();
+  KvStoreSerializer<Bytes> BYTES_SERIALIZER = new BytesSerializer<>(Bytes::wrap);
   KvStoreSerializer<Bytes32> BYTES32_SERIALIZER = new BytesSerializer<>(Bytes32::wrap);
   KvStoreSerializer<Checkpoint> CHECKPOINT_SERIALIZER = new SszSerializer<>(Checkpoint.SSZ_SCHEMA);
   KvStoreSerializer<VoteTracker> VOTES_SERIALIZER = new VoteTrackerSerializer();

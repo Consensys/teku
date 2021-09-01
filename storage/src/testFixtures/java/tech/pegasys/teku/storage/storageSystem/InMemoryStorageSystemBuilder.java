@@ -30,7 +30,7 @@ import tech.pegasys.teku.storage.server.kvstore.InMemoryKvStoreDatabaseFactory;
 import tech.pegasys.teku.storage.server.kvstore.MockKvStoreInstance;
 import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaFinalized;
 import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaHot;
-import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaFinalized;
+import tech.pegasys.teku.storage.server.kvstore.schema.V6SnapshotSchemaFinalized;
 import tech.pegasys.teku.storage.store.StoreConfig;
 
 public class InMemoryStorageSystemBuilder {
@@ -170,11 +170,11 @@ public class InMemoryStorageSystemBuilder {
       hotDb =
           MockKvStoreInstance.createEmpty(
               concat(
-                  V4SchemaHot.create(spec).getAllColumns(),
-                  V6SchemaFinalized.create(spec).getAllColumns()),
+                  new V4SchemaHot(spec).getAllColumns(),
+                  new V6SnapshotSchemaFinalized(spec).getAllColumns()),
               concat(
-                  V4SchemaHot.create(spec).getAllVariables(),
-                  V6SchemaFinalized.create(spec).getAllVariables()));
+                  new V4SchemaHot(spec).getAllVariables(),
+                  new V6SnapshotSchemaFinalized(spec).getAllVariables()));
     }
     return InMemoryKvStoreDatabaseFactory.createV6(
         hotDb, storageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
@@ -187,15 +187,16 @@ public class InMemoryStorageSystemBuilder {
 
   private Database createV4Database() {
     if (hotDb == null) {
+      final V4SchemaHot v4SchemaHot = new V4SchemaHot(spec);
       hotDb =
           MockKvStoreInstance.createEmpty(
-              V4SchemaHot.create(spec).getAllColumns(), V4SchemaHot.create(spec).getAllVariables());
+              v4SchemaHot.getAllColumns(), v4SchemaHot.getAllVariables());
     }
     if (coldDb == null) {
+      final V4SchemaFinalized v4SchemaFinalized = new V4SchemaFinalized(spec);
       coldDb =
           MockKvStoreInstance.createEmpty(
-              V4SchemaFinalized.create(spec).getAllColumns(),
-              V4SchemaFinalized.create(spec).getAllVariables());
+              v4SchemaFinalized.getAllColumns(), v4SchemaFinalized.getAllVariables());
     }
     return InMemoryKvStoreDatabaseFactory.createV4(
         hotDb, coldDb, storageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
