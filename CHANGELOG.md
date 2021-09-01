@@ -22,6 +22,7 @@ For information on changes in released versions of Teku, see the [releases page]
  - Reduced memory usage and GC pressure created while tracking the latest attestations for each validator.
  - Reduced CPU and GC pressure during epoch processing by avoiding setting validator effective balances to an unchanged value.
  - Reduced memory usage and GC pressure created by state caches.
+ - Optimised length validation of gossip and RPC messages.
 
 ### Bug Fixes
  - Fixed `IllegalStateException: New response submitted after closing AsyncResponseProcessor` errors.

@@ -40,12 +40,14 @@ public abstract class AbstractSszPrimitiveSchema<
 
   private final int bitsSize;
   private final int sszSize;
+  private final SszLengthBounds sszLengthBounds;
 
   protected AbstractSszPrimitiveSchema(int bitsSize) {
     checkArgument(
         bitsSize > 0 && bitsSize <= 256 && 256 % bitsSize == 0, "Invalid bitsize: %s", bitsSize);
     this.bitsSize = bitsSize;
     this.sszSize = getSSZBytesSize();
+    this.sszLengthBounds = SszLengthBounds.ofBits(bitsSize);
   }
 
   @Override
@@ -127,6 +129,6 @@ public abstract class AbstractSszPrimitiveSchema<
 
   @Override
   public SszLengthBounds getSszLengthBounds() {
-    return SszLengthBounds.ofBits(getBitsSize());
+    return sszLengthBounds;
   }
 }
