@@ -113,7 +113,7 @@ public class KvStoreDatabase implements Database {
         metricsSystem,
         hotDb,
         finalizedDb,
-        V4SchemaHot.create(spec),
+        new V4SchemaHot(spec),
         new V4SchemaFinalized(spec),
         stateStorageMode,
         stateStorageFrequency,
@@ -147,8 +147,7 @@ public class KvStoreDatabase implements Database {
 
   public static Database createWithStateTrie(
       final MetricsSystem metricsSystem,
-      final KvStoreAccessor hotDb,
-      final KvStoreAccessor finalizedDb,
+      final KvStoreAccessor db,
       final SchemaHot schemaHot,
       final SchemaFinalizedTrieState schemaFinalized,
       final StateStorageMode stateStorageMode,
@@ -158,8 +157,8 @@ public class KvStoreDatabase implements Database {
         new V4FinalizedStateTrieStorageLogic();
     return create(
         metricsSystem,
-        hotDb,
-        finalizedDb,
+        db,
+        db,
         schemaHot,
         schemaFinalized,
         stateStorageMode,

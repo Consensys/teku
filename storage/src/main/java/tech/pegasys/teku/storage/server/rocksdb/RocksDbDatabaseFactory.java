@@ -44,10 +44,7 @@ public class RocksDbDatabaseFactory {
       final Spec spec) {
     final KvStoreAccessor hotDb =
         RocksDbInstanceFactory.create(
-            metricsSystem,
-            STORAGE_HOT_DB,
-            hotConfiguration,
-            V4SchemaHot.create(spec).getAllColumns());
+            metricsSystem, STORAGE_HOT_DB, hotConfiguration, new V4SchemaHot(spec).getAllColumns());
     final KvStoreAccessor finalizedDb =
         RocksDbInstanceFactory.create(
             metricsSystem,

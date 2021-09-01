@@ -69,7 +69,7 @@ public class LevelDbDatabaseFactory {
       final boolean storeNonCanonicalBlocks,
       final Spec spec) {
     final KvStoreAccessor db;
-    final V4SchemaHot schemaHot = V4SchemaHot.create(spec);
+    final V4SchemaHot schemaHot = new V4SchemaHot(spec);
     final V6SnapshotSchemaFinalized schemaFinalized = new V6SnapshotSchemaFinalized(spec);
     final List<KvStoreColumn<?, ?>> allColumns = new ArrayList<>(schemaHot.getAllColumns());
     allColumns.addAll(schemaFinalized.getAllColumns());
@@ -94,7 +94,7 @@ public class LevelDbDatabaseFactory {
       final boolean storeNonCanonicalBlocks,
       final Spec spec) {
 
-    final V4SchemaHot schemaHot = V4SchemaHot.create(spec);
+    final V4SchemaHot schemaHot = new V4SchemaHot(spec);
     final V6TrieSchemaFinalized schemaFinalized = new V6TrieSchemaFinalized(spec);
     final List<KvStoreColumn<?, ?>> allColumns = new ArrayList<>(schemaHot.getAllColumns());
     allColumns.addAll(schemaFinalized.getAllColumns());
@@ -103,7 +103,6 @@ public class LevelDbDatabaseFactory {
 
     return KvStoreDatabase.createWithStateTrie(
         metricsSystem,
-        db,
         db,
         schemaHot,
         schemaFinalized,

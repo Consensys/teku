@@ -162,7 +162,7 @@ public class FileBackedStorageSystemBuilder {
     return RocksDbDatabaseFactory.createV6(
         new StubMetricsSystem(),
         configDefault.withDatabaseDir(hotDir),
-        V4SchemaHot.create(spec),
+        new V4SchemaHot(spec),
         new V6SnapshotSchemaFinalized(spec),
         storageMode,
         stateStorageFrequency,

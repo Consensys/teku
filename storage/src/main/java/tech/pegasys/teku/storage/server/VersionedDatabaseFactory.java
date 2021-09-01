@@ -220,7 +220,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       return RocksDbDatabaseFactory.createV6(
           metricsSystem,
           dbConfiguration.withDatabaseDir(dbDirectory.toPath()),
-          V4SchemaHot.create(spec),
+          new V4SchemaHot(spec),
           new V6SnapshotSchemaFinalized(spec),
           stateStorageMode,
           stateStorageFrequency,

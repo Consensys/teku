@@ -49,7 +49,7 @@ public class InMemoryKvStoreDatabaseFactory {
         new StubMetricsSystem(),
         db,
         db,
-        V4SchemaHot.create(spec),
+        new V4SchemaHot(spec),
         new V6SnapshotSchemaFinalized(spec),
         storageMode,
         stateStorageFrequency,

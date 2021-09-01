@@ -170,10 +170,10 @@ public class InMemoryStorageSystemBuilder {
       hotDb =
           MockKvStoreInstance.createEmpty(
               concat(
-                  V4SchemaHot.create(spec).getAllColumns(),
+                  new V4SchemaHot(spec).getAllColumns(),
                   new V6SnapshotSchemaFinalized(spec).getAllColumns()),
               concat(
-                  V4SchemaHot.create(spec).getAllVariables(),
+                  new V4SchemaHot(spec).getAllVariables(),
                   new V6SnapshotSchemaFinalized(spec).getAllVariables()));
     }
     return InMemoryKvStoreDatabaseFactory.createV6(
@@ -187,7 +187,7 @@ public class InMemoryStorageSystemBuilder {
 
   private Database createV4Database() {
     if (hotDb == null) {
-      final V4SchemaHot v4SchemaHot = V4SchemaHot.create(spec);
+      final V4SchemaHot v4SchemaHot = new V4SchemaHot(spec);
       hotDb =
           MockKvStoreInstance.createEmpty(
               v4SchemaHot.getAllColumns(), v4SchemaHot.getAllVariables());
