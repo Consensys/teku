@@ -21,3 +21,4 @@ For information on changes in released versions of Teku, see the [releases page]
  - Posting aggregates that fail validation to `/eth/v1/validator/aggregate_and_proofs` will now result in `SC_BAD_REQUEST` response, with details of the invalid aggregates in the response body.
  - Use atomic move when writing slashing protection records, if supported by the file system.
  - Increase the batch size when searching for unknown validator indexes from 10 to 50.
+ - Fixed issue with the voluntary-exit subcommand and Altair networks which caused "Failed to retrieve network config" errors.
