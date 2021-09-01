@@ -17,6 +17,7 @@ import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER
 import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 import com.google.common.base.Preconditions;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -288,7 +289,7 @@ public class AttestationGenerator {
           continue;
         }
 
-        List<Integer> committeeIndices = assignment.getCommittee();
+        IntList committeeIndices = assignment.getCommittee();
         UInt64 committeeIndex = assignment.getCommitteeIndex();
         Committee committee = new Committee(committeeIndex, committeeIndices);
         int indexIntoCommittee = committeeIndices.indexOf(validatorIndex);

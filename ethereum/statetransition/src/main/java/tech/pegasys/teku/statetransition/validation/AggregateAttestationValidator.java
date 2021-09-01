@@ -22,7 +22,7 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 import static tech.pegasys.teku.util.config.Constants.VALID_AGGREGATE_SET_SIZE;
 
-import java.util.List;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -130,7 +130,7 @@ public class AggregateAttestationValidator {
                           return reject("Rejecting aggregate with incorrect selection proof");
                         }
 
-                        final List<Integer> beaconCommittee =
+                        final IntList beaconCommittee =
                             spec.getBeaconCommittee(
                                 state, aggregateSlot, aggregate.getData().getIndex());
 
