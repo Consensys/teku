@@ -17,8 +17,6 @@ import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSeri
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.BYTES32_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.UINT64_SERIALIZER;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -27,26 +25,35 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer;
 
-public class V4SchemaFinalized implements SchemaFinalizedSnapshotState {
+/**
+ * The same as {@link V4SchemaFinalized} but with other column ids which are distinct from {@link
+ * V4SchemaHot}
+ */
+public class V6SnapshotSchemaFinalized implements SchemaFinalizedSnapshotState {
+  // column ids should be distinct across different DAOs to make possible using
+  // schemes both for a single and separated DBs
+  private static final int ID_OFFSET = 128;
+
   private static final KvStoreColumn<Bytes32, UInt64> SLOTS_BY_FINALIZED_ROOT =
-      KvStoreColumn.create(1, BYTES32_SERIALIZER, UINT64_SERIALIZER);
+      KvStoreColumn.create(ID_OFFSET + 1, BYTES32_SERIALIZER, UINT64_SERIALIZER);
   private final KvStoreColumn<UInt64, SignedBeaconBlock> finalizedBlocksBySlot;
   private final KvStoreColumn<UInt64, BeaconState> finalizedStatesBySlot;
   private final KvStoreColumn<Bytes32, SignedBeaconBlock> nonCanonicalBlocksByRoot;
   private static final KvStoreColumn<Bytes32, UInt64> SLOTS_BY_FINALIZED_STATE_ROOT =
-      KvStoreColumn.create(4, BYTES32_SERIALIZER, UINT64_SERIALIZER);
+      KvStoreColumn.create(ID_OFFSET + 4, BYTES32_SERIALIZER, UINT64_SERIALIZER);
   private static final KvStoreColumn<UInt64, Set<Bytes32>> NON_CANONICAL_BLOCK_ROOTS_BY_SLOT =
-      KvStoreColumn.create(6, UINT64_SERIALIZER, BLOCK_ROOTS_SERIALIZER);
+      KvStoreColumn.create(ID_OFFSET + 6, UINT64_SERIALIZER, BLOCK_ROOTS_SERIALIZER);
 
-  public V4SchemaFinalized(final Spec spec) {
+  public V6SnapshotSchemaFinalized(final Spec spec) {
     finalizedBlocksBySlot =
         KvStoreColumn.create(
-            2, UINT64_SERIALIZER, KvStoreSerializer.createSignedBlockSerializer(spec));
-    this.finalizedStatesBySlot =
-        KvStoreColumn.create(3, UINT64_SERIALIZER, KvStoreSerializer.createStateSerializer(spec));
+            ID_OFFSET + 2, UINT64_SERIALIZER, KvStoreSerializer.createSignedBlockSerializer(spec));
+    finalizedStatesBySlot =
+        KvStoreColumn.create(
+            ID_OFFSET + 3, UINT64_SERIALIZER, KvStoreSerializer.createStateSerializer(spec));
     nonCanonicalBlocksByRoot =
         KvStoreColumn.create(
-            5, BYTES32_SERIALIZER, KvStoreSerializer.createSignedBlockSerializer(spec));
+            ID_OFFSET + 5, BYTES32_SERIALIZER, KvStoreSerializer.createSignedBlockSerializer(spec));
   }
 
   @Override
@@ -77,10 +84,5 @@ public class V4SchemaFinalized implements SchemaFinalizedSnapshotState {
   @Override
   public KvStoreColumn<UInt64, Set<Bytes32>> getColumnNonCanonicalRootsBySlot() {
     return NON_CANONICAL_BLOCK_ROOTS_BY_SLOT;
-  }
-
-  @Override
-  public List<KvStoreVariable<?>> getAllVariables() {
-    return Collections.emptyList();
   }
 }

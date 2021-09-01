@@ -20,14 +20,11 @@ import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public interface SchemaFinalized extends Schema {
   KvStoreColumn<Bytes32, UInt64> getColumnSlotsByFinalizedRoot();
 
   KvStoreColumn<UInt64, SignedBeaconBlock> getColumnFinalizedBlocksBySlot();
-
-  KvStoreColumn<UInt64, BeaconState> getColumnFinalizedStatesBySlot();
 
   KvStoreColumn<Bytes32, UInt64> getColumnSlotsByFinalizedStateRoot();
 
@@ -40,15 +37,7 @@ public interface SchemaFinalized extends Schema {
     return getColumnMap().values();
   }
 
-  default Map<String, KvStoreColumn<?, ?>> getColumnMap() {
-    return Map.of(
-        "SLOTS_BY_FINALIZED_ROOT", getColumnSlotsByFinalizedRoot(),
-        "FINALIZED_BLOCKS_BY_SLOT", getColumnFinalizedBlocksBySlot(),
-        "FINALIZED_STATES_BY_SLOT", getColumnFinalizedStatesBySlot(),
-        "SLOTS_BY_FINALIZED_STATE_ROOT", getColumnSlotsByFinalizedStateRoot(),
-        "NON_CANONICAL_BLOCKS_BY_ROOT", getColumnNonCanonicalBlocksByRoot(),
-        "NON_CANONICAL_BLOCK_ROOTS_BY_SLOT", getColumnNonCanonicalRootsBySlot());
-  }
+  Map<String, KvStoreColumn<?, ?>> getColumnMap();
 
   @Override
   default Collection<KvStoreVariable<?>> getAllVariables() {
