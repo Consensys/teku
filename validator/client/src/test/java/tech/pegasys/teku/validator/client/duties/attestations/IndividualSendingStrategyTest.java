@@ -13,71 +13,79 @@
 
 package tech.pegasys.teku.validator.client.duties.attestations;
 
-import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.duties.DutyResult;
 import tech.pegasys.teku.validator.client.duties.ProductionResult;
 
-class BatchAttestationSendingStrategyTest {
+class IndividualSendingStrategyTest {
 
   private final Spec spec = TestSpecFactory.createDefault();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
 
-  private final BatchAttestationSendingStrategy strategy =
-      new BatchAttestationSendingStrategy(validatorApiChannel);
+  @SuppressWarnings("unchecked")
+  private final Function<ProductionResult<String>, SafeFuture<DutyResult>> sendFunction =
+      mock(Function.class);
+
+  private final IndividualSendingStrategy<String> strategy =
+      new IndividualSendingStrategy<>(sendFunction);
 
   @BeforeEach
   void setUp() {
-    when(validatorApiChannel.sendSignedAttestations(anyList()))
-        .thenReturn(SafeFuture.completedFuture(emptyList()));
+    when(sendFunction.apply(any()))
+        .thenAnswer(
+            invocation -> {
+              final ProductionResult<String> result = invocation.getArgument(0);
+              return SafeFuture.completedFuture(result.getResult());
+            });
   }
 
   @Test
-  void shouldSendAllAttestationsInASingleBatch() {
-    final SafeFuture<ProductionResult<Attestation>> future1 = new SafeFuture<>();
-    final SafeFuture<ProductionResult<Attestation>> future2 = new SafeFuture<>();
-    final SafeFuture<ProductionResult<Attestation>> future3 = new SafeFuture<>();
+  void shouldSendAttestationsAsSoonAsTheyAreReady() {
+    final SafeFuture<ProductionResult<String>> future1 = new SafeFuture<>();
+    final SafeFuture<ProductionResult<String>> future2 = new SafeFuture<>();
+    final SafeFuture<ProductionResult<String>> future3 = new SafeFuture<>();
 
-    final Attestation attestation1 = dataStructureUtil.randomAttestation();
-    final Attestation attestation2 = dataStructureUtil.randomAttestation();
-    final Attestation attestation3 = dataStructureUtil.randomAttestation();
+    final String message1 = "message1";
+    final String message2 = "message2";
+    final String message3 = "message3";
 
     final SafeFuture<DutyResult> result = strategy.send(Stream.of(future1, future2, future3));
 
     assertThat(result).isNotDone();
 
-    future1.complete(
+    final ProductionResult<String> result1 =
         ProductionResult.success(
-            dataStructureUtil.randomPublicKey(), dataStructureUtil.randomBytes32(), attestation1));
+            dataStructureUtil.randomPublicKey(), dataStructureUtil.randomBytes32(), message1);
+    future1.complete(result1);
     assertThat(result).isNotDone();
+    verify(sendFunction).apply(result1);
 
-    future3.complete(
+    final ProductionResult<String> result3 =
         ProductionResult.success(
-            dataStructureUtil.randomPublicKey(), dataStructureUtil.randomBytes32(), attestation3));
+            dataStructureUtil.randomPublicKey(), dataStructureUtil.randomBytes32(), message3);
+    future3.complete(result3);
     assertThat(result).isNotDone();
+    verify(sendFunction).apply(result3);
 
-    future2.complete(
+    final ProductionResult<String> result2 =
         ProductionResult.success(
-            dataStructureUtil.randomPublicKey(), dataStructureUtil.randomBytes32(), attestation2));
+            dataStructureUtil.randomPublicKey(), dataStructureUtil.randomBytes32(), message2);
+    future2.complete(result2);
     assertThat(result).isCompleted();
     assertThat(result.join().getSuccessCount()).isEqualTo(3);
-    verify(validatorApiChannel)
-        .sendSignedAttestations(List.of(attestation1, attestation2, attestation3));
+    verify(sendFunction).apply(result2);
   }
 }
