@@ -75,7 +75,8 @@ public class SpecConfigReader {
           "DOMAIN_SYNC_COMMITTEE",
           "DOMAIN_CONTRIBUTION_AND_PROOF",
           "TARGET_AGGREGATORS_PER_SYNC_SUBCOMMITTEE",
-          "DOMAIN_SYNC_COMMITTEE_SELECTION_PROOF");
+          "DOMAIN_SYNC_COMMITTEE_SELECTION_PROOF",
+          "SYNC_COMMITTEE_SUBNET_COUNT");
 
   private final ImmutableMap<Class<?>, Function<Object, ?>> parsers =
       ImmutableMap.<Class<?>, Function<Object, ?>>builder()

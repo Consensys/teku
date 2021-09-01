@@ -22,9 +22,10 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BatchSemiAggregate;
+import tech.pegasys.teku.bls.impl.AbstractBLS12381Test;
 import tech.pegasys.teku.bls.impl.BLS12381;
 
-public class BlstTest {
+public class BlstTest extends AbstractBLS12381Test {
   private static final Random random = new Random(1);
 
   private static BLS12381 BLS;
@@ -32,6 +33,11 @@ public class BlstTest {
   @BeforeAll
   static void setup() {
     BLS = BlstLoader.INSTANCE.orElseThrow();
+  }
+
+  @Override
+  protected BLS12381 getBls() {
+    return BLS;
   }
 
   @Test

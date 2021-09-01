@@ -13,18 +13,26 @@
 
 package tech.pegasys.teku.bls.impl.blst;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.bls.impl.AbstractPublicKeyTest;
+import tech.pegasys.teku.bls.impl.BLS12381;
 
-public class BlstPublicKeyTest {
+public class BlstPublicKeyTest extends AbstractPublicKeyTest {
+
+  private static BLS12381 BLS;
 
   @BeforeAll
   static void setup() {
-    assertThat(BlstLoader.INSTANCE).isNotEmpty();
+    BLS = BlstLoader.INSTANCE.orElseThrow();
+  }
+
+  @Override
+  protected BLS12381 getBls() {
+    return BLS;
   }
 
   // The infinite public key is now considered to be invalid

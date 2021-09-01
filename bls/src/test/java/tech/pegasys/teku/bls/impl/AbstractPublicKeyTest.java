@@ -13,21 +13,14 @@
 
 package tech.pegasys.teku.bls.impl;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.util.Collections;
 import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
 
-public abstract class PublicKeyTest {
+public abstract class AbstractPublicKeyTest {
 
   protected abstract BLS12381 getBls();
-
-  @Test
-  void succeedsWhenPassingEmptyListToAggregatePublicKeysDoesNotThrowException() {
-    assertDoesNotThrow(() -> getBls().aggregatePublicKeys(Collections.emptyList()));
-  }
 
   @Test
   public void shouldHaveConsistentHashCodeAndEquals() {
