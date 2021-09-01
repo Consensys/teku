@@ -26,7 +26,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration;
 import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaHot;
-import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaFinalized;
+import tech.pegasys.teku.storage.server.kvstore.schema.V6SnapshotSchemaFinalized;
 import tech.pegasys.teku.storage.server.leveldb.LevelDbDatabaseFactory;
 import tech.pegasys.teku.storage.server.metadata.V5DatabaseMetadata;
 import tech.pegasys.teku.storage.server.metadata.V6DatabaseMetadata;
@@ -158,6 +158,13 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
             dbVersion.getValue(),
             dbDirectory.getAbsolutePath());
         break;
+      case LEVELDB_TRIE:
+        database = createLevelDbTrieDatabase();
+        LOG.info(
+            "Created leveldb_trie Hot and Finalized database ({}) at {}",
+            dbVersion.getValue(),
+            dbDirectory.getAbsolutePath());
+        break;
       default:
         throw new UnsupportedOperationException("Unhandled database version " + dbVersion);
     }
@@ -207,22 +214,14 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
 
   private Database createV6Database() {
     try {
-      final V6DatabaseMetadata defaultMetaData = V6DatabaseMetadata.singleDBDefault();
 
-      final V6DatabaseMetadata metaData =
-          V6DatabaseMetadata.init(getMetadataFile(), defaultMetaData);
-
-      DatabaseNetwork.init(
-          getNetworkFile(), spec.getGenesisSpecConfig().getGenesisForkVersion(), eth1Address);
-
-      final KvStoreConfiguration hotOrSingleDBConfiguration =
-          metaData.getSingleDbConfiguration().getConfiguration();
+      final KvStoreConfiguration dbConfiguration = initV6Configuration();
 
       return RocksDbDatabaseFactory.createV6(
           metricsSystem,
-          hotOrSingleDBConfiguration.withDatabaseDir(dbDirectory.toPath()),
-          V4SchemaHot.create(spec),
-          V6SchemaFinalized.create(spec),
+          dbConfiguration.withDatabaseDir(dbDirectory.toPath()),
+          new V4SchemaHot(spec),
+          new V6SnapshotSchemaFinalized(spec),
           stateStorageMode,
           stateStorageFrequency,
           storeNonCanonicalBlocks,
@@ -258,22 +257,11 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
 
   private Database createLevelDbV2Database() {
     try {
-      final V6DatabaseMetadata defaultMetaData = V6DatabaseMetadata.singleDBDefault();
-
-      final V6DatabaseMetadata metaData =
-          V6DatabaseMetadata.init(getMetadataFile(), defaultMetaData);
-
-      DatabaseNetwork.init(
-          getNetworkFile(), spec.getGenesisSpecConfig().getGenesisForkVersion(), eth1Address);
-
-      final KvStoreConfiguration hotOrSingleDBConfiguration =
-          metaData.getSingleDbConfiguration().getConfiguration();
+      final KvStoreConfiguration dbConfiguration = initV6Configuration();
 
       return LevelDbDatabaseFactory.createLevelDbV2(
           metricsSystem,
-          hotOrSingleDBConfiguration.withDatabaseDir(dbDirectory.toPath()),
-          V4SchemaHot.create(spec),
-          V6SchemaFinalized.create(spec),
+          dbConfiguration.withDatabaseDir(dbDirectory.toPath()),
           stateStorageMode,
           stateStorageFrequency,
           storeNonCanonicalBlocks,
@@ -281,6 +269,31 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);
     }
+  }
+
+  private Database createLevelDbTrieDatabase() {
+    try {
+      final KvStoreConfiguration dbConfiguration = initV6Configuration();
+
+      return LevelDbDatabaseFactory.createLevelDbTrie(
+          metricsSystem,
+          dbConfiguration.withDatabaseDir(dbDirectory.toPath()),
+          stateStorageMode,
+          storeNonCanonicalBlocks,
+          spec);
+    } catch (final IOException e) {
+      throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);
+    }
+  }
+
+  private KvStoreConfiguration initV6Configuration() throws IOException {
+    final V6DatabaseMetadata metaData =
+        V6DatabaseMetadata.init(getMetadataFile(), V6DatabaseMetadata.singleDBDefault());
+
+    DatabaseNetwork.init(
+        getNetworkFile(), spec.getGenesisSpecConfig().getGenesisForkVersion(), eth1Address);
+
+    return metaData.getSingleDbConfiguration().getConfiguration();
   }
 
   private File getMetadataFile() {

@@ -42,8 +42,7 @@ public class BatchSignatureVerifierTest {
         Bytes.wrap("Hello, world!".getBytes(UTF_8)),
         BLSTestUtil.randomSignature(43));
 
-    // a case that should probably be handled differently, but equally doesnt seem to occur
-    assertThatThrownBy(verifier::batchVerify).isInstanceOf(IndexOutOfBoundsException.class);
+    assertThat(verifier.batchVerify()).isFalse();
   }
 
   @Test

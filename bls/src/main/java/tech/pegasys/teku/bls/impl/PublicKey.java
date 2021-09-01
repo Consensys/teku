@@ -64,6 +64,13 @@ public interface PublicKey {
    */
   boolean isInGroup();
 
+  /**
+   * Determine if the key is valid.
+   *
+   * @return true if the key is valid, otherwise false. The infinity public key is invalid.
+   */
+  boolean isValid();
+
   /** Implementation must override */
   @Override
   int hashCode();

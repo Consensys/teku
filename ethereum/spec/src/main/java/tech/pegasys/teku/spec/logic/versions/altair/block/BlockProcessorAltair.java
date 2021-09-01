@@ -241,7 +241,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
             });
   }
 
-  static boolean eth2FastAggregateVerify(
+  public static boolean eth2FastAggregateVerify(
       final BLSSignatureVerifier signatureVerifier,
       List<BLSPublicKey> pubkeys,
       Bytes32 message,

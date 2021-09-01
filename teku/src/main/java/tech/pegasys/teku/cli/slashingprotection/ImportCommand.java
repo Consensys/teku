@@ -59,7 +59,8 @@ public class ImportCommand implements Runnable {
     verifyImportFileExists(importFile);
     prepareOutputPath(slashProtectionPath.toFile());
 
-    SlashingProtectionImporter importer = new SlashingProtectionImporter(SUB_COMMAND_LOG);
+    SlashingProtectionImporter importer =
+        new SlashingProtectionImporter(SUB_COMMAND_LOG, fromFileName);
 
     try {
       SUB_COMMAND_LOG.display("Reading slashing protection data from: " + importFile.toString());

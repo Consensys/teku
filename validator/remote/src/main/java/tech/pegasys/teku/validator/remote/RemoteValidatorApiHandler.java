@@ -73,7 +73,7 @@ import tech.pegasys.teku.validator.remote.apiclient.ValidatorRestApiClient;
 public class RemoteValidatorApiHandler implements ValidatorApiChannel {
 
   private static final Logger LOG = LogManager.getLogger();
-  static final int MAX_PUBLIC_KEY_BATCH_SIZE = 10;
+  static final int MAX_PUBLIC_KEY_BATCH_SIZE = 50;
   static final int MAX_RATE_LIMITING_RETRIES = 3;
 
   private final Spec spec;

@@ -156,6 +156,10 @@ public class BlstBLS12381 implements BLS12381 {
   @Override
   public boolean completeBatchVerify(List<? extends BatchSemiAggregate> preparedList) {
     try {
+      if (preparedList.isEmpty()) {
+        return true;
+      }
+
       List<BlstSemiAggregate> blstList =
           preparedList.stream().map(b -> (BlstSemiAggregate) b).collect(Collectors.toList());
 

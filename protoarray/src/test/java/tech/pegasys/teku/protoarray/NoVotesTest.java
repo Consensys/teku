@@ -14,7 +14,6 @@
 package tech.pegasys.teku.protoarray;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.protoarray.ProtoArrayTestUtil.createProtoArrayForkChoiceStrategy;
@@ -148,7 +147,7 @@ public class NoVotesTest {
                 store, unsigned(1), getHash(0), unsigned(1), balances, proposerWeightings))
         .isEqualTo(getHash(4));
 
-    // Ensure there is an error when starting from a block that has the wrong justified epoch.
+    // Ensure there is no error when starting from a block that has the wrong justified epoch.
     //
     //      0
     //     / \
@@ -156,12 +155,11 @@ public class NoVotesTest {
     //     |  |
     //     4  3
     //     |
-    //     5 <- starting from 5 with justified epoch 0 should error.
-    assertThatThrownBy(
-            () ->
-                forkChoice.applyPendingVotes(
-                    store, unsigned(1), getHash(5), unsigned(1), balances, proposerWeightings))
-        .hasMessage("ProtoArray: Best node is not viable for head");
+    //     5 <- starting from 5 with justified epoch 0 should return justified.
+    assertThat(
+            forkChoice.applyPendingVotes(
+                store, unsigned(1), getHash(5), unsigned(1), balances, proposerWeightings))
+        .isEqualTo(getHash(5));
 
     // Set the justified epoch to 2 and the start block to 5 and ensure 5 is the head.
     //
