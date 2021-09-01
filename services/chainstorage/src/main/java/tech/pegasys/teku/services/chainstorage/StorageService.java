@@ -15,7 +15,6 @@ package tech.pegasys.teku.services.chainstorage;
 
 import static tech.pegasys.teku.util.config.Constants.STORAGE_QUERY_CHANNEL_PARALLELISM;
 
-import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
@@ -52,7 +51,6 @@ public class StorageService extends Service {
               new VersionedDatabaseFactory(
                   serviceConfig.getMetricsSystem(),
                   serviceConfig.getDataDirLayout().getBeaconDataDirectory(),
-                  Optional.empty(),
                   config.getDataStorageMode(),
                   config.getDataStorageCreateDbVersion(),
                   config.getDataStorageFrequency(),

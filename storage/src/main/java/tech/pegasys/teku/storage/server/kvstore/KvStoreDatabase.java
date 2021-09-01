@@ -121,17 +121,16 @@ public class KvStoreDatabase implements Database {
 
   public static Database createV6(
       final MetricsSystem metricsSystem,
-      final KvStoreAccessor hotDb,
-      final KvStoreAccessor finalizedDb,
+      final KvStoreAccessor db,
       final SchemaHot schemaHot,
       final SchemaFinalized schemaFinalized,
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
       final Spec spec) {
-    final V4HotKvStoreDao dao = new V4HotKvStoreDao(hotDb, schemaHot);
+    final V4HotKvStoreDao dao = new V4HotKvStoreDao(db, schemaHot);
     final V4FinalizedKvStoreDao finalizedDbDao =
-        new V4FinalizedKvStoreDao(finalizedDb, schemaFinalized, stateStorageFrequency);
+        new V4FinalizedKvStoreDao(db, schemaFinalized, stateStorageFrequency);
     return new KvStoreDatabase(
         metricsSystem,
         dao,
