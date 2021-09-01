@@ -14,7 +14,6 @@
 package tech.pegasys.teku.test.acceptance;
 
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
@@ -38,8 +37,7 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
             config ->
                 config
                     .withNetwork(networkName)
-                    .withDepositsFrom(eth1Node)
-                    .withAltairEpoch(UInt64.ZERO));
+                    .withDepositsFrom(eth1Node));
 
     final TekuValidatorNode validatorClient =
         createValidatorNode(
