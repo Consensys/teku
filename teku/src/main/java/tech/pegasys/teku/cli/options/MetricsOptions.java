@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Set;
 import org.hyperledger.besu.metrics.StandardMetricCategory;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
+import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
@@ -35,6 +36,7 @@ public class MetricsOptions {
   @Option(
       names = {"--metrics-enabled"},
       paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
       description = "Enables metrics collection via Prometheus",
       fallbackValue = "true",
       arity = "0..1")

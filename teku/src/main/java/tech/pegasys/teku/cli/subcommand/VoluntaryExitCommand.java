@@ -31,6 +31,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import picocli.CommandLine;
+import picocli.CommandLine.Help.Visibility;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -59,6 +60,7 @@ import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient
 @CommandLine.Command(
     name = "voluntary-exit",
     description = "Create and sign a voluntary exit for a specified validator.",
+    showDefaultValues = true,
     mixinStandardHelpOptions = true,
     abbreviateSynopsis = true,
     versionProvider = PicoCliVersionProvider.class,
@@ -95,6 +97,7 @@ public class VoluntaryExitCommand implements Runnable {
       names = {"--confirmation-enabled"},
       description = "Request confirmation before submitting voluntary exits.",
       paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
       arity = "1")
   private boolean confirmationEnabled = true;
 
