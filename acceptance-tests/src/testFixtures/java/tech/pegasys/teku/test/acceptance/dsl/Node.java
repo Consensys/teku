@@ -65,7 +65,11 @@ public abstract class Node {
   }
 
   public void waitForLogMessageContaining(final String filter) {
+<<<<<<< HEAD
     waitFor(() -> assertThat(getFilteredOutput(filter)).isNotEmpty(), 6, TimeUnit.MINUTES);
+=======
+    waitFor(() -> assertThat(getFilteredOutput(filter)).isNotEmpty(), 2, TimeUnit.MINUTES);
+>>>>>>> d7ab463d44e39e0bcfae1832a8f4ddd1a95418c5
   }
 
   protected void waitFor(

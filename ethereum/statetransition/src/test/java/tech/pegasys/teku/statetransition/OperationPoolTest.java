@@ -26,7 +26,10 @@ import java.util.Optional;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+<<<<<<< HEAD
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+=======
+>>>>>>> d7ab463d44e39e0bcfae1832a8f4ddd1a95418c5
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -51,7 +54,10 @@ public class OperationPoolTest {
   Function<UInt64, BeaconBlockBodySchema<?>> beaconBlockSchemaSupplier =
       slot -> spec.atSlot(slot).getSchemaDefinitions().getBeaconBlockBodySchema();
   BeaconState state = mock(BeaconState.class);
+<<<<<<< HEAD
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
+=======
+>>>>>>> d7ab463d44e39e0bcfae1832a8f4ddd1a95418c5
 
   @BeforeEach
   void init() {
@@ -64,8 +70,11 @@ public class OperationPoolTest {
 
     OperationPool<ProposerSlashing> pool =
         new OperationPool<>(
+<<<<<<< HEAD
             "ProposerSlashingPool",
             metricsSystem,
+=======
+>>>>>>> d7ab463d44e39e0bcfae1832a8f4ddd1a95418c5
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getProposerSlashingsSchema),
             validator);
     assertThat(pool.getItemsForBlock(state)).isEmpty();
@@ -76,8 +85,11 @@ public class OperationPoolTest {
     OperationValidator<SignedVoluntaryExit> validator = mock(OperationValidator.class);
     OperationPool<SignedVoluntaryExit> pool =
         new OperationPool<>(
+<<<<<<< HEAD
             "SignedVoluntaryExitPool",
             metricsSystem,
+=======
+>>>>>>> d7ab463d44e39e0bcfae1832a8f4ddd1a95418c5
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getVoluntaryExitsSchema),
             validator);
     when(validator.validateFully(any())).thenReturn(InternalValidationResult.ACCEPT);
@@ -96,8 +108,12 @@ public class OperationPoolTest {
             .andThen(BeaconBlockBodySchema::getAttesterSlashingsSchema)
             .apply(state.getSlot());
     OperationPool<AttesterSlashing> pool =
+<<<<<<< HEAD
         new OperationPool<>(
             "AttesterSlashingPool", metricsSystem, __ -> attesterSlashingsSchema, validator);
+=======
+        new OperationPool<>(__ -> attesterSlashingsSchema, validator);
+>>>>>>> d7ab463d44e39e0bcfae1832a8f4ddd1a95418c5
     when(validator.validateFully(any())).thenReturn(InternalValidationResult.ACCEPT);
     when(validator.validateForStateTransition(any(), any())).thenReturn(Optional.empty());
     SszList<AttesterSlashing> attesterSlashings =
@@ -113,8 +129,11 @@ public class OperationPoolTest {
     OperationValidator<ProposerSlashing> validator = mock(OperationValidator.class);
     OperationPool<ProposerSlashing> pool =
         new OperationPool<>(
+<<<<<<< HEAD
             "ProposerSlashingPool",
             metricsSystem,
+=======
+>>>>>>> d7ab463d44e39e0bcfae1832a8f4ddd1a95418c5
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getProposerSlashingsSchema),
             validator);
 
@@ -138,8 +157,11 @@ public class OperationPoolTest {
     OperationValidator<ProposerSlashing> validator = mock(OperationValidator.class);
     OperationPool<ProposerSlashing> pool =
         new OperationPool<>(
+<<<<<<< HEAD
             "ProposerSlashingPool",
             metricsSystem,
+=======
+>>>>>>> d7ab463d44e39e0bcfae1832a8f4ddd1a95418c5
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getProposerSlashingsSchema),
             validator);
 
