@@ -17,7 +17,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -153,8 +152,8 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
-  public Set<UInt64> getVotedValidatorIndices() {
-    return votes.keySet();
+  public UInt64 getHighestVotedValidatorIndex() {
+    return votes.keySet().stream().max(Comparator.naturalOrder()).orElse(UInt64.ZERO);
   }
 
   // Prunable methods
