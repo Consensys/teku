@@ -14,28 +14,27 @@
 package tech.pegasys.teku.validator.client.duties.attestations;
 
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.client.duties.DutyResult;
 import tech.pegasys.teku.validator.client.duties.ProductionResult;
 
-public class BatchAttestationSendingStrategy implements SendingStrategy<Attestation> {
-  private final ValidatorApiChannel validatorApiChannel;
+public class BatchAttestationSendingStrategy<T> implements SendingStrategy<T> {
+  private final Function<List<T>, SafeFuture<List<SubmitDataError>>> sendFunction;
 
-  public BatchAttestationSendingStrategy(final ValidatorApiChannel validatorApiChannel) {
-    this.validatorApiChannel = validatorApiChannel;
+  public BatchAttestationSendingStrategy(
+      final Function<List<T>, SafeFuture<List<SubmitDataError>>> sendFunction) {
+    this.sendFunction = sendFunction;
   }
 
   @Override
-  public SafeFuture<DutyResult> send(
-      final Stream<SafeFuture<ProductionResult<Attestation>>> attestations) {
+  public SafeFuture<DutyResult> send(final Stream<SafeFuture<ProductionResult<T>>> attestations) {
     return SafeFuture.collectAll(attestations).thenCompose(this::sendAttestationsAsBatch);
   }
 
-  private SafeFuture<DutyResult> sendAttestationsAsBatch(
-      final List<ProductionResult<Attestation>> results) {
-    return ProductionResult.send(results, validatorApiChannel::sendSignedAttestations);
+  private SafeFuture<DutyResult> sendAttestationsAsBatch(final List<ProductionResult<T>> results) {
+    return ProductionResult.send(results, sendFunction);
   }
 }

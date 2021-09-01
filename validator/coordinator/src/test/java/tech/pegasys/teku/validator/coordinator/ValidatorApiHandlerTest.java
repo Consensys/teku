@@ -721,15 +721,47 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
-  public void sendAggregateAndProof_shouldPostAggregateAndProof() {
+  public void sendAggregateAndProofs_shouldPostAggregateAndProof() {
     final SignedAggregateAndProof aggregateAndProof =
         dataStructureUtil.randomSignedAggregateAndProof();
     when(attestationManager.onAttestation(any(ValidateableAttestation.class)))
         .thenReturn(completedFuture(SUCCESSFUL));
-    validatorApiHandler.sendAggregateAndProof(aggregateAndProof);
+    final SafeFuture<List<SubmitDataError>> result =
+        validatorApiHandler.sendAggregateAndProofs(List.of(aggregateAndProof));
+    assertThat(result).isCompletedWithValue(emptyList());
 
     verify(attestationManager)
         .onAttestation(ValidateableAttestation.aggregateFromValidator(spec, aggregateAndProof));
+  }
+
+  @Test
+  void sendAggregateAndProofs_shouldProcessMixOfValidAndInvalidAggregates() {
+    final SignedAggregateAndProof invalidAggregate =
+        dataStructureUtil.randomSignedAggregateAndProof();
+    final SignedAggregateAndProof validAggregate =
+        dataStructureUtil.randomSignedAggregateAndProof();
+    when(attestationManager.onAttestation(
+            ValidateableAttestation.aggregateFromValidator(spec, invalidAggregate)))
+        .thenReturn(completedFuture(AttestationProcessingResult.invalid("Bad juju")));
+    when(attestationManager.onAttestation(
+            ValidateableAttestation.aggregateFromValidator(spec, validAggregate)))
+        .thenReturn(completedFuture(SUCCESSFUL));
+
+    final SafeFuture<List<SubmitDataError>> result =
+        validatorApiHandler.sendAggregateAndProofs(List.of(invalidAggregate, validAggregate));
+    assertThat(result).isCompletedWithValue(List.of(new SubmitDataError(ZERO, "Bad juju")));
+
+    // Should send both to the attestation manager.
+    verify(attestationManager)
+        .onAttestation(
+            argThat(
+                validatableAttestation ->
+                    validatableAttestation.getSignedAggregateAndProof().equals(validAggregate)));
+    verify(attestationManager)
+        .onAttestation(
+            argThat(
+                validatableAttestation ->
+                    validatableAttestation.getSignedAggregateAndProof().equals(invalidAggregate)));
   }
 
   @Test

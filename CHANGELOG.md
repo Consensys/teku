@@ -34,4 +34,5 @@ milestones. Existing Sign type `block` is backward compatible with phase0.
  - Get validator from state should return `404` code rather than a `400` code.
  - Produce attestation data (`/eth/v1/validator/attestation_data`) should return `400` error for future slots, rather than a `500`.
  - Fixed command-line option `--Xdata-storage-non-canonical-blocks-enabled` which was marked as a development option (-X) but not hidden.
+ - Posting aggregates that fail validation to `/eth/v1/validator/aggregate_and_proofs` will now result in `SC_BAD_REQUEST` response, with details of the invalid aggregates in the response body.
 

@@ -486,21 +486,23 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public void sendAggregateAndProof(final SignedAggregateAndProof aggregateAndProof) {
-    attestationManager
+  public SafeFuture<List<SubmitDataError>> sendAggregateAndProofs(
+      final List<SignedAggregateAndProof> aggregateAndProofs) {
+    return SafeFuture.collectAll(aggregateAndProofs.stream().map(this::processAggregateAndProof))
+        .thenApply(this::convertAttestationProcessingResultsToErrorList);
+  }
+
+  private SafeFuture<AttestationProcessingResult> processAggregateAndProof(
+      final SignedAggregateAndProof aggregateAndProof) {
+    return attestationManager
         .onAttestation(ValidateableAttestation.aggregateFromValidator(spec, aggregateAndProof))
-        .finish(
-            result -> {
-              result.ifInvalid(
-                  reason ->
-                      VALIDATOR_LOGGER.producedInvalidAggregate(
-                          aggregateAndProof.getMessage().getAggregate().getData().getSlot(),
-                          reason));
-            },
-            err ->
-                LOG.error(
-                    "Failed to send aggregate for slot {}",
-                    aggregateAndProof.getMessage().getAggregate().getData().getSlot()));
+        .thenPeek(
+            result ->
+                result.ifInvalid(
+                    reason ->
+                        VALIDATOR_LOGGER.producedInvalidAggregate(
+                            aggregateAndProof.getMessage().getAggregate().getData().getSlot(),
+                            reason)));
   }
 
   @Override
@@ -627,7 +629,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   private Optional<AttesterDuty> createAttesterDuties(
-      final BeaconState state, final UInt64 epoch, final Integer validatorIndex) {
+      final BeaconState state, final UInt64 epoch, final int validatorIndex) {
 
     return combine(
         spec.getValidatorPubKey(state, UInt64.valueOf(validatorIndex)),

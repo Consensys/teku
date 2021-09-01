@@ -19,6 +19,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,6 +29,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.client.duties.DutyResult;
 import tech.pegasys.teku.validator.client.duties.ProductionResult;
 
@@ -36,7 +39,7 @@ class IndividualSendingStrategyTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @SuppressWarnings("unchecked")
-  private final Function<ProductionResult<String>, SafeFuture<DutyResult>> sendFunction =
+  private final Function<List<String>, SafeFuture<List<SubmitDataError>>> sendFunction =
       mock(Function.class);
 
   private final IndividualSendingStrategy<String> strategy =
@@ -44,12 +47,7 @@ class IndividualSendingStrategyTest {
 
   @BeforeEach
   void setUp() {
-    when(sendFunction.apply(any()))
-        .thenAnswer(
-            invocation -> {
-              final ProductionResult<String> result = invocation.getArgument(0);
-              return SafeFuture.completedFuture(result.getResult());
-            });
+    when(sendFunction.apply(any())).thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
   }
 
   @Test
@@ -66,26 +64,23 @@ class IndividualSendingStrategyTest {
 
     assertThat(result).isNotDone();
 
-    final ProductionResult<String> result1 =
+    future1.complete(
         ProductionResult.success(
-            dataStructureUtil.randomPublicKey(), dataStructureUtil.randomBytes32(), message1);
-    future1.complete(result1);
+            dataStructureUtil.randomPublicKey(), dataStructureUtil.randomBytes32(), message1));
     assertThat(result).isNotDone();
-    verify(sendFunction).apply(result1);
+    verify(sendFunction).apply(List.of(message1));
 
-    final ProductionResult<String> result3 =
+    future3.complete(
         ProductionResult.success(
-            dataStructureUtil.randomPublicKey(), dataStructureUtil.randomBytes32(), message3);
-    future3.complete(result3);
+            dataStructureUtil.randomPublicKey(), dataStructureUtil.randomBytes32(), message3));
     assertThat(result).isNotDone();
-    verify(sendFunction).apply(result3);
+    verify(sendFunction).apply(List.of(message3));
 
-    final ProductionResult<String> result2 =
+    future2.complete(
         ProductionResult.success(
-            dataStructureUtil.randomPublicKey(), dataStructureUtil.randomBytes32(), message2);
-    future2.complete(result2);
+            dataStructureUtil.randomPublicKey(), dataStructureUtil.randomBytes32(), message2));
     assertThat(result).isCompleted();
     assertThat(result.join().getSuccessCount()).isEqualTo(3);
-    verify(sendFunction).apply(result2);
+    verify(sendFunction).apply(List.of(message2));
   }
 }

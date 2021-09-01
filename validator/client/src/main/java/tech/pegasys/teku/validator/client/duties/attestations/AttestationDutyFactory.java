@@ -45,8 +45,8 @@ public class AttestationDutyFactory
         forkProvider,
         validatorApiChannel,
         sendAttestationsAsBatch
-            ? new BatchAttestationSendingStrategy(validatorApiChannel)
-            : IndividualSendingStrategy.createAttestationSender(validatorApiChannel));
+            ? new BatchAttestationSendingStrategy<>(validatorApiChannel::sendSignedAttestations)
+            : new IndividualSendingStrategy<>(validatorApiChannel::sendSignedAttestations));
   }
 
   @Override
@@ -56,7 +56,9 @@ public class AttestationDutyFactory
         validatorApiChannel,
         forkProvider,
         VALIDATOR_LOGGER,
-        IndividualSendingStrategy.createAggregateSender(validatorApiChannel));
+        sendAttestationsAsBatch
+            ? new BatchAttestationSendingStrategy<>(validatorApiChannel::sendAggregateAndProofs)
+            : new IndividualSendingStrategy<>(validatorApiChannel::sendAggregateAndProofs));
   }
 
   @Override

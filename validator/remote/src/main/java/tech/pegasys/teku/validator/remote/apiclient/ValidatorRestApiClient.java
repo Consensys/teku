@@ -64,7 +64,8 @@ public interface ValidatorRestApiClient {
 
   Optional<Attestation> createAggregate(UInt64 slot, Bytes32 attestationHashTreeRoot);
 
-  void sendAggregateAndProofs(List<SignedAggregateAndProof> signedAggregateAndProof);
+  Optional<PostDataFailureResponse> sendAggregateAndProofs(
+      List<SignedAggregateAndProof> signedAggregateAndProof);
 
   void subscribeToBeaconCommittee(List<CommitteeSubscriptionRequest> requests);
 
