@@ -536,6 +536,6 @@ workflows:
           filters:
             branches:
               only:
-                - master
+                - gh-pages
     jobs:
       - dockerScan
