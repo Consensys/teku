@@ -36,8 +36,7 @@ import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 public class OperationPool<T extends SszData> {
   private static final int OPERATION_POOL_SIZE = 1000;
   private static final String OPERATION_POOL_SIZE_METRIC = "operation_pool_size_";
-  private static final String OPERATION_POOL_SIZE_VALIDATION_REASON =
-      "operation_pool_validation_";
+  private static final String OPERATION_POOL_SIZE_VALIDATION_REASON = "operation_pool_validation_";
   private final Set<T> operations = LimitedSet.create(OPERATION_POOL_SIZE);
   private final Function<UInt64, SszListSchema<T, ?>> slotToSszListSchemaSupplier;
   private final OperationValidator<T> operationValidator;
@@ -52,10 +51,7 @@ public class OperationPool<T extends SszData> {
     this.slotToSszListSchemaSupplier = slotToSszListSchemaSupplier;
     this.operationValidator = operationValidator;
     metricsSystem.createIntegerGauge(
-        TekuMetricCategory.BEACON,
-        OPERATION_POOL_SIZE_METRIC + metricType,
-        "result",
-        this::size);
+        TekuMetricCategory.BEACON, OPERATION_POOL_SIZE_METRIC + metricType, "result", this::size);
     validationReasonCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.BEACON,
