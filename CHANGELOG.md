@@ -14,16 +14,8 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Breaking Changes
 
 ### Additions and Improvements
- - Added command line option `--validators-early-attestations-enabled`, which defaults to true. 
-   When using a load balanced beacon node, this option should be disabled.
- - Added additional bootnodes for the Prater testnet to improve peer discovery.
- - Improved peer discovery. All authenticated node sessions are evaluated as potential peers to connect.
- - Improved clarity of sync progress log messages.
  - Logged a message to indicate when the node is in sync.
 
 ### Bug Fixes
- - Added a column size and percentage complete to migrate-database command, where columns contain block or state objects, as they can be time consuming to copy.
- - Fixed issue in Altair where sync committee contribution gossip could be incorrectly rejected when received at the very end of the slot.
- - Posting attestations that fail validation to `/eth/v1/beacon/pool/attestations` will now result in `SC_BAD_REQUEST` response, with details of the invalid attestations in the response body.
  - Fixed `IllegalStateException: New response submitted after closing AsyncResponseProcessor` errors.
 
