@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Streams;
-import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -146,8 +145,7 @@ public class BLS {
         publicKeys.size() == messages.size(),
         "Number of public keys and number of messages differs.");
     if (publicKeys.isEmpty()) return false;
-    // Check that there are no duplicate messages
-    if (new HashSet<>(messages).size() != messages.size()) return false;
+
     List<PublicKeyMessagePair> publicKeyMessagePairs =
         Streams.zip(
                 publicKeys.stream(),

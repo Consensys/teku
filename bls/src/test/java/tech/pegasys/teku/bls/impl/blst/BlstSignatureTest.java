@@ -19,12 +19,20 @@ import static tech.pegasys.teku.bls.impl.blst.BlstSignature.INFINITY;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.bls.impl.AbstractSignatureTest;
+import tech.pegasys.teku.bls.impl.BLS12381;
 
-public class BlstSignatureTest {
+public class BlstSignatureTest extends AbstractSignatureTest {
+  private static BLS12381 BLS;
 
   @BeforeAll
   static void setup() {
-    assertThat(BlstLoader.INSTANCE).isNotEmpty();
+    BLS = BlstLoader.INSTANCE.orElseThrow();
+  }
+
+  @Override
+  protected BLS12381 getBls() {
+    return BLS;
   }
 
   private static final Bytes INFINITY_BYTES =
