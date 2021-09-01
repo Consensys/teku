@@ -28,19 +28,22 @@ public class ReferenceTestFinder {
 
   private static final Path TEST_PATH_FROM_MODULE =
       Path.of("src", "referenceTest", "resources", "eth2.0-spec-tests", "tests");
-  private static List<String> SUPPORTED_FORKS = List.of(TestFork.PHASE0, TestFork.ALTAIR);
+  private static final List<String> SUPPORTED_FORKS = List.of(TestFork.PHASE0, TestFork.ALTAIR);
 
   @MustBeClosed
   public static Stream<TestDefinition> findReferenceTests() throws IOException {
-    return findSpecDirectories().flatMap(ReferenceTestFinder::findTestTypes);
+    return findSpecDirectories().flatMap(unchecked(ReferenceTestFinder::findTestTypes));
   }
 
   @MustBeClosed
-  private static Stream<TestDefinition> findTestTypes(final Path specDirectory) {
+  private static Stream<TestDefinition> findTestTypes(final Path specDirectory) throws IOException {
+    final String spec = specDirectory.getFileName().toString();
+    if (spec.equals("bls")) {
+      return new BlsRefTestFinder().findTests(TestFork.PHASE0, spec, specDirectory);
+    }
     return SUPPORTED_FORKS.stream()
         .flatMap(
             fork -> {
-              final String spec = specDirectory.getFileName().toString();
               final Path testsPath = specDirectory.resolve(fork);
               if (!testsPath.toFile().exists()) {
                 return Stream.empty();
@@ -48,6 +51,7 @@ public class ReferenceTestFinder {
 
               return Stream.of(
                       new BlsTestFinder(),
+                      new BlsRefTestFinder(),
                       new SszTestFinder("ssz_generic"),
                       new SszTestFinder("ssz_static"),
                       new ShufflingTestFinder(),

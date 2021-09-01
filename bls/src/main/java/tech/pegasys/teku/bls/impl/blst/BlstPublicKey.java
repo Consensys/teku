@@ -89,6 +89,11 @@ class BlstPublicKey implements PublicKey {
     }
   }
 
+  @Override
+  public boolean isInGroup() {
+    return isInGroup.get();
+  }
+
   private boolean checkGroupMembership() {
     return ecPoint.in_group();
   }

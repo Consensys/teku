@@ -57,6 +57,13 @@ public interface PublicKey {
    */
   void forceValidation() throws IllegalArgumentException;
 
+  /**
+   * Determine if the key is in the G1 group.
+   *
+   * @return true if the key is in group, otherwise false.
+   */
+  boolean isInGroup();
+
   /** Implementation must override */
   @Override
   int hashCode();
