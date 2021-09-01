@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
@@ -206,7 +207,7 @@ public class ForkChoiceUtil {
       final ValidateableAttestation validateableAttestation,
       final Optional<BeaconState> maybeTargetState) {
     Attestation attestation = validateableAttestation.getAttestation();
-    return validateOnAttestation(store, attestation)
+    return validateOnAttestation(store, attestation.getData())
         .ifSuccessful(
             () -> {
               if (maybeTargetState.isEmpty()) {
@@ -220,51 +221,57 @@ public class ForkChoiceUtil {
   }
 
   private AttestationProcessingResult validateOnAttestation(
-      final ReadOnlyStore store, final Attestation attestation) {
-    final Checkpoint target = attestation.getData().getTarget();
+      final ReadOnlyStore store, final AttestationData attestationData) {
 
-    UInt64 current_epoch = miscHelpers.computeEpochAtSlot(getCurrentSlot(store));
+    UInt64 currentEpoch = miscHelpers.computeEpochAtSlot(getCurrentSlot(store));
+    final ReadOnlyForkChoiceStrategy forkChoiceStrategy = store.getForkChoiceStrategy();
+
+    return validateOnAttestation(forkChoiceStrategy, currentEpoch, attestationData);
+  }
+
+  public AttestationProcessingResult validateOnAttestation(
+      final ReadOnlyForkChoiceStrategy forkChoiceStrategy,
+      final UInt64 currentEpoch,
+      final AttestationData attestationData) {
+    final Checkpoint target = attestationData.getTarget();
 
     // Use GENESIS_EPOCH for previous when genesis to avoid underflow
-    UInt64 previous_epoch =
-        current_epoch.compareTo(SpecConfig.GENESIS_EPOCH) > 0
-            ? current_epoch.minus(UInt64.ONE)
+    final UInt64 previousEpoch =
+        currentEpoch.isGreaterThan(SpecConfig.GENESIS_EPOCH)
+            ? currentEpoch.minus(UInt64.ONE)
             : SpecConfig.GENESIS_EPOCH;
 
-    if (!target.getEpoch().equals(previous_epoch) && !target.getEpoch().equals(current_epoch)) {
+    if (!target.getEpoch().equals(previousEpoch) && !target.getEpoch().equals(currentEpoch)) {
       return AttestationProcessingResult.invalid(
           "Attestations must be from the current or previous epoch");
     }
 
-    if (!target
-        .getEpoch()
-        .equals(miscHelpers.computeEpochAtSlot(attestation.getData().getSlot()))) {
+    if (!target.getEpoch().equals(miscHelpers.computeEpochAtSlot(attestationData.getSlot()))) {
       return AttestationProcessingResult.invalid("Attestation slot must be within specified epoch");
     }
 
-    final ReadOnlyForkChoiceStrategy forkChoiceStrategy = store.getForkChoiceStrategy();
     if (!forkChoiceStrategy.contains(target.getRoot())) {
       // Attestations target must be for a known block. If a target block is unknown, delay
       // consideration until the block is found
       return AttestationProcessingResult.UNKNOWN_BLOCK;
     }
 
-    Optional<UInt64> blockSlot =
-        forkChoiceStrategy.blockSlot(attestation.getData().getBeacon_block_root());
+    final Optional<UInt64> blockSlot =
+        forkChoiceStrategy.blockSlot(attestationData.getBeacon_block_root());
     if (blockSlot.isEmpty()) {
       // Attestations must be for a known block. If block is unknown, delay consideration until the
       // block is found
       return AttestationProcessingResult.UNKNOWN_BLOCK;
     }
 
-    if (blockSlot.get().compareTo(attestation.getData().getSlot()) > 0) {
+    if (blockSlot.get().compareTo(attestationData.getSlot()) > 0) {
       return AttestationProcessingResult.invalid(
           "Attestations must not be for blocks in the future. If not, the attestation should not be considered");
     }
 
     // LMD vote must be consistent with FFG vote target
-    final UInt64 target_slot = miscHelpers.computeStartSlotAtEpoch(target.getEpoch());
-    if (getAncestor(forkChoiceStrategy, attestation.getData().getBeacon_block_root(), target_slot)
+    final UInt64 targetSlot = miscHelpers.computeStartSlotAtEpoch(target.getEpoch());
+    if (getAncestor(forkChoiceStrategy, attestationData.getBeacon_block_root(), targetSlot)
         .map(ancestorRoot -> !ancestorRoot.equals(target.getRoot()))
         .orElse(true)) {
       return AttestationProcessingResult.invalid(
