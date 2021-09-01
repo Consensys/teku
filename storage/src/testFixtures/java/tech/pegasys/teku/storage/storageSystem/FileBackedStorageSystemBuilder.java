@@ -26,7 +26,7 @@ import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration;
 import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaHot;
-import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaFinalized;
+import tech.pegasys.teku.storage.server.kvstore.schema.V6SnapshotSchemaFinalized;
 import tech.pegasys.teku.storage.server.leveldb.LevelDbDatabaseFactory;
 import tech.pegasys.teku.storage.server.rocksdb.RocksDbDatabaseFactory;
 import tech.pegasys.teku.storage.store.StoreConfig;
@@ -54,6 +54,9 @@ public class FileBackedStorageSystemBuilder {
   public StorageSystem build() {
     final Database database;
     switch (version) {
+      case LEVELDB_TRIE:
+        database = createLevelDbTrieDatabase();
+        break;
       case LEVELDB2:
         database = createLevelDb2Database();
         break;
@@ -154,12 +157,13 @@ public class FileBackedStorageSystemBuilder {
   }
 
   private Database createV6Database() {
-    KvStoreConfiguration dbConfigDefault = KvStoreConfiguration.v6SingleDefaults();
+    KvStoreConfiguration configDefault = KvStoreConfiguration.v6SingleDefaults();
+
     return RocksDbDatabaseFactory.createV6(
         new StubMetricsSystem(),
-        dbConfigDefault.withDatabaseDir(hotDir),
-        V4SchemaHot.create(spec),
-        V6SchemaFinalized.create(spec),
+        configDefault.withDatabaseDir(hotDir),
+        new V4SchemaHot(spec),
+        new V6SnapshotSchemaFinalized(spec),
         storageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
@@ -167,15 +171,22 @@ public class FileBackedStorageSystemBuilder {
   }
 
   private Database createLevelDb2Database() {
-    KvStoreConfiguration dbConfigDefault = KvStoreConfiguration.v6SingleDefaults();
-
+    KvStoreConfiguration configDefault = KvStoreConfiguration.v6SingleDefaults();
     return LevelDbDatabaseFactory.createLevelDbV2(
         new StubMetricsSystem(),
-        dbConfigDefault.withDatabaseDir(hotDir),
-        V4SchemaHot.create(spec),
-        V6SchemaFinalized.create(spec),
+        configDefault.withDatabaseDir(hotDir),
         storageMode,
         stateStorageFrequency,
+        storeNonCanonicalBlocks,
+        spec);
+  }
+
+  private Database createLevelDbTrieDatabase() {
+    KvStoreConfiguration configDefault = KvStoreConfiguration.v6SingleDefaults();
+    return LevelDbDatabaseFactory.createLevelDbTrie(
+        new StubMetricsSystem(),
+        configDefault.withDatabaseDir(hotDir),
+        storageMode,
         storeNonCanonicalBlocks,
         spec);
   }

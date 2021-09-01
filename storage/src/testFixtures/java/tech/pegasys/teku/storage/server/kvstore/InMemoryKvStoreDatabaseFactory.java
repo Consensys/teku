@@ -18,7 +18,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaHot;
-import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaFinalized;
+import tech.pegasys.teku.storage.server.kvstore.schema.V6SnapshotSchemaFinalized;
 
 public class InMemoryKvStoreDatabaseFactory {
 
@@ -45,11 +45,12 @@ public class InMemoryKvStoreDatabaseFactory {
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
       final Spec spec) {
-    return KvStoreDatabase.createV6(
+    return KvStoreDatabase.createWithStateSnapshots(
         new StubMetricsSystem(),
         db,
-        V4SchemaHot.create(spec),
-        V6SchemaFinalized.create(spec),
+        db,
+        new V4SchemaHot(spec),
+        new V6SnapshotSchemaFinalized(spec),
         storageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
