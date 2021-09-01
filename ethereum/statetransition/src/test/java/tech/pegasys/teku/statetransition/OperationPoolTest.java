@@ -64,7 +64,7 @@ public class OperationPoolTest {
 
     OperationPool<ProposerSlashing> pool =
         new OperationPool<>(
-                "ProposerSlashingPool",
+            "ProposerSlashingPool",
             metricsSystem,
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getProposerSlashingsSchema),
             validator);
@@ -76,7 +76,7 @@ public class OperationPoolTest {
     OperationValidator<SignedVoluntaryExit> validator = mock(OperationValidator.class);
     OperationPool<SignedVoluntaryExit> pool =
         new OperationPool<>(
-                "SignedVoluntaryExitPool",
+            "SignedVoluntaryExitPool",
             metricsSystem,
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getVoluntaryExitsSchema),
             validator);
@@ -96,7 +96,8 @@ public class OperationPoolTest {
             .andThen(BeaconBlockBodySchema::getAttesterSlashingsSchema)
             .apply(state.getSlot());
     OperationPool<AttesterSlashing> pool =
-        new OperationPool<>("AttesterSlashingPool",metricsSystem, __ -> attesterSlashingsSchema, validator);
+        new OperationPool<>(
+            "AttesterSlashingPool", metricsSystem, __ -> attesterSlashingsSchema, validator);
     when(validator.validateFully(any())).thenReturn(InternalValidationResult.ACCEPT);
     when(validator.validateForStateTransition(any(), any())).thenReturn(Optional.empty());
     SszList<AttesterSlashing> attesterSlashings =
@@ -112,7 +113,7 @@ public class OperationPoolTest {
     OperationValidator<ProposerSlashing> validator = mock(OperationValidator.class);
     OperationPool<ProposerSlashing> pool =
         new OperationPool<>(
-                "ProposerSlashingPool",
+            "ProposerSlashingPool",
             metricsSystem,
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getProposerSlashingsSchema),
             validator);
@@ -137,7 +138,7 @@ public class OperationPoolTest {
     OperationValidator<ProposerSlashing> validator = mock(OperationValidator.class);
     OperationPool<ProposerSlashing> pool =
         new OperationPool<>(
-                "ProposerSlashingPool",
+            "ProposerSlashingPool",
             metricsSystem,
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getProposerSlashingsSchema),
             validator);

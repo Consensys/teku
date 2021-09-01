@@ -36,7 +36,8 @@ import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 public class OperationPool<T extends SszData> {
   private static final int OPERATION_POOL_SIZE = 1000;
   private static final String OPERATION_POOL_SIZE_METRIC = "eth1_operation_pool_count_for_";
-  private static final String OPERATION_POOL_SIZE_VALIDATION_REASON = "eth1_operation_pool_validation_reason_for_";
+  private static final String OPERATION_POOL_SIZE_VALIDATION_REASON =
+      "eth1_operation_pool_validation_reason_for_";
   private final Set<T> operations = LimitedSet.create(OPERATION_POOL_SIZE);
   private final Function<UInt64, SszListSchema<T, ?>> slotToSszListSchemaSupplier;
   private final OperationValidator<T> operationValidator;
@@ -44,7 +45,7 @@ public class OperationPool<T extends SszData> {
   private final LabelledMetric<Counter> validationReasonCounter;
 
   public OperationPool(
-          String metricType,
+      String metricType,
       MetricsSystem metricsSystem,
       Function<UInt64, SszListSchema<T, ?>> slotToSszListSchemaSupplier,
       OperationValidator<T> operationValidator) {
@@ -52,13 +53,13 @@ public class OperationPool<T extends SszData> {
     this.operationValidator = operationValidator;
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.BEACON,
-        OPERATION_POOL_SIZE_METRIC+metricType,
+        OPERATION_POOL_SIZE_METRIC + metricType,
         "Count of items present in each type of pool",
         this::size);
     validationReasonCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.BEACON,
-            OPERATION_POOL_SIZE_VALIDATION_REASON+metricType,
+            OPERATION_POOL_SIZE_VALIDATION_REASON + metricType,
             "track validation reason");
   }
 
