@@ -22,3 +22,4 @@ For information on changes in released versions of Teku, see the [releases page]
  - Use atomic move when writing slashing protection records, if supported by the file system.
  - Increase the batch size when searching for unknown validator indexes from 10 to 50.
  - Fixed issue with the voluntary-exit subcommand and Altair networks which caused "Failed to retrieve network config" errors.
+ - Fixed issue where redundant attestations were held in the attestation pool and included in blocks.
