@@ -155,7 +155,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
   }
 
   private class AggregatingIterator implements Iterator<ValidateableAttestation> {
-    private final Set<ValidateableAttestation> includedAttestations = new HashSet<>();
+    private SszBitlist includedValidators = Attestation.createEmptyAggregationBits();
 
     @Override
     public boolean hasNext() {
@@ -169,20 +169,23 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
       streamRemainingAttestations()
           .forEach(
               candidate -> {
+                final SszBitlist candidateAggregationBits =
+                    candidate.getAttestation().getAggregation_bits();
                 if (builder.canAggregate(candidate)) {
                   builder.aggregate(candidate);
-                } else if (builder.isFullyIncluded(candidate)) {
-                  includedAttestations.add(candidate);
+                  includedValidators = includedValidators.or(candidateAggregationBits);
                 }
               });
-      includedAttestations.addAll(builder.getIncludedAttestations());
       return builder.buildAggregate();
     }
 
     public Stream<ValidateableAttestation> streamRemainingAttestations() {
       return attestationsByValidatorCount.values().stream()
           .flatMap(Set::stream)
-          .filter(candidate -> !includedAttestations.contains(candidate));
+          .filter(
+              candidate ->
+                  !includedValidators.isSuperSetOf(
+                      candidate.getAttestation().getAggregation_bits()));
     }
   }
 }

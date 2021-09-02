@@ -188,7 +188,7 @@ public class VoluntaryExitCommand implements Runnable {
           .orElseThrow();
     } catch (Exception ex) {
       SUB_COMMAND_LOG.error(
-          "Failed to retrieve network config. Check beacon node is accepting REST requests.");
+          "Failed to retrieve network config. Check beacon node is accepting REST requests.", ex);
       System.exit(1);
     }
     return null;
