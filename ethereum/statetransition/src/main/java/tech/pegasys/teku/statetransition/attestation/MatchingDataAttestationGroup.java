@@ -171,9 +171,6 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
               candidate -> {
                 final SszBitlist candidateAggregationBits =
                     candidate.getAttestation().getAggregation_bits();
-                if (includedValidators.isSuperSetOf(candidateAggregationBits)) {
-                  return;
-                }
                 if (builder.canAggregate(candidate)) {
                   builder.aggregate(candidate);
                   includedValidators = includedValidators.or(candidateAggregationBits);
