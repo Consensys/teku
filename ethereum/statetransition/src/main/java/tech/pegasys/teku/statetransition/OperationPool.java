@@ -52,11 +52,12 @@ public class OperationPool<T extends SszData> {
     this.operationValidator = operationValidator;
 
     metricsSystem.createIntegerGauge(
-        TekuMetricCategory.BEACON, OPERATION_POOL_SIZE_METRIC + metricType, "result", this::size);
+        TekuMetricCategory.BEACON, OPERATION_POOL_SIZE_METRIC + metricType, "Current number of operations in the pool", this::size);
     validationReasonCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.BEACON,
             OPERATION_POOL_SIZE_VALIDATION_REASON + metricType,
+                "Total number of attempts to add an operation to the pool, broken down by validation result",
             "result");
   }
 
