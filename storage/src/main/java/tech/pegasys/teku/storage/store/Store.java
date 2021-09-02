@@ -93,7 +93,7 @@ class Store implements UpdatableStore {
   final Map<Bytes32, SignedBeaconBlock> blocks;
   final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates;
   final VoteTracker[] votes;
-  public static final int VOTE_TRACKER_SIZE = 128;
+  public static final int VOTE_TRACKER_SIZE = 1024;
   UInt64 highestVotedValidatorIndex;
   private ForkChoiceStrategy forkChoiceStrategy;
 
