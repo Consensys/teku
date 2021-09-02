@@ -92,7 +92,10 @@ public class StoreVoteUpdater implements VoteUpdater {
   public void commit() {
     // Votes are applied to the store immediately since the changes to the in-memory ProtoArray
     // can't be rolled back.
-    store.votes.putAll(votes);
+    votes.forEach(
+        (key, value) -> {
+          store.votes[key.intValue()] = value;
+        });
     store.highestVotedValidatorIndex =
         store.highestVotedValidatorIndex.max(
             votes.keySet().stream().max(Comparator.naturalOrder()).orElse(UInt64.ZERO));

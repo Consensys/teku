@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -93,7 +92,8 @@ class Store implements UpdatableStore {
   final CachingTaskQueue<Bytes32, StateAndBlockSummary> states;
   final Map<Bytes32, SignedBeaconBlock> blocks;
   final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates;
-  final Map<UInt64, VoteTracker> votes;
+  final VoteTracker[] votes;
+  public static final int VOTE_TRACKER_SIZE = 16;
   UInt64 highestVotedValidatorIndex;
   private ForkChoiceStrategy forkChoiceStrategy;
 
@@ -136,9 +136,15 @@ class Store implements UpdatableStore {
     this.justified_checkpoint = justified_checkpoint;
     this.best_justified_checkpoint = best_justified_checkpoint;
     this.blocks = blocks;
-    this.votes = new HashMap<>(votes);
+    // this.votes = new HashMap<>(votes);
+
+    this.votes = new VoteTracker[VOTE_TRACKER_SIZE];
+    votes.forEach(
+        (key, value) -> {
+          this.votes[key.intValue()] = value;
+        });
     this.highestVotedValidatorIndex =
-        this.votes.keySet().stream().max(Comparator.naturalOrder()).orElse(UInt64.ZERO);
+        votes.keySet().stream().max(Comparator.naturalOrder()).orElse(UInt64.ZERO);
     this.blockMetadata = blockMetadata;
 
     // Track latest finalized block
@@ -524,7 +530,7 @@ class Store implements UpdatableStore {
   VoteTracker getVote(UInt64 validatorIndex) {
     readLock.lock();
     try {
-      return votes.get(validatorIndex);
+      return votes[validatorIndex.intValue()];
     } finally {
       readLock.unlock();
     }
