@@ -192,7 +192,7 @@ public class OperationsReOrgManagerTest {
 
     verify(recentChainData).getAncestorsOnFork(commonAncestorSlot, block2.hashTreeRoot());
 
-    verify(attestationPool).onReorg(commonAncestorSlot);
+    verify(attestationPool, never()).onReorg(commonAncestorSlot);
     verify(exitOperationPool, never()).addAll(any());
     verify(proposerSlashingOperationPool, never()).addAll(any());
     verify(attesterSlashingOperationPool, never()).addAll(any());
