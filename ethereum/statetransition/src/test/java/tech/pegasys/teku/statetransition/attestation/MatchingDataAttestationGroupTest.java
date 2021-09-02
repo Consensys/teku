@@ -169,6 +169,20 @@ class MatchingDataAttestationGroupTest {
   }
 
   @Test
+  void iterator_shouldOmitAttestationsThatOverlapWithFirstAttestationAndAreRedundantWithCombined() {
+    // First aggregate created will have validators 1,2,3,4 which makes the 2,4 attestation
+    // redundant, but iteration will have already passed it before it becomes redundant
+    final ValidateableAttestation useful1 = addAttestation(1, 2, 3);
+    addAttestation(2, 4);
+    final ValidateableAttestation useful2 = addAttestation(4);
+
+    assertThat(group)
+        .containsExactly(
+            ValidateableAttestation.from(
+                spec, aggregateAttestations(useful1.getAttestation(), useful2.getAttestation())));
+  }
+
+  @Test
   public void size() {
     assertThat(group.size()).isEqualTo(0);
     final ValidateableAttestation attestation1 = addAttestation(1);
