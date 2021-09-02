@@ -93,7 +93,7 @@ class Store implements UpdatableStore {
   final Map<Bytes32, SignedBeaconBlock> blocks;
   final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates;
   final VoteTracker[] votes;
-  public static final int VOTE_TRACKER_SIZE = 16;
+  public static final int VOTE_TRACKER_SIZE = 64;
   UInt64 highestVotedValidatorIndex;
   private ForkChoiceStrategy forkChoiceStrategy;
 
@@ -136,7 +136,6 @@ class Store implements UpdatableStore {
     this.justified_checkpoint = justified_checkpoint;
     this.best_justified_checkpoint = best_justified_checkpoint;
     this.blocks = blocks;
-    // this.votes = new HashMap<>(votes);
 
     this.votes = new VoteTracker[VOTE_TRACKER_SIZE];
     votes.forEach(
