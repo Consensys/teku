@@ -39,7 +39,6 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.schema.SszListSchema;
-import tech.pegasys.teku.util.config.Constants;
 
 /**
  * Maintains a pool of attestations. Attestations can be retrieved either for inclusion in a block
@@ -49,8 +48,6 @@ import tech.pegasys.teku.util.config.Constants;
  */
 public class AggregatingAttestationPool implements SlotEventsChannel {
   static final long ATTESTATION_RETENTION_EPOCHS = 2;
-  private static final SszListSchema<Attestation, ?> ATTESTATIONS_SCHEMA =
-      SszListSchema.create(Attestation.SSZ_SCHEMA, Constants.MAX_ATTESTATIONS);
 
   private final Map<Bytes, MatchingDataAttestationGroup> attestationGroupByDataHash =
       new HashMap<>();
@@ -161,6 +158,8 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     final int previousEpochLimit = spec.getPreviousEpochAttestationCapacity(stateAtBlockSlot);
 
     final AtomicInteger prevEpochCount = new AtomicInteger(0);
+    final SszListSchema<Attestation, ?> attestationsSchema =
+        getAttestationsSchema(stateAtBlockSlot.getSlot());
     return dataHashBySlot.descendingMap().values().stream()
         .flatMap(Collection::stream)
         .map(attestationGroupByDataHash::get)
@@ -168,7 +167,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .filter(group -> isValid(stateAtBlockSlot, group.getAttestationData()))
         .filter(forkChecker::areAttestationsFromCorrectFork)
         .flatMap(MatchingDataAttestationGroup::stream)
-        .limit(ATTESTATIONS_SCHEMA.getMaxLength())
+        .limit(attestationsSchema.getMaxLength())
         .map(ValidateableAttestation::getAttestation)
         .filter(
             att -> {
@@ -178,7 +177,14 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
               }
               return true;
             })
-        .collect(ATTESTATIONS_SCHEMA.collector());
+        .collect(attestationsSchema.collector());
+  }
+
+  private SszListSchema<Attestation, ?> getAttestationsSchema(final UInt64 slot) {
+    return spec.atSlot(slot)
+        .getSchemaDefinitions()
+        .getBeaconBlockBodySchema()
+        .getAttestationsSchema();
   }
 
   public Stream<Attestation> getAttestations(

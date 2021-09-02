@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.ssz.collections;
 
+import java.util.BitSet;
 import java.util.List;
 import java.util.stream.IntStream;
 import javax.annotation.Nullable;
@@ -75,6 +76,8 @@ public interface SszBitlist extends SszPrimitiveList<Boolean, SszBit> {
   default IntStream streamAllSetBits() {
     return getAllSetBits().stream().mapToInt(i -> i);
   }
+
+  BitSet asBitSet();
 
   @Override
   default Boolean getElement(int index) {

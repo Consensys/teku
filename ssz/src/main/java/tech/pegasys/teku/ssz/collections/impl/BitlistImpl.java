@@ -122,6 +122,10 @@ class BitlistImpl {
     return Bytes.wrap(array);
   }
 
+  public BitSet asBitSet() {
+    return (BitSet) data.clone();
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {

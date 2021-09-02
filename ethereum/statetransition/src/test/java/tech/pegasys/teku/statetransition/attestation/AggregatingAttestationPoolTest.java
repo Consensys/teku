@@ -15,7 +15,9 @@ package tech.pegasys.teku.statetransition.attestation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool.ATTESTATION_RETENTION_EPOCHS;
@@ -29,9 +31,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
+import org.mockito.Mockito;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.TestConfigLoader;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -48,8 +53,9 @@ class AggregatingAttestationPoolTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final Spec mockSpec = mock(Spec.class);
+  private final SpecVersion mockSpecVersion = Mockito.mock(SpecVersion.class);
 
-  private final AggregatingAttestationPool aggregatingPool =
+  private AggregatingAttestationPool aggregatingPool =
       new AggregatingAttestationPool(mockSpec, new NoOpMetricsSystem());
 
   private final AttestationForkChecker forkChecker = mock(AttestationForkChecker.class);
@@ -63,6 +69,8 @@ class AggregatingAttestationPoolTest {
         .thenAnswer(i -> spec.computeEpochAtSlot(i.getArgument(0)));
     when(mockSpec.getSlotsPerEpoch(any())).thenAnswer(i -> spec.getSlotsPerEpoch(i.getArgument(0)));
     when(mockSpec.getCurrentEpoch(any())).thenAnswer(i -> spec.getCurrentEpoch(i.getArgument(0)));
+    when(mockSpec.atSlot(any())).thenReturn(mockSpecVersion);
+    when(mockSpecVersion.getSchemaDefinitions()).thenReturn(spec.getGenesisSchemaDefinitions());
   }
 
   @AfterEach
@@ -192,13 +200,19 @@ class AggregatingAttestationPoolTest {
 
   @Test
   public void getAttestationsForBlock_shouldNotAddMoreAttestationsThanAllowedInBlock() {
-    final BeaconState state = dataStructureUtil.randomBeaconState();
-    Constants.MAX_ATTESTATIONS = 2;
-    final AttestationData attestationData = dataStructureUtil.randomAttestationData();
+    final Spec spec =
+        spy(
+            TestSpecFactory.createPhase0(
+                TestConfigLoader.loadConfig("minimal", builder -> builder.maxAttestations(2))));
+    aggregatingPool = new AggregatingAttestationPool(spec, new NoOpMetricsSystem());
+    final BeaconState state = dataStructureUtil.randomBeaconState(UInt64.valueOf(2));
+    doReturn(Optional.empty()).when(spec).validateAttestation(any(), any());
+    final AttestationData attestationData = dataStructureUtil.randomAttestationData(ONE);
     final Attestation attestation1 = addAttestationFromValidators(attestationData, 1, 2, 3, 4);
-    final Attestation attestation2 = addAttestationFromValidators(attestationData, 2, 5);
+    assertThat(aggregatingPool.getSize()).isEqualTo(1);
+    final Attestation attestation2 = addAttestationFromValidators(attestationData, 2, 3, 5);
     // Won't be included because of the 2 attestation limit.
-    addAttestationFromValidators(attestationData, 2);
+    addAttestationFromValidators(attestationData, 2, 6);
 
     assertThat(aggregatingPool.getAttestationsForBlock(state, forkChecker))
         .containsExactly(attestation1, attestation2);
@@ -285,6 +299,7 @@ class AggregatingAttestationPoolTest {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
     addAttestationFromValidators(attestationData, 1, 2, 3, 4);
     final Attestation attestationToRemove = addAttestationFromValidators(attestationData, 2, 5);
+    assertThat(aggregatingPool.getSize()).isEqualTo(2);
     aggregatingPool.remove(attestationToRemove);
     assertThat(aggregatingPool.getSize()).isEqualTo(1);
   }
@@ -313,9 +328,9 @@ class AggregatingAttestationPoolTest {
   @Test
   public void getSize_shouldAddTheRightData() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
-    addAttestationFromValidators(attestationData, 1, 2, 3, 4, 5);
+    addAttestationFromValidators(attestationData, 1, 2, 4, 5);
     addAttestationFromValidators(attestationData, 1, 2, 3);
-    addAttestationFromValidators(attestationData, 4, 5);
+    addAttestationFromValidators(attestationData, 4, 5, 9);
     addAttestationFromValidators(attestationData, 6);
     addAttestationFromValidators(attestationData, 7, 8);
     assertThat(aggregatingPool.getSize()).isEqualTo(5);
@@ -325,15 +340,21 @@ class AggregatingAttestationPoolTest {
   public void getSize_shouldDecrementForAllRemovedAttestationsWhileKeepingOthers() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
 
-    addAttestationFromValidators(attestationData, 1, 2, 3);
-    addAttestationFromValidators(attestationData, 4, 5);
+    addAttestationFromValidators(attestationData, 1, 2, 3); // Will be removed
+    assertThat(aggregatingPool.getSize()).isEqualTo(1);
+    addAttestationFromValidators(attestationData, 4, 5); // Will be removed
+    assertThat(aggregatingPool.getSize()).isEqualTo(2);
     addAttestationFromValidators(attestationData, 6);
+    assertThat(aggregatingPool.getSize()).isEqualTo(3);
     addAttestationFromValidators(attestationData, 7, 8);
+    assertThat(aggregatingPool.getSize()).isEqualTo(4);
 
+    // Won't be added because we have already seen all validators.
     final Attestation attestationToRemove =
         addAttestationFromValidators(attestationData, 1, 2, 3, 4, 5);
-    assertThat(aggregatingPool.getSize()).isEqualTo(5);
+    assertThat(aggregatingPool.getSize()).isEqualTo(4);
 
+    // But can still be removed and will remove the attestations containing any subset of validators
     aggregatingPool.remove(attestationToRemove);
     assertThat(aggregatingPool.getSize()).isEqualTo(2);
   }
@@ -398,6 +419,48 @@ class AggregatingAttestationPoolTest {
             aggregatingPool.getAttestations(
                 Optional.of(attestationData1.getSlot()), Optional.empty()))
         .containsExactly(attestation1);
+  }
+
+  @Test
+  void add_shouldNotAddAttestationsThatHaveNoNewValidators() {
+    final AttestationData data = dataStructureUtil.randomAttestationData();
+    final Attestation usefulAttestation1 = addAttestationFromValidators(data, 1, 2, 3, 4);
+    final Attestation usefulAttestation2 = addAttestationFromValidators(data, 5);
+    assertThat(aggregatingPool.getSize()).isEqualTo(2);
+    addAttestationFromValidators(data, 1, 3, 5);
+    assertThat(aggregatingPool.getAttestations(Optional.of(data.getSlot()), Optional.empty()))
+        .containsExactly(aggregateAttestations(usefulAttestation1, usefulAttestation2));
+    assertThat(aggregatingPool.getSize()).isEqualTo(2);
+  }
+
+  @Test
+  void add_shouldAddAttestationsThatAreOnlyUsefulBecauseOfRemovedAttestations() {
+    final AttestationData data = dataStructureUtil.randomAttestationData();
+    final Attestation usefulAttestation1 = addAttestationFromValidators(data, 1, 2, 3, 4);
+    final Attestation removedAttestation = addAttestationFromValidators(data, 5);
+    aggregatingPool.remove(removedAttestation);
+    final Attestation usefulAttestation2 = addAttestationFromValidators(data, 1, 3, 5);
+    assertThat(aggregatingPool.getAttestations(Optional.of(data.getSlot()), Optional.empty()))
+        .containsExactly(usefulAttestation1, usefulAttestation2);
+    assertThat(aggregatingPool.getSize()).isEqualTo(2);
+  }
+
+  @Test
+  void add_shouldNotAddSubsetsOfAttestationsWithPartialOverlapOfRemovedAttestations() {
+    final AttestationData data = dataStructureUtil.randomAttestationData();
+    final Attestation usefulAttestation1 = addAttestationFromValidators(data, 1, 2, 3, 4);
+    final Attestation usefulAttestation2 = addAttestationFromValidators(data, 1, 3, 5, 6);
+    final Attestation removedAttestation = addAttestationFromValidators(data, 5);
+    aggregatingPool.remove(removedAttestation);
+    // Removal leaves first two useful attestations
+    assertThat(aggregatingPool.getSize()).isEqualTo(2);
+
+    // Not useful because (1,3,5,6) attestation is still present
+    addAttestationFromValidators(data, 5);
+    assertThat(aggregatingPool.getSize()).isEqualTo(2);
+
+    assertThat(aggregatingPool.getAttestations(Optional.of(data.getSlot()), Optional.empty()))
+        .containsExactly(usefulAttestation1, usefulAttestation2);
   }
 
   private Attestation addAttestationFromValidators(final UInt64 slot, final int... validators) {

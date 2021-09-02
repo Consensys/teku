@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.attestation;
 
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -27,7 +28,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
-import tech.pegasys.teku.ssz.collections.SszBitlist;
 
 /**
  * Maintains an aggregated collection of attestations which all share the same {@link
@@ -49,7 +49,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
   private final Spec spec;
   private final AttestationData attestationData;
   private final Bytes32 committeeShufflingSeed;
-  private SszBitlist seenAggregationBits = Attestation.createEmptyAggregationBits();
+  private BitSet seenAggregationBits = new BitSet();
 
   public MatchingDataAttestationGroup(
       final Spec spec,
@@ -72,14 +72,14 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
    * @return True if the attestation was added, false otherwise
    */
   public boolean add(final ValidateableAttestation attestation) {
-    if (seenAggregationBits.isSuperSetOf(attestation.getAttestation().getAggregation_bits())) {
+    final BitSet aggregationBits = attestation.getAttestation().getAggregation_bits().asBitSet();
+    if (isSuperSetOf(seenAggregationBits, aggregationBits)) {
       // We've already seen these aggregation bits
       return false;
     }
+    seenAggregationBits.or(aggregationBits);
     return attestationsByValidatorCount
-        .computeIfAbsent(
-            attestation.getAttestation().getAggregation_bits().getBitCount(),
-            count -> new HashSet<>())
+        .computeIfAbsent(aggregationBits.cardinality(), count -> new HashSet<>())
         .add(attestation);
   }
 
@@ -124,34 +124,43 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
    * @param attestation the attestation to logically remove from the pool.
    */
   public int remove(final Attestation attestation) {
-    if (seenAggregationBits.isSuperSetOf(attestation.getAggregation_bits())) {
-      // We've already seen and filtered out all of these bits, nothing to do
+    final BitSet aggregationBits = attestation.getAggregation_bits().asBitSet();
+    if (!seenAggregationBits.intersects(aggregationBits)) {
+      // We don't have any attestations from any of these validators so nothing to remove
       return 0;
     }
-    seenAggregationBits = seenAggregationBits.or(attestation.getAggregation_bits());
 
     final Collection<Set<ValidateableAttestation>> attestationSets =
         attestationsByValidatorCount.values();
+    final BitSet newSeenAggregationBits = new BitSet();
     int numRemoved = 0;
     for (Iterator<Set<ValidateableAttestation>> i = attestationSets.iterator(); i.hasNext(); ) {
       final Set<ValidateableAttestation> candidates = i.next();
       for (Iterator<ValidateableAttestation> iterator = candidates.iterator();
           iterator.hasNext(); ) {
         ValidateableAttestation candidate = iterator.next();
-        if (seenAggregationBits.isSuperSetOf(candidate.getAttestation().getAggregation_bits())) {
+        final BitSet candidateBits = candidate.getAttestation().getAggregation_bits().asBitSet();
+        if (isSuperSetOf(aggregationBits, candidateBits)) {
           iterator.remove();
           numRemoved++;
+        } else {
+          newSeenAggregationBits.or(candidateBits);
         }
       }
       if (candidates.isEmpty()) {
         i.remove();
       }
     }
+    seenAggregationBits = newSeenAggregationBits;
     return numRemoved;
   }
 
   public Bytes32 getCommitteeShufflingSeed() {
     return committeeShufflingSeed;
+  }
+
+  private boolean isSuperSetOf(final BitSet value, final BitSet other) {
+    return other.stream().allMatch(value::get);
   }
 
   private class AggregatingIterator implements Iterator<ValidateableAttestation> {
