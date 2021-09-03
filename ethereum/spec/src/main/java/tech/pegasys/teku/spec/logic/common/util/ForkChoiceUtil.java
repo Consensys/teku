@@ -204,7 +204,7 @@ public class ForkChoiceUtil {
 
   @CheckReturnValue
   public AttestationProcessingResult validate(
-      final Fork forkInfo,
+      final Fork fork,
       final ReadOnlyStore store,
       final ValidateableAttestation validateableAttestation,
       final Optional<BeaconState> maybeTargetState) {
@@ -216,7 +216,7 @@ public class ForkChoiceUtil {
                 return AttestationProcessingResult.UNKNOWN_BLOCK;
               } else {
                 return attestationUtil.isValidIndexedAttestation(
-                    forkInfo, maybeTargetState.get(), validateableAttestation);
+                    fork, maybeTargetState.get(), validateableAttestation);
               }
             })
         .ifSuccessful(() -> checkIfAttestationShouldBeSavedForFuture(store, attestation));
