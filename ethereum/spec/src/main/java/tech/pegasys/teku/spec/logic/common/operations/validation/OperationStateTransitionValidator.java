@@ -14,10 +14,11 @@
 package tech.pegasys.teku.spec.logic.common.operations.validation;
 
 import java.util.Optional;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 @FunctionalInterface
 public interface OperationStateTransitionValidator<T> {
 
-  Optional<OperationInvalidReason> validate(final BeaconState state, final T operation);
+  Optional<OperationInvalidReason> validate(Fork fork, BeaconState state, T operation);
 }

@@ -22,6 +22,7 @@ import java.util.Set;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
@@ -45,11 +46,12 @@ public class AttesterSlashingValidator
 
   @Override
   public Optional<OperationInvalidReason> validate(
-      final BeaconState state, final AttesterSlashing attesterSlashing) {
-    return validate(state, attesterSlashing, SlashedIndicesCaptor.NOOP);
+      final Fork fork, final BeaconState state, final AttesterSlashing attesterSlashing) {
+    return validate(fork, state, attesterSlashing, SlashedIndicesCaptor.NOOP);
   }
 
   public Optional<OperationInvalidReason> validate(
+      final Fork fork,
       final BeaconState state,
       final AttesterSlashing attesterSlashing,
       final SlashedIndicesCaptor slashedIndicesCaptor) {
@@ -63,11 +65,15 @@ public class AttesterSlashingValidator
                 AttesterSlashingInvalidReason.ATTESTATIONS_NOT_SLASHABLE),
         () ->
             check(
-                attestationUtil.isValidIndexedAttestation(state, attestation_1).isSuccessful(),
+                attestationUtil
+                    .isValidIndexedAttestation(fork, state, attestation_1)
+                    .isSuccessful(),
                 AttesterSlashingInvalidReason.ATTESTATION_1_INVALID),
         () ->
             check(
-                attestationUtil.isValidIndexedAttestation(state, attestation_2).isSuccessful(),
+                attestationUtil
+                    .isValidIndexedAttestation(fork, state, attestation_2)
+                    .isSuccessful(),
                 AttesterSlashingInvalidReason.ATTESTATION_2_INVALID),
         () -> {
           boolean slashed_any = false;

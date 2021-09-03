@@ -15,29 +15,18 @@ package tech.pegasys.teku.spec.logic.common.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_EPOCH;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import tech.pegasys.teku.bls.BLS;
-import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.constants.ValidatorConstants;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.operations.Deposit;
-import tech.pegasys.teku.spec.datastructures.operations.DepositData;
-import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
 import tech.pegasys.teku.spec.datastructures.state.BeaconStateTestBuilder;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -132,25 +121,6 @@ public class BeaconStateUtilTest {
         .validator(dataStructureUtil.randomValidator())
         .validator(dataStructureUtil.randomValidator())
         .build();
-  }
-
-  @Test
-  void validateProofOfPossessionReturnsFalseIfTheBLSSignatureIsNotValidForGivenDepositInputData() {
-    Deposit deposit = dataStructureUtil.newDeposits(1).get(0);
-    BLSPublicKey pubkey = BLSTestUtil.randomPublicKey(42);
-    DepositData depositData = deposit.getData();
-    DepositMessage depositMessage =
-        new DepositMessage(
-            depositData.getPubkey(),
-            depositData.getWithdrawal_credentials(),
-            depositData.getAmount());
-    Bytes32 domain =
-        genesisSpec
-            .beaconStateAccessors()
-            .getDomain(createBeaconState(), Domain.DEPOSIT, GENESIS_EPOCH);
-    Bytes signing_root = genesisSpec.miscHelpers().computeSigningRoot(depositMessage, domain);
-
-    assertFalse(BLS.verify(pubkey, signing_root, depositData.getSignature()));
   }
 
   @Test
