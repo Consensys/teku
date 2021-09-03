@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
@@ -45,7 +46,7 @@ public class BlockImporter {
   private final ForkChoice forkChoice;
   private final WeakSubjectivityValidator weakSubjectivityValidator;
 
-  private final Subscribers<VerifiedBlockOperationsListener<Attestation>> attestationSubscribers =
+  private final Subscribers<VerifiedBlockAttestationListener> attestationSubscribers =
       Subscribers.create(true);
   private final Subscribers<VerifiedBlockOperationsListener<AttesterSlashing>>
       attesterSlashingSubscribers = Subscribers.create(true);
@@ -158,9 +159,10 @@ public class BlockImporter {
   }
 
   private void notifyBlockOperationSubscribers(SignedBeaconBlock block) {
-    attestationSubscribers.deliver(
-        VerifiedBlockOperationsListener::onOperationsFromBlock,
-        block.getMessage().getBody().getAttestations());
+    attestationSubscribers.forEach(
+        listener ->
+            listener.onOperationsFromBlock(
+                block.getSlot(), block.getMessage().getBody().getAttestations()));
     attesterSlashingSubscribers.deliver(
         VerifiedBlockOperationsListener::onOperationsFromBlock,
         block.getMessage().getBody().getAttester_slashings());
@@ -173,7 +175,7 @@ public class BlockImporter {
   }
 
   public void subscribeToVerifiedBlockAttestations(
-      VerifiedBlockOperationsListener<Attestation> verifiedBlockAttestationsListener) {
+      VerifiedBlockAttestationListener verifiedBlockAttestationsListener) {
     attestationSubscribers.subscribe(verifiedBlockAttestationsListener);
   }
 
@@ -203,5 +205,9 @@ public class BlockImporter {
             () ->
                 new IllegalStateException(
                     "Attempting to perform fork choice operations before store has been initialized"));
+  }
+
+  public interface VerifiedBlockAttestationListener {
+    void onOperationsFromBlock(UInt64 slot, SszList<Attestation> attestations);
   }
 }
