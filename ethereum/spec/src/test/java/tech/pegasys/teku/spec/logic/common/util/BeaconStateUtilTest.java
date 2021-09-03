@@ -114,15 +114,6 @@ public class BeaconStateUtilTest {
                 .getElement((int) GENESIS_SLOT.plus(SLOTS_PER_EPOCH).decrement().longValue()));
   }
 
-  private BeaconState createBeaconState() {
-    return new BeaconStateTestBuilder(dataStructureUtil)
-        .forkVersion(specConfig.getGenesisForkVersion())
-        .validator(dataStructureUtil.randomValidator())
-        .validator(dataStructureUtil.randomValidator())
-        .validator(dataStructureUtil.randomValidator())
-        .build();
-  }
-
   @Test
   public void isSlotAtNthEpochBoundary_invalidNParameter_zero() {
     assertThatThrownBy(
