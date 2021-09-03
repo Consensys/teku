@@ -59,7 +59,9 @@ public class ValidatorOptions {
   @Option(
       names = {"--validators-performance-tracking-mode"},
       paramLabel = "<TRACKING_MODE>",
-      description = "Set strategy for handling performance tracking",
+      description =
+          "Set strategy for handling performance tracking."
+              + "Valid values: ${COMPLETION-CANDIDATES}",
       arity = "1")
   private ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode =
       ValidatorPerformanceTrackingMode.ALL;
