@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.attestation;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import com.google.common.base.Suppliers;
 import java.util.Collection;
@@ -184,5 +185,21 @@ public class ValidateableAttestation {
   @Override
   public int hashCode() {
     return Objects.hashCode(getAttestation(), maybeAggregate);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("spec", spec)
+        .add("attestation", attestation)
+        .add("maybeAggregate", maybeAggregate)
+        .add("hashTreeRoot", hashTreeRoot)
+        .add("gossiped", gossiped)
+        .add("producedLocally", producedLocally)
+        .add("isValidIndexedAttestation", isValidIndexedAttestation)
+        .add("indexedAttestation", indexedAttestation)
+        .add("committeeShufflingSeed", committeeShufflingSeed)
+        .add("receivedSubnetId", receivedSubnetId)
+        .toString();
   }
 }

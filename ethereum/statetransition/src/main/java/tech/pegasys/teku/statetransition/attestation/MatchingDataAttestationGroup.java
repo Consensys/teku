@@ -18,11 +18,13 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.NavigableMap;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -47,17 +49,29 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
       new TreeMap<>(Comparator.reverseOrder()); // Most validators first
 
   private final Spec spec;
+  private Optional<Bytes32> committeeShufflingSeed = Optional.empty();
   private final AttestationData attestationData;
-  private final Bytes32 committeeShufflingSeed;
-  private SszBitlist seenAggregationBits = Attestation.createEmptyAggregationBits();
 
-  public MatchingDataAttestationGroup(
-      final Spec spec,
-      final AttestationData attestationData,
-      final Bytes32 committeeShufflingSeed) {
+  /**
+   * Tracks which validators were included in attestations at a given slot on the canonical chain.
+   *
+   * <p>When a reorg occurs we can accurately compute the set of included validators at the common
+   * ancestor by removing blocks in slots after the ancestor then recalculating {@link
+   * #includedValidators}. Otherwise we might remove a validator from the included list because it
+   * was in a block moved off the canonical chain even though that validator was also included in an
+   * earlier block which is still on the canonical chain.
+   *
+   * <p>Pruning isn't required for this map because the entire attestation group is dropped by
+   * {@link AggregatingAttestationPool} once it is too old to be included in blocks (32 slots).
+   */
+  private final NavigableMap<UInt64, SszBitlist> includedValidatorsBySlot = new TreeMap<>();
+
+  /** Precalculated combined list of included validators across all blocks. */
+  private SszBitlist includedValidators = Attestation.createEmptyAggregationBits();
+
+  public MatchingDataAttestationGroup(final Spec spec, final AttestationData attestationData) {
     this.spec = spec;
     this.attestationData = attestationData;
-    this.committeeShufflingSeed = committeeShufflingSeed;
   }
 
   public AttestationData getAttestationData() {
@@ -72,9 +86,12 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
    * @return True if the attestation was added, false otherwise
    */
   public boolean add(final ValidateableAttestation attestation) {
-    if (seenAggregationBits.isSuperSetOf(attestation.getAttestation().getAggregation_bits())) {
-      // We've already seen these aggregation bits
+    if (includedValidators.isSuperSetOf(attestation.getAttestation().getAggregation_bits())) {
+      // All attestation bits have already been included on chain
       return false;
+    }
+    if (committeeShufflingSeed.isEmpty()) {
+      committeeShufflingSeed = attestation.getCommitteeShufflingSeed();
     }
     return attestationsByValidatorCount
         .computeIfAbsent(
@@ -111,7 +128,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
     return attestationsByValidatorCount.isEmpty();
   }
 
-  public long size() {
+  public int size() {
     return attestationsByValidatorCount.values().stream().map(Set::size).reduce(0, Integer::sum);
   }
 
@@ -123,12 +140,16 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
    *
    * @param attestation the attestation to logically remove from the pool.
    */
-  public int remove(final Attestation attestation) {
-    if (seenAggregationBits.isSuperSetOf(attestation.getAggregation_bits())) {
+  public int onAttestationIncludedInBlock(final UInt64 slot, final Attestation attestation) {
+    // Record validators in attestation as seen in this slot
+    // Important to do even if the attestation is redundant so we handle re-orgs correctly
+    includedValidatorsBySlot.merge(slot, attestation.getAggregation_bits(), SszBitlist::or);
+
+    if (includedValidators.isSuperSetOf(attestation.getAggregation_bits())) {
       // We've already seen and filtered out all of these bits, nothing to do
       return 0;
     }
-    seenAggregationBits = seenAggregationBits.or(attestation.getAggregation_bits());
+    includedValidators = includedValidators.or(attestation.getAggregation_bits());
 
     final Collection<Set<ValidateableAttestation>> attestationSets =
         attestationsByValidatorCount.values();
@@ -138,7 +159,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
       for (Iterator<ValidateableAttestation> iterator = candidates.iterator();
           iterator.hasNext(); ) {
         ValidateableAttestation candidate = iterator.next();
-        if (seenAggregationBits.isSuperSetOf(candidate.getAttestation().getAggregation_bits())) {
+        if (includedValidators.isSuperSetOf(candidate.getAttestation().getAggregation_bits())) {
           iterator.remove();
           numRemoved++;
         }
@@ -150,12 +171,29 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
     return numRemoved;
   }
 
+  public void onReorg(final UInt64 commonAncestorSlot) {
+    final NavigableMap<UInt64, SszBitlist> removedSlots =
+        includedValidatorsBySlot.tailMap(commonAncestorSlot, false);
+    if (removedSlots.isEmpty()) {
+      // No relevant attestations in affected slots, so nothing to do.
+      return;
+    }
+    removedSlots.clear();
+    // Recalculate totalSeenAggregationBits as validators may have been seen in multiple blocks so
+    // can't do a simple remove
+    includedValidators =
+        includedValidatorsBySlot.values().stream()
+            .reduce(Attestation.createEmptyAggregationBits(), SszBitlist::or);
+  }
+
   public Bytes32 getCommitteeShufflingSeed() {
-    return committeeShufflingSeed;
+    return committeeShufflingSeed.orElseThrow(
+        () ->
+            new IllegalStateException("Attestations added with unknown committee shuffling seed"));
   }
 
   private class AggregatingIterator implements Iterator<ValidateableAttestation> {
-    private SszBitlist includedValidators = Attestation.createEmptyAggregationBits();
+    private SszBitlist includedValidators = MatchingDataAttestationGroup.this.includedValidators;
 
     @Override
     public boolean hasNext() {
