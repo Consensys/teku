@@ -423,14 +423,14 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   public void subscribeToSyncCommitteeSubnets(
       final Collection<SyncCommitteeSubnetSubscription> subscriptions) {
     for (final SyncCommitteeSubnetSubscription subscription : subscriptions) {
-      final UInt64 unsubscribeSlot =
-          spec.computeStartSlotAtEpoch(subscription.getUntilEpoch().increment());
+      // untilEpoch is exclusive, so it will unsubscribe at the first slot of the specified index
+      final UInt64 untilEpoch = subscription.getUntilEpoch();
+      final UInt64 unsubscribeSlot = spec.computeStartSlotAtEpoch(untilEpoch);
       final SyncCommitteeUtil syncCommitteeUtil =
-          spec.getSyncCommitteeUtilRequired(
-              spec.computeStartSlotAtEpoch(subscription.getUntilEpoch()));
+          spec.getSyncCommitteeUtilRequired(spec.computeStartSlotAtEpoch(untilEpoch));
       final Set<Integer> syncCommitteeIndices = subscription.getSyncCommitteeIndices();
       performanceTracker.saveExpectedSyncCommitteeParticipant(
-          subscription.getValidatorIndex(), syncCommitteeIndices, subscription.getUntilEpoch());
+          subscription.getValidatorIndex(), syncCommitteeIndices, untilEpoch.decrement());
       syncCommitteeUtil
           .getSyncSubcommittees(syncCommitteeIndices)
           .forEach(index -> syncCommitteeSubscriptionManager.subscribe(index, unsubscribeSlot));
