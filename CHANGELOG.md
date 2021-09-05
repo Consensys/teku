@@ -7,7 +7,8 @@
 - The `/eth/v1/validator/blocks/:slot` endpoint has been deprecated in favor of the v2 Altair endpoint `/eth/v2/validator/blocks/:slot`
 - The `-jdk14` and `-jdk15` docker image variants will be removed in a future release. JDK 14 and 15 are no longer receiving security updates from upstream vendors.
   Note that the default docker image usage JDK 16 and is still receiving security updates.
-
+- The commandline option `--validators-performance-tracking-enabled` has been deprecated in favour of `--validators-performance-tracking-mode`
+ 
 ## Current Releases
 For information on changes in released versions of Teku, see the [releases page](https://github.com/ConsenSys/teku/releases).
 
@@ -23,3 +24,4 @@ For information on changes in released versions of Teku, see the [releases page]
  - Increase the batch size when searching for unknown validator indexes from 10 to 50.
  - Fixed issue with the voluntary-exit subcommand and Altair networks which caused "Failed to retrieve network config" errors.
  - Fixed issue where redundant attestations were incorrectly included in blocks.
+ - Validator performance is no longer logged when there are no attestations expected.
