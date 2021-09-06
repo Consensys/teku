@@ -38,6 +38,12 @@ or [zip format](https://artifacts.consensys.net/public/teku/raw/names/teku.zip/v
 We recommend only using release versions for MainNet, but `develop` builds are useful for testing 
 the latest changes on testnets.
 
+Release notifications are available via:
+* `teku` in [Consensys Discord](https://discord.gg/7hPv2T6), 
+* `client-updates` in [Ethstaker Discord](https://discord.gg/u2q7FRv)
+* Subscribe to release notifications on github for [teku](https://github.com/ConsenSys/teku)
+* Follow us on [Twitter](https://twitter.com/Teku_ConsenSys)
+* Sign up to our [release announcements](https://pages.consensys.net/teku-sign-up) email list (release and important announcements only, no marketing)
 
 ## Build Instructions
 
