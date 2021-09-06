@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
@@ -125,22 +126,24 @@ public class AttestationUtil {
   }
 
   public AttestationProcessingResult isValidIndexedAttestation(
-      BeaconState state, ValidateableAttestation attestation) {
-    return isValidIndexedAttestation(state, attestation, BLSSignatureVerifier.SIMPLE);
+      Fork fork, BeaconState state, ValidateableAttestation attestation) {
+    return isValidIndexedAttestation(fork, state, attestation, BLSSignatureVerifier.SIMPLE);
   }
 
   public AttestationProcessingResult isValidIndexedAttestation(
+      Fork fork,
       BeaconState state,
       ValidateableAttestation attestation,
       BLSSignatureVerifier blsSignatureVerifier) {
     final SafeFuture<AttestationProcessingResult> result =
         isValidIndexedAttestationAsync(
-            state, attestation, AsyncBLSSignatureVerifier.wrap(blsSignatureVerifier));
+            fork, state, attestation, AsyncBLSSignatureVerifier.wrap(blsSignatureVerifier));
 
     return result.getImmediately();
   }
 
   public SafeFuture<AttestationProcessingResult> isValidIndexedAttestationAsync(
+      Fork fork,
       BeaconState state,
       ValidateableAttestation attestation,
       AsyncBLSSignatureVerifier blsSignatureVerifier) {
@@ -156,7 +159,7 @@ public class AttestationUtil {
               attestation.setIndexedAttestation(indexedAttestation);
               return indexedAttestation;
             })
-        .thenCompose(att -> isValidIndexedAttestationAsync(state, att, blsSignatureVerifier))
+        .thenCompose(att -> isValidIndexedAttestationAsync(fork, state, att, blsSignatureVerifier))
         .thenApply(
             result -> {
               if (result.isSuccessful()) {
@@ -185,22 +188,24 @@ public class AttestationUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_valid_indexed_attestation</a>
    */
   public AttestationProcessingResult isValidIndexedAttestation(
-      BeaconState state, IndexedAttestation indexed_attestation) {
-    return isValidIndexedAttestation(state, indexed_attestation, BLSSignatureVerifier.SIMPLE);
+      Fork fork, BeaconState state, IndexedAttestation indexed_attestation) {
+    return isValidIndexedAttestation(fork, state, indexed_attestation, BLSSignatureVerifier.SIMPLE);
   }
 
   public AttestationProcessingResult isValidIndexedAttestation(
+      Fork fork,
       BeaconState state,
       IndexedAttestation indexed_attestation,
       BLSSignatureVerifier signatureVerifier) {
     final SafeFuture<AttestationProcessingResult> result =
         isValidIndexedAttestationAsync(
-            state, indexed_attestation, AsyncBLSSignatureVerifier.wrap(signatureVerifier));
+            fork, state, indexed_attestation, AsyncBLSSignatureVerifier.wrap(signatureVerifier));
 
     return result.getImmediately();
   }
 
   public SafeFuture<AttestationProcessingResult> isValidIndexedAttestationAsync(
+      Fork fork,
       BeaconState state,
       IndexedAttestation indexed_attestation,
       AsyncBLSSignatureVerifier signatureVerifier) {
@@ -225,7 +230,10 @@ public class AttestationUtil {
     BLSSignature signature = indexed_attestation.getSignature();
     Bytes32 domain =
         beaconStateAccessors.getDomain(
-            state, Domain.BEACON_ATTESTER, indexed_attestation.getData().getTarget().getEpoch());
+            Domain.BEACON_ATTESTER,
+            indexed_attestation.getData().getTarget().getEpoch(),
+            fork,
+            state.getGenesis_validators_root());
     Bytes signing_root = miscHelpers.computeSigningRoot(indexed_attestation.getData(), domain);
 
     return signatureVerifier

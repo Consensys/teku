@@ -98,9 +98,10 @@ class SyncCommitteeDutyLoaderTest {
     verify(validatorApiChannel)
         .subscribeToSyncCommitteeSubnets(
             Set.of(
-                new SyncCommitteeSubnetSubscription(validator1Index, Set.of(1, 6, 25), untilEpoch),
                 new SyncCommitteeSubnetSubscription(
-                    validator2Index, Set.of(7, 50, 38), untilEpoch)));
+                    validator1Index, Set.of(1, 6, 25), untilEpoch.increment()),
+                new SyncCommitteeSubnetSubscription(
+                    validator2Index, Set.of(7, 50, 38), untilEpoch.increment())));
   }
 
   private SyncCommitteeScheduledDuties loadDuties(final UInt64 epoch) {

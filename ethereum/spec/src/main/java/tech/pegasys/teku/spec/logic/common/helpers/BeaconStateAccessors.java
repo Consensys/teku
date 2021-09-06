@@ -30,6 +30,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
+import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
@@ -297,13 +298,8 @@ public abstract class BeaconStateAccessors {
         oldestQueryableSlot);
   }
 
-  public Bytes32 getDomain(BeaconState state, Bytes4 domainType, UInt64 messageEpoch) {
-    UInt64 epoch = (messageEpoch == null) ? getCurrentEpoch(state) : messageEpoch;
-    return getDomain(domainType, epoch, state.getFork(), state.getGenesis_validators_root());
-  }
-
-  public Bytes32 getDomain(BeaconState state, Bytes4 domainType) {
-    return getDomain(state, domainType, null);
+  public Bytes32 getDomain(final ForkInfo forkInfo, final Bytes4 domainType, final UInt64 epoch) {
+    return getDomain(domainType, epoch, forkInfo.getFork(), forkInfo.getGenesisValidatorsRoot());
   }
 
   public Bytes32 getDomain(
