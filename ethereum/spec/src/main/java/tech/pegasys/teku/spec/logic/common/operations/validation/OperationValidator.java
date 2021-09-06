@@ -19,6 +19,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
@@ -65,29 +66,30 @@ public class OperationValidator {
   }
 
   public Optional<OperationInvalidReason> validateAttestationData(
-      final BeaconState state, final AttestationData data) {
-    return attestationDataValidator.validate(state, data);
+      final Fork fork, final BeaconState state, final AttestationData data) {
+    return attestationDataValidator.validate(fork, state, data);
   }
 
   public Optional<OperationInvalidReason> validateAttesterSlashing(
-      final BeaconState state, final AttesterSlashing attesterSlashing) {
-    return attesterSlashingValidator.validate(state, attesterSlashing);
+      final Fork fork, final BeaconState state, final AttesterSlashing attesterSlashing) {
+    return attesterSlashingValidator.validate(fork, state, attesterSlashing);
   }
 
   public Optional<OperationInvalidReason> validateAttesterSlashing(
+      final Fork fork,
       final BeaconState state,
       final AttesterSlashing attesterSlashing,
       SlashedIndicesCaptor slashedIndicesCaptor) {
-    return attesterSlashingValidator.validate(state, attesterSlashing, slashedIndicesCaptor);
+    return attesterSlashingValidator.validate(fork, state, attesterSlashing, slashedIndicesCaptor);
   }
 
   public Optional<OperationInvalidReason> validateProposerSlashing(
-      final BeaconState state, final ProposerSlashing proposerSlashing) {
-    return proposerSlashingValidator.validate(state, proposerSlashing);
+      final Fork fork, final BeaconState state, final ProposerSlashing proposerSlashing) {
+    return proposerSlashingValidator.validate(fork, state, proposerSlashing);
   }
 
   public Optional<OperationInvalidReason> validateVoluntaryExit(
-      final BeaconState state, final SignedVoluntaryExit signedExit) {
-    return voluntaryExitValidator.validate(state, signedExit);
+      final Fork fork, final BeaconState state, final SignedVoluntaryExit signedExit) {
+    return voluntaryExitValidator.validate(fork, state, signedExit);
   }
 }

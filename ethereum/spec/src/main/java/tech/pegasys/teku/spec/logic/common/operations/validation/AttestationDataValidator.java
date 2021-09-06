@@ -19,6 +19,7 @@ import static tech.pegasys.teku.spec.logic.common.operations.validation.Operatio
 import java.util.Optional;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
@@ -42,7 +43,7 @@ public class AttestationDataValidator
 
   @Override
   public Optional<OperationInvalidReason> validate(
-      final BeaconState state, final AttestationData data) {
+      final Fork fork, final BeaconState state, final AttestationData data) {
     return firstOf(
         () ->
             check(

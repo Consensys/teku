@@ -22,6 +22,7 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
@@ -40,7 +41,7 @@ public class ProposerSlashingValidator
 
   @Override
   public Optional<OperationInvalidReason> validate(
-      final BeaconState state, final ProposerSlashing proposerSlashing) {
+      final Fork fork, final BeaconState state, final ProposerSlashing proposerSlashing) {
     final BeaconBlockHeader header1 = proposerSlashing.getHeader_1().getMessage();
     final BeaconBlockHeader header2 = proposerSlashing.getHeader_2().getMessage();
     return firstOf(
