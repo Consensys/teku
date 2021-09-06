@@ -133,7 +133,7 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
                     new SyncCommitteeSubnetSubscription(
                         assignment.getValidatorIndex(),
                         assignment.getCommitteeIndices(),
-                        lastEpochInCommitteePeriod))
+                        lastEpochInCommitteePeriod.increment()))
             .collect(Collectors.toSet()));
   }
 
