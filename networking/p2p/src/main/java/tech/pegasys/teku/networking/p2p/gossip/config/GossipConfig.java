@@ -23,8 +23,8 @@ import java.util.function.Consumer;
  * https://github.com/ethereum/eth2.0-specs/blob/v0.11.1/specs/phase0/p2p-interface.md#the-gossip-domain-gossipsub
  */
 public class GossipConfig {
-  public static final int DEFAULT_D = 6;
-  public static final int DEFAULT_D_LOW = 5;
+  public static final int DEFAULT_D = 8;
+  public static final int DEFAULT_D_LOW = 6;
   public static final int DEFAULT_D_HIGH = 12;
   public static final int DEFAULT_D_LAZY = 6;
   public static final Duration DEFAULT_FANOUT_TTL = Duration.ofSeconds(60);
