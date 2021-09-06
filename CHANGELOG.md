@@ -25,3 +25,4 @@ For information on changes in released versions of Teku, see the [releases page]
  - Fixed issue with the voluntary-exit subcommand and Altair networks which caused "Failed to retrieve network config" errors.
  - Fixed issue where redundant attestations were incorrectly included in blocks.
  - Validator performance is no longer logged when there are no attestations expected.
+ - Updated sync committee subscriptions to use untilEpoch as an exclusive field.
