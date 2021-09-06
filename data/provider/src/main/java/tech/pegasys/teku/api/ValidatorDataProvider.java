@@ -363,6 +363,10 @@ public class ValidatorDataProvider {
             .collect(toList()));
   }
 
+  public boolean isPhase0Slot(final UInt64 slot) {
+    return spec.atSlot(slot).getMilestone() == SpecMilestone.PHASE0;
+  }
+
   private tech.pegasys.teku.spec.datastructures.operations.versions.altair
           .SignedContributionAndProof
       asInternalContributionAndProofs(final SignedContributionAndProof signedContributionAndProof) {

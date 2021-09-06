@@ -354,6 +354,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     LOG.debug("BeaconChainController.initAttesterSlashingPool()");
     attesterSlashingPool =
         new OperationPool<>(
+            "AttesterSlashingPool",
+            metricsSystem,
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getAttesterSlashingsSchema),
             new AttesterSlashingValidator(recentChainData, spec));
     blockImporter.subscribeToVerifiedBlockAttesterSlashings(attesterSlashingPool::removeAll);
@@ -364,6 +366,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     ProposerSlashingValidator validator = new ProposerSlashingValidator(spec, recentChainData);
     proposerSlashingPool =
         new OperationPool<>(
+            "ProposerSlashingPool",
+            metricsSystem,
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getProposerSlashingsSchema),
             validator);
     blockImporter.subscribeToVerifiedBlockProposerSlashings(proposerSlashingPool::removeAll);
@@ -374,6 +378,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     VoluntaryExitValidator validator = new VoluntaryExitValidator(spec, recentChainData);
     voluntaryExitPool =
         new OperationPool<>(
+            "VoluntaryExitPool",
+            metricsSystem,
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getVoluntaryExitsSchema),
             validator);
     blockImporter.subscribeToVerifiedBlockVoluntaryExits(voluntaryExitPool::removeAll);
@@ -540,7 +546,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     AggregateAttestationValidator aggregateValidator =
         new AggregateAttestationValidator(recentChainData, attestationValidator, spec);
     blockImporter.subscribeToVerifiedBlockAttestations(
-        (attestations) ->
+        (slot, attestations) ->
             attestations.forEach(
                 attestation ->
                     aggregateValidator.addSeenAggregate(
@@ -687,7 +693,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     LOG.debug("BeaconChainController.initAttestationPool()");
     attestationPool = new AggregatingAttestationPool(spec, metricsSystem);
     eventChannels.subscribe(SlotEventsChannel.class, attestationPool);
-    blockImporter.subscribeToVerifiedBlockAttestations(attestationPool::removeAll);
+    blockImporter.subscribeToVerifiedBlockAttestations(
+        attestationPool::onAttestationsIncludedInBlock);
   }
 
   public void initRestAPI() {

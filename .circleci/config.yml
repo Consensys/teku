@@ -173,6 +173,7 @@ jobs:
           command: |
             for FILE in $(ls docker)
             do
+              docker pull -q "consensys/teku:develop-$FILE"
               trivy -q image --exit-code 1 --no-progress --severity HIGH,CRITICAL "consensys/teku:develop-$FILE"
             done
       - notify
@@ -319,7 +320,7 @@ jobs:
       - attach_workspace:
           at: ~/project
       - setup_remote_docker:
-          docker_layer_caching: true
+          docker_layer_caching: false
       - run:
           name: Docker
           command: |
@@ -350,7 +351,7 @@ jobs:
       - attach_workspace:
           at: ~/project
       - setup_remote_docker:
-          docker_layer_caching: true
+          docker_layer_caching: false
       - run:
           name: Publish Docker
           command: |
@@ -536,6 +537,6 @@ workflows:
           filters:
             branches:
               only:
-                - gh-pages
+                - master
     jobs:
       - dockerScan

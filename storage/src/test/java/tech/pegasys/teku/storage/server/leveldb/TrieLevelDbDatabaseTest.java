@@ -11,12 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.server.rocksdb;
-
-import static org.assertj.core.api.Assertions.assertThat;
+package tech.pegasys.teku.storage.server.leveldb;
 
 import java.io.File;
-import java.nio.file.Path;
+import org.junit.jupiter.api.Disabled;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.kvstore.AbstractKvStoreDatabaseWithHotStatesTest;
@@ -24,25 +22,17 @@ import tech.pegasys.teku.storage.storageSystem.FileBackedStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.StoreConfig;
 
-public class V6SeparateRocksDbDatabaseTest extends AbstractKvStoreDatabaseWithHotStatesTest {
+@Disabled("https://github.com/ConsenSys/teku/issues/4173 still in progress")
+public class TrieLevelDbDatabaseTest extends AbstractKvStoreDatabaseWithHotStatesTest {
   @Override
   protected StorageSystem createStorageSystem(
       final File tempDir,
       final StateStorageMode storageMode,
       final StoreConfig storeConfig,
       final boolean storeNonCanonicalBlocks) {
-    Path mainDataDir = tempDir.toPath().resolve("mainDataDir");
-    if (!mainDataDir.toFile().exists()) {
-      assertThat(mainDataDir.toFile().mkdir()).isTrue();
-    }
-    Path archDataDir = tempDir.toPath().resolve("v6arch");
-    if (!archDataDir.toFile().exists()) {
-      assertThat(archDataDir.toFile().mkdir()).isTrue();
-    }
     return FileBackedStorageSystemBuilder.create()
-        .dataDir(mainDataDir)
-        .v6ArchiveDir(archDataDir)
-        .version(DatabaseVersion.V6)
+        .dataDir(tempDir.toPath())
+        .version(DatabaseVersion.LEVELDB_TRIE)
         .storageMode(storageMode)
         .stateStorageFrequency(1L)
         .storeConfig(storeConfig)

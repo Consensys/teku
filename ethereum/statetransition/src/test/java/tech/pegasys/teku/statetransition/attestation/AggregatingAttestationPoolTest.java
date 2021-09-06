@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool.ATTESTATION_RETENTION_EPOCHS;
 import static tech.pegasys.teku.statetransition.attestation.AggregatorUtil.aggregateAttestations;
 
@@ -285,7 +286,7 @@ class AggregatingAttestationPoolTest {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
     addAttestationFromValidators(attestationData, 1, 2, 3, 4);
     final Attestation attestationToRemove = addAttestationFromValidators(attestationData, 2, 5);
-    aggregatingPool.remove(attestationToRemove);
+    aggregatingPool.onAttestationsIncludedInBlock(ZERO, List.of(attestationToRemove));
     assertThat(aggregatingPool.getSize()).isEqualTo(1);
   }
 
@@ -306,7 +307,7 @@ class AggregatingAttestationPoolTest {
     assertThat(aggregatingPool.getSize()).isEqualTo(2);
     final Attestation attestationToRemove =
         addAttestationFromValidators(attestationData, 1, 2, 3, 4, 5);
-    aggregatingPool.remove(attestationToRemove);
+    aggregatingPool.onAttestationsIncludedInBlock(ZERO, List.of(attestationToRemove));
     assertThat(aggregatingPool.getSize()).isEqualTo(0);
   }
 
@@ -334,7 +335,7 @@ class AggregatingAttestationPoolTest {
         addAttestationFromValidators(attestationData, 1, 2, 3, 4, 5);
     assertThat(aggregatingPool.getSize()).isEqualTo(5);
 
-    aggregatingPool.remove(attestationToRemove);
+    aggregatingPool.onAttestationsIncludedInBlock(ZERO, List.of(attestationToRemove));
     assertThat(aggregatingPool.getSize()).isEqualTo(2);
   }
 
@@ -400,21 +401,61 @@ class AggregatingAttestationPoolTest {
         .containsExactly(attestation1);
   }
 
+  @Test
+  void onAttestationsIncludedInBlock_shouldNotAddAttestationsAlreadySeenInABlock() {
+    final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
+    // Included in block before we see any attestations with this data
+    aggregatingPool.onAttestationsIncludedInBlock(
+        ONE, List.of(createAttestation(attestationData, 1, 2, 3, 4)));
+
+    // But still shouldn't be able to add a redundant attestation later
+    addAttestationFromValidators(attestationData, 2, 3);
+    assertThat(aggregatingPool.getSize()).isZero();
+  }
+
+  @Test
+  void onAttestationsIncludedInBlock_shouldRemoveAttestationsWhenSeenInABlock() {
+    final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
+    addAttestationFromValidators(attestationData, 2, 3);
+
+    aggregatingPool.onAttestationsIncludedInBlock(
+        ONE, List.of(createAttestation(attestationData, 1, 2, 3, 4)));
+
+    assertThat(aggregatingPool.getSize()).isZero();
+  }
+
+  @Test
+  void onReorg_shouldBeAbleToReaddAttestations() {
+    final AttestationData attestationData = dataStructureUtil.randomAttestationData(ZERO);
+    // Included in block before we see any attestations with this data
+    aggregatingPool.onAttestationsIncludedInBlock(
+        ONE, List.of(createAttestation(attestationData, 1, 2, 3, 4)));
+
+    aggregatingPool.onReorg(ZERO);
+
+    // Should now be able to add attestations that were redundant
+    addAttestationFromValidators(attestationData, 2, 3);
+    assertThat(aggregatingPool.getSize()).isEqualTo(1);
+  }
+
   private Attestation addAttestationFromValidators(final UInt64 slot, final int... validators) {
     return addAttestationFromValidators(dataStructureUtil.randomAttestationData(slot), validators);
   }
 
   private Attestation addAttestationFromValidators(
       final AttestationData data, final int... validators) {
-    final SszBitlist bitlist =
-        Attestation.SSZ_SCHEMA.getAggregationBitsSchema().ofBits(20, validators);
-    final Attestation attestation =
-        new Attestation(bitlist, data, dataStructureUtil.randomSignature());
+    final Attestation attestation = createAttestation(data, validators);
     ValidateableAttestation validateableAttestation =
         ValidateableAttestation.from(spec, attestation);
     validateableAttestation.saveCommitteeShufflingSeed(
         dataStructureUtil.randomBeaconState(100, 15));
     aggregatingPool.add(validateableAttestation);
     return attestation;
+  }
+
+  private Attestation createAttestation(final AttestationData data, final int... validators) {
+    final SszBitlist bitlist =
+        Attestation.SSZ_SCHEMA.getAggregationBitsSchema().ofBits(20, validators);
+    return new Attestation(bitlist, data, dataStructureUtil.randomSignature());
   }
 }

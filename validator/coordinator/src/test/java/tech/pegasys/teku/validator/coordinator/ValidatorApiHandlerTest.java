@@ -605,10 +605,8 @@ class ValidatorApiHandlerTest {
     final SyncCommitteeSubnetSubscription subscription2 =
         new SyncCommitteeSubnetSubscription(1, Set.of(5, 10), UInt64.valueOf(35));
     validatorApiHandler.subscribeToSyncCommitteeSubnets(List.of(subscription1, subscription2));
-    final UInt64 unsubscribeSlotSubscription1 =
-        spec.computeStartSlotAtEpoch(UInt64.valueOf(44).increment());
-    final UInt64 unsubscribeSlotSubscription2 =
-        spec.computeStartSlotAtEpoch(UInt64.valueOf(35).increment());
+    final UInt64 unsubscribeSlotSubscription1 = spec.computeStartSlotAtEpoch(UInt64.valueOf(44));
+    final UInt64 unsubscribeSlotSubscription2 = spec.computeStartSlotAtEpoch(UInt64.valueOf(35));
     verify(syncCommitteeSubscriptionManager).subscribe(0, unsubscribeSlotSubscription1);
     verify(syncCommitteeSubscriptionManager).subscribe(1, unsubscribeSlotSubscription1);
     verify(syncCommitteeSubscriptionManager).subscribe(3, unsubscribeSlotSubscription1);
