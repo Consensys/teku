@@ -58,7 +58,7 @@ public class AttestationGenerator {
   }
 
   public static int getSingleAttesterIndex(Attestation attestation) {
-    return attestation.getAggregation_bits().streamAllSetBits().findFirst().orElse(-1);
+    return attestation.getAggregationBits().streamAllSetBits().findFirst().orElse(-1);
   }
 
   public static AttestationData diffSlotAttestationData(UInt64 slot, AttestationData data) {
@@ -91,10 +91,10 @@ public class AttestationGenerator {
     Preconditions.checkArgument(!srcAttestations.isEmpty(), "Expected at least one attestation");
 
     int targetBitlistSize =
-        srcAttestations.stream().mapToInt(a -> a.getAggregation_bits().size()).max().getAsInt();
+        srcAttestations.stream().mapToInt(a -> a.getAggregationBits().size()).max().getAsInt();
     SszBitlist targetBitlist =
         srcAttestations.stream()
-            .map(Attestation::getAggregation_bits)
+            .map(Attestation::getAggregationBits)
             .reduce(
                 Attestation.SSZ_SCHEMA.getAggregationBitsSchema().ofBits(targetBitlistSize),
                 SszBitlist::or,
@@ -102,7 +102,7 @@ public class AttestationGenerator {
     BLSSignature targetSig =
         BLS.aggregate(
             srcAttestations.stream()
-                .map(Attestation::getAggregate_signature)
+                .map(Attestation::getAggregateSignature)
                 .collect(Collectors.toList()));
 
     return new Attestation(targetBitlist, srcAttestations.get(0).getData(), targetSig);
