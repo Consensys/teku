@@ -15,6 +15,9 @@ package tech.pegasys.teku.ssz.schema;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
@@ -26,7 +29,10 @@ import tech.pegasys.teku.ssz.SszDataAssert;
 import tech.pegasys.teku.ssz.SszPrimitive;
 import tech.pegasys.teku.ssz.primitive.SszBit;
 import tech.pegasys.teku.ssz.sos.SszDeserializeException;
+import tech.pegasys.teku.ssz.tree.LeafDataNode;
 import tech.pegasys.teku.ssz.tree.LeafNode;
+import tech.pegasys.teku.ssz.tree.TreeNode;
+import tech.pegasys.teku.ssz.tree.TreeNodeVisitor;
 
 public class SszPrimitiveSchemaTest implements SszSchemaTestBase {
 
@@ -90,5 +96,48 @@ public class SszPrimitiveSchemaTest implements SszSchemaTestBase {
         .isSameAs(SszBit.of(true));
     assertThat(SszPrimitiveSchemas.BIT_SCHEMA.sszDeserialize(Bytes.fromHexString("0x00")))
         .isSameAs(SszBit.of(false));
+  }
+
+  @MethodSource("testSchemaArguments")
+  @ParameterizedTest
+  void iterate_shouldVisitBackingNodeAsLeaf(SszPrimitiveSchema<?, ?> schema) {
+    final SszPrimitive<?, ?> primitive = randomSsz.randomData(schema);
+    final TreeNode node = primitive.getBackingNode();
+    final TreeNodeVisitor nodeVisitor = mock(TreeNodeVisitor.class);
+    final int rootGIndex = 50;
+    schema.iterate(nodeVisitor, 100, rootGIndex, node);
+    verify(nodeVisitor).onLeafNode((LeafDataNode) node, rootGIndex);
+    verifyNoMoreInteractions(nodeVisitor);
+  }
+
+  @MethodSource("testSchemaArguments")
+  @ParameterizedTest
+  void loadBackingNodes_shouldRestoreTree(SszPrimitiveSchema<?, ?> schema) {
+    final InMemoryStoringTreeNodeVisitor nodeStore = new InMemoryStoringTreeNodeVisitor();
+    final SszPrimitive<?, ?> primitive = randomSsz.randomData(schema);
+    final TreeNode node = primitive.getBackingNode();
+    final int rootGIndex = 50;
+    schema.iterate(nodeStore, 100, rootGIndex, node);
+    final TreeNode result =
+        schema.loadBackingNodes(nodeStore, primitive.hashTreeRoot(), rootGIndex);
+    assertThat(result).isEqualTo(node);
+    final SszPrimitive<?, ?> rebuiltPrimitive = schema.createFromBackingNode(result);
+    assertThat(rebuiltPrimitive.get()).isEqualTo(primitive.get());
+  }
+
+  @MethodSource("testSchemaArguments")
+  @ParameterizedTest
+  void loadBackingNodes_shouldRestoreDefaultTree(SszPrimitiveSchema<?, ?> schema) {
+    final InMemoryStoringTreeNodeVisitor nodeStore = new InMemoryStoringTreeNodeVisitor();
+    final TreeNode node = schema.getDefaultTree();
+    final int rootGIndex = 50;
+    schema.iterate(nodeStore, 100, rootGIndex, node);
+    // LeafNode should be equal
+    final TreeNode result = schema.loadBackingNodes(nodeStore, node.hashTreeRoot(), rootGIndex);
+    assertThat(result).isEqualTo(node);
+
+    // And should be equal when accessing the actual value
+    final SszPrimitive<?, ?> rebuiltPrimitive = schema.createFromBackingNode(result);
+    assertThat(rebuiltPrimitive.get()).isEqualTo(schema.createFromBackingNode(node).get());
   }
 }

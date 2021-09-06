@@ -24,7 +24,7 @@ public class IterationUtil {
 
   public static void visitNodesToDepth(
       final NodeVisitor nodeVisitor,
-      final int maxCompressionDepth,
+      final int maxBranchLevelsSkipped,
       final TreeNode rootNode,
       final long rootGIndex,
       final int depthToVisit) {
@@ -32,37 +32,38 @@ public class IterationUtil {
     if (nodeVisitor.canSkipBranch(rootNode.hashTreeRoot(), rootGIndex)) {
       return;
     }
-    if (depthToVisit <= maxCompressionDepth) {
+    if (depthToVisit <= maxBranchLevelsSkipped) {
       visitChildNodesAtDepth(nodeVisitor, rootNode, rootGIndex, depthToVisit);
     } else {
       visitIntermediateBranches(
-          nodeVisitor, maxCompressionDepth, rootNode, rootGIndex, depthToVisit);
+          nodeVisitor, maxBranchLevelsSkipped, rootNode, rootGIndex, depthToVisit);
     }
   }
 
   private static void visitIntermediateBranches(
       final NodeVisitor nodeVisitor,
-      final int maxCompressionDepth,
+      final int maxBranchLevelsSkipped,
       final TreeNode rootNode,
       final long rootGIndex,
       final int depthToVisit) {
     // Max compression depth exceeded so will need to record some interim branch nodes
-    final int childCount = Math.toIntExact(1L << maxCompressionDepth);
+    final int childCount = Math.toIntExact(1L << maxBranchLevelsSkipped);
     final Bytes32[] childRoots = new Bytes32[childCount];
-    final int remainingDepth = depthToVisit - maxCompressionDepth;
+    final int remainingDepth = depthToVisit - maxBranchLevelsSkipped;
     for (int childIndex = 0; childIndex < childCount; childIndex++) {
       final long childRelativeGIndex =
-          GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, childIndex, maxCompressionDepth);
+          GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, childIndex, maxBranchLevelsSkipped);
       final TreeNode childNode = rootNode.get(childRelativeGIndex);
       childRoots[childIndex] = childNode.hashTreeRoot();
       visitNodesToDepth(
           nodeVisitor,
-          maxCompressionDepth,
+          maxBranchLevelsSkipped,
           childNode,
           gIdxCompose(rootGIndex, childRelativeGIndex),
           remainingDepth);
     }
-    nodeVisitor.onBranchNode(rootNode.hashTreeRoot(), rootGIndex, maxCompressionDepth, childRoots);
+    nodeVisitor.onBranchNode(
+        rootNode.hashTreeRoot(), rootGIndex, maxBranchLevelsSkipped, childRoots);
   }
 
   private static void visitChildNodesAtDepth(
@@ -97,7 +98,8 @@ public class IterationUtil {
 
     /**
      * Called when an intermediate branch node is visited. Multiple levels of branch nodes may be
-     * skipped to optimise iteration and storage, in which case the children
+     * skipped to optimise iteration and storage, in which case the children are {@code depth}
+     * levels from the branch node.
      *
      * @param root the hash tree root of the branch node
      * @param gIndex the generalised index of the branch node

@@ -14,11 +14,14 @@
 package tech.pegasys.teku.ssz.schema;
 
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 import tech.pegasys.teku.ssz.tree.TreeNode;
+import tech.pegasys.teku.ssz.tree.TreeNodeSource;
+import tech.pegasys.teku.ssz.tree.TreeNodeVisitor;
 
 /**
  * Base class for any SSZ structure schema like Vector, List, Container, primitive types
@@ -70,5 +73,25 @@ public interface SszSchema<SszDataT extends SszData> extends SszType {
 
   default SszDataT sszDeserialize(Bytes ssz) throws SszDeserializeException {
     return sszDeserialize(SszReader.fromBytes(ssz));
+  }
+
+  /**
+   * Iterate the backing nodes for this object and it's children. Iteration will be optimised by
+   * skipping any branches reported as unnecessary by {@link TreeNodeVisitor#canSkipBranch(Bytes32,
+   * long)} and by skipping up to {@code maxBranchLevelsSkipped} levels of branch nodes. Skipped
+   * levels will never include the deepest level of nodes represented by this schema (ie the root
+   * node of all child objects will be visited, even if it's a branch node).
+   *
+   * @param nodeVisitor the class to callback with visited nodes
+   * @param maxBranchLevelsSkipped the maximum number of levels of branch nodes that can be skipped
+   * @param rootGIndex the generalized index of the root node of this schema
+   */
+  default void iterate(
+      TreeNodeVisitor nodeVisitor, int maxBranchLevelsSkipped, long rootGIndex, TreeNode node) {
+    throw new UnsupportedOperationException("Not implemented");
+  }
+
+  default TreeNode loadBackingNodes(TreeNodeSource nodeSource, Bytes32 rootHash, long rootGIndex) {
+    throw new UnsupportedOperationException("Not implemented");
   }
 }
