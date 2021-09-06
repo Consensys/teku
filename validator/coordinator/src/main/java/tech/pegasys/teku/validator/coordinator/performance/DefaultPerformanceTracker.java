@@ -126,14 +126,14 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
       AttestationPerformance attestationPerformance =
           getAttestationPerformanceForEpoch(currentEpoch, analyzedEpoch);
 
-      if (mode.isLoggingEnabled()) {
+      // suppress performance metric output when not relevant
+      if (mode.isLoggingEnabled() && attestationPerformance.numberOfExpectedAttestations > 0) {
         statusLogger.performance(attestationPerformance.toString());
       }
 
       if (mode.isMetricsEnabled()) {
         validatorPerformanceMetrics.updateAttestationPerformanceMetrics(attestationPerformance);
       }
-
       producedAttestationsByEpoch.headMap(analyzedEpoch, true).clear();
     }
 
