@@ -134,7 +134,7 @@ class AttestationValidatorTest {
   public void shouldRejectAttestationWithIncorrectAggregateBitsSize() {
     final Attestation attestation =
         attestationGenerator.validAttestation(recentChainData.getChainHead().orElseThrow());
-    final SszBitlist validAggregationBits = attestation.getAggregation_bits();
+    final SszBitlist validAggregationBits = attestation.getAggregationBits();
     SszBitlist invalidAggregationBits =
         validAggregationBits
             .getSchema()
@@ -142,7 +142,7 @@ class AttestationValidatorTest {
             .or(validAggregationBits);
     final Attestation invalidAttestation =
         new Attestation(
-            invalidAggregationBits, attestation.getData(), attestation.getAggregate_signature());
+            invalidAggregationBits, attestation.getData(), attestation.getAggregateSignature());
     assertThat(validate(invalidAttestation).code()).isEqualTo(REJECT);
   }
 
@@ -227,7 +227,7 @@ class AttestationValidatorTest {
     // Sanity check
     assertThat(attestation1.getData().getTarget().getEpoch())
         .isEqualTo(attestation2.getData().getTarget().getEpoch());
-    assertThat(attestation1.getAggregation_bits()).isEqualTo(attestation2.getAggregation_bits());
+    assertThat(attestation1.getAggregationBits()).isEqualTo(attestation2.getAggregationBits());
 
     assertThat(validate(attestation1).code()).isEqualTo(ACCEPT);
     assertThat(validate(attestation2).code()).isEqualTo(IGNORE);
@@ -254,7 +254,7 @@ class AttestationValidatorTest {
     // Sanity check
     assertThat(attestation1.getData().getTarget().getEpoch())
         .isNotEqualTo(attestation2.getData().getTarget().getEpoch());
-    assertThat(attestation1.getAggregation_bits()).isEqualTo(attestation2.getAggregation_bits());
+    assertThat(attestation1.getAggregationBits()).isEqualTo(attestation2.getAggregationBits());
 
     assertThat(validate(attestation1).code()).isEqualTo(ACCEPT);
     assertThat(validate(attestation2).code()).isEqualTo(ACCEPT);
@@ -277,7 +277,7 @@ class AttestationValidatorTest {
 
     // Sanity check
     assertThat(attestation1.getData().getSlot()).isEqualTo(attestation2.getData().getSlot());
-    assertThat(attestation1.getAggregation_bits()).isNotEqualTo(attestation2.getAggregation_bits());
+    assertThat(attestation1.getAggregationBits()).isNotEqualTo(attestation2.getAggregationBits());
 
     assertThat(validate(attestation1).code()).isEqualTo(ACCEPT);
     assertThat(validate(attestation2).code()).isEqualTo(ACCEPT);
@@ -330,7 +330,7 @@ class AttestationValidatorTest {
                 ValidateableAttestation.fromNetwork(
                     spec,
                     new Attestation(
-                        attestation.getAggregation_bits(),
+                        attestation.getAggregationBits(),
                         new AttestationData(
                             data.getSlot(),
                             get_committee_count_per_slot(
@@ -338,7 +338,7 @@ class AttestationValidatorTest {
                             data.getBeacon_block_root(),
                             data.getSource(),
                             data.getTarget()),
-                        attestation.getAggregate_signature()),
+                        attestation.getAggregateSignature()),
                     expectedSubnetId)))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
   }
@@ -355,14 +355,14 @@ class AttestationValidatorTest {
                 ValidateableAttestation.fromNetwork(
                     spec,
                     new Attestation(
-                        attestation.getAggregation_bits(),
+                        attestation.getAggregationBits(),
                         new AttestationData(
                             data.getSlot(),
                             data.getIndex(),
                             data.getBeacon_block_root(),
                             data.getSource(),
                             new Checkpoint(data.getTarget().getEpoch().plus(2), Bytes32.ZERO)),
-                        attestation.getAggregate_signature()),
+                        attestation.getAggregateSignature()),
                     expectedSubnetId)))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
   }
@@ -411,6 +411,6 @@ class AttestationValidatorTest {
   }
 
   private boolean hasSameValidators(final Attestation attestation1, final Attestation attestation) {
-    return attestation.getAggregation_bits().equals(attestation1.getAggregation_bits());
+    return attestation.getAggregationBits().equals(attestation1.getAggregationBits());
   }
 }

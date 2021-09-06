@@ -296,7 +296,7 @@ public class DefaultPerformanceTrackerTest {
             .filter(
                 a ->
                     a.getData().equals(attestation1.getData())
-                        && !a.getAggregation_bits().equals(attestation1.getAggregation_bits()))
+                        && !a.getAggregationBits().equals(attestation1.getAggregationBits()))
             .findFirst()
             .orElseThrow();
 

@@ -87,7 +87,7 @@ public class AttestationUtil {
    */
   public IndexedAttestation getIndexedAttestation(BeaconState state, Attestation attestation) {
     List<Integer> attesting_indices =
-        getAttestingIndices(state, attestation.getData(), attestation.getAggregation_bits());
+        getAttestingIndices(state, attestation.getData(), attestation.getAggregationBits());
 
     return new IndexedAttestation(
         attesting_indices.stream()
@@ -95,7 +95,7 @@ public class AttestationUtil {
             .map(UInt64::valueOf)
             .collect(IndexedAttestation.SSZ_SCHEMA.getAttestingIndicesSchema().collectorUnboxed()),
         attestation.getData(),
-        attestation.getAggregate_signature());
+        attestation.getAggregateSignature());
   }
 
   /**
@@ -252,12 +252,12 @@ public class AttestationUtil {
 
   public boolean representsNewAttester(Attestation oldAttestation, Attestation newAttestation) {
     int newAttesterIndex = getAttesterIndexIntoCommittee(newAttestation);
-    return !oldAttestation.getAggregation_bits().getBit(newAttesterIndex);
+    return !oldAttestation.getAggregationBits().getBit(newAttesterIndex);
   }
 
   // Returns the index of the first attester in the Attestation
   public int getAttesterIndexIntoCommittee(Attestation attestation) {
-    SszBitlist aggregationBits = attestation.getAggregation_bits();
+    SszBitlist aggregationBits = attestation.getAggregationBits();
     for (int i = 0; i < aggregationBits.size(); i++) {
       if (aggregationBits.getBit(i)) {
         return i;
