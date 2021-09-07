@@ -44,12 +44,12 @@ public abstract class AbstractBeaconNodeCommandTest {
 
   @TempDir Path dataPath;
 
-  public TekuConfiguration getResultingTekuConfiguration() {
+  public TekuConfiguration getResultingTekuConfiguration(boolean validatorClientOnly) {
     try {
       final ArgumentCaptor<TekuConfiguration> configCaptor =
           ArgumentCaptor.forClass(TekuConfiguration.class);
       assertThat(stringWriter.toString()).isEmpty();
-      verify(startAction).start(configCaptor.capture(), eq(false));
+      verify(startAction).start(configCaptor.capture(), eq(validatorClientOnly));
 
       return configCaptor.getValue();
     } catch (Throwable t) {
@@ -58,6 +58,10 @@ public abstract class AbstractBeaconNodeCommandTest {
       LOG.error("Failed to parse Teku configuration: " + stringWriter);
       throw t;
     }
+  }
+
+  public TekuConfiguration getResultingTekuConfiguration() {
+    return getResultingTekuConfiguration(false);
   }
 
   public TekuConfiguration getTekuConfigurationFromArguments(String... arguments) {

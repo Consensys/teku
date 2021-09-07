@@ -64,5 +64,6 @@ dependencies {
   testImplementation testFixtures(project(':bls'))
   testImplementation testFixtures(project(':storage'))
 
+  testImplementation 'org.mockito:mockito-inline'
   testImplementation 'org.awaitility:awaitility'
 }
