@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.cli.subcommand;
 
+import static tech.pegasys.teku.cli.subcommand.ValidatorApiClientUtil.getSpecOrExit;
+import static tech.pegasys.teku.infrastructure.logging.SubCommandLogger.SUB_COMMAND_LOG;
+
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionException;
 import picocli.CommandLine.Command;
@@ -30,6 +33,8 @@ import tech.pegasys.teku.cli.options.ValidatorOptions;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
 
 @Command(
@@ -73,6 +78,8 @@ public class ValidatorClientCommand implements Callable<Integer> {
 
   @ParentCommand private BeaconNodeCommand parentCommand;
 
+  private static final String AUTO_NETWORK_OPTION = "auto";
+
   @Override
   public Integer call() {
     try {
@@ -94,9 +101,32 @@ public class ValidatorClientCommand implements Callable<Integer> {
     return 1;
   }
 
+  private void configureWithSpecFromBeaconNode(Eth2NetworkConfiguration.Builder builder) {
+    Spec spec = getSpecOrExit(validatorClientOptions.parseApiEndpoint());
+    builder.spec(spec);
+  }
+
+  private boolean isAutoDetectNetworkSpec() {
+    return AUTO_NETWORK_OPTION.equalsIgnoreCase(eth2NetworkOptions.getNetwork());
+  }
+
+  private void configureEth2Network(TekuConfiguration.Builder builder) {
+    if (isAutoDetectNetworkSpec()) {
+      builder.eth2NetworkConfig(this::configureWithSpecFromBeaconNode);
+    } else {
+      var deprecationWarning =
+          String.format(
+              "The '--network=%s' option is deprecated. Use '--network=auto' instead, "
+                  + "which fetches network configuration from the beacon node endpoint.",
+              eth2NetworkOptions.getNetwork());
+      SUB_COMMAND_LOG.displayDeprecationWarning(deprecationWarning);
+      eth2NetworkOptions.configure(builder);
+    }
+  }
+
   private TekuConfiguration tekuConfiguration() {
     final TekuConfiguration.Builder builder = TekuConfiguration.builder();
-    eth2NetworkOptions.configure(builder);
+    configureEth2Network(builder);
     validatorOptions.configure(builder);
     validatorClientOptions.configure(builder);
     dataOptions.configure(builder);
