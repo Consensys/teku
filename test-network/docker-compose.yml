@@ -22,6 +22,7 @@ services:
 
   grafana:
     image: grafana/grafana:latest
+    user: "${USER}:root"
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=pass
     volumes:

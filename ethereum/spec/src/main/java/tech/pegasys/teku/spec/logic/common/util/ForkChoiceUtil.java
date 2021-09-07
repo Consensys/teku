@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
@@ -203,6 +204,7 @@ public class ForkChoiceUtil {
 
   @CheckReturnValue
   public AttestationProcessingResult validate(
+      final Fork fork,
       final ReadOnlyStore store,
       final ValidateableAttestation validateableAttestation,
       final Optional<BeaconState> maybeTargetState) {
@@ -214,7 +216,7 @@ public class ForkChoiceUtil {
                 return AttestationProcessingResult.UNKNOWN_BLOCK;
               } else {
                 return attestationUtil.isValidIndexedAttestation(
-                    maybeTargetState.get(), validateableAttestation);
+                    fork, maybeTargetState.get(), validateableAttestation);
               }
             })
         .ifSuccessful(() -> checkIfAttestationShouldBeSavedForFuture(store, attestation));

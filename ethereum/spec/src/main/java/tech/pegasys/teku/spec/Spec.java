@@ -325,16 +325,18 @@ public class Spec {
       BeaconState state,
       ProposerSlashing proposerSlashing,
       BLSSignatureVerifier signatureVerifier) {
-    return atState(state)
+    final UInt64 epoch = getProposerSlashingEpoch(proposerSlashing);
+    return atEpoch(epoch)
         .operationSignatureVerifier()
-        .verifyProposerSlashingSignature(state, proposerSlashing, signatureVerifier);
+        .verifyProposerSlashingSignature(fork(epoch), state, proposerSlashing, signatureVerifier);
   }
 
   public boolean verifyVoluntaryExitSignature(
       BeaconState state, SignedVoluntaryExit signedExit, BLSSignatureVerifier signatureVerifier) {
-    return atState(state)
+    final UInt64 epoch = signedExit.getMessage().getEpoch();
+    return atEpoch(epoch)
         .operationSignatureVerifier()
-        .verifyVoluntaryExitSignature(state, signedExit, signatureVerifier);
+        .verifyVoluntaryExitSignature(fork(epoch), state, signedExit, signatureVerifier);
   }
 
   public Bytes32 getPreviousDutyDependentRoot(BeaconState state) {
@@ -416,24 +418,37 @@ public class Spec {
       final ReadOnlyStore store,
       final ValidateableAttestation validateableAttestation,
       final Optional<BeaconState> maybeTargetState) {
-    return atSlot(validateableAttestation.getAttestation().getData().getSlot())
+    final UInt64 slot = validateableAttestation.getAttestation().getData().getSlot();
+    final Fork fork = forkSchedule.getFork(computeEpochAtSlot(slot));
+    return atSlot(slot)
         .getForkChoiceUtil()
-        .validate(store, validateableAttestation, maybeTargetState);
+        .validate(fork, store, validateableAttestation, maybeTargetState);
   }
 
   public Optional<OperationInvalidReason> validateAttesterSlashing(
       final BeaconState state, final AttesterSlashing attesterSlashing) {
-    return atState(state).getOperationValidator().validateAttesterSlashing(state, attesterSlashing);
+    // Attestations must both be from the same epoch or will wind up being rejected by any version
+    final UInt64 epoch =
+        computeEpochAtSlot(attesterSlashing.getAttestation_1().getData().getSlot());
+    return atEpoch(epoch)
+        .getOperationValidator()
+        .validateAttesterSlashing(fork(epoch), state, attesterSlashing);
   }
 
   public Optional<OperationInvalidReason> validateProposerSlashing(
       final BeaconState state, final ProposerSlashing proposerSlashing) {
-    return atState(state).getOperationValidator().validateProposerSlashing(state, proposerSlashing);
+    final UInt64 epoch = getProposerSlashingEpoch(proposerSlashing);
+    return atEpoch(epoch)
+        .getOperationValidator()
+        .validateProposerSlashing(fork(epoch), state, proposerSlashing);
   }
 
   public Optional<OperationInvalidReason> validateVoluntaryExit(
       final BeaconState state, final SignedVoluntaryExit signedExit) {
-    return atState(state).getOperationValidator().validateVoluntaryExit(state, signedExit);
+    final UInt64 epoch = signedExit.getMessage().getEpoch();
+    return atEpoch(epoch)
+        .getOperationValidator()
+        .validateVoluntaryExit(fork(epoch), state, signedExit);
   }
 
   public BlockImportResult onBlock(
@@ -582,9 +597,11 @@ public class Spec {
       BeaconState state,
       ValidateableAttestation attestation,
       AsyncBLSSignatureVerifier blsSignatureVerifier) {
-    return atState(state)
+    final UInt64 slot = attestation.getData().getSlot();
+    return atSlot(slot)
         .getAttestationUtil()
-        .isValidIndexedAttestationAsync(state, attestation, blsSignatureVerifier);
+        .isValidIndexedAttestationAsync(
+            getForkAtSlot(slot), state, attestation, blsSignatureVerifier);
   }
 
   // Private helpers
@@ -604,6 +621,15 @@ public class Spec {
                 () -> new IllegalArgumentException("Unknown fork version: " + forkVersion));
 
     return forMilestone(milestone);
+  }
+
+  private Fork getForkAtSlot(final UInt64 slot) {
+    return forkSchedule.getFork(computeEpochAtSlot(slot));
+  }
+
+  private UInt64 getProposerSlashingEpoch(final ProposerSlashing proposerSlashing) {
+    // Slashable blocks must be from same slot
+    return computeEpochAtSlot(proposerSlashing.getHeader_1().getMessage().getSlot());
   }
 
   @Override

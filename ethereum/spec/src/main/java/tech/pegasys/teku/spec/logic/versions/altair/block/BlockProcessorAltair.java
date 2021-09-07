@@ -190,7 +190,9 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
     final UInt64 previousSlot = state.getSlot().minusMinZero(1);
     final Bytes32 domain =
         beaconStateAccessors.getDomain(
-            state, Domain.SYNC_COMMITTEE, miscHelpers.computeEpochAtSlot(previousSlot));
+            state.getForkInfo(),
+            Domain.SYNC_COMMITTEE,
+            miscHelpers.computeEpochAtSlot(previousSlot));
     final Bytes32 signingRoot =
         miscHelpersAltair.computeSigningRoot(
             beaconStateAccessors.getBlockRootAtSlot(state, previousSlot), domain);
@@ -236,9 +238,8 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
     idlePubkeys.stream()
         .map(pubkey -> validatorsUtil.getValidatorIndex(state, pubkey).orElseThrow())
         .forEach(
-            participantIndex -> {
-              beaconStateMutators.decreaseBalance(state, participantIndex, participantReward);
-            });
+            participantIndex ->
+                beaconStateMutators.decreaseBalance(state, participantIndex, participantReward));
   }
 
   public static boolean eth2FastAggregateVerify(

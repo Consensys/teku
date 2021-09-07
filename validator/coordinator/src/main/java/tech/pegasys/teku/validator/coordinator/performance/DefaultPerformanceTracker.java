@@ -126,14 +126,14 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
       AttestationPerformance attestationPerformance =
           getAttestationPerformanceForEpoch(currentEpoch, analyzedEpoch);
 
-      if (mode.isLoggingEnabled()) {
+      // suppress performance metric output when not relevant
+      if (mode.isLoggingEnabled() && attestationPerformance.numberOfExpectedAttestations > 0) {
         statusLogger.performance(attestationPerformance.toString());
       }
 
       if (mode.isMetricsEnabled()) {
         validatorPerformanceMetrics.updateAttestationPerformanceMetrics(attestationPerformance);
       }
-
       producedAttestationsByEpoch.headMap(analyzedEpoch, true).clear();
     }
 
@@ -250,7 +250,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
         NavigableMap<UInt64, SszBitlist> slotToBitlists =
             slotAndBitlistsByAttestationDataHash.computeIfAbsent(
                 attestationDataHash, __ -> new TreeMap<>());
-        slotToBitlists.merge(slot, attestation.getAggregation_bits(), SszBitlist::nullableOr);
+        slotToBitlists.merge(slot, attestation.getAggregationBits(), SszBitlist::nullableOr);
       }
     }
 
@@ -263,7 +263,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
       NavigableMap<UInt64, SszBitlist> slotAndBitlists =
           slotAndBitlistsByAttestationDataHash.get(sentAttestationDataHash);
       for (UInt64 slot : slotAndBitlists.keySet()) {
-        if (slotAndBitlists.get(slot).isSuperSetOf(sentAttestation.getAggregation_bits())) {
+        if (slotAndBitlists.get(slot).isSuperSetOf(sentAttestation.getAggregationBits())) {
           inclusionDistances.add(slot.minus(sentAttestationSlot).intValue());
           break;
         }
