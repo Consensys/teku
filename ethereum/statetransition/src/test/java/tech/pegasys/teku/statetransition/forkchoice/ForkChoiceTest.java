@@ -391,7 +391,7 @@ class ForkChoiceTest {
         new IndexedAttestation(
             IndexedAttestation.SSZ_SCHEMA.getAttestingIndicesSchema().of(validatorIndex),
             updatedVote.getData(),
-            updatedVote.getAttestation().getAggregate_signature()));
+            updatedVote.getAttestation().getAggregateSignature()));
 
     forkChoice.applyIndexedAttestations(List.of(updatedVote));
     return updatedAttestationSlot;

@@ -76,9 +76,9 @@ public class SszBenchUtil {
   }
 
   public static void iterateData(Attestation a, Blackhole bh) {
-    bh.consume(a.getAggregation_bits());
+    bh.consume(a.getAggregationBits());
     iterateData(a.getData(), bh);
-    bh.consume(a.getAggregate_signature());
+    bh.consume(a.getAggregateSignature());
   }
 
   public static void iterateData(AttesterSlashing s, Blackhole bh) {

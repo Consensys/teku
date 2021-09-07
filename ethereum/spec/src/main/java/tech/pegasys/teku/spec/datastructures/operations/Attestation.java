@@ -79,7 +79,7 @@ public class Attestation
     return Sets.newHashSet(getData().getTarget().getRoot(), getData().getBeacon_block_root());
   }
 
-  public SszBitlist getAggregation_bits() {
+  public SszBitlist getAggregationBits() {
     return getField0();
   }
 
@@ -87,7 +87,7 @@ public class Attestation
     return getField1();
   }
 
-  public BLSSignature getAggregate_signature() {
+  public BLSSignature getAggregateSignature() {
     return getField2().getSignature();
   }
 }
