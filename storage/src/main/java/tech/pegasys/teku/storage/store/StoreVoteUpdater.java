@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.storage.store;
 
-import java.util.Comparator;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -92,13 +92,18 @@ public class StoreVoteUpdater implements VoteUpdater {
   public void commit() {
     // Votes are applied to the store immediately since the changes to the in-memory ProtoArray
     // can't be rolled back.
+
+    store.highestVotedValidatorIndex = getHighestVotedValidatorIndex();
+
+    if (store.highestVotedValidatorIndex.intValue() >= store.votes.length) {
+      store.votes = Arrays.copyOf(store.votes, store.highestVotedValidatorIndex.intValue() + 1000);
+    }
+
     votes.forEach(
         (key, value) -> {
           store.votes[key.intValue()] = value;
         });
-    store.highestVotedValidatorIndex =
-        store.highestVotedValidatorIndex.max(
-            votes.keySet().stream().max(Comparator.naturalOrder()).orElse(UInt64.ZERO));
+
     voteUpdateChannel.onVotesUpdated(votes);
   }
 }
