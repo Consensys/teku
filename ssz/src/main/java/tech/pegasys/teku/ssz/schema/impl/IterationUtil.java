@@ -28,15 +28,36 @@ public class IterationUtil {
       final TreeNode rootNode,
       final long rootGIndex,
       final int depthToVisit) {
+    visitNodesToDepth(
+        nodeVisitor,
+        maxBranchLevelsSkipped,
+        rootNode,
+        rootGIndex,
+        depthToVisit,
+        GIndexUtil.gIdxRightmostFrom(rootGIndex));
+  }
+
+  public static void visitNodesToDepth(
+      final NodeVisitor nodeVisitor,
+      final int maxBranchLevelsSkipped,
+      final TreeNode rootNode,
+      final long rootGIndex,
+      final int depthToVisit,
+      final long lastUsefulGIndex) {
     checkArgument(depthToVisit > 0, "Depth must be positive");
     if (nodeVisitor.canSkipBranch(rootNode.hashTreeRoot(), rootGIndex)) {
       return;
     }
     if (depthToVisit <= maxBranchLevelsSkipped) {
-      visitChildNodesAtDepth(nodeVisitor, rootNode, rootGIndex, depthToVisit);
+      visitChildNodesAtDepth(nodeVisitor, rootNode, rootGIndex, depthToVisit, lastUsefulGIndex);
     } else {
       visitIntermediateBranches(
-          nodeVisitor, maxBranchLevelsSkipped, rootNode, rootGIndex, depthToVisit);
+          nodeVisitor,
+          maxBranchLevelsSkipped,
+          rootNode,
+          rootGIndex,
+          depthToVisit,
+          lastUsefulGIndex);
     }
   }
 
@@ -45,33 +66,46 @@ public class IterationUtil {
       final int maxBranchLevelsSkipped,
       final TreeNode rootNode,
       final long rootGIndex,
-      final int depthToVisit) {
+      final int depthToVisit,
+      final long lastUsefulGIndex) {
     // Max compression depth exceeded so will need to record some interim branch nodes
-    final int childCount = Math.toIntExact(1L << maxBranchLevelsSkipped);
-    final Bytes32[] childRoots = new Bytes32[childCount];
+
     final int remainingDepth = depthToVisit - maxBranchLevelsSkipped;
+    final int childCount = getUsefulChildCount(maxBranchLevelsSkipped, lastUsefulGIndex);
+    final Bytes32[] childRoots = new Bytes32[childCount];
     for (int childIndex = 0; childIndex < childCount; childIndex++) {
       final long childRelativeGIndex =
           GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, childIndex, maxBranchLevelsSkipped);
+      final long childGIndex = gIdxCompose(rootGIndex, childRelativeGIndex);
+
       final TreeNode childNode = rootNode.get(childRelativeGIndex);
       childRoots[childIndex] = childNode.hashTreeRoot();
       visitNodesToDepth(
           nodeVisitor,
           maxBranchLevelsSkipped,
           childNode,
-          gIdxCompose(rootGIndex, childRelativeGIndex),
-          remainingDepth);
+          childGIndex,
+          remainingDepth,
+          lastUsefulGIndex);
     }
     nodeVisitor.onBranchNode(
         rootNode.hashTreeRoot(), rootGIndex, maxBranchLevelsSkipped, childRoots);
+  }
+
+  private static int getUsefulChildCount(
+      final int maxBranchLevelsSkipped, final long lastUsefulGIndex) {
+    final int lastUsefulChildIndex =
+        GIndexUtil.gIdxGetChildIndex(lastUsefulGIndex, maxBranchLevelsSkipped);
+    return Math.min(Math.toIntExact(1L << maxBranchLevelsSkipped), lastUsefulChildIndex + 1);
   }
 
   private static void visitChildNodesAtDepth(
       final NodeVisitor nodeVisitor,
       final TreeNode rootNode,
       final long rootGIndex,
-      final int depthToVisit) {
-    final int childCount = Math.toIntExact(1L << depthToVisit);
+      final int depthToVisit,
+      final long lastUsefulGIndex) {
+    final int childCount = getUsefulChildCount(depthToVisit, lastUsefulGIndex);
     final Bytes32[] childRoots = new Bytes32[childCount];
     for (int childIndex = 0; childIndex < childCount; childIndex++) {
       final long childRelativeGIndex =

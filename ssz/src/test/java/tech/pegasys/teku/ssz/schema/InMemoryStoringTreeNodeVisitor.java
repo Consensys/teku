@@ -13,15 +13,17 @@
 
 package tech.pegasys.teku.ssz.schema;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.tree.LeafDataNode;
 import tech.pegasys.teku.ssz.tree.TreeNodeSource;
 import tech.pegasys.teku.ssz.tree.TreeNodeVisitor;
+import tech.pegasys.teku.ssz.tree.TreeUtil;
 
 public class InMemoryStoringTreeNodeVisitor implements TreeNodeVisitor, TreeNodeSource {
 
@@ -36,20 +38,24 @@ public class InMemoryStoringTreeNodeVisitor implements TreeNodeVisitor, TreeNode
   @Override
   public void onBranchNode(
       final Bytes32 root, final long gIndex, final int depth, final Bytes32[] children) {
+    if (TreeUtil.ZERO_TREES_BY_ROOT.containsKey(root)) {
+      // No point storing zero trees.
+      return;
+    }
     branchNodes.putIfAbsent(
         root, new CompressedBranchInfo(depth, Arrays.copyOf(children, children.length)));
   }
 
   @Override
   public void onLeafNode(final LeafDataNode node, final long gIndex) {
-    if (node.getData().size() > Bytes32.SIZE) {
+    if (node.getData().size() > Bytes32.SIZE && !node.hashTreeRoot().isZero()) {
       leafNodes.putIfAbsent(node.hashTreeRoot(), node.getData());
     }
   }
 
   @Override
-  public Optional<CompressedBranchInfo> loadBranchNode(final Bytes32 rootHash, final long gIndex) {
-    return Optional.ofNullable(branchNodes.get(rootHash));
+  public CompressedBranchInfo loadBranchNode(final Bytes32 rootHash, final long gIndex) {
+    return checkNotNull(branchNodes.get(rootHash), "Unknown branch node %s", rootHash);
   }
 
   @Override

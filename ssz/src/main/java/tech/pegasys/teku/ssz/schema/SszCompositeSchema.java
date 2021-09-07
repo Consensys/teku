@@ -13,9 +13,13 @@
 
 package tech.pegasys.teku.ssz.schema;
 
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.SszComposite;
+import tech.pegasys.teku.ssz.schema.impl.IterationUtil;
+import tech.pegasys.teku.ssz.schema.impl.IterationUtil.NodeVisitor;
 import tech.pegasys.teku.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.ssz.tree.TreeNode;
+import tech.pegasys.teku.ssz.tree.TreeNodeVisitor;
 import tech.pegasys.teku.ssz.tree.TreeUtil;
 
 /** Abstract schema of {@link SszComposite} subclasses */
@@ -84,5 +88,50 @@ public interface SszCompositeSchema<SszCompositeT extends SszComposite<?>>
   @Override
   default boolean isPrimitive() {
     return false;
+  }
+
+  @Override
+  default void iterate(
+      final TreeNodeVisitor nodeVisitor,
+      final int maxBranchLevelsSkipped,
+      final long rootGIndex,
+      final TreeNode node) {
+    final int depthToVisit = treeDepth();
+    if (depthToVisit == 0) {
+      // Only one child so wrapper is inlined
+      getChildSchema(0).iterate(nodeVisitor, maxBranchLevelsSkipped, rootGIndex, node);
+      return;
+    }
+    final long lastUsefulGIndex =
+        GIndexUtil.gIdxChildGIndex(rootGIndex, getMaxLength() - 1, treeDepth());
+    final NodeVisitor delegatingVisitor =
+        new NodeVisitor() {
+          @Override
+          public boolean canSkipBranch(final Bytes32 root, final long gIndex) {
+            return nodeVisitor.canSkipBranch(root, gIndex);
+          }
+
+          @Override
+          public void onBranchNode(
+              final Bytes32 root, final long gIndex, final int depth, final Bytes32[] children) {
+            nodeVisitor.onBranchNode(root, gIndex, depth, children);
+          }
+
+          @Override
+          public void onTargetDepthNode(final TreeNode node, final long gIndex) {
+            final int childIndex = GIndexUtil.gIdxGetChildIndex(gIndex, treeDepth());
+            if (childIndex < getMaxLength()) {
+              final SszSchema<?> childSchema = getChildSchema(childIndex);
+              childSchema.iterate(nodeVisitor, maxBranchLevelsSkipped, gIndex, node);
+            }
+          }
+        };
+    IterationUtil.visitNodesToDepth(
+        delegatingVisitor,
+        maxBranchLevelsSkipped,
+        node,
+        rootGIndex,
+        depthToVisit,
+        lastUsefulGIndex);
   }
 }

@@ -26,6 +26,7 @@ import java.util.Queue;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.SszContainer;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.schema.SszContainerSchema;
@@ -35,7 +36,9 @@ import tech.pegasys.teku.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
+import tech.pegasys.teku.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.ssz.tree.TreeNode;
+import tech.pegasys.teku.ssz.tree.TreeNodeSource;
 import tech.pegasys.teku.ssz.tree.TreeUtil;
 
 public abstract class AbstractSszContainerSchema<C extends SszContainer>
@@ -310,6 +313,20 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
     }
 
     return TreeUtil.createTree(childrenSubtrees);
+  }
+
+  @Override
+  public TreeNode loadBackingNodes(TreeNodeSource nodeSource, Bytes32 rootHash, long rootGIndex) {
+    return LoadingUtil.loadNodesToDepth(
+        nodeSource,
+        rootHash,
+        rootGIndex,
+        treeDepth(),
+        getDefaultTree(),
+        (nodeSource1, childHash, childGIndex) -> {
+          final int childIndex = GIndexUtil.gIdxGetChildIndex(childGIndex, treeDepth());
+          return getChildSchema(childIndex).loadBackingNodes(nodeSource, childHash, childGIndex);
+        });
   }
 
   @Override

@@ -19,6 +19,7 @@ import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.ssz.tree.GIndexUtil.SELF_G_INDEX;
 
@@ -228,6 +229,27 @@ class IterationUtilTest {
         .verify(visitor)
         .onBranchNode(
             rootNode.hashTreeRoot(), SELF_G_INDEX, maxBranchLevelsSkipped, roots(branchNodes));
+  }
+
+  @Test
+  void shouldNotStoreUnnecessaryChildNodes_singleBranchLevel() {
+    final int depth = 4;
+    final int maxBranchLevelsSkipped = Integer.MAX_VALUE;
+    final List<TreeNode> children = createChildrenForDepth(depth);
+
+    final TreeNode rootNode = TreeUtil.createTree(children, depth);
+    final long rootNodeGIndex = 20;
+    final int lastUsefulChildIndex = 5;
+    final long lastUsefulGIndex =
+        GIndexUtil.gIdxChildGIndex(rootNodeGIndex, lastUsefulChildIndex, depth);
+
+    IterationUtil.visitNodesToDepth(
+        visitor, maxBranchLevelsSkipped, rootNode, rootNodeGIndex, depth, lastUsefulGIndex);
+
+    final List<TreeNode> visitedChildren = children.subList(0, lastUsefulChildIndex);
+    verifyChildrenVisited(rootNodeGIndex, visitedChildren, depth);
+    verify(visitor)
+        .onBranchNode(rootNode.hashTreeRoot(), rootNodeGIndex, depth, roots(visitedChildren));
   }
 
   private List<TreeNode> getNodesAtDepth(final TreeNode rootNode, final int depth) {

@@ -13,12 +13,11 @@
 
 package tech.pegasys.teku.ssz.tree;
 
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 
 public interface TreeNodeSource {
-  Optional<CompressedBranchInfo> loadBranchNode(Bytes32 rootHash, long gIndex);
+  CompressedBranchInfo loadBranchNode(Bytes32 rootHash, long gIndex);
 
   Bytes loadLeafNode(Bytes32 rootHash, long gIndex);
 
