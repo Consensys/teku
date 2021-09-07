@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.cli.subcommand;
 
+import static tech.pegasys.teku.cli.subcommand.ValidatorApiClientUtil.getSpecOrExit;
+
 import com.google.common.base.Throwables;
 import java.io.UncheckedIOException;
 import java.net.ConnectException;
@@ -23,10 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Scanner;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import okhttp3.HttpUrl;
-import okhttp3.OkHttpClient;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -47,14 +46,11 @@ import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecFactory;
-import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 import tech.pegasys.teku.validator.client.loader.PublicKeyLoader;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
-import tech.pegasys.teku.validator.remote.apiclient.OkHttpClientAuthLoggingIntercepter;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
 
 @CommandLine.Command(
@@ -179,21 +175,6 @@ public class VoluntaryExitCommand implements Runnable {
     }
   }
 
-  private Spec getSpec() {
-    try {
-      return apiClient
-          .getConfigSpec()
-          .map(response -> SpecConfigLoader.loadConfig(response.data))
-          .map(SpecFactory::create)
-          .orElseThrow();
-    } catch (Exception ex) {
-      SUB_COMMAND_LOG.error(
-          "Failed to retrieve network config. Check beacon node is accepting REST requests.", ex);
-      System.exit(1);
-    }
-    return null;
-  }
-
   private Optional<UInt64> getEpoch() {
     return apiClient
         .getBlockHeader("head")
@@ -215,10 +196,10 @@ public class VoluntaryExitCommand implements Runnable {
             .validatorClient()
             .getValidatorConfig()
             .getBeaconNodeApiEndpoint()
-            .map(this::buildHttpEndpoint)
+            .map(ValidatorApiClientUtil::createApiClient)
             .orElseThrow();
 
-    spec = getSpec();
+    spec = getSpecOrExit(apiClient);
 
     validateOrDefaultEpoch();
     fork = spec.getForkSchedule().getFork(epoch);
@@ -251,19 +232,6 @@ public class VoluntaryExitCommand implements Runnable {
     if (validators.hasNoValidators()) {
       SUB_COMMAND_LOG.error("No validators were found to exit.");
       System.exit(1);
-    }
-  }
-
-  private OkHttpValidatorRestApiClient buildHttpEndpoint(final URI endpoint) {
-    {
-      HttpUrl apiEndpoint = HttpUrl.get(endpoint);
-      final OkHttpClient.Builder httpClientBuilder =
-          new OkHttpClient.Builder().readTimeout(30, TimeUnit.SECONDS);
-      OkHttpClientAuthLoggingIntercepter.addAuthenticator(apiEndpoint, httpClientBuilder);
-      // Strip any authentication info from the URL to ensure it doesn't get logged.
-      apiEndpoint = apiEndpoint.newBuilder().username("").password("").build();
-      final OkHttpClient okHttpClient = httpClientBuilder.build();
-      return new OkHttpValidatorRestApiClient(apiEndpoint, okHttpClient);
     }
   }
 
