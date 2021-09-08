@@ -25,7 +25,7 @@ import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpClientAuthLoggingIntercepter;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
 
-class ValidatorApiClientUtil {
+class RemoteSpecLoader {
   static Spec getSpec(OkHttpValidatorRestApiClient apiClient) {
     return apiClient
         .getConfigSpec()

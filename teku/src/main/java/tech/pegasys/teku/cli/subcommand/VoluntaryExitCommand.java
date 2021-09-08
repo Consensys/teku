@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.cli.subcommand;
 
-import static tech.pegasys.teku.cli.subcommand.ValidatorApiClientUtil.getSpecOrExit;
+import static tech.pegasys.teku.cli.subcommand.RemoteSpecLoader.getSpecOrExit;
 
 import com.google.common.base.Throwables;
 import java.io.UncheckedIOException;
@@ -196,7 +196,7 @@ public class VoluntaryExitCommand implements Runnable {
             .validatorClient()
             .getValidatorConfig()
             .getBeaconNodeApiEndpoint()
-            .map(ValidatorApiClientUtil::createApiClient)
+            .map(RemoteSpecLoader::createApiClient)
             .orElseThrow();
 
     spec = getSpecOrExit(apiClient);
