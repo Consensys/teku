@@ -37,6 +37,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -219,11 +220,13 @@ public class SlotProcessorTest {
 
     slotProcessor.onTick(beaconState.getGenesis_time().plus(SECONDS_PER_SLOT / 3));
     final Checkpoint finalizedCheckpoint = recentChainData.getStore().getFinalizedCheckpoint();
+    final BeaconBlock headBlock = recentChainData.getHeadBlock().orElseThrow().getMessage();
     verify(eventLogger)
         .slotEvent(
             ZERO,
             recentChainData.getHeadSlot(),
-            recentChainData.getBestBlockRoot().orElseThrow(),
+            headBlock.getRoot(),
+            headBlock.getParentRoot(),
             ZERO,
             finalizedCheckpoint.getEpoch(),
             finalizedCheckpoint.getRoot(),
