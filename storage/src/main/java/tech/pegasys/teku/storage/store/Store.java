@@ -524,11 +524,11 @@ class Store implements UpdatableStore {
     }
   }
 
-  VoteTracker getVote(UInt64 validatorIndex) {
+  Optional<VoteTracker> getVote(UInt64 validatorIndex) {
     readLock.lock();
     try {
-      if (validatorIndex.intValue() >= votes.length) return null;
-      return votes[validatorIndex.intValue()];
+      if (validatorIndex.intValue() >= votes.length) return Optional.empty();
+      return Optional.ofNullable(votes[validatorIndex.intValue()]);
     } finally {
       readLock.unlock();
     }

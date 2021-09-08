@@ -47,8 +47,7 @@ public class StoreVoteUpdater implements VoteUpdater {
     if (txVote != null) {
       return txVote;
     } else {
-      VoteTracker storeVote = store.getVote(validatorIndex);
-      return storeVote != null ? storeVote : VoteTracker.DEFAULT;
+      return store.getVote(validatorIndex).orElse(VoteTracker.DEFAULT);
     }
   }
 
