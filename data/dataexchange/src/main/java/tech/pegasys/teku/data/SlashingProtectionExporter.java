@@ -56,7 +56,7 @@ public class SlashingProtectionExporter {
         .forEach(this::readSlashProtectionFile);
   }
 
-  private void readSlashProtectionFile(final File file) {
+  void readSlashProtectionFile(final File file) {
     try {
       Optional<ValidatorSigningRecord> maybeRecord =
           syncDataAccessor.read(file.toPath()).map(ValidatorSigningRecord::fromBytes);
@@ -69,7 +69,6 @@ public class SlashingProtectionExporter {
           && validatorSigningRecord.getGenesisValidatorsRoot() != null) {
         this.genesisValidatorsRoot = validatorSigningRecord.getGenesisValidatorsRoot();
       } else if (validatorSigningRecord.getGenesisValidatorsRoot() != null
-          && genesisValidatorsRoot != null
           && !genesisValidatorsRoot.equals(validatorSigningRecord.getGenesisValidatorsRoot())) {
         log.exit(
             1,
@@ -99,10 +98,12 @@ public class SlashingProtectionExporter {
   }
 
   private Bytes getJsonByteData() throws JsonProcessingException {
-    final String prettyJson =
-        jsonProvider.objectToPrettyJSON(
-            new SlashingProtectionInterchangeFormat(
-                new Metadata(INTERCHANGE_VERSION, genesisValidatorsRoot), signingHistoryList));
-    return Bytes.of(prettyJson.getBytes(StandardCharsets.UTF_8));
+    return Bytes.of(getPrettyJson().getBytes(StandardCharsets.UTF_8));
+  }
+
+  String getPrettyJson() throws JsonProcessingException {
+    return jsonProvider.objectToPrettyJSON(
+        new SlashingProtectionInterchangeFormat(
+            new Metadata(INTERCHANGE_VERSION, genesisValidatorsRoot), signingHistoryList));
   }
 }
