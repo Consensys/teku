@@ -93,7 +93,7 @@ class Store implements UpdatableStore {
   final Map<Bytes32, SignedBeaconBlock> blocks;
   final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates;
   VoteTracker[] votes;
-  public static final int DEFAULT_VOTE_TRACKER_SIZE = 1000;
+  public static final int VOTE_TRACKER_SPARE_CAPACITY = 1000;
   UInt64 highestVotedValidatorIndex;
   private ForkChoiceStrategy forkChoiceStrategy;
 
@@ -139,8 +139,7 @@ class Store implements UpdatableStore {
     this.highestVotedValidatorIndex =
         votes.keySet().stream().max(Comparator.naturalOrder()).orElse(UInt64.ZERO);
     this.votes =
-        new VoteTracker
-            [Math.max(this.highestVotedValidatorIndex.intValue() + 1, DEFAULT_VOTE_TRACKER_SIZE)];
+        new VoteTracker[this.highestVotedValidatorIndex.intValue() + VOTE_TRACKER_SPARE_CAPACITY];
     votes.forEach(
         (key, value) -> {
           this.votes[key.intValue()] = value;

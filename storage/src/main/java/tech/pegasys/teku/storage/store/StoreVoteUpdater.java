@@ -99,7 +99,7 @@ public class StoreVoteUpdater implements VoteUpdater {
       store.votes =
           Arrays.copyOf(
               store.votes,
-              store.highestVotedValidatorIndex.intValue() + Store.DEFAULT_VOTE_TRACKER_SIZE);
+              store.highestVotedValidatorIndex.intValue() + Store.VOTE_TRACKER_SPARE_CAPACITY);
     }
 
     votes.forEach(
