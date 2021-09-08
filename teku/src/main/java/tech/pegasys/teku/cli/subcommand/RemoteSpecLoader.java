@@ -13,12 +13,11 @@
 
 package tech.pegasys.teku.cli.subcommand;
 
-import static tech.pegasys.teku.infrastructure.logging.SubCommandLogger.SUB_COMMAND_LOG;
-
 import java.net.URI;
 import java.util.concurrent.TimeUnit;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
@@ -31,22 +30,15 @@ class RemoteSpecLoader {
         .getConfigSpec()
         .map(response -> SpecConfigLoader.loadConfig(response.data))
         .map(SpecFactory::create)
-        .orElseThrow();
+        .orElseThrow(
+            () ->
+                new InvalidConfigurationException(
+                    "Could not retrieve network spec from beacon node endpoint. Check beacon node is "
+                        + "accepting REST requests"));
   }
 
-  static Spec getSpecOrExit(URI beaconEndpoint) {
-    return getSpecOrExit(createApiClient(beaconEndpoint));
-  }
-
-  static Spec getSpecOrExit(OkHttpValidatorRestApiClient apiClient) {
-    try {
-      return getSpec(apiClient);
-    } catch (Exception ex) {
-      SUB_COMMAND_LOG.error(
-          "Failed to retrieve network config. Check beacon node is accepting REST requests.", ex);
-      System.exit(1);
-    }
-    return null;
+  static Spec getSpec(URI beaconEndpoint) {
+    return getSpec(createApiClient(beaconEndpoint));
   }
 
   static OkHttpValidatorRestApiClient createApiClient(final URI baseEndpoint) {

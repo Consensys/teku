@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.cli.subcommand;
 
-import static tech.pegasys.teku.cli.subcommand.RemoteSpecLoader.getSpecOrExit;
+import static tech.pegasys.teku.cli.subcommand.RemoteSpecLoader.getSpec;
 import static tech.pegasys.teku.infrastructure.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
 import java.util.concurrent.Callable;
@@ -102,7 +102,7 @@ public class ValidatorClientCommand implements Callable<Integer> {
   }
 
   private void configureWithSpecFromBeaconNode(Eth2NetworkConfiguration.Builder builder) {
-    Spec spec = getSpecOrExit(validatorClientOptions.parseApiEndpoint());
+    Spec spec = getSpec(validatorClientOptions.parseApiEndpoint());
     builder.spec(spec);
   }
 

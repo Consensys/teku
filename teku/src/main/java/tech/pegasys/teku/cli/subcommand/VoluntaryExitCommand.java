@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.cli.subcommand;
 
-import static tech.pegasys.teku.cli.subcommand.RemoteSpecLoader.getSpecOrExit;
+import static tech.pegasys.teku.cli.subcommand.RemoteSpecLoader.getSpec;
 
 import com.google.common.base.Throwables;
 import java.io.UncheckedIOException;
@@ -199,7 +199,7 @@ public class VoluntaryExitCommand implements Runnable {
             .map(RemoteSpecLoader::createApiClient)
             .orElseThrow();
 
-    spec = getSpecOrExit(apiClient);
+    spec = getSpec(apiClient);
 
     validateOrDefaultEpoch();
     fork = spec.getForkSchedule().getFork(epoch);

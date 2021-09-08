@@ -35,10 +35,9 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
             Resources.getResource("tech/pegasys/teku/cli/subcommand/test-spec.yaml").getPath());
     final String[] args = {"vc", "--network", "auto", "--beacon-node-api-endpoint", endpoint};
 
-    try (MockedStatic<RemoteSpecLoader> mockValidatorClient =
-        mockStatic(RemoteSpecLoader.class)) {
+    try (MockedStatic<RemoteSpecLoader> mockValidatorClient = mockStatic(RemoteSpecLoader.class)) {
       mockValidatorClient
-          .when(() -> RemoteSpecLoader.getSpecOrExit(URI.create(endpoint)))
+          .when(() -> RemoteSpecLoader.getSpec(URI.create(endpoint)))
           .thenReturn(testSpec);
 
       int parseResult = beaconNodeCommand.parse(args);
