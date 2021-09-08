@@ -220,6 +220,7 @@ public class SlotProcessor {
                                 nodeSlot.getValue(),
                                 head.getSlot(),
                                 head.getRoot(),
+                                head.getParentRoot(),
                                 nodeEpoch,
                                 finalizedCheckpoint.getEpoch(),
                                 finalizedCheckpoint.getRoot(),
