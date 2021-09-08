@@ -78,13 +78,13 @@ public class ValidatorClientCommand implements Callable<Integer> {
   private UnusedValidatorClientOptions unusedValidatorClientOptions;
 
   @CommandLine.Option(
-          names = {"-n", "--network"},
-          paramLabel = "<NETWORK>",
-          description =
-                  "Represents which network to use. "
-                          + "Use `auto` to fetch network configuration from the beacon node endpoint directly."
-                          + "Note that all other values for this option have been deprecated.",
-          arity = "1")
+      names = {"-n", "--network"},
+      paramLabel = "<NETWORK>",
+      description =
+          "Represents which network to use. "
+              + "Use `auto` to fetch network configuration from the beacon node endpoint directly."
+              + "Note that all other values for this option have been deprecated.",
+      arity = "1")
   private String networkOption = "mainnet";
 
   @ParentCommand private BeaconNodeCommand parentCommand;

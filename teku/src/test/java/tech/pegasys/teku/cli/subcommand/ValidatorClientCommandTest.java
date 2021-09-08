@@ -26,14 +26,21 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 
 public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
+  final String endpoint = "http://localhost:5004";
+  final String[] args = {"vc", "--network", "auto", "--beacon-node-api-endpoint", endpoint};
+
+  @Test
+  public void autoDetectNetwork_ShouldDisplayErrorMsgIfFailsToConnectToBeaconNode() {
+    beaconNodeCommand.parse(args);
+    assertThat(getCommandLineOutput())
+        .containsIgnoringCase("could not retrieve network spec from beacon node");
+  }
 
   @Test
   public void autoDetectNetwork_ShouldFetchNetworkDetailsFromBeaconNodeIfEnabled() {
-    final String endpoint = "http://localhost:5004";
     final Spec testSpec =
         SpecFactory.create(
             Resources.getResource("tech/pegasys/teku/cli/subcommand/test-spec.yaml").getPath());
-    final String[] args = {"vc", "--network", "auto", "--beacon-node-api-endpoint", endpoint};
 
     try (MockedStatic<RemoteSpecLoader> mockValidatorClient = mockStatic(RemoteSpecLoader.class)) {
       mockValidatorClient

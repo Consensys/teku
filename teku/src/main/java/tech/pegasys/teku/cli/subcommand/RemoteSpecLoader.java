@@ -25,16 +25,21 @@ import tech.pegasys.teku.validator.remote.apiclient.OkHttpClientAuthLoggingInter
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
 
 class RemoteSpecLoader {
+
   static Spec getSpec(OkHttpValidatorRestApiClient apiClient) {
-    return apiClient
-        .getConfigSpec()
-        .map(response -> SpecConfigLoader.loadConfig(response.data))
-        .map(SpecFactory::create)
-        .orElseThrow(
-            () ->
-                new InvalidConfigurationException(
-                    "Could not retrieve network spec from beacon node endpoint. Check beacon node is "
-                        + "accepting REST requests"));
+    try {
+      return apiClient
+          .getConfigSpec()
+          .map(response -> SpecConfigLoader.loadConfig(response.data))
+          .map(SpecFactory::create)
+          .orElseThrow();
+    } catch (Exception e) {
+      String errMsg =
+          String.format(
+              "Failed to retrieve network spec from beacon node endpoint '%s'.\nDetails: %s",
+              apiClient.getBaseEndpoint(), e.getMessage());
+      throw new InvalidConfigurationException(errMsg, e);
+    }
   }
 
   static Spec getSpec(URI beaconEndpoint) {
