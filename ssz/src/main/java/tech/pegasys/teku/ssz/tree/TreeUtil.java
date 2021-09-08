@@ -29,7 +29,7 @@ import tech.pegasys.teku.ssz.tree.TreeNodeImpl.LeafNodeImpl;
 /** Misc Backing binary tree utils */
 public class TreeUtil {
 
-  static class ZeroLeafNode extends LeafNodeImpl {
+  public static class ZeroLeafNode extends LeafNodeImpl {
     public ZeroLeafNode(int size) {
       super(Bytes.wrap(new byte[size]));
     }
@@ -40,7 +40,7 @@ public class TreeUtil {
     }
   }
 
-  private static class ZeroBranchNode extends BranchNodeImpl {
+  public static class ZeroBranchNode extends BranchNodeImpl {
     private final int height;
 
     public ZeroBranchNode(TreeNode left, TreeNode right, int height) {

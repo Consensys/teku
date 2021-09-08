@@ -13,23 +13,32 @@
 
 package tech.pegasys.teku.ssz.schema.impl;
 
+import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.ssz.tree.TreeUtil.bitsCeilToBytes;
 
 import java.nio.ByteOrder;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.schema.SszListSchema;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.schema.SszSchema;
 import tech.pegasys.teku.ssz.schema.SszSchemaHints;
+import tech.pegasys.teku.ssz.schema.impl.IterationUtil.NodeVisitor;
+import tech.pegasys.teku.ssz.schema.impl.LoadingUtil.ChildLoader;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 import tech.pegasys.teku.ssz.tree.BranchNode;
 import tech.pegasys.teku.ssz.tree.GIndexUtil;
+import tech.pegasys.teku.ssz.tree.LeafDataNode;
 import tech.pegasys.teku.ssz.tree.LeafNode;
 import tech.pegasys.teku.ssz.tree.TreeNode;
+import tech.pegasys.teku.ssz.tree.TreeNodeSource;
+import tech.pegasys.teku.ssz.tree.TreeNodeSource.CompressedBranchInfo;
+import tech.pegasys.teku.ssz.tree.TreeNodeVisitor;
+import tech.pegasys.teku.ssz.tree.TreeUtil;
 
 public abstract class AbstractSszListSchema<
         ElementDataT extends SszData, SszListT extends SszList<ElementDataT>>
@@ -125,6 +134,122 @@ public abstract class AbstractSszListSchema<
       DeserializedData data = sszDeserializeVector(reader);
       return createTree(data.getDataTree(), data.getChildrenCount());
     }
+  }
+
+  @Override
+  public void iterate(
+      final TreeNodeVisitor nodeVisitor,
+      final int maxBranchLevelsSkipped,
+      final long rootGIndex,
+      final TreeNode node) {
+    // Lists start with a branch with the data on the left and length on the right
+    final TreeNode vectorNode = getVectorNode(node);
+    final TreeNode lengthNode = node.get(GIndexUtil.RIGHT_CHILD_G_INDEX);
+
+    // Iterate vector data (omitting empty list items at the end...)
+    iterateVectorNodes(
+        nodeVisitor,
+        maxBranchLevelsSkipped,
+        GIndexUtil.gIdxLeftGIndex(rootGIndex),
+        vectorNode,
+        getLength(node));
+
+    // Iterate leaf node
+    nodeVisitor.onLeafNode((LeafDataNode) lengthNode, GIndexUtil.gIdxRightGIndex(rootGIndex));
+
+    // Iterate list root node
+    nodeVisitor.onBranchNode(
+        node.hashTreeRoot(),
+        GIndexUtil.gIdxRightGIndex(rootGIndex),
+        1,
+        new Bytes32[] {vectorNode.hashTreeRoot(), lengthNode.hashTreeRoot()});
+  }
+
+  private void iterateVectorNodes(
+      final TreeNodeVisitor nodeVisitor,
+      final int maxBranchLevelsSkipped,
+      final long rootGIndex,
+      final TreeNode node,
+      final int length) {
+    if (length == 0) {
+      // Nothing useful to iterate
+      return;
+    }
+    final int depthToVisit = compatibleVectorSchema.treeDepth();
+    if (depthToVisit == 0) {
+      // Only one child so wrapper is inlined
+      iterateChildNode(nodeVisitor, maxBranchLevelsSkipped, rootGIndex, node);
+      return;
+    }
+    final int fullNodeCount = length / compatibleVectorSchema.getElementsPerChunk();
+    int lastNodeElementCount = length % compatibleVectorSchema.getElementsPerChunk();
+    final long lastUsefulChildIndex = lastNodeElementCount == 0 ? fullNodeCount - 1 : fullNodeCount;
+    final long lastUsefulGIndex =
+        GIndexUtil.gIdxChildGIndex(rootGIndex, lastUsefulChildIndex, depthToVisit);
+    final NodeVisitor delegatingVisitor =
+        new NodeVisitor() {
+          @Override
+          public boolean canSkipBranch(final Bytes32 root, final long gIndex) {
+            return nodeVisitor.canSkipBranch(root, gIndex);
+          }
+
+          @Override
+          public void onBranchNode(
+              final Bytes32 root, final long gIndex, final int depth, final Bytes32[] children) {
+            nodeVisitor.onBranchNode(root, gIndex, depth, children);
+          }
+
+          @Override
+          public void onTargetDepthNode(final TreeNode childNode, final long gIndex) {
+            compatibleVectorSchema.iterateChildNode(
+                nodeVisitor, maxBranchLevelsSkipped, gIndex, childNode);
+          }
+        };
+    IterationUtil.visitNodesToDepth(
+        delegatingVisitor,
+        maxBranchLevelsSkipped,
+        node,
+        rootGIndex,
+        depthToVisit,
+        lastUsefulGIndex);
+  }
+
+  @Override
+  public TreeNode loadBackingNodes(
+      final TreeNodeSource nodeSource, final Bytes32 rootHash, final long rootGIndex) {
+    if (TreeUtil.ZERO_TREES_BY_ROOT.containsKey(rootHash)) {
+      return getDefaultTree();
+    }
+    final CompressedBranchInfo branchData = nodeSource.loadBranchNode(rootHash, rootGIndex);
+    checkState(
+        branchData.getChildren().length == 2, "List root node must have exactly two children");
+    checkState(branchData.getDepth() == 1, "List root node must have depth of 1");
+    final Bytes32 vectorHash = branchData.getChildren()[0];
+    final Bytes32 lengthHash = branchData.getChildren()[1];
+    final int length =
+        nodeSource
+            .loadLeafNode(lengthHash, GIndexUtil.gIdxRightGIndex(rootGIndex))
+            .getInt(0, ByteOrder.LITTLE_ENDIAN);
+
+    final ChildLoader childLoader =
+        (childNodeSource, childHash, childGIndex) ->
+            LoadingUtil.loadCollectionChild(
+                childNodeSource,
+                childHash,
+                childGIndex,
+                length,
+                compatibleVectorSchema.getElementsPerChunk(),
+                compatibleVectorSchema.treeDepth(),
+                compatibleVectorSchema.getElementSchema());
+    final TreeNode vectorNode =
+        LoadingUtil.loadNodesToDepth(
+            nodeSource,
+            vectorHash,
+            GIndexUtil.gIdxLeftGIndex(rootGIndex),
+            compatibleVectorSchema.treeDepth(),
+            compatibleVectorSchema.getDefault().getBackingNode(),
+            childLoader);
+    return BranchNode.create(vectorNode, toLengthNode(length));
   }
 
   private static TreeNode toLengthNode(int length) {

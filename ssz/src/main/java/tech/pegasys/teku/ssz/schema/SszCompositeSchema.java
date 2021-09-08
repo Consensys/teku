@@ -99,11 +99,12 @@ public interface SszCompositeSchema<SszCompositeT extends SszComposite<?>>
     final int depthToVisit = treeDepth();
     if (depthToVisit == 0) {
       // Only one child so wrapper is inlined
-      getChildSchema(0).iterate(nodeVisitor, maxBranchLevelsSkipped, rootGIndex, node);
+      iterateChildNode(nodeVisitor, maxBranchLevelsSkipped, rootGIndex, node);
       return;
     }
+    final long lastUsefulChildIdx = maxChunks() - 1;
     final long lastUsefulGIndex =
-        GIndexUtil.gIdxChildGIndex(rootGIndex, getMaxLength() - 1, treeDepth());
+        GIndexUtil.gIdxChildGIndex(rootGIndex, lastUsefulChildIdx, depthToVisit);
     final NodeVisitor delegatingVisitor =
         new NodeVisitor() {
           @Override
@@ -119,11 +120,7 @@ public interface SszCompositeSchema<SszCompositeT extends SszComposite<?>>
 
           @Override
           public void onTargetDepthNode(final TreeNode node, final long gIndex) {
-            final int childIndex = GIndexUtil.gIdxGetChildIndex(gIndex, treeDepth());
-            if (childIndex < getMaxLength()) {
-              final SszSchema<?> childSchema = getChildSchema(childIndex);
-              childSchema.iterate(nodeVisitor, maxBranchLevelsSkipped, gIndex, node);
-            }
+            iterateChildNode(nodeVisitor, maxBranchLevelsSkipped, gIndex, node);
           }
         };
     IterationUtil.visitNodesToDepth(
@@ -134,4 +131,7 @@ public interface SszCompositeSchema<SszCompositeT extends SszComposite<?>>
         depthToVisit,
         lastUsefulGIndex);
   }
+
+  void iterateChildNode(
+      TreeNodeVisitor nodeVisitor, int maxBranchLevelsSkipped, long gIndex, TreeNode node);
 }

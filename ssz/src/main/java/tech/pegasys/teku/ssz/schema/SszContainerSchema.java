@@ -15,11 +15,16 @@ package tech.pegasys.teku.ssz.schema;
 
 import java.util.List;
 import java.util.function.BiFunction;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.SszContainer;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.schema.impl.AbstractSszContainerSchema;
 import tech.pegasys.teku.ssz.schema.impl.AbstractSszContainerSchema.NamedSchema;
+import tech.pegasys.teku.ssz.schema.impl.LoadingUtil;
+import tech.pegasys.teku.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.ssz.tree.TreeNode;
+import tech.pegasys.teku.ssz.tree.TreeNodeSource;
+import tech.pegasys.teku.ssz.tree.TreeNodeVisitor;
 
 /**
  * {@link SszSchema} for an Ssz Container structure
@@ -82,6 +87,33 @@ public interface SszContainerSchema<C extends SszContainer> extends SszComposite
   /** Returns the number of fields in ssz containers of this type */
   default int getFieldsCount() {
     return (int) getMaxLength();
+  }
+
+  @Override
+  default void iterateChildNode(
+      final TreeNodeVisitor nodeVisitor,
+      final int maxBranchLevelsSkipped,
+      final long gIndex,
+      final TreeNode node) {
+    final int childIndex = GIndexUtil.gIdxToChildIndex(gIndex, treeDepth());
+    if (childIndex < getMaxLength()) {
+      final SszSchema<?> childSchema = getChildSchema(childIndex);
+      childSchema.iterate(nodeVisitor, maxBranchLevelsSkipped, gIndex, node);
+    }
+  }
+
+  @Override
+  default TreeNode loadBackingNodes(TreeNodeSource nodeSource, Bytes32 rootHash, long rootGIndex) {
+    return LoadingUtil.loadNodesToDepth(
+        nodeSource,
+        rootHash,
+        rootGIndex,
+        treeDepth(),
+        getDefault().getBackingNode(),
+        (nodeSource1, childHash, childGIndex) -> {
+          final int childIndex = GIndexUtil.gIdxToChildIndex(childGIndex, treeDepth());
+          return getChildSchema(childIndex).loadBackingNodes(nodeSource, childHash, childGIndex);
+        });
   }
 
   /** Returns this container name */

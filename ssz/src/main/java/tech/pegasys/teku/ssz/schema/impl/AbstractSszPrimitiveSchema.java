@@ -77,7 +77,7 @@ public abstract class AbstractSszPrimitiveSchema<
       final TreeNodeSource nodeSource, final Bytes32 rootHash, final long rootGIndex) {
     final Bytes data = nodeSource.loadLeafNode(rootHash, rootGIndex);
     if (rootHash.isZero()) {
-      return getDefault().getBackingNode();
+      return LeafNode.ZERO_LEAVES[sszSize];
     } else {
       return LeafNode.create(data.slice(0, sszSize));
     }

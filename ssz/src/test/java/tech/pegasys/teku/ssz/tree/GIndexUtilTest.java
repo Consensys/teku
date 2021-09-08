@@ -13,14 +13,15 @@
 
 package tech.pegasys.teku.ssz.tree;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.stream.Stream;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.ssz.tree.GIndexUtil.NodeRelation;
 
 public class GIndexUtilTest {
@@ -60,8 +61,8 @@ public class GIndexUtilTest {
   @MethodSource("compareCases")
   void testCompare(long idx1, long idx2, NodeRelation expected) {
     if (expected != null) {
-      Assertions.assertThat(GIndexUtil.gIdxCompare(idx1, idx2)).isEqualTo(expected);
-      Assertions.assertThat(GIndexUtil.gIdxCompare(idx2, idx1)).isEqualTo(expected.inverse());
+      assertThat(GIndexUtil.gIdxCompare(idx1, idx2)).isEqualTo(expected);
+      assertThat(GIndexUtil.gIdxCompare(idx2, idx1)).isEqualTo(expected.inverse());
     } else {
       assertThatThrownBy(() -> GIndexUtil.gIdxCompare(idx1, idx2));
     }
@@ -69,48 +70,45 @@ public class GIndexUtilTest {
 
   @Test
   void testIsSelf() {
-    Assertions.assertThat(GIndexUtil.gIdxIsSelf(GIndexUtil.SELF_G_INDEX)).isTrue();
-    Assertions.assertThat(GIndexUtil.gIdxIsSelf(0b10)).isFalse();
-    Assertions.assertThat(GIndexUtil.gIdxIsSelf(GIndexUtil.LEFTMOST_G_INDEX)).isFalse();
-    Assertions.assertThat(GIndexUtil.gIdxIsSelf(GIndexUtil.RIGHTMOST_G_INDEX)).isFalse();
+    assertThat(GIndexUtil.gIdxIsSelf(GIndexUtil.SELF_G_INDEX)).isTrue();
+    assertThat(GIndexUtil.gIdxIsSelf(0b10)).isFalse();
+    assertThat(GIndexUtil.gIdxIsSelf(GIndexUtil.LEFTMOST_G_INDEX)).isFalse();
+    assertThat(GIndexUtil.gIdxIsSelf(GIndexUtil.RIGHTMOST_G_INDEX)).isFalse();
   }
 
   @Test
   void testGetDepth() {
-    Assertions.assertThat(GIndexUtil.gIdxGetDepth(GIndexUtil.SELF_G_INDEX)).isEqualTo(0);
-    Assertions.assertThat(GIndexUtil.gIdxGetDepth(0b10)).isEqualTo(1);
-    Assertions.assertThat(GIndexUtil.gIdxGetDepth(0b11)).isEqualTo(1);
-    Assertions.assertThat(GIndexUtil.gIdxGetDepth(0b100)).isEqualTo(2);
-    Assertions.assertThat(GIndexUtil.gIdxGetDepth(0b101)).isEqualTo(2);
-    Assertions.assertThat(GIndexUtil.gIdxGetDepth(0b111)).isEqualTo(2);
-    Assertions.assertThat(GIndexUtil.gIdxGetDepth(GIndexUtil.LEFTMOST_G_INDEX)).isEqualTo(63);
-    Assertions.assertThat(GIndexUtil.gIdxGetDepth(GIndexUtil.RIGHTMOST_G_INDEX)).isEqualTo(63);
-    Assertions.assertThat(GIndexUtil.gIdxGetDepth(GIndexUtil.gIdxLeftmostFrom(0b10010)))
-        .isEqualTo(63);
+    assertThat(GIndexUtil.gIdxGetDepth(GIndexUtil.SELF_G_INDEX)).isEqualTo(0);
+    assertThat(GIndexUtil.gIdxGetDepth(0b10)).isEqualTo(1);
+    assertThat(GIndexUtil.gIdxGetDepth(0b11)).isEqualTo(1);
+    assertThat(GIndexUtil.gIdxGetDepth(0b100)).isEqualTo(2);
+    assertThat(GIndexUtil.gIdxGetDepth(0b101)).isEqualTo(2);
+    assertThat(GIndexUtil.gIdxGetDepth(0b111)).isEqualTo(2);
+    assertThat(GIndexUtil.gIdxGetDepth(GIndexUtil.LEFTMOST_G_INDEX)).isEqualTo(63);
+    assertThat(GIndexUtil.gIdxGetDepth(GIndexUtil.RIGHTMOST_G_INDEX)).isEqualTo(63);
+    assertThat(GIndexUtil.gIdxGetDepth(GIndexUtil.gIdxLeftmostFrom(0b10010))).isEqualTo(63);
     assertThatThrownBy(() -> GIndexUtil.gIdxGetDepth(INVALID_G_INDEX));
   }
 
   @Test
   void testConstants() {
-    Assertions.assertThat(GIndexUtil.SELF_G_INDEX).isEqualTo(1L);
-    Assertions.assertThat(GIndexUtil.LEFTMOST_G_INDEX).isEqualTo(Long.MIN_VALUE);
-    Assertions.assertThat(GIndexUtil.RIGHTMOST_G_INDEX).isEqualTo(-1L);
+    assertThat(GIndexUtil.SELF_G_INDEX).isEqualTo(1L);
+    assertThat(GIndexUtil.LEFTMOST_G_INDEX).isEqualTo(Long.MIN_VALUE);
+    assertThat(GIndexUtil.RIGHTMOST_G_INDEX).isEqualTo(-1L);
   }
 
   @Test
   void testLeftRightGIndex() {
-    Assertions.assertThat(GIndexUtil.gIdxLeftGIndex(GIndexUtil.SELF_G_INDEX)).isEqualTo(0b10L);
-    Assertions.assertThat(GIndexUtil.gIdxRightGIndex(GIndexUtil.SELF_G_INDEX)).isEqualTo(0b11L);
-    Assertions.assertThat(
-            GIndexUtil.gIdxLeftGIndex(GIndexUtil.gIdxGetParent(GIndexUtil.LEFTMOST_G_INDEX)))
+    assertThat(GIndexUtil.gIdxLeftGIndex(GIndexUtil.SELF_G_INDEX)).isEqualTo(0b10L);
+    assertThat(GIndexUtil.gIdxRightGIndex(GIndexUtil.SELF_G_INDEX)).isEqualTo(0b11L);
+    assertThat(GIndexUtil.gIdxLeftGIndex(GIndexUtil.gIdxGetParent(GIndexUtil.LEFTMOST_G_INDEX)))
         .isEqualTo(GIndexUtil.LEFTMOST_G_INDEX);
-    Assertions.assertThat(
-            GIndexUtil.gIdxRightGIndex(GIndexUtil.gIdxGetParent(GIndexUtil.RIGHTMOST_G_INDEX)))
+    assertThat(GIndexUtil.gIdxRightGIndex(GIndexUtil.gIdxGetParent(GIndexUtil.RIGHTMOST_G_INDEX)))
         .isEqualTo(GIndexUtil.RIGHTMOST_G_INDEX);
-    Assertions.assertThat(GIndexUtil.gIdxLeftGIndex(0b10L)).isEqualTo(0b100L);
-    Assertions.assertThat(GIndexUtil.gIdxRightGIndex(0b10L)).isEqualTo(0b101L);
-    Assertions.assertThat(GIndexUtil.gIdxLeftGIndex(0b11L)).isEqualTo(0b110L);
-    Assertions.assertThat(GIndexUtil.gIdxRightGIndex(0b11L)).isEqualTo(0b111L);
+    assertThat(GIndexUtil.gIdxLeftGIndex(0b10L)).isEqualTo(0b100L);
+    assertThat(GIndexUtil.gIdxRightGIndex(0b10L)).isEqualTo(0b101L);
+    assertThat(GIndexUtil.gIdxLeftGIndex(0b11L)).isEqualTo(0b110L);
+    assertThat(GIndexUtil.gIdxRightGIndex(0b11L)).isEqualTo(0b111L);
     assertThatThrownBy(() -> GIndexUtil.gIdxLeftGIndex(INVALID_G_INDEX));
     assertThatThrownBy(() -> GIndexUtil.gIdxLeftGIndex(GIndexUtil.LEFTMOST_G_INDEX));
     assertThatThrownBy(() -> GIndexUtil.gIdxLeftGIndex(GIndexUtil.RIGHTMOST_G_INDEX));
@@ -118,31 +116,25 @@ public class GIndexUtilTest {
 
   @Test
   void testChildGIndex() {
-    Assertions.assertThat(GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, 0, 0))
+    assertThat(GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, 0, 0))
         .isEqualTo(GIndexUtil.SELF_G_INDEX);
-    Assertions.assertThat(GIndexUtil.gIdxChildGIndex(GIndexUtil.LEFTMOST_G_INDEX, 0, 0))
+    assertThat(GIndexUtil.gIdxChildGIndex(GIndexUtil.LEFTMOST_G_INDEX, 0, 0))
         .isEqualTo(GIndexUtil.LEFTMOST_G_INDEX);
-    Assertions.assertThat(GIndexUtil.gIdxChildGIndex(GIndexUtil.RIGHTMOST_G_INDEX, 0, 0))
+    assertThat(GIndexUtil.gIdxChildGIndex(GIndexUtil.RIGHTMOST_G_INDEX, 0, 0))
         .isEqualTo(GIndexUtil.RIGHTMOST_G_INDEX);
-    Assertions.assertThat(GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, 0, 1))
-        .isEqualTo(0b10L);
-    Assertions.assertThat(GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, 1, 1))
-        .isEqualTo(0b11L);
-    Assertions.assertThat(GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, 0, 2))
-        .isEqualTo(0b100L);
-    Assertions.assertThat(GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, 1, 2))
-        .isEqualTo(0b101L);
-    Assertions.assertThat(GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, 2, 2))
-        .isEqualTo(0b110L);
-    Assertions.assertThat(GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, 3, 2))
-        .isEqualTo(0b111L);
-    Assertions.assertThat(GIndexUtil.gIdxChildGIndex(0b100L, 0, 2)).isEqualTo(0b10000L);
-    Assertions.assertThat(GIndexUtil.gIdxChildGIndex(0b100L, 1, 2)).isEqualTo(0b10001L);
-    Assertions.assertThat(GIndexUtil.gIdxChildGIndex(0b100L, 2, 2)).isEqualTo(0b10010L);
-    Assertions.assertThat(GIndexUtil.gIdxChildGIndex(0b100L, 3, 2)).isEqualTo(0b10011L);
-    Assertions.assertThat(GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, 0, 31))
+    assertThat(GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, 0, 1)).isEqualTo(0b10L);
+    assertThat(GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, 1, 1)).isEqualTo(0b11L);
+    assertThat(GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, 0, 2)).isEqualTo(0b100L);
+    assertThat(GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, 1, 2)).isEqualTo(0b101L);
+    assertThat(GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, 2, 2)).isEqualTo(0b110L);
+    assertThat(GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, 3, 2)).isEqualTo(0b111L);
+    assertThat(GIndexUtil.gIdxChildGIndex(0b100L, 0, 2)).isEqualTo(0b10000L);
+    assertThat(GIndexUtil.gIdxChildGIndex(0b100L, 1, 2)).isEqualTo(0b10001L);
+    assertThat(GIndexUtil.gIdxChildGIndex(0b100L, 2, 2)).isEqualTo(0b10010L);
+    assertThat(GIndexUtil.gIdxChildGIndex(0b100L, 3, 2)).isEqualTo(0b10011L);
+    assertThat(GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, 0, 31))
         .isEqualTo(0b10000000_00000000_00000000_00000000L);
-    Assertions.assertThat(GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, 1, 31))
+    assertThat(GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, 1, 31))
         .isEqualTo(0b10000000_00000000_00000000_00000001L);
 
     assertThatThrownBy(() -> GIndexUtil.gIdxChildGIndex(INVALID_G_INDEX, 0, 2));
@@ -157,15 +149,13 @@ public class GIndexUtilTest {
 
   @Test
   void testCombine() {
-    Assertions.assertThat(GIndexUtil.gIdxCompose(GIndexUtil.SELF_G_INDEX, GIndexUtil.SELF_G_INDEX))
+    assertThat(GIndexUtil.gIdxCompose(GIndexUtil.SELF_G_INDEX, GIndexUtil.SELF_G_INDEX))
         .isEqualTo(GIndexUtil.SELF_G_INDEX);
-    Assertions.assertThat(GIndexUtil.gIdxCompose(GIndexUtil.SELF_G_INDEX, 0b10101))
-        .isEqualTo(0b10101);
-    Assertions.assertThat(GIndexUtil.gIdxCompose(0b10101, GIndexUtil.SELF_G_INDEX))
-        .isEqualTo(0b10101);
-    Assertions.assertThat(GIndexUtil.gIdxCompose(0b10, 0b11)).isEqualTo(0b101);
-    Assertions.assertThat(GIndexUtil.gIdxCompose(0b11, 0b11)).isEqualTo(0b111);
-    Assertions.assertThat(GIndexUtil.gIdxCompose(0b10, 0b10)).isEqualTo(0b100);
+    assertThat(GIndexUtil.gIdxCompose(GIndexUtil.SELF_G_INDEX, 0b10101)).isEqualTo(0b10101);
+    assertThat(GIndexUtil.gIdxCompose(0b10101, GIndexUtil.SELF_G_INDEX)).isEqualTo(0b10101);
+    assertThat(GIndexUtil.gIdxCompose(0b10, 0b11)).isEqualTo(0b101);
+    assertThat(GIndexUtil.gIdxCompose(0b11, 0b11)).isEqualTo(0b111);
+    assertThat(GIndexUtil.gIdxCompose(0b10, 0b10)).isEqualTo(0b100);
 
     assertThatThrownBy(() -> GIndexUtil.gIdxCompose(GIndexUtil.LEFTMOST_G_INDEX, 0b11));
     assertThatThrownBy(() -> GIndexUtil.gIdxCompose(GIndexUtil.RIGHTMOST_G_INDEX, 0b11));
@@ -174,24 +164,23 @@ public class GIndexUtilTest {
 
   @Test
   void testLeftRightmost() {
-    Assertions.assertThat(GIndexUtil.gIdxLeftmostFrom(GIndexUtil.SELF_G_INDEX))
+    assertThat(GIndexUtil.gIdxLeftmostFrom(GIndexUtil.SELF_G_INDEX))
         .isEqualTo(GIndexUtil.LEFTMOST_G_INDEX);
-    Assertions.assertThat(GIndexUtil.gIdxRightmostFrom(GIndexUtil.SELF_G_INDEX))
+    assertThat(GIndexUtil.gIdxRightmostFrom(GIndexUtil.SELF_G_INDEX))
         .isEqualTo(GIndexUtil.RIGHTMOST_G_INDEX);
-    Assertions.assertThat(GIndexUtil.gIdxLeftmostFrom(0b10)).isEqualTo(GIndexUtil.LEFTMOST_G_INDEX);
-    Assertions.assertThat(GIndexUtil.gIdxRightmostFrom(0b11))
-        .isEqualTo(GIndexUtil.RIGHTMOST_G_INDEX);
-    Assertions.assertThat(GIndexUtil.gIdxLeftmostFrom(0b11)).isEqualTo(0b11L << 62);
-    Assertions.assertThat(GIndexUtil.gIdxRightmostFrom(0b10))
+    assertThat(GIndexUtil.gIdxLeftmostFrom(0b10)).isEqualTo(GIndexUtil.LEFTMOST_G_INDEX);
+    assertThat(GIndexUtil.gIdxRightmostFrom(0b11)).isEqualTo(GIndexUtil.RIGHTMOST_G_INDEX);
+    assertThat(GIndexUtil.gIdxLeftmostFrom(0b11)).isEqualTo(0b11L << 62);
+    assertThat(GIndexUtil.gIdxRightmostFrom(0b10))
         .isEqualTo(0b1011111111111111_1111111111111111_1111111111111111_1111111111111111L);
 
-    Assertions.assertThat(GIndexUtil.gIdxLeftmostFrom(GIndexUtil.LEFTMOST_G_INDEX))
+    assertThat(GIndexUtil.gIdxLeftmostFrom(GIndexUtil.LEFTMOST_G_INDEX))
         .isEqualTo(GIndexUtil.LEFTMOST_G_INDEX);
-    Assertions.assertThat(GIndexUtil.gIdxRightmostFrom(GIndexUtil.LEFTMOST_G_INDEX))
+    assertThat(GIndexUtil.gIdxRightmostFrom(GIndexUtil.LEFTMOST_G_INDEX))
         .isEqualTo(GIndexUtil.LEFTMOST_G_INDEX);
-    Assertions.assertThat(GIndexUtil.gIdxLeftmostFrom(GIndexUtil.RIGHTMOST_G_INDEX))
+    assertThat(GIndexUtil.gIdxLeftmostFrom(GIndexUtil.RIGHTMOST_G_INDEX))
         .isEqualTo(GIndexUtil.RIGHTMOST_G_INDEX);
-    Assertions.assertThat(GIndexUtil.gIdxRightmostFrom(GIndexUtil.RIGHTMOST_G_INDEX))
+    assertThat(GIndexUtil.gIdxRightmostFrom(GIndexUtil.RIGHTMOST_G_INDEX))
         .isEqualTo(GIndexUtil.RIGHTMOST_G_INDEX);
 
     assertThatThrownBy(() -> GIndexUtil.gIdxLeftmostFrom(INVALID_G_INDEX));
@@ -200,34 +189,26 @@ public class GIndexUtilTest {
 
   @Test
   void testGetChildIndex() {
-    Assertions.assertThat(GIndexUtil.gIdxGetChildIndex(GIndexUtil.SELF_G_INDEX, 0)).isEqualTo(0);
-    Assertions.assertThat(GIndexUtil.gIdxGetChildIndex(GIndexUtil.LEFTMOST_G_INDEX, 0))
+    assertThat(GIndexUtil.gIdxGetChildIndex(GIndexUtil.SELF_G_INDEX, 0)).isEqualTo(0);
+    assertThat(GIndexUtil.gIdxGetChildIndex(GIndexUtil.LEFTMOST_G_INDEX, 0)).isEqualTo(0);
+    assertThat(GIndexUtil.gIdxGetChildIndex(GIndexUtil.RIGHTMOST_G_INDEX, 0)).isEqualTo(0);
+    assertThat(GIndexUtil.gIdxGetChildIndex(GIndexUtil.LEFTMOST_G_INDEX, 22)).isEqualTo(0);
+    assertThat(GIndexUtil.gIdxGetChildIndex(GIndexUtil.LEFTMOST_G_INDEX, GIndexUtil.MAX_DEPTH))
         .isEqualTo(0);
-    Assertions.assertThat(GIndexUtil.gIdxGetChildIndex(GIndexUtil.RIGHTMOST_G_INDEX, 0))
-        .isEqualTo(0);
-    Assertions.assertThat(GIndexUtil.gIdxGetChildIndex(GIndexUtil.LEFTMOST_G_INDEX, 22))
-        .isEqualTo(0);
-    Assertions.assertThat(
-            GIndexUtil.gIdxGetChildIndex(GIndexUtil.LEFTMOST_G_INDEX, GIndexUtil.MAX_DEPTH))
-        .isEqualTo(0);
-    Assertions.assertThat(GIndexUtil.gIdxGetChildIndex(GIndexUtil.RIGHTMOST_G_INDEX, 1))
-        .isEqualTo(1);
-    Assertions.assertThat(GIndexUtil.gIdxGetChildIndex(GIndexUtil.RIGHTMOST_G_INDEX, 2))
-        .isEqualTo(3);
-    Assertions.assertThat(GIndexUtil.gIdxGetChildIndex(GIndexUtil.RIGHTMOST_G_INDEX, 3))
-        .isEqualTo(7);
-    Assertions.assertThat(GIndexUtil.gIdxGetChildIndex(GIndexUtil.RIGHTMOST_G_INDEX, 22))
+    assertThat(GIndexUtil.gIdxGetChildIndex(GIndexUtil.RIGHTMOST_G_INDEX, 1)).isEqualTo(1);
+    assertThat(GIndexUtil.gIdxGetChildIndex(GIndexUtil.RIGHTMOST_G_INDEX, 2)).isEqualTo(3);
+    assertThat(GIndexUtil.gIdxGetChildIndex(GIndexUtil.RIGHTMOST_G_INDEX, 3)).isEqualTo(7);
+    assertThat(GIndexUtil.gIdxGetChildIndex(GIndexUtil.RIGHTMOST_G_INDEX, 22))
         .isEqualTo((1 << 22) - 1);
-    Assertions.assertThat(
-            GIndexUtil.gIdxGetChildIndex(GIndexUtil.RIGHTMOST_G_INDEX, GIndexUtil.MAX_DEPTH))
+    assertThat(GIndexUtil.gIdxGetChildIndex(GIndexUtil.RIGHTMOST_G_INDEX, GIndexUtil.MAX_DEPTH))
         .isEqualTo(GIndexUtil.RIGHTMOST_G_INDEX);
-    Assertions.assertThat(GIndexUtil.gIdxGetChildIndex(0b1100, 0)).isEqualTo(0);
-    Assertions.assertThat(GIndexUtil.gIdxGetChildIndex(0b1100, 1)).isEqualTo(1);
-    Assertions.assertThat(GIndexUtil.gIdxGetChildIndex(0b1100, 2)).isEqualTo(2);
-    Assertions.assertThat(GIndexUtil.gIdxGetChildIndex(0b1100, 3)).isEqualTo(4);
-    Assertions.assertThat(GIndexUtil.gIdxGetChildIndex(0b1000, 1)).isEqualTo(0);
-    Assertions.assertThat(GIndexUtil.gIdxGetChildIndex(0b1000, 2)).isEqualTo(0);
-    Assertions.assertThat(GIndexUtil.gIdxGetChildIndex(0b1000, 3)).isEqualTo(0);
+    assertThat(GIndexUtil.gIdxGetChildIndex(0b1100, 0)).isEqualTo(0);
+    assertThat(GIndexUtil.gIdxGetChildIndex(0b1100, 1)).isEqualTo(1);
+    assertThat(GIndexUtil.gIdxGetChildIndex(0b1100, 2)).isEqualTo(2);
+    assertThat(GIndexUtil.gIdxGetChildIndex(0b1100, 3)).isEqualTo(4);
+    assertThat(GIndexUtil.gIdxGetChildIndex(0b1000, 1)).isEqualTo(0);
+    assertThat(GIndexUtil.gIdxGetChildIndex(0b1000, 2)).isEqualTo(0);
+    assertThat(GIndexUtil.gIdxGetChildIndex(0b1000, 3)).isEqualTo(0);
 
     assertThatThrownBy(() -> GIndexUtil.gIdxGetChildIndex(INVALID_G_INDEX, 0));
     assertThatThrownBy(() -> GIndexUtil.gIdxGetChildIndex(INVALID_G_INDEX, 1));
@@ -239,26 +220,53 @@ public class GIndexUtilTest {
 
   @Test
   void testRelativeGIndex() {
-    Assertions.assertThat(GIndexUtil.gIdxGetRelativeGIndex(GIndexUtil.SELF_G_INDEX, 0))
+    assertThat(GIndexUtil.gIdxGetRelativeGIndex(GIndexUtil.SELF_G_INDEX, 0))
         .isEqualTo(GIndexUtil.SELF_G_INDEX);
-    Assertions.assertThat(GIndexUtil.gIdxGetRelativeGIndex(GIndexUtil.LEFTMOST_G_INDEX, 0))
+    assertThat(GIndexUtil.gIdxGetRelativeGIndex(GIndexUtil.LEFTMOST_G_INDEX, 0))
         .isEqualTo(GIndexUtil.LEFTMOST_G_INDEX);
-    Assertions.assertThat(GIndexUtil.gIdxGetRelativeGIndex(GIndexUtil.RIGHTMOST_G_INDEX, 0))
+    assertThat(GIndexUtil.gIdxGetRelativeGIndex(GIndexUtil.RIGHTMOST_G_INDEX, 0))
         .isEqualTo(GIndexUtil.RIGHTMOST_G_INDEX);
-    Assertions.assertThat(GIndexUtil.gIdxGetRelativeGIndex(GIndexUtil.RIGHTMOST_G_INDEX, 62))
-        .isEqualTo(0b11L);
-    Assertions.assertThat(GIndexUtil.gIdxGetRelativeGIndex(0b100100111, 3)).isEqualTo(0b100111L);
-    Assertions.assertThat(GIndexUtil.gIdxGetRelativeGIndex(0b10, 1))
-        .isEqualTo(GIndexUtil.SELF_G_INDEX);
-    Assertions.assertThat(GIndexUtil.gIdxGetRelativeGIndex(0b1011, 0)).isEqualTo(0b1011);
-    Assertions.assertThat(GIndexUtil.gIdxGetRelativeGIndex(0b1011, 1)).isEqualTo(0b111);
-    Assertions.assertThat(GIndexUtil.gIdxGetRelativeGIndex(0b1011, 2)).isEqualTo(0b11);
-    Assertions.assertThat(GIndexUtil.gIdxGetRelativeGIndex(0b1011, 3))
-        .isEqualTo(GIndexUtil.SELF_G_INDEX);
+    assertThat(GIndexUtil.gIdxGetRelativeGIndex(GIndexUtil.RIGHTMOST_G_INDEX, 62)).isEqualTo(0b11L);
+    assertThat(GIndexUtil.gIdxGetRelativeGIndex(0b100100111, 3)).isEqualTo(0b100111L);
+    assertThat(GIndexUtil.gIdxGetRelativeGIndex(0b10, 1)).isEqualTo(GIndexUtil.SELF_G_INDEX);
+    assertThat(GIndexUtil.gIdxGetRelativeGIndex(0b1011, 0)).isEqualTo(0b1011);
+    assertThat(GIndexUtil.gIdxGetRelativeGIndex(0b1011, 1)).isEqualTo(0b111);
+    assertThat(GIndexUtil.gIdxGetRelativeGIndex(0b1011, 2)).isEqualTo(0b11);
+    assertThat(GIndexUtil.gIdxGetRelativeGIndex(0b1011, 3)).isEqualTo(GIndexUtil.SELF_G_INDEX);
 
     assertThatThrownBy(() -> GIndexUtil.gIdxGetRelativeGIndex(GIndexUtil.SELF_G_INDEX, 1));
     assertThatThrownBy(() -> GIndexUtil.gIdxGetRelativeGIndex(0b10, 2));
     assertThatThrownBy(() -> GIndexUtil.gIdxGetRelativeGIndex(0b10, -1));
     assertThatThrownBy(() -> GIndexUtil.gIdxGetRelativeGIndex(0b10, 64));
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+      ints = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 50, 51, 52, 53, 54, 55, 100, 101, 102, 103, 104})
+  void shouldReverseChildIndex(long rootGIndex) {
+    final int treeDepth = 4;
+    final int childIndex = 9;
+    //    final long rootGIndex = 3;
+    final long childGIndex = GIndexUtil.gIdxChildGIndex(rootGIndex, childIndex, treeDepth);
+    //    assertThat(childGIndex).isEqualTo(57);
+
+    final int reversedChildIndex = GIndexUtil.gIdxGetChildIndex(childGIndex, treeDepth);
+    assertThat(reversedChildIndex).isEqualTo(childIndex);
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+      ints = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 50, 51, 52, 53, 54, 55, 100, 101, 102, 103, 104})
+  void shouldReverseChildIndexAfterRelativising(long rootGIndex) {
+    final int treeDepth = 4;
+    final int childIndex = 9;
+    //    final long rootGIndex = 3;
+    final long childGIndex = GIndexUtil.gIdxChildGIndex(rootGIndex, childIndex, treeDepth);
+    //    assertThat(childGIndex).isEqualTo(57);
+
+    //    final long relativeChildGIndex = GIndexUtil.gIdxGetRelativeGIndex(childGIndex, treeDepth);
+    //    System.out.println(relativeChildGIndex);
+    final int reversedChildIndex = GIndexUtil.gIdxToChildIndex(childGIndex, treeDepth);
+    assertThat(reversedChildIndex).isEqualTo(childIndex);
   }
 }

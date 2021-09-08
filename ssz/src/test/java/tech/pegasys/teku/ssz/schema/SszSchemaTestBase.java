@@ -72,6 +72,11 @@ public interface SszSchemaTestBase extends SszTypeTestBase {
   @ParameterizedTest
   default void loadBackingNodes_shouldRestoreTree_singleBranchStep(SszSchema<?> schema) {
     final int maxBranchLevelsSkipped = Integer.MAX_VALUE;
+    if (schema instanceof SszListSchema) {
+      // It's not reasonable to try and work with massive lists in a single step
+      Assumptions.assumeThat(((SszListSchema<?, ?>) schema).getMaxLength())
+          .isLessThanOrEqualTo(1000);
+    }
     assertTreeRoundtrip(schema, maxBranchLevelsSkipped);
   }
 
@@ -87,6 +92,7 @@ public interface SszSchemaTestBase extends SszTypeTestBase {
     // Find some non-zero data (to make sure it's actually different to the default tree)
     final SszData data =
         randomSsz
+            .withMaxListSize(5)
             .randomDataStream(schema)
             .filter(item -> !item.getBackingNode().hashTreeRoot().isZero())
             .findFirst()

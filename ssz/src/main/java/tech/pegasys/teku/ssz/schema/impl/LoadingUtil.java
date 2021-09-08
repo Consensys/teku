@@ -14,11 +14,16 @@
 package tech.pegasys.teku.ssz.schema.impl;
 
 import static com.google.common.base.Preconditions.checkState;
+import static tech.pegasys.teku.ssz.tree.TreeUtil.bitsCeilToBytes;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ssz.schema.SszPrimitiveSchema;
+import tech.pegasys.teku.ssz.schema.SszSchema;
 import tech.pegasys.teku.ssz.tree.GIndexUtil;
+import tech.pegasys.teku.ssz.tree.LeafNode;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 import tech.pegasys.teku.ssz.tree.TreeNodeSource;
 import tech.pegasys.teku.ssz.tree.TreeNodeSource.CompressedBranchInfo;
@@ -70,7 +75,57 @@ public class LoadingUtil {
                 childLoader));
       }
     }
-    return TreeUtil.createTree(children);
+    final long totalChildCount = 1L << branchDepth;
+    for (long unusedChildIndex = childHashes.length;
+        unusedChildIndex < totalChildCount;
+        unusedChildIndex++) {
+      children.add(
+          defaultTree.get(
+              GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, unusedChildIndex, branchDepth)));
+    }
+    return TreeUtil.createTree(children, branchDepth);
+  }
+
+  static TreeNode loadCollectionChild(
+      final TreeNodeSource childNodeSource,
+      final Bytes32 childHash,
+      final long childGIndex,
+      final int length,
+      final int elementsPerChunk,
+      final int treeDepth,
+      final SszSchema<?> elementSchema) {
+    if (elementSchema.isPrimitive()) {
+      final Bytes data = childNodeSource.loadLeafNode(childHash, childGIndex);
+      if (data.size() > Bytes32.SIZE) {
+        return LeafNode.create(data);
+      } else {
+        // Potentially need to trim the data
+        final int fullNodeCount = length / elementsPerChunk;
+        int lastNodeElementCount = length % elementsPerChunk;
+        if (lastNodeElementCount == 0) {
+          return createLeaf(data);
+        }
+        final long lastNodeGIndex =
+            GIndexUtil.gIdxChildGIndex(childGIndex >>> treeDepth, fullNodeCount, treeDepth);
+        if (lastNodeGIndex != childGIndex) {
+          return createLeaf(data);
+        }
+        // Need to trim the data
+        final int bitsSize = ((SszPrimitiveSchema<?, ?>) elementSchema).getBitsSize();
+        int lastNodeSizeBytes = bitsCeilToBytes(lastNodeElementCount * bitsSize);
+        return createLeaf(data.slice(0, lastNodeSizeBytes));
+      }
+    } else {
+      return elementSchema.loadBackingNodes(childNodeSource, childHash, childGIndex);
+    }
+  }
+
+  static LeafNode createLeaf(final Bytes data) {
+    if (data.size() < Bytes32.SIZE && data.isZero()) {
+      return LeafNode.ZERO_LEAVES[data.size()];
+    } else {
+      return LeafNode.create(data);
+    }
   }
 
   public interface ChildLoader {

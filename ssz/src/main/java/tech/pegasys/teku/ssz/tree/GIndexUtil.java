@@ -276,6 +276,15 @@ public class GIndexUtil {
     return (int) (generalizedIndexWithoutAnchor >>> (indexBitCount - childDepth));
   }
 
+  public static int gIdxToChildIndex(long generalizedIndex, int childDepth) {
+    checkGIndex(generalizedIndex);
+    assert childDepth >= 0 && childDepth <= MAX_DEPTH;
+    final long rootGIndex = generalizedIndex >>> childDepth;
+    checkGIndex(rootGIndex);
+    final long leftMostAtDepth = rootGIndex << childDepth;
+    return (int) (generalizedIndex - leftMostAtDepth);
+  }
+
   /**
    * Returns the generalized index of the node at <code>generalizedIndex</code> relative to its
    * predecessor at depth <code>childDepth</code> For example:

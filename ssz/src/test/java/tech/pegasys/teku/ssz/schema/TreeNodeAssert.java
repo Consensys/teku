@@ -16,11 +16,15 @@ package tech.pegasys.teku.ssz.schema;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import org.assertj.core.api.AbstractAssert;
 import tech.pegasys.teku.ssz.tree.BranchNode;
 import tech.pegasys.teku.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.ssz.tree.LeafDataNode;
 import tech.pegasys.teku.ssz.tree.TreeNode;
+import tech.pegasys.teku.ssz.tree.TreeUtil.ZeroBranchNode;
+import tech.pegasys.teku.ssz.tree.TreeUtil.ZeroLeafNode;
 
 public class TreeNodeAssert extends AbstractAssert<TreeNodeAssert, TreeNode> {
 
@@ -33,15 +37,56 @@ public class TreeNodeAssert extends AbstractAssert<TreeNodeAssert, TreeNode> {
   }
 
   public TreeNodeAssert isTreeEqual(final TreeNode expected) {
-    assertTreeEqual(actual, expected, GIndexUtil.SELF_G_INDEX);
+    try {
+      assertTreeEqual(actual, expected, GIndexUtil.SELF_G_INDEX);
+    } catch (final Throwable t) {
+      failWithActualExpectedAndMessage(printTree(actual), printTree(expected), "Trees did not match", t);
+    }
     return this;
+  }
+
+  public static String printTree(final TreeNode node) {
+    final StringWriter out = new StringWriter();
+    printTree(new PrintWriter(out), node, "", GIndexUtil.SELF_G_INDEX);
+    return out.toString();
+  }
+
+  private static void printTree(
+      final PrintWriter out, final TreeNode node, final String indent, final long gIndex) {
+    final String prefix = indent + gIndex + " ";
+    if (node instanceof ZeroLeafNode) {
+      out.println(
+          prefix + node.hashTreeRoot() + ": " + ((LeafDataNode) node).getData() + " (zero)");
+    } else if (node instanceof LeafDataNode) {
+      out.println(prefix + node.hashTreeRoot() + ": " + ((LeafDataNode) node).getData());
+    } else if (node instanceof ZeroBranchNode) {
+      out.println(prefix + node.hashTreeRoot() + " (" + node + ")");
+    } else if (node instanceof BranchNode) {
+      out.println(prefix + node.hashTreeRoot());
+      printTree(
+          out,
+          node.get(GIndexUtil.LEFT_CHILD_G_INDEX),
+          indent + "  ",
+          GIndexUtil.gIdxCompose(gIndex, GIndexUtil.LEFT_CHILD_G_INDEX));
+      printTree(
+          out,
+          node.get(GIndexUtil.RIGHT_CHILD_G_INDEX),
+          indent + "  ",
+          GIndexUtil.gIdxCompose(gIndex, GIndexUtil.RIGHT_CHILD_G_INDEX));
+    } else {
+      throw new IllegalArgumentException("Unknown node type: " + node.getClass());
+    }
   }
 
   private void assertTreeEqual(final TreeNode actual, final TreeNode expected, final long gIndex) {
     assertThat(actual.hashTreeRoot())
         .describedAs("node root at gIndex %s", gIndex)
         .isEqualTo(expected.hashTreeRoot());
-    if (actual instanceof BranchNode) {
+    if (actual instanceof ZeroBranchNode && expected instanceof ZeroBranchNode) {
+      assertThat(actual.hashTreeRoot())
+          .describedAs("zero branch node root at gIndex %s", gIndex)
+          .isEqualTo(expected.hashTreeRoot());
+    } else if (actual instanceof BranchNode) {
       final BranchNode actualBranch = (BranchNode) actual;
       final BranchNode expectedBranch = (BranchNode) expected;
       assertTreeEqual(
@@ -55,8 +100,5 @@ public class TreeNodeAssert extends AbstractAssert<TreeNodeAssert, TreeNode> {
     } else {
       fail("Unknown type of TreeNode (%s) at gIndex %s", actual.getClass(), gIndex);
     }
-    assertThat(actual.getClass())
-        .describedAs("node class at gIndex %s", gIndex)
-        .isEqualTo(expected.getClass());
   }
 }
