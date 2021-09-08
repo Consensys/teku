@@ -47,7 +47,8 @@ public class StoreVoteUpdater implements VoteUpdater {
     if (txVote != null) {
       return txVote;
     } else {
-      return store.getVote(validatorIndex).orElse(VoteTracker.DEFAULT);
+      VoteTracker storeVote = store.getVote(validatorIndex);
+      return storeVote != null ? storeVote : VoteTracker.DEFAULT;
     }
   }
 
@@ -95,7 +96,10 @@ public class StoreVoteUpdater implements VoteUpdater {
     store.highestVotedValidatorIndex = getHighestVotedValidatorIndex();
 
     if (store.highestVotedValidatorIndex.intValue() >= store.votes.length) {
-      store.votes = Arrays.copyOf(store.votes, store.highestVotedValidatorIndex.intValue() + 1000);
+      store.votes =
+          Arrays.copyOf(
+              store.votes,
+              store.highestVotedValidatorIndex.intValue() + Store.DEFAULT_VOTE_TRACKER_SIZE);
     }
 
     votes.forEach(
