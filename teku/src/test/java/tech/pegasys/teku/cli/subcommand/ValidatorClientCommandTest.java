@@ -14,43 +14,66 @@
 package tech.pegasys.teku.cli.subcommand;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.mockito.Mockito.mockStatic;
+import static org.mockserver.model.HttpRequest.request;
+import static org.mockserver.model.HttpResponse.response;
 
 import com.google.common.io.Resources;
-import java.net.URI;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockserver.integration.ClientAndServer;
+import org.mockserver.junit.jupiter.MockServerExtension;
+import org.mockserver.model.JsonBody;
+import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 
+@ExtendWith(MockServerExtension.class)
 public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
-  final String endpoint = "http://localhost:5004";
-  final String[] args = {"vc", "--network", "auto", "--beacon-node-api-endpoint", endpoint};
+  private String[] args;
+  final Spec testSpec =
+      SpecFactory.create(
+          Resources.getResource("tech/pegasys/teku/cli/subcommand/test-spec.yaml").getPath());
+  private ClientAndServer clientServer;
+  private String endpoint;
 
-  @Test
-  public void autoDetectNetwork_ShouldDisplayErrorMsgIfFailsToConnectToBeaconNode() {
-    beaconNodeCommand.parse(args);
-    assertThat(getCommandLineOutput())
-        .containsIgnoringCase("could not retrieve network spec from beacon node");
+  @BeforeEach
+  public void setup(ClientAndServer cs) {
+    this.clientServer = cs;
+    endpoint = String.format("http://127.0.0.1:%s/", clientServer.getLocalPort());
+    args = new String[] {"vc", "--network", "auto", "--beacon-node-api-endpoint", endpoint};
+  }
+
+  @AfterEach
+  public void tearDown() {
+    clientServer.reset();
   }
 
   @Test
-  public void autoDetectNetwork_ShouldFetchNetworkDetailsFromBeaconNodeIfEnabled() {
-    final Spec testSpec =
-        SpecFactory.create(
-            Resources.getResource("tech/pegasys/teku/cli/subcommand/test-spec.yaml").getPath());
+  public void autoDetectNetwork_ShouldDisplayErrorMsg_IfFailsToFetchFromBeaconNode() {
+    beaconNodeCommand.parse(args);
+    assertThat(getCommandLineOutput())
+        .containsIgnoringCase(
+            String.format(
+                "failed to retrieve network spec from beacon node endpoint '%s'", endpoint));
+  }
 
-    try (MockedStatic<RemoteSpecLoader> mockValidatorClient = mockStatic(RemoteSpecLoader.class)) {
-      mockValidatorClient
-          .when(() -> RemoteSpecLoader.getSpec(URI.create(endpoint)))
-          .thenReturn(testSpec);
+  @Test
+  public void autoDetectNetwork_ShouldFetchNetworkDetailsFromBeaconNode_IfEnabled() {
+    this.clientServer
+        .when(request().withPath("/eth/v1/config/spec"))
+        .respond(response().withStatusCode(200).withBody(getTestSpecResponse()));
 
-      int parseResult = beaconNodeCommand.parse(args);
-      assertThat(parseResult).isEqualTo(0);
-      TekuConfiguration config = getResultingTekuConfiguration(true);
-      assertThat(config.eth2NetworkConfiguration().getSpec()).isEqualTo(testSpec);
-    }
+    int parseResult = beaconNodeCommand.parse(args);
+    assertThat(parseResult).isEqualTo(0);
+    TekuConfiguration config = getResultingTekuConfiguration(true);
+    assertThat(config.eth2NetworkConfiguration().getSpec()).isEqualTo(testSpec);
+  }
+
+  private String getTestSpecResponse() {
+    return JsonBody.json(new ConfigProvider(testSpec).getConfig()).toString();
   }
 }

@@ -64,6 +64,8 @@ dependencies {
   testImplementation testFixtures(project(':bls'))
   testImplementation testFixtures(project(':storage'))
 
-  testImplementation 'org.mockito:mockito-inline'
+  testImplementation project(':data:provider')
+  testImplementation 'org.mock-server:mockserver-junit-jupiter'
+
   testImplementation 'org.awaitility:awaitility'
 }
