@@ -18,15 +18,16 @@ import static tech.pegasys.teku.infrastructure.logging.SubCommandLogger.SUB_COMM
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionException;
+import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.ParentCommand;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
-import tech.pegasys.teku.cli.options.Eth2NetworkOptions;
 import tech.pegasys.teku.cli.options.InteropOptions;
 import tech.pegasys.teku.cli.options.LoggingOptions;
 import tech.pegasys.teku.cli.options.MetricsOptions;
+import tech.pegasys.teku.cli.options.UnusedValidatorClientOptions;
 import tech.pegasys.teku.cli.options.ValidatorClientDataOptions;
 import tech.pegasys.teku.cli.options.ValidatorClientOptions;
 import tech.pegasys.teku.cli.options.ValidatorOptions;
@@ -60,9 +61,6 @@ public class ValidatorClientCommand implements Callable<Integer> {
   @Mixin(name = "Validator Client")
   private ValidatorClientOptions validatorClientOptions;
 
-  @Mixin(name = "Network")
-  private Eth2NetworkOptions eth2NetworkOptions;
-
   @Mixin(name = "Data")
   private ValidatorClientDataOptions dataOptions;
 
@@ -75,6 +73,19 @@ public class ValidatorClientCommand implements Callable<Integer> {
 
   @Mixin(name = "Metrics")
   private MetricsOptions metricsOptions;
+
+  @Mixin(name = "Unused Network Options")
+  private UnusedValidatorClientOptions unusedValidatorClientOptions;
+
+  @CommandLine.Option(
+          names = {"-n", "--network"},
+          paramLabel = "<NETWORK>",
+          description =
+                  "Represents which network to use. "
+                          + "Use `auto` to fetch network configuration from the beacon node endpoint directly."
+                          + "Note that all other values for this option have been deprecated.",
+          arity = "1")
+  private String networkOption = "mainnet";
 
   @ParentCommand private BeaconNodeCommand parentCommand;
 
@@ -106,21 +117,25 @@ public class ValidatorClientCommand implements Callable<Integer> {
     builder.spec(spec);
   }
 
-  private boolean isAutoDetectNetworkSpec() {
-    return AUTO_NETWORK_OPTION.equalsIgnoreCase(eth2NetworkOptions.getNetwork());
+  private boolean isAutoDetectNetworkOption(String option) {
+    return AUTO_NETWORK_OPTION.equalsIgnoreCase(option);
+  }
+
+  private void showNetworkOptionDeprecationWarning() {
+    var deprecationWarning =
+        String.format(
+            "The '--network=%s' option is deprecated. Use '--network=auto' instead, "
+                + "which fetches network configuration from the beacon node endpoint.",
+            networkOption);
+    SUB_COMMAND_LOG.displayDeprecationWarning(deprecationWarning);
   }
 
   private void configureEth2Network(TekuConfiguration.Builder builder) {
-    if (isAutoDetectNetworkSpec()) {
+    if (isAutoDetectNetworkOption(networkOption)) {
       builder.eth2NetworkConfig(this::configureWithSpecFromBeaconNode);
     } else {
-      var deprecationWarning =
-          String.format(
-              "The '--network=%s' option is deprecated. Use '--network=auto' instead, "
-                  + "which fetches network configuration from the beacon node endpoint.",
-              eth2NetworkOptions.getNetwork());
-      SUB_COMMAND_LOG.displayDeprecationWarning(deprecationWarning);
-      eth2NetworkOptions.configure(builder);
+      showNetworkOptionDeprecationWarning();
+      unusedValidatorClientOptions.configure(builder, networkOption);
     }
   }
 
