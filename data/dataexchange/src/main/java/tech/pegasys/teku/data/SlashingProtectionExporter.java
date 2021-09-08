@@ -69,7 +69,7 @@ public class SlashingProtectionExporter {
           && validatorSigningRecord.getGenesisValidatorsRoot() != null) {
         this.genesisValidatorsRoot = validatorSigningRecord.getGenesisValidatorsRoot();
       } else if (validatorSigningRecord.getGenesisValidatorsRoot() != null
-          && !genesisValidatorsRoot.equals(validatorSigningRecord.getGenesisValidatorsRoot())) {
+          && !validatorSigningRecord.getGenesisValidatorsRoot().equals(genesisValidatorsRoot)) {
         log.exit(
             1,
             "The genesisValidatorsRoot of "
