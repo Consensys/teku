@@ -14,11 +14,11 @@
 package tech.pegasys.teku.ssz.schema.impl;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.ssz.tree.GIndexUtil.NodeRelation.Predecessor;
 import static tech.pegasys.teku.ssz.tree.GIndexUtil.gIdxCompose;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.tree.GIndexUtil;
-import tech.pegasys.teku.ssz.tree.GIndexUtil.NodeRelation;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 import tech.pegasys.teku.ssz.tree.TreeNodeStore;
 
@@ -53,6 +53,7 @@ public class StoringUtil {
       visitChildNodesAtDepth(
           nodeStore, rootNode, rootGIndex, childDepth, lastUsefulGIndex, targetDepthNodeHandler);
     } else {
+      // Max compression depth exceeded so will need to record some interim branch nodes
       storeIntermediateBranches(
           nodeStore,
           maxBranchLevelsSkipped,
@@ -72,11 +73,10 @@ public class StoringUtil {
       final int childDepth,
       final long lastUsefulGIndex,
       final TargetDepthNodeHandler targetDepthNodeHandler) {
-    // Max compression depth exceeded so will need to record some interim branch nodes
-
     final int remainingDepth = childDepth - maxBranchLevelsSkipped;
     final int childCount =
-        getUsefulChildCount(rootGIndex, maxBranchLevelsSkipped, remainingDepth, lastUsefulGIndex);
+        getUsefulChildCountAtBranchChildDepth(
+            rootGIndex, maxBranchLevelsSkipped, remainingDepth, lastUsefulGIndex);
     final Bytes32[] childRoots = new Bytes32[childCount];
     for (int childIndex = 0; childIndex < childCount; childIndex++) {
       final long childRelativeGIndex =
@@ -98,25 +98,6 @@ public class StoringUtil {
         rootNode.hashTreeRoot(), rootGIndex, maxBranchLevelsSkipped, childRoots);
   }
 
-  private static int getUsefulChildCount(
-      final long rootGIndex,
-      final int depthFromRoot,
-      final int depthFromLastUsefulGIndex,
-      final long lastUsefulGIndex) {
-    // Find parent GIndex of lastUsefulGIndex at depth to be stored
-    final long ancestorGIndexAtTargetDepth = lastUsefulGIndex >>> depthFromLastUsefulGIndex;
-
-    final int childCount;
-    if (GIndexUtil.gIdxCompare(rootGIndex, ancestorGIndexAtTargetDepth)
-        == NodeRelation.Predecessor) {
-      childCount =
-          GIndexUtil.gIdxChildIndexFromGIndex(ancestorGIndexAtTargetDepth, depthFromRoot) + 1;
-    } else {
-      childCount = Math.toIntExact(1L << depthFromRoot);
-    }
-    return childCount;
-  }
-
   private static void visitChildNodesAtDepth(
       final TreeNodeStore nodeVisitor,
       final TreeNode rootNode,
@@ -124,12 +105,7 @@ public class StoringUtil {
       final int childDepth,
       final long lastUsefulGIndex,
       final TargetDepthNodeHandler targetDepthNodeHandler) {
-    final int childCount;
-    if (GIndexUtil.gIdxCompare(rootGIndex, lastUsefulGIndex) == NodeRelation.Predecessor) {
-      childCount = GIndexUtil.gIdxChildIndexFromGIndex(lastUsefulGIndex, childDepth) + 1;
-    } else {
-      childCount = Math.toIntExact(1L << childDepth);
-    }
+    final int childCount = getUsefulChildCount(rootGIndex, childDepth, lastUsefulGIndex);
     final Bytes32[] childRoots = new Bytes32[childCount];
     for (int childIndex = 0; childIndex < childCount; childIndex++) {
       final long childRelativeGIndex =
@@ -140,6 +116,28 @@ public class StoringUtil {
           childNode, gIdxCompose(rootGIndex, childRelativeGIndex));
     }
     nodeVisitor.storeBranchNode(rootNode.hashTreeRoot(), rootGIndex, childDepth, childRoots);
+  }
+
+  private static int getUsefulChildCountAtBranchChildDepth(
+      final long rootGIndex,
+      final int depthFromRoot,
+      final int depthFromLastUsefulGIndex,
+      final long lastUsefulGIndex) {
+    // Find parent GIndex of lastUsefulGIndex at depth to be stored
+    final long lastUsefulGIndexAtTargetDepth = lastUsefulGIndex >>> depthFromLastUsefulGIndex;
+
+    return getUsefulChildCount(rootGIndex, depthFromRoot, lastUsefulGIndexAtTargetDepth);
+  }
+
+  private static int getUsefulChildCount(
+      final long rootGIndex, final int childDepth, final long lastUsefulGIndex) {
+    final int childCount;
+    if (GIndexUtil.gIdxCompare(rootGIndex, lastUsefulGIndex) == Predecessor) {
+      childCount = GIndexUtil.gIdxChildIndexFromGIndex(lastUsefulGIndex, childDepth) + 1;
+    } else {
+      childCount = Math.toIntExact(1L << childDepth);
+    }
+    return childCount;
   }
 
   public interface TargetDepthNodeHandler {

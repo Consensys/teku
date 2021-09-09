@@ -31,7 +31,6 @@ import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 import tech.pegasys.teku.ssz.tree.BranchNode;
 import tech.pegasys.teku.ssz.tree.GIndexUtil;
-import tech.pegasys.teku.ssz.tree.LeafDataNode;
 import tech.pegasys.teku.ssz.tree.LeafNode;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 import tech.pegasys.teku.ssz.tree.TreeNodeSource;
@@ -145,18 +144,18 @@ public abstract class AbstractSszListSchema<
     final TreeNode vectorNode = getVectorNode(node);
     final TreeNode lengthNode = node.get(GIndexUtil.RIGHT_CHILD_G_INDEX);
 
-    // Iterate vector data (omitting empty list items at the end...)
-    iterateVectorNodes(
+    // Stroe vector data (omitting empty list items at the end...)
+    storeVectorNodes(
         nodeStore,
         maxBranchLevelsSkipped,
         GIndexUtil.gIdxLeftGIndex(rootGIndex),
         vectorNode,
         getLength(node));
 
-    // Iterate leaf node
-    nodeStore.storeLeafNode((LeafDataNode) lengthNode, GIndexUtil.gIdxRightGIndex(rootGIndex));
+    // Store leaf node
+    nodeStore.storeLeafNode(lengthNode, GIndexUtil.gIdxRightGIndex(rootGIndex));
 
-    // Iterate list root node
+    // Store list root node
     nodeStore.storeBranchNode(
         node.hashTreeRoot(),
         GIndexUtil.gIdxRightGIndex(rootGIndex),
@@ -164,19 +163,19 @@ public abstract class AbstractSszListSchema<
         new Bytes32[] {vectorNode.hashTreeRoot(), lengthNode.hashTreeRoot()});
   }
 
-  private void iterateVectorNodes(
+  private void storeVectorNodes(
       final TreeNodeStore nodeStore,
       final int maxBranchLevelsSkipped,
       final long rootGIndex,
       final TreeNode node,
       final int length) {
     if (length == 0) {
-      // Nothing useful to iterate
+      // Nothing useful to store
       return;
     }
-    final int depthToVisit = compatibleVectorSchema.treeDepth();
-    if (depthToVisit == 0) {
-      // Only one child so wrapper is inlined
+    final int childDepth = compatibleVectorSchema.treeDepth();
+    if (childDepth == 0) {
+      // Only one child so wrapper is omitted
       storeChildNode(nodeStore, maxBranchLevelsSkipped, rootGIndex, node);
       return;
     }
@@ -186,7 +185,7 @@ public abstract class AbstractSszListSchema<
         maxBranchLevelsSkipped,
         node,
         rootGIndex,
-        depthToVisit,
+        childDepth,
         lastUsefulGIndex,
         (targetDepthNode, targetDepthGIndex) ->
             compatibleVectorSchema.storeChildNode(

@@ -42,21 +42,18 @@ public class LoadingUtil {
       final long lastUsefulGIndex,
       final ChildLoader childLoader) {
     if (depthToLoad == 0) {
-      final NodeRelation nodeRelation = GIndexUtil.gIdxCompare(rootGIndex, lastUsefulGIndex);
-      if (nodeRelation == NodeRelation.Right) {
-        return TreeUtil.ZERO_TREES[0];
+      if (GIndexUtil.gIdxCompare(rootGIndex, lastUsefulGIndex) == NodeRelation.Right) {
+        // Leaf node is past the last useful node so can just use the default tree
+        return defaultTree;
       }
       // Only one child so wrapper is inlined
       return childLoader.loadChild(nodeSource, rootHash, rootGIndex);
     }
 
     if (TreeUtil.ZERO_TREES_BY_ROOT.containsKey(rootHash)) {
-      // Decide if node is useful, if it is, return Branch.create(loadNodesToDepth(left),
-      // loadNodesToDepth(right));
-      final NodeRelation relationRootToLastUseful =
-          GIndexUtil.gIdxCompare(rootGIndex, lastUsefulGIndex);
-      if (relationRootToLastUseful == NodeRelation.Predecessor
-          || relationRootToLastUseful == NodeRelation.Left) {
+      // Zero branch, but it may be "useful" and need to ensure leaf data has the right lengths
+      // or it may be "useless" and we can just use the default tree
+      if (isZeroBranchUseful(rootGIndex, lastUsefulGIndex)) {
         return createUsefulEmptyBranch(
             nodeSource, rootGIndex, depthToLoad, defaultTree, lastUsefulGIndex, childLoader);
       }
@@ -95,6 +92,24 @@ public class LoadingUtil {
               GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, unusedChildIndex, branchDepth)));
     }
     return TreeUtil.createTree(children, branchDepth);
+  }
+
+  private static boolean isZeroBranchUseful(final long rootGIndex, final long lastUsefulGIndex) {
+    final NodeRelation relationRootToLastUseful =
+        GIndexUtil.gIdxCompare(rootGIndex, lastUsefulGIndex);
+    switch (relationRootToLastUseful) {
+      case Left:
+      case Predecessor:
+        return true;
+
+      case Same:
+      case Right:
+      case Successor:
+        return false;
+
+      default:
+        throw new IllegalStateException("Unknown relation type: " + relationRootToLastUseful);
+    }
   }
 
   private static BranchNode createUsefulEmptyBranch(
