@@ -65,18 +65,20 @@ public class SlashingProtectionExporter {
       }
       ValidatorSigningRecord validatorSigningRecord = maybeRecord.get();
 
-      if (genesisValidatorsRoot == null
-          && validatorSigningRecord.getGenesisValidatorsRoot() != null) {
-        this.genesisValidatorsRoot = validatorSigningRecord.getGenesisValidatorsRoot();
-      } else if (validatorSigningRecord.getGenesisValidatorsRoot() != null
-          && !validatorSigningRecord.getGenesisValidatorsRoot().equals(genesisValidatorsRoot)) {
-        log.exit(
-            1,
-            "The genesisValidatorsRoot of "
-                + file.getName()
-                + " does not match the expected "
-                + genesisValidatorsRoot.toHexString());
+      if (validatorSigningRecord.getGenesisValidatorsRoot() != null) {
+        if (genesisValidatorsRoot == null) {
+          this.genesisValidatorsRoot = validatorSigningRecord.getGenesisValidatorsRoot();
+        } else if (!genesisValidatorsRoot.equals(
+            validatorSigningRecord.getGenesisValidatorsRoot())) {
+          log.exit(
+              1,
+              "The genesisValidatorsRoot of "
+                  + file.getName()
+                  + " does not match the expected "
+                  + genesisValidatorsRoot.toHexString());
+        }
       }
+
       final String pubkey = file.getName().substring(0, file.getName().length() - ".yml".length());
       log.display("Exporting " + pubkey);
       signingHistoryList.add(
