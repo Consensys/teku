@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.data.slashinginterchange;
+package tech.pegasys.teku.data;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -24,7 +24,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import tech.pegasys.teku.data.SlashingProtectionImporter;
+import tech.pegasys.teku.data.slashinginterchange.Metadata;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 
 public class SlashingProtectionImporterTest {
