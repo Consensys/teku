@@ -120,7 +120,7 @@ public class EventLogger {
     }
     final String slotEventLog =
         String.format(
-            "Slot Event  *** Slot: %s, Block: %s <~ %s, Epoch: %s, Finalized checkpoint: %s, Finalized root: %s, Peers: %d",
+            "Slot Event  *** Slot: %s, Block: %s Parent: %s, Epoch: %s, Finalized checkpoint: %s, Finalized root: %s, Peers: %d",
             nodeSlot,
             headBlockRoot,
             bestBlockRootOrParent,
