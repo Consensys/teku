@@ -113,10 +113,13 @@ public interface SszContainerSchema<C extends SszContainer> extends SszComposite
         treeDepth(),
         getDefault().getBackingNode(),
         lastUsefulGIndex,
-        (nodeSource1, childHash, childGIndex) -> {
-          final int childIndex = GIndexUtil.gIdxChildIndexFromGIndex(childGIndex, treeDepth());
-          return getChildSchema(childIndex).loadBackingNodes(nodeSource, childHash, childGIndex);
-        });
+        this::loadChildNode);
+  }
+
+  private TreeNode loadChildNode(
+      final TreeNodeSource nodeSource, final Bytes32 childHash, final long childGIndex) {
+    final int childIndex = GIndexUtil.gIdxChildIndexFromGIndex(childGIndex, treeDepth());
+    return getChildSchema(childIndex).loadBackingNodes(nodeSource, childHash, childGIndex);
   }
 
   /** Returns this container name */
