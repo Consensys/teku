@@ -50,7 +50,7 @@ dependencyManagement {
 
     dependency 'io.pkts:pkts-core:3.0.3'
 
-    dependency 'org.mock-server:mockserver-junit-jupiter:5.10.0'
+    dependency 'org.mock-server:mockserver-junit-jupiter:5.11.0'
 
     dependencySet(group: 'io.swagger.core.v3', version: '2.1.5') {
       entry 'swagger-parser'
