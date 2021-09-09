@@ -246,27 +246,9 @@ public class GIndexUtilTest {
   void shouldReverseChildIndex(long rootGIndex) {
     final int treeDepth = 4;
     final int childIndex = 9;
-    //    final long rootGIndex = 3;
     final long childGIndex = GIndexUtil.gIdxChildGIndex(rootGIndex, childIndex, treeDepth);
-    //    assertThat(childGIndex).isEqualTo(57);
 
-    final int reversedChildIndex = GIndexUtil.gIdxGetChildIndex(childGIndex, treeDepth);
-    assertThat(reversedChildIndex).isEqualTo(childIndex);
-  }
-
-  @ParameterizedTest
-  @ValueSource(
-      ints = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 50, 51, 52, 53, 54, 55, 100, 101, 102, 103, 104})
-  void shouldReverseChildIndexAfterRelativising(long rootGIndex) {
-    final int treeDepth = 4;
-    final int childIndex = 9;
-    //    final long rootGIndex = 3;
-    final long childGIndex = GIndexUtil.gIdxChildGIndex(rootGIndex, childIndex, treeDepth);
-    //    assertThat(childGIndex).isEqualTo(57);
-
-    //    final long relativeChildGIndex = GIndexUtil.gIdxGetRelativeGIndex(childGIndex, treeDepth);
-    //    System.out.println(relativeChildGIndex);
-    final int reversedChildIndex = GIndexUtil.gIdxToChildIndex(childGIndex, treeDepth);
+    final int reversedChildIndex = GIndexUtil.gIdxChildIndexFromGIndex(childGIndex, treeDepth);
     assertThat(reversedChildIndex).isEqualTo(childIndex);
   }
 }

@@ -105,7 +105,8 @@ public class IterationUtil {
     final int childCount;
     if (GIndexUtil.gIdxCompare(rootGIndex, ancestorGIndexAtTargetDepth)
         == NodeRelation.Predecessor) {
-      childCount = GIndexUtil.gIdxToChildIndex(ancestorGIndexAtTargetDepth, depthFromRoot) + 1;
+      childCount =
+          GIndexUtil.gIdxChildIndexFromGIndex(ancestorGIndexAtTargetDepth, depthFromRoot) + 1;
     } else {
       childCount = Math.toIntExact(1L << depthFromRoot);
     }
@@ -120,7 +121,7 @@ public class IterationUtil {
       final long lastUsefulGIndex) {
     final int childCount;
     if (GIndexUtil.gIdxCompare(rootGIndex, lastUsefulGIndex) == NodeRelation.Predecessor) {
-      childCount = GIndexUtil.gIdxToChildIndex(lastUsefulGIndex, depthToVisit) + 1;
+      childCount = GIndexUtil.gIdxChildIndexFromGIndex(lastUsefulGIndex, depthToVisit) + 1;
     } else {
       childCount = Math.toIntExact(1L << depthToVisit);
     }

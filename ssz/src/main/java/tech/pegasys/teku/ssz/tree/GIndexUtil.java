@@ -184,6 +184,24 @@ public class GIndexUtil {
   }
 
   /**
+   * The inverse of {@link #gIdxChildGIndex(long, long, int)} to convert the generalized index of a
+   * descendant at a specific depth back to the index number of that child.
+   *
+   * @param childGeneralizedIndex the generalized index of the child
+   * @param childDepth the depth of the child from the ancestor node to get an index number for
+   * @return the zero-based index number of the child at {@code childGeneralizedIndex} in a list of
+   *     children {@code childDepth}
+   */
+  public static int gIdxChildIndexFromGIndex(long childGeneralizedIndex, int childDepth) {
+    checkGIndex(childGeneralizedIndex);
+    assert childDepth >= 0 && childDepth <= MAX_DEPTH;
+    final long rootGIndex = childGeneralizedIndex >>> childDepth;
+    checkGIndex(rootGIndex);
+    final long leftMostAtDepth = rootGIndex << childDepth;
+    return (int) (childGeneralizedIndex - leftMostAtDepth);
+  }
+
+  /**
    * Compose absolute generalized index, where <code>childGeneralizedIndex</code> is relative to the
    * node at <code>parentGeneralizedIndex</code>
    *
@@ -274,15 +292,6 @@ public class GIndexUtil {
     assert indexBitCount >= childDepth;
     long generalizedIndexWithoutAnchor = generalizedIndex ^ anchor;
     return (int) (generalizedIndexWithoutAnchor >>> (indexBitCount - childDepth));
-  }
-
-  public static int gIdxToChildIndex(long generalizedIndex, int childDepth) {
-    checkGIndex(generalizedIndex);
-    assert childDepth >= 0 && childDepth <= MAX_DEPTH;
-    final long rootGIndex = generalizedIndex >>> childDepth;
-    checkGIndex(rootGIndex);
-    final long leftMostAtDepth = rootGIndex << childDepth;
-    return (int) (generalizedIndex - leftMostAtDepth);
   }
 
   /**
