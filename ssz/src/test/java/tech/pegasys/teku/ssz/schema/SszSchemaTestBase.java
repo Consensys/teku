@@ -82,6 +82,13 @@ public abstract class SszSchemaTestBase extends SszTypeTestBase {
     assertTreeRoundtrip(schema, maxBranchLevelsSkipped);
   }
 
+  @MethodSource("testSchemaArguments")
+  @ParameterizedTest
+  void loadBackingNodes_shouldRestoreTree_noramlBranchSkipLevel(SszSchema<?> schema) {
+    final int maxBranchLevelsSkipped = 5;
+    assertTreeRoundtrip(schema, maxBranchLevelsSkipped);
+  }
+
   private void assertTreeRoundtrip(final SszSchema<?> schema, final int maxBranchLevelsSkipped) {
     // Find some non-zero data (to make sure it's actually different to the default tree)
     final SszData data =

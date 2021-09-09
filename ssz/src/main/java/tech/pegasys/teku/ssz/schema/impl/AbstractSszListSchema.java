@@ -144,7 +144,7 @@ public abstract class AbstractSszListSchema<
     final TreeNode vectorNode = getVectorNode(node);
     final TreeNode lengthNode = node.get(GIndexUtil.RIGHT_CHILD_G_INDEX);
 
-    // Stroe vector data (omitting empty list items at the end...)
+    // Store vector data (omitting empty list items at the end...)
     storeVectorNodes(
         nodeStore,
         maxBranchLevelsSkipped,
