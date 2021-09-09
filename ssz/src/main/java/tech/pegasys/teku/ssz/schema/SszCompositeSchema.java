@@ -14,9 +14,7 @@
 package tech.pegasys.teku.ssz.schema;
 
 import tech.pegasys.teku.ssz.SszComposite;
-import tech.pegasys.teku.ssz.schema.impl.IterationUtil;
-import tech.pegasys.teku.ssz.schema.impl.IterationUtil.NodeVisitor;
-import tech.pegasys.teku.ssz.schema.impl.IterationUtil.TreNodeVisitorAdapter;
+import tech.pegasys.teku.ssz.schema.impl.StoringUtil;
 import tech.pegasys.teku.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 import tech.pegasys.teku.ssz.tree.TreeNodeStore;
@@ -92,26 +90,28 @@ public interface SszCompositeSchema<SszCompositeT extends SszComposite<?>>
 
   @Override
   default void storeBackingNodes(
-      final TreeNodeStore nodeVisitor,
+      final TreeNodeStore nodeStore,
       final int maxBranchLevelsSkipped,
       final long rootGIndex,
       final TreeNode node) {
     final int depthToVisit = treeDepth();
     if (depthToVisit == 0) {
       // Only one child so wrapper is inlined
-      iterateChildNode(nodeVisitor, maxBranchLevelsSkipped, rootGIndex, node);
+      iterateChildNode(nodeStore, maxBranchLevelsSkipped, rootGIndex, node);
       return;
     }
     final long lastUsefulGIndex =
         GIndexUtil.gIdxChildGIndex(rootGIndex, maxChunks() - 1, depthToVisit);
-    final NodeVisitor adapter =
-        new TreNodeVisitorAdapter(
-            nodeVisitor,
-            (targetDepthNode, targetDepthGIndex) ->
-                iterateChildNode(
-                    nodeVisitor, maxBranchLevelsSkipped, targetDepthGIndex, targetDepthNode));
-    IterationUtil.visitNodesToDepth(
-        adapter, maxBranchLevelsSkipped, node, rootGIndex, depthToVisit, lastUsefulGIndex);
+    StoringUtil.storeNodesToDepth(
+        nodeStore,
+        maxBranchLevelsSkipped,
+        node,
+        rootGIndex,
+        depthToVisit,
+        lastUsefulGIndex,
+        (targetDepthNode, targetDepthGIndex) ->
+            iterateChildNode(
+                nodeStore, maxBranchLevelsSkipped, targetDepthGIndex, targetDepthNode));
   }
 
   void iterateChildNode(

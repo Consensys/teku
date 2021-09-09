@@ -65,11 +65,11 @@ public abstract class AbstractSszPrimitiveSchema<
 
   @Override
   public void storeBackingNodes(
-      final TreeNodeStore nodeVisitor,
+      final TreeNodeStore nodeStore,
       final int maxBranchLevelsSkipped,
       final long rootGIndex,
       final TreeNode node) {
-    nodeVisitor.storeLeafNode((LeafDataNode) node, rootGIndex);
+    nodeStore.storeLeafNode((LeafDataNode) node, rootGIndex);
   }
 
   @Override

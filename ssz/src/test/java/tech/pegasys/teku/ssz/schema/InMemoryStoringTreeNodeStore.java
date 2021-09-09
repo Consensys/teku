@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.ssz.schema;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Arrays;
@@ -21,6 +22,7 @@ import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.tree.LeafDataNode;
+import tech.pegasys.teku.ssz.tree.TreeNode;
 import tech.pegasys.teku.ssz.tree.TreeNodeSource;
 import tech.pegasys.teku.ssz.tree.TreeNodeStore;
 import tech.pegasys.teku.ssz.tree.TreeUtil;
@@ -47,7 +49,9 @@ public class InMemoryStoringTreeNodeStore implements TreeNodeStore, TreeNodeSour
   }
 
   @Override
-  public void storeLeafNode(final LeafDataNode node, final long gIndex) {
+  public void storeLeafNode(final TreeNode treeNode, final long gIndex) {
+    checkArgument(treeNode instanceof LeafDataNode, "Can't store a non-leaf node");
+    final LeafDataNode node = (LeafDataNode) treeNode;
     if (node.getData().size() > Bytes32.SIZE && !node.hashTreeRoot().isZero()) {
       leafNodes.putIfAbsent(node.hashTreeRoot(), node.getData());
     }

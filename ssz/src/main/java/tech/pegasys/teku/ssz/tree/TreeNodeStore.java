@@ -50,5 +50,5 @@ public interface TreeNodeStore {
    * @param node the visited leaf node
    * @param gIndex the generalized index of the node
    */
-  void storeLeafNode(LeafDataNode node, long gIndex);
+  void storeLeafNode(TreeNode node, long gIndex);
 }

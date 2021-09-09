@@ -82,12 +82,12 @@ public interface SszSchema<SszDataT extends SszData> extends SszType {
    * levels will never include the deepest level of nodes represented by this schema (ie the root
    * node of all child objects will be stored, even if it's a branch node).
    *
-   * @param nodeVisitor the class to callback with visited nodes
+   * @param nodeStore the class to use to store node data
    * @param maxBranchLevelsSkipped the maximum number of levels of branch nodes that can be skipped
    * @param rootGIndex the generalized index of the root node of this schema
    */
   void storeBackingNodes(
-      TreeNodeStore nodeVisitor, int maxBranchLevelsSkipped, long rootGIndex, TreeNode node);
+      TreeNodeStore nodeStore, int maxBranchLevelsSkipped, long rootGIndex, TreeNode node);
 
   /**
    * Load backing nodes for this object and its children. This should be able to restore a tree

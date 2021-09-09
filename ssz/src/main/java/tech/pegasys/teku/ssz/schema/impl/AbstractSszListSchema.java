@@ -25,8 +25,6 @@ import tech.pegasys.teku.ssz.schema.SszListSchema;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.schema.SszSchema;
 import tech.pegasys.teku.ssz.schema.SszSchemaHints;
-import tech.pegasys.teku.ssz.schema.impl.IterationUtil.NodeVisitor;
-import tech.pegasys.teku.ssz.schema.impl.IterationUtil.TreNodeVisitorAdapter;
 import tech.pegasys.teku.ssz.schema.impl.LoadingUtil.ChildLoader;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
@@ -139,7 +137,7 @@ public abstract class AbstractSszListSchema<
 
   @Override
   public void storeBackingNodes(
-      final TreeNodeStore nodeVisitor,
+      final TreeNodeStore nodeStore,
       final int maxBranchLevelsSkipped,
       final long rootGIndex,
       final TreeNode node) {
@@ -149,17 +147,17 @@ public abstract class AbstractSszListSchema<
 
     // Iterate vector data (omitting empty list items at the end...)
     iterateVectorNodes(
-        nodeVisitor,
+        nodeStore,
         maxBranchLevelsSkipped,
         GIndexUtil.gIdxLeftGIndex(rootGIndex),
         vectorNode,
         getLength(node));
 
     // Iterate leaf node
-    nodeVisitor.storeLeafNode((LeafDataNode) lengthNode, GIndexUtil.gIdxRightGIndex(rootGIndex));
+    nodeStore.storeLeafNode((LeafDataNode) lengthNode, GIndexUtil.gIdxRightGIndex(rootGIndex));
 
     // Iterate list root node
-    nodeVisitor.storeBranchNode(
+    nodeStore.storeBranchNode(
         node.hashTreeRoot(),
         GIndexUtil.gIdxRightGIndex(rootGIndex),
         1,
@@ -167,7 +165,7 @@ public abstract class AbstractSszListSchema<
   }
 
   private void iterateVectorNodes(
-      final TreeNodeStore nodeVisitor,
+      final TreeNodeStore nodeStore,
       final int maxBranchLevelsSkipped,
       final long rootGIndex,
       final TreeNode node,
@@ -179,23 +177,20 @@ public abstract class AbstractSszListSchema<
     final int depthToVisit = compatibleVectorSchema.treeDepth();
     if (depthToVisit == 0) {
       // Only one child so wrapper is inlined
-      iterateChildNode(nodeVisitor, maxBranchLevelsSkipped, rootGIndex, node);
+      iterateChildNode(nodeStore, maxBranchLevelsSkipped, rootGIndex, node);
       return;
     }
     final long lastUsefulGIndex = getVectorLastUsefulGIndex(rootGIndex, length);
-    final NodeVisitor delegatingVisitor =
-        new TreNodeVisitorAdapter(
-            nodeVisitor,
-            (targetDepthNode, targetDepthGIndex) ->
-                compatibleVectorSchema.iterateChildNode(
-                    nodeVisitor, maxBranchLevelsSkipped, targetDepthGIndex, targetDepthNode));
-    IterationUtil.visitNodesToDepth(
-        delegatingVisitor,
+    StoringUtil.storeNodesToDepth(
+        nodeStore,
         maxBranchLevelsSkipped,
         node,
         rootGIndex,
         depthToVisit,
-        lastUsefulGIndex);
+        lastUsefulGIndex,
+        (targetDepthNode, targetDepthGIndex) ->
+            compatibleVectorSchema.iterateChildNode(
+                nodeStore, maxBranchLevelsSkipped, targetDepthGIndex, targetDepthNode));
   }
 
   private long getVectorLastUsefulGIndex(final long rootGIndex, final int length) {

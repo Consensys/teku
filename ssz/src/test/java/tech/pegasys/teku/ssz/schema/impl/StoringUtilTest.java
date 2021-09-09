@@ -22,6 +22,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.ssz.tree.GIndexUtil.RIGHTMOST_G_INDEX;
 import static tech.pegasys.teku.ssz.tree.GIndexUtil.SELF_G_INDEX;
 
 import java.nio.ByteOrder;
@@ -36,49 +37,53 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 import org.mockito.verification.VerificationMode;
-import tech.pegasys.teku.ssz.schema.impl.IterationUtil.NodeVisitor;
+import tech.pegasys.teku.ssz.schema.impl.StoringUtil.TargetDepthNodeHandler;
 import tech.pegasys.teku.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.ssz.tree.LeafNode;
 import tech.pegasys.teku.ssz.tree.TreeNode;
+import tech.pegasys.teku.ssz.tree.TreeNodeStore;
 import tech.pegasys.teku.ssz.tree.TreeUtil;
 
-class IterationUtilTest {
+class StoringUtilTest {
 
   private static final int UNLIMITED_SKIP = Integer.MAX_VALUE;
-  private final NodeVisitor visitor = mock(NodeVisitor.class);
-  private final InOrder inOrder = inOrder(visitor);
+  private final TreeNodeStore nodeStore = mock(TreeNodeStore.class);
+  private final TargetDepthNodeHandler childHandler = mock(TargetDepthNodeHandler.class);
+  private final InOrder inOrder = inOrder(nodeStore);
 
   @BeforeEach
   void setUp() {
-    when(visitor.canSkipBranch(any(), anyLong())).thenReturn(false);
+    when(nodeStore.canSkipBranch(any(), anyLong())).thenReturn(false);
   }
 
   @Test
-  void shouldVisitBothChildrenOfBranchNode() {
+  void shouldStoreBothChildrenOfBranchNode() {
     final LeafNode left = LeafNode.create(Bytes.of(1));
     final LeafNode right = LeafNode.create(Bytes.of(2));
     final TreeNode rootNode = TreeUtil.createTree(List.of(left, right));
-    IterationUtil.visitNodesToDepth(visitor, UNLIMITED_SKIP, rootNode, SELF_G_INDEX, 1);
-    inOrder.verify(visitor).onTargetDepthNode(left, GIndexUtil.LEFT_CHILD_G_INDEX);
-    inOrder.verify(visitor).onTargetDepthNode(right, GIndexUtil.RIGHT_CHILD_G_INDEX);
+    StoringUtil.storeNodesToDepth(
+        nodeStore, UNLIMITED_SKIP, rootNode, SELF_G_INDEX, 1, RIGHTMOST_G_INDEX, childHandler);
+    inOrder.verify(nodeStore).storeLeafNode(left, GIndexUtil.LEFT_CHILD_G_INDEX);
+    inOrder.verify(nodeStore).storeLeafNode(right, GIndexUtil.RIGHT_CHILD_G_INDEX);
     inOrder
-        .verify(visitor)
-        .onBranchNode(rootNode.hashTreeRoot(), SELF_G_INDEX, 1, roots(left, right));
+        .verify(nodeStore)
+        .storeBranchNode(rootNode.hashTreeRoot(), SELF_G_INDEX, 1, roots(left, right));
     inOrder.verifyNoMoreInteractions();
   }
 
   @Test
-  void shouldVisitChildrenAtSpecifiedDepth() {
+  void shouldStoreChildrenAtSpecifiedDepth() {
     final int depth = 5;
     final List<TreeNode> children = createChildrenForDepth(depth);
     final TreeNode rootNode = TreeUtil.createTree(children, depth);
 
-    IterationUtil.visitNodesToDepth(visitor, UNLIMITED_SKIP, rootNode, SELF_G_INDEX, depth);
+    StoringUtil.storeNodesToDepth(
+        nodeStore, UNLIMITED_SKIP, rootNode, SELF_G_INDEX, depth, RIGHTMOST_G_INDEX, childHandler);
 
-    verifyChildrenVisited(children, depth);
+    verifyChildrenStored(children, depth);
     inOrder
-        .verify(visitor)
-        .onBranchNode(rootNode.hashTreeRoot(), SELF_G_INDEX, depth, roots(children));
+        .verify(nodeStore)
+        .storeBranchNode(rootNode.hashTreeRoot(), SELF_G_INDEX, depth, roots(children));
     inOrder.verifyNoMoreInteractions();
   }
 
@@ -88,25 +93,33 @@ class IterationUtilTest {
     final LeafNode left = LeafNode.create(Bytes.of(1));
     final LeafNode right = LeafNode.create(Bytes.of(2));
     final TreeNode rootNode = TreeUtil.createTree(List.of(left, right));
-    IterationUtil.visitNodesToDepth(visitor, UNLIMITED_SKIP, rootNode, rootGIndex, 1);
-    inOrder.verify(visitor).onTargetDepthNode(left, GIndexUtil.gIdxLeftGIndex(rootGIndex));
-    inOrder.verify(visitor).onTargetDepthNode(right, GIndexUtil.gIdxRightGIndex(rootGIndex));
+    StoringUtil.storeNodesToDepth(
+        nodeStore, UNLIMITED_SKIP, rootNode, rootGIndex, 1, RIGHTMOST_G_INDEX, childHandler);
+    inOrder.verify(nodeStore).storeLeafNode(left, GIndexUtil.gIdxLeftGIndex(rootGIndex));
+    inOrder.verify(nodeStore).storeLeafNode(right, GIndexUtil.gIdxRightGIndex(rootGIndex));
     inOrder
-        .verify(visitor)
-        .onBranchNode(rootNode.hashTreeRoot(), rootGIndex, 1, roots(left, right));
+        .verify(nodeStore)
+        .storeBranchNode(rootNode.hashTreeRoot(), rootGIndex, 1, roots(left, right));
     inOrder.verifyNoMoreInteractions();
   }
 
   @Test
-  void shouldVisitIntermediateBranchesWhenDepthExceedsMaxSkipLevels_evenInterval() {
+  void shouldStoreIntermediateBranchesWhenDepthExceedsMaxSkipLevels_evenInterval() {
     final int depth = 4;
     final int maxBranchLevelsSkipped = 2;
     final List<TreeNode> children = createChildrenForDepth(depth);
     final TreeNode rootNode = TreeUtil.createTree(children, depth);
 
-    IterationUtil.visitNodesToDepth(visitor, maxBranchLevelsSkipped, rootNode, SELF_G_INDEX, depth);
+    StoringUtil.storeNodesToDepth(
+        nodeStore,
+        maxBranchLevelsSkipped,
+        rootNode,
+        SELF_G_INDEX,
+        depth,
+        RIGHTMOST_G_INDEX,
+        childHandler);
 
-    // Visit branch nodes 5 levels deep
+    // Store branch nodes 5 levels deep
     final List<TreeNode> branchNodes = getNodesAtDepth(rootNode, maxBranchLevelsSkipped);
     // Children should be evenly split between intermediate branch nodes
     final int childrenPerBranchNode = children.size() / branchNodes.size();
@@ -116,12 +129,12 @@ class IterationUtilTest {
       final int firstChildIndex = i * childrenPerBranchNode;
       final List<TreeNode> branchChildren =
           children.subList(firstChildIndex, firstChildIndex + childrenPerBranchNode);
-      // Visit children first
-      verifyChildrenVisited(branchGIndex, branchChildren, maxBranchLevelsSkipped);
+      // Store children first
+      verifyChildrenStored(branchGIndex, branchChildren, maxBranchLevelsSkipped);
       // Then branch node itself
       inOrder
-          .verify(visitor)
-          .onBranchNode(
+          .verify(nodeStore)
+          .storeBranchNode(
               branchNode.hashTreeRoot(),
               branchGIndex,
               maxBranchLevelsSkipped,
@@ -129,21 +142,28 @@ class IterationUtilTest {
     }
     // Then root node
     inOrder
-        .verify(visitor)
-        .onBranchNode(
+        .verify(nodeStore)
+        .storeBranchNode(
             rootNode.hashTreeRoot(), SELF_G_INDEX, maxBranchLevelsSkipped, roots(branchNodes));
   }
 
   @Test
-  void shouldVisitIntermediateBranchesWhenDepthExceedsMaxSkipLevels_unevenInterval() {
+  void shouldStoreIntermediateBranchesWhenDepthExceedsMaxSkipLevels_unevenInterval() {
     final int depth = 4;
     final int maxBranchLevelsSkipped = 3;
     final List<TreeNode> children = createChildrenForDepth(depth);
     final TreeNode rootNode = TreeUtil.createTree(children, depth);
 
-    IterationUtil.visitNodesToDepth(visitor, maxBranchLevelsSkipped, rootNode, SELF_G_INDEX, depth);
+    StoringUtil.storeNodesToDepth(
+        nodeStore,
+        maxBranchLevelsSkipped,
+        rootNode,
+        SELF_G_INDEX,
+        depth,
+        RIGHTMOST_G_INDEX,
+        childHandler);
 
-    // Visit branch nodes 5 levels deep
+    // Store branch nodes 5 levels deep
     final List<TreeNode> branchNodes = getNodesAtDepth(rootNode, maxBranchLevelsSkipped);
     // Children should be evenly split between intermediate branch nodes
     final int childrenPerBranchNode = children.size() / branchNodes.size();
@@ -154,32 +174,33 @@ class IterationUtilTest {
       final int firstChildIndex = i * childrenPerBranchNode;
       final List<TreeNode> branchChildren =
           children.subList(firstChildIndex, firstChildIndex + childrenPerBranchNode);
-      // Visit children first
-      verifyChildrenVisited(branchGIndex, branchChildren, remainingDepth);
+      // Store children first
+      verifyChildrenStored(branchGIndex, branchChildren, remainingDepth);
       // Then branch node itself
       inOrder
-          .verify(visitor)
-          .onBranchNode(
+          .verify(nodeStore)
+          .storeBranchNode(
               branchNode.hashTreeRoot(), branchGIndex, remainingDepth, roots(branchChildren));
     }
     // Then root node
     inOrder
-        .verify(visitor)
-        .onBranchNode(
+        .verify(nodeStore)
+        .storeBranchNode(
             rootNode.hashTreeRoot(), SELF_G_INDEX, maxBranchLevelsSkipped, roots(branchNodes));
   }
 
   @Test
-  void shouldNotVisitAnyNodesIfRootCanBeSkipped() {
+  void shouldNotStoreAnyNodesIfRootCanBeSkipped() {
     final int depth = 5;
     final List<TreeNode> children = createChildrenForDepth(depth);
     final TreeNode rootNode = TreeUtil.createTree(children, depth);
 
-    when(visitor.canSkipBranch(rootNode.hashTreeRoot(), SELF_G_INDEX)).thenReturn(true);
+    when(nodeStore.canSkipBranch(rootNode.hashTreeRoot(), SELF_G_INDEX)).thenReturn(true);
 
-    IterationUtil.visitNodesToDepth(visitor, UNLIMITED_SKIP, rootNode, SELF_G_INDEX, depth);
+    StoringUtil.storeNodesToDepth(
+        nodeStore, UNLIMITED_SKIP, rootNode, SELF_G_INDEX, depth, RIGHTMOST_G_INDEX, childHandler);
 
-    inOrder.verify(visitor).canSkipBranch(rootNode.hashTreeRoot(), SELF_G_INDEX);
+    inOrder.verify(nodeStore).canSkipBranch(rootNode.hashTreeRoot(), SELF_G_INDEX);
     inOrder.verifyNoMoreInteractions();
   }
 
@@ -194,14 +215,19 @@ class IterationUtilTest {
     // Can skip intermediate branches 0 and 2, but should store the others
     skippableBranchIndices.forEach(
         index ->
-            when(visitor.canSkipBranch(
+            when(nodeStore.canSkipBranch(
                     branchNodes.get(index).hashTreeRoot(),
                     GIndexUtil.gIdxChildGIndex(SELF_G_INDEX, index, maxBranchLevelsSkipped)))
                 .thenReturn(true));
 
-    IterationUtil.visitNodesToDepth(visitor, maxBranchLevelsSkipped, rootNode, SELF_G_INDEX, depth);
-
-    // Visit branch nodes 5 levels deep
+    StoringUtil.storeNodesToDepth(
+        nodeStore,
+        maxBranchLevelsSkipped,
+        rootNode,
+        SELF_G_INDEX,
+        depth,
+        RIGHTMOST_G_INDEX,
+        childHandler);
 
     // Children should be evenly split between intermediate branch nodes
     final int childrenPerBranchNode = children.size() / branchNodes.size();
@@ -214,12 +240,12 @@ class IterationUtilTest {
       // Should skip all nodes under branches 0 and 2
       final VerificationMode verificationMode =
           skippableBranchIndices.contains(i) ? never() : times(1);
-      // Visit children first
-      verifyChildrenVisited(verificationMode, branchGIndex, branchChildren, maxBranchLevelsSkipped);
+      // Store children first
+      verifyChildrenStored(verificationMode, branchGIndex, branchChildren, maxBranchLevelsSkipped);
       // Then branch node itself
       inOrder
-          .verify(visitor, verificationMode)
-          .onBranchNode(
+          .verify(nodeStore, verificationMode)
+          .storeBranchNode(
               branchNode.hashTreeRoot(),
               branchGIndex,
               maxBranchLevelsSkipped,
@@ -227,8 +253,8 @@ class IterationUtilTest {
     }
     // Then root node
     inOrder
-        .verify(visitor)
-        .onBranchNode(
+        .verify(nodeStore)
+        .storeBranchNode(
             rootNode.hashTreeRoot(), SELF_G_INDEX, maxBranchLevelsSkipped, roots(branchNodes));
   }
 
@@ -244,15 +270,21 @@ class IterationUtilTest {
     final long lastUsefulGIndex =
         GIndexUtil.gIdxChildGIndex(rootNodeGIndex, lastUsefulChildIndex, depth);
 
-    IterationUtil.visitNodesToDepth(
-        visitor, maxBranchLevelsSkipped, rootNode, rootNodeGIndex, depth, lastUsefulGIndex);
+    StoringUtil.storeNodesToDepth(
+        nodeStore,
+        maxBranchLevelsSkipped,
+        rootNode,
+        rootNodeGIndex,
+        depth,
+        lastUsefulGIndex,
+        childHandler);
 
     // toIndex is exclusive in subList so + 1 to ensure we include the last useful child
-    final List<TreeNode> visitedChildren = children.subList(0, lastUsefulChildIndex + 1);
-    verifyChildrenVisited(rootNodeGIndex, visitedChildren, depth);
-    verify(visitor, never()).onTargetDepthNode(eq(children.get(6)), anyLong());
-    verify(visitor)
-        .onBranchNode(rootNode.hashTreeRoot(), rootNodeGIndex, depth, roots(visitedChildren));
+    final List<TreeNode> storedChildren = children.subList(0, lastUsefulChildIndex + 1);
+    verifyChildrenStored(rootNodeGIndex, storedChildren, depth);
+    verify(nodeStore, never()).storeLeafNode(eq(children.get(6)), anyLong());
+    verify(nodeStore)
+        .storeBranchNode(rootNode.hashTreeRoot(), rootNodeGIndex, depth, roots(storedChildren));
   }
 
   private List<TreeNode> getNodesAtDepth(final TreeNode rootNode, final int depth) {
@@ -265,16 +297,16 @@ class IterationUtilTest {
     return nodes;
   }
 
-  private void verifyChildrenVisited(final List<TreeNode> children, final int depth) {
-    verifyChildrenVisited(SELF_G_INDEX, children, depth);
+  private void verifyChildrenStored(final List<TreeNode> children, final int depth) {
+    verifyChildrenStored(SELF_G_INDEX, children, depth);
   }
 
-  private void verifyChildrenVisited(
+  private void verifyChildrenStored(
       final long rootGIndex, final List<TreeNode> children, final int depth) {
-    verifyChildrenVisited(times(1), rootGIndex, children, depth);
+    verifyChildrenStored(times(1), rootGIndex, children, depth);
   }
 
-  private void verifyChildrenVisited(
+  private void verifyChildrenStored(
       final VerificationMode verificationMode,
       final long rootGIndex,
       final List<TreeNode> children,
@@ -282,8 +314,8 @@ class IterationUtilTest {
     for (int i = 0; i < children.size(); i++) {
       final TreeNode child = children.get(i);
       inOrder
-          .verify(visitor, verificationMode)
-          .onTargetDepthNode(child, GIndexUtil.gIdxChildGIndex(rootGIndex, i, depth));
+          .verify(nodeStore, verificationMode)
+          .storeLeafNode(child, GIndexUtil.gIdxChildGIndex(rootGIndex, i, depth));
     }
   }
 

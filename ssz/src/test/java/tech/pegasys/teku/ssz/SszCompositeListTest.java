@@ -59,7 +59,7 @@ public class SszCompositeListTest {
 
         @Override
         public void storeBackingNodes(
-            final TreeNodeStore nodeVisitor,
+            final TreeNodeStore nodeStore,
             final int maxBranchLevelsSkipped,
             final long rootGIndex,
             final TreeNode node) {}
