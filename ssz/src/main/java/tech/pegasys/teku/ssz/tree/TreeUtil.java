@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMap.Builder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -61,7 +60,8 @@ public class TreeUtil {
   static {
     ZERO_TREES = new TreeNode[64];
     ZERO_TREES[0] = LeafNode.EMPTY_LEAF;
-    final Builder<Bytes32, TreeNode> mapBuilder = ImmutableMap.<Bytes32, TreeNode>builder();
+    final ImmutableMap.Builder<Bytes32, TreeNode> mapBuilder =
+        ImmutableMap.<Bytes32, TreeNode>builder();
     for (int i = 1; i < ZERO_TREES.length; i++) {
       ZERO_TREES[i] = new ZeroBranchNode(ZERO_TREES[i - 1], ZERO_TREES[i - 1], i);
       mapBuilder.put(ZERO_TREES[i].hashTreeRoot(), ZERO_TREES[i]); // pre-cache
