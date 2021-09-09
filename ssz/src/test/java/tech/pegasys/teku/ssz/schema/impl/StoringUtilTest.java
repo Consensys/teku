@@ -49,7 +49,7 @@ class StoringUtilTest {
   private static final int UNLIMITED_SKIP = Integer.MAX_VALUE;
   private final TreeNodeStore nodeStore = mock(TreeNodeStore.class);
   private final TargetDepthNodeHandler childHandler = mock(TargetDepthNodeHandler.class);
-  private final InOrder inOrder = inOrder(nodeStore);
+  private final InOrder inOrder = inOrder(nodeStore, childHandler);
 
   @BeforeEach
   void setUp() {
@@ -63,8 +63,8 @@ class StoringUtilTest {
     final TreeNode rootNode = TreeUtil.createTree(List.of(left, right));
     StoringUtil.storeNodesToDepth(
         nodeStore, UNLIMITED_SKIP, rootNode, SELF_G_INDEX, 1, RIGHTMOST_G_INDEX, childHandler);
-    inOrder.verify(nodeStore).storeLeafNode(left, GIndexUtil.LEFT_CHILD_G_INDEX);
-    inOrder.verify(nodeStore).storeLeafNode(right, GIndexUtil.RIGHT_CHILD_G_INDEX);
+    inOrder.verify(childHandler).storeTargetDepthNode(left, GIndexUtil.LEFT_CHILD_G_INDEX);
+    inOrder.verify(childHandler).storeTargetDepthNode(right, GIndexUtil.RIGHT_CHILD_G_INDEX);
     inOrder
         .verify(nodeStore)
         .storeBranchNode(rootNode.hashTreeRoot(), SELF_G_INDEX, 1, roots(left, right));
@@ -95,8 +95,10 @@ class StoringUtilTest {
     final TreeNode rootNode = TreeUtil.createTree(List.of(left, right));
     StoringUtil.storeNodesToDepth(
         nodeStore, UNLIMITED_SKIP, rootNode, rootGIndex, 1, RIGHTMOST_G_INDEX, childHandler);
-    inOrder.verify(nodeStore).storeLeafNode(left, GIndexUtil.gIdxLeftGIndex(rootGIndex));
-    inOrder.verify(nodeStore).storeLeafNode(right, GIndexUtil.gIdxRightGIndex(rootGIndex));
+    inOrder.verify(childHandler).storeTargetDepthNode(left, GIndexUtil.gIdxLeftGIndex(rootGIndex));
+    inOrder
+        .verify(childHandler)
+        .storeTargetDepthNode(right, GIndexUtil.gIdxRightGIndex(rootGIndex));
     inOrder
         .verify(nodeStore)
         .storeBranchNode(rootNode.hashTreeRoot(), rootGIndex, 1, roots(left, right));
@@ -282,7 +284,7 @@ class StoringUtilTest {
     // toIndex is exclusive in subList so + 1 to ensure we include the last useful child
     final List<TreeNode> storedChildren = children.subList(0, lastUsefulChildIndex + 1);
     verifyChildrenStored(rootNodeGIndex, storedChildren, depth);
-    verify(nodeStore, never()).storeLeafNode(eq(children.get(6)), anyLong());
+    verify(childHandler, never()).storeTargetDepthNode(eq(children.get(6)), anyLong());
     verify(nodeStore)
         .storeBranchNode(rootNode.hashTreeRoot(), rootNodeGIndex, depth, roots(storedChildren));
   }
@@ -314,8 +316,8 @@ class StoringUtilTest {
     for (int i = 0; i < children.size(); i++) {
       final TreeNode child = children.get(i);
       inOrder
-          .verify(nodeStore, verificationMode)
-          .storeLeafNode(child, GIndexUtil.gIdxChildGIndex(rootGIndex, i, depth));
+          .verify(childHandler, verificationMode)
+          .storeTargetDepthNode(child, GIndexUtil.gIdxChildGIndex(rootGIndex, i, depth));
     }
   }
 
