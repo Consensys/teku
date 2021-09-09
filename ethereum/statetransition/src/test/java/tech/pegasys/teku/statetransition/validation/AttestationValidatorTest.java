@@ -19,13 +19,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.IGNORE;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.REJECT;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.SAVE_FOR_FUTURE;
 import static tech.pegasys.teku.util.config.Constants.ATTESTATION_PROPAGATION_SLOT_RANGE;
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import java.util.List;
 import java.util.Optional;
@@ -122,11 +120,12 @@ class AttestationValidatorTest {
   @Test
   public void shouldReturnValidForValidAttestation_whenManyBlocksHaveBeenSkipped() {
     final StateAndBlockSummary head = recentChainData.getChainHead().orElseThrow();
-    final UInt64 currentSlot = head.getSlot().plus(SLOTS_PER_EPOCH * 3);
+    final UInt64 currentSlot = head.getSlot().plus(spec.getSlotsPerEpoch(head.getSlot()) * 3);
     storageSystem.chainUpdater().setCurrentSlot(currentSlot);
 
     final Attestation attestation =
-        attestationGenerator.validAttestation(head, head.getSlot().plus(SLOTS_PER_EPOCH * 3));
+        attestationGenerator.validAttestation(
+            head, head.getSlot().plus(spec.getSlotsPerEpoch(head.getSlot()) * 3));
     assertThat(validate(attestation).code()).isEqualTo(ACCEPT);
   }
 
@@ -209,35 +208,12 @@ class AttestationValidatorTest {
   }
 
   @Test
-  public void shouldRejectAttestationForSameValidatorAndTargetEpoch() {
-    final StateAndBlockSummary genesis = recentChainData.getChainHead().orElseThrow();
-    chainUpdater.advanceChain(ONE);
-
-    // Slot 1 attestation for the block at slot 1
-    final Attestation attestation1 =
-        attestationGenerator.validAttestation(recentChainData.getChainHead().orElseThrow());
-    // Slot 1 attestation from the same validator claiming no block at slot 1
-    final Attestation attestation2 =
-        attestationGenerator
-            .streamAttestations(genesis, ONE)
-            .filter(attestation -> hasSameValidators(attestation1, attestation))
-            .findFirst()
-            .orElseThrow();
-
-    // Sanity check
-    assertThat(attestation1.getData().getTarget().getEpoch())
-        .isEqualTo(attestation2.getData().getTarget().getEpoch());
-    assertThat(attestation1.getAggregationBits()).isEqualTo(attestation2.getAggregationBits());
-
-    assertThat(validate(attestation1).code()).isEqualTo(ACCEPT);
-    assertThat(validate(attestation2).code()).isEqualTo(IGNORE);
-  }
-
-  @Test
   public void shouldAcceptAttestationForSameValidatorButDifferentTargetEpoch() {
     final StateAndBlockSummary genesis = recentChainData.getChainHead().orElseThrow();
     final SignedBeaconBlock nextEpochBlock =
-        chainUpdater.advanceChain(UInt64.valueOf(SLOTS_PER_EPOCH + 1)).getBlock();
+        chainUpdater
+            .advanceChain(UInt64.valueOf(spec.getSlotsPerEpoch(genesis.getSlot()) + 1))
+            .getBlock();
 
     // Slot 0 attestation
     final Attestation attestation1 = attestationGenerator.validAttestation(genesis);
@@ -333,7 +309,7 @@ class AttestationValidatorTest {
                         attestation.getAggregationBits(),
                         new AttestationData(
                             data.getSlot(),
-                            get_committee_count_per_slot(
+                            spec.getCommitteeCountPerSlot(
                                 blockAndState.getState(), data.getTarget().getEpoch()),
                             data.getBeacon_block_root(),
                             data.getSource(),

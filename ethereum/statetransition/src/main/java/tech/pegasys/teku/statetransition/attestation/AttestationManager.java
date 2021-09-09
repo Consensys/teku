@@ -232,8 +232,6 @@ public class AttestationManager extends Service
 
     if (attestation.isAggregate()) {
       aggregateValidator.addSeenAggregate(attestation);
-    } else {
-      attestationValidator.addSeenAttestation(attestation);
     }
 
     notifyAttestationsToSendSubscribers(attestation);

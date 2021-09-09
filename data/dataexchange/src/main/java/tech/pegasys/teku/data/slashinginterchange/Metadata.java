@@ -16,16 +16,17 @@ package tech.pegasys.teku.data.slashinginterchange;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Metadata {
 
   public static final UInt64 INTERCHANGE_VERSION = UInt64.valueOf(5);
 
   @JsonProperty("interchange_format")
-  @JsonInclude(JsonInclude.Include.NON_NULL)
   public final String interchangeFormat;
 
   @JsonProperty("interchange_format_version")
@@ -62,5 +63,14 @@ public class Metadata {
   @Override
   public int hashCode() {
     return Objects.hash(interchangeFormatVersion, genesisValidatorsRoot);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("interchangeFormat", interchangeFormat)
+        .add("interchangeFormatVersion", interchangeFormatVersion)
+        .add("genesisValidatorsRoot", genesisValidatorsRoot)
+        .toString();
   }
 }
