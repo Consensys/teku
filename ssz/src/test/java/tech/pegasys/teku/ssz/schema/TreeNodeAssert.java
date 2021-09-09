@@ -40,7 +40,8 @@ public class TreeNodeAssert extends AbstractAssert<TreeNodeAssert, TreeNode> {
     try {
       assertTreeEqual(actual, expected, GIndexUtil.SELF_G_INDEX);
     } catch (final Throwable t) {
-      failWithActualExpectedAndMessage(printTree(actual), printTree(expected), "Trees did not match", t);
+      failWithActualExpectedAndMessage(
+          printTree(actual), printTree(expected), "Trees did not match", t);
     }
     return this;
   }

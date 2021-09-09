@@ -104,12 +104,15 @@ public interface SszContainerSchema<C extends SszContainer> extends SszComposite
 
   @Override
   default TreeNode loadBackingNodes(TreeNodeSource nodeSource, Bytes32 rootHash, long rootGIndex) {
+    final long lastUsefulGIndex =
+        GIndexUtil.gIdxChildGIndex(rootGIndex, maxChunks() - 1, treeDepth());
     return LoadingUtil.loadNodesToDepth(
         nodeSource,
         rootHash,
         rootGIndex,
         treeDepth(),
         getDefault().getBackingNode(),
+        lastUsefulGIndex,
         (nodeSource1, childHash, childGIndex) -> {
           final int childIndex = GIndexUtil.gIdxToChildIndex(childGIndex, treeDepth());
           return getChildSchema(childIndex).loadBackingNodes(nodeSource, childHash, childGIndex);

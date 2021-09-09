@@ -181,11 +181,7 @@ public abstract class AbstractSszListSchema<
       iterateChildNode(nodeVisitor, maxBranchLevelsSkipped, rootGIndex, node);
       return;
     }
-    final int fullNodeCount = length / compatibleVectorSchema.getElementsPerChunk();
-    int lastNodeElementCount = length % compatibleVectorSchema.getElementsPerChunk();
-    final long lastUsefulChildIndex = lastNodeElementCount == 0 ? fullNodeCount - 1 : fullNodeCount;
-    final long lastUsefulGIndex =
-        GIndexUtil.gIdxChildGIndex(rootGIndex, lastUsefulChildIndex, depthToVisit);
+    final long lastUsefulGIndex = getVectorLastUsefulGIndex(rootGIndex, length);
     final NodeVisitor delegatingVisitor =
         new NodeVisitor() {
           @Override
@@ -214,10 +210,21 @@ public abstract class AbstractSszListSchema<
         lastUsefulGIndex);
   }
 
+  private long getVectorLastUsefulGIndex(final long rootGIndex, final int length) {
+    if (length == 0) {
+      return rootGIndex;
+    }
+    final int fullNodeCount = length / compatibleVectorSchema.getElementsPerChunk();
+    int lastNodeElementCount = length % compatibleVectorSchema.getElementsPerChunk();
+    final long lastUsefulChildIndex = lastNodeElementCount == 0 ? fullNodeCount - 1 : fullNodeCount;
+    return GIndexUtil.gIdxChildGIndex(
+        rootGIndex, lastUsefulChildIndex, compatibleVectorSchema.treeDepth());
+  }
+
   @Override
   public TreeNode loadBackingNodes(
       final TreeNodeSource nodeSource, final Bytes32 rootHash, final long rootGIndex) {
-    if (TreeUtil.ZERO_TREES_BY_ROOT.containsKey(rootHash)) {
+    if (TreeUtil.ZERO_TREES_BY_ROOT.containsKey(rootHash) || rootHash.equals(Bytes32.ZERO)) {
       return getDefaultTree();
     }
     final CompressedBranchInfo branchData = nodeSource.loadBranchNode(rootHash, rootGIndex);
@@ -241,13 +248,16 @@ public abstract class AbstractSszListSchema<
                 compatibleVectorSchema.getElementsPerChunk(),
                 compatibleVectorSchema.treeDepth(),
                 compatibleVectorSchema.getElementSchema());
+    final long vectorRootGIndex = GIndexUtil.gIdxLeftGIndex(rootGIndex);
+    final long lastUsefulGIndex = getVectorLastUsefulGIndex(vectorRootGIndex, length);
     final TreeNode vectorNode =
         LoadingUtil.loadNodesToDepth(
             nodeSource,
             vectorHash,
-            GIndexUtil.gIdxLeftGIndex(rootGIndex),
+            vectorRootGIndex,
             compatibleVectorSchema.treeDepth(),
             compatibleVectorSchema.getDefault().getBackingNode(),
+            lastUsefulGIndex,
             childLoader);
     return BranchNode.create(vectorNode, toLengthNode(length));
   }

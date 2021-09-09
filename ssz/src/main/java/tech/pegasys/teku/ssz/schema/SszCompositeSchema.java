@@ -102,9 +102,8 @@ public interface SszCompositeSchema<SszCompositeT extends SszComposite<?>>
       iterateChildNode(nodeVisitor, maxBranchLevelsSkipped, rootGIndex, node);
       return;
     }
-    final long lastUsefulChildIdx = maxChunks() - 1;
     final long lastUsefulGIndex =
-        GIndexUtil.gIdxChildGIndex(rootGIndex, lastUsefulChildIdx, depthToVisit);
+        GIndexUtil.gIdxChildGIndex(rootGIndex, maxChunks() - 1, depthToVisit);
     final NodeVisitor delegatingVisitor =
         new NodeVisitor() {
           @Override

@@ -22,7 +22,9 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchema;
 import tech.pegasys.teku.ssz.schema.SszSchema;
+import tech.pegasys.teku.ssz.tree.BranchNode;
 import tech.pegasys.teku.ssz.tree.GIndexUtil;
+import tech.pegasys.teku.ssz.tree.GIndexUtil.NodeRelation;
 import tech.pegasys.teku.ssz.tree.LeafNode;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 import tech.pegasys.teku.ssz.tree.TreeNodeSource;
@@ -37,12 +39,27 @@ public class LoadingUtil {
       final long rootGIndex,
       final int depthToLoad,
       final TreeNode defaultTree,
+      final long lastUsefulGIndex,
       final ChildLoader childLoader) {
     if (depthToLoad == 0) {
+      final NodeRelation nodeRelation = GIndexUtil.gIdxCompare(rootGIndex, lastUsefulGIndex);
+      if (nodeRelation == NodeRelation.Right) {
+        return TreeUtil.ZERO_TREES[0];
+      }
       // Only one child so wrapper is inlined
       return childLoader.loadChild(nodeSource, rootHash, rootGIndex);
     }
+
     if (TreeUtil.ZERO_TREES_BY_ROOT.containsKey(rootHash)) {
+      // Decide if node is useful, if it is, return Branch.create(loadNodesToDepth(left),
+      // loadNodesToDepth(right));
+      final NodeRelation relationRootToLastUseful =
+          GIndexUtil.gIdxCompare(rootGIndex, lastUsefulGIndex);
+      if (relationRootToLastUseful == NodeRelation.Predecessor
+          || relationRootToLastUseful == NodeRelation.Left) {
+        return createUsefulEmptyBranch(
+            nodeSource, rootGIndex, depthToLoad, defaultTree, lastUsefulGIndex, childLoader);
+      }
       return defaultTree;
     }
     final CompressedBranchInfo rootBranchInfo = nodeSource.loadBranchNode(rootHash, rootGIndex);
@@ -58,23 +75,17 @@ public class LoadingUtil {
     for (int childIndex = 0; childIndex < childHashes.length; childIndex++) {
       final long childGIndex =
           GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, childIndex, branchDepth);
-      if (branchDepth == depthToLoad) {
-        children.add(
-            childLoader.loadChild(
-                nodeSource,
-                childHashes[childIndex],
-                GIndexUtil.gIdxCompose(rootGIndex, childGIndex)));
-      } else {
-        children.add(
-            loadNodesToDepth(
-                nodeSource,
-                childHashes[childIndex],
-                GIndexUtil.gIdxCompose(rootGIndex, childGIndex),
-                depthToLoad - branchDepth,
-                defaultTree.get(childGIndex),
-                childLoader));
-      }
+      children.add(
+          loadNodesToDepth(
+              nodeSource,
+              childHashes[childIndex],
+              GIndexUtil.gIdxCompose(rootGIndex, childGIndex),
+              depthToLoad - branchDepth,
+              defaultTree.get(childGIndex),
+              lastUsefulGIndex,
+              childLoader));
     }
+
     final long totalChildCount = 1L << branchDepth;
     for (long unusedChildIndex = childHashes.length;
         unusedChildIndex < totalChildCount;
@@ -84,6 +95,36 @@ public class LoadingUtil {
               GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, unusedChildIndex, branchDepth)));
     }
     return TreeUtil.createTree(children, branchDepth);
+  }
+
+  private static BranchNode createUsefulEmptyBranch(
+      final TreeNodeSource nodeSource,
+      final long rootGIndex,
+      final int depthToLoad,
+      final TreeNode defaultTree,
+      final long lastUsefulGIndex,
+      final ChildLoader childLoader) {
+    final TreeNode defaultLeftNode = defaultTree.get(GIndexUtil.LEFT_CHILD_G_INDEX);
+    final TreeNode leftNode =
+        loadNodesToDepth(
+            nodeSource,
+            defaultLeftNode.hashTreeRoot(),
+            GIndexUtil.gIdxLeftGIndex(rootGIndex),
+            depthToLoad - 1,
+            defaultLeftNode,
+            lastUsefulGIndex,
+            childLoader);
+    final TreeNode defaultRightNode = defaultTree.get(GIndexUtil.RIGHT_CHILD_G_INDEX);
+    final TreeNode rightNode =
+        loadNodesToDepth(
+            nodeSource,
+            defaultRightNode.hashTreeRoot(),
+            GIndexUtil.gIdxRightGIndex(rootGIndex),
+            depthToLoad - 1,
+            defaultRightNode,
+            lastUsefulGIndex,
+            childLoader);
+    return BranchNode.create(leftNode, rightNode);
   }
 
   static TreeNode loadCollectionChild(
