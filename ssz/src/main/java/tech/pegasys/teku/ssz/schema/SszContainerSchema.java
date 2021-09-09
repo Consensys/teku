@@ -24,7 +24,7 @@ import tech.pegasys.teku.ssz.schema.impl.LoadingUtil;
 import tech.pegasys.teku.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 import tech.pegasys.teku.ssz.tree.TreeNodeSource;
-import tech.pegasys.teku.ssz.tree.TreeNodeVisitor;
+import tech.pegasys.teku.ssz.tree.TreeNodeStore;
 
 /**
  * {@link SszSchema} for an Ssz Container structure
@@ -91,14 +91,14 @@ public interface SszContainerSchema<C extends SszContainer> extends SszComposite
 
   @Override
   default void iterateChildNode(
-      final TreeNodeVisitor nodeVisitor,
+      final TreeNodeStore nodeVisitor,
       final int maxBranchLevelsSkipped,
       final long gIndex,
       final TreeNode node) {
     final int childIndex = GIndexUtil.gIdxChildIndexFromGIndex(gIndex, treeDepth());
     if (childIndex < getMaxLength()) {
       final SszSchema<?> childSchema = getChildSchema(childIndex);
-      childSchema.iterate(nodeVisitor, maxBranchLevelsSkipped, gIndex, node);
+      childSchema.storeBackingNodes(nodeVisitor, maxBranchLevelsSkipped, gIndex, node);
     }
   }
 

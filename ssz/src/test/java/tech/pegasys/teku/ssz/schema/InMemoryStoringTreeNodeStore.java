@@ -22,10 +22,10 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.tree.LeafDataNode;
 import tech.pegasys.teku.ssz.tree.TreeNodeSource;
-import tech.pegasys.teku.ssz.tree.TreeNodeVisitor;
+import tech.pegasys.teku.ssz.tree.TreeNodeStore;
 import tech.pegasys.teku.ssz.tree.TreeUtil;
 
-public class InMemoryStoringTreeNodeVisitor implements TreeNodeVisitor, TreeNodeSource {
+public class InMemoryStoringTreeNodeStore implements TreeNodeStore, TreeNodeSource {
 
   private final Map<Bytes32, CompressedBranchInfo> branchNodes = new HashMap<>();
   private final Map<Bytes32, Bytes> leafNodes = new HashMap<>();
@@ -36,7 +36,7 @@ public class InMemoryStoringTreeNodeVisitor implements TreeNodeVisitor, TreeNode
   }
 
   @Override
-  public void onBranchNode(
+  public void storeBranchNode(
       final Bytes32 root, final long gIndex, final int depth, final Bytes32[] children) {
     if (TreeUtil.ZERO_TREES_BY_ROOT.containsKey(root)) {
       // No point storing zero trees.
@@ -47,7 +47,7 @@ public class InMemoryStoringTreeNodeVisitor implements TreeNodeVisitor, TreeNode
   }
 
   @Override
-  public void onLeafNode(final LeafDataNode node, final long gIndex) {
+  public void storeLeafNode(final LeafDataNode node, final long gIndex) {
     if (node.getData().size() > Bytes32.SIZE && !node.hashTreeRoot().isZero()) {
       leafNodes.putIfAbsent(node.hashTreeRoot(), node.getData());
     }

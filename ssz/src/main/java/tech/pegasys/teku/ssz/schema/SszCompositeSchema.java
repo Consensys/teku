@@ -19,7 +19,7 @@ import tech.pegasys.teku.ssz.schema.impl.IterationUtil.NodeVisitor;
 import tech.pegasys.teku.ssz.schema.impl.IterationUtil.TreNodeVisitorAdapter;
 import tech.pegasys.teku.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.ssz.tree.TreeNode;
-import tech.pegasys.teku.ssz.tree.TreeNodeVisitor;
+import tech.pegasys.teku.ssz.tree.TreeNodeStore;
 import tech.pegasys.teku.ssz.tree.TreeUtil;
 
 /** Abstract schema of {@link SszComposite} subclasses */
@@ -91,8 +91,8 @@ public interface SszCompositeSchema<SszCompositeT extends SszComposite<?>>
   }
 
   @Override
-  default void iterate(
-      final TreeNodeVisitor nodeVisitor,
+  default void storeBackingNodes(
+      final TreeNodeStore nodeVisitor,
       final int maxBranchLevelsSkipped,
       final long rootGIndex,
       final TreeNode node) {
@@ -115,5 +115,5 @@ public interface SszCompositeSchema<SszCompositeT extends SszComposite<?>>
   }
 
   void iterateChildNode(
-      TreeNodeVisitor nodeVisitor, int maxBranchLevelsSkipped, long gIndex, TreeNode node);
+      TreeNodeStore nodeVisitor, int maxBranchLevelsSkipped, long gIndex, TreeNode node);
 }

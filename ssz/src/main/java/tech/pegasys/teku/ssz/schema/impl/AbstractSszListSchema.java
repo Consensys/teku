@@ -38,7 +38,7 @@ import tech.pegasys.teku.ssz.tree.LeafNode;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 import tech.pegasys.teku.ssz.tree.TreeNodeSource;
 import tech.pegasys.teku.ssz.tree.TreeNodeSource.CompressedBranchInfo;
-import tech.pegasys.teku.ssz.tree.TreeNodeVisitor;
+import tech.pegasys.teku.ssz.tree.TreeNodeStore;
 import tech.pegasys.teku.ssz.tree.TreeUtil;
 
 public abstract class AbstractSszListSchema<
@@ -138,8 +138,8 @@ public abstract class AbstractSszListSchema<
   }
 
   @Override
-  public void iterate(
-      final TreeNodeVisitor nodeVisitor,
+  public void storeBackingNodes(
+      final TreeNodeStore nodeVisitor,
       final int maxBranchLevelsSkipped,
       final long rootGIndex,
       final TreeNode node) {
@@ -156,10 +156,10 @@ public abstract class AbstractSszListSchema<
         getLength(node));
 
     // Iterate leaf node
-    nodeVisitor.onLeafNode((LeafDataNode) lengthNode, GIndexUtil.gIdxRightGIndex(rootGIndex));
+    nodeVisitor.storeLeafNode((LeafDataNode) lengthNode, GIndexUtil.gIdxRightGIndex(rootGIndex));
 
     // Iterate list root node
-    nodeVisitor.onBranchNode(
+    nodeVisitor.storeBranchNode(
         node.hashTreeRoot(),
         GIndexUtil.gIdxRightGIndex(rootGIndex),
         1,
@@ -167,7 +167,7 @@ public abstract class AbstractSszListSchema<
   }
 
   private void iterateVectorNodes(
-      final TreeNodeVisitor nodeVisitor,
+      final TreeNodeStore nodeVisitor,
       final int maxBranchLevelsSkipped,
       final long rootGIndex,
       final TreeNode node,

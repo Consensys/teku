@@ -21,7 +21,7 @@ import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 import tech.pegasys.teku.ssz.tree.TreeNodeSource;
-import tech.pegasys.teku.ssz.tree.TreeNodeVisitor;
+import tech.pegasys.teku.ssz.tree.TreeNodeStore;
 
 /**
  * Base class for any SSZ structure schema like Vector, List, Container, primitive types
@@ -76,18 +76,27 @@ public interface SszSchema<SszDataT extends SszData> extends SszType {
   }
 
   /**
-   * Iterate the backing nodes for this object and it's children. Iteration will be optimised by
-   * skipping any branches reported as unnecessary by {@link TreeNodeVisitor#canSkipBranch(Bytes32,
+   * Store the backing nodes for this object and its children. Iteration will be optimised by
+   * skipping any branches reported as unnecessary by {@link TreeNodeStore#canSkipBranch(Bytes32,
    * long)} and by skipping up to {@code maxBranchLevelsSkipped} levels of branch nodes. Skipped
    * levels will never include the deepest level of nodes represented by this schema (ie the root
-   * node of all child objects will be visited, even if it's a branch node).
+   * node of all child objects will be stored, even if it's a branch node).
    *
    * @param nodeVisitor the class to callback with visited nodes
    * @param maxBranchLevelsSkipped the maximum number of levels of branch nodes that can be skipped
    * @param rootGIndex the generalized index of the root node of this schema
    */
-  void iterate(
-      TreeNodeVisitor nodeVisitor, int maxBranchLevelsSkipped, long rootGIndex, TreeNode node);
+  void storeBackingNodes(
+      TreeNodeStore nodeVisitor, int maxBranchLevelsSkipped, long rootGIndex, TreeNode node);
 
+  /**
+   * Load backing nodes for this object and its children. This should be able to restore a tree
+   * previously recorded with {@link #storeBackingNodes(TreeNodeStore, int, long, TreeNode)}.
+   *
+   * @param nodeSource the node source to load data from
+   * @param rootHash the hash of the root node for the object to load
+   * @param rootGIndex the GIndex of the root node for the object to load in the overall tree
+   * @return the loaded node
+   */
   TreeNode loadBackingNodes(TreeNodeSource nodeSource, Bytes32 rootHash, long rootGIndex);
 }

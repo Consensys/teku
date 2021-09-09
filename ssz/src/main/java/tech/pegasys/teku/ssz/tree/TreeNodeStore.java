@@ -15,11 +15,11 @@ package tech.pegasys.teku.ssz.tree;
 
 import org.apache.tuweni.bytes.Bytes32;
 
-public interface TreeNodeVisitor {
+public interface TreeNodeStore {
 
   /**
    * Called prior to visiting a branch or its descendants to determine if the branch needs to be
-   * visited.
+   * stored.
    *
    * @param root the hash tree root of the branch node
    * @param gIndex the generalized index of the branch node
@@ -29,9 +29,12 @@ public interface TreeNodeVisitor {
   boolean canSkipBranch(Bytes32 root, long gIndex);
 
   /**
-   * Called when an intermediate branch node is visited. Multiple levels of branch nodes may be
-   * skipped to optimise iteration and storage, in which case the children are {@code depth} levels
-   * from the branch node.
+   * Store an intermediate branch node. Multiple levels of branch nodes may be skipped to optimise
+   * iteration and storage, in which case the children are {@code depth} levels from the branch
+   * node.
+   *
+   * <p>The children may omit trailing nodes which are not required to be stored, for example
+   * because they are the zero tree.
    *
    * @param root the hash tree root of the branch node
    * @param gIndex the generalised index of the branch node
@@ -39,13 +42,13 @@ public interface TreeNodeVisitor {
    *     node to the children
    * @param children the non-empty children at the specified depth from the branch node.
    */
-  void onBranchNode(Bytes32 root, long gIndex, int depth, Bytes32[] children);
+  void storeBranchNode(Bytes32 root, long gIndex, int depth, Bytes32[] children);
 
   /**
-   * Called when a leaf node is visited.
+   * Store a leaf node.
    *
    * @param node the visited leaf node
    * @param gIndex the generalized index of the node
    */
-  void onLeafNode(LeafDataNode node, long gIndex);
+  void storeLeafNode(LeafDataNode node, long gIndex);
 }

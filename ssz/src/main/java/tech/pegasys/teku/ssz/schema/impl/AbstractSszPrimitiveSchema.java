@@ -30,7 +30,7 @@ import tech.pegasys.teku.ssz.tree.LeafDataNode;
 import tech.pegasys.teku.ssz.tree.LeafNode;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 import tech.pegasys.teku.ssz.tree.TreeNodeSource;
-import tech.pegasys.teku.ssz.tree.TreeNodeVisitor;
+import tech.pegasys.teku.ssz.tree.TreeNodeStore;
 
 /**
  * Represents primitive view type
@@ -64,12 +64,12 @@ public abstract class AbstractSszPrimitiveSchema<
   }
 
   @Override
-  public void iterate(
-      final TreeNodeVisitor nodeVisitor,
+  public void storeBackingNodes(
+      final TreeNodeStore nodeVisitor,
       final int maxBranchLevelsSkipped,
       final long rootGIndex,
       final TreeNode node) {
-    nodeVisitor.onLeafNode((LeafDataNode) node, rootGIndex);
+    nodeVisitor.storeLeafNode((LeafDataNode) node, rootGIndex);
   }
 
   @Override

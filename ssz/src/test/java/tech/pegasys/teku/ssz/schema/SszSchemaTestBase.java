@@ -96,10 +96,10 @@ public abstract class SszSchemaTestBase extends SszTypeTestBase {
 
   protected void assertTreeRoundtrip(
       final SszSchema<?> schema, final int maxBranchLevelsSkipped, final SszData data) {
-    final InMemoryStoringTreeNodeVisitor nodeStore = new InMemoryStoringTreeNodeVisitor();
+    final InMemoryStoringTreeNodeStore nodeStore = new InMemoryStoringTreeNodeStore();
     final TreeNode node = data.getBackingNode();
     final long rootGIndex = 34;
-    schema.iterate(nodeStore, maxBranchLevelsSkipped, rootGIndex, node);
+    schema.storeBackingNodes(nodeStore, maxBranchLevelsSkipped, rootGIndex, node);
     final TreeNode result = schema.loadBackingNodes(nodeStore, data.hashTreeRoot(), rootGIndex);
     assertThatTreeNode(result).isTreeEqual(node);
     final SszData rebuiltData = schema.createFromBackingNode(result);
@@ -109,10 +109,10 @@ public abstract class SszSchemaTestBase extends SszTypeTestBase {
   @MethodSource("testSchemaArguments")
   @ParameterizedTest
   void loadBackingNodes_shouldRestoreDefaultTree(SszSchema<?> schema) {
-    final InMemoryStoringTreeNodeVisitor nodeStore = new InMemoryStoringTreeNodeVisitor();
+    final InMemoryStoringTreeNodeStore nodeStore = new InMemoryStoringTreeNodeStore();
     final TreeNode node = schema.getDefault().getBackingNode();
     final long rootGIndex = 67;
-    schema.iterate(nodeStore, 100, rootGIndex, node);
+    schema.storeBackingNodes(nodeStore, 100, rootGIndex, node);
     // LeafNode should be equal
     final TreeNode result = schema.loadBackingNodes(nodeStore, node.hashTreeRoot(), rootGIndex);
     assertThatTreeNode(result).isTreeEqual(node);

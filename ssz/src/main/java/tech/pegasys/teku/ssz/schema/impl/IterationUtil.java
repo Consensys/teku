@@ -20,7 +20,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.ssz.tree.GIndexUtil.NodeRelation;
 import tech.pegasys.teku.ssz.tree.TreeNode;
-import tech.pegasys.teku.ssz.tree.TreeNodeVisitor;
+import tech.pegasys.teku.ssz.tree.TreeNodeStore;
 
 public class IterationUtil {
 
@@ -175,11 +175,11 @@ public class IterationUtil {
   }
 
   public static class TreNodeVisitorAdapter implements NodeVisitor {
-    private final TreeNodeVisitor nodeVisitor;
+    private final TreeNodeStore nodeVisitor;
     private final TargetDepthNodeVisitor targetDepthNodeVisitor;
 
     public TreNodeVisitorAdapter(
-        final TreeNodeVisitor nodeVisitor, final TargetDepthNodeVisitor targetDepthNodeVisitor) {
+        final TreeNodeStore nodeVisitor, final TargetDepthNodeVisitor targetDepthNodeVisitor) {
       this.nodeVisitor = nodeVisitor;
       this.targetDepthNodeVisitor = targetDepthNodeVisitor;
     }
@@ -192,7 +192,7 @@ public class IterationUtil {
     @Override
     public void onBranchNode(
         final Bytes32 root, final long gIndex, final int depth, final Bytes32[] children) {
-      nodeVisitor.onBranchNode(root, gIndex, depth, children);
+      nodeVisitor.storeBranchNode(root, gIndex, depth, children);
     }
 
     @Override

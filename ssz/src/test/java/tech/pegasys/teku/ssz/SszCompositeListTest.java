@@ -30,7 +30,7 @@ import tech.pegasys.teku.ssz.sos.SszWriter;
 import tech.pegasys.teku.ssz.tree.LeafNode;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 import tech.pegasys.teku.ssz.tree.TreeNodeSource;
-import tech.pegasys.teku.ssz.tree.TreeNodeVisitor;
+import tech.pegasys.teku.ssz.tree.TreeNodeStore;
 
 public class SszCompositeListTest {
 
@@ -58,8 +58,8 @@ public class SszCompositeListTest {
         }
 
         @Override
-        public void iterate(
-            final TreeNodeVisitor nodeVisitor,
+        public void storeBackingNodes(
+            final TreeNodeStore nodeVisitor,
             final int maxBranchLevelsSkipped,
             final long rootGIndex,
             final TreeNode node) {}
