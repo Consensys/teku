@@ -86,12 +86,8 @@ public interface SszSchema<SszDataT extends SszData> extends SszType {
    * @param maxBranchLevelsSkipped the maximum number of levels of branch nodes that can be skipped
    * @param rootGIndex the generalized index of the root node of this schema
    */
-  default void iterate(
-      TreeNodeVisitor nodeVisitor, int maxBranchLevelsSkipped, long rootGIndex, TreeNode node) {
-    throw new UnsupportedOperationException("Not implemented");
-  }
+  void iterate(
+      TreeNodeVisitor nodeVisitor, int maxBranchLevelsSkipped, long rootGIndex, TreeNode node);
 
-  default TreeNode loadBackingNodes(TreeNodeSource nodeSource, Bytes32 rootHash, long rootGIndex) {
-    throw new UnsupportedOperationException("Not implemented");
-  }
+  TreeNode loadBackingNodes(TreeNodeSource nodeSource, Bytes32 rootHash, long rootGIndex);
 }
