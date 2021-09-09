@@ -26,6 +26,7 @@ import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.schema.SszSchema;
 import tech.pegasys.teku.ssz.schema.SszSchemaHints;
 import tech.pegasys.teku.ssz.schema.impl.IterationUtil.NodeVisitor;
+import tech.pegasys.teku.ssz.schema.impl.IterationUtil.TreNodeVisitorAdapter;
 import tech.pegasys.teku.ssz.schema.impl.LoadingUtil.ChildLoader;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
@@ -183,24 +184,11 @@ public abstract class AbstractSszListSchema<
     }
     final long lastUsefulGIndex = getVectorLastUsefulGIndex(rootGIndex, length);
     final NodeVisitor delegatingVisitor =
-        new NodeVisitor() {
-          @Override
-          public boolean canSkipBranch(final Bytes32 root, final long gIndex) {
-            return nodeVisitor.canSkipBranch(root, gIndex);
-          }
-
-          @Override
-          public void onBranchNode(
-              final Bytes32 root, final long gIndex, final int depth, final Bytes32[] children) {
-            nodeVisitor.onBranchNode(root, gIndex, depth, children);
-          }
-
-          @Override
-          public void onTargetDepthNode(final TreeNode childNode, final long gIndex) {
-            compatibleVectorSchema.iterateChildNode(
-                nodeVisitor, maxBranchLevelsSkipped, gIndex, childNode);
-          }
-        };
+        new TreNodeVisitorAdapter(
+            nodeVisitor,
+            (targetDepthNode, targetDepthGIndex) ->
+                compatibleVectorSchema.iterateChildNode(
+                    nodeVisitor, maxBranchLevelsSkipped, targetDepthGIndex, targetDepthNode));
     IterationUtil.visitNodesToDepth(
         delegatingVisitor,
         maxBranchLevelsSkipped,
