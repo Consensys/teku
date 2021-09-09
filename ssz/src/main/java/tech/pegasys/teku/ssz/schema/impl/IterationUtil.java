@@ -20,6 +20,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.ssz.tree.GIndexUtil.NodeRelation;
 import tech.pegasys.teku.ssz.tree.TreeNode;
+import tech.pegasys.teku.ssz.tree.TreeNodeVisitor;
 
 public class IterationUtil {
 
@@ -136,7 +137,7 @@ public class IterationUtil {
     nodeVisitor.onBranchNode(rootNode.hashTreeRoot(), rootGIndex, depthToVisit, childRoots);
   }
 
-  public interface NodeVisitor {
+  public interface NodeVisitor extends TargetDepthNodeVisitor {
 
     /**
      * Called prior to visiting a branch or its descendants to determine if the branch needs to be
@@ -161,7 +162,9 @@ public class IterationUtil {
      * @param children the non-empty children at the specified depth from the branch node.
      */
     void onBranchNode(Bytes32 root, long gIndex, int depth, Bytes32[] children);
+  }
 
+  public interface TargetDepthNodeVisitor {
     /**
      * Called when a descendant node at the requested depth is reached.
      *
@@ -169,5 +172,32 @@ public class IterationUtil {
      * @param gIndex the generalized index of the node
      */
     void onTargetDepthNode(TreeNode node, long gIndex);
+  }
+
+  public static class TreNodeVisitorAdapter implements NodeVisitor {
+    private final TreeNodeVisitor nodeVisitor;
+    private final TargetDepthNodeVisitor targetDepthNodeVisitor;
+
+    public TreNodeVisitorAdapter(
+        final TreeNodeVisitor nodeVisitor, final TargetDepthNodeVisitor targetDepthNodeVisitor) {
+      this.nodeVisitor = nodeVisitor;
+      this.targetDepthNodeVisitor = targetDepthNodeVisitor;
+    }
+
+    @Override
+    public boolean canSkipBranch(final Bytes32 root, final long gIndex) {
+      return nodeVisitor.canSkipBranch(root, gIndex);
+    }
+
+    @Override
+    public void onBranchNode(
+        final Bytes32 root, final long gIndex, final int depth, final Bytes32[] children) {
+      nodeVisitor.onBranchNode(root, gIndex, depth, children);
+    }
+
+    @Override
+    public void onTargetDepthNode(final TreeNode node, final long gIndex) {
+      targetDepthNodeVisitor.onTargetDepthNode(node, gIndex);
+    }
   }
 }

@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.ssz.schema;
 
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.SszComposite;
 import tech.pegasys.teku.ssz.schema.impl.IterationUtil;
 import tech.pegasys.teku.ssz.schema.impl.IterationUtil.NodeVisitor;
+import tech.pegasys.teku.ssz.schema.impl.IterationUtil.TreNodeVisitorAdapter;
 import tech.pegasys.teku.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 import tech.pegasys.teku.ssz.tree.TreeNodeVisitor;
@@ -104,31 +104,14 @@ public interface SszCompositeSchema<SszCompositeT extends SszComposite<?>>
     }
     final long lastUsefulGIndex =
         GIndexUtil.gIdxChildGIndex(rootGIndex, maxChunks() - 1, depthToVisit);
-    final NodeVisitor delegatingVisitor =
-        new NodeVisitor() {
-          @Override
-          public boolean canSkipBranch(final Bytes32 root, final long gIndex) {
-            return nodeVisitor.canSkipBranch(root, gIndex);
-          }
-
-          @Override
-          public void onBranchNode(
-              final Bytes32 root, final long gIndex, final int depth, final Bytes32[] children) {
-            nodeVisitor.onBranchNode(root, gIndex, depth, children);
-          }
-
-          @Override
-          public void onTargetDepthNode(final TreeNode node, final long gIndex) {
-            iterateChildNode(nodeVisitor, maxBranchLevelsSkipped, gIndex, node);
-          }
-        };
+    final NodeVisitor adapter =
+        new TreNodeVisitorAdapter(
+            nodeVisitor,
+            (targetDepthNode, targetDepthGIndex) ->
+                iterateChildNode(
+                    nodeVisitor, maxBranchLevelsSkipped, targetDepthGIndex, targetDepthNode));
     IterationUtil.visitNodesToDepth(
-        delegatingVisitor,
-        maxBranchLevelsSkipped,
-        node,
-        rootGIndex,
-        depthToVisit,
-        lastUsefulGIndex);
+        adapter, maxBranchLevelsSkipped, node, rootGIndex, depthToVisit, lastUsefulGIndex);
   }
 
   void iterateChildNode(
