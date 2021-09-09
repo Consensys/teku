@@ -15,6 +15,7 @@ package tech.pegasys.teku.ssz.schema.impl;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -246,8 +247,10 @@ class IterationUtilTest {
     IterationUtil.visitNodesToDepth(
         visitor, maxBranchLevelsSkipped, rootNode, rootNodeGIndex, depth, lastUsefulGIndex);
 
-    final List<TreeNode> visitedChildren = children.subList(0, lastUsefulChildIndex);
+    // toIndex is exclusive in subList so + 1 to ensure we include the last useful child
+    final List<TreeNode> visitedChildren = children.subList(0, lastUsefulChildIndex + 1);
     verifyChildrenVisited(rootNodeGIndex, visitedChildren, depth);
+    verify(visitor, never()).onTargetDepthNode(eq(children.get(6)), anyLong());
     verify(visitor)
         .onBranchNode(rootNode.hashTreeRoot(), rootNodeGIndex, depth, roots(visitedChildren));
   }
