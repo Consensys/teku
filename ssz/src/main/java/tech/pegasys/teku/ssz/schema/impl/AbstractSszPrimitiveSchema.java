@@ -75,10 +75,10 @@ public abstract class AbstractSszPrimitiveSchema<
   @Override
   public TreeNode loadBackingNodes(
       final TreeNodeSource nodeSource, final Bytes32 rootHash, final long rootGIndex) {
-    final Bytes data = nodeSource.loadLeafNode(rootHash, rootGIndex);
     if (rootHash.isZero()) {
       return LeafNode.ZERO_LEAVES[sszSize];
     } else {
+      final Bytes data = nodeSource.loadLeafNode(rootHash, rootGIndex);
       return LeafNode.create(data.slice(0, sszSize));
     }
   }
