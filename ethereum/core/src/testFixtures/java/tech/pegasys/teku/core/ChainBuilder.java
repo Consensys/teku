@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.core;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.util.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
 
@@ -25,6 +26,7 @@ import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.function.Function;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
@@ -34,6 +36,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.LocalSigner;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.core.synccomittee.SignedContributionAndProofTestBuilder;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -491,8 +494,15 @@ public class ChainBuilder {
         .create(slot, blockRoot, UInt64.valueOf(validatorIndex), signature);
   }
 
-  private Signer getSigner(final int proposerIndex) {
-    return new LocalSigner(spec, validatorKeys.get(proposerIndex), SYNC_RUNNER);
+  public BLSSignature sign(
+      final int validatorId, final Function<Signer, SafeFuture<BLSSignature>> signFunction) {
+    final SafeFuture<BLSSignature> result = signFunction.apply(getSigner(validatorId));
+    assertThat(result).isCompleted();
+    return result.join();
+  }
+
+  private Signer getSigner(final int validatorId) {
+    return new LocalSigner(spec, validatorKeys.get(validatorId), SYNC_RUNNER);
   }
 
   public static final class BlockOptions {

@@ -368,7 +368,7 @@ public class TekuNode extends Node {
                           spec.getAttestingIndices(
                               internalBeaconState,
                               a.asInternalAttestation().getData(),
-                              a.asInternalAttestation().getAggregation_bits()))
+                              a.asInternalAttestation().getAggregationBits()))
                   .flatMap(Collection::stream)
                   .map(UInt64::valueOf)
                   .collect(toSet());

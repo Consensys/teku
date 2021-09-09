@@ -86,7 +86,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
    * @return True if the attestation was added, false otherwise
    */
   public boolean add(final ValidateableAttestation attestation) {
-    if (includedValidators.isSuperSetOf(attestation.getAttestation().getAggregation_bits())) {
+    if (includedValidators.isSuperSetOf(attestation.getAttestation().getAggregationBits())) {
       // All attestation bits have already been included on chain
       return false;
     }
@@ -95,7 +95,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
     }
     return attestationsByValidatorCount
         .computeIfAbsent(
-            attestation.getAttestation().getAggregation_bits().getBitCount(),
+            attestation.getAttestation().getAggregationBits().getBitCount(),
             count -> new HashSet<>())
         .add(attestation);
   }
@@ -143,13 +143,13 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
   public int onAttestationIncludedInBlock(final UInt64 slot, final Attestation attestation) {
     // Record validators in attestation as seen in this slot
     // Important to do even if the attestation is redundant so we handle re-orgs correctly
-    includedValidatorsBySlot.merge(slot, attestation.getAggregation_bits(), SszBitlist::or);
+    includedValidatorsBySlot.merge(slot, attestation.getAggregationBits(), SszBitlist::or);
 
-    if (includedValidators.isSuperSetOf(attestation.getAggregation_bits())) {
+    if (includedValidators.isSuperSetOf(attestation.getAggregationBits())) {
       // We've already seen and filtered out all of these bits, nothing to do
       return 0;
     }
-    includedValidators = includedValidators.or(attestation.getAggregation_bits());
+    includedValidators = includedValidators.or(attestation.getAggregationBits());
 
     final Collection<Set<ValidateableAttestation>> attestationSets =
         attestationsByValidatorCount.values();
@@ -159,7 +159,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
       for (Iterator<ValidateableAttestation> iterator = candidates.iterator();
           iterator.hasNext(); ) {
         ValidateableAttestation candidate = iterator.next();
-        if (includedValidators.isSuperSetOf(candidate.getAttestation().getAggregation_bits())) {
+        if (includedValidators.isSuperSetOf(candidate.getAttestation().getAggregationBits())) {
           iterator.remove();
           numRemoved++;
         }
@@ -208,7 +208,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
           .forEach(
               candidate -> {
                 final SszBitlist candidateAggregationBits =
-                    candidate.getAttestation().getAggregation_bits();
+                    candidate.getAttestation().getAggregationBits();
                 if (builder.canAggregate(candidate)) {
                   builder.aggregate(candidate);
                   includedValidators = includedValidators.or(candidateAggregationBits);
@@ -223,7 +223,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
           .filter(
               candidate ->
                   !includedValidators.isSuperSetOf(
-                      candidate.getAttestation().getAggregation_bits()));
+                      candidate.getAttestation().getAggregationBits()));
     }
   }
 }
