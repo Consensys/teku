@@ -69,7 +69,7 @@ public abstract class AbstractSszPrimitiveSchema<
       final int maxBranchLevelsSkipped,
       final long rootGIndex,
       final TreeNode node) {
-    nodeStore.storeLeafNode((LeafDataNode) node, rootGIndex);
+    nodeStore.storeLeafNode(node, rootGIndex);
   }
 
   @Override
