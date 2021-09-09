@@ -40,13 +40,16 @@ public class RandomSszDataGenerator {
   private final Supplier<SszUInt64> uintSupplier;
   private final Supplier<SszBytes32> bytes32Supplier;
 
-  private int maxListSize = 16 * 1024;
+  private final Random random;
+  private final int maxListSize;
 
   public RandomSszDataGenerator() {
-    this(new Random(1));
+    this(new Random(1), 16 * 1024);
   }
 
-  public RandomSszDataGenerator(Random random) {
+  public RandomSszDataGenerator(Random random, final int maxListSize) {
+    this.random = random;
+    this.maxListSize = maxListSize;
     bitSupplier = () -> SszBit.of(random.nextBoolean());
     byteSupplier = () -> SszByte.of(random.nextInt());
     bytes4Supplier = () -> SszBytes4.of(Bytes4.rightPad(Bytes.random(4, random)));
@@ -55,8 +58,7 @@ public class RandomSszDataGenerator {
   }
 
   public RandomSszDataGenerator withMaxListSize(int maxListSize) {
-    this.maxListSize = maxListSize;
-    return this;
+    return new RandomSszDataGenerator(random, maxListSize);
   }
 
   public <T extends SszData> T randomData(SszSchema<T> schema) {

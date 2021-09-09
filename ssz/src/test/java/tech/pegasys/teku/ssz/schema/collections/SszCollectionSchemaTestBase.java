@@ -18,7 +18,7 @@ import tech.pegasys.teku.ssz.schema.SszCompositeSchemaTestBase;
 import tech.pegasys.teku.ssz.schema.SszContainerSchemaTest;
 import tech.pegasys.teku.ssz.schema.SszSchema;
 
-public interface SszCollectionSchemaTestBase extends SszCompositeSchemaTestBase {
+public abstract class SszCollectionSchemaTestBase extends SszCompositeSchemaTestBase {
 
   static Stream<SszSchema<?>> complexElementSchemas() {
     return Stream.concat(

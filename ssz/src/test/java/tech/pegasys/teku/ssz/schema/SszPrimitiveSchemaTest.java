@@ -27,7 +27,7 @@ import tech.pegasys.teku.ssz.primitive.SszBit;
 import tech.pegasys.teku.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.ssz.tree.LeafNode;
 
-public class SszPrimitiveSchemaTest implements SszSchemaTestBase {
+public class SszPrimitiveSchemaTest extends SszSchemaTestBase {
 
   @Override
   public Stream<SszPrimitiveSchema<?, ?>> testSchemas() {

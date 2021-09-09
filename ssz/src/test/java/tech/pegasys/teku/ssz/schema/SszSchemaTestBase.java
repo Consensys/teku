@@ -30,21 +30,20 @@ import tech.pegasys.teku.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 
-public interface SszSchemaTestBase extends SszTypeTestBase {
+public abstract class SszSchemaTestBase extends SszTypeTestBase {
 
-  RandomSszDataGenerator randomSsz = new RandomSszDataGenerator();
+  protected final RandomSszDataGenerator randomSsz = new RandomSszDataGenerator();
 
   @MethodSource("testSchemaArguments")
   @ParameterizedTest
-  default void getDefaultTree_shouldBeEqualToDefaultStructure(SszSchema<SszData> schema) {
+  void getDefaultTree_shouldBeEqualToDefaultStructure(SszSchema<SszData> schema) {
     SszData defaultTreeData = schema.createFromBackingNode(schema.getDefaultTree());
     SszDataAssert.assertThatSszData(defaultTreeData).isEqualByAllMeansTo(schema.getDefault());
   }
 
   @MethodSource("testSchemaArguments")
   @ParameterizedTest
-  default void sszDeserialize_tooLongSszShouldFailFastWithoutReadingWholeInput(
-      SszSchema<SszData> schema) {
+  void sszDeserialize_tooLongSszShouldFailFastWithoutReadingWholeInput(SszSchema<SszData> schema) {
 
     long maxSszLength = schema.getSszLengthBounds().getMaxBytes();
     // ignore too large and degenerative structs
@@ -70,7 +69,7 @@ public interface SszSchemaTestBase extends SszTypeTestBase {
 
   @MethodSource("testSchemaArguments")
   @ParameterizedTest
-  default void loadBackingNodes_shouldRestoreTree_singleBranchStep(SszSchema<?> schema) {
+  void loadBackingNodes_shouldRestoreTree_singleBranchStep(SszSchema<?> schema) {
     final int maxBranchLevelsSkipped = Integer.MAX_VALUE;
     if (schema instanceof SszListSchema) {
       // It's not reasonable to try and work with massive lists in a single step
@@ -82,7 +81,7 @@ public interface SszSchemaTestBase extends SszTypeTestBase {
 
   @MethodSource("testSchemaArguments")
   @ParameterizedTest
-  default void loadBackingNodes_shouldRestoreTree_multipleBranchSteps(SszSchema<?> schema) {
+  void loadBackingNodes_shouldRestoreTree_multipleBranchSteps(SszSchema<?> schema) {
     final int maxBranchLevelsSkipped = 1;
     assertTreeRoundtrip(schema, maxBranchLevelsSkipped);
   }
@@ -108,7 +107,7 @@ public interface SszSchemaTestBase extends SszTypeTestBase {
 
   @MethodSource("testSchemaArguments")
   @ParameterizedTest
-  default void loadBackingNodes_shouldRestoreDefaultTree(SszSchema<?> schema) {
+  void loadBackingNodes_shouldRestoreDefaultTree(SszSchema<?> schema) {
     final InMemoryStoringTreeNodeVisitor nodeStore = new InMemoryStoringTreeNodeVisitor();
     final TreeNode node = schema.getDefault().getBackingNode();
     final long rootGIndex = GIndexUtil.SELF_G_INDEX;

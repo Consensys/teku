@@ -24,17 +24,17 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 @TestInstance(Lifecycle.PER_CLASS)
-public interface SszTypeTestBase {
+public abstract class SszTypeTestBase {
 
-  Stream<? extends SszSchema<?>> testSchemas();
+  protected abstract Stream<? extends SszSchema<?>> testSchemas();
 
-  default Stream<Arguments> testSchemaArguments() {
+  Stream<Arguments> testSchemaArguments() {
     return testSchemas().map(Arguments::of);
   }
 
   @MethodSource("testSchemaArguments")
   @ParameterizedTest
-  default void getFixedPartSize_shouldBeNonZeroForFixed(SszType type) {
+  void getFixedPartSize_shouldBeNonZeroForFixed(SszType type) {
     Assumptions.assumeTrue(type.isFixedSize());
     assertThat(type.getSszFixedPartSize()).isNotZero();
   }
