@@ -32,9 +32,9 @@ public interface SszCollectionSchema<
   SszSchema<SszElementT> getElementSchema();
 
   @Override
-  default void iterateChildNode(
-      TreeNodeStore nodeVisitor, int maxBranchLevelsSkipped, long gIndex, TreeNode node) {
-    getElementSchema().storeBackingNodes(nodeVisitor, maxBranchLevelsSkipped, gIndex, node);
+  default void storeChildNode(
+      TreeNodeStore nodeStore, int maxBranchLevelsSkipped, long gIndex, TreeNode node) {
+    getElementSchema().storeBackingNodes(nodeStore, maxBranchLevelsSkipped, gIndex, node);
   }
 
   @SuppressWarnings("unchecked")

@@ -177,7 +177,7 @@ public abstract class AbstractSszListSchema<
     final int depthToVisit = compatibleVectorSchema.treeDepth();
     if (depthToVisit == 0) {
       // Only one child so wrapper is inlined
-      iterateChildNode(nodeStore, maxBranchLevelsSkipped, rootGIndex, node);
+      storeChildNode(nodeStore, maxBranchLevelsSkipped, rootGIndex, node);
       return;
     }
     final long lastUsefulGIndex = getVectorLastUsefulGIndex(rootGIndex, length);
@@ -189,7 +189,7 @@ public abstract class AbstractSszListSchema<
         depthToVisit,
         lastUsefulGIndex,
         (targetDepthNode, targetDepthGIndex) ->
-            compatibleVectorSchema.iterateChildNode(
+            compatibleVectorSchema.storeChildNode(
                 nodeStore, maxBranchLevelsSkipped, targetDepthGIndex, targetDepthNode));
   }
 

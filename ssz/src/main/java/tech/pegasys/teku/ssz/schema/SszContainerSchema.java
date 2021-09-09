@@ -90,15 +90,15 @@ public interface SszContainerSchema<C extends SszContainer> extends SszComposite
   }
 
   @Override
-  default void iterateChildNode(
-      final TreeNodeStore nodeVisitor,
+  default void storeChildNode(
+      final TreeNodeStore nodeStore,
       final int maxBranchLevelsSkipped,
       final long gIndex,
       final TreeNode node) {
     final int childIndex = GIndexUtil.gIdxChildIndexFromGIndex(gIndex, treeDepth());
     if (childIndex < getMaxLength()) {
       final SszSchema<?> childSchema = getChildSchema(childIndex);
-      childSchema.storeBackingNodes(nodeVisitor, maxBranchLevelsSkipped, gIndex, node);
+      childSchema.storeBackingNodes(nodeStore, maxBranchLevelsSkipped, gIndex, node);
     }
   }
 

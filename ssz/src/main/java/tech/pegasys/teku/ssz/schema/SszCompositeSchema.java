@@ -97,7 +97,7 @@ public interface SszCompositeSchema<SszCompositeT extends SszComposite<?>>
     final int depthToVisit = treeDepth();
     if (depthToVisit == 0) {
       // Only one child so wrapper is inlined
-      iterateChildNode(nodeStore, maxBranchLevelsSkipped, rootGIndex, node);
+      storeChildNode(nodeStore, maxBranchLevelsSkipped, rootGIndex, node);
       return;
     }
     final long lastUsefulGIndex =
@@ -110,10 +110,9 @@ public interface SszCompositeSchema<SszCompositeT extends SszComposite<?>>
         depthToVisit,
         lastUsefulGIndex,
         (targetDepthNode, targetDepthGIndex) ->
-            iterateChildNode(
-                nodeStore, maxBranchLevelsSkipped, targetDepthGIndex, targetDepthNode));
+            storeChildNode(nodeStore, maxBranchLevelsSkipped, targetDepthGIndex, targetDepthNode));
   }
 
-  void iterateChildNode(
-      TreeNodeStore nodeVisitor, int maxBranchLevelsSkipped, long gIndex, TreeNode node);
+  void storeChildNode(
+      TreeNodeStore nodeStore, int maxBranchLevelsSkipped, long gIndex, TreeNode node);
 }
