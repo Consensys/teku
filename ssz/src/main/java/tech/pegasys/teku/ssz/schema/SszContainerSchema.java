@@ -96,10 +96,8 @@ public interface SszContainerSchema<C extends SszContainer> extends SszComposite
       final long gIndex,
       final TreeNode node) {
     final int childIndex = GIndexUtil.gIdxChildIndexFromGIndex(gIndex, treeDepth());
-    if (childIndex < getMaxLength()) {
-      final SszSchema<?> childSchema = getChildSchema(childIndex);
-      childSchema.storeBackingNodes(nodeStore, maxBranchLevelsSkipped, gIndex, node);
-    }
+    final SszSchema<?> childSchema = getChildSchema(childIndex);
+    childSchema.storeBackingNodes(nodeStore, maxBranchLevelsSkipped, gIndex, node);
   }
 
   @Override

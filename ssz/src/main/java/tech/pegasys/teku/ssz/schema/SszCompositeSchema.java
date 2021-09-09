@@ -94,20 +94,20 @@ public interface SszCompositeSchema<SszCompositeT extends SszComposite<?>>
       final int maxBranchLevelsSkipped,
       final long rootGIndex,
       final TreeNode node) {
-    final int depthToVisit = treeDepth();
-    if (depthToVisit == 0) {
-      // Only one child so wrapper is inlined
+    final int childDepth = treeDepth();
+    if (childDepth == 0) {
+      // Only one child so wrapper is omitted
       storeChildNode(nodeStore, maxBranchLevelsSkipped, rootGIndex, node);
       return;
     }
     final long lastUsefulGIndex =
-        GIndexUtil.gIdxChildGIndex(rootGIndex, maxChunks() - 1, depthToVisit);
+        GIndexUtil.gIdxChildGIndex(rootGIndex, maxChunks() - 1, childDepth);
     StoringUtil.storeNodesToDepth(
         nodeStore,
         maxBranchLevelsSkipped,
         node,
         rootGIndex,
-        depthToVisit,
+        childDepth,
         lastUsefulGIndex,
         (targetDepthNode, targetDepthGIndex) ->
             storeChildNode(nodeStore, maxBranchLevelsSkipped, targetDepthGIndex, targetDepthNode));
