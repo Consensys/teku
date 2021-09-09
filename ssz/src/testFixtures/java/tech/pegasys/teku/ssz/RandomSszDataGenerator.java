@@ -27,6 +27,7 @@ import tech.pegasys.teku.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.ssz.primitive.SszBytes4;
 import tech.pegasys.teku.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.ssz.schema.SszCollectionSchema;
+import tech.pegasys.teku.ssz.schema.SszListSchema;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.schema.SszSchema;
 import tech.pegasys.teku.ssz.schema.impl.AbstractSszContainerSchema;
@@ -98,7 +99,12 @@ public class RandomSszDataGenerator {
             SszCollectionSchema<SszData, ?> collectionSchema =
                 (SszCollectionSchema<SszData, ?>) schema;
             SszSchema<SszData> elementSchema = collectionSchema.getElementSchema();
-            int maxChildrenToAdd = (int) Long.min(collectionSchema.getMaxLength(), maxListSize);
+            long maxChildrenToAdd;
+            if (schema instanceof SszListSchema) {
+              maxChildrenToAdd = Math.min(collectionSchema.getMaxLength(), maxListSize);
+            } else {
+              maxChildrenToAdd = collectionSchema.getMaxLength();
+            }
             List<SszData> children =
                 Stream.generate(() -> randomData(elementSchema))
                     .limit(maxChildrenToAdd)
