@@ -19,16 +19,12 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ACCEPT;
 import static tech.pegasys.teku.util.config.Constants.ATTESTATION_PROPAGATION_SLOT_RANGE;
-import static tech.pegasys.teku.util.config.Constants.VALID_ATTESTATION_SET_SIZE;
 
 import it.unimi.dsi.fastutil.ints.IntList;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
-import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
@@ -41,13 +37,10 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
 
 public class AttestationValidator {
-
   private static final UInt64 MAX_FUTURE_SLOT_ALLOWANCE = UInt64.valueOf(3);
   private static final UInt64 MAXIMUM_GOSSIP_CLOCK_DISPARITY =
       UInt64.valueOf(Constants.MAXIMUM_GOSSIP_CLOCK_DISPARITY);
 
-  private final Set<ValidatorAndTargetEpoch> receivedValidAttestations =
-      LimitedSet.create(VALID_ATTESTATION_SET_SIZE);
   private final Spec spec;
   private final RecentChainData recentChainData;
   private final AsyncBLSSignatureVerifier signatureVerifier;
@@ -70,30 +63,7 @@ public class AttestationValidator {
     }
 
     return singleOrAggregateAttestationChecks(
-            signatureVerifier,
-            validateableAttestation,
-            validateableAttestation.getReceivedSubnetId())
-        .thenApply(
-            result -> {
-              if (result.code() != ACCEPT) {
-                return result;
-              }
-
-              return addAndCheckFirstValidAttestation(attestation);
-            });
-  }
-
-  public void addSeenAttestation(final ValidateableAttestation attestation) {
-    receivedValidAttestations.add(getValidatorAndTargetEpoch(attestation.getAttestation()));
-  }
-
-  private InternalValidationResult addAndCheckFirstValidAttestation(final Attestation attestation) {
-    // The attestation is the first valid attestation received for the participating validator for
-    // the slot, attestation.data.slot.
-    if (!receivedValidAttestations.add(getValidatorAndTargetEpoch(attestation))) {
-      return InternalValidationResult.IGNORE;
-    }
-    return InternalValidationResult.ACCEPT;
+        signatureVerifier, validateableAttestation, validateableAttestation.getReceivedSubnetId());
   }
 
   private InternalValidationResult singleAttestationChecks(final Attestation attestation) {
@@ -102,12 +72,6 @@ public class AttestationValidator {
     final int bitCount = attestation.getAggregationBits().getBitCount();
     if (bitCount != 1) {
       return InternalValidationResult.reject("Attestation has %s bits set instead of 1", bitCount);
-    }
-
-    // The attestation is the first valid attestation received for the participating validator for
-    // the slot, attestation.data.slot.
-    if (receivedValidAttestations.contains(getValidatorAndTargetEpoch(attestation))) {
-      return InternalValidationResult.IGNORE;
     }
     return InternalValidationResult.ACCEPT;
   }
@@ -261,13 +225,6 @@ public class AttestationValidator {
     }
   }
 
-  private ValidatorAndTargetEpoch getValidatorAndTargetEpoch(final Attestation attestation) {
-    return new ValidatorAndTargetEpoch(
-        attestation.getData().getTarget().getEpoch(),
-        attestation.getData().getIndex(),
-        attestation.getAggregationBits().streamAllSetBits().findFirst().orElseThrow());
-  }
-
   private boolean isCurrentTimeBeforeMinimumAttestationBroadcastTime(
       final Attestation attestation, final UInt64 currentTimeMillis) {
     final UInt64 minimumBroadcastTimeMillis =
@@ -317,40 +274,6 @@ public class AttestationValidator {
 
     // Add allowed clock disparity
     return secondsToMillis(lastAllowedTime).plus(MAXIMUM_GOSSIP_CLOCK_DISPARITY);
-  }
-
-  private static class ValidatorAndTargetEpoch {
-    private final UInt64 targetEpoch;
-    // Validator is identified via committee index and position to avoid resolving the actual
-    // validator ID before checking for duplicates
-    private final UInt64 committeeIndex;
-    private final int committeePosition;
-
-    private ValidatorAndTargetEpoch(
-        final UInt64 targetEpoch, final UInt64 committeeIndex, final int committeePosition) {
-      this.targetEpoch = targetEpoch;
-      this.committeeIndex = committeeIndex;
-      this.committeePosition = committeePosition;
-    }
-
-    @Override
-    public boolean equals(final Object o) {
-      if (this == o) {
-        return true;
-      }
-      if (o == null || getClass() != o.getClass()) {
-        return false;
-      }
-      final ValidatorAndTargetEpoch that = (ValidatorAndTargetEpoch) o;
-      return committeePosition == that.committeePosition
-          && Objects.equals(targetEpoch, that.targetEpoch)
-          && Objects.equals(committeeIndex, that.committeeIndex);
-    }
-
-    @Override
-    public int hashCode() {
-      return Objects.hash(targetEpoch, committeeIndex, committeePosition);
-    }
   }
 
   private int secondsPerSlot(final UInt64 slot) {
