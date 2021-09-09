@@ -116,7 +116,6 @@ public class Constants {
 
   // Teku Networking Specific
   public static final int VALID_BLOCK_SET_SIZE = 1000;
-  public static final int VALID_ATTESTATION_SET_SIZE = 21000;
   public static final int VALID_AGGREGATE_SET_SIZE = 1000;
   public static final int VALID_VALIDATOR_SET_SIZE = 10000;
   public static final int VALID_CONTRIBUTION_AND_PROOF_SET_SIZE = 10000;
