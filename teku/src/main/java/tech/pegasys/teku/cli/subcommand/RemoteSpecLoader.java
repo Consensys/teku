@@ -14,17 +14,30 @@
 package tech.pegasys.teku.cli.subcommand;
 
 import java.net.URI;
+import java.time.Duration;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
+import tech.pegasys.teku.sync.forward.singlepeer.RetryDelayFunction;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpClientAuthLoggingIntercepter;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
 
 class RemoteSpecLoader {
+  private static BiConsumer<Throwable, Integer> retryErrObserver =
+      (Throwable e, Integer attempt) -> {
+        var errMsg = String.format("Attempt %d failed: \n%s\n", attempt, e.getMessage());
+        SubCommandLogger.SUB_COMMAND_LOG.error(errMsg);
+      };
+
+  private static RetryDelayFunction retryDelayFunction =
+      RetryDelayFunction.createExponentialRetry(2f, Duration.ofSeconds(2), Duration.ofSeconds(20));
 
   static Spec getSpec(OkHttpValidatorRestApiClient apiClient) {
     try {
@@ -44,6 +57,46 @@ class RemoteSpecLoader {
 
   static Spec getSpec(URI beaconEndpoint) {
     return getSpec(createApiClient(beaconEndpoint));
+  }
+
+  static Spec getSpecWithRetry(URI beaconEndpoint, int maxAttempts) throws Throwable {
+    return retry(() -> getSpec(beaconEndpoint), retryErrObserver, maxAttempts);
+  }
+
+  static Spec getSpecWithRetry(OkHttpValidatorRestApiClient apiClient, int maxAttempts)
+      throws Throwable {
+    return retry(() -> getSpec(apiClient), retryErrObserver, maxAttempts);
+  }
+
+  private static <T> T retry(
+      Callable<T> f, BiConsumer<Throwable, Integer> errObserver, int maxAttempts) throws Throwable {
+    return retry(f, errObserver, maxAttempts, 1);
+  }
+
+  private static <T> T retry(
+      Callable<T> f, BiConsumer<Throwable, Integer> errObserver, int maxAttempts, int attempt)
+      throws Throwable {
+    if (maxAttempts < 1) {
+      throw new IllegalArgumentException(
+          "The number of retry attempts for an operation has to be greater than 1");
+    }
+    try {
+      return f.call();
+    } catch (Throwable e) {
+      errObserver.accept(e, attempt);
+      if (attempt >= maxAttempts) throw e;
+      delayFor(attempt, errObserver);
+      return retry(f, errObserver, maxAttempts, ++attempt);
+    }
+  }
+
+  private static void delayFor(int attempt, BiConsumer<Throwable, Integer> errObserver) {
+    try {
+      Thread.sleep(retryDelayFunction.getRetryDelay(attempt).toMillis());
+    } catch (InterruptedException e) {
+      errObserver.accept(e, attempt);
+      throw new RuntimeException(e);
+    }
   }
 
   static OkHttpValidatorRestApiClient createApiClient(final URI baseEndpoint) {

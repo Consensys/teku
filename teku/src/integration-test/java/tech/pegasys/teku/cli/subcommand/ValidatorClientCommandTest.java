@@ -32,6 +32,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.junit.jupiter.MockServerExtension;
+import org.mockserver.matchers.Times;
+import org.mockserver.model.HttpError;
 import org.mockserver.model.JsonBody;
 import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
@@ -75,26 +77,33 @@ public class ValidatorClientCommandTest {
   }
 
   @Test
-  public void autoDetectNetwork_ShouldDisplayErrorMsg_IfFailsToFetchFromBeaconNode() {
-    beaconNodeCommand.parse(argsAutoEnabled);
-    assertThat(stringWriter.toString())
-        .containsIgnoringCase(
-            String.format(
-                "failed to retrieve network spec from beacon node endpoint '%s'",
-                mockBeaconServerEndpoint));
+  public void autoDetectNetwork_ShouldRetryRequest_IfFailsToFetchFromBeaconNode() {
+    configureMockServer(1);
+    fetchAndVerifySpec();
   }
 
   @Test
   public void autoDetectNetwork_ShouldFetchNetworkDetailsFromBeaconNode_IfEnabled() {
-    this.mockBeaconServer
-        .when(request().withPath("/eth/v1/config/spec"))
-        .respond(response().withStatusCode(200).withBody(getTestSpecResponse()));
+    configureMockServer(0);
+    fetchAndVerifySpec();
+  }
 
+  private void fetchAndVerifySpec() {
     int parseResult = beaconNodeCommand.parse(argsAutoEnabled);
     assertThat(parseResult).isEqualTo(0);
 
     TekuConfiguration config = getResultingTekuConfiguration();
     assertThat(config.eth2NetworkConfiguration().getSpec()).isEqualTo(testSpec);
+  }
+
+  private void configureMockServer(int fails) {
+    this.mockBeaconServer
+        .when(request().withPath("/eth/v1/config/spec"), Times.exactly(fails))
+        .error(HttpError.error());
+
+    this.mockBeaconServer
+        .when(request().withPath("/eth/v1/config/spec"))
+        .respond(response().withStatusCode(200).withBody(getTestSpecResponse()));
   }
 
   private String getTestSpecResponse() {

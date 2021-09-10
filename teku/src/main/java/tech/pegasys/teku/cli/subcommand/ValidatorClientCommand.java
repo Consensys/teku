@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.cli.subcommand;
 
-import static tech.pegasys.teku.cli.subcommand.RemoteSpecLoader.getSpec;
+import static tech.pegasys.teku.cli.subcommand.RemoteSpecLoader.getSpecWithRetry;
 import static tech.pegasys.teku.infrastructure.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
 import java.util.concurrent.Callable;
@@ -35,7 +35,6 @@ import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
 
 @Command(
@@ -113,8 +112,12 @@ public class ValidatorClientCommand implements Callable<Integer> {
   }
 
   private void configureWithSpecFromBeaconNode(Eth2NetworkConfiguration.Builder builder) {
-    Spec spec = getSpec(validatorClientOptions.parseApiEndpoint());
-    builder.spec(spec);
+    try {
+      var spec = getSpecWithRetry(validatorClientOptions.parseApiEndpoint(), 4);
+      builder.spec(spec);
+    } catch (Throwable e) {
+      throw new InvalidConfigurationException(e);
+    }
   }
 
   private boolean isAutoDetectNetworkOption(String option) {
