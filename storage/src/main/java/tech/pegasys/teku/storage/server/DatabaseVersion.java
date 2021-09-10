@@ -24,7 +24,7 @@ public enum DatabaseVersion {
   V6("6"),
   LEVELDB1("leveldb1"),
   LEVELDB2("leveldb2"),
-  LEVELDB_TREE("leveldb_tree");
+  LEVELDB_TREE("leveldb-tree");
 
   private static final Logger LOG = LogManager.getLogger();
   public static final DatabaseVersion DEFAULT_VERSION;

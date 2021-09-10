@@ -28,7 +28,7 @@ public class CompressedBranchInfoSerializer implements KvStoreSerializer<Compres
         (data.size() - Integer.BYTES) % Bytes32.SIZE == 0,
         "Branch data was an invalid length %s",
         data);
-    // Take unsigned int from front (depth)
+    // Take int from front (depth)
     final int depth = data.getInt(0);
     // Then split remaining into 32 byte chunks (children)
     final Bytes childHashes = data.slice(Integer.BYTES);
