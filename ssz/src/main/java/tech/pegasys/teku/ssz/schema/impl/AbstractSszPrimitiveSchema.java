@@ -18,6 +18,7 @@ import static tech.pegasys.teku.ssz.tree.TreeUtil.bitsCeilToBytes;
 
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.SszPrimitive;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchema;
@@ -28,6 +29,8 @@ import tech.pegasys.teku.ssz.sos.SszWriter;
 import tech.pegasys.teku.ssz.tree.LeafDataNode;
 import tech.pegasys.teku.ssz.tree.LeafNode;
 import tech.pegasys.teku.ssz.tree.TreeNode;
+import tech.pegasys.teku.ssz.tree.TreeNodeSource;
+import tech.pegasys.teku.ssz.tree.TreeNodeStore;
 
 /**
  * Represents primitive view type
@@ -58,6 +61,26 @@ public abstract class AbstractSszPrimitiveSchema<
   @Override
   public SszDataT createFromBackingNode(TreeNode node) {
     return createFromPackedNode(node, 0);
+  }
+
+  @Override
+  public void storeBackingNodes(
+      final TreeNodeStore nodeStore,
+      final int maxBranchLevelsSkipped,
+      final long rootGIndex,
+      final TreeNode node) {
+    nodeStore.storeLeafNode(node, rootGIndex);
+  }
+
+  @Override
+  public TreeNode loadBackingNodes(
+      final TreeNodeSource nodeSource, final Bytes32 rootHash, final long rootGIndex) {
+    if (rootHash.isZero()) {
+      return LeafNode.ZERO_LEAVES[sszSize];
+    } else {
+      final Bytes data = nodeSource.loadLeafNode(rootHash, rootGIndex);
+      return LeafNode.create(data.slice(0, sszSize));
+    }
   }
 
   @Override

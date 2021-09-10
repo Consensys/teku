@@ -18,9 +18,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.ssz.schema.SszListSchema;
 
-public interface SszListSchemaTestBase extends SszCollectionSchemaTestBase {
+public abstract class SszListSchemaTestBase extends SszCollectionSchemaTestBase {
 
-  static Stream<SszListSchema<?, ?>> complexListSchemas() {
+  public static Stream<SszListSchema<?, ?>> complexListSchemas() {
     return SszCollectionSchemaTestBase.complexElementSchemas()
         .flatMap(
             elementSchema ->
@@ -35,5 +35,5 @@ public interface SszListSchemaTestBase extends SszCollectionSchemaTestBase {
 
   @MethodSource("testSchemaArguments")
   @ParameterizedTest
-  default void getChildSchema_shouldThrowIndexOutOfBounds(SszListSchema<?, ?> schema) {}
+  void getChildSchema_shouldThrowIndexOutOfBounds(SszListSchema<?, ?> schema) {}
 }

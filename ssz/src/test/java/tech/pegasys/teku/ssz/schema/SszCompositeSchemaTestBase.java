@@ -20,17 +20,17 @@ import org.assertj.core.api.Assumptions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-public interface SszCompositeSchemaTestBase extends SszSchemaTestBase {
+public abstract class SszCompositeSchemaTestBase extends SszSchemaTestBase {
 
   @MethodSource("testSchemaArguments")
   @ParameterizedTest
-  default void isPrimitive_shouldReturnFalse(SszCompositeSchema<?> schema) {
+  void isPrimitive_shouldReturnFalse(SszCompositeSchema<?> schema) {
     assertThat(schema.isPrimitive()).isFalse();
   }
 
   @MethodSource("testSchemaArguments")
   @ParameterizedTest
-  default void getChildSchema_shouldThrowIndexOutOfBounds(SszCompositeSchema<?> schema) {
+  void getChildSchema_shouldThrowIndexOutOfBounds(SszCompositeSchema<?> schema) {
     Assumptions.assumeThat(schema.getMaxLength()).isLessThan(Integer.MAX_VALUE);
     assertThatThrownBy(() -> schema.getChildSchema((int) schema.getMaxLength()))
         .isInstanceOf(IndexOutOfBoundsException.class);

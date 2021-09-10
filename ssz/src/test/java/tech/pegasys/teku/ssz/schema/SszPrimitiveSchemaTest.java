@@ -21,16 +21,13 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.teku.ssz.RandomSszDataGenerator;
 import tech.pegasys.teku.ssz.SszDataAssert;
 import tech.pegasys.teku.ssz.SszPrimitive;
 import tech.pegasys.teku.ssz.primitive.SszBit;
 import tech.pegasys.teku.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.ssz.tree.LeafNode;
 
-public class SszPrimitiveSchemaTest implements SszSchemaTestBase {
-
-  private final RandomSszDataGenerator randomSsz = new RandomSszDataGenerator();
+public class SszPrimitiveSchemaTest extends SszSchemaTestBase {
 
   @Override
   public Stream<SszPrimitiveSchema<?, ?>> testSchemas() {

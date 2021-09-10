@@ -23,12 +23,19 @@ import tech.pegasys.teku.ssz.SszCollection;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.SszMutableComposite;
 import tech.pegasys.teku.ssz.tree.TreeNode;
+import tech.pegasys.teku.ssz.tree.TreeNodeStore;
 
 public interface SszCollectionSchema<
         SszElementT extends SszData, SszCollectionT extends SszCollection<SszElementT>>
     extends SszCompositeSchema<SszCollectionT> {
 
   SszSchema<SszElementT> getElementSchema();
+
+  @Override
+  default void storeChildNode(
+      TreeNodeStore nodeStore, int maxBranchLevelsSkipped, long gIndex, TreeNode node) {
+    getElementSchema().storeBackingNodes(nodeStore, maxBranchLevelsSkipped, gIndex, node);
+  }
 
   @SuppressWarnings("unchecked")
   default SszCollectionT of(SszElementT... elements) {
