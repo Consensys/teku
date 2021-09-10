@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.ssz.tree;
 
+import com.google.common.base.MoreObjects;
+import java.util.Arrays;
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 
@@ -36,6 +39,33 @@ public interface TreeNodeSource {
 
     public Bytes32[] getChildren() {
       return children;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      final CompressedBranchInfo that = (CompressedBranchInfo) o;
+      return depth == that.depth && Arrays.equals(children, that.children);
+    }
+
+    @Override
+    public int hashCode() {
+      int result = Objects.hash(depth);
+      result = 31 * result + Arrays.hashCode(children);
+      return result;
+    }
+
+    @Override
+    public String toString() {
+      return MoreObjects.toStringHelper(this)
+          .add("depth", depth)
+          .add("children", children)
+          .toString();
     }
   }
 }

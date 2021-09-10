@@ -73,11 +73,11 @@ import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreProtoArrayDao;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedKvStoreDao;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedStateSnapshotStorageLogic;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedStateStorageLogic;
-import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedStateTrieStorageLogic;
+import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedStateTreeStorageLogic;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4HotKvStoreDao;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalized;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedSnapshotState;
-import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedTrieState;
+import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedTreeState;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaHot;
 import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaFinalized;
 import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaHot;
@@ -145,16 +145,16 @@ public class KvStoreDatabase implements Database {
         finalizedStateStorageLogic);
   }
 
-  public static Database createWithStateTrie(
+  public static Database createWithStateTree(
       final MetricsSystem metricsSystem,
       final KvStoreAccessor db,
       final SchemaHot schemaHot,
-      final SchemaFinalizedTrieState schemaFinalized,
+      final SchemaFinalizedTreeState schemaFinalized,
       final StateStorageMode stateStorageMode,
       final boolean storeNonCanonicalBlocks,
       final Spec spec) {
-    final V4FinalizedStateStorageLogic<SchemaFinalizedTrieState> finalizedStateStorageLogic =
-        new V4FinalizedStateTrieStorageLogic();
+    final V4FinalizedStateStorageLogic<SchemaFinalizedTreeState> finalizedStateStorageLogic =
+        new V4FinalizedStateTreeStorageLogic(spec);
     return create(
         metricsSystem,
         db,

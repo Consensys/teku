@@ -54,7 +54,7 @@ public class FileBackedStorageSystemBuilder {
   public StorageSystem build() {
     final Database database;
     switch (version) {
-      case LEVELDB_TRIE:
+      case LEVELDB_TREE:
         database = createLevelDbTrieDatabase();
         break;
       case LEVELDB2:
@@ -183,7 +183,7 @@ public class FileBackedStorageSystemBuilder {
 
   private Database createLevelDbTrieDatabase() {
     KvStoreConfiguration configDefault = KvStoreConfiguration.v6SingleDefaults();
-    return LevelDbDatabaseFactory.createLevelDbTrie(
+    return LevelDbDatabaseFactory.createLevelDbTree(
         new StubMetricsSystem(),
         configDefault.withDatabaseDir(hotDir),
         storageMode,
