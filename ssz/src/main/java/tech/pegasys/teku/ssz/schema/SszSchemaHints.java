@@ -16,6 +16,7 @@ package tech.pegasys.teku.ssz.schema;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import tech.pegasys.teku.ssz.tree.SszSuperNode;
 
 /**
@@ -25,6 +26,13 @@ import tech.pegasys.teku.ssz.tree.SszSuperNode;
 public class SszSchemaHints {
 
   private static class SszSchemaHint {}
+
+  @Override
+  public String toString() {
+    return hints.stream()
+        .map(hint -> hint.getClass().getSimpleName())
+        .collect(Collectors.joining(", ", "(", ")"));
+  }
 
   /**
    * Hint to use {@link SszSuperNode} for lists/vectors to save the memory when the list content is

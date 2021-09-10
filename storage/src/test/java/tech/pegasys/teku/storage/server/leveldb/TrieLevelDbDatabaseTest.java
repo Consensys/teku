@@ -32,7 +32,7 @@ public class TrieLevelDbDatabaseTest extends AbstractKvStoreDatabaseWithHotState
       final boolean storeNonCanonicalBlocks) {
     return FileBackedStorageSystemBuilder.create()
         .dataDir(tempDir.toPath())
-        .version(DatabaseVersion.LEVELDB_TRIE)
+        .version(DatabaseVersion.LEVELDB_TREE)
         .storageMode(storageMode)
         .stateStorageFrequency(1L)
         .storeConfig(storeConfig)

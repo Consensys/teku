@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.ssz.tree.TreeNodeSource.CompressedBranchInfo;
 
 public interface KvStoreSerializer<T> {
   KvStoreSerializer<UInt64> UINT64_SERIALIZER = new UInt64Serializer();
@@ -45,6 +46,8 @@ public interface KvStoreSerializer<T> {
   KvStoreSerializer<CheckpointEpochs> CHECKPOINT_EPOCHS_SERIALIZER =
       new CheckpointEpochsSerializer();
   KvStoreSerializer<Set<Bytes32>> BLOCK_ROOTS_SERIALIZER = new Bytes32SetSerializer();
+  KvStoreSerializer<CompressedBranchInfo> COMPRESSED_BRANCH_INFO_KV_STORE_SERIALIZER =
+      new CompressedBranchInfoSerializer();
 
   static KvStoreSerializer<BeaconState> createStateSerializer(final Spec spec) {
     return new BeaconStateSerializer(spec);

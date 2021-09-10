@@ -17,14 +17,15 @@ import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.ssz.tree.TreeNodeSource.CompressedBranchInfo;
 
-public interface SchemaFinalizedTrieState extends SchemaFinalized {
+public interface SchemaFinalizedTreeState extends SchemaFinalized {
 
   KvStoreColumn<UInt64, Bytes32> getColumnFinalizedStateRootsBySlot();
 
-  KvStoreColumn<Bytes32, Bytes> getColumnFinalizedStateMerkleTrieLeaves();
+  KvStoreColumn<Bytes32, Bytes> getColumnFinalizedStateMerkleTreeLeaves();
 
-  KvStoreColumn<Bytes32, Bytes> getColumnFinalizedStateMerkleTrieBranches();
+  KvStoreColumn<Bytes32, CompressedBranchInfo> getColumnFinalizedStateMerkleTreeBranches();
 
   @Override
   default Map<String, KvStoreColumn<?, ?>> getColumnMap() {
@@ -32,8 +33,8 @@ public interface SchemaFinalizedTrieState extends SchemaFinalized {
         "SLOTS_BY_FINALIZED_ROOT", getColumnSlotsByFinalizedRoot(),
         "FINALIZED_BLOCKS_BY_SLOT", getColumnFinalizedBlocksBySlot(),
         "FINALIZED_STATE_ROOTS_BY_SLOT", getColumnFinalizedStateRootsBySlot(),
-        "FINALIZED_STATE_TRIE_LEAVES", getColumnFinalizedStateMerkleTrieLeaves(),
-        "FINALIZED_STATE_TRIE_BRANCHES", getColumnFinalizedStateMerkleTrieBranches(),
+        "FINALIZED_STATE_TREE_LEAVES", getColumnFinalizedStateMerkleTreeLeaves(),
+        "FINALIZED_STATE_TREE_BRANCHES", getColumnFinalizedStateMerkleTreeBranches(),
         "SLOTS_BY_FINALIZED_STATE_ROOT", getColumnSlotsByFinalizedStateRoot(),
         "NON_CANONICAL_BLOCKS_BY_ROOT", getColumnNonCanonicalBlocksByRoot(),
         "NON_CANONICAL_BLOCK_ROOTS_BY_SLOT", getColumnNonCanonicalRootsBySlot());

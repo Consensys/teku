@@ -15,16 +15,18 @@ package tech.pegasys.teku.ssz.schema;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static tech.pegasys.teku.ssz.schema.TreeNodeAssert.assertThatTreeNode;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.tuweni.bytes.Bytes;
-import org.assertj.core.api.Assumptions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.ssz.RandomSszDataGenerator;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.SszDataAssert;
+import tech.pegasys.teku.ssz.schema.SszSchemaHints.SszSuperNodeHint;
+import tech.pegasys.teku.ssz.schema.impl.AbstractSszCollectionSchema;
 import tech.pegasys.teku.ssz.sos.SimpleSszReader;
 import tech.pegasys.teku.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.ssz.tree.TreeNode;
@@ -43,10 +45,18 @@ public abstract class SszSchemaTestBase extends SszTypeTestBase {
   @MethodSource("testSchemaArguments")
   @ParameterizedTest
   void sszDeserialize_tooLongSszShouldFailFastWithoutReadingWholeInput(SszSchema<SszData> schema) {
-
     long maxSszLength = schema.getSszLengthBounds().getMaxBytes();
     // ignore too large and degenerative structs
-    Assumptions.assumeThat(maxSszLength).isLessThan(32 * 1024 * 1024).isGreaterThan(0);
+    assumeThat(maxSszLength).isLessThan(32 * 1024 * 1024).isGreaterThan(0);
+    // ignore lists using SszSuperNode as many validations are skipped
+    if (schema instanceof AbstractSszCollectionSchema) {
+      assumeThat(
+              ((AbstractSszCollectionSchema<?, ?>) schema)
+                  .getHints()
+                  .getHint(SszSuperNodeHint.class))
+          .describedAs("uses SszSuperNode")
+          .isEmpty();
+    }
 
     SszData data = randomSsz.randomData(schema);
     Bytes ssz = data.sszSerialize();

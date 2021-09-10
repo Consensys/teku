@@ -16,6 +16,7 @@ package tech.pegasys.teku.storage.server.kvstore.schema;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.BLOCK_ROOTS_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.BYTES32_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.BYTES_SERIALIZER;
+import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.COMPRESSED_BRANCH_INFO_KV_STORE_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.UINT64_SERIALIZER;
 
 import java.util.Set;
@@ -24,13 +25,14 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.ssz.tree.TreeNodeSource.CompressedBranchInfo;
 import tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer;
 
 /**
  * The same as {@link V4SchemaFinalized} but with other column ids which are distinct from {@link
  * V4SchemaHot}
  */
-public class V6TrieSchemaFinalized implements SchemaFinalizedTrieState {
+public class V6TreeSchemaFinalized implements SchemaFinalizedTreeState {
   // column ids should be distinct across different DAOs to make possible using
   // schemes both for a single and separated DBs
   private static final int ID_OFFSET = 128;
@@ -43,15 +45,17 @@ public class V6TrieSchemaFinalized implements SchemaFinalizedTrieState {
       KvStoreColumn.create(ID_OFFSET + 3, UINT64_SERIALIZER, BLOCK_ROOTS_SERIALIZER);
   private static final KvStoreColumn<UInt64, Bytes32> FINALIZED_STATE_ROOTS_BY_SLOT =
       KvStoreColumn.create(ID_OFFSET + 4, UINT64_SERIALIZER, BYTES32_SERIALIZER);
-  private static final KvStoreColumn<Bytes32, Bytes> FINALIZED_STATE_TRIE_LEAVES_BY_ROOT =
+  private static final KvStoreColumn<Bytes32, Bytes> FINALIZED_STATE_TREE_LEAVES_BY_ROOT =
       KvStoreColumn.create(ID_OFFSET + 5, BYTES32_SERIALIZER, BYTES_SERIALIZER);
-  private static final KvStoreColumn<Bytes32, Bytes> FINALIZED_STATE_TRIE_BRANCHES_BY_ROOT =
-      KvStoreColumn.create(ID_OFFSET + 6, BYTES32_SERIALIZER, BYTES_SERIALIZER);
+  private static final KvStoreColumn<Bytes32, CompressedBranchInfo>
+      FINALIZED_STATE_TREE_BRANCHES_BY_ROOT =
+          KvStoreColumn.create(
+              ID_OFFSET + 6, BYTES32_SERIALIZER, COMPRESSED_BRANCH_INFO_KV_STORE_SERIALIZER);
 
   private final KvStoreColumn<UInt64, SignedBeaconBlock> finalizedBlocksBySlot;
   private final KvStoreColumn<Bytes32, SignedBeaconBlock> nonCanonicalBlocksByRoot;
 
-  public V6TrieSchemaFinalized(final Spec spec) {
+  public V6TreeSchemaFinalized(final Spec spec) {
     finalizedBlocksBySlot =
         KvStoreColumn.create(
             ID_OFFSET + 7, UINT64_SERIALIZER, KvStoreSerializer.createSignedBlockSerializer(spec));
@@ -91,12 +95,12 @@ public class V6TrieSchemaFinalized implements SchemaFinalizedTrieState {
   }
 
   @Override
-  public KvStoreColumn<Bytes32, Bytes> getColumnFinalizedStateMerkleTrieLeaves() {
-    return FINALIZED_STATE_TRIE_LEAVES_BY_ROOT;
+  public KvStoreColumn<Bytes32, Bytes> getColumnFinalizedStateMerkleTreeLeaves() {
+    return FINALIZED_STATE_TREE_LEAVES_BY_ROOT;
   }
 
   @Override
-  public KvStoreColumn<Bytes32, Bytes> getColumnFinalizedStateMerkleTrieBranches() {
-    return FINALIZED_STATE_TRIE_BRANCHES_BY_ROOT;
+  public KvStoreColumn<Bytes32, CompressedBranchInfo> getColumnFinalizedStateMerkleTreeBranches() {
+    return FINALIZED_STATE_TREE_BRANCHES_BY_ROOT;
   }
 }
