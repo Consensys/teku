@@ -158,10 +158,10 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
             dbVersion.getValue(),
             dbDirectory.getAbsolutePath());
         break;
-      case LEVELDB_TRIE:
-        database = createLevelDbTrieDatabase();
+      case LEVELDB_TREE:
+        database = createLevelDbTreeDatabase();
         LOG.info(
-            "Created leveldb_trie Hot and Finalized database ({}) at {}",
+            "Created leveldb_tree Hot and Finalized database ({}) at {}",
             dbVersion.getValue(),
             dbDirectory.getAbsolutePath());
         break;
@@ -271,11 +271,11 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     }
   }
 
-  private Database createLevelDbTrieDatabase() {
+  private Database createLevelDbTreeDatabase() {
     try {
       final KvStoreConfiguration dbConfiguration = initV6Configuration();
 
-      return LevelDbDatabaseFactory.createLevelDbTrie(
+      return LevelDbDatabaseFactory.createLevelDbTree(
           metricsSystem,
           dbConfiguration.withDatabaseDir(dbDirectory.toPath()),
           stateStorageMode,

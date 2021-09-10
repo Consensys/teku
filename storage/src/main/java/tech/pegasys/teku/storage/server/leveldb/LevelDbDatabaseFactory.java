@@ -31,7 +31,7 @@ import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
 import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaFinalized;
 import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaHot;
 import tech.pegasys.teku.storage.server.kvstore.schema.V6SnapshotSchemaFinalized;
-import tech.pegasys.teku.storage.server.kvstore.schema.V6TrieSchemaFinalized;
+import tech.pegasys.teku.storage.server.kvstore.schema.V6TreeSchemaFinalized;
 
 public class LevelDbDatabaseFactory {
 
@@ -87,7 +87,7 @@ public class LevelDbDatabaseFactory {
         spec);
   }
 
-  public static Database createLevelDbTrie(
+  public static Database createLevelDbTree(
       final MetricsSystem metricsSystem,
       final KvStoreConfiguration hotConfiguration,
       final StateStorageMode stateStorageMode,
@@ -95,13 +95,13 @@ public class LevelDbDatabaseFactory {
       final Spec spec) {
 
     final V4SchemaHot schemaHot = new V4SchemaHot(spec);
-    final V6TrieSchemaFinalized schemaFinalized = new V6TrieSchemaFinalized(spec);
+    final V6TreeSchemaFinalized schemaFinalized = new V6TreeSchemaFinalized(spec);
     final List<KvStoreColumn<?, ?>> allColumns = new ArrayList<>(schemaHot.getAllColumns());
     allColumns.addAll(schemaFinalized.getAllColumns());
     final KvStoreAccessor db =
         LevelDbInstanceFactory.create(metricsSystem, STORAGE, hotConfiguration, allColumns);
 
-    return KvStoreDatabase.createWithStateTrie(
+    return KvStoreDatabase.createWithStateTree(
         metricsSystem,
         db,
         schemaHot,
