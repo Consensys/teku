@@ -16,7 +16,6 @@ package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Optional;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -39,7 +38,6 @@ class V4FinalizedStateTreeStorageLogicTest {
   private final V4FinalizedStateTreeStorageLogic logic = new V4FinalizedStateTreeStorageLogic(spec);
 
   @Test
-  @Disabled("Need to support iterating supernodes before this can work")
   void shouldRoundTripState() {
     final BeaconState state = dataStructureUtil.randomBeaconState();
 
