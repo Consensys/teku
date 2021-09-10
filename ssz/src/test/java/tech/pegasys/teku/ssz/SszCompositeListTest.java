@@ -29,6 +29,8 @@ import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 import tech.pegasys.teku.ssz.tree.LeafNode;
 import tech.pegasys.teku.ssz.tree.TreeNode;
+import tech.pegasys.teku.ssz.tree.TreeNodeSource;
+import tech.pegasys.teku.ssz.tree.TreeNodeStore;
 
 public class SszCompositeListTest {
 
@@ -53,6 +55,19 @@ public class SszCompositeListTest {
         @Override
         public boolean isPrimitive() {
           return false;
+        }
+
+        @Override
+        public void storeBackingNodes(
+            final TreeNodeStore nodeStore,
+            final int maxBranchLevelsSkipped,
+            final long rootGIndex,
+            final TreeNode node) {}
+
+        @Override
+        public TreeNode loadBackingNodes(
+            final TreeNodeSource nodeSource, final Bytes32 rootHash, final long rootGIndex) {
+          return null;
         }
 
         @Override

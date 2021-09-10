@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.SszVector;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
@@ -31,9 +32,11 @@ import tech.pegasys.teku.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
+import tech.pegasys.teku.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.ssz.tree.LeafNode;
 import tech.pegasys.teku.ssz.tree.SszSuperNode;
 import tech.pegasys.teku.ssz.tree.TreeNode;
+import tech.pegasys.teku.ssz.tree.TreeNodeSource;
 import tech.pegasys.teku.ssz.tree.TreeUtil;
 
 public abstract class AbstractSszVectorSchema<
@@ -162,6 +165,32 @@ public abstract class AbstractSszVectorSchema<
       throw new SszDeserializeException("Invalid Vector ssz");
     }
     return data.getDataTree();
+  }
+
+  @Override
+  public TreeNode loadBackingNodes(TreeNodeSource nodeSource, Bytes32 rootHash, long rootGIndex) {
+    final long lastUsefulGIndex =
+        GIndexUtil.gIdxChildGIndex(rootGIndex, maxChunks() - 1, treeDepth());
+    return LoadingUtil.loadNodesToDepth(
+        nodeSource,
+        rootHash,
+        rootGIndex,
+        treeDepth(),
+        getDefault().getBackingNode(),
+        lastUsefulGIndex,
+        this::loadChildNode);
+  }
+
+  private TreeNode loadChildNode(
+      final TreeNodeSource nodeSource, final Bytes32 childHash, final long childGIndex) {
+    return LoadingUtil.loadCollectionChild(
+        nodeSource,
+        childHash,
+        childGIndex,
+        getLength(),
+        getElementsPerChunk(),
+        treeDepth(),
+        getElementSchema());
   }
 
   @Override

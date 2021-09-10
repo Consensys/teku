@@ -17,9 +17,9 @@ import java.util.stream.Stream;
 import tech.pegasys.teku.ssz.schema.SszCompositeSchemaTestBase;
 import tech.pegasys.teku.ssz.schema.SszVectorSchema;
 
-public interface SszVectorSchemaTestBase extends SszCompositeSchemaTestBase {
+public abstract class SszVectorSchemaTestBase extends SszCompositeSchemaTestBase {
 
-  static Stream<SszVectorSchema<?, ?>> complexVectorSchemas() {
+  public static Stream<SszVectorSchema<?, ?>> complexVectorSchemas() {
     return SszCollectionSchemaTestBase.complexElementSchemas()
         .flatMap(
             elementSchema ->

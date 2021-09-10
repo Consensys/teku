@@ -16,17 +16,19 @@ package tech.pegasys.teku.ssz.tree;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.tree.TreeNodeImpl.BranchNodeImpl;
 import tech.pegasys.teku.ssz.tree.TreeNodeImpl.LeafNodeImpl;
 
 /** Misc Backing binary tree utils */
 public class TreeUtil {
 
-  static class ZeroLeafNode extends LeafNodeImpl {
+  public static class ZeroLeafNode extends LeafNodeImpl {
     public ZeroLeafNode(int size) {
       super(Bytes.wrap(new byte[size]));
     }
@@ -37,7 +39,7 @@ public class TreeUtil {
     }
   }
 
-  private static class ZeroBranchNode extends BranchNodeImpl {
+  public static class ZeroBranchNode extends BranchNodeImpl {
     private final int height;
 
     public ZeroBranchNode(TreeNode left, TreeNode right, int height) {
@@ -53,13 +55,18 @@ public class TreeUtil {
 
   @VisibleForTesting public static final TreeNode[] ZERO_TREES;
 
+  public static ImmutableMap<Bytes32, TreeNode> ZERO_TREES_BY_ROOT;
+
   static {
     ZERO_TREES = new TreeNode[64];
     ZERO_TREES[0] = LeafNode.EMPTY_LEAF;
+    final ImmutableMap.Builder<Bytes32, TreeNode> mapBuilder =
+        ImmutableMap.<Bytes32, TreeNode>builder();
     for (int i = 1; i < ZERO_TREES.length; i++) {
       ZERO_TREES[i] = new ZeroBranchNode(ZERO_TREES[i - 1], ZERO_TREES[i - 1], i);
-      ZERO_TREES[i].hashTreeRoot(); // pre-cache
+      mapBuilder.put(ZERO_TREES[i].hashTreeRoot(), ZERO_TREES[i]); // pre-cache
     }
+    ZERO_TREES_BY_ROOT = mapBuilder.build();
   }
 
   public static int bitsCeilToBytes(int bits) {
