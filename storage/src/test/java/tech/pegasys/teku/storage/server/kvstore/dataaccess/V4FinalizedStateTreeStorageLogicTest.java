@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -24,6 +25,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransaction;
 import tech.pegasys.teku.storage.server.kvstore.MockKvStoreInstance;
+import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedStateStorageLogic.FinalizedStateUpdater;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedTreeState;
 import tech.pegasys.teku.storage.server.kvstore.schema.V6TreeSchemaFinalized;
 
@@ -42,9 +44,46 @@ class V4FinalizedStateTreeStorageLogicTest {
     final BeaconState state = dataStructureUtil.randomBeaconState();
 
     storeState(state);
+    assertStateReloads(state);
+  }
+
+  @Test
+  void shouldGetMostRecentStateBeforeRequestedSlot() {
+    final BeaconState state = dataStructureUtil.randomBeaconState();
+
+    storeState(state);
+    assertStateReloads(state, state.getSlot().plus(10));
+  }
+
+  @Test
+  void shouldStoreAndLoadMultipleStates() {
+    final BeaconState state1 = dataStructureUtil.randomBeaconState(UInt64.valueOf(3));
+    final BeaconState state2 = dataStructureUtil.randomBeaconState(UInt64.valueOf(5));
+    final BeaconState state3 = dataStructureUtil.randomBeaconState(UInt64.valueOf(7));
+    final BeaconState state4 = dataStructureUtil.randomBeaconState(UInt64.valueOf(10));
+    try (final KvStoreTransaction transaction = db.startTransaction()) {
+      final FinalizedStateUpdater<SchemaFinalizedTreeState> updater = logic.updater();
+      updater.addFinalizedState(db, transaction, schema, state1);
+      updater.addFinalizedState(db, transaction, schema, state2);
+      updater.addFinalizedState(db, transaction, schema, state3);
+      updater.addFinalizedState(db, transaction, schema, state4);
+      transaction.commit();
+    }
+
+    assertStateReloads(state1);
+    assertStateReloads(state2);
+    assertStateReloads(state3);
+    assertStateReloads(state4);
+  }
+
+  private void assertStateReloads(final BeaconState state) {
+    assertStateReloads(state, state.getSlot());
+  }
+
+  private void assertStateReloads(final BeaconState expectedState, final UInt64 slot) {
     final Optional<BeaconState> loadedState =
-        logic.getLatestAvailableFinalizedState(db, schema, state.getSlot());
-    assertThat(loadedState).contains(state);
+        logic.getLatestAvailableFinalizedState(db, schema, slot);
+    assertThat(loadedState).contains(expectedState);
   }
 
   private void storeState(final BeaconState state) {
