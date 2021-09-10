@@ -22,6 +22,7 @@ import org.assertj.core.api.AbstractAssert;
 import tech.pegasys.teku.ssz.tree.BranchNode;
 import tech.pegasys.teku.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.ssz.tree.LeafDataNode;
+import tech.pegasys.teku.ssz.tree.SszSuperNode;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 import tech.pegasys.teku.ssz.tree.TreeUtil.ZeroBranchNode;
 import tech.pegasys.teku.ssz.tree.TreeUtil.ZeroLeafNode;
@@ -41,7 +42,7 @@ public class TreeNodeAssert extends AbstractAssert<TreeNodeAssert, TreeNode> {
       assertTreeEqual(actual, expected, GIndexUtil.SELF_G_INDEX);
     } catch (final Throwable t) {
       failWithActualExpectedAndMessage(
-          printTree(actual), printTree(expected), "Trees did not match", t);
+          printTree(actual), printTree(expected), "Trees did not match: " + t.getMessage(), t);
     }
     return this;
   }
@@ -58,6 +59,9 @@ public class TreeNodeAssert extends AbstractAssert<TreeNodeAssert, TreeNode> {
     if (node instanceof ZeroLeafNode) {
       out.println(
           prefix + node.hashTreeRoot() + ": " + ((LeafDataNode) node).getData() + " (zero)");
+    } else if (node instanceof SszSuperNode) {
+      out.println(
+          prefix + node.hashTreeRoot() + ": " + ((LeafDataNode) node).getData() + " (supernode)");
     } else if (node instanceof LeafDataNode) {
       out.println(prefix + node.hashTreeRoot() + ": " + ((LeafDataNode) node).getData());
     } else if (node instanceof ZeroBranchNode) {
@@ -94,6 +98,13 @@ public class TreeNodeAssert extends AbstractAssert<TreeNodeAssert, TreeNode> {
           actualBranch.left(), expectedBranch.left(), GIndexUtil.gIdxLeftGIndex(gIndex));
       assertTreeEqual(
           actualBranch.right(), expectedBranch.right(), GIndexUtil.gIdxRightGIndex(gIndex));
+    } else if (expected instanceof SszSuperNode) {
+      assertThat(((LeafDataNode) actual).getData())
+          .describedAs("leaf data at gIndex %s", gIndex)
+          .isEqualTo(((LeafDataNode) expected).getData());
+      assertThat(actual)
+          .describedAs("node at gIndex %s should be supernode but wasn't", gIndex)
+          .isInstanceOf(SszSuperNode.class);
     } else if (actual instanceof LeafDataNode) {
       assertThat(((LeafDataNode) actual).getData())
           .describedAs("leaf data at gIndex %s", gIndex)
