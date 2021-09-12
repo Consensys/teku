@@ -72,6 +72,14 @@ public class MetricsOptions {
       arity = "0..*")
   private final List<String> metricsHostAllowlist = Arrays.asList("127.0.0.1", "localhost");
 
+  @Option(
+      names = {"--Xmetrics-endpoint"},
+      hidden = true,
+      paramLabel = "<ENDPOINT>",
+      description = "External endpoint service to receive metrics",
+      arity = "1")
+  private String metricsEndpoint = null;
+
   public void configure(TekuConfiguration.Builder builder) {
     builder.metrics(
         b ->
@@ -79,6 +87,7 @@ public class MetricsOptions {
                 .metricsPort(metricsPort)
                 .metricsInterface(metricsInterface)
                 .metricsCategories(metricsCategories)
-                .metricsHostAllowlist(metricsHostAllowlist));
+                .metricsHostAllowlist(metricsHostAllowlist)
+                .metricsEndpoint(metricsEndpoint));
   }
 }

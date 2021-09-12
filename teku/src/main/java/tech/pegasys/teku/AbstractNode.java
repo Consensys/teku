@@ -24,6 +24,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.data.publisher.MetricsPublisherManager;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
@@ -49,6 +50,7 @@ public abstract class AbstractNode implements Node {
   private final AsyncRunnerFactory asyncRunnerFactory;
   private final EventChannels eventChannels;
   private final MetricsEndpoint metricsEndpoint;
+  private final MetricsPublisherManager metricsPublisher;
   protected final ServiceConfig serviceConfig;
 
   protected AbstractNode(final TekuConfiguration tekuConfig) {
@@ -64,6 +66,7 @@ public abstract class AbstractNode implements Node {
 
     asyncRunnerFactory =
         AsyncRunnerFactory.createDefault(new MetricTrackingExecutorFactory(metricsSystem));
+    this.metricsPublisher = new MetricsPublisherManager(asyncRunnerFactory, metricsEndpoint);
     serviceConfig =
         new ServiceConfig(
             asyncRunnerFactory,
@@ -87,6 +90,7 @@ public abstract class AbstractNode implements Node {
   @Override
   public void start() {
     metricsEndpoint.start().join();
+    metricsPublisher.runPublisher();
     getServiceController().start().join();
   }
 
