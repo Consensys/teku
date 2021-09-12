@@ -25,13 +25,16 @@ import tech.pegasys.teku.ssz.schema.SszListSchema;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.schema.SszSchema;
 import tech.pegasys.teku.ssz.schema.SszSchemaHints;
+import tech.pegasys.teku.ssz.schema.SszSchemaHints.SszSuperNodeHint;
 import tech.pegasys.teku.ssz.schema.impl.LoadingUtil.ChildLoader;
+import tech.pegasys.teku.ssz.schema.impl.StoringUtil.TargetDepthNodeHandler;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 import tech.pegasys.teku.ssz.tree.BranchNode;
 import tech.pegasys.teku.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.ssz.tree.LeafNode;
+import tech.pegasys.teku.ssz.tree.SszSuperNode;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 import tech.pegasys.teku.ssz.tree.TreeNodeSource;
 import tech.pegasys.teku.ssz.tree.TreeNodeSource.CompressedBranchInfo;
@@ -173,13 +176,20 @@ public abstract class AbstractSszListSchema<
       // Nothing useful to store
       return;
     }
-    final int childDepth = compatibleVectorSchema.treeDepth();
-    if (childDepth == 0) {
+    final int superNodeDepth = getSuperNodeDepth();
+    final int childDepth = compatibleVectorSchema.treeDepth() - superNodeDepth;
+    if (childDepth == 0 && superNodeDepth == 0) {
       // Only one child so wrapper is omitted
       storeChildNode(nodeStore, maxBranchLevelsSkipped, rootGIndex, node);
       return;
     }
-    final long lastUsefulGIndex = getVectorLastUsefulGIndex(rootGIndex, length);
+    final long lastUsefulGIndex = getVectorLastUsefulGIndex(rootGIndex, length, superNodeDepth);
+    final TargetDepthNodeHandler targetDepthNodeHandler =
+        superNodeDepth == 0
+            ? (targetDepthNode, targetDepthGIndex) ->
+                compatibleVectorSchema.storeChildNode(
+                    nodeStore, maxBranchLevelsSkipped, targetDepthGIndex, targetDepthNode)
+            : nodeStore::storeLeafNode;
     StoringUtil.storeNodesToDepth(
         nodeStore,
         maxBranchLevelsSkipped,
@@ -187,20 +197,25 @@ public abstract class AbstractSszListSchema<
         rootGIndex,
         childDepth,
         lastUsefulGIndex,
-        (targetDepthNode, targetDepthGIndex) ->
-            compatibleVectorSchema.storeChildNode(
-                nodeStore, maxBranchLevelsSkipped, targetDepthGIndex, targetDepthNode));
+        targetDepthNodeHandler);
   }
 
-  private long getVectorLastUsefulGIndex(final long rootGIndex, final int length) {
+  private int getSuperNodeDepth() {
+    return getHints().getHint(SszSuperNodeHint.class).map(SszSuperNodeHint::getDepth).orElse(0);
+  }
+
+  private long getVectorLastUsefulGIndex(
+      final long rootGIndex, final int length, final int superNodeDepth) {
     if (length == 0) {
       return rootGIndex;
     }
-    final int fullNodeCount = length / compatibleVectorSchema.getElementsPerChunk();
-    int lastNodeElementCount = length % compatibleVectorSchema.getElementsPerChunk();
+    final int elementsPerSuperNode = Math.max(1, Math.toIntExact(1L << superNodeDepth));
+    final int elementsPerNode = compatibleVectorSchema.getElementsPerChunk() * elementsPerSuperNode;
+    final int fullNodeCount = length / elementsPerNode;
+    int lastNodeElementCount = length % elementsPerNode;
     final long lastUsefulChildIndex = lastNodeElementCount == 0 ? fullNodeCount - 1 : fullNodeCount;
     return GIndexUtil.gIdxChildGIndex(
-        rootGIndex, lastUsefulChildIndex, compatibleVectorSchema.treeDepth());
+        rootGIndex, lastUsefulChildIndex, compatibleVectorSchema.treeDepth() - superNodeDepth);
   }
 
   @Override
@@ -220,24 +235,36 @@ public abstract class AbstractSszListSchema<
             .loadLeafNode(lengthHash, GIndexUtil.gIdxRightGIndex(rootGIndex))
             .getInt(0, ByteOrder.LITTLE_ENDIAN);
 
+    final int superNodeDepth = getSuperNodeDepth();
     final ChildLoader childLoader =
-        (childNodeSource, childHash, childGIndex) ->
-            LoadingUtil.loadCollectionChild(
-                childNodeSource,
-                childHash,
-                childGIndex,
-                length,
-                compatibleVectorSchema.getElementsPerChunk(),
-                compatibleVectorSchema.treeDepth(),
-                compatibleVectorSchema.getElementSchema());
+        superNodeDepth == 0
+            ? (childNodeSource, childHash, childGIndex) ->
+                LoadingUtil.loadCollectionChild(
+                    childNodeSource,
+                    childHash,
+                    childGIndex,
+                    length,
+                    compatibleVectorSchema.getElementsPerChunk(),
+                    compatibleVectorSchema.treeDepth(),
+                    compatibleVectorSchema.getElementSchema())
+            : (childNodeSource, childHash, childGIndex) -> {
+              final Bytes data;
+              if (TreeUtil.ZERO_TREES_BY_ROOT.containsKey(childHash)) {
+                data = Bytes.EMPTY;
+              } else {
+                data = nodeSource.loadLeafNode(childHash, childGIndex);
+              }
+              return new SszSuperNode(superNodeDepth, elementSszSupernodeTemplate.get(), data);
+            };
     final long vectorRootGIndex = GIndexUtil.gIdxLeftGIndex(rootGIndex);
-    final long lastUsefulGIndex = getVectorLastUsefulGIndex(vectorRootGIndex, length);
+    final long lastUsefulGIndex =
+        getVectorLastUsefulGIndex(vectorRootGIndex, length, superNodeDepth);
     final TreeNode vectorNode =
         LoadingUtil.loadNodesToDepth(
             nodeSource,
             vectorHash,
             vectorRootGIndex,
-            compatibleVectorSchema.treeDepth(),
+            compatibleVectorSchema.treeDepth() - superNodeDepth,
             compatibleVectorSchema.getDefault().getBackingNode(),
             lastUsefulGIndex,
             childLoader);
@@ -304,6 +331,6 @@ public abstract class AbstractSszListSchema<
 
   @Override
   public String toString() {
-    return "List[" + getElementSchema() + ", " + getMaxLength() + "]";
+    return "List[" + getElementSchema() + ", " + getMaxLength() + "]" + getHints();
   }
 }

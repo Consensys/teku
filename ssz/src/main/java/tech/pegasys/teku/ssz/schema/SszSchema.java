@@ -99,4 +99,10 @@ public interface SszSchema<SszDataT extends SszData> extends SszType {
    * @return the loaded node
    */
   TreeNode loadBackingNodes(TreeNodeSource nodeSource, Bytes32 rootHash, long rootGIndex);
+
+  default SszDataT load(
+      final TreeNodeSource nodeSource, final Bytes32 rootHash, final long rootGIndex) {
+    final TreeNode node = loadBackingNodes(nodeSource, rootHash, rootGIndex);
+    return createFromBackingNode(node);
+  }
 }
