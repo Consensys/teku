@@ -59,14 +59,22 @@ dependencies {
   implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
 
+  integrationTestImplementation 'org.mock-server:mockserver-junit-jupiter'
+
   testImplementation testFixtures(project(':infrastructure:async'))
   testImplementation testFixtures(project(':ethereum:spec'))
   testImplementation testFixtures(project(':bls'))
   testImplementation testFixtures(project(':storage'))
 
   testImplementation project(':data:provider')
-  testImplementation 'org.mock-server:mockserver-junit-jupiter'
-  testImplementation 'com.github.java-json-tools:json-schema-validator:2.2.11'
-
   testImplementation 'org.awaitility:awaitility'
+
+  constraints{
+    integrationTestImplementation('com.github.java-json-tools:json-schema-validator'){
+      version{
+        strictly '[2.2.8, 2.2.14['
+      }
+      because 'later versions cause runtime issues with mockserver'
+    }
+  }
 }
