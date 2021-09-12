@@ -126,7 +126,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     sizeGauge.set(currentSize);
   }
 
-  public int getSize() {
+  public synchronized int getSize() {
     return size.get();
   }
 
@@ -156,7 +156,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .collect(ATTESTATIONS_SCHEMA.collector());
   }
 
-  public Stream<Attestation> getAttestations(
+  public synchronized Stream<Attestation> getAttestations(
       final Optional<UInt64> maybeSlot, final Optional<UInt64> maybeCommitteeIndex) {
     final Predicate<Map.Entry<UInt64, Set<Bytes>>> filterForSlot =
         (entry) -> maybeSlot.map(slot -> entry.getKey().equals(slot)).orElse(true);
@@ -189,7 +189,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .flatMap(attestations -> attestations.stream().findFirst());
   }
 
-  public void onReorg(final UInt64 commonAncestorSlot) {
+  public synchronized void onReorg(final UInt64 commonAncestorSlot) {
     attestationGroupByDataHash.values().forEach(group -> group.onReorg(commonAncestorSlot));
   }
 }
