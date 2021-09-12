@@ -30,8 +30,7 @@ import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient
 class RemoteSpecLoader {
   private static BiConsumer<Throwable, Integer> retryErrObserver =
       (Throwable e, Integer attempt) -> {
-        var errMsg = String.format("Attempt %d failed: \n%s\n", attempt, e.getMessage());
-        SubCommandLogger.SUB_COMMAND_LOG.error(errMsg);
+        SubCommandLogger.SUB_COMMAND_LOG.error(e.getMessage());
       };
 
   private static final long RETRY_DELAY = 5000;
