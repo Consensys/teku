@@ -62,19 +62,15 @@ class GeneralMetricDataTest {
   private ArrayList<Observation> getMockObservations() {
     ArrayList<Observation> list = new ArrayList<>();
     Observation cpu =
-        new Observation(
-            StandardMetricCategory.PROCESS, "cpu_seconds_total", 1.0, null);
+        new Observation(StandardMetricCategory.PROCESS, "cpu_seconds_total", 1.0, null);
     Observation memory =
-        new Observation(
-            StandardMetricCategory.JVM, "memory_pool_bytes_used", 1.0, null);
+        new Observation(StandardMetricCategory.JVM, "memory_pool_bytes_used", 1.0, null);
     Observation clientVersion =
         new Observation(TekuMetricCategory.BEACON, "teku_version", 1.0, null);
     Observation activeValidators =
-        new Observation(
-            TekuMetricCategory.BEACON, "current_active_validators", 1.0, null);
+        new Observation(TekuMetricCategory.BEACON, "current_active_validators", 1.0, null);
     Observation liveValidators =
-        new Observation(
-            TekuMetricCategory.BEACON, "current_live_validators", 1.0, null);
+        new Observation(TekuMetricCategory.BEACON, "current_live_validators", 1.0, null);
     list.add(cpu);
     list.add(memory);
     list.add(clientVersion);

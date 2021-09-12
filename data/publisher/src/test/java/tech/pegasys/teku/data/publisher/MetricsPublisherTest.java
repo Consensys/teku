@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-
 import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -58,7 +57,6 @@ class MetricsPublisherTest {
 
     RecordedRequest request = mockWebServer.takeRequest();
     assertThat(request.getMethod()).isEqualTo("POST");
-    assertThat(request.getBody().readString(StandardCharsets.UTF_8))
-            .isEqualTo(json);
+    assertThat(request.getBody().readString(StandardCharsets.UTF_8)).isEqualTo(json);
   }
 }
