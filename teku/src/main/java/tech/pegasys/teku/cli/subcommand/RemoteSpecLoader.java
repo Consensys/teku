@@ -14,7 +14,6 @@
 package tech.pegasys.teku.cli.subcommand;
 
 import java.net.URI;
-import java.time.Duration;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
@@ -25,7 +24,6 @@ import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
-import tech.pegasys.teku.sync.forward.singlepeer.RetryDelayFunction;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpClientAuthLoggingIntercepter;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
 
@@ -36,8 +34,7 @@ class RemoteSpecLoader {
         SubCommandLogger.SUB_COMMAND_LOG.error(errMsg);
       };
 
-  private static RetryDelayFunction retryDelayFunction =
-      RetryDelayFunction.createExponentialRetry(2f, Duration.ofSeconds(2), Duration.ofSeconds(20));
+  private static final long RETRY_DELAY = 5000;
 
   static Spec getSpec(OkHttpValidatorRestApiClient apiClient) {
     try {
@@ -92,7 +89,7 @@ class RemoteSpecLoader {
 
   private static void delayFor(int attempt, BiConsumer<Throwable, Integer> errObserver) {
     try {
-      Thread.sleep(retryDelayFunction.getRetryDelay(attempt).toMillis());
+      Thread.sleep(RETRY_DELAY);
     } catch (InterruptedException e) {
       errObserver.accept(e, attempt);
       throw new RuntimeException(e);
