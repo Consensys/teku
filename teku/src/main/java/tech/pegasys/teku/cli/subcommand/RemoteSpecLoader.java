@@ -16,7 +16,6 @@ package tech.pegasys.teku.cli.subcommand;
 import java.net.URI;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiConsumer;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
@@ -28,10 +27,6 @@ import tech.pegasys.teku.validator.remote.apiclient.OkHttpClientAuthLoggingInter
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
 
 class RemoteSpecLoader {
-  private static BiConsumer<Throwable, Integer> retryErrObserver =
-      (Throwable e, Integer attempt) -> {
-        SubCommandLogger.SUB_COMMAND_LOG.error(e.getMessage());
-      };
 
   private static final long RETRY_DELAY = 5000;
 
@@ -55,44 +50,35 @@ class RemoteSpecLoader {
     return getSpec(createApiClient(beaconEndpoint));
   }
 
-  static Spec getSpecWithRetry(URI beaconEndpoint, int maxAttempts) throws Throwable {
-    return retry(() -> getSpec(beaconEndpoint), retryErrObserver, maxAttempts);
+  static Spec getSpecWithRetry(URI beaconEndpoint) {
+    return retry(() -> getSpec(beaconEndpoint));
   }
 
-  static Spec getSpecWithRetry(OkHttpValidatorRestApiClient apiClient, int maxAttempts)
-      throws Throwable {
-    return retry(() -> getSpec(apiClient), retryErrObserver, maxAttempts);
+  static Spec getSpecWithRetry(OkHttpValidatorRestApiClient apiClient) {
+    return retry(() -> getSpec(apiClient));
   }
 
-  private static <T> T retry(
-      Callable<T> f, BiConsumer<Throwable, Integer> errObserver, int maxAttempts) throws Throwable {
-    return retry(f, errObserver, maxAttempts, 1);
-  }
-
-  private static <T> T retry(
-      Callable<T> f, BiConsumer<Throwable, Integer> errObserver, int maxAttempts, int attempt)
-      throws Throwable {
-    if (maxAttempts < 1) {
-      throw new IllegalArgumentException(
-          "The number of retry attempts for an operation has to be greater than 1");
-    }
+  private static <T> T retry(Callable<T> f) {
     try {
       return f.call();
     } catch (Throwable e) {
-      errObserver.accept(e, attempt);
-      if (attempt >= maxAttempts) throw e;
-      delayFor(attempt, errObserver);
-      return retry(f, errObserver, maxAttempts, ++attempt);
+      logError(e);
+      sleep();
+      return retry(f);
     }
   }
 
-  private static void delayFor(int attempt, BiConsumer<Throwable, Integer> errObserver) {
+  private static void sleep() {
     try {
       Thread.sleep(RETRY_DELAY);
     } catch (InterruptedException e) {
-      errObserver.accept(e, attempt);
+      logError(e);
       throw new RuntimeException(e);
     }
+  }
+
+  private static void logError(Throwable e) {
+    SubCommandLogger.SUB_COMMAND_LOG.error(e.getMessage());
   }
 
   static OkHttpValidatorRestApiClient createApiClient(final URI baseEndpoint) {

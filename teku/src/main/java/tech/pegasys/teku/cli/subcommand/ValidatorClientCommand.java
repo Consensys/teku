@@ -113,7 +113,7 @@ public class ValidatorClientCommand implements Callable<Integer> {
 
   private void configureWithSpecFromBeaconNode(Eth2NetworkConfiguration.Builder builder) {
     try {
-      var spec = getSpecWithRetry(validatorClientOptions.parseApiEndpoint(), 4);
+      var spec = getSpecWithRetry(validatorClientOptions.parseApiEndpoint());
       builder.spec(spec);
     } catch (Throwable e) {
       throw new InvalidConfigurationException(e);
