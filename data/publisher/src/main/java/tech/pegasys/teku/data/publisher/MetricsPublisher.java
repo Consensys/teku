@@ -25,30 +25,22 @@ import org.apache.logging.log4j.Logger;
 
 public class MetricsPublisher {
 
-  private final String endpointAddress;
-  private final String json;
   private final OkHttpClient client;
   private static final Logger LOG = LogManager.getLogger();
+  private MediaType mediaType = MediaType.parse("application/json; charset=utf-8");
 
-  public MetricsPublisher(
-      final String endpointAddress, final String json, final OkHttpClient client) {
-    this.endpointAddress = endpointAddress;
-    this.json = json;
+  public MetricsPublisher(final OkHttpClient client) {
     this.client = client;
   }
 
-  public void publishMetrics() throws IOException {
-    HttpUrl endpoint = HttpUrl.get(this.endpointAddress);
-    RequestBody body =
-        RequestBody.create(this.json, MediaType.parse("application/json; charset=utf-8"));
+  public void publishMetrics(final String endpointAddress, final String json) throws IOException {
+    HttpUrl endpoint = HttpUrl.get(endpointAddress);
+    RequestBody body = RequestBody.create(json, mediaType);
     Request request = new Request.Builder().url(endpoint).post(body).build();
     Response response = this.client.newCall(request).execute();
     if (response.code() != 200) {
       LOG.error(
-          new StringBuilder()
-              .append("Failed to publish metrics to ")
-              .append(this.endpointAddress)
-              .append(response.body()));
+          "Failed to publish metrics to {}. Response code {}", endpointAddress, response.code());
     }
   }
 }

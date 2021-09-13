@@ -28,7 +28,7 @@ public class DefaultMetricData extends BaseMetricData {
       @JsonProperty("timestamp") long timestamp,
       @JsonProperty("process") String process,
       MetricsSystem metricsSystem) {
-    super(0, System.currentTimeMillis(), "");
+    super(version, timestamp, process);
     this.metricsSystem = metricsSystem;
   }
 

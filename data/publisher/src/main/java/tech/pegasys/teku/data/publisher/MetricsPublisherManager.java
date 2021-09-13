@@ -21,10 +21,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
+import tech.pegasys.teku.infrastructure.async.Cancellable;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.MetricsEndpoint;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.service.serviceutils.Service;
 
-public class MetricsPublisherManager {
+public class MetricsPublisherManager extends Service {
 
   private static final long intervalBetweenPublications = 60;
 
@@ -33,38 +36,59 @@ public class MetricsPublisherManager {
   private static final Logger LOG = LogManager.getLogger();
   private final JsonProvider jsonProvider = new JsonProvider();
   private final MetricsDataFactory dataFactory;
+  private final MetricsPublisher publisher;
+  private volatile Cancellable publisherTask;
 
   public MetricsPublisherManager(
       AsyncRunnerFactory asyncRunnerFactory, final MetricsEndpoint metricsConfig) {
     this.asyncRunnerFactory = asyncRunnerFactory;
     this.metricsConfig = metricsConfig;
     this.dataFactory = new MetricsDataFactory(metricsConfig.getMetricsSystem());
+    this.publisher = new MetricsPublisher(new OkHttpClient());
   }
 
-  public void runPublisher() {
+  @Override
+  public SafeFuture<?> start() {
+    SafeFuture<?> safeFuture = SafeFuture.COMPLETE;
     if (metricsConfig.getMetricConfig().getMetricsEndpoint() != null) {
-      AsyncRunner asyncRunner = asyncRunnerFactory.create("MetricPublisher", 1);
-      asyncRunner.runWithFixedDelay(
-          this::publishMetrics,
-          Duration.ofSeconds(intervalBetweenPublications),
-          (err) ->
-              LOG.error(
-                  "Encountered error while attempting to publish metrics to remote service", err));
+      safeFuture = this.doStart();
     }
+    return safeFuture;
   }
 
   private void publishMetrics() {
     String endpointAddress = metricsConfig.getMetricConfig().getMetricsEndpoint();
-    BaseMetricData clientData = dataFactory.getMetricData(MetricsDataClients.BEACONCHAIN);
+    BaseMetricData clientData = dataFactory.getMetricData(MetricsDataClient.VALIDATOR);
     try {
-      MetricsPublisher publisher =
-          new MetricsPublisher(
-              endpointAddress, jsonProvider.objectToJSON(clientData), new OkHttpClient());
-      publisher.publishMetrics();
+      publisher.publishMetrics(endpointAddress, jsonProvider.objectToJSON(clientData));
+
     } catch (JsonProcessingException e) {
       LOG.error("Error processing JSON object ", e);
     } catch (IOException e) {
       LOG.error("Error performing external connection ", e);
     }
+  }
+
+  @Override
+  protected SafeFuture<?> doStart() {
+    AsyncRunner asyncRunner = asyncRunnerFactory.create("MetricPublisher", 1);
+    publisherTask =
+        asyncRunner.runWithFixedDelay(
+            this::publishMetrics,
+            Duration.ofSeconds(intervalBetweenPublications),
+            (err) ->
+                LOG.error(
+                    "Encountered error while attempting to publish metrics to remote service",
+                    err));
+    return SafeFuture.COMPLETE;
+  }
+
+  @Override
+  protected SafeFuture<?> doStop() {
+    final Cancellable publisherTask = this.publisherTask;
+    if (publisherTask != null) {
+      publisherTask.cancel();
+    }
+    return SafeFuture.COMPLETE;
   }
 }

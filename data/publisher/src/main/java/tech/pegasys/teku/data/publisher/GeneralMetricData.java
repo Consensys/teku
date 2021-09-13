@@ -15,17 +15,9 @@ package tech.pegasys.teku.data.publisher;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.Map;
 import java.util.Objects;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import org.hyperledger.besu.metrics.Observation;
-import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
 
 public class GeneralMetricData extends BaseMetricData {
-
-  private static final String clientName = "Teku";
-  private static final int clientBuild = 1;
 
   public final long cpu_process_seconds_total;
   public final long memory_process_bytes;
@@ -55,55 +47,6 @@ public class GeneralMetricData extends BaseMetricData {
     this.client_build = clientBuild;
     this.validator_total = validator_total;
     this.validator_active = validator_active;
-  }
-
-  public GeneralMetricData(
-      int version,
-      long timestamp,
-      String process,
-      PrometheusMetricsSystem prometheusMetricsSystem) {
-    super(version, timestamp, process);
-    final Map<String, Object> values;
-    values =
-        prometheusMetricsSystem
-            .streamObservations()
-            .collect(
-                Collectors.toMap(
-                    Observation::getMetricName,
-                    Function.identity(),
-                    (existing, replacement) -> existing));
-
-    if (values.containsKey("cpu_seconds_total")) {
-      this.cpu_process_seconds_total =
-          ((Double) ((Observation) values.get("cpu_seconds_total")).getValue()).longValue();
-    } else {
-      this.cpu_process_seconds_total = 0L;
-    }
-    if (values.containsKey("memory_pool_bytes_used")) {
-      this.memory_process_bytes =
-          ((Double) ((Observation) values.get("memory_pool_bytes_used")).getValue()).longValue();
-    } else {
-      this.memory_process_bytes = 0L;
-    }
-    if (values.containsKey("teku_version")) {
-      this.client_version = ((Observation) values.get("teku_version")).getValue().toString();
-    } else {
-      this.client_version = "";
-    }
-    if (values.containsKey("current_active_validators")) {
-      this.validator_total =
-          ((Double) ((Observation) values.get("current_active_validators")).getValue()).intValue();
-    } else {
-      this.validator_total = 0;
-    }
-    if (values.containsKey("current_live_validators")) {
-      this.validator_active =
-          ((Double) ((Observation) values.get("current_live_validators")).getValue()).intValue();
-    } else {
-      this.validator_active = 0;
-    }
-    this.client_name = clientName;
-    this.client_build = clientBuild;
   }
 
   @Override

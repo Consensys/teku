@@ -13,28 +13,94 @@
 
 package tech.pegasys.teku.data.publisher;
 
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import org.hyperledger.besu.metrics.Observation;
 import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 
 public class MetricsDataFactory {
   private final MetricsSystem metricsSystem;
   private static final int protocolVersion = 1;
+  private static final String clientName = "Teku";
+  private static final int clientBuild = 1;
 
   public MetricsDataFactory(MetricsSystem pms) {
     this.metricsSystem = pms;
   }
 
-  public BaseMetricData getMetricData(MetricsDataClients metricsClient) {
+  public BaseMetricData getMetricData(MetricsDataClient metricsClient) {
     if (metricsSystem instanceof PrometheusMetricsSystem) {
-      if (metricsClient == MetricsDataClients.BEACONCHAIN) {
-        return new GeneralMetricData(
-            protocolVersion,
-            System.currentTimeMillis(),
-            "validator",
-            (PrometheusMetricsSystem) metricsSystem);
+      if (metricsClient == MetricsDataClient.VALIDATOR) {
+        return extractValidatorData((PrometheusMetricsSystem) metricsSystem);
       }
     }
     return new DefaultMetricData(
         protocolVersion, System.currentTimeMillis(), "default", metricsSystem);
+  }
+
+  private static BaseMetricData extractValidatorData(
+      PrometheusMetricsSystem prometheusMetricsSystem) {
+    final long cpuProcessSecondsTotal;
+    final long memoryProcessBytes;
+    final String clientName;
+    final String clientVersion;
+    final int clientBuild;
+    final int validatorTotal;
+    final int validatorActive;
+
+    final Map<String, Object> values;
+    values =
+        prometheusMetricsSystem
+            .streamObservations()
+            .collect(
+                Collectors.toMap(
+                    Observation::getMetricName,
+                    Function.identity(),
+                    (existing, replacement) -> existing));
+
+    if (values.containsKey("cpu_seconds_total")) {
+      cpuProcessSecondsTotal =
+          ((Double) ((Observation) values.get("cpu_seconds_total")).getValue()).longValue();
+    } else {
+      cpuProcessSecondsTotal = 0L;
+    }
+    if (values.containsKey("memory_pool_bytes_used")) {
+      memoryProcessBytes =
+          ((Double) ((Observation) values.get("memory_pool_bytes_used")).getValue()).longValue();
+    } else {
+      memoryProcessBytes = 0L;
+    }
+    if (values.containsKey("teku_version")) {
+      clientVersion = ((Observation) values.get("teku_version")).getValue().toString();
+    } else {
+      clientVersion = "";
+    }
+    if (values.containsKey("current_active_validators")) {
+      validatorTotal =
+          ((Double) ((Observation) values.get("current_active_validators")).getValue()).intValue();
+    } else {
+      validatorTotal = 0;
+    }
+    if (values.containsKey("current_live_validators")) {
+      validatorActive =
+          ((Double) ((Observation) values.get("current_live_validators")).getValue()).intValue();
+    } else {
+      validatorActive = 0;
+    }
+    clientName = MetricsDataFactory.clientName;
+    clientBuild = MetricsDataFactory.clientBuild;
+    return new GeneralMetricData(
+        protocolVersion,
+        System.currentTimeMillis(),
+        MetricsDataClient.VALIDATOR.getDataClient(),
+        cpuProcessSecondsTotal,
+        memoryProcessBytes,
+        clientName,
+        clientVersion,
+        clientBuild,
+        validatorTotal,
+        validatorActive);
   }
 }

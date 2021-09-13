@@ -13,6 +13,18 @@
 
 package tech.pegasys.teku.data.publisher;
 
-public enum MetricsDataClients {
-  BEACONCHAIN
+public enum MetricsDataClient {
+  VALIDATOR("validator"),
+  BEACON_NODE("beaconnode"),
+  SYSTEM("system");
+
+  private String dataClient;
+
+  MetricsDataClient(String dataClient) {
+    this.dataClient = dataClient;
+  }
+
+  public String getDataClient() {
+    return this.dataClient;
+  }
 }

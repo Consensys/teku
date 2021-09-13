@@ -2,7 +2,8 @@
 dependencies {
     implementation project (':infrastructure:async')
     implementation project (':infrastructure:metrics')
-    implementation project  (':data:serializer')
+    implementation project (':data:serializer')
+    implementation project (':services:serviceutils')
 
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
@@ -13,6 +14,8 @@ dependencies {
     testImplementation 'org.assertj:assertj-core'
     testImplementation 'org.mockito:mockito-core'
     testImplementation 'com.squareup.okhttp3:mockwebserver'
+    testFixturesImplementation testFixtures(project(':infrastructure:metrics'))
+    testFixturesImplementation testFixtures(project(':infrastructure:async'))
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
 
 }

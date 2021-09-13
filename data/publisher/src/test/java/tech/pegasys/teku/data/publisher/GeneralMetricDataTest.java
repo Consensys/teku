@@ -43,7 +43,8 @@ class GeneralMetricDataTest {
   @Test
   public void shouldSerializeObjectFromPrometheusMetrics() throws JsonProcessingException {
     when(prometheusMock.streamObservations()).thenReturn(getMockObservations().stream());
-    final GeneralMetricData metricData = new GeneralMetricData(1, 10L, "system", prometheusMock);
+    final GeneralMetricData metricData =
+        new GeneralMetricData(1, 10L, "system", 10L, 10L, "Teku", "1.1", 1, 1, 1);
     final String data = jsonProvider.objectToJSON(metricData);
 
     assertThat(metricData).isEqualTo(jsonProvider.jsonToObject(data, GeneralMetricData.class));
@@ -53,7 +54,8 @@ class GeneralMetricDataTest {
   public void shouldSerializeObjectFromPrometheusMetricsWhenNoDataIsFound()
       throws JsonProcessingException {
     when(prometheusMock.streamObservations()).thenReturn(new ArrayList<Observation>().stream());
-    final GeneralMetricData metricData = new GeneralMetricData(1, 10L, "system", prometheusMock);
+    final GeneralMetricData metricData =
+        new GeneralMetricData(1, 10L, "system", 10L, 10L, "Teku", "1.1", 1, 1, 1);
     final String data = jsonProvider.objectToJSON(metricData);
 
     assertThat(metricData).isEqualTo(jsonProvider.jsonToObject(data, GeneralMetricData.class));

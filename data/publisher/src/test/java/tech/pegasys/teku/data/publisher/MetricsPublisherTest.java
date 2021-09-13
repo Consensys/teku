@@ -51,9 +51,9 @@ class MetricsPublisherTest {
             + "\"client_name\": \"Teku\", "
             + "\"client_version\": \"1.1\", "
             + "\"client_build\": 11}";
-    metricsPublisher = new MetricsPublisher(mockWebServer.url("/").toString(), json, okHttpClient);
+    metricsPublisher = new MetricsPublisher(okHttpClient);
     mockWebServer.enqueue(new MockResponse().setResponseCode(200));
-    metricsPublisher.publishMetrics();
+    metricsPublisher.publishMetrics(mockWebServer.url("/").toString(), json);
 
     RecordedRequest request = mockWebServer.takeRequest();
     assertThat(request.getMethod()).isEqualTo("POST");
