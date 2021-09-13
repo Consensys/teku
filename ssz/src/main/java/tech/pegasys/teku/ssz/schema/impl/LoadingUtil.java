@@ -56,13 +56,7 @@ public class LoadingUtil {
       // or it may be "useless" and we can just use the default tree
       if (isZeroBranchUseful(rootGIndex, lastUsefulGIndex)) {
         return createUsefulEmptyBranch(
-            nodeSource,
-            rootHash,
-            rootGIndex,
-            depthToLoad,
-            defaultTree,
-            lastUsefulGIndex,
-            childLoader);
+            nodeSource, rootGIndex, depthToLoad, defaultTree, lastUsefulGIndex, childLoader);
       }
       return defaultTree;
     }
@@ -153,7 +147,6 @@ public class LoadingUtil {
 
   private static BranchNode createUsefulEmptyBranch(
       final TreeNodeSource nodeSource,
-      final Bytes32 rootHash,
       final long rootGIndex,
       final int depthToLoad,
       final TreeNode defaultTree,
