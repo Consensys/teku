@@ -20,28 +20,27 @@ import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.function.Consumer;
 import org.apache.commons.io.FileUtils;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
-import tech.pegasys.teku.cli.options.DataStorageOptions;
-import tech.pegasys.teku.cli.options.Eth2NetworkOptions;
 import tech.pegasys.teku.cli.options.ValidatorClientDataOptions;
+import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
+import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreDatabase;
 
 public class DatabaseMigrater {
   private final DataDirLayout dataDirLayout;
   private final Consumer<String> statusUpdater;
-  private final DataStorageOptions dataStorageOptions;
-  private final Eth2NetworkOptions eth2NetworkOptions;
   private final int batchSize;
   private final Spec spec;
+  private final String network;
+  private final StateStorageMode storageMode;
   private KvStoreDatabase originalDatabase;
 
   KvStoreDatabase getOriginalDatabase() {
@@ -56,14 +55,14 @@ public class DatabaseMigrater {
 
   private DatabaseMigrater(
       final DataDirLayout dataDirLayout,
-      final DataStorageOptions dataStorageOptions,
-      final Eth2NetworkOptions eth2NetworkOptions,
+      final String network,
+      final StateStorageMode storageMode,
       final Spec spec,
       final int batchSize,
       final Consumer<String> statusUpdater) {
     this.dataDirLayout = dataDirLayout;
-    this.dataStorageOptions = dataStorageOptions;
-    this.eth2NetworkOptions = eth2NetworkOptions;
+    this.network = network;
+    this.storageMode = storageMode;
     this.spec = spec;
     this.batchSize = batchSize;
     this.statusUpdater = statusUpdater;
@@ -109,20 +108,14 @@ public class DatabaseMigrater {
   @VisibleForTesting
   void swapActiveDatabase() throws DatabaseMigraterError {
     try {
-      Files.move(
-          dataDirLayout.getBeaconDataDirectory(),
-          getMovedOldBeaconFolderPath(),
-          StandardCopyOption.ATOMIC_MOVE);
+      Files.move(dataDirLayout.getBeaconDataDirectory(), getMovedOldBeaconFolderPath());
     } catch (IOException ex) {
       statusUpdater.accept(ex.getMessage());
       throw new DatabaseMigraterError(
           "Failed to move old database to " + getMovedOldBeaconFolderPath().toString());
     }
     try {
-      Files.move(
-          getNewBeaconFolderPath(),
-          dataDirLayout.getBeaconDataDirectory(),
-          StandardCopyOption.ATOMIC_MOVE);
+      Files.move(getNewBeaconFolderPath(), dataDirLayout.getBeaconDataDirectory());
     } catch (IOException ex) {
       statusUpdater.accept(ex.getMessage());
       throw new DatabaseMigraterError(
@@ -180,15 +173,16 @@ public class DatabaseMigrater {
   @VisibleForTesting
   KvStoreDatabase createDatabase(final Path databasePath, DatabaseVersion databaseVersion)
       throws DatabaseMigraterError {
+    final Eth2NetworkConfiguration config = Eth2NetworkConfiguration.builder(network).build();
     final VersionedDatabaseFactory databaseFactory =
         new VersionedDatabaseFactory(
             new NoOpMetricsSystem(),
             databasePath,
-            dataStorageOptions.getDataStorageMode(),
+            storageMode,
             databaseVersion,
             DEFAULT_STORAGE_FREQUENCY,
-            eth2NetworkOptions.getNetworkConfiguration().getEth1DepositContractAddress(),
-            dataStorageOptions.isStoreNonCanonicalBlocks(),
+            config.getEth1DepositContractAddress(),
+            true,
             spec);
     final Database database = databaseFactory.createDatabase();
     if (!(database instanceof KvStoreDatabase)) {
@@ -212,8 +206,8 @@ public class DatabaseMigrater {
     private int batchSize = 500;
     private DataDirLayout dataDirLayout;
     private Consumer<String> statusUpdater;
-    private DataStorageOptions dataStorageOptions;
-    private Eth2NetworkOptions eth2NetworkOptions;
+    private String network;
+    private StateStorageMode storageMode = StateStorageMode.ARCHIVE;
     private Spec spec;
 
     public Builder dataOptions(final ValidatorClientDataOptions dataOptions) {
@@ -233,21 +227,21 @@ public class DatabaseMigrater {
       return this;
     }
 
+    public Builder network(final String network) {
+      this.network = network;
+      if (spec == null) {
+        spec = Eth2NetworkConfiguration.builder().applyNetworkDefaults(network).build().getSpec();
+      }
+      return this;
+    }
+
+    public Builder storageMode(final StateStorageMode storageMode) {
+      this.storageMode = storageMode;
+      return this;
+    }
+
     public Builder statusUpdater(final Consumer<String> statusUpdater) {
       this.statusUpdater = statusUpdater;
-      return this;
-    }
-
-    public Builder dataStorageOptions(final DataStorageOptions dataStorageOptions) {
-      this.dataStorageOptions = dataStorageOptions;
-      return this;
-    }
-
-    public Builder eth2NetworkOptions(final Eth2NetworkOptions eth2NetworkOptions) {
-      this.eth2NetworkOptions = eth2NetworkOptions;
-      if (spec == null) {
-        spec = this.eth2NetworkOptions.getNetworkConfiguration().getSpec();
-      }
       return this;
     }
 
@@ -258,8 +252,9 @@ public class DatabaseMigrater {
 
     public DatabaseMigrater build() {
       checkNotNull(dataDirLayout);
+      checkNotNull(spec);
       return new DatabaseMigrater(
-          dataDirLayout, dataStorageOptions, eth2NetworkOptions, spec, batchSize, statusUpdater);
+          dataDirLayout, network, storageMode, spec, batchSize, statusUpdater);
     }
   }
 }

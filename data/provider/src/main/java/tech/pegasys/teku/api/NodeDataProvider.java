@@ -24,10 +24,12 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
 import tech.pegasys.teku.spec.datastructures.blocks.ReceivedBlockListener;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockManager;
+import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class NodeDataProvider {
@@ -39,6 +41,7 @@ public class NodeDataProvider {
       proposerSlashingPool;
   private final OperationPool<tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit>
       voluntaryExitPool;
+  private final SyncCommitteeContributionPool syncCommitteeContributionPool;
   private final BlockManager blockManager;
   private final AttestationManager attestationManager;
 
@@ -50,12 +53,14 @@ public class NodeDataProvider {
           proposerSlashingPool,
       OperationPool<tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit>
           voluntaryExitPool,
+      final SyncCommitteeContributionPool syncCommitteeContributionPool,
       BlockManager blockManager,
       AttestationManager attestationManager) {
     this.attestationPool = attestationPool;
     this.attesterSlashingPool = attesterSlashingsPool;
     this.proposerSlashingPool = proposerSlashingPool;
     this.voluntaryExitPool = voluntaryExitPool;
+    this.syncCommitteeContributionPool = syncCommitteeContributionPool;
     this.blockManager = blockManager;
     this.attestationManager = attestationManager;
   }
@@ -111,5 +116,10 @@ public class NodeDataProvider {
               tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit>
           listener) {
     voluntaryExitPool.subscribeOperationAdded(listener);
+  }
+
+  public void subscribeToSyncCommitteeContributions(
+      OperationPool.OperationAddedSubscriber<SignedContributionAndProof> listener) {
+    syncCommitteeContributionPool.subscribeOperationAdded(listener);
   }
 }

@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.networking.p2p.discovery.noop;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
@@ -38,8 +40,8 @@ public class NoOpDiscoveryService implements DiscoveryService {
   }
 
   @Override
-  public SafeFuture<Void> searchForPeers() {
-    return SafeFuture.COMPLETE;
+  public SafeFuture<Collection<DiscoveryPeer>> searchForPeers() {
+    return SafeFuture.completedFuture(Collections.emptyList());
   }
 
   @Override

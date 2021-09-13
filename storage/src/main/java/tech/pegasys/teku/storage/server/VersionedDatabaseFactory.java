@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -27,7 +26,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration;
 import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaHot;
-import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaFinalized;
+import tech.pegasys.teku.storage.server.kvstore.schema.V6SnapshotSchemaFinalized;
 import tech.pegasys.teku.storage.server.leveldb.LevelDbDatabaseFactory;
 import tech.pegasys.teku.storage.server.metadata.V5DatabaseMetadata;
 import tech.pegasys.teku.storage.server.metadata.V6DatabaseMetadata;
@@ -49,7 +48,6 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private final File dataDirectory;
   private final File dbDirectory;
   private final File v5ArchiveDirectory;
-  private final Optional<File> v6ArchiveDirectory;
   private final File dbVersionFile;
   private final StateStorageMode stateStorageMode;
   private final DatabaseVersion createDatabaseVersion;
@@ -68,7 +66,6 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     this(
         metricsSystem,
         dataPath,
-        Optional.empty(),
         dataStorageMode,
         DatabaseVersion.DEFAULT_VERSION,
         DEFAULT_STORAGE_FREQUENCY,
@@ -86,33 +83,10 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final Eth1Address eth1Address,
       final boolean storeNonCanonicalBlocks,
       final Spec spec) {
-    this(
-        metricsSystem,
-        dataPath,
-        Optional.empty(),
-        dataStorageMode,
-        createDatabaseVersion,
-        stateStorageFrequency,
-        eth1Address,
-        storeNonCanonicalBlocks,
-        spec);
-  }
-
-  public VersionedDatabaseFactory(
-      final MetricsSystem metricsSystem,
-      final Path dataPath,
-      final Optional<Path> maybeArchiveDataPath,
-      final StateStorageMode dataStorageMode,
-      final DatabaseVersion createDatabaseVersion,
-      final long stateStorageFrequency,
-      final Eth1Address eth1Address,
-      final boolean storeNonCanonicalBlocks,
-      final Spec spec) {
     this.metricsSystem = metricsSystem;
     this.dataDirectory = dataPath.toFile();
     this.dbDirectory = this.dataDirectory.toPath().resolve(DB_PATH).toFile();
     this.v5ArchiveDirectory = this.dataDirectory.toPath().resolve(ARCHIVE_PATH).toFile();
-    this.v6ArchiveDirectory = maybeArchiveDataPath.map(p -> p.resolve(ARCHIVE_PATH).toFile());
     this.dbVersionFile = this.dataDirectory.toPath().resolve(DB_VERSION_PATH).toFile();
     this.stateStorageMode = dataStorageMode;
     this.stateStorageFrequency = stateStorageFrequency;
@@ -161,21 +135,10 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
         break;
       case V6:
         database = createV6Database();
-        if (v6ArchiveDirectory.isPresent()) {
-          LOG.info(
-              "Created V6 Hot database ({}) at {}",
-              dbVersion.getValue(),
-              dbDirectory.getAbsolutePath());
-          LOG.info(
-              "Created V6 Finalized database ({}) at {}",
-              dbVersion.getValue(),
-              v6ArchiveDirectory.get().getAbsolutePath());
-        } else {
-          LOG.info(
-              "Created V6 Hot and Finalized database ({}) at {}",
-              dbVersion.getValue(),
-              dbDirectory.getAbsolutePath());
-        }
+        LOG.info(
+            "Created V6 Hot and Finalized database ({}) at {}",
+            dbVersion.getValue(),
+            dbDirectory.getAbsolutePath());
         break;
       case LEVELDB1:
         database = createLevelDbV1Database();
@@ -190,21 +153,17 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
         break;
       case LEVELDB2:
         database = createLevelDbV2Database();
-        if (v6ArchiveDirectory.isPresent()) {
-          LOG.info(
-              "Created leveldb2 Hot database ({}) at {}",
-              dbVersion.getValue(),
-              dbDirectory.getAbsolutePath());
-          LOG.info(
-              "Created leveldb2 Finalized database ({}) at {}",
-              dbVersion.getValue(),
-              v6ArchiveDirectory.get().getAbsolutePath());
-        } else {
-          LOG.info(
-              "Created leveldb2 Hot and Finalized database ({}) at {}",
-              dbVersion.getValue(),
-              dbDirectory.getAbsolutePath());
-        }
+        LOG.info(
+            "Created leveldb2 Hot and Finalized database ({}) at {}",
+            dbVersion.getValue(),
+            dbDirectory.getAbsolutePath());
+        break;
+      case LEVELDB_TREE:
+        database = createLevelDbTreeDatabase();
+        LOG.info(
+            "Created leveldb_tree Hot and Finalized database ({}) at {}",
+            dbVersion.getValue(),
+            dbDirectory.getAbsolutePath());
         break;
       default:
         throw new UnsupportedOperationException("Unhandled database version " + dbVersion);
@@ -255,46 +214,14 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
 
   private Database createV6Database() {
     try {
-      final V6DatabaseMetadata defaultMetaData;
-      if (v6ArchiveDirectory.isPresent()) {
-        defaultMetaData = V6DatabaseMetadata.separateDBDefault();
-      } else {
-        defaultMetaData = V6DatabaseMetadata.singleDBDefault();
-      }
 
-      final V6DatabaseMetadata metaData =
-          V6DatabaseMetadata.init(getMetadataFile(), defaultMetaData);
-      if (defaultMetaData.isSingleDB() != metaData.isSingleDB()) {
-        throw DatabaseStorageException.unrecoverable(
-            "The database was originally created as "
-                + (metaData.isSingleDB() ? "Single" : "Separate")
-                + " but now accessed as "
-                + (defaultMetaData.isSingleDB() ? "Single" : "Separate"));
-      }
-
-      DatabaseNetwork.init(
-          getNetworkFile(), spec.getGenesisSpecConfig().getGenesisForkVersion(), eth1Address);
-
-      final KvStoreConfiguration hotOrSingleDBConfiguration =
-          metaData.isSingleDB()
-              ? metaData.getSingleDbConfiguration().get().getConfiguration()
-              : metaData.getSeparateDbConfiguration().get().getHotDbConfiguration();
-
-      final Optional<KvStoreConfiguration> finalizedConfiguration =
-          v6ArchiveDirectory.map(
-              dir ->
-                  metaData
-                      .getSeparateDbConfiguration()
-                      .get()
-                      .getArchiveDbConfiguration()
-                      .withDatabaseDir(dir.toPath()));
+      final KvStoreConfiguration dbConfiguration = initV6Configuration();
 
       return RocksDbDatabaseFactory.createV6(
           metricsSystem,
-          hotOrSingleDBConfiguration.withDatabaseDir(dbDirectory.toPath()),
-          finalizedConfiguration,
-          V4SchemaHot.create(spec),
-          V6SchemaFinalized.create(spec),
+          dbConfiguration.withDatabaseDir(dbDirectory.toPath()),
+          new V4SchemaHot(spec),
+          new V6SnapshotSchemaFinalized(spec),
           stateStorageMode,
           stateStorageFrequency,
           storeNonCanonicalBlocks,
@@ -330,46 +257,11 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
 
   private Database createLevelDbV2Database() {
     try {
-      final V6DatabaseMetadata defaultMetaData;
-      if (v6ArchiveDirectory.isPresent()) {
-        defaultMetaData = V6DatabaseMetadata.separateDBDefault();
-      } else {
-        defaultMetaData = V6DatabaseMetadata.singleDBDefault();
-      }
-
-      final V6DatabaseMetadata metaData =
-          V6DatabaseMetadata.init(getMetadataFile(), defaultMetaData);
-      if (defaultMetaData.isSingleDB() != metaData.isSingleDB()) {
-        throw DatabaseStorageException.unrecoverable(
-            "The database was originally created as "
-                + (metaData.isSingleDB() ? "Single" : "Separate")
-                + " but now accessed as "
-                + (defaultMetaData.isSingleDB() ? "Single" : "Separate"));
-      }
-
-      DatabaseNetwork.init(
-          getNetworkFile(), spec.getGenesisSpecConfig().getGenesisForkVersion(), eth1Address);
-
-      final KvStoreConfiguration hotOrSingleDBConfiguration =
-          metaData.isSingleDB()
-              ? metaData.getSingleDbConfiguration().orElseThrow().getConfiguration()
-              : metaData.getSeparateDbConfiguration().orElseThrow().getHotDbConfiguration();
-
-      final Optional<KvStoreConfiguration> finalizedConfiguration =
-          v6ArchiveDirectory.map(
-              dir ->
-                  metaData
-                      .getSeparateDbConfiguration()
-                      .orElseThrow()
-                      .getArchiveDbConfiguration()
-                      .withDatabaseDir(dir.toPath()));
+      final KvStoreConfiguration dbConfiguration = initV6Configuration();
 
       return LevelDbDatabaseFactory.createLevelDbV2(
           metricsSystem,
-          hotOrSingleDBConfiguration.withDatabaseDir(dbDirectory.toPath()),
-          finalizedConfiguration,
-          V4SchemaHot.create(spec),
-          V6SchemaFinalized.create(spec),
+          dbConfiguration.withDatabaseDir(dbDirectory.toPath()),
           stateStorageMode,
           stateStorageFrequency,
           storeNonCanonicalBlocks,
@@ -377,6 +269,31 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);
     }
+  }
+
+  private Database createLevelDbTreeDatabase() {
+    try {
+      final KvStoreConfiguration dbConfiguration = initV6Configuration();
+
+      return LevelDbDatabaseFactory.createLevelDbTree(
+          metricsSystem,
+          dbConfiguration.withDatabaseDir(dbDirectory.toPath()),
+          stateStorageMode,
+          storeNonCanonicalBlocks,
+          spec);
+    } catch (final IOException e) {
+      throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);
+    }
+  }
+
+  private KvStoreConfiguration initV6Configuration() throws IOException {
+    final V6DatabaseMetadata metaData =
+        V6DatabaseMetadata.init(getMetadataFile(), V6DatabaseMetadata.singleDBDefault());
+
+    DatabaseNetwork.init(
+        getNetworkFile(), spec.getGenesisSpecConfig().getGenesisForkVersion(), eth1Address);
+
+    return metaData.getSingleDbConfiguration().getConfiguration();
   }
 
   private File getMetadataFile() {
@@ -414,17 +331,6 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
                   "Unable to create the path to store archive files at %s",
                   v5ArchiveDirectory.getAbsolutePath()));
         }
-        break;
-      case V6:
-      case LEVELDB2:
-        v6ArchiveDirectory.ifPresent(
-            archiveDirectory -> {
-              if (!archiveDirectory.mkdirs() && !archiveDirectory.isDirectory()) {
-                throw DatabaseStorageException.unrecoverable(
-                    "Unable to create the path to store archive files at "
-                        + archiveDirectory.getAbsolutePath());
-              }
-            });
         break;
       default:
         // do nothing

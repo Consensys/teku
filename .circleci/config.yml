@@ -1,4 +1,6 @@
 version: 2.1
+orbs:
+  slack: circleci/slack@3.4.2
 executors:
   small_executor:
     docker:
@@ -12,6 +14,12 @@ executors:
     environment:
       JAVA_TOOL_OPTIONS: -Xmx2g
       GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=2
+
+  trivy_executor:
+    docker:
+      - image: docker:stable-git
+    resource_class: small
+    working_directory: ~/project
 
   medium_executor:
     docker:
@@ -105,6 +113,13 @@ commands:
       - store_artifacts:
           path: build/test-artifacts
 
+  notify:
+    description: "Notify Slack"
+    steps:
+      - slack/status:
+          mentions: "team-centaur"
+          fail_only: true
+          only_for_branches: 'master'
 jobs:
   assemble:
     executor: medium_executor
@@ -114,6 +129,7 @@ jobs:
           name: Assemble
           command: |
             ./gradlew --no-daemon --parallel clean compileJava compileTestJava compileJmhJava compileIntegrationTestJava compileAcceptanceTestJava assemble
+      - notify
       - save_cache:
           name: Caching gradle dependencies
           key: deps-{{ checksum "build.gradle" }}-{{ .Branch }}-{{ .Revision }}
@@ -138,6 +154,29 @@ jobs:
           name: Spotless
           command: |
             ./gradlew --no-daemon --parallel checkMavenCoordinateCollisions spotlessCheck
+      - notify
+
+  dockerScan:
+    executor: trivy_executor
+    steps:
+      - prepare
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          name: Install trivy
+          command: |
+            apk add --update-cache --upgrade curl bash
+            curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+      - run:
+          name: Scan with trivy
+          shell: /bin/sh
+          command: |
+            for FILE in $(ls docker)
+            do
+              docker pull -q "consensys/teku:develop-$FILE"
+              trivy -q image --exit-code 1 --no-progress --severity HIGH,CRITICAL "consensys/teku:develop-$FILE"
+            done
+      - notify
 
   unitTests:
     parallelism: 2
@@ -164,6 +203,7 @@ jobs:
               exit 1
             fi
             ./gradlew --no-daemon --parallel test $GRADLE_ARGS
+      - notify
       - capture_test_results
 
   integrationTests:
@@ -177,6 +217,7 @@ jobs:
           no_output_timeout: 20m
           command: |
             ./gradlew --no-daemon --parallel integrationTest
+      - notify
       - capture_test_results
       - store_artifacts:
           path: build/test-results
@@ -205,6 +246,7 @@ jobs:
               exit 1
             fi
             ./gradlew --no-daemon --parallel acceptanceTest $GRADLE_ARGS
+      - notify
       - capture_test_results
       - capture_test_artifacts
       - store_artifacts:
@@ -232,6 +274,7 @@ jobs:
           name: CompileReferenceTests
           command: |
             ./gradlew --no-daemon --parallel compileReferenceTestJava
+      - notify
       - save_cache:
           name: Caching reference tests
           key: reftests-{{ checksum "build.gradle" }}
@@ -267,6 +310,7 @@ jobs:
               exit 1
             fi
             ./gradlew --no-daemon --parallel -x generateReferenceTestClasses -x processReferenceTestResources -x cleanReferenceTestClasses referenceTest $GRADLE_ARGS
+      - notify
       - capture_test_results
 
   docker:
@@ -276,11 +320,12 @@ jobs:
       - attach_workspace:
           at: ~/project
       - setup_remote_docker:
-          docker_layer_caching: true
+          docker_layer_caching: false
       - run:
           name: Docker
           command: |
             ./gradlew --no-daemon --parallel distDocker
+      - notify
 
   publish-cloudsmith:
     executor: small_executor
@@ -297,6 +342,7 @@ jobs:
           name: Publish to Cloudsmith
           command: |
             ./gradlew --no-daemon --parallel cloudsmithUpload publish
+      - notify
 
   publishDocker:
     executor: medium_executor
@@ -305,12 +351,13 @@ jobs:
       - attach_workspace:
           at: ~/project
       - setup_remote_docker:
-          docker_layer_caching: true
+          docker_layer_caching: false
       - run:
           name: Publish Docker
           command: |
             docker login --username "${DOCKER_USER_RW}" --password "${DOCKER_PASSWORD_RW}"
             ./gradlew --no-daemon --parallel "-Pbranch=${CIRCLE_BRANCH}" dockerUpload
+      - notify
 
   extractAPISpec:
     executor: medium_executor
@@ -338,6 +385,7 @@ jobs:
 
             kill $TEKU_PID
             exit $EXIT_CODE
+      - notify
       - store_artifacts:
           path: .openapidoc/spec/teku.json
       - store_artifacts:
@@ -370,6 +418,7 @@ jobs:
           working_directory: .openapidoc
           command: |
             OA_GIT_USERNAME=$CIRCLE_USERNAME OA_GIT_EMAIL="${CIRCLE_USERNAME}@users.noreply.github.com" OA_GIT_URL=$CIRCLE_REPOSITORY_URL OA_GH_PAGES_BRANCH="gh-pages" node publish.js
+      - notify
       - save_cache:
           paths:
             - ~/.npm
@@ -481,3 +530,13 @@ workflows:
             - docker
             - extractAPISpec
             - spotless
+  nightly:
+    triggers:
+      - schedule:
+          cron: "0 19 * * *"
+          filters:
+            branches:
+              only:
+                - master
+    jobs:
+      - dockerScan

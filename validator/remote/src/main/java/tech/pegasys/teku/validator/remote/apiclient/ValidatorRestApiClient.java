@@ -19,7 +19,7 @@ import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
-import tech.pegasys.teku.api.response.v1.beacon.PostSyncCommitteeFailureResponse;
+import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
@@ -58,19 +58,20 @@ public interface ValidatorRestApiClient {
 
   Optional<AttestationData> createAttestationData(UInt64 slot, int committeeIndex);
 
-  void sendSignedAttestation(Attestation attestation);
+  Optional<PostDataFailureResponse> sendSignedAttestations(List<Attestation> attestation);
 
   void sendVoluntaryExit(SignedVoluntaryExit voluntaryExit);
 
   Optional<Attestation> createAggregate(UInt64 slot, Bytes32 attestationHashTreeRoot);
 
-  void sendAggregateAndProofs(List<SignedAggregateAndProof> signedAggregateAndProof);
+  Optional<PostDataFailureResponse> sendAggregateAndProofs(
+      List<SignedAggregateAndProof> signedAggregateAndProof);
 
   void subscribeToBeaconCommittee(List<CommitteeSubscriptionRequest> requests);
 
   void subscribeToPersistentSubnets(Set<SubnetSubscription> subnetSubscriptions);
 
-  Optional<PostSyncCommitteeFailureResponse> sendSyncCommitteeMessages(
+  Optional<PostDataFailureResponse> sendSyncCommitteeMessages(
       List<SyncCommitteeMessage> syncCommitteeMessages);
 
   Optional<PostSyncDutiesResponse> getSyncCommitteeDuties(

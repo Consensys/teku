@@ -14,8 +14,10 @@
 package tech.pegasys.teku.ssz.schema;
 
 import tech.pegasys.teku.ssz.SszComposite;
+import tech.pegasys.teku.ssz.schema.impl.StoringUtil;
 import tech.pegasys.teku.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.ssz.tree.TreeNode;
+import tech.pegasys.teku.ssz.tree.TreeNodeStore;
 import tech.pegasys.teku.ssz.tree.TreeUtil;
 
 /** Abstract schema of {@link SszComposite} subclasses */
@@ -85,4 +87,32 @@ public interface SszCompositeSchema<SszCompositeT extends SszComposite<?>>
   default boolean isPrimitive() {
     return false;
   }
+
+  @Override
+  default void storeBackingNodes(
+      final TreeNodeStore nodeStore,
+      final int maxBranchLevelsSkipped,
+      final long rootGIndex,
+      final TreeNode node) {
+    final int childDepth = treeDepth();
+    if (childDepth == 0) {
+      // Only one child so wrapper is omitted
+      storeChildNode(nodeStore, maxBranchLevelsSkipped, rootGIndex, node);
+      return;
+    }
+    final long lastUsefulGIndex =
+        GIndexUtil.gIdxChildGIndex(rootGIndex, maxChunks() - 1, childDepth);
+    StoringUtil.storeNodesToDepth(
+        nodeStore,
+        maxBranchLevelsSkipped,
+        node,
+        rootGIndex,
+        childDepth,
+        lastUsefulGIndex,
+        (targetDepthNode, targetDepthGIndex) ->
+            storeChildNode(nodeStore, maxBranchLevelsSkipped, targetDepthGIndex, targetDepthNode));
+  }
+
+  void storeChildNode(
+      TreeNodeStore nodeStore, int maxBranchLevelsSkipped, long gIndex, TreeNode node);
 }

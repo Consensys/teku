@@ -44,7 +44,10 @@ import tech.pegasys.teku.storage.store.UpdatableStore;
 public class ForkChoiceTestExecutor implements TestExecutor {
   private static final Logger LOG = LogManager.getLogger();
   public static final ImmutableMap<String, TestExecutor> FORK_CHOICE_TEST_TYPES =
-      ImmutableMap.of("fork_choice/get_head", new ForkChoiceTestExecutor());
+      ImmutableMap.<String, TestExecutor>builder()
+          .put("fork_choice/get_head", new ForkChoiceTestExecutor())
+          .put("fork_choice/on_block", TestExecutor.IGNORE_TESTS)
+          .build();
 
   @Override
   public void runTest(final TestDefinition testDefinition) throws Throwable {
@@ -131,6 +134,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     final SignedBeaconBlock block =
         TestDataUtils.loadSsz(
             testDefinition, blockName + ".ssz_snappy", spec::deserializeSignedBeaconBlock);
+    LOG.info("Importing block {} at slot {}", block.getRoot(), block.getSlot());
     assertThat(forkChoice.onBlock(block)).isCompleted();
   }
 

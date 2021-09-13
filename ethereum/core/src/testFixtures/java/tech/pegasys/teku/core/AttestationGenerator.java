@@ -17,6 +17,7 @@ import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER
 import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 import com.google.common.base.Preconditions;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -57,7 +58,7 @@ public class AttestationGenerator {
   }
 
   public static int getSingleAttesterIndex(Attestation attestation) {
-    return attestation.getAggregation_bits().streamAllSetBits().findFirst().orElse(-1);
+    return attestation.getAggregationBits().streamAllSetBits().findFirst().orElse(-1);
   }
 
   public static AttestationData diffSlotAttestationData(UInt64 slot, AttestationData data) {
@@ -90,10 +91,10 @@ public class AttestationGenerator {
     Preconditions.checkArgument(!srcAttestations.isEmpty(), "Expected at least one attestation");
 
     int targetBitlistSize =
-        srcAttestations.stream().mapToInt(a -> a.getAggregation_bits().size()).max().getAsInt();
+        srcAttestations.stream().mapToInt(a -> a.getAggregationBits().size()).max().getAsInt();
     SszBitlist targetBitlist =
         srcAttestations.stream()
-            .map(Attestation::getAggregation_bits)
+            .map(Attestation::getAggregationBits)
             .reduce(
                 Attestation.SSZ_SCHEMA.getAggregationBitsSchema().ofBits(targetBitlistSize),
                 SszBitlist::or,
@@ -101,7 +102,7 @@ public class AttestationGenerator {
     BLSSignature targetSig =
         BLS.aggregate(
             srcAttestations.stream()
-                .map(Attestation::getAggregate_signature)
+                .map(Attestation::getAggregateSignature)
                 .collect(Collectors.toList()));
 
     return new Attestation(targetBitlist, srcAttestations.get(0).getData(), targetSig);
@@ -288,7 +289,7 @@ public class AttestationGenerator {
           continue;
         }
 
-        List<Integer> committeeIndices = assignment.getCommittee();
+        IntList committeeIndices = assignment.getCommittee();
         UInt64 committeeIndex = assignment.getCommitteeIndex();
         Committee committee = new Committee(committeeIndex, committeeIndices);
         int indexIntoCommittee = committeeIndices.indexOf(validatorIndex);

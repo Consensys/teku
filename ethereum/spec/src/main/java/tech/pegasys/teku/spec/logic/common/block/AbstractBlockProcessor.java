@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -74,6 +75,7 @@ import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.ssz.type.Bytes4;
 
 public abstract class AbstractBlockProcessor implements BlockProcessor {
   /**
@@ -224,11 +226,16 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     }
     final Bytes signing_root =
         miscHelpers.computeSigningRoot(
-            block.getMessage(), beaconStateAccessors.getDomain(state, Domain.BEACON_PROPOSER));
+            block.getMessage(), getDomain(state, Domain.BEACON_PROPOSER));
     if (!signatureVerifier.verify(proposerPublicKey.get(), signing_root, block.getSignature())) {
       return BlockValidationResult.failed("Invalid block signature: " + block);
     }
     return BlockValidationResult.SUCCESSFUL;
+  }
+
+  private Bytes32 getDomain(final BeaconState state, final Bytes4 beaconProposer) {
+    return beaconStateAccessors.getDomain(
+        state.getForkInfo(), beaconProposer, beaconStateAccessors.getCurrentEpoch(state));
   }
 
   @CheckReturnValue
@@ -250,7 +257,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   @CheckReturnValue
   public Optional<OperationInvalidReason> validateAttestation(
       final BeaconState state, final AttestationData data) {
-    return operationValidator.validateAttestationData(state, data);
+    return operationValidator.validateAttestationData(state.getFork(), state, data);
   }
 
   protected void assertAttestationValid(
@@ -263,10 +270,10 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
         "process_attestations: %s",
         invalidReason.map(OperationInvalidReason::describe).orElse(""));
 
-    List<Integer> committee =
+    IntList committee =
         beaconStateAccessors.getBeaconCommittee(state, data.getSlot(), data.getIndex());
     checkArgument(
-        attestation.getAggregation_bits().size() == committee.size(),
+        attestation.getAggregationBits().size() == committee.size(),
         "process_attestations: Attestation aggregation bits and committee don't have the same length");
   }
 
@@ -350,7 +357,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     // Verify RANDAO reveal
     final BLSPublicKey proposerPublicKey =
         beaconStateAccessors.getValidatorPubKey(state, block.getProposerIndex()).orElseThrow();
-    final Bytes32 domain = beaconStateAccessors.getDomain(state, Domain.RANDAO);
+    final Bytes32 domain = getDomain(state, Domain.RANDAO);
     final Bytes signing_root = miscHelpers.computeSigningRoot(epoch, domain);
     if (!bls.verify(proposerPublicKey, signing_root, block.getBody().getRandao_reveal())) {
       return BlockValidationResult.failed("Randao reveal is invalid.");
@@ -427,7 +434,8 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
           // For each proposer_slashing in block.body.proposer_slashings:
           for (ProposerSlashing proposerSlashing : proposerSlashings) {
             Optional<OperationInvalidReason> invalidReason =
-                operationValidator.validateProposerSlashing(state, proposerSlashing);
+                operationValidator.validateProposerSlashing(
+                    state.getFork(), state, proposerSlashing);
             checkArgument(
                 invalidReason.isEmpty(),
                 "process_proposer_slashings: %s",
@@ -450,7 +458,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
 
       boolean slashingSignatureValid =
           operationSignatureVerifier.verifyProposerSlashingSignature(
-              state, proposerSlashing, signatureVerifier);
+              state.getFork(), state, proposerSlashing, signatureVerifier);
       if (!slashingSignatureValid) {
         return BlockValidationResult.failed(
             "Proposer slashing signature is invalid " + proposerSlashing);
@@ -470,7 +478,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
             List<UInt64> indicesToSlash = new ArrayList<>();
             final Optional<OperationInvalidReason> invalidReason =
                 operationValidator.validateAttesterSlashing(
-                    state, attesterSlashing, indicesToSlash::add);
+                    state.getFork(), state, attesterSlashing, indicesToSlash::add);
 
             checkArgument(
                 invalidReason.isEmpty(),
@@ -568,7 +576,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
             .map(
                 attestation ->
                     attestationUtil.isValidIndexedAttestation(
-                        state, attestation, signatureVerifier))
+                        state.getFork(), state, attestation, signatureVerifier))
             .filter(result -> !result.isSuccessful())
             .findAny();
     return processResult
@@ -723,7 +731,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
           // For each exit in block.body.voluntaryExits:
           for (SignedVoluntaryExit signedExit : exits) {
             Optional<OperationInvalidReason> invalidReason =
-                operationValidator.validateVoluntaryExit(state, signedExit);
+                operationValidator.validateVoluntaryExit(state.getFork(), state, signedExit);
             checkArgument(
                 invalidReason.isEmpty(),
                 "process_voluntary_exits: %s",
@@ -743,7 +751,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     for (SignedVoluntaryExit signedExit : exits) {
       boolean exitSignatureValid =
           operationSignatureVerifier.verifyVoluntaryExitSignature(
-              state, signedExit, signatureVerifier);
+              state.getFork(), state, signedExit, signatureVerifier);
       if (!exitSignatureValid) {
         return BlockValidationResult.failed("Exit signature is invalid: " + signedExit);
       }

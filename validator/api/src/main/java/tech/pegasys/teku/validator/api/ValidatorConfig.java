@@ -41,6 +41,8 @@ public class ValidatorConfig {
   private final Optional<URI> beaconNodeApiEndpoint;
   private final int validatorExternalSignerConcurrentRequestLimit;
   private final boolean useDependentRoots;
+  private final boolean generateEarlyAttestations;
+  private final boolean sendAttestationsAsBatch;
 
   private ValidatorConfig(
       final List<String> validatorKeys,
@@ -57,7 +59,9 @@ public class ValidatorConfig {
       final boolean validatorKeystoreLockingEnabled,
       final boolean validatorExternalSignerSlashingProtectionEnabled,
       final int validatorExternalSignerConcurrentRequestLimit,
-      final boolean useDependentRoots) {
+      final boolean useDependentRoots,
+      final boolean generateEarlyAttestations,
+      final boolean sendAttestationsAsBatch) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
@@ -76,6 +80,8 @@ public class ValidatorConfig {
     this.validatorExternalSignerConcurrentRequestLimit =
         validatorExternalSignerConcurrentRequestLimit;
     this.useDependentRoots = useDependentRoots;
+    this.generateEarlyAttestations = generateEarlyAttestations;
+    this.sendAttestationsAsBatch = sendAttestationsAsBatch;
   }
 
   public static Builder builder() {
@@ -139,8 +145,16 @@ public class ValidatorConfig {
     return processor.getFilePairs();
   }
 
+  public boolean generateEarlyAttestations() {
+    return generateEarlyAttestations;
+  }
+
   public boolean useDependentRoots() {
     return useDependentRoots;
+  }
+
+  public boolean sendAttestationsAsBatch() {
+    return sendAttestationsAsBatch;
   }
 
   public static final class Builder {
@@ -160,6 +174,8 @@ public class ValidatorConfig {
     private Optional<URI> beaconNodeApiEndpoint = Optional.empty();
     private boolean validatorExternalSignerSlashingProtectionEnabled = true;
     private boolean useDependentRoots = false;
+    private boolean generateEarlyAttestations = true;
+    private boolean sendAttestationsAsBatch = false;
 
     private Builder() {}
 
@@ -248,6 +264,16 @@ public class ValidatorConfig {
       return this;
     }
 
+    public Builder generateEarlyAttestations(final boolean generateEarlyAttestations) {
+      this.generateEarlyAttestations = generateEarlyAttestations;
+      return this;
+    }
+
+    public Builder sendAttestationsAsBatch(final boolean sendAttestationsAsBatch) {
+      this.sendAttestationsAsBatch = sendAttestationsAsBatch;
+      return this;
+    }
+
     public ValidatorConfig build() {
       validateExternalSignerUrlAndPublicKeys();
       validateExternalSignerKeystoreAndPasswordFileConfig();
@@ -268,7 +294,9 @@ public class ValidatorConfig {
           validatorKeystoreLockingEnabled,
           validatorExternalSignerSlashingProtectionEnabled,
           validatorExternalSignerConcurrentRequestLimit,
-          useDependentRoots);
+          useDependentRoots,
+          generateEarlyAttestations,
+          sendAttestationsAsBatch);
     }
 
     private void validateExternalSignerUrlAndPublicKeys() {

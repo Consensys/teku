@@ -133,7 +133,7 @@ public class GossipMessageHandlerIntegrationTest {
                     .gossipedBlockProcessor(
                         block -> {
                           // Report block as invalid
-                          return SafeFuture.completedFuture(InternalValidationResult.REJECT);
+                          return SafeFuture.completedFuture(InternalValidationResult.reject("No"));
                         }));
     node2.chainUtil().setSlot(blockSlot);
 

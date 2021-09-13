@@ -17,6 +17,7 @@ import java.nio.file.Path;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import picocli.CommandLine;
+import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.cli.converter.GraffitiConverter;
 import tech.pegasys.teku.config.TekuConfiguration;
@@ -41,7 +42,8 @@ public class ValidatorOptions {
       names = {"--validators-graffiti-file"},
       paramLabel = "<GRAFFITI FILE>",
       description =
-          "File to load graffiti value to include during block creation. Value gets converted to bytes and padded to Bytes32.  If file reading fails during block creation, teku will fall back to any value supplied via --validators-graffiti.",
+          "File to load graffiti value to include during block creation. Value gets converted to bytes and padded to Bytes32. "
+              + "Takes precedence over --validators-graffiti. If the file can not be read, the --validators-graffiti value is used as a fallback.",
       arity = "1")
   private Path graffitiFile;
 
@@ -57,7 +59,9 @@ public class ValidatorOptions {
   @Option(
       names = {"--validators-performance-tracking-mode"},
       paramLabel = "<TRACKING_MODE>",
-      description = "Set strategy for handling performance tracking",
+      description =
+          "Set strategy for handling performance tracking."
+              + "Valid values: ${COMPLETION-CANDIDATES}",
       arity = "1")
   private ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode =
       ValidatorPerformanceTrackingMode.ALL;
@@ -65,6 +69,7 @@ public class ValidatorOptions {
   @Option(
       names = {"--validators-keystore-locking-enabled"},
       paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
       description = "Enable locking validator keystore files",
       arity = "1")
   private boolean validatorKeystoreLockingEnabled = true;
@@ -72,7 +77,8 @@ public class ValidatorOptions {
   @Option(
       names = {"--validators-external-signer-slashing-protection-enabled"},
       paramLabel = "<BOOLEAN>",
-      description = "Enable internal slashing protection for external signers. Default: true",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Enable internal slashing protection for external signers",
       fallbackValue = "true",
       arity = "0..1")
   private boolean validatorExternalSignerSlashingProtectionEnabled = true;
@@ -81,11 +87,31 @@ public class ValidatorOptions {
       names = {"--Xvalidators-dependent-root-enabled"},
       paramLabel = "<BOOLEAN>",
       description =
-          "Invalidate validator duties based on the dependent root information instead of chain re-org events. Default: false",
+          "Invalidate validator duties based on the dependent root information instead of chain re-org events",
       hidden = true,
       fallbackValue = "true",
       arity = "0..1")
   private boolean useDependentRoots = true;
+
+  @Option(
+      names = {"--validators-early-attestations-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description =
+          "Generate attestations as soon as a block is known, rather than delaying until the attestation is due",
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean generateEarlyAttestations = true;
+
+  @Option(
+      names = {"--Xvalidators-batch-attestations-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description =
+          "Send all attestations for a slot to the beacon node in a single batch. Default: false",
+      fallbackValue = "true",
+      hidden = true,
+      arity = "0..1")
+  private boolean sendAttestationsAsBatch = false;
 
   public void configure(TekuConfiguration.Builder builder) {
     if (validatorPerformanceTrackingEnabled != null) {
@@ -107,7 +133,9 @@ public class ValidatorOptions {
                     .graffitiProvider(
                         new FileBackedGraffitiProvider(
                             Optional.ofNullable(graffiti), Optional.ofNullable(graffitiFile)))
-                    .useDependentRoots(useDependentRoots))
+                    .useDependentRoots(useDependentRoots)
+                    .generateEarlyAttestations(generateEarlyAttestations)
+                    .sendAttestationsAsBatch(sendAttestationsAsBatch))
         // We don't need to update head for empty slots when using dependent roots
         .store(b -> b.updateHeadForEmptySlots(!useDependentRoots));
     validatorKeysOptions.configure(builder);

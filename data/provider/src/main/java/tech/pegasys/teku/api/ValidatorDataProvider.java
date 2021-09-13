@@ -20,13 +20,17 @@ import static java.util.stream.Collectors.toSet;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Throwables;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionRequest;
+import tech.pegasys.teku.api.response.v1.beacon.PostDataFailure;
+import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostSyncDutiesResponse;
@@ -44,6 +48,7 @@ import tech.pegasys.teku.api.schema.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.api.schema.merge.SignedBeaconBlockMerge;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
@@ -59,7 +64,7 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuty;
-import tech.pegasys.teku.validator.api.SubmitCommitteeMessagesResult;
+import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
@@ -69,6 +74,8 @@ public class ValidatorDataProvider {
       "Cannot produce a block for a historic slot.";
   public static final String NO_SLOT_PROVIDED = "No slot was provided.";
   public static final String NO_RANDAO_PROVIDED = "No randao_reveal was provided.";
+  static final String PARTIAL_PUBLISH_FAILURE_MESSAGE =
+      "Some items failed to publish, refer to errors for details";
   private final ValidatorApiChannel validatorApiChannel;
   private final CombinedChainDataClient combinedChainDataClient;
   private final SchemaObjectProvider schemaObjectProvider;
@@ -129,18 +136,23 @@ public class ValidatorDataProvider {
     }
     return validatorApiChannel
         .createAttestationData(slot, committeeIndex)
-        .thenApply(maybeAttestation -> maybeAttestation.map(AttestationData::new));
+        .thenApply(maybeAttestation -> maybeAttestation.map(AttestationData::new))
+        .exceptionallyCompose(
+            error -> {
+              final Throwable rootCause = Throwables.getRootCause(error);
+              if (rootCause instanceof IllegalArgumentException) {
+                return SafeFuture.failedFuture(new BadRequestException(rootCause.getMessage()));
+              }
+              return SafeFuture.failedFuture(error);
+            });
   }
 
-  public void submitAttestations(List<Attestation> attestations) {
-    attestations.forEach(this::submitAttestation);
-  }
-
-  public void submitAttestation(Attestation attestation) {
-    if (attestation.signature.asInternalBLSSignature().toSSZBytes().isZero()) {
-      throw new IllegalArgumentException("Signed attestations must have a non zero signature");
-    }
-    validatorApiChannel.sendSignedAttestation(attestation.asInternalAttestation());
+  public SafeFuture<Optional<PostDataFailureResponse>> submitAttestations(
+      List<Attestation> attestations) {
+    return validatorApiChannel
+        .sendSignedAttestations(
+            attestations.stream().map(Attestation::asInternalAttestation).collect(toList()))
+        .thenApply(this::convertToPostDataFailureResponse);
   }
 
   public SignedBeaconBlock parseBlock(final JsonProvider jsonProvider, final String jsonBlock)
@@ -189,14 +201,28 @@ public class ValidatorDataProvider {
             });
   }
 
-  public SafeFuture<SubmitCommitteeMessagesResult> submitCommitteeSignatures(
+  public SafeFuture<Optional<PostDataFailureResponse>> submitCommitteeSignatures(
       final List<SyncCommitteeMessage> messages) {
     return validatorApiChannel
         .sendSyncCommitteeMessages(
             messages.stream()
                 .flatMap(message -> message.asInternalCommitteeSignature(spec).stream())
                 .collect(Collectors.toList()))
-        .thenApply(SubmitCommitteeMessagesResult::new);
+        .thenApply(this::convertToPostDataFailureResponse);
+  }
+
+  private Optional<PostDataFailureResponse> convertToPostDataFailureResponse(
+      final List<SubmitDataError> errors) {
+    if (errors.isEmpty()) {
+      return Optional.empty();
+    }
+    return Optional.of(
+        new PostDataFailureResponse(
+            HttpStatusCodes.SC_BAD_REQUEST,
+            PARTIAL_PUBLISH_FAILURE_MESSAGE,
+            errors.stream()
+                .map(e -> new PostDataFailure(e.getIndex(), e.getMessage()))
+                .collect(Collectors.toList())));
   }
 
   public SafeFuture<Optional<Attestation>> createAggregate(
@@ -206,10 +232,14 @@ public class ValidatorDataProvider {
         .thenApply(maybeAttestation -> maybeAttestation.map(Attestation::new));
   }
 
-  public void sendAggregateAndProofs(List<SignedAggregateAndProof> aggregateAndProofs) {
-    aggregateAndProofs.stream()
-        .map(SignedAggregateAndProof::asInternalSignedAggregateAndProof)
-        .forEach(validatorApiChannel::sendAggregateAndProof);
+  public SafeFuture<Optional<PostDataFailureResponse>> sendAggregateAndProofs(
+      List<SignedAggregateAndProof> aggregateAndProofs) {
+    return validatorApiChannel
+        .sendAggregateAndProofs(
+            aggregateAndProofs.stream()
+                .map(SignedAggregateAndProof::asInternalSignedAggregateAndProof)
+                .collect(toList()))
+        .thenApply(this::convertToPostDataFailureResponse);
   }
 
   public void subscribeToBeaconCommittee(final List<BeaconCommitteeSubscriptionRequest> requests) {
@@ -335,6 +365,10 @@ public class ValidatorDataProvider {
         contributionAndProofs.stream()
             .map(this::asInternalContributionAndProofs)
             .collect(toList()));
+  }
+
+  public boolean isPhase0Slot(final UInt64 slot) {
+    return spec.atSlot(slot).getMilestone() == SpecMilestone.PHASE0;
   }
 
   private tech.pegasys.teku.spec.datastructures.operations.versions.altair

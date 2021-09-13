@@ -103,23 +103,6 @@ class DatabaseMetadataTest {
     assertThat(reloadedData).usingRecursiveComparison().isEqualTo(expectedMetadata);
   }
 
-  @Test
-  void shouldCreateV6SeparateMetadataFile(@TempDir final File tempDir) throws Exception {
-    final File metadataFile = new File(tempDir, "metadata.yml");
-    assertThat(metadataFile).doesNotExist();
-    final V6DatabaseMetadata expectedMetadata = V6DatabaseMetadata.separateDBDefault();
-    final V6DatabaseMetadata loadedMetadata =
-        V6DatabaseMetadata.init(metadataFile, expectedMetadata);
-
-    assertThat(loadedMetadata).usingRecursiveComparison().isEqualTo(expectedMetadata);
-    assertThat(metadataFile).exists();
-
-    // And should reload those settings now that the file exists
-    final V6DatabaseMetadata reloadedData =
-        V6DatabaseMetadata.init(metadataFile, new V6DatabaseMetadata());
-    assertThat(reloadedData).usingRecursiveComparison().isEqualTo(expectedMetadata);
-  }
-
   private Map<String, Object> loadMetaData(final File metadataFile) throws java.io.IOException {
     return new ObjectMapper(new YAMLFactory())
         .readValue(

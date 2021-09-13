@@ -67,7 +67,7 @@ public class ProposerSlashingTopicHandlerTest extends AbstractTopicHandlerTest<P
   public void handleMessage_rejectedSlashing() {
     final ProposerSlashing slashing = dataStructureUtil.randomProposerSlashing();
     when(processor.process(slashing))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.REJECT));
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.reject("Nope")));
     Bytes serialized = gossipEncoding.encode(slashing);
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(topicHandler.prepareMessage(serialized));

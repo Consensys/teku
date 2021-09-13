@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Disabled;
@@ -109,6 +110,8 @@ public class DiscoveryNetworkIntegrationTest {
         () -> {
           assertThat(network1.getPeer(network2.getNodeId())).isPresent();
           assertThat(network2.getPeer(network1.getNodeId())).isPresent();
-        });
+        },
+        3,
+        TimeUnit.MINUTES);
   }
 }

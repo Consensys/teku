@@ -91,6 +91,7 @@ import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockManager;
+import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -112,6 +113,8 @@ public class BeaconRestApiV1Test {
   private final OperationPool<AttesterSlashing> attesterSlashingPool = mock(OperationPool.class);
   private final OperationPool<ProposerSlashing> proposerSlashingPool = mock(OperationPool.class);
   private final OperationPool<SignedVoluntaryExit> voluntaryExitPool = mock(OperationPool.class);
+  private final SyncCommitteeContributionPool syncCommitteeContributionPool =
+      mock(SyncCommitteeContributionPool.class);
 
   @BeforeEach
   public void setup() {
@@ -137,7 +140,8 @@ public class BeaconRestApiV1Test {
             attestationManager,
             attesterSlashingPool,
             proposerSlashingPool,
-            voluntaryExitPool),
+            voluntaryExitPool,
+            syncCommitteeContributionPool),
         beaconRestApiConfig,
         eventChannels,
         new StubAsyncRunner(),

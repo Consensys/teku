@@ -177,6 +177,13 @@ public final class DataStructureUtil {
     return Bytes32.random(random);
   }
 
+  public Bytes randomBytes(final int length) {
+    final Random random = new Random(nextSeed());
+    final byte[] result = new byte[length];
+    random.nextBytes(result);
+    return Bytes.wrap(result);
+  }
+
   public BLSSignature randomSignature() {
     return BLSTestUtil.randomSignature(nextSeed());
   }

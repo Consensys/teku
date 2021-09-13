@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client.duties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -26,6 +27,8 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,6 +48,8 @@ import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
+import tech.pegasys.teku.validator.client.duties.attestations.AggregationDuty;
+import tech.pegasys.teku.validator.client.duties.attestations.IndividualSendingStrategy;
 
 class AggregationDutyTest {
   private static final String TYPE = "aggregate";
@@ -62,7 +67,12 @@ class AggregationDutyTest {
   private final ValidatorLogger validatorLogger = mock(ValidatorLogger.class);
 
   private final AggregationDuty duty =
-      new AggregationDuty(SLOT, validatorApiChannel, forkProvider, validatorLogger);
+      new AggregationDuty(
+          SLOT,
+          validatorApiChannel,
+          forkProvider,
+          validatorLogger,
+          new IndividualSendingStrategy<>(validatorApiChannel::sendAggregateAndProofs));
 
   @BeforeEach
   public void setUp() {
@@ -101,8 +111,8 @@ class AggregationDutyTest {
     assertThat(duty.performDuty()).isCompleted();
 
     verify(validatorApiChannel)
-        .sendAggregateAndProof(
-            new SignedAggregateAndProof(expectedAggregateAndProof, aggregateSignature));
+        .sendAggregateAndProofs(
+            List.of(new SignedAggregateAndProof(expectedAggregateAndProof, aggregateSignature)));
   }
 
   @Test
@@ -153,12 +163,12 @@ class AggregationDutyTest {
     assertThat(duty.performDuty()).isCompleted();
 
     verify(validatorApiChannel)
-        .sendAggregateAndProof(
-            new SignedAggregateAndProof(aggregateAndProof1, aggregateSignature1));
+        .sendAggregateAndProofs(
+            List.of(new SignedAggregateAndProof(aggregateAndProof1, aggregateSignature1)));
 
     verify(validatorApiChannel)
-        .sendAggregateAndProof(
-            new SignedAggregateAndProof(aggregateAndProof2, aggregateSignature2));
+        .sendAggregateAndProofs(
+            List.of(new SignedAggregateAndProof(aggregateAndProof2, aggregateSignature2)));
   }
 
   @Test
@@ -188,6 +198,8 @@ class AggregationDutyTest {
 
     when(validatorApiChannel.createAggregate(SLOT, attestationData.hashTreeRoot()))
         .thenReturn(completedFuture(Optional.of(aggregate)));
+    when(validatorApiChannel.sendAggregateAndProofs(anyList()))
+        .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
 
     final AggregateAndProof aggregateAndProof =
         new AggregateAndProof(UInt64.valueOf(validator1Index), aggregate, validator1Proof);
@@ -198,9 +210,10 @@ class AggregationDutyTest {
     performAndReportDuty();
 
     verify(validatorApiChannel)
-        .sendAggregateAndProof(new SignedAggregateAndProof(aggregateAndProof, aggregateSignature1));
+        .sendAggregateAndProofs(
+            List.of(new SignedAggregateAndProof(aggregateAndProof, aggregateSignature1)));
     // Only one proof should be sent.
-    verify(validatorApiChannel, times(1)).sendAggregateAndProof(any());
+    verify(validatorApiChannel, times(1)).sendAggregateAndProofs(anyList());
     verify(validatorLogger)
         .dutyCompleted(TYPE, SLOT, 1, Set.of(aggregate.getData().getBeacon_block_root()));
     verifyNoMoreInteractions(validatorLogger);
@@ -248,7 +261,7 @@ class AggregationDutyTest {
         .thenReturn(completedFuture(Optional.empty()));
 
     assertThat(duty.performDuty()).isCompleted();
-    verify(validatorApiChannel, never()).sendAggregateAndProof(any());
+    verify(validatorApiChannel, never()).sendAggregateAndProofs(anyList());
     verify(validatorLogger).aggregationSkipped(SLOT, 2);
     verifyNoMoreInteractions(validatorLogger);
   }
@@ -267,7 +280,7 @@ class AggregationDutyTest {
         .thenReturn(failedFuture(exception));
 
     performAndReportDuty();
-    verify(validatorApiChannel, never()).sendAggregateAndProof(any());
+    verify(validatorApiChannel, never()).sendAggregateAndProofs(anyList());
     verify(validatorLogger)
         .dutyFailed(TYPE, SLOT, Set.of(validator1.getPublicKey().toAbbreviatedString()), exception);
     verifyNoMoreInteractions(validatorLogger);

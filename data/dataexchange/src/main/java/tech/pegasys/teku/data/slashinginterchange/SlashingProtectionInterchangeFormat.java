@@ -14,7 +14,10 @@
 package tech.pegasys.teku.data.slashinginterchange;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
 import java.util.List;
+import java.util.Objects;
 
 public class SlashingProtectionInterchangeFormat {
   public final Metadata metadata;
@@ -22,8 +25,27 @@ public class SlashingProtectionInterchangeFormat {
 
   @JsonCreator
   public SlashingProtectionInterchangeFormat(
-      final Metadata metadata, final List<SigningHistory> data) {
+      @JsonProperty("metadata") final Metadata metadata,
+      @JsonProperty("data") final List<SigningHistory> data) {
     this.metadata = metadata;
     this.data = data;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    final SlashingProtectionInterchangeFormat that = (SlashingProtectionInterchangeFormat) o;
+    return Objects.equals(metadata, that.metadata) && Objects.equals(data, that.data);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(metadata, data);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this).add("metadata", metadata).add("data", data).toString();
   }
 }

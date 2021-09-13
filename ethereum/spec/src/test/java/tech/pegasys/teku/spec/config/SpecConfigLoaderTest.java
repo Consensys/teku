@@ -144,8 +144,8 @@ public class SpecConfigLoaderTest {
   static Stream<Arguments> knownNetworks() {
     return Stream.of(
         Arguments.of(Eth2Network.MAINNET.configName(), SpecConfigAltair.class),
-        Arguments.of(Eth2Network.PYRMONT.configName(), SpecConfigPhase0.class),
-        Arguments.of(Eth2Network.PRATER.configName(), SpecConfigPhase0.class),
+        Arguments.of(Eth2Network.PYRMONT.configName(), SpecConfigAltair.class),
+        Arguments.of(Eth2Network.PRATER.configName(), SpecConfigAltair.class),
         Arguments.of(Eth2Network.MINIMAL.configName(), SpecConfigAltair.class),
         Arguments.of(Eth2Network.SWIFT.configName(), SpecConfigPhase0.class),
         Arguments.of(Eth2Network.LESS_SWIFT.configName(), SpecConfigPhase0.class));

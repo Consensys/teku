@@ -38,6 +38,14 @@ public class SignedContributionAndProof {
     this.signature = signature;
   }
 
+  public SignedContributionAndProof(
+      final tech.pegasys.teku.spec.datastructures.operations.versions.altair
+              .SignedContributionAndProof
+          proof) {
+    this.message = new ContributionAndProof(proof.getMessage());
+    this.signature = new BLSSignature(proof.getSignature());
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) return true;

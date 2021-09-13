@@ -21,6 +21,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
@@ -28,7 +29,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.util.config.Constants;
 
 /**
  * Represents an "anchor" - a trusted, finalized (block, state, checkpoint) tuple from which we can
@@ -53,7 +53,7 @@ public class AnchorPoint extends StateAndBlockSummary {
 
     this.spec = spec;
     this.checkpoint = checkpoint;
-    this.isGenesis = checkpoint.getEpoch().equals(UInt64.valueOf(Constants.GENESIS_EPOCH));
+    this.isGenesis = checkpoint.getEpoch().equals(SpecConfig.GENESIS_EPOCH);
   }
 
   public static AnchorPoint create(
@@ -105,7 +105,7 @@ public class AnchorPoint extends StateAndBlockSummary {
   }
 
   private static boolean isGenesisState(final BeaconState state) {
-    return state.getSlot().equals(UInt64.valueOf(Constants.GENESIS_SLOT));
+    return state.getSlot().equals(SpecConfig.GENESIS_SLOT);
   }
 
   public static AnchorPoint fromInitialBlockAndState(

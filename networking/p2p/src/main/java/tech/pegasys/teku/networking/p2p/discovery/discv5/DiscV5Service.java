@@ -13,10 +13,14 @@
 
 package tech.pegasys.teku.networking.p2p.discovery.discv5;
 
+import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toList;
+import static tech.pegasys.teku.networking.p2p.discovery.discv5.NodeRecordConverter.convertToDiscoveryPeer;
+
 import java.time.Duration;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -28,12 +32,12 @@ import org.ethereum.beacon.discovery.schema.EnrField;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.ethereum.beacon.discovery.schema.NodeRecordBuilder;
 import org.ethereum.beacon.discovery.schema.NodeRecordFactory;
-import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
-import org.ethereum.beacon.discovery.schema.NodeStatus;
 import org.ethereum.beacon.discovery.storage.NewAddressHandler;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
@@ -49,6 +53,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
   private static final String SEQ_NO_STORE_KEY = "local-enr-seqno";
   private static final Duration BOOTNODE_REFRESH_DELAY = Duration.ofMinutes(2);
   private final AsyncRunner asyncRunner;
+  private final Bytes localNodePrivateKey;
   private final SchemaDefinitionsSupplier currentSchemaDefinitionsSupplier;
 
   private final DiscoverySystem discoverySystem;
@@ -57,6 +62,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
   private volatile Cancellable bootnodeRefreshTask;
 
   public DiscV5Service(
+      final MetricsSystem metricsSystem,
       final AsyncRunner asyncRunner,
       final DiscoveryConfig discoConfig,
       final NetworkConfig p2pConfig,
@@ -64,6 +70,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
       final Bytes privateKey,
       final SchemaDefinitionsSupplier currentSchemaDefinitionsSupplier) {
     this.asyncRunner = asyncRunner;
+    this.localNodePrivateKey = privateKey;
     this.currentSchemaDefinitionsSupplier = currentSchemaDefinitionsSupplier;
     final String listenAddress = p2pConfig.getNetworkInterface();
     final int listenPort = p2pConfig.getListenPort();
@@ -72,36 +79,44 @@ public class DiscV5Service extends Service implements DiscoveryService {
     final UInt64 seqNo =
         kvStore.get(SEQ_NO_STORE_KEY).map(UInt64::fromBytes).orElse(UInt64.ZERO).add(1);
     final NewAddressHandler maybeUpdateNodeRecordHandler =
-        maybeUpdateNodeRecord(p2pConfig.hasUserExplicitlySetAdvertisedIp());
+        maybeUpdateNodeRecord(p2pConfig.hasUserExplicitlySetAdvertisedIp(), advertisedPort);
     this.bootnodes =
         discoConfig.getBootnodes().stream()
             .map(NodeRecordFactory.DEFAULT::fromEnr)
-            .collect(Collectors.toList());
+            .collect(toList());
+    final NodeRecordBuilder nodeRecordBuilder =
+        new NodeRecordBuilder().privateKey(privateKey).seq(seqNo);
+    if (p2pConfig.hasUserExplicitlySetAdvertisedIp()) {
+      nodeRecordBuilder.address(advertisedAddress, advertisedPort);
+    }
+    final NodeRecord localNodeRecord = nodeRecordBuilder.build();
     this.discoverySystem =
         new DiscoverySystemBuilder()
             .listen(listenAddress, listenPort)
             .privateKey(privateKey)
             .bootnodes(bootnodes)
-            .localNodeRecord(
-                new NodeRecordBuilder()
-                    .privateKey(privateKey)
-                    .address(advertisedAddress, advertisedPort)
-                    .seq(seqNo)
-                    .build())
+            .localNodeRecord(localNodeRecord)
             .newAddressHandler(maybeUpdateNodeRecordHandler)
             .localNodeRecordListener(this::localNodeRecordUpdated)
             .build();
     this.kvStore = kvStore;
+    metricsSystem.createIntegerGauge(
+        TekuMetricCategory.DISCOVERY,
+        "live_nodes_current",
+        "Current number of live nodes tracked by the discovery system",
+        () -> discoverySystem.getBucketStats().getTotalLiveNodeCount());
   }
 
-  private NewAddressHandler maybeUpdateNodeRecord(boolean userExplicitlySetAdvertisedIpOrPort) {
-    return (oldRecord, proposedNewRecord) -> {
-      if (userExplicitlySetAdvertisedIpOrPort) {
-        return Optional.of(oldRecord);
-      } else {
-        return Optional.of(proposedNewRecord);
-      }
-    };
+  private NewAddressHandler maybeUpdateNodeRecord(
+      boolean userExplicitlySetAdvertisedIpOrPort, final int advertisedTcpPort) {
+    if (userExplicitlySetAdvertisedIpOrPort) {
+      return (oldRecord, newAddress) -> Optional.of(oldRecord);
+    } else {
+      return (oldRecord, newAddress) ->
+          Optional.of(
+              oldRecord.withNewAddress(
+                  newAddress, Optional.of(advertisedTcpPort), localNodePrivateKey));
+    }
   }
 
   private void localNodeRecordUpdated(NodeRecord oldRecord, NodeRecord newRecord) {
@@ -140,14 +155,24 @@ public class DiscV5Service extends Service implements DiscoveryService {
   public Stream<DiscoveryPeer> streamKnownPeers() {
     final SchemaDefinitions schemaDefinitions =
         currentSchemaDefinitionsSupplier.getSchemaDefinitions();
-    return activeNodes()
-        .map(n -> NodeRecordConverter.convertToDiscoveryPeer(n, schemaDefinitions))
-        .flatMap(Optional::stream);
+    return activeNodes().flatMap(node -> convertToDiscoveryPeer(node, schemaDefinitions).stream());
   }
 
   @Override
-  public SafeFuture<Void> searchForPeers() {
-    return SafeFuture.of(discoverySystem.searchForNewPeers());
+  public SafeFuture<Collection<DiscoveryPeer>> searchForPeers() {
+    return SafeFuture.of(discoverySystem.searchForNewPeers())
+        // Current version of discovery doesn't return the found peers but next version will
+        .<Collection<NodeRecord>>thenApply(__ -> emptyList())
+        .thenApply(this::convertToDiscoveryPeers);
+  }
+
+  private List<DiscoveryPeer> convertToDiscoveryPeers(final Collection<NodeRecord> foundNodes) {
+    LOG.debug("Found {} nodes prior to filtering", foundNodes.size());
+    final SchemaDefinitions schemaDefinitions =
+        currentSchemaDefinitionsSupplier.getSchemaDefinitions();
+    return foundNodes.stream()
+        .flatMap(nodeRecord -> convertToDiscoveryPeer(nodeRecord, schemaDefinitions).stream())
+        .collect(toList());
   }
 
   @Override
@@ -178,9 +203,6 @@ public class DiscV5Service extends Service implements DiscoveryService {
   }
 
   private Stream<NodeRecord> activeNodes() {
-    return discoverySystem
-        .streamKnownNodes()
-        .filter(record -> record.getStatus() == NodeStatus.ACTIVE)
-        .map(NodeRecordInfo::getNode);
+    return discoverySystem.streamLiveNodes();
   }
 }

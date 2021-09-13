@@ -14,16 +14,18 @@
 package tech.pegasys.teku.ssz.schema;
 
 import java.util.stream.Stream;
+import tech.pegasys.teku.ssz.TestContainers.TestLargeContainer;
 import tech.pegasys.teku.ssz.TestContainers.TestSmallContainer;
 import tech.pegasys.teku.ssz.TestContainers.TestSubContainer;
 import tech.pegasys.teku.ssz.TestContainers.VariableSizeContainer;
 import tech.pegasys.teku.ssz.TestContainers.WritableContainer;
 import tech.pegasys.teku.ssz.TestContainers.WritableSubContainer;
 
-public class SszContainerSchemaTest implements SszCompositeSchemaTestBase {
+public class SszContainerSchemaTest extends SszCompositeSchemaTestBase {
 
   public static Stream<SszContainerSchema<?>> testContainerSchemas() {
     return Stream.of(
+        TestLargeContainer.SSZ_SCHEMA,
         TestSubContainer.SSZ_SCHEMA,
         TestSmallContainer.SSZ_SCHEMA,
         VariableSizeContainer.SSZ_SCHEMA,

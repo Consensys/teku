@@ -41,10 +41,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
+import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import picocli.CommandLine;
 import tech.pegasys.teku.cli.options.BeaconRestApiOptions;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
@@ -94,6 +96,36 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     assertThat(str).contains("Description:");
     assertThat(str).contains("Default");
     assertThat(str).doesNotContain("To display full help:");
+  }
+
+  @Test
+  public void helpShouldShowDefaultsForBooleanOptions() {
+    final Pattern optPattern = Pattern.compile("(?i)--\\S+=<boolean>");
+    final Pattern optDefValPattern = Pattern.compile("(?i)Default: (?:true|false)");
+    checkAllBoolOptionsHaveVisibleDefaults(
+        new CommandLine(beaconNodeCommand), optPattern, optDefValPattern, "");
+  }
+
+  private void checkAllBoolOptionsHaveVisibleDefaults(
+      CommandLine cmd, Pattern optPattern, Pattern optDefValPattern, String parentCmds) {
+    String usageMsg = cmd.getUsageMessage();
+    var numBoolOptions = optPattern.matcher(usageMsg).results().count();
+    var numBoolDefaults = optDefValPattern.matcher(usageMsg).results().count();
+
+    assertThat(numBoolOptions)
+        .withFailMessage(
+            "one or more boolean options for command '%s%s' does not display a default value",
+            parentCmds, cmd.getCommandName())
+        .isLessThanOrEqualTo(numBoolDefaults);
+
+    // check all nested subcommands
+    for (CommandLine subCmd : cmd.getSubcommands().values()) {
+      checkAllBoolOptionsHaveVisibleDefaults(
+          subCmd,
+          optPattern,
+          optDefValPattern,
+          String.format("%s%s ", parentCmds, cmd.getCommandName()));
+    }
   }
 
   @Test
@@ -324,33 +356,62 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
   private String[] createCliArgs() {
     return new String[] {
-      "--network", "minimal",
-      "--p2p-enabled", "false",
-      "--p2p-interface", "1.2.3.4",
-      "--p2p-port", "1234",
-      "--p2p-discovery-enabled", "false",
-      "--p2p-advertised-port", "9000",
-      "--p2p-private-key-file", "path/to/file",
-      "--Xinterop-genesis-time", "1",
-      "--Xinterop-owned-validator-start-index", "0",
-      "--Xinterop-owned-validator-count", "64",
-      "--initial-state", "",
-      "--Xinterop-number-of-validators", "64",
-      "--Xinterop-enabled", "true",
-      "--eth1-deposit-contract-address", "0x77f7bED277449F51505a4C54550B074030d989bC",
-      "--eth1-endpoint", "http://localhost:8545",
-      "--metrics-enabled", "false",
-      "--metrics-port", "8008",
-      "--metrics-interface", "127.0.0.1",
-      "--metrics-categories", "BEACON,LIBP2P,NETWORK,EVENTBUS,JVM,PROCESS",
-      "--data-path", dataPath.toString(),
-      "--data-storage-mode", "prune",
-      "--rest-api-port", "5051",
-      "--rest-api-docs-enabled", "false",
-      "--rest-api-enabled", "false",
-      "--rest-api-interface", "127.0.0.1",
-      "--Xpeer-rate-limit", "500",
-      "--Xpeer-request-limit", "50"
+      "--network",
+      "minimal",
+      "--p2p-enabled",
+      "false",
+      "--p2p-interface",
+      "1.2.3.4",
+      "--p2p-port",
+      "1234",
+      "--p2p-discovery-enabled",
+      "false",
+      "--p2p-advertised-port",
+      "9000",
+      "--p2p-private-key-file",
+      "path/to/file",
+      "--Xinterop-genesis-time",
+      "1",
+      "--Xinterop-owned-validator-start-index",
+      "0",
+      "--Xinterop-owned-validator-count",
+      "64",
+      "--initial-state",
+      "",
+      "--Xinterop-number-of-validators",
+      "64",
+      "--Xinterop-enabled",
+      "true",
+      "--eth1-deposit-contract-address",
+      "0x77f7bED277449F51505a4C54550B074030d989bC",
+      "--eth1-endpoint",
+      "http://localhost:8545",
+      "--metrics-enabled",
+      "false",
+      "--metrics-port",
+      "8008",
+      "--metrics-interface",
+      "127.0.0.1",
+      "--metrics-categories",
+      "BEACON,LIBP2P,NETWORK,EVENTBUS,JVM,PROCESS",
+      "--data-path",
+      dataPath.toString(),
+      "--data-storage-mode",
+      "prune",
+      "--rest-api-port",
+      "5051",
+      "--rest-api-docs-enabled",
+      "false",
+      "--rest-api-enabled",
+      "false",
+      "--rest-api-interface",
+      "127.0.0.1",
+      "--Xrest-api-max-url-length",
+      "65535",
+      "--Xpeer-rate-limit",
+      "500",
+      "--Xpeer-request-limit",
+      "50"
     };
   }
 
@@ -444,6 +505,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .restApiHostAllowlist(List.of("127.0.0.1", "localhost"))
                     .restApiCorsAllowedOrigins(new ArrayList<>())
                     .eth1DepositContractAddress(address)
+                    .maxUrlLength(65535)
                     .maxPendingEvents(BeaconRestApiOptions.DEFAULT_MAX_EVENT_QUEUE_SIZE))
         .validator(
             b ->
@@ -452,7 +514,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .validatorKeystoreLockingEnabled(true)
                     .validatorPerformanceTrackingMode(ValidatorPerformanceTrackingMode.ALL)
                     .graffitiProvider(new FileBackedGraffitiProvider())
-                    .useDependentRoots(true))
+                    .useDependentRoots(true)
+                    .generateEarlyAttestations(true))
         .logging(
             b ->
                 b.colorEnabled(true)

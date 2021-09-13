@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.SszVector;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
@@ -31,9 +32,11 @@ import tech.pegasys.teku.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
+import tech.pegasys.teku.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.ssz.tree.LeafNode;
 import tech.pegasys.teku.ssz.tree.SszSuperNode;
 import tech.pegasys.teku.ssz.tree.TreeNode;
+import tech.pegasys.teku.ssz.tree.TreeNodeSource;
 import tech.pegasys.teku.ssz.tree.TreeUtil;
 
 public abstract class AbstractSszVectorSchema<
@@ -43,6 +46,7 @@ public abstract class AbstractSszVectorSchema<
 
   private final boolean isListBacking;
   private final int fixedPartSize;
+  private SszLengthBounds sszLengthBounds;
 
   protected AbstractSszVectorSchema(SszSchema<SszElementT> elementType, long vectorLength) {
     this(elementType, vectorLength, false);
@@ -61,6 +65,7 @@ public abstract class AbstractSszVectorSchema<
     super(vectorLength, elementSchema, hints);
     this.isListBacking = isListBacking;
     this.fixedPartSize = calcSszFixedPartSize();
+    this.sszLengthBounds = computeSszLengthBounds(elementSchema, vectorLength);
   }
 
   @Override
@@ -163,12 +168,43 @@ public abstract class AbstractSszVectorSchema<
   }
 
   @Override
+  public TreeNode loadBackingNodes(TreeNodeSource nodeSource, Bytes32 rootHash, long rootGIndex) {
+    final long lastUsefulGIndex =
+        GIndexUtil.gIdxChildGIndex(rootGIndex, maxChunks() - 1, treeDepth());
+    return LoadingUtil.loadNodesToDepth(
+        nodeSource,
+        rootHash,
+        rootGIndex,
+        treeDepth(),
+        getDefault().getBackingNode(),
+        lastUsefulGIndex,
+        this::loadChildNode);
+  }
+
+  private TreeNode loadChildNode(
+      final TreeNodeSource nodeSource, final Bytes32 childHash, final long childGIndex) {
+    return LoadingUtil.loadCollectionChild(
+        nodeSource,
+        childHash,
+        childGIndex,
+        getLength(),
+        getElementsPerChunk(),
+        treeDepth(),
+        getElementSchema());
+  }
+
+  @Override
   public SszLengthBounds getSszLengthBounds() {
-    return getElementSchema()
+    return sszLengthBounds;
+  }
+
+  private static SszLengthBounds computeSszLengthBounds(
+      final SszSchema<?> elementSchema, final long length) {
+    return elementSchema
         .getSszLengthBounds()
         // if elements are of dynamic size the offset size should be added for every element
-        .addBytes(getElementSchema().isFixedSize() ? 0 : SSZ_LENGTH_SIZE)
-        .mul(getLength())
+        .addBytes(elementSchema.isFixedSize() ? 0 : SSZ_LENGTH_SIZE)
+        .mul(length)
         .ceilToBytes();
   }
 

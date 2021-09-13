@@ -14,16 +14,14 @@
 package tech.pegasys.teku.spec.datastructures.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil.decrease_balance;
 import static tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 import static tech.pegasys.teku.spec.datastructures.util.ValidatorsUtil.increase_balance;
 import static tech.pegasys.teku.util.config.Constants.CHURN_LIMIT_QUOTIENT;
-import static tech.pegasys.teku.util.config.Constants.DOMAIN_BEACON_PROPOSER;
 import static tech.pegasys.teku.util.config.Constants.EFFECTIVE_BALANCE_INCREMENT;
 import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_HISTORICAL_VECTOR;
 import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_SLASHINGS_VECTOR;
-import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
-import static tech.pegasys.teku.util.config.Constants.GENESIS_EPOCH;
 import static tech.pegasys.teku.util.config.Constants.MAX_COMMITTEES_PER_SLOT;
 import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
 import static tech.pegasys.teku.util.config.Constants.MAX_SEED_LOOKAHEAD;
@@ -39,6 +37,7 @@ import static tech.pegasys.teku.util.config.Constants.TARGET_COMMITTEE_SIZE;
 import static tech.pegasys.teku.util.config.Constants.WHISTLEBLOWER_REWARD_QUOTIENT;
 
 import com.google.common.primitives.UnsignedBytes;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.nio.ByteOrder;
 import java.util.Collection;
 import java.util.Collections;
@@ -48,6 +47,8 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkData;
 import tech.pegasys.teku.spec.datastructures.state.SigningData;
@@ -197,8 +198,8 @@ public class BeaconStateUtil {
   @Deprecated
   public static UInt64 get_previous_epoch(BeaconState state) {
     UInt64 current_epoch = get_current_epoch(state);
-    return current_epoch.equals(UInt64.valueOf(GENESIS_EPOCH))
-        ? UInt64.valueOf(GENESIS_EPOCH)
+    return current_epoch.equals(SpecConfig.GENESIS_EPOCH)
+        ? SpecConfig.GENESIS_EPOCH
         : current_epoch.minus(UInt64.ONE);
   }
 
@@ -384,7 +385,7 @@ public class BeaconStateUtil {
    */
   @Deprecated
   public static UInt64 get_committee_count_per_slot(BeaconState state, UInt64 epoch) {
-    List<Integer> active_validator_indices = get_active_validator_indices(state, epoch);
+    IntList active_validator_indices = get_active_validator_indices(state, epoch);
     return get_committee_count_per_slot(active_validator_indices.size());
   }
 
@@ -439,9 +440,9 @@ public class BeaconStateUtil {
               Bytes32 seed =
                   Hash.sha2_256(
                       Bytes.concatenate(
-                          get_seed(state, epoch, DOMAIN_BEACON_PROPOSER),
+                          get_seed(state, epoch, Domain.BEACON_PROPOSER),
                           uint_to_bytes(slot.longValue(), 8)));
-              List<Integer> indices = get_active_validator_indices(state, epoch);
+              IntList indices = get_active_validator_indices(state, epoch);
               return compute_proposer_index(state, indices, seed);
             });
   }
@@ -712,15 +713,14 @@ public class BeaconStateUtil {
    * @return
    */
   @Deprecated
-  private static int compute_proposer_index(
-      BeaconState state, List<Integer> indices, Bytes32 seed) {
+  private static int compute_proposer_index(BeaconState state, IntList indices, Bytes32 seed) {
     checkArgument(!indices.isEmpty(), "compute_proposer_index indices must not be empty");
     UInt64 MAX_RANDOM_BYTE = UInt64.valueOf(255); // Math.pow(2, 8) - 1;
     int i = 0;
     final int total = indices.size();
     Bytes32 hash = null;
     while (true) {
-      int candidate_index = indices.get(compute_shuffled_index(i % total, total, seed));
+      int candidate_index = indices.getInt(compute_shuffled_index(i % total, total, seed));
       if (i % 32 == 0) {
         hash = Hash.sha2_256(Bytes.concatenate(seed, uint_to_bytes(Math.floorDiv(i, 32), 8)));
       }

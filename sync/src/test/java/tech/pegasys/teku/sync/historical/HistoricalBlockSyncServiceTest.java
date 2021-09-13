@@ -34,6 +34,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
@@ -47,6 +48,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
@@ -61,6 +63,8 @@ public class HistoricalBlockSyncServiceTest {
   private final MetricsSystem metricsSystem = new NoOpMetricsSystem();
   private final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+  private final SignatureVerificationService signatureVerificationService =
+      mock(SignatureVerificationService.class);
 
   @SuppressWarnings("unchecked")
   private final P2PNetwork<Eth2Peer> network = mock(P2PNetwork.class);
@@ -77,6 +81,7 @@ public class HistoricalBlockSyncServiceTest {
           network,
           storageSystem.combinedChainDataClient(),
           syncStateProvider,
+          signatureVerificationService,
           batchSize);
   private final Subscribers<SyncStateProvider.SyncStateSubscriber> syncStateSubscribers =
       Subscribers.create(false);
@@ -88,6 +93,7 @@ public class HistoricalBlockSyncServiceTest {
   private final ArgumentCaptor<Collection<SignedBeaconBlock>> blockCaptor =
       ArgumentCaptor.forClass(Collection.class);
 
+  @SuppressWarnings("unchecked")
   @BeforeEach
   public void setup() {
     when(storageUpdateChannel.onFinalizedBlocks(any())).thenReturn(SafeFuture.COMPLETE);
@@ -96,6 +102,8 @@ public class HistoricalBlockSyncServiceTest {
     when(syncStateProvider.unsubscribeFromSyncStateChanges(anyLong()))
         .thenAnswer((i) -> syncStateSubscribers.unsubscribe(i.getArgument(0)));
     when(syncStateProvider.getCurrentSyncState()).thenAnswer(i -> currentSyncState.get());
+    when(signatureVerificationService.verify(any(), any(), (List<BLSSignature>) any()))
+        .thenReturn(SafeFuture.completedFuture(true));
   }
 
   @Test

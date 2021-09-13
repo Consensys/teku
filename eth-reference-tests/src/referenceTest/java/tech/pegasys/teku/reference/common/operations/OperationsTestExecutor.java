@@ -78,6 +78,9 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
               "operations/sync_aggregate",
               new OperationsTestExecutor<>("sync_aggregate.ssz_snappy", Operation.SYNC_AGGREGATE))
           .put(
+              "operations/sync_aggregate_random",
+              new OperationsTestExecutor<>("sync_aggregate.ssz_snappy", Operation.SYNC_AGGREGATE))
+          .put(
               "operations/execution_payload",
               new OperationsTestExecutor<>(
                   "execution_payload.ssz_snappy", Operation.EXECUTION_PAYLOAD))

@@ -43,6 +43,12 @@ public class Eth1Data extends Container3<Eth1Data, SszBytes32, SszUInt64, SszByt
 
   public static final Eth1DataSchema SSZ_SCHEMA = new Eth1DataSchema();
 
+  /**
+   * The output of `get_deposit_root` from the deposit contract prior to any deposits being made.
+   */
+  public static final Bytes32 EMPTY_DEPOSIT_ROOT =
+      Bytes32.fromHexString("0xd70a234731285c6804c2a4f56711ddb8c82c99740f207854891028af34e27e5e");
+
   private Eth1Data(Eth1DataSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }

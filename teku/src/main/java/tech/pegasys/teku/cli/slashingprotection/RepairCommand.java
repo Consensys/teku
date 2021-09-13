@@ -18,6 +18,7 @@ import java.nio.file.Path;
 import java.util.Optional;
 import java.util.Scanner;
 import picocli.CommandLine;
+import picocli.CommandLine.Help.Visibility;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.Eth2NetworkOptions;
 import tech.pegasys.teku.cli.options.ValidatorClientDataOptions;
@@ -54,6 +55,7 @@ public class RepairCommand implements Runnable {
   @CommandLine.Option(
       names = {"--check-only-enabled"},
       paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
       description = "Read and report potential problems, but don't update anything.",
       arity = "0..1")
   private boolean checkOnlyEnabled = false;
@@ -61,6 +63,7 @@ public class RepairCommand implements Runnable {
   @CommandLine.Option(
       names = {"--update-all-enabled"},
       paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
       description = "All validator slashing protection records should be updated.",
       arity = "0..1")
   private boolean updateAllEnabled = false;

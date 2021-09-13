@@ -41,7 +41,7 @@ import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
-import tech.pegasys.teku.validator.api.SubmitCommitteeMessageError;
+import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
@@ -90,14 +90,14 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   private final BeaconChainRequestCounter attestationDataRequestsCounter;
   private final BeaconChainRequestCounter aggregateRequestsCounter;
   private final BeaconChainRequestCounter createSyncCommitteeContributionCounter;
+  private final BeaconChainRequestCounter sendAttestationRequestCounter;
+  private final BeaconChainRequestCounter sendAggregateRequestCounter;
+  private final BeaconChainRequestCounter sendSyncCommitteeMessagesRequestCounter;
   private final Counter getValidatorIndicesRequestCounter;
   private final Counter subscribeAggregationRequestCounter;
   private final Counter subscribePersistentRequestCounter;
   private final Counter subscribeSyncCommitteeRequestCounter;
-  private final Counter sendAttestationRequestCounter;
-  private final Counter sendAggregateRequestCounter;
   private final Counter sendBlockRequestCounter;
-  private final Counter sendSyncCommitteeMessagesRequestCounter;
   private final Counter sendContributionAndProofsRequestCounter;
 
   public MetricRecordingValidatorApiChannel(
@@ -160,13 +160,13 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
             PERSISTENT_SUBSCRIPTION_COUNTER_NAME,
             "Counter recording the number of requests to subscribe to persistent committees");
     sendAttestationRequestCounter =
-        metricsSystem.createCounter(
-            TekuMetricCategory.VALIDATOR,
+        BeaconChainRequestCounter.create(
+            metricsSystem,
             PUBLISHED_ATTESTATION_COUNTER_NAME,
             "Counter recording the number of signed attestations sent to the beacon node");
     sendAggregateRequestCounter =
-        metricsSystem.createCounter(
-            TekuMetricCategory.VALIDATOR,
+        BeaconChainRequestCounter.create(
+            metricsSystem,
             PUBLISHED_AGGREGATE_COUNTER_NAME,
             "Counter recording the number of signed aggregate attestations sent to the beacon node");
     sendBlockRequestCounter =
@@ -180,8 +180,8 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
             SYNC_COMMITTEE_SUBNET_SUBSCRIPTION_NAME,
             "Counter recording the number of subscription requests for sync committee subnets sent to the beacon node");
     sendSyncCommitteeMessagesRequestCounter =
-        metricsSystem.createCounter(
-            TekuMetricCategory.VALIDATOR,
+        BeaconChainRequestCounter.create(
+            metricsSystem,
             SYNC_COMMITTEE_SEND_MESSAGES_NAME,
             "Counter recording the number of sync committee messages sent to the beacon node");
     sendContributionAndProofsRequestCounter =
@@ -193,7 +193,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<GenesisData>> getGenesisData() {
-    return countRequest(delegate.getGenesisData(), genesisTimeRequestCounter);
+    return countDataRequest(delegate.getGenesisData(), genesisTimeRequestCounter);
   }
 
   @Override
@@ -212,48 +212,48 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<AttesterDuties>> getAttestationDuties(
       final UInt64 epoch, final Collection<Integer> validatorIndexes) {
-    return countRequest(
+    return countDataRequest(
         delegate.getAttestationDuties(epoch, validatorIndexes), attestationDutiesRequestCounter);
   }
 
   @Override
   public SafeFuture<Optional<SyncCommitteeDuties>> getSyncCommitteeDuties(
       final UInt64 epoch, final Collection<Integer> validatorIndices) {
-    return countRequest(
+    return countDataRequest(
         delegate.getSyncCommitteeDuties(epoch, validatorIndices),
         syncCommitteeDutiesRequestCounter);
   }
 
   @Override
   public SafeFuture<Optional<ProposerDuties>> getProposerDuties(final UInt64 epoch) {
-    return countRequest(delegate.getProposerDuties(epoch), proposerDutiesRequestCounter);
+    return countDataRequest(delegate.getProposerDuties(epoch), proposerDutiesRequestCounter);
   }
 
   @Override
   public SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(
       final UInt64 slot, final BLSSignature randaoReveal, Optional<Bytes32> graffiti) {
-    return countRequest(
+    return countDataRequest(
         delegate.createUnsignedBlock(slot, randaoReveal, graffiti), unsignedBlockRequestsCounter);
   }
 
   @Override
   public SafeFuture<Optional<AttestationData>> createAttestationData(
       final UInt64 slot, final int committeeIndex) {
-    return countRequest(
+    return countDataRequest(
         delegate.createAttestationData(slot, committeeIndex), attestationDataRequestsCounter);
   }
 
   @Override
   public SafeFuture<Optional<Attestation>> createAggregate(
       final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
-    return countRequest(
+    return countDataRequest(
         delegate.createAggregate(slot, attestationHashTreeRoot), aggregateRequestsCounter);
   }
 
   @Override
   public SafeFuture<Optional<SyncCommitteeContribution>> createSyncCommitteeContribution(
       final UInt64 slot, final int subcommitteeIndex, final Bytes32 beaconBlockRoot) {
-    return countRequest(
+    return countDataRequest(
         delegate.createSyncCommitteeContribution(slot, subcommitteeIndex, beaconBlockRoot),
         createSyncCommitteeContributionCounter);
   }
@@ -278,22 +278,17 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
-  public void sendSignedAttestation(final Attestation attestation) {
-    sendAttestationRequestCounter.inc();
-    delegate.sendSignedAttestation(attestation);
+  public SafeFuture<List<SubmitDataError>> sendSignedAttestations(
+      final List<Attestation> attestations) {
+    return countSendRequest(
+        delegate.sendSignedAttestations(attestations), sendAttestationRequestCounter);
   }
 
   @Override
-  public void sendSignedAttestation(
-      final Attestation attestation, Optional<Integer> validatorIndex) {
-    sendAttestationRequestCounter.inc();
-    delegate.sendSignedAttestation(attestation, validatorIndex);
-  }
-
-  @Override
-  public void sendAggregateAndProof(final SignedAggregateAndProof aggregateAndProof) {
-    sendAggregateRequestCounter.inc();
-    delegate.sendAggregateAndProof(aggregateAndProof);
+  public SafeFuture<List<SubmitDataError>> sendAggregateAndProofs(
+      final List<SignedAggregateAndProof> aggregateAndProofs) {
+    return countSendRequest(
+        delegate.sendAggregateAndProofs(aggregateAndProofs), sendAggregateRequestCounter);
   }
 
   @Override
@@ -303,10 +298,11 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<List<SubmitCommitteeMessageError>> sendSyncCommitteeMessages(
+  public SafeFuture<List<SubmitDataError>> sendSyncCommitteeMessages(
       final List<SyncCommitteeMessage> syncCommitteeMessages) {
-    sendSyncCommitteeMessagesRequestCounter.inc();
-    return delegate.sendSyncCommitteeMessages(syncCommitteeMessages);
+    return countSendRequest(
+        delegate.sendSyncCommitteeMessages(syncCommitteeMessages),
+        sendSyncCommitteeMessagesRequestCounter);
   }
 
   @Override
@@ -316,7 +312,21 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
     return delegate.sendSignedContributionAndProofs(signedContributionAndProofs);
   }
 
-  private <T> SafeFuture<Optional<T>> countRequest(
+  private <T> SafeFuture<List<T>> countSendRequest(
+      final SafeFuture<List<T>> request, final BeaconChainRequestCounter counter) {
+    return request
+        .catchAndRethrow(__ -> counter.onError())
+        .thenPeek(
+            result -> {
+              if (result.isEmpty()) {
+                counter.onSuccess();
+              } else {
+                counter.onError();
+              }
+            });
+  }
+
+  private <T> SafeFuture<Optional<T>> countDataRequest(
       final SafeFuture<Optional<T>> request, final BeaconChainRequestCounter counter) {
     return request
         .catchAndRethrow(__ -> counter.onError())

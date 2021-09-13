@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.p2p.discovery;
 
+import java.util.Collection;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
@@ -26,7 +27,7 @@ public interface DiscoveryService {
 
   Stream<DiscoveryPeer> streamKnownPeers();
 
-  SafeFuture<Void> searchForPeers();
+  SafeFuture<Collection<DiscoveryPeer>> searchForPeers();
 
   Optional<String> getEnr();
 

@@ -15,8 +15,6 @@ package tech.pegasys.teku.reference.phase0.bls;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static tech.pegasys.teku.ethtests.finder.BlsTestFinder.BLS_DATA_FILE;
-import static tech.pegasys.teku.reference.TestDataUtils.loadYaml;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.tuweni.bytes.Bytes;
@@ -30,7 +28,7 @@ public class BlsSignTestExecutor extends BlsTestExecutor {
 
   @Override
   public void runTestImpl(final TestDefinition testDefinition) throws Throwable {
-    final Data data = loadYaml(testDefinition, BLS_DATA_FILE, Data.class);
+    final Data data = loadDataFile(testDefinition, Data.class);
     final BLSSecretKey privateKey = data.input.getPrivateKey();
     final Bytes message = data.input.getMessage();
     final BLSSignature expectedResult = data.getOutput();

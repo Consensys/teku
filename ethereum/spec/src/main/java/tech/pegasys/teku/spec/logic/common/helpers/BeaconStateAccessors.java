@@ -17,10 +17,9 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_EPOCH;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBytes;
 
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -31,6 +30,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
+import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
@@ -97,7 +97,7 @@ public abstract class BeaconStateAccessors {
    * @param epoch - The epoch under consideration.
    * @return A list of indices representing the active validators for the given epoch.
    */
-  public List<Integer> getActiveValidatorIndices(BeaconState state, UInt64 epoch) {
+  public IntList getActiveValidatorIndices(BeaconState state, UInt64 epoch) {
     final UInt64 stateEpoch = getCurrentEpoch(state);
     final UInt64 maxLookaheadEpoch = getMaxLookaheadEpoch(stateEpoch);
     checkArgument(
@@ -111,10 +111,10 @@ public abstract class BeaconStateAccessors {
             epoch,
             e -> {
               SszList<Validator> validators = state.getValidators();
-              return IntStream.range(0, validators.size())
-                  .filter(index -> predicates.isActiveValidator(validators.get(index), epoch))
-                  .boxed()
-                  .collect(Collectors.toList());
+              return IntList.of(
+                  IntStream.range(0, validators.size())
+                      .filter(index -> predicates.isActiveValidator(validators.get(index), epoch))
+                      .toArray());
             });
   }
 
@@ -160,7 +160,7 @@ public abstract class BeaconStateAccessors {
    * @return
    */
   public UInt64 getCommitteeCountPerSlot(BeaconState state, UInt64 epoch) {
-    List<Integer> activeValidatorIndices = getActiveValidatorIndices(state, epoch);
+    IntList activeValidatorIndices = getActiveValidatorIndices(state, epoch);
     return getCommitteeCountPerSlot(activeValidatorIndices.size());
   }
 
@@ -196,7 +196,7 @@ public abstract class BeaconStateAccessors {
                   Hash.sha2_256(
                       Bytes.concatenate(
                           getSeed(state, epoch, Domain.BEACON_PROPOSER), uint64ToBytes(slot)));
-              List<Integer> indices = getActiveValidatorIndices(state, epoch);
+              IntList indices = getActiveValidatorIndices(state, epoch);
               return miscHelpers.computeProposerIndex(state, indices, seed);
             });
   }
@@ -262,7 +262,7 @@ public abstract class BeaconStateAccessors {
     return Integer.MAX_VALUE;
   }
 
-  public List<Integer> getBeaconCommittee(BeaconState state, UInt64 slot, UInt64 index) {
+  public IntList getBeaconCommittee(BeaconState state, UInt64 slot, UInt64 index) {
     // Make sure state is within range of the slot being queried
     validateStateForCommitteeQuery(state, slot);
 
@@ -298,13 +298,8 @@ public abstract class BeaconStateAccessors {
         oldestQueryableSlot);
   }
 
-  public Bytes32 getDomain(BeaconState state, Bytes4 domainType, UInt64 messageEpoch) {
-    UInt64 epoch = (messageEpoch == null) ? getCurrentEpoch(state) : messageEpoch;
-    return getDomain(domainType, epoch, state.getFork(), state.getGenesis_validators_root());
-  }
-
-  public Bytes32 getDomain(BeaconState state, Bytes4 domainType) {
-    return getDomain(state, domainType, null);
+  public Bytes32 getDomain(final ForkInfo forkInfo, final Bytes4 domainType, final UInt64 epoch) {
+    return getDomain(domainType, epoch, forkInfo.getFork(), forkInfo.getGenesisValidatorsRoot());
   }
 
   public Bytes32 getDomain(

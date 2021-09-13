@@ -58,6 +58,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncComm
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
@@ -80,7 +81,7 @@ import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
-import tech.pegasys.teku.validator.api.SubmitCommitteeMessageError;
+import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
@@ -422,14 +423,14 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   public void subscribeToSyncCommitteeSubnets(
       final Collection<SyncCommitteeSubnetSubscription> subscriptions) {
     for (final SyncCommitteeSubnetSubscription subscription : subscriptions) {
-      final UInt64 unsubscribeSlot =
-          spec.computeStartSlotAtEpoch(subscription.getUntilEpoch().increment());
+      // untilEpoch is exclusive, so it will unsubscribe at the first slot of the specified index
+      final UInt64 untilEpoch = subscription.getUntilEpoch();
+      final UInt64 unsubscribeSlot = spec.computeStartSlotAtEpoch(untilEpoch);
       final SyncCommitteeUtil syncCommitteeUtil =
-          spec.getSyncCommitteeUtilRequired(
-              spec.computeStartSlotAtEpoch(subscription.getUntilEpoch()));
+          spec.getSyncCommitteeUtilRequired(spec.computeStartSlotAtEpoch(untilEpoch));
       final Set<Integer> syncCommitteeIndices = subscription.getSyncCommitteeIndices();
       performanceTracker.saveExpectedSyncCommitteeParticipant(
-          subscription.getValidatorIndex(), syncCommitteeIndices, subscription.getUntilEpoch());
+          subscription.getValidatorIndex(), syncCommitteeIndices, untilEpoch.decrement());
       syncCommitteeUtil
           .getSyncSubcommittees(syncCommitteeIndices)
           .forEach(index -> syncCommitteeSubscriptionManager.subscribe(index, unsubscribeSlot));
@@ -442,11 +443,17 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public void sendSignedAttestation(
-      final Attestation attestation, final Optional<Integer> expectedValidatorIndex) {
-    attestationManager
+  public SafeFuture<List<SubmitDataError>> sendSignedAttestations(
+      final List<Attestation> attestations) {
+    return SafeFuture.collectAll(attestations.stream().map(this::processAttestation))
+        .thenApply(this::convertAttestationProcessingResultsToErrorList);
+  }
+
+  private SafeFuture<AttestationProcessingResult> processAttestation(
+      final Attestation attestation) {
+    return attestationManager
         .onAttestation(ValidateableAttestation.fromValidator(spec, attestation))
-        .finish(
+        .thenPeek(
             result -> {
               if (!result.isInvalid()) {
                 dutyMetrics.onAttestationPublished(attestation.getData().getSlot());
@@ -455,35 +462,47 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                 VALIDATOR_LOGGER.producedInvalidAttestation(
                     attestation.getData().getSlot(), result.getInvalidReason());
               }
-            },
-            err ->
-                LOG.error(
-                    "Failed to send signed attestation for slot {}, block {}",
-                    attestation.getData().getSlot(),
-                    attestation.getData().getBeacon_block_root()));
+            })
+        .exceptionally(
+            error -> {
+              LOG.error(
+                  "Failed to send signed attestation for slot {}, block {}",
+                  attestation.getData().getSlot(),
+                  attestation.getData().getBeacon_block_root());
+              return AttestationProcessingResult.invalid("Unexpected error");
+            });
+  }
+
+  private List<SubmitDataError> convertAttestationProcessingResultsToErrorList(
+      final List<AttestationProcessingResult> results) {
+    final List<SubmitDataError> errorList = new ArrayList<>();
+    for (int index = 0; index < results.size(); index++) {
+      final AttestationProcessingResult result = results.get(index);
+      if (result.isInvalid()) {
+        errorList.add(new SubmitDataError(UInt64.valueOf(index), result.getInvalidReason()));
+      }
+    }
+    return errorList;
   }
 
   @Override
-  public void sendSignedAttestation(final Attestation attestation) {
-    sendSignedAttestation(attestation, Optional.empty());
+  public SafeFuture<List<SubmitDataError>> sendAggregateAndProofs(
+      final List<SignedAggregateAndProof> aggregateAndProofs) {
+    return SafeFuture.collectAll(aggregateAndProofs.stream().map(this::processAggregateAndProof))
+        .thenApply(this::convertAttestationProcessingResultsToErrorList);
   }
 
-  @Override
-  public void sendAggregateAndProof(final SignedAggregateAndProof aggregateAndProof) {
-    attestationManager
+  private SafeFuture<AttestationProcessingResult> processAggregateAndProof(
+      final SignedAggregateAndProof aggregateAndProof) {
+    return attestationManager
         .onAttestation(ValidateableAttestation.aggregateFromValidator(spec, aggregateAndProof))
-        .finish(
-            result -> {
-              result.ifInvalid(
-                  reason ->
-                      VALIDATOR_LOGGER.producedInvalidAggregate(
-                          aggregateAndProof.getMessage().getAggregate().getData().getSlot(),
-                          reason));
-            },
-            err ->
-                LOG.error(
-                    "Failed to send aggregate for slot {}",
-                    aggregateAndProof.getMessage().getAggregate().getData().getSlot()));
+        .thenPeek(
+            result ->
+                result.ifInvalid(
+                    reason ->
+                        VALIDATOR_LOGGER.producedInvalidAggregate(
+                            aggregateAndProof.getMessage().getAggregate().getData().getSlot(),
+                            reason)));
   }
 
   @Override
@@ -517,7 +536,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<List<SubmitCommitteeMessageError>> sendSyncCommitteeMessages(
+  public SafeFuture<List<SubmitDataError>> sendSyncCommitteeMessages(
       final List<SyncCommitteeMessage> syncCommitteeMessages) {
 
     final List<SafeFuture<InternalValidationResult>> addedMessages =
@@ -542,11 +561,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             });
   }
 
-  private List<SubmitCommitteeMessageError> getSendSyncCommitteesResultFromFutures(
+  private List<SubmitDataError> getSendSyncCommitteesResultFromFutures(
       final List<InternalValidationResult> internalValidationResults) {
-    final List<SubmitCommitteeMessageError> errorList = new ArrayList<>();
+    final List<SubmitDataError> errorList = new ArrayList<>();
     for (int index = 0; index < internalValidationResults.size(); index++) {
-      final Optional<SubmitCommitteeMessageError> maybeError =
+      final Optional<SubmitDataError> maybeError =
           fromInternalValidationResult(internalValidationResults.get(index), index);
       maybeError.ifPresent(errorList::add);
     }
@@ -571,13 +590,13 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             });
   }
 
-  private Optional<SubmitCommitteeMessageError> fromInternalValidationResult(
+  private Optional<SubmitDataError> fromInternalValidationResult(
       final InternalValidationResult internalValidationResult, final int resultIndex) {
     if (!internalValidationResult.isReject()) {
       return Optional.empty();
     }
     return Optional.of(
-        new SubmitCommitteeMessageError(
+        new SubmitDataError(
             UInt64.valueOf(resultIndex),
             internalValidationResult.getDescription().orElse("Rejected")));
   }
@@ -610,7 +629,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   private Optional<AttesterDuty> createAttesterDuties(
-      final BeaconState state, final UInt64 epoch, final Integer validatorIndex) {
+      final BeaconState state, final UInt64 epoch, final int validatorIndex) {
 
     return combine(
         spec.getValidatorPubKey(state, UInt64.valueOf(validatorIndex)),

@@ -21,13 +21,46 @@ import org.apache.tuweni.bytes.Bytes;
  * Simple interface to enable pluggable variants of BLS verifier. In a {@link #SIMPLE} case it's
  * just static {@link BLS} methods
  */
-@FunctionalInterface
 public interface BLSSignatureVerifier {
 
   /** Just delegates verify to {@link BLS#fastAggregateVerify(List, Bytes, BLSSignature)} */
-  BLSSignatureVerifier SIMPLE = BLS::fastAggregateVerify;
+  BLSSignatureVerifier SIMPLE =
+      new BLSSignatureVerifier() {
+        @Override
+        public boolean verify(
+            final List<BLSPublicKey> publicKeys,
+            final Bytes message,
+            final BLSSignature signature) {
+          return BLS.fastAggregateVerify(publicKeys, message, signature);
+        }
 
-  BLSSignatureVerifier NO_OP = (publicKeys, message, signature) -> true;
+        @Override
+        public boolean verify(
+            final List<List<BLSPublicKey>> publicKeys,
+            final List<Bytes> messages,
+            final List<BLSSignature> signatures) {
+          return BLS.batchVerify(publicKeys, messages, signatures);
+        }
+      };
+
+  BLSSignatureVerifier NO_OP =
+      new BLSSignatureVerifier() {
+        @Override
+        public boolean verify(
+            final List<BLSPublicKey> publicKeys,
+            final Bytes message,
+            final BLSSignature signature) {
+          return true;
+        }
+
+        @Override
+        public boolean verify(
+            final List<List<BLSPublicKey>> publicKeys,
+            final List<Bytes> messages,
+            final List<BLSSignature> signatures) {
+          return true;
+        }
+      };
 
   /**
    * Verifies an aggregate BLS signature against a message using the list of public keys. In case of
@@ -45,4 +78,9 @@ public interface BLSSignatureVerifier {
   default boolean verify(BLSPublicKey publicKey, Bytes message, BLSSignature signature) {
     return verify(Collections.singletonList(publicKey), message, signature);
   }
+
+  boolean verify(
+      final List<List<BLSPublicKey>> publicKeys,
+      final List<Bytes> messages,
+      final List<BLSSignature> signatures);
 }

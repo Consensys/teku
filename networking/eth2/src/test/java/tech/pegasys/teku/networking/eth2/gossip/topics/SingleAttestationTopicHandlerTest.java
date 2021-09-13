@@ -108,7 +108,7 @@ public class SingleAttestationTopicHandlerTest
         ValidateableAttestation.fromNetwork(
             spec, attestationGenerator.validAttestation(blockAndState), SUBNET_ID);
     when(processor.process(attestation))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.REJECT));
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.reject("Nope")));
     final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
 
     final SafeFuture<ValidationResult> result =

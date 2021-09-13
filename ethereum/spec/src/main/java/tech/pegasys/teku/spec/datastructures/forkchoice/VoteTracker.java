@@ -13,59 +13,63 @@
 
 package tech.pegasys.teku.spec.datastructures.forkchoice;
 
+import com.google.common.base.MoreObjects;
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.containers.Container3;
-import tech.pegasys.teku.ssz.containers.ContainerSchema3;
-import tech.pegasys.teku.ssz.primitive.SszBytes32;
-import tech.pegasys.teku.ssz.primitive.SszUInt64;
-import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.tree.TreeNode;
 
-public class VoteTracker extends Container3<VoteTracker, SszBytes32, SszBytes32, SszUInt64> {
+public class VoteTracker {
 
-  public static class VoteTrackerSchema
-      extends ContainerSchema3<VoteTracker, SszBytes32, SszBytes32, SszUInt64> {
+  public static final VoteTracker DEFAULT =
+      new VoteTracker(Bytes32.ZERO, Bytes32.ZERO, UInt64.ZERO);
 
-    public VoteTrackerSchema() {
-      super(
-          "VoteTracker",
-          namedSchema("currentRoot", SszPrimitiveSchemas.BYTES32_SCHEMA),
-          namedSchema("nextRoot", SszPrimitiveSchemas.BYTES32_SCHEMA),
-          namedSchema("nextEpoch", SszPrimitiveSchemas.UINT64_SCHEMA));
-    }
+  private final Bytes32 currentRoot;
+  private final Bytes32 nextRoot;
+  private final UInt64 nextEpoch;
 
-    @Override
-    public VoteTracker createFromBackingNode(TreeNode node) {
-      return new VoteTracker(this, node);
-    }
-  }
-
-  public static final VoteTrackerSchema SSZ_SCHEMA = new VoteTrackerSchema();
-  public static final VoteTracker DEFAULT = new VoteTracker();
-
-  private VoteTracker(
-      ContainerSchema3<VoteTracker, SszBytes32, SszBytes32, SszUInt64> type, TreeNode backingNode) {
-    super(type, backingNode);
-  }
-
-  private VoteTracker() {
-    super(SSZ_SCHEMA);
-  }
-
-  public VoteTracker(Bytes32 currentRoot, Bytes32 nextRoot, UInt64 nextEpoch) {
-    super(SSZ_SCHEMA, SszBytes32.of(currentRoot), SszBytes32.of(nextRoot), SszUInt64.of(nextEpoch));
+  public VoteTracker(final Bytes32 currentRoot, final Bytes32 nextRoot, final UInt64 nextEpoch) {
+    this.currentRoot = currentRoot;
+    this.nextRoot = nextRoot;
+    this.nextEpoch = nextEpoch;
   }
 
   public Bytes32 getCurrentRoot() {
-    return getField0().get();
+    return currentRoot;
   }
 
   public Bytes32 getNextRoot() {
-    return getField1().get();
+    return nextRoot;
   }
 
   public UInt64 getNextEpoch() {
-    return getField2().get();
+    return nextEpoch;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final VoteTracker that = (VoteTracker) o;
+    return Objects.equals(currentRoot, that.currentRoot)
+        && Objects.equals(nextRoot, that.nextRoot)
+        && Objects.equals(nextEpoch, that.nextEpoch);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(currentRoot, nextRoot, nextEpoch);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("currentRoot", currentRoot)
+        .add("nextRoot", nextRoot)
+        .add("nextEpoch", nextEpoch)
+        .toString();
   }
 }

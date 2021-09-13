@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -36,8 +37,12 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.beaconnode.metrics.BeaconChainRequestCounter.RequestOutcome;
 
@@ -104,6 +109,42 @@ class MetricRecordingValidatorApiChannelTest {
   }
 
   @ParameterizedTest(name = "{displayName} - {0}")
+  @MethodSource("getSendDataArguments")
+  void shouldRecordSuccessfulSendRequest(
+      final String name,
+      final Function<ValidatorApiChannel, SafeFuture<List<Object>>> method,
+      final String counterName,
+      final List<Object> failures) {
+    when(method.apply(delegate)).thenReturn(SafeFuture.completedFuture(emptyList()));
+
+    final SafeFuture<List<Object>> result = method.apply(apiChannel);
+
+    assertThat(result).isCompletedWithValue(emptyList());
+
+    assertThat(getCounterValue(counterName, RequestOutcome.SUCCESS)).isEqualTo(1);
+    assertThat(getCounterValue(counterName, RequestOutcome.ERROR)).isZero();
+    assertThat(getCounterValue(counterName, RequestOutcome.DATA_UNAVAILABLE)).isZero();
+  }
+
+  @ParameterizedTest(name = "{displayName} - {0}")
+  @MethodSource("getSendDataArguments")
+  void shouldRecordFailingSendRequest(
+      final String name,
+      final Function<ValidatorApiChannel, SafeFuture<List<Object>>> method,
+      final String counterName,
+      final List<Object> failures) {
+    when(method.apply(delegate)).thenReturn(SafeFuture.completedFuture(failures));
+
+    final SafeFuture<List<Object>> result = method.apply(apiChannel);
+
+    assertThat(result).isCompletedWithValue(failures);
+
+    assertThat(getCounterValue(counterName, RequestOutcome.SUCCESS)).isZero();
+    assertThat(getCounterValue(counterName, RequestOutcome.ERROR)).isEqualTo(1);
+    assertThat(getCounterValue(counterName, RequestOutcome.DATA_UNAVAILABLE)).isZero();
+  }
+
+  @ParameterizedTest(name = "{displayName} - {0}")
   @MethodSource("getNoResponseCallArguments")
   public void shouldRecordCallsWithNoResponse(
       final String name, final Consumer<ValidatorApiChannel> method, final String counterName) {
@@ -115,7 +156,6 @@ class MetricRecordingValidatorApiChannelTest {
   }
 
   public static Stream<Arguments> getNoResponseCallArguments() {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
     return Stream.of(
         noResponseTest(
             "subscribeToBeaconCommitteeForAggregation",
@@ -124,16 +164,7 @@ class MetricRecordingValidatorApiChannelTest {
         noResponseTest(
             "subscribeToPersistentSubnets",
             channel -> channel.subscribeToPersistentSubnets(emptySet()),
-            MetricRecordingValidatorApiChannel.PERSISTENT_SUBSCRIPTION_COUNTER_NAME),
-        noResponseTest(
-            "sendSignedAttestation",
-            channel -> channel.sendSignedAttestation(dataStructureUtil.randomAttestation()),
-            MetricRecordingValidatorApiChannel.PUBLISHED_ATTESTATION_COUNTER_NAME),
-        noResponseTest(
-            "sendAggregateAndProof",
-            channel ->
-                channel.sendAggregateAndProof(dataStructureUtil.randomSignedAggregateAndProof()),
-            MetricRecordingValidatorApiChannel.PUBLISHED_AGGREGATE_COUNTER_NAME));
+            MetricRecordingValidatorApiChannel.PERSISTENT_SUBSCRIPTION_COUNTER_NAME));
   }
 
   private static Arguments noResponseTest(
@@ -180,12 +211,48 @@ class MetricRecordingValidatorApiChannelTest {
             dataStructureUtil.randomSyncCommitteeContribution(slot)));
   }
 
+  public static Stream<Arguments> getSendDataArguments() {
+    final DataStructureUtil dataStructureUtil =
+        new DataStructureUtil(TestSpecFactory.createMinimalAltair());
+    final List<SubmitDataError> submissionErrors =
+        List.of(new SubmitDataError(UInt64.ZERO, "Nope"));
+    final List<Attestation> attestations = List.of(dataStructureUtil.randomAttestation());
+    final List<SyncCommitteeMessage> syncCommitteeMessages =
+        List.of(dataStructureUtil.randomSyncCommitteeMessage());
+    final List<SignedAggregateAndProof> aggregateAndProofs =
+        List.of(dataStructureUtil.randomSignedAggregateAndProof());
+    return Stream.of(
+        sendDataTest(
+            "sendSignedAttestations",
+            channel -> channel.sendSignedAttestations(attestations),
+            MetricRecordingValidatorApiChannel.PUBLISHED_ATTESTATION_COUNTER_NAME,
+            submissionErrors),
+        sendDataTest(
+            "sendSyncCommitteeMessages",
+            channel -> channel.sendSyncCommitteeMessages(syncCommitteeMessages),
+            MetricRecordingValidatorApiChannel.SYNC_COMMITTEE_SEND_MESSAGES_NAME,
+            submissionErrors),
+        sendDataTest(
+            "sendAggregateAndProofs",
+            channel -> channel.sendAggregateAndProofs(aggregateAndProofs),
+            MetricRecordingValidatorApiChannel.PUBLISHED_AGGREGATE_COUNTER_NAME,
+            submissionErrors));
+  }
+
   private static <T> Arguments requestDataTest(
       final String name,
       final Function<ValidatorApiChannel, SafeFuture<Optional<T>>> method,
       final String counterName,
       final T presentValue) {
     return Arguments.of(name, method, counterName, presentValue);
+  }
+
+  private static <T> Arguments sendDataTest(
+      final String name,
+      final Function<ValidatorApiChannel, SafeFuture<List<T>>> method,
+      final String counterName,
+      final List<T> errors) {
+    return Arguments.of(name, method, counterName, errors);
   }
 
   private long getCounterValue(final String counterName, final RequestOutcome outcome) {

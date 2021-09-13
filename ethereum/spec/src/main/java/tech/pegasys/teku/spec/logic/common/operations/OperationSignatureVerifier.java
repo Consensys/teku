@@ -25,6 +25,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
@@ -42,6 +43,7 @@ public class OperationSignatureVerifier {
   }
 
   public boolean verifyProposerSlashingSignature(
+      Fork fork,
       BeaconState state,
       ProposerSlashing proposerSlashing,
       BLSSignatureVerifier signatureVerifier) {
@@ -61,7 +63,10 @@ public class OperationSignatureVerifier {
         miscHelpers.computeSigningRoot(
             header1,
             beaconStateAccessors.getDomain(
-                state, Domain.BEACON_PROPOSER, miscHelpers.computeEpochAtSlot(header1.getSlot()))),
+                Domain.BEACON_PROPOSER,
+                miscHelpers.computeEpochAtSlot(header1.getSlot()),
+                fork,
+                state.getGenesis_validators_root())),
         proposerSlashing.getHeader_1().getSignature())) {
       LOG.trace("Header1 signature is invalid {}", header1);
       return false;
@@ -72,7 +77,10 @@ public class OperationSignatureVerifier {
         miscHelpers.computeSigningRoot(
             header2,
             beaconStateAccessors.getDomain(
-                state, Domain.BEACON_PROPOSER, miscHelpers.computeEpochAtSlot(header2.getSlot()))),
+                Domain.BEACON_PROPOSER,
+                miscHelpers.computeEpochAtSlot(header2.getSlot()),
+                fork,
+                state.getGenesis_validators_root())),
         proposerSlashing.getHeader_2().getSignature())) {
       LOG.trace("Header2 signature is invalid {}", header1);
       return false;
@@ -81,7 +89,10 @@ public class OperationSignatureVerifier {
   }
 
   public boolean verifyVoluntaryExitSignature(
-      BeaconState state, SignedVoluntaryExit signedExit, BLSSignatureVerifier signatureVerifier) {
+      Fork fork,
+      BeaconState state,
+      SignedVoluntaryExit signedExit,
+      BLSSignatureVerifier signatureVerifier) {
     final VoluntaryExit exit = signedExit.getMessage();
 
     Optional<BLSPublicKey> maybePublicKey =
@@ -91,7 +102,8 @@ public class OperationSignatureVerifier {
     }
 
     final Bytes32 domain =
-        beaconStateAccessors.getDomain(state, Domain.VOLUNTARY_EXIT, exit.getEpoch());
+        beaconStateAccessors.getDomain(
+            Domain.VOLUNTARY_EXIT, exit.getEpoch(), fork, state.getGenesis_validators_root());
     final Bytes signing_root = miscHelpers.computeSigningRoot(exit, domain);
     return signatureVerifier.verify(maybePublicKey.get(), signing_root, signedExit.getSignature());
   }

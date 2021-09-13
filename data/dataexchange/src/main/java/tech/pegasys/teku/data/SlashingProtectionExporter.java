@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -40,11 +41,12 @@ public class SlashingProtectionExporter {
   private final JsonProvider jsonProvider = new JsonProvider();
   private final List<SigningHistory> signingHistoryList = new ArrayList<>();
   private Bytes32 genesisValidatorsRoot = null;
-  private final SyncDataAccessor syncDataAccessor = new SyncDataAccessor();
+  private final SyncDataAccessor syncDataAccessor;
   private final SubCommandLogger log;
 
-  public SlashingProtectionExporter(final SubCommandLogger log) {
+  public SlashingProtectionExporter(final SubCommandLogger log, final String path) {
     this.log = log;
+    this.syncDataAccessor = SyncDataAccessor.create(Paths.get(path));
   }
 
   public void initialise(final Path slashProtectionPath) {
@@ -54,7 +56,7 @@ public class SlashingProtectionExporter {
         .forEach(this::readSlashProtectionFile);
   }
 
-  private void readSlashProtectionFile(final File file) {
+  void readSlashProtectionFile(final File file) {
     try {
       Optional<ValidatorSigningRecord> maybeRecord =
           syncDataAccessor.read(file.toPath()).map(ValidatorSigningRecord::fromBytes);
@@ -63,18 +65,20 @@ public class SlashingProtectionExporter {
       }
       ValidatorSigningRecord validatorSigningRecord = maybeRecord.get();
 
-      if (genesisValidatorsRoot == null
-          && validatorSigningRecord.getGenesisValidatorsRoot() != null) {
-        this.genesisValidatorsRoot = validatorSigningRecord.getGenesisValidatorsRoot();
-      } else if (validatorSigningRecord.getGenesisValidatorsRoot() != null
-          && !genesisValidatorsRoot.equals(validatorSigningRecord.getGenesisValidatorsRoot())) {
-        log.exit(
-            1,
-            "The genesisValidatorsRoot of "
-                + file.getName()
-                + " does not match the expected "
-                + genesisValidatorsRoot.toHexString());
+      if (validatorSigningRecord.getGenesisValidatorsRoot() != null) {
+        if (genesisValidatorsRoot == null) {
+          this.genesisValidatorsRoot = validatorSigningRecord.getGenesisValidatorsRoot();
+        } else if (!genesisValidatorsRoot.equals(
+            validatorSigningRecord.getGenesisValidatorsRoot())) {
+          log.exit(
+              1,
+              "The genesisValidatorsRoot of "
+                  + file.getName()
+                  + " does not match the expected "
+                  + genesisValidatorsRoot.toHexString());
+        }
       }
+
       final String pubkey = file.getName().substring(0, file.getName().length() - ".yml".length());
       log.display("Exporting " + pubkey);
       signingHistoryList.add(
@@ -96,10 +100,12 @@ public class SlashingProtectionExporter {
   }
 
   private Bytes getJsonByteData() throws JsonProcessingException {
-    final String prettyJson =
-        jsonProvider.objectToPrettyJSON(
-            new SlashingProtectionInterchangeFormat(
-                new Metadata(INTERCHANGE_VERSION, genesisValidatorsRoot), signingHistoryList));
-    return Bytes.of(prettyJson.getBytes(StandardCharsets.UTF_8));
+    return Bytes.of(getPrettyJson().getBytes(StandardCharsets.UTF_8));
+  }
+
+  String getPrettyJson() throws JsonProcessingException {
+    return jsonProvider.objectToPrettyJSON(
+        new SlashingProtectionInterchangeFormat(
+            new Metadata(INTERCHANGE_VERSION, genesisValidatorsRoot), signingHistoryList));
   }
 }

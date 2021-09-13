@@ -13,11 +13,10 @@
 
 package tech.pegasys.teku.storage.store;
 
-import com.google.common.collect.Sets;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -33,6 +32,7 @@ public class StoreVoteUpdater implements VoteUpdater {
   private final ReadWriteLock lock;
   private final VoteUpdateChannel voteUpdateChannel;
   private final Map<UInt64, VoteTracker> votes = new HashMap<>();
+  private UInt64 highestVotedValidatorIndex = UInt64.ZERO;
 
   StoreVoteUpdater(
       final Store store, final ReadWriteLock lock, final VoteUpdateChannel voteUpdateChannel) {
@@ -53,13 +53,14 @@ public class StoreVoteUpdater implements VoteUpdater {
   }
 
   @Override
-  public Set<UInt64> getVotedValidatorIndices() {
-    return Sets.union(votes.keySet(), store.getVotedValidatorIndices());
+  public UInt64 getHighestVotedValidatorIndex() {
+    return highestVotedValidatorIndex.max(store.getHighestVotedValidatorIndex());
   }
 
   @Override
   public void putVote(UInt64 validatorIndex, VoteTracker vote) {
     votes.put(validatorIndex, vote);
+    highestVotedValidatorIndex = highestVotedValidatorIndex.max(validatorIndex);
   }
 
   @Override
@@ -91,7 +92,21 @@ public class StoreVoteUpdater implements VoteUpdater {
   public void commit() {
     // Votes are applied to the store immediately since the changes to the in-memory ProtoArray
     // can't be rolled back.
-    store.votes.putAll(votes);
+
+    store.highestVotedValidatorIndex = getHighestVotedValidatorIndex();
+
+    if (store.highestVotedValidatorIndex.intValue() >= store.votes.length) {
+      store.votes =
+          Arrays.copyOf(
+              store.votes,
+              store.highestVotedValidatorIndex.intValue() + Store.VOTE_TRACKER_SPARE_CAPACITY);
+    }
+
+    votes.forEach(
+        (key, value) -> {
+          store.votes[key.intValue()] = value;
+        });
+
     voteUpdateChannel.onVotesUpdated(votes);
   }
 }

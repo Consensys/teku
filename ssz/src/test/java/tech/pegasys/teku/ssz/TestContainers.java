@@ -173,6 +173,29 @@ public class TestContainers {
     }
   }
 
+  public static class TestLargeContainer extends AbstractSszImmutableContainer {
+
+    public static final SszContainerSchema<TestLargeContainer> SSZ_SCHEMA =
+        SszContainerSchema.create(
+            "TestLargeContainer",
+            List.of(
+                NamedSchema.of("long1", SszPrimitiveSchemas.UINT64_SCHEMA),
+                NamedSchema.of("long2", SszPrimitiveSchemas.UINT64_SCHEMA),
+                NamedSchema.of("long3", SszPrimitiveSchemas.UINT64_SCHEMA),
+                NamedSchema.of("long4", SszPrimitiveSchemas.UINT64_SCHEMA),
+                NamedSchema.of("long5", SszPrimitiveSchemas.UINT64_SCHEMA),
+                NamedSchema.of("long6", SszPrimitiveSchemas.UINT64_SCHEMA),
+                NamedSchema.of("long7", SszPrimitiveSchemas.UINT64_SCHEMA),
+                NamedSchema.of("long8", SszPrimitiveSchemas.UINT64_SCHEMA),
+                NamedSchema.of("long9", SszPrimitiveSchemas.UINT64_SCHEMA),
+                NamedSchema.of("long10", SszPrimitiveSchemas.UINT64_SCHEMA)),
+            TestLargeContainer::new);
+
+    private TestLargeContainer(SszContainerSchema<TestLargeContainer> type, TreeNode backingNode) {
+      super(type, backingNode);
+    }
+  }
+
   public static class TestContainer extends AbstractSszImmutableContainer {
 
     public static final SszContainerSchema<TestContainer> SSZ_SCHEMA =

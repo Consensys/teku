@@ -14,15 +14,12 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_OK;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.INVALID_BODY_SUPPLIED;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 
-import com.fasterxml.jackson.databind.JsonMappingException;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
@@ -31,11 +28,14 @@ import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
+import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class PostAttestation extends AbstractHandler {
@@ -66,18 +66,22 @@ public class PostAttestation extends AbstractHandler {
         @OpenApiResponse(
             status = RES_OK,
             description = "The Attestation was accepted, validated, and submitted"),
-        @OpenApiResponse(status = RES_BAD_REQUEST, description = INVALID_BODY_SUPPLIED),
+        @OpenApiResponse(
+            status = RES_BAD_REQUEST,
+            description = "Errors with one or more sync committee messages",
+            content = @OpenApiContent(from = PostDataFailureResponse.class)),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
   public void handle(final Context ctx) throws Exception {
     try {
-      final String body = ctx.body();
       final List<Attestation> attestations =
-          Arrays.asList(jsonProvider.jsonToObject(body, Attestation[].class));
-      provider.submitAttestations(attestations);
-      ctx.status(SC_OK);
-    } catch (final IllegalArgumentException | JsonMappingException e) {
+          Arrays.asList(parseRequestBody(ctx.body(), Attestation[].class));
+      final SafeFuture<Optional<PostDataFailureResponse>> future =
+          provider.submitAttestations(attestations);
+
+      handlePostDataResult(ctx, future);
+    } catch (final IllegalArgumentException e) {
       ctx.result(BadRequest.badRequest(jsonProvider, e.getMessage()));
       ctx.status(SC_BAD_REQUEST);
     }

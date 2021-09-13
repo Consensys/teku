@@ -17,6 +17,8 @@ import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.integerSquareRoot;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBytes;
 
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
@@ -91,18 +93,18 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
    * @param state the state to calculate committees from
    * @return the sequence of sync committee indices
    */
-  public List<Integer> getNextSyncCommitteeIndices(final BeaconState state) {
+  public IntList getNextSyncCommitteeIndices(final BeaconState state) {
     final UInt64 epoch = getCurrentEpoch(state).plus(1);
-    final List<Integer> activeValidatorIndices = getActiveValidatorIndices(state, epoch);
+    final IntList activeValidatorIndices = getActiveValidatorIndices(state, epoch);
     final int activeValidatorCount = activeValidatorIndices.size();
     final Bytes32 seed = getSeed(state, epoch, Domain.SYNC_COMMITTEE);
     int i = 0;
     final SszList<Validator> validators = state.getValidators();
-    final List<Integer> syncCommitteeIndices = new ArrayList<>();
+    final IntList syncCommitteeIndices = new IntArrayList();
     while (syncCommitteeIndices.size() < altairConfig.getSyncCommitteeSize()) {
       final int shuffledIndex =
           miscHelpers.computeShuffledIndex(i % activeValidatorCount, activeValidatorCount, seed);
-      final Integer candidateIndex = activeValidatorIndices.get(shuffledIndex);
+      final int candidateIndex = activeValidatorIndices.getInt(shuffledIndex);
       final int randomByte =
           ByteUtil.toUnsignedInt(
               Hash.sha2_256(Bytes.wrap(seed, uint64ToBytes(i / 32))).get(i % 32));
@@ -137,10 +139,11 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
    * @return the SyncCommittee
    */
   public SyncCommittee getNextSyncCommittee(final BeaconState state) {
-    final List<Integer> indices = getNextSyncCommitteeIndices(state);
+    final IntList indices = getNextSyncCommitteeIndices(state);
     final List<BLSPublicKey> pubkeys =
-        indices.stream()
-            .map(index -> getValidatorPubKey(state, UInt64.valueOf(index)).orElseThrow())
+        indices
+            .intStream()
+            .mapToObj(index -> getValidatorPubKey(state, UInt64.valueOf(index)).orElseThrow())
             .collect(toList());
     final BLSPublicKey aggregatePubkey = BLSPublicKey.aggregate(pubkeys);
 

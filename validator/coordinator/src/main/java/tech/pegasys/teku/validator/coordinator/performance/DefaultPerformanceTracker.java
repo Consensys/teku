@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IntSummaryStatistics;
@@ -27,6 +28,8 @@ import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -49,11 +52,14 @@ import tech.pegasys.teku.validator.coordinator.ActiveValidatorTracker;
 public class DefaultPerformanceTracker implements PerformanceTracker {
 
   @VisibleForTesting
-  final NavigableMap<UInt64, Set<SlotAndBlockRoot>> producedBlocksByEpoch = new TreeMap<>();
+  final NavigableMap<UInt64, Set<SlotAndBlockRoot>> producedBlocksByEpoch =
+      new ConcurrentSkipListMap<>();
 
-  final NavigableMap<UInt64, Set<Attestation>> producedAttestationsByEpoch = new TreeMap<>();
+  final NavigableMap<UInt64, Set<Attestation>> producedAttestationsByEpoch =
+      new ConcurrentSkipListMap<>();
 
-  final NavigableMap<UInt64, AtomicInteger> blockProductionAttemptsByEpoch = new TreeMap<>();
+  final NavigableMap<UInt64, AtomicInteger> blockProductionAttemptsByEpoch =
+      new ConcurrentSkipListMap<>();
 
   @VisibleForTesting
   static final UInt64 BLOCK_PERFORMANCE_EVALUATION_INTERVAL = UInt64.valueOf(2); // epochs
@@ -68,7 +74,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
   private final SyncCommitteePerformanceTracker syncCommitteePerformanceTracker;
   private final Spec spec;
 
-  private Optional<UInt64> nodeStartEpoch = Optional.empty();
+  private volatile Optional<UInt64> nodeStartEpoch = Optional.empty();
   private final AtomicReference<UInt64> latestAnalyzedEpoch = new AtomicReference<>(UInt64.ZERO);
 
   public DefaultPerformanceTracker(
@@ -95,6 +101,8 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
 
   @Override
   public void onSlot(UInt64 slot) {
+    // Ensure a consistent view as the field is volatile.
+    final Optional<UInt64> nodeStartEpoch = this.nodeStartEpoch;
     if (nodeStartEpoch.isEmpty()) {
       return;
     }
@@ -118,14 +126,14 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
       AttestationPerformance attestationPerformance =
           getAttestationPerformanceForEpoch(currentEpoch, analyzedEpoch);
 
-      if (mode.isLoggingEnabled()) {
+      // suppress performance metric output when not relevant
+      if (mode.isLoggingEnabled() && attestationPerformance.numberOfExpectedAttestations > 0) {
         statusLogger.performance(attestationPerformance.toString());
       }
 
       if (mode.isMetricsEnabled()) {
         validatorPerformanceMetrics.updateAttestationPerformanceMetrics(attestationPerformance);
       }
-
       producedAttestationsByEpoch.headMap(analyzedEpoch, true).clear();
     }
 
@@ -225,7 +233,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
 
     // Get sent attestations in range
     Set<Attestation> producedAttestations =
-        producedAttestationsByEpoch.getOrDefault(analyzedEpoch, new HashSet<>());
+        producedAttestationsByEpoch.getOrDefault(analyzedEpoch, Collections.emptySet());
     BeaconState state = combinedChainDataClient.getBestState().orElseThrow();
 
     int correctTargetCount = 0;
@@ -242,7 +250,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
         NavigableMap<UInt64, SszBitlist> slotToBitlists =
             slotAndBitlistsByAttestationDataHash.computeIfAbsent(
                 attestationDataHash, __ -> new TreeMap<>());
-        slotToBitlists.merge(slot, attestation.getAggregation_bits(), SszBitlist::nullableOr);
+        slotToBitlists.merge(slot, attestation.getAggregationBits(), SszBitlist::nullableOr);
       }
     }
 
@@ -255,7 +263,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
       NavigableMap<UInt64, SszBitlist> slotAndBitlists =
           slotAndBitlistsByAttestationDataHash.get(sentAttestationDataHash);
       for (UInt64 slot : slotAndBitlists.keySet()) {
-        if (slotAndBitlists.get(slot).isSuperSetOf(sentAttestation.getAggregation_bits())) {
+        if (slotAndBitlists.get(slot).isSuperSetOf(sentAttestation.getAggregationBits())) {
           inclusionDistances.add(slot.minus(sentAttestationSlot).intValue());
           break;
         }
@@ -327,7 +335,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
   public void saveProducedAttestation(Attestation attestation) {
     UInt64 epoch = spec.computeEpochAtSlot(attestation.getData().getSlot());
     Set<Attestation> attestationsInEpoch =
-        producedAttestationsByEpoch.computeIfAbsent(epoch, __ -> new HashSet<>());
+        producedAttestationsByEpoch.computeIfAbsent(epoch, __ -> concurrentSet());
     attestationsInEpoch.add(attestation);
   }
 
@@ -335,7 +343,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
   public void saveProducedBlock(SignedBeaconBlock block) {
     UInt64 epoch = spec.computeEpochAtSlot(block.getSlot());
     Set<SlotAndBlockRoot> blocksInEpoch =
-        producedBlocksByEpoch.computeIfAbsent(epoch, __ -> new HashSet<>());
+        producedBlocksByEpoch.computeIfAbsent(epoch, __ -> concurrentSet());
     blocksInEpoch.add(new SlotAndBlockRoot(block.getSlot(), block.getRoot()));
   }
 
@@ -362,5 +370,9 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
 
   static long getPercentage(final long numerator, final long denominator) {
     return (long) (numerator * 100.0 / denominator + 0.5);
+  }
+
+  private <T> Set<T> concurrentSet() {
+    return Collections.newSetFromMap(new ConcurrentHashMap<>());
   }
 }

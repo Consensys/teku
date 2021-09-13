@@ -1,4 +1,6 @@
 dependencies {
+    api 'it.unimi.dsi:fastutil'
+
     implementation project(':ssz')
 
     implementation 'com.fasterxml.jackson.core:jackson-databind'

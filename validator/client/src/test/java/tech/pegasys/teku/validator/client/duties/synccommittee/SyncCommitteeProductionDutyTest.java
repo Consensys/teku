@@ -42,7 +42,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncComm
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.validator.api.SubmitCommitteeMessageError;
+import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
@@ -138,8 +138,7 @@ class SyncCommitteeProductionDutyTest {
 
     when(validatorApiChannel.sendSyncCommitteeMessages(any()))
         .thenReturn(
-            SafeFuture.completedFuture(
-                List.of(new SubmitCommitteeMessageError(UInt64.ZERO, "API Rejected"))));
+            SafeFuture.completedFuture(List.of(new SubmitDataError(UInt64.ZERO, "API Rejected"))));
 
     produceMessagesAndReport(duties, slot);
 

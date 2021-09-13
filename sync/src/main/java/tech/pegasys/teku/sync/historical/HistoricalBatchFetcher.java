@@ -15,7 +15,10 @@ package tech.pegasys.teku.sync.historical;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Deque;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -23,20 +26,30 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.InvalidResponseException;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.constants.Domain;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 /** Fetches a target batch of blocks from a peer. */
 public class HistoricalBatchFetcher {
   private static final Logger LOG = LogManager.getLogger();
-
   private static final int MAX_REQUESTS = 2;
 
   private final StorageUpdateChannel storageUpdateChannel;
@@ -46,9 +59,12 @@ public class HistoricalBatchFetcher {
   private final UInt64 batchSize;
   private final int maxRequests;
 
+  private final Spec spec;
   private final SafeFuture<BeaconBlockSummary> future = new SafeFuture<>();
   private final Deque<SignedBeaconBlock> blocksToImport = new ConcurrentLinkedDeque<>();
   private final AtomicInteger requestCount = new AtomicInteger(0);
+  private final AsyncBLSSignatureVerifier signatureVerificationService;
+  private final CombinedChainDataClient chainDataClient;
 
   /**
    * @param storageUpdateChannel The storage channel where finalized blocks will be imported
@@ -56,32 +72,48 @@ public class HistoricalBatchFetcher {
    * @param maxSlot The maxSlot to pull
    * @param lastBlockRoot The block root that defines the last block in our batch
    * @param batchSize The number of blocks to sync (assuming all slots are filled)
-   * @param maxRequests The number of blocksByRange requests allowed to pull this batch
    */
+  public HistoricalBatchFetcher(
+      final StorageUpdateChannel storageUpdateChannel,
+      final AsyncBLSSignatureVerifier signatureVerifier,
+      final CombinedChainDataClient chainDataClient,
+      final Spec spec,
+      final Eth2Peer peer,
+      final UInt64 maxSlot,
+      final Bytes32 lastBlockRoot,
+      final UInt64 batchSize) {
+    this(
+        storageUpdateChannel,
+        signatureVerifier,
+        chainDataClient,
+        spec,
+        peer,
+        maxSlot,
+        lastBlockRoot,
+        batchSize,
+        MAX_REQUESTS);
+  }
+
   @VisibleForTesting
   HistoricalBatchFetcher(
       final StorageUpdateChannel storageUpdateChannel,
+      final AsyncBLSSignatureVerifier signatureVerifier,
+      final CombinedChainDataClient chainDataClient,
+      final Spec spec,
       final Eth2Peer peer,
       final UInt64 maxSlot,
       final Bytes32 lastBlockRoot,
       final UInt64 batchSize,
       final int maxRequests) {
     this.storageUpdateChannel = storageUpdateChannel;
+    this.signatureVerificationService = signatureVerifier;
+    this.chainDataClient = chainDataClient;
+    this.spec = spec;
     this.peer = peer;
     this.maxSlot = maxSlot;
     this.lastBlockRoot = lastBlockRoot;
     this.batchSize = batchSize;
     this.maxRequests = maxRequests;
-  }
-
-  public static HistoricalBatchFetcher create(
-      final StorageUpdateChannel storageUpdateChannel,
-      final Eth2Peer peer,
-      final UInt64 maxSlot,
-      final Bytes32 lastBlockRoot,
-      final UInt64 batchSize) {
-    return new HistoricalBatchFetcher(
-        storageUpdateChannel, peer, maxSlot, lastBlockRoot, batchSize, MAX_REQUESTS);
   }
 
   /**
@@ -179,9 +211,60 @@ public class HistoricalBatchFetcher {
 
   private SafeFuture<Void> importBatch() {
     final SignedBeaconBlock newEarliestBlock = blocksToImport.getFirst();
-    return storageUpdateChannel
-        .onFinalizedBlocks(blocksToImport)
-        .thenRun(() -> future.complete(newEarliestBlock));
+
+    return batchVerifyHistoricalBlockSignatures(blocksToImport)
+        .thenCompose(
+            validSignatures ->
+                storageUpdateChannel
+                    // send to signature verification then store
+                    // all pass, or if one fails we reject the entire response
+                    .onFinalizedBlocks(blocksToImport)
+                    .thenRun(
+                        () -> {
+                          LOG.trace(
+                              "Earliest block is now from slot {}", newEarliestBlock.getSlot());
+                          future.complete(newEarliestBlock);
+                        }));
+  }
+
+  SafeFuture<Void> batchVerifyHistoricalBlockSignatures(
+      final Collection<SignedBeaconBlock> blocks) {
+
+    BeaconState bestState = chainDataClient.getBestState().orElseThrow();
+    List<BLSSignature> signatures = new ArrayList<>();
+    List<Bytes> signingRoots = new ArrayList<>();
+    List<List<BLSPublicKey>> proposerPublicKeys = new ArrayList<>();
+
+    final Bytes32 genesisValidatorsRoot = bestState.getForkInfo().getGenesisValidatorsRoot();
+
+    blocks.forEach(
+        signedBlock -> {
+          final BeaconBlock block = signedBlock.getMessage();
+          if (block.getSlot().isGreaterThan(SpecConfig.GENESIS_SLOT)) {
+            final UInt64 epoch = spec.computeEpochAtSlot(block.getSlot());
+            final Fork fork = spec.fork(epoch);
+            final Bytes32 domain =
+                spec.getDomain(Domain.BEACON_PROPOSER, epoch, fork, genesisValidatorsRoot);
+            signatures.add(signedBlock.getSignature());
+            signingRoots.add(spec.computeSigningRoot(block, domain));
+            BLSPublicKey proposerPublicKey =
+                spec.getValidatorPubKey(bestState, block.getProposerIndex())
+                    .orElseThrow(
+                        () ->
+                            new IllegalStateException(
+                                "Proposer has to be in the state since state is more recent than the block proposed"));
+            proposerPublicKeys.add(List.of(proposerPublicKey));
+          }
+        });
+
+    return signatureVerificationService
+        .verify(proposerPublicKeys, signingRoots, signatures)
+        .thenAccept(
+            signaturesValid -> {
+              if (!signaturesValid) {
+                throw new IllegalArgumentException("Batch signature verification failed");
+              }
+            });
   }
 
   private RequestParameters calculateRequestParams() {

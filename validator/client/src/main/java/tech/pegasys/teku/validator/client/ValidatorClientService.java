@@ -35,10 +35,10 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.beaconnode.BeaconNodeApi;
 import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
-import tech.pegasys.teku.validator.client.duties.AttestationDutyFactory;
 import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
 import tech.pegasys.teku.validator.client.duties.BlockDutyFactory;
 import tech.pegasys.teku.validator.client.duties.SlotBasedScheduledDuties;
+import tech.pegasys.teku.validator.client.duties.attestations.AttestationDutyFactory;
 import tech.pegasys.teku.validator.client.duties.synccommittee.ChainHeadTracker;
 import tech.pegasys.teku.validator.client.duties.synccommittee.SyncCommitteeScheduledDuties;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
@@ -82,6 +82,8 @@ public class ValidatorClientService extends Service {
     final EventChannels eventChannels = services.getEventChannels();
     final AsyncRunner asyncRunner = services.createAsyncRunner("validator");
     final boolean useDependentRoots = config.getValidatorConfig().useDependentRoots();
+    final boolean generateEarlyAttestations =
+        config.getValidatorConfig().generateEarlyAttestations();
     final BeaconNodeApi beaconNodeApi =
         config
             .getValidatorConfig()
@@ -89,11 +91,20 @@ public class ValidatorClientService extends Service {
             .map(
                 endpoint ->
                     RemoteBeaconNodeApi.create(
-                        services, asyncRunner, endpoint, config.getSpec(), useDependentRoots))
+                        services,
+                        asyncRunner,
+                        endpoint,
+                        config.getSpec(),
+                        useDependentRoots,
+                        generateEarlyAttestations))
             .orElseGet(
                 () ->
                     InProcessBeaconNodeApi.create(
-                        services, asyncRunner, useDependentRoots, config.getSpec()));
+                        services,
+                        asyncRunner,
+                        useDependentRoots,
+                        generateEarlyAttestations,
+                        config.getSpec()));
     final ValidatorApiChannel validatorApiChannel = beaconNodeApi.getValidatorApi();
     final GenesisDataProvider genesisDataProvider =
         new GenesisDataProvider(asyncRunner, validatorApiChannel);
@@ -125,7 +136,8 @@ public class ValidatorClientService extends Service {
       final ServiceConfig services) {
     final Path slashingProtectionPath = getSlashingProtectionPath(services.getDataDirLayout());
     final SlashingProtector slashingProtector =
-        new LocalSlashingProtector(new SyncDataAccessor(), slashingProtectionPath);
+        new LocalSlashingProtector(
+            SyncDataAccessor.create(slashingProtectionPath), slashingProtectionPath);
     return ValidatorLoader.create(
         config.getSpec(),
         config.getValidatorConfig(),
@@ -146,7 +158,10 @@ public class ValidatorClientService extends Service {
     final BlockDutyFactory blockDutyFactory =
         new BlockDutyFactory(forkProvider, validatorApiChannel, spec);
     final AttestationDutyFactory attestationDutyFactory =
-        new AttestationDutyFactory(forkProvider, validatorApiChannel);
+        new AttestationDutyFactory(
+            forkProvider,
+            validatorApiChannel,
+            config.getValidatorConfig().sendAttestationsAsBatch());
     final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =
         new BeaconCommitteeSubscriptions(validatorApiChannel);
     final DutyLoader<?> attestationDutyLoader =

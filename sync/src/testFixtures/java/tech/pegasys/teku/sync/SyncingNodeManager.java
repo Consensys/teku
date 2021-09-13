@@ -126,7 +126,12 @@ public class SyncingNodeManager {
 
     SyncManager syncManager =
         SyncManager.create(
-            asyncRunner, eth2P2PNetwork, recentChainData, blockImporter, new NoOpMetricsSystem());
+            asyncRunner,
+            eth2P2PNetwork,
+            recentChainData,
+            blockImporter,
+            new NoOpMetricsSystem(),
+            spec);
     ForwardSyncService syncService = new SinglePeerSyncService(syncManager, recentChainData);
 
     final FetchRecentBlocksService recentBlockFetcher =

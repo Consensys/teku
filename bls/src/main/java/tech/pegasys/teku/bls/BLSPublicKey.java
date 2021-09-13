@@ -138,6 +138,14 @@ public final class BLSPublicKey {
     return publicKey.get();
   }
 
+  public boolean isInGroup() {
+    return publicKey.get().isInGroup();
+  }
+
+  public boolean isValid() {
+    return publicKey.get().isValid();
+  }
+
   public String toAbbreviatedString() {
     return toBytesCompressed().toUnprefixedHexString().substring(0, 7);
   }

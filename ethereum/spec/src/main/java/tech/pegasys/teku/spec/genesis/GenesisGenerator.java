@@ -62,10 +62,9 @@ public class GenesisGenerator {
     state = schemaDefinitions.getBeaconStateSchema().createBuilder();
     Bytes32 latestBlockRoot =
         schemaDefinitions.getBeaconBlockBodySchema().createEmpty().hashTreeRoot();
-    final UInt64 genesisSlot = UInt64.valueOf(Constants.GENESIS_SLOT);
     BeaconBlockHeader beaconBlockHeader =
         new BeaconBlockHeader(
-            genesisSlot, UInt64.ZERO, Bytes32.ZERO, Bytes32.ZERO, latestBlockRoot);
+            SpecConfig.GENESIS_SLOT, UInt64.ZERO, Bytes32.ZERO, Bytes32.ZERO, latestBlockRoot);
     state.setLatest_block_header(beaconBlockHeader);
     state.setFork(genesisFork);
 

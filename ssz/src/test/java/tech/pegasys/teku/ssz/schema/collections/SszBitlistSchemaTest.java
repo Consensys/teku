@@ -29,7 +29,7 @@ import tech.pegasys.teku.ssz.schema.SszListSchema;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.schema.SszSchema;
 
-public class SszBitlistSchemaTest implements SszListSchemaTestBase {
+public class SszBitlistSchemaTest extends SszListSchemaTestBase {
 
   @Override
   public Stream<? extends SszSchema<?>> testSchemas() {

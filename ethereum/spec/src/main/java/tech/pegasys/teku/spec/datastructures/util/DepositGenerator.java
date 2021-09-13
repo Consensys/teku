@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.util;
 
-import static tech.pegasys.teku.util.config.Constants.BLS_WITHDRAWAL_PREFIX;
+import static tech.pegasys.teku.spec.constants.NetworkConstants.BLS_WITHDRAWAL_PREFIX;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;

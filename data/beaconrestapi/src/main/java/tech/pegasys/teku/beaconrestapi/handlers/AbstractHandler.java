@@ -13,10 +13,17 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers;
 
+import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.base.Throwables;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import java.io.ByteArrayInputStream;
 import java.util.Optional;
+import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
@@ -26,6 +33,15 @@ public abstract class AbstractHandler implements Handler {
 
   protected AbstractHandler(final JsonProvider jsonProvider) {
     this.jsonProvider = jsonProvider;
+  }
+
+  protected <T> T parseRequestBody(String json, Class<T> clazz) {
+    try {
+      return jsonProvider.jsonToObject(json, clazz);
+    } catch (JsonProcessingException ex) {
+      throw new IllegalArgumentException(
+          "Could read request body to get required data. " + ex.getMessage());
+    }
   }
 
   protected <T> void handleOptionalResult(
@@ -115,6 +131,33 @@ public abstract class AbstractHandler implements Handler {
                 return null;
               }
             }));
+  }
+
+  protected void handlePostDataResult(
+      final Context ctx, final SafeFuture<Optional<PostDataFailureResponse>> result) {
+    ctx.result(
+        result
+            .thenApplyChecked(
+                errors -> {
+                  if (errors.isEmpty()) {
+                    ctx.status(SC_OK);
+                    return null;
+                  }
+
+                  ctx.status(SC_BAD_REQUEST);
+                  return jsonProvider.objectToJSON(errors.get());
+                })
+            .exceptionallyCompose(
+                error -> {
+                  final Throwable rootCause = Throwables.getRootCause(error);
+                  if (rootCause instanceof IllegalArgumentException) {
+                    ctx.status(SC_BAD_REQUEST);
+                    return SafeFuture.of(
+                        () -> BadRequest.badRequest(jsonProvider, rootCause.getMessage()));
+                  } else {
+                    return failedFuture(error);
+                  }
+                }));
   }
 
   @FunctionalInterface

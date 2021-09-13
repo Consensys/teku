@@ -15,7 +15,9 @@ package tech.pegasys.teku.validator.coordinator.performance;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker.ATTESTATION_INCLUSION_RANGE;
@@ -294,7 +296,7 @@ public class DefaultPerformanceTrackerTest {
             .filter(
                 a ->
                     a.getData().equals(attestation1.getData())
-                        && !a.getAggregation_bits().equals(attestation1.getAggregation_bits()))
+                        && !a.getAggregationBits().equals(attestation1.getAggregationBits()))
             .findFirst()
             .orElseThrow();
 
@@ -322,6 +324,13 @@ public class DefaultPerformanceTrackerTest {
     AttestationPerformance expectedAttestationPerformance =
         new AttestationPerformance(2, 0, 0, 0, 0, 0, 0, 0);
     verify(log).performance(expectedAttestationPerformance.toString());
+  }
+
+  @Test
+  void shouldNotReportAttestationPerformanceIfNoValidatorsInEpoch() {
+    when(validatorTracker.getNumberOfValidatorsForEpoch(UInt64.valueOf(2))).thenReturn(0);
+    performanceTracker.onSlot(spec.computeStartSlotAtEpoch(ATTESTATION_INCLUSION_RANGE.plus(2)));
+    verify(log, never()).performance(anyString());
   }
 
   @Test

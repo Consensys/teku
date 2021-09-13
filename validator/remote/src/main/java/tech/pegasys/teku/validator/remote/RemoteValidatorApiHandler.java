@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.remote;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 import com.google.common.base.Throwables;
@@ -32,7 +33,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.SchemaObjectProvider;
-import tech.pegasys.teku.api.response.v1.beacon.PostSyncCommitteeFailureResponse;
+import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.response.v1.validator.PostSyncDutiesResponse;
@@ -61,7 +62,7 @@ import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
-import tech.pegasys.teku.validator.api.SubmitCommitteeMessageError;
+import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
@@ -72,7 +73,7 @@ import tech.pegasys.teku.validator.remote.apiclient.ValidatorRestApiClient;
 public class RemoteValidatorApiHandler implements ValidatorApiChannel {
 
   private static final Logger LOG = LogManager.getLogger();
-  static final int MAX_PUBLIC_KEY_BATCH_SIZE = 10;
+  static final int MAX_PUBLIC_KEY_BATCH_SIZE = 50;
   static final int MAX_RATE_LIMITING_RETRIES = 3;
 
   private final Spec spec;
@@ -140,9 +141,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
       final List<BLSPublicKey> batch, Function<ValidatorResponse, T> valueExtractor) {
     return apiClient
         .getValidators(
-            batch.stream()
-                .map(key -> key.toBytesCompressed().toHexString())
-                .collect(Collectors.toList()))
+            batch.stream().map(key -> key.toBytesCompressed().toHexString()).collect(toList()))
         .map(responses -> convertToValidatorMap(responses, valueExtractor));
   }
 
@@ -166,7 +165,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
                             response.dependentRoot,
                             response.data.stream()
                                 .map(this::mapToApiAttesterDuties)
-                                .collect(Collectors.toList()))));
+                                .collect(toList()))));
   }
 
   @Override
@@ -190,7 +189,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
                         duty.committeeIndices.stream()
                             .map(UInt64::intValue)
                             .collect(Collectors.toSet())))
-            .collect(Collectors.toList()));
+            .collect(toList()));
   }
 
   @Override
@@ -205,7 +204,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
                             response.dependentRoot,
                             response.data.stream()
                                 .map(this::mapToProposerDuties)
-                                .collect(Collectors.toList()))));
+                                .collect(toList()))));
   }
 
   private ProposerDuty mapToProposerDuties(
@@ -239,18 +238,17 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public void sendSignedAttestation(final Attestation attestation) {
-    final tech.pegasys.teku.api.schema.Attestation schemaAttestation =
-        new tech.pegasys.teku.api.schema.Attestation(attestation);
+  public SafeFuture<List<SubmitDataError>> sendSignedAttestations(
+      final List<Attestation> attestations) {
+    final List<tech.pegasys.teku.api.schema.Attestation> schemaAttestations =
+        attestations.stream().map(tech.pegasys.teku.api.schema.Attestation::new).collect(toList());
 
-    sendRequest(() -> apiClient.sendSignedAttestation(schemaAttestation))
-        .finish(error -> LOG.error("Failed to send signed attestation", error));
-  }
-
-  @Override
-  public void sendSignedAttestation(
-      final Attestation attestation, final Optional<Integer> validatorIndex) {
-    sendSignedAttestation(attestation);
+    return sendRequest(
+        () ->
+            apiClient
+                .sendSignedAttestations(schemaAttestations)
+                .map(this::convertPostDataFailureResponseToSubmitDataErrors)
+                .orElse(emptyList()));
   }
 
   @Override
@@ -274,7 +272,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<List<SubmitCommitteeMessageError>> sendSyncCommitteeMessages(
+  public SafeFuture<List<SubmitDataError>> sendSyncCommitteeMessages(
       final List<SyncCommitteeMessage> syncCommitteeMessages) {
     return sendRequest(
         () ->
@@ -289,8 +287,8 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
                                     signature.getValidatorIndex(),
                                     new tech.pegasys.teku.api.schema.BLSSignature(
                                         signature.getSignature())))
-                        .collect(Collectors.toList()))
-                .map(this::responseToSyncCommitteeMessages)
+                        .collect(toList()))
+                .map(this::convertPostDataFailureResponseToSubmitDataErrors)
                 .orElse(emptyList()));
   }
 
@@ -301,7 +299,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
         signedContributionsRestSchema =
             signedContributionAndProofs.stream()
                 .map(this::asSignedContributionandProofs)
-                .collect(Collectors.toList());
+                .collect(toList());
     return sendRequest(() -> apiClient.sendContributionAndProofs(signedContributionsRestSchema));
   }
 
@@ -331,11 +329,11 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
         new tech.pegasys.teku.api.schema.BLSSignature(contribution.getSignature()));
   }
 
-  private List<SubmitCommitteeMessageError> responseToSyncCommitteeMessages(
-      final PostSyncCommitteeFailureResponse postSyncCommitteeFailureResponse) {
-    return postSyncCommitteeFailureResponse.failures.stream()
-        .map(i -> new SubmitCommitteeMessageError(i.index, i.message))
-        .collect(Collectors.toList());
+  private List<SubmitDataError> convertPostDataFailureResponseToSubmitDataErrors(
+      final PostDataFailureResponse postDataFailureResponse) {
+    return postDataFailureResponse.failures.stream()
+        .map(i -> new SubmitDataError(i.index, i.message))
+        .collect(toList());
   }
 
   @Override
@@ -362,14 +360,17 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public void sendAggregateAndProof(final SignedAggregateAndProof aggregateAndProof) {
-    sendRequest(
-            () ->
-                apiClient.sendAggregateAndProofs(
-                    List.of(
-                        new tech.pegasys.teku.api.schema.SignedAggregateAndProof(
-                            aggregateAndProof))))
-        .finish(error -> LOG.error("Failed to send aggregate and proof", error));
+  public SafeFuture<List<SubmitDataError>> sendAggregateAndProofs(
+      final List<SignedAggregateAndProof> aggregateAndProofs) {
+    return sendRequest(
+        () ->
+            apiClient
+                .sendAggregateAndProofs(
+                    aggregateAndProofs.stream()
+                        .map(tech.pegasys.teku.api.schema.SignedAggregateAndProof::new)
+                        .collect(toList()))
+                .map(this::convertPostDataFailureResponseToSubmitDataErrors)
+                .orElse(emptyList()));
   }
 
   @Override
@@ -393,9 +394,9 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
                                     UInt64.valueOf(subscription.getValidatorIndex()),
                                     subscription.getSyncCommitteeIndices().stream()
                                         .map(UInt64::valueOf)
-                                        .collect(Collectors.toList()),
+                                        .collect(toList()),
                                     subscription.getUntilEpoch()))
-                        .collect(Collectors.toList())))
+                        .collect(toList())))
         .finish(error -> LOG.error("Failed to subscribe to sync committee subnets", error));
   }
 

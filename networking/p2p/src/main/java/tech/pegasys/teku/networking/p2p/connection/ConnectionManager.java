@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.networking.p2p.connection;
 
-import static java.util.stream.Collectors.toList;
+import static java.util.Collections.emptyList;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -23,6 +23,8 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -94,18 +96,22 @@ public class ConnectionManager extends Service {
             this::searchForPeers,
             DISCOVERY_INTERVAL,
             error -> LOG.error("Error while searching for peers", error));
-    connectToKnownPeers();
+    connectToBestPeers(emptyList());
     searchForPeers();
     peerConnectedSubscriptionId = network.subscribeConnect(this::onPeerConnected);
     return SafeFuture.COMPLETE;
   }
 
-  private void connectToKnownPeers() {
+  private void connectToBestPeers(final Collection<DiscoveryPeer> additionalPeersToConsider) {
     peerSelectionStrategy
         .selectPeersToConnect(
             network,
             peerPools,
-            () -> discoveryService.streamKnownPeers().filter(this::isPeerValid).collect(toList()))
+            () ->
+                Stream.concat(
+                        additionalPeersToConsider.stream(), discoveryService.streamKnownPeers())
+                    .filter(this::isPeerValid)
+                    .collect(Collectors.toSet()))
         .forEach(this::attemptConnection);
   }
 
@@ -117,12 +123,12 @@ public class ConnectionManager extends Service {
     LOG.trace("Searching for peers");
     discoveryService
         .searchForPeers()
-        .orTimeout(10, TimeUnit.SECONDS)
+        .orTimeout(30, TimeUnit.SECONDS)
         .finish(
-            this::connectToKnownPeers,
+            this::connectToBestPeers,
             error -> {
               LOG.debug("Discovery failed", error);
-              connectToKnownPeers();
+              connectToBestPeers(emptyList());
             });
   }
 

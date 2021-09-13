@@ -17,23 +17,35 @@ import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.ssz.schema.SszListSchema;
+import tech.pegasys.teku.ssz.schema.SszSchema;
+import tech.pegasys.teku.ssz.schema.SszSchemaHints;
 
-public interface SszListSchemaTestBase extends SszCollectionSchemaTestBase {
+public abstract class SszListSchemaTestBase extends SszCollectionSchemaTestBase {
 
-  static Stream<SszListSchema<?, ?>> complexListSchemas() {
+  public static Stream<SszListSchema<?, ?>> complexListSchemas() {
     return SszCollectionSchemaTestBase.complexElementSchemas()
         .flatMap(
             elementSchema ->
-                Stream.of(
-                    SszListSchema.create(elementSchema, 0),
-                    SszListSchema.create(elementSchema, 1),
-                    SszListSchema.create(elementSchema, 2),
-                    SszListSchema.create(elementSchema, 3),
-                    SszListSchema.create(elementSchema, 10),
-                    SszListSchema.create(elementSchema, 1L << 33)));
+                Stream.concat(
+                    Stream.of(
+                        SszListSchema.create(elementSchema, 0),
+                        SszListSchema.create(elementSchema, 1),
+                        SszListSchema.create(elementSchema, 2),
+                        SszListSchema.create(elementSchema, 3),
+                        SszListSchema.create(elementSchema, 10),
+                        SszListSchema.create(elementSchema, 1L << 33)),
+                    createSuperNodeVariant(elementSchema)));
+  }
+
+  private static Stream<? extends SszListSchema<?, ?>> createSuperNodeVariant(
+      final SszSchema<?> elementSchema) {
+    // SuperNodes only support fixed sized content
+    return elementSchema.isFixedSize()
+        ? Stream.of(SszListSchema.create(elementSchema, 1L << 16, SszSchemaHints.sszSuperNode(8)))
+        : Stream.empty();
   }
 
   @MethodSource("testSchemaArguments")
   @ParameterizedTest
-  default void getChildSchema_shouldThrowIndexOutOfBounds(SszListSchema<?, ?> schema) {}
+  void getChildSchema_shouldThrowIndexOutOfBounds(SszListSchema<?, ?> schema) {}
 }
