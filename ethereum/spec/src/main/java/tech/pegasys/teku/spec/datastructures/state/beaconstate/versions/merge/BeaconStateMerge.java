@@ -16,9 +16,12 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge;
 import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
+import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.ssz.collections.SszUInt64List;
+import tech.pegasys.teku.ssz.primitive.SszByte;
 
 public interface BeaconStateMerge extends BeaconState {
 
@@ -36,16 +39,32 @@ public interface BeaconStateMerge extends BeaconState {
                     "Expected a merge state but got: " + state.getClass().getSimpleName()));
   }
 
-  // Attestations
-  default SszList<PendingAttestation> getPrevious_epoch_attestations() {
+  // Participation
+  default SszList<SszByte> getPreviousEpochParticipation() {
     final int fieldIndex =
-        getSchema().getFieldIndex(BeaconStateFields.PREVIOUS_EPOCH_ATTESTATIONS.name());
+        getSchema().getFieldIndex(BeaconStateFields.PREVIOUS_EPOCH_PARTICIPATION.name());
     return getAny(fieldIndex);
   }
 
-  default SszList<PendingAttestation> getCurrent_epoch_attestations() {
+  default SszList<SszByte> getCurrentEpochParticipation() {
     final int fieldIndex =
-        getSchema().getFieldIndex(BeaconStateFields.CURRENT_EPOCH_ATTESTATIONS.name());
+        getSchema().getFieldIndex(BeaconStateFields.CURRENT_EPOCH_PARTICIPATION.name());
+    return getAny(fieldIndex);
+  }
+
+  default SszUInt64List getInactivityScores() {
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.INACTIVITY_SCORES.name());
+    return getAny(fieldIndex);
+  }
+
+  default SyncCommittee getCurrentSyncCommittee() {
+    final int fieldIndex =
+        getSchema().getFieldIndex(BeaconStateFields.CURRENT_SYNC_COMMITTEE.name());
+    return getAny(fieldIndex);
+  }
+
+  default SyncCommittee getNextSyncCommittee() {
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.NEXT_SYNC_COMMITTEE.name());
     return getAny(fieldIndex);
   }
 

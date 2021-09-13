@@ -14,33 +14,15 @@
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.spec.constants.ParticipationFlags;
-import tech.pegasys.teku.ssz.SszList;
-import tech.pegasys.teku.ssz.primitive.SszByte;
 
 interface ValidatorStatsAltair extends BeaconStateAltair {
   @Override
   default CorrectAndLiveValidators getValidatorStatsPreviousEpoch(final Bytes32 correctTargetRoot) {
-    return getValidatorStats(getPreviousEpochParticipation());
+    return ValidatorStatsUtil.getValidatorStats(getPreviousEpochParticipation());
   }
 
   @Override
   default CorrectAndLiveValidators getValidatorStatsCurrentEpoch(final Bytes32 correctTargetRoot) {
-    return getValidatorStats(getCurrentEpochParticipation());
-  }
-
-  private CorrectAndLiveValidators getValidatorStats(final SszList<SszByte> participationFlags) {
-    int numberOfCorrectValidators = 0;
-    int numberOfLiveValidators = 0;
-    for (SszByte participationFlag : participationFlags) {
-      final byte flag = participationFlag.get();
-      if (ParticipationFlags.isTimelyTarget(flag)) {
-        numberOfCorrectValidators++;
-      }
-      if (ParticipationFlags.isAnyFlagSet(flag)) {
-        numberOfLiveValidators++;
-      }
-    }
-    return new CorrectAndLiveValidators(numberOfCorrectValidators, numberOfLiveValidators);
+    return ValidatorStatsUtil.getValidatorStats(getCurrentEpochParticipation());
   }
 }

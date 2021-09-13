@@ -16,9 +16,14 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge;
 import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
+import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
+import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.SszMutableList;
+import tech.pegasys.teku.ssz.collections.SszMutableUInt64List;
+import tech.pegasys.teku.ssz.collections.SszUInt64List;
+import tech.pegasys.teku.ssz.primitive.SszByte;
 
 public interface MutableBeaconStateMerge extends MutableBeaconState, BeaconStateMerge {
 
@@ -33,17 +38,51 @@ public interface MutableBeaconStateMerge extends MutableBeaconState, BeaconState
 
   // Attestations
   @Override
-  default SszMutableList<PendingAttestation> getPrevious_epoch_attestations() {
+  default SszMutableList<SszByte> getPreviousEpochParticipation() {
     final int fieldIndex =
-        getSchema().getFieldIndex(BeaconStateFields.PREVIOUS_EPOCH_ATTESTATIONS.name());
+        getSchema().getFieldIndex(BeaconStateFields.PREVIOUS_EPOCH_PARTICIPATION.name());
     return getAnyByRef(fieldIndex);
   }
 
-  @Override
-  default SszMutableList<PendingAttestation> getCurrent_epoch_attestations() {
+  default void setPreviousEpochParticipation(final SszList<SszByte> newValue) {
     final int fieldIndex =
-        getSchema().getFieldIndex(BeaconStateFields.CURRENT_EPOCH_ATTESTATIONS.name());
+        getSchema().getFieldIndex(BeaconStateFields.PREVIOUS_EPOCH_PARTICIPATION.name());
+    set(fieldIndex, newValue);
+  }
+
+  @Override
+  default SszMutableList<SszByte> getCurrentEpochParticipation() {
+    final int fieldIndex =
+        getSchema().getFieldIndex(BeaconStateFields.CURRENT_EPOCH_PARTICIPATION.name());
     return getAnyByRef(fieldIndex);
+  }
+
+  default void setCurrentEpochParticipation(final SszList<SszByte> newValue) {
+    final int fieldIndex =
+        getSchema().getFieldIndex(BeaconStateFields.CURRENT_EPOCH_PARTICIPATION.name());
+    set(fieldIndex, newValue);
+  }
+
+  @Override
+  default SszMutableUInt64List getInactivityScores() {
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.INACTIVITY_SCORES.name());
+    return getAnyByRef(fieldIndex);
+  }
+
+  default void setInactivityScores(SszUInt64List newValue) {
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.INACTIVITY_SCORES.name());
+    set(fieldIndex, newValue);
+  }
+
+  default void setCurrentSyncCommittee(SyncCommittee currentSyncCommittee) {
+    final int fieldIndex =
+        getSchema().getFieldIndex(BeaconStateFields.CURRENT_SYNC_COMMITTEE.name());
+    set(fieldIndex, currentSyncCommittee);
+  }
+
+  default void setNextSyncCommittee(SyncCommittee nextSyncCommittee) {
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.NEXT_SYNC_COMMITTEE.name());
+    set(fieldIndex, nextSyncCommittee);
   }
 
   // Execution

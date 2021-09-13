@@ -13,69 +13,17 @@
 
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge;
 
-import java.util.HashMap;
-import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
-import tech.pegasys.teku.ssz.SszList;
-import tech.pegasys.teku.ssz.collections.SszBitlist;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.ValidatorStatsUtil;
 
 interface ValidatorStatsMerge extends BeaconStateMerge {
   @Override
   default CorrectAndLiveValidators getValidatorStatsPreviousEpoch(final Bytes32 correctTargetRoot) {
-    return getValidatorStats(getPrevious_epoch_attestations(), correctTargetRoot);
+    return ValidatorStatsUtil.getValidatorStats(getPreviousEpochParticipation());
   }
 
   @Override
   default CorrectAndLiveValidators getValidatorStatsCurrentEpoch(final Bytes32 correctTargetRoot) {
-    return getValidatorStats(getCurrent_epoch_attestations(), correctTargetRoot);
-  }
-
-  private CorrectAndLiveValidators getValidatorStats(
-      final SszList<PendingAttestation> attestations, final Bytes32 correctTargetRoot) {
-
-    final Map<UInt64, Map<UInt64, SszBitlist>> liveValidatorsAggregationBitsBySlotAndCommittee =
-        new HashMap<>();
-    final Map<UInt64, Map<UInt64, SszBitlist>> correctValidatorsAggregationBitsBySlotAndCommittee =
-        new HashMap<>();
-
-    attestations.forEach(
-        attestation -> {
-          if (isCorrectAttestation(attestation, correctTargetRoot)) {
-            correctValidatorsAggregationBitsBySlotAndCommittee
-                .computeIfAbsent(attestation.getData().getSlot(), __ -> new HashMap<>())
-                .merge(
-                    attestation.getData().getIndex(),
-                    attestation.getAggregation_bits(),
-                    SszBitlist::nullableOr);
-          }
-
-          liveValidatorsAggregationBitsBySlotAndCommittee
-              .computeIfAbsent(attestation.getData().getSlot(), __ -> new HashMap<>())
-              .merge(
-                  attestation.getData().getIndex(),
-                  attestation.getAggregation_bits(),
-                  SszBitlist::nullableOr);
-        });
-
-    final int numberOfCorrectValidators =
-        correctValidatorsAggregationBitsBySlotAndCommittee.values().stream()
-            .flatMap(aggregationBitsByCommittee -> aggregationBitsByCommittee.values().stream())
-            .mapToInt(SszBitlist::getBitCount)
-            .sum();
-
-    final int numberOfLiveValidators =
-        liveValidatorsAggregationBitsBySlotAndCommittee.values().stream()
-            .flatMap(aggregationBitsByCommittee -> aggregationBitsByCommittee.values().stream())
-            .mapToInt(SszBitlist::getBitCount)
-            .sum();
-
-    return new CorrectAndLiveValidators(numberOfCorrectValidators, numberOfLiveValidators);
-  }
-
-  private boolean isCorrectAttestation(
-      final PendingAttestation attestation, final Bytes32 correctTargetRoot) {
-    return attestation.getData().getTarget().getRoot().equals(correctTargetRoot);
+    return ValidatorStatsUtil.getValidatorStats(getCurrentEpochParticipation());
   }
 }
