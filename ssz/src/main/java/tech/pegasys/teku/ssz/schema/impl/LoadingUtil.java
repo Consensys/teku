@@ -77,7 +77,7 @@ public class LoadingUtil {
     final Bytes32[] childHashes = rootBranchInfo.getChildren();
     final List<TreeNode> children = new ArrayList<>(childHashes.length);
 
-    // TODO: Walk through child hashes in pairs and create the branch nodes for the level above them
+    // Walk through child hashes in pairs and create the branch nodes for the level above them
     final int buildNodesAtDepth = rootBranchInfo.getDepth() - 1;
     int childIndex = 0;
     while (childIndex < childHashes.length) {
@@ -121,6 +121,7 @@ public class LoadingUtil {
       childIndex += 2;
     }
 
+    // Add default nodes for any remaining children, again using branch nodes one level up
     final long totalChildCount = 1L << branchDepth;
     while (childIndex < totalChildCount) {
       children.add(
