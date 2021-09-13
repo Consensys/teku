@@ -34,15 +34,15 @@ public class V4FinalizedStateTreeStorageLogic
 
   @Override
   public Optional<BeaconState> getLatestAvailableFinalizedState(
-      final KvStoreAccessor db, final SchemaFinalizedTreeState schema, final UInt64 maxSlot) {
-    return db.getFloorEntry(schema.getColumnFinalizedStateRootsBySlot(), maxSlot)
+      final KvStoreAccessor db, final SchemaFinalizedTreeState dbSchema, final UInt64 maxSlot) {
+    return db.getFloorEntry(dbSchema.getColumnFinalizedStateRootsBySlot(), maxSlot)
         .map(
             entry ->
                 spec.atSlot(entry.getKey())
                     .getSchemaDefinitions()
                     .getBeaconStateSchema()
                     .load(
-                        new KvStoreTreeNodeSource(db, schema),
+                        new KvStoreTreeNodeSource(db, dbSchema),
                         entry.getValue(),
                         GIndexUtil.SELF_G_INDEX));
   }

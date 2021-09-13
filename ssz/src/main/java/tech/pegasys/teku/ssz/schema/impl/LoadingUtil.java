@@ -25,6 +25,7 @@ import tech.pegasys.teku.ssz.schema.SszSchema;
 import tech.pegasys.teku.ssz.tree.BranchNode;
 import tech.pegasys.teku.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.ssz.tree.GIndexUtil.NodeRelation;
+import tech.pegasys.teku.ssz.tree.LazyBranchNode;
 import tech.pegasys.teku.ssz.tree.LeafNode;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 import tech.pegasys.teku.ssz.tree.TreeNodeSource;
@@ -55,7 +56,13 @@ public class LoadingUtil {
       // or it may be "useless" and we can just use the default tree
       if (isZeroBranchUseful(rootGIndex, lastUsefulGIndex)) {
         return createUsefulEmptyBranch(
-            nodeSource, rootGIndex, depthToLoad, defaultTree, lastUsefulGIndex, childLoader);
+            nodeSource,
+            rootHash,
+            rootGIndex,
+            depthToLoad,
+            defaultTree,
+            lastUsefulGIndex,
+            childLoader);
       }
       return defaultTree;
     }
@@ -69,29 +76,60 @@ public class LoadingUtil {
         depthToLoad);
     final Bytes32[] childHashes = rootBranchInfo.getChildren();
     final List<TreeNode> children = new ArrayList<>(childHashes.length);
-    for (int childIndex = 0; childIndex < childHashes.length; childIndex++) {
-      final long childGIndex =
-          GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, childIndex, branchDepth);
+
+    // TODO: Walk through child hashes in pairs and create the branch nodes for the level above them
+    final int buildNodesAtDepth = rootBranchInfo.getDepth() - 1;
+    int childIndex = 0;
+    while (childIndex < childHashes.length) {
+      final long branchNodeGIndex =
+          GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, childIndex / 2, buildNodesAtDepth);
+      final long composedBranchNodeGIndex = GIndexUtil.gIdxCompose(rootGIndex, branchNodeGIndex);
+      final Bytes32 leftHash = childHashes[childIndex];
+      final Bytes32 rightHash;
+      if (childIndex + 1 < childHashes.length) {
+        rightHash = childHashes[childIndex + 1];
+      } else {
+        rightHash =
+            defaultTree
+                .get(
+                    GIndexUtil.gIdxChildGIndex(
+                        GIndexUtil.SELF_G_INDEX, childIndex + 1, branchDepth))
+                .hashTreeRoot();
+      }
       children.add(
-          loadNodesToDepth(
-              nodeSource,
-              childHashes[childIndex],
-              GIndexUtil.gIdxCompose(rootGIndex, childGIndex),
-              depthToLoad - branchDepth,
-              defaultTree.get(childGIndex),
-              lastUsefulGIndex,
-              childLoader));
+          LazyBranchNode.createWithUnknownHash(
+              leftHash,
+              rightHash,
+              () ->
+                  loadNodesToDepth(
+                      nodeSource,
+                      leftHash,
+                      GIndexUtil.gIdxLeftGIndex(composedBranchNodeGIndex),
+                      depthToLoad - branchDepth,
+                      defaultTree.get(GIndexUtil.gIdxLeftGIndex(branchNodeGIndex)),
+                      lastUsefulGIndex,
+                      childLoader),
+              () ->
+                  loadNodesToDepth(
+                      nodeSource,
+                      rightHash,
+                      GIndexUtil.gIdxRightGIndex(composedBranchNodeGIndex),
+                      depthToLoad - branchDepth,
+                      defaultTree.get(GIndexUtil.gIdxRightGIndex(branchNodeGIndex)),
+                      lastUsefulGIndex,
+                      childLoader)));
+      childIndex += 2;
     }
 
     final long totalChildCount = 1L << branchDepth;
-    for (long unusedChildIndex = childHashes.length;
-        unusedChildIndex < totalChildCount;
-        unusedChildIndex++) {
+    while (childIndex < totalChildCount) {
       children.add(
           defaultTree.get(
-              GIndexUtil.gIdxChildGIndex(GIndexUtil.SELF_G_INDEX, unusedChildIndex, branchDepth)));
+              GIndexUtil.gIdxChildGIndex(
+                  GIndexUtil.SELF_G_INDEX, childIndex / 2, buildNodesAtDepth)));
+      childIndex += 2;
     }
-    return TreeUtil.createTree(children, branchDepth);
+    return TreeUtil.createTree(children, buildNodesAtDepth);
   }
 
   private static boolean isZeroBranchUseful(final long rootGIndex, final long lastUsefulGIndex) {
@@ -114,6 +152,7 @@ public class LoadingUtil {
 
   private static BranchNode createUsefulEmptyBranch(
       final TreeNodeSource nodeSource,
+      final Bytes32 rootHash,
       final long rootGIndex,
       final int depthToLoad,
       final TreeNode defaultTree,
