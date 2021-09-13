@@ -57,6 +57,10 @@ public class LoggingConfigurator {
     return COLOR.get();
   }
 
+  public static boolean isIncludeP2pWarnings() {
+    return INCLUDE_P2P_WARNINGS;
+  }
+
   public static synchronized void setColorEnabled(final boolean isEnabled) {
     COLOR.set(isEnabled);
   }
@@ -246,12 +250,9 @@ public class LoggingConfigurator {
   }
 
   private static LoggerConfig setUpP2pLogger(final Appender appender) {
-    // Don't disable p2p error logs unless the root log level disables error.
-    final Level p2pLogLevel =
-        INCLUDE_P2P_WARNINGS || ROOT_LOG_LEVEL.isMoreSpecificThan(Level.ERROR)
-            ? ROOT_LOG_LEVEL
-            : Level.ERROR;
+    final Level p2pLogLevel = INCLUDE_P2P_WARNINGS ? Level.INFO : Level.OFF;
     final LoggerConfig logger = new LoggerConfig(P2P_LOGGER_NAME, p2pLogLevel, true);
+    StatusLogger.getLogger().info("Include P2P warnings set to: {}", INCLUDE_P2P_WARNINGS);
     logger.addAppender(appender, ROOT_LOG_LEVEL, null);
     return logger;
   }
