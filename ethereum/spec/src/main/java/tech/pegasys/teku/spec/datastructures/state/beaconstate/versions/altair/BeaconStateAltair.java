@@ -70,7 +70,14 @@ public interface BeaconStateAltair extends BeaconState {
     return Optional.of(this);
   }
 
-  <E1 extends Exception, E2 extends Exception, E3 extends Exception>
+  @Override
+  MutableBeaconStateAltair createWritableCopy();
+
+  default <E1 extends Exception, E2 extends Exception, E3 extends Exception>
       BeaconStateAltair updatedAltair(Mutator<MutableBeaconStateAltair, E1, E2, E3> mutator)
-          throws E1, E2, E3;
+          throws E1, E2, E3 {
+    MutableBeaconStateAltair writableCopy = createWritableCopy();
+    mutator.mutate(writableCopy);
+    return writableCopy.commitChanges();
+  }
 }

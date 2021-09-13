@@ -16,6 +16,7 @@ package tech.pegasys.teku.infrastructure.io.resource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -28,10 +29,14 @@ public class FileResourceLoader extends ResourceLoader {
 
   @Override
   Optional<InputStream> loadSource(final String source) throws IOException {
-    final Path path = Path.of(source);
-    if (!path.toFile().exists()) {
+    try {
+      final Path path = Path.of(source);
+      if (!path.toFile().exists()) {
+        return Optional.empty();
+      }
+      return Optional.of(Files.newInputStream(path));
+    } catch (InvalidPathException e) {
       return Optional.empty();
     }
-    return Optional.of(Files.newInputStream(path));
   }
 }

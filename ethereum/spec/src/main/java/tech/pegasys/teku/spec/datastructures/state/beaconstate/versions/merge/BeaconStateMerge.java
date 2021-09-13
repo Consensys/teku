@@ -46,6 +46,14 @@ public interface BeaconStateMerge extends BeaconStateAltair {
     return Optional.of(this);
   }
 
-  <E1 extends Exception, E2 extends Exception, E3 extends Exception> BeaconStateMerge updatedMerge(
-      Mutator<MutableBeaconStateMerge, E1, E2, E3> mutator) throws E1, E2, E3;
+  @Override
+  MutableBeaconStateMerge createWritableCopy();
+
+  default <E1 extends Exception, E2 extends Exception, E3 extends Exception>
+      BeaconStateMerge updatedMerge(Mutator<MutableBeaconStateMerge, E1, E2, E3> mutator)
+          throws E1, E2, E3 {
+    MutableBeaconStateMerge writableCopy = createWritableCopy();
+    mutator.mutate(writableCopy);
+    return writableCopy.commitChanges();
+  }
 }

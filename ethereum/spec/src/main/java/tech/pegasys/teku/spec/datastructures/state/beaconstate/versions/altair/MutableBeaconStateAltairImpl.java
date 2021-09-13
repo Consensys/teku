@@ -47,4 +47,9 @@ class MutableBeaconStateAltairImpl extends AbstractMutableBeaconState<BeaconStat
   protected void addCustomFields(ToStringHelper stringBuilder) {
     BeaconStateAltairImpl.describeCustomFields(stringBuilder, this);
   }
+
+  @Override
+  public MutableBeaconStateAltair createWritableCopy() {
+    return (MutableBeaconStateAltair) super.createWritableCopy();
+  }
 }

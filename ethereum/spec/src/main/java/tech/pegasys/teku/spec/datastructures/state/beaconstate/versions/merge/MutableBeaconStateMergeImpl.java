@@ -56,4 +56,9 @@ class MutableBeaconStateMergeImpl extends AbstractMutableBeaconState<BeaconState
   protected void addCustomFields(ToStringHelper stringBuilder) {
     BeaconStateMergeImpl.describeCustomFields(stringBuilder, this);
   }
+
+  @Override
+  public MutableBeaconStateMerge createWritableCopy() {
+    return (MutableBeaconStateMerge) super.createWritableCopy();
+  }
 }

@@ -60,7 +60,7 @@ public abstract class AbstractBeaconState<TMutable extends MutableBeaconState>
   @Override
   public <E1 extends Exception, E2 extends Exception, E3 extends Exception> BeaconState updated(
       Mutator<MutableBeaconState, E1, E2, E3> mutator) throws E1, E2, E3 {
-    MutableBeaconState writableCopy = createWritableCopyPriv();
+    MutableBeaconState writableCopy = createWritableCopy();
     mutator.mutate(writableCopy);
     return writableCopy.commitChanges();
   }
@@ -92,5 +92,6 @@ public abstract class AbstractBeaconState<TMutable extends MutableBeaconState>
 
   protected abstract void describeCustomFields(ToStringHelper stringBuilder);
 
-  protected abstract TMutable createWritableCopyPriv();
+  @Override
+  public abstract TMutable createWritableCopy();
 }

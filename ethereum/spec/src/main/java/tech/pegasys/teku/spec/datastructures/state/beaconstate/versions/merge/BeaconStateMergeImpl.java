@@ -18,8 +18,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.ValidatorStatsAltair;
 import tech.pegasys.teku.ssz.SszContainer;
 import tech.pegasys.teku.ssz.SszData;
@@ -49,23 +47,7 @@ class BeaconStateMergeImpl extends AbstractBeaconState<MutableBeaconStateMerge>
   }
 
   @Override
-  public <E1 extends Exception, E2 extends Exception, E3 extends Exception>
-      BeaconStateMerge updatedMerge(Mutator<MutableBeaconStateMerge, E1, E2, E3> mutator)
-          throws E1, E2, E3 {
-    MutableBeaconStateMerge writableCopy = createWritableCopyPriv();
-    mutator.mutate(writableCopy);
-    return writableCopy.commitChanges();
-  }
-
-  @Override
-  public <E1 extends Exception, E2 extends Exception, E3 extends Exception>
-      BeaconStateAltair updatedAltair(Mutator<MutableBeaconStateAltair, E1, E2, E3> mutator)
-          throws E1, E2, E3 {
-    return null;
-  }
-
-  @Override
-  protected MutableBeaconStateMerge createWritableCopyPriv() {
+  public MutableBeaconStateMerge createWritableCopy() {
     return new MutableBeaconStateMergeImpl(this);
   }
 
