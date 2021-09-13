@@ -21,7 +21,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.ssz.tree.GIndexUtil.NodeRelation;
-import tech.pegasys.teku.ssz.tree.TreeNodeImpl.LeafNodeImpl;
 import tech.pegasys.teku.ssz.tree.TreeUtil.ZeroLeafNode;
 
 /**
@@ -47,7 +46,7 @@ public interface LeafNode extends TreeNode, LeafDataNode {
 
   /** Creates a basic Leaf node instance with the data <= 32 bytes */
   static LeafNode create(Bytes data) {
-    return new LeafNodeImpl(data);
+    return new SimpleLeafNode(data);
   }
 
   /**
