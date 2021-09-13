@@ -184,7 +184,7 @@ public class BlockProcessorMerge extends AbstractBlockProcessor {
 
     PendingAttestation pendingAttestation =
         new PendingAttestation(
-            attestation.getAggregation_bits(),
+            attestation.getAggregationBits(),
             data,
             state.getSlot().minus(data.getSlot()),
             UInt64.valueOf(beaconStateAccessors.getBeaconProposerIndex(state)));

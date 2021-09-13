@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -27,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
@@ -120,6 +122,58 @@ public class AggregatingSignatureVerificationServiceTest {
   @Test
   public void verify_validSignatures_smallBatch() {
     verifyValidSignatures(minBatchSizeToSplit - 1);
+  }
+
+  @Test
+  public void verify_validSignatures_listVerify() throws ExecutionException, InterruptedException {
+    startService();
+
+    final List<SafeFuture<Boolean>> futures = new ArrayList<>();
+    for (int i = 0; i < batchSize; i += 5) {
+      final List<Integer> indices = new ArrayList<>();
+      final List<Boolean> useValidSignatures = new ArrayList<>();
+      for (int j = 0; j < 5; j++) {
+        useValidSignatures.add(true);
+        indices.add(i);
+      }
+      futures.add(executeListVerify(indices, indices, useValidSignatures));
+    }
+    for (SafeFuture<Boolean> future : futures) {
+      assertThat(future).isNotDone();
+    }
+    runPendingTasks();
+
+    for (SafeFuture<Boolean> future : futures) {
+      assertThat(future).isCompletedWithValue(true);
+    }
+  }
+
+  @Test
+  public void verify_InvalidSignature_listVerify() {
+    startService();
+
+    final List<SafeFuture<Boolean>> futures = new ArrayList<>();
+    for (int i = 0; i < batchSize; i += 5) {
+      final List<Integer> indices = new ArrayList<>();
+      final List<Boolean> useValidSignatures = new ArrayList<>();
+      // batch 1 contains i: 5-9, and the second signature will be invalid
+      for (int j = 0; j < 5; j++) {
+        useValidSignatures.add(i != 5 || j != 1);
+        indices.add(i);
+      }
+      futures.add(executeListVerify(indices, indices, useValidSignatures));
+    }
+    for (SafeFuture<Boolean> future : futures) {
+      assertThat(future).isNotDone();
+    }
+    runPendingTasks();
+
+    // the second future will fail due to an invalid signature in the group, but all other futures
+    // pass
+    for (int i = 0; i < 5; i++) {
+      final SafeFuture<Boolean> future = futures.get(i);
+      assertThat(future).isCompletedWithValue(i != 1);
+    }
   }
 
   public void verifyValidSignatures(final int batchSize) {
@@ -303,6 +357,24 @@ public class AggregatingSignatureVerificationServiceTest {
     final BLSSignature signature =
         useValidSignature ? BLS.sign(keypair.getSecretKey(), message) : BLSSignature.empty();
     return service.verify(keypair.getPublicKey(), message, signature);
+  }
+
+  private SafeFuture<Boolean> executeListVerify(
+      final List<Integer> keyIndices,
+      final List<Integer> data,
+      final List<Boolean> useValidSignatures) {
+    final List<List<BLSPublicKey>> publicKeys = new ArrayList<>();
+    final List<Bytes> messages = new ArrayList<>();
+    final List<BLSSignature> signatures = new ArrayList<>();
+    for (int i = 0; i < keyIndices.size(); i++) {
+      publicKeys.add(List.of(KEYS.get(i).getPublicKey()));
+      messages.add(Bytes.of(data.get(i)));
+      signatures.add(
+          useValidSignatures.get(i)
+              ? BLS.sign(KEYS.get(i).getSecretKey(), messages.get(i))
+              : BLSSignature.empty());
+    }
+    return service.verify(publicKeys, messages, signatures);
   }
 
   private void runPendingTasks() {

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.remote.apiclient;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -42,6 +43,8 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionRequest;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
+import tech.pegasys.teku.api.response.v1.beacon.PostDataFailure;
+import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAttestationDataResponse;
@@ -385,7 +388,7 @@ class OkHttpValidatorRestApiClientTest {
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK));
 
-    apiClient.sendSignedAttestation(attestation);
+    apiClient.sendSignedAttestations(List.of(attestation));
 
     RecordedRequest request = mockWebServer.takeRequest();
 
@@ -400,10 +403,17 @@ class OkHttpValidatorRestApiClientTest {
   public void sendSignedAttestation_WhenBadParameters_ThrowsIllegalArgumentException() {
     final Attestation attestation = schemaObjects.attestation();
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
+    final PostDataFailureResponse response =
+        new PostDataFailureResponse(
+            SC_BAD_REQUEST, "Computer said no", List.of(new PostDataFailure(UInt64.ZERO, "Bad")));
+    mockWebServer.enqueue(
+        new MockResponse().setResponseCode(SC_BAD_REQUEST).setBody(asJson(response)));
 
-    assertThatThrownBy(() -> apiClient.sendSignedAttestation(attestation))
-        .isInstanceOf(IllegalArgumentException.class);
+    assertThat(apiClient.sendSignedAttestations(List.of(attestation)))
+        .isPresent()
+        .get()
+        .usingRecursiveComparison()
+        .isEqualTo(response);
   }
 
   @Test
@@ -412,7 +422,7 @@ class OkHttpValidatorRestApiClientTest {
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
 
-    assertThatThrownBy(() -> apiClient.sendSignedAttestation(attestation))
+    assertThatThrownBy(() -> apiClient.sendSignedAttestations(List.of(attestation)))
         .isInstanceOf(RuntimeException.class)
         .hasMessageContaining("Unexpected response from Beacon Node API");
   }
@@ -520,13 +530,20 @@ class OkHttpValidatorRestApiClientTest {
   }
 
   @Test
-  public void sendAggregateAndProofs_WhenBadParameters_ThrowsIllegalArgumentException() {
+  public void sendAggregateAndProofs_WhenBadParameters_ReturnsErrorResponse() {
     final SignedAggregateAndProof signedAggregateAndProof = schemaObjects.signedAggregateAndProof();
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
+    final PostDataFailureResponse response =
+        new PostDataFailureResponse(
+            SC_BAD_REQUEST, "Computer said no", List.of(new PostDataFailure(UInt64.ZERO, "Bad")));
+    mockWebServer.enqueue(
+        new MockResponse().setResponseCode(SC_BAD_REQUEST).setBody(asJson(response)));
 
-    assertThatThrownBy(() -> apiClient.sendAggregateAndProofs(List.of(signedAggregateAndProof)))
-        .isInstanceOf(IllegalArgumentException.class);
+    assertThat(apiClient.sendAggregateAndProofs(List.of(signedAggregateAndProof)))
+        .isPresent()
+        .get()
+        .usingRecursiveComparison()
+        .isEqualTo(response);
   }
 
   @Test
@@ -673,6 +690,28 @@ class OkHttpValidatorRestApiClientTest {
     mockWebServer.enqueue(new MockResponse().setResponseCode(429));
 
     assertThatThrownBy(() -> apiClient.getGenesis()).isInstanceOf(RateLimitedException.class);
+  }
+
+  @Test
+  void sendSyncCommitteeMessages_shouldReturnEmptyWhenResponseIsOk() {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK));
+
+    assertThat(apiClient.sendSyncCommitteeMessages(emptyList())).isEmpty();
+  }
+
+  @Test
+  void sendSyncCommitteeMessages_shouldReturnErrorsFromBadResponse() {
+    final PostDataFailureResponse response =
+        new PostDataFailureResponse(
+            SC_BAD_REQUEST, "Computer said no", List.of(new PostDataFailure(UInt64.ZERO, "Bad")));
+    mockWebServer.enqueue(
+        new MockResponse().setResponseCode(SC_BAD_REQUEST).setBody(asJson(response)));
+
+    assertThat(apiClient.sendSyncCommitteeMessages(emptyList()))
+        .isPresent()
+        .get()
+        .usingRecursiveComparison()
+        .isEqualTo(response);
   }
 
   private String asJson(Object object) {

@@ -128,7 +128,7 @@ public class ForkScheduleTest {
     final ForkSchedule forkSchedule = buildForkSchedule(TRANSITION_CONFIG);
 
     assertThat(forkSchedule.getSupportedMilestones())
-        .containsExactly(SpecMilestone.PHASE0, SpecMilestone.MERGE, SpecMilestone.ALTAIR);
+        .containsExactly(SpecMilestone.PHASE0, SpecMilestone.ALTAIR);
   }
 
   @Test
@@ -138,7 +138,7 @@ public class ForkScheduleTest {
     final ForkSchedule forkSchedule = ForkSchedule.builder().addNextMilestone(altair).build();
 
     assertThat(forkSchedule.getSupportedMilestones())
-        .containsExactly(SpecMilestone.PHASE0, SpecMilestone.MERGE, SpecMilestone.ALTAIR);
+        .containsExactly(SpecMilestone.PHASE0, SpecMilestone.ALTAIR);
   }
 
   @Test

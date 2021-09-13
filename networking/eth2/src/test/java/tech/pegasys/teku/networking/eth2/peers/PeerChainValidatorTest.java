@@ -19,6 +19,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_EPOCH;
 
 import java.util.List;
 import java.util.Optional;
@@ -58,12 +59,11 @@ public class PeerChainValidatorTest {
   private final ForkInfo otherForkInfo =
       new ForkInfo(forks.get(0), dataStructureUtil.randomBytes32());
 
-  private final UInt64 genesisEpoch = UInt64.valueOf(Constants.GENESIS_EPOCH);
   private final UInt64 remoteFinalizedEpoch = UInt64.valueOf(10L);
   private final UInt64 earlierEpoch = UInt64.valueOf(8L);
   private final UInt64 laterEpoch = UInt64.valueOf(12L);
 
-  private final UInt64 genesisSlot = spec.computeStartSlotAtEpoch(genesisEpoch);
+  private final UInt64 genesisSlot = spec.computeStartSlotAtEpoch(GENESIS_EPOCH);
   private final UInt64 remoteFinalizedEpochSlot =
       spec.computeStartSlotAtEpoch(remoteFinalizedEpoch);
   private final UInt64 earlierEpochSlot = spec.computeStartSlotAtEpoch(earlierEpoch);
@@ -84,7 +84,7 @@ public class PeerChainValidatorTest {
       dataStructureUtil.randomSignedBlockAndState(laterBlockSlot);
 
   private final Checkpoint genesisCheckpoint =
-      new Checkpoint(genesisEpoch, genesisBlockAndState.getRoot());
+      new Checkpoint(GENESIS_EPOCH, genesisBlockAndState.getRoot());
   private final Checkpoint remoteFinalizedCheckpoint =
       new Checkpoint(remoteFinalizedEpoch, remoteFinalizedBlockAndState.getRoot());
   private final Checkpoint earlierCheckpoint =

@@ -72,8 +72,10 @@ class SyncCommitteeScheduledDutiesTest {
     verify(validatorApiChannel)
         .subscribeToSyncCommitteeSubnets(
             Set.of(
-                new SyncCommitteeSubnetSubscription(50, Set.of(1, 2, 3), PERIOD_END_EPOCH),
-                new SyncCommitteeSubnetSubscription(70, Set.of(2, 6), PERIOD_END_EPOCH)));
+                new SyncCommitteeSubnetSubscription(
+                    50, Set.of(1, 2, 3), PERIOD_END_EPOCH.increment()),
+                new SyncCommitteeSubnetSubscription(
+                    70, Set.of(2, 6), PERIOD_END_EPOCH.increment())));
   }
 
   @Test

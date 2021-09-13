@@ -28,6 +28,7 @@ import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
     name = "import",
     description =
         "Import slashing protection database. Supports minimal or complete interchange format.",
+    showDefaultValues = true,
     mixinStandardHelpOptions = true,
     abbreviateSynopsis = true,
     versionProvider = PicoCliVersionProvider.class,
@@ -58,7 +59,8 @@ public class ImportCommand implements Runnable {
     verifyImportFileExists(importFile);
     prepareOutputPath(slashProtectionPath.toFile());
 
-    SlashingProtectionImporter importer = new SlashingProtectionImporter(SUB_COMMAND_LOG);
+    SlashingProtectionImporter importer =
+        new SlashingProtectionImporter(SUB_COMMAND_LOG, fromFileName);
 
     try {
       SUB_COMMAND_LOG.display("Reading slashing protection data from: " + importFile.toString());

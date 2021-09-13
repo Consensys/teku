@@ -181,7 +181,7 @@ public class BlockImporterTest {
     int invalidAttIdx = aggregatedAttestations.size() / 2;
     Attestation att = aggregatedAttestations.get(invalidAttIdx);
     Attestation invalidAtt =
-        new Attestation(att.getAggregation_bits(), att.getData(), BLSTestUtil.randomSignature(1));
+        new Attestation(att.getAggregationBits(), att.getData(), BLSTestUtil.randomSignature(1));
     aggregatedAttestations.set(invalidAttIdx, invalidAtt);
 
     UInt64 currentSlotFinal = currentSlot.plus(UInt64.ONE);

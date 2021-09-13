@@ -47,8 +47,9 @@ public class ReferenceTestGenerator {
       final String testClassName = getTestClassName(testDefinition);
       final String testPackage =
           "tech.pegasys.teku.reference."
-              + sanitizePackageName(testDefinition.getFork())
-              + "."
+              + (testDefinition.getFork().isEmpty()
+                  ? ""
+                  : sanitizePackageName(testDefinition.getFork()) + ".")
               + sanitizePackageName(testDefinition.getTestType());
       final String testMethodName = "test" + toCamelCase(testDefinition.getTestName());
       final String content =

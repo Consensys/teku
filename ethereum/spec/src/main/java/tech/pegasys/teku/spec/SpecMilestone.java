@@ -24,8 +24,8 @@ import tech.pegasys.teku.ssz.type.Bytes4;
 
 public enum SpecMilestone {
   PHASE0,
-  MERGE,
-  ALTAIR;
+  ALTAIR,
+  MERGE;
 
   /**
    * Returns true if this milestone is at or after the supplied milestone ({@code other})

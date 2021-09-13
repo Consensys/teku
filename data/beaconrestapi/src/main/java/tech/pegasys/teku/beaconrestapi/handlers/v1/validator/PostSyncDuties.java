@@ -21,7 +21,8 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERRO
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SERVICE_UNAVAILABLE;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_EXPERIMENTAL;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -74,7 +75,7 @@ public class PostSyncDuties extends AbstractHandler implements Handler {
       path = ROUTE,
       method = HttpMethod.POST,
       summary = "Get sync committee duties",
-      tags = {TAG_EXPERIMENTAL},
+      tags = {TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED},
       description = "Requests the beacon node to provide a set of sync committee duties",
       requestBody =
           @OpenApiRequestBody(
@@ -99,8 +100,7 @@ public class PostSyncDuties extends AbstractHandler implements Handler {
     final Map<String, String> parameters = ctx.pathParamMap();
     try {
       final UInt64 epoch = UInt64.valueOf(parameters.get(EPOCH));
-      final List<Integer> indexes =
-          Arrays.asList(jsonProvider.jsonToObject(ctx.body(), Integer[].class));
+      final List<Integer> indexes = Arrays.asList(parseRequestBody(ctx.body(), Integer[].class));
 
       SafeFuture<Optional<PostSyncDutiesResponse>> future =
           validatorDataProvider.getSyncDuties(epoch, indexes);

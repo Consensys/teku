@@ -20,7 +20,8 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERRO
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SUBCOMMITTEE_INDEX;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_EXPERIMENTAL;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBytes32;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsInt;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUInt64;
@@ -63,7 +64,7 @@ public class GetSyncCommitteeContribution extends AbstractHandler {
       path = ROUTE,
       method = HttpMethod.GET,
       summary = "Produce a sync committee contribution",
-      tags = {TAG_EXPERIMENTAL},
+      tags = {TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED},
       queryParams = {
         @OpenApiParam(
             name = SLOT,
@@ -108,6 +109,10 @@ public class GetSyncCommitteeContribution extends AbstractHandler {
             String.format(
                 "Subcommittee index needs to be between 0 and %s, %s is outside of this range.",
                 NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT - 1, subcommitteeIndex));
+      }
+
+      if (provider.isPhase0Slot(slot)) {
+        throw new IllegalArgumentException(String.format("Slot %s is not an Altair slot", slot));
       }
 
       final SafeFuture<Optional<SyncCommitteeContribution>> future =

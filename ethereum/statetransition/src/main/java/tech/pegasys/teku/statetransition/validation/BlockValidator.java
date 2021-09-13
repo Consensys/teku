@@ -13,12 +13,8 @@
 
 package tech.pegasys.teku.statetransition.validation;
 
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_signing_root;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_domain;
-import static tech.pegasys.teku.util.config.Constants.DOMAIN_BEACON_PROPOSER;
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 import static tech.pegasys.teku.util.config.Constants.MAXIMUM_GOSSIP_CLOCK_DISPARITY;
 import static tech.pegasys.teku.util.config.Constants.VALID_BLOCK_SET_SIZE;
 
@@ -34,6 +30,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -60,27 +57,26 @@ public class BlockValidator {
       LOG.trace(
           "BlockValidator: Block is either too old or is not the first block with valid signature for "
               + "its slot. It will be dropped");
-      return SafeFuture.completedFuture(InternalValidationResult.IGNORE);
+      return completedFuture(InternalValidationResult.IGNORE);
     }
 
     if (blockIsFromFutureSlot(block)) {
       LOG.trace("BlockValidator: Block is from the future. It will be saved for future processing");
-      return SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
+      return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
     }
 
     if (recentChainData.containsBlock(block.getRoot())) {
       LOG.trace("Block is already imported");
-      return SafeFuture.completedFuture(InternalValidationResult.IGNORE);
+      return completedFuture(InternalValidationResult.IGNORE);
     }
 
     if (!recentChainData.containsBlock(block.getParentRoot())) {
       LOG.trace("Block parent is not available. It will be saved for future processing");
-      return SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
+      return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
     }
 
     if (!currentFinalizedCheckpointIsAncestorOfBlock(block)) {
-      LOG.trace("Block does not descend from finalized checkpoint");
-      return SafeFuture.completedFuture(InternalValidationResult.REJECT);
+      return completedFuture(reject("Block does not descend from finalized checkpoint"));
     }
 
     return recentChainData
@@ -90,16 +86,15 @@ public class BlockValidator {
               if (parentBlock.isEmpty()) {
                 LOG.trace(
                     "BlockValidator: Parent block does not exist. It will be saved for future processing");
-                return SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
+                return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
               }
 
               if (parentBlock.get().getSlot().isGreaterThanOrEqualTo(block.getSlot())) {
-                LOG.trace("Parent block is after child block.");
-                return SafeFuture.completedFuture(InternalValidationResult.REJECT);
+                return completedFuture(reject("Parent block is after child block."));
               }
 
               final UInt64 firstSlotInBlockEpoch =
-                  compute_start_slot_at_epoch(compute_epoch_at_slot(block.getSlot()));
+                  spec.computeStartSlotAtEpoch(spec.computeEpochAtSlot(block.getSlot()));
               return recentChainData
                   .retrieveStateAtSlot(
                       new SlotAndBlockRoot(
@@ -112,12 +107,16 @@ public class BlockValidator {
                               "Block was available but state wasn't. Must have been pruned by finalized.");
                           return InternalValidationResult.IGNORE;
                         }
-                        if (blockIsProposedByTheExpectedProposer(block, postState.get())
-                            && blockSignatureIsValidWithRespectToProposerIndex(
-                                block, postState.get())) {
-                          return InternalValidationResult.ACCEPT;
+                        if (!blockIsProposedByTheExpectedProposer(block, postState.get())) {
+                          return reject(
+                              "Block proposed by incorrect proposer (%s)",
+                              block.getProposerIndex());
                         }
-                        return InternalValidationResult.REJECT;
+                        if (!blockSignatureIsValidWithRespectToProposerIndex(
+                            block, postState.get())) {
+                          return reject("Block signature is invalid");
+                        }
+                        return InternalValidationResult.ACCEPT;
                       });
             });
   }
@@ -143,8 +142,13 @@ public class BlockValidator {
 
   private boolean blockSignatureIsValidWithRespectToProposerIndex(
       SignedBeaconBlock block, BeaconState postState) {
-    final Bytes32 domain = get_domain(postState, DOMAIN_BEACON_PROPOSER);
-    final Bytes signing_root = compute_signing_root(block.getMessage(), domain);
+    final Bytes32 domain =
+        spec.getDomain(
+            Domain.BEACON_PROPOSER,
+            spec.getCurrentEpoch(postState),
+            postState.getFork(),
+            postState.getGenesis_validators_root());
+    final Bytes signing_root = spec.computeSigningRoot(block.getMessage(), domain);
     final BLSSignature signature = block.getSignature();
 
     boolean signatureValid =
@@ -157,7 +161,7 @@ public class BlockValidator {
 
   private boolean blockIsProposedByTheExpectedProposer(
       SignedBeaconBlock block, BeaconState postState) {
-    final int proposerIndex = get_beacon_proposer_index(postState, block.getSlot());
+    final int proposerIndex = spec.getBeaconProposerIndex(postState, block.getSlot());
     return proposerIndex == block.getMessage().getProposerIndex().longValue();
   }
 

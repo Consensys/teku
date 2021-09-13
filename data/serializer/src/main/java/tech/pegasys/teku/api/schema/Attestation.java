@@ -32,9 +32,9 @@ public class Attestation {
   public final BLSSignature signature;
 
   public Attestation(tech.pegasys.teku.spec.datastructures.operations.Attestation attestation) {
-    this.aggregation_bits = attestation.getAggregation_bits();
+    this.aggregation_bits = attestation.getAggregationBits();
     this.data = new AttestationData(attestation.getData());
-    this.signature = new BLSSignature(attestation.getAggregate_signature());
+    this.signature = new BLSSignature(attestation.getAggregateSignature());
   }
 
   @JsonCreator

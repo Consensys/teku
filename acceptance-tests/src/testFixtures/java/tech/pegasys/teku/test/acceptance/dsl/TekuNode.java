@@ -19,6 +19,7 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.crypto.KEY_TYPE;
 import io.libp2p.core.crypto.KeyKt;
@@ -31,6 +32,7 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +50,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.utility.MountableFile;
+import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetBlockRootResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
@@ -57,6 +60,7 @@ import tech.pegasys.teku.api.response.v2.beacon.GetBlockResponseV2;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
+import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
 import tech.pegasys.teku.api.schema.interfaces.SignedBlock;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
@@ -75,6 +79,7 @@ public class TekuNode extends Node {
   private final Config config;
   private final JsonProvider jsonProvider = new JsonProvider();
   private final Spec spec;
+  private Optional<EventStreamListener> maybeEventStreamListener = Optional.empty();
 
   private boolean started = false;
   private Set<File> configFiles;
@@ -131,6 +136,34 @@ public class TekuNode extends Node {
     container.start();
   }
 
+  public void startEventListener(final List<EventType> eventTypes) {
+    maybeEventStreamListener = Optional.of(new EventStreamListener(getEventUrl(eventTypes)));
+  }
+
+  public List<SignedContributionAndProof> getContributionAndProofEvents() {
+    if (maybeEventStreamListener.isEmpty()) {
+      return Collections.emptyList();
+    }
+    return maybeEventStreamListener.get().getMessages().stream()
+        .filter(
+            packedMessage ->
+                packedMessage.getEvent().equals(EventType.contribution_and_proof.name()))
+        .map(this::optionalProof)
+        .flatMap(Optional::stream)
+        .collect(Collectors.toList());
+  }
+
+  private Optional<SignedContributionAndProof> optionalProof(
+      final Eth2EventHandler.PackedMessage packedMessage) {
+    try {
+      return Optional.of(
+          jsonProvider.jsonToObject(
+              packedMessage.getMessageEvent().getData(), SignedContributionAndProof.class));
+    } catch (JsonProcessingException e) {
+      return Optional.empty();
+    }
+  }
+
   public void waitForGenesis() {
     LOG.debug("Wait for genesis");
     waitFor(this::fetchGenesisTime);
@@ -138,6 +171,15 @@ public class TekuNode extends Node {
 
   public void waitForGenesisTime(final UInt64 expectedGenesisTime) {
     waitFor(() -> assertThat(fetchGenesisTime()).isEqualTo(expectedGenesisTime));
+  }
+
+  private String getEventUrl(List<EventType> events) {
+    String eventTypes = "";
+    if (events.size() > 0) {
+      eventTypes =
+          "?topics=" + events.stream().map(EventType::name).collect(Collectors.joining(","));
+    }
+    return getRestApiUrl() + "/eth/v1/events" + eventTypes;
   }
 
   private UInt64 fetchGenesisTime() throws IOException {
@@ -326,7 +368,7 @@ public class TekuNode extends Node {
                           spec.getAttestingIndices(
                               internalBeaconState,
                               a.asInternalAttestation().getData(),
-                              a.asInternalAttestation().getAggregation_bits()))
+                              a.asInternalAttestation().getAggregationBits()))
                   .flatMap(Collection::stream)
                   .map(UInt64::valueOf)
                   .collect(toSet());
@@ -425,6 +467,7 @@ public class TekuNode extends Node {
       return;
     }
     LOG.debug("Shutting down");
+    maybeEventStreamListener.ifPresent(EventStreamListener::close);
     configFiles.forEach(
         configFile -> {
           if (!configFile.delete() && configFile.exists()) {

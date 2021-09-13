@@ -56,8 +56,7 @@ public class SpecConfigReader {
           // Unsupported, upcoming fork-related keys
           "SHARDING_FORK_VERSION",
           "SHARDING_FORK_EPOCH",
-          "SHARDING_FORK_EPOCH",
-          "MIN_ANCHOR_POW_BLOCK_DIFFICULTY");
+          "SHARDING_FORK_EPOCH");
   private static final ImmutableSet<String> CONSTANT_KEYS =
       ImmutableSet.of(
           // Phase0 constants which may exist in legacy config files, but should now be ignored
@@ -76,7 +75,8 @@ public class SpecConfigReader {
           "DOMAIN_SYNC_COMMITTEE",
           "DOMAIN_CONTRIBUTION_AND_PROOF",
           "TARGET_AGGREGATORS_PER_SYNC_SUBCOMMITTEE",
-          "DOMAIN_SYNC_COMMITTEE_SELECTION_PROOF");
+          "DOMAIN_SYNC_COMMITTEE_SELECTION_PROOF",
+          "SYNC_COMMITTEE_SUBNET_COUNT");
 
   private final ImmutableMap<Class<?>, Function<Object, ?>> parsers =
       ImmutableMap.<Class<?>, Function<Object, ?>>builder()

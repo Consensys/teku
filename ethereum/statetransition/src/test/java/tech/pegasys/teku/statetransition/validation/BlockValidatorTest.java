@@ -16,7 +16,6 @@ package tech.pegasys.teku.statetransition.validation;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
@@ -127,7 +126,7 @@ public class BlockValidatorTest {
   @Test
   void shouldReturnInvalidForBlockOlderThanFinalizedSlot() throws Exception {
     UInt64 finalizedEpoch = UInt64.valueOf(10);
-    UInt64 finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
+    UInt64 finalizedSlot = spec.computeStartSlotAtEpoch(finalizedEpoch);
     final SignedBeaconBlock block = beaconChainUtil.createBlockAtSlot(finalizedSlot.minus(ONE));
     beaconChainUtil.finalizeChainAtEpoch(finalizedEpoch);
     beaconChainUtil.setSlot(recentChainData.getHeadSlot());
@@ -198,7 +197,7 @@ public class BlockValidatorTest {
     ChainUpdater chainUpdaterFork =
         new ChainUpdater(storageSystem.recentChainData(), chainBuilderFork);
 
-    UInt64 startSlotOfFinalizedEpoch = compute_start_slot_at_epoch(UInt64.valueOf(4));
+    UInt64 startSlotOfFinalizedEpoch = spec.computeStartSlotAtEpoch(UInt64.valueOf(4));
 
     chainUpdaterFork.advanceChain(20);
 
@@ -209,6 +208,6 @@ public class BlockValidatorTest {
     chainUpdater.saveBlockTime(blockAndState);
     final SafeFuture<InternalValidationResult> result =
         blockValidator.validate(blockAndState.getBlock());
-    assertThat(result).isCompletedWithValue(InternalValidationResult.REJECT);
+    assertThat(result).isCompletedWithValueMatching(InternalValidationResult::isReject);
   }
 }

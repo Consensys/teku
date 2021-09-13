@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.datastructures.operations;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static tech.pegasys.teku.spec.constants.NetworkConstants.DEPOSIT_CONTRACT_TREE_DEPTH;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -29,7 +30,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SszTestUtils;
 import tech.pegasys.teku.ssz.collections.SszBytes32Vector;
-import tech.pegasys.teku.util.config.Constants;
 
 @ExtendWith(BouncyCastleExtension.class)
 class DepositTest {
@@ -90,7 +90,7 @@ class DepositTest {
 
   @Test
   void vectorLengthsTest() {
-    List<Integer> vectorLengths = List.of(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1);
+    List<Integer> vectorLengths = List.of(DEPOSIT_CONTRACT_TREE_DEPTH + 1);
     assertEquals(vectorLengths, SszTestUtils.getVectorLengths(Deposit.SSZ_SCHEMA));
   }
 

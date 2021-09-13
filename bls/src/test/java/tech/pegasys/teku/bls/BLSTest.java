@@ -15,6 +15,7 @@ package tech.pegasys.teku.bls;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -123,27 +124,6 @@ public abstract class BLSTest {
                 "0xb2550663aa862b2741c9abc94f7b0b8a725b6f12b8f214d833e214e87c64235e4b1fb1e1ee64e5ae942cb3e0392699fc0524ae6f35072d1f243668de730be8745ab5be3314f90c107e246cefd1f1b97cd7241cfe97f4c80aeb354e8fac2ea720"));
 
     assertTrue(BLS.fastAggregateVerify(publicKeys, message, aggregatedSignature));
-  }
-
-  @Test
-  void succeedsWhenAggregateVerifyWithRepeatedMessagesReturnsFalse() {
-    Bytes message1 = Bytes.wrap("Hello, world 1!".getBytes(UTF_8));
-    Bytes message2 = Bytes.wrap("Hello, world 2!".getBytes(UTF_8));
-    BLSKeyPair keyPair1 = BLSTestUtil.randomKeyPair(1);
-    BLSKeyPair keyPair2 = BLSTestUtil.randomKeyPair(2);
-    BLSKeyPair keyPair3 = BLSTestUtil.randomKeyPair(3);
-
-    List<BLSPublicKey> publicKeys =
-        Arrays.asList(keyPair1.getPublicKey(), keyPair2.getPublicKey(), keyPair3.getPublicKey());
-    List<Bytes> messages = Arrays.asList(message1, message2, message2);
-    List<BLSSignature> signatures =
-        Arrays.asList(
-            BLS.sign(keyPair1.getSecretKey(), message1),
-            BLS.sign(keyPair2.getSecretKey(), message2),
-            BLS.sign(keyPair3.getSecretKey(), message2));
-    BLSSignature aggregatedSignature = BLS.aggregate(signatures);
-
-    assertFalse(BLS.aggregateVerify(publicKeys, messages, aggregatedSignature));
   }
 
   @Test
@@ -259,6 +239,26 @@ public abstract class BLSTest {
     BLSSignature sigAggr = BLS.aggregate(List.of(sig1, infinityG2()));
     boolean res1 = BLS.verify(pubKeyAggr, message, sigAggr);
     assertFalse(res1);
+  }
+
+  @Test
+  void aggregateSignatureNotInG2() {
+    // Create a signature from a point on the curve but not in G2
+    final BLSSignature signatureInvalid =
+        BLSSignature.fromBytesCompressed(
+            Bytes.fromHexString(
+                "0x"
+                    + "8000000000000000000000000000000000000000000000000000000000000000"
+                    + "0000000000000000000000000000000000000000000000000000000000000000"
+                    + "0000000000000000000000000000000000000000000000000000000000000004"));
+    assertThat(signatureInvalid.isValid()).isFalse();
+
+    final BLSSignature signatureValid = BLSTestUtil.randomSignature(98765);
+    assertThat(signatureValid.isValid()).isTrue();
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> BLS.aggregate(List.of(signatureValid, signatureInvalid)));
   }
 
   @Test

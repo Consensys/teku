@@ -67,7 +67,7 @@ public class AttesterSlashingTopicHandlerTest extends AbstractTopicHandlerTest<A
   public void handleMessage_rejectedSlashing() {
     final AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashing();
     when(processor.process(slashing))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.REJECT));
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.reject("Nope")));
     Bytes serialized = gossipEncoding.encode(slashing);
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(topicHandler.prepareMessage(serialized));

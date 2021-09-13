@@ -72,7 +72,7 @@ public class PostAttesterSlashing extends AbstractHandler {
   public void handle(final Context ctx) throws Exception {
     try {
       final AttesterSlashing attesterSlashing =
-          jsonProvider.jsonToObject(ctx.body(), AttesterSlashing.class);
+          parseRequestBody(ctx.body(), AttesterSlashing.class);
       InternalValidationResult result =
           nodeDataProvider.postAttesterSlashing(attesterSlashing).join();
       if (result.code().equals(ValidationResultCode.IGNORE)

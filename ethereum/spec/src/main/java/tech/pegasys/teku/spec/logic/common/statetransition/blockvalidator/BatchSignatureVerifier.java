@@ -65,6 +65,19 @@ public class BatchSignatureVerifier implements BLSSignatureVerifier {
     return true;
   }
 
+  @Override
+  public boolean verify(
+      final List<List<BLSPublicKey>> publicKeys,
+      final List<Bytes> messages,
+      final List<BLSSignature> signatures) {
+    for (int i = 0; i < publicKeys.size(); i++) {
+      if (!verify(publicKeys.get(i), messages.get(i), signatures.get(i))) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   /**
    * Performs verification of all the signatures collected with one or more calls to {@link
    * #verify(List, Bytes, BLSSignature)}

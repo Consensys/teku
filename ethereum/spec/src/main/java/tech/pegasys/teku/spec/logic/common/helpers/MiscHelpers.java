@@ -19,9 +19,7 @@ import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBy
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uintToBytes;
 
 import com.google.common.primitives.UnsignedBytes;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
+import it.unimi.dsi.fastutil.ints.IntList;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
@@ -75,14 +73,14 @@ public class MiscHelpers {
     return indexRet;
   }
 
-  public int computeProposerIndex(BeaconState state, List<Integer> indices, Bytes32 seed) {
+  public int computeProposerIndex(BeaconState state, IntList indices, Bytes32 seed) {
     checkArgument(!indices.isEmpty(), "compute_proposer_index indices must not be empty");
     UInt64 MAX_RANDOM_BYTE = UInt64.valueOf(255); // Math.pow(2, 8) - 1;
     int i = 0;
     final int total = indices.size();
     Bytes32 hash = null;
     while (true) {
-      int candidate_index = indices.get(computeShuffledIndex(i % total, total, seed));
+      int candidate_index = indices.getInt(computeShuffledIndex(i % total, total, seed));
       if (i % 32 == 0) {
         hash = Hash.sha2_256(Bytes.concatenate(seed, uint64ToBytes(Math.floorDiv(i, 32))));
       }
@@ -132,15 +130,15 @@ public class MiscHelpers {
     return computeStartSlotAtEpoch(previousEpoch);
   }
 
-  public List<Integer> computeCommittee(
-      BeaconState state, List<Integer> indices, Bytes32 seed, int index, int count) {
+  public IntList computeCommittee(
+      BeaconState state, IntList indices, Bytes32 seed, int index, int count) {
     int start = Math.floorDiv(indices.size() * index, count);
     int end = Math.floorDiv(indices.size() * (index + 1), count);
     return computeCommitteeShuffle(state, indices, seed, start, end);
   }
 
-  private List<Integer> computeCommitteeShuffle(
-      BeaconState state, List<Integer> indices, Bytes32 seed, int fromIndex, int toIndex) {
+  private IntList computeCommitteeShuffle(
+      BeaconState state, IntList indices, Bytes32 seed, int fromIndex, int toIndex) {
     if (fromIndex < toIndex) {
       int indexCount = indices.size();
       checkArgument(fromIndex < indexCount, "CommitteeUtil.getShuffledIndex1");
@@ -152,10 +150,10 @@ public class MiscHelpers {
         .subList(fromIndex, toIndex);
   }
 
-  List<Integer> shuffleList(List<Integer> input, Bytes32 seed) {
-    int[] indexes = input.stream().mapToInt(i -> i).toArray();
+  IntList shuffleList(IntList input, Bytes32 seed) {
+    final int[] indexes = input.toIntArray();
     shuffleList(indexes, seed);
-    return Arrays.stream(indexes).boxed().collect(Collectors.toList());
+    return IntList.of(indexes);
   }
 
   public void shuffleList(int[] input, Bytes32 seed) {

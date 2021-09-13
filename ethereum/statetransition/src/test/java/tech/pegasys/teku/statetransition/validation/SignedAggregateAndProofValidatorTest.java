@@ -22,6 +22,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import java.util.List;
@@ -172,10 +173,9 @@ class SignedAggregateAndProofValidatorTest {
         ValidateableAttestation.aggregateFromValidator(spec, aggregate);
     when(attestationValidator.singleOrAggregateAttestationChecks(
             any(), eq(attestation), eq(OptionalInt.empty())))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.REJECT));
+        .thenReturn(SafeFuture.completedFuture(reject("Nah mate")));
 
-    assertThat(validator.validate(attestation))
-        .isCompletedWithValue(InternalValidationResult.REJECT);
+    assertThat(validator.validate(attestation)).isCompletedWithValue(reject("Nah mate"));
   }
 
   @Test
@@ -236,7 +236,7 @@ class SignedAggregateAndProofValidatorTest {
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
 
     assertThat(validator.validate(attestation))
-        .isCompletedWithValue(InternalValidationResult.REJECT);
+        .isCompletedWithValueMatching(InternalValidationResult::isReject);
   }
 
   @Test
@@ -270,7 +270,7 @@ class SignedAggregateAndProofValidatorTest {
     assertThat(
             validator.validate(
                 ValidateableAttestation.aggregateFromValidator(spec, aggregateAndProof2)))
-        .isCompletedWithValue(InternalValidationResult.IGNORE);
+        .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
   }
 
   @Test
@@ -301,7 +301,7 @@ class SignedAggregateAndProofValidatorTest {
     assertThat(validator.validate(attestation1))
         .isCompletedWithValue(InternalValidationResult.ACCEPT);
     assertThat(validator.validate(attestation2))
-        .isCompletedWithValue(InternalValidationResult.IGNORE);
+        .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
   }
 
   @Test
@@ -331,7 +331,7 @@ class SignedAggregateAndProofValidatorTest {
 
     validator.addSeenAggregate(attestation1);
     assertThat(validator.validate(attestation2))
-        .isCompletedWithValue(InternalValidationResult.IGNORE);
+        .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
   }
 
   @Test
@@ -432,7 +432,7 @@ class SignedAggregateAndProofValidatorTest {
         .isFalse();
 
     assertThat(validator.validate(ValidateableAttestation.aggregateFromValidator(spec, aggregate)))
-        .isCompletedWithValue(InternalValidationResult.REJECT);
+        .isCompletedWithValueMatching(InternalValidationResult::isReject);
   }
 
   @Test
@@ -457,7 +457,7 @@ class SignedAggregateAndProofValidatorTest {
     }
 
     assertThat(validator.validate(ValidateableAttestation.aggregateFromValidator(spec, aggregate)))
-        .isCompletedWithValue(InternalValidationResult.REJECT);
+        .isCompletedWithValueMatching(InternalValidationResult::isReject);
   }
 
   @Test
@@ -472,7 +472,7 @@ class SignedAggregateAndProofValidatorTest {
     whenAttestationIsValid(aggregate);
 
     assertThat(validator.validate(ValidateableAttestation.aggregateFromValidator(spec, aggregate)))
-        .isCompletedWithValue(InternalValidationResult.REJECT);
+        .isCompletedWithValueMatching(InternalValidationResult::isReject);
   }
 
   @Test
@@ -488,7 +488,7 @@ class SignedAggregateAndProofValidatorTest {
     assertThat(
             validator.validate(
                 ValidateableAttestation.aggregateFromValidator(spec, invalidAggregate)))
-        .isCompletedWithValue(InternalValidationResult.REJECT);
+        .isCompletedWithValueMatching(InternalValidationResult::isReject);
     assertThat(
             validator.validate(
                 ValidateableAttestation.aggregateFromValidator(spec, validAggregate)))

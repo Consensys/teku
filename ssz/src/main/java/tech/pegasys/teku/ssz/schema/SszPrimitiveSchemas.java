@@ -29,6 +29,7 @@ import tech.pegasys.teku.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.ssz.primitive.SszBytes4;
 import tech.pegasys.teku.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.ssz.schema.impl.AbstractSszPrimitiveSchema;
+import tech.pegasys.teku.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.ssz.tree.LeafDataNode;
 import tech.pegasys.teku.ssz.tree.LeafNode;
 import tech.pegasys.teku.ssz.tree.TreeNode;
@@ -67,6 +68,15 @@ public interface SszPrimitiveSchemas {
         @Override
         public TreeNode getDefaultTree() {
           return LeafNode.ZERO_LEAVES[1];
+        }
+
+        @Override
+        protected LeafNode createNodeFromSszBytes(final Bytes bytes) {
+          final byte data = bytes.get(0);
+          if (data != 0 && data != 1) {
+            throw new SszDeserializeException("Invalid bit value: " + bytes);
+          }
+          return super.createNodeFromSszBytes(bytes);
         }
 
         @Override

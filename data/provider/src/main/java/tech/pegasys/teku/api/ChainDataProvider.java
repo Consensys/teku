@@ -30,6 +30,8 @@ import java.util.function.IntPredicate;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.blockselector.BlockSelectorFactory;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
@@ -63,6 +65,7 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class ChainDataProvider {
+  private static final Logger LOG = LogManager.getLogger();
   private final BlockSelectorFactory defaultBlockSelectorFactory;
   private final StateSelectorFactory defaultStateSelectorFactory;
   private final Spec spec;
@@ -362,19 +365,23 @@ public class ChainDataProvider {
     return defaultStateSelectorFactory
         .defaultStateSelector(stateIdParam)
         .getState()
-        .thenApply(
-            maybeState -> maybeState.map(state -> getValidatorFromState(state, validatorIdParam)));
+        .thenApply(maybeState -> getValidatorFromState(maybeState, validatorIdParam));
   }
 
-  private ValidatorResponse getValidatorFromState(
-      final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state,
+  private Optional<ValidatorResponse> getValidatorFromState(
+      final Optional<tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState>
+          maybeState,
       final String validatorIdParam) {
+    if (maybeState.isEmpty()) {
+      return Optional.empty();
+    }
+    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state =
+        maybeState.get();
     final UInt64 epoch = spec.getCurrentEpoch(state);
     return getValidatorSelector(state, List.of(validatorIdParam))
         .mapToObj(index -> ValidatorResponse.fromState(state, index, epoch, FAR_FUTURE_EPOCH))
         .flatMap(Optional::stream)
-        .findFirst()
-        .orElseThrow(() -> new BadRequestException("Validator not found: " + validatorIdParam));
+        .findFirst();
   }
 
   public SafeFuture<Optional<List<EpochCommitteeResponse>>> getStateCommittees(
@@ -451,6 +458,23 @@ public class ChainDataProvider {
       return SafeFuture.completedFuture(Optional.empty());
     }
     return SafeFuture.completedFuture(Optional.of(result));
+  }
+
+  // Returns false
+  //  - if Altair milestone is not supported,
+  //  - if a slot is specified and that slot is a phase 0 slot
+  // otherwise true will be returned
+  public boolean stateParameterMaySupportAltair(final String epochParam) {
+    if (!spec.isMilestoneSupported(SpecMilestone.ALTAIR)) {
+      return false;
+    }
+    try {
+      final UInt64 slot = UInt64.valueOf(epochParam);
+      return spec.atSlot(slot).getMilestone() != SpecMilestone.PHASE0;
+    } catch (NumberFormatException e) {
+      LOG.trace(e);
+    }
+    return true;
   }
 
   public SafeFuture<Optional<StateSyncCommittees>> getStateSyncCommittees(

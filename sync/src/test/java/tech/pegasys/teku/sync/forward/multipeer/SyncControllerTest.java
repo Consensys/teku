@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -31,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
+import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -45,12 +47,13 @@ class SyncControllerTest {
   private final SyncTargetSelector syncTargetSelector = mock(SyncTargetSelector.class);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final Executor subscriberExecutor = mock(Executor.class);
+  private final EventLogger eventLogger = mock(EventLogger.class);
 
   private final TargetChain targetChain = chainWith(dataStructureUtil.randomSlotAndBlockRoot());
 
   private final SyncController syncController =
       new SyncController(
-          eventThread, subscriberExecutor, recentChainData, syncTargetSelector, sync);
+          eventThread, subscriberExecutor, recentChainData, syncTargetSelector, sync, eventLogger);
   private static final UInt64 HEAD_SLOT = UInt64.valueOf(2338);
 
   @BeforeEach
@@ -221,6 +224,26 @@ class SyncControllerTest {
     onTargetChainsUpdated();
 
     ignoreFuture(verify(sync).syncToChain(targetChain));
+  }
+
+  @Test
+  void shouldExecuteCompleteSyncMessage() {
+    final SafeFuture<SyncResult> syncResult = startFinalizedSync();
+
+    assertThat(syncController.isSyncActive()).isTrue();
+    verify(eventLogger, never()).syncCompleted();
+    syncResult.complete(SyncResult.COMPLETE);
+    assertNotSyncing();
+    verify(eventLogger, times(1)).syncCompleted();
+  }
+
+  @Test
+  void shouldExecuteStartSyncMessage() {
+    final SyncSubscriber subscriber = mock(SyncSubscriber.class);
+    syncController.subscribeToSyncChanges(subscriber);
+    verify(eventLogger, never()).syncStart();
+    ignoreFuture(startFinalizedSync());
+    verify(eventLogger, times(1)).syncStart();
   }
 
   private void assertSyncSubscriberNotified(

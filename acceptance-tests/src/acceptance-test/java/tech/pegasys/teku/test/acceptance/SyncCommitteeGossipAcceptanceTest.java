@@ -13,8 +13,12 @@
 
 package tech.pegasys.teku.test.acceptance;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
@@ -56,12 +60,29 @@ public class SyncCommitteeGossipAcceptanceTest extends AcceptanceTestBase {
   @Test
   public void shouldContainSyncCommitteeAggregates() throws Exception {
     primaryNode.start();
+    primaryNode.startEventListener(List.of(EventType.contribution_and_proof));
+
     secondaryNode.start();
+    secondaryNode.startEventListener(List.of(EventType.contribution_and_proof));
     validatorClient.start();
+
     secondaryNode.waitForFullSyncCommitteeAggregate();
     validatorClient.stop();
     secondaryNode.stop();
     primaryNode.stop();
+
+    // primary node has validators 1-7, expect gossip from aggregators 8-15 coming through
+    assertThat(
+            primaryNode.getContributionAndProofEvents().stream()
+                .filter(proof -> proof.message.aggregatorIndex.isGreaterThanOrEqualTo(8))
+                .count())
+        .isGreaterThan(0);
+    // secondary node has remote validators 8-15, expect gossip from aggregators 1-7
+    assertThat(
+            secondaryNode.getContributionAndProofEvents().stream()
+                .filter(proof -> proof.message.aggregatorIndex.isLessThan(8))
+                .count())
+        .isGreaterThan(0);
   }
 
   private TekuNode.Config configureNode(final TekuNode.Config node, final int genesisTime) {

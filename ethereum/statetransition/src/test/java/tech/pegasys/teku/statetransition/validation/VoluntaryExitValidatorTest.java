@@ -127,6 +127,6 @@ public class VoluntaryExitValidatorTest {
         .thenReturn(false);
     final InternalValidationResult exitValidation = voluntaryExitValidator.validateFully(exit);
     assertThat(exitValidation.code()).isEqualTo(REJECT);
-    assertThat(exitValidation.getDescription().orElse("")).contains("fails signature verification");
+    assertThat(exitValidation.getDescription().orElse("")).contains("Signature is invalid");
   }
 }

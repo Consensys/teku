@@ -23,12 +23,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -95,7 +92,9 @@ class Store implements UpdatableStore {
   final CachingTaskQueue<Bytes32, StateAndBlockSummary> states;
   final Map<Bytes32, SignedBeaconBlock> blocks;
   final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates;
-  final Map<UInt64, VoteTracker> votes;
+  VoteTracker[] votes;
+  public static final int VOTE_TRACKER_SPARE_CAPACITY = 1000;
+  UInt64 highestVotedValidatorIndex;
   private ForkChoiceStrategy forkChoiceStrategy;
 
   private Store(
@@ -137,7 +136,14 @@ class Store implements UpdatableStore {
     this.justified_checkpoint = justified_checkpoint;
     this.best_justified_checkpoint = best_justified_checkpoint;
     this.blocks = blocks;
-    this.votes = new HashMap<>(votes);
+    this.highestVotedValidatorIndex =
+        votes.keySet().stream().max(Comparator.naturalOrder()).orElse(UInt64.ZERO);
+    this.votes =
+        new VoteTracker[this.highestVotedValidatorIndex.intValue() + VOTE_TRACKER_SPARE_CAPACITY];
+    votes.forEach(
+        (key, value) -> {
+          this.votes[key.intValue()] = value;
+        });
     this.blockMetadata = blockMetadata;
 
     // Track latest finalized block
@@ -511,10 +517,10 @@ class Store implements UpdatableStore {
             blockRoot -> SafeFuture.completedFuture(Optional.of(latestStateAtEpoch))));
   }
 
-  Set<UInt64> getVotedValidatorIndices() {
+  UInt64 getHighestVotedValidatorIndex() {
     readLock.lock();
     try {
-      return new HashSet<>(votes.keySet());
+      return highestVotedValidatorIndex;
     } finally {
       readLock.unlock();
     }
@@ -523,7 +529,10 @@ class Store implements UpdatableStore {
   VoteTracker getVote(UInt64 validatorIndex) {
     readLock.lock();
     try {
-      return votes.get(validatorIndex);
+      if (validatorIndex.intValue() >= votes.length) {
+        return null;
+      }
+      return votes[validatorIndex.intValue()];
     } finally {
       readLock.unlock();
     }

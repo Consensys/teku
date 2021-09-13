@@ -18,9 +18,9 @@ import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_EXPERIMENTAL;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.common.base.Throwables;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -33,16 +33,17 @@ import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
+import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.provider.JsonProvider;
 
-public class PostContributionAndProofs implements Handler {
+public class PostContributionAndProofs extends AbstractHandler implements Handler {
 
   public static final String ROUTE = "/eth/v1/validator/contribution_and_proofs";
 
   private final ValidatorDataProvider provider;
-  private final JsonProvider jsonProvider;
 
   public PostContributionAndProofs(final DataProvider provider, final JsonProvider jsonProvider) {
     this(provider.getValidatorDataProvider(), jsonProvider);
@@ -50,15 +51,15 @@ public class PostContributionAndProofs implements Handler {
 
   public PostContributionAndProofs(
       final ValidatorDataProvider provider, final JsonProvider jsonProvider) {
+    super(jsonProvider);
     this.provider = provider;
-    this.jsonProvider = jsonProvider;
   }
 
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.POST,
       summary = "Publish contribution and proofs",
-      tags = {TAG_EXPERIMENTAL},
+      tags = {TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED},
       requestBody =
           @OpenApiRequestBody(
               content = {@OpenApiContent(from = SignedContributionAndProof.class, isArray = true)}),
@@ -73,21 +74,22 @@ public class PostContributionAndProofs implements Handler {
       })
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
+    final SignedContributionAndProof[] signedContributionAndProofs;
     try {
-      final SignedContributionAndProof[] signedContributionAndProofs =
-          jsonProvider.jsonToObject(ctx.body(), SignedContributionAndProof[].class);
-
-      final SafeFuture<Void> future =
-          provider.sendContributionAndProofs(asList(signedContributionAndProofs));
-
-      ctx.result(
-          future
-              .thenApplyChecked(result -> "")
-              .exceptionallyCompose(error -> handleError(ctx, error)));
-    } catch (final JsonMappingException e) {
-      ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
-      ctx.status(SC_BAD_REQUEST);
+      signedContributionAndProofs =
+          parseRequestBody(ctx.body(), SignedContributionAndProof[].class);
+    } catch (IllegalArgumentException e) {
+      ctx.result(BadRequest.badRequest(jsonProvider, e.getMessage()));
+      ctx.status(HttpStatusCodes.SC_BAD_REQUEST);
+      return;
     }
+    final SafeFuture<Void> future =
+        provider.sendContributionAndProofs(asList(signedContributionAndProofs));
+
+    ctx.result(
+        future
+            .thenApplyChecked(result -> "")
+            .exceptionallyCompose(error -> handleError(ctx, error)));
   }
 
   private SafeFuture<String> handleError(final Context ctx, final Throwable error) {

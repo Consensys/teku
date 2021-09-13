@@ -99,7 +99,7 @@ public class DepositProcessingController {
   }
 
   private synchronized void fetchLatestSubscriptionDepositsOverRange() {
-    if (active || latestCanonicalBlockNumber.equals(latestSuccessfullyQueriedBlock)) {
+    if (isActiveOrAlreadyQueriedLatestCanonicalBlock()) {
       return;
     }
     active = true;
@@ -118,7 +118,7 @@ public class DepositProcessingController {
     final BigInteger nextBlockNumber;
 
     synchronized (DepositProcessingController.this) {
-      if (active || latestCanonicalBlockNumber.equals(latestSuccessfullyQueriedBlock)) {
+      if (isActiveOrAlreadyQueriedLatestCanonicalBlock()) {
         return;
       }
       active = true;
@@ -148,6 +148,15 @@ public class DepositProcessingController {
         .finish(
             __ -> onSubscriptionDepositRequestSuccessful(nextBlockNumber),
             (err) -> onSubscriptionDepositRequestFailed(err, nextBlockNumber));
+  }
+
+  /**
+   * Avoid having multiple queries running concurrently or queries that attempt to go backwards.
+   *
+   * @return true if request to fetch deposits should be ignored.
+   */
+  private boolean isActiveOrAlreadyQueriedLatestCanonicalBlock() {
+    return active || latestCanonicalBlockNumber.compareTo(latestSuccessfullyQueriedBlock) <= 0;
   }
 
   private synchronized void onSubscriptionDepositRequestSuccessful(BigInteger requestToBlock) {

@@ -77,6 +77,9 @@ public class OperationsReOrgManager implements ChainHeadChannel {
               recentChainData.getAncestorsOnFork(
                   reorgContext.getCommonAncestorSlot(), bestBlockRoot);
 
+          if (!notCanonicalBlockRoots.isEmpty()) {
+            attestationPool.onReorg(reorgContext.getCommonAncestorSlot());
+          }
           processNonCanonicalBlockOperations(notCanonicalBlockRoots.values());
           processCanonicalBlockOperations(nowCanonicalBlockRoots.values());
         });
@@ -152,7 +155,8 @@ public class OperationsReOrgManager implements ChainHeadChannel {
                             proposerSlashingPool.removeAll(blockBody.getProposer_slashings());
                             attesterSlashingPool.removeAll(blockBody.getAttester_slashings());
                             exitPool.removeAll(blockBody.getVoluntary_exits());
-                            attestationPool.removeAll(blockBody.getAttestations());
+                            attestationPool.onAttestationsIncludedInBlock(
+                                block.getSlot(), blockBody.getAttestations());
                           },
                           () ->
                               LOG.debug(

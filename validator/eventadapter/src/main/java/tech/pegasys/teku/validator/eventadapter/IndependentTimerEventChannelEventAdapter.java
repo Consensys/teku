@@ -18,7 +18,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.ReorgContext;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
@@ -28,24 +27,19 @@ public class IndependentTimerEventChannelEventAdapter
     implements ChainHeadChannel, BeaconChainEventAdapter {
 
   private final BeaconChainEventAdapter timeBasedEventAdapter;
+  private final boolean generateEarlyAttestations;
   private final ValidatorTimingChannel validatorTimingChannel;
   private final EventChannels eventChannels;
 
   public IndependentTimerEventChannelEventAdapter(
       final EventChannels eventChannels,
+      final boolean generateEarlyAttestations,
       final BeaconChainEventAdapter timeBasedEventAdapter,
       final ValidatorTimingChannel validatorTimingChannel) {
     this.eventChannels = eventChannels;
     this.timeBasedEventAdapter = timeBasedEventAdapter;
     this.validatorTimingChannel = validatorTimingChannel;
-  }
-
-  public static BeaconChainEventAdapter create(
-      final ServiceConfig serviceConfig, final BeaconChainEventAdapter timeBasedEventAdapter) {
-    final ValidatorTimingChannel validatorTimingChannel =
-        serviceConfig.getEventChannels().getPublisher(ValidatorTimingChannel.class);
-    return new IndependentTimerEventChannelEventAdapter(
-        serviceConfig.getEventChannels(), timeBasedEventAdapter, validatorTimingChannel);
+    this.generateEarlyAttestations = generateEarlyAttestations;
   }
 
   @Override
@@ -74,6 +68,8 @@ public class IndependentTimerEventChannelEventAdapter
             validatorTimingChannel.onChainReorg(slot, reorgContext.getCommonAncestorSlot()));
     validatorTimingChannel.onHeadUpdate(
         slot, previousDutyDependentRoot, currentDutyDependentRoot, bestBlockRoot);
-    validatorTimingChannel.onAttestationCreationDue(slot);
+    if (generateEarlyAttestations) {
+      validatorTimingChannel.onAttestationCreationDue(slot);
+    }
   }
 }

@@ -135,7 +135,9 @@ public class Eth2OutgoingRequestHandler<
         throw new ExtraDataAppendedException();
       }
 
-      maybeResponses.forEach(responseProcessor::processResponse);
+      for (TResponse maybeResponse : maybeResponses) {
+        responseProcessor.processResponse(maybeResponse);
+      }
       if (chunksReceived < maximumResponseChunks) {
         if (!maybeResponses.isEmpty()) {
           ensureNextResponseArrivesInTime(rpcStream, chunksReceived, currentChunkCount);

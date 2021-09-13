@@ -29,7 +29,7 @@ import tech.pegasys.teku.ssz.schema.SszSchema;
 import tech.pegasys.teku.ssz.schema.SszVectorSchema;
 import tech.pegasys.teku.ssz.sos.SszDeserializeException;
 
-public class SszBitvectorSchemaTest implements SszVectorSchemaTestBase {
+public class SszBitvectorSchemaTest extends SszVectorSchemaTestBase {
 
   @Override
   public Stream<? extends SszSchema<?>> testSchemas() {

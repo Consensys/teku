@@ -16,11 +16,13 @@ package tech.pegasys.teku.ssz.schema.collections;
 import java.util.stream.Stream;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.ssz.collections.SszBitvector;
 import tech.pegasys.teku.ssz.schema.SszListSchema;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.schema.SszSchema;
 
-public class SszListSchemaTest implements SszListSchemaTestBase {
+public class SszListSchemaTest extends SszListSchemaTestBase {
 
   @Override
   public Stream<? extends SszSchema<?>> testSchemas() {
@@ -35,5 +37,16 @@ public class SszListSchemaTest implements SszListSchemaTestBase {
         .isInstanceOf(SszUInt64ListSchema.class);
     Assertions.assertThat(SszListSchema.create(SszPrimitiveSchemas.BYTES4_SCHEMA, 10))
         .isInstanceOf(SszPrimitiveListSchema.class);
+  }
+
+  @Test
+  void loadBackingNodes_shouldRestoreTree_multipleBranchSteps_problematicBitvector() {
+    final SszBitvectorSchema<SszBitvector> bitVectorSchema = SszBitvectorSchema.create(1);
+    final SszListSchema<SszBitvector, ? extends SszList<SszBitvector>> listSchema =
+        SszListSchema.create(bitVectorSchema, 3);
+    final SszList<SszBitvector> data =
+        listSchema.of(
+            bitVectorSchema.of(true), bitVectorSchema.of(false), bitVectorSchema.of(true));
+    assertTreeRoundtrip(listSchema, 1, data);
   }
 }

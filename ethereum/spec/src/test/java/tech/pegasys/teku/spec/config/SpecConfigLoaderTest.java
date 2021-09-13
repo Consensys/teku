@@ -15,8 +15,8 @@ package tech.pegasys.teku.spec.config;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllAltairFieldsSet;
 import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllFieldsSet;
+import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllMergeFieldsSet;
 import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllPhase0FieldsSet;
 
 import java.io.InputStream;
@@ -64,14 +64,14 @@ public class SpecConfigLoaderTest {
   @Test
   public void shouldLoadMainnet() throws Exception {
     final SpecConfig config = SpecConfigLoader.loadConfig("mainnet");
-    assertAllAltairFieldsSet(config);
+    assertAllMergeFieldsSet(config);
   }
 
   @Test
   public void shouldLoadMainnetFromFileUrl() throws Exception {
     final URL url = getMainnetConfigResourceAsUrl();
     final SpecConfig config = SpecConfigLoader.loadConfig(url.toString());
-    assertAllAltairFieldsSet(config);
+    assertAllMergeFieldsSet(config);
   }
 
   @Test
@@ -80,7 +80,7 @@ public class SpecConfigLoaderTest {
       final Path file = tempDir.resolve("mainnet.yml");
       writeStreamToFile(inputStream, file);
       final SpecConfig config = SpecConfigLoader.loadConfig(file.toAbsolutePath().toString());
-      assertAllAltairFieldsSet(config);
+      assertAllMergeFieldsSet(config);
     }
   }
 
@@ -143,10 +143,10 @@ public class SpecConfigLoaderTest {
 
   static Stream<Arguments> knownNetworks() {
     return Stream.of(
-        Arguments.of(Eth2Network.MAINNET.configName(), SpecConfigAltair.class),
-        Arguments.of(Eth2Network.PYRMONT.configName(), SpecConfigPhase0.class),
-        Arguments.of(Eth2Network.PRATER.configName(), SpecConfigPhase0.class),
-        Arguments.of(Eth2Network.MINIMAL.configName(), SpecConfigAltair.class),
+        Arguments.of(Eth2Network.MAINNET.configName(), SpecConfigMerge.class),
+        Arguments.of(Eth2Network.PYRMONT.configName(), SpecConfigMerge.class),
+        Arguments.of(Eth2Network.PRATER.configName(), SpecConfigMerge.class),
+        Arguments.of(Eth2Network.MINIMAL.configName(), SpecConfigMerge.class),
         Arguments.of(Eth2Network.SWIFT.configName(), SpecConfigPhase0.class),
         Arguments.of(Eth2Network.LESS_SWIFT.configName(), SpecConfigPhase0.class));
   }

@@ -347,22 +347,38 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
 
       final UInt64 hysteresisIncrement =
           specConfig.getEffectiveBalanceIncrement().dividedBy(specConfig.getHysteresisQuotient());
-      final UInt64 downwardThreshold =
-          hysteresisIncrement.times(specConfig.getHysteresisDownwardMultiplier());
-      final UInt64 upwardThreshold =
-          hysteresisIncrement.times(specConfig.getHysteresisUpwardMultiplier());
-      if (balance.plus(downwardThreshold).isLessThan(validator.getEffective_balance())
-          || validator.getEffective_balance().plus(upwardThreshold).isLessThan(balance)) {
-        state
-            .getValidators()
-            .set(
-                index,
-                validator.withEffective_balance(
-                    balance
-                        .minus(balance.mod(specConfig.getEffectiveBalanceIncrement()))
-                        .min(specConfig.getMaxEffectiveBalance())));
+      final UInt64 currentEffectiveBalance = validator.getEffective_balance();
+      if (shouldDecreaseEffectiveBalance(balance, hysteresisIncrement, currentEffectiveBalance)
+          || shouldIncreaseEffectiveBalance(
+              balance, hysteresisIncrement, currentEffectiveBalance)) {
+        final UInt64 newEffectiveBalance =
+            balance
+                .minus(balance.mod(specConfig.getEffectiveBalanceIncrement()))
+                .min(specConfig.getMaxEffectiveBalance());
+        validators.set(index, validator.withEffective_balance(newEffectiveBalance));
       }
     }
+  }
+
+  private boolean shouldIncreaseEffectiveBalance(
+      final UInt64 balance,
+      final UInt64 hysteresisIncrement,
+      final UInt64 currentEffectiveBalance) {
+    final UInt64 upwardThreshold =
+        hysteresisIncrement.times(specConfig.getHysteresisUpwardMultiplier());
+    // This condition doesn't match the spec but is an optimisation to avoid creating a new
+    // validator with the same effective balance when it's already at the maximum.
+    return !currentEffectiveBalance.equals(specConfig.getMaxEffectiveBalance())
+        && currentEffectiveBalance.plus(upwardThreshold).isLessThan(balance);
+  }
+
+  private boolean shouldDecreaseEffectiveBalance(
+      final UInt64 balance,
+      final UInt64 hysteresisIncrement,
+      final UInt64 currentEffectiveBalance) {
+    final UInt64 downwardThreshold =
+        hysteresisIncrement.times(specConfig.getHysteresisDownwardMultiplier());
+    return balance.plus(downwardThreshold).isLessThan(currentEffectiveBalance);
   }
 
   @Override

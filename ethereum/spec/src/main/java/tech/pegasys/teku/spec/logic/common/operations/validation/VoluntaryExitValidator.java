@@ -23,6 +23,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
@@ -46,7 +47,7 @@ public class VoluntaryExitValidator
 
   @Override
   public Optional<OperationInvalidReason> validate(
-      final BeaconState state, final SignedVoluntaryExit signedExit) {
+      final Fork fork, final BeaconState state, final SignedVoluntaryExit signedExit) {
     VoluntaryExit exit = signedExit.getMessage();
     return firstOf(
         () ->
@@ -88,7 +89,8 @@ public class VoluntaryExitValidator
     VALIDATOR_INACTIVE("Validator is not active"),
     EXIT_INITIATED("Validator has already initiated exit"),
     SUBMITTED_TOO_EARLY("Specified exit epoch is still in the future"),
-    VALIDATOR_TOO_YOUNG("Validator has not been active long enough");
+    VALIDATOR_TOO_YOUNG("Validator has not been active long enough"),
+    INVALID_SIGNATURE("Signature is invalid");
 
     private final String description;
 

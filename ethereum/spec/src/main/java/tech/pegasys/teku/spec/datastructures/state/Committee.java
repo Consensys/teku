@@ -13,15 +13,15 @@
 
 package tech.pegasys.teku.spec.datastructures.state;
 
-import java.util.List;
+import it.unimi.dsi.fastutil.ints.IntList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class Committee {
 
   private final UInt64 index;
-  private final List<Integer> committee;
+  private final IntList committee;
 
-  public Committee(UInt64 index, List<Integer> committee) {
+  public Committee(UInt64 index, IntList committee) {
     this.index = index;
     this.committee = committee;
   }
@@ -31,7 +31,7 @@ public class Committee {
     return index;
   }
 
-  public List<Integer> getCommittee() {
+  public IntList getCommittee() {
     return committee;
   }
 

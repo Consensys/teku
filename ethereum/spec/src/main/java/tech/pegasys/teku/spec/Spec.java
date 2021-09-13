@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec;
 
 import com.google.common.base.Preconditions;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -346,16 +347,18 @@ public class Spec {
       BeaconState state,
       ProposerSlashing proposerSlashing,
       BLSSignatureVerifier signatureVerifier) {
-    return atState(state)
+    final UInt64 epoch = getProposerSlashingEpoch(proposerSlashing);
+    return atEpoch(epoch)
         .operationSignatureVerifier()
-        .verifyProposerSlashingSignature(state, proposerSlashing, signatureVerifier);
+        .verifyProposerSlashingSignature(fork(epoch), state, proposerSlashing, signatureVerifier);
   }
 
   public boolean verifyVoluntaryExitSignature(
       BeaconState state, SignedVoluntaryExit signedExit, BLSSignatureVerifier signatureVerifier) {
-    return atState(state)
+    final UInt64 epoch = signedExit.getMessage().getEpoch();
+    return atEpoch(epoch)
         .operationSignatureVerifier()
-        .verifyVoluntaryExitSignature(state, signedExit, signatureVerifier);
+        .verifyVoluntaryExitSignature(fork(epoch), state, signedExit, signatureVerifier);
   }
 
   public Bytes32 getPreviousDutyDependentRoot(BeaconState state) {
@@ -437,24 +440,37 @@ public class Spec {
       final ReadOnlyStore store,
       final ValidateableAttestation validateableAttestation,
       final Optional<BeaconState> maybeTargetState) {
-    return atSlot(validateableAttestation.getAttestation().getData().getSlot())
+    final UInt64 slot = validateableAttestation.getAttestation().getData().getSlot();
+    final Fork fork = forkSchedule.getFork(computeEpochAtSlot(slot));
+    return atSlot(slot)
         .getForkChoiceUtil()
-        .validate(store, validateableAttestation, maybeTargetState);
+        .validate(fork, store, validateableAttestation, maybeTargetState);
   }
 
   public Optional<OperationInvalidReason> validateAttesterSlashing(
       final BeaconState state, final AttesterSlashing attesterSlashing) {
-    return atState(state).getOperationValidator().validateAttesterSlashing(state, attesterSlashing);
+    // Attestations must both be from the same epoch or will wind up being rejected by any version
+    final UInt64 epoch =
+        computeEpochAtSlot(attesterSlashing.getAttestation_1().getData().getSlot());
+    return atEpoch(epoch)
+        .getOperationValidator()
+        .validateAttesterSlashing(fork(epoch), state, attesterSlashing);
   }
 
   public Optional<OperationInvalidReason> validateProposerSlashing(
       final BeaconState state, final ProposerSlashing proposerSlashing) {
-    return atState(state).getOperationValidator().validateProposerSlashing(state, proposerSlashing);
+    final UInt64 epoch = getProposerSlashingEpoch(proposerSlashing);
+    return atEpoch(epoch)
+        .getOperationValidator()
+        .validateProposerSlashing(fork(epoch), state, proposerSlashing);
   }
 
   public Optional<OperationInvalidReason> validateVoluntaryExit(
       final BeaconState state, final SignedVoluntaryExit signedExit) {
-    return atState(state).getOperationValidator().validateVoluntaryExit(state, signedExit);
+    final UInt64 epoch = signedExit.getMessage().getEpoch();
+    return atEpoch(epoch)
+        .getOperationValidator()
+        .validateVoluntaryExit(fork(epoch), state, signedExit);
   }
 
   public BlockImportResult onBlock(
@@ -550,7 +566,7 @@ public class Spec {
     return atState(state).beaconStateAccessors().getMaxLookaheadEpoch(state);
   }
 
-  public List<Integer> getActiveValidatorIndices(final BeaconState state, final UInt64 epoch) {
+  public IntList getActiveValidatorIndices(final BeaconState state, final UInt64 epoch) {
     return atEpoch(epoch).beaconStateAccessors().getActiveValidatorIndices(state, epoch);
   }
 
@@ -562,7 +578,7 @@ public class Spec {
     return atState(state).beaconStateAccessors().getPreviousEpochAttestationCapacity(state);
   }
 
-  public List<Integer> getBeaconCommittee(BeaconState state, UInt64 slot, UInt64 index) {
+  public IntList getBeaconCommittee(BeaconState state, UInt64 slot, UInt64 index) {
     return atState(state).beaconStateAccessors().getBeaconCommittee(state, slot, index);
   }
 
@@ -587,8 +603,7 @@ public class Spec {
   }
 
   // Attestation helpers
-  public List<Integer> getAttestingIndices(
-      BeaconState state, AttestationData data, SszBitlist bits) {
+  public IntList getAttestingIndices(BeaconState state, AttestationData data, SszBitlist bits) {
     return atState(state).getAttestationUtil().getAttestingIndices(state, data, bits);
   }
 
@@ -606,9 +621,11 @@ public class Spec {
       BeaconState state,
       ValidateableAttestation attestation,
       AsyncBLSSignatureVerifier blsSignatureVerifier) {
-    return atState(state)
+    final UInt64 slot = attestation.getData().getSlot();
+    return atSlot(slot)
         .getAttestationUtil()
-        .isValidIndexedAttestationAsync(state, attestation, blsSignatureVerifier);
+        .isValidIndexedAttestationAsync(
+            getForkAtSlot(slot), state, attestation, blsSignatureVerifier);
   }
 
   // Misc helpers
@@ -638,6 +655,15 @@ public class Spec {
                 () -> new IllegalArgumentException("Unknown fork version: " + forkVersion));
 
     return forMilestone(milestone);
+  }
+
+  private Fork getForkAtSlot(final UInt64 slot) {
+    return forkSchedule.getFork(computeEpochAtSlot(slot));
+  }
+
+  private UInt64 getProposerSlashingEpoch(final ProposerSlashing proposerSlashing) {
+    // Slashable blocks must be from same slot
+    return computeEpochAtSlot(proposerSlashing.getHeader_1().getMessage().getSlot());
   }
 
   @Override

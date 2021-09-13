@@ -23,12 +23,12 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.util.config.Constants;
 
 public class TestStoreFactory {
   private final Spec spec = TestSpecFactory.createDefault();
@@ -44,8 +44,7 @@ public class TestStoreFactory {
 
   public TestStoreImpl createGenesisStore(final BeaconState genesisState) {
     checkArgument(
-        genesisState.getSlot().equals(UInt64.valueOf(Constants.GENESIS_SLOT)),
-        "Genesis state has invalid slot.");
+        genesisState.getSlot().equals(SpecConfig.GENESIS_SLOT), "Genesis state has invalid slot.");
     return getForkChoiceStore(createAnchorFromState(genesisState));
   }
 
@@ -101,6 +100,6 @@ public class TestStoreFactory {
   }
 
   private BeaconState createRandomGenesisState() {
-    return dataStructureUtil.randomBeaconState(UInt64.valueOf(Constants.GENESIS_SLOT));
+    return dataStructureUtil.randomBeaconState(SpecConfig.GENESIS_SLOT);
   }
 }

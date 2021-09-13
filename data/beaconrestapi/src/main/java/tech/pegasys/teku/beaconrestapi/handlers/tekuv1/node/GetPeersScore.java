@@ -16,7 +16,6 @@ package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.node;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_EXPERIMENTAL;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_TEKU;
 
 import io.javalin.core.util.Header;
@@ -53,7 +52,7 @@ public class GetPeersScore implements Handler {
       path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get peer scores",
-      tags = {TAG_TEKU, TAG_EXPERIMENTAL},
+      tags = {TAG_TEKU},
       description = "Retrieves data about the node's network peers.",
       responses = {
         @OpenApiResponse(

@@ -20,6 +20,8 @@ public enum SignType {
   RANDAO_REVEAL,
   @JsonProperty("block")
   BLOCK,
+  @JsonProperty("block_v2")
+  BLOCK_V2,
   @JsonProperty("attestation")
   ATTESTATION,
   @JsonProperty("aggregation_slot")

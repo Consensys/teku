@@ -14,7 +14,6 @@
 package tech.pegasys.teku.reference.phase0.bls;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.ethtests.finder.BlsTestFinder.BLS_DATA_FILE;
 import static tech.pegasys.teku.reference.phase0.bls.BlsTests.parseSignature;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -23,13 +22,12 @@ import java.util.stream.Collectors;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
-import tech.pegasys.teku.reference.TestDataUtils;
 
 public class BlsAggregateTestExecutor extends BlsTestExecutor {
 
   @Override
   public void runTestImpl(final TestDefinition testDefinition) throws Throwable {
-    final Data data = TestDataUtils.loadYaml(testDefinition, BLS_DATA_FILE, Data.class);
+    final Data data = loadDataFile(testDefinition, Data.class);
     final List<BLSSignature> signatures = data.getInput();
     final BLSSignature expectedSignature = data.getOutput();
     BLSSignature actualSignature;

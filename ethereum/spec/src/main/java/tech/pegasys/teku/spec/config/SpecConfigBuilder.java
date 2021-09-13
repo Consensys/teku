@@ -105,7 +105,7 @@ public class SpecConfigBuilder {
 
   public SpecConfig build() {
     validate();
-    final SpecConfig phase0 =
+    SpecConfig config =
         new SpecConfigPhase0(
             rawConfig,
             eth1FollowDistance,
@@ -157,13 +157,13 @@ public class SpecConfigBuilder {
             depositNetworkId,
             depositContractAddress);
 
-    if (mergeBuilder.isPresent()) {
-      return mergeBuilder.get().build(phase0);
-    } else if (altairBuilder.isPresent()) {
-      return altairBuilder.get().build(phase0);
-    } else {
-      return phase0;
+    if (altairBuilder.isPresent()) {
+      config = altairBuilder.get().build(config);
     }
+    if (mergeBuilder.isPresent()) {
+      config = mergeBuilder.get().build(config);
+    }
+    return config;
   }
 
   private void validate() {

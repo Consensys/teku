@@ -36,16 +36,18 @@ import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalized;
 
-public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
+public class V4FinalizedKvStoreDao<S extends SchemaFinalized> implements KvStoreFinalizedDao {
   private final KvStoreAccessor db;
-  private final SchemaFinalized schema;
-  private final UInt64 stateStorageFrequency;
+  private final S schema;
+  private final V4FinalizedStateStorageLogic<S> stateStorageLogic;
 
   public V4FinalizedKvStoreDao(
-      final KvStoreAccessor db, final SchemaFinalized schema, final long stateStorageFrequency) {
+      final KvStoreAccessor db,
+      final S schema,
+      final V4FinalizedStateStorageLogic<S> stateStorageLogic) {
     this.db = db;
     this.schema = schema;
-    this.stateStorageFrequency = UInt64.valueOf(stateStorageFrequency);
+    this.stateStorageLogic = stateStorageLogic;
   }
 
   @Override
@@ -85,8 +87,7 @@ public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
 
   @Override
   public Optional<BeaconState> getLatestAvailableFinalizedState(final UInt64 maxSlot) {
-    return db.getFloorEntry(schema.getColumnFinalizedStatesBySlot(), maxSlot)
-        .map(ColumnEntry::getValue);
+    return stateStorageLogic.getLatestAvailableFinalizedState(db, schema, maxSlot);
   }
 
   @Override
@@ -129,7 +130,7 @@ public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
     Preconditions.checkArgument(
         finalizedDao instanceof V4FinalizedKvStoreDao,
         "Expected instance of V4FinalizedKvStoreDao");
-    final V4FinalizedKvStoreDao dao = (V4FinalizedKvStoreDao) finalizedDao;
+    final V4FinalizedKvStoreDao<?> dao = (V4FinalizedKvStoreDao<?>) finalizedDao;
 
     final Map<String, KvStoreVariable<?>> newVariables = schema.getVariableMap();
     if (newVariables.size() > 0) {
@@ -147,13 +148,50 @@ public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
     if (newColumns.size() > 0) {
       final Map<String, KvStoreColumn<?, ?>> oldColumns = dao.schema.getColumnMap();
       for (String key : newColumns.keySet()) {
-        logger.accept(String.format("Copy column %s", key));
+        final Optional<UInt64> maybeCount = displayCopyColumnMessage(key, oldColumns, dao, logger);
         try (final Stream<ColumnEntry<Bytes, Bytes>> oldEntryStream =
                 dao.streamRawColumn(oldColumns.get(key));
-            BatchWriter batchWriter = new BatchWriter(batchSize, logger, db)) {
+            BatchWriter batchWriter = new BatchWriter(batchSize, logger, db, maybeCount)) {
           oldEntryStream.forEach(entry -> batchWriter.add(newColumns.get(key), entry));
         }
       }
+    }
+  }
+
+  private Optional<UInt64> displayCopyColumnMessage(
+      final String key,
+      final Map<String, KvStoreColumn<?, ?>> oldColumns,
+      final V4FinalizedKvStoreDao<?> dao,
+      final Consumer<String> logger) {
+    final Optional<UInt64> maybeCount = getObjectCountForColumn(key, oldColumns, dao);
+    maybeCount.ifPresentOrElse(
+        (count) -> logger.accept(String.format("Copy column %s - %s objects", key, count)),
+        () -> logger.accept(String.format("Copy column %s", key)));
+
+    return maybeCount;
+  }
+
+  private Optional<UInt64> getObjectCountForColumn(
+      final String key,
+      final Map<String, KvStoreColumn<?, ?>> oldColumns,
+      final V4FinalizedKvStoreDao<?> dao) {
+    switch (key) {
+      case ("FINALIZED_STATES_BY_SLOT"):
+      case ("SLOTS_BY_FINALIZED_STATE_ROOT"):
+      case ("SLOTS_BY_FINALIZED_ROOT"):
+        return getEntityCountFromColumn(oldColumns.get(key), dao);
+      case ("FINALIZED_BLOCKS_BY_SLOT"):
+        return getEntityCountFromColumn(oldColumns.get("SLOTS_BY_FINALIZED_ROOT"), dao);
+      default:
+        break;
+    }
+    return Optional.empty();
+  }
+
+  Optional<UInt64> getEntityCountFromColumn(
+      final KvStoreColumn<?, ?> column, final V4FinalizedKvStoreDao<?> dao) {
+    try (final Stream<ColumnEntry<Bytes, Bytes>> oldEntryStream = dao.streamRawColumn(column)) {
+      return Optional.of(UInt64.valueOf(oldEntryStream.count()));
     }
   }
 
@@ -176,29 +214,23 @@ public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
   @Override
   @MustBeClosed
   public FinalizedUpdater finalizedUpdater() {
-    return new V4FinalizedKvStoreDao.V4FinalizedUpdater(db, schema, stateStorageFrequency);
+    return new V4FinalizedKvStoreDao.V4FinalizedUpdater<>(db, schema, stateStorageLogic.updater());
   }
 
-  static class V4FinalizedUpdater implements FinalizedUpdater {
+  static class V4FinalizedUpdater<S extends SchemaFinalized> implements FinalizedUpdater {
     private final KvStoreTransaction transaction;
     private final KvStoreAccessor db;
-    private final SchemaFinalized schema;
-    private final UInt64 stateStorageFrequency;
-    private Optional<UInt64> lastStateStoredSlot = Optional.empty();
-    private boolean loadedLastStoreState = false;
-
-    KvStoreTransaction getTransaction() {
-      return transaction;
-    }
+    private final S schema;
+    private final V4FinalizedStateStorageLogic.FinalizedStateUpdater<S> stateStorageLogic;
 
     V4FinalizedUpdater(
         final KvStoreAccessor db,
-        final SchemaFinalized schema,
-        final UInt64 stateStorageFrequency) {
+        final S schema,
+        final V4FinalizedStateStorageLogic.FinalizedStateUpdater<S> stateStorageLogic) {
       this.transaction = db.startTransaction();
       this.db = db;
       this.schema = schema;
-      this.stateStorageFrequency = stateStorageFrequency;
+      this.stateStorageLogic = stateStorageLogic;
     }
 
     @Override
@@ -223,28 +255,12 @@ public class V4FinalizedKvStoreDao implements KvStoreFinalizedDao {
 
     @Override
     public void addFinalizedState(final Bytes32 blockRoot, final BeaconState state) {
-      if (!loadedLastStoreState) {
-        lastStateStoredSlot = db.getLastKey(schema.getColumnFinalizedStatesBySlot());
-        loadedLastStoreState = true;
-      }
-      if (lastStateStoredSlot.isPresent()) {
-        UInt64 nextStorageSlot = lastStateStoredSlot.get().plus(stateStorageFrequency);
-        if (state.getSlot().compareTo(nextStorageSlot) >= 0) {
-          addFinalizedState(state);
-        }
-      } else {
-        addFinalizedState(state);
-      }
+      stateStorageLogic.addFinalizedState(db, transaction, schema, state);
     }
 
     @Override
     public void addFinalizedStateRoot(final Bytes32 stateRoot, final UInt64 slot) {
       transaction.put(schema.getColumnSlotsByFinalizedStateRoot(), stateRoot, slot);
-    }
-
-    private void addFinalizedState(final BeaconState state) {
-      transaction.put(schema.getColumnFinalizedStatesBySlot(), state.getSlot(), state);
-      lastStateStoredSlot = Optional.of(state.getSlot());
     }
 
     @Override

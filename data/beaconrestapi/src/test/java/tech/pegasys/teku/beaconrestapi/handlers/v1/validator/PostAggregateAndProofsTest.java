@@ -16,12 +16,14 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.javalin.http.Context;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -67,6 +69,9 @@ class PostAggregateAndProofsTest {
     final tech.pegasys.teku.api.schema.SignedAggregateAndProof[] schemaSignedAggregateAndProof = {
       new tech.pegasys.teku.api.schema.SignedAggregateAndProof(signedAggregateAndProof)
     };
+
+    when(provider.sendAggregateAndProofs(anyList()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     String signedAggregateAndProofAsJson = jsonProvider.objectToJSON(schemaSignedAggregateAndProof);
     when(context.body()).thenReturn(signedAggregateAndProofAsJson);

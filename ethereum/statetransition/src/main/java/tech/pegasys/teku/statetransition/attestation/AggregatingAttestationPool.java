@@ -72,28 +72,20 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
 
   public synchronized void add(final ValidateableAttestation attestation) {
     final AttestationData attestationData = attestation.getAttestation().getData();
-    final Bytes32 dataRoot = attestationData.hashTreeRoot();
-    final boolean add =
-        attestationGroupByDataHash
-            .computeIfAbsent(
-                dataRoot,
-                key ->
-                    new MatchingDataAttestationGroup(
-                        spec,
-                        attestationData,
-                        attestation
-                            .getCommitteeShufflingSeed()
-                            .orElseThrow(
-                                () ->
-                                    new UnsupportedOperationException(
-                                        "ValidateableAttestation does not have a randao mix."))))
-            .add(attestation);
+    final boolean add = getOrCreateAttestationGroup(attestationData).add(attestation);
     if (add) {
       updateSize(1);
     }
     dataHashBySlot
         .computeIfAbsent(attestationData.getSlot(), slot -> new HashSet<>())
-        .add(dataRoot);
+        .add(attestationData.hashTreeRoot());
+  }
+
+  private MatchingDataAttestationGroup getOrCreateAttestationGroup(
+      final AttestationData attestationData) {
+    return attestationGroupByDataHash.computeIfAbsent(
+        attestationData.hashTreeRoot(),
+        key -> new MatchingDataAttestationGroup(spec, attestationData));
   }
 
   @Override
@@ -110,30 +102,23 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .flatMap(Set::stream)
         .forEach(
             key -> {
-              final int removed = Math.toIntExact(attestationGroupByDataHash.get(key).size());
+              final int removed = attestationGroupByDataHash.get(key).size();
               attestationGroupByDataHash.remove(key);
               updateSize(-removed);
             });
     dataHashesToRemove.clear();
   }
 
-  public void removeAll(Iterable<Attestation> attestations) {
-    attestations.forEach(this::remove);
+  public synchronized void onAttestationsIncludedInBlock(
+      final UInt64 slot, final Iterable<Attestation> attestations) {
+    attestations.forEach(attestation -> onAttestationIncludedInBlock(slot, attestation));
   }
 
-  public synchronized void remove(final Attestation attestation) {
+  private void onAttestationIncludedInBlock(final UInt64 slot, final Attestation attestation) {
     final AttestationData attestationData = attestation.getData();
-    final Bytes32 dataRoot = attestationData.hashTreeRoot();
-    final MatchingDataAttestationGroup attestations = attestationGroupByDataHash.get(dataRoot);
-    if (attestations == null) {
-      return;
-    }
-    final int numRemoved = attestations.remove(attestation);
+    final MatchingDataAttestationGroup attestations = getOrCreateAttestationGroup(attestationData);
+    final int numRemoved = attestations.onAttestationIncludedInBlock(slot, attestation);
     updateSize(-numRemoved);
-    if (attestations.isEmpty()) {
-      attestationGroupByDataHash.remove(dataRoot);
-      removeFromSlotMappings(attestationData.getSlot(), dataRoot);
-    }
   }
 
   private void updateSize(final int delta) {
@@ -141,17 +126,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     sizeGauge.set(currentSize);
   }
 
-  private void removeFromSlotMappings(final UInt64 slot, final Bytes32 dataRoot) {
-    final Set<Bytes> dataHashesForSlot = dataHashBySlot.get(slot);
-    if (dataHashesForSlot != null) {
-      dataHashesForSlot.remove(dataRoot);
-      if (dataHashesForSlot.isEmpty()) {
-        dataHashBySlot.remove(slot);
-      }
-    }
-  }
-
-  public int getSize() {
+  public synchronized int getSize() {
     return size.get();
   }
 
@@ -181,7 +156,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .collect(ATTESTATIONS_SCHEMA.collector());
   }
 
-  public Stream<Attestation> getAttestations(
+  public synchronized Stream<Attestation> getAttestations(
       final Optional<UInt64> maybeSlot, final Optional<UInt64> maybeCommitteeIndex) {
     final Predicate<Map.Entry<UInt64, Set<Bytes>>> filterForSlot =
         (entry) -> maybeSlot.map(slot -> entry.getKey().equals(slot)).orElse(true);
@@ -212,5 +187,9 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
       final Bytes32 attestationHashTreeRoot) {
     return Optional.ofNullable(attestationGroupByDataHash.get(attestationHashTreeRoot))
         .flatMap(attestations -> attestations.stream().findFirst());
+  }
+
+  public synchronized void onReorg(final UInt64 commonAncestorSlot) {
+    attestationGroupByDataHash.values().forEach(group -> group.onReorg(commonAncestorSlot));
   }
 }

@@ -19,9 +19,12 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.util.PendingPool;
+import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -47,7 +50,9 @@ public class SyncServiceFactory {
   private final BlockImporter blockImporter;
   private final PendingPool<SignedBeaconBlock> pendingBlocks;
   private final int getStartupTargetPeerCount;
+  private final AsyncBLSSignatureVerifier signatureVerifier;
   private final Duration startupTimeout;
+  private final Spec spec;
 
   private SyncServiceFactory(
       final SyncConfig syncConfig,
@@ -62,7 +67,9 @@ public class SyncServiceFactory {
       final BlockImporter blockImporter,
       final PendingPool<SignedBeaconBlock> pendingBlocks,
       final int getStartupTargetPeerCount,
-      final Duration startupTimeout) {
+      final SignatureVerificationService signatureVerifier,
+      final Duration startupTimeout,
+      final Spec spec) {
     this.syncConfig = syncConfig;
     this.metrics = metrics;
     this.asyncRunnerFactory = asyncRunnerFactory;
@@ -75,7 +82,9 @@ public class SyncServiceFactory {
     this.blockImporter = blockImporter;
     this.pendingBlocks = pendingBlocks;
     this.getStartupTargetPeerCount = getStartupTargetPeerCount;
+    this.signatureVerifier = signatureVerifier;
     this.startupTimeout = startupTimeout;
+    this.spec = spec;
   }
 
   public static SyncService createSyncService(
@@ -91,7 +100,9 @@ public class SyncServiceFactory {
       final BlockImporter blockImporter,
       final PendingPool<SignedBeaconBlock> pendingBlocks,
       final int getStartupTargetPeerCount,
-      final Duration startupTimeout) {
+      final SignatureVerificationService signatureVerificationService,
+      final Duration startupTimeout,
+      final Spec spec) {
     final SyncServiceFactory factory =
         new SyncServiceFactory(
             syncConfig,
@@ -106,7 +117,9 @@ public class SyncServiceFactory {
             blockImporter,
             pendingBlocks,
             getStartupTargetPeerCount,
-            startupTimeout);
+            signatureVerificationService,
+            startupTimeout,
+            spec);
     return factory.create();
   }
 
@@ -131,12 +144,13 @@ public class SyncServiceFactory {
     final AsyncRunner asyncRunner =
         asyncRunnerFactory.create(HistoricalBlockSyncService.class.getSimpleName(), 1);
     return HistoricalBlockSyncService.create(
-        recentChainData.getSpec(),
+        spec,
         metrics,
         storageUpdateChannel,
         asyncRunner,
         p2pNetwork,
         combinedChainDataClient,
+        signatureVerifier,
         syncStateProvider);
   }
 
@@ -156,11 +170,12 @@ public class SyncServiceFactory {
               recentChainData,
               pendingBlocks,
               p2pNetwork,
-              blockImporter);
+              blockImporter,
+              spec);
     } else {
       forwardSync =
           SinglePeerSyncServiceFactory.create(
-              metrics, asyncRunner, p2pNetwork, recentChainData, blockImporter);
+              metrics, asyncRunner, p2pNetwork, recentChainData, blockImporter, spec);
     }
     return forwardSync;
   }
