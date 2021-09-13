@@ -22,12 +22,12 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.ssz.primitive.SszBytes32;
 
-public class BeaconBlockBodyBuilderAltair extends AbstractBeaconBlockBodyBuilder {
+class BeaconBlockBodyBuilderAltair extends AbstractBeaconBlockBodyBuilder {
 
-  private BeaconBlockBodySchemaAltair schema;
+  private BeaconBlockBodySchemaAltairImpl schema;
   private SyncAggregate syncAggregate;
 
-  public BeaconBlockBodyBuilderAltair schema(final BeaconBlockBodySchemaAltair schema) {
+  public BeaconBlockBodyBuilderAltair schema(final BeaconBlockBodySchemaAltairImpl schema) {
     this.schema = schema;
     return this;
   }
@@ -52,10 +52,10 @@ public class BeaconBlockBodyBuilderAltair extends AbstractBeaconBlockBodyBuilder
     checkNotNull(syncAggregate, "syncAggregate must be specified");
   }
 
-  public BeaconBlockBodyAltair build() {
+  public BeaconBlockBodyAltairImpl build() {
     validate();
 
-    return new BeaconBlockBodyAltair(
+    return new BeaconBlockBodyAltairImpl(
         schema,
         new SszSignature(randaoReveal),
         eth1Data,

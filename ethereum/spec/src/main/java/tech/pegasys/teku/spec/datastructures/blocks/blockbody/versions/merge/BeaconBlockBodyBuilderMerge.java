@@ -23,18 +23,19 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.ssz.primitive.SszBytes32;
 
-public class BeaconBlockBodyBuilderMerge extends AbstractBeaconBlockBodyBuilder {
-  private BeaconBlockBodySchemaMerge schema;
+class BeaconBlockBodyBuilderMerge extends AbstractBeaconBlockBodyBuilder {
+  private BeaconBlockBodySchemaMergeImpl schema;
+  private SyncAggregate syncAggregate;
   private ExecutionPayload executionPayload;
 
-  public BeaconBlockBodyBuilderMerge schema(final BeaconBlockBodySchemaMerge schema) {
+  public BeaconBlockBodyBuilderMerge schema(final BeaconBlockBodySchemaMergeImpl schema) {
     this.schema = schema;
     return this;
   }
 
   @Override
   public BeaconBlockBodyBuilder syncAggregate(final Supplier<SyncAggregate> syncAggregateSupplier) {
-    // No sync aggregate in Merge
+    this.syncAggregate = syncAggregateSupplier.get();
     return this;
   }
 
@@ -49,12 +50,13 @@ public class BeaconBlockBodyBuilderMerge extends AbstractBeaconBlockBodyBuilder 
   protected void validate() {
     super.validate();
     checkNotNull(schema, "schema must be specified");
+    checkNotNull(syncAggregate, "syncAggregate must be specified");
     checkNotNull(executionPayload, "executionPayload must be specified");
   }
 
-  public BeaconBlockBodyMerge build() {
+  public BeaconBlockBodyMergeImpl build() {
     validate();
-    return new BeaconBlockBodyMerge(
+    return new BeaconBlockBodyMergeImpl(
         schema,
         new SszSignature(randaoReveal),
         eth1Data,
@@ -64,6 +66,7 @@ public class BeaconBlockBodyBuilderMerge extends AbstractBeaconBlockBodyBuilder 
         attestations,
         deposits,
         voluntaryExits,
+        syncAggregate,
         executionPayload);
   }
 }
