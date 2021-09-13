@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Objects;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Arrays;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -180,8 +181,8 @@ public class BeaconStateMerge extends BeaconState implements State {
       return false;
     }
     BeaconStateMerge that = (BeaconStateMerge) o;
-    return Objects.equal(previous_epoch_participation, that.previous_epoch_participation)
-        && Objects.equal(current_epoch_participation, that.current_epoch_participation)
+    return Arrays.equals(previous_epoch_participation, that.previous_epoch_participation)
+        && Arrays.equals(current_epoch_participation, that.current_epoch_participation)
         && Objects.equal(inactivity_scores, that.inactivity_scores)
         && Objects.equal(current_sync_committee, that.current_sync_committee)
         && Objects.equal(next_sync_committee, that.next_sync_committee)
@@ -190,13 +191,15 @@ public class BeaconStateMerge extends BeaconState implements State {
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(
-        previous_epoch_participation,
-        current_epoch_participation,
-        inactivity_scores,
-        current_sync_committee,
-        next_sync_committee,
-        latest_execution_payload_header);
+    int result =
+        java.util.Objects.hash(
+            inactivity_scores,
+            current_sync_committee,
+            next_sync_committee,
+            latest_execution_payload_header);
+    result = 31 * result + Arrays.hashCode(previous_epoch_participation);
+    result = 31 * result + Arrays.hashCode(current_epoch_participation);
+    return result;
   }
 
   private static byte[] toByteArray(final SszList<SszByte> byteList) {
