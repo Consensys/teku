@@ -22,13 +22,11 @@ import java.util.List;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.ssz.tree.TreeNodeImpl.BranchNodeImpl;
-import tech.pegasys.teku.ssz.tree.TreeNodeImpl.LeafNodeImpl;
 
 /** Misc Backing binary tree utils */
 public class TreeUtil {
 
-  public static class ZeroLeafNode extends LeafNodeImpl {
+  public static class ZeroLeafNode extends SimpleLeafNode {
     public ZeroLeafNode(int size) {
       super(Bytes.wrap(new byte[size]));
     }
@@ -39,7 +37,7 @@ public class TreeUtil {
     }
   }
 
-  public static class ZeroBranchNode extends BranchNodeImpl {
+  public static class ZeroBranchNode extends SimpleBranchNode {
     private final int height;
 
     public ZeroBranchNode(TreeNode left, TreeNode right, int height) {
@@ -60,8 +58,7 @@ public class TreeUtil {
   static {
     ZERO_TREES = new TreeNode[64];
     ZERO_TREES[0] = LeafNode.EMPTY_LEAF;
-    final ImmutableMap.Builder<Bytes32, TreeNode> mapBuilder =
-        ImmutableMap.<Bytes32, TreeNode>builder();
+    final ImmutableMap.Builder<Bytes32, TreeNode> mapBuilder = ImmutableMap.builder();
     for (int i = 1; i < ZERO_TREES.length; i++) {
       ZERO_TREES[i] = new ZeroBranchNode(ZERO_TREES[i - 1], ZERO_TREES[i - 1], i);
       mapBuilder.put(ZERO_TREES[i].hashTreeRoot(), ZERO_TREES[i]); // pre-cache
@@ -110,7 +107,7 @@ public class TreeUtil {
           leftNodesCount == rightNodesCount
               ? lTree
               : createTree(defaultNode, rightNodesCount, depth - 1);
-      return new BranchNodeImpl(lTree, rTree);
+      return BranchNode.create(lTree, rTree);
     }
   }
 
