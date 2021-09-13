@@ -21,14 +21,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 import tech.pegasys.teku.ssz.primitive.SszByte;
-import tech.pegasys.teku.ssz.schema.SszListSchema;
 import tech.pegasys.teku.ssz.schema.collections.SszPrimitiveListSchema;
 import tech.pegasys.teku.ssz.schema.collections.SszUInt64ListSchema;
 import tech.pegasys.teku.ssz.sos.SszField;
@@ -54,10 +52,10 @@ public class BeaconStateSchemaMerge
             LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX,
             BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER.name(),
             () -> ExecutionPayloadHeader.SSZ_SCHEMA);
-    return
-        Stream.concat(
+    return Stream.concat(
             BeaconStateSchemaAltair.getUniqueFields(specConfig).stream(),
-            Stream.of(latestExecutionPayloadHeaderField)).collect(Collectors.toList());
+            Stream.of(latestExecutionPayloadHeaderField))
+        .collect(Collectors.toList());
   }
 
   public static BeaconStateSchemaMerge required(final BeaconStateSchema<?, ?> schema) {

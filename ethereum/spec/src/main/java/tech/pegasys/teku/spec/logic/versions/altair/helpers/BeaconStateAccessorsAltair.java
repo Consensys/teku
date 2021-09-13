@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.ssz.SszList;
 
@@ -48,9 +49,7 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
   private final SpecConfigAltair altairConfig;
 
   public BeaconStateAccessorsAltair(
-      final SpecConfigAltair config,
-      final Predicates predicates,
-      final MiscHelpersAltair miscHelpers) {
+      final SpecConfigAltair config, final Predicates predicates, final MiscHelpers miscHelpers) {
     super(config, predicates, miscHelpers);
     this.altairConfig = config;
   }

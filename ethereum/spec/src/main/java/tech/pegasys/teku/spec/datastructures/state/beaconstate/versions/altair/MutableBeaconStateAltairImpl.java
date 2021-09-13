@@ -14,9 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair;
 
 import com.google.common.base.MoreObjects.ToStringHelper;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractMutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
 import tech.pegasys.teku.ssz.SszData;
@@ -43,19 +41,6 @@ class MutableBeaconStateAltairImpl extends AbstractMutableBeaconState<BeaconStat
   @Override
   public BeaconStateAltair commitChanges() {
     return (BeaconStateAltair) super.commitChanges();
-  }
-
-  @Override
-  public <E1 extends Exception, E2 extends Exception, E3 extends Exception> BeaconState updated(
-      Mutator<MutableBeaconState, E1, E2, E3> mutator) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public <E1 extends Exception, E2 extends Exception, E3 extends Exception>
-      BeaconStateAltair updatedAltair(Mutator<MutableBeaconStateAltair, E1, E2, E3> mutator)
-          throws E1, E2, E3 {
-    throw new UnsupportedOperationException();
   }
 
   @Override

@@ -19,6 +19,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.BeaconStateMerge;
 import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.merge.helpers.BeaconStateAccessorsMerge;
@@ -41,6 +42,7 @@ public class MergeStateUpgrade implements StateUpgrade<BeaconStateMerge> {
   @Override
   public BeaconStateMerge upgrade(final BeaconState preState) {
     final UInt64 epoch = beaconStateAccessors.getCurrentEpoch(preState);
+    BeaconStateAltair preStateAltair = BeaconStateAltair.required(preState);
 
     return schemaDefinitions
         .getBeaconStateSchema()
@@ -49,23 +51,18 @@ public class MergeStateUpgrade implements StateUpgrade<BeaconStateMerge> {
             state -> {
               BeaconStateFields.copyCommonFieldsFromSource(state, preState);
 
-              preState
-                  .toVersionPhase0()
-                  .ifPresent(
-                      beaconStatePhase0 -> {
-                        state
-                            .getPrevious_epoch_attestations()
-                            .setAll(beaconStatePhase0.getPrevious_epoch_attestations());
-                        state
-                            .getCurrent_epoch_attestations()
-                            .setAll(beaconStatePhase0.getCurrent_epoch_attestations());
-                      });
+              state.setCurrentEpochParticipation(preStateAltair.getCurrentEpochParticipation());
+              state.setPreviousEpochParticipation(preStateAltair.getPreviousEpochParticipation());
+              state.setCurrentSyncCommittee(preStateAltair.getCurrentSyncCommittee());
+              state.setNextSyncCommittee(preStateAltair.getNextSyncCommittee());
+              state.setInactivityScores(preStateAltair.getInactivityScores());
 
               state.setFork(
                   new Fork(
                       preState.getFork().getCurrent_version(),
                       specConfig.getMergeForkVersion(),
                       epoch));
+
               state.setLatestExecutionPayloadHeader(new ExecutionPayloadHeader());
             });
   }

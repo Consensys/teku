@@ -34,13 +34,13 @@ import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.EpochProcessorAltair;
+import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.ValidatorStatusFactoryAltair;
 import tech.pegasys.teku.spec.logic.versions.merge.block.BlockProcessorMerge;
 import tech.pegasys.teku.spec.logic.versions.merge.forktransition.MergeStateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.merge.forktransition.TransitionStoreUtil;
 import tech.pegasys.teku.spec.logic.versions.merge.helpers.BeaconStateAccessorsMerge;
 import tech.pegasys.teku.spec.logic.versions.merge.helpers.MiscHelpersMerge;
-import tech.pegasys.teku.spec.logic.versions.merge.statetransition.epoch.EpochProcessorMerge;
-import tech.pegasys.teku.spec.logic.versions.merge.statetransition.epoch.ValidatorStatusFactoryMerge;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
 
 public class SpecLogicMerge extends AbstractSpecLogic {
@@ -61,8 +61,8 @@ public class SpecLogicMerge extends AbstractSpecLogic {
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
       final OperationValidator operationValidator,
-      final ValidatorStatusFactoryMerge validatorStatusFactory,
-      final EpochProcessorMerge epochProcessor,
+      final ValidatorStatusFactoryAltair validatorStatusFactory,
+      final EpochProcessorAltair epochProcessor,
       final BlockProcessorMerge blockProcessor,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil,
@@ -118,12 +118,17 @@ public class SpecLogicMerge extends AbstractSpecLogic {
     final OperationValidator operationValidator =
         OperationValidator.create(
             config, predicates, miscHelpers, beaconStateAccessors, attestationUtil);
-    final ValidatorStatusFactoryMerge validatorStatusFactory =
-        new ValidatorStatusFactoryMerge(
-            config, beaconStateUtil, attestationUtil, beaconStateAccessors, predicates);
-    final EpochProcessorMerge epochProcessor =
-        new EpochProcessorMerge(
+    final ValidatorStatusFactoryAltair validatorStatusFactory =
+        new ValidatorStatusFactoryAltair(
             config,
+            beaconStateUtil,
+            attestationUtil,
+            predicates,
+            miscHelpers,
+            beaconStateAccessors);
+    final EpochProcessorAltair epochProcessor =
+        new EpochProcessorAltair(
+            config.toVersionAltair().orElseThrow(),
             miscHelpers,
             beaconStateAccessors,
             beaconStateMutators,

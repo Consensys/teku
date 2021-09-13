@@ -14,25 +14,13 @@
 package tech.pegasys.teku.spec.logic.versions.merge.helpers;
 
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.BeaconStateMerge;
-import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
+import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 
-public class BeaconStateAccessorsMerge extends BeaconStateAccessors {
+public class BeaconStateAccessorsMerge extends BeaconStateAccessorsAltair {
   public BeaconStateAccessorsMerge(
       final SpecConfig config, final Predicates predicates, final MiscHelpers miscHelpers) {
-    super(config, predicates, miscHelpers);
-  }
-
-  // Custom accessors
-  @Override
-  public int getPreviousEpochAttestationCapacity(final BeaconState genericState) {
-    final BeaconStateMerge state = BeaconStateMerge.required(genericState);
-    final int absoluteMax =
-        Math.toIntExact(
-            state.getBeaconStateSchema().getPreviousEpochAttestationsSchema().getMaxLength());
-    return absoluteMax - state.getPrevious_epoch_attestations().size();
+    super(config.toVersionAltair().orElseThrow(), predicates, miscHelpers);
   }
 }

@@ -19,12 +19,13 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractMutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.ValidatorStatsAltair;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.cache.IntCache;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 
 class MutableBeaconStateMergeImpl extends AbstractMutableBeaconState<BeaconStateMergeImpl>
-    implements MutableBeaconStateMerge, BeaconStateCache, ValidatorStatsMerge {
+    implements MutableBeaconStateMerge, BeaconStateCache, ValidatorStatsAltair {
 
   MutableBeaconStateMergeImpl(BeaconStateMergeImpl backingImmutableView) {
     super(backingImmutableView);
@@ -54,12 +55,5 @@ class MutableBeaconStateMergeImpl extends AbstractMutableBeaconState<BeaconState
   @Override
   protected void addCustomFields(ToStringHelper stringBuilder) {
     BeaconStateMergeImpl.describeCustomFields(stringBuilder, this);
-  }
-
-  @Override
-  public <E1 extends Exception, E2 extends Exception, E3 extends Exception>
-      BeaconStateMerge updatedMerge(Mutator<MutableBeaconStateMerge, E1, E2, E3> mutator)
-          throws E1, E2, E3 {
-    throw new UnsupportedOperationException();
   }
 }
