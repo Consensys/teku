@@ -59,8 +59,10 @@ public class SpecFactory {
     final UInt64 altairForkEpoch =
         config.toVersionAltair().map(SpecConfigAltair::getAltairForkEpoch).orElse(FAR_FUTURE_EPOCH);
     final Optional<UInt64> mergeForkEpoch =
-        config.toVersionMerge().map(SpecConfigMerge::getMergeForkEpoch);
-
+        config
+            .toVersionMerge()
+            .map(SpecConfigMerge::getMergeForkEpoch)
+            .filter(epoch -> !epoch.equals(FAR_FUTURE_EPOCH));
     // Merge takes precedence in the prototype
     if (mergeForkEpoch.isPresent()) {
       if (mergeForkEpoch.get().equals(UInt64.ZERO)) {
