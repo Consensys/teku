@@ -75,16 +75,18 @@ public class BeaconBlockBodyMerge extends BeaconBlockBody {
             builder.executionPayload(
                 () ->
                     new tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload(
-                        executionPayload.block_hash,
                         executionPayload.parent_hash,
                         executionPayload.miner,
                         executionPayload.state_root,
-                        executionPayload.number,
+                        executionPayload.receipt_root,
+                        executionPayload.logs_bloom,
+                        executionPayload.random,
+                        executionPayload.block_number,
                         executionPayload.gas_limit,
                         executionPayload.gas_used,
                         executionPayload.timestamp,
-                        executionPayload.receipt_root,
-                        executionPayload.logs_bloom,
+                        executionPayload.base_fee_per_gas,
+                        executionPayload.block_hash,
                         executionPayload.transactions)));
   }
 }

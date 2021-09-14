@@ -16,13 +16,13 @@ package tech.pegasys.teku.spec.executionengine.client.schema;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.common.base.MoreObjects;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.executionengine.client.serializer.Bytes20Deserializer;
 import tech.pegasys.teku.spec.executionengine.client.serializer.Bytes20Serializer;
@@ -38,10 +38,6 @@ public class ExecutionPayload {
 
   @JsonSerialize(using = BytesSerializer.class)
   @JsonDeserialize(using = Bytes32Deserializer.class)
-  public final Bytes32 blockHash;
-
-  @JsonSerialize(using = BytesSerializer.class)
-  @JsonDeserialize(using = Bytes32Deserializer.class)
   public final Bytes32 parentHash;
 
   @JsonSerialize(using = Bytes20Serializer.class)
@@ -52,9 +48,21 @@ public class ExecutionPayload {
   @JsonDeserialize(using = Bytes32Deserializer.class)
   public final Bytes32 stateRoot;
 
+  @JsonSerialize(using = BytesSerializer.class)
+  @JsonDeserialize(using = Bytes32Deserializer.class)
+  public final Bytes32 receiptsRoot;
+
+  @JsonSerialize(using = BytesSerializer.class)
+  @JsonDeserialize(using = BytesDeserializer.class)
+  public final Bytes logsBloom;
+
+  @JsonSerialize(using = BytesSerializer.class)
+  @JsonDeserialize(using = Bytes32Deserializer.class)
+  public final Bytes32 random;
+
   @JsonSerialize(using = UInt64AsHexSerializer.class)
   @JsonDeserialize(using = UInt64AsHexDeserializer.class)
-  public final UInt64 number;
+  public final UInt64 blockNumber;
 
   @JsonSerialize(using = UInt64AsHexSerializer.class)
   @JsonDeserialize(using = UInt64AsHexDeserializer.class)
@@ -70,140 +78,141 @@ public class ExecutionPayload {
 
   @JsonSerialize(using = BytesSerializer.class)
   @JsonDeserialize(using = Bytes32Deserializer.class)
-  public final Bytes32 receiptsRoot;
+  public final Bytes32 baseFeePerGas;
 
   @JsonSerialize(using = BytesSerializer.class)
-  @JsonDeserialize(using = BytesDeserializer.class)
-  public final Bytes logsBloom;
+  @JsonDeserialize(using = Bytes32Deserializer.class)
+  public final Bytes32 blockHash;
 
   @JsonSerialize(contentUsing = BytesSerializer.class)
   @JsonDeserialize(contentUsing = BytesDeserializer.class)
   public final List<Bytes> transactions;
 
   public ExecutionPayload(
-      @JsonProperty("blockHash") Bytes32 blockHash,
-      @JsonProperty("parentHash") Bytes32 parentHash,
-      @JsonProperty("miner") Bytes20 miner,
-      @JsonProperty("stateRoot") Bytes32 stateRoot,
-      @JsonProperty("number") UInt64 number,
-      @JsonProperty("gasLimit") UInt64 gasLimit,
-      @JsonProperty("gasUsed") UInt64 gasUsed,
-      @JsonProperty("timestamp") UInt64 timestamp,
-      @JsonProperty("receiptRoot") Bytes32 receiptsRoot,
-      @JsonProperty("logsBloom") Bytes logsBloom,
-      @JsonProperty("transactions") List<Bytes> transactions) {
-    this.blockHash = blockHash;
-    this.parentHash = parentHash;
-    this.miner = miner;
-    this.stateRoot = stateRoot;
-    this.number = number;
-    this.gasLimit = gasLimit;
-    this.gasUsed = gasUsed;
-    this.timestamp = timestamp;
-    this.receiptsRoot = receiptsRoot;
-    this.logsBloom = logsBloom;
-    this.transactions = transactions != null ? transactions : Collections.emptyList();
-  }
-
-  public ExecutionPayload(
       tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload executionPayload) {
-    this.blockHash = executionPayload.getBlock_hash();
     this.parentHash = executionPayload.getParent_hash();
     this.miner = executionPayload.getCoinbase();
     this.stateRoot = executionPayload.getState_root();
-    this.number = executionPayload.getNumber();
+    this.receiptsRoot = executionPayload.getReceipt_root();
+    this.logsBloom = executionPayload.getLogs_bloom();
+    this.random = executionPayload.getRandom();
+    this.blockNumber = executionPayload.getBlockNumber();
     this.gasLimit = executionPayload.getGas_limit();
     this.gasUsed = executionPayload.getGas_used();
     this.timestamp = executionPayload.getTimestamp();
-    this.receiptsRoot = executionPayload.getReceipt_root();
-    this.logsBloom = executionPayload.getLogs_bloom();
+    this.baseFeePerGas = executionPayload.getBaseFeePerGas();
+    this.blockHash = executionPayload.getBlock_hash();
     this.transactions =
         executionPayload.getTransactions().stream()
             .map(SszByteList::getBytes)
             .collect(Collectors.toList());
   }
 
+  public ExecutionPayload(
+      @JsonProperty("parentHash") Bytes32 parentHash,
+      @JsonProperty("miner") Bytes20 miner,
+      @JsonProperty("stateRoot") Bytes32 stateRoot,
+      @JsonProperty("receiptRoot") Bytes32 receiptsRoot,
+      @JsonProperty("logsBloom") Bytes logsBloom,
+      @JsonProperty("random") Bytes32 random,
+      @JsonProperty("blockNumber") UInt64 blockNumber,
+      @JsonProperty("gasLimit") UInt64 gasLimit,
+      @JsonProperty("gasUsed") UInt64 gasUsed,
+      @JsonProperty("timestamp") UInt64 timestamp,
+      @JsonProperty("blockHash") Bytes32 baseFeePerGas,
+      @JsonProperty("blockHash") Bytes32 blockHash,
+      @JsonProperty("transactions") List<Bytes> transactions) {
+    this.parentHash = parentHash;
+    this.miner = miner;
+    this.stateRoot = stateRoot;
+    this.receiptsRoot = receiptsRoot;
+    this.logsBloom = logsBloom;
+    this.random = random;
+    this.blockNumber = blockNumber;
+    this.gasLimit = gasLimit;
+    this.gasUsed = gasUsed;
+    this.timestamp = timestamp;
+    this.baseFeePerGas = baseFeePerGas;
+    this.blockHash = blockHash;
+    this.transactions = transactions != null ? transactions : Collections.emptyList();
+  }
+
   public tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload
       asInternalExecutionPayload() {
     return new tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload(
-        blockHash,
         parentHash,
         miner,
         stateRoot,
-        number,
+        receiptsRoot,
+        logsBloom,
+        random,
+        blockNumber,
         gasLimit,
         gasUsed,
         timestamp,
-        receiptsRoot,
-        logsBloom,
+        baseFeePerGas,
+        blockHash,
         transactions);
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    ExecutionPayload that = (ExecutionPayload) o;
-    return Objects.equals(blockHash, that.blockHash)
-        && Objects.equals(parentHash, that.parentHash)
+    final ExecutionPayload that = (ExecutionPayload) o;
+    return Objects.equals(parentHash, that.parentHash)
         && Objects.equals(miner, that.miner)
         && Objects.equals(stateRoot, that.stateRoot)
-        && Objects.equals(number, that.number)
+        && Objects.equals(receiptsRoot, that.receiptsRoot)
+        && Objects.equals(logsBloom, that.logsBloom)
+        && Objects.equals(random, that.random)
+        && Objects.equals(blockNumber, that.blockNumber)
         && Objects.equals(gasLimit, that.gasLimit)
         && Objects.equals(gasUsed, that.gasUsed)
         && Objects.equals(timestamp, that.timestamp)
-        && Objects.equals(receiptsRoot, that.receiptsRoot)
-        && Objects.equals(logsBloom, that.logsBloom)
+        && Objects.equals(baseFeePerGas, that.baseFeePerGas)
+        && Objects.equals(blockHash, that.blockHash)
         && Objects.equals(transactions, that.transactions);
   }
 
   @Override
   public int hashCode() {
     return Objects.hash(
-        blockHash,
         parentHash,
         miner,
         stateRoot,
-        number,
+        receiptsRoot,
+        logsBloom,
+        random,
+        blockNumber,
         gasLimit,
         gasUsed,
         timestamp,
-        receiptsRoot,
-        logsBloom,
+        baseFeePerGas,
+        blockHash,
         transactions);
   }
 
   @Override
   public String toString() {
-    return "ExecutionPayload{"
-        + "blockHash="
-        + LogFormatter.formatHashRoot(blockHash)
-        + ", parentHash="
-        + LogFormatter.formatHashRoot(parentHash)
-        + ", miner="
-        + miner
-        + ", stateRoot="
-        + LogFormatter.formatHashRoot(stateRoot)
-        + ", number="
-        + number
-        + ", gasLimit="
-        + gasLimit
-        + ", gasUsed="
-        + gasUsed
-        + ", timestamp="
-        + timestamp
-        + ", receiptsRoot="
-        + LogFormatter.formatHashRoot(receiptsRoot)
-        + ", logsBloom="
-        + logsBloom.toHexString().substring(0, 8)
-        + ", transactions=["
-        + transactions.stream()
-            .map(tx -> tx.toHexString().substring(0, 8))
-            .collect(Collectors.joining(", "))
-        + "]}";
+    return MoreObjects.toStringHelper(this)
+        .add("parentHash", parentHash)
+        .add("miner", miner)
+        .add("stateRoot", stateRoot)
+        .add("receiptsRoot", receiptsRoot)
+        .add("logsBloom", logsBloom)
+        .add("random", random)
+        .add("blockNumber", blockNumber)
+        .add("gasLimit", gasLimit)
+        .add("gasUsed", gasUsed)
+        .add("timestamp", timestamp)
+        .add("baseFeePerGas", baseFeePerGas)
+        .add("blockHash", blockHash)
+        .add("transactions", transactions)
+        .toString();
   }
 }

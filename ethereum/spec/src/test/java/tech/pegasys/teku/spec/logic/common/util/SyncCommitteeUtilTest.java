@@ -30,8 +30,8 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -40,8 +40,8 @@ import tech.pegasys.teku.ssz.SszList;
 class SyncCommitteeUtilTest {
   private final Spec spec = TestSpecFactory.createMinimalAltair();
   private final SpecConfigAltair config = SpecConfigAltair.required(spec.getGenesisSpecConfig());
-  private final BeaconStateSchemaAltair stateSchema =
-      BeaconStateSchemaAltair.required(spec.getGenesisSchemaDefinitions().getBeaconStateSchema());
+  private final BeaconStateSchema<?, ?> stateSchema =
+      spec.getGenesisSchemaDefinitions().getBeaconStateSchema();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final SszList<Validator> validators =
       dataStructureUtil.randomSszList(
@@ -319,7 +319,7 @@ class SyncCommitteeUtilTest {
         .validators(validators)
         .currentSyncCommittee(
             stateSchema
-                .getCurrentSyncCommitteeSchema()
+                .getCurrentSyncCommitteeSchemaOrThrow()
                 .create(committeePublicKeys, new SszPublicKey(BLSPublicKey.empty())))
         .build();
   }

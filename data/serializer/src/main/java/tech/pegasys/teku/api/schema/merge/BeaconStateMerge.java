@@ -158,16 +158,18 @@ public class BeaconStateMerge extends BeaconState implements State {
                   next_sync_committee.asInternalSyncCommittee(syncCommitteeSchema));
               beaconStateMerge.setLatestExecutionPayloadHeader(
                   new tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader(
-                      latest_execution_payload_header.block_hash,
                       latest_execution_payload_header.parent_hash,
                       latest_execution_payload_header.miner,
                       latest_execution_payload_header.state_root,
-                      latest_execution_payload_header.number,
+                      latest_execution_payload_header.receipt_root,
+                      latest_execution_payload_header.logs_bloom,
+                      latest_execution_payload_header.random,
+                      latest_execution_payload_header.block_number,
                       latest_execution_payload_header.gas_limit,
                       latest_execution_payload_header.gas_used,
                       latest_execution_payload_header.timestamp,
-                      latest_execution_payload_header.receipt_root,
-                      latest_execution_payload_header.logs_bloom,
+                      latest_execution_payload_header.base_fee_per_gas,
+                      latest_execution_payload_header.block_hash,
                       latest_execution_payload_header.transactions_root));
             });
   }

@@ -14,31 +14,33 @@
 package tech.pegasys.teku.spec.schemas;
 
 import java.util.Optional;
-import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigMerge;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge.BeaconBlockBodySchemaMerge;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.merge.MetadataMessageSchemaMerge;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.BeaconStateMerge;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.BeaconStateSchemaMerge;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.MutableBeaconStateMerge;
 
-public class SchemaDefinitionsMerge extends AbstractSchemaDefinitions {
+public class SchemaDefinitionsMerge extends SchemaDefinitionsAltair {
   private final BeaconStateSchemaMerge beaconStateSchema;
   private final BeaconBlockBodySchemaMerge<?> beaconBlockBodySchema;
   private final BeaconBlockSchema beaconBlockSchema;
   private final SignedBeaconBlockSchema signedBeaconBlockSchema;
-  private final MetadataMessageSchemaMerge metadataMessageSchema;
 
-  public SchemaDefinitionsMerge(final SpecConfig specConfig) {
+  public SchemaDefinitionsMerge(final SpecConfigMerge specConfig) {
+    super(specConfig.toVersionAltair().orElseThrow());
     this.beaconStateSchema = BeaconStateSchemaMerge.create(specConfig);
     this.beaconBlockBodySchema = BeaconBlockBodySchemaMerge.create(specConfig);
     this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema);
     this.signedBeaconBlockSchema = new SignedBeaconBlockSchema(beaconBlockSchema);
-    this.metadataMessageSchema = new MetadataMessageSchemaMerge();
   }
 
   @Override
-  public BeaconStateSchemaMerge getBeaconStateSchema() {
+  public BeaconStateSchema<? extends BeaconStateMerge, ? extends MutableBeaconStateMerge>
+      getBeaconStateSchema() {
     return beaconStateSchema;
   }
 
@@ -55,16 +57,6 @@ public class SchemaDefinitionsMerge extends AbstractSchemaDefinitions {
   @Override
   public BeaconBlockBodySchema<?> getBeaconBlockBodySchema() {
     return beaconBlockBodySchema;
-  }
-
-  @Override
-  public MetadataMessageSchemaMerge getMetadataMessageSchema() {
-    return metadataMessageSchema;
-  }
-
-  @Override
-  public Optional<SchemaDefinitionsAltair> toVersionAltair() {
-    return Optional.empty();
   }
 
   @Override

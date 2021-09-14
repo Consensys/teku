@@ -53,16 +53,18 @@ public interface ExecutionEngineClient {
           return SafeFuture.completedFuture(
               new Response<>(
                   new ExecutionPayload(
-                      Bytes32.random(),
                       request.parentHash,
                       Bytes20.ZERO,
+                      Bytes32.ZERO,
+                      Bytes32.ZERO,
+                      ZERO_LOGS_BLOOM,
                       Bytes32.ZERO,
                       number,
                       UInt64.ZERO,
                       UInt64.ZERO,
                       request.timestamp,
                       Bytes32.ZERO,
-                      ZERO_LOGS_BLOOM,
+                      Bytes32.random(),
                       Arrays.asList(Bytes.random(128), Bytes.random(256), Bytes.random(512)))));
         }
 
