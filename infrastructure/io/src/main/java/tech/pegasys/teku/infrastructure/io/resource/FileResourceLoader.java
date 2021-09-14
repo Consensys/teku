@@ -13,10 +13,11 @@
 
 package tech.pegasys.teku.infrastructure.io.resource;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Optional;
 import java.util.function.Predicate;
 
@@ -28,10 +29,10 @@ public class FileResourceLoader extends ResourceLoader {
 
   @Override
   Optional<InputStream> loadSource(final String source) throws IOException {
-    final Path path = Path.of(source);
-    if (!path.toFile().exists()) {
+    final File file = new File(source);
+    if (!file.exists()) {
       return Optional.empty();
     }
-    return Optional.of(Files.newInputStream(path));
+    return Optional.of(new BufferedInputStream(new FileInputStream(file)));
   }
 }
