@@ -26,7 +26,6 @@ import tech.pegasys.teku.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.ssz.schema.SszListSchema;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.schema.collections.SszByteListSchema;
 import tech.pegasys.teku.ssz.schema.collections.SszByteVectorSchema;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 import tech.pegasys.teku.ssz.type.Bytes20;
@@ -152,10 +151,7 @@ public class ExecutionPayload
         SszBytes32.of(baseFeePerGas),
         SszBytes32.of(block_hash),
         transactions.stream()
-            .map(
-                tx ->
-                    ((SszByteListSchema<?>) SSZ_SCHEMA.getTransactionsSchema().getElementSchema())
-                        .fromBytes(tx))
+            .map(txBytes -> Transaction.SSZ_SCHEMA.getOpaqueTransactionSchema().fromBytes(txBytes))
             .map(Transaction.SSZ_SCHEMA::createOpaque)
             .collect(SSZ_SCHEMA.getTransactionsSchema().collector()));
   }
