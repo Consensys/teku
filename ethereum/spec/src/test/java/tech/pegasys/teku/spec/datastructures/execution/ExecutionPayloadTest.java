@@ -15,17 +15,20 @@ package tech.pegasys.teku.spec.datastructures.execution;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.type.Bytes20;
 
 public class ExecutionPayloadTest {
+
+  private final DataStructureUtil dataStructureUtil =
+      new DataStructureUtil(TestSpecFactory.createMinimalMerge());
 
   @Test
   public void shouldSszEncodeAndDecode() {
@@ -37,10 +40,10 @@ public class ExecutionPayloadTest {
             Bytes32.random(),
             Bytes.random(SpecConfig.BYTES_PER_LOGS_BLOOM),
             Bytes32.random(),
-            randomUInt64(),
-            randomUInt64(),
-            randomUInt64(),
-            randomUInt64(),
+            dataStructureUtil.randomUInt64(),
+            dataStructureUtil.randomUInt64(),
+            dataStructureUtil.randomUInt64(),
+            dataStructureUtil.randomUInt64(),
             Bytes32.random(),
             Bytes32.random(),
             Stream.of(Bytes.random(128), Bytes.random(256), Bytes.random(512))
@@ -51,15 +54,5 @@ public class ExecutionPayloadTest {
         ExecutionPayload.SSZ_SCHEMA.sszDeserialize(sszExecutionPayload);
 
     assertEquals(executionPayload, decodedExecutionPayload);
-  }
-
-  private int seed = 92892824;
-
-  private UInt64 randomUInt64() {
-    return UInt64.fromLongBits(new Random(nextSeed()).nextLong());
-  }
-
-  private int nextSeed() {
-    return seed++;
   }
 }

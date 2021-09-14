@@ -90,7 +90,7 @@ public class ExecutionPayload
 
     @SuppressWarnings("unchecked")
     public SszListSchema<SszByteList, ?> getTransactionsSchema() {
-      return (SszListSchema<SszByteList, ?>) getFieldSchema10();
+      return (SszListSchema<SszByteList, ?>) getFieldSchema12();
     }
 
     @Override
