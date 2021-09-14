@@ -40,6 +40,6 @@ public class AttestationForkChecker {
 
   public boolean areAttestationsFromCorrectFork(
       final MatchingDataAttestationGroup attestationGroup) {
-    return validCommitteeShufflingSeeds.contains(attestationGroup.getCommitteeShufflingSeed());
+    return attestationGroup.matchesCommitteeShufflingSeed(validCommitteeShufflingSeeds);
   }
 }

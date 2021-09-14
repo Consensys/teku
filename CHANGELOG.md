@@ -18,3 +18,4 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Bug Fixes
  - Fixed `ConcurrentModificationException` in `AggregatingAttestationPool`.
+ - Fixed potential `IllegalStateException` during block production.
