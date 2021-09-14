@@ -16,6 +16,8 @@ package tech.pegasys.teku.data.publisher;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.metrics.Observation;
 import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -25,6 +27,7 @@ public class MetricsDataFactory {
   private static final int protocolVersion = 1;
   private static final String clientName = "Teku";
   private static final int clientBuild = 1;
+  private static final Logger LOG = LogManager.getLogger();
 
   public MetricsDataFactory(MetricsSystem pms) {
     this.metricsSystem = pms;
@@ -35,6 +38,8 @@ public class MetricsDataFactory {
       if (metricsClient == MetricsDataClient.VALIDATOR) {
         return extractValidatorData((PrometheusMetricsSystem) metricsSystem);
       }
+    } else {
+      LOG.error("Prometheus metric system not found.");
     }
     return new DefaultMetricData(
         protocolVersion, System.currentTimeMillis(), "default", metricsSystem);
