@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.ssz.impl;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.Objects;
 import tech.pegasys.teku.ssz.SszPrimitive;
 import tech.pegasys.teku.ssz.schema.impl.AbstractSszPrimitiveSchema;

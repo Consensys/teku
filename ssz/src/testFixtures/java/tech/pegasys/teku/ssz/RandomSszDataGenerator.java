@@ -42,7 +42,6 @@ public class RandomSszDataGenerator {
   private final Supplier<SszBytes4> bytes4Supplier;
   private final Supplier<SszUInt64> uintSupplier;
   private final Supplier<SszBytes32> bytes32Supplier;
-  private final Random random;
 
   private final Random random;
   private final int maxListSize;
@@ -122,8 +121,9 @@ public class RandomSszDataGenerator {
           () -> {
             SszUnionSchema<?> unionSchema = (SszUnionSchema<?>) schema;
             int selector = random.nextInt(unionSchema.getTypesCount());
-            return (T) unionSchema
-                .createFromValue(selector, randomData(unionSchema.getChildSchema(selector)));
+            return (T)
+                unionSchema.createFromValue(
+                    selector, randomData(unionSchema.getChildSchema(selector)));
           });
     } else {
       throw new IllegalArgumentException("Unknown schema: " + schema);

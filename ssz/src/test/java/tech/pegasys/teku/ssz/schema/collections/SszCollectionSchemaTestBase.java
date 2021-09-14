@@ -24,20 +24,20 @@ public abstract class SszCollectionSchemaTestBase extends SszCompositeSchemaTest
 
   static Stream<SszSchema<?>> complexElementSchemas() {
     return Stream.of(
-        SszContainerSchemaTest.testContainerSchemas(),
-        SszUnionSchemaTest.testUnionSchemas(),
-        Stream.of(
-            SszBitvectorSchema.create(1),
-            SszBitvectorSchema.create(8),
-            SszBitvectorSchema.create(9),
-            SszBitlistSchema.create(0),
-            SszBitlistSchema.create(1),
-            SszBitlistSchema.create(7),
-            SszBitlistSchema.create(8),
-            SszBitlistSchema.create(9),
-            SszByteVectorSchema.create(3),
-            SszBytes32VectorSchema.create(3),
-            SszUInt64ListSchema.create(3))
-    ).flatMap(Function.identity());
+            SszContainerSchemaTest.testContainerSchemas(),
+            SszUnionSchemaTest.testUnionSchemas(),
+            Stream.of(
+                SszBitvectorSchema.create(1),
+                SszBitvectorSchema.create(8),
+                SszBitvectorSchema.create(9),
+                SszBitlistSchema.create(0),
+                SszBitlistSchema.create(1),
+                SszBitlistSchema.create(7),
+                SszBitlistSchema.create(8),
+                SszBitlistSchema.create(9),
+                SszByteVectorSchema.create(3),
+                SszBytes32VectorSchema.create(3),
+                SszUInt64ListSchema.create(3)))
+        .flatMap(Function.identity());
   }
 }

@@ -1,3 +1,16 @@
+/*
+ * Copyright 2021 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.teku.ssz.schema.impl;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -43,12 +56,14 @@ public class SszUnionSchemaImpl implements SszUnionSchema<SszUnion> {
   public SszUnionSchemaImpl(List<SszSchema<?>> childrenSchemas) {
     checkArgument(childrenSchemas.size() > 1, "At least two types expected in Union");
     checkArgument(childrenSchemas.size() < MAX_SELECTOR, "Too many child types");
-    checkArgument(childrenSchemas.stream().skip(1)
+    checkArgument(
+        childrenSchemas.stream()
+            .skip(1)
             .allMatch(schema -> schema != SszPrimitiveSchemas.NONE_SCHEMA),
         "None is allowed for zero selector only");
     this.childrenSchemas = childrenSchemas;
-    defaultTree = createUnionNode(childrenSchemas.get(DEFAULT_SELECTOR).getDefaultTree(),
-        DEFAULT_SELECTOR);
+    defaultTree =
+        createUnionNode(childrenSchemas.get(DEFAULT_SELECTOR).getDefaultTree(), DEFAULT_SELECTOR);
   }
 
   @Override
@@ -74,7 +89,8 @@ public class SszUnionSchemaImpl implements SszUnionSchema<SszUnion> {
   @Override
   public SszUnion createFromValue(int selector, SszData value) {
     checkArgument(selector < getTypesCount(), "Selector is out of bounds");
-    checkArgument(getChildSchema(selector).equals(value.getSchema()),
+    checkArgument(
+        getChildSchema(selector).equals(value.getSchema()),
         "Incompatible value schema for supplied selector");
     return createFromBackingNode(createUnionNode(value.getBackingNode(), selector));
   }

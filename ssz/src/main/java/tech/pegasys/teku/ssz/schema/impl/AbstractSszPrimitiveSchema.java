@@ -48,7 +48,8 @@ public abstract class AbstractSszPrimitiveSchema<
   protected AbstractSszPrimitiveSchema(int bitsSize) {
     checkArgument(
         bitsSize == 0 || (bitsSize > 0 && bitsSize <= 256 && 256 % bitsSize == 0),
-        "Invalid bitsize: %s", bitsSize);
+        "Invalid bitsize: %s",
+        bitsSize);
     this.bitsSize = bitsSize;
     this.sszSize = getSSZBytesSize();
     this.sszLengthBounds = SszLengthBounds.ofBits(bitsSize);

@@ -47,8 +47,8 @@ public interface SszPrimitiveSchemas {
         }
 
         @Override
-        protected TreeNode updateBackingNode(TreeNode srcNode, int internalIndex,
-            SszData newValue) {
+        protected TreeNode updateBackingNode(
+            TreeNode srcNode, int internalIndex, SszData newValue) {
           return srcNode;
         }
 
