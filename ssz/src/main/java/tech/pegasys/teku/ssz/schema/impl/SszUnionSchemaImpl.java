@@ -152,18 +152,22 @@ public class SszUnionSchemaImpl implements SszUnionSchema<SszUnion> {
   }
 
   @Override
-  public void storeBackingNodes(TreeNodeStore nodeStore, int maxBranchLevelsSkipped,
-      long rootGIndex, TreeNode node) {
+  public void storeBackingNodes(
+      TreeNodeStore nodeStore, int maxBranchLevelsSkipped, long rootGIndex, TreeNode node) {
     TreeNode selectorNode = getSelectorNode(node);
     TreeNode valueNode = getValueNode(node);
     int selector = getSelectorFromSelectorNode(selectorNode);
     nodeStore.storeLeafNode(selectorNode, GIndexUtil.gIdxRightGIndex(rootGIndex));
 
-    getChildSchema(selector).storeBackingNodes(nodeStore, maxBranchLevelsSkipped,
-        GIndexUtil.gIdxLeftGIndex(rootGIndex), valueNode);
+    getChildSchema(selector)
+        .storeBackingNodes(
+            nodeStore, maxBranchLevelsSkipped, GIndexUtil.gIdxLeftGIndex(rootGIndex), valueNode);
 
-    nodeStore.storeBranchNode(node.hashTreeRoot(), rootGIndex, 1,
-        new Bytes32[]{valueNode.hashTreeRoot(), selectorNode.hashTreeRoot()});
+    nodeStore.storeBranchNode(
+        node.hashTreeRoot(),
+        rootGIndex,
+        1,
+        new Bytes32[] {valueNode.hashTreeRoot(), selectorNode.hashTreeRoot()});
   }
 
   @Override
@@ -184,8 +188,8 @@ public class SszUnionSchemaImpl implements SszUnionSchema<SszUnion> {
             .getInt(0, ByteOrder.LITTLE_ENDIAN);
     checkState(selector < getTypesCount(), "Selector is out of bounds");
     SszSchema<?> childSchema = getChildSchema(selector);
-    TreeNode valueNode = childSchema
-        .loadBackingNodes(nodeSource, valueHash, GIndexUtil.gIdxLeftGIndex(rootGIndex));
+    TreeNode valueNode =
+        childSchema.loadBackingNodes(nodeSource, valueHash, GIndexUtil.gIdxLeftGIndex(rootGIndex));
     return createUnionNode(valueNode, selector);
   }
 
