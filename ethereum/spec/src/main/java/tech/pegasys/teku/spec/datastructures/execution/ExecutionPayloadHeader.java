@@ -19,8 +19,8 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.collections.SszByteVector;
-import tech.pegasys.teku.ssz.containers.Container11;
-import tech.pegasys.teku.ssz.containers.ContainerSchema11;
+import tech.pegasys.teku.ssz.containers.Container13;
+import tech.pegasys.teku.ssz.containers.ContainerSchema13;
 import tech.pegasys.teku.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
@@ -29,9 +29,11 @@ import tech.pegasys.teku.ssz.tree.TreeNode;
 import tech.pegasys.teku.ssz.type.Bytes20;
 
 public class ExecutionPayloadHeader
-    extends Container11<
+    extends Container13<
         ExecutionPayloadHeader,
         SszBytes32,
+        SszByteVector,
+        SszBytes32,
         SszBytes32,
         SszByteVector,
         SszBytes32,
@@ -40,13 +42,15 @@ public class ExecutionPayloadHeader
         SszUInt64,
         SszUInt64,
         SszBytes32,
-        SszByteVector,
+        SszBytes32,
         SszBytes32> {
 
   public static class ExecutionPayloadHeaderSchema
-      extends ContainerSchema11<
+      extends ContainerSchema13<
           ExecutionPayloadHeader,
           SszBytes32,
+          SszByteVector,
+          SszBytes32,
           SszBytes32,
           SszByteVector,
           SszBytes32,
@@ -55,22 +59,24 @@ public class ExecutionPayloadHeader
           SszUInt64,
           SszUInt64,
           SszBytes32,
-          SszByteVector,
+          SszBytes32,
           SszBytes32> {
 
     public ExecutionPayloadHeaderSchema() {
       super(
           "ExecutionPayloadHeader",
-          namedSchema("block_hash", SszPrimitiveSchemas.BYTES32_SCHEMA),
           namedSchema("parent_hash", SszPrimitiveSchemas.BYTES32_SCHEMA),
           namedSchema("coinbase", SszByteVectorSchema.create(Bytes20.SIZE)),
           namedSchema("state_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
-          namedSchema("number", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("receipt_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema("logs_bloom", SszByteVectorSchema.create(BYTES_PER_LOGS_BLOOM)),
+          namedSchema("random", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema("block_number", SszPrimitiveSchemas.UINT64_SCHEMA),
           namedSchema("gas_limit", SszPrimitiveSchemas.UINT64_SCHEMA),
           namedSchema("gas_used", SszPrimitiveSchemas.UINT64_SCHEMA),
           namedSchema("timestamp", SszPrimitiveSchemas.UINT64_SCHEMA),
-          namedSchema("receipt_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
-          namedSchema("logs_bloom", SszByteVectorSchema.create(BYTES_PER_LOGS_BLOOM)),
+          namedSchema("base_fee_per_gas", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema("block_hash", SszPrimitiveSchemas.BYTES32_SCHEMA),
           namedSchema("transactions_root", SszPrimitiveSchemas.BYTES32_SCHEMA));
     }
 
@@ -83,9 +89,11 @@ public class ExecutionPayloadHeader
   public static final ExecutionPayloadHeaderSchema SSZ_SCHEMA = new ExecutionPayloadHeaderSchema();
 
   private ExecutionPayloadHeader(
-      ContainerSchema11<
+      ContainerSchema13<
               ExecutionPayloadHeader,
               SszBytes32,
+              SszByteVector,
+              SszBytes32,
               SszBytes32,
               SszByteVector,
               SszBytes32,
@@ -94,7 +102,7 @@ public class ExecutionPayloadHeader
               SszUInt64,
               SszUInt64,
               SszBytes32,
-              SszByteVector,
+              SszBytes32,
               SszBytes32>
           type,
       TreeNode backingNode) {
@@ -102,29 +110,33 @@ public class ExecutionPayloadHeader
   }
 
   public ExecutionPayloadHeader(
-      Bytes32 block_hash,
       Bytes32 parent_hash,
       Bytes20 coinbase,
       Bytes32 state_root,
-      UInt64 number,
+      Bytes32 receipt_root,
+      Bytes logs_bloom,
+      Bytes32 random,
+      UInt64 blockNumber,
       UInt64 gas_limit,
       UInt64 gas_used,
       UInt64 timestamp,
-      Bytes32 receipt_root,
-      Bytes logs_bloom,
+      Bytes32 baseFeePerGas,
+      Bytes32 block_hash,
       Bytes32 transactions_root) {
     super(
         SSZ_SCHEMA,
-        SszBytes32.of(block_hash),
         SszBytes32.of(parent_hash),
         SszByteVector.fromBytes(coinbase.getWrappedBytes()),
         SszBytes32.of(state_root),
-        SszUInt64.of(number),
+        SszBytes32.of(receipt_root),
+        SszByteVector.fromBytes(logs_bloom),
+        SszBytes32.of(random),
+        SszUInt64.of(blockNumber),
         SszUInt64.of(gas_limit),
         SszUInt64.of(gas_used),
         SszUInt64.of(timestamp),
-        SszBytes32.of(receipt_root),
-        SszByteVector.fromBytes(logs_bloom),
+        SszBytes32.of(baseFeePerGas),
+        SszBytes32.of(block_hash),
         SszBytes32.of(transactions_root));
   }
 
@@ -137,47 +149,55 @@ public class ExecutionPayloadHeader
     return SSZ_SCHEMA;
   }
 
-  public Bytes32 getBlock_hash() {
+  public Bytes32 getParent_hash() {
     return getField0().get();
   }
 
-  public Bytes32 getParent_hash() {
-    return getField1().get();
-  }
-
   public Bytes20 getCoinbase() {
-    return Bytes20.leftPad(getField2().getBytes());
+    return Bytes20.leftPad(getField1().getBytes());
   }
 
   public Bytes32 getState_root() {
-    return getField3().get();
-  }
-
-  public UInt64 getNumber() {
-    return getField4().get();
-  }
-
-  public UInt64 getGas_limit() {
-    return getField5().get();
-  }
-
-  public UInt64 getGas_used() {
-    return getField6().get();
-  }
-
-  public UInt64 getTimestamp() {
-    return getField7().get();
+    return getField2().get();
   }
 
   public Bytes32 getReceipt_root() {
-    return getField8().get();
+    return getField3().get();
   }
 
   public Bytes getLogs_bloom() {
-    return getField9().getBytes();
+    return getField4().getBytes();
+  }
+
+  public Bytes32 getRandom() {
+    return getField5().get();
+  }
+
+  public UInt64 getBlockNumber() {
+    return getField6().get();
+  }
+
+  public UInt64 getGas_limit() {
+    return getField7().get();
+  }
+
+  public UInt64 getGas_used() {
+    return getField8().get();
+  }
+
+  public UInt64 getTimestamp() {
+    return getField9().get();
+  }
+
+  public Bytes32 getBaseFeePerGas() {
+    return getField10().get();
+  }
+
+  public Bytes32 getBlock_hash() {
+    return getField11().get();
   }
 
   public Bytes32 getTransactions_root() {
-    return getField10().get();
+    return getField12().get();
   }
 }

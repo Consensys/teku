@@ -32,15 +32,17 @@ public class ExecutionPayloadTest {
     ExecutionPayload executionPayload =
         new ExecutionPayload(
             Bytes32.random(),
-            Bytes32.random(),
             Bytes20.random(),
             Bytes32.random(),
+            Bytes32.random(),
+            Bytes.random(SpecConfig.BYTES_PER_LOGS_BLOOM),
+            Bytes32.random(),
             randomUInt64(),
             randomUInt64(),
             randomUInt64(),
             randomUInt64(),
             Bytes32.random(),
-            Bytes.random(SpecConfig.BYTES_PER_LOGS_BLOOM),
+            Bytes32.random(),
             Stream.of(Bytes.random(128), Bytes.random(256), Bytes.random(512))
                 .collect(Collectors.toList()));
 

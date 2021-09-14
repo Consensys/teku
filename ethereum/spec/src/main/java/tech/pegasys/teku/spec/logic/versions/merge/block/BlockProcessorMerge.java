@@ -134,8 +134,8 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
             "process_execution_payload: Verify that the parent matches");
         checkArgument(
             executionPayload
-                .getNumber()
-                .equals(state.getLatest_execution_payload_header().getNumber().increment()),
+                .getBlockNumber()
+                .equals(state.getLatest_execution_payload_header().getBlockNumber().increment()),
             "process_execution_payload: Verify that the number is consequent");
       }
 
@@ -154,16 +154,18 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
 
       state.setLatestExecutionPayloadHeader(
           new ExecutionPayloadHeader(
-              executionPayload.getBlock_hash(),
               executionPayload.getParent_hash(),
               executionPayload.getCoinbase(),
               executionPayload.getState_root(),
-              executionPayload.getNumber(),
+              executionPayload.getReceipt_root(),
+              executionPayload.getLogs_bloom(),
+              executionPayload.getRandom(),
+              executionPayload.getBlockNumber(),
               executionPayload.getGas_limit(),
               executionPayload.getGas_used(),
               executionPayload.getTimestamp(),
-              executionPayload.getReceipt_root(),
-              executionPayload.getLogs_bloom(),
+              executionPayload.getBaseFeePerGas(),
+              executionPayload.getBlock_hash(),
               executionPayload.getTransactions().hashTreeRoot()));
 
     } catch (IllegalArgumentException e) {
