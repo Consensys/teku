@@ -24,7 +24,6 @@ import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.ssz.SszData;
@@ -51,9 +50,7 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
           .put(
               "ssz_static/SyncCommittee",
               new SszTestExecutor<>(
-                  schemas ->
-                      BeaconStateSchemaAltair.required(schemas.getBeaconStateSchema())
-                          .getCurrentSyncCommitteeSchema()))
+                  schemas -> schemas.getBeaconStateSchema().getCurrentSyncCommitteeSchemaOrThrow()))
           .put(
               "ssz_static/SyncAggregate",
               new SszTestExecutor<>(
