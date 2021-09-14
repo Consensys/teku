@@ -1,10 +1,13 @@
 package tech.pegasys.teku.ssz.schema.impl;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.base.Objects;
+import java.nio.ByteOrder;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.SszUnion;
 import tech.pegasys.teku.ssz.impl.SszUnionImpl;
@@ -19,6 +22,10 @@ import tech.pegasys.teku.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.ssz.tree.LeafDataNode;
 import tech.pegasys.teku.ssz.tree.LeafNode;
 import tech.pegasys.teku.ssz.tree.TreeNode;
+import tech.pegasys.teku.ssz.tree.TreeNodeSource;
+import tech.pegasys.teku.ssz.tree.TreeNodeSource.CompressedBranchInfo;
+import tech.pegasys.teku.ssz.tree.TreeNodeStore;
+import tech.pegasys.teku.ssz.tree.TreeUtil;
 
 public class SszUnionSchemaImpl implements SszUnionSchema<SszUnion> {
 
@@ -114,14 +121,56 @@ public class SszUnionSchemaImpl implements SszUnionSchema<SszUnion> {
     return unionNode.get(GIndexUtil.LEFT_CHILD_G_INDEX);
   }
 
+  private TreeNode getSelectorNode(TreeNode unionNode) {
+    return unionNode.get(GIndexUtil.RIGHT_CHILD_G_INDEX);
+  }
+
   public int getSelector(TreeNode unionNode) {
-    int selector = getSelectorFromSelectorNode(unionNode.get(GIndexUtil.RIGHT_CHILD_G_INDEX));
+    int selector = getSelectorFromSelectorNode(getSelectorNode(unionNode));
     checkArgument(selector < getTypesCount(), "Selector is out of bounds");
     return selector;
   }
 
   private TreeNode createUnionNode(TreeNode valueNode, int selector) {
     return BranchNode.create(valueNode, createSelectorNode(selector));
+  }
+
+  @Override
+  public void storeBackingNodes(TreeNodeStore nodeStore, int maxBranchLevelsSkipped,
+      long rootGIndex, TreeNode node) {
+    TreeNode selectorNode = getSelectorNode(node);
+    TreeNode valueNode = getValueNode(node);
+    int selector = getSelectorFromSelectorNode(selectorNode);
+    nodeStore.storeLeafNode(selectorNode, GIndexUtil.gIdxRightGIndex(rootGIndex));
+
+    getChildSchema(selector).storeBackingNodes(nodeStore, maxBranchLevelsSkipped,
+        GIndexUtil.gIdxLeftGIndex(rootGIndex), valueNode);
+
+    nodeStore.storeBranchNode(node.hashTreeRoot(), rootGIndex, 1,
+        new Bytes32[]{valueNode.hashTreeRoot(), selectorNode.hashTreeRoot()});
+  }
+
+  @Override
+  public TreeNode loadBackingNodes(TreeNodeSource nodeSource, Bytes32 rootHash, long rootGIndex) {
+    if (TreeUtil.ZERO_TREES_BY_ROOT.containsKey(rootHash) || rootHash.equals(Bytes32.ZERO)) {
+      return getDefaultTree();
+    }
+
+    final CompressedBranchInfo branchData = nodeSource.loadBranchNode(rootHash, rootGIndex);
+    checkState(
+        branchData.getChildren().length == 2, "Union root node must have exactly two children");
+    checkState(branchData.getDepth() == 1, "Union root node must have depth of 1");
+    final Bytes32 valueHash = branchData.getChildren()[0];
+    final Bytes32 selectorHash = branchData.getChildren()[1];
+    final int selector =
+        nodeSource
+            .loadLeafNode(selectorHash, GIndexUtil.gIdxRightGIndex(rootGIndex))
+            .getInt(0, ByteOrder.LITTLE_ENDIAN);
+    checkState(selector < getTypesCount(), "Selector is out of bounds");
+    SszSchema<?> childSchema = getChildSchema(selector);
+    TreeNode valueNode = childSchema
+        .loadBackingNodes(nodeSource, valueHash, GIndexUtil.gIdxLeftGIndex(rootGIndex));
+    return createUnionNode(valueNode, selector);
   }
 
   @Override
