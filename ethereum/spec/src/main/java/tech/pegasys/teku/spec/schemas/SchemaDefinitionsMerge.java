@@ -24,7 +24,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.Be
 
 public class SchemaDefinitionsMerge extends AbstractSchemaDefinitions {
   private final BeaconStateSchemaMerge beaconStateSchema;
-  private final BeaconBlockBodySchemaMerge beaconBlockBodySchema;
+  private final BeaconBlockBodySchemaMerge<?> beaconBlockBodySchema;
   private final BeaconBlockSchema beaconBlockSchema;
   private final SignedBeaconBlockSchema signedBeaconBlockSchema;
   private final MetadataMessageSchemaMerge metadataMessageSchema;
