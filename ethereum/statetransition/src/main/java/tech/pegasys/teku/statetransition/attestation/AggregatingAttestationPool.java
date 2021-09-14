@@ -76,13 +76,13 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     if (add) {
       updateSize(1);
     }
-    dataHashBySlot
-        .computeIfAbsent(attestationData.getSlot(), slot -> new HashSet<>())
-        .add(attestationData.hashTreeRoot());
   }
 
   private MatchingDataAttestationGroup getOrCreateAttestationGroup(
       final AttestationData attestationData) {
+    dataHashBySlot
+        .computeIfAbsent(attestationData.getSlot(), slot -> new HashSet<>())
+        .add(attestationData.hashTreeRoot());
     return attestationGroupByDataHash.computeIfAbsent(
         attestationData.hashTreeRoot(),
         key -> new MatchingDataAttestationGroup(spec, attestationData));
