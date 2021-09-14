@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataValidator.AttestationInvalidReason;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.collections.SszBitlist;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -126,6 +127,24 @@ class AggregatingAttestationPoolTest {
             aggregatingPool.getAttestationsForBlock(
                 dataStructureUtil.randomBeaconState(), forkChecker))
         .isEmpty();
+  }
+
+  @Test
+  void getAttestationsForBlock_shouldNotThrowExceptionWhenShufflingSeedIsUnknown() {
+    final Attestation attestation = dataStructureUtil.randomAttestation(1);
+    // Receive the attestation from a block, prior to receiving it via gossip
+    aggregatingPool.onAttestationsIncludedInBlock(ONE, List.of(attestation));
+    // Attestation isn't added because it's already redundant
+    aggregatingPool.add(ValidateableAttestation.fromValidator(spec, attestation));
+    assertThat(aggregatingPool.getSize()).isZero();
+
+    // But we now have a MatchingDataAttestationGroup with unknown shuffling seed present
+    // It was previously assumed that wasn't possible so it threw an IllegalStateException
+    // Now it should just exclude the group from consideration
+    final BeaconState state = dataStructureUtil.randomBeaconState(UInt64.valueOf(2));
+    final SszList<Attestation> result =
+        aggregatingPool.getAttestationsForBlock(state, new AttestationForkChecker(spec, state));
+    assertThat(result).isEmpty();
   }
 
   @Test
