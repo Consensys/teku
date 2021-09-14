@@ -17,22 +17,25 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
+import tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
-import tech.pegasys.teku.ssz.schema.SszListSchema;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
+import tech.pegasys.teku.ssz.primitive.SszByte;
+import tech.pegasys.teku.ssz.schema.collections.SszPrimitiveListSchema;
+import tech.pegasys.teku.ssz.schema.collections.SszUInt64ListSchema;
 import tech.pegasys.teku.ssz.sos.SszField;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 
 public class BeaconStateSchemaMerge
     extends AbstractBeaconStateSchema<BeaconStateMerge, MutableBeaconStateMerge> {
 
-  private static final int PREVIOUS_EPOCH_ATTESTATIONS_FIELD_INDEX = 15;
-  private static final int CURRENT_EPOCH_ATTESTATIONS_FIELD_INDEX = 16;
-  private static final int LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX = 21;
+  private static final int LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX = 24;
 
   @VisibleForTesting
   BeaconStateSchemaMerge(final SpecConfig specConfig) {
@@ -44,31 +47,15 @@ public class BeaconStateSchemaMerge
   }
 
   private static List<SszField> getUniqueFields(final SpecConfig specConfig) {
-    final SszField previousEpochAttestationsField =
-        new SszField(
-            PREVIOUS_EPOCH_ATTESTATIONS_FIELD_INDEX,
-            BeaconStateFields.PREVIOUS_EPOCH_ATTESTATIONS.name(),
-            () ->
-                SszListSchema.create(
-                    PendingAttestation.SSZ_SCHEMA,
-                    (long) specConfig.getMaxAttestations() * specConfig.getSlotsPerEpoch()));
-    final SszField currentEpochAttestationsField =
-        new SszField(
-            CURRENT_EPOCH_ATTESTATIONS_FIELD_INDEX,
-            BeaconStateFields.CURRENT_EPOCH_ATTESTATIONS.name(),
-            () ->
-                SszListSchema.create(
-                    PendingAttestation.SSZ_SCHEMA,
-                    (long) specConfig.getMaxAttestations() * specConfig.getSlotsPerEpoch()));
     final SszField latestExecutionPayloadHeaderField =
         new SszField(
             LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX,
             BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER.name(),
             () -> ExecutionPayloadHeader.SSZ_SCHEMA);
-    return List.of(
-        previousEpochAttestationsField,
-        currentEpochAttestationsField,
-        latestExecutionPayloadHeaderField);
+    return Stream.concat(
+            BeaconStateSchemaAltair.getUniqueFields(specConfig).stream(),
+            Stream.of(latestExecutionPayloadHeaderField))
+        .collect(Collectors.toList());
   }
 
   public static BeaconStateSchemaMerge required(final BeaconStateSchema<?, ?> schema) {
@@ -80,15 +67,30 @@ public class BeaconStateSchemaMerge
   }
 
   @SuppressWarnings("unchecked")
-  public SszListSchema<PendingAttestation, ?> getPreviousEpochAttestationsSchema() {
-    return (SszListSchema<PendingAttestation, ?>)
-        getChildSchema(getFieldIndex(BeaconStateFields.PREVIOUS_EPOCH_ATTESTATIONS.name()));
+  public SszPrimitiveListSchema<Byte, SszByte, ?> getPreviousEpochParticipationSchema() {
+    return (SszPrimitiveListSchema<Byte, SszByte, ?>)
+        getChildSchema(getFieldIndex(BeaconStateFields.PREVIOUS_EPOCH_PARTICIPATION.name()));
   }
 
   @SuppressWarnings("unchecked")
-  public SszListSchema<PendingAttestation, ?> getCurrentEpochAttestationsSchema() {
-    return (SszListSchema<PendingAttestation, ?>)
-        getChildSchema(getFieldIndex(BeaconStateFields.CURRENT_EPOCH_ATTESTATIONS.name()));
+  public SszPrimitiveListSchema<Byte, SszByte, ?> getCurrentEpochParticipationSchema() {
+    return (SszPrimitiveListSchema<Byte, SszByte, ?>)
+        getChildSchema(getFieldIndex(BeaconStateFields.CURRENT_EPOCH_PARTICIPATION.name()));
+  }
+
+  public SszUInt64ListSchema<?> getInactivityScoresSchema() {
+    return (SszUInt64ListSchema<?>)
+        getChildSchema(getFieldIndex(BeaconStateFields.INACTIVITY_SCORES.name()));
+  }
+
+  public SyncCommitteeSchema getCurrentSyncCommitteeSchema() {
+    return (SyncCommitteeSchema)
+        getChildSchema(getFieldIndex(BeaconStateFields.CURRENT_SYNC_COMMITTEE.name()));
+  }
+
+  public SyncCommitteeSchema getNextSyncCommitteeSchema() {
+    return (SyncCommitteeSchema)
+        getChildSchema(getFieldIndex(BeaconStateFields.NEXT_SYNC_COMMITTEE.name()));
   }
 
   @Override

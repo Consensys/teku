@@ -15,12 +15,11 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge;
 
 import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
-import tech.pegasys.teku.ssz.SszMutableList;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
 
-public interface MutableBeaconStateMerge extends MutableBeaconState, BeaconStateMerge {
+public interface MutableBeaconStateMerge extends MutableBeaconStateAltair, BeaconStateMerge {
 
   static MutableBeaconStateMerge required(final MutableBeaconState state) {
     return state
@@ -29,21 +28,6 @@ public interface MutableBeaconStateMerge extends MutableBeaconState, BeaconState
             () ->
                 new IllegalArgumentException(
                     "Expected a merge state but got: " + state.getClass().getSimpleName()));
-  }
-
-  // Attestations
-  @Override
-  default SszMutableList<PendingAttestation> getPrevious_epoch_attestations() {
-    final int fieldIndex =
-        getSchema().getFieldIndex(BeaconStateFields.PREVIOUS_EPOCH_ATTESTATIONS.name());
-    return getAnyByRef(fieldIndex);
-  }
-
-  @Override
-  default SszMutableList<PendingAttestation> getCurrent_epoch_attestations() {
-    final int fieldIndex =
-        getSchema().getFieldIndex(BeaconStateFields.CURRENT_EPOCH_ATTESTATIONS.name());
-    return getAnyByRef(fieldIndex);
   }
 
   // Execution
@@ -59,5 +43,12 @@ public interface MutableBeaconStateMerge extends MutableBeaconState, BeaconState
   @Override
   default Optional<MutableBeaconStateMerge> toMutableVersionMerge() {
     return Optional.of(this);
+  }
+
+  @Override
+  default <E1 extends Exception, E2 extends Exception, E3 extends Exception>
+      BeaconStateMerge updatedMerge(Mutator<MutableBeaconStateMerge, E1, E2, E3> mutator)
+          throws E1, E2, E3 {
+    throw new UnsupportedOperationException();
   }
 }

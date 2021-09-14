@@ -20,9 +20,9 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.BeaconStateMerge;
-import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
+import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
 
-public class MiscHelpersMerge extends MiscHelpers {
+public class MiscHelpersMerge extends MiscHelpersAltair {
 
   public MiscHelpersMerge(final SpecConfig specConfig) {
     super(specConfig);

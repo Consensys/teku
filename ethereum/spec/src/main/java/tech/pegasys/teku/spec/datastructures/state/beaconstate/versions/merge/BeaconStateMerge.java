@@ -15,15 +15,13 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge;
 
 import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
-import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 
-public interface BeaconStateMerge extends BeaconState {
+public interface BeaconStateMerge extends BeaconStateAltair {
 
-  @Override
-  default BeaconStateSchemaMerge getBeaconStateSchema() {
+  default BeaconStateSchemaMerge getBeaconStateSchemaMerge() {
     return (BeaconStateSchemaMerge) getSchema();
   }
 
@@ -34,19 +32,6 @@ public interface BeaconStateMerge extends BeaconState {
             () ->
                 new IllegalArgumentException(
                     "Expected a merge state but got: " + state.getClass().getSimpleName()));
-  }
-
-  // Attestations
-  default SszList<PendingAttestation> getPrevious_epoch_attestations() {
-    final int fieldIndex =
-        getSchema().getFieldIndex(BeaconStateFields.PREVIOUS_EPOCH_ATTESTATIONS.name());
-    return getAny(fieldIndex);
-  }
-
-  default SszList<PendingAttestation> getCurrent_epoch_attestations() {
-    final int fieldIndex =
-        getSchema().getFieldIndex(BeaconStateFields.CURRENT_EPOCH_ATTESTATIONS.name());
-    return getAny(fieldIndex);
   }
 
   // Execution
@@ -61,6 +46,14 @@ public interface BeaconStateMerge extends BeaconState {
     return Optional.of(this);
   }
 
-  <E1 extends Exception, E2 extends Exception, E3 extends Exception> BeaconStateMerge updatedMerge(
-      Mutator<MutableBeaconStateMerge, E1, E2, E3> mutator) throws E1, E2, E3;
+  @Override
+  MutableBeaconStateMerge createWritableCopy();
+
+  default <E1 extends Exception, E2 extends Exception, E3 extends Exception>
+      BeaconStateMerge updatedMerge(Mutator<MutableBeaconStateMerge, E1, E2, E3> mutator)
+          throws E1, E2, E3 {
+    MutableBeaconStateMerge writableCopy = createWritableCopy();
+    mutator.mutate(writableCopy);
+    return writableCopy.commitChanges();
+  }
 }

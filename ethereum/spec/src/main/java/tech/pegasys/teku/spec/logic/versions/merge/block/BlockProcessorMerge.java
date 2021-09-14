@@ -23,7 +23,6 @@ import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigMerge;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -31,9 +30,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Sy
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge.BeaconBlockBodyMerge;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
-import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.MutableBeaconStateMerge;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineService;
@@ -42,9 +38,7 @@ import tech.pegasys.teku.spec.executionengine.client.schema.AssembleBlockRequest
 import tech.pegasys.teku.spec.executionengine.client.schema.GenericResponse;
 import tech.pegasys.teku.spec.executionengine.client.schema.NewBlockResponse;
 import tech.pegasys.teku.spec.executionengine.client.schema.Response;
-import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
-import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
@@ -54,20 +48,23 @@ import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.logic.versions.altair.block.BlockProcessorAltair;
+import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.merge.helpers.MiscHelpersMerge;
 
-public class BlockProcessorMerge extends AbstractBlockProcessor {
+public class BlockProcessorMerge extends BlockProcessorAltair {
 
   private static final Logger LOG = LogManager.getLogger();
 
   private final MiscHelpersMerge miscHelpersMerge;
+  private final BeaconStateAccessorsAltair beaconStateAccessorsAltair;
   private final ExecutionPayloadUtil executionPayloadUtil;
 
   public BlockProcessorMerge(
       final SpecConfigMerge specConfig,
       final Predicates predicates,
       final MiscHelpersMerge miscHelpers,
-      final BeaconStateAccessors beaconStateAccessors,
+      final BeaconStateAccessorsAltair beaconStateAccessors,
       final BeaconStateMutators beaconStateMutators,
       final OperationSignatureVerifier operationSignatureVerifier,
       final BeaconStateUtil beaconStateUtil,
@@ -76,7 +73,7 @@ public class BlockProcessorMerge extends AbstractBlockProcessor {
       final OperationValidator operationValidator,
       final ExecutionPayloadUtil executionPayloadUtil) {
     super(
-        specConfig,
+        specConfig.toVersionAltair().orElseThrow(),
         predicates,
         miscHelpers,
         beaconStateAccessors,
@@ -87,6 +84,7 @@ public class BlockProcessorMerge extends AbstractBlockProcessor {
         validatorsUtil,
         operationValidator);
     this.miscHelpersMerge = miscHelpers;
+    this.beaconStateAccessorsAltair = beaconStateAccessors;
     this.executionPayloadUtil = executionPayloadUtil;
   }
 
@@ -106,7 +104,7 @@ public class BlockProcessorMerge extends AbstractBlockProcessor {
   }
 
   @Override
-  protected void processBlock(
+  public void processBlock(
       MutableBeaconState genericState,
       BeaconBlock block,
       IndexedAttestationCache indexedAttestationCache,
@@ -174,34 +172,12 @@ public class BlockProcessorMerge extends AbstractBlockProcessor {
     }
   }
 
-  @Override
-  protected void processAttestation(
-      MutableBeaconState genericState,
-      Attestation attestation,
-      IndexedAttestationProvider indexedAttestationProvider) {
-    final MutableBeaconStateMerge state = MutableBeaconStateMerge.required(genericState);
-    final AttestationData data = attestation.getData();
-
-    PendingAttestation pendingAttestation =
-        new PendingAttestation(
-            attestation.getAggregationBits(),
-            data,
-            state.getSlot().minus(data.getSlot()),
-            UInt64.valueOf(beaconStateAccessors.getBeaconProposerIndex(state)));
-
-    if (data.getTarget().getEpoch().equals(beaconStateAccessors.getCurrentEpoch(state))) {
-      state.getCurrent_epoch_attestations().append(pendingAttestation);
-    } else {
-      state.getPrevious_epoch_attestations().append(pendingAttestation);
-    }
-  }
-
   public BlockProcessorMerge forProcessExecutionPayloadReferenceTest(final Boolean executionValid) {
     return new BlockProcessorMerge(
         SpecConfigMerge.required(specConfig),
         predicates,
         miscHelpersMerge,
-        beaconStateAccessors,
+        beaconStateAccessorsAltair,
         beaconStateMutators,
         operationSignatureVerifier,
         beaconStateUtil,

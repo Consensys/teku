@@ -89,4 +89,11 @@ public interface MutableBeaconStateAltair extends MutableBeaconState, BeaconStat
   default Optional<MutableBeaconStateAltair> toMutableVersionAltair() {
     return Optional.of(this);
   }
+
+  @Override
+  default <E1 extends Exception, E2 extends Exception, E3 extends Exception>
+      BeaconStateAltair updatedAltair(Mutator<MutableBeaconStateAltair, E1, E2, E3> mutator)
+          throws E1, E2, E3 {
+    throw new UnsupportedOperationException();
+  }
 }
