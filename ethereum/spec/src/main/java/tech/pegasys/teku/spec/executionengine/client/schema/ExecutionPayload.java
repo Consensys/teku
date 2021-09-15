@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.executionengine.client.serializer.Bytes20Deserializer;
 import tech.pegasys.teku.spec.executionengine.client.serializer.Bytes20Serializer;
 import tech.pegasys.teku.spec.executionengine.client.serializer.Bytes32Deserializer;
@@ -104,6 +105,7 @@ public class ExecutionPayload {
     this.blockHash = executionPayload.getBlock_hash();
     this.transactions =
         executionPayload.getTransactions().stream()
+            .map(Transaction::getOpaqueTransaction)
             .map(SszByteList::getBytes)
             .collect(Collectors.toList());
   }

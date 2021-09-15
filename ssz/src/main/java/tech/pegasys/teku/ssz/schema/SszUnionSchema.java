@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.ssz.schema;
 
+import java.util.Arrays;
 import java.util.List;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.SszUnion;
@@ -22,8 +23,12 @@ public interface SszUnionSchema<SszUnionT extends SszUnion> extends SszSchema<Ss
   int SELECTOR_SIZE_BYTES = 1;
   int NONE_VALUE_SELECTOR = 0;
 
-  static SszUnionSchema<?> create(List<SszSchema<?>> childrenSchemas) {
-    return new SszUnionSchemaImpl(childrenSchemas);
+  static SszUnionSchema<SszUnion> create(SszSchema<?>... childrenSchemas) {
+    return create(Arrays.asList(childrenSchemas));
+  }
+
+  static SszUnionSchema<SszUnion> create(List<SszSchema<?>> childrenSchemas) {
+    return SszUnionSchemaImpl.createGenericSchema(childrenSchemas);
   }
 
   List<SszSchema<?>> getChildrenSchemas();

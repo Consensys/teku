@@ -24,12 +24,12 @@ import tech.pegasys.teku.ssz.tree.TreeNode;
 
 public class SszUnionImpl implements SszUnion {
 
-  private final SszUnionSchemaImpl schema;
+  private final SszUnionSchemaImpl<?> schema;
   private final TreeNode backingNode;
   private final Supplier<SszData> value = Suppliers.memoize(this::createValue);
   private final Supplier<Integer> selector = Suppliers.memoize(this::createSelector);
 
-  public SszUnionImpl(SszUnionSchemaImpl schema, TreeNode backingNode) {
+  public SszUnionImpl(SszUnionSchemaImpl<?> schema, TreeNode backingNode) {
     this.schema = schema;
     this.backingNode = backingNode;
   }
@@ -40,7 +40,7 @@ public class SszUnionImpl implements SszUnion {
   }
 
   @Override
-  public SszUnionSchemaImpl getSchema() {
+  public SszUnionSchemaImpl<?> getSchema() {
     return schema;
   }
 

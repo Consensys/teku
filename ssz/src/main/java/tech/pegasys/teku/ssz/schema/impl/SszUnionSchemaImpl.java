@@ -45,7 +45,8 @@ import tech.pegasys.teku.ssz.tree.TreeNodeSource.CompressedBranchInfo;
 import tech.pegasys.teku.ssz.tree.TreeNodeStore;
 import tech.pegasys.teku.ssz.tree.TreeUtil;
 
-public class SszUnionSchemaImpl implements SszUnionSchema<SszUnion> {
+public abstract class SszUnionSchemaImpl<SszUnionT extends SszUnion>
+    implements SszUnionSchema<SszUnionT> {
 
   private static final int MAX_SELECTOR = 127;
   private static final int DEFAULT_SELECTOR = 0;
@@ -53,6 +54,15 @@ public class SszUnionSchemaImpl implements SszUnionSchema<SszUnion> {
   private static LeafNode createSelectorNode(int selector) {
     assert selector <= MAX_SELECTOR;
     return LeafNode.create(Bytes.of((byte) selector));
+  }
+
+  public static SszUnionSchema<SszUnion> createGenericSchema(List<SszSchema<?>> childrenSchemas) {
+    return new SszUnionSchemaImpl<>(childrenSchemas) {
+      @Override
+      public SszUnion createFromBackingNode(TreeNode node) {
+        return new SszUnionImpl(this, node);
+      }
+    };
   }
 
   private final List<SszSchema<?>> childrenSchemas;
@@ -88,12 +98,11 @@ public class SszUnionSchemaImpl implements SszUnionSchema<SszUnion> {
   }
 
   @Override
-  public SszUnion createFromBackingNode(TreeNode node) {
-    return new SszUnionImpl(this, node);
-  }
+  @SuppressWarnings("unchecked")
+  public abstract SszUnionT createFromBackingNode(TreeNode node);
 
   @Override
-  public SszUnion createFromValue(int selector, SszData value) {
+  public SszUnionT createFromValue(int selector, SszData value) {
     checkArgument(selector < getTypesCount(), "Selector is out of bounds");
     checkArgument(
         getChildSchema(selector).equals(value.getSchema()),
@@ -222,7 +231,7 @@ public class SszUnionSchemaImpl implements SszUnionSchema<SszUnion> {
     if (!(o instanceof SszUnionSchemaImpl)) {
       return false;
     }
-    SszUnionSchemaImpl that = (SszUnionSchemaImpl) o;
+    SszUnionSchemaImpl<?> that = (SszUnionSchemaImpl<?>) o;
     return Objects.equal(childrenSchemas, that.childrenSchemas);
   }
 

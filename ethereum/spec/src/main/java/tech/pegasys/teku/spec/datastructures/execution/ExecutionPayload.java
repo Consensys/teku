@@ -19,7 +19,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.ssz.SszList;
-import tech.pegasys.teku.ssz.collections.SszByteList;
 import tech.pegasys.teku.ssz.collections.SszByteVector;
 import tech.pegasys.teku.ssz.containers.Container13;
 import tech.pegasys.teku.ssz.containers.ContainerSchema13;
@@ -27,7 +26,6 @@ import tech.pegasys.teku.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.ssz.schema.SszListSchema;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.schema.collections.SszByteListSchema;
 import tech.pegasys.teku.ssz.schema.collections.SszByteVectorSchema;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 import tech.pegasys.teku.ssz.type.Bytes20;
@@ -47,7 +45,7 @@ public class ExecutionPayload
         SszUInt64,
         SszBytes32,
         SszBytes32,
-        SszList<SszByteList>> {
+        SszList<Transaction>> {
 
   public static class ExecutionPayloadSchema
       extends ContainerSchema13<
@@ -64,7 +62,7 @@ public class ExecutionPayload
           SszUInt64,
           SszBytes32,
           SszBytes32,
-          SszList<SszByteList>> {
+          SszList<Transaction>> {
 
     public ExecutionPayloadSchema() {
       super(
@@ -83,14 +81,12 @@ public class ExecutionPayload
           namedSchema("block_hash", SszPrimitiveSchemas.BYTES32_SCHEMA),
           namedSchema(
               "transactions",
-              SszListSchema.create(
-                  SszByteListSchema.create(SpecConfig.MAX_BYTES_PER_OPAQUE_TRANSACTION),
-                  SpecConfig.MAX_EXECUTION_TRANSACTIONS)));
+              SszListSchema.create(Transaction.SSZ_SCHEMA, SpecConfig.MAX_EXECUTION_TRANSACTIONS)));
     }
 
     @SuppressWarnings("unchecked")
-    public SszListSchema<SszByteList, ?> getTransactionsSchema() {
-      return (SszListSchema<SszByteList, ?>) getFieldSchema12();
+    public SszListSchema<Transaction, ?> getTransactionsSchema() {
+      return (SszListSchema<Transaction, ?>) getFieldSchema12();
     }
 
     @Override
@@ -120,7 +116,7 @@ public class ExecutionPayload
               SszUInt64,
               SszBytes32,
               SszBytes32,
-              SszList<SszByteList>>
+              SszList<Transaction>>
           type,
       TreeNode backingNode) {
     super(type, backingNode);
@@ -155,10 +151,8 @@ public class ExecutionPayload
         SszBytes32.of(baseFeePerGas),
         SszBytes32.of(block_hash),
         transactions.stream()
-            .map(
-                tx ->
-                    ((SszByteListSchema<?>) SSZ_SCHEMA.getTransactionsSchema().getElementSchema())
-                        .fromBytes(tx))
+            .map(txBytes -> Transaction.SSZ_SCHEMA.getOpaqueTransactionSchema().fromBytes(txBytes))
+            .map(Transaction.SSZ_SCHEMA::createOpaque)
             .collect(SSZ_SCHEMA.getTransactionsSchema().collector()));
   }
 
@@ -215,7 +209,7 @@ public class ExecutionPayload
     return getField11().get();
   }
 
-  public SszList<SszByteList> getTransactions() {
+  public SszList<Transaction> getTransactions() {
     return getField12();
   }
 }
