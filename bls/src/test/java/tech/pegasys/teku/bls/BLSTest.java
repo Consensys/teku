@@ -204,16 +204,6 @@ public abstract class BLSTest {
                 + "0000000000000000000000000000000000000000000000000000000000000000"));
   }
 
-  static BLSSignature signatureNotInG2() {
-    // Create a signature from a point on the curve but not in G2
-    return BLSSignature.fromBytesCompressed(
-        Bytes.fromHexString(
-            "0x"
-                + "8000000000000000000000000000000000000000000000000000000000000000"
-                + "0000000000000000000000000000000000000000000000000000000000000000"
-                + "0000000000000000000000000000000000000000000000000000000000000004"));
-  }
-
   static BLSSecretKey zeroSK() {
     return BLSSecretKey.fromBytes(Bytes32.ZERO);
   }
