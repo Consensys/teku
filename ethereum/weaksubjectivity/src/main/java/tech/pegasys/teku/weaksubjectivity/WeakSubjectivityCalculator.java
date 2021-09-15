@@ -13,12 +13,10 @@
 
 package tech.pegasys.teku.weaksubjectivity;
 
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_validator_churn_limit;
-
 import com.google.common.annotations.VisibleForTesting;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.EthConstants;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
@@ -61,7 +59,7 @@ public class WeakSubjectivityCalculator {
   public boolean isWithinWeakSubjectivityPeriod(
       final CheckpointState finalizedCheckpoint, final UInt64 currentSlot) {
     UInt64 wsPeriod = computeWeakSubjectivityPeriod(finalizedCheckpoint);
-    final UInt64 currentEpoch = compute_epoch_at_slot(currentSlot);
+    final UInt64 currentEpoch = spec.computeEpochAtSlot(currentSlot);
 
     return finalizedCheckpoint
         .getCheckpoint()
@@ -79,19 +77,22 @@ public class WeakSubjectivityCalculator {
     final int activeValidators = stateCalculator.getActiveValidators(state);
     final UInt64 totalActiveValidatorBalance =
         stateCalculator.getTotalActiveValidatorBalance(state, activeValidators);
-    final SpecConfig config = spec.atEpoch(checkpointState.getEpoch()).getConfig();
-    return computeWeakSubjectivityPeriod(config, activeValidators, totalActiveValidatorBalance);
+    final SpecVersion specVersion = spec.atEpoch(checkpointState.getEpoch());
+    return computeWeakSubjectivityPeriod(
+        specVersion, activeValidators, totalActiveValidatorBalance);
   }
 
   @VisibleForTesting
   UInt64 computeWeakSubjectivityPeriod(
-      final SpecConfig constants,
+      final SpecVersion specVersion,
       final int activeValidatorCount,
       final UInt64 totalValidatorBalance) {
+    final SpecConfig constants = specVersion.getConfig();
     final UInt64 N = UInt64.valueOf(activeValidatorCount);
     final UInt64 t = totalValidatorBalance.dividedBy(N).dividedBy(EthConstants.ETH_TO_GWEI);
     final UInt64 T = constants.getMaxEffectiveBalance().dividedBy(EthConstants.ETH_TO_GWEI);
-    final UInt64 delta = get_validator_churn_limit(activeValidatorCount);
+    final UInt64 delta =
+        specVersion.beaconStateAccessors().getValidatorChurnLimit(activeValidatorCount);
     final UInt64 Delta =
         UInt64.valueOf(constants.getMaxDeposits()).times(constants.getSlotsPerEpoch());
     final UInt64 D = safetyDecay;

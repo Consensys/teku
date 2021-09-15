@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.spec.constants.EthConstants.ETH_TO_GWEI;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -47,7 +46,7 @@ public class WeakSubjectivityCalculatorTest {
     final WeakSubjectivityCalculator calculator = WeakSubjectivityCalculator.create(config);
     UInt64 result =
         calculator.computeWeakSubjectivityPeriod(
-            SPEC.getGenesisSpecConfig(), validatorCount, totalActiveValidatorBalance);
+            SPEC.getGenesisSpec(), validatorCount, totalActiveValidatorBalance);
     assertThat(result).isEqualTo(UInt64.valueOf(expectedResult));
   }
 
@@ -71,15 +70,15 @@ public class WeakSubjectivityCalculatorTest {
     final UInt64 minSafeEpoch = finalizedEpoch.plus(expectedWeakSubjectivityPeriod);
 
     // Check the minimum safe epoch
-    final UInt64 minEpochStartSlot = compute_start_slot_at_epoch(minSafeEpoch);
+    final UInt64 minEpochStartSlot = SPEC.computeStartSlotAtEpoch(minSafeEpoch);
     assertThat(calculator.isWithinWeakSubjectivityPeriod(finalizedCheckpoint, minEpochStartSlot))
         .isTrue();
-    final UInt64 minEpochLastSlot = compute_start_slot_at_epoch(minSafeEpoch.plus(1)).minus(1);
+    final UInt64 minEpochLastSlot = SPEC.computeStartSlotAtEpoch(minSafeEpoch.plus(1)).minus(1);
     assertThat(calculator.isWithinWeakSubjectivityPeriod(finalizedCheckpoint, minEpochLastSlot))
         .isTrue();
 
     // Check first unsafe epoch
-    final UInt64 minUnsafeSlot = compute_start_slot_at_epoch(minSafeEpoch.plus(1));
+    final UInt64 minUnsafeSlot = SPEC.computeStartSlotAtEpoch(minSafeEpoch.plus(1));
     assertThat(calculator.isWithinWeakSubjectivityPeriod(finalizedCheckpoint, minUnsafeSlot))
         .isFalse();
     assertThat(
@@ -95,7 +94,7 @@ public class WeakSubjectivityCalculatorTest {
         .isFalse();
 
     // Check earlier safe epochs
-    final UInt64 earlierEpochSlot = compute_start_slot_at_epoch(minSafeEpoch).minus(1);
+    final UInt64 earlierEpochSlot = SPEC.computeStartSlotAtEpoch(minSafeEpoch).minus(1);
     assertThat(calculator.isWithinWeakSubjectivityPeriod(finalizedCheckpoint, earlierEpochSlot))
         .isTrue();
     assertThat(
@@ -104,7 +103,7 @@ public class WeakSubjectivityCalculatorTest {
         .isTrue();
 
     // Check finalized epoch
-    final UInt64 finalizedEpochSlot = compute_start_slot_at_epoch(finalizedEpoch);
+    final UInt64 finalizedEpochSlot = SPEC.computeStartSlotAtEpoch(finalizedEpoch);
     assertThat(calculator.isWithinWeakSubjectivityPeriod(finalizedCheckpoint, finalizedEpochSlot))
         .isTrue();
   }
