@@ -153,11 +153,17 @@ public class Eth2NetworkConfiguration {
     private Optional<UInt64> eth1DepositContractDeployBlock = Optional.empty();
     private boolean balanceAttackMitigationEnabled = false;
     private Optional<UInt64> altairForkEpoch = Optional.empty();
+    private Spec spec;
+
+    public void spec(Spec spec) {
+      this.spec = spec;
+    }
 
     public Eth2NetworkConfiguration build() {
       checkNotNull(constants, "Missing constants");
-
-      final Spec spec = SpecFactory.create(constants, altairForkEpoch);
+      if (spec == null) {
+        spec = SpecFactory.create(constants, altairForkEpoch);
+      }
       // if the deposit contract was not set, default from constants
       if (eth1DepositContractAddress == null) {
         eth1DepositContractAddress(
