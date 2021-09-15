@@ -14,6 +14,7 @@
 package tech.pegasys.teku.bls.impl.blst;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static tech.pegasys.teku.bls.impl.blst.BlstSignature.INFINITY;
 
 import org.apache.tuweni.bytes.Bytes;
@@ -21,6 +22,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.impl.AbstractSignatureTest;
 import tech.pegasys.teku.bls.impl.BLS12381;
+import tech.pegasys.teku.bls.impl.DeserializeException;
 
 public class BlstSignatureTest extends AbstractSignatureTest {
   private static BLS12381 BLS;
@@ -46,24 +48,17 @@ public class BlstSignatureTest extends AbstractSignatureTest {
   void infinityBytesDeserialisesToValidInfinity() {
     BlstSignature signature = BlstSignature.fromBytes(INFINITY_BYTES);
     assertThat(signature.isInfinity()).isTrue();
-    assertThat(signature.isValid()).isTrue();
     assertThat(signature).isEqualTo(INFINITY);
   }
 
   @Test
-  void badSignatureDeserialisesToInvalid() {
-    BlstSignature signature = BlstSignature.fromBytes(Bytes.wrap(new byte[96]));
-    assertThat(signature.isInfinity()).isFalse();
-    assertThat(signature.isValid()).isFalse();
+  void badSignatureThrowsException() {
+    assertThrows(
+        DeserializeException.class, () -> BlstSignature.fromBytes(Bytes.wrap(new byte[96])));
   }
 
   @Test
   void infinitySignatureIsInfinity() {
     assertThat(INFINITY.isInfinity()).isTrue();
-  }
-
-  @Test
-  void infinitySignatureIsValid() {
-    assertThat(INFINITY.isValid()).isTrue();
   }
 }

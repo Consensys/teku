@@ -22,6 +22,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessorTest;
@@ -38,7 +39,7 @@ public class BlockProcessorAltairTest extends BlockProcessorTest {
   void eth2FastAggregateVerify_shouldReturnFalseIfNoPublicKeysAndNotInfinitySignature() {
     assertThat(
             BlockProcessorAltair.eth2FastAggregateVerify(
-                signatureVerifier, List.of(), Bytes32.ZERO, BLSSignature.empty()))
+                signatureVerifier, List.of(), Bytes32.ZERO, BLSTestUtil.randomSignature(7654)))
         .isFalse();
     verifyNoInteractions(signatureVerifier);
   }

@@ -17,13 +17,13 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import supranational.blst.BLST_ERROR;
 import supranational.blst.P2;
 import supranational.blst.P2_Affine;
 import supranational.blst.Pairing;
+import tech.pegasys.teku.bls.impl.DeserializeException;
 import tech.pegasys.teku.bls.impl.PublicKey;
 import tech.pegasys.teku.bls.impl.PublicKeyMessagePair;
 import tech.pegasys.teku.bls.impl.Signature;
@@ -32,19 +32,21 @@ public class BlstSignature implements Signature {
   private static final int COMPRESSED_SIG_SIZE = 96;
 
   // The valid infinite signature
-  static final BlstSignature INFINITY = new BlstSignature(new P2_Affine(), true);
+  static final BlstSignature INFINITY = new BlstSignature(new P2_Affine());
 
   public static BlstSignature fromBytes(Bytes compressed) {
-    checkArgument(
-        compressed.size() == COMPRESSED_SIG_SIZE,
-        "Expected " + COMPRESSED_SIG_SIZE + " bytes of input but got %s",
-        compressed.size());
     try {
+      checkArgument(
+          compressed.size() == COMPRESSED_SIG_SIZE,
+          "Expected " + COMPRESSED_SIG_SIZE + " bytes of input but got %s",
+          compressed.size());
       P2_Affine ec2Point = new P2_Affine(compressed.toArrayUnsafe());
-      return new BlstSignature(ec2Point, ec2Point.in_group());
+      if (!ec2Point.in_group()) {
+        throw new DeserializeException("Deserialised signature is not in the G2 group");
+      }
+      return new BlstSignature(ec2Point);
     } catch (Exception e) {
-      // Return an invalid infinite signature if deserialisation fails
-      return new BlstSignature(new P2_Affine(), false);
+      throw new DeserializeException("Signature deserialisation failed: " + e.getMessage());
     }
   }
 
@@ -58,20 +60,13 @@ public class BlstSignature implements Signature {
 
   public static BlstSignature aggregate(List<BlstSignature> signatures) {
 
-    Optional<BlstSignature> invalidSignature =
-        signatures.stream().filter(s -> !s.isValid).findFirst();
-    if (invalidSignature.isPresent()) {
-      throw new IllegalArgumentException(
-          "Can't aggregate invalid signature: " + invalidSignature.get());
-    }
-
     // We've done the group check, so we can add() rather than aggregate() here
     P2 sum = new P2();
     for (BlstSignature finiteSignature : signatures) {
       sum.add(finiteSignature.ec2Point);
     }
 
-    return new BlstSignature(sum.to_affine(), true);
+    return new BlstSignature(sum.to_affine());
   }
 
   private static void blstPrepareVerifyAggregated(
@@ -94,11 +89,9 @@ public class BlstSignature implements Signature {
   }
 
   final P2_Affine ec2Point;
-  private final boolean isValid;
 
-  public BlstSignature(P2_Affine ec2Point, boolean isValid) {
+  public BlstSignature(P2_Affine ec2Point) {
     this.ec2Point = ec2Point;
-    this.isValid = isValid;
   }
 
   @Override
@@ -147,12 +140,7 @@ public class BlstSignature implements Signature {
 
   @Override
   public boolean isInfinity() {
-    return isValid && ec2Point.is_inf();
-  }
-
-  @Override
-  public boolean isValid() {
-    return isValid;
+    return ec2Point.is_inf();
   }
 
   @Override
