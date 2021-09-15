@@ -24,10 +24,8 @@ import static org.mockito.Mockito.when;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -35,6 +33,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
+import tech.pegasys.teku.validator.client.SyncCommitteeScheduler.EarlySubscribeRandomSource;
 import tech.pegasys.teku.validator.client.duties.synccommittee.SyncCommitteeScheduledDuties;
 
 class SyncCommitteeSchedulerTest {
@@ -51,7 +50,8 @@ class SyncCommitteeSchedulerTest {
   private final DutyLoader<SyncCommitteeScheduledDuties> dutyLoader = mock(DutyLoader.class);
 
   private final SyncCommitteeScheduledDuties duties = createScheduledDuties();
-  private final Random earlySubscribeRandomSource = Mockito.mock(Random.class);
+  private final EarlySubscribeRandomSource earlySubscribeRandomSource =
+      mock(EarlySubscribeRandomSource.class);
 
   private final SyncCommitteeScheduler scheduler =
       new SyncCommitteeScheduler(
@@ -114,7 +114,7 @@ class SyncCommitteeSchedulerTest {
 
   @Test
   void shouldCalculateNextSyncPeriodDutiesRandomNumberOfEpochsPriorToStart() {
-    when(earlySubscribeRandomSource.nextInt(epochsPerSyncCommitteePeriod)).thenReturn(4);
+    when(earlySubscribeRandomSource.randomEpochCount(epochsPerSyncCommitteePeriod)).thenReturn(4);
     final UInt64 nextSyncCommitteePeriodStartEpoch =
         syncCommitteeUtil.computeFirstEpochOfNextSyncCommitteePeriod(UInt64.ZERO);
     final UInt64 subscribeEpoch = nextSyncCommitteePeriodStartEpoch.minus(4);
@@ -128,10 +128,10 @@ class SyncCommitteeSchedulerTest {
 
   @Test
   void shouldNotSelectNewRandomNumberEachSlot() {
-    when(earlySubscribeRandomSource.nextInt(epochsPerSyncCommitteePeriod)).thenReturn(4);
+    when(earlySubscribeRandomSource.randomEpochCount(epochsPerSyncCommitteePeriod)).thenReturn(4);
 
     scheduler.onSlot(UInt64.ONE);
-    verify(earlySubscribeRandomSource).nextInt(epochsPerSyncCommitteePeriod);
+    verify(earlySubscribeRandomSource).randomEpochCount(epochsPerSyncCommitteePeriod);
 
     // Already picked a random epoch to subscribe, so don't pick again
     scheduler.onSlot(UInt64.valueOf(2));
@@ -140,7 +140,7 @@ class SyncCommitteeSchedulerTest {
 
   @Test
   void shouldNotRecalculateDutiesEverySlot() {
-    when(earlySubscribeRandomSource.nextInt(epochsPerSyncCommitteePeriod)).thenReturn(4);
+    when(earlySubscribeRandomSource.randomEpochCount(epochsPerSyncCommitteePeriod)).thenReturn(4);
     final UInt64 nextSyncCommitteePeriodStartEpoch =
         syncCommitteeUtil.computeFirstEpochOfNextSyncCommitteePeriod(UInt64.ZERO);
     final UInt64 subscribeEpoch = nextSyncCommitteePeriodStartEpoch.minus(4);
@@ -161,7 +161,7 @@ class SyncCommitteeSchedulerTest {
 
   @Test
   void shouldSwitchToNextCommitteePeriodWhenLastSlotOfSyncCommitteePeriodReached() {
-    when(earlySubscribeRandomSource.nextInt(epochsPerSyncCommitteePeriod)).thenReturn(5);
+    when(earlySubscribeRandomSource.randomEpochCount(epochsPerSyncCommitteePeriod)).thenReturn(5);
     final UInt64 nextSyncCommitteePeriodStartEpoch =
         syncCommitteeUtil.computeFirstEpochOfNextSyncCommitteePeriod(UInt64.ZERO);
     final UInt64 subscribeEpoch = nextSyncCommitteePeriodStartEpoch.minus(5);
@@ -195,7 +195,7 @@ class SyncCommitteeSchedulerTest {
    */
   @Test
   void shouldUseNextPeriodForDutiesWhenOnSlotNotYetCalled() {
-    when(earlySubscribeRandomSource.nextInt(epochsPerSyncCommitteePeriod)).thenReturn(5);
+    when(earlySubscribeRandomSource.randomEpochCount(epochsPerSyncCommitteePeriod)).thenReturn(5);
     final UInt64 nextSyncCommitteePeriodStartEpoch =
         syncCommitteeUtil.computeFirstEpochOfNextSyncCommitteePeriod(UInt64.ZERO);
     final UInt64 subscribeEpoch = nextSyncCommitteePeriodStartEpoch.minus(5);
