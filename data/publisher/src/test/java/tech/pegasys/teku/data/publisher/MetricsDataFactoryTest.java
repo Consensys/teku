@@ -39,7 +39,8 @@ class MetricsDataFactoryTest {
     final BaseMetricData baseMetricData =
         metricsDataFactory.getMetricData(MetricsDataClient.VALIDATOR);
     final String data = jsonProvider.objectToJSON(baseMetricData);
-    assertThat(baseMetricData).isEqualTo(jsonProvider.jsonToObject(data, ValidatorMetricData.class));
+    assertThat(baseMetricData)
+        .isEqualTo(jsonProvider.jsonToObject(data, ValidatorMetricData.class));
     assertThat(baseMetricData).isInstanceOf(ValidatorMetricData.class);
     ValidatorMetricData validatorMetricData = (ValidatorMetricData) baseMetricData;
     assertThat(validatorMetricData.cpu_process_seconds_total).isEqualTo(1);
@@ -55,7 +56,8 @@ class MetricsDataFactoryTest {
     final BaseMetricData baseMetricData =
         metricsDataFactory.getMetricData(MetricsDataClient.VALIDATOR);
     final String data = jsonProvider.objectToJSON(baseMetricData);
-    assertThat(baseMetricData).isEqualTo(jsonProvider.jsonToObject(data, ValidatorMetricData.class));
+    assertThat(baseMetricData)
+        .isEqualTo(jsonProvider.jsonToObject(data, ValidatorMetricData.class));
     assertThat(baseMetricData).isInstanceOf(ValidatorMetricData.class);
     ValidatorMetricData validatorMetricData = (ValidatorMetricData) baseMetricData;
     assertThat(validatorMetricData.cpu_process_seconds_total).isEqualTo(0);
