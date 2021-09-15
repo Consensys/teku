@@ -13,23 +13,28 @@
 
 package tech.pegasys.teku.cli.subcommand;
 
+import static tech.pegasys.teku.cli.subcommand.RemoteSpecLoader.getSpecWithRetry;
+import static tech.pegasys.teku.infrastructure.logging.SubCommandLogger.SUB_COMMAND_LOG;
+
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionException;
+import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.ParentCommand;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
-import tech.pegasys.teku.cli.options.Eth2NetworkOptions;
 import tech.pegasys.teku.cli.options.InteropOptions;
 import tech.pegasys.teku.cli.options.LoggingOptions;
 import tech.pegasys.teku.cli.options.MetricsOptions;
+import tech.pegasys.teku.cli.options.UnusedValidatorClientOptions;
 import tech.pegasys.teku.cli.options.ValidatorClientDataOptions;
 import tech.pegasys.teku.cli.options.ValidatorClientOptions;
 import tech.pegasys.teku.cli.options.ValidatorOptions;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
 
 @Command(
@@ -55,9 +60,6 @@ public class ValidatorClientCommand implements Callable<Integer> {
   @Mixin(name = "Validator Client")
   private ValidatorClientOptions validatorClientOptions;
 
-  @Mixin(name = "Network")
-  private Eth2NetworkOptions eth2NetworkOptions;
-
   @Mixin(name = "Data")
   private ValidatorClientDataOptions dataOptions;
 
@@ -71,7 +73,22 @@ public class ValidatorClientCommand implements Callable<Integer> {
   @Mixin(name = "Metrics")
   private MetricsOptions metricsOptions;
 
+  @Mixin(name = "Unused Network Options")
+  private UnusedValidatorClientOptions unusedValidatorClientOptions;
+
+  @CommandLine.Option(
+      names = {"-n", "--network"},
+      paramLabel = "<NETWORK>",
+      description =
+          "Represents which network to use. "
+              + "Use `auto` to fetch network configuration from the beacon node endpoint directly."
+              + "Note that all other values for this option have been deprecated.",
+      arity = "1")
+  private String networkOption = "mainnet";
+
   @ParentCommand private BeaconNodeCommand parentCommand;
+
+  private static final String AUTO_NETWORK_OPTION = "auto";
 
   @Override
   public Integer call() {
@@ -94,9 +111,40 @@ public class ValidatorClientCommand implements Callable<Integer> {
     return 1;
   }
 
+  private void configureWithSpecFromBeaconNode(Eth2NetworkConfiguration.Builder builder) {
+    try {
+      var spec = getSpecWithRetry(validatorClientOptions.parseApiEndpoint());
+      builder.spec(spec);
+    } catch (Throwable e) {
+      throw new InvalidConfigurationException(e);
+    }
+  }
+
+  private boolean isAutoDetectNetworkOption(String option) {
+    return AUTO_NETWORK_OPTION.equalsIgnoreCase(option);
+  }
+
+  private void showNetworkOptionDeprecationWarning() {
+    var deprecationWarning =
+        String.format(
+            "The '--network=%s' option is deprecated. Use '--network=auto' instead, "
+                + "which fetches network configuration from the beacon node endpoint.",
+            networkOption);
+    SUB_COMMAND_LOG.displayDeprecationWarning(deprecationWarning);
+  }
+
+  private void configureEth2Network(TekuConfiguration.Builder builder) {
+    if (isAutoDetectNetworkOption(networkOption)) {
+      builder.eth2NetworkConfig(this::configureWithSpecFromBeaconNode);
+    } else {
+      showNetworkOptionDeprecationWarning();
+      unusedValidatorClientOptions.configure(builder, networkOption);
+    }
+  }
+
   private TekuConfiguration tekuConfiguration() {
     final TekuConfiguration.Builder builder = TekuConfiguration.builder();
-    eth2NetworkOptions.configure(builder);
+    configureEth2Network(builder);
     validatorOptions.configure(builder);
     validatorClientOptions.configure(builder);
     dataOptions.configure(builder);
