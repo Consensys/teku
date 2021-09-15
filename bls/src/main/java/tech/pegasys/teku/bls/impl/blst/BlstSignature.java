@@ -31,7 +31,6 @@ import tech.pegasys.teku.bls.impl.Signature;
 public class BlstSignature implements Signature {
   private static final int COMPRESSED_SIG_SIZE = 96;
 
-  // The valid infinite signature
   static final BlstSignature INFINITY = new BlstSignature(new P2_Affine());
 
   public static BlstSignature fromBytes(Bytes compressed) {
@@ -41,9 +40,6 @@ public class BlstSignature implements Signature {
           "Expected " + COMPRESSED_SIG_SIZE + " bytes of input but got %s",
           compressed.size());
       P2_Affine ec2Point = new P2_Affine(compressed.toArrayUnsafe());
-      if (!ec2Point.in_group()) {
-        throw new DeserializeException("Deserialised signature is not in the G2 group");
-      }
       return new BlstSignature(ec2Point);
     } catch (Exception e) {
       throw new DeserializeException("Signature deserialisation failed: " + e.getMessage());
@@ -59,14 +55,16 @@ public class BlstSignature implements Signature {
   }
 
   public static BlstSignature aggregate(List<BlstSignature> signatures) {
-
-    // We've done the group check, so we can add() rather than aggregate() here
-    P2 sum = new P2();
-    for (BlstSignature finiteSignature : signatures) {
-      sum.add(finiteSignature.ec2Point);
+    try {
+      P2 sum = new P2();
+      for (BlstSignature finiteSignature : signatures) {
+        sum.aggregate(finiteSignature.ec2Point);
+      }
+      return new BlstSignature(sum.to_affine());
+    } catch (RuntimeException e) {
+      // Blst performs a G2 group membership test on each signature. We end up here if it fails.
+      throw new RuntimeException("Failed to aggregate signatures: " + e.getMessage());
     }
-
-    return new BlstSignature(sum.to_affine());
   }
 
   private static void blstPrepareVerifyAggregated(

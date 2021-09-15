@@ -204,6 +204,16 @@ public abstract class BLSTest {
                 + "0000000000000000000000000000000000000000000000000000000000000000"));
   }
 
+  static BLSSignature notInG2() {
+    // A point on the curve but not in the G2 group
+    return BLSSignature.fromBytesCompressed(
+        Bytes.fromHexString(
+            "0x"
+                + "8000000000000000000000000000000000000000000000000000000000000000"
+                + "0000000000000000000000000000000000000000000000000000000000000000"
+                + "0000000000000000000000000000000000000000000000000000000000000004"));
+  }
+
   static BLSSecretKey zeroSK() {
     return BLSSecretKey.fromBytes(Bytes32.ZERO);
   }
@@ -241,6 +251,11 @@ public abstract class BLSTest {
   }
 
   @Test
+  void succeedsWhenAggregateNotInG2ThrowsException() {
+    assertThrows(RuntimeException.class, () -> BLS.aggregate(List.of(notInG2())));
+  }
+
+  @Test
   void batchVerify2InfinitePublicKeyAndSignature() {
     BLSKeyPair keyPairInf = new BLSKeyPair(zeroSK());
 
@@ -269,19 +284,6 @@ public abstract class BLSTest {
         BLS.prepareBatchVerify(1, List.of(keyPairInf.getPublicKey()), message, infinityG2());
 
     boolean res1 = BLS.completeBatchVerify(List.of(semiAggregate1, semiAggregateInf));
-    assertFalse(res1);
-  }
-
-  @Test
-  void batchVerifyInvalidInfiniteSignature() {
-    BLSKeyPair keyPair1 = BLSTestUtil.randomKeyPair(1);
-
-    Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
-
-    BatchSemiAggregate semiAggregate =
-        BLS.prepareBatchVerify(0, List.of(keyPair1.getPublicKey()), message, infinityG2());
-
-    boolean res1 = BLS.completeBatchVerify(List.of(semiAggregate));
     assertFalse(res1);
   }
 

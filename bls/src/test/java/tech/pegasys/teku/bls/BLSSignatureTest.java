@@ -139,20 +139,6 @@ abstract class BLSSignatureTest {
   }
 
   @Test
-  void succeedsWhenDeserialisationOfNotInG2ThrowsException() {
-    assertThrows(
-        DeserializeException.class,
-        () ->
-            BLSSignature.fromBytesCompressed(
-                    Bytes.fromHexString(
-                        "0x"
-                            + "8000000000000000000000000000000000000000000000000000000000000000"
-                            + "0000000000000000000000000000000000000000000000000000000000000000"
-                            + "0000000000000000000000000000000000000000000000000000000000000004"))
-                .getSignature());
-  }
-
-  @Test
   void succeedsWhenNonInfiniteSignatureIsNotInfinite() {
     BLSSignature signature = BLSTestUtil.randomSignature(513);
     assertThat(signature.isInfinity()).isFalse();

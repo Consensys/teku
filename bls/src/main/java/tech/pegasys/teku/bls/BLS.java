@@ -26,7 +26,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.impl.BLS12381;
-import tech.pegasys.teku.bls.impl.DeserializeException;
 import tech.pegasys.teku.bls.impl.PublicKey;
 import tech.pegasys.teku.bls.impl.PublicKeyMessagePair;
 import tech.pegasys.teku.bls.impl.blst.BlstLoader;
@@ -96,7 +95,7 @@ public class BLS {
     }
     try {
       return signature.getSignature().verify(publicKey.getPublicKey(), message);
-    } catch (DeserializeException e) {
+    } catch (RuntimeException e) {
       return false;
     }
   }
@@ -112,10 +111,9 @@ public class BLS {
    *
    * @param signatures the list of signatures to be aggregated
    * @return the aggregated signature
-   * @throws IllegalArgumentException if any of supplied signatures is invalid
+   * @throws RuntimeException if any of supplied signatures is invalid
    */
-  public static BLSSignature aggregate(List<BLSSignature> signatures)
-      throws IllegalArgumentException {
+  public static BLSSignature aggregate(List<BLSSignature> signatures) throws RuntimeException {
     checkArgument(signatures.size() > 0, "Aggregating zero signatures is invalid.");
     return new BLSSignature(
         getBlsImpl()
@@ -154,7 +152,7 @@ public class BLS {
             .collect(Collectors.toList());
     try {
       return signature.getSignature().verify(publicKeyMessagePairs);
-    } catch (DeserializeException e) {
+    } catch (RuntimeException e) {
       return false;
     }
   }
@@ -183,7 +181,7 @@ public class BLS {
         publicKeys.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList());
     try {
       return signature.getSignature().verify(publicKeyObjects, message);
-    } catch (DeserializeException e) {
+    } catch (RuntimeException e) {
       return false;
     }
   }
@@ -330,7 +328,7 @@ public class BLS {
               publicKeys.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList()),
               message,
               signature.getSignature());
-    } catch (DeserializeException e) {
+    } catch (RuntimeException e) {
       return new InvalidBatchSemiAggregate();
     }
   }
@@ -360,7 +358,7 @@ public class BLS {
               publicKeys2.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList()),
               message2,
               signature2.getSignature());
-    } catch (DeserializeException e) {
+    } catch (RuntimeException e) {
       return new InvalidBatchSemiAggregate();
     }
   }
