@@ -17,7 +17,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 
-public class GeneralMetricData extends BaseMetricData {
+public class ValidatorMetricData extends BaseMetricData {
 
   public final long cpu_process_seconds_total;
   public final long memory_process_bytes;
@@ -28,7 +28,7 @@ public class GeneralMetricData extends BaseMetricData {
   public final int validator_active;
 
   @JsonCreator
-  public GeneralMetricData(
+  public ValidatorMetricData(
       @JsonProperty("version") int version,
       @JsonProperty("timestamp") long timestamp,
       @JsonProperty("process") String process,
@@ -54,7 +54,7 @@ public class GeneralMetricData extends BaseMetricData {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     if (!super.equals(o)) return false;
-    GeneralMetricData that = (GeneralMetricData) o;
+    ValidatorMetricData that = (ValidatorMetricData) o;
     return cpu_process_seconds_total == that.cpu_process_seconds_total
         && memory_process_bytes == that.memory_process_bytes
         && client_build == that.client_build

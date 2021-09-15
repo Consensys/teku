@@ -19,15 +19,15 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.provider.JsonProvider;
 
-class GeneralMetricDataTest {
+class ValidatorMetricDataTest {
 
   private JsonProvider jsonProvider = new JsonProvider();
 
   @Test
   public void shouldSerializeObject() throws JsonProcessingException {
-    final GeneralMetricData process =
-        new GeneralMetricData(1, 10L, "system", 11L, 12L, "teku", "21.8", 2, 3, 4);
+    final ValidatorMetricData process =
+        new ValidatorMetricData(1, 10L, "system", 11L, 12L, "teku", "21.8", 2, 3, 4);
     final String data = jsonProvider.objectToJSON(process);
-    assertThat(process).isEqualTo(jsonProvider.jsonToObject(data, GeneralMetricData.class));
+    assertThat(process).isEqualTo(jsonProvider.jsonToObject(data, ValidatorMetricData.class));
   }
 }

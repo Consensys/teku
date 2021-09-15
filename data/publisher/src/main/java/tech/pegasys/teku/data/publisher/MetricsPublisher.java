@@ -25,8 +25,8 @@ import org.apache.logging.log4j.Logger;
 
 public class MetricsPublisher {
 
-  private final OkHttpClient client;
   private static final Logger LOG = LogManager.getLogger();
+  private final OkHttpClient client;
   private MediaType mediaType = MediaType.parse("application/json; charset=utf-8");
 
   public MetricsPublisher(final OkHttpClient client) {

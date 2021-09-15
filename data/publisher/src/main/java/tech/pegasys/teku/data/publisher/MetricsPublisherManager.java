@@ -29,13 +29,14 @@ import tech.pegasys.teku.service.serviceutils.Service;
 
 public class MetricsPublisherManager extends Service {
 
-  private final long intervalBetweenPublications;
+  private static final Logger LOG = LogManager.getLogger();
 
+  private final long intervalBetweenPublications;
   private final AsyncRunnerFactory asyncRunnerFactory;
   private final MetricsEndpoint metricsConfig;
-  private static final Logger LOG = LogManager.getLogger();
-  private final JsonProvider jsonProvider = new JsonProvider();
   private final MetricsDataFactory dataFactory;
+  private final JsonProvider jsonProvider = new JsonProvider();
+
   private MetricsPublisher publisher;
   private volatile Cancellable publisherTask;
 

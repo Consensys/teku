@@ -24,9 +24,9 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 
 public class MetricsDataFactory {
   private final MetricsSystem metricsSystem;
-  private static final int protocolVersion = 1;
-  private static final String clientName = "Teku";
-  private static final int clientBuild = 1;
+  private static final int PROTOCOL_VERSION = 1;
+  private static final String CLIENT_NAME = "Teku";
+  private static final int CLIENT_BUILD = 1;
   private static final Logger LOG = LogManager.getLogger();
 
   public MetricsDataFactory(MetricsSystem metricsSystem) {
@@ -41,8 +41,8 @@ public class MetricsDataFactory {
     } else {
       LOG.error("Prometheus metric system not found.");
     }
-    return new DefaultMetricData(
-        protocolVersion, System.currentTimeMillis(), "default", metricsSystem);
+    return new MinimalMetricData(
+        PROTOCOL_VERSION, System.currentTimeMillis(), "minimal", metricsSystem);
   }
 
   private static BaseMetricData extractValidatorData(
@@ -94,10 +94,10 @@ public class MetricsDataFactory {
     } else {
       validatorActive = 0;
     }
-    clientName = MetricsDataFactory.clientName;
-    clientBuild = MetricsDataFactory.clientBuild;
-    return new GeneralMetricData(
-        protocolVersion,
+    clientName = MetricsDataFactory.CLIENT_NAME;
+    clientBuild = MetricsDataFactory.CLIENT_BUILD;
+    return new ValidatorMetricData(
+        PROTOCOL_VERSION,
         System.currentTimeMillis(),
         MetricsDataClient.VALIDATOR.getDataClient(),
         cpuProcessSecondsTotal,

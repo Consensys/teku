@@ -18,12 +18,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 
-public class DefaultMetricData extends BaseMetricData {
+public class MinimalMetricData extends BaseMetricData {
 
   private final MetricsSystem metricsSystem;
 
   @JsonCreator
-  public DefaultMetricData(
+  public MinimalMetricData(
       @JsonProperty("version") int version,
       @JsonProperty("timestamp") long timestamp,
       @JsonProperty("process") String process,
@@ -36,7 +36,7 @@ public class DefaultMetricData extends BaseMetricData {
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    DefaultMetricData that = (DefaultMetricData) o;
+    MinimalMetricData that = (MinimalMetricData) o;
     return metricsSystem.equals(that.metricsSystem);
   }
 
