@@ -15,6 +15,8 @@ package tech.pegasys.teku.ssz.schema;
 
 import java.util.List;
 import java.util.stream.Stream;
+import tech.pegasys.teku.ssz.TestContainers.TestByteVectorContainer;
+import tech.pegasys.teku.ssz.TestContainers.VariableSizeContainer;
 
 public class SszUnionSchemaTest extends SszSchemaTestBase {
 
@@ -45,7 +47,12 @@ public class SszUnionSchemaTest extends SszSchemaTestBase {
             List.of(
                 SszPrimitiveSchemas.BIT_SCHEMA,
                 SszPrimitiveSchemas.BYTES4_SCHEMA,
-                SszPrimitiveSchemas.BIT_SCHEMA)));
+                SszPrimitiveSchemas.BIT_SCHEMA)),
+        SszUnionSchema.create(List.of(SszPrimitiveSchemas.BIT_SCHEMA)),
+        SszUnionSchema.create(
+            List.of(SszPrimitiveSchemas.BIT_SCHEMA, VariableSizeContainer.SSZ_SCHEMA)),
+        SszUnionSchema.create(
+            List.of(TestByteVectorContainer.SSZ_SCHEMA, SszPrimitiveSchemas.BIT_SCHEMA)));
   }
 
   @Override

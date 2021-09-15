@@ -61,7 +61,6 @@ public class SszUnionSchemaImpl implements SszUnionSchema<SszUnion> {
       Suppliers.memoize(this::calcSszLengthBounds);
 
   public SszUnionSchemaImpl(List<SszSchema<?>> childrenSchemas) {
-    checkArgument(childrenSchemas.size() > 1, "At least two types expected in Union");
     checkArgument(childrenSchemas.size() < MAX_SELECTOR, "Too many child types");
     checkArgument(
         childrenSchemas.stream()
