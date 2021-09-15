@@ -158,10 +158,11 @@ public class SpecConfigBuilder {
             depositContractAddress);
 
     if (altairBuilder.isPresent()) {
-      config = altairBuilder.get().build(config);
-    }
-    if (mergeBuilder.isPresent()) {
-      config = mergeBuilder.get().build(config);
+      final SpecConfigAltair altairConfig = altairBuilder.get().build(config);
+      config = altairConfig;
+      if (mergeBuilder.isPresent()) {
+        config = mergeBuilder.get().build(altairConfig);
+      }
     }
     return config;
   }
@@ -570,7 +571,7 @@ public class SpecConfigBuilder {
     private AltairBuilder() {}
 
     SpecConfigAltair build(final SpecConfig specConfig) {
-      return new SpecConfigAltair(
+      return new SpecConfigAltairImpl(
           specConfig,
           inactivityPenaltyQuotientAltair,
           minSlashingPenaltyQuotientAltair,
@@ -683,7 +684,7 @@ public class SpecConfigBuilder {
 
     private MergeBuilder() {}
 
-    SpecConfigMerge build(final SpecConfig specConfig) {
+    SpecConfigMerge build(final SpecConfigAltair specConfig) {
       return new SpecConfigMerge(
           specConfig,
           mergeForkVersion,

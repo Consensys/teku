@@ -26,7 +26,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigMerge;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge.BeaconBlockBodyMerge;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -94,13 +93,6 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
         "Expected merge block processor but got %s",
         blockProcessor.getClass());
     return (BlockProcessorMerge) blockProcessor;
-  }
-
-  @Override
-  public void processSyncAggregate(
-      MutableBeaconState state, SyncAggregate syncAggregate, BLSSignatureVerifier signatureVerifier)
-      throws BlockProcessingException {
-    throw new UnsupportedOperationException("No SyncCommittee in merge");
   }
 
   @Override

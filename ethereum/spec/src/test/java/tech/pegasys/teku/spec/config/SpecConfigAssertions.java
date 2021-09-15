@@ -28,7 +28,7 @@ public class SpecConfigAssertions {
   }
 
   static void assertAllAltairFieldsSet(final SpecConfig config) throws Exception {
-    assertAllFieldsSet(config, SpecConfigAltair.class);
+    assertAllFieldsSet(config, SpecConfigAltairImpl.class);
   }
 
   static void assertAllMergeFieldsSet(final SpecConfig config) throws Exception {

@@ -61,9 +61,7 @@ public abstract class Eth2ReferenceTestCase {
           .build();
 
   private final ImmutableMap<String, TestExecutor> MERGE_TEST_TYPES =
-      ImmutableMap.<String, TestExecutor>builder()
-          .putAll(RewardsTestExecutorPhase0.REWARDS_TEST_TYPES)
-          .build();
+      ImmutableMap.<String, TestExecutor>builder().putAll(ALTAIR_TEST_TYPES).build();
 
   protected void runReferenceTest(final TestDefinition testDefinition) throws Throwable {
     setConstants(testDefinition.getConfigName());

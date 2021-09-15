@@ -20,8 +20,6 @@ import tech.pegasys.teku.spec.config.SpecConfigMerge;
 import tech.pegasys.teku.spec.datastructures.forkchoice.TransitionStore;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
-import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
-import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MergeTransitionHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.PowBlock;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
@@ -34,6 +32,7 @@ import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateMutatorsAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.EpochProcessorAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.ValidatorStatusFactoryAltair;
 import tech.pegasys.teku.spec.logic.versions.merge.block.BlockProcessorMerge;
@@ -54,8 +53,8 @@ public class SpecLogicMerge extends AbstractSpecLogic {
   private SpecLogicMerge(
       final Predicates predicates,
       final MiscHelpersMerge miscHelpers,
-      final BeaconStateAccessors beaconStateAccessors,
-      final BeaconStateMutators beaconStateMutators,
+      final BeaconStateAccessorsMerge beaconStateAccessors,
+      final BeaconStateMutatorsAltair beaconStateMutators,
       final OperationSignatureVerifier operationSignatureVerifier,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
@@ -101,8 +100,8 @@ public class SpecLogicMerge extends AbstractSpecLogic {
     final MiscHelpersMerge miscHelpers = new MiscHelpersMerge(config);
     final BeaconStateAccessorsMerge beaconStateAccessors =
         new BeaconStateAccessorsMerge(config, predicates, miscHelpers);
-    final BeaconStateMutators beaconStateMutators =
-        new BeaconStateMutators(config, miscHelpers, beaconStateAccessors);
+    final BeaconStateMutatorsAltair beaconStateMutators =
+        new BeaconStateMutatorsAltair(config, miscHelpers, beaconStateAccessors);
 
     // Operation validaton
     final OperationSignatureVerifier operationSignatureVerifier =

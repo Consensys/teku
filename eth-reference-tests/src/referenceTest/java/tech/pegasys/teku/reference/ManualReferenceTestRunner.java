@@ -59,7 +59,6 @@ public class ManualReferenceTestRunner extends Eth2ReferenceTestCase {
             testDefinition ->
                 SPEC.isBlank() || testDefinition.getConfigName().equalsIgnoreCase(SPEC))
         .filter(testDefinition -> testDefinition.getTestType().startsWith(TEST_TYPE))
-        .filter(testDefinition -> testDefinition.getDisplayName().contains("merge"))
         .map(testDefinition -> Arguments.of(testDefinition.getDisplayName(), testDefinition));
   }
 }
