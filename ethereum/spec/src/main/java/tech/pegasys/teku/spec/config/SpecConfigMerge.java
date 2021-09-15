@@ -20,7 +20,7 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
-public class SpecConfigMerge extends DelegatingSpecConfig {
+public class SpecConfigMerge extends DelegatingSpecConfigAltair {
 
   // Fork
   private final Bytes4 mergeForkVersion;
@@ -31,7 +31,7 @@ public class SpecConfigMerge extends DelegatingSpecConfig {
   private final UInt256 minAnchorPowBlockDifficulty;
 
   public SpecConfigMerge(
-      SpecConfig specConfig,
+      SpecConfigAltair specConfig,
       Bytes4 mergeForkVersion,
       UInt64 mergeForkEpoch,
       UInt64 targetSecondsToMerge,

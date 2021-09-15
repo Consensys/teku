@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.config;
 
 import java.util.Map;
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
@@ -289,15 +288,5 @@ public class DelegatingSpecConfig implements SpecConfig {
   @Override
   public Bytes getDepositContractAddress() {
     return specConfig.getDepositContractAddress();
-  }
-
-  @Override
-  public Optional<SpecConfigAltair> toVersionAltair() {
-    return specConfig.toVersionAltair();
-  }
-
-  @Override
-  public Optional<SpecConfigMerge> toVersionMerge() {
-    return specConfig.toVersionMerge();
   }
 }

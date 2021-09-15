@@ -91,6 +91,10 @@ public interface BeaconStateSchema<T extends BeaconState, TMutable extends Mutab
     return (SyncCommitteeSchema) getSchemaOrThrow(BeaconStateFields.CURRENT_SYNC_COMMITTEE);
   }
 
+  default SyncCommitteeSchema getNextSyncCommitteeSchemaOrThrow() {
+    return (SyncCommitteeSchema) getSchemaOrThrow(BeaconStateFields.NEXT_SYNC_COMMITTEE);
+  }
+
   private SszSchema<?> getSchemaOrThrow(final BeaconStateFields field) {
     final String fieldName = field.name();
     final int fieldIndex = getFieldIndex(fieldName);

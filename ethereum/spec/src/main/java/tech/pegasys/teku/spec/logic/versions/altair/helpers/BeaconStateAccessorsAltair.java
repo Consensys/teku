@@ -36,7 +36,6 @@ import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
@@ -146,8 +145,9 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
             .collect(toList());
     final BLSPublicKey aggregatePubkey = BLSPublicKey.aggregate(pubkeys);
 
-    return ((BeaconStateSchemaAltair) state.getSchema())
-        .getNextSyncCommitteeSchema()
+    return state
+        .getBeaconStateSchema()
+        .getNextSyncCommitteeSchemaOrThrow()
         .create(
             pubkeys.stream().map(SszPublicKey::new).collect(toList()),
             new SszPublicKey(aggregatePubkey));
