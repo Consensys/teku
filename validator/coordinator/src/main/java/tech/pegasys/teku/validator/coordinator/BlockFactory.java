@@ -83,6 +83,22 @@ public class BlockFactory {
     this.spec = spec;
   }
 
+  public void prepareExecutionPayload(
+      final Optional<BeaconState> maybeCurrentSlotState, UInt64 payloadId) {
+    if (maybeCurrentSlotState.isEmpty()) return;
+    final BeaconState currentState = maybeCurrentSlotState.get();
+    if (currentState instanceof BeaconStateMerge) {
+
+      final ExecutionPayloadUtil executionPayloadUtil =
+          spec.atSlot(currentState.getSlot()).getExecutionPayloadUtil().orElseThrow();
+
+      UInt64 timestamp = spec.computeTimeAtSlot(currentState, currentState.getSlot());
+      final Bytes32 executionParentHash =
+          ((BeaconStateMerge) currentState).getLatest_execution_payload_header().getBlock_hash();
+      executionPayloadUtil.prepareExecutionPayload(executionParentHash, timestamp, payloadId);
+    }
+  }
+
   public BeaconBlock createUnsignedBlock(
       final BeaconState previousState,
       final Optional<BeaconState> maybeBlockSlotState,

@@ -20,6 +20,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.crypto.SecureRandomProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -36,6 +37,7 @@ public class BlockProductionDuty implements Duty {
   private final ForkProvider forkProvider;
   private final ValidatorApiChannel validatorApiChannel;
   private final Spec spec;
+  private UInt64 executionPayloadRequestId;
 
   public BlockProductionDuty(
       final Validator validator,
@@ -54,6 +56,14 @@ public class BlockProductionDuty implements Duty {
   public SafeFuture<DutyResult> performDuty() {
     LOG.trace("Creating block for validator {} at slot {}", validator.getPublicKey(), slot);
     return forkProvider.getForkInfo(slot).thenCompose(this::produceBlock);
+    // TODO do we need to call prepareDuty if it has not been called before?
+  }
+
+  @Override
+  public SafeFuture<Void> prepareDuty() {
+    executionPayloadRequestId =
+        UInt64.fromLongBits(SecureRandomProvider.publicSecureRandom().nextLong());
+    return validatorApiChannel.prepareExecutionPayload(slot, executionPayloadRequestId);
   }
 
   public SafeFuture<DutyResult> produceBlock(final ForkInfo forkInfo) {

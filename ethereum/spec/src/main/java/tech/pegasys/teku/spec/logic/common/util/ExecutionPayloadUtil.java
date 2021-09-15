@@ -39,6 +39,11 @@ public class ExecutionPayloadUtil {
             executionPayload));
   }
 
+  public void prepareExecutionPayload(Bytes32 parentHash, UInt64 timestamp, UInt64 payloadId) {
+    checkNotNull(executionEngineService);
+    executionEngineService.prepareBlock(parentHash, timestamp, payloadId);
+  }
+
   public ExecutionPayload produceExecutionPayload(Bytes32 parentHash, UInt64 timestamp) {
     checkNotNull(executionEngineService);
     return executionEngineService.assembleBlock(parentHash, timestamp).asInternalExecutionPayload();

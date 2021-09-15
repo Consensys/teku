@@ -105,4 +105,13 @@ public class SlotBasedScheduledDuties<P extends Duty, A extends Duty> implements
   public boolean requiresRecalculation(final Bytes32 newHeadDependentRoot) {
     return !getDependentRoot().equals(newHeadDependentRoot);
   }
+
+  @Override
+  public SafeFuture<Void> performProductionDutyPreparation(UInt64 slot) {
+    final Duty duty = productionDuties.get(slot);
+    if (duty == null) {
+      return SafeFuture.COMPLETE;
+    }
+    return duty.prepareDuty();
+  }
 }

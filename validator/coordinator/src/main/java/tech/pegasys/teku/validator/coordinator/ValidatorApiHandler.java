@@ -261,6 +261,19 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
+  public SafeFuture<Void> prepareExecutionPayload(UInt64 preparingSlot, UInt64 payloadId) {
+    // we are preparing for the upcoming slot, lets take current slot state
+    final SafeFuture<Optional<BeaconState>> currentSlotStateFuture =
+        combinedChainDataClient.getStateAtSlotExact(preparingSlot.decrement());
+
+    return currentSlotStateFuture.thenApplyChecked(
+        preState -> {
+          blockFactory.prepareExecutionPayload(preState, payloadId);
+          return null;
+        });
+  }
+
+  @Override
   public SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(
       final UInt64 slot, final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
     LOG.trace("Creating unsigned block for slot {}", slot);

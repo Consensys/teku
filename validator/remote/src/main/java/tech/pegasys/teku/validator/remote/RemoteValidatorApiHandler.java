@@ -207,6 +207,11 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
                                 .collect(toList()))));
   }
 
+  @Override
+  public SafeFuture<Void> prepareExecutionPayload(UInt64 slot, UInt64 requestId) {
+    return SafeFuture.COMPLETE; // TODO implement remote call
+  }
+
   private ProposerDuty mapToProposerDuties(
       final tech.pegasys.teku.api.response.v1.validator.ProposerDuty proposerDuty) {
     return new ProposerDuty(

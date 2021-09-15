@@ -53,6 +53,10 @@ public class ExecutionEngineService {
     this.executionEngineClient = executionEngineClient;
   }
 
+  public void prepareBlock(Bytes32 parentHash, UInt64 timestamp, UInt64 payloadId) {
+    // TODO CALL execution client
+  }
+
   /**
    * Requests execution-engine to produce a block.
    *
