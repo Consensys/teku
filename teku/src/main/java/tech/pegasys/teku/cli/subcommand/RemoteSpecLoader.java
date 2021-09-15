@@ -23,6 +23,7 @@ import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
+import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpClientAuthLoggingIntercepter;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
 
@@ -72,8 +73,7 @@ class RemoteSpecLoader {
     try {
       Thread.sleep(RETRY_DELAY);
     } catch (InterruptedException e) {
-      logError(e);
-      throw new RuntimeException(e);
+      throw new ShuttingDownException();
     }
   }
 
