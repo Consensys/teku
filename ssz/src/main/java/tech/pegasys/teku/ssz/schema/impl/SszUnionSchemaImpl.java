@@ -17,8 +17,11 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.base.Objects;
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
 import java.nio.ByteOrder;
 import java.util.List;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.SszData;
@@ -26,8 +29,10 @@ import tech.pegasys.teku.ssz.SszUnion;
 import tech.pegasys.teku.ssz.impl.SszUnionImpl;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.schema.SszSchema;
+import tech.pegasys.teku.ssz.schema.SszType;
 import tech.pegasys.teku.ssz.schema.SszUnionSchema;
 import tech.pegasys.teku.ssz.sos.SszDeserializeException;
+import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.ssz.sos.SszReader;
 import tech.pegasys.teku.ssz.sos.SszWriter;
 import tech.pegasys.teku.ssz.tree.BranchNode;
@@ -62,6 +67,8 @@ public abstract class SszUnionSchemaImpl<SszUnionT extends SszUnion>
 
   private final List<SszSchema<?>> childrenSchemas;
   private final TreeNode defaultTree;
+  private final Supplier<SszLengthBounds> lengthBounds =
+      Suppliers.memoize(this::calcSszLengthBounds);
 
   public SszUnionSchemaImpl(List<SszSchema<?>> childrenSchemas) {
     checkArgument(childrenSchemas.size() < MAX_SELECTOR, "Too many child types");
@@ -199,6 +206,21 @@ public abstract class SszUnionSchemaImpl<SszUnionT extends SszUnion>
     TreeNode valueNode =
         childSchema.loadBackingNodes(nodeSource, valueHash, GIndexUtil.gIdxLeftGIndex(rootGIndex));
     return createUnionNode(valueNode, selector);
+  }
+
+  @Override
+  public SszLengthBounds getSszLengthBounds() {
+    return lengthBounds.get();
+  }
+
+  private SszLengthBounds calcSszLengthBounds() {
+    return IntStream.range(0, getTypesCount())
+        .mapToObj(this::getChildSchema)
+        .map(SszType::getSszLengthBounds)
+        .reduce(SszLengthBounds::or)
+        .orElseThrow()
+        .addBytes(SELECTOR_SIZE_BYTES)
+        .ceilToBytes();
   }
 
   @Override

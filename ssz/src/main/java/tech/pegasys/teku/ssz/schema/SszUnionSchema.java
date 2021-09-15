@@ -15,11 +15,9 @@ package tech.pegasys.teku.ssz.schema;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.IntStream;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.SszUnion;
 import tech.pegasys.teku.ssz.schema.impl.SszUnionSchemaImpl;
-import tech.pegasys.teku.ssz.sos.SszLengthBounds;
 
 public interface SszUnionSchema<SszUnionT extends SszUnion> extends SszSchema<SszUnionT> {
   int SELECTOR_SIZE_BYTES = 1;
@@ -58,16 +56,5 @@ public interface SszUnionSchema<SszUnionT extends SszUnion> extends SszSchema<Ss
   @Override
   default int getSszFixedPartSize() {
     return SELECTOR_SIZE_BYTES;
-  }
-
-  @Override
-  default SszLengthBounds getSszLengthBounds() {
-    return IntStream.range(0, getTypesCount())
-        .mapToObj(this::getChildSchema)
-        .map(SszType::getSszLengthBounds)
-        .reduce(SszLengthBounds::or)
-        .orElseThrow()
-        .addBytes(SELECTOR_SIZE_BYTES)
-        .ceilToBytes();
   }
 }
