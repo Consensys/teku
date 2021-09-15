@@ -78,6 +78,13 @@ public interface Signature {
    */
   boolean isInfinity();
 
+  /**
+   * Determine if this Signature is in the G2 Group.
+   *
+   * @return true if this signature is in the G2 group, otherwise false.
+   */
+  boolean isInGroup();
+
   /** Implementation must override */
   @Override
   int hashCode();

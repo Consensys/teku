@@ -142,6 +142,11 @@ public class BlstSignature implements Signature {
   }
 
   @Override
+  public boolean isInGroup() {
+    return ec2Point.in_group();
+  }
+
+  @Override
   public int hashCode() {
     return toBytesCompressed().hashCode();
   }

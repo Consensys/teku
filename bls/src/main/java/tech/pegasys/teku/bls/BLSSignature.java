@@ -115,6 +115,10 @@ public class BLSSignature {
     return getSignature().isInfinity();
   }
 
+  public boolean isInGroup() {
+    return getSignature().isInGroup();
+  }
+
   @Override
   public String toString() {
     return toBytesCompressed().toString();
