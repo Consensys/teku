@@ -29,8 +29,8 @@ public class MetricsDataFactory {
   private static final int clientBuild = 1;
   private static final Logger LOG = LogManager.getLogger();
 
-  public MetricsDataFactory(MetricsSystem pms) {
-    this.metricsSystem = pms;
+  public MetricsDataFactory(MetricsSystem metricsSystem) {
+    this.metricsSystem = metricsSystem;
   }
 
   public BaseMetricData getMetricData(MetricsDataClient metricsClient) {

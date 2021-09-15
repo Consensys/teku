@@ -29,22 +29,29 @@ import tech.pegasys.teku.service.serviceutils.Service;
 
 public class MetricsPublisherManager extends Service {
 
-  private static final long intervalBetweenPublications = 60;
+  private final long intervalBetweenPublications;
 
   private final AsyncRunnerFactory asyncRunnerFactory;
   private final MetricsEndpoint metricsConfig;
   private static final Logger LOG = LogManager.getLogger();
   private final JsonProvider jsonProvider = new JsonProvider();
   private final MetricsDataFactory dataFactory;
-  private final MetricsPublisher publisher;
+  private MetricsPublisher publisher;
   private volatile Cancellable publisherTask;
 
   public MetricsPublisherManager(
-      AsyncRunnerFactory asyncRunnerFactory, final MetricsEndpoint metricsConfig) {
+      AsyncRunnerFactory asyncRunnerFactory,
+      final MetricsEndpoint metricsConfig,
+      final long intervalBetweenPublications) {
     this.asyncRunnerFactory = asyncRunnerFactory;
     this.metricsConfig = metricsConfig;
     this.dataFactory = new MetricsDataFactory(metricsConfig.getMetricsSystem());
     this.publisher = new MetricsPublisher(new OkHttpClient());
+    this.intervalBetweenPublications = intervalBetweenPublications;
+  }
+
+  void setMetricsPublisher(final MetricsPublisher metricsPublisher) {
+    this.publisher = metricsPublisher;
   }
 
   @Override
@@ -56,17 +63,17 @@ public class MetricsPublisherManager extends Service {
     return safeFuture;
   }
 
-  private void publishMetrics() {
+  int publishMetrics() {
     String endpointAddress = metricsConfig.getMetricConfig().getMetricsEndpoint();
     BaseMetricData clientData = dataFactory.getMetricData(MetricsDataClient.VALIDATOR);
     try {
-      publisher.publishMetrics(endpointAddress, jsonProvider.objectToJSON(clientData));
-
+      return publisher.publishMetrics(endpointAddress, jsonProvider.objectToJSON(clientData));
     } catch (JsonProcessingException e) {
       LOG.error("Error processing JSON object ", e);
     } catch (IOException e) {
       LOG.error("Error performing external connection ", e);
     }
+    return 0;
   }
 
   @Override

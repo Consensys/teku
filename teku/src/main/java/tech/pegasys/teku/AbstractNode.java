@@ -41,6 +41,7 @@ import tech.pegasys.teku.util.config.Constants;
 
 public abstract class AbstractNode implements Node {
   private static final Logger LOG = LogManager.getLogger();
+  private static final long intervalBetweenPublications = 60;
 
   private final Vertx vertx = Vertx.vertx();
   private final ExecutorService threadPool =
@@ -66,7 +67,9 @@ public abstract class AbstractNode implements Node {
 
     asyncRunnerFactory =
         AsyncRunnerFactory.createDefault(new MetricTrackingExecutorFactory(metricsSystem));
-    this.metricsPublisher = new MetricsPublisherManager(asyncRunnerFactory, metricsEndpoint);
+    this.metricsPublisher =
+        new MetricsPublisherManager(
+            asyncRunnerFactory, metricsEndpoint, intervalBetweenPublications);
     serviceConfig =
         new ServiceConfig(
             asyncRunnerFactory,

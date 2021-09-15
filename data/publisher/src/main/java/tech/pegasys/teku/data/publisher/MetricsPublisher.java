@@ -33,7 +33,7 @@ public class MetricsPublisher {
     this.client = client;
   }
 
-  public void publishMetrics(final String endpointAddress, final String json) throws IOException {
+  public int publishMetrics(final String endpointAddress, final String json) throws IOException {
     HttpUrl endpoint = HttpUrl.get(endpointAddress);
     RequestBody body = RequestBody.create(json, mediaType);
     Request request = new Request.Builder().url(endpoint).post(body).build();
@@ -42,5 +42,6 @@ public class MetricsPublisher {
       LOG.error(
           "Failed to publish metrics to {}. Response code {}", endpointAddress, response.code());
     }
+    return response.code();
   }
 }
