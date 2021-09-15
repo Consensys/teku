@@ -26,26 +26,32 @@ public class P2PLogger {
   @SuppressWarnings("PrivateStaticFinalLoggers")
   private final Logger log;
 
+  private final boolean isIncludeP2pWarnings = LoggingConfigurator.isIncludeP2pWarnings();
+
   public P2PLogger(final String name) {
     this.log = LogManager.getLogger(name);
   }
 
   public void onGossipMessageDecodingError(
       final String topic, final Bytes originalMessage, final Throwable error) {
-    log.warn(
-        "Failed to decode gossip message on topic {}, raw message: {}",
-        topic,
-        originalMessage,
-        error);
+    if (isIncludeP2pWarnings) {
+      log.warn(
+          "Failed to decode gossip message on topic {}, raw message: {}",
+          topic,
+          originalMessage,
+          error);
+    }
   }
 
   public void onGossipRejected(
       final String topic, final Bytes decodedMessage, final Optional<String> description) {
-    log.warn(
-        "Rejecting gossip message on topic {}, reason: {}, decoded message: {}",
-        topic,
-        description.orElse("failed validation"),
-        decodedMessage);
+    if (isIncludeP2pWarnings) {
+      log.warn(
+          "Rejecting gossip message on topic {}, reason: {}, decoded message: {}",
+          topic,
+          description.orElse("failed validation"),
+          decodedMessage);
+    }
   }
 
   public void onInvalidBlock(
@@ -54,12 +60,14 @@ public class P2PLogger {
       final Bytes blockSsz,
       final String failureReason,
       final Optional<Throwable> failureCause) {
-    log.warn(
-        "Rejecting invalid block at slot {} with root {} because {}. Full block data: {}",
-        slot,
-        blockRoot,
-        failureReason,
-        blockSsz,
-        failureCause.orElse(null));
+    if (isIncludeP2pWarnings) {
+      log.warn(
+          "Rejecting invalid block at slot {} with root {} because {}. Full block data: {}",
+          slot,
+          blockRoot,
+          failureReason,
+          blockSsz,
+          failureCause.orElse(null));
+    }
   }
 }

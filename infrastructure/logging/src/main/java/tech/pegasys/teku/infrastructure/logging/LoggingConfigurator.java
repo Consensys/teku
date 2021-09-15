@@ -57,6 +57,10 @@ public class LoggingConfigurator {
     return COLOR.get();
   }
 
+  public static boolean isIncludeP2pWarnings() {
+    return INCLUDE_P2P_WARNINGS;
+  }
+
   public static synchronized void setColorEnabled(final boolean isEnabled) {
     COLOR.set(isEnabled);
   }
@@ -118,7 +122,6 @@ public class LoggingConfigurator {
         setUpStatusLogger(consoleAppender);
         setUpEventsLogger(consoleAppender);
         setUpValidatorLogger(consoleAppender);
-        setUpP2pLogger(consoleAppender);
 
         addAppenderToRootLogger(configuration, consoleAppender);
         break;
@@ -128,7 +131,6 @@ public class LoggingConfigurator {
         setUpStatusLogger(fileAppender);
         setUpEventsLogger(fileAppender);
         setUpValidatorLogger(fileAppender);
-        setUpP2pLogger(fileAppender);
 
         addAppenderToRootLogger(configuration, fileAppender);
         break;
@@ -142,11 +144,9 @@ public class LoggingConfigurator {
         final LoggerConfig eventsLogger = setUpEventsLogger(consoleAppender);
         final LoggerConfig statusLogger = setUpStatusLogger(consoleAppender);
         final LoggerConfig validatorLogger = setUpValidatorLogger(consoleAppender);
-        final LoggerConfig p2pLogger = setUpP2pLogger(consoleAppender);
         configuration.addLogger(eventsLogger.getName(), eventsLogger);
         configuration.addLogger(statusLogger.getName(), statusLogger);
         configuration.addLogger(validatorLogger.getName(), validatorLogger);
-        configuration.addLogger(p2pLogger.getName(), p2pLogger);
 
         fileAppender = fileAppender(configuration);
 
@@ -154,7 +154,7 @@ public class LoggingConfigurator {
         addAppenderToRootLogger(configuration, fileAppender);
         break;
     }
-
+    StatusLogger.getLogger().info("Include P2P warnings set to: {}", INCLUDE_P2P_WARNINGS);
     configuration.getLoggerContext().updateLoggers();
   }
 
@@ -241,17 +241,6 @@ public class LoggingConfigurator {
             ? ROOT_LOG_LEVEL
             : Level.ERROR;
     final LoggerConfig logger = new LoggerConfig(VALIDATOR_LOGGER_NAME, validatorLogLevel, true);
-    logger.addAppender(appender, ROOT_LOG_LEVEL, null);
-    return logger;
-  }
-
-  private static LoggerConfig setUpP2pLogger(final Appender appender) {
-    // Don't disable p2p error logs unless the root log level disables error.
-    final Level p2pLogLevel =
-        INCLUDE_P2P_WARNINGS || ROOT_LOG_LEVEL.isMoreSpecificThan(Level.ERROR)
-            ? ROOT_LOG_LEVEL
-            : Level.ERROR;
-    final LoggerConfig logger = new LoggerConfig(P2P_LOGGER_NAME, p2pLogLevel, true);
     logger.addAppender(appender, ROOT_LOG_LEVEL, null);
     return logger;
   }

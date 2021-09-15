@@ -161,7 +161,7 @@ public abstract class AbstractSszListSchema<
     // Store list root node
     nodeStore.storeBranchNode(
         node.hashTreeRoot(),
-        GIndexUtil.gIdxRightGIndex(rootGIndex),
+        rootGIndex,
         1,
         new Bytes32[] {vectorNode.hashTreeRoot(), lengthNode.hashTreeRoot()});
   }

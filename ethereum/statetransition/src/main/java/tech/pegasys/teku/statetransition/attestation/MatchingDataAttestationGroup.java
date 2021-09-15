@@ -186,10 +186,8 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
             .reduce(Attestation.createEmptyAggregationBits(), SszBitlist::or);
   }
 
-  public Bytes32 getCommitteeShufflingSeed() {
-    return committeeShufflingSeed.orElseThrow(
-        () ->
-            new IllegalStateException("Attestations added with unknown committee shuffling seed"));
+  public boolean matchesCommitteeShufflingSeed(final Set<Bytes32> validSeeds) {
+    return committeeShufflingSeed.map(validSeeds::contains).orElse(false);
   }
 
   private class AggregatingIterator implements Iterator<ValidateableAttestation> {
