@@ -37,7 +37,7 @@ public class BlockProductionDuty implements Duty {
   private final ForkProvider forkProvider;
   private final ValidatorApiChannel validatorApiChannel;
   private final Spec spec;
-  private UInt64 executionPayloadRequestId;
+  private UInt64 executionPayloadId;
 
   public BlockProductionDuty(
       final Validator validator,
@@ -61,9 +61,8 @@ public class BlockProductionDuty implements Duty {
 
   @Override
   public SafeFuture<Void> prepareDuty() {
-    executionPayloadRequestId =
-        UInt64.fromLongBits(SecureRandomProvider.publicSecureRandom().nextLong());
-    return validatorApiChannel.prepareExecutionPayload(slot, executionPayloadRequestId);
+    executionPayloadId = UInt64.fromLongBits(SecureRandomProvider.publicSecureRandom().nextLong());
+    return validatorApiChannel.prepareExecutionPayload(slot, executionPayloadId);
   }
 
   public SafeFuture<DutyResult> produceBlock(final ForkInfo forkInfo) {

@@ -208,8 +208,9 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Void> prepareExecutionPayload(UInt64 slot, UInt64 requestId) {
-    return SafeFuture.COMPLETE; // TODO implement remote call
+  public SafeFuture<Void> prepareExecutionPayload(UInt64 slot, UInt64 payloadId) {
+    // TODO implement remote call
+    throw new UnsupportedOperationException("Not implemented");
   }
 
   private ProposerDuty mapToProposerDuties(

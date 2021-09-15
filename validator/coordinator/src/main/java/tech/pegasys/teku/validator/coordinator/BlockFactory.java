@@ -86,17 +86,19 @@ public class BlockFactory {
   public void prepareExecutionPayload(
       final Optional<BeaconState> maybeCurrentSlotState, UInt64 payloadId) {
     if (maybeCurrentSlotState.isEmpty()) return;
-    final BeaconState currentState = maybeCurrentSlotState.get();
-    if (currentState instanceof BeaconStateMerge) {
+    final Optional<BeaconStateMerge> maybeCurrentMergeState =
+        maybeCurrentSlotState.get().toVersionMerge();
 
-      final ExecutionPayloadUtil executionPayloadUtil =
-          spec.atSlot(currentState.getSlot()).getExecutionPayloadUtil().orElseThrow();
+    if (maybeCurrentMergeState.isEmpty()) return;
+    final BeaconStateMerge currentMergeState = maybeCurrentMergeState.get();
 
-      UInt64 timestamp = spec.computeTimeAtSlot(currentState, currentState.getSlot());
-      final Bytes32 executionParentHash =
-          ((BeaconStateMerge) currentState).getLatest_execution_payload_header().getBlock_hash();
-      executionPayloadUtil.prepareExecutionPayload(executionParentHash, timestamp, payloadId);
-    }
+    final ExecutionPayloadUtil executionPayloadUtil =
+        spec.atSlot(currentMergeState.getSlot()).getExecutionPayloadUtil().orElseThrow();
+
+    UInt64 timestamp = spec.computeTimeAtSlot(currentMergeState, currentMergeState.getSlot());
+    final Bytes32 executionParentHash =
+        currentMergeState.getLatest_execution_payload_header().getBlock_hash();
+    executionPayloadUtil.prepareExecutionPayload(executionParentHash, timestamp, payloadId);
   }
 
   public BeaconBlock createUnsignedBlock(
