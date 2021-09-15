@@ -22,7 +22,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.ssz.tree.GIndexUtil.NodeRelation;
-import tech.pegasys.teku.ssz.tree.TreeNodeImpl.BranchNodeImpl;
 
 /**
  * Branch node of a tree. This node type corresponds to the 'Commit' node in the spec:
@@ -39,7 +38,7 @@ public interface BranchNode extends TreeNode {
   static BranchNode create(TreeNode left, TreeNode right) {
     checkNotNull(left);
     checkNotNull(right);
-    return new BranchNodeImpl(left, right);
+    return new SimpleBranchNode(left, right);
   }
 
   /**

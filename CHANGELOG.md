@@ -18,15 +18,5 @@ For information on changes in released versions of Teku, see the [releases page]
 ## Unreleased Changes
 
 ### Additions and Improvements
- - Updated BLST library.
-
 
 ### Bug Fixes
- - Posting aggregates that fail validation to `/eth/v1/validator/aggregate_and_proofs` will now result in `SC_BAD_REQUEST` response, with details of the invalid aggregates in the response body.
- - Use atomic move when writing slashing protection records, if supported by the file system.
- - Increase the batch size when searching for unknown validator indexes from 10 to 50.
- - Fixed issue with the voluntary-exit subcommand and Altair networks which caused "Failed to retrieve network config" errors.
- - Fixed issue where redundant attestations were incorrectly included in blocks.
- - Validator performance is no longer logged when there are no attestations expected.
- - Updated sync committee subscriptions to use untilEpoch as an exclusive field.
- - Fixed an issue where invalid attestations could be incorrectly added to blocks in the epoch immediately after the Altair fork.
