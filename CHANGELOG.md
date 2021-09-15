@@ -18,7 +18,8 @@ For information on changes in released versions of Teku, see the [releases page]
 ## Unreleased Changes
 
 ### Additions and Improvements
-- Upgraded to BLST 0.3.5
+- Upgraded to BLST 0.3.5.
 
 
 ### Bug Fixes
+- Fix `NoSuchElementException` reported at startup by validator performance tracking module. 
