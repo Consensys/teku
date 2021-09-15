@@ -25,11 +25,13 @@ import tech.pegasys.teku.ssz.primitive.SszBit;
 import tech.pegasys.teku.ssz.primitive.SszByte;
 import tech.pegasys.teku.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.ssz.primitive.SszBytes4;
+import tech.pegasys.teku.ssz.primitive.SszNone;
 import tech.pegasys.teku.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.ssz.schema.SszCollectionSchema;
 import tech.pegasys.teku.ssz.schema.SszListSchema;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.schema.SszSchema;
+import tech.pegasys.teku.ssz.schema.SszUnionSchema;
 import tech.pegasys.teku.ssz.schema.impl.AbstractSszContainerSchema;
 import tech.pegasys.teku.ssz.schema.impl.AbstractSszPrimitiveSchema;
 import tech.pegasys.teku.ssz.type.Bytes4;
@@ -69,7 +71,9 @@ public class RandomSszDataGenerator {
   @SuppressWarnings("unchecked")
   public <T extends SszData> Stream<T> randomDataStream(SszSchema<T> schema) {
     if (schema instanceof AbstractSszPrimitiveSchema) {
-      if (schema == SszPrimitiveSchemas.BIT_SCHEMA) {
+      if (schema == SszPrimitiveSchemas.NONE_SCHEMA) {
+        return (Stream<T>) Stream.generate(() -> SszNone.INSTANCE);
+      } else if (schema == SszPrimitiveSchemas.BIT_SCHEMA) {
         return (Stream<T>) Stream.generate(bitSupplier);
       } else if (schema == SszPrimitiveSchemas.BYTE_SCHEMA) {
         return (Stream<T>) Stream.generate(byteSupplier);
@@ -111,6 +115,15 @@ public class RandomSszDataGenerator {
                     .collect(Collectors.toList());
             SszCollection<SszData> ret = collectionSchema.createFromElements(children);
             return (T) ret;
+          });
+    } else if (schema instanceof SszUnionSchema) {
+      return Stream.generate(
+          () -> {
+            SszUnionSchema<?> unionSchema = (SszUnionSchema<?>) schema;
+            int selector = random.nextInt(unionSchema.getTypesCount());
+            return (T)
+                unionSchema.createFromValue(
+                    selector, randomData(unionSchema.getChildSchema(selector)));
           });
     } else {
       throw new IllegalArgumentException("Unknown schema: " + schema);

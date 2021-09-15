@@ -80,6 +80,10 @@ public class SszLengthBounds {
     return new SszLengthBounds(this.min * factor, this.max * factor);
   }
 
+  public SszLengthBounds or(final SszLengthBounds other) {
+    return new SszLengthBounds(Long.min(this.min, other.min), Long.max(this.max, other.max));
+  }
+
   public boolean isWithinBounds(final long lengthBytes) {
     return lengthBytes >= getMinBytes() && lengthBytes <= getMaxBytes();
   }
