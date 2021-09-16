@@ -75,11 +75,11 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
 
   @Override
   public SafeFuture<DutyResult> performProductionDuty(final UInt64 slot) {
-    lastSignatureBlockRoot = chainHeadTracker.getCurrentChainHead(slot);
-    lastSignatureSlot = Optional.of(slot);
-    if (assignments.isEmpty() && lastSignatureBlockRoot.isEmpty()) {
+    if (assignments.isEmpty()) {
       return SafeFuture.completedFuture(DutyResult.NO_OP);
     }
+    lastSignatureBlockRoot = chainHeadTracker.getCurrentChainHead(slot);
+    lastSignatureSlot = Optional.of(slot);
     return lastSignatureBlockRoot
         .map(blockRoot -> productionDuty.produceMessages(slot, blockRoot))
         .orElseGet(() -> headUnavailableFailure(slot));
@@ -129,17 +129,18 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
   }
 
   public void subscribeToSubnets() {
-    if (assignments.size() > 0) {
-      validatorApiChannel.subscribeToSyncCommitteeSubnets(
-          assignments.stream()
-              .map(
-                  assignment ->
-                      new SyncCommitteeSubnetSubscription(
-                          assignment.getValidatorIndex(),
-                          assignment.getCommitteeIndices(),
-                          lastEpochInCommitteePeriod.increment()))
-              .collect(Collectors.toSet()));
+    if (assignments.isEmpty()) {
+      return;
     }
+    validatorApiChannel.subscribeToSyncCommitteeSubnets(
+        assignments.stream()
+            .map(
+                assignment ->
+                    new SyncCommitteeSubnetSubscription(
+                        assignment.getValidatorIndex(),
+                        assignment.getCommitteeIndices(),
+                        lastEpochInCommitteePeriod.increment()))
+            .collect(Collectors.toSet()));
   }
 
   public static class Builder {
