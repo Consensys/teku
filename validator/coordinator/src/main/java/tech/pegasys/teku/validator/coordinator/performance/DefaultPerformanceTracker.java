@@ -103,7 +103,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
   public void onSlot(UInt64 slot) {
     // Ensure a consistent view as the field is volatile.
     final Optional<UInt64> nodeStartEpoch = this.nodeStartEpoch;
-    if (nodeStartEpoch.isEmpty()) {
+    if (nodeStartEpoch.isEmpty() || combinedChainDataClient.getChainHead().isEmpty()) {
       return;
     }
 
