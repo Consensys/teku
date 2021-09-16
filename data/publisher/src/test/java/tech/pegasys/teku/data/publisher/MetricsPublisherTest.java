@@ -59,4 +59,14 @@ class MetricsPublisherTest {
     assertThat(request.getMethod()).isEqualTo("POST");
     assertThat(request.getBody().readString(StandardCharsets.UTF_8)).isEqualTo(json);
   }
+
+  @Test
+  void shouldReturnErrorFromServer() throws IOException {
+    String json = "{}";
+    int serverInternalError = 500;
+    metricsPublisher = new MetricsPublisher(okHttpClient);
+    mockWebServer.enqueue(new MockResponse().setResponseCode(serverInternalError));
+    int responseCode = metricsPublisher.publishMetrics(mockWebServer.url("/").toString(), json);
+    assertThat(responseCode).isEqualTo(serverInternalError);
+  }
 }
