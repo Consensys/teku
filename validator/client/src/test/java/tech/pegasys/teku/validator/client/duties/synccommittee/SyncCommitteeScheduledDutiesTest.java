@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.Collections;
@@ -79,6 +80,15 @@ class SyncCommitteeScheduledDutiesTest {
   }
 
   @Test
+  void shouldNotSubscribeToSubnetsWithoutValidatorsPresent() {
+    final SyncCommitteeScheduledDuties duties = validBuilder().build();
+
+    duties.subscribeToSubnets();
+
+    verifyNoInteractions(validatorApiChannel);
+  }
+
+  @Test
   void shouldNotProduceSignaturesWhenChainHeadIsEmpty() {
     final UInt64 slot = UInt64.valueOf(25);
     when(chainHeadTracker.getCurrentChainHead(slot)).thenReturn(Optional.empty());
@@ -102,6 +112,18 @@ class SyncCommitteeScheduledDutiesTest {
                     validator1.getPublicKey().toAbbreviatedString(),
                     validator2.getPublicKey().toAbbreviatedString())),
             any(IllegalStateException.class));
+  }
+
+  @Test
+  void shouldNotPerformDutyWhenNoActiveValidatorsAndChainHeadEmpty() {
+    final UInt64 slot = UInt64.valueOf(25);
+    when(chainHeadTracker.getCurrentChainHead(slot)).thenReturn(Optional.empty());
+
+    final SyncCommitteeScheduledDuties duties = validBuilder().build();
+    final SafeFuture<DutyResult> result = duties.performProductionDuty(slot);
+    reportDutyResult(slot, result);
+
+    verifyNoInteractions(validatorLogger);
   }
 
   @Test
