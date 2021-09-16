@@ -18,13 +18,13 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.forkchoice.TransitionStore;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineService;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.versions.merge.helpers.MiscHelpersMerge;
 
 public class MergeTransitionHelpers {
 
   private final MiscHelpersMerge miscHelpers;
-  private ExecutionEngineService executionEngineService;
+  private ExecutionEngineChannel executionEngineChannel;
 
   public MergeTransitionHelpers(MiscHelpersMerge miscHelpers) {
     this.miscHelpers = miscHelpers;
@@ -45,17 +45,18 @@ public class MergeTransitionHelpers {
   }
 
   public PowBlock getPowBlock(Bytes32 blockHash) {
-    return executionEngineService
+    return executionEngineChannel
         .getPowBlock(blockHash)
+        .join()
         .map(PowBlock::new)
         .orElse(new PowBlock(blockHash, false, false, UInt256.ZERO, UInt256.ZERO));
   }
 
   public PowBlock getPowChainHead() {
-    return new PowBlock(executionEngineService.getPowChainHead());
+    return new PowBlock(executionEngineChannel.getPowChainHead().join());
   }
 
-  public void setExecutionEngineService(ExecutionEngineService executionEngineService) {
-    this.executionEngineService = executionEngineService;
+  public void setExecutionEngineChannel(ExecutionEngineChannel executionEngineChannel) {
+    this.executionEngineChannel = executionEngineChannel;
   }
 }

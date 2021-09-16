@@ -19,10 +19,10 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigMerge;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -31,12 +31,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.MutableBeaconStateMerge;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineService;
-import tech.pegasys.teku.spec.executionengine.client.ExecutionEngineClient;
-import tech.pegasys.teku.spec.executionengine.client.schema.AssembleBlockRequest;
-import tech.pegasys.teku.spec.executionengine.client.schema.GenericResponse;
-import tech.pegasys.teku.spec.executionengine.client.schema.NewBlockResponse;
-import tech.pegasys.teku.spec.executionengine.client.schema.Response;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
@@ -179,45 +174,37 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
         validatorsUtil,
         operationValidator,
         new ExecutionPayloadUtil(
-            new ExecutionEngineService(
-                new ExecutionEngineClient() {
-                  @Override
-                  public SafeFuture<
-                          Response<
-                              tech.pegasys.teku.spec.executionengine.client.schema
-                                  .ExecutionPayload>>
-                      consensusAssembleBlock(AssembleBlockRequest request) {
-                    return null;
-                  }
+            new ExecutionEngineChannel() {
+              @Override
+              public SafeFuture<ExecutionPayload> assembleBlock(
+                  Bytes32 parentHash, UInt64 timestamp) {
+                throw new UnsupportedOperationException();
+              }
 
-                  @Override
-                  public SafeFuture<Response<NewBlockResponse>> consensusNewBlock(
-                      tech.pegasys.teku.spec.executionengine.client.schema.ExecutionPayload
-                          request) {
-                    return SafeFuture.completedFuture(
-                        new Response<>(new NewBlockResponse(executionValid)));
-                  }
+              @Override
+              public SafeFuture<Boolean> newBlock(ExecutionPayload executionPayload) {
+                return SafeFuture.completedFuture(executionValid);
+              }
 
-                  @Override
-                  public SafeFuture<Response<GenericResponse>> consensusSetHead(Bytes32 blockHash) {
-                    return null;
-                  }
+              @Override
+              public SafeFuture<Void> setHead(Bytes32 blockHash) {
+                throw new UnsupportedOperationException();
+              }
 
-                  @Override
-                  public SafeFuture<Response<GenericResponse>> consensusFinalizeBlock(
-                      Bytes32 blockHash) {
-                    return null;
-                  }
+              @Override
+              public SafeFuture<Void> finalizeBlock(Bytes32 blockHash) {
+                throw new UnsupportedOperationException();
+              }
 
-                  @Override
-                  public SafeFuture<Optional<Block>> getPowBlock(Bytes32 blockHash) {
-                    return SafeFuture.completedFuture(Optional.empty());
-                  }
+              @Override
+              public SafeFuture<Optional<Block>> getPowBlock(Bytes32 blockHash) {
+                throw new UnsupportedOperationException();
+              }
 
-                  @Override
-                  public SafeFuture<Block> getPowChainHead() {
-                    return SafeFuture.completedFuture(new EthBlock.Block());
-                  }
-                })));
+              @Override
+              public SafeFuture<Block> getPowChainHead() {
+                throw new UnsupportedOperationException();
+              }
+            }));
   }
 }

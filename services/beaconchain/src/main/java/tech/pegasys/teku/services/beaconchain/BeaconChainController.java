@@ -58,6 +58,7 @@ import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
+import tech.pegasys.teku.services.powchain.execution.ExecutionEngineService;
 import tech.pegasys.teku.services.timer.TimeTickChannel;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -73,7 +74,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineService;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.SpecLogic;
 import tech.pegasys.teku.statetransition.EpochCachePrimer;
 import tech.pegasys.teku.statetransition.OperationPool;
@@ -179,7 +180,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile CoalescingChainHeadChannel coalescingChainHeadChannel;
   private volatile ActiveValidatorTracker activeValidatorTracker;
   private volatile AttestationTopicSubscriber attestationTopicSubscriber;
-  private volatile ExecutionEngineService executionEngineService;
+  private volatile ExecutionEngineChannel executionEngineChannel;
   private volatile SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager;
 
   private UInt64 genesisTimeTracker = ZERO;
@@ -800,17 +801,17 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
     if (specLogic.isPresent()) {
       SpecLogic specLogicMerge = specLogic.get();
-      executionEngineService =
+      executionEngineChannel =
           beaconConfig.powchainConfig().isEnabled()
               ? ExecutionEngineService.create(
                   beaconConfig.powchainConfig().getEth1Endpoints().get(0))
               : ExecutionEngineService.createStub();
       specLogicMerge
           .getExecutionPayloadUtil()
-          .ifPresent(util -> util.setExecutionEngineService(executionEngineService));
+          .ifPresent(util -> util.setExecutionEngineChannel(executionEngineChannel));
       specLogicMerge
           .getMergeTransitionHelpers()
-          .ifPresent(helpers -> helpers.setExecutionEngineService(executionEngineService));
+          .ifPresent(helpers -> helpers.setExecutionEngineChannel(executionEngineChannel));
 
       // Propagate head updates
       eventChannels.subscribe(
@@ -833,7 +834,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                                     // Check if there is a payload
                                     if (!body.getExecution_payload()
                                         .equals(new ExecutionPayload())) {
-                                      executionEngineService.setHead(
+                                      executionEngineChannel.setHead(
                                           body.getExecution_payload().getBlock_hash());
                                     }
                                   }))
@@ -854,7 +855,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                                     // Check if there is a payload
                                     if (!body.getExecution_payload()
                                         .equals(new ExecutionPayload())) {
-                                      executionEngineService.finalizeBlock(
+                                      executionEngineChannel.finalizeBlock(
                                           body.getExecution_payload().getBlock_hash());
                                     }
                                   }))

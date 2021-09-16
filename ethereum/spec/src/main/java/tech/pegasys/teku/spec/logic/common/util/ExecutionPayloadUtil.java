@@ -18,33 +18,29 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineService;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 
 public class ExecutionPayloadUtil {
 
-  private ExecutionEngineService executionEngineService;
+  private ExecutionEngineChannel executionEngineChannel;
 
-  public ExecutionPayloadUtil(ExecutionEngineService executionEngineService) {
-    this.executionEngineService = executionEngineService;
-  }
+  public ExecutionPayloadUtil() {}
 
-  public ExecutionPayloadUtil() {
-    this(ExecutionEngineService.createStub());
+  public ExecutionPayloadUtil(ExecutionEngineChannel executionEngineChannel) {
+    this.executionEngineChannel = executionEngineChannel;
   }
 
   public boolean verifyExecutionStateTransition(ExecutionPayload executionPayload) {
-    checkNotNull(executionEngineService);
-    return executionEngineService.newBlock(
-        new tech.pegasys.teku.spec.executionengine.client.schema.ExecutionPayload(
-            executionPayload));
+    checkNotNull(executionEngineChannel);
+    return executionEngineChannel.newBlock(executionPayload).join();
   }
 
   public ExecutionPayload produceExecutionPayload(Bytes32 parentHash, UInt64 timestamp) {
-    checkNotNull(executionEngineService);
-    return executionEngineService.assembleBlock(parentHash, timestamp).asInternalExecutionPayload();
+    checkNotNull(executionEngineChannel);
+    return executionEngineChannel.assembleBlock(parentHash, timestamp).join();
   }
 
-  public void setExecutionEngineService(ExecutionEngineService executionEngineService) {
-    this.executionEngineService = executionEngineService;
+  public void setExecutionEngineChannel(ExecutionEngineChannel executionEngineChannel) {
+    this.executionEngineChannel = executionEngineChannel;
   }
 }
