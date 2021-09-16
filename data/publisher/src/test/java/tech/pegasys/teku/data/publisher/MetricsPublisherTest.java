@@ -27,14 +27,13 @@ import org.junit.jupiter.api.Test;
 
 class MetricsPublisherTest {
 
-  private MockWebServer mockWebServer = new MockWebServer();
-  private OkHttpClient okHttpClient;
+  private final OkHttpClient okHttpClient = new OkHttpClient();
+  private final MockWebServer mockWebServer = new MockWebServer();
   private MetricsPublisher metricsPublisher;
 
   @BeforeEach
   public void beforeEach() throws Exception {
     mockWebServer.start();
-    okHttpClient = new OkHttpClient();
   }
 
   @AfterEach
