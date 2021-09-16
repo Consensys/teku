@@ -57,6 +57,8 @@ class SyncCommitteeScheduledDutiesTest {
 
   private final Validator validator1 = createValidator();
   private final Validator validator2 = createValidator();
+  private final List<ValidatorAndCommitteeIndices> singleValidatorList =
+      List.of(new ValidatorAndCommitteeIndices(validator1, 1));
 
   @Test
   void shouldSubscribeToSubnets() {
@@ -142,8 +144,7 @@ class SyncCommitteeScheduledDutiesTest {
     when(aggregationDuty.produceAggregates(slot, blockRoot))
         .thenReturn(SafeFuture.completedFuture(expectedDutyResult));
 
-    final SyncCommitteeScheduledDuties duties =
-        createScheduledDutiesWithMocks(List.of(new ValidatorAndCommitteeIndices(validator1, 1)));
+    final SyncCommitteeScheduledDuties duties = createScheduledDutiesWithMocks(singleValidatorList);
 
     assertThat(duties.performProductionDuty(slot)).isCompletedWithValue(expectedDutyResult);
     assertThat(duties.performAggregationDuty(slot)).isCompletedWithValue(expectedDutyResult);
@@ -159,17 +160,12 @@ class SyncCommitteeScheduledDutiesTest {
     final SafeFuture<DutyResult> result = duties.performAggregationDuty(UInt64.ZERO);
     reportDutyResult(UInt64.ZERO, result);
 
-    verify(validatorLogger)
-        .dutyFailed(
-            eq(TYPE),
-            eq(UInt64.ZERO),
-            eq(Collections.emptySet()),
-            any(IllegalStateException.class));
+    verifyNoInteractions(validatorLogger);
   }
 
   @Test
   void shouldNotProduceAggregatesIfNoBlockFoundForSignatures() {
-    final SyncCommitteeScheduledDuties duties = createScheduledDutiesWithMocks();
+    final SyncCommitteeScheduledDuties duties = createScheduledDutiesWithMocks(singleValidatorList);
     when(chainHeadTracker.getCurrentChainHead(any())).thenReturn(Optional.empty());
 
     assertThat(duties.performProductionDuty(UInt64.ZERO)).isCompleted();
@@ -181,13 +177,13 @@ class SyncCommitteeScheduledDutiesTest {
         .dutyFailed(
             eq(TYPE),
             eq(UInt64.ZERO),
-            eq(Collections.emptySet()),
+            eq(Set.of(validator1.getPublicKey().toAbbreviatedString())),
             any(IllegalStateException.class));
   }
 
   @Test
   void shouldNotProduceAggregatesIfSignaturesLastProducedForEarlierSlot() {
-    final SyncCommitteeScheduledDuties duties = createScheduledDutiesWithMocks();
+    final SyncCommitteeScheduledDuties duties = createScheduledDutiesWithMocks(singleValidatorList);
     when(chainHeadTracker.getCurrentChainHead(any()))
         .thenReturn(Optional.of(dataStructureUtil.randomBytes32()));
 
@@ -200,13 +196,13 @@ class SyncCommitteeScheduledDutiesTest {
         .dutyFailed(
             eq(TYPE),
             eq(UInt64.ZERO),
-            eq(Collections.emptySet()),
+            eq(Set.of(validator1.getPublicKey().toAbbreviatedString())),
             any(IllegalStateException.class));
   }
 
   @Test
   void shouldNotProduceAggregatesIfSignaturesLastProducedForLaterSlot() {
-    final SyncCommitteeScheduledDuties duties = createScheduledDutiesWithMocks();
+    final SyncCommitteeScheduledDuties duties = createScheduledDutiesWithMocks(singleValidatorList);
     when(chainHeadTracker.getCurrentChainHead(any()))
         .thenReturn(Optional.of(dataStructureUtil.randomBytes32()));
 
@@ -219,7 +215,7 @@ class SyncCommitteeScheduledDutiesTest {
         .dutyFailed(
             eq(TYPE),
             eq(UInt64.ZERO),
-            eq(Collections.emptySet()),
+            eq(Set.of(validator1.getPublicKey().toAbbreviatedString())),
             any(IllegalStateException.class));
   }
 
