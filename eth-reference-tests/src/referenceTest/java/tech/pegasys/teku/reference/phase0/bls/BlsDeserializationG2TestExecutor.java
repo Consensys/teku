@@ -34,7 +34,7 @@ public class BlsDeserializationG2TestExecutor extends BlsTestExecutor {
 
   private boolean validateSignature(final String signature) {
     try {
-      return BLSSignature.fromBytesCompressed(Bytes.fromHexString(signature)).isInGroup();
+      return BLSSignature.fromBytesCompressed(Bytes.fromHexString(signature)).isValid();
     } catch (DeserializeException e) {
       return false;
     }

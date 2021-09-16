@@ -31,6 +31,20 @@ abstract class BLSSignatureTest {
               + "0000000000000000000000000000000000000000000000000000000000000000"
               + "0000000000000000000000000000000000000000000000000000000000000000");
 
+  private static BLSSignature infinity() {
+    return BLSSignature.fromBytesCompressed(INFINITY_BYTES);
+  }
+
+  private static BLSSignature notInG2() {
+    // A point on the curve but not in the G2 group
+    return BLSSignature.fromBytesCompressed(
+        Bytes.fromHexString(
+            "0x"
+                + "8000000000000000000000000000000000000000000000000000000000000000"
+                + "0000000000000000000000000000000000000000000000000000000000000000"
+                + "0000000000000000000000000000000000000000000000000000000000000004"));
+  }
+
   @Test
   void succeedsWhenEqualsReturnsTrueForTheSameEmptySignature() {
     BLSSignature signature = BLSSignature.empty();
@@ -57,6 +71,14 @@ abstract class BLSSignatureTest {
   @Test
   void succeedsWhenDeserialisationOfEmptySignatureThrowsException() {
     assertThrows(DeserializeException.class, () -> BLSSignature.empty().getSignature());
+  }
+
+  @Test
+  void succeedsWhenDeserialisationOfBadDataThrowsException() {
+    assertThrows(
+        DeserializeException.class,
+        () ->
+            BLSSignature.fromBytesCompressed(Bytes.fromHexString("33".repeat(96))).getSignature());
   }
 
   @Test
@@ -126,16 +148,29 @@ abstract class BLSSignatureTest {
 
   @Test
   void succeedsWhenInfiniteSignatureIsInfinite() {
-    final BLSSignature signature = BLSSignature.fromBytesCompressed(INFINITY_BYTES);
-    assertThat(signature.isInfinity()).isTrue();
+    assertThat(infinity().isInfinity()).isTrue();
   }
 
   @Test
-  void succeedsWhenDeserialisationOfBadDataThrowsException() {
-    assertThrows(
-        DeserializeException.class,
-        () ->
-            BLSSignature.fromBytesCompressed(Bytes.fromHexString("33".repeat(96))).getSignature());
+  void succeedsWhenInfiniteSignatureIsValid() {
+    assertThat(infinity().isValid()).isTrue();
+  }
+
+  @Test
+  void succeedsWhenNotInG2SignatureIsNotValid() {
+    assertThat(notInG2().isValid()).isFalse();
+  }
+
+  @Test
+  void succeedsWhenJunkSignatureIsNotValid() {
+    final BLSSignature junkSignature =
+        BLSSignature.fromBytesCompressed(Bytes.fromHexString("11".repeat(96)));
+    assertThat(junkSignature.isValid()).isFalse();
+  }
+
+  @Test
+  void succeedsWhenEmptySignatureIsNotValid() {
+    assertThat(BLSSignature.empty().isValid()).isFalse();
   }
 
   @Test

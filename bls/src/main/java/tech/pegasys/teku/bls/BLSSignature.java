@@ -114,7 +114,7 @@ public class BLSSignature {
   public boolean isInfinity() {
     try {
       return getSignature().isInfinity();
-    } catch (Exception e) {
+    } catch (final RuntimeException e) {
       return false;
     }
   }
@@ -122,7 +122,7 @@ public class BLSSignature {
   public boolean isValid() {
     try {
       return getSignature().isInGroup();
-    } catch (Exception e) {
+    } catch (final RuntimeException e) {
       return false;
     }
   }
