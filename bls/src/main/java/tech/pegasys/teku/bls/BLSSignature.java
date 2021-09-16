@@ -112,11 +112,19 @@ public class BLSSignature {
   }
 
   public boolean isInfinity() {
-    return getSignature().isInfinity();
+    try {
+      return getSignature().isInfinity();
+    } catch (Exception e) {
+      return false;
+    }
   }
 
-  public boolean isInGroup() {
-    return getSignature().isInGroup();
+  public boolean isValid() {
+    try {
+      return getSignature().isInGroup();
+    } catch (Exception e) {
+      return false;
+    }
   }
 
   @Override
