@@ -48,6 +48,9 @@ public class BlockProductionDutyLoader
   @Override
   protected SafeFuture<Optional<ProposerDuties>> requestDuties(
       final UInt64 epoch, final Collection<Integer> validatorIndices) {
+    if (validatorIndices.isEmpty()) {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
     return validatorApiChannel.getProposerDuties(epoch);
   }
 

@@ -110,6 +110,9 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
 
   @Override
   public SafeFuture<DutyResult> performAggregationDuty(final UInt64 slot) {
+    if (getAllValidatorKeys().isEmpty()) {
+      return SafeFuture.completedFuture(DutyResult.NO_OP);
+    }
     if (lastSignatureSlot.isEmpty()
         || lastSignatureBlockRoot.isEmpty()
         || !lastSignatureSlot.get().equals(slot)) {
