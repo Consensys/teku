@@ -40,6 +40,7 @@ import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SU
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.URI;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -340,6 +341,10 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
 
     final Request request = requestBuilder().url(httpUrlBuilder.build()).build();
     return executeCall(request, responseHandler);
+  }
+
+  public URI getBaseEndpoint() {
+    return baseEndpoint.uri();
   }
 
   private <T> Optional<T> post(

@@ -44,6 +44,11 @@ public class SubCommandLogger {
             ColorConsolePrinter.Color.RED));
   }
 
+  public void displayDeprecationWarning(String message) {
+    error(
+        print(String.format("DEPRECATION WARNING: %s", message), ColorConsolePrinter.Color.YELLOW));
+  }
+
   public void exit(final int exitCode, final String message, final Exception exception) {
     error(message, exception);
     System.exit(exitCode);

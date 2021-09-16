@@ -531,7 +531,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .metricsPort(8008)
                     .metricsInterface("127.0.0.1")
                     .metricsCategories(Set.of(BEACON, LIBP2P, NETWORK, EVENTBUS, JVM, PROCESS))
-                    .metricsHostAllowlist(List.of("127.0.0.1", "localhost")))
+                    .metricsHostAllowlist(List.of("127.0.0.1", "localhost"))
+                    .metricsEndpoint(null))
         .interop(
             b ->
                 b.interopGenesisTime(1)

@@ -18,9 +18,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
@@ -79,6 +81,15 @@ class SyncCommitteeScheduledDutiesTest {
   }
 
   @Test
+  void shouldNotSubscribeToSubnetsWithoutValidatorsPresent() {
+    final SyncCommitteeScheduledDuties duties = validBuilder().build();
+
+    duties.subscribeToSubnets();
+    verifyNoInteractions(chainHeadTracker);
+    verifyNoInteractions(validatorApiChannel);
+  }
+
+  @Test
   void shouldNotProduceSignaturesWhenChainHeadIsEmpty() {
     final UInt64 slot = UInt64.valueOf(25);
     when(chainHeadTracker.getCurrentChainHead(slot)).thenReturn(Optional.empty());
@@ -105,6 +116,18 @@ class SyncCommitteeScheduledDutiesTest {
   }
 
   @Test
+  void shouldNotPerformDutyWhenNoActiveValidatorsAndChainHeadEmpty() {
+    final UInt64 slot = UInt64.valueOf(25);
+    when(chainHeadTracker.getCurrentChainHead(slot)).thenReturn(Optional.empty());
+
+    final SyncCommitteeScheduledDuties duties = validBuilder().build();
+    final SafeFuture<DutyResult> result = duties.performProductionDuty(slot);
+    reportDutyResult(slot, result);
+
+    verifyNoInteractions(validatorLogger);
+  }
+
+  @Test
   void shouldUseSameBlockRootForProductionAndAggregation() {
     final UInt64 slot = UInt64.valueOf(25);
     final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
@@ -119,7 +142,8 @@ class SyncCommitteeScheduledDutiesTest {
     when(aggregationDuty.produceAggregates(slot, blockRoot))
         .thenReturn(SafeFuture.completedFuture(expectedDutyResult));
 
-    final SyncCommitteeScheduledDuties duties = createScheduledDutiesWithMocks();
+    final SyncCommitteeScheduledDuties duties =
+        createScheduledDutiesWithMocks(List.of(new ValidatorAndCommitteeIndices(validator1, 1)));
 
     assertThat(duties.performProductionDuty(slot)).isCompletedWithValue(expectedDutyResult);
     assertThat(duties.performAggregationDuty(slot)).isCompletedWithValue(expectedDutyResult);
@@ -210,12 +234,17 @@ class SyncCommitteeScheduledDutiesTest {
   }
 
   private SyncCommitteeScheduledDuties createScheduledDutiesWithMocks() {
+    return createScheduledDutiesWithMocks(Collections.emptyList());
+  }
+
+  private SyncCommitteeScheduledDuties createScheduledDutiesWithMocks(
+      final List<ValidatorAndCommitteeIndices> validatorAndCommitteeIndices) {
     return new SyncCommitteeScheduledDuties(
         productionDuty,
         aggregationDuty,
         chainHeadTracker,
         validatorApiChannel,
-        Collections.emptyList(),
+        validatorAndCommitteeIndices,
         UInt64.ZERO);
   }
 
