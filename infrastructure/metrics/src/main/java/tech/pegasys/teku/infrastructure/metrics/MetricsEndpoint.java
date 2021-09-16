@@ -25,12 +25,14 @@ public class MetricsEndpoint {
 
   private final Optional<MetricsService> metricsService;
   private final PrometheusMetricsSystem metricsSystem;
+  private final MetricsConfig config;
 
   public MetricsEndpoint(final MetricsConfig config, final Vertx vertx) {
     final MetricsConfiguration metricsConfig = createMetricsConfiguration(config);
     metricsSystem = new PrometheusMetricsSystem(config.getMetricsCategories(), true);
     metricsSystem.init();
     metricsService = MetricsService.create(vertx, metricsConfig, metricsSystem);
+    this.config = config;
   }
 
   public CompletableFuture<?> start() {
@@ -45,6 +47,10 @@ public class MetricsEndpoint {
 
   public MetricsSystem getMetricsSystem() {
     return metricsSystem;
+  }
+
+  public MetricsConfig getMetricConfig() {
+    return this.config;
   }
 
   private MetricsConfiguration createMetricsConfiguration(final MetricsConfig config) {
