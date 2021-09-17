@@ -438,7 +438,7 @@ class ValidatorApiHandlerTest {
             newSlot,
             randaoReveal,
             Optional.empty(),
-            ZERO))
+            newSlot))
         .thenReturn(createdBlock);
 
     final SafeFuture<Optional<BeaconBlock>> result =
@@ -451,7 +451,7 @@ class ValidatorApiHandlerTest {
             newSlot,
             randaoReveal,
             Optional.empty(),
-            ZERO);
+            newSlot);
     assertThat(result).isCompletedWithValue(Optional.of(createdBlock));
   }
 
