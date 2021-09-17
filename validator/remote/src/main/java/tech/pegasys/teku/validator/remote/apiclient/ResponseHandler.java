@@ -99,11 +99,9 @@ public class ResponseHandler<T> {
       return parseResponse(response, badReqeustResponseClass);
     }
     LOG.debug(
-        "Invalid params response from Beacon Node API (url = "
-            + request.url()
-            + ", response = "
-            + response.body()
-            + ")");
+        "Invalid params response from Beacon Node API (url = {}, response = {})",
+        request.url(),
+        response.body());
     throw new IllegalArgumentException(
         "Invalid params response from Beacon Node API (url = " + request.url() + ")");
   }
