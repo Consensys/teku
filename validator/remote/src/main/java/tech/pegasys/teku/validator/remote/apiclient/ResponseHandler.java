@@ -83,7 +83,7 @@ public class ResponseHandler<T> {
 
   private Optional<T> noValueHandler(final Request request, final Response response) {
     if (response.code() != SC_ACCEPTED && response.code() != SC_NO_CONTENT) {
-      LOG.warn("No value from url={}, status={}", request.url(), response.code());
+      LOG.warn("Server error from url={}, status={}", request.url(), response.code());
     }
     return Optional.empty();
   }
