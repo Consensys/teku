@@ -45,6 +45,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
   private final StateAndBlockSummaryProvider stateProvider;
   private final StorageQueryChannel storageQueryChannel;
   private final StoreConfig storeConfig;
+  private final ExecutionEngineChannel executionEngineChannel;
 
   public StorageBackedRecentChainData(
       final AsyncRunner asyncRunner,
@@ -75,6 +76,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
     this.storageQueryChannel = storageQueryChannel;
     this.blockProvider = storageQueryChannel::getHotBlocksByRoot;
     this.stateProvider = storageQueryChannel::getHotStateAndBlockSummaryByBlockRoot;
+    this.executionEngineChannel = executionEngineChannel;
   }
 
   public static SafeFuture<RecentChainData> create(
@@ -164,6 +166,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
                   .stateProvider(stateProvider)
                   .storeConfig(storeConfig)
                   .protoArrayStorageChannel(protoArrayStorageChannel)
+                  .executionEngineChannel(executionEngineChannel)
                   .build();
           setStore(store);
           STATUS_LOG.finishInitializingChainData();
