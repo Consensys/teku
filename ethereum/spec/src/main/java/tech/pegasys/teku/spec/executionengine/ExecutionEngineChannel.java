@@ -26,6 +26,13 @@ public interface ExecutionEngineChannel extends ChannelInterface {
 
   ExecutionEngineChannel NOOP =
       new ExecutionEngineChannel() {
+
+        @Override
+        public SafeFuture<Void> prepareBlock(
+            Bytes32 parentHash, UInt64 timestamp, UInt64 payloadId) {
+          throw new UnsupportedOperationException();
+        }
+
         @Override
         public SafeFuture<ExecutionPayload> assembleBlock(Bytes32 parentHash, UInt64 timestamp) {
           throw new UnsupportedOperationException();
@@ -56,6 +63,8 @@ public interface ExecutionEngineChannel extends ChannelInterface {
           throw new UnsupportedOperationException();
         }
       };
+
+  SafeFuture<Void> prepareBlock(Bytes32 parentHash, UInt64 timestamp, UInt64 payloadId);
 
   /**
    * Requests execution-engine to produce a block.

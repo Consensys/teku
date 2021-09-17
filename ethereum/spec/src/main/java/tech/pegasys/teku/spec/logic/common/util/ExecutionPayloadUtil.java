@@ -30,16 +30,19 @@ public class ExecutionPayloadUtil {
     return executionEngineChannel.newBlock(executionPayload).join();
   }
 
-  public void prepareExecutionPayload(ExecutionEngineChannel executionEngineChannel, Bytes32 parentHash, UInt64 timestamp, UInt64 payloadId) {
-    checkNotNull(executionEngineService);
-    executionEngineService.prepareBlock(parentHash, timestamp, payloadId);
+  public void prepareExecutionPayload(
+      ExecutionEngineChannel executionEngineChannel,
+      Bytes32 parentHash,
+      UInt64 timestamp,
+      UInt64 payloadId) {
+    executionEngineChannel.prepareBlock(parentHash, timestamp, payloadId).join();
   }
 
-  public ExecutionPayload getExecutionPayload(ExecutionEngineChannel executionEngineChannel,
-      Bytes32 parentHash, UInt64 timestamp, UInt64 payloadId) {
-    checkNotNull(executionEngineService);
-    return executionEngineService.assembleBlock(parentHash, timestamp).asInternalExecutionPayload();
+  public ExecutionPayload getExecutionPayload(
+      ExecutionEngineChannel executionEngineChannel,
+      Bytes32 parentHash,
+      UInt64 timestamp,
+      UInt64 payloadId) {
+    return executionEngineChannel.assembleBlock(parentHash, timestamp).join();
   }
-
-
 }

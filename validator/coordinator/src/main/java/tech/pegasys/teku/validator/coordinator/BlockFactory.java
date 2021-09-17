@@ -106,7 +106,8 @@ public class BlockFactory {
     UInt64 timestamp = spec.computeTimeAtSlot(currentMergeState, currentMergeState.getSlot());
     final Bytes32 executionParentHash =
         currentMergeState.getLatest_execution_payload_header().getBlock_hash();
-    executionPayloadUtil.prepareExecutionPayload(executionParentHash, timestamp, payloadId);
+    executionPayloadUtil.prepareExecutionPayload(
+        executionEngineChannel, executionParentHash, timestamp, payloadId);
   }
 
   public BeaconBlock createUnsignedBlock(

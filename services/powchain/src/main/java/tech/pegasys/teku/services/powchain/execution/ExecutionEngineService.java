@@ -66,6 +66,11 @@ public class ExecutionEngineService implements ExecutionEngineChannel {
   }
 
   @Override
+  public SafeFuture<Void> prepareBlock(Bytes32 parentHash, UInt64 timestamp, UInt64 payloadId) {
+    return SafeFuture.completedFuture(null);
+  }
+
+  @Override
   public SafeFuture<tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload> assembleBlock(
       Bytes32 parentHash, UInt64 timestamp) {
     AssembleBlockRequest request = new AssembleBlockRequest(parentHash, timestamp);
