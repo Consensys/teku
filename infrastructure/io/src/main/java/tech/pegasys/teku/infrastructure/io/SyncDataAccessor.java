@@ -41,7 +41,12 @@ public class SyncDataAccessor {
     this.atomicFileMoveSupport = atomicFileMoveSupport;
   }
 
+  public static SyncDataAccessor createWithoutAtomicMove() {
+    return new SyncDataAccessor(false);
+  }
+
   public static SyncDataAccessor create(final Path path) {
+
     boolean atomicFileMoveSupport = false;
     final Path tmpFile = path.resolve("syncWriteTest.tmp");
 
