@@ -229,6 +229,7 @@ public class StorageBackedRecentChainDataTest {
                 AnchorPoint.fromGenesisState(spec, INITIAL_STATE),
                 UInt64.ZERO)
             .storeConfig(storeConfig)
+            .executionEngineChannel(ExecutionEngineChannel.NOOP)
             .build();
     client.get().initializeFromGenesis(INITIAL_STATE, UInt64.ZERO);
     assertStoreInitialized(client.get());

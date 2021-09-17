@@ -40,6 +40,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 
@@ -156,6 +157,7 @@ public abstract class AbstractStoreTest {
                     Optional.of(new CheckpointEpochs(UInt64.ZERO, UInt64.ZERO)))))
         .storeConfig(pruningOptions)
         .votes(emptyMap())
+        .executionEngineChannel(ExecutionEngineChannel.NOOP)
         .build();
   }
 
