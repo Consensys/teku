@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.remote.apiclient;
 
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_GATEWAY;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
@@ -26,9 +27,12 @@ import java.util.Map;
 import java.util.Optional;
 import okhttp3.Request;
 import okhttp3.Response;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class ResponseHandler<T> {
+  private static final Logger LOG = LogManager.getLogger();
   private final Map<Integer, Handler<T>> handlers = new HashMap<>();
   private final JsonProvider jsonProvider;
   private final Class<T> responseClass;
@@ -41,6 +45,7 @@ public class ResponseHandler<T> {
     withHandler(SC_ACCEPTED, this::noValueHandler);
     withHandler(SC_NO_CONTENT, this::noValueHandler);
     withHandler(SC_SERVICE_UNAVAILABLE, this::noValueHandler);
+    withHandler(SC_BAD_GATEWAY, this::noValueHandler);
     withHandler(SC_BAD_REQUEST, this::defaultBadRequestHandler);
     withHandler(SC_TOO_MANY_REQUESTS, this::defaultTooManyRequestsHandler);
   }
@@ -64,15 +69,22 @@ public class ResponseHandler<T> {
         .handleResponse(request, response);
   }
 
-  private Optional<T> unknownResponseCodeHandler(final Request request, final Response response)
-      throws IOException {
+  private Optional<T> unknownResponseCodeHandler(final Request request, final Response response) {
+    LOG.debug(
+        "Unexpected response from Beacon Node API (url = {}, status = {}, response = {})",
+        request.url(),
+        response.code(),
+        response.body());
     throw new RuntimeException(
         String.format(
-            "Unexpected response from Beacon Node API (url = %s, status = %s, response = %s)",
-            request.url(), response.code(), response.body().string()));
+            "Unexpected response from Beacon Node API (url = %s, status = %s)",
+            request.url(), response.code()));
   }
 
   private Optional<T> noValueHandler(final Request request, final Response response) {
+    if (response.code() != SC_ACCEPTED && response.code() != SC_NO_CONTENT) {
+      LOG.warn("No value from url={}, status={}", request.url(), response.code());
+    }
     return Optional.empty();
   }
 
@@ -86,12 +98,14 @@ public class ResponseHandler<T> {
     if (badReqeustResponseClass != null) {
       return parseResponse(response, badReqeustResponseClass);
     }
-    throw new IllegalArgumentException(
+    LOG.debug(
         "Invalid params response from Beacon Node API (url = "
             + request.url()
             + ", response = "
-            + response.body().string()
+            + response.body()
             + ")");
+    throw new IllegalArgumentException(
+        "Invalid params response from Beacon Node API (url = " + request.url() + ")");
   }
 
   private Optional<T> defaultOkHandler(final Request request, final Response response)
