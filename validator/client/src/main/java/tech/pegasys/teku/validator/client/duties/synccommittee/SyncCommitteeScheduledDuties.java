@@ -74,6 +74,11 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
   }
 
   @Override
+  public SafeFuture<Void> performProductionDutyPreparation(UInt64 slot) {
+    return SafeFuture.COMPLETE;
+  }
+
+  @Override
   public SafeFuture<DutyResult> performProductionDuty(final UInt64 slot) {
     lastSignatureBlockRoot = chainHeadTracker.getCurrentChainHead(slot);
     lastSignatureSlot = Optional.of(slot);

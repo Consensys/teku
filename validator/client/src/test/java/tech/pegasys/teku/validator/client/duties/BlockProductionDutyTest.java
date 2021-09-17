@@ -67,6 +67,7 @@ class BlockProductionDutyTest {
 
   @BeforeEach
   public void setUp() {
+    when(validatorApiChannel.prepareExecutionPayload(SLOT)).thenReturn(SafeFuture.COMPLETE);
     when(forkProvider.getForkInfo(any())).thenReturn(completedFuture(fork));
   }
 
@@ -155,6 +156,7 @@ class BlockProductionDutyTest {
 
   private void performAndReportDuty() {
     final SafeFuture<DutyResult> result = duty.performDuty();
+    verify(validatorApiChannel).prepareExecutionPayload(SLOT);
     assertThat(result).isCompleted();
     result.join().report(TYPE, SLOT, validatorLogger);
   }

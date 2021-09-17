@@ -84,6 +84,22 @@ class PendingDuties {
                     error -> reportDutyFailure(error, duties.getAggregationType(), slot)));
   }
 
+  public void onProductionPreparationDue(final UInt64 slot) {
+    execute(
+        duties ->
+            duties
+                .performProductionDutyPreparation(slot)
+                .finish(
+                    error ->
+                        reportDutyPreparationFailure(error, duties.getProductionType(), slot)));
+  }
+
+  private void reportDutyPreparationFailure(
+      final Throwable error, final String producedType, final UInt64 slot) {
+    // TODO handle preparation failure correctly
+    VALIDATOR_LOGGER.dutyFailed("preparation of " + producedType, slot, emptySet(), error);
+  }
+
   private void reportDutyFailure(
       final Throwable error, final String producedType, final UInt64 slot) {
     dutiesPerformedCounter.labels(producedType, "failed").inc();

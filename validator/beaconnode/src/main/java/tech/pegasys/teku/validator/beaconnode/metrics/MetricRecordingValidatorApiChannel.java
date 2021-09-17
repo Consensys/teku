@@ -230,6 +230,11 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
+  public SafeFuture<Void> prepareExecutionPayload(UInt64 slot) {
+    return delegate.prepareExecutionPayload(slot);
+  }
+
+  @Override
   public SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(
       final UInt64 slot, final BLSSignature randaoReveal, Optional<Bytes32> graffiti) {
     return countDataRequest(
