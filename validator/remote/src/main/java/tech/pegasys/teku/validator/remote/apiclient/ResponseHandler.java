@@ -29,6 +29,7 @@ import okhttp3.Request;
 import okhttp3.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class ResponseHandler<T> {
@@ -44,8 +45,8 @@ public class ResponseHandler<T> {
     withHandler(SC_OK, this::defaultOkHandler);
     withHandler(SC_ACCEPTED, this::noValueHandler);
     withHandler(SC_NO_CONTENT, this::noValueHandler);
-    withHandler(SC_SERVICE_UNAVAILABLE, this::noValueHandler);
-    withHandler(SC_BAD_GATEWAY, this::noValueHandler);
+    withHandler(SC_SERVICE_UNAVAILABLE, this::serviceErrorHandler);
+    withHandler(SC_BAD_GATEWAY, this::serviceErrorHandler);
     withHandler(SC_BAD_REQUEST, this::defaultBadRequestHandler);
     withHandler(SC_TOO_MANY_REQUESTS, this::defaultTooManyRequestsHandler);
   }
@@ -82,10 +83,14 @@ public class ResponseHandler<T> {
   }
 
   private Optional<T> noValueHandler(final Request request, final Response response) {
-    if (response.code() != SC_ACCEPTED && response.code() != SC_NO_CONTENT) {
-      LOG.warn("Server error from url={}, status={}", request.url(), response.code());
-    }
     return Optional.empty();
+  }
+
+  private Optional<T> serviceErrorHandler(final Request request, final Response response) {
+    throw new RemoteServiceNotAvailableException(
+        String.format(
+            "Server error from Beacon Node API (url = %s, status = %s)",
+            request.url(), response.code()));
   }
 
   private Optional<T> defaultTooManyRequestsHandler(

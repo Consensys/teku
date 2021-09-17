@@ -40,6 +40,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
 import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionRequest;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
@@ -290,13 +291,15 @@ class OkHttpValidatorRestApiClientTest {
   }
 
   @Test
-  public void sendSignedBlock_WhenServiceUnavailable_DoesNotFailHandlingResponse() {
+  public void sendSignedBlock_WhenServiceUnavailable_ThrowsServiceNotAvailableResponse() {
     final SignedBeaconBlock signedBeaconBlock = schemaObjects.signedBeaconBlock();
 
     // node is syncing
     mockWebServer.enqueue(new MockResponse().setResponseCode(503));
 
-    apiClient.sendSignedBlock(signedBeaconBlock);
+    assertThatThrownBy(() -> apiClient.sendSignedBlock(signedBeaconBlock))
+        .isInstanceOf(RemoteServiceNotAvailableException.class)
+        .hasMessageContaining("Server error from Beacon Node API");
   }
 
   @Test
