@@ -85,11 +85,15 @@ public class BlockFactory {
 
   public void prepareExecutionPayload(
       final Optional<BeaconState> maybeCurrentSlotState, UInt64 payloadId) {
-    if (maybeCurrentSlotState.isEmpty()) return;
+    if (maybeCurrentSlotState.isEmpty()) {
+      return;
+    }
     final Optional<BeaconStateMerge> maybeCurrentMergeState =
         maybeCurrentSlotState.get().toVersionMerge();
 
-    if (maybeCurrentMergeState.isEmpty()) return;
+    if (maybeCurrentMergeState.isEmpty()) {
+      return;
+    }
     final BeaconStateMerge currentMergeState = maybeCurrentMergeState.get();
 
     final ExecutionPayloadUtil executionPayloadUtil =
@@ -106,7 +110,8 @@ public class BlockFactory {
       final Optional<BeaconState> maybeBlockSlotState,
       final UInt64 newSlot,
       final BLSSignature randaoReveal,
-      final Optional<Bytes32> optionalGraffiti)
+      final Optional<Bytes32> optionalGraffiti,
+      final UInt64 executionPayloadId)
       throws EpochProcessingException, SlotProcessingException, StateTransitionException {
     checkArgument(
         maybeBlockSlotState.isEmpty() || maybeBlockSlotState.get().getSlot().equals(newSlot),
@@ -166,13 +171,14 @@ public class BlockFactory {
                     .attesterSlashings(attesterSlashings)
                     .deposits(deposits)
                     .voluntaryExits(voluntaryExits)
-                    .executionPayload(() -> getExecutionPayload(blockSlotState))
+                    .executionPayload(() -> getExecutionPayload(blockSlotState, executionPayloadId))
                     .syncAggregate(
                         () -> contributionPool.createSyncAggregateForBlock(newSlot, parentRoot)))
         .getBlock();
   }
 
-  private ExecutionPayload getExecutionPayload(BeaconState genericState) {
+  private ExecutionPayload getExecutionPayload(
+      BeaconState genericState, UInt64 executionPayloadId) {
     final BeaconStateMerge state = BeaconStateMerge.required(genericState);
     final ExecutionPayloadUtil executionPayloadUtil =
         spec.atSlot(state.getSlot()).getExecutionPayloadUtil().orElseThrow();
@@ -209,13 +215,15 @@ public class BlockFactory {
                     transitionStore.getTransitionTotalDifficulty().toBigInteger()),
                 Color.YELLOW));
         UInt64 timestamp = spec.computeTimeAtSlot(state, state.getSlot());
-        return executionPayloadUtil.produceExecutionPayload(powHead.blockHash, timestamp);
+        return executionPayloadUtil.getExecutionPayload(
+            powHead.blockHash, timestamp, executionPayloadId);
       }
     }
 
     // Post-merge, normal payload
     final Bytes32 executionParentHash = state.getLatest_execution_payload_header().getBlock_hash();
     final UInt64 timestamp = spec.computeTimeAtSlot(state, state.getSlot());
-    return executionPayloadUtil.produceExecutionPayload(executionParentHash, timestamp);
+    return executionPayloadUtil.getExecutionPayload(
+        executionParentHash, timestamp, executionPayloadId);
   }
 }

@@ -133,7 +133,7 @@ public class BlockProposalTestUtil {
     return spec.atSlot(state.getSlot())
         .getExecutionPayloadUtil()
         .orElseThrow()
-        .produceExecutionPayload(executionParentHash, timestamp);
+        .getExecutionPayload(executionParentHash, timestamp, UInt64.ZERO);
   }
 
   public int getProposerIndexForSlot(final BeaconState preState, final UInt64 slot) {

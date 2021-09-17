@@ -16,11 +16,11 @@ package tech.pegasys.teku.validator.client.duties;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.crypto.SecureRandomProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -32,12 +32,14 @@ import tech.pegasys.teku.validator.client.Validator;
 
 public class BlockProductionDuty implements Duty {
   private static final Logger LOG = LogManager.getLogger();
+  private static final AtomicLong PAYLOAD_ID_COUNTER = new AtomicLong(0);
   private final Validator validator;
   private final UInt64 slot;
   private final ForkProvider forkProvider;
   private final ValidatorApiChannel validatorApiChannel;
   private final Spec spec;
-  private UInt64 executionPayloadId;
+  private final UInt64 executionPayloadId;
+  private Optional<SafeFuture<Void>> maybePrepareFuture;
 
   public BlockProductionDuty(
       final Validator validator,
@@ -50,19 +52,28 @@ public class BlockProductionDuty implements Duty {
     this.forkProvider = forkProvider;
     this.validatorApiChannel = validatorApiChannel;
     this.spec = spec;
+    this.executionPayloadId = UInt64.fromLongBits(PAYLOAD_ID_COUNTER.incrementAndGet());
+    this.maybePrepareFuture = Optional.empty();
   }
 
   @Override
   public SafeFuture<DutyResult> performDuty() {
     LOG.trace("Creating block for validator {} at slot {}", validator.getPublicKey(), slot);
-    return forkProvider.getForkInfo(slot).thenCompose(this::produceBlock);
-    // TODO do we need to call prepareDuty if it has not been called before?
+
+    // make sure we prepared at least once before producing block
+    return maybePrepareFuture
+        .orElseGet(this::prepareDuty)
+        .thenCompose(__ -> forkProvider.getForkInfo(slot))
+        .thenCompose(this::produceBlock);
   }
 
   @Override
   public SafeFuture<Void> prepareDuty() {
-    executionPayloadId = UInt64.fromLongBits(SecureRandomProvider.publicSecureRandom().nextLong());
-    return validatorApiChannel.prepareExecutionPayload(slot, executionPayloadId);
+    LOG.trace("Preparing block for validator {} at slot {}", validator.getPublicKey(), slot);
+
+    maybePrepareFuture =
+        Optional.of(validatorApiChannel.prepareExecutionPayload(slot, executionPayloadId));
+    return maybePrepareFuture.get();
   }
 
   public SafeFuture<DutyResult> produceBlock(final ForkInfo forkInfo) {

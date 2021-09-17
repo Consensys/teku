@@ -266,7 +266,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     final SafeFuture<Optional<BeaconState>> currentSlotStateFuture =
         combinedChainDataClient.getStateAtSlotExact(preparingSlot.decrement());
 
-    return currentSlotStateFuture.thenApplyChecked(
+    return currentSlotStateFuture.thenApply(
         preState -> {
           blockFactory.prepareExecutionPayload(preState, payloadId);
           return null;
@@ -311,7 +311,12 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         "Delegating to block factory. Has block slot state? {}", maybeBlockSlotState.isPresent());
     return Optional.of(
         blockFactory.createUnsignedBlock(
-            maybePreState.get(), maybeBlockSlotState, slot, randaoReveal, graffiti));
+            maybePreState.get(),
+            maybeBlockSlotState,
+            slot,
+            randaoReveal,
+            graffiti,
+            slot)); // we are using slot number as payloadId
   }
 
   @Override

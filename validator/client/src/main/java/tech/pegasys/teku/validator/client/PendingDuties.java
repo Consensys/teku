@@ -84,7 +84,7 @@ class PendingDuties {
                     error -> reportDutyFailure(error, duties.getAggregationType(), slot)));
   }
 
-  public void onProductionDuePreparation(final UInt64 slot) {
+  public void onProductionPreparationDue(final UInt64 slot) {
     execute(
         duties ->
             duties

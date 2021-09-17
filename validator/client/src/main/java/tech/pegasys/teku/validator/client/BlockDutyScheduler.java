@@ -47,7 +47,7 @@ public class BlockDutyScheduler extends AbstractDutyScheduler {
   public void onAttestationCreationDue(final UInt64 slot) {
     final UInt64 preparationDueSlot = slot.plus(1);
     calculateDuties(spec.computeEpochAtSlot(preparationDueSlot));
-    notifyEpochDuties(PendingDuties::onProductionDuePreparation, preparationDueSlot);
+    notifyEpochDuties(PendingDuties::onProductionPreparationDue, preparationDueSlot);
   }
 
   @Override
