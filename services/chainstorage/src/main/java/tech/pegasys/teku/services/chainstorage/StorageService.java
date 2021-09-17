@@ -20,6 +20,7 @@ import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -59,7 +60,13 @@ public class StorageService extends Service {
                   config.getSpec());
           database = dbFactory.createDatabase();
 
-          chainStorage = ChainStorage.create(database, config.getSpec());
+          ExecutionEngineChannel executionEngineChannel =
+              serviceConfig
+                  .getEventChannels()
+                  .getPublisher(
+                      ExecutionEngineChannel.class,
+                      serviceConfig.createAsyncRunner("ExecutionEngineChannel-Thread", 1));
+          chainStorage = ChainStorage.create(database, executionEngineChannel, config.getSpec());
           final DepositStorage depositStorage =
               DepositStorage.create(
                   serviceConfig.getEventChannels().getPublisher(Eth1EventsChannel.class), database);

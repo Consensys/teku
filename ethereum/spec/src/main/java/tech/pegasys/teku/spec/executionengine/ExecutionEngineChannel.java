@@ -24,6 +24,39 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 
 public interface ExecutionEngineChannel extends ChannelInterface {
 
+  ExecutionEngineChannel NOOP =
+      new ExecutionEngineChannel() {
+        @Override
+        public SafeFuture<ExecutionPayload> assembleBlock(Bytes32 parentHash, UInt64 timestamp) {
+          throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public SafeFuture<Boolean> newBlock(ExecutionPayload executionPayload) {
+          throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public SafeFuture<Void> setHead(Bytes32 blockHash) {
+          throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public SafeFuture<Void> finalizeBlock(Bytes32 blockHash) {
+          throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public SafeFuture<Optional<Block>> getPowBlock(Bytes32 blockHash) {
+          throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public SafeFuture<Block> getPowChainHead() {
+          throw new UnsupportedOperationException();
+        }
+      };
+
   /**
    * Requests execution-engine to produce a block.
    *

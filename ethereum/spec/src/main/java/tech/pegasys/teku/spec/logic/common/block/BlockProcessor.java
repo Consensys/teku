@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
@@ -42,6 +43,7 @@ public interface BlockProcessor {
       final BeaconState state, final AttestationData data);
 
   BeaconState processAndValidateBlock(
+      ExecutionEngineChannel executionEngineChannel,
       SignedBeaconBlock signedBlock,
       BeaconState blockSlotState,
       IndexedAttestationCache indexedAttestationCache)
@@ -58,6 +60,7 @@ public interface BlockProcessor {
    * @throws StateTransitionException If the block is invalid or cannot be processed
    */
   BeaconState processAndValidateBlock(
+      ExecutionEngineChannel executionEngineChannel,
       SignedBeaconBlock signedBlock,
       BeaconState blockSlotState,
       IndexedAttestationCache indexedAttestationCache,
@@ -65,6 +68,7 @@ public interface BlockProcessor {
       throws StateTransitionException;
 
   BeaconState processUnsignedBlock(
+      ExecutionEngineChannel executionEngineChannel,
       BeaconState preState,
       BeaconBlock block,
       IndexedAttestationCache indexedAttestationCache,
@@ -112,7 +116,10 @@ public interface BlockProcessor {
       MutableBeaconState state, SyncAggregate syncAggregate, BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException;
 
-  default void processExecutionPayload(MutableBeaconState state, ExecutionPayload executionPayload)
+  default void processExecutionPayload(
+      ExecutionEngineChannel executionEngineChannel,
+      MutableBeaconState state,
+      ExecutionPayload executionPayload)
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No ExecutionPayload in this spec version");
   }

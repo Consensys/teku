@@ -22,25 +22,17 @@ import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 
 public class ExecutionPayloadUtil {
 
-  private ExecutionEngineChannel executionEngineChannel;
-
   public ExecutionPayloadUtil() {}
 
-  public ExecutionPayloadUtil(ExecutionEngineChannel executionEngineChannel) {
-    this.executionEngineChannel = executionEngineChannel;
-  }
-
-  public boolean verifyExecutionStateTransition(ExecutionPayload executionPayload) {
+  public boolean verifyExecutionStateTransition(
+      ExecutionEngineChannel executionEngineChannel, ExecutionPayload executionPayload) {
     checkNotNull(executionEngineChannel);
     return executionEngineChannel.newBlock(executionPayload).join();
   }
 
-  public ExecutionPayload produceExecutionPayload(Bytes32 parentHash, UInt64 timestamp) {
+  public ExecutionPayload produceExecutionPayload(
+      ExecutionEngineChannel executionEngineChannel, Bytes32 parentHash, UInt64 timestamp) {
     checkNotNull(executionEngineChannel);
     return executionEngineChannel.assembleBlock(parentHash, timestamp).join();
-  }
-
-  public void setExecutionEngineChannel(ExecutionEngineChannel executionEngineChannel) {
-    this.executionEngineChannel = executionEngineChannel;
   }
 }

@@ -34,6 +34,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.storage.server.Database;
 
 class FinalizedStateCacheTest {
@@ -44,7 +45,8 @@ class FinalizedStateCacheTest {
   private final Database database = mock(Database.class);
   // We don't use soft references in unit tests to avoid intermittency
   private final FinalizedStateCache cache =
-      new FinalizedStateCache(spec, database, MAXIMUM_CACHE_SIZE, false);
+      new FinalizedStateCache(
+          spec, database, ExecutionEngineChannel.NOOP, MAXIMUM_CACHE_SIZE, false);
 
   @BeforeEach
   public void setUp() {

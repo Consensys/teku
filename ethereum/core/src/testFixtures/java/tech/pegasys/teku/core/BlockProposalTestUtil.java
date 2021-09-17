@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.BeaconStateMerge;
 import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
@@ -68,6 +69,7 @@ public class BlockProposalTestUtil {
     final BeaconState blockSlotState = spec.processSlots(state, newSlot);
     final BeaconBlockAndState newBlockAndState =
         spec.createNewUnsignedBlock(
+            ExecutionEngineChannel.NOOP,
             newSlot,
             spec.getBeaconProposerIndex(blockSlotState, newSlot),
             blockSlotState,
@@ -133,7 +135,7 @@ public class BlockProposalTestUtil {
     return spec.atSlot(state.getSlot())
         .getExecutionPayloadUtil()
         .orElseThrow()
-        .produceExecutionPayload(executionParentHash, timestamp);
+        .produceExecutionPayload(ExecutionEngineChannel.NOOP, executionParentHash, timestamp);
   }
 
   public int getProposerIndexForSlot(final BeaconState preState, final UInt64 slot) {

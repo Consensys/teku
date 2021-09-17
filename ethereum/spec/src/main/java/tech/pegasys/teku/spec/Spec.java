@@ -56,6 +56,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateInvariants;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.genesis.GenesisGenerator;
 import tech.pegasys.teku.spec.logic.SpecLogic;
 import tech.pegasys.teku.spec.logic.StateTransition;
@@ -474,6 +475,7 @@ public class Spec {
   }
 
   public BlockImportResult onBlock(
+      ExecutionEngineChannel executionEngineChannel,
       final MutableStore store,
       final SignedBeaconBlock signedBlock,
       final BeaconState blockSlotState,
@@ -482,7 +484,13 @@ public class Spec {
     Optional<TransitionStore> maybeTransitionStore = specVersion.getTransitionStore();
     return specVersion
         .getForkChoiceUtil()
-        .onBlock(store, signedBlock, blockSlotState, indexedAttestationCache, maybeTransitionStore);
+        .onBlock(
+            executionEngineChannel,
+            store,
+            signedBlock,
+            blockSlotState,
+            indexedAttestationCache,
+            maybeTransitionStore);
   }
 
   public boolean blockDescendsFromLatestFinalizedBlock(
@@ -501,6 +509,7 @@ public class Spec {
 
   // Block Proposal
   public BeaconBlockAndState createNewUnsignedBlock(
+      ExecutionEngineChannel executionEngineChannel,
       final UInt64 newSlot,
       final int proposerIndex,
       final BeaconState blockSlotState,
@@ -510,7 +519,12 @@ public class Spec {
     return atSlot(newSlot)
         .getBlockProposalUtil()
         .createNewUnsignedBlock(
-            newSlot, proposerIndex, blockSlotState, parentBlockSigningRoot, bodyBuilder);
+            executionEngineChannel,
+            newSlot,
+            proposerIndex,
+            blockSlotState,
+            parentBlockSigningRoot,
+            bodyBuilder);
   }
 
   // Block Processor Utils
@@ -520,6 +534,7 @@ public class Spec {
   }
 
   public BeaconState processBlock(
+      ExecutionEngineChannel executionEngineChannel,
       final BeaconState preState,
       final SignedBeaconBlock block,
       final BLSSignatureVerifier signatureVerifier)
@@ -528,18 +543,26 @@ public class Spec {
       final BeaconState blockSlotState = stateTransition.processSlots(preState, block.getSlot());
       return getBlockProcessor(block.getSlot())
           .processAndValidateBlock(
-              block, blockSlotState, IndexedAttestationCache.NOOP, signatureVerifier);
+              executionEngineChannel,
+              block,
+              blockSlotState,
+              IndexedAttestationCache.NOOP,
+              signatureVerifier);
     } catch (SlotProcessingException | EpochProcessingException e) {
       throw new StateTransitionException(e);
     }
   }
 
-  public BeaconState replayValidatedBlock(final BeaconState preState, final SignedBeaconBlock block)
+  public BeaconState replayValidatedBlock(
+      ExecutionEngineChannel executionEngineChannel,
+      final BeaconState preState,
+      final SignedBeaconBlock block)
       throws StateTransitionException {
     try {
       final BeaconState blockSlotState = stateTransition.processSlots(preState, block.getSlot());
       return getBlockProcessor(block.getSlot())
           .processUnsignedBlock(
+              executionEngineChannel,
               blockSlotState,
               block.getMessage(),
               IndexedAttestationCache.NOOP,

@@ -15,14 +15,9 @@ package tech.pegasys.teku.spec.logic.versions.merge.block;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes32;
-import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigMerge;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -51,7 +46,6 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
   private static final Logger LOG = LogManager.getLogger();
 
   private final MiscHelpersMerge miscHelpersMerge;
-  private final BeaconStateAccessorsAltair beaconStateAccessorsAltair;
   private final ExecutionPayloadUtil executionPayloadUtil;
 
   public BlockProcessorMerge(
@@ -78,7 +72,6 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
         validatorsUtil,
         operationValidator);
     this.miscHelpersMerge = miscHelpers;
-    this.beaconStateAccessorsAltair = beaconStateAccessors;
     this.executionPayloadUtil = executionPayloadUtil;
   }
 
@@ -92,6 +85,7 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
 
   @Override
   public void processBlock(
+      ExecutionEngineChannel executionEngineChannel,
       MutableBeaconState genericState,
       BeaconBlock block,
       IndexedAttestationCache indexedAttestationCache,
@@ -100,15 +94,18 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
     final MutableBeaconStateMerge state = MutableBeaconStateMerge.required(genericState);
     final BeaconBlockBodyMerge blockBody = BeaconBlockBodyMerge.required(block.getBody());
 
-    super.processBlock(state, block, indexedAttestationCache, signatureVerifier);
+    super.processBlock(
+        executionEngineChannel, state, block, indexedAttestationCache, signatureVerifier);
     if (miscHelpersMerge.isExecutionEnabled(genericState, block)) {
-      processExecutionPayload(state, blockBody.getExecution_payload());
+      processExecutionPayload(executionEngineChannel, state, blockBody.getExecution_payload());
     }
   }
 
   @Override
   public void processExecutionPayload(
-      MutableBeaconState genericState, ExecutionPayload executionPayload)
+      ExecutionEngineChannel executionEngineChannel,
+      MutableBeaconState genericState,
+      ExecutionPayload executionPayload)
       throws BlockProcessingException {
     try {
       final MutableBeaconStateMerge state = MutableBeaconStateMerge.required(genericState);
@@ -133,7 +130,8 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
           "process_execution_payload: Verify that the timestamp is correct");
 
       boolean isExecutionPayloadValid =
-          executionPayloadUtil.verifyExecutionStateTransition(executionPayload);
+          executionPayloadUtil.verifyExecutionStateTransition(
+              executionEngineChannel, executionPayload);
 
       checkArgument(
           isExecutionPayloadValid,
@@ -159,52 +157,5 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
       LOG.warn(e.getMessage());
       throw new BlockProcessingException(e);
     }
-  }
-
-  public BlockProcessorMerge forProcessExecutionPayloadReferenceTest(final Boolean executionValid) {
-    return new BlockProcessorMerge(
-        SpecConfigMerge.required(specConfig),
-        predicates,
-        miscHelpersMerge,
-        beaconStateAccessorsAltair,
-        beaconStateMutators,
-        operationSignatureVerifier,
-        beaconStateUtil,
-        attestationUtil,
-        validatorsUtil,
-        operationValidator,
-        new ExecutionPayloadUtil(
-            new ExecutionEngineChannel() {
-              @Override
-              public SafeFuture<ExecutionPayload> assembleBlock(
-                  Bytes32 parentHash, UInt64 timestamp) {
-                throw new UnsupportedOperationException();
-              }
-
-              @Override
-              public SafeFuture<Boolean> newBlock(ExecutionPayload executionPayload) {
-                return SafeFuture.completedFuture(executionValid);
-              }
-
-              @Override
-              public SafeFuture<Void> setHead(Bytes32 blockHash) {
-                throw new UnsupportedOperationException();
-              }
-
-              @Override
-              public SafeFuture<Void> finalizeBlock(Bytes32 blockHash) {
-                throw new UnsupportedOperationException();
-              }
-
-              @Override
-              public SafeFuture<Optional<Block>> getPowBlock(Bytes32 blockHash) {
-                throw new UnsupportedOperationException();
-              }
-
-              @Override
-              public SafeFuture<Block> getPowChainHead() {
-                throw new UnsupportedOperationException();
-              }
-            }));
   }
 }

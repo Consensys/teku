@@ -279,6 +279,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                     eventChannels.getPublisher(ProtoArrayStorageChannel.class, beaconAsyncRunner),
                     eventChannels.getPublisher(FinalizedCheckpointChannel.class, beaconAsyncRunner),
                     coalescingChainHeadChannel,
+                    executionEngineChannel,
                     spec))
         .thenCompose(
             client -> {
@@ -480,7 +481,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             depositProvider,
             eth1DataCache,
             VersionProvider.getDefaultGraffiti(),
-            spec);
+            spec,
+            executionEngineChannel);
     syncCommitteeSubscriptionManager =
         beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()
             ? new AllSyncCommitteeSubscriptions(p2pNetwork, spec)
@@ -742,7 +744,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             eventChannels.getPublisher(BlockImportNotifications.class),
             recentChainData,
             forkChoice,
-            weakSubjectivityValidator);
+            weakSubjectivityValidator,
+            executionEngineChannel);
   }
 
   public void initBlockManager() {
@@ -807,9 +810,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                   beaconConfig.powchainConfig().getEth1Endpoints().get(0))
               : ExecutionEngineService.createStub();
       specLogicMerge
-          .getExecutionPayloadUtil()
-          .ifPresent(util -> util.setExecutionEngineChannel(executionEngineChannel));
-      specLogicMerge
           .getMergeTransitionHelpers()
           .ifPresent(helpers -> helpers.setExecutionEngineChannel(executionEngineChannel));
 
@@ -834,8 +834,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                                     // Check if there is a payload
                                     if (!body.getExecution_payload()
                                         .equals(new ExecutionPayload())) {
-                                      executionEngineChannel.setHead(
-                                          body.getExecution_payload().getBlock_hash());
+                                      executionEngineChannel
+                                          .setHead(body.getExecution_payload().getBlock_hash())
+                                          .finish(err -> LOG.warn("setHead failed", err));
                                     }
                                   }))
                   .reportExceptions());
@@ -855,8 +856,10 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                                     // Check if there is a payload
                                     if (!body.getExecution_payload()
                                         .equals(new ExecutionPayload())) {
-                                      executionEngineChannel.finalizeBlock(
-                                          body.getExecution_payload().getBlock_hash());
+                                      executionEngineChannel
+                                          .finalizeBlock(
+                                              body.getExecution_payload().getBlock_hash())
+                                          .finish(err -> LOG.warn("finalizeBlock failed", err));
                                     }
                                   }))
                   .reportExceptions());

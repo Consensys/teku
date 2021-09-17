@@ -32,6 +32,7 @@ import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 
 public class SanityBlocksTestExecutor implements TestExecutor {
@@ -89,6 +90,7 @@ public class SanityBlocksTestExecutor implements TestExecutor {
       for (SignedBeaconBlock block : blocks) {
         result =
             spec.processBlock(
+                ExecutionEngineChannel.NOOP,
                 result,
                 block,
                 metaData.getBlsSetting() == IGNORED

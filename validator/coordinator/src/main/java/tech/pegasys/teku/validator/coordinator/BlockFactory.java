@@ -36,6 +36,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.BeaconStateMerge;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.helpers.MergeTransitionHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.PowBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
@@ -61,6 +62,7 @@ public class BlockFactory {
   private final Eth1DataCache eth1DataCache;
   private final Bytes32 graffiti;
   private final Spec spec;
+  private final ExecutionEngineChannel executionEngineChannel;
 
   public BlockFactory(
       final AggregatingAttestationPool attestationPool,
@@ -71,7 +73,8 @@ public class BlockFactory {
       final DepositProvider depositProvider,
       final Eth1DataCache eth1DataCache,
       final Bytes32 graffiti,
-      final Spec spec) {
+      final Spec spec,
+      ExecutionEngineChannel executionEngineChannel) {
     this.attestationPool = attestationPool;
     this.attesterSlashingPool = attesterSlashingPool;
     this.proposerSlashingPool = proposerSlashingPool;
@@ -81,6 +84,7 @@ public class BlockFactory {
     this.eth1DataCache = eth1DataCache;
     this.graffiti = graffiti;
     this.spec = spec;
+    this.executionEngineChannel = executionEngineChannel;
   }
 
   public BeaconBlock createUnsignedBlock(
@@ -134,6 +138,7 @@ public class BlockFactory {
     final Eth1Data eth1Vote = eth1DataCache.getEth1Vote(blockPreState);
 
     return spec.createNewUnsignedBlock(
+            executionEngineChannel,
             newSlot,
             spec.getBeaconProposerIndex(blockSlotState, newSlot),
             blockSlotState,
@@ -191,13 +196,14 @@ public class BlockFactory {
                     transitionStore.getTransitionTotalDifficulty().toBigInteger()),
                 Color.YELLOW));
         UInt64 timestamp = spec.computeTimeAtSlot(state, state.getSlot());
-        return executionPayloadUtil.produceExecutionPayload(powHead.blockHash, timestamp);
+        return executionPayloadUtil.produceExecutionPayload(
+            executionEngineChannel, powHead.blockHash, timestamp);
       }
     }
 
     // Post-merge, normal payload
     final Bytes32 executionParentHash = state.getLatest_execution_payload_header().getBlock_hash();
     final UInt64 timestamp = spec.computeTimeAtSlot(state, state.getSlot());
-    return executionPayloadUtil.produceExecutionPayload(executionParentHash, timestamp);
+    return executionEngineChannel.assembleBlock(executionParentHash, timestamp).join();
   }
 }

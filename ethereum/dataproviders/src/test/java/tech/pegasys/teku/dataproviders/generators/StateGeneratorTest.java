@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.hashtree.HashTree;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 
 public class StateGeneratorTest {
   protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(3);
@@ -61,7 +62,8 @@ public class StateGeneratorTest {
     blockMap.remove(genesis.getRoot());
     final BlockProvider blockProvider = BlockProvider.fromMap(blockMap);
 
-    final StateGenerator generator = StateGenerator.create(spec, tree, genesis, blockProvider);
+    final StateGenerator generator =
+        StateGenerator.create(spec, tree, genesis, blockProvider, ExecutionEngineChannel.NOOP);
     final SafeFuture<StateAndBlockSummary> result =
         generator.regenerateStateForBlock(lastBlockAndState.getRoot());
     assertThat(result).isCompletedWithValue(lastBlockAndState);
@@ -84,7 +86,8 @@ public class StateGeneratorTest {
     blockMap.remove(genesis.getRoot());
     final BlockProvider blockProvider = BlockProvider.fromMap(blockMap);
 
-    final StateGenerator generator = StateGenerator.create(spec, tree, genesis, blockProvider);
+    final StateGenerator generator =
+        StateGenerator.create(spec, tree, genesis, blockProvider, ExecutionEngineChannel.NOOP);
     final SafeFuture<StateAndBlockSummary> result =
         generator.regenerateStateForBlock(genesis.getRoot());
     final StateAndBlockSummary expected = StateAndBlockSummary.create(genesis.getState());
@@ -135,7 +138,8 @@ public class StateGeneratorTest {
     blockMap.remove(missingBlock.getRoot());
     final BlockProvider blockProvider = BlockProvider.fromMap(blockMap);
 
-    final StateGenerator generator = StateGenerator.create(spec, tree, genesis, blockProvider);
+    final StateGenerator generator =
+        StateGenerator.create(spec, tree, genesis, blockProvider, ExecutionEngineChannel.NOOP);
     processor.accept(generator, missingBlock);
   }
 

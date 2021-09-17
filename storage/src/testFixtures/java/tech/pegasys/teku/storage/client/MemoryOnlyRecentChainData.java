@@ -24,6 +24,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -56,7 +57,8 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
         protoArrayStorageChannel,
         finalizedCheckpointChannel,
         chainHeadChannel,
-        spec);
+        spec,
+        ExecutionEngineChannel.NOOP);
   }
 
   public static Builder builder() {

@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MergeTransitionHelpers;
@@ -328,6 +329,7 @@ public class ForkChoiceUtil {
    */
   @CheckReturnValue
   public BlockImportResult onBlock(
+      ExecutionEngineChannel executionEngineChannel,
       final MutableStore store,
       final SignedBeaconBlock signedBlock,
       final BeaconState blockSlotState,
@@ -359,7 +361,7 @@ public class ForkChoiceUtil {
     try {
       state =
           blockProcessor.processAndValidateBlock(
-              signedBlock, blockSlotState, indexedAttestationCache);
+              executionEngineChannel, signedBlock, blockSlotState, indexedAttestationCache);
     } catch (StateTransitionException e) {
       return BlockImportResult.failedStateTransition(e);
     }

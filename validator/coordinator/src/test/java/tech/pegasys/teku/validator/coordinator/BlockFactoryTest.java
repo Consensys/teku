@@ -40,6 +40,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
@@ -64,6 +65,7 @@ class BlockFactoryTest {
       mock(SyncCommitteeContributionPool.class);
   final DepositProvider depositProvider = mock(DepositProvider.class);
   final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
+  private final ExecutionEngineChannel executionEngineChannel = ExecutionEngineChannel.NOOP;
 
   @Test
   public void shouldCreateBlockAfterNormalSlot() throws Exception {
@@ -117,7 +119,8 @@ class BlockFactoryTest {
             depositProvider,
             eth1DataCache,
             graffiti,
-            spec);
+            spec,
+            executionEngineChannel);
 
     when(depositProvider.getDeposits(any(), any())).thenReturn(deposits);
     when(attestationsPool.getAttestationsForBlock(any(), any())).thenReturn(attestations);
