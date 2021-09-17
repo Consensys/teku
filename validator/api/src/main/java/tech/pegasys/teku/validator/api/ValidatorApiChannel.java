@@ -55,7 +55,7 @@ public interface ValidatorApiChannel extends ChannelInterface {
 
   SafeFuture<Optional<ProposerDuties>> getProposerDuties(final UInt64 epoch);
 
-  SafeFuture<Void> prepareExecutionPayload(UInt64 slot, UInt64 payloadId);
+  SafeFuture<Void> prepareExecutionPayload(UInt64 slot);
 
   SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(
       UInt64 slot, BLSSignature randaoReveal, Optional<Bytes32> graffiti);

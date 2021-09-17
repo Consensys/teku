@@ -16,7 +16,6 @@ package tech.pegasys.teku.validator.client.duties;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicLong;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -32,13 +31,11 @@ import tech.pegasys.teku.validator.client.Validator;
 
 public class BlockProductionDuty implements Duty {
   private static final Logger LOG = LogManager.getLogger();
-  private static final AtomicLong PAYLOAD_ID_COUNTER = new AtomicLong(0);
   private final Validator validator;
   private final UInt64 slot;
   private final ForkProvider forkProvider;
   private final ValidatorApiChannel validatorApiChannel;
   private final Spec spec;
-  private final UInt64 executionPayloadId;
   private Optional<SafeFuture<Void>> maybePrepareFuture;
 
   public BlockProductionDuty(
@@ -52,7 +49,6 @@ public class BlockProductionDuty implements Duty {
     this.forkProvider = forkProvider;
     this.validatorApiChannel = validatorApiChannel;
     this.spec = spec;
-    this.executionPayloadId = UInt64.fromLongBits(PAYLOAD_ID_COUNTER.incrementAndGet());
     this.maybePrepareFuture = Optional.empty();
   }
 
@@ -71,8 +67,7 @@ public class BlockProductionDuty implements Duty {
   public SafeFuture<Void> prepareDuty() {
     LOG.trace("Preparing block for validator {} at slot {}", validator.getPublicKey(), slot);
 
-    maybePrepareFuture =
-        Optional.of(validatorApiChannel.prepareExecutionPayload(slot, executionPayloadId));
+    maybePrepareFuture = Optional.of(validatorApiChannel.prepareExecutionPayload(slot));
     return maybePrepareFuture.get();
   }
 

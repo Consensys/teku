@@ -230,8 +230,8 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Void> prepareExecutionPayload(UInt64 slot, UInt64 payloadId) {
-    return delegate.prepareExecutionPayload(slot, payloadId);
+  public SafeFuture<Void> prepareExecutionPayload(UInt64 slot) {
+    return delegate.prepareExecutionPayload(slot);
   }
 
   @Override
