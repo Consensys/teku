@@ -48,7 +48,7 @@ public class SlashingProtectionImporter {
 
   public SlashingProtectionImporter(final SubCommandLogger log, final String path) {
     this.log = log;
-    syncDataAccessor = SyncDataAccessor.create(Paths.get(path));
+    syncDataAccessor = SyncDataAccessor.create(Paths.get(path), false);
   }
 
   public void initialise(final File inputFile) throws IOException {
