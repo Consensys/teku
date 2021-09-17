@@ -45,7 +45,6 @@ public class SlashingProtectionExporter {
 
   public SlashingProtectionExporter(final SubCommandLogger log, final String path) {
     this.log = log;
-    System.out.println(path);
     this.syncDataAccessor = SyncDataAccessor.createWithoutAtomicMove();
   }
 
