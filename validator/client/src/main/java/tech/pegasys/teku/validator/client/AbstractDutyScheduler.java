@@ -29,7 +29,7 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
   private static final Logger LOG = LogManager.getLogger();
   private final MetricsSystem metricsSystem;
   private final String dutyType;
-  private final Spec spec;
+  protected final Spec spec;
   private final boolean useDependentRoots;
   private final DutyLoader<?> epochDutiesScheduler;
   private final int lookAheadEpochs;
@@ -123,7 +123,7 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
     invalidateEpochs(dutiesByEpoch);
   }
 
-  private void calculateDuties(final UInt64 epochNumber) {
+  protected void calculateDuties(final UInt64 epochNumber) {
     dutiesByEpoch.computeIfAbsent(epochNumber, this::createEpochDuties);
     for (int i = 1; i <= lookAheadEpochs; i++) {
       dutiesByEpoch.computeIfAbsent(epochNumber.plus(i), this::createEpochDuties);

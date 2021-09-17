@@ -36,6 +36,7 @@ public class BlockProductionDuty implements Duty {
   private final ForkProvider forkProvider;
   private final ValidatorApiChannel validatorApiChannel;
   private final Spec spec;
+  private Optional<SafeFuture<Void>> maybePrepareFuture;
 
   public BlockProductionDuty(
       final Validator validator,
@@ -48,12 +49,26 @@ public class BlockProductionDuty implements Duty {
     this.forkProvider = forkProvider;
     this.validatorApiChannel = validatorApiChannel;
     this.spec = spec;
+    this.maybePrepareFuture = Optional.empty();
   }
 
   @Override
   public SafeFuture<DutyResult> performDuty() {
     LOG.trace("Creating block for validator {} at slot {}", validator.getPublicKey(), slot);
-    return forkProvider.getForkInfo(slot).thenCompose(this::produceBlock);
+
+    // make sure we prepared at least once before producing block
+    return maybePrepareFuture
+        .orElseGet(this::prepareDuty)
+        .thenCompose(__ -> forkProvider.getForkInfo(slot))
+        .thenCompose(this::produceBlock);
+  }
+
+  @Override
+  public SafeFuture<Void> prepareDuty() {
+    LOG.trace("Preparing block for validator {} at slot {}", validator.getPublicKey(), slot);
+
+    maybePrepareFuture = Optional.of(validatorApiChannel.prepareExecutionPayload(slot));
+    return maybePrepareFuture.get();
   }
 
   public SafeFuture<DutyResult> produceBlock(final ForkInfo forkInfo) {

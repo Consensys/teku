@@ -433,7 +433,12 @@ class ValidatorApiHandlerTest {
     when(chainDataClient.getStateAtSlotExact(newSlot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockSlotState)));
     when(blockFactory.createUnsignedBlock(
-            previousState, Optional.of(blockSlotState), newSlot, randaoReveal, Optional.empty()))
+            previousState,
+            Optional.of(blockSlotState),
+            newSlot,
+            randaoReveal,
+            Optional.empty(),
+            newSlot))
         .thenReturn(createdBlock);
 
     final SafeFuture<Optional<BeaconBlock>> result =
@@ -441,7 +446,12 @@ class ValidatorApiHandlerTest {
 
     verify(blockFactory)
         .createUnsignedBlock(
-            previousState, Optional.of(blockSlotState), newSlot, randaoReveal, Optional.empty());
+            previousState,
+            Optional.of(blockSlotState),
+            newSlot,
+            randaoReveal,
+            Optional.empty(),
+            newSlot);
     assertThat(result).isCompletedWithValue(Optional.of(createdBlock));
   }
 
