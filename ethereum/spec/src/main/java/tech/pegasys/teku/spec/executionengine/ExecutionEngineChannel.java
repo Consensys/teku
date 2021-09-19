@@ -30,32 +30,32 @@ public interface ExecutionEngineChannel extends ChannelInterface {
         @Override
         public SafeFuture<Void> prepareBlock(
             Bytes32 parentHash, UInt64 timestamp, UInt64 payloadId) {
-          throw new UnsupportedOperationException();
+          return SafeFuture.completedFuture(null);
         }
 
         @Override
         public SafeFuture<ExecutionPayload> assembleBlock(Bytes32 parentHash, UInt64 timestamp) {
-          throw new UnsupportedOperationException();
+          return SafeFuture.completedFuture(new ExecutionPayload());
         }
 
         @Override
         public SafeFuture<Boolean> newBlock(ExecutionPayload executionPayload) {
-          throw new UnsupportedOperationException();
+          return SafeFuture.completedFuture(true);
         }
 
         @Override
         public SafeFuture<Void> setHead(Bytes32 blockHash) {
-          throw new UnsupportedOperationException();
+          return SafeFuture.completedFuture(null);
         }
 
         @Override
         public SafeFuture<Void> finalizeBlock(Bytes32 blockHash) {
-          throw new UnsupportedOperationException();
+          return SafeFuture.completedFuture(null);
         }
 
         @Override
         public SafeFuture<Optional<Block>> getPowBlock(Bytes32 blockHash) {
-          throw new UnsupportedOperationException();
+          return SafeFuture.completedFuture(Optional.empty());
         }
 
         @Override
