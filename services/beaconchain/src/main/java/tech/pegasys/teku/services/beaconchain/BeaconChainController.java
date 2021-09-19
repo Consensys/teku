@@ -266,6 +266,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     StorageUpdateChannel storageUpdateChannel =
         eventChannels.getPublisher(StorageUpdateChannel.class, beaconAsyncRunner);
     final VoteUpdateChannel voteUpdateChannel = eventChannels.getPublisher(VoteUpdateChannel.class);
+    createExecutionEngineChannel();
+
     return initWeakSubjectivity(storageQueryChannel, storageUpdateChannel)
         .thenCompose(
             __ ->
@@ -798,17 +800,23 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     eventChannels.subscribe(ChainHeadChannel.class, operationsReOrgManager);
   }
 
+  private void createExecutionEngineChannel() {
+    Optional<SpecLogic> specLogic = spec.getSpecLogicForMilestone(SpecMilestone.MERGE);
+    if (specLogic.isPresent()) {
+      executionEngineChannel =
+          beaconConfig.powchainConfig().isEnabled()
+              ? ExecutionEngineService.create(
+                  beaconConfig.powchainConfig().getEth1Endpoints().get(0))
+              : ExecutionEngineService.createStub();
+    }
+  }
+
   // FIXME this dirty simplification is a temporal solution
   private void initExecutionEngineService() {
     Optional<SpecLogic> specLogic = spec.getSpecLogicForMilestone(SpecMilestone.MERGE);
 
     if (specLogic.isPresent()) {
       SpecLogic specLogicMerge = specLogic.get();
-      executionEngineChannel =
-          beaconConfig.powchainConfig().isEnabled()
-              ? ExecutionEngineService.create(
-                  beaconConfig.powchainConfig().getEth1Endpoints().get(0))
-              : ExecutionEngineService.createStub();
       specLogicMerge
           .getMergeTransitionHelpers()
           .ifPresent(helpers -> helpers.setExecutionEngineChannel(executionEngineChannel));

@@ -231,6 +231,7 @@ public class StoreBuilder {
   }
 
   public StoreBuilder executionEngineChannel(ExecutionEngineChannel executionEngineChannel) {
+    checkNotNull(executionEngineChannel);
     this.executionEngineChannel = executionEngineChannel;
     return this;
   }
