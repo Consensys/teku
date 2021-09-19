@@ -802,12 +802,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private void createExecutionEngineChannel() {
     Optional<SpecLogic> specLogic = spec.getSpecLogicForMilestone(SpecMilestone.MERGE);
-    if (specLogic.isPresent()) {
+    if (specLogic.isPresent() && beaconConfig.powchainConfig().isEnabled()) {
       executionEngineChannel =
-          beaconConfig.powchainConfig().isEnabled()
-              ? ExecutionEngineService.create(
-                  beaconConfig.powchainConfig().getEth1Endpoints().get(0))
-              : ExecutionEngineService.createStub();
+          ExecutionEngineService.create(beaconConfig.powchainConfig().getEth1Endpoints().get(0));
+    } else {
+      executionEngineChannel = ExecutionEngineService.createStub();
     }
   }
 
