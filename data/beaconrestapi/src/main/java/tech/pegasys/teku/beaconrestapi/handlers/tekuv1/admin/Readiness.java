@@ -13,36 +13,54 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin;
 
+import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.CACHE_NONE;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_TEKU;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TARGET_PEER_COUNT;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TARGET_PEER_COUNT_DESCRIPTION;
+import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsLong;
 
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
+import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.List;
+import java.util.Map;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.NetworkDataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 
 public class Readiness implements Handler {
+  private static final Logger LOG = LogManager.getLogger();
   public static final String ROUTE = "/teku/v1/admin/readiness";
   private final SyncDataProvider syncProvider;
   private final ChainDataProvider chainDataProvider;
+  private final NetworkDataProvider networkDataProvider;
 
   public Readiness(final DataProvider provider) {
     this.syncProvider = provider.getSyncDataProvider();
     this.chainDataProvider = provider.getChainDataProvider();
+    this.networkDataProvider = provider.getNetworkDataProvider();
   }
 
-  Readiness(final SyncDataProvider syncProvider, final ChainDataProvider chainDataProvider) {
+  Readiness(
+      final SyncDataProvider syncProvider,
+      final ChainDataProvider chainDataProvider,
+      final NetworkDataProvider networkDataProvider) {
     this.syncProvider = syncProvider;
     this.chainDataProvider = chainDataProvider;
+    this.networkDataProvider = networkDataProvider;
   }
 
   @OpenApi(
@@ -51,8 +69,14 @@ public class Readiness implements Handler {
       summary = "Get node readiness",
       description = "Returns 200 if the node is ready to accept traffic",
       tags = {TAG_TEKU},
+      queryParams = {
+        @OpenApiParam(name = TARGET_PEER_COUNT, description = TARGET_PEER_COUNT_DESCRIPTION),
+      },
       responses = {
         @OpenApiResponse(status = RES_OK, description = "Node is ready"),
+        @OpenApiResponse(
+            status = RES_BAD_REQUEST,
+            description = "Cannot parse " + TARGET_PEER_COUNT + " parameter passed in request"),
         @OpenApiResponse(
             status = RES_SERVICE_UNAVAILABLE,
             description = "Node not initialized or having issues")
@@ -60,10 +84,35 @@ public class Readiness implements Handler {
   @Override
   public void handle(final Context ctx) throws Exception {
     ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
-    if (!chainDataProvider.isStoreAvailable() || syncProvider.isSyncing()) {
+    if (!canParseTargetPeerCountParameter(ctx)) {
+      ctx.status(SC_BAD_REQUEST);
+    } else if (!chainDataProvider.isStoreAvailable()
+        || syncProvider.isSyncing()
+        || !reachedTargetPeerCount(ctx)) {
       ctx.status(SC_SERVICE_UNAVAILABLE);
     } else {
       ctx.status(SC_OK);
     }
+  }
+
+  private Boolean canParseTargetPeerCountParameter(final Context ctx) {
+    try {
+      final Map<String, List<String>> parameters = ctx.queryParamMap();
+      return parameters.isEmpty() // Backwards compatibility
+          || (parameters.containsKey(TARGET_PEER_COUNT)
+              && getParameterValueAsLong(parameters, TARGET_PEER_COUNT) > 0);
+    } catch (final IllegalArgumentException ex) {
+      LOG.error("Cannot parse {} parameter in Readiness", TARGET_PEER_COUNT, ex);
+      return false;
+    }
+  }
+
+  private boolean reachedTargetPeerCount(final Context ctx) {
+    final Map<String, List<String>> parameters = ctx.queryParamMap();
+    LOG.debug("Current peer count is {}", networkDataProvider.getPeerCount());
+    return parameters.isEmpty() // Backwards compatibility
+        || (parameters.containsKey(TARGET_PEER_COUNT)
+            && networkDataProvider.getPeerCount()
+                > getParameterValueAsLong(parameters, TARGET_PEER_COUNT));
   }
 }
