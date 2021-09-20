@@ -90,7 +90,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
 
   @Override
   public void processBlock(
-      ExecutionEngineChannel executionEngineChannel,
+      final ExecutionEngineChannel executionEngineChannel,
       final MutableBeaconState genericState,
       final BeaconBlock block,
       final IndexedAttestationCache indexedAttestationCache,

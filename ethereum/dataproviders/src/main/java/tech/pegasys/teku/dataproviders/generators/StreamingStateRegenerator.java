@@ -32,7 +32,9 @@ public class StreamingStateRegenerator {
   private BeaconState state;
 
   private StreamingStateRegenerator(
-      final Spec spec, final BeaconState preState, ExecutionEngineChannel executionEngineChannel) {
+      final Spec spec,
+      final BeaconState preState,
+      final ExecutionEngineChannel executionEngineChannel) {
     this.spec = spec;
     this.state = preState;
     this.executionEngineChannel = executionEngineChannel;

@@ -105,7 +105,7 @@ class Store implements UpdatableStore {
       final int hotStatePersistenceFrequencyInEpochs,
       final BlockProvider blockProvider,
       final StateAndBlockSummaryProvider stateProvider,
-      ExecutionEngineChannel executionEngineChannel,
+      final ExecutionEngineChannel executionEngineChannel,
       final CachingTaskQueue<Bytes32, StateAndBlockSummary> states,
       final Optional<Checkpoint> initialCheckpoint,
       final UInt64 time,

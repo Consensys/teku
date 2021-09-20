@@ -41,7 +41,7 @@ public class StateGenerationTask implements CacheableTask<Bytes32, StateAndBlock
       final HashTree tree,
       final BlockProvider blockProvider,
       final StateRegenerationBaseSelector baseSelector,
-      ExecutionEngineChannel executionEngineChannel) {
+      final ExecutionEngineChannel executionEngineChannel) {
     this.spec = spec;
     this.tree = tree;
     this.blockProvider = blockProvider;

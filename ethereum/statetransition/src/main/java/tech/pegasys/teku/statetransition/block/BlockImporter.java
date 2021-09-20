@@ -65,7 +65,7 @@ public class BlockImporter {
       final RecentChainData recentChainData,
       final ForkChoice forkChoice,
       final WeakSubjectivityValidator weakSubjectivityValidator,
-      ExecutionEngineChannel executionEngineChannel) {
+      final ExecutionEngineChannel executionEngineChannel) {
     this.blockImportNotifications = blockImportNotifications;
     this.recentChainData = recentChainData;
     this.forkChoice = forkChoice;

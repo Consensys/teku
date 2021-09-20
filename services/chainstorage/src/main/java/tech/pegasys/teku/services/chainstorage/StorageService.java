@@ -60,7 +60,7 @@ public class StorageService extends Service {
                   config.getSpec());
           database = dbFactory.createDatabase();
 
-          ExecutionEngineChannel executionEngineChannel =
+          final ExecutionEngineChannel executionEngineChannel =
               serviceConfig
                   .getEventChannels()
                   .getPublisher(

@@ -329,7 +329,7 @@ public class ForkChoiceUtil {
    */
   @CheckReturnValue
   public BlockImportResult onBlock(
-      ExecutionEngineChannel executionEngineChannel,
+      final ExecutionEngineChannel executionEngineChannel,
       final MutableStore store,
       final SignedBeaconBlock signedBlock,
       final BeaconState blockSlotState,

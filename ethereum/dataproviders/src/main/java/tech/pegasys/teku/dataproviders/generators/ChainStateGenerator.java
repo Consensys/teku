@@ -33,7 +33,7 @@ class ChainStateGenerator {
       final List<SignedBeaconBlock> chain,
       final BeaconState baseState,
       final boolean skipValidation,
-      ExecutionEngineChannel executionEngineChannel) {
+      final ExecutionEngineChannel executionEngineChannel) {
     this.executionEngineChannel = executionEngineChannel;
     if (!skipValidation) {
       for (int i = chain.size() - 1; i > 0; i--) {
@@ -59,7 +59,7 @@ class ChainStateGenerator {
       final Spec spec,
       final List<SignedBeaconBlock> chain,
       final BeaconState baseState,
-      ExecutionEngineChannel executionEngineChannel) {
+      final ExecutionEngineChannel executionEngineChannel) {
     return create(spec, chain, baseState, false, executionEngineChannel);
   }
 
@@ -68,7 +68,7 @@ class ChainStateGenerator {
       final List<SignedBeaconBlock> chain,
       final BeaconState baseState,
       final boolean skipValidation,
-      ExecutionEngineChannel executionEngineChannel) {
+      final ExecutionEngineChannel executionEngineChannel) {
     return new ChainStateGenerator(spec, chain, baseState, skipValidation, executionEngineChannel);
   }
 

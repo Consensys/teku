@@ -161,7 +161,7 @@ public class ForkChoice {
 
   /** Import a block to the store. */
   public SafeFuture<BlockImportResult> onBlock(
-      ExecutionEngineChannel executionEngineChannel, final SignedBeaconBlock block) {
+      final ExecutionEngineChannel executionEngineChannel, final SignedBeaconBlock block) {
     return recentChainData
         .retrieveStateAtSlot(new SlotAndBlockRoot(block.getSlot(), block.getParentRoot()))
         .thenCompose(blockSlotState -> onBlock(executionEngineChannel, block, blockSlotState));
@@ -172,9 +172,9 @@ public class ForkChoice {
    * processed to the same slot as the block.
    */
   private SafeFuture<BlockImportResult> onBlock(
-      ExecutionEngineChannel executionEngineChannel,
+      final ExecutionEngineChannel executionEngineChannel,
       final SignedBeaconBlock block,
-      Optional<BeaconState> blockSlotState) {
+      final Optional<BeaconState> blockSlotState) {
     if (blockSlotState.isEmpty()) {
       return SafeFuture.completedFuture(BlockImportResult.FAILED_UNKNOWN_PARENT);
     }

@@ -230,7 +230,7 @@ public class StoreBuilder {
     return this;
   }
 
-  public StoreBuilder executionEngineChannel(ExecutionEngineChannel executionEngineChannel) {
+  public StoreBuilder executionEngineChannel(final ExecutionEngineChannel executionEngineChannel) {
     checkNotNull(executionEngineChannel);
     this.executionEngineChannel = executionEngineChannel;
     return this;

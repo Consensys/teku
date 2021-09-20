@@ -57,7 +57,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final ProtoArrayStorageChannel protoArrayStorageChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
-      ExecutionEngineChannel executionEngineChannel,
+      final ExecutionEngineChannel executionEngineChannel,
       final Spec spec) {
     super(
         asyncRunner,
@@ -70,8 +70,8 @@ public class StorageBackedRecentChainData extends RecentChainData {
         protoArrayStorageChannel,
         finalizedCheckpointChannel,
         chainHeadChannel,
-        spec,
-        executionEngineChannel);
+        executionEngineChannel,
+        spec);
     this.storeConfig = storeConfig;
     this.storageQueryChannel = storageQueryChannel;
     this.blockProvider = storageQueryChannel::getHotBlocksByRoot;
@@ -89,7 +89,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final ProtoArrayStorageChannel protoArrayStorageChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
-      ExecutionEngineChannel executionEngineChannel,
+      final ExecutionEngineChannel executionEngineChannel,
       final Spec spec) {
     StorageBackedRecentChainData client =
         new StorageBackedRecentChainData(
@@ -119,7 +119,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final ProtoArrayStorageChannel protoArrayStorageChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
-      ExecutionEngineChannel executionEngineChannel,
+      final ExecutionEngineChannel executionEngineChannel,
       final Spec spec) {
     StorageBackedRecentChainData client =
         new StorageBackedRecentChainData(

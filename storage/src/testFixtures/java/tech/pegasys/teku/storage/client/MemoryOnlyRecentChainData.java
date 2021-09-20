@@ -57,8 +57,8 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
         protoArrayStorageChannel,
         finalizedCheckpointChannel,
         chainHeadChannel,
-        spec,
-        ExecutionEngineChannel.NOOP);
+        ExecutionEngineChannel.NOOP,
+        spec);
   }
 
   public static Builder builder() {

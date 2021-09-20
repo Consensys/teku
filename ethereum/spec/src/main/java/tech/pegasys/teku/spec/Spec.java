@@ -475,7 +475,7 @@ public class Spec {
   }
 
   public BlockImportResult onBlock(
-      ExecutionEngineChannel executionEngineChannel,
+      final ExecutionEngineChannel executionEngineChannel,
       final MutableStore store,
       final SignedBeaconBlock signedBlock,
       final BeaconState blockSlotState,
@@ -509,7 +509,7 @@ public class Spec {
 
   // Block Proposal
   public BeaconBlockAndState createNewUnsignedBlock(
-      ExecutionEngineChannel executionEngineChannel,
+      final ExecutionEngineChannel executionEngineChannel,
       final UInt64 newSlot,
       final int proposerIndex,
       final BeaconState blockSlotState,
@@ -534,7 +534,7 @@ public class Spec {
   }
 
   public BeaconState processBlock(
-      ExecutionEngineChannel executionEngineChannel,
+      final ExecutionEngineChannel executionEngineChannel,
       final BeaconState preState,
       final SignedBeaconBlock block,
       final BLSSignatureVerifier signatureVerifier)
@@ -554,7 +554,7 @@ public class Spec {
   }
 
   public BeaconState replayValidatedBlock(
-      ExecutionEngineChannel executionEngineChannel,
+      final ExecutionEngineChannel executionEngineChannel,
       final BeaconState preState,
       final SignedBeaconBlock block)
       throws StateTransitionException {

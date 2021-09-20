@@ -106,8 +106,8 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       final ProtoArrayStorageChannel protoArrayStorageChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
-      final Spec spec,
-      ExecutionEngineChannel executionEngineChannel) {
+      final ExecutionEngineChannel executionEngineChannel,
+      final Spec spec) {
     this.asyncRunner = asyncRunner;
     this.metricsSystem = metricsSystem;
     this.storeConfig = storeConfig;

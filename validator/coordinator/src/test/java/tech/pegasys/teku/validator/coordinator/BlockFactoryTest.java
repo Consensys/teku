@@ -65,7 +65,7 @@ class BlockFactoryTest {
       mock(SyncCommitteeContributionPool.class);
   final DepositProvider depositProvider = mock(DepositProvider.class);
   final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
-  private final ExecutionEngineChannel executionEngineChannel = ExecutionEngineChannel.NOOP;
+  final ExecutionEngineChannel executionEngineChannel = ExecutionEngineChannel.NOOP;
 
   @Test
   public void shouldCreateBlockAfterNormalSlot() throws Exception {

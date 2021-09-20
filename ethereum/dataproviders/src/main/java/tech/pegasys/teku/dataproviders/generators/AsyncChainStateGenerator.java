@@ -63,7 +63,7 @@ class AsyncChainStateGenerator {
       final HashTree blockTree,
       final BlockProvider blockProvider,
       final StateProvider stateProvider,
-      ExecutionEngineChannel executionEngineChannel) {
+      final ExecutionEngineChannel executionEngineChannel) {
     return new AsyncChainStateGenerator(
         spec,
         blockTree,

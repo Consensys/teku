@@ -54,7 +54,9 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel, 
   }
 
   public static ChainStorage create(
-      final Database database, ExecutionEngineChannel executionEngineChannel, final Spec spec) {
+      final Database database,
+      final ExecutionEngineChannel executionEngineChannel,
+      final Spec spec) {
     final int finalizedStateCacheSize = spec.getSlotsPerEpoch(SpecConfig.GENESIS_EPOCH) * 3;
     return new ChainStorage(
         database,

@@ -50,7 +50,7 @@ public class FinalizedStateCache {
   public FinalizedStateCache(
       final Spec spec,
       final Database database,
-      ExecutionEngineChannel executionEngineChannel,
+      final ExecutionEngineChannel executionEngineChannel,
       final int maximumCacheSize,
       final boolean useSoftReferences) {
     this.spec = spec;

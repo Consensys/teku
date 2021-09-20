@@ -67,7 +67,7 @@ public class StateGenerator {
       final HashTree blockTree,
       final StateAndBlockSummary rootBlockAndState,
       final BlockProvider blockProvider,
-      ExecutionEngineChannel executionEngineChannel,
+      final ExecutionEngineChannel executionEngineChannel,
       final Map<Bytes32, BeaconState> knownStates) {
     return create(
         spec,
@@ -84,7 +84,7 @@ public class StateGenerator {
       final HashTree blockTree,
       final StateAndBlockSummary rootBlockAndState,
       final BlockProvider blockProvider,
-      ExecutionEngineChannel executionEngineChannel,
+      final ExecutionEngineChannel executionEngineChannel,
       final Map<Bytes32, BeaconState> knownStates,
       final int stateCacheSize) {
     checkArgument(

@@ -124,7 +124,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
 
   @Override
   public BeaconState processAndValidateBlock(
-      ExecutionEngineChannel executionEngineChannel,
+      final ExecutionEngineChannel executionEngineChannel,
       final SignedBeaconBlock signedBlock,
       final BeaconState blockSlotState,
       final IndexedAttestationCache indexedAttestationCache)
@@ -147,7 +147,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
 
   @Override
   public BeaconState processAndValidateBlock(
-      ExecutionEngineChannel executionEngineChannel,
+      final ExecutionEngineChannel executionEngineChannel,
       final SignedBeaconBlock signedBlock,
       final BeaconState blockSlotState,
       final IndexedAttestationCache indexedAttestationCache,
@@ -290,7 +290,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
 
   @Override
   public BeaconState processUnsignedBlock(
-      ExecutionEngineChannel executionEngineChannel,
+      final ExecutionEngineChannel executionEngineChannel,
       final BeaconState preState,
       final BeaconBlock block,
       final IndexedAttestationCache indexedAttestationCache,
@@ -303,7 +303,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   }
 
   protected void processBlock(
-      ExecutionEngineChannel executionEngineChannel,
+      final ExecutionEngineChannel executionEngineChannel,
       final MutableBeaconState state,
       final BeaconBlock block,
       final IndexedAttestationCache indexedAttestationCache,

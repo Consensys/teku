@@ -74,7 +74,7 @@ public class BlockFactory {
       final Eth1DataCache eth1DataCache,
       final Bytes32 graffiti,
       final Spec spec,
-      ExecutionEngineChannel executionEngineChannel) {
+      final ExecutionEngineChannel executionEngineChannel) {
     this.attestationPool = attestationPool;
     this.attesterSlashingPool = attesterSlashingPool;
     this.proposerSlashingPool = proposerSlashingPool;

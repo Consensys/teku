@@ -27,7 +27,7 @@ class BlockProcessor {
   }
 
   public BeaconState process(
-      ExecutionEngineChannel executionEngineChannel,
+      final ExecutionEngineChannel executionEngineChannel,
       final BeaconState preState,
       final SignedBeaconBlock block) {
 

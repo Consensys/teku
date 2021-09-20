@@ -43,7 +43,7 @@ public class BlockProposalUtil {
   }
 
   public BeaconBlockAndState createNewUnsignedBlock(
-      ExecutionEngineChannel executionEngineChannel,
+      final ExecutionEngineChannel executionEngineChannel,
       final UInt64 newSlot,
       final int proposerIndex,
       final BeaconState blockSlotState,
