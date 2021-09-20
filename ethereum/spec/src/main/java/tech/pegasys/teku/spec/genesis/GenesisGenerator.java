@@ -98,7 +98,7 @@ public class GenesisGenerator {
                         UInt64.ZERO,
                         UInt64.ZERO,
                         UInt64.ZERO,
-                        Bytes.wrap(new byte[SpecConfig.MAX_EXTRA_DATA_BYTES]),
+                        Bytes.EMPTY,
                         Bytes32.ZERO,
                         Bytes32.ZERO,
                         Bytes32.ZERO)));

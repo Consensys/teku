@@ -43,7 +43,7 @@ public class ExecutionPayload {
 
   @JsonSerialize(using = Bytes20Serializer.class)
   @JsonDeserialize(using = Bytes20Deserializer.class)
-  public final Bytes20 miner;
+  public final Bytes20 coinbase;
 
   @JsonSerialize(using = BytesSerializer.class)
   @JsonDeserialize(using = Bytes32Deserializer.class)
@@ -96,7 +96,7 @@ public class ExecutionPayload {
   public ExecutionPayload(
       tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload executionPayload) {
     this.parentHash = executionPayload.getParent_hash();
-    this.miner = executionPayload.getCoinbase();
+    this.coinbase = executionPayload.getCoinbase();
     this.stateRoot = executionPayload.getState_root();
     this.receiptsRoot = executionPayload.getReceipt_root();
     this.logsBloom = executionPayload.getLogs_bloom();
@@ -117,7 +117,7 @@ public class ExecutionPayload {
 
   public ExecutionPayload(
       @JsonProperty("parentHash") Bytes32 parentHash,
-      @JsonProperty("miner") Bytes20 miner,
+      @JsonProperty("coinbase") Bytes20 coinbase,
       @JsonProperty("stateRoot") Bytes32 stateRoot,
       @JsonProperty("receiptRoot") Bytes32 receiptsRoot,
       @JsonProperty("logsBloom") Bytes logsBloom,
@@ -131,7 +131,7 @@ public class ExecutionPayload {
       @JsonProperty("blockHash") Bytes32 blockHash,
       @JsonProperty("transactions") List<Bytes> transactions) {
     this.parentHash = parentHash;
-    this.miner = miner;
+    this.coinbase = coinbase;
     this.stateRoot = stateRoot;
     this.receiptsRoot = receiptsRoot;
     this.logsBloom = logsBloom;
@@ -150,7 +150,7 @@ public class ExecutionPayload {
       asInternalExecutionPayload() {
     return new tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload(
         parentHash,
-        miner,
+        coinbase,
         stateRoot,
         receiptsRoot,
         logsBloom,
@@ -175,7 +175,7 @@ public class ExecutionPayload {
     }
     final ExecutionPayload that = (ExecutionPayload) o;
     return Objects.equals(parentHash, that.parentHash)
-        && Objects.equals(miner, that.miner)
+        && Objects.equals(coinbase, that.coinbase)
         && Objects.equals(stateRoot, that.stateRoot)
         && Objects.equals(receiptsRoot, that.receiptsRoot)
         && Objects.equals(logsBloom, that.logsBloom)
@@ -193,7 +193,7 @@ public class ExecutionPayload {
   public int hashCode() {
     return Objects.hash(
         parentHash,
-        miner,
+        coinbase,
         stateRoot,
         receiptsRoot,
         logsBloom,
@@ -211,7 +211,7 @@ public class ExecutionPayload {
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("parentHash", parentHash)
-        .add("miner", miner)
+        .add("coinbase", coinbase)
         .add("stateRoot", stateRoot)
         .add("receiptsRoot", receiptsRoot)
         .add("logsBloom", logsBloom)
