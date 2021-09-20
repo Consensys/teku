@@ -66,7 +66,8 @@ public class BlockProposalTestUtil {
     final BLSSignature randaoReveal =
         signer.createRandaoReveal(newEpoch, state.getForkInfo()).join();
 
-    final BeaconState blockSlotState = spec.processSlots(state, newSlot);
+    final BeaconState blockSlotState =
+        spec.processSlots(state, newSlot, ExecutionEngineChannel.NOOP);
     final BeaconBlockAndState newBlockAndState =
         spec.createNewUnsignedBlock(
             ExecutionEngineChannel.NOOP,
@@ -142,7 +143,7 @@ public class BlockProposalTestUtil {
   public int getProposerIndexForSlot(final BeaconState preState, final UInt64 slot) {
     BeaconState state;
     try {
-      state = spec.processSlots(preState, slot);
+      state = spec.processSlots(preState, slot, ExecutionEngineChannel.NOOP);
     } catch (SlotProcessingException | EpochProcessingException e) {
       throw new RuntimeException(e);
     }

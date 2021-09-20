@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -81,7 +82,7 @@ class StateRootCollectorTest {
     for (int i = 2; i < SLOTS_PER_HISTORICAL_ROOT + 2; i++) {
       final UInt64 slot = UInt64.valueOf(i);
       // Regenerate states to ensure we don't wrap around and record the wrong values.
-      historicState = spec.processSlots(historicState, slot);
+      historicState = spec.processSlots(historicState, slot, ExecutionEngineChannel.NOOP);
       verify(transaction)
           .putStateRoot(
               historicState.hashTreeRoot(), new SlotAndBlockRoot(slot, genesis.getRoot()));

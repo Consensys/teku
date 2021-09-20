@@ -349,7 +349,8 @@ public class ForkChoiceUtil {
 
     // [Merge] Return if transition condition checks fail
     final Optional<BlockImportResult> maybeTerminalPowBlockFailure =
-        checkOnTerminalPowBlockConditions(block, blockSlotState, maybeTransitionStore);
+        checkOnTerminalPowBlockConditions(
+            executionEngineChannel, block, blockSlotState, maybeTransitionStore);
     if (maybeTerminalPowBlockFailure.isPresent()) {
       return maybeTerminalPowBlockFailure.get();
     }
@@ -419,6 +420,7 @@ public class ForkChoiceUtil {
   }
 
   private Optional<BlockImportResult> checkOnTerminalPowBlockConditions(
+      final ExecutionEngineChannel executionEngineChannel,
       final BeaconBlock block,
       final BeaconState blockSlotState,
       final Optional<TransitionStore> maybeTransitionStore) {
@@ -432,7 +434,8 @@ public class ForkChoiceUtil {
     }
     BeaconBlockBodyMerge blockBodyMerge = block.getBody().toVersionMerge().orElseThrow();
     PowBlock powBlock =
-        mergeTransitionHelpers.getPowBlock(blockBodyMerge.getExecution_payload().getParent_hash());
+        mergeTransitionHelpers.getPowBlock(
+            executionEngineChannel, blockBodyMerge.getExecution_payload().getParent_hash());
     if (!powBlock.isProcessed) {
       return Optional.of(BlockImportResult.FAILED_UNKNOWN_TERMINAL_POW_BLOCK);
     }

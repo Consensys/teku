@@ -41,7 +41,9 @@ import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
+import tech.pegasys.teku.storage.store.UpdatableStore.StoreUpdateHandler;
 
 class StoreTransaction implements UpdatableStore.StoreTransaction {
   private static final Logger LOG = LogManager.getLogger();
@@ -50,6 +52,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   private final Store store;
   private final ReadWriteLock lock;
   private final StorageUpdateChannel storageUpdateChannel;
+  private final ExecutionEngineChannel executionEngineChannel;
 
   Optional<UInt64> time = Optional.empty();
   Optional<UInt64> genesis_time = Optional.empty();
@@ -65,11 +68,13 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
       final Store store,
       final ReadWriteLock lock,
       final StorageUpdateChannel storageUpdateChannel,
-      final UpdatableStore.StoreUpdateHandler updateHandler) {
+      ExecutionEngineChannel executionEngineChannel,
+      final StoreUpdateHandler updateHandler) {
     this.spec = spec;
     this.store = store;
     this.lock = lock;
     this.storageUpdateChannel = storageUpdateChannel;
+    this.executionEngineChannel = executionEngineChannel;
     this.updateHandler = updateHandler;
   }
 
@@ -311,7 +316,8 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
       return new StateAtSlotTask(
               spec,
               checkpoint.toSlotAndBlockRoot(spec),
-              fromBlockAndState(inMemoryCheckpointBlockState))
+              fromBlockAndState(inMemoryCheckpointBlockState),
+              executionEngineChannel)
           .performTask();
     }
     return store.retrieveCheckpointState(checkpoint);
@@ -325,7 +331,10 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
       // Not executing the task via the task queue to avoid caching the result before the tx is
       // committed
       return new StateAtSlotTask(
-              spec, slotAndBlockRoot, fromBlockAndState(inMemoryCheckpointBlockState))
+              spec,
+              slotAndBlockRoot,
+              fromBlockAndState(inMemoryCheckpointBlockState),
+              executionEngineChannel)
           .performTask();
     }
     return store.retrieveStateAtSlot(slotAndBlockRoot);

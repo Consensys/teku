@@ -401,6 +401,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         new CombinedChainDataClient(
             recentChainData,
             eventChannels.getPublisher(StorageQueryChannel.class, beaconAsyncRunner),
+            executionEngineChannel,
             spec);
   }
 
@@ -662,6 +663,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             .config(beaconConfig.p2pConfig())
             .eventChannels(eventChannels)
             .recentChainData(recentChainData)
+            .executionEngineChannel(executionEngineChannel)
             .gossipedBlockProcessor(blockManager::validateAndImportBlock)
             .gossipedAttestationProcessor(attestationManager::addAttestation)
             .gossipedAggregateProcessor(attestationManager::addAggregate)
@@ -815,11 +817,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     Optional<SpecLogic> specLogic = spec.getSpecLogicForMilestone(SpecMilestone.MERGE);
 
     if (specLogic.isPresent()) {
-      SpecLogic specLogicMerge = specLogic.get();
-      specLogicMerge
-          .getMergeTransitionHelpers()
-          .ifPresent(helpers -> helpers.setExecutionEngineChannel(executionEngineChannel));
-
       // Propagate head updates
       eventChannels.subscribe(
           ChainHeadChannel.class,

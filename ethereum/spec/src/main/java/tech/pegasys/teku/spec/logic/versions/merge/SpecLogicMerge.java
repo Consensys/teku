@@ -19,6 +19,7 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.spec.config.SpecConfigMerge;
 import tech.pegasys.teku.spec.datastructures.forkchoice.TransitionStore;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.helpers.MergeTransitionHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.PowBlock;
@@ -191,8 +192,11 @@ public class SpecLogicMerge extends AbstractSpecLogic {
   }
 
   @Override
-  public void initializeTransitionStore(BeaconState state) {
-    PowBlock powBlock = mergeTransitionHelpers.getPowBlock(state.getEth1_data().getBlock_hash());
+  public void initializeTransitionStore(
+      ExecutionEngineChannel executionEngineChannel, BeaconState state) {
+    PowBlock powBlock =
+        mergeTransitionHelpers.getPowBlock(
+            executionEngineChannel, state.getEth1_data().getBlock_hash());
     Preconditions.checkArgument(powBlock.isProcessed, "Anchor PowBlock is not processed");
     Preconditions.checkArgument(powBlock.isValid, "Anchor PowBlock is invalid");
 

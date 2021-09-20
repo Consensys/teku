@@ -24,7 +24,6 @@ import tech.pegasys.teku.spec.logic.versions.merge.helpers.MiscHelpersMerge;
 public class MergeTransitionHelpers {
 
   private final MiscHelpersMerge miscHelpers;
-  private ExecutionEngineChannel executionEngineChannel;
 
   public MergeTransitionHelpers(MiscHelpersMerge miscHelpers) {
     this.miscHelpers = miscHelpers;
@@ -44,7 +43,7 @@ public class MergeTransitionHelpers {
     return powBlock.isValid && isTotalDifficultyReached;
   }
 
-  public PowBlock getPowBlock(Bytes32 blockHash) {
+  public PowBlock getPowBlock(ExecutionEngineChannel executionEngineChannel, Bytes32 blockHash) {
     return executionEngineChannel
         .getPowBlock(blockHash)
         .join()
@@ -52,11 +51,7 @@ public class MergeTransitionHelpers {
         .orElse(new PowBlock(blockHash, false, false, UInt256.ZERO, UInt256.ZERO));
   }
 
-  public PowBlock getPowChainHead() {
+  public PowBlock getPowChainHead(ExecutionEngineChannel executionEngineChannel) {
     return new PowBlock(executionEngineChannel.getPowChainHead().join());
-  }
-
-  public void setExecutionEngineChannel(ExecutionEngineChannel executionEngineChannel) {
-    this.executionEngineChannel = executionEngineChannel;
   }
 }

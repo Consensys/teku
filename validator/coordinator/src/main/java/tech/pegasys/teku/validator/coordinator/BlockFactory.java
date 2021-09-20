@@ -130,7 +130,7 @@ public class BlockFactory {
     if (previousState.getSlot().equals(slotBeforeBlock)) {
       blockPreState = previousState;
     } else {
-      blockPreState = spec.processSlots(previousState, slotBeforeBlock);
+      blockPreState = spec.processSlots(previousState, slotBeforeBlock, executionEngineChannel);
     }
 
     // Collect attestations to include
@@ -138,7 +138,7 @@ public class BlockFactory {
     if (maybeBlockSlotState.isPresent()) {
       blockSlotState = maybeBlockSlotState.get();
     } else {
-      blockSlotState = spec.processSlots(blockPreState, newSlot);
+      blockSlotState = spec.processSlots(blockPreState, newSlot, executionEngineChannel);
     }
     SszList<Attestation> attestations =
         attestationPool.getAttestationsForBlock(
@@ -194,7 +194,7 @@ public class BlockFactory {
         spec.atSlot(state.getSlot()).getTransitionStore().orElseThrow();
 
     if (!mergeTransitionHelpers.isMergeComplete(state)) {
-      PowBlock powHead = mergeTransitionHelpers.getPowChainHead();
+      PowBlock powHead = mergeTransitionHelpers.getPowChainHead(executionEngineChannel);
       if (!mergeTransitionHelpers.isValidTerminalPowBlock(powHead, transitionStore)) {
         // Pre-merge, empty payload
         LOG.info(

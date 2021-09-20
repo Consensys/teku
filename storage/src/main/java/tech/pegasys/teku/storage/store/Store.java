@@ -321,7 +321,7 @@ class Store implements UpdatableStore {
   public StoreTransaction startTransaction(
       final StorageUpdateChannel storageUpdateChannel, final StoreUpdateHandler updateHandler) {
     return new tech.pegasys.teku.storage.store.StoreTransaction(
-        spec, this, lock, storageUpdateChannel, updateHandler);
+        spec, this, lock, storageUpdateChannel, executionEngineChannel, updateHandler);
   }
 
   @Override
@@ -480,13 +480,18 @@ class Store implements UpdatableStore {
   @Override
   public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(Checkpoint checkpoint) {
     return checkpointStates.perform(
-        new StateAtSlotTask(spec, checkpoint.toSlotAndBlockRoot(spec), this::retrieveBlockState));
+        new StateAtSlotTask(
+            spec,
+            checkpoint.toSlotAndBlockRoot(spec),
+            this::retrieveBlockState,
+            executionEngineChannel));
   }
 
   @Override
   public SafeFuture<Optional<BeaconState>> retrieveStateAtSlot(SlotAndBlockRoot slotAndBlockRoot) {
     return checkpointStates.perform(
-        new StateAtSlotTask(spec, slotAndBlockRoot, this::retrieveBlockState));
+        new StateAtSlotTask(
+            spec, slotAndBlockRoot, this::retrieveBlockState, executionEngineChannel));
   }
 
   @Override
@@ -503,7 +508,10 @@ class Store implements UpdatableStore {
     return checkpointStates
         .perform(
             new StateAtSlotTask(
-                spec, finalized.getCheckpoint().toSlotAndBlockRoot(spec), fromAnchor(finalized)))
+                spec,
+                finalized.getCheckpoint().toSlotAndBlockRoot(spec),
+                fromAnchor(finalized),
+                executionEngineChannel))
         .thenApply(
             maybeState ->
                 CheckpointState.create(
@@ -520,7 +528,8 @@ class Store implements UpdatableStore {
         new StateAtSlotTask(
             spec,
             checkpoint.toSlotAndBlockRoot(spec),
-            blockRoot -> SafeFuture.completedFuture(Optional.of(latestStateAtEpoch))));
+            blockRoot -> SafeFuture.completedFuture(Optional.of(latestStateAtEpoch)),
+            executionEngineChannel));
   }
 
   UInt64 getHighestVotedValidatorIndex() {

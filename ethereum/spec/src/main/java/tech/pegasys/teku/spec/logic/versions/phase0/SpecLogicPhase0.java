@@ -17,6 +17,7 @@ import java.util.Optional;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.forkchoice.TransitionStore;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
@@ -145,7 +146,8 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
   }
 
   @Override
-  public void initializeTransitionStore(BeaconState state) {
+  public void initializeTransitionStore(
+      ExecutionEngineChannel executionEngineChannel, BeaconState state) {
     // no transition store in Altair
   }
 
