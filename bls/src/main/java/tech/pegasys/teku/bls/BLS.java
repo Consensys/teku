@@ -96,7 +96,7 @@ public class BLS {
     }
     try {
       return signature.getSignature().verify(publicKey.getPublicKey(), message);
-    } catch (RuntimeException e) {
+    } catch (IllegalArgumentException e) {
       return false;
     }
   }
