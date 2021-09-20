@@ -180,6 +180,7 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
               executionPayload.getGas_limit(),
               executionPayload.getGas_used(),
               executionPayload.getTimestamp(),
+              executionPayload.getExtraData(),
               executionPayload.getBaseFeePerGas(),
               executionPayload.getBlock_hash(),
               executionPayload.getTransactions().hashTreeRoot()));

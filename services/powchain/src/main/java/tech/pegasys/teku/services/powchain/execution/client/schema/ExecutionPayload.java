@@ -78,6 +78,10 @@ public class ExecutionPayload {
   public final UInt64 timestamp;
 
   @JsonSerialize(using = BytesSerializer.class)
+  @JsonDeserialize(using = BytesDeserializer.class)
+  public final Bytes extraData;
+
+  @JsonSerialize(using = BytesSerializer.class)
   @JsonDeserialize(using = Bytes32Deserializer.class)
   public final Bytes32 baseFeePerGas;
 
@@ -101,6 +105,7 @@ public class ExecutionPayload {
     this.gasLimit = executionPayload.getGas_limit();
     this.gasUsed = executionPayload.getGas_used();
     this.timestamp = executionPayload.getTimestamp();
+    this.extraData = executionPayload.getExtraData();
     this.baseFeePerGas = executionPayload.getBaseFeePerGas();
     this.blockHash = executionPayload.getBlock_hash();
     this.transactions =
@@ -121,6 +126,7 @@ public class ExecutionPayload {
       @JsonProperty("gasLimit") UInt64 gasLimit,
       @JsonProperty("gasUsed") UInt64 gasUsed,
       @JsonProperty("timestamp") UInt64 timestamp,
+      @JsonProperty("extraData") Bytes extraData,
       @JsonProperty("blockHash") Bytes32 baseFeePerGas,
       @JsonProperty("blockHash") Bytes32 blockHash,
       @JsonProperty("transactions") List<Bytes> transactions) {
@@ -134,6 +140,7 @@ public class ExecutionPayload {
     this.gasLimit = gasLimit;
     this.gasUsed = gasUsed;
     this.timestamp = timestamp;
+    this.extraData = extraData;
     this.baseFeePerGas = baseFeePerGas;
     this.blockHash = blockHash;
     this.transactions = transactions != null ? transactions : Collections.emptyList();
@@ -152,6 +159,7 @@ public class ExecutionPayload {
         gasLimit,
         gasUsed,
         timestamp,
+        extraData,
         baseFeePerGas,
         blockHash,
         transactions);

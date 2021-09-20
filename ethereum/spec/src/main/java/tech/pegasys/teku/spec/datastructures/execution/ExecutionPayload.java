@@ -19,19 +19,21 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.ssz.collections.SszByteList;
 import tech.pegasys.teku.ssz.collections.SszByteVector;
-import tech.pegasys.teku.ssz.containers.Container13;
-import tech.pegasys.teku.ssz.containers.ContainerSchema13;
+import tech.pegasys.teku.ssz.containers.Container14;
+import tech.pegasys.teku.ssz.containers.ContainerSchema14;
 import tech.pegasys.teku.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.ssz.schema.SszListSchema;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.schema.collections.SszByteListSchema;
 import tech.pegasys.teku.ssz.schema.collections.SszByteVectorSchema;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 import tech.pegasys.teku.ssz.type.Bytes20;
 
 public class ExecutionPayload
-    extends Container13<
+    extends Container14<
         ExecutionPayload,
         SszBytes32,
         SszByteVector,
@@ -43,12 +45,13 @@ public class ExecutionPayload
         SszUInt64,
         SszUInt64,
         SszUInt64,
+        SszByteList,
         SszBytes32,
         SszBytes32,
         SszList<Transaction>> {
 
   public static class ExecutionPayloadSchema
-      extends ContainerSchema13<
+      extends ContainerSchema14<
           ExecutionPayload,
           SszBytes32,
           SszByteVector,
@@ -60,6 +63,7 @@ public class ExecutionPayload
           SszUInt64,
           SszUInt64,
           SszUInt64,
+          SszByteList,
           SszBytes32,
           SszBytes32,
           SszList<Transaction>> {
@@ -77,6 +81,7 @@ public class ExecutionPayload
           namedSchema("gas_limit", SszPrimitiveSchemas.UINT64_SCHEMA),
           namedSchema("gas_used", SszPrimitiveSchemas.UINT64_SCHEMA),
           namedSchema("timestamp", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("extra_data", SszByteListSchema.create(SpecConfig.MAX_EXTRA_DATA_BYTES)),
           namedSchema("base_fee_per_gas", SszPrimitiveSchemas.BYTES32_SCHEMA),
           namedSchema("block_hash", SszPrimitiveSchemas.BYTES32_SCHEMA),
           namedSchema(
@@ -102,7 +107,7 @@ public class ExecutionPayload
   }
 
   ExecutionPayload(
-      ContainerSchema13<
+      ContainerSchema14<
               ExecutionPayload,
               SszBytes32,
               SszByteVector,
@@ -114,6 +119,7 @@ public class ExecutionPayload
               SszUInt64,
               SszUInt64,
               SszUInt64,
+              SszByteList,
               SszBytes32,
               SszBytes32,
               SszList<Transaction>>
@@ -133,6 +139,7 @@ public class ExecutionPayload
       UInt64 gas_limit,
       UInt64 gas_used,
       UInt64 timestamp,
+      Bytes extra_data,
       Bytes32 baseFeePerGas,
       Bytes32 block_hash,
       List<Bytes> transactions) {
@@ -148,6 +155,7 @@ public class ExecutionPayload
         SszUInt64.of(gas_limit),
         SszUInt64.of(gas_used),
         SszUInt64.of(timestamp),
+        SszByteList.fromBytes(extra_data),
         SszBytes32.of(baseFeePerGas),
         SszBytes32.of(block_hash),
         transactions.stream()
@@ -201,15 +209,19 @@ public class ExecutionPayload
     return getField9().get();
   }
 
-  public Bytes32 getBaseFeePerGas() {
-    return getField10().get();
+  public Bytes getExtraData() {
+    return getField10().getBytes();
   }
 
-  public Bytes32 getBlock_hash() {
+  public Bytes32 getBaseFeePerGas() {
     return getField11().get();
   }
 
+  public Bytes32 getBlock_hash() {
+    return getField12().get();
+  }
+
   public SszList<Transaction> getTransactions() {
-    return getField12();
+    return getField13();
   }
 }
