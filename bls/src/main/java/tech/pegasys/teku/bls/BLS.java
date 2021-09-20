@@ -26,6 +26,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.impl.BLS12381;
+import tech.pegasys.teku.bls.impl.BlsException;
 import tech.pegasys.teku.bls.impl.PublicKey;
 import tech.pegasys.teku.bls.impl.PublicKeyMessagePair;
 import tech.pegasys.teku.bls.impl.blst.BlstLoader;
@@ -57,7 +58,7 @@ public class BLS {
       BLS_IMPL = BlstLoader.INSTANCE.get();
       LOG.info("BLS: loaded BLST library");
     } else {
-      throw new RuntimeException("Failed to load Blst library.");
+      throw new BlsException("Failed to load Blst library.");
     }
   }
 
@@ -111,14 +112,20 @@ public class BLS {
    *
    * @param signatures the list of signatures to be aggregated
    * @return the aggregated signature
-   * @throws RuntimeException if any of supplied signatures is invalid
+   * @throws BlsException if any of supplied signatures is invalid
    */
-  public static BLSSignature aggregate(List<BLSSignature> signatures) throws RuntimeException {
-    checkArgument(signatures.size() > 0, "Aggregating zero signatures is invalid.");
-    return new BLSSignature(
-        getBlsImpl()
-            .aggregateSignatures(
-                signatures.stream().map(BLSSignature::getSignature).collect(Collectors.toList())));
+  public static BLSSignature aggregate(List<BLSSignature> signatures) throws BlsException {
+    try {
+      checkArgument(signatures.size() > 0, "Aggregating zero signatures is invalid.");
+      return new BLSSignature(
+          getBlsImpl()
+              .aggregateSignatures(
+                  signatures.stream()
+                      .map(BLSSignature::getSignature)
+                      .collect(Collectors.toList())));
+    } catch (IllegalArgumentException e) {
+      throw new BlsException("Failed to aggregate signatures", e);
+    }
   }
 
   /**
@@ -139,21 +146,25 @@ public class BLS {
    */
   public static boolean aggregateVerify(
       List<BLSPublicKey> publicKeys, List<Bytes> messages, BLSSignature signature) {
-    checkArgument(
-        publicKeys.size() == messages.size(),
-        "Number of public keys and number of messages differs.");
-    if (publicKeys.isEmpty()) return false;
-
-    List<PublicKeyMessagePair> publicKeyMessagePairs =
-        Streams.zip(
-                publicKeys.stream(),
-                messages.stream(),
-                (pk, msg) -> new PublicKeyMessagePair(pk.getPublicKey(), msg))
-            .collect(Collectors.toList());
     try {
-      return signature.getSignature().verify(publicKeyMessagePairs);
-    } catch (RuntimeException e) {
-      return false;
+      checkArgument(
+          publicKeys.size() == messages.size(),
+          "Number of public keys and number of messages differs.");
+      if (publicKeys.isEmpty()) return false;
+
+      List<PublicKeyMessagePair> publicKeyMessagePairs =
+          Streams.zip(
+                  publicKeys.stream(),
+                  messages.stream(),
+                  (pk, msg) -> new PublicKeyMessagePair(pk.getPublicKey(), msg))
+              .collect(Collectors.toList());
+      try {
+        return signature.getSignature().verify(publicKeyMessagePairs);
+      } catch (BlsException e) {
+        return false;
+      }
+    } catch (IllegalArgumentException e) {
+      throw new BlsException("Failed to aggregateVerify", e);
     }
   }
 
@@ -176,13 +187,18 @@ public class BLS {
       LOG.warn("Skipping bls verification.");
       return true;
     }
-    if (publicKeys.isEmpty()) return false;
-    List<PublicKey> publicKeyObjects =
-        publicKeys.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList());
+
     try {
-      return signature.getSignature().verify(publicKeyObjects, message);
-    } catch (RuntimeException e) {
-      return false;
+      if (publicKeys.isEmpty()) return false;
+      List<PublicKey> publicKeyObjects =
+          publicKeys.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList());
+      try {
+        return signature.getSignature().verify(publicKeyObjects, message);
+      } catch (BlsException e) {
+        return false;
+      }
+    } catch (IllegalArgumentException e) {
+      throw new BlsException("Failed to fastAggregateVerify", e);
     }
   }
 
@@ -209,21 +225,25 @@ public class BLS {
    */
   public static boolean batchVerify(
       List<List<BLSPublicKey>> publicKeys, List<Bytes> messages, List<BLSSignature> signatures) {
-    Preconditions.checkArgument(
-        publicKeys.size() == messages.size() && publicKeys.size() == signatures.size(),
-        "Different collection sizes");
+    try {
+      Preconditions.checkArgument(
+          publicKeys.size() == messages.size() && publicKeys.size() == signatures.size(),
+          "Different collection sizes");
 
-    int count = publicKeys.size();
-    if (count == 0) {
-      return false;
-    } else if (count == 1) {
-      return fastAggregateVerify(publicKeys.get(0), messages.get(0), signatures.get(0));
-    } else {
-      // double pairing variant is normally slightly faster, but when the number of
-      // signatures is relatively small the parallelization of hashToG2 internally
-      // yields more performance gain than double pairing
-      boolean doublePairing = count > Runtime.getRuntime().availableProcessors() * 2;
-      return batchVerify(publicKeys, messages, signatures, doublePairing, true);
+      int count = publicKeys.size();
+      if (count == 0) {
+        return false;
+      } else if (count == 1) {
+        return fastAggregateVerify(publicKeys.get(0), messages.get(0), signatures.get(0));
+      } else {
+        // double pairing variant is normally slightly faster, but when the number of
+        // signatures is relatively small the parallelization of hashToG2 internally
+        // yields more performance gain than double pairing
+        boolean doublePairing = count > Runtime.getRuntime().availableProcessors() * 2;
+        return batchVerify(publicKeys, messages, signatures, doublePairing, true);
+      }
+    } catch (IllegalArgumentException e) {
+      throw new BlsException("Failed to batchVerify", e);
     }
   }
 
@@ -256,51 +276,55 @@ public class BLS {
       LOG.warn("Skipping bls verification.");
       return true;
     }
-    Preconditions.checkArgument(
-        publicKeys.size() == messages.size() && publicKeys.size() == signatures.size(),
-        "Different collection sizes");
-    int count = publicKeys.size();
-    if (count == 0) return false;
-    if (doublePairing) {
-      Stream<List<Integer>> pairsStream =
-          Lists.partition(IntStream.range(0, count).boxed().collect(Collectors.toList()), 2)
-              .stream();
+    try {
+      Preconditions.checkArgument(
+          publicKeys.size() == messages.size() && publicKeys.size() == signatures.size(),
+          "Different collection sizes");
+      int count = publicKeys.size();
+      if (count == 0) return false;
+      if (doublePairing) {
+        Stream<List<Integer>> pairsStream =
+            Lists.partition(IntStream.range(0, count).boxed().collect(Collectors.toList()), 2)
+                .stream();
 
-      if (parallel) {
-        pairsStream = pairsStream.parallel();
-      }
-      return completeBatchVerify(
-          pairsStream
-              .map(
-                  idx ->
-                      idx.size() == 1
-                          ? prepareBatchVerify(
-                              idx.get(0),
-                              publicKeys.get(idx.get(0)),
-                              messages.get(idx.get(0)),
-                              signatures.get(idx.get(0)))
-                          : prepareBatchVerify2(
-                              idx.get(0),
-                              publicKeys.get(idx.get(0)),
-                              messages.get(idx.get(0)),
-                              signatures.get(idx.get(0)),
-                              publicKeys.get(idx.get(1)),
-                              messages.get(idx.get(1)),
-                              signatures.get(idx.get(1))))
-              .collect(Collectors.toList()));
-    } else {
-      Stream<Integer> indexStream = IntStream.range(0, count).boxed();
+        if (parallel) {
+          pairsStream = pairsStream.parallel();
+        }
+        return completeBatchVerify(
+            pairsStream
+                .map(
+                    idx ->
+                        idx.size() == 1
+                            ? prepareBatchVerify(
+                                idx.get(0),
+                                publicKeys.get(idx.get(0)),
+                                messages.get(idx.get(0)),
+                                signatures.get(idx.get(0)))
+                            : prepareBatchVerify2(
+                                idx.get(0),
+                                publicKeys.get(idx.get(0)),
+                                messages.get(idx.get(0)),
+                                signatures.get(idx.get(0)),
+                                publicKeys.get(idx.get(1)),
+                                messages.get(idx.get(1)),
+                                signatures.get(idx.get(1))))
+                .collect(Collectors.toList()));
+      } else {
+        Stream<Integer> indexStream = IntStream.range(0, count).boxed();
 
-      if (parallel) {
-        indexStream = indexStream.parallel();
+        if (parallel) {
+          indexStream = indexStream.parallel();
+        }
+        return completeBatchVerify(
+            indexStream
+                .map(
+                    idx ->
+                        prepareBatchVerify(
+                            idx, publicKeys.get(idx), messages.get(idx), signatures.get(idx)))
+                .collect(Collectors.toList()));
       }
-      return completeBatchVerify(
-          indexStream
-              .map(
-                  idx ->
-                      prepareBatchVerify(
-                          idx, publicKeys.get(idx), messages.get(idx), signatures.get(idx)))
-              .collect(Collectors.toList()));
+    } catch (IllegalArgumentException e) {
+      throw new BlsException("Failed to batchVerify", e);
     }
   }
 
@@ -328,7 +352,7 @@ public class BLS {
               publicKeys.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList()),
               message,
               signature.getSignature());
-    } catch (RuntimeException e) {
+    } catch (BlsException e) {
       return new InvalidBatchSemiAggregate();
     }
   }
@@ -358,7 +382,7 @@ public class BLS {
               publicKeys2.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList()),
               message2,
               signature2.getSignature());
-    } catch (RuntimeException e) {
+    } catch (BlsException e) {
       return new InvalidBatchSemiAggregate();
     }
   }

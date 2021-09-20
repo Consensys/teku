@@ -21,7 +21,7 @@ import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.InvalidSSZTypeException;
 import org.apache.tuweni.ssz.SSZ;
-import tech.pegasys.teku.bls.impl.DeserializeException;
+import tech.pegasys.teku.bls.impl.BlsException;
 import tech.pegasys.teku.bls.impl.Signature;
 
 public class BLSSignature {
@@ -60,7 +60,7 @@ public class BLSSignature {
       return SSZ.decode(
           bytes, reader -> new BLSSignature(reader.readFixedBytes(SSZ_BLS_SIGNATURE_SIZE)));
     } catch (InvalidSSZTypeException e) {
-      throw new DeserializeException("Failed to create signature from SSZ.");
+      throw new BlsException("Failed to create signature from SSZ.");
     }
   }
 
@@ -114,7 +114,7 @@ public class BLSSignature {
   public boolean isInfinity() {
     try {
       return getSignature().isInfinity();
-    } catch (final RuntimeException e) {
+    } catch (final IllegalArgumentException e) {
       return false;
     }
   }
@@ -122,7 +122,7 @@ public class BLSSignature {
   public boolean isValid() {
     try {
       return getSignature().isInGroup();
-    } catch (final RuntimeException e) {
+    } catch (final IllegalArgumentException e) {
       return false;
     }
   }

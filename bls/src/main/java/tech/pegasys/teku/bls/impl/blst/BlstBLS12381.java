@@ -29,6 +29,7 @@ import supranational.blst.P2_Affine;
 import supranational.blst.Pairing;
 import tech.pegasys.teku.bls.BatchSemiAggregate;
 import tech.pegasys.teku.bls.impl.BLS12381;
+import tech.pegasys.teku.bls.impl.BlsException;
 import tech.pegasys.teku.bls.impl.KeyPair;
 import tech.pegasys.teku.bls.impl.PublicKey;
 import tech.pegasys.teku.bls.impl.Signature;
@@ -127,7 +128,7 @@ public class BlstBLS12381 implements BLS12381 {
       if (ret == BLST_ERROR.BLST_PK_IS_INFINITY) {
         return BlstSemiAggregate.createInvalid();
       } else {
-        throw new IllegalArgumentException("Error: " + ret);
+        throw new BlsException("Error in Blst, error code: " + ret);
       }
     }
 

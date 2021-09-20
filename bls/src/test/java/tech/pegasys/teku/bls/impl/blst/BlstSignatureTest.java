@@ -22,7 +22,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.impl.AbstractSignatureTest;
 import tech.pegasys.teku.bls.impl.BLS12381;
-import tech.pegasys.teku.bls.impl.DeserializeException;
+import tech.pegasys.teku.bls.impl.BlsException;
 
 public class BlstSignatureTest extends AbstractSignatureTest {
   private static BLS12381 BLS;
@@ -53,8 +53,7 @@ public class BlstSignatureTest extends AbstractSignatureTest {
 
   @Test
   void badSignatureThrowsException() {
-    assertThrows(
-        DeserializeException.class, () -> BlstSignature.fromBytes(Bytes.wrap(new byte[96])));
+    assertThrows(BlsException.class, () -> BlstSignature.fromBytes(Bytes.wrap(new byte[96])));
   }
 
   @Test

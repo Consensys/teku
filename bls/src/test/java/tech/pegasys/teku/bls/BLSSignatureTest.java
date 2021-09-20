@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.bls.impl.DeserializeException;
+import tech.pegasys.teku.bls.impl.BlsException;
 
 abstract class BLSSignatureTest {
 
@@ -70,13 +70,13 @@ abstract class BLSSignatureTest {
 
   @Test
   void succeedsWhenDeserialisationOfEmptySignatureThrowsException() {
-    assertThrows(DeserializeException.class, () -> BLSSignature.empty().getSignature());
+    assertThrows(BlsException.class, () -> BLSSignature.empty().getSignature());
   }
 
   @Test
   void succeedsWhenDeserialisationOfBadDataThrowsException() {
     assertThrows(
-        DeserializeException.class,
+        BlsException.class,
         () ->
             BLSSignature.fromBytesCompressed(Bytes.fromHexString("33".repeat(96))).getSignature());
   }
@@ -85,14 +85,13 @@ abstract class BLSSignatureTest {
   void succeedsIfDeserializationThrowsWithTooFewBytes() {
     Bytes tooFewBytes = Bytes.wrap(new byte[95]);
     assertThrows(
-        DeserializeException.class,
-        () -> BLSSignature.fromBytesCompressed(tooFewBytes).getSignature());
+        BlsException.class, () -> BLSSignature.fromBytesCompressed(tooFewBytes).getSignature());
   }
 
   @Test
   void succeedsIfSSZDeserializationThrowsWithTooFewBytes() {
     Bytes tooFewBytes = Bytes.wrap(new byte[95]);
-    assertThrows(DeserializeException.class, () -> BLSSignature.fromSSZBytes(tooFewBytes));
+    assertThrows(BlsException.class, () -> BLSSignature.fromSSZBytes(tooFewBytes));
   }
 
   @Test

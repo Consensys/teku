@@ -23,7 +23,7 @@ import supranational.blst.BLST_ERROR;
 import supranational.blst.P2;
 import supranational.blst.P2_Affine;
 import supranational.blst.Pairing;
-import tech.pegasys.teku.bls.impl.DeserializeException;
+import tech.pegasys.teku.bls.impl.BlsException;
 import tech.pegasys.teku.bls.impl.PublicKey;
 import tech.pegasys.teku.bls.impl.PublicKeyMessagePair;
 import tech.pegasys.teku.bls.impl.Signature;
@@ -37,12 +37,13 @@ public class BlstSignature implements Signature {
     try {
       checkArgument(
           compressed.size() == COMPRESSED_SIG_SIZE,
-          "Expected " + COMPRESSED_SIG_SIZE + " bytes of input but got %s",
+          "Expected %s bytes of input but got %s",
+          COMPRESSED_SIG_SIZE,
           compressed.size());
       P2_Affine ec2Point = new P2_Affine(compressed.toArrayUnsafe());
       return new BlstSignature(ec2Point);
     } catch (Exception e) {
-      throw new DeserializeException("Signature deserialisation failed: " + e.getMessage());
+      throw new BlsException("Deserialization of signature bytes failed: " + compressed, e);
     }
   }
 
@@ -61,9 +62,9 @@ public class BlstSignature implements Signature {
         sum.aggregate(finiteSignature.ec2Point);
       }
       return new BlstSignature(sum.to_affine());
-    } catch (RuntimeException e) {
+    } catch (IllegalArgumentException e) {
       // Blst performs a G2 group membership test on each signature. We end up here if it fails.
-      throw new RuntimeException("Failed to aggregate signatures: " + e.getMessage());
+      throw new BlsException("Failed to aggregate signatures", e);
     }
   }
 
@@ -77,7 +78,7 @@ public class BlstSignature implements Signature {
             message.toArrayUnsafe(),
             new byte[0]);
     if (ret != BLST_ERROR.BLST_SUCCESS) {
-      throw new IllegalArgumentException("Error: " + ret);
+      throw new BlsException("Error in Blst, error code: " + ret);
     }
   }
 
