@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,149 +13,89 @@
 
 package tech.pegasys.teku.services.powchain.execution;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-
-import com.google.errorprone.annotations.FormatMethod;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.logging.ColorConsolePrinter;
-import tech.pegasys.teku.infrastructure.logging.ColorConsolePrinter.Color;
-import tech.pegasys.teku.infrastructure.logging.LogFormatter;
+import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.services.powchain.execution.client.ExecutionEngineClient;
-import tech.pegasys.teku.services.powchain.execution.client.Web3JExecutionEngineClient;
-import tech.pegasys.teku.services.powchain.execution.client.schema.AssembleBlockRequest;
-import tech.pegasys.teku.services.powchain.execution.client.schema.ExecutionPayload;
-import tech.pegasys.teku.services.powchain.execution.client.schema.NewBlockResponse;
-import tech.pegasys.teku.services.powchain.execution.client.schema.Response;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge.BeaconBlockBodyMerge;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.storage.api.ChainHeadChannel;
+import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
+import tech.pegasys.teku.storage.api.ReorgContext;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class ExecutionEngineService implements ExecutionEngineChannel {
+public class ExecutionEngineService implements ChainHeadChannel, FinalizedCheckpointChannel {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private final ExecutionEngineClient executionEngineClient;
+  private final ExecutionEngineChannel executionEngineChannel;
+  private final RecentChainData recentChainData;
 
-  public static ExecutionEngineService create(String eth1EngineEndpoint) {
-    checkNotNull(eth1EngineEndpoint);
-    return new ExecutionEngineService(new Web3JExecutionEngineClient(eth1EngineEndpoint));
+  public ExecutionEngineService(
+      ExecutionEngineChannel executionEngineChannel, RecentChainData recentChainData) {
+    this.executionEngineChannel = executionEngineChannel;
+    this.recentChainData = recentChainData;
   }
 
-  public static ExecutionEngineService createStub() {
-    return new ExecutionEngineService(ExecutionEngineClient.Stub);
-  }
-
-  public ExecutionEngineService(ExecutionEngineClient executionEngineClient) {
-    this.executionEngineClient = executionEngineClient;
-  }
-
-  private static <K> K unwrapResponseOrThrow(Response<K> response) {
-    checkArgument(
-        response.getPayload() != null, "Invalid remote response: %s", response.getReason());
-    return response.getPayload();
-  }
-
-  @FormatMethod
-  private static void printConsole(String formatString, Object... args) {
-    LOG.info(ColorConsolePrinter.print(String.format(formatString, args), Color.CYAN));
+  public void initialize(EventChannels eventChannels) {
+    eventChannels.subscribe(ChainHeadChannel.class, this);
+    eventChannels.subscribe(FinalizedCheckpointChannel.class, this);
   }
 
   @Override
-  public SafeFuture<Void> prepareBlock(Bytes32 parentHash, UInt64 timestamp, UInt64 payloadId) {
-    return SafeFuture.completedFuture(null);
+  public void chainHeadUpdated(
+      UInt64 slot,
+      Bytes32 stateRoot,
+      Bytes32 bestBlockRoot,
+      boolean epochTransition,
+      Bytes32 previousDutyDependentRoot,
+      Bytes32 currentDutyDependentRoot,
+      Optional<ReorgContext> optionalReorgContext) {
+
+    recentChainData
+        .retrieveBlockByRoot(bestBlockRoot)
+        .thenCompose(
+            maybeABlock ->
+                maybeABlock
+                    .flatMap(block -> block.getBody().toVersionMerge())
+                    .map(this::onHeadBlockMerge)
+                    .orElseGet(() -> SafeFuture.completedFuture(null)))
+        .finish(err -> LOG.warn("setHead failed", err));
+  }
+
+  private SafeFuture<Void> onHeadBlockMerge(BeaconBlockBodyMerge blockBody) {
+    // Check if there is a payload
+    if (!blockBody.getExecution_payload().equals(new ExecutionPayload())) {
+      return executionEngineChannel.setHead(blockBody.getExecution_payload().getBlock_hash());
+    } else {
+      return SafeFuture.completedFuture(null);
+    }
   }
 
   @Override
-  public SafeFuture<tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload> assembleBlock(
-      Bytes32 parentHash, UInt64 timestamp) {
-    AssembleBlockRequest request = new AssembleBlockRequest(parentHash, timestamp);
-
-    return executionEngineClient
-        .consensusAssembleBlock(request)
-        .thenApply(ExecutionEngineService::unwrapResponseOrThrow)
-        .thenApply(ExecutionPayload::asInternalExecutionPayload)
-        .thenPeek(
-            executionPayload ->
-                printConsole(
-                    "consensus_assembleBlock(parent_hash=%s, timestamp=%s) ~> %s",
-                    LogFormatter.formatHashRoot(parentHash), timestamp, executionPayload));
+  public void onNewFinalizedCheckpoint(Checkpoint checkpoint) {
+    recentChainData
+        .retrieveBlockByRoot(checkpoint.getRoot())
+        .thenCompose(
+            maybeABlock ->
+                maybeABlock
+                    .flatMap(block -> block.getBody().toVersionMerge())
+                    .map(this::onFinalizedBlockMerge)
+                    .orElseGet(() -> SafeFuture.completedFuture(null)))
+        .finish(err -> LOG.warn("finalizeBlock failed", err));
   }
 
-  @Override
-  public SafeFuture<Boolean> newBlock(
-      tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload executionPayload) {
-    return executionEngineClient
-        .consensusNewBlock(new ExecutionPayload(executionPayload))
-        .thenApply(ExecutionEngineService::unwrapResponseOrThrow)
-        .thenApply(NewBlockResponse::getValid)
-        .thenPeek(
-            res ->
-                printConsole(
-                    "Failed consensus_newBlock(execution_payload=%s), reason: %s",
-                    executionPayload, res));
-  }
-
-  @Override
-  public SafeFuture<Void> setHead(Bytes32 blockHash) {
-    return executionEngineClient
-        .consensusSetHead(blockHash)
-        .thenApply(ExecutionEngineService::unwrapResponseOrThrow)
-        .thenPeek(
-            __ ->
-                printConsole(
-                    "consensus_setHead(blockHash=%s)", LogFormatter.formatHashRoot(blockHash)))
-        .thenApply(__ -> null);
-  }
-
-  @Override
-  public SafeFuture<Void> finalizeBlock(Bytes32 blockHash) {
-    return executionEngineClient
-        .consensusFinalizeBlock(blockHash)
-        .thenApply(ExecutionEngineService::unwrapResponseOrThrow)
-        .thenPeek(
-            __ ->
-                printConsole(
-                    "consensus_finalizeBlock(blockHash=%s)",
-                    LogFormatter.formatHashRoot(blockHash)))
-        .thenApply(__ -> null);
-  }
-
-  @Override
-  public SafeFuture<Optional<Block>> getPowBlock(Bytes32 blockHash) {
-    return executionEngineClient
-        .getPowBlock(blockHash)
-        .thenPeek(
-            res ->
-                res.ifPresentOrElse(
-                    block ->
-                        printConsole(
-                            "eth_getBlock(blockHash=%s) ~> EthBlock(number=%s, totalDifficulty=%s, difficulty=%s)",
-                            LogFormatter.formatHashRoot(blockHash),
-                            block.getNumber().toString(),
-                            block.getTotalDifficulty().toString(),
-                            block.getDifficulty().toString()),
-                    () ->
-                        printConsole(
-                            "eth_getBlock(blockHash=%s) ~> null",
-                            LogFormatter.formatHashRoot(blockHash))));
-  }
-
-  @Override
-  public SafeFuture<Block> getPowChainHead() {
-    return executionEngineClient
-        .getPowChainHead()
-        .thenPeek(
-            block ->
-                printConsole(
-                    "eth_getLatestBlock() ~> EthBlock(blockHash=%s, number=%s, totalDifficulty=%s, difficulty=%s)",
-                    LogFormatter.formatHashRoot(Bytes32.fromHexString(block.getHash())),
-                    block.getNumber().toString(),
-                    block.getTotalDifficulty().toString(),
-                    block.getDifficulty().toString()));
+  private SafeFuture<Void> onFinalizedBlockMerge(BeaconBlockBodyMerge blockBody) {
+    // Check if there is a payload
+    if (!blockBody.getExecution_payload().equals(new ExecutionPayload())) {
+      return executionEngineChannel.finalizeBlock(blockBody.getExecution_payload().getBlock_hash());
+    } else {
+      return SafeFuture.completedFuture(null);
+    }
   }
 }

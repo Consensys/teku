@@ -58,6 +58,7 @@ import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
+import tech.pegasys.teku.services.powchain.execution.ExecutionEngineChannelImpl;
 import tech.pegasys.teku.services.powchain.execution.ExecutionEngineService;
 import tech.pegasys.teku.services.timer.TimeTickChannel;
 import tech.pegasys.teku.spec.Spec;
@@ -65,7 +66,6 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.interop.InteropStartupUtil;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -806,67 +806,20 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     Optional<SpecLogic> specLogic = spec.getSpecLogicForMilestone(SpecMilestone.MERGE);
     if (specLogic.isPresent() && beaconConfig.powchainConfig().isEnabled()) {
       executionEngineChannel =
-          ExecutionEngineService.create(beaconConfig.powchainConfig().getEth1Endpoints().get(0));
+          ExecutionEngineChannelImpl.create(
+              beaconConfig.powchainConfig().getEth1Endpoints().get(0));
     } else {
-      executionEngineChannel = ExecutionEngineService.createStub();
+      executionEngineChannel = ExecutionEngineChannelImpl.createStub();
     }
   }
 
-  // FIXME this dirty simplification is a temporal solution
   private void initExecutionEngineService() {
     Optional<SpecLogic> specLogic = spec.getSpecLogicForMilestone(SpecMilestone.MERGE);
 
     if (specLogic.isPresent()) {
-      // Propagate head updates
-      eventChannels.subscribe(
-          ChainHeadChannel.class,
-          (slot,
-              stateRoot,
-              bestBlockRoot,
-              epochTransition,
-              previousDutyDependentRoot,
-              currentDutyDependentRoot,
-              optionalReorgContext) ->
-              recentChainData
-                  .retrieveBlockByRoot(bestBlockRoot)
-                  .thenAccept(
-                      maybeABlock ->
-                          maybeABlock
-                              .flatMap(block -> block.getBody().toVersionMerge())
-                              .ifPresent(
-                                  body -> {
-                                    // Check if there is a payload
-                                    if (!body.getExecution_payload()
-                                        .equals(new ExecutionPayload())) {
-                                      executionEngineChannel
-                                          .setHead(body.getExecution_payload().getBlock_hash())
-                                          .finish(err -> LOG.warn("setHead failed", err));
-                                    }
-                                  }))
-                  .reportExceptions());
-
-      // Propagate finalized block updates
-      eventChannels.subscribe(
-          FinalizedCheckpointChannel.class,
-          (checkpoint) ->
-              recentChainData
-                  .retrieveBlockByRoot(checkpoint.getRoot())
-                  .thenAccept(
-                      maybeABlock ->
-                          maybeABlock
-                              .flatMap(block -> block.getBody().toVersionMerge())
-                              .ifPresent(
-                                  body -> {
-                                    // Check if there is a payload
-                                    if (!body.getExecution_payload()
-                                        .equals(new ExecutionPayload())) {
-                                      executionEngineChannel
-                                          .finalizeBlock(
-                                              body.getExecution_payload().getBlock_hash())
-                                          .finish(err -> LOG.warn("finalizeBlock failed", err));
-                                    }
-                                  }))
-                  .reportExceptions());
+      ExecutionEngineService executionEngineService =
+          new ExecutionEngineService(executionEngineChannel, recentChainData);
+      executionEngineService.initialize(eventChannels);
     }
   }
 
