@@ -15,6 +15,7 @@ package tech.pegasys.teku.data.publisher;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Objects;
 
 public class BeaconNodeMetricData extends BaseMetricData {
 
@@ -49,5 +50,35 @@ public class BeaconNodeMetricData extends BaseMetricData {
     this.client_name = clientName;
     this.client_version = clientVersion;
     this.client_build = clientBuild;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    if (!super.equals(o)) return false;
+    BeaconNodeMetricData that = (BeaconNodeMetricData) o;
+    return disk_beaconchain_bytes_total == that.disk_beaconchain_bytes_total
+        && network_libp2p_bytes_total_receive == that.network_libp2p_bytes_total_receive
+        && network_libp2p_bytes_total_transmit == that.network_libp2p_bytes_total_transmit
+        && network_peers_connected == that.network_peers_connected
+        && sync_beacon_head_slot == that.sync_beacon_head_slot
+        && client_build == that.client_build
+        && client_name.equals(that.client_name)
+        && client_version.equals(that.client_version);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        super.hashCode(),
+        disk_beaconchain_bytes_total,
+        network_libp2p_bytes_total_receive,
+        network_libp2p_bytes_total_transmit,
+        network_peers_connected,
+        sync_beacon_head_slot,
+        client_name,
+        client_version,
+        client_build);
   }
 }
