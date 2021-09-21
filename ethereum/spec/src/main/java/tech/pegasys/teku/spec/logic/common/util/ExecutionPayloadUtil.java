@@ -16,22 +16,14 @@ package tech.pegasys.teku.spec.logic.common.util;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.ssz.type.Bytes20;
 
 public class ExecutionPayloadUtil {
-  // we are going to store latest payloadId returned by preparePayload for a given slot
-  // in this way validator doesn't need to know anything about payloadId
-  private LRUCache<UInt64, UInt64> slotToPayloadIdMap;
 
-  public ExecutionPayloadUtil() {
-    this.slotToPayloadIdMap =
-        LRUCache.create(
-            10); // TODO check if makes sense to remember payloadId for the latest 10 slots
-  }
+  public ExecutionPayloadUtil() {}
 
   public boolean verifyExecutionStateTransition(
       ExecutionEngineChannel executionEngineChannel, ExecutionPayload executionPayload) {
@@ -39,29 +31,21 @@ public class ExecutionPayloadUtil {
     return executionEngineChannel.newBlock(executionPayload).join();
   }
 
-  public void prepareExecutionPayload(
+  public UInt64 prepareExecutionPayload(
       ExecutionEngineChannel executionEngineChannel,
-      UInt64 slot,
       Bytes32 parentHash,
       UInt64 timestamp,
       Bytes32 random,
       Bytes20 feeRecipient) {
 
-    UInt64 payloadId =
-        executionEngineChannel.preparePayload(parentHash, timestamp, random, feeRecipient).join();
-
-    slotToPayloadIdMap.invalidateWithNewValue(slot, payloadId);
+    return executionEngineChannel
+        .preparePayload(parentHash, timestamp, random, feeRecipient)
+        .join();
   }
 
   public ExecutionPayload getExecutionPayload(
-      ExecutionEngineChannel executionEngineChannel, UInt64 slot) {
-    UInt64 payloadId =
-        slotToPayloadIdMap
-            .getCached(slot)
-            .orElseThrow(
-                () ->
-                    new IllegalStateException(
-                        "Unable to retrieve execution payloadId from slot " + slot));
+      ExecutionEngineChannel executionEngineChannel, UInt64 payloadId) {
+
     return executionEngineChannel.getPayload(payloadId).join();
   }
 }

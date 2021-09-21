@@ -311,12 +311,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         "Delegating to block factory. Has block slot state? {}", maybeBlockSlotState.isPresent());
     return Optional.of(
         blockFactory.createUnsignedBlock(
-            maybePreState.get(),
-            maybeBlockSlotState,
-            slot,
-            randaoReveal,
-            graffiti,
-            slot)); // we are using slot number as payloadId
+            maybePreState.get(), maybeBlockSlotState, slot, randaoReveal, graffiti));
   }
 
   @Override
