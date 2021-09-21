@@ -150,8 +150,9 @@ public class BLS {
       checkArgument(
           publicKeys.size() == messages.size(),
           "Number of public keys and number of messages differs.");
-      if (publicKeys.isEmpty()) return false;
-
+      if (publicKeys.isEmpty()) {
+        return false;
+      }
       List<PublicKeyMessagePair> publicKeyMessagePairs =
           Streams.zip(
                   publicKeys.stream(),
@@ -189,7 +190,9 @@ public class BLS {
     }
 
     try {
-      if (publicKeys.isEmpty()) return false;
+      if (publicKeys.isEmpty()) {
+        return false;
+      }
       List<PublicKey> publicKeyObjects =
           publicKeys.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList());
       try {
@@ -281,7 +284,9 @@ public class BLS {
           publicKeys.size() == messages.size() && publicKeys.size() == signatures.size(),
           "Different collection sizes");
       int count = publicKeys.size();
-      if (count == 0) return false;
+      if (count == 0) {
+        return false;
+      }
       if (doublePairing) {
         Stream<List<Integer>> pairsStream =
             Lists.partition(IntStream.range(0, count).boxed().collect(Collectors.toList()), 2)
