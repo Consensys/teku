@@ -33,9 +33,8 @@ public interface ExecutionEngineClient {
 
   SafeFuture<Response<NewBlockResponse>> consensusNewBlock(ExecutionPayload request);
 
-  SafeFuture<Response<GenericResponse>> consensusSetHead(Bytes32 blockHash);
-
-  SafeFuture<Response<GenericResponse>> consensusFinalizeBlock(Bytes32 blockHash);
+  SafeFuture<Response<GenericResponse>> forkChoiceUpdated(
+      Bytes32 headBlockHash, Bytes32 finalizedBlockHash, Bytes32 confirmedBlockHash);
 
   SafeFuture<Optional<EthBlock.Block>> getPowBlock(Bytes32 blockHash);
 
@@ -74,12 +73,8 @@ public interface ExecutionEngineClient {
         }
 
         @Override
-        public SafeFuture<Response<GenericResponse>> consensusSetHead(Bytes32 blockHash) {
-          return SafeFuture.completedFuture(new Response<>(new GenericResponse(true)));
-        }
-
-        @Override
-        public SafeFuture<Response<GenericResponse>> consensusFinalizeBlock(Bytes32 blockHash) {
+        public SafeFuture<Response<GenericResponse>> forkChoiceUpdated(
+            Bytes32 headBlockHash, Bytes32 finalizedBlockHash, Bytes32 confirmedBlockHash) {
           return SafeFuture.completedFuture(new Response<>(new GenericResponse(true)));
         }
 
