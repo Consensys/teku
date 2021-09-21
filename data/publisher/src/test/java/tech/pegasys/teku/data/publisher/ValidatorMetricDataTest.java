@@ -21,7 +21,7 @@ import tech.pegasys.teku.provider.JsonProvider;
 
 class ValidatorMetricDataTest {
 
-  private JsonProvider jsonProvider = new JsonProvider();
+  private final JsonProvider jsonProvider = new JsonProvider();
 
   @Test
   public void shouldSerializeObject() throws JsonProcessingException {

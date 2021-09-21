@@ -18,17 +18,18 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
+import java.util.List;
 import org.hyperledger.besu.metrics.Observation;
 import org.hyperledger.besu.metrics.StandardMetricCategory;
 import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
-import tech.pegasys.teku.provider.JsonProvider;
 
 class MetricsDataFactoryTest {
 
-  private JsonProvider jsonProvider = new JsonProvider();
+  //  private final JsonProvider jsonProvider = new JsonProvider();
   PrometheusMetricsSystem prometheusMock = mock(PrometheusMetricsSystem.class);
 
   @Test
@@ -36,16 +37,15 @@ class MetricsDataFactoryTest {
       throws JsonProcessingException {
     when(prometheusMock.streamObservations()).thenReturn(getMockObservations().stream());
     final MetricsDataFactory metricsDataFactory = new MetricsDataFactory(prometheusMock);
-    final BaseMetricData baseMetricData =
-        metricsDataFactory.getMetricData(MetricsDataClient.VALIDATOR);
-    final String data = jsonProvider.objectToJSON(baseMetricData);
-    assertThat(baseMetricData)
-        .isEqualTo(jsonProvider.jsonToObject(data, ValidatorMetricData.class));
-    assertThat(baseMetricData).isInstanceOf(ValidatorMetricData.class);
-    ValidatorMetricData validatorMetricData = (ValidatorMetricData) baseMetricData;
-    assertThat(validatorMetricData.cpu_process_seconds_total).isEqualTo(1);
-    assertThat(validatorMetricData.validator_total).isEqualTo(1);
-    assertThat(validatorMetricData.validator_active).isEqualTo(1);
+    final List<BaseMetricData> baseMetricData = metricsDataFactory.getMetricData();
+
+    ObjectMapper mapper = new ObjectMapper();
+    final String data = mapper.writeValueAsString(baseMetricData);
+
+    assertThat(data).contains("beaconnode");
+    assertThat(data).contains("validator");
+    assertThat(data).contains("\"validator_active\":1");
+    assertThat(data).contains("\"disk_beaconchain_bytes_total\":0");
   }
 
   @Test
@@ -53,16 +53,15 @@ class MetricsDataFactoryTest {
       throws JsonProcessingException {
     when(prometheusMock.streamObservations()).thenReturn(new ArrayList<Observation>().stream());
     final MetricsDataFactory metricsDataFactory = new MetricsDataFactory(prometheusMock);
-    final BaseMetricData baseMetricData =
-        metricsDataFactory.getMetricData(MetricsDataClient.VALIDATOR);
-    final String data = jsonProvider.objectToJSON(baseMetricData);
-    assertThat(baseMetricData)
-        .isEqualTo(jsonProvider.jsonToObject(data, ValidatorMetricData.class));
-    assertThat(baseMetricData).isInstanceOf(ValidatorMetricData.class);
-    ValidatorMetricData validatorMetricData = (ValidatorMetricData) baseMetricData;
-    assertThat(validatorMetricData.cpu_process_seconds_total).isEqualTo(0);
-    assertThat(validatorMetricData.validator_total).isEqualTo(0);
-    assertThat(validatorMetricData.validator_active).isEqualTo(0);
+    final List<BaseMetricData> baseMetricData = metricsDataFactory.getMetricData();
+
+    ObjectMapper mapper = new ObjectMapper();
+    final String data = mapper.writeValueAsString(baseMetricData);
+
+    assertThat(data).contains("beaconnode");
+    assertThat(data).contains("validator");
+    assertThat(data).contains("\"validator_active\":0");
+    assertThat(data).contains("\"disk_beaconchain_bytes_total\":0");
   }
 
   private ArrayList<Observation> getMockObservations() {

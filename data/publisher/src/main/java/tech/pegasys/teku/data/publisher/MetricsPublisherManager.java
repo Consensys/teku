@@ -14,8 +14,10 @@
 package tech.pegasys.teku.data.publisher;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.List;
 import okhttp3.OkHttpClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -24,7 +26,6 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.MetricsEndpoint;
-import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.service.serviceutils.Service;
 
 public class MetricsPublisherManager extends Service {
@@ -35,7 +36,7 @@ public class MetricsPublisherManager extends Service {
   private final AsyncRunnerFactory asyncRunnerFactory;
   private final MetricsEndpoint metricsConfig;
   private final MetricsDataFactory dataFactory;
-  private final JsonProvider jsonProvider = new JsonProvider();
+  private final ObjectMapper mapper;
 
   private MetricsPublisher publisher;
   private volatile Cancellable publisherTask;
@@ -49,6 +50,7 @@ public class MetricsPublisherManager extends Service {
     this.dataFactory = new MetricsDataFactory(metricsConfig.getMetricsSystem());
     this.publisher = new MetricsPublisher(new OkHttpClient());
     this.intervalBetweenPublications = intervalBetweenPublications;
+    this.mapper = new ObjectMapper();
   }
 
   void setMetricsPublisher(final MetricsPublisher metricsPublisher) {
@@ -66,9 +68,10 @@ public class MetricsPublisherManager extends Service {
 
   int publishMetrics() {
     String endpointAddress = metricsConfig.getMetricConfig().getMetricsEndpoint();
-    BaseMetricData clientData = dataFactory.getMetricData(MetricsDataClient.VALIDATOR);
+    List<BaseMetricData> clientData = dataFactory.getMetricData();
     try {
-      return publisher.publishMetrics(endpointAddress, jsonProvider.objectToJSON(clientData));
+      final String data = mapper.writeValueAsString(clientData);
+      return publisher.publishMetrics(endpointAddress, data);
     } catch (JsonProcessingException e) {
       LOG.error("Error processing JSON object ", e);
     } catch (IOException e) {
