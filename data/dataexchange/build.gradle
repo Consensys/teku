@@ -8,5 +8,6 @@ dependencies {
     implementation project(':ethereum:spec')
     implementation project(':infrastructure:logging')
 
+    testImplementation testFixtures(project(':infrastructure:io'))
     testImplementation testFixtures(project(':ethereum:spec'))
 }

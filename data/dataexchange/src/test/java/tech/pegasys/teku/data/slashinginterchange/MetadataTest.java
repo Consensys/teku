@@ -56,7 +56,7 @@ public class MetadataTest {
   @Test
   public void shouldSerializeCompleteFormat() throws JsonProcessingException {
     final Metadata metadata = new Metadata(INTERCHANGE_VERSION, root);
-    assertThat(jsonProvider.objectToPrettyJSON(metadata)).isEqualTo(jsonData);
+    assertThat(jsonProvider.objectToPrettyJSON(metadata)).isEqualToNormalizingNewlines(jsonData);
   }
 
   @Test
