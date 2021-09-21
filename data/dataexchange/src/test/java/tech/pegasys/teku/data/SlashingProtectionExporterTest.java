@@ -14,6 +14,7 @@
 package tech.pegasys.teku.data;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.condition.OS.WINDOWS;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -35,6 +36,7 @@ import java.util.List;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.schema.BLSPubKey;
@@ -145,6 +147,7 @@ public class SlashingProtectionExporterTest {
   }
 
   @Test
+  @DisabledOnOs(WINDOWS)
   public void shouldPrintIfFileCannotBeRead(@TempDir Path tempDir)
       throws URISyntaxException, IOException {
     final SlashingProtectionExporter exporter =
