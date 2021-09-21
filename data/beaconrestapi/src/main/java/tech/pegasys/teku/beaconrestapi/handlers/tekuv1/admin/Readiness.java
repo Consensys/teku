@@ -34,15 +34,13 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
 import java.util.Map;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import java.util.OptionalLong;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 
 public class Readiness implements Handler {
-  private static final Logger LOG = LogManager.getLogger();
   public static final String ROUTE = "/teku/v1/admin/readiness";
   private final SyncDataProvider syncProvider;
   private final ChainDataProvider chainDataProvider;
@@ -84,35 +82,33 @@ public class Readiness implements Handler {
   @Override
   public void handle(final Context ctx) throws Exception {
     ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
-    if (!canParseTargetPeerCountParameter(ctx)) {
+    final OptionalLong targetPeerCount;
+    try {
+      targetPeerCount = parseTargetPeerCountParameter(ctx);
+    } catch (final IllegalArgumentException e) {
       ctx.status(SC_BAD_REQUEST);
-    } else if (!chainDataProvider.isStoreAvailable()
+      ctx.result("Invalid " + TARGET_PEER_COUNT);
+      return;
+    }
+    if (!chainDataProvider.isStoreAvailable()
         || syncProvider.isSyncing()
-        || !reachedTargetPeerCount(ctx)) {
+        || belowTargetPeerCount(targetPeerCount)) {
       ctx.status(SC_SERVICE_UNAVAILABLE);
     } else {
       ctx.status(SC_OK);
     }
   }
 
-  private Boolean canParseTargetPeerCountParameter(final Context ctx) {
-    try {
-      final Map<String, List<String>> parameters = ctx.queryParamMap();
-      return parameters.isEmpty() // Backwards compatibility
-          || (parameters.containsKey(TARGET_PEER_COUNT)
-              && getParameterValueAsLong(parameters, TARGET_PEER_COUNT) > 0);
-    } catch (final IllegalArgumentException ex) {
-      LOG.error("Cannot parse {} parameter in Readiness", TARGET_PEER_COUNT, ex);
-      return false;
+  private OptionalLong parseTargetPeerCountParameter(final Context ctx) {
+    final Map<String, List<String>> parameters = ctx.queryParamMap();
+    if (!parameters.containsKey(TARGET_PEER_COUNT)) {
+      return OptionalLong.empty();
     }
+    return OptionalLong.of(getParameterValueAsLong(parameters, TARGET_PEER_COUNT));
   }
 
-  private boolean reachedTargetPeerCount(final Context ctx) {
-    final Map<String, List<String>> parameters = ctx.queryParamMap();
-    LOG.debug("Current peer count is {}", networkDataProvider.getPeerCount());
-    return parameters.isEmpty() // Backwards compatibility
-        || (parameters.containsKey(TARGET_PEER_COUNT)
-            && networkDataProvider.getPeerCount()
-                > getParameterValueAsLong(parameters, TARGET_PEER_COUNT));
+  private boolean belowTargetPeerCount(final OptionalLong targetPeerCount) {
+    return targetPeerCount.isPresent()
+        && networkDataProvider.getPeerCount() < targetPeerCount.getAsLong();
   }
 }
