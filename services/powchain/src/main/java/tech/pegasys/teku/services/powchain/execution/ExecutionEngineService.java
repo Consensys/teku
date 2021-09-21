@@ -121,9 +121,7 @@ public class ExecutionEngineService implements ChainHeadChannel, FinalizedCheckp
                     .map(
                         upd ->
                             executionEngineChannel.forkChoiceUpdated(
-                                upd.getBestBlock(),
-                                upd.getFinalizedBlock(),
-                                upd.getConfirmedBlock()))
+                                upd.getBestBlock(), upd.getFinalizedBlock()))
                     .orElseGet(() -> SafeFuture.completedFuture(null)))
         .finish(err -> LOG.warn("forkChoiceUpdated failed", err));
   }

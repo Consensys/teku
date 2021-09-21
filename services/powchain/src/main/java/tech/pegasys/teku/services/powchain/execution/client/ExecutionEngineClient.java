@@ -34,7 +34,7 @@ public interface ExecutionEngineClient {
   SafeFuture<Response<NewBlockResponse>> consensusNewBlock(ExecutionPayload request);
 
   SafeFuture<Response<GenericResponse>> forkChoiceUpdated(
-      Bytes32 headBlockHash, Bytes32 finalizedBlockHash, Bytes32 confirmedBlockHash);
+      Bytes32 headBlockHash, Bytes32 finalizedBlockHash);
 
   SafeFuture<Optional<EthBlock.Block>> getPowBlock(Bytes32 blockHash);
 
@@ -74,7 +74,7 @@ public interface ExecutionEngineClient {
 
         @Override
         public SafeFuture<Response<GenericResponse>> forkChoiceUpdated(
-            Bytes32 headBlockHash, Bytes32 finalizedBlockHash, Bytes32 confirmedBlockHash) {
+            Bytes32 headBlockHash, Bytes32 finalizedBlockHash) {
           return SafeFuture.completedFuture(new Response<>(new GenericResponse(true)));
         }
 

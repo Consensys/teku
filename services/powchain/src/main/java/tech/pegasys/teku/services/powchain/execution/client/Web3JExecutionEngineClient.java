@@ -65,14 +65,11 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 
   @Override
   public SafeFuture<Response<GenericResponse>> forkChoiceUpdated(
-      Bytes32 headBlockHash, Bytes32 finalizedBlockHash, Bytes32 confirmedBlockHash) {
+      Bytes32 headBlockHash, Bytes32 finalizedBlockHash) {
     Request<?, GenericWeb3jResponse> web3jRequest =
         new Request<>(
             "engine_forkChoiceUpdated",
-            List.of(
-                headBlockHash.toHexString(),
-                finalizedBlockHash.toHexString(),
-                confirmedBlockHash.toHexString()),
+            List.of(headBlockHash.toHexString(), finalizedBlockHash.toHexString()),
             web3jService,
             GenericWeb3jResponse.class);
     return doRequest(web3jRequest);
