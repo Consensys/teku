@@ -19,6 +19,7 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Additions and Improvements
 - Upgraded to BLST 0.3.5.
+- `/teku/v1/admin/readiness` endpoint now accepts a `target_peer_count` param to require a minimum number of peers before the node is considered ready.
 
 
 ### Bug Fixes
