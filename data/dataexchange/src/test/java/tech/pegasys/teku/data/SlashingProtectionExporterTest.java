@@ -14,7 +14,6 @@
 package tech.pegasys.teku.data;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.condition.OS.WINDOWS;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -31,15 +30,13 @@ import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.nio.file.attribute.PosixFilePermission;
 import java.util.List;
-import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.schema.BLSPubKey;
+import tech.pegasys.teku.cli.OSUtils;
 import tech.pegasys.teku.data.signingrecord.ValidatorSigningRecord;
 import tech.pegasys.teku.data.slashinginterchange.Metadata;
 import tech.pegasys.teku.data.slashinginterchange.SigningHistory;
@@ -147,13 +144,12 @@ public class SlashingProtectionExporterTest {
   }
 
   @Test
-  @DisabledOnOs(WINDOWS)
   public void shouldPrintIfFileCannotBeRead(@TempDir Path tempDir)
       throws URISyntaxException, IOException {
     final SlashingProtectionExporter exporter =
         new SlashingProtectionExporter(logger, tempDir.toString());
     final File file = usingResourceFile("slashProtection.yml", tempDir);
-    Files.setPosixFilePermissions(file.toPath(), Set.of(PosixFilePermission.OTHERS_EXECUTE));
+    OSUtils.makeNonReadable(file.toPath());
     exporter.readSlashProtectionFile(file);
     verify(logger).exit(eq(1), stringArgs.capture(), any(AccessDeniedException.class));
     assertThat(stringArgs.getValue()).startsWith("Failed to read from file");
