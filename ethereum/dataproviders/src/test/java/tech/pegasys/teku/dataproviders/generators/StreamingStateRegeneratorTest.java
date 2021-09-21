@@ -26,6 +26,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 
 class StreamingStateRegeneratorTest {
 
@@ -49,7 +50,8 @@ class StreamingStateRegeneratorTest {
         StreamingStateRegenerator.regenerate(
             spec,
             genesis.getState(),
-            newBlocksAndStates.stream().map(SignedBlockAndState::getBlock));
+            newBlocksAndStates.stream().map(SignedBlockAndState::getBlock),
+            ExecutionEngineChannel.NOOP);
     assertThat(result).isEqualTo(lastBlockAndState.getState());
   }
 }

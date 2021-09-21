@@ -41,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
@@ -85,7 +86,8 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
   protected final EventChannels eventChannels = mock(EventChannels.class);
 
   protected CombinedChainDataClient combinedChainDataClient =
-      new CombinedChainDataClient(recentChainData, historicalChainData, spec);
+      new CombinedChainDataClient(
+          recentChainData, historicalChainData, ExecutionEngineChannel.NOOP, spec);
   protected DataProvider dataProvider;
   protected BeaconRestApi beaconRestApi;
   protected OkHttpClient client;

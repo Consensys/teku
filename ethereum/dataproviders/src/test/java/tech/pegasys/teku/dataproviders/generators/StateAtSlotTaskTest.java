@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointExcepti
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 
 class StateAtSlotTaskTest {
   private static final UInt64 EPOCH = UInt64.valueOf(2);
@@ -101,7 +102,8 @@ class StateAtSlotTaskTest {
 
     final StateAtSlotTask task = createTask(slot, blockAndState.getRoot());
     final SafeFuture<Optional<BeaconState>> result = task.performTask();
-    final BeaconState expectedState = spec.processSlots(blockAndState.getState(), slot);
+    final BeaconState expectedState =
+        spec.processSlots(blockAndState.getState(), slot, ExecutionEngineChannel.NOOP);
     assertThatSafeFuture(result).isCompletedWithOptionalContaining(expectedState);
   }
 
@@ -147,6 +149,7 @@ class StateAtSlotTaskTest {
   }
 
   private StateAtSlotTask createTask(final UInt64 slot, final Bytes32 root) {
-    return new StateAtSlotTask(spec, new SlotAndBlockRoot(slot, root), stateProvider);
+    return new StateAtSlotTask(
+        spec, new SlotAndBlockRoot(slot, root), stateProvider, ExecutionEngineChannel.NOOP);
   }
 }

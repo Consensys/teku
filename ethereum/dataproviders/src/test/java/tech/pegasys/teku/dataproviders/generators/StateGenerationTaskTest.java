@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.spec.datastructures.state.BlockRootAndState;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 
 class StateGenerationTaskTest {
 
@@ -149,7 +150,8 @@ class StateGenerationTaskTest {
                         startBlockAndState.getRoot(), startBlockAndState.getState())),
             getStateAndBlockProvider(),
             Optional.empty(),
-            REPLAY_TOLERANCE_TO_AVOID_LOADING_IN_EPOCHS));
+            REPLAY_TOLERANCE_TO_AVOID_LOADING_IN_EPOCHS),
+        ExecutionEngineChannel.NOOP);
   }
 
   private static class TrackingBlockProvider implements BlockProvider {

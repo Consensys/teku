@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.executionengine.client;
+package tech.pegasys.teku.services.powchain.execution.client;
 
 import java.util.Collections;
 import java.util.Optional;
@@ -23,11 +23,11 @@ import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.http.HttpService;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.executionengine.client.schema.AssembleBlockRequest;
-import tech.pegasys.teku.spec.executionengine.client.schema.ExecutionPayload;
-import tech.pegasys.teku.spec.executionengine.client.schema.GenericResponse;
-import tech.pegasys.teku.spec.executionengine.client.schema.NewBlockResponse;
-import tech.pegasys.teku.spec.executionengine.client.schema.Response;
+import tech.pegasys.teku.services.powchain.execution.client.schema.AssembleBlockRequest;
+import tech.pegasys.teku.services.powchain.execution.client.schema.ExecutionPayload;
+import tech.pegasys.teku.services.powchain.execution.client.schema.GenericResponse;
+import tech.pegasys.teku.services.powchain.execution.client.schema.NewBlockResponse;
+import tech.pegasys.teku.services.powchain.execution.client.schema.Response;
 
 public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 

@@ -58,13 +58,14 @@ import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
+import tech.pegasys.teku.services.powchain.execution.ExecutionEngineChannelImpl;
+import tech.pegasys.teku.services.powchain.execution.ExecutionEngineService;
 import tech.pegasys.teku.services.timer.TimeTickChannel;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.interop.InteropStartupUtil;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -73,7 +74,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineService;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.SpecLogic;
 import tech.pegasys.teku.statetransition.EpochCachePrimer;
 import tech.pegasys.teku.statetransition.OperationPool;
@@ -179,7 +180,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile CoalescingChainHeadChannel coalescingChainHeadChannel;
   private volatile ActiveValidatorTracker activeValidatorTracker;
   private volatile AttestationTopicSubscriber attestationTopicSubscriber;
-  private volatile ExecutionEngineService executionEngineService;
+  private volatile ExecutionEngineChannel executionEngineChannel;
   private volatile SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager;
 
   private UInt64 genesisTimeTracker = ZERO;
@@ -265,6 +266,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     StorageUpdateChannel storageUpdateChannel =
         eventChannels.getPublisher(StorageUpdateChannel.class, beaconAsyncRunner);
     final VoteUpdateChannel voteUpdateChannel = eventChannels.getPublisher(VoteUpdateChannel.class);
+    createExecutionEngineChannel();
+
     return initWeakSubjectivity(storageQueryChannel, storageUpdateChannel)
         .thenCompose(
             __ ->
@@ -278,6 +281,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                     eventChannels.getPublisher(ProtoArrayStorageChannel.class, beaconAsyncRunner),
                     eventChannels.getPublisher(FinalizedCheckpointChannel.class, beaconAsyncRunner),
                     coalescingChainHeadChannel,
+                    executionEngineChannel,
                     spec))
         .thenCompose(
             client -> {
@@ -397,6 +401,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         new CombinedChainDataClient(
             recentChainData,
             eventChannels.getPublisher(StorageQueryChannel.class, beaconAsyncRunner),
+            executionEngineChannel,
             spec);
   }
 
@@ -479,7 +484,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             depositProvider,
             eth1DataCache,
             VersionProvider.getDefaultGraffiti(),
-            spec);
+            spec,
+            executionEngineChannel);
     syncCommitteeSubscriptionManager =
         beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()
             ? new AllSyncCommitteeSubscriptions(p2pNetwork, spec)
@@ -657,6 +663,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             .config(beaconConfig.p2pConfig())
             .eventChannels(eventChannels)
             .recentChainData(recentChainData)
+            .executionEngineChannel(executionEngineChannel)
             .gossipedBlockProcessor(blockManager::validateAndImportBlock)
             .gossipedAttestationProcessor(attestationManager::addAttestation)
             .gossipedAggregateProcessor(attestationManager::addAggregate)
@@ -741,7 +748,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             eventChannels.getPublisher(BlockImportNotifications.class),
             recentChainData,
             forkChoice,
-            weakSubjectivityValidator);
+            weakSubjectivityValidator,
+            executionEngineChannel);
   }
 
   public void initBlockManager() {
@@ -794,71 +802,24 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     eventChannels.subscribe(ChainHeadChannel.class, operationsReOrgManager);
   }
 
-  // FIXME this dirty simplification is a temporal solution
+  private void createExecutionEngineChannel() {
+    Optional<SpecLogic> specLogic = spec.getSpecLogicForMilestone(SpecMilestone.MERGE);
+    if (specLogic.isPresent() && beaconConfig.powchainConfig().isEnabled()) {
+      executionEngineChannel =
+          ExecutionEngineChannelImpl.create(
+              beaconConfig.powchainConfig().getEth1Endpoints().get(0));
+    } else {
+      executionEngineChannel = ExecutionEngineChannelImpl.createStub();
+    }
+  }
+
   private void initExecutionEngineService() {
     Optional<SpecLogic> specLogic = spec.getSpecLogicForMilestone(SpecMilestone.MERGE);
 
     if (specLogic.isPresent()) {
-      SpecLogic specLogicMerge = specLogic.get();
-      executionEngineService =
-          beaconConfig.powchainConfig().isEnabled()
-              ? ExecutionEngineService.create(
-                  beaconConfig.powchainConfig().getEth1Endpoints().get(0))
-              : ExecutionEngineService.createStub();
-      specLogicMerge
-          .getExecutionPayloadUtil()
-          .ifPresent(util -> util.setExecutionEngineService(executionEngineService));
-      specLogicMerge
-          .getMergeTransitionHelpers()
-          .ifPresent(helpers -> helpers.setExecutionEngineService(executionEngineService));
-
-      // Propagate head updates
-      eventChannels.subscribe(
-          ChainHeadChannel.class,
-          (slot,
-              stateRoot,
-              bestBlockRoot,
-              epochTransition,
-              previousDutyDependentRoot,
-              currentDutyDependentRoot,
-              optionalReorgContext) ->
-              recentChainData
-                  .retrieveBlockByRoot(bestBlockRoot)
-                  .thenAccept(
-                      maybeABlock ->
-                          maybeABlock
-                              .flatMap(block -> block.getBody().toVersionMerge())
-                              .ifPresent(
-                                  body -> {
-                                    // Check if there is a payload
-                                    if (!body.getExecution_payload()
-                                        .equals(new ExecutionPayload())) {
-                                      executionEngineService.setHead(
-                                          body.getExecution_payload().getBlock_hash());
-                                    }
-                                  }))
-                  .reportExceptions());
-
-      // Propagate finalized block updates
-      eventChannels.subscribe(
-          FinalizedCheckpointChannel.class,
-          (checkpoint) ->
-              recentChainData
-                  .retrieveBlockByRoot(checkpoint.getRoot())
-                  .thenAccept(
-                      maybeABlock ->
-                          maybeABlock
-                              .flatMap(block -> block.getBody().toVersionMerge())
-                              .ifPresent(
-                                  body -> {
-                                    // Check if there is a payload
-                                    if (!body.getExecution_payload()
-                                        .equals(new ExecutionPayload())) {
-                                      executionEngineService.finalizeBlock(
-                                          body.getExecution_payload().getBlock_hash());
-                                    }
-                                  }))
-                  .reportExceptions());
+      ExecutionEngineService executionEngineService =
+          new ExecutionEngineService(executionEngineChannel, recentChainData);
+      executionEngineService.initialize(eventChannels);
     }
   }
 

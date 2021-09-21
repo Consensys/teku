@@ -11,21 +11,21 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.executionengine.client.schema;
+package tech.pegasys.teku.services.powchain.execution.client.schema;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 
-public class NewBlockResponse {
+public class GenericResponse {
 
-  private Boolean valid;
+  private Boolean success;
 
-  public NewBlockResponse(@JsonProperty("valid") Boolean valid) {
-    this.valid = valid;
+  public GenericResponse(@JsonProperty("success") Boolean success) {
+    this.success = success;
   }
 
-  public Boolean getValid() {
-    return valid;
+  public Boolean getSuccess() {
+    return success;
   }
 
   @Override
@@ -36,17 +36,17 @@ public class NewBlockResponse {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    NewBlockResponse that = (NewBlockResponse) o;
-    return Objects.equals(valid, that.valid);
+    GenericResponse that = (GenericResponse) o;
+    return Objects.equals(success, that.success);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(valid);
+    return Objects.hash(success);
   }
 
   @Override
   public String toString() {
-    return "NewBlockResponse{" + "valid=" + valid + '}';
+    return "GenericResponse{" + "success=" + success + '}';
   }
 }

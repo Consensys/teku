@@ -20,17 +20,21 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 
 class ChainStateGenerator {
   private final BlockProcessor blockProcessor;
   private final List<SignedBeaconBlock> chain;
   private final BeaconState baseState;
+  private final ExecutionEngineChannel executionEngineChannel;
 
   private ChainStateGenerator(
       final Spec spec,
       final List<SignedBeaconBlock> chain,
       final BeaconState baseState,
-      final boolean skipValidation) {
+      final boolean skipValidation,
+      final ExecutionEngineChannel executionEngineChannel) {
+    this.executionEngineChannel = executionEngineChannel;
     if (!skipValidation) {
       for (int i = chain.size() - 1; i > 0; i--) {
         checkArgument(
@@ -52,16 +56,20 @@ class ChainStateGenerator {
    * @return
    */
   public static ChainStateGenerator create(
-      final Spec spec, final List<SignedBeaconBlock> chain, final BeaconState baseState) {
-    return create(spec, chain, baseState, false);
+      final Spec spec,
+      final List<SignedBeaconBlock> chain,
+      final BeaconState baseState,
+      final ExecutionEngineChannel executionEngineChannel) {
+    return create(spec, chain, baseState, false, executionEngineChannel);
   }
 
   static ChainStateGenerator create(
       final Spec spec,
       final List<SignedBeaconBlock> chain,
       final BeaconState baseState,
-      final boolean skipValidation) {
-    return new ChainStateGenerator(spec, chain, baseState, skipValidation);
+      final boolean skipValidation,
+      final ExecutionEngineChannel executionEngineChannel) {
+    return new ChainStateGenerator(spec, chain, baseState, skipValidation, executionEngineChannel);
   }
 
   public void generateStates(final StateHandler handler) {
@@ -73,7 +81,7 @@ class ChainStateGenerator {
         handler.handle(new SignedBlockAndState(currentBlock, baseState));
         continue;
       }
-      state = blockProcessor.process(state, currentBlock);
+      state = blockProcessor.process(executionEngineChannel, state, currentBlock);
       handler.handle(new SignedBlockAndState(currentBlock, state));
     }
   }

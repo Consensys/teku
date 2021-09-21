@@ -49,6 +49,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.ssz.type.Bytes4;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
@@ -79,6 +80,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   private final ChainHeadChannel chainHeadChannel;
   private final StoreConfig storeConfig;
   private final Spec spec;
+  private final ExecutionEngineChannel executionEngineChannel;
 
   private final AtomicBoolean storeInitialized = new AtomicBoolean(false);
   private final SafeFuture<Void> storeInitializedFuture = new SafeFuture<>();
@@ -104,6 +106,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       final ProtoArrayStorageChannel protoArrayStorageChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
+      final ExecutionEngineChannel executionEngineChannel,
       final Spec spec) {
     this.asyncRunner = asyncRunner;
     this.metricsSystem = metricsSystem;
@@ -122,6 +125,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
             "reorgs_total",
             "Total occurrences of reorganizations of the chain");
     this.spec = spec;
+    this.executionEngineChannel = executionEngineChannel;
   }
 
   public void subscribeStoreInitialized(Runnable runnable) {
@@ -148,6 +152,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
                 anchorPoint,
                 currentTime)
             .storeConfig(storeConfig)
+            .executionEngineChannel(executionEngineChannel)
             .build();
 
     final boolean result = setStore(store);

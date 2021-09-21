@@ -16,6 +16,7 @@ package tech.pegasys.teku.dataproviders.generators;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 
 class BlockProcessor {
@@ -25,10 +26,14 @@ class BlockProcessor {
     this.spec = spec;
   }
 
-  public BeaconState process(final BeaconState preState, final SignedBeaconBlock block) {
+  public BeaconState process(
+      final ExecutionEngineChannel executionEngineChannel,
+      final BeaconState preState,
+      final SignedBeaconBlock block) {
 
     try {
-      final BeaconState postState = spec.replayValidatedBlock(preState, block);
+      final BeaconState postState =
+          spec.replayValidatedBlock(executionEngineChannel, preState, block);
       assertBlockAndStateMatch(block, postState);
       return postState;
     } catch (StateTransitionException e) {

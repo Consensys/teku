@@ -64,6 +64,7 @@ import tech.pegasys.teku.spec.datastructures.state.BlockRootAndState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
 
@@ -81,6 +82,7 @@ class Store implements UpdatableStore {
   private final Spec spec;
   private final StateAndBlockSummaryProvider stateProvider;
   private final BlockProvider blockProvider;
+  private final ExecutionEngineChannel executionEngineChannel;
 
   private final Optional<Checkpoint> initialCheckpoint;
   BlockMetadataStore blockMetadata;
@@ -103,6 +105,7 @@ class Store implements UpdatableStore {
       final int hotStatePersistenceFrequencyInEpochs,
       final BlockProvider blockProvider,
       final StateAndBlockSummaryProvider stateProvider,
+      final ExecutionEngineChannel executionEngineChannel,
       final CachingTaskQueue<Bytes32, StateAndBlockSummary> states,
       final Optional<Checkpoint> initialCheckpoint,
       final UInt64 time,
@@ -114,6 +117,7 @@ class Store implements UpdatableStore {
       final Map<UInt64, VoteTracker> votes,
       final Map<Bytes32, SignedBeaconBlock> blocks,
       final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates) {
+    this.executionEngineChannel = executionEngineChannel;
     checkArgument(
         time.isGreaterThanOrEqualTo(genesis_time),
         "Time must be greater than or equal to genesisTime");
@@ -178,7 +182,8 @@ class Store implements UpdatableStore {
       final Map<Bytes32, StoredBlockMetadata> blockInfoByRoot,
       final Map<UInt64, VoteTracker> votes,
       final StoreConfig config,
-      final ProtoArrayStorageChannel protoArrayStorageChannel) {
+      final ProtoArrayStorageChannel protoArrayStorageChannel,
+      final ExecutionEngineChannel executionEngineChannel) {
 
     // Create limited collections for non-final data
     final Map<Bytes32, SignedBeaconBlock> blocks = LimitedMap.create(config.getBlockCacheSize());
@@ -226,6 +231,7 @@ class Store implements UpdatableStore {
             config.getHotStatePersistenceFrequencyInEpochs(),
             blockProvider,
             stateAndBlockProvider,
+            executionEngineChannel,
             stateTaskQueue,
             initialCheckpoint,
             time,
@@ -315,7 +321,7 @@ class Store implements UpdatableStore {
   public StoreTransaction startTransaction(
       final StorageUpdateChannel storageUpdateChannel, final StoreUpdateHandler updateHandler) {
     return new tech.pegasys.teku.storage.store.StoreTransaction(
-        spec, this, lock, storageUpdateChannel, updateHandler);
+        spec, this, lock, storageUpdateChannel, executionEngineChannel, updateHandler);
   }
 
   @Override
@@ -474,13 +480,18 @@ class Store implements UpdatableStore {
   @Override
   public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(Checkpoint checkpoint) {
     return checkpointStates.perform(
-        new StateAtSlotTask(spec, checkpoint.toSlotAndBlockRoot(spec), this::retrieveBlockState));
+        new StateAtSlotTask(
+            spec,
+            checkpoint.toSlotAndBlockRoot(spec),
+            this::retrieveBlockState,
+            executionEngineChannel));
   }
 
   @Override
   public SafeFuture<Optional<BeaconState>> retrieveStateAtSlot(SlotAndBlockRoot slotAndBlockRoot) {
     return checkpointStates.perform(
-        new StateAtSlotTask(spec, slotAndBlockRoot, this::retrieveBlockState));
+        new StateAtSlotTask(
+            spec, slotAndBlockRoot, this::retrieveBlockState, executionEngineChannel));
   }
 
   @Override
@@ -497,7 +508,10 @@ class Store implements UpdatableStore {
     return checkpointStates
         .perform(
             new StateAtSlotTask(
-                spec, finalized.getCheckpoint().toSlotAndBlockRoot(spec), fromAnchor(finalized)))
+                spec,
+                finalized.getCheckpoint().toSlotAndBlockRoot(spec),
+                fromAnchor(finalized),
+                executionEngineChannel))
         .thenApply(
             maybeState ->
                 CheckpointState.create(
@@ -514,7 +528,8 @@ class Store implements UpdatableStore {
         new StateAtSlotTask(
             spec,
             checkpoint.toSlotAndBlockRoot(spec),
-            blockRoot -> SafeFuture.completedFuture(Optional.of(latestStateAtEpoch))));
+            blockRoot -> SafeFuture.completedFuture(Optional.of(latestStateAtEpoch)),
+            executionEngineChannel));
   }
 
   UInt64 getHighestVotedValidatorIndex() {
@@ -621,7 +636,8 @@ class Store implements UpdatableStore {
                     () -> getClosestAvailableBlockRootAndState(blockRoot),
                     stateProvider,
                     Optional.empty(),
-                    hotStatePersistenceFrequencyInEpochs))));
+                    hotStatePersistenceFrequencyInEpochs),
+                executionEngineChannel)));
   }
 
   private Optional<BlockRootAndState> getClosestAvailableBlockRootAndState(

@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 
 public class StateGenerator {
   public static final int DEFAULT_STATE_CACHE_SIZE = 100;
@@ -50,8 +51,15 @@ public class StateGenerator {
       Spec spec,
       final HashTree blockTree,
       final StateAndBlockSummary rootBlockAndState,
-      final BlockProvider blockProvider) {
-    return create(spec, blockTree, rootBlockAndState, blockProvider, Collections.emptyMap());
+      final BlockProvider blockProvider,
+      ExecutionEngineChannel executionEngineChannel) {
+    return create(
+        spec,
+        blockTree,
+        rootBlockAndState,
+        blockProvider,
+        executionEngineChannel,
+        Collections.emptyMap());
   }
 
   public static StateGenerator create(
@@ -59,9 +67,16 @@ public class StateGenerator {
       final HashTree blockTree,
       final StateAndBlockSummary rootBlockAndState,
       final BlockProvider blockProvider,
+      final ExecutionEngineChannel executionEngineChannel,
       final Map<Bytes32, BeaconState> knownStates) {
     return create(
-        spec, blockTree, rootBlockAndState, blockProvider, knownStates, DEFAULT_STATE_CACHE_SIZE);
+        spec,
+        blockTree,
+        rootBlockAndState,
+        blockProvider,
+        executionEngineChannel,
+        knownStates,
+        DEFAULT_STATE_CACHE_SIZE);
   }
 
   public static StateGenerator create(
@@ -69,6 +84,7 @@ public class StateGenerator {
       final HashTree blockTree,
       final StateAndBlockSummary rootBlockAndState,
       final BlockProvider blockProvider,
+      final ExecutionEngineChannel executionEngineChannel,
       final Map<Bytes32, BeaconState> knownStates,
       final int stateCacheSize) {
     checkArgument(
@@ -80,7 +96,8 @@ public class StateGenerator {
     final StateCache stateCache = new StateCache(stateCacheSize, availableStates);
 
     final AsyncChainStateGenerator chainStateGenerator =
-        AsyncChainStateGenerator.create(spec, blockTree, blockProvider, stateCache::get);
+        AsyncChainStateGenerator.create(
+            spec, blockTree, blockProvider, stateCache::get, executionEngineChannel);
     return new StateGenerator(blockTree, chainStateGenerator, stateCache);
   }
 

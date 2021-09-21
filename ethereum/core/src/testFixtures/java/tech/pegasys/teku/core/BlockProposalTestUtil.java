@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.BeaconStateMerge;
 import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
@@ -65,9 +66,11 @@ public class BlockProposalTestUtil {
     final BLSSignature randaoReveal =
         signer.createRandaoReveal(newEpoch, state.getForkInfo()).join();
 
-    final BeaconState blockSlotState = spec.processSlots(state, newSlot);
+    final BeaconState blockSlotState =
+        spec.processSlots(state, newSlot, ExecutionEngineChannel.NOOP);
     final BeaconBlockAndState newBlockAndState =
         spec.createNewUnsignedBlock(
+            ExecutionEngineChannel.NOOP,
             newSlot,
             spec.getBeaconProposerIndex(blockSlotState, newSlot),
             blockSlotState,
@@ -133,13 +136,14 @@ public class BlockProposalTestUtil {
     return spec.atSlot(state.getSlot())
         .getExecutionPayloadUtil()
         .orElseThrow()
-        .getExecutionPayload(executionParentHash, timestamp, UInt64.ZERO);
+        .getExecutionPayload(
+            ExecutionEngineChannel.NOOP, executionParentHash, timestamp, UInt64.ZERO);
   }
 
   public int getProposerIndexForSlot(final BeaconState preState, final UInt64 slot) {
     BeaconState state;
     try {
-      state = spec.processSlots(preState, slot);
+      state = spec.processSlots(preState, slot, ExecutionEngineChannel.NOOP);
     } catch (SlotProcessingException | EpochProcessingException e) {
       throw new RuntimeException(e);
     }

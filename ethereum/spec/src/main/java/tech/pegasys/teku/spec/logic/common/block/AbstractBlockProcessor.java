@@ -60,6 +60,7 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
@@ -123,6 +124,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
 
   @Override
   public BeaconState processAndValidateBlock(
+      final ExecutionEngineChannel executionEngineChannel,
       final SignedBeaconBlock signedBlock,
       final BeaconState blockSlotState,
       final IndexedAttestationCache indexedAttestationCache)
@@ -130,7 +132,11 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     final BatchSignatureVerifier signatureVerifier = new BatchSignatureVerifier();
     final BeaconState result =
         processAndValidateBlock(
-            signedBlock, blockSlotState, indexedAttestationCache, signatureVerifier);
+            executionEngineChannel,
+            signedBlock,
+            blockSlotState,
+            indexedAttestationCache,
+            signatureVerifier);
     if (!signatureVerifier.batchVerify()) {
       throw new StateTransitionException(
           "Batch signature verification failed for block "
@@ -141,6 +147,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
 
   @Override
   public BeaconState processAndValidateBlock(
+      final ExecutionEngineChannel executionEngineChannel,
       final SignedBeaconBlock signedBlock,
       final BeaconState blockSlotState,
       final IndexedAttestationCache indexedAttestationCache,
@@ -150,7 +157,11 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       // Process_block
       BeaconState postState =
           processUnsignedBlock(
-              blockSlotState, signedBlock.getMessage(), indexedAttestationCache, signatureVerifier);
+              executionEngineChannel,
+              blockSlotState,
+              signedBlock.getMessage(),
+              indexedAttestationCache,
+              signatureVerifier);
 
       BlockValidationResult blockValidationResult =
           validateBlock(
@@ -279,16 +290,20 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
 
   @Override
   public BeaconState processUnsignedBlock(
+      final ExecutionEngineChannel executionEngineChannel,
       final BeaconState preState,
       final BeaconBlock block,
       final IndexedAttestationCache indexedAttestationCache,
       final BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException {
     return preState.updated(
-        state -> processBlock(state, block, indexedAttestationCache, signatureVerifier));
+        state ->
+            processBlock(
+                executionEngineChannel, state, block, indexedAttestationCache, signatureVerifier));
   }
 
   protected void processBlock(
+      final ExecutionEngineChannel executionEngineChannel,
       final MutableBeaconState state,
       final BeaconBlock block,
       final IndexedAttestationCache indexedAttestationCache,

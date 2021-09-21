@@ -24,6 +24,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.hashtree.HashTree;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 
 public class StateGenerationTask implements CacheableTask<Bytes32, StateAndBlockSummary> {
   private static final Logger LOG = LogManager.getLogger();
@@ -32,18 +33,21 @@ public class StateGenerationTask implements CacheableTask<Bytes32, StateAndBlock
   private final BlockProvider blockProvider;
   private final Bytes32 blockRoot;
   private final StateRegenerationBaseSelector baseSelector;
+  private final ExecutionEngineChannel executionEngineChannel;
 
   public StateGenerationTask(
       final Spec spec,
       final Bytes32 blockRoot,
       final HashTree tree,
       final BlockProvider blockProvider,
-      final StateRegenerationBaseSelector baseSelector) {
+      final StateRegenerationBaseSelector baseSelector,
+      final ExecutionEngineChannel executionEngineChannel) {
     this.spec = spec;
     this.tree = tree;
     this.blockProvider = blockProvider;
     this.blockRoot = blockRoot;
     this.baseSelector = baseSelector;
+    this.executionEngineChannel = executionEngineChannel;
   }
 
   @Override
@@ -79,7 +83,8 @@ public class StateGenerationTask implements CacheableTask<Bytes32, StateAndBlock
         blockRoot,
         tree,
         blockProvider,
-        baseSelector.withRebasedStartingPoint(newBaseBlockAndState));
+        baseSelector.withRebasedStartingPoint(newBaseBlockAndState),
+        executionEngineChannel);
   }
 
   @Override
@@ -94,7 +99,11 @@ public class StateGenerationTask implements CacheableTask<Bytes32, StateAndBlock
     }
     final StateAndBlockSummary base = maybeBase.get();
     return StateGenerator.create(
-            spec, tree.withRoot(base.getRoot()).block(base).build(), base, blockProvider)
+            spec,
+            tree.withRoot(base.getRoot()).block(base).build(),
+            base,
+            blockProvider,
+            executionEngineChannel)
         .regenerateStateForBlock(blockRoot)
         .thenApply(Optional::of);
   }

@@ -36,6 +36,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.BeaconStateMerge;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.helpers.MergeTransitionHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.PowBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
@@ -61,6 +62,7 @@ public class BlockFactory {
   private final Eth1DataCache eth1DataCache;
   private final Bytes32 graffiti;
   private final Spec spec;
+  private final ExecutionEngineChannel executionEngineChannel;
 
   public BlockFactory(
       final AggregatingAttestationPool attestationPool,
@@ -71,7 +73,8 @@ public class BlockFactory {
       final DepositProvider depositProvider,
       final Eth1DataCache eth1DataCache,
       final Bytes32 graffiti,
-      final Spec spec) {
+      final Spec spec,
+      final ExecutionEngineChannel executionEngineChannel) {
     this.attestationPool = attestationPool;
     this.attesterSlashingPool = attesterSlashingPool;
     this.proposerSlashingPool = proposerSlashingPool;
@@ -81,6 +84,7 @@ public class BlockFactory {
     this.eth1DataCache = eth1DataCache;
     this.graffiti = graffiti;
     this.spec = spec;
+    this.executionEngineChannel = executionEngineChannel;
   }
 
   public void prepareExecutionPayload(
@@ -102,7 +106,8 @@ public class BlockFactory {
     UInt64 timestamp = spec.computeTimeAtSlot(currentMergeState, currentMergeState.getSlot());
     final Bytes32 executionParentHash =
         currentMergeState.getLatest_execution_payload_header().getBlock_hash();
-    executionPayloadUtil.prepareExecutionPayload(executionParentHash, timestamp, payloadId);
+    executionPayloadUtil.prepareExecutionPayload(
+        executionEngineChannel, executionParentHash, timestamp, payloadId);
   }
 
   public BeaconBlock createUnsignedBlock(
@@ -125,7 +130,7 @@ public class BlockFactory {
     if (previousState.getSlot().equals(slotBeforeBlock)) {
       blockPreState = previousState;
     } else {
-      blockPreState = spec.processSlots(previousState, slotBeforeBlock);
+      blockPreState = spec.processSlots(previousState, slotBeforeBlock, executionEngineChannel);
     }
 
     // Collect attestations to include
@@ -133,7 +138,7 @@ public class BlockFactory {
     if (maybeBlockSlotState.isPresent()) {
       blockSlotState = maybeBlockSlotState.get();
     } else {
-      blockSlotState = spec.processSlots(blockPreState, newSlot);
+      blockSlotState = spec.processSlots(blockPreState, newSlot, executionEngineChannel);
     }
     SszList<Attestation> attestations =
         attestationPool.getAttestationsForBlock(
@@ -157,6 +162,7 @@ public class BlockFactory {
     final Eth1Data eth1Vote = eth1DataCache.getEth1Vote(blockPreState);
 
     return spec.createNewUnsignedBlock(
+            executionEngineChannel,
             newSlot,
             spec.getBeaconProposerIndex(blockSlotState, newSlot),
             blockSlotState,
@@ -188,7 +194,7 @@ public class BlockFactory {
         spec.atSlot(state.getSlot()).getTransitionStore().orElseThrow();
 
     if (!mergeTransitionHelpers.isMergeComplete(state)) {
-      PowBlock powHead = mergeTransitionHelpers.getPowChainHead();
+      PowBlock powHead = mergeTransitionHelpers.getPowChainHead(executionEngineChannel);
       if (!mergeTransitionHelpers.isValidTerminalPowBlock(powHead, transitionStore)) {
         // Pre-merge, empty payload
         LOG.info(
@@ -216,7 +222,7 @@ public class BlockFactory {
                 Color.YELLOW));
         UInt64 timestamp = spec.computeTimeAtSlot(state, state.getSlot());
         return executionPayloadUtil.getExecutionPayload(
-            powHead.blockHash, timestamp, executionPayloadId);
+            executionEngineChannel, powHead.blockHash, timestamp, executionPayloadId);
       }
     }
 
@@ -224,6 +230,6 @@ public class BlockFactory {
     final Bytes32 executionParentHash = state.getLatest_execution_payload_header().getBlock_hash();
     final UInt64 timestamp = spec.computeTimeAtSlot(state, state.getSlot());
     return executionPayloadUtil.getExecutionPayload(
-        executionParentHash, timestamp, executionPayloadId);
+        executionEngineChannel, executionParentHash, timestamp, executionPayloadId);
   }
 }

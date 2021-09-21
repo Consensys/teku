@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
@@ -44,6 +45,7 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel, 
 
   private final Database database;
   private final FinalizedStateCache finalizedStateCache;
+
   private volatile Optional<StoreBuilder> cachedStore = Optional.empty();
 
   private ChainStorage(final Database database, final FinalizedStateCache finalizedStateCache) {
@@ -51,10 +53,15 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel, 
     this.finalizedStateCache = finalizedStateCache;
   }
 
-  public static ChainStorage create(final Database database, final Spec spec) {
+  public static ChainStorage create(
+      final Database database,
+      final ExecutionEngineChannel executionEngineChannel,
+      final Spec spec) {
     final int finalizedStateCacheSize = spec.getSlotsPerEpoch(SpecConfig.GENESIS_EPOCH) * 3;
     return new ChainStorage(
-        database, new FinalizedStateCache(spec, database, finalizedStateCacheSize, true));
+        database,
+        new FinalizedStateCache(
+            spec, database, executionEngineChannel, finalizedStateCacheSize, true));
   }
 
   private synchronized Optional<StoreBuilder> getStore() {

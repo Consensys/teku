@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MergeTransitionHelpers;
@@ -328,6 +329,7 @@ public class ForkChoiceUtil {
    */
   @CheckReturnValue
   public BlockImportResult onBlock(
+      final ExecutionEngineChannel executionEngineChannel,
       final MutableStore store,
       final SignedBeaconBlock signedBlock,
       final BeaconState blockSlotState,
@@ -347,7 +349,8 @@ public class ForkChoiceUtil {
 
     // [Merge] Return if transition condition checks fail
     final Optional<BlockImportResult> maybeTerminalPowBlockFailure =
-        checkOnTerminalPowBlockConditions(block, blockSlotState, maybeTransitionStore);
+        checkOnTerminalPowBlockConditions(
+            executionEngineChannel, block, blockSlotState, maybeTransitionStore);
     if (maybeTerminalPowBlockFailure.isPresent()) {
       return maybeTerminalPowBlockFailure.get();
     }
@@ -359,7 +362,7 @@ public class ForkChoiceUtil {
     try {
       state =
           blockProcessor.processAndValidateBlock(
-              signedBlock, blockSlotState, indexedAttestationCache);
+              executionEngineChannel, signedBlock, blockSlotState, indexedAttestationCache);
     } catch (StateTransitionException e) {
       return BlockImportResult.failedStateTransition(e);
     }
@@ -417,6 +420,7 @@ public class ForkChoiceUtil {
   }
 
   private Optional<BlockImportResult> checkOnTerminalPowBlockConditions(
+      final ExecutionEngineChannel executionEngineChannel,
       final BeaconBlock block,
       final BeaconState blockSlotState,
       final Optional<TransitionStore> maybeTransitionStore) {
@@ -430,7 +434,8 @@ public class ForkChoiceUtil {
     }
     BeaconBlockBodyMerge blockBodyMerge = block.getBody().toVersionMerge().orElseThrow();
     PowBlock powBlock =
-        mergeTransitionHelpers.getPowBlock(blockBodyMerge.getExecution_payload().getParent_hash());
+        mergeTransitionHelpers.getPowBlock(
+            executionEngineChannel, blockBodyMerge.getExecution_payload().getParent_hash());
     if (!powBlock.isProcessed) {
       return Optional.of(BlockImportResult.FAILED_UNKNOWN_TERMINAL_POW_BLOCK);
     }

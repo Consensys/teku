@@ -11,21 +11,20 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.executionengine.client.serializer;
+package tech.pegasys.teku.services.powchain.execution.client.serializer;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import java.io.IOException;
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import org.apache.tuweni.bytes.Bytes32;
 
-public class UInt64AsHexDeserializer extends JsonDeserializer<UInt64> {
+public class Bytes32Deserializer extends JsonDeserializer<Bytes32> {
 
   @Override
-  public UInt64 deserialize(JsonParser p, DeserializationContext ctxt)
+  public Bytes32 deserialize(JsonParser p, DeserializationContext ctxt)
       throws IOException, JsonProcessingException {
-    return UInt64.valueOf(Bytes.fromHexStringLenient(p.getValueAsString()).toUnsignedBigInteger());
+    return Bytes32.fromHexString(p.getValueAsString());
   }
 }

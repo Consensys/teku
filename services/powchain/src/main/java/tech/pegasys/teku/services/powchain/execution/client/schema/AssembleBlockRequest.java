@@ -11,14 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.executionengine.client.schema;
+package tech.pegasys.teku.services.powchain.execution.client.schema;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.executionengine.client.serializer.BytesSerializer;
-import tech.pegasys.teku.spec.executionengine.client.serializer.UInt64AsHexSerializer;
+import tech.pegasys.teku.services.powchain.execution.client.serializer.BytesSerializer;
+import tech.pegasys.teku.services.powchain.execution.client.serializer.UInt64AsHexSerializer;
 
 public class AssembleBlockRequest {
   @JsonSerialize(using = BytesSerializer.class)

@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 
 public class StoreBuilder {
   private AsyncRunner asyncRunner;
@@ -50,6 +51,7 @@ public class StoreBuilder {
   private Checkpoint bestJustifiedCheckpoint;
   private Map<UInt64, VoteTracker> votes;
   private ProtoArrayStorageChannel protoArrayStorageChannel = ProtoArrayStorageChannel.NO_OP;
+  private ExecutionEngineChannel executionEngineChannel;
 
   private StoreBuilder() {}
 
@@ -115,7 +117,8 @@ public class StoreBuilder {
         blockInfoByRoot,
         votes,
         storeConfig,
-        protoArrayStorageChannel);
+        protoArrayStorageChannel,
+        executionEngineChannel);
   }
 
   private void assertValid() {
@@ -131,6 +134,7 @@ public class StoreBuilder {
     checkState(latestFinalized != null, "Latest finalized anchor must be defined");
     checkState(votes != null, "Votes must be defined");
     checkState(!blockInfoByRoot.isEmpty(), "Block data must be supplied");
+    checkState(executionEngineChannel != null, "ExecutionEngineChannel must be defined");
   }
 
   public StoreBuilder asyncRunner(final AsyncRunner asyncRunner) {
@@ -223,6 +227,12 @@ public class StoreBuilder {
   public StoreBuilder protoArrayStorageChannel(
       final ProtoArrayStorageChannel protoArrayStorageChannel) {
     this.protoArrayStorageChannel = protoArrayStorageChannel;
+    return this;
+  }
+
+  public StoreBuilder executionEngineChannel(final ExecutionEngineChannel executionEngineChannel) {
+    checkNotNull(executionEngineChannel);
+    this.executionEngineChannel = executionEngineChannel;
     return this;
   }
 }

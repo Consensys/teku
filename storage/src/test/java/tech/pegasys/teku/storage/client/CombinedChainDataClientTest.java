@@ -25,6 +25,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 
@@ -35,7 +36,8 @@ class CombinedChainDataClientTest {
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
   private final CombinedChainDataClient client =
-      new CombinedChainDataClient(recentChainData, historicalChainData, spec);
+      new CombinedChainDataClient(
+          recentChainData, historicalChainData, ExecutionEngineChannel.NOOP, spec);
 
   final HashSet<SignedBeaconBlock> nonCanonicalBlocks = new HashSet<>();
   final SignedBeaconBlock firstBlock = dataStructureUtil.randomSignedBeaconBlock(1);

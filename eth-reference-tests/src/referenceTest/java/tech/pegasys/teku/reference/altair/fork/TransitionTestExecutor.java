@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.TestConfigLoader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 
 public class TransitionTestExecutor implements TestExecutor {
@@ -73,7 +74,9 @@ public class TransitionTestExecutor implements TestExecutor {
               testDefinition, "blocks_" + i + ".ssz_snappy", spec::deserializeSignedBeaconBlock);
 
       try {
-        result = spec.processBlock(result, block, BLSSignatureVerifier.SIMPLE);
+        result =
+            spec.processBlock(
+                ExecutionEngineChannel.NOOP, result, block, BLSSignatureVerifier.SIMPLE);
       } catch (final StateTransitionException e) {
         Assertions.fail(
             "Failed to process block " + i + " at slot " + block.getSlot() + ": " + e.getMessage(),

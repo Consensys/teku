@@ -22,6 +22,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 
@@ -35,7 +36,8 @@ public class StateTransition {
     this.specProvider = specProvider;
   }
 
-  public BeaconState processSlots(BeaconState preState, UInt64 slot)
+  public BeaconState processSlots(
+      BeaconState preState, UInt64 slot, ExecutionEngineChannel executionEngineChannel)
       throws SlotProcessingException, EpochProcessingException {
     try {
       checkArgument(
@@ -73,7 +75,7 @@ public class StateTransition {
                     .orElse(prevMilestoneState);
             // Update spec
             currentSpec = newSpec;
-            newSpec.initializeTransitionStore(state);
+            newSpec.initializeTransitionStore(executionEngineChannel, state);
           }
         }
       }

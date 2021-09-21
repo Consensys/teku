@@ -15,14 +15,9 @@ package tech.pegasys.teku.spec.logic.versions.merge.block;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes32;
-import org.web3j.protocol.core.methods.response.EthBlock;
-import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigMerge;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -31,12 +26,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.MutableBeaconStateMerge;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineService;
-import tech.pegasys.teku.spec.executionengine.client.ExecutionEngineClient;
-import tech.pegasys.teku.spec.executionengine.client.schema.AssembleBlockRequest;
-import tech.pegasys.teku.spec.executionengine.client.schema.GenericResponse;
-import tech.pegasys.teku.spec.executionengine.client.schema.NewBlockResponse;
-import tech.pegasys.teku.spec.executionengine.client.schema.Response;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
@@ -56,7 +46,6 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
   private static final Logger LOG = LogManager.getLogger();
 
   private final MiscHelpersMerge miscHelpersMerge;
-  private final BeaconStateAccessorsAltair beaconStateAccessorsAltair;
   private final ExecutionPayloadUtil executionPayloadUtil;
 
   public BlockProcessorMerge(
@@ -83,7 +72,6 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
         validatorsUtil,
         operationValidator);
     this.miscHelpersMerge = miscHelpers;
-    this.beaconStateAccessorsAltair = beaconStateAccessors;
     this.executionPayloadUtil = executionPayloadUtil;
   }
 
@@ -97,6 +85,7 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
 
   @Override
   public void processBlock(
+      ExecutionEngineChannel executionEngineChannel,
       MutableBeaconState genericState,
       BeaconBlock block,
       IndexedAttestationCache indexedAttestationCache,
@@ -105,15 +94,18 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
     final MutableBeaconStateMerge state = MutableBeaconStateMerge.required(genericState);
     final BeaconBlockBodyMerge blockBody = BeaconBlockBodyMerge.required(block.getBody());
 
-    super.processBlock(state, block, indexedAttestationCache, signatureVerifier);
+    super.processBlock(
+        executionEngineChannel, state, block, indexedAttestationCache, signatureVerifier);
     if (miscHelpersMerge.isExecutionEnabled(genericState, block)) {
-      processExecutionPayload(state, blockBody.getExecution_payload());
+      processExecutionPayload(executionEngineChannel, state, blockBody.getExecution_payload());
     }
   }
 
   @Override
   public void processExecutionPayload(
-      MutableBeaconState genericState, ExecutionPayload executionPayload)
+      ExecutionEngineChannel executionEngineChannel,
+      MutableBeaconState genericState,
+      ExecutionPayload executionPayload)
       throws BlockProcessingException {
     try {
       final MutableBeaconStateMerge state = MutableBeaconStateMerge.required(genericState);
@@ -138,7 +130,8 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
           "process_execution_payload: Verify that the timestamp is correct");
 
       boolean isExecutionPayloadValid =
-          executionPayloadUtil.verifyExecutionStateTransition(executionPayload);
+          executionPayloadUtil.verifyExecutionStateTransition(
+              executionEngineChannel, executionPayload);
 
       checkArgument(
           isExecutionPayloadValid,
@@ -164,60 +157,5 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
       LOG.warn(e.getMessage());
       throw new BlockProcessingException(e);
     }
-  }
-
-  public BlockProcessorMerge forProcessExecutionPayloadReferenceTest(final Boolean executionValid) {
-    return new BlockProcessorMerge(
-        SpecConfigMerge.required(specConfig),
-        predicates,
-        miscHelpersMerge,
-        beaconStateAccessorsAltair,
-        beaconStateMutators,
-        operationSignatureVerifier,
-        beaconStateUtil,
-        attestationUtil,
-        validatorsUtil,
-        operationValidator,
-        new ExecutionPayloadUtil(
-            new ExecutionEngineService(
-                new ExecutionEngineClient() {
-                  @Override
-                  public SafeFuture<
-                          Response<
-                              tech.pegasys.teku.spec.executionengine.client.schema
-                                  .ExecutionPayload>>
-                      consensusAssembleBlock(AssembleBlockRequest request) {
-                    return null;
-                  }
-
-                  @Override
-                  public SafeFuture<Response<NewBlockResponse>> consensusNewBlock(
-                      tech.pegasys.teku.spec.executionengine.client.schema.ExecutionPayload
-                          request) {
-                    return SafeFuture.completedFuture(
-                        new Response<>(new NewBlockResponse(executionValid)));
-                  }
-
-                  @Override
-                  public SafeFuture<Response<GenericResponse>> consensusSetHead(Bytes32 blockHash) {
-                    return null;
-                  }
-
-                  @Override
-                  public SafeFuture<Response<GenericResponse>> consensusFinalizeBlock(
-                      Bytes32 blockHash) {
-                    return null;
-                  }
-
-                  @Override
-                  public SafeFuture<Optional<Block>> getPowBlock(Bytes32 blockHash) {
-                    return SafeFuture.completedFuture(Optional.empty());
-                  }
-
-                  @Override
-                  public SafeFuture<Block> getPowChainHead() {
-                    return SafeFuture.completedFuture(new EthBlock.Block());
-                  }
-                })));
   }
 }

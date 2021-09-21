@@ -28,6 +28,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
@@ -44,6 +45,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
   private final StateAndBlockSummaryProvider stateProvider;
   private final StorageQueryChannel storageQueryChannel;
   private final StoreConfig storeConfig;
+  private final ExecutionEngineChannel executionEngineChannel;
 
   public StorageBackedRecentChainData(
       final AsyncRunner asyncRunner,
@@ -55,6 +57,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final ProtoArrayStorageChannel protoArrayStorageChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
+      final ExecutionEngineChannel executionEngineChannel,
       final Spec spec) {
     super(
         asyncRunner,
@@ -67,11 +70,13 @@ public class StorageBackedRecentChainData extends RecentChainData {
         protoArrayStorageChannel,
         finalizedCheckpointChannel,
         chainHeadChannel,
+        executionEngineChannel,
         spec);
     this.storeConfig = storeConfig;
     this.storageQueryChannel = storageQueryChannel;
     this.blockProvider = storageQueryChannel::getHotBlocksByRoot;
     this.stateProvider = storageQueryChannel::getHotStateAndBlockSummaryByBlockRoot;
+    this.executionEngineChannel = executionEngineChannel;
   }
 
   public static SafeFuture<RecentChainData> create(
@@ -84,6 +89,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final ProtoArrayStorageChannel protoArrayStorageChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
+      final ExecutionEngineChannel executionEngineChannel,
       final Spec spec) {
     StorageBackedRecentChainData client =
         new StorageBackedRecentChainData(
@@ -96,6 +102,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
             protoArrayStorageChannel,
             finalizedCheckpointChannel,
             chainHeadChannel,
+            executionEngineChannel,
             spec);
 
     return client.initializeFromStorageWithRetry(asyncRunner);
@@ -112,6 +119,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final ProtoArrayStorageChannel protoArrayStorageChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
+      final ExecutionEngineChannel executionEngineChannel,
       final Spec spec) {
     StorageBackedRecentChainData client =
         new StorageBackedRecentChainData(
@@ -124,6 +132,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
             protoArrayStorageChannel,
             finalizedCheckpointChannel,
             chainHeadChannel,
+            executionEngineChannel,
             spec);
 
     return client.initializeFromStorage().join();
@@ -157,6 +166,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
                   .stateProvider(stateProvider)
                   .storeConfig(storeConfig)
                   .protoArrayStorageChannel(protoArrayStorageChannel)
+                  .executionEngineChannel(executionEngineChannel)
                   .build();
           setStore(store);
           STATUS_LOG.finishInitializingChainData();

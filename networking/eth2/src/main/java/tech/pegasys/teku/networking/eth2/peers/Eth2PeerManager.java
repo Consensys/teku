@@ -44,6 +44,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessageSchema;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -104,6 +105,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final AsyncRunner asyncRunner,
       final RecentChainData recentChainData,
       final StorageQueryChannel historicalChainData,
+      final ExecutionEngineChannel executionEngineChannel,
       final MetricsSystem metricsSystem,
       final SubnetSubscriptionService attestationSubnetService,
       final SubnetSubscriptionService syncCommitteeSubnetService,
@@ -124,7 +126,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
     syncCommitteeSubnetService.subscribeToUpdates(
         metadataMessagesFactory::updateSyncCommitteeSubnetIds);
     final CombinedChainDataClient combinedChainDataClient =
-        new CombinedChainDataClient(recentChainData, historicalChainData, spec);
+        new CombinedChainDataClient(
+            recentChainData, historicalChainData, executionEngineChannel, spec);
 
     return new Eth2PeerManager(
         spec,

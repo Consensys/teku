@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -87,6 +88,7 @@ public class StorageBackedRecentChainDataTest {
             ProtoArrayStorageChannel.NO_OP,
             finalizedCheckpointChannel,
             chainHeadChannel,
+            ExecutionEngineChannel.NOOP,
             spec);
 
     // We should have posted a request to get the store from storage
@@ -139,6 +141,7 @@ public class StorageBackedRecentChainDataTest {
             protoArrayStorageChannel,
             finalizedCheckpointChannel,
             chainHeadChannel,
+            ExecutionEngineChannel.NOOP,
             spec);
 
     // We should have posted a request to get the store from storage
@@ -201,6 +204,7 @@ public class StorageBackedRecentChainDataTest {
             ProtoArrayStorageChannel.NO_OP,
             finalizedCheckpointChannel,
             chainHeadChannel,
+            ExecutionEngineChannel.NOOP,
             spec);
 
     // We should have posted a request to get the store from storage
@@ -225,6 +229,7 @@ public class StorageBackedRecentChainDataTest {
                 AnchorPoint.fromGenesisState(spec, INITIAL_STATE),
                 UInt64.ZERO)
             .storeConfig(storeConfig)
+            .executionEngineChannel(ExecutionEngineChannel.NOOP)
             .build();
     client.get().initializeFromGenesis(INITIAL_STATE, UInt64.ZERO);
     assertStoreInitialized(client.get());
@@ -251,6 +256,7 @@ public class StorageBackedRecentChainDataTest {
             ProtoArrayStorageChannel.NO_OP,
             finalizedCheckpointChannel,
             chainHeadChannel,
+            ExecutionEngineChannel.NOOP,
             spec);
 
     // We should have posted a request to get the store from storage
@@ -296,6 +302,7 @@ public class StorageBackedRecentChainDataTest {
             ProtoArrayStorageChannel.NO_OP,
             finalizedCheckpointChannel,
             chainHeadChannel,
+            ExecutionEngineChannel.NOOP,
             spec);
 
     // We should have posted a request to get the store from storage

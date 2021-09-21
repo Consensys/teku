@@ -11,18 +11,32 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.executionengine.client.serializer;
+package tech.pegasys.teku.services.powchain.execution.client.schema;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import java.io.IOException;
-import org.apache.tuweni.bytes.Bytes;
+public final class Response<T> {
 
-public class BytesSerializer extends JsonSerializer<Bytes> {
-  @Override
-  public void serialize(Bytes value, JsonGenerator gen, SerializerProvider provider)
-      throws IOException {
-    gen.writeString(value.toHexString().toLowerCase());
+  private final T payload;
+  private final String reason;
+
+  private Response(T payload, String reason) {
+    this.payload = payload;
+    this.reason = reason;
+  }
+
+  public Response(String reason) {
+    this(null, reason);
+  }
+
+  public Response(T payload) {
+    this.payload = payload;
+    this.reason = null;
+  }
+
+  public T getPayload() {
+    return payload;
+  }
+
+  public String getReason() {
+    return reason;
   }
 }

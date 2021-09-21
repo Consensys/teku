@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.executionengine.client.schema;
+package tech.pegasys.teku.services.powchain.execution.client.schema;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -24,14 +24,14 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.services.powchain.execution.client.serializer.Bytes20Deserializer;
+import tech.pegasys.teku.services.powchain.execution.client.serializer.Bytes20Serializer;
+import tech.pegasys.teku.services.powchain.execution.client.serializer.Bytes32Deserializer;
+import tech.pegasys.teku.services.powchain.execution.client.serializer.BytesDeserializer;
+import tech.pegasys.teku.services.powchain.execution.client.serializer.BytesSerializer;
+import tech.pegasys.teku.services.powchain.execution.client.serializer.UInt64AsHexDeserializer;
+import tech.pegasys.teku.services.powchain.execution.client.serializer.UInt64AsHexSerializer;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
-import tech.pegasys.teku.spec.executionengine.client.serializer.Bytes20Deserializer;
-import tech.pegasys.teku.spec.executionengine.client.serializer.Bytes20Serializer;
-import tech.pegasys.teku.spec.executionengine.client.serializer.Bytes32Deserializer;
-import tech.pegasys.teku.spec.executionengine.client.serializer.BytesDeserializer;
-import tech.pegasys.teku.spec.executionengine.client.serializer.BytesSerializer;
-import tech.pegasys.teku.spec.executionengine.client.serializer.UInt64AsHexDeserializer;
-import tech.pegasys.teku.spec.executionengine.client.serializer.UInt64AsHexSerializer;
 import tech.pegasys.teku.ssz.collections.SszByteList;
 import tech.pegasys.teku.ssz.type.Bytes20;
 

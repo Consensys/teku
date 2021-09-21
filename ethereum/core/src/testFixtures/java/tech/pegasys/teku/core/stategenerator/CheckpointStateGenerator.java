@@ -21,6 +21,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointExcepti
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 
@@ -47,7 +48,8 @@ public abstract class CheckpointStateGenerator {
         return baseState;
       }
 
-      return spec.processSlots(baseState, checkpoint.getEpochStartSlot(spec));
+      return spec.processSlots(
+          baseState, checkpoint.getEpochStartSlot(spec), ExecutionEngineChannel.NOOP);
     } catch (SlotProcessingException | EpochProcessingException | IllegalArgumentException e) {
       throw new InvalidCheckpointException(e);
     }

@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 
 class AsyncChainStateGenerator {
   private static final Logger LOG = LogManager.getLogger();
@@ -39,6 +40,7 @@ class AsyncChainStateGenerator {
   private final HashTree blockTree;
   private final BlockProvider blockProvider;
   private final StateProvider stateProvider;
+  private final ExecutionEngineChannel executionEngineChannel;
   private final int blockBatchSize;
 
   private AsyncChainStateGenerator(
@@ -46,11 +48,13 @@ class AsyncChainStateGenerator {
       final HashTree blockTree,
       final BlockProvider blockProvider,
       final StateProvider stateProvider,
+      ExecutionEngineChannel executionEngineChannel,
       final int blockBatchSize) {
     this.spec = spec;
     this.blockTree = blockTree;
     this.blockProvider = blockProvider;
     this.stateProvider = stateProvider;
+    this.executionEngineChannel = executionEngineChannel;
     this.blockBatchSize = blockBatchSize;
   }
 
@@ -58,9 +62,15 @@ class AsyncChainStateGenerator {
       final Spec spec,
       final HashTree blockTree,
       final BlockProvider blockProvider,
-      final StateProvider stateProvider) {
+      final StateProvider stateProvider,
+      final ExecutionEngineChannel executionEngineChannel) {
     return new AsyncChainStateGenerator(
-        spec, blockTree, blockProvider, stateProvider, DEFAULT_BLOCK_BATCH_SIZE);
+        spec,
+        blockTree,
+        blockProvider,
+        stateProvider,
+        executionEngineChannel,
+        DEFAULT_BLOCK_BATCH_SIZE);
   }
 
   public SafeFuture<StateAndBlockSummary> generateTargetState(final Bytes32 targetRoot) {
@@ -171,7 +181,8 @@ class AsyncChainStateGenerator {
               }
 
               final ChainStateGenerator chainStateGenerator =
-                  ChainStateGenerator.create(spec, chainBlocks, startState, true);
+                  ChainStateGenerator.create(
+                      spec, chainBlocks, startState, true, executionEngineChannel);
               final AtomicReference<BeaconState> lastState = new AtomicReference<>(null);
               chainStateGenerator.generateStates(
                   stateAndBlock -> {

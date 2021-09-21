@@ -11,20 +11,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.executionengine.client.serializer;
+package tech.pegasys.teku.services.powchain.execution.client.serializer;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
 import java.io.IOException;
-import tech.pegasys.teku.ssz.type.Bytes20;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class Bytes20Deserializer extends JsonDeserializer<Bytes20> {
-
+public class UInt64Serializer extends JsonSerializer<UInt64> {
   @Override
-  public Bytes20 deserialize(JsonParser p, DeserializationContext ctxt)
-      throws IOException, JsonProcessingException {
-    return Bytes20.fromHexString(p.getValueAsString());
+  public void serialize(UInt64 value, JsonGenerator gen, SerializerProvider serializers)
+      throws IOException {
+    gen.writeString(value.toString());
   }
 }

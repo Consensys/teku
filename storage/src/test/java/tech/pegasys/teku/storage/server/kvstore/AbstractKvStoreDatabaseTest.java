@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.server.AbstractStorageBackedDatabaseTest;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
@@ -89,6 +90,7 @@ public abstract class AbstractKvStoreDatabaseTest extends AbstractStorageBackedD
             .asyncRunner(mock(AsyncRunner.class))
             .blockProvider(mock(BlockProvider.class))
             .stateProvider(mock(StateAndBlockSummaryProvider.class))
+            .executionEngineChannel(ExecutionEngineChannel.NOOP)
             .build();
 
     assertThat(store.getTime()).isEqualTo(genesisTime);

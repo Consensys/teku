@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
@@ -89,6 +90,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
 
   @Override
   public void processBlock(
+      final ExecutionEngineChannel executionEngineChannel,
       final MutableBeaconState genericState,
       final BeaconBlock block,
       final IndexedAttestationCache indexedAttestationCache,
@@ -97,7 +99,8 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
     final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(genericState);
     final BeaconBlockBodyAltair blockBody = BeaconBlockBodyAltair.required(block.getBody());
 
-    super.processBlock(state, block, indexedAttestationCache, signatureVerifier);
+    super.processBlock(
+        executionEngineChannel, state, block, indexedAttestationCache, signatureVerifier);
     processSyncAggregate(state, blockBody.getSyncAggregate(), signatureVerifier);
   }
 

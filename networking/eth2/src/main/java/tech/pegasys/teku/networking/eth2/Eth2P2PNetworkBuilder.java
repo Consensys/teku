@@ -64,6 +64,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -89,6 +90,7 @@ public class Eth2P2PNetworkBuilder {
   private GossipPublisher<SignedVoluntaryExit> voluntaryExitGossipPublisher;
   private ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
   private StorageQueryChannel historicalChainData;
+  private ExecutionEngineChannel executionEngineChannel;
   private MetricsSystem metricsSystem;
   private final List<RpcMethod<?, ?, ?>> rpcMethods = new ArrayList<>();
   private final List<PeerHandler> peerHandlers = new ArrayList<>();
@@ -125,6 +127,7 @@ public class Eth2P2PNetworkBuilder {
             asyncRunner,
             recentChainData,
             historicalChainData,
+            executionEngineChannel,
             metricsSystem,
             attestationSubnetService,
             syncCommitteeSubnetService,
@@ -290,6 +293,7 @@ public class Eth2P2PNetworkBuilder {
     assertNotNull("eventChannels", eventChannels);
     assertNotNull("metricsSystem", metricsSystem);
     assertNotNull("chainStorageClient", recentChainData);
+    assertNotNull("executionEngineChannel", executionEngineChannel);
     assertNotNull("keyValueStore", keyValueStore);
     assertNotNull("timeProvider", timeProvider);
     assertNotNull("gossipedBlockProcessor", gossipedBlockProcessor);
@@ -332,6 +336,13 @@ public class Eth2P2PNetworkBuilder {
   public Eth2P2PNetworkBuilder recentChainData(final RecentChainData recentChainData) {
     checkNotNull(recentChainData);
     this.recentChainData = recentChainData;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder executionEngineChannel(
+      ExecutionEngineChannel executionEngineChannel) {
+    checkNotNull(executionEngineChannel);
+    this.executionEngineChannel = executionEngineChannel;
     return this;
   }
 

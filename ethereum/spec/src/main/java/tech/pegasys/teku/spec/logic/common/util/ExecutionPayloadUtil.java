@@ -18,39 +18,31 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineService;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 
 public class ExecutionPayloadUtil {
 
-  private ExecutionEngineService executionEngineService;
+  public ExecutionPayloadUtil() {}
 
-  public ExecutionPayloadUtil(ExecutionEngineService executionEngineService) {
-    this.executionEngineService = executionEngineService;
+  public boolean verifyExecutionStateTransition(
+      ExecutionEngineChannel executionEngineChannel, ExecutionPayload executionPayload) {
+    checkNotNull(executionEngineChannel);
+    return executionEngineChannel.newBlock(executionPayload).join();
   }
 
-  public ExecutionPayloadUtil() {
-    this(ExecutionEngineService.createStub());
-  }
-
-  public boolean verifyExecutionStateTransition(ExecutionPayload executionPayload) {
-    checkNotNull(executionEngineService);
-    return executionEngineService.newBlock(
-        new tech.pegasys.teku.spec.executionengine.client.schema.ExecutionPayload(
-            executionPayload));
-  }
-
-  public void prepareExecutionPayload(Bytes32 parentHash, UInt64 timestamp, UInt64 payloadId) {
-    checkNotNull(executionEngineService);
-    executionEngineService.prepareBlock(parentHash, timestamp, payloadId);
+  public void prepareExecutionPayload(
+      ExecutionEngineChannel executionEngineChannel,
+      Bytes32 parentHash,
+      UInt64 timestamp,
+      UInt64 payloadId) {
+    executionEngineChannel.prepareBlock(parentHash, timestamp, payloadId).join();
   }
 
   public ExecutionPayload getExecutionPayload(
-      Bytes32 parentHash, UInt64 timestamp, UInt64 payloadId) {
-    checkNotNull(executionEngineService);
-    return executionEngineService.assembleBlock(parentHash, timestamp).asInternalExecutionPayload();
-  }
-
-  public void setExecutionEngineService(ExecutionEngineService executionEngineService) {
-    this.executionEngineService = executionEngineService;
+      ExecutionEngineChannel executionEngineChannel,
+      Bytes32 parentHash,
+      UInt64 timestamp,
+      UInt64 payloadId) {
+    return executionEngineChannel.assembleBlock(parentHash, timestamp).join();
   }
 }

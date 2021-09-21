@@ -13,7 +13,12 @@
 
 package tech.pegasys.teku.reference.common.operations;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
@@ -25,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.versions.merge.block.BlockProcessorMerge;
@@ -106,9 +112,12 @@ public class DefaultOperationProcessor implements OperationProcessor {
       MutableBeaconState state, ExecutionPayload executionPayload, Boolean executionValid)
       throws BlockProcessingException {
     BlockProcessor blockProcessor =
-        BlockProcessorMerge.required(spec.atSlot(state.getSlot()).getBlockProcessor())
-            .forProcessExecutionPayloadReferenceTest(executionValid);
+        BlockProcessorMerge.required(spec.atSlot(state.getSlot()).getBlockProcessor());
 
-    blockProcessor.processExecutionPayload(state, executionPayload);
+    ExecutionEngineChannel executionEngineChannel = mock(ExecutionEngineChannel.class);
+    when(executionEngineChannel.newBlock(any()))
+        .thenReturn(SafeFuture.completedFuture(executionValid));
+
+    blockProcessor.processExecutionPayload(executionEngineChannel, state, executionPayload);
   }
 }
