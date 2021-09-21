@@ -15,6 +15,7 @@ package tech.pegasys.teku.infrastructure.io;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.condition.OS.WINDOWS;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -25,6 +26,7 @@ import java.util.HashSet;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -33,6 +35,7 @@ import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException
 public class SyncDataAccessorTest {
 
   @Test
+  @DisabledOnOs(WINDOWS)
   public void shouldThrowInvalidConfigurationExceptionWhenDirectoryNotWritable(
       @TempDir Path tempDir) throws IOException {
     Set<PosixFilePermission> perms = new HashSet<>();
