@@ -44,6 +44,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProces
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadUtil;
 import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.ssz.type.Bytes20;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationForkChecker;
@@ -87,27 +88,42 @@ public class BlockFactory {
     this.executionEngineChannel = executionEngineChannel;
   }
 
-  public void prepareExecutionPayload(
-      final Optional<BeaconState> maybeCurrentSlotState, UInt64 payloadId) {
+  public void prepareExecutionPayload(final Optional<BeaconState> maybeCurrentSlotState) {
     if (maybeCurrentSlotState.isEmpty()) {
+      LOG.error("prepareExecutionPayload - empty state!");
       return;
     }
     final Optional<BeaconStateMerge> maybeCurrentMergeState =
         maybeCurrentSlotState.get().toVersionMerge();
 
     if (maybeCurrentMergeState.isEmpty()) {
+      LOG.trace("prepareExecutionPayload - not yet in Merge state!");
       return;
     }
     final BeaconStateMerge currentMergeState = maybeCurrentMergeState.get();
-
-    final ExecutionPayloadUtil executionPayloadUtil =
-        spec.atSlot(currentMergeState.getSlot()).getExecutionPayloadUtil().orElseThrow();
-
-    UInt64 timestamp = spec.computeTimeAtSlot(currentMergeState, currentMergeState.getSlot());
     final Bytes32 executionParentHash =
         currentMergeState.getLatest_execution_payload_header().getBlock_hash();
+    final UInt64 slot = currentMergeState.getSlot();
+    final UInt64 epoch = spec.computeEpochAtSlot(slot);
+    final UInt64 timestamp = spec.computeTimeAtSlot(currentMergeState, slot);
+    final Bytes32 random =
+        spec.atEpoch(epoch).beaconStateAccessors().getRandaoMix(currentMergeState, slot);
+
+    final ExecutionPayloadUtil executionPayloadUtil =
+        spec.atSlot(slot)
+            .getExecutionPayloadUtil()
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "unable to retrieve ExecutionPayloadUtil from slot " + slot));
+
     executionPayloadUtil.prepareExecutionPayload(
-        executionEngineChannel, executionParentHash, timestamp, payloadId);
+        executionEngineChannel,
+        slot,
+        executionParentHash,
+        timestamp,
+        random,
+        Bytes20.ZERO); // TODO let's burn fees for now!
   }
 
   public BeaconBlock createUnsignedBlock(
@@ -220,16 +236,13 @@ public class BlockFactory {
                     powHead.totalDifficulty.toBigInteger(),
                     transitionStore.getTransitionTotalDifficulty().toBigInteger()),
                 Color.YELLOW));
-        UInt64 timestamp = spec.computeTimeAtSlot(state, state.getSlot());
-        return executionPayloadUtil.getExecutionPayload(
-            executionEngineChannel, powHead.blockHash, timestamp, executionPayloadId);
+        return executionPayloadUtil.getExecutionPayload(executionEngineChannel, executionPayloadId);
+        // TODO do we want to check if returned payload has the expected parent block?
       }
     }
 
     // Post-merge, normal payload
-    final Bytes32 executionParentHash = state.getLatest_execution_payload_header().getBlock_hash();
-    final UInt64 timestamp = spec.computeTimeAtSlot(state, state.getSlot());
-    return executionPayloadUtil.getExecutionPayload(
-        executionEngineChannel, executionParentHash, timestamp, executionPayloadId);
+    return executionPayloadUtil.getExecutionPayload(executionEngineChannel, executionPayloadId);
+    // TODO do we want to check if returned payload has the expected parent block?
   }
 }

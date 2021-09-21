@@ -268,8 +268,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
     return currentSlotStateFuture.thenApply(
         preState -> {
-          blockFactory.prepareExecutionPayload(
-              preState, preparingSlot); // we are using slot number as payloadId
+          blockFactory.prepareExecutionPayload(preState);
           return null;
         });
   }
