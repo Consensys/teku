@@ -108,7 +108,7 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
         .thenPeek(
             __ ->
                 printConsole(
-                    "engine_forkchoiceUpdated(bestBlockHash=%s, finalizedBlockHash=%s, confirmedBlockHash=%s)",
+                    "engine_forkchoiceUpdated(bestBlockHash=%s, finalizedBlockHash=%s)",
                     LogFormatter.formatHashRoot(bestBlockHash),
                     LogFormatter.formatHashRoot(finalizedBlockHash)))
         .thenApply(__ -> null);
