@@ -79,16 +79,11 @@ public interface Signature {
   boolean isInfinity();
 
   /**
-   * Returns true if the point is on the curve and is in the G2 group.
+   * Determine if this Signature is in the G2 Group.
    *
-   * <p>Note that the G2 point at infinity may or may not be a valid signature, depending on where
-   * it came from: a deserialised infinite signature is valid; an infinite signature resulting from
-   * a failed deserialisation is invalid.
-   *
-   * @return true if this signature is on the curve and in the G2 group, and is not a bad infinite
-   *     signature, otherwise false.
+   * @return true if this signature is in the G2 group, otherwise false.
    */
-  boolean isValid();
+  boolean isInGroup();
 
   /** Implementation must override */
   @Override
