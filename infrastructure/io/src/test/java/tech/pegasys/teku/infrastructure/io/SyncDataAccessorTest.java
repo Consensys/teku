@@ -20,14 +20,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.attribute.PosixFilePermission;
-import java.util.HashSet;
-import java.util.Set;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import tech.pegasys.teku.cli.OSUtils;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
 public class SyncDataAccessorTest {
@@ -35,11 +33,8 @@ public class SyncDataAccessorTest {
   @Test
   public void shouldThrowInvalidConfigurationExceptionWhenDirectoryNotWritable(
       @TempDir Path tempDir) throws IOException {
-    Set<PosixFilePermission> perms = new HashSet<>();
-    perms.add(PosixFilePermission.OWNER_READ);
-    perms.add(PosixFilePermission.OWNER_EXECUTE);
 
-    Files.setPosixFilePermissions(tempDir, perms);
+    OSUtils.makeNonWritable(tempDir);
 
     assertThatThrownBy(() -> SyncDataAccessor.create(tempDir))
         .isInstanceOf(InvalidConfigurationException.class)

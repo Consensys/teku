@@ -20,6 +20,7 @@ import static org.hyperledger.besu.metrics.StandardMetricCategory.PROCESS;
 import static tech.pegasys.teku.cli.BeaconNodeCommand.CONFIG_FILE_OPTION_NAME;
 import static tech.pegasys.teku.cli.BeaconNodeCommand.LOG_FILE;
 import static tech.pegasys.teku.cli.BeaconNodeCommand.LOG_PATTERN;
+import static tech.pegasys.teku.cli.OSUtils.SLASH;
 import static tech.pegasys.teku.cli.options.MetricsOptions.DEFAULT_METRICS_CATEGORIES;
 import static tech.pegasys.teku.infrastructure.logging.LoggingDestination.BOTH;
 import static tech.pegasys.teku.infrastructure.logging.LoggingDestination.DEFAULT_BOTH;
@@ -60,6 +61,7 @@ import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.ValidatorPerformanceTrackingMode;
 
 public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
+
   final Eth1Address address =
       Eth1Address.fromHexString("0x77f7bED277449F51505a4C54550B074030d989bC");
 
@@ -272,29 +274,29 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void shouldSetLogFileToTheOptionProvided() {
-    final String[] args = {"--log-file", "/hello/world.log"};
+    final String[] args = {"--log-file", OSUtils.toOSPath("/hello/world.log")};
     beaconNodeCommand.parse(args);
     assertThat(beaconNodeCommand.tekuConfiguration().loggingConfig().getLogFile())
-        .isEqualTo("/hello/world.log");
+        .isEqualTo(OSUtils.toOSPath("/hello/world.log"));
   }
 
   @Test
   public void shouldSetLogFileToTheOptionProvidedRegardlessOfDataPath() {
     final String[] args = {
-      "--log-file", "/hello/world.log",
-      "--data-path", "/yo"
+      "--log-file", OSUtils.toOSPath("/hello/world.log"),
+      "--data-path", OSUtils.toOSPath("/yo")
     };
     beaconNodeCommand.parse(args);
     assertThat(beaconNodeCommand.tekuConfiguration().loggingConfig().getLogFile())
-        .isEqualTo("/hello/world.log");
+        .isEqualTo(OSUtils.toOSPath("/hello/world.log"));
   }
 
   @Test
   public void shouldSetLogFileRelativeToSetDataDirectory() {
-    final String[] args = {"--data-path", "/yo"};
+    final String[] args = {"--data-path", OSUtils.toOSPath("/yo")};
     beaconNodeCommand.parse(args);
     assertThat(beaconNodeCommand.tekuConfiguration().loggingConfig().getLogFile())
-        .isEqualTo("/yo/logs/teku.log");
+        .isEqualTo(OSUtils.toOSPath("/yo/logs/teku.log"));
   }
 
   @Test
@@ -311,23 +313,28 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     beaconNodeCommand.parse(args);
     assertThat(beaconNodeCommand.tekuConfiguration().loggingConfig().getLogFile())
         .isEqualTo(
-            StringUtils.joinWith("/", VersionProvider.defaultStoragePath(), "logs", LOG_FILE));
+            StringUtils.joinWith(SLASH, VersionProvider.defaultStoragePath(), "logs", LOG_FILE));
   }
 
   @Test
   public void shouldSetLogPatternToDefaultDataDirectory() {
-    final String[] args = {"--data-path", "/my/path"};
+    final String[] args = {"--data-path", OSUtils.toOSPath("/my/path")};
     beaconNodeCommand.parse(args);
     assertThat(beaconNodeCommand.tekuConfiguration().loggingConfig().getLogFileNamePattern())
-        .isEqualTo("/my/path/logs/" + LOG_PATTERN);
+        .isEqualTo(OSUtils.toOSPath("/my/path/logs/" + LOG_PATTERN));
   }
 
   @Test
   public void shouldSetLogPatternOnCommandLine() {
-    final String[] args = {"--data-path", "/my/path", "--log-file-name-pattern", "/z/%d.log"};
+    final String[] args = {
+      "--data-path",
+      OSUtils.toOSPath("/my/path"),
+      "--log-file-name-pattern",
+      OSUtils.toOSPath("/z/%d.log")
+    };
     beaconNodeCommand.parse(args);
     assertThat(beaconNodeCommand.tekuConfiguration().loggingConfig().getLogFileNamePattern())
-        .isEqualTo("/z/%d.log");
+        .isEqualTo(OSUtils.toOSPath("/z/%d.log"));
   }
 
   @Test
@@ -432,9 +439,9 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .logging(
             b ->
                 b.destination(DEFAULT_BOTH)
-                    .logFile(StringUtils.joinWith("/", dataPath.toString(), "logs", LOG_FILE))
+                    .logFile(StringUtils.joinWith(SLASH, dataPath.toString(), "logs", LOG_FILE))
                     .logFileNamePattern(
-                        StringUtils.joinWith("/", dataPath.toString(), "logs", LOG_PATTERN)))
+                        StringUtils.joinWith(SLASH, dataPath.toString(), "logs", LOG_PATTERN)))
         .metrics(b -> b.metricsCategories(DEFAULT_METRICS_CATEGORIES))
         .restApi(b -> b.eth1DepositContractAddress(networkConfig.getEth1DepositContractAddress()))
         .p2p(p -> p.peerRateLimit(500).peerRequestLimit(50))
@@ -457,9 +464,9 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .logging(
             b ->
                 b.destination(BOTH)
-                    .logFile(StringUtils.joinWith("/", dataPath.toString(), "logs", LOG_FILE))
+                    .logFile(StringUtils.joinWith(SLASH, dataPath.toString(), "logs", LOG_FILE))
                     .logFileNamePattern(
-                        StringUtils.joinWith("/", dataPath.toString(), "logs", LOG_PATTERN)));
+                        StringUtils.joinWith(SLASH, dataPath.toString(), "logs", LOG_PATTERN)));
   }
 
   private TekuConfiguration.Builder expectedConfigurationBuilder() {
@@ -520,9 +527,9 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
             b ->
                 b.colorEnabled(true)
                     .destination(DEFAULT_BOTH)
-                    .logFile(StringUtils.joinWith("/", dataPath.toString(), "logs", LOG_FILE))
+                    .logFile(StringUtils.joinWith(SLASH, dataPath.toString(), "logs", LOG_FILE))
                     .logFileNamePattern(
-                        StringUtils.joinWith("/", dataPath.toString(), "logs", LOG_PATTERN))
+                        StringUtils.joinWith(SLASH, dataPath.toString(), "logs", LOG_PATTERN))
                     .includeEventsEnabled(true)
                     .includeValidatorDutiesEnabled(true))
         .metrics(

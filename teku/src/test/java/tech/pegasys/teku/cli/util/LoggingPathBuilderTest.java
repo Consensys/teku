@@ -14,6 +14,7 @@
 package tech.pegasys.teku.cli.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.cli.OSUtils.toOSPath;
 import static tech.pegasys.teku.cli.util.LoggingPathBuilder.SEP;
 
 import java.nio.file.Path;
@@ -45,8 +46,8 @@ public class LoggingPathBuilderTest {
   @Test
   public void shouldConstructPathGivenCustomDataBaseDirectory() {
     LoggingPathBuilder builder =
-        new LoggingPathBuilder().defaultBasename("t.log").dataPath(Path.of("/test"));
-    assertThat(builder.build()).isEqualTo("/test/logs/t.log");
+        new LoggingPathBuilder().defaultBasename("t.log").dataPath(Path.of(toOSPath("/test")));
+    assertThat(builder.build()).isEqualTo(toOSPath("/test/logs/t.log"));
   }
 
   @Test
@@ -54,9 +55,9 @@ public class LoggingPathBuilderTest {
     LoggingPathBuilder builder =
         new LoggingPathBuilder()
             .defaultBasename("t.log")
-            .dataPath(Path.of("/t1"))
+            .dataPath(Path.of(toOSPath("/t1")))
             .fromCommandLine("u.log");
-    assertThat(builder.build()).isEqualTo("/t1/logs/u.log");
+    assertThat(builder.build()).isEqualTo(toOSPath("/t1/logs/u.log"));
   }
 
   @Test
@@ -64,21 +65,21 @@ public class LoggingPathBuilderTest {
     LoggingPathBuilder builder =
         new LoggingPathBuilder()
             .defaultBasename("t.log")
-            .dataPath(Path.of("/t1"))
-            .fromCommandLine("/u1/u.log");
-    assertThat(builder.build()).isEqualTo("/u1/u.log");
+            .dataPath(Path.of(toOSPath("/t1")))
+            .fromCommandLine(toOSPath("/u1/u.log"));
+    assertThat(builder.build()).isEqualTo(toOSPath("/u1/u.log"));
   }
 
   @Test
   public void shouldConstructFromOnlyAbsoluteFilename() {
-    LoggingPathBuilder builder = new LoggingPathBuilder().fromCommandLine("/u1/u.log");
-    assertThat(builder.build()).isEqualTo("/u1/u.log");
+    LoggingPathBuilder builder = new LoggingPathBuilder().fromCommandLine(toOSPath("/u1/u.log"));
+    assertThat(builder.build()).isEqualTo(toOSPath("/u1/u.log"));
   }
 
   @Test
   public void shouldConstructFromMaybeLogFile() {
     LoggingPathBuilder builder =
-        new LoggingPathBuilder().maybeFromCommandLine(Optional.of("/u1/u.log"));
-    assertThat(builder.build()).isEqualTo("/u1/u.log");
+        new LoggingPathBuilder().maybeFromCommandLine(Optional.of(toOSPath("/u1/u.log")));
+    assertThat(builder.build()).isEqualTo(toOSPath("/u1/u.log"));
   }
 }
