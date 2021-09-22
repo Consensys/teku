@@ -22,6 +22,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 
 public interface OperationProcessor {
@@ -49,6 +50,6 @@ public interface OperationProcessor {
   void processExecutionPayload(
       final MutableBeaconState state,
       final ExecutionPayload executionPayload,
-      final Boolean executionValid)
+      final ExecutionPayloadStatus executionStatus)
       throws BlockProcessingException;
 }

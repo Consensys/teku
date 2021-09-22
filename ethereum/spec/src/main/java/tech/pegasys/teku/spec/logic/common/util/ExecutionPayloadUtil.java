@@ -25,10 +25,10 @@ public class ExecutionPayloadUtil {
 
   public ExecutionPayloadUtil() {}
 
-  public boolean verifyExecutionStateTransition(
+  public ExecutionEngineChannel.ExecutionPayloadStatus verifyExecutionPayload(
       ExecutionEngineChannel executionEngineChannel, ExecutionPayload executionPayload) {
     checkNotNull(executionEngineChannel);
-    return executionEngineChannel.newBlock(executionPayload).join();
+    return executionEngineChannel.executePayload(executionPayload).join();
   }
 
   public UInt64 prepareExecutionPayload(

@@ -15,17 +15,22 @@ package tech.pegasys.teku.services.powchain.execution.client.schema;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel.ExecutionPayloadStatus;
 
-public class NewBlockResponse {
+public class ExecutePayloadResponse {
 
-  private Boolean valid;
+  private ExecutionPayloadStatus status;
 
-  public NewBlockResponse(@JsonProperty("valid") Boolean valid) {
-    this.valid = valid;
+  public ExecutePayloadResponse(@JsonProperty("status") String status) {
+    try {
+      ExecutionPayloadStatus.valueOf(status);
+    } catch (IllegalArgumentException e) {
+      throw new RuntimeException("Invalid status field received: " + status);
+    }
   }
 
-  public Boolean getValid() {
-    return valid;
+  public ExecutionPayloadStatus getStatus() {
+    return status;
   }
 
   @Override
@@ -36,17 +41,17 @@ public class NewBlockResponse {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    NewBlockResponse that = (NewBlockResponse) o;
-    return Objects.equals(valid, that.valid);
+    ExecutePayloadResponse that = (ExecutePayloadResponse) o;
+    return Objects.equals(status, that.status);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(valid);
+    return Objects.hash(status);
   }
 
   @Override
   public String toString() {
-    return "NewBlockResponse{" + "valid=" + valid + '}';
+    return "NewBlockResponse{" + "valid=" + status.name() + '}';
   }
 }

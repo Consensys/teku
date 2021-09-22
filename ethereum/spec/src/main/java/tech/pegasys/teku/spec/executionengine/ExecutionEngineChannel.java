@@ -25,6 +25,12 @@ import tech.pegasys.teku.ssz.type.Bytes20;
 
 public interface ExecutionEngineChannel extends ChannelInterface {
 
+  enum ExecutionPayloadStatus {
+    VALID,
+    INVALID,
+    SYNCING
+  }
+
   ExecutionEngineChannel NOOP =
       new ExecutionEngineChannel() {
 
@@ -40,8 +46,9 @@ public interface ExecutionEngineChannel extends ChannelInterface {
         }
 
         @Override
-        public SafeFuture<Boolean> newBlock(ExecutionPayload executionPayload) {
-          return SafeFuture.completedFuture(true);
+        public SafeFuture<ExecutionPayloadStatus> executePayload(
+            ExecutionPayload executionPayload) {
+          return SafeFuture.completedFuture(ExecutionPayloadStatus.VALID);
         }
 
         @Override
@@ -70,13 +77,7 @@ public interface ExecutionEngineChannel extends ChannelInterface {
 
   SafeFuture<ExecutionPayload> getPayload(UInt64 payloadId);
 
-  /**
-   * Requests execution-engine to process a block.
-   *
-   * @param executionPayload an executable payload
-   * @return {@code true} if processing succeeded, {@code false} otherwise
-   */
-  SafeFuture<Boolean> newBlock(ExecutionPayload executionPayload);
+  SafeFuture<ExecutionPayloadStatus> executePayload(ExecutionPayload executionPayload);
 
   SafeFuture<Void> setHead(Bytes32 blockHash);
 
