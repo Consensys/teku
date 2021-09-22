@@ -17,22 +17,27 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigMerge;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge.BeaconBlockBodyMerge;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.MutableBeaconStateMerge;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel.ConsensusValidationResult;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadUtil;
@@ -81,6 +86,33 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
         "Expected merge block processor but got %s",
         blockProcessor.getClass());
     return (BlockProcessorMerge) blockProcessor;
+  }
+
+  @Override
+  public BeaconState processAndValidateBlock(
+      ExecutionEngineChannel executionEngineChannel,
+      SignedBeaconBlock signedBlock,
+      BeaconState blockSlotState,
+      IndexedAttestationCache indexedAttestationCache)
+      throws StateTransitionException {
+
+    BeaconBlockBodyMerge blockBody =
+        BeaconBlockBodyMerge.required(signedBlock.getMessage().getBody());
+    Bytes32 payloadBlockHash = blockBody.getExecution_payload().getBlock_hash();
+    try {
+      BeaconState postState =
+          super.processAndValidateBlock(
+              executionEngineChannel, signedBlock, blockSlotState, indexedAttestationCache);
+      executionEngineChannel
+          .consensusValidated(payloadBlockHash, ConsensusValidationResult.VALID)
+          .join();
+      return postState;
+    } catch (StateTransitionException e) {
+      executionEngineChannel
+          .consensusValidated(payloadBlockHash, ConsensusValidationResult.INVALID)
+          .join();
+      throw e;
+    }
   }
 
   @Override

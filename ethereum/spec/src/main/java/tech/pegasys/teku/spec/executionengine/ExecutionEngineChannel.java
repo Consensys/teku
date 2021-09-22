@@ -24,6 +24,11 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 
 public interface ExecutionEngineChannel extends ChannelInterface {
 
+  enum ConsensusValidationResult {
+    VALID,
+    INVALID
+  }
+
   ExecutionEngineChannel NOOP =
       new ExecutionEngineChannel() {
 
@@ -46,6 +51,12 @@ public interface ExecutionEngineChannel extends ChannelInterface {
         @Override
         public SafeFuture<Void> forkChoiceUpdated(
             Bytes32 bestBlockHash, Bytes32 finalizedBlockHash) {
+          return SafeFuture.completedFuture(null);
+        }
+
+        @Override
+        public SafeFuture<Void> consensusValidated(
+            Bytes32 blockHash, ConsensusValidationResult result) {
           return SafeFuture.completedFuture(null);
         }
 
@@ -80,6 +91,8 @@ public interface ExecutionEngineChannel extends ChannelInterface {
   SafeFuture<Boolean> newBlock(ExecutionPayload executionPayload);
 
   SafeFuture<Void> forkChoiceUpdated(Bytes32 bestBlockHash, Bytes32 finalizedBlockHash);
+
+  SafeFuture<Void> consensusValidated(Bytes32 blockHash, ConsensusValidationResult result);
 
   SafeFuture<Optional<Block>> getPowBlock(Bytes32 blockHash);
 
