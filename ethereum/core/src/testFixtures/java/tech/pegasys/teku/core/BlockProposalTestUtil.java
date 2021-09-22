@@ -85,7 +85,7 @@ public class BlockProposalTestUtil {
                     .attesterSlashings(blockBodyLists.createAttesterSlashings())
                     .deposits(deposits)
                     .voluntaryExits(exits)
-                    .executionPayload(() -> createExecutionPayload(spec, blockSlotState)));
+                    .executionPayload(() -> getExecutionPayload(spec, blockSlotState)));
 
     // Sign block and set block signature
     final BeaconBlock block = newBlockAndState.getBlock();
@@ -128,16 +128,13 @@ public class BlockProposalTestUtil {
         Hash.sha2_256(Hash.sha2_256(SSZ.encodeUInt64(votingPeriod.longValue()))));
   }
 
-  private static ExecutionPayload createExecutionPayload(Spec spec, BeaconState genericState) {
+  private static ExecutionPayload getExecutionPayload(Spec spec, BeaconState genericState) {
     final BeaconStateMerge state = BeaconStateMerge.required(genericState);
-    final Bytes32 executionParentHash = state.getLatest_execution_payload_header().getBlock_hash();
-    final UInt64 timestamp = spec.computeTimeAtSlot(state, state.getSlot());
 
     return spec.atSlot(state.getSlot())
         .getExecutionPayloadUtil()
         .orElseThrow()
-        .getExecutionPayload(
-            ExecutionEngineChannel.NOOP, executionParentHash, timestamp, UInt64.ZERO);
+        .getExecutionPayload(ExecutionEngineChannel.NOOP, UInt64.ZERO);
   }
 
   public int getProposerIndexForSlot(final BeaconState preState, final UInt64 slot) {

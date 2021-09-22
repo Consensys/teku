@@ -29,11 +29,13 @@ import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.services.powchain.execution.client.ExecutionEngineClient;
 import tech.pegasys.teku.services.powchain.execution.client.Web3JExecutionEngineClient;
-import tech.pegasys.teku.services.powchain.execution.client.schema.AssembleBlockRequest;
 import tech.pegasys.teku.services.powchain.execution.client.schema.ExecutionPayload;
 import tech.pegasys.teku.services.powchain.execution.client.schema.NewBlockResponse;
+import tech.pegasys.teku.services.powchain.execution.client.schema.PreparePayloadRequest;
+import tech.pegasys.teku.services.powchain.execution.client.schema.PreparePayloadResponse;
 import tech.pegasys.teku.services.powchain.execution.client.schema.Response;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.ssz.type.Bytes20;
 
 public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
 
@@ -66,24 +68,34 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
   }
 
   @Override
-  public SafeFuture<Void> prepareBlock(Bytes32 parentHash, UInt64 timestamp, UInt64 payloadId) {
-    return SafeFuture.completedFuture(null);
+  public SafeFuture<UInt64> preparePayload(
+      Bytes32 parentHash, UInt64 timestamp, Bytes32 random, Bytes20 feeRecipient) {
+    return executionEngineClient
+        .preparePayload(new PreparePayloadRequest(parentHash, timestamp, random, feeRecipient))
+        .thenApply(ExecutionEngineChannelImpl::unwrapResponseOrThrow)
+        .thenApply(PreparePayloadResponse::getPayloadId)
+        .thenPeek(
+            getPayloadId ->
+                printConsole(
+                    "engine_preparePayload(parentHash=%s, timestamp=%s, random=%s, feeRecipient=%s) ~> %s",
+                    LogFormatter.formatHashRoot(parentHash),
+                    timestamp.toString(),
+                    LogFormatter.formatHashRoot(random),
+                    feeRecipient.toHexString(),
+                    getPayloadId));
   }
 
   @Override
-  public SafeFuture<tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload> assembleBlock(
-      Bytes32 parentHash, UInt64 timestamp) {
-    AssembleBlockRequest request = new AssembleBlockRequest(parentHash, timestamp);
+  public SafeFuture<tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload> getPayload(
+      UInt64 payloadId) {
 
     return executionEngineClient
-        .consensusAssembleBlock(request)
+        .getPayload(payloadId)
         .thenApply(ExecutionEngineChannelImpl::unwrapResponseOrThrow)
         .thenApply(ExecutionPayload::asInternalExecutionPayload)
         .thenPeek(
             executionPayload ->
-                printConsole(
-                    "consensus_assembleBlock(parent_hash=%s, timestamp=%s) ~> %s",
-                    LogFormatter.formatHashRoot(parentHash), timestamp, executionPayload));
+                printConsole("engine_getPayload(payloadId=%s) ~> %s", payloadId, executionPayload));
   }
 
   @Override

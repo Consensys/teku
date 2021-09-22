@@ -19,6 +19,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.ssz.type.Bytes20;
 
 public class ExecutionPayloadUtil {
 
@@ -30,19 +31,21 @@ public class ExecutionPayloadUtil {
     return executionEngineChannel.newBlock(executionPayload).join();
   }
 
-  public void prepareExecutionPayload(
+  public UInt64 prepareExecutionPayload(
       ExecutionEngineChannel executionEngineChannel,
       Bytes32 parentHash,
       UInt64 timestamp,
-      UInt64 payloadId) {
-    executionEngineChannel.prepareBlock(parentHash, timestamp, payloadId).join();
+      Bytes32 random,
+      Bytes20 feeRecipient) {
+
+    return executionEngineChannel
+        .preparePayload(parentHash, timestamp, random, feeRecipient)
+        .join();
   }
 
   public ExecutionPayload getExecutionPayload(
-      ExecutionEngineChannel executionEngineChannel,
-      Bytes32 parentHash,
-      UInt64 timestamp,
-      UInt64 payloadId) {
-    return executionEngineChannel.assembleBlock(parentHash, timestamp).join();
+      ExecutionEngineChannel executionEngineChannel, UInt64 payloadId) {
+
+    return executionEngineChannel.getPayload(payloadId).join();
   }
 }

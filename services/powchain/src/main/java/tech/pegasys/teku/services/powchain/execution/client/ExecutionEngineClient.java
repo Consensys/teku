@@ -20,16 +20,19 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.services.powchain.execution.client.schema.AssembleBlockRequest;
 import tech.pegasys.teku.services.powchain.execution.client.schema.ExecutionPayload;
 import tech.pegasys.teku.services.powchain.execution.client.schema.GenericResponse;
 import tech.pegasys.teku.services.powchain.execution.client.schema.NewBlockResponse;
+import tech.pegasys.teku.services.powchain.execution.client.schema.PreparePayloadRequest;
+import tech.pegasys.teku.services.powchain.execution.client.schema.PreparePayloadResponse;
 import tech.pegasys.teku.services.powchain.execution.client.schema.Response;
 import tech.pegasys.teku.ssz.type.Bytes20;
 
 public interface ExecutionEngineClient {
 
-  SafeFuture<Response<ExecutionPayload>> consensusAssembleBlock(AssembleBlockRequest request);
+  SafeFuture<Response<PreparePayloadResponse>> preparePayload(PreparePayloadRequest request);
+
+  SafeFuture<Response<ExecutionPayload>> getPayload(UInt64 payloadId);
 
   SafeFuture<Response<NewBlockResponse>> consensusNewBlock(ExecutionPayload request);
 
@@ -45,15 +48,27 @@ public interface ExecutionEngineClient {
       new ExecutionEngineClient() {
         private final Bytes ZERO_LOGS_BLOOM = Bytes.wrap(new byte[256]);
         private UInt64 number = UInt64.ZERO;
+        private UInt64 payloadId = UInt64.ZERO;
+        private Optional<PreparePayloadRequest> lastPreparePayloadRequest = Optional.empty();
 
         @Override
-        public SafeFuture<Response<ExecutionPayload>> consensusAssembleBlock(
-            AssembleBlockRequest request) {
+        public SafeFuture<Response<PreparePayloadResponse>> preparePayload(
+            PreparePayloadRequest request) {
+          lastPreparePayloadRequest = Optional.of(request);
+          payloadId = payloadId.increment();
+          return SafeFuture.completedFuture(new Response<>(new PreparePayloadResponse(payloadId)));
+        }
+
+        @Override
+        public SafeFuture<Response<ExecutionPayload>> getPayload(UInt64 payloadId) {
+          PreparePayloadRequest preparePayloadRequest =
+              lastPreparePayloadRequest.orElseThrow(
+                  () -> new IllegalStateException("preparePayload was not called."));
           number = number.increment();
           return SafeFuture.completedFuture(
               new Response<>(
                   new ExecutionPayload(
-                      request.parentHash,
+                      preparePayloadRequest.parentHash,
                       Bytes20.ZERO,
                       Bytes32.ZERO,
                       Bytes32.ZERO,
@@ -62,7 +77,7 @@ public interface ExecutionEngineClient {
                       number,
                       UInt64.ZERO,
                       UInt64.ZERO,
-                      request.timestamp,
+                      preparePayloadRequest.timestamp,
                       Bytes32.ZERO,
                       Bytes32.random(),
                       Arrays.asList(Bytes.random(128), Bytes.random(256), Bytes.random(512)))));

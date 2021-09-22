@@ -21,6 +21,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
 import tech.pegasys.teku.infrastructure.logging.ColorConsolePrinter;
 import tech.pegasys.teku.infrastructure.logging.ColorConsolePrinter.Color;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -44,6 +45,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProces
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadUtil;
 import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.ssz.type.Bytes20;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationForkChecker;
@@ -63,6 +65,10 @@ public class BlockFactory {
   private final Bytes32 graffiti;
   private final Spec spec;
   private final ExecutionEngineChannel executionEngineChannel;
+
+  // we are going to store latest payloadId returned by preparePayload for a given slot
+  // in this way validator doesn't need to know anything about payloadId
+  private final LRUCache<UInt64, UInt64> slotToPayloadIdMap;
 
   public BlockFactory(
       final AggregatingAttestationPool attestationPool,
@@ -85,29 +91,68 @@ public class BlockFactory {
     this.graffiti = graffiti;
     this.spec = spec;
     this.executionEngineChannel = executionEngineChannel;
+
+    this.slotToPayloadIdMap =
+        LRUCache.create(
+            10); // TODO check if makes sense to remember payloadId for the latest 10 slots
   }
 
-  public void prepareExecutionPayload(
-      final Optional<BeaconState> maybeCurrentSlotState, UInt64 payloadId) {
+  public void prepareExecutionPayload(final Optional<BeaconState> maybeCurrentSlotState) {
     if (maybeCurrentSlotState.isEmpty()) {
+      LOG.error("prepareExecutionPayload - empty state!");
       return;
     }
     final Optional<BeaconStateMerge> maybeCurrentMergeState =
         maybeCurrentSlotState.get().toVersionMerge();
 
     if (maybeCurrentMergeState.isEmpty()) {
+      LOG.trace("prepareExecutionPayload - not yet in Merge state!");
       return;
     }
     final BeaconStateMerge currentMergeState = maybeCurrentMergeState.get();
 
-    final ExecutionPayloadUtil executionPayloadUtil =
-        spec.atSlot(currentMergeState.getSlot()).getExecutionPayloadUtil().orElseThrow();
+    final UInt64 slot = currentMergeState.getSlot();
+    final UInt64 epoch = spec.computeEpochAtSlot(slot);
+    final UInt64 timestamp = spec.computeTimeAtSlot(currentMergeState, slot);
+    final Bytes32 random =
+        spec.atEpoch(epoch).beaconStateAccessors().getRandaoMix(currentMergeState, epoch);
 
-    UInt64 timestamp = spec.computeTimeAtSlot(currentMergeState, currentMergeState.getSlot());
-    final Bytes32 executionParentHash =
-        currentMergeState.getLatest_execution_payload_header().getBlock_hash();
-    executionPayloadUtil.prepareExecutionPayload(
-        executionEngineChannel, executionParentHash, timestamp, payloadId);
+    final MergeTransitionHelpers mergeTransitionHelpers =
+        spec.atSlot(slot).getMergeTransitionHelpers().orElseThrow();
+    final TransitionStore transitionStore = spec.atSlot(slot).getTransitionStore().orElseThrow();
+
+    Bytes32 executionParentHash;
+
+    if (!mergeTransitionHelpers.isMergeComplete(currentMergeState)) {
+      PowBlock powHead = mergeTransitionHelpers.getPowChainHead(executionEngineChannel);
+      if (!mergeTransitionHelpers.isValidTerminalPowBlock(powHead, transitionStore)) {
+        LOG.trace("prepareExecutionPayload - terminal block not yet reached!");
+        return;
+      }
+      // terminal block
+      executionParentHash = powHead.blockHash;
+      LOG.trace("prepareExecutionPayload - terminal block reached!");
+    } else {
+      executionParentHash = currentMergeState.getLatest_execution_payload_header().getBlock_hash();
+    }
+
+    final ExecutionPayloadUtil executionPayloadUtil =
+        spec.atSlot(slot)
+            .getExecutionPayloadUtil()
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "unable to retrieve ExecutionPayloadUtil from slot " + slot));
+
+    final UInt64 payloadId =
+        executionPayloadUtil.prepareExecutionPayload(
+            executionEngineChannel,
+            executionParentHash,
+            timestamp,
+            random,
+            Bytes20.ZERO); // TODO let's burn fees for now!
+
+    slotToPayloadIdMap.invalidateWithNewValue(slot, payloadId);
   }
 
   public BeaconBlock createUnsignedBlock(
@@ -115,8 +160,7 @@ public class BlockFactory {
       final Optional<BeaconState> maybeBlockSlotState,
       final UInt64 newSlot,
       final BLSSignature randaoReveal,
-      final Optional<Bytes32> optionalGraffiti,
-      final UInt64 executionPayloadId)
+      final Optional<Bytes32> optionalGraffiti)
       throws EpochProcessingException, SlotProcessingException, StateTransitionException {
     checkArgument(
         maybeBlockSlotState.isEmpty() || maybeBlockSlotState.get().getSlot().equals(newSlot),
@@ -177,21 +221,20 @@ public class BlockFactory {
                     .attesterSlashings(attesterSlashings)
                     .deposits(deposits)
                     .voluntaryExits(voluntaryExits)
-                    .executionPayload(() -> getExecutionPayload(blockSlotState, executionPayloadId))
+                    .executionPayload(() -> getExecutionPayload(blockSlotState))
                     .syncAggregate(
                         () -> contributionPool.createSyncAggregateForBlock(newSlot, parentRoot)))
         .getBlock();
   }
 
-  private ExecutionPayload getExecutionPayload(
-      BeaconState genericState, UInt64 executionPayloadId) {
+  private ExecutionPayload getExecutionPayload(BeaconState genericState) {
     final BeaconStateMerge state = BeaconStateMerge.required(genericState);
+    final UInt64 slot = state.getSlot();
     final ExecutionPayloadUtil executionPayloadUtil =
-        spec.atSlot(state.getSlot()).getExecutionPayloadUtil().orElseThrow();
+        spec.atSlot(slot).getExecutionPayloadUtil().orElseThrow();
     final MergeTransitionHelpers mergeTransitionHelpers =
-        spec.atSlot(state.getSlot()).getMergeTransitionHelpers().orElseThrow();
-    final TransitionStore transitionStore =
-        spec.atSlot(state.getSlot()).getTransitionStore().orElseThrow();
+        spec.atSlot(slot).getMergeTransitionHelpers().orElseThrow();
+    final TransitionStore transitionStore = spec.atSlot(slot).getTransitionStore().orElseThrow();
 
     if (!mergeTransitionHelpers.isMergeComplete(state)) {
       PowBlock powHead = mergeTransitionHelpers.getPowChainHead(executionEngineChannel);
@@ -220,16 +263,38 @@ public class BlockFactory {
                     powHead.totalDifficulty.toBigInteger(),
                     transitionStore.getTransitionTotalDifficulty().toBigInteger()),
                 Color.YELLOW));
-        UInt64 timestamp = spec.computeTimeAtSlot(state, state.getSlot());
-        return executionPayloadUtil.getExecutionPayload(
-            executionEngineChannel, powHead.blockHash, timestamp, executionPayloadId);
+
+        return validateExecutionPayload(
+            powHead.blockHash,
+            executionPayloadUtil.getExecutionPayload(
+                executionEngineChannel, getExecutionPayloadIdFromSlot(slot)));
       }
     }
 
     // Post-merge, normal payload
-    final Bytes32 executionParentHash = state.getLatest_execution_payload_header().getBlock_hash();
-    final UInt64 timestamp = spec.computeTimeAtSlot(state, state.getSlot());
-    return executionPayloadUtil.getExecutionPayload(
-        executionEngineChannel, executionParentHash, timestamp, executionPayloadId);
+    return validateExecutionPayload(
+        state.getLatest_execution_payload_header().getBlock_hash(),
+        executionPayloadUtil.getExecutionPayload(
+            executionEngineChannel, getExecutionPayloadIdFromSlot(slot)));
+  }
+
+  private UInt64 getExecutionPayloadIdFromSlot(UInt64 slot) {
+    return slotToPayloadIdMap
+        .getCached(slot)
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "Unable to retrieve execution payloadId from slot " + slot));
+  }
+
+  private ExecutionPayload validateExecutionPayload(
+      Bytes32 expectedExecutionParentHash, ExecutionPayload executionPayload) {
+
+    if (!executionPayload.getParent_hash().equals(expectedExecutionParentHash)) {
+      throw new IllegalStateException(
+          "Execution Payload returned by the execution client has an unexpected parent block hash");
+    }
+
+    return executionPayload;
   }
 }
