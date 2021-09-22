@@ -23,7 +23,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes48;
 import supranational.blst.P1;
 import supranational.blst.P1_Affine;
-import tech.pegasys.teku.bls.impl.DeserializeException;
+import tech.pegasys.teku.bls.impl.BlsException;
 import tech.pegasys.teku.bls.impl.PublicKey;
 
 class BlstPublicKey implements PublicKey {
@@ -40,8 +40,8 @@ class BlstPublicKey implements PublicKey {
     try {
       P1_Affine ecPoint = new P1_Affine(compressed.toArrayUnsafe());
       return new BlstPublicKey(ecPoint);
-    } catch (Exception err) {
-      throw new DeserializeException("Invalid PublicKey bytes: " + compressed);
+    } catch (Exception e) {
+      throw new BlsException("Deserialization of public key bytes failed: " + compressed, e);
     }
   }
 

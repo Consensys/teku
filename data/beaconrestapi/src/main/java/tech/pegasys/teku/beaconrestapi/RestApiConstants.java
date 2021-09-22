@@ -96,7 +96,13 @@ public class RestApiConstants {
 
   public static final String SYNCING_STATUS = "syncing_status";
   public static final String SYNCING_STATUS_DESCRIPTION =
-      "Customize syncing status instead of deafult " + SC_PARTIAL_CONTENT;
+      "Customize syncing status instead of default status code (" + SC_PARTIAL_CONTENT + ")";
+
+  public static final String TARGET_PEER_COUNT = "target_peer_count";
+  public static final String TARGET_PEER_COUNT_DESCRIPTION =
+      "Returns "
+          + SC_SERVICE_UNAVAILABLE
+          + " status code when current peer count is below than target";
 
   public static final String HEADER_ACCEPT = "Accept";
   public static final String HEADER_ACCEPT_JSON = "application/json";

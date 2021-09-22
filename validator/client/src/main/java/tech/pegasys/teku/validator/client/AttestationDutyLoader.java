@@ -66,6 +66,9 @@ public class AttestationDutyLoader
   @Override
   protected SafeFuture<Optional<AttesterDuties>> requestDuties(
       final UInt64 epoch, final Collection<Integer> validatorIndices) {
+    if (validatorIndices.isEmpty()) {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
     return validatorApiChannel.getAttestationDuties(epoch, validatorIndices);
   }
 

@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.bls.impl.DeserializeException;
+import tech.pegasys.teku.bls.impl.BlsException;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 
 public class BlsDeserializationG2TestExecutor extends BlsTestExecutor {
@@ -35,7 +35,7 @@ public class BlsDeserializationG2TestExecutor extends BlsTestExecutor {
   private boolean validateSignature(final String signature) {
     try {
       return BLSSignature.fromBytesCompressed(Bytes.fromHexString(signature)).isValid();
-    } catch (DeserializeException e) {
+    } catch (BlsException e) {
       return false;
     }
   }

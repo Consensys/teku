@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
+import tech.pegasys.teku.cli.OSUtils;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
@@ -131,7 +132,8 @@ public class Eth2P2PNetworkOptionsTest extends AbstractBeaconNodeCommandTest {
     final String output = getCommandLineOutput();
     assertThat(output)
         .contains(
-            "-n, --network=<NETWORK>    Represents which network to use.\n"
+            "-n, --network=<NETWORK>    Represents which network to use."
+                + OSUtils.CR
                 + "                               Default: mainnet");
   }
 

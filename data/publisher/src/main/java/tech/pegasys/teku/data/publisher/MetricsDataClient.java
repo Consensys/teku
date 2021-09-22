@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,11 +11,20 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.bls.impl;
+package tech.pegasys.teku.data.publisher;
 
-public class DeserializeException extends IllegalArgumentException {
+public enum MetricsDataClient {
+  VALIDATOR("validator"),
+  BEACON_NODE("beaconnode"),
+  SYSTEM("system");
 
-  public DeserializeException(String message) {
-    super(message);
+  private String dataClient;
+
+  MetricsDataClient(String dataClient) {
+    this.dataClient = dataClient;
+  }
+
+  public String getDataClient() {
+    return this.dataClient;
   }
 }
