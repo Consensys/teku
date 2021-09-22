@@ -14,7 +14,6 @@
 package tech.pegasys.teku.validator.client;
 
 import java.util.Optional;
-import java.util.Random;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -40,7 +39,7 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
   private final MetricsSystem metricsSystem;
   private final Spec spec;
   private final DutyLoader<SyncCommitteeScheduledDuties> dutyLoader;
-  private final Random earlySubscribeRandomSource;
+  private final EarlySubscribeRandomSource earlySubscribeRandomSource;
 
   private Optional<SyncCommitteePeriod> currentSyncCommitteePeriod = Optional.empty();
   private Optional<SyncCommitteePeriod> nextSyncCommitteePeriod = Optional.empty();
@@ -49,7 +48,7 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
       final MetricsSystem metricsSystem,
       final Spec spec,
       final DutyLoader<SyncCommitteeScheduledDuties> dutyLoader,
-      final Random earlySubscribeRandomSource) {
+      final EarlySubscribeRandomSource earlySubscribeRandomSource) {
     this.metricsSystem = metricsSystem;
     this.spec = spec;
     this.dutyLoader = dutyLoader;
@@ -79,7 +78,7 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
       final UInt64 firstEpochOfNextSyncCommitteePeriod =
           syncCommitteeUtil.computeFirstEpochOfNextSyncCommitteePeriod(dutiesEpoch);
       final int subscribeEpochsPriorToNextSyncPeriod =
-          earlySubscribeRandomSource.nextInt(specConfig.getEpochsPerSyncCommitteePeriod());
+          earlySubscribeRandomSource.randomEpochCount(specConfig.getEpochsPerSyncCommitteePeriod());
       nextSyncCommitteePeriod =
           Optional.of(
               createSyncCommitteePeriod(
@@ -186,5 +185,9 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
     public void recalculate() {
       duties.ifPresent(PendingDuties::recalculate);
     }
+  }
+
+  public interface EarlySubscribeRandomSource {
+    int randomEpochCount(final int epochsPerSyncCommitteePeriod);
   }
 }
