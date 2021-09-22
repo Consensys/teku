@@ -19,8 +19,12 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import java.io.IOException;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.Locale;
 
 public class DoubleSerializer extends JsonSerializer<Double> {
+  private static final DecimalFormatSymbols US_SYMBOLS = new DecimalFormatSymbols(Locale.US);
+
   @Override
   public void serialize(Double value, JsonGenerator gen, SerializerProvider serializers)
       throws IOException {
@@ -28,7 +32,7 @@ public class DoubleSerializer extends JsonSerializer<Double> {
   }
 
   private String formatValue(Double value) {
-    DecimalFormat df = new DecimalFormat("#.####");
+    DecimalFormat df = new DecimalFormat("#.####", US_SYMBOLS);
     df.setRoundingMode(RoundingMode.HALF_UP);
     return df.format(value);
   }
