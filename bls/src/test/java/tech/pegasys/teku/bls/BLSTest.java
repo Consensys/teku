@@ -15,7 +15,6 @@ package tech.pegasys.teku.bls;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.singletonList;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -205,6 +204,16 @@ public abstract class BLSTest {
                 + "0000000000000000000000000000000000000000000000000000000000000000"));
   }
 
+  static BLSSignature notInG2() {
+    // A point on the curve but not in the G2 group
+    return BLSSignature.fromBytesCompressed(
+        Bytes.fromHexString(
+            "0x"
+                + "8000000000000000000000000000000000000000000000000000000000000000"
+                + "0000000000000000000000000000000000000000000000000000000000000000"
+                + "0000000000000000000000000000000000000000000000000000000000000004"));
+  }
+
   static BLSSecretKey zeroSK() {
     return BLSSecretKey.fromBytes(Bytes32.ZERO);
   }
@@ -242,23 +251,8 @@ public abstract class BLSTest {
   }
 
   @Test
-  void aggregateSignatureNotInG2() {
-    // Create a signature from a point on the curve but not in G2
-    final BLSSignature signatureInvalid =
-        BLSSignature.fromBytesCompressed(
-            Bytes.fromHexString(
-                "0x"
-                    + "8000000000000000000000000000000000000000000000000000000000000000"
-                    + "0000000000000000000000000000000000000000000000000000000000000000"
-                    + "0000000000000000000000000000000000000000000000000000000000000004"));
-    assertThat(signatureInvalid.isValid()).isFalse();
-
-    final BLSSignature signatureValid = BLSTestUtil.randomSignature(98765);
-    assertThat(signatureValid.isValid()).isTrue();
-
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> BLS.aggregate(List.of(signatureValid, signatureInvalid)));
+  void succeedsWhenAggregateNotInG2ThrowsException() {
+    assertThrows(RuntimeException.class, () -> BLS.aggregate(List.of(notInG2())));
   }
 
   @Test
@@ -290,19 +284,6 @@ public abstract class BLSTest {
         BLS.prepareBatchVerify(1, List.of(keyPairInf.getPublicKey()), message, infinityG2());
 
     boolean res1 = BLS.completeBatchVerify(List.of(semiAggregate1, semiAggregateInf));
-    assertFalse(res1);
-  }
-
-  @Test
-  void batchVerifyInvalidInfiniteSignature() {
-    BLSKeyPair keyPair1 = BLSTestUtil.randomKeyPair(1);
-
-    Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
-
-    BatchSemiAggregate semiAggregate =
-        BLS.prepareBatchVerify(0, List.of(keyPair1.getPublicKey()), message, infinityG2());
-
-    boolean res1 = BLS.completeBatchVerify(List.of(semiAggregate));
     assertFalse(res1);
   }
 

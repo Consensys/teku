@@ -13,9 +13,13 @@
 
 package tech.pegasys.teku.bls.impl;
 
-public class DeserializeException extends IllegalArgumentException {
+public class BlsException extends IllegalArgumentException {
 
-  public DeserializeException(String message) {
+  public BlsException(String message) {
     super(message);
+  }
+
+  public BlsException(String message, Throwable cause) {
+    super(message, cause);
   }
 }
