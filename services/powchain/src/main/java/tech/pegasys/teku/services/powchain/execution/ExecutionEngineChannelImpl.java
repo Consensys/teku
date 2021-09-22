@@ -113,27 +113,16 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
   }
 
   @Override
-  public SafeFuture<Void> setHead(Bytes32 blockHash) {
+  public SafeFuture<Void> forkChoiceUpdated(Bytes32 bestBlockHash, Bytes32 finalizedBlockHash) {
     return executionEngineClient
-        .consensusSetHead(blockHash)
+        .forkChoiceUpdated(bestBlockHash, finalizedBlockHash)
         .thenApply(ExecutionEngineChannelImpl::unwrapResponseOrThrow)
         .thenPeek(
             __ ->
                 printConsole(
-                    "consensus_setHead(blockHash=%s)", LogFormatter.formatHashRoot(blockHash)))
-        .thenApply(__ -> null);
-  }
-
-  @Override
-  public SafeFuture<Void> finalizeBlock(Bytes32 blockHash) {
-    return executionEngineClient
-        .consensusFinalizeBlock(blockHash)
-        .thenApply(ExecutionEngineChannelImpl::unwrapResponseOrThrow)
-        .thenPeek(
-            __ ->
-                printConsole(
-                    "consensus_finalizeBlock(blockHash=%s)",
-                    LogFormatter.formatHashRoot(blockHash)))
+                    "engine_forkchoiceUpdated(bestBlockHash=%s, finalizedBlockHash=%s)",
+                    LogFormatter.formatHashRoot(bestBlockHash),
+                    LogFormatter.formatHashRoot(finalizedBlockHash)))
         .thenApply(__ -> null);
   }
 

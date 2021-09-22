@@ -14,6 +14,7 @@
 package tech.pegasys.teku.services.powchain.execution.client;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.apache.tuweni.bytes.Bytes32;
@@ -76,22 +77,12 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   }
 
   @Override
-  public SafeFuture<Response<GenericResponse>> consensusSetHead(Bytes32 blockHash) {
+  public SafeFuture<Response<GenericResponse>> forkChoiceUpdated(
+      Bytes32 headBlockHash, Bytes32 finalizedBlockHash) {
     Request<?, GenericWeb3jResponse> web3jRequest =
         new Request<>(
-            "consensus_setHead",
-            Collections.singletonList(blockHash.toHexString()),
-            web3jService,
-            GenericWeb3jResponse.class);
-    return doRequest(web3jRequest);
-  }
-
-  @Override
-  public SafeFuture<Response<GenericResponse>> consensusFinalizeBlock(Bytes32 blockHash) {
-    Request<?, GenericWeb3jResponse> web3jRequest =
-        new Request<>(
-            "consensus_finalizeBlock",
-            Collections.singletonList(blockHash.toHexString()),
+            "engine_forkChoiceUpdated",
+            List.of(headBlockHash.toHexString(), finalizedBlockHash.toHexString()),
             web3jService,
             GenericWeb3jResponse.class);
     return doRequest(web3jRequest);

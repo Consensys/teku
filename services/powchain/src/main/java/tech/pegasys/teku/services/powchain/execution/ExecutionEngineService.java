@@ -20,18 +20,19 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge.BeaconBlockBodyMerge;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
-import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgContext;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class ExecutionEngineService implements ChainHeadChannel, FinalizedCheckpointChannel {
+public class ExecutionEngineService implements ChainHeadChannel {
 
   private static final Logger LOG = LogManager.getLogger();
+  private static final ExecutionPayload DEFAULT_EXECUTION_PAYLOAD = new ExecutionPayload();
 
   private final ExecutionEngineChannel executionEngineChannel;
   private final RecentChainData recentChainData;
@@ -44,58 +45,95 @@ public class ExecutionEngineService implements ChainHeadChannel, FinalizedCheckp
 
   public void initialize(EventChannels eventChannels) {
     eventChannels.subscribe(ChainHeadChannel.class, this);
-    eventChannels.subscribe(FinalizedCheckpointChannel.class, this);
   }
 
   @Override
   public void chainHeadUpdated(
       UInt64 slot,
       Bytes32 stateRoot,
-      Bytes32 bestBlockRoot,
+      Bytes32 headBlockRoot,
       boolean epochTransition,
       Bytes32 previousDutyDependentRoot,
       Bytes32 currentDutyDependentRoot,
       Optional<ReorgContext> optionalReorgContext) {
 
     recentChainData
-        .retrieveBlockByRoot(bestBlockRoot)
+        .retrieveBlockState(headBlockRoot)
         .thenCompose(
-            maybeABlock ->
-                maybeABlock
-                    .flatMap(block -> block.getBody().toVersionMerge())
-                    .map(this::onHeadBlockMerge)
+            maybeState ->
+                maybeState
+                    .map(
+                        state ->
+                            updateForkChoice(
+                                headBlockRoot, state.getFinalized_checkpoint().getRoot()))
                     .orElseGet(() -> SafeFuture.completedFuture(null)))
-        .finish(err -> LOG.warn("setHead failed", err));
+        .finish(err -> LOG.warn("forkChoiceUpdated failed", err));
   }
 
-  private SafeFuture<Void> onHeadBlockMerge(BeaconBlockBodyMerge blockBody) {
-    // Check if there is a payload
-    if (!blockBody.getExecution_payload().equals(new ExecutionPayload())) {
-      return executionEngineChannel.setHead(blockBody.getExecution_payload().getBlock_hash());
-    } else {
-      return SafeFuture.completedFuture(null);
+  private static Optional<Bytes32> getPayloadBlockHash(Optional<BeaconBlock> block) {
+    return block
+        .map(BeaconBlock::getBody)
+        .flatMap(BeaconBlockBody::toVersionMerge)
+        .map(BeaconBlockBodyMerge::getExecution_payload)
+        .filter(executionPayload -> !DEFAULT_EXECUTION_PAYLOAD.equals(executionPayload))
+        .map(ExecutionPayload::getBlock_hash);
+  }
+
+  private SafeFuture<Void> updateForkChoice(Bytes32 headBlockRoot, Bytes32 finalizedBlockRoot) {
+
+    SafeFuture<Optional<Bytes32>> headBlockHashPromise =
+        recentChainData
+            .retrieveBlockByRoot(headBlockRoot)
+            .thenApply(ExecutionEngineService::getPayloadBlockHash);
+
+    SafeFuture<Bytes32> finalizedBlockHashPromise =
+        recentChainData
+            .retrieveBlockByRoot(finalizedBlockRoot)
+            .thenApply(ExecutionEngineService::getPayloadBlockHash)
+            .thenApply(maybeHash -> maybeHash.orElse(Bytes32.ZERO));
+
+    return headBlockHashPromise
+        .thenCombine(finalizedBlockHashPromise, ForkChoiceUpdate::fromHeadAndFinalized)
+        .thenCompose(
+            maybeUpd ->
+                maybeUpd
+                    .map(
+                        upd ->
+                            executionEngineChannel.forkChoiceUpdated(
+                                upd.getHeadBlock(), upd.getFinalizedBlock()))
+                    .orElseGet(() -> SafeFuture.completedFuture(null)));
+  }
+
+  private static class ForkChoiceUpdate {
+
+    private final Bytes32 headBlock;
+    private final Bytes32 finalizedBlock;
+    private final Bytes32 confirmedBlock;
+
+    /** @deprecated TODO confirmed block post merge interop */
+    @Deprecated
+    static Optional<ForkChoiceUpdate> fromHeadAndFinalized(
+        Optional<Bytes32> maybeHeadBlock, Bytes32 finalizedBlock) {
+      return maybeHeadBlock.map(
+          headBlock -> new ForkChoiceUpdate(headBlock, finalizedBlock, Bytes32.ZERO));
     }
-  }
 
-  @Override
-  public void onNewFinalizedCheckpoint(Checkpoint checkpoint) {
-    recentChainData
-        .retrieveBlockByRoot(checkpoint.getRoot())
-        .thenCompose(
-            maybeABlock ->
-                maybeABlock
-                    .flatMap(block -> block.getBody().toVersionMerge())
-                    .map(this::onFinalizedBlockMerge)
-                    .orElseGet(() -> SafeFuture.completedFuture(null)))
-        .finish(err -> LOG.warn("finalizeBlock failed", err));
-  }
+    public ForkChoiceUpdate(Bytes32 headBlock, Bytes32 finalizedBlock, Bytes32 confirmedBlock) {
+      this.headBlock = headBlock;
+      this.finalizedBlock = finalizedBlock;
+      this.confirmedBlock = confirmedBlock;
+    }
 
-  private SafeFuture<Void> onFinalizedBlockMerge(BeaconBlockBodyMerge blockBody) {
-    // Check if there is a payload
-    if (!blockBody.getExecution_payload().equals(new ExecutionPayload())) {
-      return executionEngineChannel.finalizeBlock(blockBody.getExecution_payload().getBlock_hash());
-    } else {
-      return SafeFuture.completedFuture(null);
+    public Bytes32 getHeadBlock() {
+      return headBlock;
+    }
+
+    public Bytes32 getFinalizedBlock() {
+      return finalizedBlock;
+    }
+
+    public Bytes32 getConfirmedBlock() {
+      return confirmedBlock;
     }
   }
 }

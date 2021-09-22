@@ -45,12 +45,8 @@ public interface ExecutionEngineChannel extends ChannelInterface {
         }
 
         @Override
-        public SafeFuture<Void> setHead(Bytes32 blockHash) {
-          return SafeFuture.completedFuture(null);
-        }
-
-        @Override
-        public SafeFuture<Void> finalizeBlock(Bytes32 blockHash) {
+        public SafeFuture<Void> forkChoiceUpdated(
+            Bytes32 bestBlockHash, Bytes32 finalizedBlockHash) {
           return SafeFuture.completedFuture(null);
         }
 
@@ -78,9 +74,7 @@ public interface ExecutionEngineChannel extends ChannelInterface {
    */
   SafeFuture<Boolean> newBlock(ExecutionPayload executionPayload);
 
-  SafeFuture<Void> setHead(Bytes32 blockHash);
-
-  SafeFuture<Void> finalizeBlock(Bytes32 blockHash);
+  SafeFuture<Void> forkChoiceUpdated(Bytes32 bestBlockHash, Bytes32 finalizedBlockHash);
 
   SafeFuture<Optional<Block>> getPowBlock(Bytes32 blockHash);
 
