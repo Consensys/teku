@@ -24,10 +24,12 @@ import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.http.HttpService;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.services.powchain.execution.client.schema.AssembleBlockRequest;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.services.powchain.execution.client.schema.ExecutionPayload;
 import tech.pegasys.teku.services.powchain.execution.client.schema.GenericResponse;
 import tech.pegasys.teku.services.powchain.execution.client.schema.NewBlockResponse;
+import tech.pegasys.teku.services.powchain.execution.client.schema.PreparePayloadRequest;
+import tech.pegasys.teku.services.powchain.execution.client.schema.PreparePayloadResponse;
 import tech.pegasys.teku.services.powchain.execution.client.schema.Response;
 
 public class Web3JExecutionEngineClient implements ExecutionEngineClient {
@@ -41,14 +43,25 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   }
 
   @Override
-  public SafeFuture<Response<ExecutionPayload>> consensusAssembleBlock(
-      AssembleBlockRequest request) {
-    Request<?, AssembleBlockWeb3jResponse> web3jRequest =
+  public SafeFuture<Response<PreparePayloadResponse>> preparePayload(
+      PreparePayloadRequest request) {
+    Request<?, PreparePayloadWeb3jResponse> web3jRequest =
         new Request<>(
-            "consensus_assembleBlock",
+            "engine_preparePayload",
             Collections.singletonList(request),
             web3jService,
-            AssembleBlockWeb3jResponse.class);
+            PreparePayloadWeb3jResponse.class);
+    return doRequest(web3jRequest);
+  }
+
+  @Override
+  public SafeFuture<Response<ExecutionPayload>> getPayload(UInt64 payloadId) {
+    Request<?, GetPayloadWeb3jResponse> web3jRequest =
+        new Request<>(
+            "engine_getPayload",
+            Collections.singletonList(payloadId.toString()),
+            web3jService,
+            GetPayloadWeb3jResponse.class);
     return doRequest(web3jRequest);
   }
 
@@ -120,8 +133,10 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
     return SafeFuture.of(responseFuture);
   }
 
-  static class AssembleBlockWeb3jResponse
-      extends org.web3j.protocol.core.Response<ExecutionPayload> {}
+  static class GetPayloadWeb3jResponse extends org.web3j.protocol.core.Response<ExecutionPayload> {}
+
+  static class PreparePayloadWeb3jResponse
+      extends org.web3j.protocol.core.Response<PreparePayloadResponse> {}
 
   static class NewBlockWeb3jResponse extends org.web3j.protocol.core.Response<NewBlockResponse> {}
 

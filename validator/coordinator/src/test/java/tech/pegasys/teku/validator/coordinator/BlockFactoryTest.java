@@ -141,7 +141,7 @@ class BlockFactoryTest {
 
     final BeaconBlock block =
         blockFactory.createUnsignedBlock(
-            previousState, Optional.empty(), newSlot, randaoReveal, Optional.empty(), UInt64.ZERO);
+            previousState, Optional.empty(), newSlot, randaoReveal, Optional.empty());
 
     assertThat(block).isNotNull();
     assertThat(block.getSlot()).isEqualTo(newSlot);

@@ -21,6 +21,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.ssz.type.Bytes20;
 
 public interface ExecutionEngineChannel extends ChannelInterface {
 
@@ -33,13 +34,13 @@ public interface ExecutionEngineChannel extends ChannelInterface {
       new ExecutionEngineChannel() {
 
         @Override
-        public SafeFuture<Void> prepareBlock(
-            Bytes32 parentHash, UInt64 timestamp, UInt64 payloadId) {
-          return SafeFuture.completedFuture(null);
+        public SafeFuture<UInt64> preparePayload(
+            Bytes32 parentHash, UInt64 timestamp, Bytes32 random, Bytes20 feeRecipient) {
+          return SafeFuture.completedFuture(UInt64.ZERO);
         }
 
         @Override
-        public SafeFuture<ExecutionPayload> assembleBlock(Bytes32 parentHash, UInt64 timestamp) {
+        public SafeFuture<ExecutionPayload> getPayload(UInt64 payloadId) {
           return SafeFuture.completedFuture(new ExecutionPayload());
         }
 
@@ -71,16 +72,10 @@ public interface ExecutionEngineChannel extends ChannelInterface {
         }
       };
 
-  SafeFuture<Void> prepareBlock(Bytes32 parentHash, UInt64 timestamp, UInt64 payloadId);
+  SafeFuture<UInt64> preparePayload(
+      Bytes32 parentHash, UInt64 timestamp, Bytes32 random, Bytes20 feeRecipient);
 
-  /**
-   * Requests execution-engine to produce a block.
-   *
-   * @param parentHash the hash of execution block to produce atop of
-   * @param timestamp the timestamp of the beginning of the slot
-   * @return a response with execution payload
-   */
-  SafeFuture<ExecutionPayload> assembleBlock(Bytes32 parentHash, UInt64 timestamp);
+  SafeFuture<ExecutionPayload> getPayload(UInt64 payloadId);
 
   /**
    * Requests execution-engine to process a block.
