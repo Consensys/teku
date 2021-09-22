@@ -48,7 +48,7 @@ public class MetricsDataFactory {
           new MinimalMetricData(
               PROTOCOL_VERSION,
               timeProvider.getTimeInMillis().longValue(),
-              "minimal",
+              MetricsDataClient.MINIMAL.getDataClient(),
               metricsSystem));
     }
     return metricList;

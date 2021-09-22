@@ -73,8 +73,7 @@ public class MetricsPublisherManager extends Service {
     String endpointAddress = metricsConfig.getMetricConfig().getMetricsEndpoint();
     List<BaseMetricData> clientData = dataFactory.getMetricData(this.timeProvider);
     try {
-      final String data = jsonProvider.objectToJSON(clientData);
-      return publisher.publishMetrics(endpointAddress, data);
+      return publisher.publishMetrics(endpointAddress, jsonProvider.objectToJSON(clientData));
     } catch (JsonProcessingException e) {
       LOG.error("Error processing JSON object ", e);
     } catch (IOException e) {
