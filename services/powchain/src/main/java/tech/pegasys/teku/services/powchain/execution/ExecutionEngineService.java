@@ -24,23 +24,18 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge.BeaconBlockBodyMerge;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
-import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgContext;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class ExecutionEngineService implements ChainHeadChannel, FinalizedCheckpointChannel {
+public class ExecutionEngineService implements ChainHeadChannel {
 
   private static final Logger LOG = LogManager.getLogger();
   private static final ExecutionPayload DEFAULT_EXECUTION_PAYLOAD = new ExecutionPayload();
 
   private final ExecutionEngineChannel executionEngineChannel;
   private final RecentChainData recentChainData;
-
-  private Optional<Bytes32> lastHeadBlock;
-  private Optional<Bytes32> lastFinalizedBlock;
 
   public ExecutionEngineService(
       ExecutionEngineChannel executionEngineChannel, RecentChainData recentChainData) {
@@ -50,7 +45,6 @@ public class ExecutionEngineService implements ChainHeadChannel, FinalizedCheckp
 
   public void initialize(EventChannels eventChannels) {
     eventChannels.subscribe(ChainHeadChannel.class, this);
-    eventChannels.subscribe(FinalizedCheckpointChannel.class, this);
   }
 
   @Override
@@ -63,31 +57,17 @@ public class ExecutionEngineService implements ChainHeadChannel, FinalizedCheckp
       Bytes32 currentDutyDependentRoot,
       Optional<ReorgContext> optionalReorgContext) {
 
-    final Optional<Bytes32> curFinalizedBlock;
-
-    synchronized (this) {
-      lastHeadBlock = Optional.of(headBlockRoot);
-      curFinalizedBlock = lastFinalizedBlock;
-    }
-
-    updateForkChoice(headBlockRoot, curFinalizedBlock);
-  }
-
-  @Override
-  public void onNewFinalizedCheckpoint(Checkpoint checkpoint) {
-    final Bytes32 curHeadBlock;
-    final Optional<Bytes32> curFinalizedBlock;
-
-    synchronized (this) {
-      lastFinalizedBlock = Optional.of(checkpoint.getRoot());
-      if (lastHeadBlock.isEmpty()) {
-        return;
-      }
-      curHeadBlock = lastHeadBlock.get();
-      curFinalizedBlock = lastFinalizedBlock;
-    }
-
-    updateForkChoice(curHeadBlock, curFinalizedBlock);
+    recentChainData
+        .retrieveBlockState(headBlockRoot)
+        .thenCompose(
+            maybeState ->
+                maybeState
+                    .map(
+                        state ->
+                            updateForkChoice(
+                                headBlockRoot, state.getFinalized_checkpoint().getRoot()))
+                    .orElseGet(() -> SafeFuture.completedFuture(null)))
+        .finish(err -> LOG.warn("forkChoiceUpdated failed", err));
   }
 
   private static Optional<Bytes32> getPayloadBlockHash(Optional<BeaconBlock> block) {
@@ -99,7 +79,7 @@ public class ExecutionEngineService implements ChainHeadChannel, FinalizedCheckp
         .map(ExecutionPayload::getBlock_hash);
   }
 
-  private void updateForkChoice(Bytes32 headBlockRoot, Optional<Bytes32> maybeFinalizedBlockRoot) {
+  private SafeFuture<Void> updateForkChoice(Bytes32 headBlockRoot, Bytes32 finalizedBlockRoot) {
 
     SafeFuture<Optional<Bytes32>> headBlockHashPromise =
         recentChainData
@@ -107,13 +87,12 @@ public class ExecutionEngineService implements ChainHeadChannel, FinalizedCheckp
             .thenApply(ExecutionEngineService::getPayloadBlockHash);
 
     SafeFuture<Bytes32> finalizedBlockHashPromise =
-        maybeFinalizedBlockRoot
-            .map(recentChainData::retrieveBlockByRoot)
-            .orElseGet(() -> SafeFuture.completedFuture(Optional.empty()))
+        recentChainData
+            .retrieveBlockByRoot(finalizedBlockRoot)
             .thenApply(ExecutionEngineService::getPayloadBlockHash)
             .thenApply(maybeHash -> maybeHash.orElse(Bytes32.ZERO));
 
-    headBlockHashPromise
+    return headBlockHashPromise
         .thenCombine(finalizedBlockHashPromise, ForkChoiceUpdate::fromHeadAndFinalized)
         .thenCompose(
             maybeUpd ->
@@ -122,8 +101,7 @@ public class ExecutionEngineService implements ChainHeadChannel, FinalizedCheckp
                         upd ->
                             executionEngineChannel.forkChoiceUpdated(
                                 upd.getHeadBlock(), upd.getFinalizedBlock()))
-                    .orElseGet(() -> SafeFuture.completedFuture(null)))
-        .finish(err -> LOG.warn("forkChoiceUpdated failed", err));
+                    .orElseGet(() -> SafeFuture.completedFuture(null)));
   }
 
   private static class ForkChoiceUpdate {
