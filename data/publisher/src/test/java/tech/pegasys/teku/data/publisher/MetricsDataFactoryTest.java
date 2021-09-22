@@ -18,7 +18,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.List;
 import org.hyperledger.besu.metrics.Observation;
@@ -26,26 +25,36 @@ import org.hyperledger.besu.metrics.StandardMetricCategory;
 import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
+import tech.pegasys.teku.provider.JsonProvider;
 
 class MetricsDataFactoryTest {
 
-  //  private final JsonProvider jsonProvider = new JsonProvider();
+  private final JsonProvider jsonProvider = new JsonProvider();
+  private static final int CURRENT_TIME = 10_000;
   PrometheusMetricsSystem prometheusMock = mock(PrometheusMetricsSystem.class);
+  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(CURRENT_TIME);
 
   @Test
   public void shouldExtractMetricsFromPrometheusMetricsAndSerialiseJson()
       throws JsonProcessingException {
     when(prometheusMock.streamObservations()).thenReturn(getMockObservations().stream());
     final MetricsDataFactory metricsDataFactory = new MetricsDataFactory(prometheusMock);
-    final List<BaseMetricData> baseMetricData = metricsDataFactory.getMetricData();
 
-    ObjectMapper mapper = new ObjectMapper();
-    final String data = mapper.writeValueAsString(baseMetricData);
+    final List<BaseMetricData> baseMetricData = metricsDataFactory.getMetricData(timeProvider);
+    final String beaconNode = jsonProvider.objectToJSON(baseMetricData.get(0));
+    final String validator = jsonProvider.objectToJSON(baseMetricData.get(1));
 
-    assertThat(data).contains("beaconnode");
-    assertThat(data).contains("validator");
-    assertThat(data).contains("\"validator_active\":1");
-    assertThat(data).contains("\"disk_beaconchain_bytes_total\":0");
+    BeaconNodeMetricData beaconNodeDeserialized =
+        jsonProvider.jsonToObject(beaconNode, BeaconNodeMetricData.class);
+    ValidatorMetricData validatorDeserialized =
+        jsonProvider.jsonToObject(validator, ValidatorMetricData.class);
+
+    assertThat(baseMetricData.get(0)).isInstanceOf(BeaconNodeMetricData.class);
+    assertThat(baseMetricData.get(1)).isInstanceOf(ValidatorMetricData.class);
+
+    assertThat(baseMetricData.get(0)).isEqualTo(beaconNodeDeserialized);
+    assertThat(baseMetricData.get(1)).isEqualTo(validatorDeserialized);
   }
 
   @Test
@@ -53,15 +62,24 @@ class MetricsDataFactoryTest {
       throws JsonProcessingException {
     when(prometheusMock.streamObservations()).thenReturn(new ArrayList<Observation>().stream());
     final MetricsDataFactory metricsDataFactory = new MetricsDataFactory(prometheusMock);
-    final List<BaseMetricData> baseMetricData = metricsDataFactory.getMetricData();
 
-    ObjectMapper mapper = new ObjectMapper();
-    final String data = mapper.writeValueAsString(baseMetricData);
+    final List<BaseMetricData> baseMetricData = metricsDataFactory.getMetricData(timeProvider);
+    final String beaconNode = jsonProvider.objectToJSON(baseMetricData.get(0));
+    final String validator = jsonProvider.objectToJSON(baseMetricData.get(1));
 
-    assertThat(data).contains("beaconnode");
-    assertThat(data).contains("validator");
-    assertThat(data).contains("\"validator_active\":0");
-    assertThat(data).contains("\"disk_beaconchain_bytes_total\":0");
+    BeaconNodeMetricData beaconNodeDeserialized =
+        jsonProvider.jsonToObject(beaconNode, BeaconNodeMetricData.class);
+    ValidatorMetricData validatorDeserialized =
+        jsonProvider.jsonToObject(validator, ValidatorMetricData.class);
+
+    assertThat(baseMetricData.get(0)).isInstanceOf(BeaconNodeMetricData.class);
+    assertThat(baseMetricData.get(1)).isInstanceOf(ValidatorMetricData.class);
+
+    assertThat(baseMetricData.get(0)).isEqualTo(beaconNodeDeserialized);
+    assertThat(baseMetricData.get(1)).isEqualTo(validatorDeserialized);
+
+    assertThat(beaconNodeDeserialized.disk_beaconchain_bytes_total).isNull();
+    assertThat(validatorDeserialized.validator_total).isNull();
   }
 
   private ArrayList<Observation> getMockObservations() {
@@ -70,15 +88,12 @@ class MetricsDataFactoryTest {
         new Observation(StandardMetricCategory.PROCESS, "cpu_seconds_total", 1.0, null);
     Observation memory =
         new Observation(StandardMetricCategory.JVM, "memory_pool_bytes_used", 1.0, null);
-    Observation clientVersion =
-        new Observation(TekuMetricCategory.BEACON, "teku_version", 1.0, null);
     Observation activeValidators =
         new Observation(TekuMetricCategory.BEACON, "current_active_validators", 1.0, null);
     Observation liveValidators =
         new Observation(TekuMetricCategory.BEACON, "current_live_validators", 1.0, null);
     list.add(cpu);
     list.add(memory);
-    list.add(clientVersion);
     list.add(activeValidators);
     list.add(liveValidators);
     return list;

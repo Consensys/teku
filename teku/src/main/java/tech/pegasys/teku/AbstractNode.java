@@ -67,9 +67,6 @@ public abstract class AbstractNode implements Node {
 
     asyncRunnerFactory =
         AsyncRunnerFactory.createDefault(new MetricTrackingExecutorFactory(metricsSystem));
-    this.metricsPublisher =
-        new MetricsPublisherManager(
-            asyncRunnerFactory, metricsEndpoint, INTERVAL_BETWEEN_PUBLICATIONS);
     serviceConfig =
         new ServiceConfig(
             asyncRunnerFactory,
@@ -77,6 +74,12 @@ public abstract class AbstractNode implements Node {
             eventChannels,
             metricsSystem,
             DataDirLayout.createFrom(tekuConfig.dataConfig()));
+    this.metricsPublisher =
+        new MetricsPublisherManager(
+            asyncRunnerFactory,
+            serviceConfig.getTimeProvider(),
+            metricsEndpoint,
+            INTERVAL_BETWEEN_PUBLICATIONS);
     Constants.setConstants(tekuConfig.eth2NetworkConfiguration().getConstants());
   }
 

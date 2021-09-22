@@ -32,6 +32,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.MetricsConfig;
 import tech.pegasys.teku.infrastructure.metrics.MetricsEndpoint;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 
 class MetricsPublisherManagerTest {
 
@@ -44,6 +45,7 @@ class MetricsPublisherManagerTest {
   private final CountDownLatch lock = new CountDownLatch(1);
   private final AsyncRunnerFactory asyncRunnerFactory =
       AsyncRunnerFactory.createDefault(new MetricTrackingExecutorFactory(metricsSystem));
+  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(10_000);
 
   @BeforeEach
   void init_mocks() throws IOException {
@@ -60,7 +62,7 @@ class MetricsPublisherManagerTest {
   @Test
   public void shouldRunPublisherEveryXSeconds() throws InterruptedException, IOException {
     MetricsPublisherManager publisherManager =
-        new MetricsPublisherManager(asyncRunnerFactory, metricsEndpoint, 1);
+        new MetricsPublisherManager(asyncRunnerFactory, timeProvider, metricsEndpoint, 1);
     publisherManager.setMetricsPublisher(metricsPublisher);
     verify(metricsPublisher, times(0)).publishMetrics(anyString(), anyString());
     SafeFuture<?> safeFuture = publisherManager.doStart();
@@ -74,7 +76,7 @@ class MetricsPublisherManagerTest {
   @Test
   public void shouldReturnHTTPStatusOk() throws IOException {
     MetricsPublisherManager publisherManager =
-        new MetricsPublisherManager(asyncRunnerFactory, metricsEndpoint, 1);
+        new MetricsPublisherManager(asyncRunnerFactory, timeProvider, metricsEndpoint, 1);
     publisherManager.setMetricsPublisher(metricsPublisher);
     Assertions.assertThat(publisherManager.publishMetrics()).isEqualTo(200);
   }
@@ -82,7 +84,7 @@ class MetricsPublisherManagerTest {
   @Test
   public void shouldStopGracefully() throws IOException {
     MetricsPublisherManager publisherManager =
-        new MetricsPublisherManager(asyncRunnerFactory, metricsEndpoint, 1);
+        new MetricsPublisherManager(asyncRunnerFactory, timeProvider, metricsEndpoint, 1);
     publisherManager.setMetricsPublisher(metricsPublisher);
     SafeFuture<?> safeFuture = publisherManager.doStart();
     Assertions.assertThat(safeFuture).isEqualTo(SafeFuture.COMPLETE);

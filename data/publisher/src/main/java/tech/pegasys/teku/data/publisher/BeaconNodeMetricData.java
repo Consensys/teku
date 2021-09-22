@@ -14,33 +14,33 @@
 package tech.pegasys.teku.data.publisher;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class BeaconNodeMetricData extends BaseMetricData {
 
-  public final long disk_beaconchain_bytes_total;
-  public final long network_libp2p_bytes_total_receive;
-  public final long network_libp2p_bytes_total_transmit;
-  public final int network_peers_connected;
-  public final long sync_beacon_head_slot;
+  public final Long disk_beaconchain_bytes_total;
+  public final Long network_libp2p_bytes_total_receive;
+  public final Long network_libp2p_bytes_total_transmit;
+  public final Integer network_peers_connected;
+  public final Long sync_beacon_head_slot;
   public final String client_name;
   public final String client_version;
-  public final int client_build;
 
   @JsonCreator
   public BeaconNodeMetricData(
       @JsonProperty("version") int version,
       @JsonProperty("timestamp") long timestamp,
       @JsonProperty("process") String process,
-      @JsonProperty("disk_beaconchain_bytes_total") long disk_beaconchain_bytes_total,
-      @JsonProperty("network_libp2p_bytes_total_receive") long network_libp2p_bytes_total_receive,
-      @JsonProperty("network_libp2p_bytes_total_transmit") long network_libp2p_bytes_total_transmit,
-      @JsonProperty("network_peers_connected") int network_peers_connected,
-      @JsonProperty("sync_beacon_head_slot") long sync_beacon_head_slot,
+      @JsonProperty("disk_beaconchain_bytes_total") Long disk_beaconchain_bytes_total,
+      @JsonProperty("network_libp2p_bytes_total_receive") Long network_libp2p_bytes_total_receive,
+      @JsonProperty("network_libp2p_bytes_total_transmit") Long network_libp2p_bytes_total_transmit,
+      @JsonProperty("network_peers_connected") Integer network_peers_connected,
+      @JsonProperty("sync_beacon_head_slot") Long sync_beacon_head_slot,
       @JsonProperty("client_name") String clientName,
-      @JsonProperty("client_version") String clientVersion,
-      @JsonProperty("client_build") int clientBuild) {
+      @JsonProperty("client_version") String clientVersion) {
     super(version, timestamp, process);
     this.disk_beaconchain_bytes_total = disk_beaconchain_bytes_total;
     this.network_libp2p_bytes_total_receive = network_libp2p_bytes_total_receive;
@@ -49,7 +49,6 @@ public class BeaconNodeMetricData extends BaseMetricData {
     this.sync_beacon_head_slot = sync_beacon_head_slot;
     this.client_name = clientName;
     this.client_version = clientVersion;
-    this.client_build = clientBuild;
   }
 
   @Override
@@ -58,14 +57,15 @@ public class BeaconNodeMetricData extends BaseMetricData {
     if (o == null || getClass() != o.getClass()) return false;
     if (!super.equals(o)) return false;
     BeaconNodeMetricData that = (BeaconNodeMetricData) o;
-    return disk_beaconchain_bytes_total == that.disk_beaconchain_bytes_total
-        && network_libp2p_bytes_total_receive == that.network_libp2p_bytes_total_receive
-        && network_libp2p_bytes_total_transmit == that.network_libp2p_bytes_total_transmit
-        && network_peers_connected == that.network_peers_connected
-        && sync_beacon_head_slot == that.sync_beacon_head_slot
-        && client_build == that.client_build
-        && client_name.equals(that.client_name)
-        && client_version.equals(that.client_version);
+    return Objects.equals(disk_beaconchain_bytes_total, that.disk_beaconchain_bytes_total)
+        && Objects.equals(
+            network_libp2p_bytes_total_receive, that.network_libp2p_bytes_total_receive)
+        && Objects.equals(
+            network_libp2p_bytes_total_transmit, that.network_libp2p_bytes_total_transmit)
+        && Objects.equals(network_peers_connected, that.network_peers_connected)
+        && Objects.equals(sync_beacon_head_slot, that.sync_beacon_head_slot)
+        && Objects.equals(client_name, that.client_name)
+        && Objects.equals(client_version, that.client_version);
   }
 
   @Override
@@ -78,7 +78,6 @@ public class BeaconNodeMetricData extends BaseMetricData {
         network_peers_connected,
         sync_beacon_head_slot,
         client_name,
-        client_version,
-        client_build);
+        client_version);
   }
 }
