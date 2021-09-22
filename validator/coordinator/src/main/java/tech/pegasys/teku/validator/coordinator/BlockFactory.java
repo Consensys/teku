@@ -115,7 +115,7 @@ public class BlockFactory {
     final UInt64 epoch = spec.computeEpochAtSlot(slot);
     final UInt64 timestamp = spec.computeTimeAtSlot(currentMergeState, slot);
     final Bytes32 random =
-        spec.atEpoch(epoch).beaconStateAccessors().getRandaoMix(currentMergeState, slot);
+        spec.atEpoch(epoch).beaconStateAccessors().getRandaoMix(currentMergeState, epoch);
 
     final MergeTransitionHelpers mergeTransitionHelpers =
         spec.atSlot(slot).getMergeTransitionHelpers().orElseThrow();
