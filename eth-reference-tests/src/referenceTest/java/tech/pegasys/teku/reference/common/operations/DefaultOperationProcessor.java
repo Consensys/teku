@@ -109,14 +109,17 @@ public class DefaultOperationProcessor implements OperationProcessor {
 
   @Override
   public void processExecutionPayload(
-      MutableBeaconState state, ExecutionPayload executionPayload, Boolean executionValid)
+      MutableBeaconState state,
+      ExecutionPayload executionPayload,
+      ExecutionEngineChannel.ExecutionPayloadStatus executionStatus)
       throws BlockProcessingException {
     BlockProcessor blockProcessor =
         BlockProcessorMerge.required(spec.atSlot(state.getSlot()).getBlockProcessor());
 
     ExecutionEngineChannel executionEngineChannel = mock(ExecutionEngineChannel.class);
-    when(executionEngineChannel.newBlock(any()))
-        .thenReturn(SafeFuture.completedFuture(executionValid));
+
+    when(executionEngineChannel.executePayload(any()))
+        .thenReturn(SafeFuture.completedFuture(executionStatus));
 
     blockProcessor.processExecutionPayload(executionEngineChannel, state, executionPayload);
   }
