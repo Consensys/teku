@@ -39,7 +39,7 @@ public class ExecutionEngineService implements ChainHeadChannel, FinalizedCheckp
   private final ExecutionEngineChannel executionEngineChannel;
   private final RecentChainData recentChainData;
 
-  private Optional<Bytes32> lastBestBlock;
+  private Optional<Bytes32> lastHeadBlock;
   private Optional<Bytes32> lastFinalizedBlock;
 
   public ExecutionEngineService(
@@ -57,7 +57,7 @@ public class ExecutionEngineService implements ChainHeadChannel, FinalizedCheckp
   public void chainHeadUpdated(
       UInt64 slot,
       Bytes32 stateRoot,
-      Bytes32 bestBlockRoot,
+      Bytes32 headBlockRoot,
       boolean epochTransition,
       Bytes32 previousDutyDependentRoot,
       Bytes32 currentDutyDependentRoot,
@@ -66,31 +66,31 @@ public class ExecutionEngineService implements ChainHeadChannel, FinalizedCheckp
     final Optional<Bytes32> curFinalizedBlock;
 
     synchronized (this) {
-      lastBestBlock = Optional.of(bestBlockRoot);
+      lastHeadBlock = Optional.of(headBlockRoot);
       curFinalizedBlock = lastFinalizedBlock;
     }
 
-    updateForkChoice(bestBlockRoot, curFinalizedBlock);
+    updateForkChoice(headBlockRoot, curFinalizedBlock);
   }
 
   @Override
   public void onNewFinalizedCheckpoint(Checkpoint checkpoint) {
-    final Bytes32 curBestBlock;
+    final Bytes32 curHeadBlock;
     final Optional<Bytes32> curFinalizedBlock;
 
     synchronized (this) {
       lastFinalizedBlock = Optional.of(checkpoint.getRoot());
-      if (lastBestBlock.isEmpty()) {
+      if (lastHeadBlock.isEmpty()) {
         return;
       }
-      curBestBlock = lastBestBlock.get();
+      curHeadBlock = lastHeadBlock.get();
       curFinalizedBlock = lastFinalizedBlock;
     }
 
-    updateForkChoice(curBestBlock, curFinalizedBlock);
+    updateForkChoice(curHeadBlock, curFinalizedBlock);
   }
 
-  private static Optional<Bytes32> getPowBlockHash(Optional<BeaconBlock> block) {
+  private static Optional<Bytes32> getPayloadBlockHash(Optional<BeaconBlock> block) {
     return block
         .map(BeaconBlock::getBody)
         .flatMap(BeaconBlockBody::toVersionMerge)
@@ -99,55 +99,55 @@ public class ExecutionEngineService implements ChainHeadChannel, FinalizedCheckp
         .map(ExecutionPayload::getBlock_hash);
   }
 
-  private void updateForkChoice(Bytes32 bestBlockRoot, Optional<Bytes32> maybeFinalizedBlockRoot) {
+  private void updateForkChoice(Bytes32 headBlockRoot, Optional<Bytes32> maybeFinalizedBlockRoot) {
 
-    SafeFuture<Optional<Bytes32>> bestBlockHashPromise =
+    SafeFuture<Optional<Bytes32>> headBlockHashPromise =
         recentChainData
-            .retrieveBlockByRoot(bestBlockRoot)
-            .thenApply(ExecutionEngineService::getPowBlockHash);
+            .retrieveBlockByRoot(headBlockRoot)
+            .thenApply(ExecutionEngineService::getPayloadBlockHash);
 
     SafeFuture<Bytes32> finalizedBlockHashPromise =
         maybeFinalizedBlockRoot
             .map(recentChainData::retrieveBlockByRoot)
             .orElseGet(() -> SafeFuture.completedFuture(Optional.empty()))
-            .thenApply(ExecutionEngineService::getPowBlockHash)
+            .thenApply(ExecutionEngineService::getPayloadBlockHash)
             .thenApply(maybeHash -> maybeHash.orElse(Bytes32.ZERO));
 
-    bestBlockHashPromise
-        .thenCombine(finalizedBlockHashPromise, ForkChoiceUpdate::fromBestAndFinalized)
+    headBlockHashPromise
+        .thenCombine(finalizedBlockHashPromise, ForkChoiceUpdate::fromHeadAndFinalized)
         .thenCompose(
             maybeUpd ->
                 maybeUpd
                     .map(
                         upd ->
                             executionEngineChannel.forkChoiceUpdated(
-                                upd.getBestBlock(), upd.getFinalizedBlock()))
+                                upd.getHeadBlock(), upd.getFinalizedBlock()))
                     .orElseGet(() -> SafeFuture.completedFuture(null)))
         .finish(err -> LOG.warn("forkChoiceUpdated failed", err));
   }
 
   private static class ForkChoiceUpdate {
 
-    private final Bytes32 bestBlock;
+    private final Bytes32 headBlock;
     private final Bytes32 finalizedBlock;
     private final Bytes32 confirmedBlock;
 
     /** @deprecated TODO confirmed block post merge interop */
     @Deprecated
-    static Optional<ForkChoiceUpdate> fromBestAndFinalized(
-        Optional<Bytes32> maybeBestBlock, Bytes32 finalizedBlock) {
-      return maybeBestBlock.map(
-          bestBlock -> new ForkChoiceUpdate(bestBlock, finalizedBlock, Bytes32.ZERO));
+    static Optional<ForkChoiceUpdate> fromHeadAndFinalized(
+        Optional<Bytes32> maybeHeadBlock, Bytes32 finalizedBlock) {
+      return maybeHeadBlock.map(
+          headBlock -> new ForkChoiceUpdate(headBlock, finalizedBlock, Bytes32.ZERO));
     }
 
-    public ForkChoiceUpdate(Bytes32 bestBlock, Bytes32 finalizedBlock, Bytes32 confirmedBlock) {
-      this.bestBlock = bestBlock;
+    public ForkChoiceUpdate(Bytes32 headBlock, Bytes32 finalizedBlock, Bytes32 confirmedBlock) {
+      this.headBlock = headBlock;
       this.finalizedBlock = finalizedBlock;
       this.confirmedBlock = confirmedBlock;
     }
 
-    public Bytes32 getBestBlock() {
-      return bestBlock;
+    public Bytes32 getHeadBlock() {
+      return headBlock;
     }
 
     public Bytes32 getFinalizedBlock() {
