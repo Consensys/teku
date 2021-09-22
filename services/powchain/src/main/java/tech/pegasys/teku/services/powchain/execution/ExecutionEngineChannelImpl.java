@@ -29,8 +29,8 @@ import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.services.powchain.execution.client.ExecutionEngineClient;
 import tech.pegasys.teku.services.powchain.execution.client.Web3JExecutionEngineClient;
+import tech.pegasys.teku.services.powchain.execution.client.schema.ExecutePayloadResponse;
 import tech.pegasys.teku.services.powchain.execution.client.schema.ExecutionPayload;
-import tech.pegasys.teku.services.powchain.execution.client.schema.NewBlockResponse;
 import tech.pegasys.teku.services.powchain.execution.client.schema.PreparePayloadRequest;
 import tech.pegasys.teku.services.powchain.execution.client.schema.PreparePayloadResponse;
 import tech.pegasys.teku.services.powchain.execution.client.schema.Response;
@@ -99,12 +99,12 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
   }
 
   @Override
-  public SafeFuture<Boolean> newBlock(
+  public SafeFuture<ExecutionPayloadStatus> executePayload(
       tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload executionPayload) {
     return executionEngineClient
-        .consensusNewBlock(new ExecutionPayload(executionPayload))
+        .executePayload(new ExecutionPayload(executionPayload))
         .thenApply(ExecutionEngineChannelImpl::unwrapResponseOrThrow)
-        .thenApply(NewBlockResponse::getValid)
+        .thenApply(ExecutePayloadResponse::getStatus)
         .thenPeek(
             res ->
                 printConsole(

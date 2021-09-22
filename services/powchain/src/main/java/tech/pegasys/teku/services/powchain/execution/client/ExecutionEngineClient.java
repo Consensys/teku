@@ -20,12 +20,13 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.services.powchain.execution.client.schema.ExecutePayloadResponse;
 import tech.pegasys.teku.services.powchain.execution.client.schema.ExecutionPayload;
 import tech.pegasys.teku.services.powchain.execution.client.schema.GenericResponse;
-import tech.pegasys.teku.services.powchain.execution.client.schema.NewBlockResponse;
 import tech.pegasys.teku.services.powchain.execution.client.schema.PreparePayloadRequest;
 import tech.pegasys.teku.services.powchain.execution.client.schema.PreparePayloadResponse;
 import tech.pegasys.teku.services.powchain.execution.client.schema.Response;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.ssz.type.Bytes20;
 
 public interface ExecutionEngineClient {
@@ -34,7 +35,7 @@ public interface ExecutionEngineClient {
 
   SafeFuture<Response<ExecutionPayload>> getPayload(UInt64 payloadId);
 
-  SafeFuture<Response<NewBlockResponse>> consensusNewBlock(ExecutionPayload request);
+  SafeFuture<Response<ExecutePayloadResponse>> executePayload(ExecutionPayload request);
 
   SafeFuture<Response<GenericResponse>> forkChoiceUpdated(
       Bytes32 headBlockHash, Bytes32 finalizedBlockHash);
@@ -86,8 +87,12 @@ public interface ExecutionEngineClient {
         }
 
         @Override
-        public SafeFuture<Response<NewBlockResponse>> consensusNewBlock(ExecutionPayload request) {
-          return SafeFuture.completedFuture(new Response<>(new NewBlockResponse(true)));
+        public SafeFuture<Response<ExecutePayloadResponse>> executePayload(
+            ExecutionPayload request) {
+          return SafeFuture.completedFuture(
+              new Response<>(
+                  new ExecutePayloadResponse(
+                      ExecutionEngineChannel.ExecutionPayloadStatus.VALID.name())));
         }
 
         @Override

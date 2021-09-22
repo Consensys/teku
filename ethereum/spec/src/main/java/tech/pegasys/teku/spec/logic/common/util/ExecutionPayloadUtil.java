@@ -19,16 +19,17 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel.ExecutionPayloadStatus;
 import tech.pegasys.teku.ssz.type.Bytes20;
 
 public class ExecutionPayloadUtil {
 
   public ExecutionPayloadUtil() {}
 
-  public boolean verifyExecutionStateTransition(
+  public ExecutionPayloadStatus verifyExecutionPayload(
       ExecutionEngineChannel executionEngineChannel, ExecutionPayload executionPayload) {
     checkNotNull(executionEngineChannel);
-    return executionEngineChannel.newBlock(executionPayload).join();
+    return executionEngineChannel.executePayload(executionPayload).join();
   }
 
   public UInt64 prepareExecutionPayload(

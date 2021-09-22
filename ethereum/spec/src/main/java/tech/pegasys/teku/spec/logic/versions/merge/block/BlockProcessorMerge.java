@@ -161,12 +161,11 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
               .equals(miscHelpersMerge.computeTimeAtSlot(state, state.getSlot())),
           "process_execution_payload: Verify that the timestamp is correct");
 
-      boolean isExecutionPayloadValid =
-          executionPayloadUtil.verifyExecutionStateTransition(
-              executionEngineChannel, executionPayload);
+      ExecutionEngineChannel.ExecutionPayloadStatus executionPayloadStatus =
+          executionPayloadUtil.verifyExecutionPayload(executionEngineChannel, executionPayload);
 
       checkArgument(
-          isExecutionPayloadValid,
+          executionPayloadStatus.equals(ExecutionEngineChannel.ExecutionPayloadStatus.VALID),
           "process_execution_payload: Verify that the payload is valid with respect to execution state transition");
 
       state.setLatestExecutionPayloadHeader(

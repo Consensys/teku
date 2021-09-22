@@ -25,9 +25,9 @@ import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.http.HttpService;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.services.powchain.execution.client.schema.ExecutePayloadResponse;
 import tech.pegasys.teku.services.powchain.execution.client.schema.ExecutionPayload;
 import tech.pegasys.teku.services.powchain.execution.client.schema.GenericResponse;
-import tech.pegasys.teku.services.powchain.execution.client.schema.NewBlockResponse;
 import tech.pegasys.teku.services.powchain.execution.client.schema.PreparePayloadRequest;
 import tech.pegasys.teku.services.powchain.execution.client.schema.PreparePayloadResponse;
 import tech.pegasys.teku.services.powchain.execution.client.schema.Response;
@@ -66,10 +66,10 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   }
 
   @Override
-  public SafeFuture<Response<NewBlockResponse>> consensusNewBlock(ExecutionPayload request) {
+  public SafeFuture<Response<ExecutePayloadResponse>> executePayload(ExecutionPayload request) {
     Request<?, NewBlockWeb3jResponse> web3jRequest =
         new Request<>(
-            "consensus_newBlock",
+            "engine_executePayload",
             Collections.singletonList(request),
             web3jService,
             NewBlockWeb3jResponse.class);
@@ -138,7 +138,8 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   static class PreparePayloadWeb3jResponse
       extends org.web3j.protocol.core.Response<PreparePayloadResponse> {}
 
-  static class NewBlockWeb3jResponse extends org.web3j.protocol.core.Response<NewBlockResponse> {}
+  static class NewBlockWeb3jResponse
+      extends org.web3j.protocol.core.Response<ExecutePayloadResponse> {}
 
   static class GenericWeb3jResponse extends org.web3j.protocol.core.Response<GenericResponse> {}
 }
