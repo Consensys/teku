@@ -52,6 +52,6 @@ public class ExecutePayloadResponse {
 
   @Override
   public String toString() {
-    return "NewBlockResponse{" + "valid=" + status.name() + '}';
+    return "NewBlockResponse{" + "valid=" + status + '}';
   }
 }
