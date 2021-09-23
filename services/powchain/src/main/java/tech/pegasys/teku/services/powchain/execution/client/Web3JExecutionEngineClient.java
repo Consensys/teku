@@ -34,12 +34,13 @@ import tech.pegasys.teku.services.powchain.execution.client.schema.Response;
 
 public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 
-  private final HttpService web3jService;
-  private final Web3j web3j;
+  private final Web3j eth1Web3j;
+  private final HttpService eeWeb3jService;
 
-  public Web3JExecutionEngineClient(String eth1Endpoint) {
-    this.web3jService = new HttpService(eth1Endpoint);
-    this.web3j = Web3j.build(web3jService);
+  public Web3JExecutionEngineClient(String eth1Endpoint, Optional<String> maybeEeEndpoint) {
+    HttpService eth1Web3jService = new HttpService(eth1Endpoint);
+    this.eth1Web3j = Web3j.build(eth1Web3jService);
+    this.eeWeb3jService = maybeEeEndpoint.map(HttpService::new).orElse(eth1Web3jService);
   }
 
   @Override
@@ -49,7 +50,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
         new Request<>(
             "engine_preparePayload",
             Collections.singletonList(request),
-            web3jService,
+            eeWeb3jService,
             PreparePayloadWeb3jResponse.class);
     return doRequest(web3jRequest);
   }
@@ -60,7 +61,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
         new Request<>(
             "engine_getPayload",
             Collections.singletonList(payloadId.toString()),
-            web3jService,
+            eeWeb3jService,
             GetPayloadWeb3jResponse.class);
     return doRequest(web3jRequest);
   }
@@ -71,7 +72,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
         new Request<>(
             "engine_executePayload",
             Collections.singletonList(request),
-            web3jService,
+            eeWeb3jService,
             NewBlockWeb3jResponse.class);
     return doRequest(web3jRequest);
   }
@@ -83,7 +84,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
         new Request<>(
             "engine_forkChoiceUpdated",
             List.of(headBlockHash.toHexString(), finalizedBlockHash.toHexString()),
-            web3jService,
+            eeWeb3jService,
             GenericWeb3jResponse.class);
     return doRequest(web3jRequest);
   }
@@ -102,7 +103,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 
   @Override
   public SafeFuture<Optional<EthBlock.Block>> getPowBlock(Bytes32 blockHash) {
-    return SafeFuture.of(web3j.ethGetBlockByHash(blockHash.toHexString(), false).sendAsync())
+    return SafeFuture.of(eth1Web3j.ethGetBlockByHash(blockHash.toHexString(), false).sendAsync())
         .thenApply(EthBlock::getBlock)
         .thenApply(Optional::ofNullable);
   }
@@ -110,7 +111,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   @Override
   public SafeFuture<EthBlock.Block> getPowChainHead() {
     return SafeFuture.of(
-            web3j.ethGetBlockByNumber(DefaultBlockParameterName.LATEST, false).sendAsync())
+            eth1Web3j.ethGetBlockByNumber(DefaultBlockParameterName.LATEST, false).sendAsync())
         .thenApply(EthBlock::getBlock);
   }
 

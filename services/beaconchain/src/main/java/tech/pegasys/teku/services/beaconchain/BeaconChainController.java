@@ -76,6 +76,7 @@ import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.SpecLogic;
+import tech.pegasys.teku.ssz.type.Bytes20;
 import tech.pegasys.teku.statetransition.EpochCachePrimer;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.OperationsReOrgManager;
@@ -484,6 +485,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             depositProvider,
             eth1DataCache,
             VersionProvider.getDefaultGraffiti(),
+            beaconConfig
+                .executionEngineConfiguration()
+                .getFeeRecipient()
+                .map(eth1Address -> Bytes20.fromHexString(eth1Address.toHexString()))
+                .orElse(Bytes20.ZERO),
             spec,
             executionEngineChannel);
     syncCommitteeSubscriptionManager =
@@ -805,9 +811,12 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private void createExecutionEngineChannel() {
     Optional<SpecLogic> specLogic = spec.getSpecLogicForMilestone(SpecMilestone.MERGE);
     if (specLogic.isPresent() && beaconConfig.powchainConfig().isEnabled()) {
-      executionEngineChannel =
-          ExecutionEngineChannelImpl.create(
-              beaconConfig.powchainConfig().getEth1Endpoints().get(0));
+      final String eth1Endpoint = beaconConfig.powchainConfig().getEth1Endpoints().get(0);
+      Optional<String> eeEndpoint = Optional.empty();
+      if (beaconConfig.executionEngineConfiguration().isEnabled()) {
+        eeEndpoint = Optional.of(beaconConfig.executionEngineConfiguration().getEndpoints().get(0));
+      }
+      executionEngineChannel = ExecutionEngineChannelImpl.create(eth1Endpoint, eeEndpoint);
     } else {
       executionEngineChannel = ExecutionEngineChannelImpl.createStub();
     }
