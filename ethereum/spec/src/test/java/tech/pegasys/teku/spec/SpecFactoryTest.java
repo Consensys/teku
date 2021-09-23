@@ -31,7 +31,7 @@ import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class SpecFactoryTest {
 
-  private static final Set<String> ALTAIR_NETWORKS = Set.of("pyrmont", "prater");
+  private static final Set<String> ALTAIR_NETWORKS = Set.of("prater");
 
   @Test
   public void defaultFactoryShouldOnlySupportPhase0_mainnet() {
