@@ -23,7 +23,7 @@ import tech.pegasys.teku.ssz.type.Bytes4;
 public class Constants {
 
   public static final ImmutableList<String> NETWORK_DEFINITIONS =
-      ImmutableList.of("mainnet", "minimal", "swift", "pyrmont", "prater", "less-swift");
+      ImmutableList.of("mainnet", "minimal", "swift", "prater", "less-swift");
 
   @Deprecated public static final UInt64 BASE_REWARDS_PER_EPOCH = UInt64.valueOf(4);
   @Deprecated public static final int DEPOSIT_CONTRACT_TREE_DEPTH = 32;
