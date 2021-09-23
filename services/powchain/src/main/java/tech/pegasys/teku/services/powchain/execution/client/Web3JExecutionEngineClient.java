@@ -96,7 +96,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
         new Request<>(
             "engine_consensusValidated",
             List.of(blockHash.toHexString(), validationResult),
-            web3jService,
+            eeWeb3jService,
             GenericWeb3jResponse.class);
     return doRequest(web3jRequest);
   }
