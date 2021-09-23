@@ -34,6 +34,7 @@ public class ExecutionEngineOptions {
       paramLabel = "<ADDRESS>",
       description =
           "Suggested fee recipient sent to the execution engine, which could use it as coinbase when producing a new execution block.",
+      hidden = true,
       arity = "0..1")
   private String feeRecipient = null;
 
