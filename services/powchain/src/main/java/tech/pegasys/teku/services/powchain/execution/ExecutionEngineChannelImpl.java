@@ -127,6 +127,19 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
   }
 
   @Override
+  public SafeFuture<Void> consensusValidated(Bytes32 blockHash, ConsensusValidationResult result) {
+    return executionEngineClient
+        .consensusValidated(blockHash, result.toString())
+        .thenApply(ExecutionEngineChannelImpl::unwrapResponseOrThrow)
+        .thenPeek(
+            __ ->
+                printConsole(
+                    "engine_consensusValidated(blockHash=%s, result=%s)",
+                    LogFormatter.formatHashRoot(blockHash), result.toString()))
+        .thenApply(__ -> null);
+  }
+
+  @Override
   public SafeFuture<Optional<Block>> getPowBlock(Bytes32 blockHash) {
     return executionEngineClient
         .getPowBlock(blockHash)

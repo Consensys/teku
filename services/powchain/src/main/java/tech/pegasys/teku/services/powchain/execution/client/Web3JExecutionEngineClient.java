@@ -89,6 +89,18 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   }
 
   @Override
+  public SafeFuture<Response<GenericResponse>> consensusValidated(
+      Bytes32 blockHash, String validationResult) {
+    Request<?, GenericWeb3jResponse> web3jRequest =
+        new Request<>(
+            "engine_consensusValidated",
+            List.of(blockHash.toHexString(), validationResult),
+            web3jService,
+            GenericWeb3jResponse.class);
+    return doRequest(web3jRequest);
+  }
+
+  @Override
   public SafeFuture<Optional<EthBlock.Block>> getPowBlock(Bytes32 blockHash) {
     return SafeFuture.of(web3j.ethGetBlockByHash(blockHash.toHexString(), false).sendAsync())
         .thenApply(EthBlock::getBlock)

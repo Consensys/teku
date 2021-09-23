@@ -31,6 +31,11 @@ public interface ExecutionEngineChannel extends ChannelInterface {
     SYNCING
   }
 
+  enum ConsensusValidationResult {
+    VALID,
+    INVALID
+  }
+
   ExecutionEngineChannel NOOP =
       new ExecutionEngineChannel() {
 
@@ -58,6 +63,12 @@ public interface ExecutionEngineChannel extends ChannelInterface {
         }
 
         @Override
+        public SafeFuture<Void> consensusValidated(
+            Bytes32 blockHash, ConsensusValidationResult result) {
+          return SafeFuture.completedFuture(null);
+        }
+
+        @Override
         public SafeFuture<Optional<Block>> getPowBlock(Bytes32 blockHash) {
           return SafeFuture.completedFuture(Optional.empty());
         }
@@ -76,6 +87,8 @@ public interface ExecutionEngineChannel extends ChannelInterface {
   SafeFuture<ExecutionPayloadStatus> executePayload(ExecutionPayload executionPayload);
 
   SafeFuture<Void> forkChoiceUpdated(Bytes32 bestBlockHash, Bytes32 finalizedBlockHash);
+
+  SafeFuture<Void> consensusValidated(Bytes32 blockHash, ConsensusValidationResult result);
 
   SafeFuture<Optional<Block>> getPowBlock(Bytes32 blockHash);
 
