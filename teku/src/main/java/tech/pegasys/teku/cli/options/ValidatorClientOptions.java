@@ -34,7 +34,7 @@ public class ValidatorClientOptions {
     builder.validator(config -> config.beaconNodeApiEndpoint(parseApiEndpoint()));
   }
 
-  private URI parseApiEndpoint() {
+  public URI parseApiEndpoint() {
     try {
       return new URI(beaconNodeApiEndpoint);
     } catch (URISyntaxException e) {

@@ -3,6 +3,7 @@ dependencies {
   implementation project(':data')
   implementation project(':data:serializer')
   implementation project(':data:signingrecord')
+  implementation project(':data:publisher')
   implementation project(':data:beaconrestapi')
   implementation project(':infrastructure:exceptions')
   implementation project(':infrastructure:metrics')
@@ -59,10 +60,23 @@ dependencies {
   implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
 
+  integrationTestImplementation 'org.mock-server:mockserver-junit-jupiter'
+
   testImplementation testFixtures(project(':infrastructure:async'))
+  testImplementation testFixtures(project(':infrastructure:io'))
   testImplementation testFixtures(project(':ethereum:spec'))
   testImplementation testFixtures(project(':bls'))
   testImplementation testFixtures(project(':storage'))
 
+  testImplementation project(':data:provider')
   testImplementation 'org.awaitility:awaitility'
+
+  constraints{
+    integrationTestImplementation('com.github.java-json-tools:json-schema-validator'){
+      version{
+        strictly '[2.2.8, 2.2.14['
+      }
+      because 'later versions cause runtime issues with mockserver'
+    }
+  }
 }

@@ -24,6 +24,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.data.publisher.MetricsPublisherManager;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
@@ -40,6 +41,7 @@ import tech.pegasys.teku.util.config.Constants;
 
 public abstract class AbstractNode implements Node {
   private static final Logger LOG = LogManager.getLogger();
+  private static final long INTERVAL_BETWEEN_PUBLICATIONS = 60;
 
   private final Vertx vertx = Vertx.vertx();
   private final ExecutorService threadPool =
@@ -49,6 +51,7 @@ public abstract class AbstractNode implements Node {
   private final AsyncRunnerFactory asyncRunnerFactory;
   private final EventChannels eventChannels;
   private final MetricsEndpoint metricsEndpoint;
+  private final MetricsPublisherManager metricsPublisher;
   protected final ServiceConfig serviceConfig;
 
   protected AbstractNode(final TekuConfiguration tekuConfig) {
@@ -71,6 +74,12 @@ public abstract class AbstractNode implements Node {
             eventChannels,
             metricsSystem,
             DataDirLayout.createFrom(tekuConfig.dataConfig()));
+    this.metricsPublisher =
+        new MetricsPublisherManager(
+            asyncRunnerFactory,
+            serviceConfig.getTimeProvider(),
+            metricsEndpoint,
+            INTERVAL_BETWEEN_PUBLICATIONS);
     Constants.setConstants(tekuConfig.eth2NetworkConfiguration().getConstants());
   }
 
@@ -92,6 +101,7 @@ public abstract class AbstractNode implements Node {
   @Override
   public void start() {
     metricsEndpoint.start().join();
+    metricsPublisher.start().join();
     getServiceController().start().join();
   }
 

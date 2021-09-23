@@ -205,7 +205,8 @@ public class ValidatorClientService extends Service {
                   chainHeadTracker,
                   forkProvider));
       validatorTimingChannels.add(
-          new SyncCommitteeScheduler(metricsSystem, spec, syncCommitteeDutyLoader, new Random()));
+          new SyncCommitteeScheduler(
+              metricsSystem, spec, syncCommitteeDutyLoader, new Random()::nextInt));
     }
     addValidatorCountMetric(metricsSystem, validators);
     this.validatorStatusLogger =

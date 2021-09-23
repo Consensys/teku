@@ -25,18 +25,21 @@ public class MetricsConfig {
   private final String metricsInterface;
   private final Set<MetricCategory> metricsCategories;
   private final List<String> metricsHostAllowlist;
+  private final String metricsEndpoint;
 
   private MetricsConfig(
       final boolean metricsEnabled,
       final int metricsPort,
       final String metricsInterface,
       final Set<MetricCategory> metricsCategories,
-      final List<String> metricsHostAllowlist) {
+      final List<String> metricsHostAllowlist,
+      final String metricsEndpoint) {
     this.metricsEnabled = metricsEnabled;
     this.metricsPort = metricsPort;
     this.metricsInterface = metricsInterface;
     this.metricsCategories = metricsCategories;
     this.metricsHostAllowlist = metricsHostAllowlist;
+    this.metricsEndpoint = metricsEndpoint;
   }
 
   public static MetricsConfigBuilder builder() {
@@ -63,6 +66,10 @@ public class MetricsConfig {
     return metricsHostAllowlist;
   }
 
+  public String getMetricsEndpoint() {
+    return metricsEndpoint;
+  }
+
   public static final class MetricsConfigBuilder {
 
     private boolean metricsEnabled;
@@ -70,6 +77,7 @@ public class MetricsConfig {
     private String metricsInterface;
     private Set<MetricCategory> metricsCategories = new HashSet<>();
     private List<String> metricsHostAllowlist;
+    private String metricsEndpoint;
 
     private MetricsConfigBuilder() {}
 
@@ -98,9 +106,19 @@ public class MetricsConfig {
       return this;
     }
 
+    public MetricsConfigBuilder metricsEndpoint(String metricsEndpoint) {
+      this.metricsEndpoint = metricsEndpoint;
+      return this;
+    }
+
     public MetricsConfig build() {
       return new MetricsConfig(
-          metricsEnabled, metricsPort, metricsInterface, metricsCategories, metricsHostAllowlist);
+          metricsEnabled,
+          metricsPort,
+          metricsInterface,
+          metricsCategories,
+          metricsHostAllowlist,
+          metricsEndpoint);
     }
   }
 }

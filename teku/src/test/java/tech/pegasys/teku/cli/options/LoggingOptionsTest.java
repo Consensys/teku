@@ -14,6 +14,7 @@
 package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.cli.OSUtils.SLASH;
 import static tech.pegasys.teku.infrastructure.logging.LoggingDestination.DEFAULT_BOTH;
 
 import org.junit.jupiter.api.Test;
@@ -35,9 +36,9 @@ public class LoggingOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(loggingConfig.isColorEnabled()).isFalse();
     assertThat(loggingConfig.isIncludeEventsEnabled()).isFalse();
     assertThat(loggingConfig.getLogFile())
-        .isEqualTo(VersionProvider.defaultStoragePath() + "/logs/a.log");
+        .isEqualTo(VersionProvider.defaultStoragePath() + SLASH + "logs" + SLASH + "a.log");
     assertThat(loggingConfig.getLogFileNamePattern())
-        .isEqualTo(VersionProvider.defaultStoragePath() + "/logs/a%d.log");
+        .isEqualTo(VersionProvider.defaultStoragePath() + SLASH + "logs" + SLASH + "a%d.log");
 
     final WireLogsConfig wireConfig = config.network().getWireLogsConfig();
     assertThat(wireConfig.isLogWireCipher()).isTrue();
