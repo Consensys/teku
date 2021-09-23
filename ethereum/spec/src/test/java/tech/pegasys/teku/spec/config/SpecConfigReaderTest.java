@@ -336,7 +336,6 @@ public class SpecConfigReaderTest {
     return Stream.of(
         Arguments.of("mainnet", getLegacyConfigPath("mainnet")),
         Arguments.of("minimal", getLegacyConfigPath("minimal")),
-        Arguments.of("pyrmont", getLegacyConfigPath("pyrmont")),
         Arguments.of("prater", getLegacyConfigPath("prater")),
         Arguments.of("swift", getLegacyConfigPath("swift")));
   }
