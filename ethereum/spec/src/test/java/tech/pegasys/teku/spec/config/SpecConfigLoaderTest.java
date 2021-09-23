@@ -55,7 +55,7 @@ public class SpecConfigLoaderTest {
    * sufficient.
    */
   @ParameterizedTest(name = "{0}")
-  @ValueSource(strings = {"prater", "pyrmont", "mainnet"})
+  @ValueSource(strings = {"prater", "mainnet"})
   public void shouldMaintainConfigNameBackwardsCompatibility(final String name) {
     final SpecConfig config = SpecConfigLoader.loadConfig(name);
     assertThat(config.getRawConfig().get("CONFIG_NAME")).isEqualTo(name);
@@ -144,7 +144,6 @@ public class SpecConfigLoaderTest {
   static Stream<Arguments> knownNetworks() {
     return Stream.of(
         Arguments.of(Eth2Network.MAINNET.configName(), SpecConfigAltair.class),
-        Arguments.of(Eth2Network.PYRMONT.configName(), SpecConfigAltair.class),
         Arguments.of(Eth2Network.PRATER.configName(), SpecConfigAltair.class),
         Arguments.of(Eth2Network.MINIMAL.configName(), SpecConfigAltair.class),
         Arguments.of(Eth2Network.SWIFT.configName(), SpecConfigPhase0.class),
