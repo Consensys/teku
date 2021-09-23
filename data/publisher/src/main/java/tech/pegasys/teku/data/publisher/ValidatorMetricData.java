@@ -14,37 +14,36 @@
 package tech.pegasys.teku.data.publisher;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ValidatorMetricData extends BaseMetricData {
 
-  public final long cpu_process_seconds_total;
-  public final long memory_process_bytes;
+  public final Long cpu_process_seconds_total;
+  public final Long memory_process_bytes;
   public final String client_name;
   public final String client_version;
-  public final int client_build;
-  public final int validator_total;
-  public final int validator_active;
+  public final Integer validator_total;
+  public final Integer validator_active;
 
   @JsonCreator
   public ValidatorMetricData(
       @JsonProperty("version") int version,
       @JsonProperty("timestamp") long timestamp,
       @JsonProperty("process") String process,
-      @JsonProperty("cpu_process_seconds_total") long cpuProcessSecondsTotal,
-      @JsonProperty("memory_process_bytes") long memoryProcessBytes,
+      @JsonProperty("cpu_process_seconds_total") Long cpuProcessSecondsTotal,
+      @JsonProperty("memory_process_bytes") Long memoryProcessBytes,
       @JsonProperty("client_name") String clientName,
       @JsonProperty("client_version") String clientVersion,
-      @JsonProperty("client_build") int clientBuild,
-      @JsonProperty("validator_total") int validator_total,
-      @JsonProperty("validator_active") int validator_active) {
+      @JsonProperty("validator_total") Integer validator_total,
+      @JsonProperty("validator_active") Integer validator_active) {
     super(version, timestamp, process);
     this.cpu_process_seconds_total = cpuProcessSecondsTotal;
     this.memory_process_bytes = memoryProcessBytes;
     this.client_name = clientName;
     this.client_version = clientVersion;
-    this.client_build = clientBuild;
     this.validator_total = validator_total;
     this.validator_active = validator_active;
   }
@@ -55,13 +54,12 @@ public class ValidatorMetricData extends BaseMetricData {
     if (o == null || getClass() != o.getClass()) return false;
     if (!super.equals(o)) return false;
     ValidatorMetricData that = (ValidatorMetricData) o;
-    return cpu_process_seconds_total == that.cpu_process_seconds_total
-        && memory_process_bytes == that.memory_process_bytes
-        && client_build == that.client_build
-        && validator_total == that.validator_total
-        && validator_active == that.validator_active
-        && client_name.equals(that.client_name)
-        && client_version.equals(that.client_version);
+    return Objects.equals(cpu_process_seconds_total, that.cpu_process_seconds_total)
+        && Objects.equals(memory_process_bytes, that.memory_process_bytes)
+        && Objects.equals(client_name, that.client_name)
+        && Objects.equals(client_version, that.client_version)
+        && Objects.equals(validator_total, that.validator_total)
+        && Objects.equals(validator_active, that.validator_active);
   }
 
   @Override
@@ -72,7 +70,6 @@ public class ValidatorMetricData extends BaseMetricData {
         memory_process_bytes,
         client_name,
         client_version,
-        client_build,
         validator_total,
         validator_active);
   }

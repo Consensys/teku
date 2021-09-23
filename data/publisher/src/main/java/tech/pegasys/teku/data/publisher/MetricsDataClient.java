@@ -16,7 +16,8 @@ package tech.pegasys.teku.data.publisher;
 public enum MetricsDataClient {
   VALIDATOR("validator"),
   BEACON_NODE("beaconnode"),
-  SYSTEM("system");
+  SYSTEM("system"),
+  MINIMAL("minimal");
 
   private String dataClient;
 
