@@ -436,7 +436,13 @@ public class ForkChoiceUtil {
     if (!powBlock.isProcessed) {
       return Optional.of(BlockImportResult.FAILED_UNKNOWN_TERMINAL_POW_BLOCK);
     }
-    if (!mergeTransitionHelpers.isValidTerminalPowBlock(powBlock)) {
+    PowBlock parentPowBlock =
+        mergeTransitionHelpers.getPowBlock(executionEngineChannel, powBlock.parentHash);
+    if (!parentPowBlock.isProcessed) {
+      return Optional.of(BlockImportResult.FAILED_UNKNOWN_TERMINAL_POW_BLOCK);
+    }
+
+    if (!mergeTransitionHelpers.isValidTerminalPowBlock(powBlock, parentPowBlock)) {
       return Optional.of(BlockImportResult.FAILED_INVALID_TERMINAL_POW_BLOCK);
     }
     return Optional.empty();
