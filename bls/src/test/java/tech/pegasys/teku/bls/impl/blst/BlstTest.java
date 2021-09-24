@@ -14,6 +14,7 @@
 package tech.pegasys.teku.bls.impl.blst;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
 import java.util.Random;
@@ -29,6 +30,16 @@ public class BlstTest extends AbstractBLS12381Test {
   private static final Random random = new Random(1);
 
   private static BLS12381 BLS;
+
+  static BlstSignature notInG2() {
+    // A point on the curve but not in the G2 group
+    return BlstSignature.fromBytes(
+        Bytes.fromHexString(
+            "0x"
+                + "8000000000000000000000000000000000000000000000000000000000000000"
+                + "0000000000000000000000000000000000000000000000000000000000000000"
+                + "0000000000000000000000000000000000000000000000000000000000000004"));
+  }
 
   @BeforeAll
   static void setup() {
@@ -77,5 +88,17 @@ public class BlstTest extends AbstractBLS12381Test {
 
     boolean blstRes = BLS.completeBatchVerify(List.of(semiAggregate1, semiAggregate2));
     assertThat(blstRes).isTrue();
+  }
+
+  @Test
+  void succeedsWhenPrepareBatchVerifyNotInG2ThrowsException() {
+    Bytes msg = Bytes32.fromHexString("123456");
+    BlstSecretKey blstSK = BlstSecretKey.generateNew(random);
+    BlstPublicKey blstPK = blstSK.derivePublicKey();
+    BlstSignature blstSignature = notInG2();
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> BLS.prepareBatchVerify(0, List.of(blstPK), msg, blstSignature));
   }
 }

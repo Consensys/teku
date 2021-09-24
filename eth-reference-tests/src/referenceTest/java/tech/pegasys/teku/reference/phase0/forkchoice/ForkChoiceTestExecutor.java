@@ -34,6 +34,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -179,11 +180,16 @@ public class ForkChoiceTestExecutor implements TestExecutor {
               .isEqualTo(expectedJustifiedRoot);
           break;
 
+        case "justified_checkpoint":
+          assertCheckpoint(
+              "justified checkpoint", store.getJustifiedCheckpoint(), get(checks, checkType));
+          break;
+
         case "best_justified_checkpoint":
-          final Bytes32 expectedBestJustifiedRoot = getBytes32(checks, checkType);
-          assertThat(store.getBestJustifiedCheckpoint().getRoot())
-              .describedAs("best justified checkpoint")
-              .isEqualTo(expectedBestJustifiedRoot);
+          assertCheckpoint(
+              "best justified checkpoint",
+              store.getBestJustifiedCheckpoint(),
+              get(checks, checkType));
           break;
 
         case "finalized_checkpoint_root":
@@ -193,10 +199,26 @@ public class ForkChoiceTestExecutor implements TestExecutor {
               .isEqualTo(expectedFinalizedRoot);
           break;
 
+        case "finalized_checkpoint":
+          assertCheckpoint(
+              "finalized checkpoint", store.getFinalizedCheckpoint(), get(checks, checkType));
+          break;
+
         default:
           throw new UnsupportedOperationException("Unsupported check type: " + checkType);
       }
     }
+  }
+
+  private void assertCheckpoint(
+      final String checkpointType,
+      final Checkpoint actual,
+      final Map<String, Object> expectedCheckpoint) {
+    final Bytes32 expectedRoot = getBytes32(expectedCheckpoint, "root");
+    final UInt64 expectedEpoch = getUInt64(expectedCheckpoint, "epoch");
+    assertThat(actual)
+        .describedAs(checkpointType)
+        .isEqualTo(new Checkpoint(expectedEpoch, expectedRoot));
   }
 
   @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})

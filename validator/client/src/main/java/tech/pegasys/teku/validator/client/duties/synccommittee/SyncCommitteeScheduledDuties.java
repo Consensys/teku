@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -36,7 +38,7 @@ import tech.pegasys.teku.validator.client.duties.DutyResult;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 
 public class SyncCommitteeScheduledDuties implements ScheduledDuties {
-
+  private static final Logger LOG = LogManager.getLogger();
   private final Collection<ValidatorAndCommitteeIndices> assignments;
   private final UInt64 lastEpochInCommitteePeriod;
 
@@ -80,6 +82,11 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
 
   @Override
   public SafeFuture<DutyResult> performProductionDuty(final UInt64 slot) {
+    LOG.trace(
+        "Performing sync committee duties at slot {}, {} assignments", slot, assignments.size());
+    if (assignments.isEmpty()) {
+      return SafeFuture.completedFuture(DutyResult.NO_OP);
+    }
     lastSignatureBlockRoot = chainHeadTracker.getCurrentChainHead(slot);
     lastSignatureSlot = Optional.of(slot);
     return lastSignatureBlockRoot
@@ -108,6 +115,9 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
 
   @Override
   public SafeFuture<DutyResult> performAggregationDuty(final UInt64 slot) {
+    if (getAllValidatorKeys().isEmpty()) {
+      return SafeFuture.completedFuture(DutyResult.NO_OP);
+    }
     if (lastSignatureSlot.isEmpty()
         || lastSignatureBlockRoot.isEmpty()
         || !lastSignatureSlot.get().equals(slot)) {
@@ -131,6 +141,9 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
   }
 
   public void subscribeToSubnets() {
+    if (assignments.isEmpty()) {
+      return;
+    }
     validatorApiChannel.subscribeToSyncCommitteeSubnets(
         assignments.stream()
             .map(
