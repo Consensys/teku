@@ -44,10 +44,7 @@ public class MergeTransitionHelpers {
         powBlock.totalDifficulty.compareTo(specConfig.getTerminalTotalDifficulty()) >= 0;
     boolean isParentTotalDifficultyValid =
         parentPowBlock.totalDifficulty.compareTo(specConfig.getTerminalTotalDifficulty()) < 0;
-    return powBlock.isValid
-        && isTotalDifficultyReached
-        && parentPowBlock.isValid
-        && isParentTotalDifficultyValid;
+    return isTotalDifficultyReached && isParentTotalDifficultyValid;
   }
 
   public PowBlock getPowBlock(ExecutionEngineChannel executionEngineChannel, Bytes32 blockHash) {
@@ -55,7 +52,7 @@ public class MergeTransitionHelpers {
         .getPowBlock(blockHash)
         .join()
         .map(PowBlock::new)
-        .orElse(new PowBlock(blockHash, Bytes32.ZERO, false, false, UInt256.ZERO, UInt256.ZERO));
+        .orElse(new PowBlock(blockHash, Bytes32.ZERO, UInt256.ZERO, UInt256.ZERO));
   }
 
   public PowBlock getPowChainHead(ExecutionEngineChannel executionEngineChannel) {

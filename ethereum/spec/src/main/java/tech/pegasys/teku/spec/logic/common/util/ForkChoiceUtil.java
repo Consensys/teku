@@ -345,13 +345,6 @@ public class ForkChoiceUtil {
       return maybeFailure.get();
     }
 
-    // [Merge] Return if transition condition checks fail
-    final Optional<BlockImportResult> maybeTerminalPowBlockFailure =
-        checkOnTerminalPowBlockConditions(executionEngineChannel, block, blockSlotState);
-    if (maybeTerminalPowBlockFailure.isPresent()) {
-      return maybeTerminalPowBlockFailure.get();
-    }
-
     // Make a copy of the state to avoid mutability issues
     BeaconState state;
 
@@ -362,6 +355,13 @@ public class ForkChoiceUtil {
               executionEngineChannel, signedBlock, blockSlotState, indexedAttestationCache);
     } catch (StateTransitionException e) {
       return BlockImportResult.failedStateTransition(e);
+    }
+
+    // [Merge] Return if transition condition checks fail
+    final Optional<BlockImportResult> maybeTerminalPowBlockFailure =
+        checkOnTerminalPowBlockConditions(executionEngineChannel, block, blockSlotState);
+    if (maybeTerminalPowBlockFailure.isPresent()) {
+      return maybeTerminalPowBlockFailure.get();
     }
 
     // Add new block to store
@@ -433,14 +433,8 @@ public class ForkChoiceUtil {
     PowBlock powBlock =
         mergeTransitionHelpers.getPowBlock(
             executionEngineChannel, blockBodyMerge.getExecution_payload().getParent_hash());
-    if (!powBlock.isProcessed) {
-      return Optional.of(BlockImportResult.FAILED_UNKNOWN_TERMINAL_POW_BLOCK);
-    }
     PowBlock parentPowBlock =
         mergeTransitionHelpers.getPowBlock(executionEngineChannel, powBlock.parentHash);
-    if (!parentPowBlock.isProcessed) {
-      return Optional.of(BlockImportResult.FAILED_UNKNOWN_TERMINAL_POW_BLOCK);
-    }
 
     if (!mergeTransitionHelpers.isValidTerminalPowBlock(powBlock, parentPowBlock)) {
       return Optional.of(BlockImportResult.FAILED_INVALID_TERMINAL_POW_BLOCK);

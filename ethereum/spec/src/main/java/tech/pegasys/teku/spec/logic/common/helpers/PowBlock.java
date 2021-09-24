@@ -21,22 +21,13 @@ public class PowBlock {
 
   public final Bytes32 blockHash;
   public final Bytes32 parentHash;
-  public final boolean isProcessed;
-  public final boolean isValid;
   public final UInt256 totalDifficulty;
   public final UInt256 difficulty;
 
   public PowBlock(
-      Bytes32 blockHash,
-      Bytes32 parentHash,
-      boolean isProcessed,
-      boolean isValid,
-      UInt256 totalDifficulty,
-      UInt256 difficulty) {
+      Bytes32 blockHash, Bytes32 parentHash, UInt256 totalDifficulty, UInt256 difficulty) {
     this.blockHash = blockHash;
     this.parentHash = parentHash;
-    this.isProcessed = isProcessed;
-    this.isValid = isValid;
     this.totalDifficulty = totalDifficulty;
     this.difficulty = difficulty;
   }
@@ -45,8 +36,6 @@ public class PowBlock {
     this(
         Bytes32.fromHexString(block.getHash()),
         Bytes32.fromHexString(block.getParentHash()),
-        true,
-        true,
         UInt256.valueOf(block.getTotalDifficulty()),
         UInt256.valueOf(block.getDifficulty()));
   }
