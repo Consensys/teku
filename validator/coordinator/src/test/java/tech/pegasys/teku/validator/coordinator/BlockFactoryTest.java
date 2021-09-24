@@ -46,6 +46,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProces
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.ssz.type.Bytes20;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -119,6 +120,7 @@ class BlockFactoryTest {
             depositProvider,
             eth1DataCache,
             graffiti,
+            Bytes20.ZERO,
             spec,
             executionEngineChannel);
 

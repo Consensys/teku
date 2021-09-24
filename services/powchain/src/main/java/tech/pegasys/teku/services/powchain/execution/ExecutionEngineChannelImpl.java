@@ -43,9 +43,11 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
 
   private final ExecutionEngineClient executionEngineClient;
 
-  public static ExecutionEngineChannelImpl create(String eth1EngineEndpoint) {
-    checkNotNull(eth1EngineEndpoint);
-    return new ExecutionEngineChannelImpl(new Web3JExecutionEngineClient(eth1EngineEndpoint));
+  public static ExecutionEngineChannelImpl create(
+      String eth1Endpoint, Optional<String> eeEndpoint) {
+    checkNotNull(eth1Endpoint);
+    checkNotNull(eeEndpoint);
+    return new ExecutionEngineChannelImpl(new Web3JExecutionEngineClient(eth1Endpoint, eeEndpoint));
   }
 
   public static ExecutionEngineChannelImpl createStub() {

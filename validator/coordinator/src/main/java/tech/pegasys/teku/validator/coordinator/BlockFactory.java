@@ -63,6 +63,7 @@ public class BlockFactory {
   private final DepositProvider depositProvider;
   private final Eth1DataCache eth1DataCache;
   private final Bytes32 graffiti;
+  private final Bytes20 feeRecipient;
   private final Spec spec;
   private final ExecutionEngineChannel executionEngineChannel;
 
@@ -79,6 +80,7 @@ public class BlockFactory {
       final DepositProvider depositProvider,
       final Eth1DataCache eth1DataCache,
       final Bytes32 graffiti,
+      final Bytes20 feeRecipient,
       final Spec spec,
       final ExecutionEngineChannel executionEngineChannel) {
     this.attestationPool = attestationPool;
@@ -89,6 +91,7 @@ public class BlockFactory {
     this.depositProvider = depositProvider;
     this.eth1DataCache = eth1DataCache;
     this.graffiti = graffiti;
+    this.feeRecipient = feeRecipient;
     this.spec = spec;
     this.executionEngineChannel = executionEngineChannel;
 
@@ -146,11 +149,7 @@ public class BlockFactory {
 
     final UInt64 payloadId =
         executionPayloadUtil.prepareExecutionPayload(
-            executionEngineChannel,
-            executionParentHash,
-            timestamp,
-            random,
-            Bytes20.ZERO); // TODO let's burn fees for now!
+            executionEngineChannel, executionParentHash, timestamp, random, feeRecipient);
 
     slotToPayloadIdMap.invalidateWithNewValue(slot, payloadId);
   }
