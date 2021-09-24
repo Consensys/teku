@@ -26,10 +26,10 @@ import tech.pegasys.teku.infrastructure.logging.ColorConsolePrinter;
 import tech.pegasys.teku.infrastructure.logging.ColorConsolePrinter.Color;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.config.SpecConfigMerge;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.forkchoice.TransitionStore;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -122,13 +122,12 @@ public class BlockFactory {
 
     final MergeTransitionHelpers mergeTransitionHelpers =
         spec.atSlot(slot).getMergeTransitionHelpers().orElseThrow();
-    final TransitionStore transitionStore = spec.atSlot(slot).getTransitionStore().orElseThrow();
 
     Bytes32 executionParentHash;
 
     if (!mergeTransitionHelpers.isMergeComplete(currentMergeState)) {
       PowBlock powHead = mergeTransitionHelpers.getPowChainHead(executionEngineChannel);
-      if (!mergeTransitionHelpers.isValidTerminalPowBlock(powHead, transitionStore)) {
+      if (!mergeTransitionHelpers.isValidTerminalPowBlock(powHead)) {
         LOG.trace("prepareExecutionPayload - terminal block not yet reached!");
         return;
       }
@@ -233,20 +232,20 @@ public class BlockFactory {
         spec.atSlot(slot).getExecutionPayloadUtil().orElseThrow();
     final MergeTransitionHelpers mergeTransitionHelpers =
         spec.atSlot(slot).getMergeTransitionHelpers().orElseThrow();
-    final TransitionStore transitionStore = spec.atSlot(slot).getTransitionStore().orElseThrow();
+    final SpecConfigMerge specConfig = spec.atSlot(slot).getConfig().toVersionMerge().orElseThrow();
 
     if (!mergeTransitionHelpers.isMergeComplete(state)) {
       PowBlock powHead = mergeTransitionHelpers.getPowChainHead(executionEngineChannel);
-      if (!mergeTransitionHelpers.isValidTerminalPowBlock(powHead, transitionStore)) {
+      if (!mergeTransitionHelpers.isValidTerminalPowBlock(powHead)) {
         // Pre-merge, empty payload
         LOG.info(
             ColorConsolePrinter.print(
                 String.format(
                     "Produce pre-merge block: pow_block.total_difficulty(%d) < transition_total_difficulty(%d), PoW blocks left ~%d",
                     powHead.totalDifficulty.toBigInteger(),
-                    transitionStore.getTransitionTotalDifficulty().toBigInteger(),
-                    transitionStore
-                        .getTransitionTotalDifficulty()
+                    specConfig.getTerminalTotalDifficulty().toBigInteger(),
+                    specConfig
+                        .getTerminalTotalDifficulty()
                         .subtract(powHead.totalDifficulty)
                         .divide(powHead.difficulty)
                         .add(UInt256.ONE)
@@ -260,7 +259,7 @@ public class BlockFactory {
                 String.format(
                     "Produce transition block: pow_block.total_difficulty(%d) >= transition_total_difficulty(%d)",
                     powHead.totalDifficulty.toBigInteger(),
-                    transitionStore.getTransitionTotalDifficulty().toBigInteger()),
+                    specConfig.getTerminalTotalDifficulty().toBigInteger()),
                 Color.YELLOW));
 
         return validateExecutionPayload(

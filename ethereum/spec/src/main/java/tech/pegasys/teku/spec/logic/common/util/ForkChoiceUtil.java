@@ -31,7 +31,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge.Bea
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
-import tech.pegasys.teku.spec.datastructures.forkchoice.TransitionStore;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -333,8 +332,7 @@ public class ForkChoiceUtil {
       final MutableStore store,
       final SignedBeaconBlock signedBlock,
       final BeaconState blockSlotState,
-      final IndexedAttestationCache indexedAttestationCache,
-      final Optional<TransitionStore> maybeTransitionStore) {
+      final IndexedAttestationCache indexedAttestationCache) {
     checkArgument(
         blockSlotState.getSlot().equals(signedBlock.getSlot()),
         "State must have slots processed up to the block slot");
@@ -349,8 +347,7 @@ public class ForkChoiceUtil {
 
     // [Merge] Return if transition condition checks fail
     final Optional<BlockImportResult> maybeTerminalPowBlockFailure =
-        checkOnTerminalPowBlockConditions(
-            executionEngineChannel, block, blockSlotState, maybeTransitionStore);
+        checkOnTerminalPowBlockConditions(executionEngineChannel, block, blockSlotState);
     if (maybeTerminalPowBlockFailure.isPresent()) {
       return maybeTerminalPowBlockFailure.get();
     }
@@ -422,10 +419,10 @@ public class ForkChoiceUtil {
   private Optional<BlockImportResult> checkOnTerminalPowBlockConditions(
       final ExecutionEngineChannel executionEngineChannel,
       final BeaconBlock block,
-      final BeaconState blockSlotState,
-      final Optional<TransitionStore> maybeTransitionStore) {
+      final BeaconState blockSlotState) {
+
     // not a merge version of the spec
-    if (maybeTransitionStore.isEmpty() || mergeTransitionHelpers == null) {
+    if (mergeTransitionHelpers == null) {
       return Optional.empty();
     }
 
@@ -439,7 +436,7 @@ public class ForkChoiceUtil {
     if (!powBlock.isProcessed) {
       return Optional.of(BlockImportResult.FAILED_UNKNOWN_TERMINAL_POW_BLOCK);
     }
-    if (!mergeTransitionHelpers.isValidTerminalPowBlock(powBlock, maybeTransitionStore.get())) {
+    if (!mergeTransitionHelpers.isValidTerminalPowBlock(powBlock)) {
       return Optional.of(BlockImportResult.FAILED_INVALID_TERMINAL_POW_BLOCK);
     }
     return Optional.empty();

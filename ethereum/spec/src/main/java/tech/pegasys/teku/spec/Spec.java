@@ -43,7 +43,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBui
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
-import tech.pegasys.teku.spec.datastructures.forkchoice.TransitionStore;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -481,16 +480,10 @@ public class Spec {
       final BeaconState blockSlotState,
       final IndexedAttestationCache indexedAttestationCache) {
     SpecVersion specVersion = atBlock(signedBlock);
-    Optional<TransitionStore> maybeTransitionStore = specVersion.getTransitionStore();
     return specVersion
         .getForkChoiceUtil()
         .onBlock(
-            executionEngineChannel,
-            store,
-            signedBlock,
-            blockSlotState,
-            indexedAttestationCache,
-            maybeTransitionStore);
+            executionEngineChannel, store, signedBlock, blockSlotState, indexedAttestationCache);
   }
 
   public boolean blockDescendsFromLatestFinalizedBlock(

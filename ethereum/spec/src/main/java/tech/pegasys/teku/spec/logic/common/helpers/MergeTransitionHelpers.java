@@ -15,8 +15,8 @@ package tech.pegasys.teku.spec.logic.common.helpers;
 
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import tech.pegasys.teku.spec.config.SpecConfigMerge;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.forkchoice.TransitionStore;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.versions.merge.helpers.MiscHelpersMerge;
@@ -24,9 +24,11 @@ import tech.pegasys.teku.spec.logic.versions.merge.helpers.MiscHelpersMerge;
 public class MergeTransitionHelpers {
 
   private final MiscHelpersMerge miscHelpers;
+  private final SpecConfigMerge specConfig;
 
-  public MergeTransitionHelpers(MiscHelpersMerge miscHelpers) {
+  public MergeTransitionHelpers(MiscHelpersMerge miscHelpers, SpecConfigMerge specConfig) {
     this.miscHelpers = miscHelpers;
+    this.specConfig = specConfig;
   }
 
   public boolean isMergeComplete(BeaconState state) {
@@ -37,9 +39,9 @@ public class MergeTransitionHelpers {
     return miscHelpers.isMergeBlock(state, block);
   }
 
-  public boolean isValidTerminalPowBlock(PowBlock powBlock, TransitionStore transitionStore) {
+  public boolean isValidTerminalPowBlock(PowBlock powBlock) {
     boolean isTotalDifficultyReached =
-        powBlock.totalDifficulty.compareTo(transitionStore.getTransitionTotalDifficulty()) >= 0;
+        powBlock.totalDifficulty.compareTo(specConfig.getTerminalTotalDifficulty()) >= 0;
     return powBlock.isValid && isTotalDifficultyReached;
   }
 

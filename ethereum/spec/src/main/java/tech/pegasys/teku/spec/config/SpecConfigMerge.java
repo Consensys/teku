@@ -27,20 +27,17 @@ public class SpecConfigMerge extends DelegatingSpecConfigAltair {
   private final UInt64 mergeForkEpoch;
 
   // Transition
-  private final UInt64 targetSecondsToMerge;
-  private final UInt256 minAnchorPowBlockDifficulty;
+  private final UInt256 terminalTotalDifficulty;
 
   public SpecConfigMerge(
       SpecConfigAltair specConfig,
       Bytes4 mergeForkVersion,
       UInt64 mergeForkEpoch,
-      UInt64 targetSecondsToMerge,
-      UInt256 minAnchorPowBlockDifficulty) {
+      UInt256 terminalTotalDifficulty) {
     super(specConfig);
     this.mergeForkVersion = mergeForkVersion;
     this.mergeForkEpoch = mergeForkEpoch;
-    this.targetSecondsToMerge = targetSecondsToMerge;
-    this.minAnchorPowBlockDifficulty = minAnchorPowBlockDifficulty;
+    this.terminalTotalDifficulty = terminalTotalDifficulty;
   }
 
   public static SpecConfigMerge required(final SpecConfig specConfig) {
@@ -73,12 +70,8 @@ public class SpecConfigMerge extends DelegatingSpecConfigAltair {
     return mergeForkEpoch;
   }
 
-  public UInt64 getTargetSecondsToMerge() {
-    return targetSecondsToMerge;
-  }
-
-  public UInt256 getMinAnchorPowBlockDifficulty() {
-    return minAnchorPowBlockDifficulty;
+  public UInt256 getTerminalTotalDifficulty() {
+    return terminalTotalDifficulty;
   }
 
   @Override
@@ -97,13 +90,11 @@ public class SpecConfigMerge extends DelegatingSpecConfigAltair {
     SpecConfigMerge that = (SpecConfigMerge) o;
     return Objects.equals(mergeForkVersion, that.mergeForkVersion)
         && Objects.equals(mergeForkEpoch, that.mergeForkEpoch)
-        && Objects.equals(targetSecondsToMerge, that.targetSecondsToMerge)
-        && Objects.equals(minAnchorPowBlockDifficulty, that.minAnchorPowBlockDifficulty);
+        && Objects.equals(terminalTotalDifficulty, that.terminalTotalDifficulty);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(
-        mergeForkVersion, mergeForkEpoch, targetSecondsToMerge, minAnchorPowBlockDifficulty);
+    return Objects.hash(mergeForkVersion, mergeForkEpoch, terminalTotalDifficulty);
   }
 }
