@@ -22,13 +22,19 @@ import com.google.common.io.Resources;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.data.slashinginterchange.Metadata;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 
 public class SlashingProtectionImporterTest {
   private final ArgumentCaptor<String> stringArgs = ArgumentCaptor.forClass(String.class);
+  private final String pubkey =
+      "b845089a1457f811bfc000588fbb4e713669be8ce060ea6be3c6ece09afc3794106c91ca73acda5e5457122d58723bed";
 
   @Test
   public void shouldFailWithParseError() throws URISyntaxException, IOException {
@@ -55,6 +61,34 @@ public class SlashingProtectionImporterTest {
     assertThat(errorString).contains("does not appear to have metadata");
   }
 
+  @Test
+  public void shouldExportAndImportFile(@TempDir Path tempDir)
+      throws IOException, URISyntaxException {
+    final SubCommandLogger logger = mock(SubCommandLogger.class);
+    final Path exportedFile = tempDir.resolve("exportedFile.json").toAbsolutePath();
+
+    final SlashingProtectionExporter exporter =
+        new SlashingProtectionExporter(logger, tempDir.toString());
+    final File ruleFile = usingResourceFile("slashProtection.yml", tempDir);
+    exporter.readSlashProtectionFile(ruleFile);
+    final String originalFileContent = Files.readString(ruleFile.toPath());
+
+    assertThat(Files.exists(ruleFile.toPath())).isTrue();
+    assertThat(Files.exists(exportedFile)).isFalse();
+    exporter.saveToFile(exportedFile.toString());
+    ruleFile.delete();
+    assertThat(Files.exists(exportedFile)).isTrue();
+    assertThat(Files.exists(ruleFile.toPath())).isFalse();
+
+    SlashingProtectionImporter importer =
+        new SlashingProtectionImporter(logger, exportedFile.toString());
+    importer.initialise(new File(exportedFile.toString()));
+    importer.updateLocalRecords(tempDir);
+    assertThat(Files.exists(ruleFile.toPath())).isTrue();
+
+    assertThat(originalFileContent).isEqualTo(Files.readString(ruleFile.toPath()));
+  }
+
   private String loadAndGetErrorText(final String resourceFile)
       throws URISyntaxException, IOException {
     final SubCommandLogger logger = mock(SubCommandLogger.class);
@@ -64,5 +98,15 @@ public class SlashingProtectionImporterTest {
 
     verify(logger).exit(eq(1), stringArgs.capture());
     return stringArgs.getValue();
+  }
+
+  private File usingResourceFile(final String resourceFileName, final Path tempDir)
+      throws URISyntaxException, IOException {
+    final Path tempFile = tempDir.resolve(pubkey + ".yml").toAbsolutePath();
+    Files.copy(
+        new File(Resources.getResource(resourceFileName).toURI()).toPath(),
+        tempFile,
+        StandardCopyOption.REPLACE_EXISTING);
+    return tempFile.toFile();
   }
 }
