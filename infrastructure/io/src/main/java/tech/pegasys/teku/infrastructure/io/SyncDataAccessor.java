@@ -45,10 +45,10 @@ public class SyncDataAccessor {
 
     boolean atomicFileMoveSupport = false;
     final Path tmpFile;
-    if (Files.isDirectory(path)) {
-      tmpFile = path.resolve("syncWriteTest.tmp");
+    if (Files.isDirectory(path.toAbsolutePath())) {
+      tmpFile = path.toAbsolutePath().resolve("syncWriteTest.tmp");
     } else {
-      tmpFile = path.getParent().resolve("syncWriteTest.tmp");
+      tmpFile = path.toAbsolutePath().getParent().resolve("syncWriteTest.tmp");
     }
 
     try {
