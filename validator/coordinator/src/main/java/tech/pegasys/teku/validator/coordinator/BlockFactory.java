@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.coordinator;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import com.google.common.base.Preconditions;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -272,20 +273,16 @@ public class BlockFactory {
 
   private Optional<PowBlock> getPowBlockAtTotalDifficulty(
       UInt256 totalDifficulty, PowBlock head, MergeTransitionHelpers mergeTransitionHelpers) {
-
-    if (head.totalDifficulty.compareTo(totalDifficulty) < 0) {
-      return Optional.empty();
-    }
+    Preconditions.checkArgument(
+        totalDifficulty.compareTo(UInt256.ZERO) > 0, "Expecting totalDifficulty > 0");
 
     PowBlock block = head;
-    while (true) {
-      PowBlock parent =
-          mergeTransitionHelpers.getPowBlock(executionEngineChannel, block.parentHash);
-      if (parent.totalDifficulty.compareTo(totalDifficulty) < 0) {
-        return Optional.of(block);
-      }
-      block = parent;
+    Optional<PowBlock> parent = Optional.empty();
+    while (block.totalDifficulty.compareTo(totalDifficulty) >= 0) {
+      parent = Optional.of(block);
+      block = mergeTransitionHelpers.getPowBlock(executionEngineChannel, block.parentHash);
     }
+    return parent;
   }
 
   private Optional<PreparePayloadReference> getExecutionPayloadRefFromSlot(UInt64 slot) {
