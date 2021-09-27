@@ -19,7 +19,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigMerge;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -153,7 +155,19 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
                 .getBlockNumber()
                 .equals(state.getLatest_execution_payload_header().getBlockNumber().increment()),
             "process_execution_payload: Verify that the number is consequent");
+
+        checkArgument(
+            isValidGasLimit(executionPayload, state.getLatest_execution_payload_header()),
+            "process_execution_payload: Verify that gas limit is valid");
       }
+
+      checkArgument(
+          executionPayload
+              .getRandom()
+              .equals(
+                  beaconStateAccessors.getRandaoMix(
+                      state, beaconStateAccessors.getCurrentEpoch(state))),
+          "process_execution_payload: Verify that the random is correct");
 
       checkArgument(
           executionPayload
@@ -189,5 +203,30 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
       LOG.warn(e.getMessage());
       throw new BlockProcessingException(e);
     }
+  }
+
+  private boolean isValidGasLimit(ExecutionPayload payload, ExecutionPayloadHeader parent) {
+    final UInt64 parentGasLimit = parent.getGas_limit();
+
+    // Check if the payload used too much gas
+    if (payload.getGas_used().isGreaterThan(parentGasLimit)) {
+      return false;
+    }
+
+    // Check if the payload changed the gas limit too much
+    final UInt64 gasLimitMaxDeviation = parentGasLimit.dividedBy(SpecConfig.GAS_LIMIT_DENOMINATOR);
+    if (payload.getGas_limit().isGreaterThanOrEqualTo(parentGasLimit.plus(gasLimitMaxDeviation))) {
+      return false;
+    }
+    if (payload.getGas_limit().isLessThanOrEqualTo(parentGasLimit.minus(gasLimitMaxDeviation))) {
+      return false;
+    }
+
+    // Check if the gas limit is at least the minimum gas limit
+    if (payload.getGas_limit().isLessThan(SpecConfig.MIN_GAS_LIMIT)) {
+      return false;
+    }
+
+    return true;
   }
 }
