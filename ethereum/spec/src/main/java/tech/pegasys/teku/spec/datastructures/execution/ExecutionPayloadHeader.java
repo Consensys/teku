@@ -18,18 +18,21 @@ import static tech.pegasys.teku.spec.config.SpecConfig.BYTES_PER_LOGS_BLOOM;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.ssz.collections.SszByteList;
 import tech.pegasys.teku.ssz.collections.SszByteVector;
-import tech.pegasys.teku.ssz.containers.Container13;
-import tech.pegasys.teku.ssz.containers.ContainerSchema13;
+import tech.pegasys.teku.ssz.containers.Container14;
+import tech.pegasys.teku.ssz.containers.ContainerSchema14;
 import tech.pegasys.teku.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.ssz.schema.collections.SszByteListSchema;
 import tech.pegasys.teku.ssz.schema.collections.SszByteVectorSchema;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 import tech.pegasys.teku.ssz.type.Bytes20;
 
 public class ExecutionPayloadHeader
-    extends Container13<
+    extends Container14<
         ExecutionPayloadHeader,
         SszBytes32,
         SszByteVector,
@@ -41,12 +44,13 @@ public class ExecutionPayloadHeader
         SszUInt64,
         SszUInt64,
         SszUInt64,
+        SszByteList,
         SszBytes32,
         SszBytes32,
         SszBytes32> {
 
   public static class ExecutionPayloadHeaderSchema
-      extends ContainerSchema13<
+      extends ContainerSchema14<
           ExecutionPayloadHeader,
           SszBytes32,
           SszByteVector,
@@ -58,6 +62,7 @@ public class ExecutionPayloadHeader
           SszUInt64,
           SszUInt64,
           SszUInt64,
+          SszByteList,
           SszBytes32,
           SszBytes32,
           SszBytes32> {
@@ -75,6 +80,7 @@ public class ExecutionPayloadHeader
           namedSchema("gas_limit", SszPrimitiveSchemas.UINT64_SCHEMA),
           namedSchema("gas_used", SszPrimitiveSchemas.UINT64_SCHEMA),
           namedSchema("timestamp", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("extra_data", SszByteListSchema.create(SpecConfig.MAX_EXTRA_DATA_BYTES)),
           namedSchema("base_fee_per_gas", SszPrimitiveSchemas.BYTES32_SCHEMA),
           namedSchema("block_hash", SszPrimitiveSchemas.BYTES32_SCHEMA),
           namedSchema("transactions_root", SszPrimitiveSchemas.BYTES32_SCHEMA));
@@ -89,7 +95,7 @@ public class ExecutionPayloadHeader
   public static final ExecutionPayloadHeaderSchema SSZ_SCHEMA = new ExecutionPayloadHeaderSchema();
 
   private ExecutionPayloadHeader(
-      ContainerSchema13<
+      ContainerSchema14<
               ExecutionPayloadHeader,
               SszBytes32,
               SszByteVector,
@@ -101,6 +107,7 @@ public class ExecutionPayloadHeader
               SszUInt64,
               SszUInt64,
               SszUInt64,
+              SszByteList,
               SszBytes32,
               SszBytes32,
               SszBytes32>
@@ -120,6 +127,7 @@ public class ExecutionPayloadHeader
       UInt64 gas_limit,
       UInt64 gas_used,
       UInt64 timestamp,
+      Bytes extra_data,
       Bytes32 baseFeePerGas,
       Bytes32 block_hash,
       Bytes32 transactions_root) {
@@ -135,6 +143,7 @@ public class ExecutionPayloadHeader
         SszUInt64.of(gas_limit),
         SszUInt64.of(gas_used),
         SszUInt64.of(timestamp),
+        SszByteList.fromBytes(extra_data),
         SszBytes32.of(baseFeePerGas),
         SszBytes32.of(block_hash),
         SszBytes32.of(transactions_root));
@@ -189,15 +198,19 @@ public class ExecutionPayloadHeader
     return getField9().get();
   }
 
-  public Bytes32 getBaseFeePerGas() {
-    return getField10().get();
+  public Bytes getExtraData() {
+    return getField10().getBytes();
   }
 
-  public Bytes32 getBlock_hash() {
+  public Bytes32 getBaseFeePerGas() {
     return getField11().get();
   }
 
-  public Bytes32 getTransactions_root() {
+  public Bytes32 getBlock_hash() {
     return getField12().get();
+  }
+
+  public Bytes32 getTransactions_root() {
+    return getField13().get();
   }
 }

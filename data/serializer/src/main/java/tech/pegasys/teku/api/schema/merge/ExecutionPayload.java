@@ -29,7 +29,7 @@ import tech.pegasys.teku.ssz.type.Bytes20;
 public class ExecutionPayload {
 
   public final Bytes32 parent_hash;
-  public final Bytes20 miner;
+  public final Bytes20 coinbase;
   public final Bytes32 state_root;
   public final Bytes32 receipt_root;
   public final Bytes logs_bloom;
@@ -38,13 +38,14 @@ public class ExecutionPayload {
   public final UInt64 gas_limit;
   public final UInt64 gas_used;
   public final UInt64 timestamp;
+  public final Bytes extra_data;
   public final Bytes32 base_fee_per_gas;
   public final Bytes32 block_hash;
   public final List<Bytes> transactions;
 
   public ExecutionPayload(
       @JsonProperty("parent_hash") Bytes32 parent_hash,
-      @JsonProperty("miner") Bytes20 miner,
+      @JsonProperty("coinbase") Bytes20 coinbase,
       @JsonProperty("state_root") Bytes32 state_root,
       @JsonProperty("receipt_root") Bytes32 receipt_root,
       @JsonProperty("logs_bloom") Bytes logs_bloom,
@@ -53,11 +54,12 @@ public class ExecutionPayload {
       @JsonProperty("gas_limit") UInt64 gas_limit,
       @JsonProperty("gas_used") UInt64 gas_used,
       @JsonProperty("timestamp") UInt64 timestamp,
+      @JsonProperty("extra_data") Bytes extra_data,
       @JsonProperty("base_fee_per_gas") Bytes32 base_fee_per_gas,
       @JsonProperty("block_hash") Bytes32 block_hash,
       @JsonProperty("transactions") List<Bytes> transactions) {
     this.parent_hash = parent_hash;
-    this.miner = miner;
+    this.coinbase = coinbase;
     this.state_root = state_root;
     this.receipt_root = receipt_root;
     this.logs_bloom = logs_bloom;
@@ -66,6 +68,7 @@ public class ExecutionPayload {
     this.gas_limit = gas_limit;
     this.gas_used = gas_used;
     this.timestamp = timestamp;
+    this.extra_data = extra_data;
     this.base_fee_per_gas = base_fee_per_gas;
     this.block_hash = block_hash;
     this.transactions = transactions != null ? transactions : Collections.emptyList();
@@ -74,7 +77,7 @@ public class ExecutionPayload {
   public ExecutionPayload(
       tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload executionPayload) {
     this.parent_hash = executionPayload.getParent_hash();
-    this.miner = executionPayload.getCoinbase();
+    this.coinbase = executionPayload.getCoinbase();
     this.state_root = executionPayload.getState_root();
     this.receipt_root = executionPayload.getReceipt_root();
     this.logs_bloom = executionPayload.getLogs_bloom();
@@ -83,6 +86,7 @@ public class ExecutionPayload {
     this.gas_limit = executionPayload.getGas_limit();
     this.gas_used = executionPayload.getGas_used();
     this.timestamp = executionPayload.getTimestamp();
+    this.extra_data = executionPayload.getExtraData();
     this.base_fee_per_gas = executionPayload.getBaseFeePerGas();
     this.block_hash = executionPayload.getBlock_hash();
     this.transactions =
@@ -96,7 +100,7 @@ public class ExecutionPayload {
       asInternalExecutionPayload() {
     return new tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload(
         parent_hash,
-        miner,
+        coinbase,
         state_root,
         receipt_root,
         logs_bloom,
@@ -105,6 +109,7 @@ public class ExecutionPayload {
         gas_limit,
         gas_used,
         timestamp,
+        extra_data,
         base_fee_per_gas,
         block_hash,
         transactions);
@@ -120,7 +125,7 @@ public class ExecutionPayload {
     }
     final ExecutionPayload that = (ExecutionPayload) o;
     return Objects.equals(parent_hash, that.parent_hash)
-        && Objects.equals(miner, that.miner)
+        && Objects.equals(coinbase, that.coinbase)
         && Objects.equals(state_root, that.state_root)
         && Objects.equals(receipt_root, that.receipt_root)
         && Objects.equals(logs_bloom, that.logs_bloom)
@@ -129,6 +134,7 @@ public class ExecutionPayload {
         && Objects.equals(gas_limit, that.gas_limit)
         && Objects.equals(gas_used, that.gas_used)
         && Objects.equals(timestamp, that.timestamp)
+        && Objects.equals(extra_data, that.extra_data)
         && Objects.equals(base_fee_per_gas, that.base_fee_per_gas)
         && Objects.equals(block_hash, that.block_hash)
         && Objects.equals(transactions, that.transactions);
@@ -138,7 +144,7 @@ public class ExecutionPayload {
   public int hashCode() {
     return Objects.hash(
         parent_hash,
-        miner,
+        coinbase,
         state_root,
         receipt_root,
         logs_bloom,
@@ -147,6 +153,7 @@ public class ExecutionPayload {
         gas_limit,
         gas_used,
         timestamp,
+        extra_data,
         base_fee_per_gas,
         block_hash,
         transactions);
@@ -156,7 +163,7 @@ public class ExecutionPayload {
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("parent_hash", parent_hash)
-        .add("miner", miner)
+        .add("coinbase", coinbase)
         .add("state_root", state_root)
         .add("receipt_root", receipt_root)
         .add("logs_bloom", logs_bloom)
@@ -165,6 +172,7 @@ public class ExecutionPayload {
         .add("gas_limit", gas_limit)
         .add("gas_used", gas_used)
         .add("timestamp", timestamp)
+        .add("extra_data", extra_data)
         .add("base_fee_per_gas", base_fee_per_gas)
         .add("block_hash", block_hash)
         .add("transactions", transactions)

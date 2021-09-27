@@ -26,6 +26,7 @@ import tech.pegasys.teku.services.powchain.execution.client.schema.GenericRespon
 import tech.pegasys.teku.services.powchain.execution.client.schema.PreparePayloadRequest;
 import tech.pegasys.teku.services.powchain.execution.client.schema.PreparePayloadResponse;
 import tech.pegasys.teku.services.powchain.execution.client.schema.Response;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.ssz.type.Bytes20;
 
@@ -50,6 +51,7 @@ public interface ExecutionEngineClient {
   ExecutionEngineClient Stub =
       new ExecutionEngineClient() {
         private final Bytes ZERO_LOGS_BLOOM = Bytes.wrap(new byte[256]);
+        private final Bytes ZERO_EXTRA_DATA = Bytes.wrap(new byte[SpecConfig.MAX_EXTRA_DATA_BYTES]);
         private UInt64 number = UInt64.ZERO;
         private UInt64 payloadId = UInt64.ZERO;
         private Optional<PreparePayloadRequest> lastPreparePayloadRequest = Optional.empty();
@@ -81,6 +83,7 @@ public interface ExecutionEngineClient {
                       UInt64.ZERO,
                       UInt64.ZERO,
                       preparePayloadRequest.timestamp,
+                      ZERO_EXTRA_DATA,
                       Bytes32.ZERO,
                       Bytes32.random(),
                       Arrays.asList(Bytes.random(128), Bytes.random(256), Bytes.random(512)))));

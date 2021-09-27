@@ -168,6 +168,7 @@ public class BeaconStateMerge extends BeaconState implements State {
                       latest_execution_payload_header.gas_limit,
                       latest_execution_payload_header.gas_used,
                       latest_execution_payload_header.timestamp,
+                      latest_execution_payload_header.extra_data,
                       latest_execution_payload_header.base_fee_per_gas,
                       latest_execution_payload_header.block_hash,
                       latest_execution_payload_header.transactions_root));

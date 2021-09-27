@@ -29,6 +29,7 @@ public interface SpecConfig {
   int BYTES_PER_LOGS_BLOOM = 256;
   int MAX_BYTES_PER_OPAQUE_TRANSACTION = 1048576;
   int MAX_EXECUTION_TRANSACTIONS = 16384;
+  int MAX_EXTRA_DATA_BYTES = 32;
 
   static SpecConfigBuilder builder() {
     return new SpecConfigBuilder();

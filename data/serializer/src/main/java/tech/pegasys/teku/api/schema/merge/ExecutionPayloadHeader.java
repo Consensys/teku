@@ -33,6 +33,7 @@ public class ExecutionPayloadHeader {
   public final UInt64 gas_limit;
   public final UInt64 gas_used;
   public final UInt64 timestamp;
+  public final Bytes extra_data;
   public final Bytes32 base_fee_per_gas;
   public final Bytes32 block_hash;
   public final Bytes32 transactions_root;
@@ -48,6 +49,7 @@ public class ExecutionPayloadHeader {
       @JsonProperty("gas_limit") UInt64 gas_limit,
       @JsonProperty("gas_used") UInt64 gas_used,
       @JsonProperty("timestamp") UInt64 timestamp,
+      @JsonProperty("extra_data") Bytes extra_data,
       @JsonProperty("base_fee_per_gas") Bytes32 base_fee_per_gas,
       @JsonProperty("block_hash") Bytes32 block_hash,
       @JsonProperty("transactions_root") Bytes32 transactions_root) {
@@ -61,6 +63,7 @@ public class ExecutionPayloadHeader {
     this.gas_limit = gas_limit;
     this.gas_used = gas_used;
     this.timestamp = timestamp;
+    this.extra_data = extra_data;
     this.base_fee_per_gas = base_fee_per_gas;
     this.block_hash = block_hash;
     this.transactions_root = transactions_root;
@@ -79,6 +82,7 @@ public class ExecutionPayloadHeader {
     this.gas_limit = executionPayloadHeader.getGas_limit();
     this.gas_used = executionPayloadHeader.getGas_used();
     this.timestamp = executionPayloadHeader.getTimestamp();
+    this.extra_data = executionPayloadHeader.getExtraData();
     this.base_fee_per_gas = executionPayloadHeader.getBaseFeePerGas();
     this.block_hash = executionPayloadHeader.getBlock_hash();
     this.transactions_root = executionPayloadHeader.getTransactions_root();
@@ -97,6 +101,7 @@ public class ExecutionPayloadHeader {
         gas_limit,
         gas_used,
         timestamp,
+        extra_data,
         base_fee_per_gas,
         block_hash,
         transactions_root);
@@ -121,6 +126,7 @@ public class ExecutionPayloadHeader {
         && Objects.equals(gas_limit, that.gas_limit)
         && Objects.equals(gas_used, that.gas_used)
         && Objects.equals(timestamp, that.timestamp)
+        && Objects.equals(extra_data, that.extra_data)
         && Objects.equals(base_fee_per_gas, that.base_fee_per_gas)
         && Objects.equals(block_hash, that.block_hash)
         && Objects.equals(transactions_root, that.transactions_root);
@@ -139,6 +145,7 @@ public class ExecutionPayloadHeader {
         gas_limit,
         gas_used,
         timestamp,
+        extra_data,
         base_fee_per_gas,
         block_hash,
         transactions_root);
@@ -157,6 +164,7 @@ public class ExecutionPayloadHeader {
         .add("gas_limit", gas_limit)
         .add("gas_used", gas_used)
         .add("timestamp", timestamp)
+        .add("extra_data", extra_data)
         .add("base_fee_per_gas", base_fee_per_gas)
         .add("block_hash", block_hash)
         .add("transactions_root", transactions_root)

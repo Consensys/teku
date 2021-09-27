@@ -43,7 +43,7 @@ public class ExecutionPayload {
 
   @JsonSerialize(using = Bytes20Serializer.class)
   @JsonDeserialize(using = Bytes20Deserializer.class)
-  public final Bytes20 miner;
+  public final Bytes20 coinbase;
 
   @JsonSerialize(using = BytesSerializer.class)
   @JsonDeserialize(using = Bytes32Deserializer.class)
@@ -78,6 +78,10 @@ public class ExecutionPayload {
   public final UInt64 timestamp;
 
   @JsonSerialize(using = BytesSerializer.class)
+  @JsonDeserialize(using = BytesDeserializer.class)
+  public final Bytes extraData;
+
+  @JsonSerialize(using = BytesSerializer.class)
   @JsonDeserialize(using = Bytes32Deserializer.class)
   public final Bytes32 baseFeePerGas;
 
@@ -92,7 +96,7 @@ public class ExecutionPayload {
   public ExecutionPayload(
       tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload executionPayload) {
     this.parentHash = executionPayload.getParent_hash();
-    this.miner = executionPayload.getCoinbase();
+    this.coinbase = executionPayload.getCoinbase();
     this.stateRoot = executionPayload.getState_root();
     this.receiptsRoot = executionPayload.getReceipt_root();
     this.logsBloom = executionPayload.getLogs_bloom();
@@ -101,6 +105,7 @@ public class ExecutionPayload {
     this.gasLimit = executionPayload.getGas_limit();
     this.gasUsed = executionPayload.getGas_used();
     this.timestamp = executionPayload.getTimestamp();
+    this.extraData = executionPayload.getExtraData();
     this.baseFeePerGas = executionPayload.getBaseFeePerGas();
     this.blockHash = executionPayload.getBlock_hash();
     this.transactions =
@@ -112,7 +117,7 @@ public class ExecutionPayload {
 
   public ExecutionPayload(
       @JsonProperty("parentHash") Bytes32 parentHash,
-      @JsonProperty("miner") Bytes20 miner,
+      @JsonProperty("coinbase") Bytes20 coinbase,
       @JsonProperty("stateRoot") Bytes32 stateRoot,
       @JsonProperty("receiptRoot") Bytes32 receiptsRoot,
       @JsonProperty("logsBloom") Bytes logsBloom,
@@ -121,11 +126,12 @@ public class ExecutionPayload {
       @JsonProperty("gasLimit") UInt64 gasLimit,
       @JsonProperty("gasUsed") UInt64 gasUsed,
       @JsonProperty("timestamp") UInt64 timestamp,
+      @JsonProperty("extraData") Bytes extraData,
       @JsonProperty("blockHash") Bytes32 baseFeePerGas,
       @JsonProperty("blockHash") Bytes32 blockHash,
       @JsonProperty("transactions") List<Bytes> transactions) {
     this.parentHash = parentHash;
-    this.miner = miner;
+    this.coinbase = coinbase;
     this.stateRoot = stateRoot;
     this.receiptsRoot = receiptsRoot;
     this.logsBloom = logsBloom;
@@ -134,6 +140,7 @@ public class ExecutionPayload {
     this.gasLimit = gasLimit;
     this.gasUsed = gasUsed;
     this.timestamp = timestamp;
+    this.extraData = extraData;
     this.baseFeePerGas = baseFeePerGas;
     this.blockHash = blockHash;
     this.transactions = transactions != null ? transactions : Collections.emptyList();
@@ -143,7 +150,7 @@ public class ExecutionPayload {
       asInternalExecutionPayload() {
     return new tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload(
         parentHash,
-        miner,
+        coinbase,
         stateRoot,
         receiptsRoot,
         logsBloom,
@@ -152,6 +159,7 @@ public class ExecutionPayload {
         gasLimit,
         gasUsed,
         timestamp,
+        extraData,
         baseFeePerGas,
         blockHash,
         transactions);
@@ -167,7 +175,7 @@ public class ExecutionPayload {
     }
     final ExecutionPayload that = (ExecutionPayload) o;
     return Objects.equals(parentHash, that.parentHash)
-        && Objects.equals(miner, that.miner)
+        && Objects.equals(coinbase, that.coinbase)
         && Objects.equals(stateRoot, that.stateRoot)
         && Objects.equals(receiptsRoot, that.receiptsRoot)
         && Objects.equals(logsBloom, that.logsBloom)
@@ -185,7 +193,7 @@ public class ExecutionPayload {
   public int hashCode() {
     return Objects.hash(
         parentHash,
-        miner,
+        coinbase,
         stateRoot,
         receiptsRoot,
         logsBloom,
@@ -203,7 +211,7 @@ public class ExecutionPayload {
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("parentHash", parentHash)
-        .add("miner", miner)
+        .add("coinbase", coinbase)
         .add("stateRoot", stateRoot)
         .add("receiptsRoot", receiptsRoot)
         .add("logsBloom", logsBloom)
