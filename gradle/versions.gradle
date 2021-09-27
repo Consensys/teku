@@ -60,7 +60,7 @@ dependencyManagement {
     }
     dependency 'io.github.classgraph:classgraph:4.8.87'
 
-    dependencySet(group: 'io.netty', version: '4.1.51.Final') {
+    dependencySet(group: 'io.netty', version: '4.1.68.Final') {
       entry 'netty-all'
     }
 
