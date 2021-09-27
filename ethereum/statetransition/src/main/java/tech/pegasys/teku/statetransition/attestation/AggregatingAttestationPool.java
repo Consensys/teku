@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.helpers.MathHelpers;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.schema.SszListSchema;
 import tech.pegasys.teku.util.config.Constants;
@@ -140,8 +141,9 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .flatMap(Collection::stream)
         .map(attestationGroupByDataHash::get)
         .filter(Objects::nonNull)
-        .filter(group -> isValid(stateAtBlockSlot, group.getAttestationData()))
+        .filter(group -> earnsRewards(stateAtBlockSlot, group.getAttestationData()))
         .filter(forkChecker::areAttestationsFromCorrectFork)
+        .filter(group -> isValid(stateAtBlockSlot, group.getAttestationData()))
         .flatMap(MatchingDataAttestationGroup::stream)
         .limit(ATTESTATIONS_SCHEMA.getMaxLength())
         .map(ValidateableAttestation::getAttestation)
@@ -154,6 +156,25 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
               return true;
             })
         .collect(ATTESTATIONS_SCHEMA.collector());
+  }
+
+  private boolean earnsRewards(
+      final BeaconState stateAtBlockSlot, final AttestationData attestationData) {
+    final UInt64 attestationSlot = attestationData.getSlot();
+    final UInt64 blockSlot = stateAtBlockSlot.getSlot();
+    final int slotsPerEpoch = spec.getSlotsPerEpoch(attestationSlot);
+    if (attestationSlot.plus(slotsPerEpoch).isLessThan(blockSlot)) {
+      return false;
+    }
+    if (attestationSlot
+        .plus(MathHelpers.integerSquareRoot(slotsPerEpoch))
+        .isGreaterThanOrEqualTo(blockSlot)) {
+      return true;
+    }
+
+    final Bytes32 correctTargetRoot =
+        spec.getBlockRoot(stateAtBlockSlot, attestationData.getTarget().getEpoch());
+    return correctTargetRoot.equals(attestationData.getTarget().getRoot());
   }
 
   public synchronized Stream<Attestation> getAttestations(
