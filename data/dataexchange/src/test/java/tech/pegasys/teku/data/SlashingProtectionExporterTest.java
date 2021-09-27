@@ -155,6 +155,20 @@ public class SlashingProtectionExporterTest {
     assertThat(stringArgs.getValue()).startsWith("Failed to read from file");
   }
 
+  @Test
+  public void shouldExportSlashProtection(@TempDir Path tempDir)
+      throws IOException, URISyntaxException {
+    final Path exportedFile = tempDir.resolve("exportedFile.json").toAbsolutePath();
+    final SlashingProtectionExporter exporter =
+        new SlashingProtectionExporter(logger, tempDir.toString());
+
+    exporter.readSlashProtectionFile(usingResourceFile("slashProtection.yml", tempDir));
+
+    assertThat(Files.exists(exportedFile)).isFalse();
+    exporter.saveToFile(exportedFile.toString());
+    assertThat(Files.exists(exportedFile)).isTrue();
+  }
+
   private File usingResourceFile(final String resourceFileName, final Path tempDir)
       throws URISyntaxException, IOException {
     final Path tempFile = tempDir.resolve(pubkey + ".yml").toAbsolutePath();

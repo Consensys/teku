@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -45,7 +46,7 @@ public class SlashingProtectionExporter {
 
   public SlashingProtectionExporter(final SubCommandLogger log, final String path) {
     this.log = log;
-    this.syncDataAccessor = SyncDataAccessor.createWithoutAtomicMove();
+    syncDataAccessor = SyncDataAccessor.create(Paths.get(path));
   }
 
   public void initialise(final Path slashProtectionPath) {

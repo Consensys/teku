@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -47,7 +48,7 @@ public class SlashingProtectionImporter {
 
   public SlashingProtectionImporter(final SubCommandLogger log, final String path) {
     this.log = log;
-    syncDataAccessor = SyncDataAccessor.createWithoutAtomicMove();
+    syncDataAccessor = SyncDataAccessor.create(Paths.get(path));
   }
 
   public void initialise(final File inputFile) throws IOException {
