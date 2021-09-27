@@ -64,7 +64,7 @@ dependencyManagement {
       entry 'netty-all'
     }
 
-    dependencySet(group: 'io.vertx', version: '3.9.7') {
+    dependencySet(group: 'io.vertx', version: '3.9.9') {
       entry 'vertx-codegen'
       entry('vertx-core') {
         // We include netty-all so omit the separated jars
