@@ -93,13 +93,13 @@ public class GenesisGenerator {
                         Bytes32.ZERO,
                         Bytes32.ZERO,
                         Bytes.wrap(new byte[SpecConfig.BYTES_PER_LOGS_BLOOM]),
-                        Bytes32.ZERO,
+                        eth1BlockHash,
                         UInt64.ZERO,
+                        specConfig.toVersionMerge().orElseThrow().getGenesisGasLimit(),
                         UInt64.ZERO,
-                        UInt64.ZERO,
-                        UInt64.ZERO,
+                        eth1Timestamp,
                         Bytes.EMPTY,
-                        Bytes32.ZERO,
+                        specConfig.toVersionMerge().orElseThrow().getGenesisBaseFeePerGas(),
                         Bytes32.ZERO,
                         Bytes32.ZERO)));
 
