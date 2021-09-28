@@ -23,7 +23,7 @@ public class ExecutePayloadResponse {
 
   public ExecutePayloadResponse(@JsonProperty("status") String status) {
     try {
-      ExecutionPayloadStatus.valueOf(status);
+      this.status = ExecutionPayloadStatus.valueOf(status);
     } catch (IllegalArgumentException e) {
       throw new RuntimeException("Invalid status field received: " + status);
     }
