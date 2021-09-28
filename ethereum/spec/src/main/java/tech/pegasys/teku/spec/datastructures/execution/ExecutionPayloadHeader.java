@@ -86,6 +86,10 @@ public class ExecutionPayloadHeader
           namedSchema("transactions_root", SszPrimitiveSchemas.BYTES32_SCHEMA));
     }
 
+    public SszByteListSchema<?> getExtraDataSchema() {
+      return (SszByteListSchema<?>) getFieldSchema10();
+    }
+
     @Override
     public ExecutionPayloadHeader createFromBackingNode(TreeNode node) {
       return new ExecutionPayloadHeader(this, node);
@@ -143,7 +147,7 @@ public class ExecutionPayloadHeader
         SszUInt64.of(gas_limit),
         SszUInt64.of(gas_used),
         SszUInt64.of(timestamp),
-        SszByteList.fromBytes(extra_data),
+        SSZ_SCHEMA.getExtraDataSchema().fromBytes(extra_data),
         SszBytes32.of(baseFeePerGas),
         SszBytes32.of(block_hash),
         SszBytes32.of(transactions_root));
