@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.logic.versions.altair.SpecLogicAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateMutatorsAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.EpochProcessorAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.ValidatorStatusFactoryAltair;
@@ -40,6 +41,8 @@ public class SpecLogicMerge extends AbstractSpecLogic {
 
   private final ExecutionPayloadUtil executionPayloadUtil;
   private final MergeTransitionHelpers mergeTransitionHelpers;
+
+  private final SpecLogicAltair specLogicAltair;
 
   private SpecLogicMerge(
       final Predicates predicates,
@@ -58,7 +61,8 @@ public class SpecLogicMerge extends AbstractSpecLogic {
       final BlockProposalUtil blockProposalUtil,
       final ExecutionPayloadUtil executionPayloadUtil,
       final MergeTransitionHelpers mergeTransitionHelpers,
-      final MergeStateUpgrade stateUpgrade) {
+      final MergeStateUpgrade stateUpgrade,
+      final SpecLogicAltair specLogicAltair) {
     super(
         predicates,
         miscHelpers,
@@ -77,6 +81,7 @@ public class SpecLogicMerge extends AbstractSpecLogic {
         Optional.of(stateUpgrade));
     this.executionPayloadUtil = executionPayloadUtil;
     this.mergeTransitionHelpers = mergeTransitionHelpers;
+    this.specLogicAltair = specLogicAltair;
   }
 
   public static SpecLogicMerge create(
@@ -151,6 +156,8 @@ public class SpecLogicMerge extends AbstractSpecLogic {
     final MergeStateUpgrade stateUpgrade =
         new MergeStateUpgrade(config, schemaDefinitions, beaconStateAccessors);
 
+    final SpecLogicAltair specLogicAltair = SpecLogicAltair.create(config, schemaDefinitions);
+
     return new SpecLogicMerge(
         predicates,
         miscHelpers,
@@ -168,12 +175,13 @@ public class SpecLogicMerge extends AbstractSpecLogic {
         blockProposalUtil,
         executionPayloadUtil,
         mergeTransitionHelpers,
-        stateUpgrade);
+        stateUpgrade,
+        specLogicAltair);
   }
 
   @Override
   public Optional<SyncCommitteeUtil> getSyncCommitteeUtil() {
-    return Optional.empty();
+    return specLogicAltair.getSyncCommitteeUtil();
   }
 
   @Override
