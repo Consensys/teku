@@ -65,9 +65,6 @@ public class SpecFactory {
             .filter(epoch -> !epoch.equals(FAR_FUTURE_EPOCH));
     // Merge takes precedence in the prototype
     if (mergeForkEpoch.isPresent()) {
-      if (mergeForkEpoch.get().equals(UInt64.ZERO)) {
-        return Spec.createSinceGenesis(config, SpecMilestone.MERGE);
-      }
       return Spec.create(config, SpecMilestone.MERGE);
     }
 
