@@ -94,6 +94,10 @@ public class ExecutionPayload
       return (SszListSchema<Transaction, ?>) getFieldSchema13();
     }
 
+    public SszByteListSchema<?> getExtraDataSchema() {
+      return (SszByteListSchema<?>) getFieldSchema10();
+    }
+
     @Override
     public ExecutionPayload createFromBackingNode(TreeNode node) {
       return new ExecutionPayload(this, node);
@@ -155,7 +159,7 @@ public class ExecutionPayload
         SszUInt64.of(gas_limit),
         SszUInt64.of(gas_used),
         SszUInt64.of(timestamp),
-        SszByteList.fromBytes(extra_data),
+        SSZ_SCHEMA.getExtraDataSchema().fromBytes(extra_data),
         SszBytes32.of(baseFeePerGas),
         SszBytes32.of(block_hash),
         transactions.stream()
