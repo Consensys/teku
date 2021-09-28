@@ -114,7 +114,8 @@ public class SpecConfigMerge extends DelegatingSpecConfigAltair {
 
   @Override
   public int hashCode() {
-    return Objects.hash(genesisGasLimit,
+    return Objects.hash(
+        genesisGasLimit,
         genesisBaseFeePerGas,
         mergeForkVersion,
         mergeForkEpoch,
