@@ -101,16 +101,16 @@ public class BlockFactory {
             10); // TODO check if makes sense to remember payloadId for the latest 10 slots
   }
 
-  public void prepareExecutionPayload(final Optional<BeaconState> maybeCurrentSlotState) {
+  public void prepareExecutionPayload(final Optional<BeaconState> maybeCurrentSlotState, UInt64 targetSlot) {
     maybeCurrentSlotState.ifPresent(
         currentSlotState -> {
-          Optional<PreparePayloadReference> maybeRef = prepareExecutionPayloadRef(currentSlotState);
-          slotToPayloadIdMap.invalidateWithNewValue(currentSlotState.getSlot(), maybeRef);
+          Optional<PreparePayloadReference> maybeRef = prepareExecutionPayloadRef(currentSlotState, targetSlot);
+          slotToPayloadIdMap.invalidateWithNewValue(targetSlot, maybeRef);
         });
   }
 
   private Optional<PreparePayloadReference> prepareExecutionPayloadRef(
-      final BeaconState currentSlotState) {
+      final BeaconState currentSlotState, UInt64 targetSlot) {
     final Optional<BeaconStateMerge> maybeCurrentMergeState = currentSlotState.toVersionMerge();
 
     if (maybeCurrentMergeState.isEmpty()) {
@@ -121,7 +121,7 @@ public class BlockFactory {
 
     final UInt64 slot = currentMergeState.getSlot();
     final UInt64 epoch = spec.computeEpochAtSlot(slot);
-    final UInt64 timestamp = spec.computeTimeAtSlot(currentMergeState, slot);
+    final UInt64 timestamp = spec.computeTimeAtSlot(currentMergeState, targetSlot);
     final Bytes32 random =
         spec.atEpoch(epoch).beaconStateAccessors().getRandaoMix(currentMergeState, epoch);
 
