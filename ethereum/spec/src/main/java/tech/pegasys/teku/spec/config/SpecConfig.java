@@ -29,6 +29,8 @@ public interface SpecConfig {
   int BYTES_PER_LOGS_BLOOM = 256;
   int MAX_BYTES_PER_OPAQUE_TRANSACTION = 1048576;
   int MAX_EXECUTION_TRANSACTIONS = 16384;
+  int GAS_LIMIT_DENOMINATOR = 1024;
+  int MIN_GAS_LIMIT = 5000;
   int MAX_EXTRA_DATA_BYTES = 32;
 
   static SpecConfigBuilder builder() {

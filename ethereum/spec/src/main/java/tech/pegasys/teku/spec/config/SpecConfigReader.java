@@ -40,6 +40,7 @@ import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigBuilder.MergeBuilder;
@@ -89,6 +90,7 @@ public class SpecConfigReader {
           .put(String.class, Function.identity())
           .put(Bytes.class, fromString(Bytes::fromHexString))
           .put(Bytes4.class, fromString(Bytes4::fromHexString))
+          .put(Bytes32.class, fromString(Bytes32::fromHexStringStrict))
           .put(boolean.class, fromString(Boolean::valueOf))
           .build();
 

@@ -16,11 +16,16 @@ package tech.pegasys.teku.spec.config;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class SpecConfigMerge extends DelegatingSpecConfigAltair {
+
+  // Genesis
+  private UInt64 genesisGasLimit;
+  private Bytes32 genesisBaseFeePerGas;
 
   // Fork
   private final Bytes4 mergeForkVersion;
@@ -32,6 +37,8 @@ public class SpecConfigMerge extends DelegatingSpecConfigAltair {
 
   public SpecConfigMerge(
       SpecConfigAltair specConfig,
+      UInt64 genesisGasLimit,
+      Bytes32 genesisBaseFeePerGas,
       Bytes4 mergeForkVersion,
       UInt64 mergeForkEpoch,
       UInt64 targetSecondsToMerge,
@@ -65,6 +72,14 @@ public class SpecConfigMerge extends DelegatingSpecConfigAltair {
                             + specConfig.getClass().getSimpleName())));
   }
 
+  public UInt64 getGenesisGasLimit() {
+    return genesisGasLimit;
+  }
+
+  public Bytes32 getGenesisBaseFeePerGas() {
+    return genesisBaseFeePerGas;
+  }
+
   public Bytes4 getMergeForkVersion() {
     return mergeForkVersion;
   }
@@ -95,7 +110,9 @@ public class SpecConfigMerge extends DelegatingSpecConfigAltair {
       return false;
     }
     SpecConfigMerge that = (SpecConfigMerge) o;
-    return Objects.equals(mergeForkVersion, that.mergeForkVersion)
+    return Objects.equals(genesisGasLimit, that.genesisGasLimit)
+        && Objects.equals(genesisBaseFeePerGas, that.genesisBaseFeePerGas)
+        && Objects.equals(mergeForkVersion, that.mergeForkVersion)
         && Objects.equals(mergeForkEpoch, that.mergeForkEpoch)
         && Objects.equals(targetSecondsToMerge, that.targetSecondsToMerge)
         && Objects.equals(minAnchorPowBlockDifficulty, that.minAnchorPowBlockDifficulty);
@@ -104,6 +121,11 @@ public class SpecConfigMerge extends DelegatingSpecConfigAltair {
   @Override
   public int hashCode() {
     return Objects.hash(
-        mergeForkVersion, mergeForkEpoch, targetSecondsToMerge, minAnchorPowBlockDifficulty);
+        genesisGasLimit,
+        genesisBaseFeePerGas,
+        mergeForkVersion,
+        mergeForkEpoch,
+        targetSecondsToMerge,
+        minAnchorPowBlockDifficulty);
   }
 }
