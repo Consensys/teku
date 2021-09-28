@@ -14,9 +14,6 @@
 package tech.pegasys.teku.spec.logic;
 
 import java.util.Optional;
-import tech.pegasys.teku.spec.datastructures.forkchoice.TransitionStore;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
@@ -38,8 +35,6 @@ import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 
 public interface SpecLogic {
   Optional<StateUpgrade<?>> getStateUpgrade();
-
-  void initializeTransitionStore(ExecutionEngineChannel executionEngineChannel, BeaconState state);
 
   ValidatorsUtil getValidatorsUtil();
 
@@ -74,6 +69,4 @@ public interface SpecLogic {
   Optional<ExecutionPayloadUtil> getExecutionPayloadUtil();
 
   Optional<MergeTransitionHelpers> getMergeTransitionHelpers();
-
-  Optional<TransitionStore> getTransitionStore();
 }

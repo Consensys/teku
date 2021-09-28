@@ -679,25 +679,19 @@ public class SpecConfigBuilder {
     private UInt64 mergeForkEpoch;
 
     // Transition
-    private UInt64 targetSecondsToMerge;
-    private UInt256 minAnchorPowBlockDifficulty;
+    private UInt256 terminalTotalDifficulty;
 
     private MergeBuilder() {}
 
     SpecConfigMerge build(final SpecConfigAltair specConfig) {
       return new SpecConfigMerge(
-          specConfig,
-          mergeForkVersion,
-          mergeForkEpoch,
-          targetSecondsToMerge,
-          minAnchorPowBlockDifficulty);
+          specConfig, mergeForkVersion, mergeForkEpoch, terminalTotalDifficulty);
     }
 
     void validate() {
       validateConstant("mergeForkVersion", mergeForkVersion);
       validateConstant("mergeForkEpoch", mergeForkEpoch);
-      validateConstant("targetSecondsToMerge", targetSecondsToMerge);
-      validateConstant("minAnchorPowBlockDifficulty", minAnchorPowBlockDifficulty);
+      validateConstant("terminalTotalDifficulty", terminalTotalDifficulty);
     }
 
     public MergeBuilder mergeForkVersion(Bytes4 mergeForkVersion) {
@@ -712,13 +706,8 @@ public class SpecConfigBuilder {
       return this;
     }
 
-    public MergeBuilder targetSecondsToMerge(UInt64 targetSecondsToMerge) {
-      this.targetSecondsToMerge = targetSecondsToMerge;
-      return this;
-    }
-
-    public MergeBuilder minAnchorPowBlockDifficulty(UInt256 minAnchorPowBlockDifficulty) {
-      this.minAnchorPowBlockDifficulty = minAnchorPowBlockDifficulty;
+    public MergeBuilder terminalTotalDifficulty(UInt256 terminalTotalDifficulty) {
+      this.terminalTotalDifficulty = terminalTotalDifficulty;
       return this;
     }
   }

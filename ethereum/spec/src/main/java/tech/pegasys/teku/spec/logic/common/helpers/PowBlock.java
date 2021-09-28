@@ -20,20 +20,14 @@ import org.web3j.protocol.core.methods.response.EthBlock;
 public class PowBlock {
 
   public final Bytes32 blockHash;
-  public final boolean isProcessed;
-  public final boolean isValid;
+  public final Bytes32 parentHash;
   public final UInt256 totalDifficulty;
   public final UInt256 difficulty;
 
   public PowBlock(
-      Bytes32 blockHash,
-      boolean isProcessed,
-      boolean isValid,
-      UInt256 totalDifficulty,
-      UInt256 difficulty) {
+      Bytes32 blockHash, Bytes32 parentHash, UInt256 totalDifficulty, UInt256 difficulty) {
     this.blockHash = blockHash;
-    this.isProcessed = isProcessed;
-    this.isValid = isValid;
+    this.parentHash = parentHash;
     this.totalDifficulty = totalDifficulty;
     this.difficulty = difficulty;
   }
@@ -41,8 +35,7 @@ public class PowBlock {
   PowBlock(EthBlock.Block block) {
     this(
         Bytes32.fromHexString(block.getHash()),
-        true,
-        true,
+        Bytes32.fromHexString(block.getParentHash()),
         UInt256.valueOf(block.getTotalDifficulty()),
         UInt256.valueOf(block.getDifficulty()));
   }

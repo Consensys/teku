@@ -14,9 +14,6 @@
 package tech.pegasys.teku.spec.logic;
 
 import java.util.Optional;
-import tech.pegasys.teku.spec.datastructures.forkchoice.TransitionStore;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
@@ -46,12 +43,6 @@ public class DelegatingSpecLogic implements SpecLogic {
   @Override
   public Optional<StateUpgrade<?>> getStateUpgrade() {
     return specLogic.getStateUpgrade();
-  }
-
-  @Override
-  public void initializeTransitionStore(
-      ExecutionEngineChannel executionEngineChannel, BeaconState state) {
-    specLogic.initializeTransitionStore(executionEngineChannel, state);
   }
 
   @Override
@@ -132,11 +123,6 @@ public class DelegatingSpecLogic implements SpecLogic {
   @Override
   public Optional<MergeTransitionHelpers> getMergeTransitionHelpers() {
     return specLogic.getMergeTransitionHelpers();
-  }
-
-  @Override
-  public Optional<TransitionStore> getTransitionStore() {
-    return specLogic.getTransitionStore();
   }
 
   @Override
