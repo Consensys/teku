@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
@@ -674,30 +675,47 @@ public class SpecConfigBuilder {
 
   public class MergeBuilder {
 
+    // Genesis
+    private UInt64 genesisGasLimit;
+    private Bytes32 genesisBaseFeePerGas;
+
     // Fork
     private Bytes4 mergeForkVersion;
     private UInt64 mergeForkEpoch;
 
     // Transition
-    private UInt64 targetSecondsToMerge;
-    private UInt256 minAnchorPowBlockDifficulty;
+    private UInt256 terminalTotalDifficulty;
 
     private MergeBuilder() {}
 
     SpecConfigMerge build(final SpecConfigAltair specConfig) {
       return new SpecConfigMerge(
           specConfig,
+          genesisGasLimit,
+          genesisBaseFeePerGas,
           mergeForkVersion,
           mergeForkEpoch,
-          targetSecondsToMerge,
-          minAnchorPowBlockDifficulty);
+          terminalTotalDifficulty);
     }
 
     void validate() {
+      validateConstant("genesisGasLimit", genesisGasLimit);
+      validateConstant("genesisBaseFeePerGas", genesisBaseFeePerGas);
       validateConstant("mergeForkVersion", mergeForkVersion);
       validateConstant("mergeForkEpoch", mergeForkEpoch);
-      validateConstant("targetSecondsToMerge", targetSecondsToMerge);
-      validateConstant("minAnchorPowBlockDifficulty", minAnchorPowBlockDifficulty);
+      validateConstant("terminalTotalDifficulty", terminalTotalDifficulty);
+    }
+
+    public MergeBuilder genesisGasLimit(UInt64 genesisGasLimit) {
+      checkNotNull(genesisGasLimit);
+      this.genesisGasLimit = genesisGasLimit;
+      return this;
+    }
+
+    public MergeBuilder genesisBaseFeePerGas(Bytes32 genesisBaseFeePerGas) {
+      checkNotNull(genesisBaseFeePerGas);
+      this.genesisBaseFeePerGas = genesisBaseFeePerGas;
+      return this;
     }
 
     public MergeBuilder mergeForkVersion(Bytes4 mergeForkVersion) {
@@ -712,13 +730,8 @@ public class SpecConfigBuilder {
       return this;
     }
 
-    public MergeBuilder targetSecondsToMerge(UInt64 targetSecondsToMerge) {
-      this.targetSecondsToMerge = targetSecondsToMerge;
-      return this;
-    }
-
-    public MergeBuilder minAnchorPowBlockDifficulty(UInt256 minAnchorPowBlockDifficulty) {
-      this.minAnchorPowBlockDifficulty = minAnchorPowBlockDifficulty;
+    public MergeBuilder terminalTotalDifficulty(UInt256 terminalTotalDifficulty) {
+      this.terminalTotalDifficulty = terminalTotalDifficulty;
       return this;
     }
   }

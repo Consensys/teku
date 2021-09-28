@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.coordinator;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import com.google.common.base.Preconditions;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,10 +27,10 @@ import tech.pegasys.teku.infrastructure.logging.ColorConsolePrinter;
 import tech.pegasys.teku.infrastructure.logging.ColorConsolePrinter.Color;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.config.SpecConfigMerge;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.forkchoice.TransitionStore;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -69,7 +70,7 @@ public class BlockFactory {
 
   // we are going to store latest payloadId returned by preparePayload for a given slot
   // in this way validator doesn't need to know anything about payloadId
-  private final LRUCache<UInt64, UInt64> slotToPayloadIdMap;
+  private final LRUCache<UInt64, Optional<PreparePayloadReference>> slotToPayloadIdMap;
 
   public BlockFactory(
       final AggregatingAttestationPool attestationPool,
@@ -101,16 +102,20 @@ public class BlockFactory {
   }
 
   public void prepareExecutionPayload(final Optional<BeaconState> maybeCurrentSlotState) {
-    if (maybeCurrentSlotState.isEmpty()) {
-      LOG.error("prepareExecutionPayload - empty state!");
-      return;
-    }
-    final Optional<BeaconStateMerge> maybeCurrentMergeState =
-        maybeCurrentSlotState.get().toVersionMerge();
+    maybeCurrentSlotState.ifPresent(
+        currentSlotState -> {
+          Optional<PreparePayloadReference> maybeRef = prepareExecutionPayloadRef(currentSlotState);
+          slotToPayloadIdMap.invalidateWithNewValue(currentSlotState.getSlot(), maybeRef);
+        });
+  }
+
+  private Optional<PreparePayloadReference> prepareExecutionPayloadRef(
+      final BeaconState currentSlotState) {
+    final Optional<BeaconStateMerge> maybeCurrentMergeState = currentSlotState.toVersionMerge();
 
     if (maybeCurrentMergeState.isEmpty()) {
       LOG.trace("prepareExecutionPayload - not yet in Merge state!");
-      return;
+      return Optional.empty();
     }
     final BeaconStateMerge currentMergeState = maybeCurrentMergeState.get();
 
@@ -122,19 +127,44 @@ public class BlockFactory {
 
     final MergeTransitionHelpers mergeTransitionHelpers =
         spec.atSlot(slot).getMergeTransitionHelpers().orElseThrow();
-    final TransitionStore transitionStore = spec.atSlot(slot).getTransitionStore().orElseThrow();
 
-    Bytes32 executionParentHash;
+    final Bytes32 executionParentHash;
 
     if (!mergeTransitionHelpers.isMergeComplete(currentMergeState)) {
+      SpecConfigMerge specConfig = spec.getSpecConfig(epoch).toVersionMerge().orElseThrow();
+      UInt256 terminalTotalDifficulty = specConfig.getTerminalTotalDifficulty();
+
       PowBlock powHead = mergeTransitionHelpers.getPowChainHead(executionEngineChannel);
-      if (!mergeTransitionHelpers.isValidTerminalPowBlock(powHead, transitionStore)) {
-        LOG.trace("prepareExecutionPayload - terminal block not yet reached!");
-        return;
+      Optional<PowBlock> terminalPowBlock =
+          getPowBlockAtTotalDifficulty(terminalTotalDifficulty, powHead, mergeTransitionHelpers);
+
+      if (terminalPowBlock.isEmpty()) {
+        LOG.info(
+            ColorConsolePrinter.print(
+                String.format(
+                    "Produce pre-merge block: pow_block.total_difficulty(%d) < transition_total_difficulty(%d), PoW blocks left ~%d",
+                    powHead.totalDifficulty.toBigInteger(),
+                    specConfig.getTerminalTotalDifficulty().toBigInteger(),
+                    specConfig
+                        .getTerminalTotalDifficulty()
+                        .subtract(powHead.totalDifficulty)
+                        .divide(powHead.difficulty)
+                        .add(UInt256.ONE)
+                        .toBigInteger()),
+                Color.CYAN));
+        return Optional.empty();
       }
+
       // terminal block
-      executionParentHash = powHead.blockHash;
-      LOG.trace("prepareExecutionPayload - terminal block reached!");
+      executionParentHash = terminalPowBlock.get().blockHash;
+
+      LOG.info(
+          ColorConsolePrinter.print(
+              String.format(
+                  "Produce transition block: pow_block.total_difficulty(%d) >= transition_total_difficulty(%d)",
+                  powHead.totalDifficulty.toBigInteger(),
+                  specConfig.getTerminalTotalDifficulty().toBigInteger()),
+              Color.YELLOW));
     } else {
       executionParentHash = currentMergeState.getLatest_execution_payload_header().getBlock_hash();
     }
@@ -151,7 +181,7 @@ public class BlockFactory {
         executionPayloadUtil.prepareExecutionPayload(
             executionEngineChannel, executionParentHash, timestamp, random, feeRecipient);
 
-    slotToPayloadIdMap.invalidateWithNewValue(slot, payloadId);
+    return Optional.of(new PreparePayloadReference(payloadId, executionParentHash));
   }
 
   public BeaconBlock createUnsignedBlock(
@@ -227,57 +257,35 @@ public class BlockFactory {
   }
 
   private ExecutionPayload getExecutionPayload(BeaconState genericState) {
-    final BeaconStateMerge state = BeaconStateMerge.required(genericState);
-    final UInt64 slot = state.getSlot();
+    UInt64 slot = genericState.getSlot();
     final ExecutionPayloadUtil executionPayloadUtil =
         spec.atSlot(slot).getExecutionPayloadUtil().orElseThrow();
-    final MergeTransitionHelpers mergeTransitionHelpers =
-        spec.atSlot(slot).getMergeTransitionHelpers().orElseThrow();
-    final TransitionStore transitionStore = spec.atSlot(slot).getTransitionStore().orElseThrow();
 
-    if (!mergeTransitionHelpers.isMergeComplete(state)) {
-      PowBlock powHead = mergeTransitionHelpers.getPowChainHead(executionEngineChannel);
-      if (!mergeTransitionHelpers.isValidTerminalPowBlock(powHead, transitionStore)) {
-        // Pre-merge, empty payload
-        LOG.info(
-            ColorConsolePrinter.print(
-                String.format(
-                    "Produce pre-merge block: pow_block.total_difficulty(%d) < transition_total_difficulty(%d), PoW blocks left ~%d",
-                    powHead.totalDifficulty.toBigInteger(),
-                    transitionStore.getTransitionTotalDifficulty().toBigInteger(),
-                    transitionStore
-                        .getTransitionTotalDifficulty()
-                        .subtract(powHead.totalDifficulty)
-                        .divide(powHead.difficulty)
-                        .add(UInt256.ONE)
-                        .toBigInteger()),
-                Color.CYAN));
-        return new ExecutionPayload();
-      } else {
-        // Signify merge via producing on top of the last PoW block
-        LOG.info(
-            ColorConsolePrinter.print(
-                String.format(
-                    "Produce transition block: pow_block.total_difficulty(%d) >= transition_total_difficulty(%d)",
-                    powHead.totalDifficulty.toBigInteger(),
-                    transitionStore.getTransitionTotalDifficulty().toBigInteger()),
-                Color.YELLOW));
-
-        return validateExecutionPayload(
-            powHead.blockHash,
-            executionPayloadUtil.getExecutionPayload(
-                executionEngineChannel, getExecutionPayloadIdFromSlot(slot)));
-      }
-    }
-
-    // Post-merge, normal payload
-    return validateExecutionPayload(
-        state.getLatest_execution_payload_header().getBlock_hash(),
-        executionPayloadUtil.getExecutionPayload(
-            executionEngineChannel, getExecutionPayloadIdFromSlot(slot)));
+    return getExecutionPayloadRefFromSlot(slot)
+        .map(
+            ref ->
+                validateExecutionPayload(
+                    ref.getParentHash(),
+                    executionPayloadUtil.getExecutionPayload(
+                        executionEngineChannel, ref.getPreparePayloadId())))
+        .orElseGet(ExecutionPayload::new);
   }
 
-  private UInt64 getExecutionPayloadIdFromSlot(UInt64 slot) {
+  private Optional<PowBlock> getPowBlockAtTotalDifficulty(
+      UInt256 totalDifficulty, PowBlock head, MergeTransitionHelpers mergeTransitionHelpers) {
+    Preconditions.checkArgument(
+        totalDifficulty.compareTo(UInt256.ZERO) > 0, "Expecting totalDifficulty > 0");
+
+    PowBlock block = head;
+    Optional<PowBlock> parent = Optional.empty();
+    while (block.totalDifficulty.compareTo(totalDifficulty) >= 0) {
+      parent = Optional.of(block);
+      block = mergeTransitionHelpers.getPowBlock(executionEngineChannel, block.parentHash);
+    }
+    return parent;
+  }
+
+  private Optional<PreparePayloadReference> getExecutionPayloadRefFromSlot(UInt64 slot) {
     return slotToPayloadIdMap
         .getCached(slot)
         .orElseThrow(
@@ -295,5 +303,23 @@ public class BlockFactory {
     }
 
     return executionPayload;
+  }
+
+  private static class PreparePayloadReference {
+    private final UInt64 preparePayloadId;
+    private final Bytes32 parentHash;
+
+    public PreparePayloadReference(UInt64 preparePayloadId, Bytes32 parentHash) {
+      this.preparePayloadId = preparePayloadId;
+      this.parentHash = parentHash;
+    }
+
+    public UInt64 getPreparePayloadId() {
+      return preparePayloadId;
+    }
+
+    public Bytes32 getParentHash() {
+      return parentHash;
+    }
   }
 }
