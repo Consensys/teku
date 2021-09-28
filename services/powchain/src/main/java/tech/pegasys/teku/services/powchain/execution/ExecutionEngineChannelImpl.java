@@ -110,7 +110,7 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
         .thenPeek(
             res ->
                 printConsole(
-                    "Failed consensus_newBlock(execution_payload=%s), reason: %s",
+                    "engine_executePayload(execution_payload=%s), result: %s",
                     executionPayload, res));
   }
 

@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli.options;
 
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.spec.Spec;
 
@@ -27,6 +28,20 @@ public class MinimalEth2NetworkOptions {
       arity = "1")
   private String network = "mainnet";
 
+  @Option(
+      names = {"--Xnetwork-altair-fork-epoch"},
+      paramLabel = "<EPOCH>",
+      description = "Altair fork first epoch",
+      arity = "1")
+  private long altairForkEpoch = -1;
+
+  @Option(
+      names = {"--Xnetwork-merge-fork-epoch"},
+      paramLabel = "<EPOCH>",
+      description = "Merge fork first epoch",
+      arity = "1")
+  private long mergeForkEpoch = -1;
+
   public void configure(final TekuConfiguration.Builder builder) {
     builder.eth2NetworkConfig(b -> b.applyNetworkDefaults(network));
   }
@@ -36,6 +51,9 @@ public class MinimalEth2NetworkOptions {
   }
 
   private Eth2NetworkConfiguration getConfig() {
-    return Eth2NetworkConfiguration.builder(network).build();
+    return Eth2NetworkConfiguration.builder(network)
+        .mergeForkEpoch(UInt64.fromLongBits(mergeForkEpoch))
+        .altairForkEpoch(UInt64.fromLongBits(altairForkEpoch))
+        .build();
   }
 }
