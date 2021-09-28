@@ -29,3 +29,4 @@ For information on changes in released versions of Teku, see the [releases page]
 - Fix `IllegalStateException` reported on altair networks, when none of your validators are in a sync committee for the current epoch.
 - Fix failed to export/import slashing protection data.
 - Fix incorrect gossip validation when processing duplicate sync committee messages which could lead to an error being reported instead of ignoring the duplicate.
+- Added additional verification of message lengths when decoding snappy messages.
