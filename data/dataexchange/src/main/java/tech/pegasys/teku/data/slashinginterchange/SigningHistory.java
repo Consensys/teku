@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.data.slashinginterchange;
 
+import static tech.pegasys.teku.data.signingrecord.ValidatorSigningRecord.isNeverSigned;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
@@ -50,9 +52,12 @@ public class SigningHistory {
     this.signedBlocks = new ArrayList<>();
     signedBlocks.add(new SignedBlock(record.getBlockSlot(), null));
     this.signedAttestations = new ArrayList<>();
-    signedAttestations.add(
-        new SignedAttestation(
-            record.getAttestationSourceEpoch(), record.getAttestationTargetEpoch(), null));
+    if (!isNeverSigned(record.getAttestationSourceEpoch())
+        || !isNeverSigned(record.getAttestationTargetEpoch())) {
+      signedAttestations.add(
+          new SignedAttestation(
+              record.getAttestationSourceEpoch(), record.getAttestationTargetEpoch(), null));
+    }
   }
 
   @Override
@@ -83,15 +88,21 @@ public class SigningHistory {
       final Optional<ValidatorSigningRecord> maybeRecord, final Bytes32 genesisValidatorsRoot) {
 
     final UInt64 lastSignedBlockSlot =
-        signedBlocks.stream().map(SignedBlock::getSlot).max(UInt64::compareTo).orElse(UInt64.ZERO);
+        signedBlocks.stream()
+            .map(SignedBlock::getSlot)
+            .filter(Objects::nonNull)
+            .max(UInt64::compareTo)
+            .orElse(UInt64.ZERO);
     final UInt64 lastSignedAttestationSourceEpoch =
         signedAttestations.stream()
             .map(SignedAttestation::getSourceEpoch)
+            .filter(Objects::nonNull)
             .max(UInt64::compareTo)
             .orElse(null);
     final UInt64 lastSignedAttestationTargetEpoch =
         signedAttestations.stream()
             .map(SignedAttestation::getTargetEpoch)
+            .filter(Objects::nonNull)
             .max(UInt64::compareTo)
             .orElse(null);
 
