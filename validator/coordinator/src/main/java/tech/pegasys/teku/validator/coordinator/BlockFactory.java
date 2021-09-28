@@ -101,10 +101,12 @@ public class BlockFactory {
             10); // TODO check if makes sense to remember payloadId for the latest 10 slots
   }
 
-  public void prepareExecutionPayload(final Optional<BeaconState> maybeCurrentSlotState, UInt64 targetSlot) {
+  public void prepareExecutionPayload(
+      final Optional<BeaconState> maybeCurrentSlotState, UInt64 targetSlot) {
     maybeCurrentSlotState.ifPresent(
         currentSlotState -> {
-          Optional<PreparePayloadReference> maybeRef = prepareExecutionPayloadRef(currentSlotState, targetSlot);
+          Optional<PreparePayloadReference> maybeRef =
+              prepareExecutionPayloadRef(currentSlotState, targetSlot);
           slotToPayloadIdMap.invalidateWithNewValue(targetSlot, maybeRef);
         });
   }
