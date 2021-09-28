@@ -45,6 +45,8 @@ public class SpecConfigMerge extends DelegatingSpecConfigAltair {
     this.mergeForkVersion = mergeForkVersion;
     this.mergeForkEpoch = mergeForkEpoch;
     this.terminalTotalDifficulty = terminalTotalDifficulty;
+    this.genesisBaseFeePerGas = genesisBaseFeePerGas;
+    this.genesisGasLimit = genesisGasLimit;
   }
 
   public static SpecConfigMerge required(final SpecConfig specConfig) {
