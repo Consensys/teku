@@ -14,8 +14,10 @@
 package tech.pegasys.teku.data;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import com.google.common.io.Resources;
@@ -25,11 +27,14 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
+import tech.pegasys.teku.data.signingrecord.ValidatorSigningRecord;
 import tech.pegasys.teku.data.slashinginterchange.Metadata;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SlashingProtectionImporterTest {
   private final ArgumentCaptor<String> stringArgs = ArgumentCaptor.forClass(String.class);
@@ -87,6 +92,61 @@ public class SlashingProtectionImporterTest {
     assertThat(Files.exists(ruleFile.toPath())).isTrue();
 
     assertThat(originalFileContent).isEqualTo(Files.readString(ruleFile.toPath()));
+  }
+
+  @Test
+  void shouldImportFileOverRepairedRecords(@TempDir Path tempDir) throws Exception {
+    final SubCommandLogger logger = mock(SubCommandLogger.class);
+    final Path initialRecords = tempDir.resolve("initial");
+    final Path repairedRecords = tempDir.resolve("repaired");
+    assertThat(initialRecords.toFile().mkdirs()).isTrue();
+    assertThat(repairedRecords.toFile().mkdirs()).isTrue();
+
+    final Path exportedFile = tempDir.resolve("exportedFile.json").toAbsolutePath();
+    final File initialRuleFile =
+        usingResourceFile("slashProtectionWithGenesisRoot.yml", initialRecords);
+    final File repairedRuleFile =
+        usingResourceFile("slashProtectionWithGenesisRoot.yml", repairedRecords);
+
+    final SlashingProtectionExporter exporter =
+        new SlashingProtectionExporter(logger, tempDir.toString());
+    exporter.readSlashProtectionFile(repairedRuleFile);
+    final String originalFileContent = Files.readString(initialRuleFile.toPath());
+
+    assertThat(exportedFile).doesNotExist();
+    exporter.saveToFile(exportedFile.toString());
+    assertThat(exportedFile).exists();
+
+    final SlashingProtectionRepairer repairer =
+        SlashingProtectionRepairer.create(logger, repairedRecords, true);
+    final UInt64 repairedSlot = UInt64.valueOf(1566);
+    final UInt64 repairedEpoch = UInt64.valueOf(7668);
+    repairer.updateRecords(repairedSlot, repairedEpoch);
+    verify(logger, never()).error(any());
+    verify(logger, never()).error(any(), any());
+    assertThat(Files.readString(repairedRuleFile.toPath())).isNotEqualTo(originalFileContent);
+
+    SlashingProtectionImporter importer =
+        new SlashingProtectionImporter(logger, exportedFile.toString());
+    importer.initialise(exportedFile.toFile());
+    importer.updateLocalRecords(repairedRecords);
+
+    // Should wind up with a file that contains the slot and epochs from the repair, combined with
+    // the genesis root from the initial file
+    final ValidatorSigningRecord initialRecord = loadSigningRecord(initialRuleFile);
+    final ValidatorSigningRecord importedRecord = loadSigningRecord(repairedRuleFile);
+    assertThat(importedRecord)
+        .isEqualTo(
+            new ValidatorSigningRecord(
+                initialRecord.getGenesisValidatorsRoot(),
+                repairedSlot,
+                repairedEpoch,
+                repairedEpoch));
+  }
+
+  private ValidatorSigningRecord loadSigningRecord(final File repairedRuleFile) throws IOException {
+    return ValidatorSigningRecord.fromBytes(
+        Bytes.wrap(Files.readAllBytes(repairedRuleFile.toPath())));
   }
 
   private String loadAndGetErrorText(final String resourceFile)
