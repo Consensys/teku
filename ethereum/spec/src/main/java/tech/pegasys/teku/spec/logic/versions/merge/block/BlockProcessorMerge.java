@@ -128,11 +128,16 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
     final MutableBeaconStateMerge state = MutableBeaconStateMerge.required(genericState);
     final BeaconBlockBodyMerge blockBody = BeaconBlockBodyMerge.required(block.getBody());
 
-    super.processBlock(
-        executionEngineChannel, state, block, indexedAttestationCache, signatureVerifier);
+    processBlockHeader(state, block);
+
     if (miscHelpersMerge.isExecutionEnabled(genericState, block)) {
       processExecutionPayload(executionEngineChannel, state, blockBody.getExecution_payload());
     }
+
+    processRandaoNoValidation(state, block.getBody());
+    processEth1Data(state, block.getBody());
+    processOperationsNoValidation(state, block.getBody(), indexedAttestationCache);
+    processSyncAggregate(state, blockBody.getSyncAggregate(), signatureVerifier);
   }
 
   @Override
