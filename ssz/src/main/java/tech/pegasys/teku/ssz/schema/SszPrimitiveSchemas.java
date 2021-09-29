@@ -21,6 +21,7 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.MutableBytes;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.primitive.SszBit;
@@ -28,6 +29,7 @@ import tech.pegasys.teku.ssz.primitive.SszByte;
 import tech.pegasys.teku.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.ssz.primitive.SszBytes4;
 import tech.pegasys.teku.ssz.primitive.SszNone;
+import tech.pegasys.teku.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.ssz.schema.impl.AbstractSszPrimitiveSchema;
 import tech.pegasys.teku.ssz.sos.SszDeserializeException;
@@ -220,6 +222,34 @@ public interface SszPrimitiveSchemas {
         @Override
         public String toString() {
           return "UInt64";
+        }
+      };
+
+  AbstractSszPrimitiveSchema<UInt256, SszUInt256> UINT256_SCHEMA =
+      new AbstractSszPrimitiveSchema<>(256) {
+        @Override
+        public SszUInt256 createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
+          return SszUInt256.of(node.hashTreeRoot());
+        }
+
+        @Override
+        public TreeNode updateBackingNode(TreeNode srcNode, int internalIndex, SszData newValue) {
+          return LeafNode.create(((SszUInt256) newValue).get().toBytes());
+        }
+
+        @Override
+        public SszUInt256 boxed(UInt256 rawValue) {
+          return SszUInt256.of(rawValue);
+        }
+
+        @Override
+        public TreeNode getDefaultTree() {
+          return LeafNode.ZERO_LEAVES[32];
+        }
+
+        @Override
+        public String toString() {
+          return "UInt256";
         }
       };
 

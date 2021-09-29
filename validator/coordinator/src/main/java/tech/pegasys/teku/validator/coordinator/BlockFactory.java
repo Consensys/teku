@@ -145,12 +145,12 @@ public class BlockFactory {
             ColorConsolePrinter.print(
                 String.format(
                     "Produce pre-merge block: pow_block.total_difficulty(%d) < transition_total_difficulty(%d), PoW blocks left ~%d",
-                    powHead.totalDifficulty.toBigInteger(),
+                    powHead.getTotalDifficulty().toBigInteger(),
                     specConfig.getTerminalTotalDifficulty().toBigInteger(),
                     specConfig
                         .getTerminalTotalDifficulty()
-                        .subtract(powHead.totalDifficulty)
-                        .divide(powHead.difficulty)
+                        .subtract(powHead.getTotalDifficulty())
+                        .divide(powHead.getDifficulty())
                         .add(UInt256.ONE)
                         .toBigInteger()),
                 Color.CYAN));
@@ -158,13 +158,13 @@ public class BlockFactory {
       }
 
       // terminal block
-      executionParentHash = terminalPowBlock.get().blockHash;
+      executionParentHash = terminalPowBlock.get().getBlockHash();
 
       LOG.info(
           ColorConsolePrinter.print(
               String.format(
                   "Produce transition block: pow_block.total_difficulty(%d) >= transition_total_difficulty(%d)",
-                  powHead.totalDifficulty.toBigInteger(),
+                  powHead.getTotalDifficulty().toBigInteger(),
                   specConfig.getTerminalTotalDifficulty().toBigInteger()),
               Color.YELLOW));
     } else {
@@ -280,9 +280,9 @@ public class BlockFactory {
 
     PowBlock block = head;
     Optional<PowBlock> parent = Optional.empty();
-    while (block.totalDifficulty.compareTo(totalDifficulty) >= 0) {
+    while (block.getTotalDifficulty().compareTo(totalDifficulty) >= 0) {
       parent = Optional.of(block);
-      block = mergeTransitionHelpers.getPowBlock(executionEngineChannel, block.parentHash);
+      block = mergeTransitionHelpers.getPowBlock(executionEngineChannel, block.getParentHash());
     }
     return parent;
   }
