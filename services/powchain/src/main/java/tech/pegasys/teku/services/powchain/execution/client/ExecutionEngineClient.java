@@ -92,6 +92,7 @@ public interface ExecutionEngineClient {
         @Override
         public SafeFuture<Response<ExecutePayloadResponse>> executePayload(
             ExecutionPayload request) {
+          number = request.blockNumber;
           return SafeFuture.completedFuture(
               new Response<>(
                   new ExecutePayloadResponse(
