@@ -49,6 +49,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       ImmutableMap.<String, TestExecutor>builder()
           .put("fork_choice/get_head", new ForkChoiceTestExecutor())
           .put("fork_choice/on_block", TestExecutor.IGNORE_TESTS)
+          .put("fork_choice/on_merge_block", TestExecutor.IGNORE_TESTS)
           .build();
 
   @Override

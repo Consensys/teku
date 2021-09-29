@@ -39,29 +39,37 @@ public abstract class Eth2ReferenceTestCase {
       ImmutableMap.<String, TestExecutor>builder()
           .putAll(BlsTests.BLS_TEST_TYPES)
           .putAll(ForkChoiceTestExecutor.FORK_CHOICE_TEST_TYPES)
-          .putAll(GenesisTests.GENESIS_TEST_TYPES)
           .putAll(ShufflingTestExecutor.SHUFFLING_TEST_TYPES)
           .putAll(EpochProcessingTestExecutor.EPOCH_PROCESSING_TEST_TYPES)
           .putAll(SszTestExecutor.SSZ_TEST_TYPES)
           .putAll(OperationsTestExecutor.OPERATIONS_TEST_TYPES)
           .putAll(SanityTests.SANITY_TEST_TYPES)
           .putAll(SszTestExecutorDeprecated.SSZ_TEST_TYPES)
+          .put("merkle/single_proof", TestExecutor.IGNORE_TESTS)
           .build();
 
   private final ImmutableMap<String, TestExecutor> PHASE_0_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
+          .putAll(GenesisTests.GENESIS_TEST_TYPES)
           .putAll(RewardsTestExecutorPhase0.REWARDS_TEST_TYPES)
           .build();
 
   private final ImmutableMap<String, TestExecutor> ALTAIR_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
+          .putAll(GenesisTests.GENESIS_TEST_TYPES)
           .putAll(TransitionTestExecutor.TRANSITION_TEST_TYPES)
           .putAll(ForkUpgradeTestExecutor.FORK_UPGRADE_TEST_TYPES)
           .putAll(RewardsTestExecutorAltair.REWARDS_TEST_TYPES)
           .build();
 
   private final ImmutableMap<String, TestExecutor> MERGE_TEST_TYPES =
-      ImmutableMap.<String, TestExecutor>builder().putAll(ALTAIR_TEST_TYPES).build();
+      ImmutableMap.<String, TestExecutor>builder()
+          .putAll(TransitionTestExecutor.TRANSITION_TEST_TYPES)
+          .putAll(ForkUpgradeTestExecutor.FORK_UPGRADE_TEST_TYPES)
+          .putAll(RewardsTestExecutorAltair.REWARDS_TEST_TYPES)
+          .put("genesis/initialization", TestExecutor.IGNORE_TESTS)
+          .put("genesis/validity", TestExecutor.IGNORE_TESTS)
+          .build();
 
   protected void runReferenceTest(final TestDefinition testDefinition) throws Throwable {
     setConstants(testDefinition.getConfigName());
