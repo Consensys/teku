@@ -117,7 +117,7 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
   @Override
   public SafeFuture<Void> forkChoiceUpdated(Bytes32 bestBlockHash, Bytes32 finalizedBlockHash) {
     return executionEngineClient
-        .forkChoiceUpdated(bestBlockHash, finalizedBlockHash)
+        .forkchoiceUpdated(bestBlockHash, finalizedBlockHash)
         .thenApply(ExecutionEngineChannelImpl::unwrapResponseOrThrow)
         .thenPeek(
             __ ->
