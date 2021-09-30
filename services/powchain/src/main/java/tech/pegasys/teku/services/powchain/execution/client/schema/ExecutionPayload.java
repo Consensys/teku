@@ -127,7 +127,7 @@ public class ExecutionPayload {
       @JsonProperty("gasUsed") UInt64 gasUsed,
       @JsonProperty("timestamp") UInt64 timestamp,
       @JsonProperty("extraData") Bytes extraData,
-      @JsonProperty("blockHash") Bytes32 baseFeePerGas,
+      @JsonProperty("baseFeePerGas") Bytes32 baseFeePerGas,
       @JsonProperty("blockHash") Bytes32 blockHash,
       @JsonProperty("transactions") List<Bytes> transactions) {
     this.parentHash = parentHash;
