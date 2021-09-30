@@ -9,6 +9,10 @@
     {
       "comment": "Consensys.net now has a ddos attack protection",
       "pattern": "^http(s)?://consensys.net"
+    },
+    {
+      "comment": "Has persistent DNS issues but link works when manually used",
+      "pattern": "^http(s)?://oss-watch.ac.uk"
     }
   ],
   "timeout": "30s",
