@@ -16,12 +16,8 @@ package tech.pegasys.teku.services.powchain.execution.client.schema;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.base.Objects;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.services.powchain.execution.client.serializer.Bytes20Serializer;
 import tech.pegasys.teku.services.powchain.execution.client.serializer.BytesSerializer;
-import tech.pegasys.teku.services.powchain.execution.client.serializer.UInt64AsHexSerializer;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel.ConsensusValidationResult;
-import tech.pegasys.teku.ssz.type.Bytes20;
 
 public class ConsensusValidatedRequest {
   @JsonSerialize(using = BytesSerializer.class)
@@ -29,9 +25,7 @@ public class ConsensusValidatedRequest {
 
   public final ConsensusValidationResult status;
 
-
-  public ConsensusValidatedRequest(Bytes32 blockHash,
-      ConsensusValidationResult status) {
+  public ConsensusValidatedRequest(Bytes32 blockHash, ConsensusValidationResult status) {
     this.blockHash = blockHash;
     this.status = status;
   }
@@ -45,8 +39,7 @@ public class ConsensusValidatedRequest {
       return false;
     }
     ConsensusValidatedRequest that = (ConsensusValidatedRequest) o;
-    return Objects.equal(blockHash, that.blockHash) &&
-        status == that.status;
+    return Objects.equal(blockHash, that.blockHash) && status == that.status;
   }
 
   @Override
@@ -56,9 +49,6 @@ public class ConsensusValidatedRequest {
 
   @Override
   public String toString() {
-    return "ConsensusValidatedRequest{" +
-        "blockHash=" + blockHash +
-        ", status=" + status +
-        '}';
+    return "ConsensusValidatedRequest{" + "blockHash=" + blockHash + ", status=" + status + '}';
   }
 }

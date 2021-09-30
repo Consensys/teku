@@ -56,8 +56,7 @@ public interface ExecutionEngineClient {
         private Optional<PreparePayloadRequest> lastPreparePayloadRequest = Optional.empty();
 
         @Override
-        public SafeFuture<UInt64> preparePayload(
-            PreparePayloadRequest request) {
+        public SafeFuture<UInt64> preparePayload(PreparePayloadRequest request) {
           lastPreparePayloadRequest = Optional.of(request);
           payloadId = payloadId.increment();
           return SafeFuture.completedFuture(payloadId);

@@ -17,7 +17,6 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.base.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.services.powchain.execution.client.serializer.BytesSerializer;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel.ConsensusValidationResult;
 
 public class ForkchoiceUpdatedRequest {
   @JsonSerialize(using = BytesSerializer.class)
@@ -26,9 +25,7 @@ public class ForkchoiceUpdatedRequest {
   @JsonSerialize(using = BytesSerializer.class)
   public final Bytes32 finalizedBlockHash;
 
-
-  public ForkchoiceUpdatedRequest(Bytes32 headBlockHash,
-      Bytes32 finalizedBlockHash) {
+  public ForkchoiceUpdatedRequest(Bytes32 headBlockHash, Bytes32 finalizedBlockHash) {
     this.headBlockHash = headBlockHash;
     this.finalizedBlockHash = finalizedBlockHash;
   }
@@ -42,8 +39,8 @@ public class ForkchoiceUpdatedRequest {
       return false;
     }
     ForkchoiceUpdatedRequest that = (ForkchoiceUpdatedRequest) o;
-    return Objects.equal(headBlockHash, that.headBlockHash) &&
-        Objects.equal(finalizedBlockHash, that.finalizedBlockHash);
+    return Objects.equal(headBlockHash, that.headBlockHash)
+        && Objects.equal(finalizedBlockHash, that.finalizedBlockHash);
   }
 
   @Override
@@ -53,9 +50,11 @@ public class ForkchoiceUpdatedRequest {
 
   @Override
   public String toString() {
-    return "ForkchoiceUpdatedRequest{" +
-        "headBlockHash=" + headBlockHash +
-        ", finalizedBlockHash=" + finalizedBlockHash +
-        '}';
+    return "ForkchoiceUpdatedRequest{"
+        + "headBlockHash="
+        + headBlockHash
+        + ", finalizedBlockHash="
+        + finalizedBlockHash
+        + '}';
   }
 }

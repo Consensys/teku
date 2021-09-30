@@ -14,7 +14,6 @@
 package tech.pegasys.teku.services.powchain.execution.client;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.apache.tuweni.bytes.Bytes32;
@@ -35,7 +34,6 @@ import tech.pegasys.teku.services.powchain.execution.client.schema.Response;
 import tech.pegasys.teku.services.powchain.execution.client.serializer.UInt64AsHexDeserializer;
 import tech.pegasys.teku.services.powchain.execution.client.serializer.UInt64AsHexSerializer;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel.ConsensusValidationResult;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel.ExecutionPayloadStatus;
 
 public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 
@@ -49,16 +47,14 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   }
 
   @Override
-  public SafeFuture<UInt64> preparePayload(
-      PreparePayloadRequest request) {
+  public SafeFuture<UInt64> preparePayload(PreparePayloadRequest request) {
     Request<?, UInt64Web3jResponse> web3jRequest =
         new Request<>(
             "engine_preparePayload",
             Collections.singletonList(request),
             eeWeb3jService,
             UInt64Web3jResponse.class);
-    return doRequest1(web3jRequest)
-        .thenApply(UInt64Web3jResponse::getUInt);
+    return doRequest1(web3jRequest).thenApply(UInt64Web3jResponse::getUInt);
   }
 
   @Override
@@ -89,8 +85,8 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
     Request<?, GenericWeb3jResponse> web3jRequest =
         new Request<>(
             "engine_forkchoiceUpdated",
-            Collections
-                .singletonList(new ForkchoiceUpdatedRequest(headBlockHash, finalizedBlockHash)),
+            Collections.singletonList(
+                new ForkchoiceUpdatedRequest(headBlockHash, finalizedBlockHash)),
             eeWeb3jService,
             GenericWeb3jResponse.class);
     return doRequest(web3jRequest);
@@ -102,8 +98,9 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
     Request<?, GenericWeb3jResponse> web3jRequest =
         new Request<>(
             "engine_consensusValidated",
-            Collections.singletonList(new ConsensusValidatedRequest(blockHash, ConsensusValidationResult
-                .valueOf(validationResult))),
+            Collections.singletonList(
+                new ConsensusValidatedRequest(
+                    blockHash, ConsensusValidationResult.valueOf(validationResult))),
             eeWeb3jService,
             GenericWeb3jResponse.class);
     return doRequest(web3jRequest);
@@ -146,7 +143,6 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
       Request<?, T> web3jRequest) {
     return SafeFuture.of(web3jRequest.sendAsync());
   }
-
 
   static class GetPayloadWeb3jResponse extends org.web3j.protocol.core.Response<ExecutionPayload> {}
 
