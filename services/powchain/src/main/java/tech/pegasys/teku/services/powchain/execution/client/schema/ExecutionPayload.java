@@ -51,7 +51,7 @@ public class ExecutionPayload {
 
   @JsonSerialize(using = BytesSerializer.class)
   @JsonDeserialize(using = Bytes32Deserializer.class)
-  public final Bytes32 receiptsRoot;
+  public final Bytes32 receiptRoot;
 
   @JsonSerialize(using = BytesSerializer.class)
   @JsonDeserialize(using = BytesDeserializer.class)
@@ -98,7 +98,7 @@ public class ExecutionPayload {
     this.parentHash = executionPayload.getParent_hash();
     this.coinbase = executionPayload.getCoinbase();
     this.stateRoot = executionPayload.getState_root();
-    this.receiptsRoot = executionPayload.getReceipt_root();
+    this.receiptRoot = executionPayload.getReceipt_root();
     this.logsBloom = executionPayload.getLogs_bloom();
     this.random = executionPayload.getRandom();
     this.blockNumber = executionPayload.getBlockNumber();
@@ -119,7 +119,7 @@ public class ExecutionPayload {
       @JsonProperty("parentHash") Bytes32 parentHash,
       @JsonProperty("coinbase") Bytes20 coinbase,
       @JsonProperty("stateRoot") Bytes32 stateRoot,
-      @JsonProperty("receiptRoot") Bytes32 receiptsRoot,
+      @JsonProperty("receiptRoot") Bytes32 receiptRoot,
       @JsonProperty("logsBloom") Bytes logsBloom,
       @JsonProperty("random") Bytes32 random,
       @JsonProperty("blockNumber") UInt64 blockNumber,
@@ -133,7 +133,7 @@ public class ExecutionPayload {
     this.parentHash = parentHash;
     this.coinbase = coinbase;
     this.stateRoot = stateRoot;
-    this.receiptsRoot = receiptsRoot;
+    this.receiptRoot = receiptRoot;
     this.logsBloom = logsBloom;
     this.random = random;
     this.blockNumber = blockNumber;
@@ -152,7 +152,7 @@ public class ExecutionPayload {
         parentHash,
         coinbase,
         stateRoot,
-        receiptsRoot,
+        receiptRoot,
         logsBloom,
         random,
         blockNumber,
@@ -177,7 +177,7 @@ public class ExecutionPayload {
     return Objects.equals(parentHash, that.parentHash)
         && Objects.equals(coinbase, that.coinbase)
         && Objects.equals(stateRoot, that.stateRoot)
-        && Objects.equals(receiptsRoot, that.receiptsRoot)
+        && Objects.equals(receiptRoot, that.receiptRoot)
         && Objects.equals(logsBloom, that.logsBloom)
         && Objects.equals(random, that.random)
         && Objects.equals(blockNumber, that.blockNumber)
@@ -196,7 +196,7 @@ public class ExecutionPayload {
         parentHash,
         coinbase,
         stateRoot,
-        receiptsRoot,
+        receiptRoot,
         logsBloom,
         random,
         blockNumber,
@@ -215,7 +215,7 @@ public class ExecutionPayload {
         .add("parentHash", parentHash)
         .add("coinbase", coinbase)
         .add("stateRoot", stateRoot)
-        .add("receiptsRoot", receiptsRoot)
+        .add("receiptRoot", receiptRoot)
         .add("logsBloom", logsBloom)
         .add("random", random)
         .add("blockNumber", blockNumber)
