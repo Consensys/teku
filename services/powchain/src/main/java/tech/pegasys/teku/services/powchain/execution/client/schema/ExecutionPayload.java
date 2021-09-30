@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.services.powchain.execution.client.schema;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -130,6 +132,19 @@ public class ExecutionPayload {
       @JsonProperty("baseFeePerGas") Bytes32 baseFeePerGas,
       @JsonProperty("blockHash") Bytes32 blockHash,
       @JsonProperty("transactions") List<Bytes> transactions) {
+    checkNotNull(parentHash, "parentHash");
+    checkNotNull(coinbase, "coinbase");
+    checkNotNull(stateRoot, "stateRoot");
+    checkNotNull(receiptRoot, "receiptRoot");
+    checkNotNull(logsBloom, "logsBloom");
+    checkNotNull(random, "random");
+    checkNotNull(blockNumber, "blockNumber");
+    checkNotNull(gasLimit, "gasLimit");
+    checkNotNull(gasUsed, "gasUsed");
+    checkNotNull(timestamp, "timestamp");
+    checkNotNull(extraData, "extraData");
+    checkNotNull(baseFeePerGas, "baseFeePerGas");
+    checkNotNull(blockHash, "blockHash");
     this.parentHash = parentHash;
     this.coinbase = coinbase;
     this.stateRoot = stateRoot;
