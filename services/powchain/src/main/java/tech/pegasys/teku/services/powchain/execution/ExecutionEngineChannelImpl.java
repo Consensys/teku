@@ -60,7 +60,7 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
 
   private static <K> K unwrapResponseOrThrow(Response<K> response) {
     checkArgument(
-        response.getPayload() != null, "Invalid remote response: %s", response.getReason());
+        response.getReason() == null, "Invalid remote response: %s", response.getReason());
     return response.getPayload();
   }
 
