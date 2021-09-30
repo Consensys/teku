@@ -229,12 +229,14 @@ public interface SszPrimitiveSchemas {
       new AbstractSszPrimitiveSchema<>(256) {
         @Override
         public SszUInt256 createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
-          return SszUInt256.of(node.hashTreeRoot());
+          // reverse() is due to LE -> BE conversion
+          return SszUInt256.of(UInt256.fromBytes(node.hashTreeRoot().reverse()));
         }
 
         @Override
         public TreeNode updateBackingNode(TreeNode srcNode, int internalIndex, SszData newValue) {
-          return LeafNode.create(((SszUInt256) newValue).get().toBytes());
+          // reverse() is due to BE -> LE conversion
+          return LeafNode.create(((SszUInt256) newValue).get().toBytes().reverse());
         }
 
         @Override

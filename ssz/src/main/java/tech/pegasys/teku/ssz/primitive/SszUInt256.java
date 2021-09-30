@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.ssz.primitive;
 
-import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.ssz.impl.AbstractSszPrimitive;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
@@ -24,10 +23,6 @@ public class SszUInt256 extends AbstractSszPrimitive<UInt256, SszUInt256> {
 
   public static SszUInt256 of(UInt256 val) {
     return new SszUInt256(val);
-  }
-
-  public static SszUInt256 of(Bytes32 val) {
-    return new SszUInt256(UInt256.fromBytes(val));
   }
 
   private SszUInt256(UInt256 val) {
