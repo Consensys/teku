@@ -88,7 +88,7 @@ public class GenesisGenerator {
             stateMerge ->
                 stateMerge.setLatestExecutionPayloadHeader(
                     new ExecutionPayloadHeader(
-                        eth1BlockHash,
+                        Bytes32.ZERO,
                         Bytes20.ZERO,
                         Bytes32.ZERO,
                         Bytes32.ZERO,
@@ -100,7 +100,7 @@ public class GenesisGenerator {
                         eth1Timestamp,
                         Bytes.EMPTY,
                         specConfig.toVersionMerge().orElseThrow().getGenesisBaseFeePerGas(),
-                        Bytes32.ZERO,
+                        eth1BlockHash,
                         Bytes32.ZERO)));
 
     // Process deposits
