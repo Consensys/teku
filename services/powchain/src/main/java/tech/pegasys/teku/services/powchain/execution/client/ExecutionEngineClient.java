@@ -24,7 +24,6 @@ import tech.pegasys.teku.services.powchain.execution.client.schema.ExecutePayloa
 import tech.pegasys.teku.services.powchain.execution.client.schema.ExecutionPayload;
 import tech.pegasys.teku.services.powchain.execution.client.schema.GenericResponse;
 import tech.pegasys.teku.services.powchain.execution.client.schema.PreparePayloadRequest;
-import tech.pegasys.teku.services.powchain.execution.client.schema.PreparePayloadResponse;
 import tech.pegasys.teku.services.powchain.execution.client.schema.Response;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
@@ -32,7 +31,7 @@ import tech.pegasys.teku.ssz.type.Bytes20;
 
 public interface ExecutionEngineClient {
 
-  SafeFuture<Response<PreparePayloadResponse>> preparePayload(PreparePayloadRequest request);
+  SafeFuture<UInt64> preparePayload(PreparePayloadRequest request);
 
   SafeFuture<Response<ExecutionPayload>> getPayload(UInt64 payloadId);
 
@@ -57,11 +56,11 @@ public interface ExecutionEngineClient {
         private Optional<PreparePayloadRequest> lastPreparePayloadRequest = Optional.empty();
 
         @Override
-        public SafeFuture<Response<PreparePayloadResponse>> preparePayload(
+        public SafeFuture<UInt64> preparePayload(
             PreparePayloadRequest request) {
           lastPreparePayloadRequest = Optional.of(request);
           payloadId = payloadId.increment();
-          return SafeFuture.completedFuture(new Response<>(new PreparePayloadResponse(payloadId)));
+          return SafeFuture.completedFuture(payloadId);
         }
 
         @Override

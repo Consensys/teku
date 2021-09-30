@@ -32,7 +32,6 @@ import tech.pegasys.teku.services.powchain.execution.client.Web3JExecutionEngine
 import tech.pegasys.teku.services.powchain.execution.client.schema.ExecutePayloadResponse;
 import tech.pegasys.teku.services.powchain.execution.client.schema.ExecutionPayload;
 import tech.pegasys.teku.services.powchain.execution.client.schema.PreparePayloadRequest;
-import tech.pegasys.teku.services.powchain.execution.client.schema.PreparePayloadResponse;
 import tech.pegasys.teku.services.powchain.execution.client.schema.Response;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.ssz.type.Bytes20;
@@ -74,8 +73,6 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
       Bytes32 parentHash, UInt64 timestamp, Bytes32 random, Bytes20 feeRecipient) {
     return executionEngineClient
         .preparePayload(new PreparePayloadRequest(parentHash, timestamp, random, feeRecipient))
-        .thenApply(ExecutionEngineChannelImpl::unwrapResponseOrThrow)
-        .thenApply(PreparePayloadResponse::getPayloadId)
         .thenPeek(
             getPayloadId ->
                 printConsole(

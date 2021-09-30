@@ -26,6 +26,10 @@ public class UInt64AsHexDeserializer extends JsonDeserializer<UInt64> {
   @Override
   public UInt64 deserialize(JsonParser p, DeserializationContext ctxt)
       throws IOException, JsonProcessingException {
-    return UInt64.valueOf(Bytes.fromHexStringLenient(p.getValueAsString()).toUnsignedBigInteger());
+    return decode(p.getValueAsString());
+  }
+
+  public static UInt64 decode(String s) {
+    return UInt64.valueOf(Bytes.fromHexStringLenient(s).toUnsignedBigInteger());
   }
 }
