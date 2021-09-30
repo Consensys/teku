@@ -38,10 +38,11 @@ public class MetricsPublisher {
     RequestBody body = RequestBody.create(json, mediaType);
     Request request = new Request.Builder().url(endpoint).post(body).build();
     Response response = this.client.newCall(request).execute();
-    if (response.code() != 200) {
-      LOG.error(
-          "Failed to publish metrics to {}. Response code {}", endpointAddress, response.code());
+    int responseCode = response.code();
+    response.close();
+    if (responseCode != 200) {
+      LOG.error("Failed to publish metrics to {}. Response code {}", endpointAddress, responseCode);
     }
-    return response.code();
+    return responseCode;
   }
 }

@@ -42,6 +42,7 @@ public class MetricsDataFactory {
       Map<String, Object> values = getStringObjectMap((PrometheusMetricsSystem) metricsSystem);
       metricList.add(extractBeaconNodeData(values, timeProvider));
       metricList.add(extractValidatorData(values, timeProvider));
+      metricList.add(extractSystemData(values, timeProvider));
     } else {
       LOG.error("Prometheus metric system not found.");
       metricList.add(
@@ -52,6 +53,152 @@ public class MetricsDataFactory {
               metricsSystem));
     }
     return metricList;
+  }
+
+  private BaseMetricData extractSystemData(
+      final Map<String, Object> values, final TimeProvider timeProvider) {
+
+    final Long cpuNodeSystemSecondsTotal;
+    final Long cpuNodeUserSecondsTotal;
+
+    final Long memoryNodeBytesTotal;
+    final Long memoryNodeBytesFree;
+    final Long memoryNodeBytesCached;
+    final Long memoryNodeBytesBuffers;
+
+    final Long diskNodeBytesTotal;
+    final Long diskNodeBytesFree;
+    final Long diskNodeIoSeconds;
+    final Long diskNodeReadsTotal;
+    final Long diskNodeWritesTotal;
+
+    final Long networkNodeBytesTotalReceive;
+    final Long networkNodeBytesTotalTransmit;
+    final Long miscNodeBootTsSeconds;
+
+    if (values.containsKey("cpu_seconds_total")) {
+      cpuNodeSystemSecondsTotal =
+          ((Double) ((Observation) values.get("cpu_seconds_total")).getValue()).longValue();
+    } else {
+      cpuNodeSystemSecondsTotal = null;
+    }
+
+    if (values.containsKey("node_cpu_seconds_total")) {
+      cpuNodeUserSecondsTotal =
+          ((Double) ((Observation) values.get("node_cpu_seconds_total")).getValue()).longValue();
+    } else {
+      cpuNodeUserSecondsTotal = null;
+    }
+
+    if (values.containsKey("node_memory_MemTotal_bytes")) {
+      memoryNodeBytesTotal =
+          ((Double) ((Observation) values.get("node_memory_MemTotal_bytes")).getValue())
+              .longValue();
+    } else {
+      memoryNodeBytesTotal = null;
+    }
+
+    if (values.containsKey("node_memory_MemFree_bytes")) {
+      memoryNodeBytesFree =
+          ((Double) ((Observation) values.get("node_memory_MemFree_bytes")).getValue()).longValue();
+    } else {
+      memoryNodeBytesFree = null;
+    }
+
+    if (values.containsKey("node_memory_Cached_bytes")) {
+      memoryNodeBytesCached =
+          ((Double) ((Observation) values.get("node_memory_Cached_bytes")).getValue()).longValue();
+    } else {
+      memoryNodeBytesCached = null;
+    }
+
+    if (values.containsKey("node_memory_Buffers_bytes")) {
+      memoryNodeBytesBuffers =
+          ((Double) ((Observation) values.get("node_memory_Buffers_bytes")).getValue()).longValue();
+    } else {
+      memoryNodeBytesBuffers = null;
+    }
+
+    if (values.containsKey("node_filesystem_size_bytes")) {
+      diskNodeBytesTotal =
+          ((Double) ((Observation) values.get("node_filesystem_size_bytes")).getValue())
+              .longValue();
+    } else {
+      diskNodeBytesTotal = null;
+    }
+
+    if (values.containsKey("node_filesystem_free_bytes")) {
+      diskNodeBytesFree =
+          ((Double) ((Observation) values.get("node_filesystem_free_bytes")).getValue())
+              .longValue();
+    } else {
+      diskNodeBytesFree = null;
+    }
+
+    if (values.containsKey("node_disk_io_time_seconds_total")) {
+      diskNodeIoSeconds =
+          ((Double) ((Observation) values.get("node_disk_io_time_seconds_total")).getValue())
+              .longValue();
+    } else {
+      diskNodeIoSeconds = null;
+    }
+
+    if (values.containsKey("node_disk_read_bytes_total")) {
+      diskNodeReadsTotal =
+          ((Double) ((Observation) values.get("node_disk_read_bytes_total")).getValue())
+              .longValue();
+    } else {
+      diskNodeReadsTotal = null;
+    }
+
+    if (values.containsKey("node_disk_written_bytes_total")) {
+      diskNodeWritesTotal =
+          ((Double) ((Observation) values.get("node_disk_written_bytes_total")).getValue())
+              .longValue();
+    } else {
+      diskNodeWritesTotal = null;
+    }
+
+    if (values.containsKey("node_network_receive_bytes_total")) {
+      networkNodeBytesTotalReceive =
+          ((Double) ((Observation) values.get("node_network_receive_bytes_total")).getValue())
+              .longValue();
+    } else {
+      networkNodeBytesTotalReceive = null;
+    }
+
+    if (values.containsKey("node_network_transmit_bytes_total")) {
+      networkNodeBytesTotalTransmit =
+          ((Double) ((Observation) values.get("node_network_transmit_bytes_total")).getValue())
+              .longValue();
+    } else {
+      networkNodeBytesTotalTransmit = null;
+    }
+
+    if (values.containsKey("start_time_second")) {
+      miscNodeBootTsSeconds =
+          ((Double) ((Observation) values.get("start_time_second")).getValue()).longValue();
+    } else {
+      miscNodeBootTsSeconds = null;
+    }
+    return new SystemMetricData(
+        PROTOCOL_VERSION,
+        timeProvider.getTimeInMillis().longValue(),
+        MetricsDataClient.SYSTEM.getDataClient(),
+        cpuNodeSystemSecondsTotal,
+        cpuNodeUserSecondsTotal,
+        memoryNodeBytesTotal,
+        memoryNodeBytesFree,
+        memoryNodeBytesCached,
+        memoryNodeBytesBuffers,
+        diskNodeBytesTotal,
+        diskNodeBytesFree,
+        diskNodeIoSeconds,
+        diskNodeReadsTotal,
+        diskNodeWritesTotal,
+        networkNodeBytesTotalReceive,
+        networkNodeBytesTotalTransmit,
+        miscNodeBootTsSeconds);
   }
 
   private static BaseMetricData extractBeaconNodeData(
