@@ -31,6 +31,7 @@ import tech.pegasys.teku.services.powchain.execution.client.serializer.Bytes20Se
 import tech.pegasys.teku.services.powchain.execution.client.serializer.Bytes32Deserializer;
 import tech.pegasys.teku.services.powchain.execution.client.serializer.BytesDeserializer;
 import tech.pegasys.teku.services.powchain.execution.client.serializer.BytesSerializer;
+import tech.pegasys.teku.services.powchain.execution.client.serializer.UInt256AsHexSerializer;
 import tech.pegasys.teku.services.powchain.execution.client.serializer.UInt64AsHexDeserializer;
 import tech.pegasys.teku.services.powchain.execution.client.serializer.UInt64AsHexSerializer;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
@@ -83,7 +84,7 @@ public class ExecutionPayload {
   @JsonDeserialize(using = BytesDeserializer.class)
   public final Bytes extraData;
 
-  @JsonSerialize(using = BytesSerializer.class)
+  @JsonSerialize(using = UInt256AsHexSerializer.class)
   @JsonDeserialize(using = Bytes32Deserializer.class)
   public final Bytes32 baseFeePerGas;
 
