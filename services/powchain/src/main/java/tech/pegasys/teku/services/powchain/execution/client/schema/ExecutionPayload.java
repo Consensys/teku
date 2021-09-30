@@ -184,6 +184,7 @@ public class ExecutionPayload {
         && Objects.equals(gasLimit, that.gasLimit)
         && Objects.equals(gasUsed, that.gasUsed)
         && Objects.equals(timestamp, that.timestamp)
+        && Objects.equals(extraData, that.extraData)
         && Objects.equals(baseFeePerGas, that.baseFeePerGas)
         && Objects.equals(blockHash, that.blockHash)
         && Objects.equals(transactions, that.transactions);
@@ -202,6 +203,7 @@ public class ExecutionPayload {
         gasLimit,
         gasUsed,
         timestamp,
+        extraData,
         baseFeePerGas,
         blockHash,
         transactions);
@@ -220,6 +222,7 @@ public class ExecutionPayload {
         .add("gasLimit", gasLimit)
         .add("gasUsed", gasUsed)
         .add("timestamp", timestamp)
+        .add("extraData", extraData)
         .add("baseFeePerGas", baseFeePerGas)
         .add("blockHash", blockHash)
         .add("transactions", transactions)
