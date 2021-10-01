@@ -14,10 +14,14 @@
 package tech.pegasys.teku.services.powchain.execution.client.schema;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.util.Objects;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.services.powchain.execution.client.serializer.UInt64AsHexDeserializer;
 
 public class PreparePayloadResponse {
+
+  @JsonDeserialize(using = UInt64AsHexDeserializer.class)
   private UInt64 payloadId;
 
   public PreparePayloadResponse(@JsonProperty("payloadId") UInt64 payloadId) {

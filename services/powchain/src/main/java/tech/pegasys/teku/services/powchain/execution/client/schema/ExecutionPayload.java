@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.services.powchain.execution.client.schema;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -29,6 +31,7 @@ import tech.pegasys.teku.services.powchain.execution.client.serializer.Bytes20Se
 import tech.pegasys.teku.services.powchain.execution.client.serializer.Bytes32Deserializer;
 import tech.pegasys.teku.services.powchain.execution.client.serializer.BytesDeserializer;
 import tech.pegasys.teku.services.powchain.execution.client.serializer.BytesSerializer;
+import tech.pegasys.teku.services.powchain.execution.client.serializer.UInt256AsHexSerializer;
 import tech.pegasys.teku.services.powchain.execution.client.serializer.UInt64AsHexDeserializer;
 import tech.pegasys.teku.services.powchain.execution.client.serializer.UInt64AsHexSerializer;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
@@ -51,7 +54,7 @@ public class ExecutionPayload {
 
   @JsonSerialize(using = BytesSerializer.class)
   @JsonDeserialize(using = Bytes32Deserializer.class)
-  public final Bytes32 receiptsRoot;
+  public final Bytes32 receiptRoot;
 
   @JsonSerialize(using = BytesSerializer.class)
   @JsonDeserialize(using = BytesDeserializer.class)
@@ -81,7 +84,7 @@ public class ExecutionPayload {
   @JsonDeserialize(using = BytesDeserializer.class)
   public final Bytes extraData;
 
-  @JsonSerialize(using = BytesSerializer.class)
+  @JsonSerialize(using = UInt256AsHexSerializer.class)
   @JsonDeserialize(using = Bytes32Deserializer.class)
   public final Bytes32 baseFeePerGas;
 
@@ -98,7 +101,7 @@ public class ExecutionPayload {
     this.parentHash = executionPayload.getParent_hash();
     this.coinbase = executionPayload.getCoinbase();
     this.stateRoot = executionPayload.getState_root();
-    this.receiptsRoot = executionPayload.getReceipt_root();
+    this.receiptRoot = executionPayload.getReceipt_root();
     this.logsBloom = executionPayload.getLogs_bloom();
     this.random = executionPayload.getRandom();
     this.blockNumber = executionPayload.getBlockNumber();
@@ -119,7 +122,7 @@ public class ExecutionPayload {
       @JsonProperty("parentHash") Bytes32 parentHash,
       @JsonProperty("coinbase") Bytes20 coinbase,
       @JsonProperty("stateRoot") Bytes32 stateRoot,
-      @JsonProperty("receiptRoot") Bytes32 receiptsRoot,
+      @JsonProperty("receiptRoot") Bytes32 receiptRoot,
       @JsonProperty("logsBloom") Bytes logsBloom,
       @JsonProperty("random") Bytes32 random,
       @JsonProperty("blockNumber") UInt64 blockNumber,
@@ -127,13 +130,26 @@ public class ExecutionPayload {
       @JsonProperty("gasUsed") UInt64 gasUsed,
       @JsonProperty("timestamp") UInt64 timestamp,
       @JsonProperty("extraData") Bytes extraData,
-      @JsonProperty("blockHash") Bytes32 baseFeePerGas,
+      @JsonProperty("baseFeePerGas") Bytes32 baseFeePerGas,
       @JsonProperty("blockHash") Bytes32 blockHash,
       @JsonProperty("transactions") List<Bytes> transactions) {
+    checkNotNull(parentHash, "parentHash");
+    checkNotNull(coinbase, "coinbase");
+    checkNotNull(stateRoot, "stateRoot");
+    checkNotNull(receiptRoot, "receiptRoot");
+    checkNotNull(logsBloom, "logsBloom");
+    checkNotNull(random, "random");
+    checkNotNull(blockNumber, "blockNumber");
+    checkNotNull(gasLimit, "gasLimit");
+    checkNotNull(gasUsed, "gasUsed");
+    checkNotNull(timestamp, "timestamp");
+    checkNotNull(extraData, "extraData");
+    checkNotNull(baseFeePerGas, "baseFeePerGas");
+    checkNotNull(blockHash, "blockHash");
     this.parentHash = parentHash;
     this.coinbase = coinbase;
     this.stateRoot = stateRoot;
-    this.receiptsRoot = receiptsRoot;
+    this.receiptRoot = receiptRoot;
     this.logsBloom = logsBloom;
     this.random = random;
     this.blockNumber = blockNumber;
@@ -152,7 +168,7 @@ public class ExecutionPayload {
         parentHash,
         coinbase,
         stateRoot,
-        receiptsRoot,
+        receiptRoot,
         logsBloom,
         random,
         blockNumber,
@@ -177,13 +193,14 @@ public class ExecutionPayload {
     return Objects.equals(parentHash, that.parentHash)
         && Objects.equals(coinbase, that.coinbase)
         && Objects.equals(stateRoot, that.stateRoot)
-        && Objects.equals(receiptsRoot, that.receiptsRoot)
+        && Objects.equals(receiptRoot, that.receiptRoot)
         && Objects.equals(logsBloom, that.logsBloom)
         && Objects.equals(random, that.random)
         && Objects.equals(blockNumber, that.blockNumber)
         && Objects.equals(gasLimit, that.gasLimit)
         && Objects.equals(gasUsed, that.gasUsed)
         && Objects.equals(timestamp, that.timestamp)
+        && Objects.equals(extraData, that.extraData)
         && Objects.equals(baseFeePerGas, that.baseFeePerGas)
         && Objects.equals(blockHash, that.blockHash)
         && Objects.equals(transactions, that.transactions);
@@ -195,13 +212,14 @@ public class ExecutionPayload {
         parentHash,
         coinbase,
         stateRoot,
-        receiptsRoot,
+        receiptRoot,
         logsBloom,
         random,
         blockNumber,
         gasLimit,
         gasUsed,
         timestamp,
+        extraData,
         baseFeePerGas,
         blockHash,
         transactions);
@@ -213,13 +231,14 @@ public class ExecutionPayload {
         .add("parentHash", parentHash)
         .add("coinbase", coinbase)
         .add("stateRoot", stateRoot)
-        .add("receiptsRoot", receiptsRoot)
+        .add("receiptRoot", receiptRoot)
         .add("logsBloom", logsBloom)
         .add("random", random)
         .add("blockNumber", blockNumber)
         .add("gasLimit", gasLimit)
         .add("gasUsed", gasUsed)
         .add("timestamp", timestamp)
+        .add("extraData", extraData)
         .add("baseFeePerGas", baseFeePerGas)
         .add("blockHash", blockHash)
         .add("transactions", transactions)

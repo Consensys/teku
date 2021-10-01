@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.services.powchain.execution.client.serializer.Bytes20Serializer;
 import tech.pegasys.teku.services.powchain.execution.client.serializer.BytesSerializer;
 import tech.pegasys.teku.services.powchain.execution.client.serializer.UInt64AsHexSerializer;
 import tech.pegasys.teku.ssz.type.Bytes20;
@@ -31,7 +32,7 @@ public class PreparePayloadRequest {
   @JsonSerialize(using = BytesSerializer.class)
   public final Bytes32 random;
 
-  @JsonSerialize(using = BytesSerializer.class)
+  @JsonSerialize(using = Bytes20Serializer.class)
   public final Bytes20 feeRecipient;
 
   public PreparePayloadRequest(

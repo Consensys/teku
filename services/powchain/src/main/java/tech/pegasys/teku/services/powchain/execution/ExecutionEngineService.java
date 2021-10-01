@@ -67,7 +67,7 @@ public class ExecutionEngineService implements ChainHeadChannel {
                             updateForkChoice(
                                 headBlockRoot, state.getFinalized_checkpoint().getRoot()))
                     .orElseGet(() -> SafeFuture.completedFuture(null)))
-        .finish(err -> LOG.warn("forkChoiceUpdated failed", err));
+        .finish(err -> LOG.warn("forkchoiceUpdated failed", err));
   }
 
   private static Optional<Bytes32> getPayloadBlockHash(Optional<BeaconBlock> block) {

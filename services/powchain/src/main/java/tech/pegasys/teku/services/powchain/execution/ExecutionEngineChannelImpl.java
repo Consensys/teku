@@ -60,7 +60,7 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
 
   private static <K> K unwrapResponseOrThrow(Response<K> response) {
     checkArgument(
-        response.getPayload() != null, "Invalid remote response: %s", response.getReason());
+        response.getReason() == null, "Invalid remote response: %s", response.getReason());
     return response.getPayload();
   }
 
@@ -117,7 +117,7 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
   @Override
   public SafeFuture<Void> forkChoiceUpdated(Bytes32 bestBlockHash, Bytes32 finalizedBlockHash) {
     return executionEngineClient
-        .forkChoiceUpdated(bestBlockHash, finalizedBlockHash)
+        .forkchoiceUpdated(bestBlockHash, finalizedBlockHash)
         .thenApply(ExecutionEngineChannelImpl::unwrapResponseOrThrow)
         .thenPeek(
             __ ->

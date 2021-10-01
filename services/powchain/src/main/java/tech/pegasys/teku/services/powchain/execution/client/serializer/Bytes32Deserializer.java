@@ -18,6 +18,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import java.io.IOException;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 
 public class Bytes32Deserializer extends JsonDeserializer<Bytes32> {
@@ -25,6 +26,6 @@ public class Bytes32Deserializer extends JsonDeserializer<Bytes32> {
   @Override
   public Bytes32 deserialize(JsonParser p, DeserializationContext ctxt)
       throws IOException, JsonProcessingException {
-    return Bytes32.fromHexString(p.getValueAsString());
+    return Bytes32.leftPad(Bytes.fromHexStringLenient(p.getValueAsString()));
   }
 }
