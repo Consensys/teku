@@ -434,7 +434,7 @@ public class ForkChoiceUtil {
         mergeTransitionHelpers.getPowBlock(
             executionEngineChannel, blockBodyMerge.getExecution_payload().getParent_hash());
     PowBlock parentPowBlock =
-        mergeTransitionHelpers.getPowBlock(executionEngineChannel, powBlock.parentHash);
+        mergeTransitionHelpers.getPowBlock(executionEngineChannel, powBlock.getParentHash());
 
     if (!mergeTransitionHelpers.isValidTerminalPowBlock(powBlock, parentPowBlock)) {
       return Optional.of(BlockImportResult.FAILED_INVALID_TERMINAL_POW_BLOCK);

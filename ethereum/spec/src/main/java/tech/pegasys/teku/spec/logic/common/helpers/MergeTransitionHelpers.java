@@ -41,9 +41,9 @@ public class MergeTransitionHelpers {
 
   public boolean isValidTerminalPowBlock(PowBlock powBlock, PowBlock parentPowBlock) {
     boolean isTotalDifficultyReached =
-        powBlock.totalDifficulty.compareTo(specConfig.getTerminalTotalDifficulty()) >= 0;
+        powBlock.getTotalDifficulty().compareTo(specConfig.getTerminalTotalDifficulty()) >= 0;
     boolean isParentTotalDifficultyValid =
-        parentPowBlock.totalDifficulty.compareTo(specConfig.getTerminalTotalDifficulty()) < 0;
+        parentPowBlock.getDifficulty().compareTo(specConfig.getTerminalTotalDifficulty()) < 0;
     return isTotalDifficultyReached && isParentTotalDifficultyValid;
   }
 
