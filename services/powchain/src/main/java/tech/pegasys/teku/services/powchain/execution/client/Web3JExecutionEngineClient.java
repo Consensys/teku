@@ -32,7 +32,6 @@ import tech.pegasys.teku.services.powchain.execution.client.schema.GenericRespon
 import tech.pegasys.teku.services.powchain.execution.client.schema.PreparePayloadRequest;
 import tech.pegasys.teku.services.powchain.execution.client.schema.PreparePayloadResponse;
 import tech.pegasys.teku.services.powchain.execution.client.schema.Response;
-import tech.pegasys.teku.services.powchain.execution.client.serializer.UInt64AsHexDeserializer;
 import tech.pegasys.teku.services.powchain.execution.client.serializer.UInt64AsHexSerializer;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel.ConsensusValidationResult;
 

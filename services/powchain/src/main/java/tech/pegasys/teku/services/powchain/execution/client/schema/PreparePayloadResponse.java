@@ -15,11 +15,9 @@ package tech.pegasys.teku.services.powchain.execution.client.schema;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.Objects;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.services.powchain.execution.client.serializer.UInt64AsHexDeserializer;
-import tech.pegasys.teku.services.powchain.execution.client.serializer.UInt64AsHexSerializer;
 
 public class PreparePayloadResponse {
 
