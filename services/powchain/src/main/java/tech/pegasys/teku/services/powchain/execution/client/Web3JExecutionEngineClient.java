@@ -47,14 +47,15 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   }
 
   @Override
-  public SafeFuture<UInt64> preparePayload(PreparePayloadRequest request) {
-    Request<?, UInt64Web3jResponse> web3jRequest =
+  public SafeFuture<Response<PreparePayloadResponse>> preparePayload(
+      PreparePayloadRequest request) {
+    Request<?, PreparePayloadWeb3jResponse> web3jRequest =
         new Request<>(
             "engine_preparePayload",
             Collections.singletonList(request),
             eeWeb3jService,
-            UInt64Web3jResponse.class);
-    return doRequest1(web3jRequest).thenApply(UInt64Web3jResponse::getUInt);
+            PreparePayloadWeb3jResponse.class);
+    return doRequest(web3jRequest);
   }
 
   @Override
@@ -62,7 +63,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
     Request<?, GetPayloadWeb3jResponse> web3jRequest =
         new Request<>(
             "engine_getPayload",
-            Collections.singletonList(UInt64AsHexSerializer.toHexString(payloadId)),
+            Collections.singletonList(payloadId.toString()),
             eeWeb3jService,
             GetPayloadWeb3jResponse.class);
     return doRequest(web3jRequest);
@@ -139,21 +140,13 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
     return SafeFuture.of(responseFuture);
   }
 
-  private <T extends org.web3j.protocol.core.Response<?>> SafeFuture<T> doRequest1(
-      Request<?, T> web3jRequest) {
-    return SafeFuture.of(web3jRequest.sendAsync());
-  }
-
   static class GetPayloadWeb3jResponse extends org.web3j.protocol.core.Response<ExecutionPayload> {}
+
+  static class PreparePayloadWeb3jResponse
+      extends org.web3j.protocol.core.Response<PreparePayloadResponse> {}
 
   static class NewBlockWeb3jResponse
       extends org.web3j.protocol.core.Response<ExecutePayloadResponse> {}
 
   static class GenericWeb3jResponse extends org.web3j.protocol.core.Response<GenericResponse> {}
-
-  static class UInt64Web3jResponse extends org.web3j.protocol.core.Response<String> {
-    public UInt64 getUInt() {
-      return UInt64AsHexDeserializer.decode(getResult());
-    }
-  }
 }
