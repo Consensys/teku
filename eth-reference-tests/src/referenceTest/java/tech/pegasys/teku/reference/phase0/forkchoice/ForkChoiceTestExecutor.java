@@ -14,15 +14,20 @@
 package tech.pegasys.teku.reference.phase0.forkchoice;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.reference.TestDataUtils;
@@ -37,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.spec.logic.common.helpers.PowBlock;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -48,9 +54,11 @@ public class ForkChoiceTestExecutor implements TestExecutor {
   public static final ImmutableMap<String, TestExecutor> FORK_CHOICE_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
           .put("fork_choice/get_head", new ForkChoiceTestExecutor())
-          .put("fork_choice/on_block", TestExecutor.IGNORE_TESTS)
-          .put("fork_choice/on_merge_block", TestExecutor.IGNORE_TESTS)
+          .put("fork_choice/on_block", new ForkChoiceTestExecutor())
+          .put("fork_choice/on_merge_block", new ForkChoiceTestExecutor())
           .build();
+
+  private ExecutionEngineChannel executionEngineChannel = spy(ExecutionEngineChannel.NOOP);
 
   @Override
   public void runTest(final TestDefinition testDefinition) throws Throwable {
@@ -106,6 +114,9 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       } else if (step.containsKey("block")) {
         applyBlock(testDefinition, spec, forkChoice, step);
 
+      } else if (step.containsKey("pow_block")) {
+        applyPowBlock(testDefinition, step);
+
       } else if (step.containsKey("attestation")) {
         applyAttestation(testDefinition, forkChoice, step);
 
@@ -134,11 +145,50 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       final ForkChoice forkChoice,
       final Map<String, Object> step) {
     final String blockName = get(step, "block");
+    final boolean isValidStep = getIsValid(step);
     final SignedBeaconBlock block =
         TestDataUtils.loadSsz(
             testDefinition, blockName + ".ssz_snappy", spec::deserializeSignedBeaconBlock);
     LOG.info("Importing block {} at slot {}", block.getRoot(), block.getSlot());
-    assertThat(forkChoice.onBlock(ExecutionEngineChannel.NOOP, block)).isCompleted();
+    assertThat(forkChoice.onBlock(executionEngineChannel, block))
+        .isCompletedWithValueMatching(
+            blockImportResult -> blockImportResult.isSuccessful() == isValidStep);
+  }
+
+  private void applyPowBlock(final TestDefinition testDefinition, final Map<String, Object> step) {
+    final String blockName = get(step, "pow_block");
+    final PowBlock powBlock =
+        TestDataUtils.loadSsz(
+            testDefinition, blockName + ".ssz_snappy", PowBlock.SSZ_SCHEMA::sszDeserialize);
+    LOG.info("setting powBlock {}", powBlock.getBlockHash());
+    when(executionEngineChannel.getPowBlock(powBlock.getBlockHash()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(
+                    new Block(
+                        "0",
+                        powBlock.getBlockHash().toHexString(),
+                        powBlock.getParentHash().toHexString(),
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        powBlock.getDifficulty().toHexString(),
+                        powBlock.getTotalDifficulty().toHexString(),
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null))));
   }
 
   @SuppressWarnings("unchecked")
@@ -233,5 +283,9 @@ public class ForkChoiceTestExecutor implements TestExecutor {
 
   private Bytes32 getBytes32(final Map<String, Object> yamlData, final String key) {
     return Bytes32.fromHexString(get(yamlData, key));
+  }
+
+  private boolean getIsValid(final Map<String, Object> yamlData) {
+    return Boolean.parseBoolean(yamlData.getOrDefault("valid", "true").toString());
   }
 }
