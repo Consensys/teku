@@ -30,6 +30,7 @@ import tech.pegasys.teku.services.powchain.execution.client.schema.ExecutionPayl
 import tech.pegasys.teku.services.powchain.execution.client.schema.ForkchoiceUpdatedRequest;
 import tech.pegasys.teku.services.powchain.execution.client.schema.GenericResponse;
 import tech.pegasys.teku.services.powchain.execution.client.schema.PreparePayloadRequest;
+import tech.pegasys.teku.services.powchain.execution.client.schema.PreparePayloadResponse;
 import tech.pegasys.teku.services.powchain.execution.client.schema.Response;
 import tech.pegasys.teku.services.powchain.execution.client.serializer.UInt64AsHexDeserializer;
 import tech.pegasys.teku.services.powchain.execution.client.serializer.UInt64AsHexSerializer;
@@ -63,7 +64,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
     Request<?, GetPayloadWeb3jResponse> web3jRequest =
         new Request<>(
             "engine_getPayload",
-            Collections.singletonList(payloadId.toString()),
+            Collections.singletonList(UInt64AsHexSerializer.toHexString(payloadId)),
             eeWeb3jService,
             GetPayloadWeb3jResponse.class);
     return doRequest(web3jRequest);

@@ -24,6 +24,10 @@ public class UInt64AsHexSerializer extends JsonSerializer<UInt64> {
   @Override
   public void serialize(UInt64 value, JsonGenerator gen, SerializerProvider serializers)
       throws IOException {
-    gen.writeString(Bytes.ofUnsignedLong(value.longValue()).toQuantityHexString());
+    gen.writeString(toHexString(value));
+  }
+
+  public static String toHexString(UInt64 value) {
+    return Bytes.ofUnsignedLong(value.longValue()).toQuantityHexString();
   }
 }
