@@ -41,8 +41,7 @@ public interface ExecutionEngineClient {
   SafeFuture<Response<GenericResponse>> forkchoiceUpdated(
       Bytes32 headBlockHash, Bytes32 finalizedBlockHash);
 
-  SafeFuture<Response<GenericResponse>> consensusValidated(
-      Bytes32 blockHash, String validationResult);
+  SafeFuture<Response<Object>> consensusValidated(Bytes32 blockHash, String validationResult);
 
   SafeFuture<Optional<EthBlock.Block>> getPowBlock(Bytes32 blockHash);
 
@@ -106,7 +105,7 @@ public interface ExecutionEngineClient {
         }
 
         @Override
-        public SafeFuture<Response<GenericResponse>> consensusValidated(
+        public SafeFuture<Response<Object>> consensusValidated(
             Bytes32 blockHash, String validationResult) {
           return SafeFuture.completedFuture(new Response<>(new GenericResponse(true)));
         }
