@@ -81,15 +81,15 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   }
 
   @Override
-  public SafeFuture<Response<GenericResponse>> forkchoiceUpdated(
+  public SafeFuture<Response<Object>> forkchoiceUpdated(
       Bytes32 headBlockHash, Bytes32 finalizedBlockHash) {
-    Request<?, GenericWeb3jResponse> web3jRequest =
+    Request<?, EmptyWeb3jResponse> web3jRequest =
         new Request<>(
             "engine_forkchoiceUpdated",
             Collections.singletonList(
                 new ForkchoiceUpdatedRequest(headBlockHash, finalizedBlockHash)),
             eeWeb3jService,
-            GenericWeb3jResponse.class);
+            EmptyWeb3jResponse.class);
     return doRequest(web3jRequest);
   }
 
