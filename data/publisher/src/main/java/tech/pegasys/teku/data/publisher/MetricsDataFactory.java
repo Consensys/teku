@@ -23,6 +23,7 @@ import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.metrics.Observation;
 import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.jetbrains.annotations.Nullable;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 
@@ -39,7 +40,7 @@ public class MetricsDataFactory {
   public List<BaseMetricData> getMetricData(final TimeProvider timeProvider) {
     List<BaseMetricData> metricList = new ArrayList<>();
     if (metricsSystem instanceof PrometheusMetricsSystem) {
-      Map<String, Object> values = getStringObjectMap((PrometheusMetricsSystem) metricsSystem);
+      Map<String, Observation> values = getStringObjectMap((PrometheusMetricsSystem) metricsSystem);
       metricList.add(extractBeaconNodeData(values, timeProvider));
       metricList.add(extractValidatorData(values, timeProvider));
       metricList.add(extractSystemData(values, timeProvider));
@@ -56,131 +57,24 @@ public class MetricsDataFactory {
   }
 
   private BaseMetricData extractSystemData(
-      final Map<String, Object> values, final TimeProvider timeProvider) {
+      final Map<String, Observation> values, final TimeProvider timeProvider) {
 
-    final Long cpuNodeSystemSecondsTotal;
-    final Long cpuNodeUserSecondsTotal;
-
-    final Long memoryNodeBytesTotal;
-    final Long memoryNodeBytesFree;
-    final Long memoryNodeBytesCached;
-    final Long memoryNodeBytesBuffers;
-
-    final Long diskNodeBytesTotal;
-    final Long diskNodeBytesFree;
-    final Long diskNodeIoSeconds;
-    final Long diskNodeReadsTotal;
-    final Long diskNodeWritesTotal;
-
-    final Long networkNodeBytesTotalReceive;
-    final Long networkNodeBytesTotalTransmit;
-    final Long miscNodeBootTsSeconds;
-
-    if (values.containsKey("cpu_seconds_total")) {
-      cpuNodeSystemSecondsTotal =
-          ((Double) ((Observation) values.get("cpu_seconds_total")).getValue()).longValue();
-    } else {
-      cpuNodeSystemSecondsTotal = null;
-    }
-
-    if (values.containsKey("node_cpu_seconds_total")) {
-      cpuNodeUserSecondsTotal =
-          ((Double) ((Observation) values.get("node_cpu_seconds_total")).getValue()).longValue();
-    } else {
-      cpuNodeUserSecondsTotal = null;
-    }
-
-    if (values.containsKey("node_memory_MemTotal_bytes")) {
-      memoryNodeBytesTotal =
-          ((Double) ((Observation) values.get("node_memory_MemTotal_bytes")).getValue())
-              .longValue();
-    } else {
-      memoryNodeBytesTotal = null;
-    }
-
-    if (values.containsKey("node_memory_MemFree_bytes")) {
-      memoryNodeBytesFree =
-          ((Double) ((Observation) values.get("node_memory_MemFree_bytes")).getValue()).longValue();
-    } else {
-      memoryNodeBytesFree = null;
-    }
-
-    if (values.containsKey("node_memory_Cached_bytes")) {
-      memoryNodeBytesCached =
-          ((Double) ((Observation) values.get("node_memory_Cached_bytes")).getValue()).longValue();
-    } else {
-      memoryNodeBytesCached = null;
-    }
-
-    if (values.containsKey("node_memory_Buffers_bytes")) {
-      memoryNodeBytesBuffers =
-          ((Double) ((Observation) values.get("node_memory_Buffers_bytes")).getValue()).longValue();
-    } else {
-      memoryNodeBytesBuffers = null;
-    }
-
-    if (values.containsKey("node_filesystem_size_bytes")) {
-      diskNodeBytesTotal =
-          ((Double) ((Observation) values.get("node_filesystem_size_bytes")).getValue())
-              .longValue();
-    } else {
-      diskNodeBytesTotal = null;
-    }
-
-    if (values.containsKey("node_filesystem_free_bytes")) {
-      diskNodeBytesFree =
-          ((Double) ((Observation) values.get("node_filesystem_free_bytes")).getValue())
-              .longValue();
-    } else {
-      diskNodeBytesFree = null;
-    }
-
-    if (values.containsKey("node_disk_io_time_seconds_total")) {
-      diskNodeIoSeconds =
-          ((Double) ((Observation) values.get("node_disk_io_time_seconds_total")).getValue())
-              .longValue();
-    } else {
-      diskNodeIoSeconds = null;
-    }
-
-    if (values.containsKey("node_disk_read_bytes_total")) {
-      diskNodeReadsTotal =
-          ((Double) ((Observation) values.get("node_disk_read_bytes_total")).getValue())
-              .longValue();
-    } else {
-      diskNodeReadsTotal = null;
-    }
-
-    if (values.containsKey("node_disk_written_bytes_total")) {
-      diskNodeWritesTotal =
-          ((Double) ((Observation) values.get("node_disk_written_bytes_total")).getValue())
-              .longValue();
-    } else {
-      diskNodeWritesTotal = null;
-    }
-
-    if (values.containsKey("node_network_receive_bytes_total")) {
-      networkNodeBytesTotalReceive =
-          ((Double) ((Observation) values.get("node_network_receive_bytes_total")).getValue())
-              .longValue();
-    } else {
-      networkNodeBytesTotalReceive = null;
-    }
-
-    if (values.containsKey("node_network_transmit_bytes_total")) {
-      networkNodeBytesTotalTransmit =
-          ((Double) ((Observation) values.get("node_network_transmit_bytes_total")).getValue())
-              .longValue();
-    } else {
-      networkNodeBytesTotalTransmit = null;
-    }
-
-    if (values.containsKey("start_time_second")) {
-      miscNodeBootTsSeconds =
-          ((Double) ((Observation) values.get("start_time_second")).getValue()).longValue();
-    } else {
-      miscNodeBootTsSeconds = null;
-    }
+    final Long cpuNodeSystemSecondsTotal = getLongValue(values, "cpu_seconds_total");
+    final Long cpuNodeUserSecondsTotal = getLongValue(values, "node_cpu_seconds_total");
+    final Long memoryNodeBytesTotal = getLongValue(values, "node_memory_MemTotal_bytes");
+    final Long memoryNodeBytesFree = getLongValue(values, "node_memory_MemFree_bytes");
+    final Long memoryNodeBytesCached = getLongValue(values, "node_memory_Cached_bytes");
+    final Long memoryNodeBytesBuffers = getLongValue(values, "node_memory_Buffers_bytes");
+    final Long diskNodeBytesTotal = getLongValue(values, "node_filesystem_size_bytes");
+    final Long diskNodeBytesFree = getLongValue(values, "node_filesystem_free_bytes");
+    final Long diskNodeIoSeconds = getLongValue(values, "node_disk_io_time_seconds_total");
+    final Long diskNodeReadsTotal = getLongValue(values, "node_disk_read_bytes_total");
+    final Long diskNodeWritesTotal = getLongValue(values, "node_disk_written_bytes_total");
+    final Long networkNodeBytesTotalReceive =
+        getLongValue(values, "node_network_receive_bytes_total");
+    final Long networkNodeBytesTotalTransmit =
+        getLongValue(values, "node_network_transmit_bytes_total");
+    final Long miscNodeBootTsSeconds = getLongValue(values, "start_time_second");
     return new SystemMetricData(
         PROTOCOL_VERSION,
         timeProvider.getTimeInMillis().longValue(),
@@ -202,45 +96,16 @@ public class MetricsDataFactory {
   }
 
   private static BaseMetricData extractBeaconNodeData(
-      final Map<String, Object> values, final TimeProvider timeProvider) {
-    final Long diskBeaconchainBytesTotal;
-    final Long networkLibp2PBytesTotalReceive;
-    final Long networkLibp2PBytesTotalTransmit;
+      final Map<String, Observation> values, final TimeProvider timeProvider) {
     final Integer networkPeersConnected;
-    final Long syncBeaconHeadSlot;
 
-    if (values.containsKey("head_slot")) {
-      syncBeaconHeadSlot =
-          ((Double) ((Observation) values.get("head_slot")).getValue()).longValue();
-    } else {
-      syncBeaconHeadSlot = null;
-    }
-    if (values.containsKey("filesystem_size_bytes")) {
-      diskBeaconchainBytesTotal =
-          ((Double) ((Observation) values.get("filesystem_size_bytes")).getValue()).longValue();
-    } else {
-      diskBeaconchainBytesTotal = null;
-    }
-    if (values.containsKey("network_receive_bytes_total")) {
-      networkLibp2PBytesTotalReceive =
-          ((Double) ((Observation) values.get("network_receive_bytes_total")).getValue())
-              .longValue();
-    } else {
-      networkLibp2PBytesTotalReceive = null;
-    }
-    if (values.containsKey("network_transmit_bytes_total")) {
-      networkLibp2PBytesTotalTransmit =
-          ((Double) ((Observation) values.get("network_transmit_bytes_total")).getValue())
-              .longValue();
-    } else {
-      networkLibp2PBytesTotalTransmit = null;
-    }
-    if (values.containsKey("peer_count")) {
-      networkPeersConnected =
-          ((Double) ((Observation) values.get("peer_count")).getValue()).intValue();
-    } else {
-      networkPeersConnected = null;
-    }
+    final Long syncBeaconHeadSlot = getLongValue(values, "head_slot");
+    final Long diskBeaconchainBytesTotal = getLongValue(values, "filesystem_size_bytes");
+    final Long networkLibp2PBytesTotalReceive = getLongValue(values, "network_receive_bytes_total");
+    final Long networkLibp2PBytesTotalTransmit =
+        getLongValue(values, "network_transmit_bytes_total");
+
+    networkPeersConnected = getIntegerValue(values, "peer_count");
     return new BeaconNodeMetricData(
         PROTOCOL_VERSION,
         timeProvider.getTimeInMillis().longValue(),
@@ -255,36 +120,12 @@ public class MetricsDataFactory {
   }
 
   private static BaseMetricData extractValidatorData(
-      final Map<String, Object> values, final TimeProvider timeProvider) {
-    final Long cpuProcessSecondsTotal;
-    final Long memoryProcessBytes;
-    final Integer validatorTotal;
-    final Integer validatorActive;
+      final Map<String, Observation> values, final TimeProvider timeProvider) {
 
-    if (values.containsKey("cpu_seconds_total")) {
-      cpuProcessSecondsTotal =
-          ((Double) ((Observation) values.get("cpu_seconds_total")).getValue()).longValue();
-    } else {
-      cpuProcessSecondsTotal = null;
-    }
-    if (values.containsKey("memory_pool_bytes_used")) {
-      memoryProcessBytes =
-          ((Double) ((Observation) values.get("memory_pool_bytes_used")).getValue()).longValue();
-    } else {
-      memoryProcessBytes = null;
-    }
-    if (values.containsKey("current_active_validators")) {
-      validatorTotal =
-          ((Double) ((Observation) values.get("current_active_validators")).getValue()).intValue();
-    } else {
-      validatorTotal = null;
-    }
-    if (values.containsKey("current_live_validators")) {
-      validatorActive =
-          ((Double) ((Observation) values.get("current_live_validators")).getValue()).intValue();
-    } else {
-      validatorActive = null;
-    }
+    final Long cpuProcessSecondsTotal = getLongValue(values, "cpu_seconds_total");
+    final Long memoryProcessBytes = getLongValue(values, "memory_pool_bytes_used");
+    final Integer validatorTotal = getIntegerValue(values, "current_active_validators");
+    final Integer validatorActive = getIntegerValue(values, "current_live_validators");
     return new ValidatorMetricData(
         PROTOCOL_VERSION,
         timeProvider.getTimeInMillis().longValue(),
@@ -297,9 +138,31 @@ public class MetricsDataFactory {
         validatorActive);
   }
 
-  private static Map<String, Object> getStringObjectMap(
+  @Nullable
+  private static Long getLongValue(Map<String, Observation> values, String key) {
+    Long dataReading;
+    if (values.containsKey(key)) {
+      dataReading = ((Double) values.get(key).getValue()).longValue();
+    } else {
+      dataReading = null;
+    }
+    return dataReading;
+  }
+
+  @Nullable
+  private static Integer getIntegerValue(Map<String, Observation> values, String key) {
+    Integer dataReading;
+    if (values.containsKey(key)) {
+      dataReading = ((Double) values.get(key).getValue()).intValue();
+    } else {
+      dataReading = null;
+    }
+    return dataReading;
+  }
+
+  private static Map<String, Observation> getStringObjectMap(
       PrometheusMetricsSystem prometheusMetricsSystem) {
-    Map<String, Object> values;
+    Map<String, Observation> values;
     values =
         prometheusMetricsSystem
             .streamObservations()
