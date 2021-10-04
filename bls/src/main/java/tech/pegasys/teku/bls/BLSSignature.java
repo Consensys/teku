@@ -21,7 +21,7 @@ import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.InvalidSSZTypeException;
 import org.apache.tuweni.ssz.SSZ;
-import tech.pegasys.teku.bls.impl.DeserializeException;
+import tech.pegasys.teku.bls.impl.BlsException;
 import tech.pegasys.teku.bls.impl.Signature;
 
 public class BLSSignature {
@@ -35,7 +35,11 @@ public class BLSSignature {
               + "0000000000000000000000000000000000000000000000000000000000000000");
 
   /**
-   * Creates an empty signature (all zero bytes). Note that this is not a valid signature.
+   * Creates an empty signature (all zero bytes).
+   *
+   * <p>Note that this is not a valid signature. We can create the empty signature and serialise it
+   * without problems, but attempting to use it by calling {@link #getSignature()} will result in a
+   * DeserializeException.
    *
    * @return the empty signature
    */
@@ -56,7 +60,7 @@ public class BLSSignature {
       return SSZ.decode(
           bytes, reader -> new BLSSignature(reader.readFixedBytes(SSZ_BLS_SIGNATURE_SIZE)));
     } catch (InvalidSSZTypeException e) {
-      throw new DeserializeException("Failed to create signature from SSZ.");
+      throw new BlsException("Failed to create signature from SSZ.");
     }
   }
 
@@ -104,26 +108,21 @@ public class BLSSignature {
   }
 
   Signature getSignature() {
-    try {
-      return signature.get();
-    } catch (final IllegalArgumentException e) {
-      throw new DeserializeException(e.getMessage());
-    }
+    return signature.get();
   }
 
   public boolean isInfinity() {
     try {
-      Signature signature = getSignature();
-      return signature.isInfinity();
-    } catch (final DeserializeException e) {
+      return getSignature().isInfinity();
+    } catch (final IllegalArgumentException e) {
       return false;
     }
   }
 
   public boolean isValid() {
     try {
-      return getSignature().isValid();
-    } catch (final DeserializeException e) {
+      return getSignature().isInGroup();
+    } catch (final IllegalArgumentException e) {
       return false;
     }
   }

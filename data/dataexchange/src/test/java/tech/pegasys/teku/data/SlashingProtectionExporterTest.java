@@ -30,16 +30,16 @@ import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.nio.file.attribute.PosixFilePermission;
 import java.util.List;
-import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.schema.BLSPubKey;
+import tech.pegasys.teku.cli.OSUtils;
 import tech.pegasys.teku.data.signingrecord.ValidatorSigningRecord;
 import tech.pegasys.teku.data.slashinginterchange.Metadata;
+import tech.pegasys.teku.data.slashinginterchange.SignedBlock;
 import tech.pegasys.teku.data.slashinginterchange.SigningHistory;
 import tech.pegasys.teku.data.slashinginterchange.SlashingProtectionInterchangeFormat;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
@@ -150,10 +150,53 @@ public class SlashingProtectionExporterTest {
     final SlashingProtectionExporter exporter =
         new SlashingProtectionExporter(logger, tempDir.toString());
     final File file = usingResourceFile("slashProtection.yml", tempDir);
-    Files.setPosixFilePermissions(file.toPath(), Set.of(PosixFilePermission.OTHERS_EXECUTE));
+    OSUtils.makeNonReadable(file.toPath());
     exporter.readSlashProtectionFile(file);
     verify(logger).exit(eq(1), stringArgs.capture(), any(AccessDeniedException.class));
     assertThat(stringArgs.getValue()).startsWith("Failed to read from file");
+  }
+
+  @Test
+  public void shouldExportSlashProtection(@TempDir Path tempDir)
+      throws IOException, URISyntaxException {
+    final Path exportedFile = tempDir.resolve("exportedFile.json").toAbsolutePath();
+    final SlashingProtectionExporter exporter =
+        new SlashingProtectionExporter(logger, tempDir.toString());
+
+    exporter.readSlashProtectionFile(usingResourceFile("slashProtection.yml", tempDir));
+
+    assertThat(Files.exists(exportedFile)).isFalse();
+    exporter.saveToFile(exportedFile.toString());
+    assertThat(Files.exists(exportedFile)).isTrue();
+  }
+
+  @Test
+  void shouldHaveNoSignedAttestationsWhenNoAttestationsSigned(@TempDir Path tempDir)
+      throws Exception {
+    final Path exportedFile = tempDir.resolve("exportedFile.json").toAbsolutePath();
+    final SlashingProtectionExporter exporter =
+        new SlashingProtectionExporter(logger, tempDir.toString());
+
+    final UInt64 blockSlot = UInt64.ONE;
+    final ValidatorSigningRecord signingRecord =
+        new ValidatorSigningRecord(validatorsRoot)
+            .maySignBlock(validatorsRoot, blockSlot)
+            .orElseThrow();
+    final Path recordFile = tempDir.resolve(pubkey + ".yml");
+    Files.write(recordFile, signingRecord.toBytes().toArrayUnsafe());
+    exporter.readSlashProtectionFile(recordFile.toFile());
+
+    assertThat(exportedFile).doesNotExist();
+    exporter.saveToFile(exportedFile.toString());
+    assertThat(exportedFile).exists();
+
+    final SlashingProtectionInterchangeFormat exportedRecords =
+        jsonProvider.jsonToObject(
+            Files.readString(exportedFile), SlashingProtectionInterchangeFormat.class);
+    assertThat(exportedRecords.data).hasSize(1);
+    final SigningHistory signingHistory = exportedRecords.data.get(0);
+    assertThat(signingHistory.signedBlocks).containsExactly(new SignedBlock(blockSlot, null));
+    assertThat(signingHistory.signedAttestations).isEmpty();
   }
 
   private File usingResourceFile(final String resourceFileName, final Path tempDir)

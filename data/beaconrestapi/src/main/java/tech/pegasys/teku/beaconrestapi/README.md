@@ -4,7 +4,7 @@
 
 * [eth2-spec](https://github.com/ethereum/eth2.0-specs)
 * [eth2-api](https://github.com/ethereum/eth2.0-APIs)
-* [Prysm API](https://docs.prylabs.network/docs/how-prysm-works/ethereum-2-public-api)
+* [Prysm API](https://docs.prylabs.network/docs/how-prysm-works/ethereum-public-api)
 * [Lighthouse API](https://lighthouse-book.sigmaprime.io/api-bn.html)
 
 ## /node/genesis_time

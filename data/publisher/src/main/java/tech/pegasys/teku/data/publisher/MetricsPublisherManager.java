@@ -16,6 +16,7 @@ package tech.pegasys.teku.data.publisher;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.List;
 import okhttp3.OkHttpClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -24,6 +25,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.MetricsEndpoint;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.service.serviceutils.Service;
 
@@ -33,6 +35,7 @@ public class MetricsPublisherManager extends Service {
 
   private final long intervalBetweenPublications;
   private final AsyncRunnerFactory asyncRunnerFactory;
+  private final TimeProvider timeProvider;
   private final MetricsEndpoint metricsConfig;
   private final MetricsDataFactory dataFactory;
   private final JsonProvider jsonProvider = new JsonProvider();
@@ -42,9 +45,11 @@ public class MetricsPublisherManager extends Service {
 
   public MetricsPublisherManager(
       AsyncRunnerFactory asyncRunnerFactory,
+      final TimeProvider timeProvider,
       final MetricsEndpoint metricsConfig,
       final long intervalBetweenPublications) {
     this.asyncRunnerFactory = asyncRunnerFactory;
+    this.timeProvider = timeProvider;
     this.metricsConfig = metricsConfig;
     this.dataFactory = new MetricsDataFactory(metricsConfig.getMetricsSystem());
     this.publisher = new MetricsPublisher(new OkHttpClient());
@@ -66,7 +71,7 @@ public class MetricsPublisherManager extends Service {
 
   int publishMetrics() {
     String endpointAddress = metricsConfig.getMetricConfig().getMetricsEndpoint();
-    BaseMetricData clientData = dataFactory.getMetricData(MetricsDataClient.VALIDATOR);
+    List<BaseMetricData> clientData = dataFactory.getMetricData(this.timeProvider);
     try {
       return publisher.publishMetrics(endpointAddress, jsonProvider.objectToJSON(clientData));
     } catch (JsonProcessingException e) {

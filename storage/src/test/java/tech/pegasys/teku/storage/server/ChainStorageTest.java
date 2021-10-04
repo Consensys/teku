@@ -23,6 +23,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
@@ -51,6 +52,15 @@ public class ChainStorageTest {
     chainBuilder = storageSystem.chainBuilder();
 
     chainBuilder.generateGenesis();
+  }
+
+  @AfterEach
+  void tearDown() {
+    try {
+      storageSystem.close();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @ParameterizedTest(name = "{0}")
