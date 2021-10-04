@@ -94,16 +94,16 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   }
 
   @Override
-  public SafeFuture<Response<GenericResponse>> consensusValidated(
+  public SafeFuture<Response<Object>> consensusValidated(
       Bytes32 blockHash, String validationResult) {
-    Request<?, GenericWeb3jResponse> web3jRequest =
+    Request<?, EmptyWeb3jResponse> web3jRequest =
         new Request<>(
             "engine_consensusValidated",
             Collections.singletonList(
                 new ConsensusValidatedRequest(
                     blockHash, ConsensusValidationResult.valueOf(validationResult))),
             eeWeb3jService,
-            GenericWeb3jResponse.class);
+            EmptyWeb3jResponse.class);
     return doRequest(web3jRequest);
   }
 
@@ -149,4 +149,6 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
       extends org.web3j.protocol.core.Response<ExecutePayloadResponse> {}
 
   static class GenericWeb3jResponse extends org.web3j.protocol.core.Response<GenericResponse> {}
+
+  static class EmptyWeb3jResponse extends org.web3j.protocol.core.Response<Object> {}
 }
