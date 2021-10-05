@@ -80,26 +80,6 @@ public class GenesisGenerator {
         .ifPresent(stateMerge -> stateMerge.setLatestExecutionPayloadHeader(payloadHeader));
   }
 
-  public void updateExecutionPayloadHeader(
-      Bytes32 eth1BlockHash, UInt64 eth1Timestamp, UInt64 genesisGasLimit, Bytes32 genesisBaseFee) {
-    updateExecutionPayloadHeader(
-        new ExecutionPayloadHeader(
-            Bytes32.ZERO,
-            Bytes20.ZERO,
-            Bytes32.ZERO,
-            Bytes32.ZERO,
-            Bytes.wrap(new byte[SpecConfig.BYTES_PER_LOGS_BLOOM]),
-            eth1BlockHash,
-            UInt64.ZERO,
-            genesisGasLimit,
-            UInt64.ZERO,
-            eth1Timestamp,
-            Bytes.EMPTY,
-            genesisBaseFee,
-            eth1BlockHash,
-            Bytes32.ZERO));
-  }
-
   public void updateCandidateState(
       Bytes32 eth1BlockHash, UInt64 eth1Timestamp, List<? extends Deposit> deposits) {
     updateGenesisTime(eth1Timestamp);
