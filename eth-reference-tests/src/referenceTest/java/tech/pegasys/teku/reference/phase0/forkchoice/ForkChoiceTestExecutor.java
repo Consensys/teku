@@ -15,8 +15,8 @@ package tech.pegasys.teku.reference.phase0.forkchoice;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import org.apache.logging.log4j.LogManager;
@@ -56,10 +56,10 @@ public class ForkChoiceTestExecutor implements TestExecutor {
                   "new_justified_is_later_than_store_justified"))
           .build();
 
-  private ImmutableList<?> testsToSkip;
+  private List<?> testsToSkip;
 
   public ForkChoiceTestExecutor(String... testsToSkip) {
-    this.testsToSkip = ImmutableList.of(testsToSkip);
+    this.testsToSkip = Arrays.asList(testsToSkip);
   }
 
   @Override
