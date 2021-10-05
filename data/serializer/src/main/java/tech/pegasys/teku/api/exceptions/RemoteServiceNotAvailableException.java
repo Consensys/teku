@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,16 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.p2p.gossip.config;
+package tech.pegasys.teku.api.exceptions;
 
-import static org.assertj.core.api.Assertions.assertThat;
+public class RemoteServiceNotAvailableException extends RuntimeException {
+  public RemoteServiceNotAvailableException(String message, Throwable cause) {
+    super(message, cause);
+  }
 
-import org.junit.jupiter.api.Test;
-
-class GossipConfigTest {
-  @Test
-  void shouldUseCorrectSeenTtl() {
-    // Should be heartbeat interval * 566
-    assertThat(GossipConfig.DEFAULT_SEEN_TTL.toMillis()).isEqualTo(700 * 566);
+  public RemoteServiceNotAvailableException(String message) {
+    super(message);
   }
 }
