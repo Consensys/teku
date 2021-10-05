@@ -40,6 +40,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -247,8 +248,17 @@ public class Spec {
   // Genesis
   public BeaconState initializeBeaconStateFromEth1(
       Bytes32 eth1BlockHash, UInt64 eth1Timestamp, List<? extends Deposit> deposits) {
+    return initializeBeaconStateFromEth1(eth1BlockHash, eth1Timestamp, deposits, Optional.empty());
+  }
+
+  public BeaconState initializeBeaconStateFromEth1(
+      Bytes32 eth1BlockHash,
+      UInt64 eth1Timestamp,
+      List<? extends Deposit> deposits,
+      Optional<ExecutionPayloadHeader> payloadHeader) {
     final GenesisGenerator genesisGenerator = createGenesisGenerator();
     genesisGenerator.updateCandidateState(eth1BlockHash, eth1Timestamp, deposits);
+    payloadHeader.ifPresent(genesisGenerator::updateExecutionPayloadHeader);
     return genesisGenerator.getGenesisState();
   }
 
