@@ -1,4 +1,6 @@
 dependencies {
+  api project(':infrastructure:time')
+
   implementation project(':infrastructure:metrics')
   implementation project(':infrastructure:events')
   implementation project(':infrastructure:exceptions')

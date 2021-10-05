@@ -31,12 +31,12 @@ import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class SpecFactoryTest {
 
-  private static final Set<String> ALTAIR_NETWORKS = Set.of("pyrmont", "prater");
+  private static final Set<String> ALTAIR_NETWORKS = Set.of("pyrmont", "prater", "mainnet");
 
   @Test
-  public void defaultFactoryShouldOnlySupportPhase0_mainnet() {
+  public void defaultFactoryShouldScheduleAltairForMainNet() {
     final Spec spec = SpecFactory.create("mainnet");
-    assertThat(spec.getForkSchedule().getSupportedMilestones()).containsExactly(PHASE0);
+    assertThat(spec.getForkSchedule().getSupportedMilestones()).containsExactly(PHASE0, ALTAIR);
   }
 
   @ParameterizedTest(name = "{0}")
