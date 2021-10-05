@@ -49,15 +49,22 @@ public class ForkChoiceTestExecutor implements TestExecutor {
   public static final ImmutableMap<String, TestExecutor> FORK_CHOICE_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
           .put("fork_choice/get_head", new ForkChoiceTestExecutor())
-          .put("fork_choice/on_block", new ForkChoiceTestExecutor())
+          .put(
+              "fork_choice/on_block",
+              new ForkChoiceTestExecutor(
+                  "new_finalized_slot_is_justified_checkpoint_ancestor",
+                  "new_justified_is_later_than_store_justified"))
           .build();
 
-  public static final ImmutableList<?> FORK_CHOICE_TESTS_TO_SKIP =
-      ImmutableList.of("new_finalized_slot_is_justified_checkpoint_ancestor");
+  private ImmutableList<?> testsToSkip;
+
+  public ForkChoiceTestExecutor(String... testsToSkip) {
+    this.testsToSkip = ImmutableList.of(testsToSkip);
+  }
 
   @Override
   public void runTest(final TestDefinition testDefinition) throws Throwable {
-    if (FORK_CHOICE_TESTS_TO_SKIP.contains(testDefinition.getTestName())) {
+    if (testsToSkip.contains(testDefinition.getTestName())) {
       throw new TestAbortedException(
           "Test " + testDefinition.getDisplayName() + " has been ignored");
     }
