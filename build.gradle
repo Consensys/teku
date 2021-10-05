@@ -598,8 +598,6 @@ subprojects {
     testImplementation 'org.junit.jupiter:junit-jupiter-api'
     testImplementation 'org.junit.jupiter:junit-jupiter-params'
 
-    testRuntimeOnly testFixtures(project(':infrastructure:logging'))
-
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 
     testFixturesImplementation 'org.assertj:assertj-core'
@@ -607,6 +605,7 @@ subprojects {
 
   if (project.name != 'unsigned') {
     dependencies.implementation(project(':infrastructure:unsigned'))
+    dependencies.testRuntimeOnly(dependencies.testFixtures(project(':infrastructure:logging')))
   }
 
   task integrationTest(type: Test, dependsOn:["compileIntegrationTestJava"]){
