@@ -141,8 +141,6 @@ public class BlockFactory {
           getPowBlockAtTotalDifficulty(terminalTotalDifficulty, powHead, mergeTransitionHelpers);
 
       if (terminalPowBlock.isEmpty()) {
-        UInt256 blockDiff =
-            powHead.getDifficulty().isZero() ? UInt256.ONE : powHead.getDifficulty();
         LOG.info(
             ColorConsolePrinter.print(
                 String.format(
@@ -152,7 +150,7 @@ public class BlockFactory {
                     specConfig
                         .getTerminalTotalDifficulty()
                         .subtract(powHead.getTotalDifficulty())
-                        .divide(blockDiff)
+                        .divide(powHead.getDifficulty())
                         .add(UInt256.ONE)
                         .toBigInteger()),
                 Color.CYAN));

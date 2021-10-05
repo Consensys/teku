@@ -105,18 +105,14 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
       BeaconState postState =
           super.processAndValidateBlock(
               executionEngineChannel, signedBlock, blockSlotState, indexedAttestationCache);
-      if (miscHelpersMerge.isExecutionEnabled(blockSlotState, signedBlock.getMessage())) {
-        executionEngineChannel
-            .consensusValidated(payloadBlockHash, ConsensusValidationResult.VALID)
-            .join();
-      }
+      executionEngineChannel
+          .consensusValidated(payloadBlockHash, ConsensusValidationResult.VALID)
+          .join();
       return postState;
     } catch (StateTransitionException e) {
-      if (miscHelpersMerge.isExecutionEnabled(blockSlotState, signedBlock.getMessage())) {
-        executionEngineChannel
-            .consensusValidated(payloadBlockHash, ConsensusValidationResult.INVALID)
-            .join();
-      }
+      executionEngineChannel
+          .consensusValidated(payloadBlockHash, ConsensusValidationResult.INVALID)
+          .join();
       throw e;
     }
   }
