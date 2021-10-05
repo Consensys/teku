@@ -6,6 +6,7 @@ dependencies {
   implementation project(':ethereum:spec')
   implementation project(':infrastructure:async')
   implementation project(':infrastructure:collections')
+  implementation project(':infrastructure:events')
   implementation project(':infrastructure:io')
   implementation project(':infrastructure:logging')
   implementation project(':infrastructure:metrics')
@@ -52,6 +53,7 @@ dependencies {
   testFixturesImplementation testFixtures(project(':ethereum:spec'))
   testFixturesImplementation project(':ethereum:networks')
   testFixturesImplementation testFixtures(project(':infrastructure:async'))
+  testFixturesImplementation project(':infrastructure:events')
   testFixturesImplementation testFixtures(project(':pow'))
   testFixturesImplementation testFixtures(project(':protoarray'))
   testFixturesImplementation 'org.mockito:mockito-core'

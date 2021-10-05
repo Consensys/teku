@@ -18,11 +18,6 @@ For information on changes in released versions of Teku, see the [releases page]
 ## Unreleased Changes
 
 ### Additions and Improvements
-- Upgraded to BLST 0.3.5.
-- `/teku/v1/admin/readiness` endpoint now accepts a `target_peer_count` param to require a minimum number of peers before the node is considered ready.
-- Support for building on JDK 17.
 
 
 ### Bug Fixes
-- Fix `NoSuchElementException` reported at startup by validator performance tracking module. 
-- Fix `IllegalStateException` reported on altair networks, when none of your validators are in a sync committee for the current epoch.
