@@ -23,7 +23,6 @@ import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.metrics.Observation;
 import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import org.jetbrains.annotations.Nullable;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 
@@ -138,7 +137,6 @@ public class MetricsDataFactory {
         validatorActive);
   }
 
-  @Nullable
   private static Long getLongValue(Map<String, Observation> values, String key) {
     if (values.containsKey(key)) {
       Double observation = (Double) values.get(key).getValue();
@@ -147,7 +145,6 @@ public class MetricsDataFactory {
     return null;
   }
 
-  @Nullable
   private static Integer getIntegerValue(Map<String, Observation> values, String key) {
     if (values.containsKey(key)) {
       Double observation = (Double) values.get(key).getValue();
