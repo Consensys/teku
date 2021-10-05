@@ -17,6 +17,7 @@ import static tech.pegasys.teku.spec.config.SpecConfig.BYTES_PER_LOGS_BLOOM;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.ssz.collections.SszByteList;
@@ -24,6 +25,7 @@ import tech.pegasys.teku.ssz.collections.SszByteVector;
 import tech.pegasys.teku.ssz.containers.Container14;
 import tech.pegasys.teku.ssz.containers.ContainerSchema14;
 import tech.pegasys.teku.ssz.primitive.SszBytes32;
+import tech.pegasys.teku.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.schema.collections.SszByteListSchema;
@@ -45,7 +47,7 @@ public class ExecutionPayloadHeader
         SszUInt64,
         SszUInt64,
         SszByteList,
-        SszBytes32,
+        SszUInt256,
         SszBytes32,
         SszBytes32> {
 
@@ -63,7 +65,7 @@ public class ExecutionPayloadHeader
           SszUInt64,
           SszUInt64,
           SszByteList,
-          SszBytes32,
+          SszUInt256,
           SszBytes32,
           SszBytes32> {
 
@@ -81,7 +83,7 @@ public class ExecutionPayloadHeader
           namedSchema("gas_used", SszPrimitiveSchemas.UINT64_SCHEMA),
           namedSchema("timestamp", SszPrimitiveSchemas.UINT64_SCHEMA),
           namedSchema("extra_data", SszByteListSchema.create(SpecConfig.MAX_EXTRA_DATA_BYTES)),
-          namedSchema("base_fee_per_gas", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema("base_fee_per_gas", SszPrimitiveSchemas.UINT256_SCHEMA),
           namedSchema("block_hash", SszPrimitiveSchemas.BYTES32_SCHEMA),
           namedSchema("transactions_root", SszPrimitiveSchemas.BYTES32_SCHEMA));
     }
@@ -112,7 +114,7 @@ public class ExecutionPayloadHeader
               SszUInt64,
               SszUInt64,
               SszByteList,
-              SszBytes32,
+              SszUInt256,
               SszBytes32,
               SszBytes32>
           type,
@@ -132,7 +134,7 @@ public class ExecutionPayloadHeader
       UInt64 gas_used,
       UInt64 timestamp,
       Bytes extra_data,
-      Bytes32 baseFeePerGas,
+      UInt256 baseFeePerGas,
       Bytes32 block_hash,
       Bytes32 transactions_root) {
     super(
@@ -148,7 +150,7 @@ public class ExecutionPayloadHeader
         SszUInt64.of(gas_used),
         SszUInt64.of(timestamp),
         SSZ_SCHEMA.getExtraDataSchema().fromBytes(extra_data),
-        SszBytes32.of(baseFeePerGas),
+        SszUInt256.of(baseFeePerGas),
         SszBytes32.of(block_hash),
         SszBytes32.of(transactions_root));
   }
@@ -206,7 +208,7 @@ public class ExecutionPayloadHeader
     return getField10().getBytes();
   }
 
-  public Bytes32 getBaseFeePerGas() {
+  public UInt256 getBaseFeePerGas() {
     return getField11().get();
   }
 

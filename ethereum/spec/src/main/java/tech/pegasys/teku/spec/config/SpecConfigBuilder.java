@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
@@ -677,7 +676,7 @@ public class SpecConfigBuilder {
 
     // Genesis
     private UInt64 genesisGasLimit;
-    private Bytes32 genesisBaseFeePerGas;
+    private UInt256 genesisBaseFeePerGas;
 
     // Fork
     private Bytes4 mergeForkVersion;
@@ -712,7 +711,7 @@ public class SpecConfigBuilder {
       return this;
     }
 
-    public MergeBuilder genesisBaseFeePerGas(Bytes32 genesisBaseFeePerGas) {
+    public MergeBuilder genesisBaseFeePerGas(UInt256 genesisBaseFeePerGas) {
       checkNotNull(genesisBaseFeePerGas);
       this.genesisBaseFeePerGas = genesisBaseFeePerGas;
       return this;

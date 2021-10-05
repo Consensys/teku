@@ -21,6 +21,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.ssz.collections.SszByteList;
@@ -39,7 +40,7 @@ public class ExecutionPayload {
   public final UInt64 gas_used;
   public final UInt64 timestamp;
   public final Bytes extra_data;
-  public final Bytes32 base_fee_per_gas;
+  public final UInt256 base_fee_per_gas;
   public final Bytes32 block_hash;
   public final List<Bytes> transactions;
 
@@ -55,7 +56,7 @@ public class ExecutionPayload {
       @JsonProperty("gas_used") UInt64 gas_used,
       @JsonProperty("timestamp") UInt64 timestamp,
       @JsonProperty("extra_data") Bytes extra_data,
-      @JsonProperty("base_fee_per_gas") Bytes32 base_fee_per_gas,
+      @JsonProperty("base_fee_per_gas") UInt256 base_fee_per_gas,
       @JsonProperty("block_hash") Bytes32 block_hash,
       @JsonProperty("transactions") List<Bytes> transactions) {
     this.parent_hash = parent_hash;
