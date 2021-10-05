@@ -140,24 +140,20 @@ public class MetricsDataFactory {
 
   @Nullable
   private static Long getLongValue(Map<String, Observation> values, String key) {
-    Long dataReading;
     if (values.containsKey(key)) {
-      dataReading = ((Double) values.get(key).getValue()).longValue();
-    } else {
-      dataReading = null;
+      Double observation = (Double) values.get(key).getValue();
+      return observation.longValue();
     }
-    return dataReading;
+    return null;
   }
 
   @Nullable
   private static Integer getIntegerValue(Map<String, Observation> values, String key) {
-    Integer dataReading;
     if (values.containsKey(key)) {
-      dataReading = ((Double) values.get(key).getValue()).intValue();
-    } else {
-      dataReading = null;
+      Double observation = (Double) values.get(key).getValue();
+      return observation.intValue();
     }
-    return dataReading;
+    return null;
   }
 
   private static Map<String, Observation> getStringObjectMap(

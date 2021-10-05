@@ -41,7 +41,8 @@ public class MetricsPublisher {
     int responseCode = response.code();
     response.close();
     if (responseCode != 200) {
-      LOG.error("Failed to publish metrics to {}. Response code {}", endpointAddress, responseCode);
+      LOG.error(
+          "Failed to publish metrics to external metrics service. Response code {}", responseCode);
     }
     return responseCode;
   }
