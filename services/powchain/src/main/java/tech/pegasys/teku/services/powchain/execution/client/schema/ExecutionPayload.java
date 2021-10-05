@@ -25,12 +25,14 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.services.powchain.execution.client.serializer.Bytes20Deserializer;
 import tech.pegasys.teku.services.powchain.execution.client.serializer.Bytes20Serializer;
 import tech.pegasys.teku.services.powchain.execution.client.serializer.Bytes32Deserializer;
 import tech.pegasys.teku.services.powchain.execution.client.serializer.BytesDeserializer;
 import tech.pegasys.teku.services.powchain.execution.client.serializer.BytesSerializer;
+import tech.pegasys.teku.services.powchain.execution.client.serializer.UInt256AsHexDeserializer;
 import tech.pegasys.teku.services.powchain.execution.client.serializer.UInt256AsHexSerializer;
 import tech.pegasys.teku.services.powchain.execution.client.serializer.UInt64AsHexDeserializer;
 import tech.pegasys.teku.services.powchain.execution.client.serializer.UInt64AsHexSerializer;
@@ -85,8 +87,8 @@ public class ExecutionPayload {
   public final Bytes extraData;
 
   @JsonSerialize(using = UInt256AsHexSerializer.class)
-  @JsonDeserialize(using = Bytes32Deserializer.class)
-  public final Bytes32 baseFeePerGas;
+  @JsonDeserialize(using = UInt256AsHexDeserializer.class)
+  public final UInt256 baseFeePerGas;
 
   @JsonSerialize(using = BytesSerializer.class)
   @JsonDeserialize(using = Bytes32Deserializer.class)
@@ -130,7 +132,7 @@ public class ExecutionPayload {
       @JsonProperty("gasUsed") UInt64 gasUsed,
       @JsonProperty("timestamp") UInt64 timestamp,
       @JsonProperty("extraData") Bytes extraData,
-      @JsonProperty("baseFeePerGas") Bytes32 baseFeePerGas,
+      @JsonProperty("baseFeePerGas") UInt256 baseFeePerGas,
       @JsonProperty("blockHash") Bytes32 blockHash,
       @JsonProperty("transactions") List<Bytes> transactions) {
     checkNotNull(parentHash, "parentHash");

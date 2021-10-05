@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -82,7 +83,7 @@ public interface ExecutionEngineClient {
                       UInt64.ZERO,
                       preparePayloadRequest.timestamp,
                       ZERO_EXTRA_DATA,
-                      Bytes32.ZERO,
+                      UInt256.ZERO,
                       Bytes32.random(),
                       Arrays.asList(Bytes.random(128), Bytes.random(256), Bytes.random(512)))));
         }

@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.config;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
-import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
@@ -25,7 +24,7 @@ public class SpecConfigMerge extends DelegatingSpecConfigAltair {
 
   // Genesis
   private UInt64 genesisGasLimit;
-  private Bytes32 genesisBaseFeePerGas;
+  private UInt256 genesisBaseFeePerGas;
 
   // Fork
   private final Bytes4 mergeForkVersion;
@@ -37,7 +36,7 @@ public class SpecConfigMerge extends DelegatingSpecConfigAltair {
   public SpecConfigMerge(
       SpecConfigAltair specConfig,
       UInt64 genesisGasLimit,
-      Bytes32 genesisBaseFeePerGas,
+      UInt256 genesisBaseFeePerGas,
       Bytes4 mergeForkVersion,
       UInt64 mergeForkEpoch,
       UInt256 terminalTotalDifficulty) {
@@ -75,7 +74,7 @@ public class SpecConfigMerge extends DelegatingSpecConfigAltair {
     return genesisGasLimit;
   }
 
-  public Bytes32 getGenesisBaseFeePerGas() {
+  public UInt256 getGenesisBaseFeePerGas() {
     return genesisBaseFeePerGas;
   }
 

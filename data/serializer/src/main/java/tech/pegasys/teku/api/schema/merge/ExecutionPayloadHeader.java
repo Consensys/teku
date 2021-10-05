@@ -18,6 +18,7 @@ import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.type.Bytes20;
 
@@ -34,7 +35,7 @@ public class ExecutionPayloadHeader {
   public final UInt64 gas_used;
   public final UInt64 timestamp;
   public final Bytes extra_data;
-  public final Bytes32 base_fee_per_gas;
+  public final UInt256 base_fee_per_gas;
   public final Bytes32 block_hash;
   public final Bytes32 transactions_root;
 
@@ -50,7 +51,7 @@ public class ExecutionPayloadHeader {
       @JsonProperty("gas_used") UInt64 gas_used,
       @JsonProperty("timestamp") UInt64 timestamp,
       @JsonProperty("extra_data") Bytes extra_data,
-      @JsonProperty("base_fee_per_gas") Bytes32 base_fee_per_gas,
+      @JsonProperty("base_fee_per_gas") UInt256 base_fee_per_gas,
       @JsonProperty("block_hash") Bytes32 block_hash,
       @JsonProperty("transactions_root") Bytes32 transactions_root) {
     this.parent_hash = parent_hash;
