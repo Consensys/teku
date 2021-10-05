@@ -24,11 +24,11 @@ import tech.pegasys.teku.spec.SpecMilestone;
 
 class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
-  void shouldEnableAltairByDefault() {
+  void shouldNotEnableAltairByDefault() {
     final TekuConfiguration config = getTekuConfigurationFromArguments();
     final Spec spec = config.eth2NetworkConfiguration().getSpec();
     assertThat(spec.getForkSchedule().getHighestSupportedMilestone())
-        .isEqualTo(SpecMilestone.ALTAIR);
+        .isEqualTo(SpecMilestone.PHASE0);
   }
 
   @Test

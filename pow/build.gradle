@@ -7,9 +7,7 @@ dependencies {
   implementation project(':util')
   implementation project(':infrastructure:events')
   implementation project(':infrastructure:logging')
-  implementation project(':infrastructure:metrics')
   implementation project(':infrastructure:subscribers')
-  implementation project(':infrastructure:time')
   implementation project(':services:serviceutils')
   implementation project(':storage:api')
 
@@ -26,5 +24,4 @@ dependencies {
 
   testFixturesImplementation project(':util')
   testFixturesImplementation project(':ethereum:pow:api')
-  testFixturesImplementation project(':infrastructure:events')
 }

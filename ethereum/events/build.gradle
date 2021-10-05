@@ -1,5 +1,5 @@
 dependencies {
-  api project(':infrastructure:events')
+  implementation project(':infrastructure:events')
   testFixturesImplementation project(':infrastructure:unsigned')
 }
 

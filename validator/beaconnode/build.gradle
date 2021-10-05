@@ -4,7 +4,6 @@ dependencies {
   implementation project(':infrastructure:async')
   implementation project(':infrastructure:events')
   implementation project(':infrastructure:metrics')
-  implementation project(':infrastructure:time')
   implementation project(':util')
   implementation project(':validator:api')
   implementation project(':data:serializer')

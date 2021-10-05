@@ -1,13 +1,26 @@
 dependencies {
+  api project(':infrastructure:crypto')
+  api project(':infrastructure:metrics')
+  api project(':infrastructure:events')
+  api project(':infrastructure:time')
+
+  implementation project(':bls')
+  implementation project(':infrastructure:async')
   implementation project(':infrastructure:exceptions')
   implementation project(':infrastructure:io')
   implementation project(':infrastructure:logging')
+  implementation project(':infrastructure:subscribers')
   implementation project(':ssz')
 
   implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+  implementation 'info.picocli:picocli'
   implementation 'org.apache.tuweni:tuweni-bytes'
+  implementation 'org.apache.tuweni:tuweni-config'
+  implementation 'org.apache.tuweni:tuweni-crypto'
+  implementation 'org.apache.tuweni:tuweni-ssz'
   implementation 'com.google.guava:guava'
+  implementation 'org.apache.commons:commons-compress'
 
   testImplementation 'org.apache.logging.log4j:log4j-core'
 

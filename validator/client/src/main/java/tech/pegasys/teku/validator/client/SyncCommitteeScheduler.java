@@ -15,8 +15,6 @@ package tech.pegasys.teku.validator.client;
 
 import java.util.Optional;
 import java.util.stream.Stream;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -37,7 +35,6 @@ import tech.pegasys.teku.validator.client.duties.synccommittee.SyncCommitteeSche
  * subnet subscriptions are renewed if the reconnection was because the beacon chain restarted.
  */
 public class SyncCommitteeScheduler implements ValidatorTimingChannel {
-  private static final Logger LOG = LogManager.getLogger();
 
   private final MetricsSystem metricsSystem;
   private final Spec spec;
@@ -46,7 +43,6 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
 
   private Optional<SyncCommitteePeriod> currentSyncCommitteePeriod = Optional.empty();
   private Optional<SyncCommitteePeriod> nextSyncCommitteePeriod = Optional.empty();
-  private UInt64 lastProductionSlot;
 
   public SyncCommitteeScheduler(
       final MetricsSystem metricsSystem,
@@ -113,16 +109,6 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
 
   @Override
   public void onAttestationCreationDue(final UInt64 slot) {
-    // Check slot being null for the edge case of genesis slot (i.e. slot 0)
-    if (lastProductionSlot != null && slot.compareTo(lastProductionSlot) <= 0) {
-      LOG.debug(
-          "Not producing sync committee message for slot {} because last production slot {} is beyond that.",
-          slot,
-          lastProductionSlot);
-      return;
-    }
-
-    lastProductionSlot = slot;
     getDutiesForSlot(slot).ifPresent(duties -> duties.onProductionDue(slot));
   }
 

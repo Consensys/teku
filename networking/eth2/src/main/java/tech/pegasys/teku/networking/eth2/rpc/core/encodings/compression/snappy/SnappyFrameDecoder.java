@@ -17,7 +17,6 @@ import static tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.s
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.handler.codec.compression.DecompressionException;
 import io.netty.handler.codec.compression.Snappy;
 import java.util.Optional;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.AbstractByteBufDecoder;
@@ -44,12 +43,7 @@ public class SnappyFrameDecoder extends AbstractByteBufDecoder<ByteBuf, Compress
   }
 
   private static final int SNAPPY_IDENTIFIER_LEN = 6;
-  // See https://github.com/google/snappy/blob/1.1.9/framing_format.txt#L95
   private static final int MAX_UNCOMPRESSED_DATA_SIZE = 65536 + 4;
-  // See https://github.com/google/snappy/blob/1.1.9/framing_format.txt#L82
-  private static final int MAX_DECOMPRESSED_DATA_SIZE = 65536;
-  // See https://github.com/google/snappy/blob/1.1.9/framing_format.txt#L82
-  private static final int MAX_COMPRESSED_CHUNK_SIZE = 16777216 - 1;
 
   private final Snappy snappy = new Snappy();
   private final boolean validateChecksums;
@@ -170,21 +164,13 @@ public class SnappyFrameDecoder extends AbstractByteBufDecoder<ByteBuf, Compress
             throw new CompressionException("Received COMPRESSED_DATA tag before STREAM_IDENTIFIER");
           }
 
-          if (chunkLength > MAX_COMPRESSED_CHUNK_SIZE) {
-            throw new DecompressionException(
-                "Received COMPRESSED_DATA that contains"
-                    + " chunk that exceeds "
-                    + MAX_COMPRESSED_CHUNK_SIZE
-                    + " bytes");
-          }
-
           if (inSize < 4 + chunkLength) {
             return Optional.empty();
           }
 
           in.skipBytes(4);
           int checksum = in.readIntLE();
-          ByteBuf uncompressed = Unpooled.buffer(chunkLength, MAX_DECOMPRESSED_DATA_SIZE);
+          ByteBuf uncompressed = Unpooled.buffer();
           try {
             if (validateChecksums) {
               int oldWriterIndex = in.writerIndex();

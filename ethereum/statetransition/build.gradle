@@ -46,4 +46,5 @@ dependencies {
   testFixturesImplementation testFixtures(project(':protoarray'))
   testFixturesImplementation testFixtures(project(':ethereum:core'))
   testFixturesImplementation testFixtures(project(':ethereum:spec'))
+  testFixturesImplementation project(':validator:client')
 }

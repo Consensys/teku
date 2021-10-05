@@ -99,31 +99,6 @@ class SyncCommitteeSchedulerTest {
   }
 
   @Test
-  void shouldNotPerformProductionMultipleTimesForSameSlot() {
-    scheduler.onSlot(UInt64.ONE);
-
-    getRequestedDutiesForSyncCommitteePeriod(0).complete(Optional.of(duties));
-
-    scheduler.onAttestationCreationDue(UInt64.ONE);
-    scheduler.onAttestationCreationDue(UInt64.ONE);
-
-    verify(duties, times(1)).performProductionDuty(UInt64.ONE);
-  }
-
-  @Test
-  void shouldNotPerformProductionForEarlierSlot() {
-    scheduler.onSlot(UInt64.ONE);
-
-    getRequestedDutiesForSyncCommitteePeriod(0).complete(Optional.of(duties));
-
-    scheduler.onAttestationCreationDue(UInt64.valueOf(2));
-    scheduler.onAttestationCreationDue(UInt64.ONE);
-
-    verify(duties).performProductionDuty(UInt64.valueOf(2));
-    verify(duties, never()).performProductionDuty(UInt64.ONE);
-  }
-
-  @Test
   void shouldPerformAggregationForEachSlotWhenAttestationAggregationDue() {
     scheduler.onSlot(UInt64.ONE);
 

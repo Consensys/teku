@@ -22,11 +22,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.data.signingrecord.ValidatorSigningRecord;
@@ -49,7 +47,7 @@ public class SlashingProtectionImporter {
 
   public SlashingProtectionImporter(final SubCommandLogger log, final String path) {
     this.log = log;
-    syncDataAccessor = SyncDataAccessor.create(Paths.get(path));
+    syncDataAccessor = SyncDataAccessor.createWithoutAtomicMove();
   }
 
   public void initialise(final File inputFile) throws IOException {
@@ -100,33 +98,23 @@ public class SlashingProtectionImporter {
   }
 
   private SigningHistory signingHistoryConverter(final SigningHistory signingHistory) {
-    try {
-      final Optional<UInt64> lastSlot =
-          signingHistory.signedBlocks.stream()
-              .map(SignedBlock::getSlot)
-              .filter(Objects::nonNull)
-              .max(UInt64::compareTo);
-      final Optional<UInt64> sourceEpoch =
-          signingHistory.signedAttestations.stream()
-              .map(SignedAttestation::getSourceEpoch)
-              .filter(Objects::nonNull)
-              .max(UInt64::compareTo);
-      final Optional<UInt64> targetEpoch =
-          signingHistory.signedAttestations.stream()
-              .map(SignedAttestation::getTargetEpoch)
-              .filter(Objects::nonNull)
-              .max(UInt64::compareTo);
-      final ValidatorSigningRecord record =
-          new ValidatorSigningRecord(
-              metadata.genesisValidatorsRoot,
-              lastSlot.orElse(UInt64.ZERO),
-              sourceEpoch.orElse(ValidatorSigningRecord.NEVER_SIGNED),
-              targetEpoch.orElse(ValidatorSigningRecord.NEVER_SIGNED));
-      return new SigningHistory(signingHistory.pubkey, record);
-    } catch (NullPointerException e) {
-      System.out.println(signingHistory.pubkey);
-      throw e;
-    }
+    final Optional<UInt64> lastSlot =
+        signingHistory.signedBlocks.stream().map(SignedBlock::getSlot).max(UInt64::compareTo);
+    final Optional<UInt64> sourceEpoch =
+        signingHistory.signedAttestations.stream()
+            .map(SignedAttestation::getSourceEpoch)
+            .max(UInt64::compareTo);
+    final Optional<UInt64> targetEpoch =
+        signingHistory.signedAttestations.stream()
+            .map(SignedAttestation::getTargetEpoch)
+            .max(UInt64::compareTo);
+    final ValidatorSigningRecord record =
+        new ValidatorSigningRecord(
+            metadata.genesisValidatorsRoot,
+            lastSlot.orElse(UInt64.ZERO),
+            sourceEpoch.orElse(ValidatorSigningRecord.NEVER_SIGNED),
+            targetEpoch.orElse(ValidatorSigningRecord.NEVER_SIGNED));
+    return new SigningHistory(signingHistory.pubkey, record);
   }
 
   public void updateLocalRecords(final Path slashingProtectionPath) {
@@ -145,12 +133,10 @@ public class SlashingProtectionImporter {
       try {
         existingRecord = syncDataAccessor.read(outputFile).map(ValidatorSigningRecord::fromBytes);
       } catch (IOException e) {
-        log.exit(1, "Failed to read existing file: " + outputFile);
+        log.exit(1, "Failed to read existing file: " + outputFile.toString());
       }
     }
     if (existingRecord.isPresent()
-        && existingRecord.get().getGenesisValidatorsRoot() != null
-        && metadata.genesisValidatorsRoot != null
         && metadata.genesisValidatorsRoot.compareTo(existingRecord.get().getGenesisValidatorsRoot())
             != 0) {
       log.exit(
