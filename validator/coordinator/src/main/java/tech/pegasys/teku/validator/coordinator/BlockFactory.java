@@ -141,7 +141,8 @@ public class BlockFactory {
           getPowBlockAtTotalDifficulty(terminalTotalDifficulty, powHead, mergeTransitionHelpers);
 
       if (terminalPowBlock.isEmpty()) {
-        UInt256 blockDiff = powHead.getDifficulty().isZero() ? UInt256.ONE : powHead.getDifficulty();
+        UInt256 blockDiff =
+            powHead.getDifficulty().isZero() ? UInt256.ONE : powHead.getDifficulty();
         LOG.info(
             ColorConsolePrinter.print(
                 String.format(
