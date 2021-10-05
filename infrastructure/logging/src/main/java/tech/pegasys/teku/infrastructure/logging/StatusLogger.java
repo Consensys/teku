@@ -56,6 +56,13 @@ public class StatusLogger {
             Color.YELLOW));
   }
 
+  public void warnTotalTerminalDifficultyChanged(final String difficulty) {
+    log.warn(
+        print(
+            "MERGE configuration has been overridden with total terminal difficulty " + difficulty,
+            Color.YELLOW));
+  }
+
   public void fatalError(final String description, final Throwable cause) {
     log.fatal("Exiting due to fatal error in {}", description, cause);
   }

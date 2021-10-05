@@ -16,9 +16,12 @@ package tech.pegasys.teku.cli.options;
 import static tech.pegasys.teku.networking.eth2.P2PConfig.Builder.DEFAULT_PEER_RATE_LIMIT;
 import static tech.pegasys.teku.networking.eth2.P2PConfig.Builder.DEFAULT_PEER_REQUEST_LIMIT;
 
+import java.math.BigInteger;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.tuweni.units.bigints.UInt256;
 import picocli.CommandLine;
 import picocli.CommandLine.Option;
+import picocli.CommandLine.TypeConversionException;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
@@ -63,6 +66,15 @@ public class Eth2NetworkOptions {
       description = "Override the Merge fork activation epoch.",
       arity = "1")
   private UInt64 mergeForkEpoch;
+
+  @Option(
+      names = {"--Xnetwork-merge-total-terminal-difficulty"},
+      hidden = true,
+      paramLabel = "<uint256>",
+      description = "Override the Merge total terminal difficulty.",
+      arity = "1",
+      converter = UInt256Converter.class)
+  private UInt256 mergeTotalTerminalDifficulty;
 
   @Option(
       names = {"--Xstartup-target-peer-count"},
@@ -157,9 +169,24 @@ public class Eth2NetworkOptions {
     if (mergeForkEpoch != null) {
       builder.mergeForkEpoch(mergeForkEpoch);
     }
+    if (mergeTotalTerminalDifficulty != null) {
+      builder.mergeTotalTerminalDifficulty(mergeTotalTerminalDifficulty);
+    }
   }
 
   public String getNetwork() {
     return network;
+  }
+
+  private static class UInt256Converter implements CommandLine.ITypeConverter<UInt256> {
+    @Override
+    public UInt256 convert(final String value) {
+      try {
+        return UInt256.valueOf(new BigInteger(value));
+      } catch (final NumberFormatException e) {
+        throw new TypeConversionException(
+            "Invalid format: must be a numeric value but was " + value);
+      }
+    }
   }
 }
