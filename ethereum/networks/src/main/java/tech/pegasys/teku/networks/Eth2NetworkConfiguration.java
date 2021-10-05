@@ -25,6 +25,7 @@ import static tech.pegasys.teku.spec.networks.Eth2Network.SWIFT;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
@@ -45,6 +46,7 @@ public class Eth2NetworkConfiguration {
   private final List<String> discoveryBootnodes;
   private final Optional<UInt64> altairForkEpoch;
   private final Optional<UInt64> mergeForkEpoch;
+  private final Optional<UInt256> mergeTotalTerminalDifficulty;
   private final Eth1Address eth1DepositContractAddress;
   private final Optional<UInt64> eth1DepositContractDeployBlock;
   private final boolean balanceAttackMitigationEnabled;
@@ -61,7 +63,8 @@ public class Eth2NetworkConfiguration {
       final Optional<UInt64> eth1DepositContractDeployBlock,
       final boolean balanceAttackMitigationEnabled,
       final Optional<UInt64> altairForkEpoch,
-      final Optional<UInt64> mergeForkEpoch) {
+      final Optional<UInt64> mergeForkEpoch,
+      final Optional<UInt256> mergeTotalTerminalDifficulty) {
     this.spec = spec;
     this.constants = constants;
     this.initialState = initialState;
@@ -71,6 +74,7 @@ public class Eth2NetworkConfiguration {
     this.discoveryBootnodes = discoveryBootnodes;
     this.altairForkEpoch = altairForkEpoch;
     this.mergeForkEpoch = mergeForkEpoch;
+    this.mergeTotalTerminalDifficulty = mergeTotalTerminalDifficulty;
     this.eth1DepositContractAddress =
         eth1DepositContractAddress == null
             ? new Eth1Address(spec.getGenesisSpecConfig().getDepositContractAddress())
@@ -144,6 +148,10 @@ public class Eth2NetworkConfiguration {
     return mergeForkEpoch;
   }
 
+  public Optional<UInt256> getMergeTotalTerminalDifficulty() {
+    return mergeTotalTerminalDifficulty;
+  }
+
   @Override
   public String toString() {
     return constants;
@@ -161,6 +169,7 @@ public class Eth2NetworkConfiguration {
     private boolean balanceAttackMitigationEnabled = false;
     private Optional<UInt64> altairForkEpoch = Optional.empty();
     private Optional<UInt64> mergeForkEpoch = Optional.empty();
+    private Optional<UInt256> mergeTotalTerminalDifficulty = Optional.empty();
     private Spec spec;
 
     public void spec(Spec spec) {
@@ -170,7 +179,9 @@ public class Eth2NetworkConfiguration {
     public Eth2NetworkConfiguration build() {
       checkNotNull(constants, "Missing constants");
       if (spec == null) {
-        spec = SpecFactory.create(constants, altairForkEpoch, mergeForkEpoch);
+        spec =
+            SpecFactory.create(
+                constants, altairForkEpoch, mergeForkEpoch, mergeTotalTerminalDifficulty);
       }
       // if the deposit contract was not set, default from constants
       if (eth1DepositContractAddress == null) {
@@ -189,7 +200,8 @@ public class Eth2NetworkConfiguration {
           eth1DepositContractDeployBlock,
           balanceAttackMitigationEnabled,
           altairForkEpoch,
-          mergeForkEpoch);
+          mergeForkEpoch,
+          mergeTotalTerminalDifficulty);
     }
 
     public Builder constants(final String constants) {
@@ -259,6 +271,11 @@ public class Eth2NetworkConfiguration {
 
     public Builder mergeForkEpoch(final UInt64 mergeForkEpoch) {
       this.mergeForkEpoch = Optional.of(mergeForkEpoch);
+      return this;
+    }
+
+    public Builder mergeTotalTerminalDifficulty(final UInt256 mergeTotalTerminalDifficulty) {
+      this.mergeTotalTerminalDifficulty = Optional.of(mergeTotalTerminalDifficulty);
       return this;
     }
 

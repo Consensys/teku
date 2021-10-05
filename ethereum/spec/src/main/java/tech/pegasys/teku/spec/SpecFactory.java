@@ -18,6 +18,7 @@ import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import java.util.Optional;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
@@ -28,19 +29,22 @@ import tech.pegasys.teku.spec.config.SpecConfigMerge;
 public class SpecFactory {
 
   public static Spec create(String configName) {
-    return create(configName, Optional.empty(), Optional.empty());
+    return create(configName, Optional.empty(), Optional.empty(), Optional.empty());
   }
 
   public static Spec create(
       String configName,
       final Optional<UInt64> altairForkEpoch,
-      final Optional<UInt64> mergeForkEpoch) {
+      final Optional<UInt64> mergeForkEpoch,
+      final Optional<UInt256> totalTerminalDifficulty) {
     final SpecConfig config =
         SpecConfigLoader.loadConfig(
             configName,
             builder -> {
               altairForkEpoch.ifPresent(forkEpoch -> overrideAltairForkEpoch(builder, forkEpoch));
               mergeForkEpoch.ifPresent(forkEpoch -> overrideMergeForkEpoch(builder, forkEpoch));
+              totalTerminalDifficulty.ifPresent(
+                  difficulty -> overrideMergeTotalTerminalDifficulty(builder, difficulty));
             });
     return create(config);
   }
@@ -53,6 +57,11 @@ public class SpecFactory {
   private static void overrideMergeForkEpoch(
       final SpecConfigBuilder builder, final UInt64 forkEpoch) {
     builder.mergeBuilder(mergeBuilder -> mergeBuilder.mergeForkEpoch(forkEpoch));
+  }
+
+  private static SpecConfigBuilder overrideMergeTotalTerminalDifficulty(
+      final SpecConfigBuilder builder, final UInt256 difficulty) {
+    return builder.mergeBuilder(mergeBuilder -> mergeBuilder.terminalTotalDifficulty(difficulty));
   }
 
   public static Spec create(final SpecConfig config) {

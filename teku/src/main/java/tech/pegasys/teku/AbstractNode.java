@@ -94,6 +94,12 @@ public abstract class AbstractNode implements Node {
         .getMergeForkEpoch()
         .ifPresent(
             forkEpoch -> STATUS_LOG.warnForkEpochChanged(SpecMilestone.MERGE.name(), forkEpoch));
+    tekuConfig
+        .eth2NetworkConfiguration()
+        .getMergeTotalTerminalDifficulty()
+        .ifPresent(
+            difficulty ->
+                STATUS_LOG.warnTotalTerminalDifficultyChanged(difficulty.toShortHexString()));
   }
 
   protected abstract ServiceController getServiceController();
