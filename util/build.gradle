@@ -1,11 +1,4 @@
 dependencies {
-  api project(':infrastructure:crypto')
-  api project(':infrastructure:metrics')
-  api project(':infrastructure:events')
-  api project(':infrastructure:time')
-
-  implementation project(':bls')
-  implementation project(':infrastructure:async')
   implementation project(':infrastructure:exceptions')
   implementation project(':infrastructure:io')
   implementation project(':infrastructure:logging')

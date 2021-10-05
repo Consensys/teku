@@ -16,6 +16,7 @@ dependencies {
   implementation project(':ethereum:spec')
   implementation project(':ethereum:statetransition')
   implementation project(':ethereum:weaksubjectivity')
+  implementation project(':infrastructure:crypto')
   implementation project(':infrastructure:events')
   implementation project(':infrastructure:async')
   implementation project(':infrastructure:io')
