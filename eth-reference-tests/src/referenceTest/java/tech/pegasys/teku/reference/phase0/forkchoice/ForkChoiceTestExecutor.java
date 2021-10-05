@@ -15,12 +15,14 @@ package tech.pegasys.teku.reference.phase0.forkchoice;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.opentest4j.TestAbortedException;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
@@ -47,11 +49,19 @@ public class ForkChoiceTestExecutor implements TestExecutor {
   public static final ImmutableMap<String, TestExecutor> FORK_CHOICE_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
           .put("fork_choice/get_head", new ForkChoiceTestExecutor())
-          .put("fork_choice/on_block", TestExecutor.IGNORE_TESTS)
+          .put("fork_choice/on_block", new ForkChoiceTestExecutor())
           .build();
+
+  public static final ImmutableList<?> FORK_CHOICE_TESTS_TO_SKIP =
+      ImmutableList.of("new_finalized_slot_is_justified_checkpoint_ancestor");
 
   @Override
   public void runTest(final TestDefinition testDefinition) throws Throwable {
+    if (FORK_CHOICE_TESTS_TO_SKIP.contains(testDefinition.getTestName())) {
+      throw new TestAbortedException(
+          "Test " + testDefinition.getDisplayName() + " has been ignored");
+    }
+
     // Note: The fork choice spec says there may be settings in a meta.yaml file but currently no
     // tests actually have one, so we currently don't bother trying to load it.
     final BeaconState anchorState =
