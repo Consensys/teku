@@ -46,8 +46,10 @@ public class LevelDbIterator<K, V> implements Iterator<ColumnEntry<byte[], byte[
 
   @Override
   public boolean hasNext() {
-    dbInstance.assertOpen();
-    return iterator.hasNext() && isValidKey();
+    synchronized (dbInstance) {
+      dbInstance.assertOpen();
+      return iterator.hasNext() && isValidKey();
+    }
   }
 
   private boolean isValidKey() {
@@ -57,8 +59,10 @@ public class LevelDbIterator<K, V> implements Iterator<ColumnEntry<byte[], byte[
 
   @Override
   public ColumnEntry<byte[], byte[]> next() {
-    dbInstance.assertOpen();
-    return asRawColumnEntry(column, iterator.next());
+    synchronized (dbInstance) {
+      dbInstance.assertOpen();
+      return asRawColumnEntry(column, iterator.next());
+    }
   }
 
   public Stream<ColumnEntry<byte[], byte[]>> toStream() {
