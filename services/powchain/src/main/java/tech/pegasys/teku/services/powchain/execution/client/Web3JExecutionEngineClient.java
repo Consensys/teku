@@ -16,6 +16,10 @@ package tech.pegasys.teku.services.powchain.execution.client;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameterName;
@@ -36,14 +40,25 @@ import tech.pegasys.teku.services.powchain.execution.client.serializer.UInt64AsH
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel.ConsensusValidationResult;
 
 public class Web3JExecutionEngineClient implements ExecutionEngineClient {
+  private static final Logger LOG = LogManager.getLogger();
 
   private final Web3j eth1Web3j;
   private final HttpService eeWeb3jService;
 
   public Web3JExecutionEngineClient(String eth1Endpoint, Optional<String> maybeEeEndpoint) {
-    HttpService eth1Web3jService = new HttpService(eth1Endpoint);
+    HttpService eth1Web3jService = new HttpService(eth1Endpoint, createOkHttpClient());
     this.eth1Web3j = Web3j.build(eth1Web3jService);
     this.eeWeb3jService = maybeEeEndpoint.map(HttpService::new).orElse(eth1Web3jService);
+  }
+
+  private static OkHttpClient createOkHttpClient() {
+    final OkHttpClient.Builder builder = new OkHttpClient.Builder();
+    if (LOG.isTraceEnabled()) {
+      HttpLoggingInterceptor logging = new HttpLoggingInterceptor(LOG::trace);
+      logging.setLevel(HttpLoggingInterceptor.Level.BODY);
+      builder.addInterceptor(logging);
+    }
+    return builder.build();
   }
 
   @Override
