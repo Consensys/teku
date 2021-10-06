@@ -16,7 +16,6 @@ package tech.pegasys.teku.reference.phase0.forkchoice;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.ImmutableMap;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import org.apache.logging.log4j.LogManager;
@@ -59,7 +58,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
   private List<?> testsToSkip;
 
   public ForkChoiceTestExecutor(String... testsToSkip) {
-    this.testsToSkip = Arrays.asList(testsToSkip);
+    this.testsToSkip = List.of(testsToSkip);
   }
 
   @Override
