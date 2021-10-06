@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
@@ -675,10 +674,6 @@ public class SpecConfigBuilder {
 
   public class MergeBuilder {
 
-    // Genesis
-    private UInt64 genesisGasLimit;
-    private Bytes32 genesisBaseFeePerGas;
-
     // Fork
     private Bytes4 mergeForkVersion;
     private UInt64 mergeForkEpoch;
@@ -690,32 +685,13 @@ public class SpecConfigBuilder {
 
     SpecConfigMerge build(final SpecConfigAltair specConfig) {
       return new SpecConfigMerge(
-          specConfig,
-          genesisGasLimit,
-          genesisBaseFeePerGas,
-          mergeForkVersion,
-          mergeForkEpoch,
-          terminalTotalDifficulty);
+          specConfig, mergeForkVersion, mergeForkEpoch, terminalTotalDifficulty);
     }
 
     void validate() {
-      validateConstant("genesisGasLimit", genesisGasLimit);
-      validateConstant("genesisBaseFeePerGas", genesisBaseFeePerGas);
       validateConstant("mergeForkVersion", mergeForkVersion);
       validateConstant("mergeForkEpoch", mergeForkEpoch);
       validateConstant("terminalTotalDifficulty", terminalTotalDifficulty);
-    }
-
-    public MergeBuilder genesisGasLimit(UInt64 genesisGasLimit) {
-      checkNotNull(genesisGasLimit);
-      this.genesisGasLimit = genesisGasLimit;
-      return this;
-    }
-
-    public MergeBuilder genesisBaseFeePerGas(Bytes32 genesisBaseFeePerGas) {
-      checkNotNull(genesisBaseFeePerGas);
-      this.genesisBaseFeePerGas = genesisBaseFeePerGas;
-      return this;
     }
 
     public MergeBuilder mergeForkVersion(Bytes4 mergeForkVersion) {
