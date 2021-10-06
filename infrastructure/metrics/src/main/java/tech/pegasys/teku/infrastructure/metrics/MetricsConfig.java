@@ -35,7 +35,7 @@ public class MetricsConfig {
       final Set<MetricCategory> metricsCategories,
       final List<String> metricsHostAllowlist,
       final String metricsEndpoint,
-      int publicationInterval) {
+      final int publicationInterval) {
     this.metricsEnabled = metricsEnabled;
     this.metricsPort = metricsPort;
     this.metricsInterface = metricsInterface;
