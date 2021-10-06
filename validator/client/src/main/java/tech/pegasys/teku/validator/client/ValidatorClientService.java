@@ -44,8 +44,7 @@ import tech.pegasys.teku.validator.client.duties.synccommittee.SyncCommitteeSche
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 import tech.pegasys.teku.validator.client.loader.PublicKeyLoader;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
-import tech.pegasys.teku.validator.eventadapter.InProcessBeaconNodeApi;
-import tech.pegasys.teku.validator.remote.RemoteBeaconNodeApi;
+import tech.pegasys.teku.validator.relaypublisher.MultiPublishingBeaconNodeApi;
 
 public class ValidatorClientService extends Service {
   private final EventChannels eventChannels;
@@ -85,26 +84,15 @@ public class ValidatorClientService extends Service {
     final boolean generateEarlyAttestations =
         config.getValidatorConfig().generateEarlyAttestations();
     final BeaconNodeApi beaconNodeApi =
-        config
-            .getValidatorConfig()
-            .getBeaconNodeApiEndpoint()
-            .map(
-                endpoint ->
-                    RemoteBeaconNodeApi.create(
-                        services,
-                        asyncRunner,
-                        endpoint,
-                        config.getSpec(),
-                        useDependentRoots,
-                        generateEarlyAttestations))
-            .orElseGet(
-                () ->
-                    InProcessBeaconNodeApi.create(
-                        services,
-                        asyncRunner,
-                        useDependentRoots,
-                        generateEarlyAttestations,
-                        config.getSpec()));
+        MultiPublishingBeaconNodeApi.create(
+            services,
+            asyncRunner,
+            config.getValidatorConfig().getBeaconNodeApiEndpoint(),
+            config.getSpec(),
+            useDependentRoots,
+            generateEarlyAttestations,
+            config.getValidatorConfig().getPublishUrls());
+
     final ValidatorApiChannel validatorApiChannel = beaconNodeApi.getValidatorApi();
     final GenesisDataProvider genesisDataProvider =
         new GenesisDataProvider(asyncRunner, validatorApiChannel);
