@@ -54,14 +54,22 @@ import tech.pegasys.teku.validator.eventadapter.InProcessBeaconNodeApi;
 import tech.pegasys.teku.validator.remote.RemoteBeaconNodeApi;
 
 public class MultiPublishingBeaconNodeApi implements BeaconNodeApi, ValidatorApiChannel {
-  private static final Logger LOG = LogManager.getLogger();
+  @SuppressWarnings("PrivateStaticFinalLoggers")
+  private final Logger logger;
+
   private final BeaconNodeApi delegate;
   private final List<BeaconNodeApi> publishingApis;
 
-  public MultiPublishingBeaconNodeApi(
-      final BeaconNodeApi delegate, final List<BeaconNodeApi> publishingApis) {
+  MultiPublishingBeaconNodeApi(
+      final BeaconNodeApi delegate, final List<BeaconNodeApi> publishingApis, final Logger logger) {
     this.delegate = delegate;
     this.publishingApis = publishingApis;
+    this.logger = logger;
+  }
+
+  MultiPublishingBeaconNodeApi(
+      final BeaconNodeApi delegate, final List<BeaconNodeApi> publishingApis) {
+    this(delegate, publishingApis, LogManager.getLogger());
   }
 
   public static BeaconNodeApi create(
@@ -106,7 +114,6 @@ public class MultiPublishingBeaconNodeApi implements BeaconNodeApi, ValidatorApi
             .collect(Collectors.toList());
 
     return new MultiPublishingBeaconNodeApi(primaryInterface, publishApis);
-    //    final BeaconNodeApi api = beaconNodeApiEndpoint
   }
 
   @Override
@@ -210,7 +217,7 @@ public class MultiPublishingBeaconNodeApi implements BeaconNodeApi, ValidatorApi
                 api.sendSignedAttestations(attestations)
                     .finish(
                         error ->
-                            LOG.warn(
+                            logger.warn(
                                 "Failed to send attestations to remote publishing host: {}",
                                 error.getMessage())));
 
@@ -227,7 +234,7 @@ public class MultiPublishingBeaconNodeApi implements BeaconNodeApi, ValidatorApi
                 api.sendAggregateAndProofs(aggregateAndProofs)
                     .finish(
                         error ->
-                            LOG.warn(
+                            logger.warn(
                                 "Failed to send aggregateAndProofs to remote publishing host: {}",
                                 error.getMessage())));
     return delegate.getValidatorApi().sendAggregateAndProofs(aggregateAndProofs);
@@ -242,7 +249,7 @@ public class MultiPublishingBeaconNodeApi implements BeaconNodeApi, ValidatorApi
                 api.sendSignedBlock(block)
                     .finish(
                         error ->
-                            LOG.warn(
+                            logger.warn(
                                 "Failed to send signedBlock to remote publishing host: {}",
                                 error.getMessage())));
     return delegate.getValidatorApi().sendSignedBlock(block);
@@ -258,7 +265,7 @@ public class MultiPublishingBeaconNodeApi implements BeaconNodeApi, ValidatorApi
                 api.sendSyncCommitteeMessages(syncCommitteeMessages)
                     .finish(
                         error ->
-                            LOG.warn(
+                            logger.warn(
                                 "Failed to send sync committee messages to remote publishing host: {}",
                                 error.getMessage())));
     return delegate.getValidatorApi().sendSyncCommitteeMessages(syncCommitteeMessages);
@@ -274,7 +281,7 @@ public class MultiPublishingBeaconNodeApi implements BeaconNodeApi, ValidatorApi
                 api.sendSignedContributionAndProofs(signedContributionAndProofs)
                     .finish(
                         error ->
-                            LOG.warn(
+                            logger.warn(
                                 "Failed to send signed contribution and proofs to remote publishing host: {}",
                                 error.getMessage())));
     return delegate.getValidatorApi().sendSignedContributionAndProofs(signedContributionAndProofs);
