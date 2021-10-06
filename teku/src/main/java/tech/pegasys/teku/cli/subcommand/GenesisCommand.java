@@ -19,18 +19,25 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
+import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.MinimalEth2NetworkOptions;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.interop.InteropStartupUtil;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartBeaconStateGenerator;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.ssz.type.Bytes20;
 
 @Command(
     name = "genesis",
@@ -77,7 +84,12 @@ public class GenesisCommand {
           new MockStartValidatorKeyPairFactory().generateKeyPairs(0, genesisParams.validatorCount);
       final BeaconState genesisState =
           InteropStartupUtil.createMockedStartInitialBeaconState(
-              spec, Bytes32.fromHexString(genesisParams.eth1BlockHash), genesisTime, validatorKeys);
+              spec,
+              Bytes32.fromHexString(genesisParams.eth1BlockHash),
+              genesisTime,
+              validatorKeys,
+              Optional.of(createExecutionPayloadHeader(genesisParams)),
+              true);
 
       if (outputToFile) {
         SUB_COMMAND_LOG.storingGenesis(genesisParams.outputFile, false);
@@ -87,6 +99,25 @@ public class GenesisCommand {
         SUB_COMMAND_LOG.storingGenesis(genesisParams.outputFile, true);
       }
     }
+  }
+
+  private ExecutionPayloadHeader createExecutionPayloadHeader(MockGenesisParams genesisParams) {
+    Bytes32 blockHash = Bytes32.fromHexString(genesisParams.eth1BlockHash);
+    return new ExecutionPayloadHeader(
+        Bytes32.ZERO,
+        Bytes20.ZERO,
+        Bytes32.ZERO,
+        Bytes32.ZERO,
+        Bytes.wrap(new byte[SpecConfig.BYTES_PER_LOGS_BLOOM]),
+        blockHash,
+        UInt64.ZERO,
+        UInt64.valueOf(genesisParams.genesisGasLimit),
+        UInt64.ZERO,
+        UInt64.valueOf(genesisParams.genesisTime),
+        Bytes.EMPTY,
+        UInt256.valueOf(genesisParams.genesisBaseFee),
+        blockHash,
+        Bytes32.ZERO);
   }
 
   public static class MockGenesisParams {
@@ -114,5 +145,17 @@ public class GenesisCommand {
         description = "The Eth1 block hash")
     private String eth1BlockHash =
         MockStartBeaconStateGenerator.INTEROP_ETH1_BLOCK_HASH.toHexString();
+
+    @Option(
+        names = {"--genesis-gas-limit"},
+        paramLabel = "<GAS_LIMIT>",
+        description = "The Merge genesis gas limit")
+    private long genesisGasLimit = 30_000_000;
+
+    @Option(
+        names = {"--genesis-base-fee"},
+        paramLabel = "<FEE>",
+        description = "The Merge genesis base fee per gas")
+    private long genesisBaseFee = 1_000_000_000;
   }
 }

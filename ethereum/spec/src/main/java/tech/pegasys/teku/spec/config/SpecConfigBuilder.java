@@ -674,10 +674,6 @@ public class SpecConfigBuilder {
 
   public class MergeBuilder {
 
-    // Genesis
-    private UInt64 genesisGasLimit;
-    private UInt256 genesisBaseFeePerGas;
-
     // Fork
     private Bytes4 mergeForkVersion;
     private UInt64 mergeForkEpoch;
@@ -689,32 +685,13 @@ public class SpecConfigBuilder {
 
     SpecConfigMerge build(final SpecConfigAltair specConfig) {
       return new SpecConfigMerge(
-          specConfig,
-          genesisGasLimit,
-          genesisBaseFeePerGas,
-          mergeForkVersion,
-          mergeForkEpoch,
-          terminalTotalDifficulty);
+          specConfig, mergeForkVersion, mergeForkEpoch, terminalTotalDifficulty);
     }
 
     void validate() {
-      validateConstant("genesisGasLimit", genesisGasLimit);
-      validateConstant("genesisBaseFeePerGas", genesisBaseFeePerGas);
       validateConstant("mergeForkVersion", mergeForkVersion);
       validateConstant("mergeForkEpoch", mergeForkEpoch);
       validateConstant("terminalTotalDifficulty", terminalTotalDifficulty);
-    }
-
-    public MergeBuilder genesisGasLimit(UInt64 genesisGasLimit) {
-      checkNotNull(genesisGasLimit);
-      this.genesisGasLimit = genesisGasLimit;
-      return this;
-    }
-
-    public MergeBuilder genesisBaseFeePerGas(UInt256 genesisBaseFeePerGas) {
-      checkNotNull(genesisBaseFeePerGas);
-      this.genesisBaseFeePerGas = genesisBaseFeePerGas;
-      return this;
     }
 
     public MergeBuilder mergeForkVersion(Bytes4 mergeForkVersion) {

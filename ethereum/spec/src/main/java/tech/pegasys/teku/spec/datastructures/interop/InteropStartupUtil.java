@@ -14,10 +14,12 @@
 package tech.pegasys.teku.spec.datastructures.interop;
 
 import java.util.List;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
@@ -37,7 +39,7 @@ public final class InteropStartupUtil {
       final long genesisTime,
       List<BLSKeyPair> validatorKeys) {
     return createMockedStartInitialBeaconState(
-        spec, eth1BlockHash, genesisTime, validatorKeys, true);
+        spec, eth1BlockHash, genesisTime, validatorKeys, Optional.empty(), true);
   }
 
   public static BeaconState createMockedStartInitialBeaconState(
@@ -50,6 +52,7 @@ public final class InteropStartupUtil {
         MockStartBeaconStateGenerator.INTEROP_ETH1_BLOCK_HASH,
         genesisTime,
         validatorKeys,
+        Optional.empty(),
         signDeposits);
   }
 
@@ -58,11 +61,13 @@ public final class InteropStartupUtil {
       final Bytes32 eth1BlockHash,
       final long genesisTime,
       List<BLSKeyPair> validatorKeys,
+      Optional<ExecutionPayloadHeader> payloadHeader,
       boolean signDeposits) {
     final List<DepositData> initialDepositData =
         new MockStartDepositGenerator(new DepositGenerator(spec, signDeposits))
             .createDeposits(validatorKeys);
     return new MockStartBeaconStateGenerator(spec)
-        .createInitialBeaconState(eth1BlockHash, UInt64.valueOf(genesisTime), initialDepositData);
+        .createInitialBeaconState(
+            eth1BlockHash, UInt64.valueOf(genesisTime), initialDepositData, payloadHeader);
   }
 }
