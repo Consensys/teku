@@ -26,6 +26,7 @@ public class MetricsConfig {
   private final Set<MetricCategory> metricsCategories;
   private final List<String> metricsHostAllowlist;
   private final String metricsEndpoint;
+  private final int publicationInterval;
 
   private MetricsConfig(
       final boolean metricsEnabled,
@@ -33,13 +34,15 @@ public class MetricsConfig {
       final String metricsInterface,
       final Set<MetricCategory> metricsCategories,
       final List<String> metricsHostAllowlist,
-      final String metricsEndpoint) {
+      final String metricsEndpoint,
+      int publicationInterval) {
     this.metricsEnabled = metricsEnabled;
     this.metricsPort = metricsPort;
     this.metricsInterface = metricsInterface;
     this.metricsCategories = metricsCategories;
     this.metricsHostAllowlist = metricsHostAllowlist;
     this.metricsEndpoint = metricsEndpoint;
+    this.publicationInterval = publicationInterval;
   }
 
   public static MetricsConfigBuilder builder() {
@@ -70,6 +73,10 @@ public class MetricsConfig {
     return metricsEndpoint;
   }
 
+  public int getPublicationInterval() {
+    return publicationInterval;
+  }
+
   public static final class MetricsConfigBuilder {
 
     private boolean metricsEnabled;
@@ -78,6 +85,7 @@ public class MetricsConfig {
     private Set<MetricCategory> metricsCategories = new HashSet<>();
     private List<String> metricsHostAllowlist;
     private String metricsEndpoint;
+    private int metricsPublicationInterval;
 
     private MetricsConfigBuilder() {}
 
@@ -111,6 +119,11 @@ public class MetricsConfig {
       return this;
     }
 
+    public MetricsConfigBuilder metricsPublicationInterval(int metricsPublicationInterval) {
+      this.metricsPublicationInterval = metricsPublicationInterval;
+      return this;
+    }
+
     public MetricsConfig build() {
       return new MetricsConfig(
           metricsEnabled,
@@ -118,7 +131,8 @@ public class MetricsConfig {
           metricsInterface,
           metricsCategories,
           metricsHostAllowlist,
-          metricsEndpoint);
+          metricsEndpoint,
+          metricsPublicationInterval);
     }
   }
 }

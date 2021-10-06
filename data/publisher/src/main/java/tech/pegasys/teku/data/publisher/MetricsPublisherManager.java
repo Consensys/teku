@@ -46,14 +46,13 @@ public class MetricsPublisherManager extends Service {
   public MetricsPublisherManager(
       AsyncRunnerFactory asyncRunnerFactory,
       final TimeProvider timeProvider,
-      final MetricsEndpoint metricsConfig,
-      final long intervalBetweenPublications) {
+      final MetricsEndpoint metricsConfig) {
     this.asyncRunnerFactory = asyncRunnerFactory;
     this.timeProvider = timeProvider;
     this.metricsConfig = metricsConfig;
     this.dataFactory = new MetricsDataFactory(metricsConfig.getMetricsSystem());
     this.publisher = new MetricsPublisher(new OkHttpClient());
-    this.intervalBetweenPublications = intervalBetweenPublications;
+    this.intervalBetweenPublications = metricsConfig.getMetricConfig().getPublicationInterval();
   }
 
   void setMetricsPublisher(final MetricsPublisher metricsPublisher) {
