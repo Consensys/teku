@@ -13,16 +13,18 @@
 
 package tech.pegasys.teku.services.powchain.execution.client.serializer;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
 import java.io.IOException;
 import org.apache.tuweni.units.bigints.UInt256;
 
-public class UInt256AsHexSerializer extends JsonSerializer<UInt256> {
+public class UInt256AsHexDeserializer extends JsonDeserializer<UInt256> {
+
   @Override
-  public void serialize(UInt256 value, JsonGenerator gen, SerializerProvider serializers)
-      throws IOException {
-    gen.writeString(value.toMinimalBytes().toShortHexString());
+  public UInt256 deserialize(JsonParser p, DeserializationContext ctxt)
+      throws IOException, JsonProcessingException {
+    return UInt256.fromHexString(p.getValueAsString());
   }
 }
