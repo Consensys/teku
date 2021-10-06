@@ -17,12 +17,12 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import java.io.IOException;
-import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 
-public class UInt256AsHexSerializer extends JsonSerializer<Bytes32> {
+public class UInt256AsHexSerializer extends JsonSerializer<UInt256> {
   @Override
-  public void serialize(Bytes32 value, JsonGenerator gen, SerializerProvider serializers)
+  public void serialize(UInt256 value, JsonGenerator gen, SerializerProvider serializers)
       throws IOException {
-    gen.writeString(value.toQuantityHexString());
+    gen.writeString(value.toMinimalBytes().toHexString());
   }
 }
