@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -38,7 +37,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.ssz.SszMutableList;
 import tech.pegasys.teku.ssz.schema.SszListSchema;
-import tech.pegasys.teku.ssz.type.Bytes20;
 import tech.pegasys.teku.util.config.Constants;
 
 public class GenesisGenerator {
