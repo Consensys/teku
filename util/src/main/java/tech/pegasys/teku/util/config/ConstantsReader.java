@@ -56,8 +56,6 @@ class ConstantsReader {
           "TRANSITION_TOTAL_DIFFICULTY",
           "MIN_ANCHOR_POW_BLOCK_DIFFICULTY",
           "TERMINAL_TOTAL_DIFFICULTY",
-          "GENESIS_GAS_LIMIT",
-          "GENESIS_BASE_FEE_PER_GAS",
           // Phase0 constants which may exist in legacy config files, but should now be ignored
           "BLS_WITHDRAWAL_PREFIX",
           "TARGET_AGGREGATORS_PER_COMMITTEE",
