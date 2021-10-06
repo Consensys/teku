@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
@@ -115,8 +116,7 @@ public class GenesisCommand {
         UInt64.ZERO,
         UInt64.valueOf(genesisParams.genesisTime),
         Bytes.EMPTY,
-        Bytes32.rightPad(
-            Bytes.ofUnsignedLong(genesisParams.genesisBaseFee, ByteOrder.LITTLE_ENDIAN)),
+        UInt256.valueOf(genesisParams.genesisBaseFee),
         blockHash,
         Bytes32.ZERO);
   }
