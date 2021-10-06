@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.data.publisher;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -20,18 +21,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import org.assertj.core.api.Assertions;
 import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
-import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.metrics.MetricsConfig;
 import tech.pegasys.teku.infrastructure.metrics.MetricsEndpoint;
-import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 
 class MetricsPublisherManagerTest {
@@ -41,11 +38,8 @@ class MetricsPublisherManagerTest {
   private MetricsPublisher metricsPublisher;
   PrometheusMetricsSystem prometheusMetricsSystem;
 
-  private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
-  private final CountDownLatch lock = new CountDownLatch(1);
-  private final AsyncRunnerFactory asyncRunnerFactory =
-      AsyncRunnerFactory.createDefault(new MetricTrackingExecutorFactory(metricsSystem));
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(10_000);
+  private final StubAsyncRunnerFactory asyncRunnerFactory = new StubAsyncRunnerFactory();
 
   @BeforeEach
   void init_mocks() throws IOException {
@@ -66,9 +60,10 @@ class MetricsPublisherManagerTest {
     publisherManager.setMetricsPublisher(metricsPublisher);
     verify(metricsPublisher, times(0)).publishMetrics(anyString(), anyString());
     SafeFuture<?> safeFuture = publisherManager.doStart();
-    lock.await(1100, TimeUnit.MILLISECONDS);
+    assertThat(asyncRunnerFactory.getStubAsyncRunners().size()).isEqualTo(1);
+    asyncRunnerFactory.getStubAsyncRunners().get(0).executeQueuedActions();
     verify(metricsPublisher, times(1)).publishMetrics(anyString(), anyString());
-    lock.await(1100, TimeUnit.MILLISECONDS);
+    asyncRunnerFactory.getStubAsyncRunners().get(0).executeQueuedActions();
     verify(metricsPublisher, times(2)).publishMetrics(anyString(), anyString());
     Assertions.assertThat(safeFuture).isEqualTo(SafeFuture.COMPLETE);
   }
