@@ -36,7 +36,7 @@ public class MetricsPublisherManager extends Service {
   private final long intervalBetweenPublications;
   private final AsyncRunnerFactory asyncRunnerFactory;
   private final TimeProvider timeProvider;
-  private final MetricsEndpoint metricsConfig;
+  private final MetricsEndpoint metricsEndpoint;
   private final MetricsDataFactory dataFactory;
   private final JsonProvider jsonProvider = new JsonProvider();
 
@@ -46,13 +46,13 @@ public class MetricsPublisherManager extends Service {
   public MetricsPublisherManager(
       AsyncRunnerFactory asyncRunnerFactory,
       final TimeProvider timeProvider,
-      final MetricsEndpoint metricsConfig) {
+      final MetricsEndpoint metricsEndpoint) {
     this.asyncRunnerFactory = asyncRunnerFactory;
     this.timeProvider = timeProvider;
-    this.metricsConfig = metricsConfig;
-    this.dataFactory = new MetricsDataFactory(metricsConfig.getMetricsSystem());
+    this.metricsEndpoint = metricsEndpoint;
+    this.dataFactory = new MetricsDataFactory(metricsEndpoint.getMetricsSystem());
     this.publisher = new MetricsPublisher(new OkHttpClient());
-    this.intervalBetweenPublications = metricsConfig.getMetricConfig().getPublicationInterval();
+    this.intervalBetweenPublications = metricsEndpoint.getMetricConfig().getPublicationInterval();
   }
 
   void setMetricsPublisher(final MetricsPublisher metricsPublisher) {
@@ -62,14 +62,14 @@ public class MetricsPublisherManager extends Service {
   @Override
   public SafeFuture<?> start() {
     SafeFuture<?> safeFuture = SafeFuture.COMPLETE;
-    if (metricsConfig.getMetricConfig().getMetricsEndpoint() != null) {
+    if (metricsEndpoint.getMetricConfig().getMetricsEndpoint() != null) {
       safeFuture = this.doStart();
     }
     return safeFuture;
   }
 
   int publishMetrics() {
-    String endpointAddress = metricsConfig.getMetricConfig().getMetricsEndpoint();
+    String endpointAddress = metricsEndpoint.getMetricConfig().getMetricsEndpoint();
     List<BaseMetricData> clientData = dataFactory.getMetricData(this.timeProvider);
     try {
       return publisher.publishMetrics(endpointAddress, jsonProvider.objectToJSON(clientData));
