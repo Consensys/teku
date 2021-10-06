@@ -18,7 +18,6 @@ import static tech.pegasys.teku.infrastructure.logging.SubCommandLogger.SUB_COMM
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.ByteOrder;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
