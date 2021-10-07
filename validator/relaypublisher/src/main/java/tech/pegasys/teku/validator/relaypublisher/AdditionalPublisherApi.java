@@ -29,11 +29,11 @@ import tech.pegasys.teku.validator.beaconnode.BeaconNodeApi;
 
 public class AdditionalPublisherApi {
   private final String sanitizedUrl;
-  private final BeaconNodeApi beaconNodeApi;
+  private final BeaconNodeApi delegate;
 
-  public AdditionalPublisherApi(final URI uri, final BeaconNodeApi beaconNodeApi) {
+  public AdditionalPublisherApi(final URI uri, final BeaconNodeApi delegate) {
     this.sanitizedUrl = UrlSanitizer.sanitizePotentialUrl(uri.toString());
-    this.beaconNodeApi = beaconNodeApi;
+    this.delegate = delegate;
   }
 
   public String getSanitizedUrl() {
@@ -42,27 +42,25 @@ public class AdditionalPublisherApi {
 
   public SafeFuture<List<SubmitDataError>> sendSignedAttestations(
       final List<Attestation> attestations) {
-    return beaconNodeApi.getValidatorApi().sendSignedAttestations(attestations);
+    return delegate.getValidatorApi().sendSignedAttestations(attestations);
   }
 
   public SafeFuture<List<SubmitDataError>> sendAggregateAndProofs(
       final List<SignedAggregateAndProof> aggregateAndProofs) {
-    return beaconNodeApi.getValidatorApi().sendAggregateAndProofs(aggregateAndProofs);
+    return delegate.getValidatorApi().sendAggregateAndProofs(aggregateAndProofs);
   }
 
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(final SignedBeaconBlock block) {
-    return beaconNodeApi.getValidatorApi().sendSignedBlock(block);
+    return delegate.getValidatorApi().sendSignedBlock(block);
   }
 
   public SafeFuture<List<SubmitDataError>> sendSyncCommitteeMessages(
       final List<SyncCommitteeMessage> syncCommitteeMessages) {
-    return beaconNodeApi.getValidatorApi().sendSyncCommitteeMessages(syncCommitteeMessages);
+    return delegate.getValidatorApi().sendSyncCommitteeMessages(syncCommitteeMessages);
   }
 
   public SafeFuture<Void> sendSignedContributionAndProofs(
       final Collection<SignedContributionAndProof> signedContributionAndProofs) {
-    return beaconNodeApi
-        .getValidatorApi()
-        .sendSignedContributionAndProofs(signedContributionAndProofs);
+    return delegate.getValidatorApi().sendSignedContributionAndProofs(signedContributionAndProofs);
   }
 }
