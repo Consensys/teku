@@ -88,7 +88,8 @@ public class BlockImporterTest {
           recentChainData,
           forkChoice,
           weakSubjectivityValidator,
-          executionEngineChannel);
+          executionEngineChannel,
+          CurrentSlotProvider.NOOP);
 
   @BeforeAll
   public static void init() {
@@ -364,7 +365,8 @@ public class BlockImporterTest {
             recentChainData,
             forkChoice,
             weakSubjectivityValidator,
-            executionEngineChannel);
+            executionEngineChannel,
+            CurrentSlotProvider.NOOP);
 
     final BlockImportResult result = blockImporter.importBlock(otherBlock).get();
     assertImportFailed(result, FailureReason.FAILED_WEAK_SUBJECTIVITY_CHECKS);
@@ -393,7 +395,8 @@ public class BlockImporterTest {
             recentChainData,
             forkChoice,
             weakSubjectivityValidator,
-            executionEngineChannel);
+            executionEngineChannel,
+            CurrentSlotProvider.NOOP);
 
     // Import wsBlock
     final BlockImportResult result = blockImporter.importBlock(wsBlock).get();
@@ -415,7 +418,8 @@ public class BlockImporterTest {
             storageSystem.recentChainData(),
             forkChoice,
             weakSubjectivityValidator,
-            executionEngineChannel);
+            executionEngineChannel,
+            CurrentSlotProvider.NOOP);
 
     // The current slot is far ahead of the block being imported
     final UInt64 wsPeriod = UInt64.valueOf(10);
@@ -452,7 +456,8 @@ public class BlockImporterTest {
             storageSystem.recentChainData(),
             forkChoice,
             weakSubjectivityValidator,
-            executionEngineChannel);
+            executionEngineChannel,
+            CurrentSlotProvider.NOOP);
 
     // Set current time to be several WSP's ahead of finalized checkpoint
     final UInt64 wsPeriod = UInt64.valueOf(10);
@@ -497,7 +502,8 @@ public class BlockImporterTest {
             storageSystem.recentChainData(),
             forkChoice,
             weakSubjectivityValidator,
-            executionEngineChannel);
+            executionEngineChannel,
+            CurrentSlotProvider.NOOP);
 
     // Set current time to be several WSP's ahead of finalized checkpoint
     final UInt64 wsPeriod = UInt64.valueOf(10);
@@ -534,7 +540,8 @@ public class BlockImporterTest {
             storageSystem.recentChainData(),
             forkChoice,
             weakSubjectivityValidator,
-            executionEngineChannel);
+            executionEngineChannel,
+            CurrentSlotProvider.NOOP);
 
     final SignedBlockAndState genesis = storageSystem.chainUpdater().initializeGenesis();
 
@@ -559,7 +566,8 @@ public class BlockImporterTest {
             storageSystem.recentChainData(),
             forkChoice,
             weakSubjectivityValidator,
-            executionEngineChannel);
+            executionEngineChannel,
+            CurrentSlotProvider.NOOP);
 
     final SignedBlockAndState genesis = storageSystem.chainUpdater().initializeGenesis();
 

@@ -86,6 +86,7 @@ import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.BlockManager;
+import tech.pegasys.teku.statetransition.block.CurrentSlotProvider;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
@@ -755,7 +756,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             recentChainData,
             forkChoice,
             weakSubjectivityValidator,
-            executionEngineChannel);
+            executionEngineChannel,
+            CurrentSlotProvider.create(timeProvider, genesisTimeTracker, spec));
   }
 
   public void initBlockManager() {

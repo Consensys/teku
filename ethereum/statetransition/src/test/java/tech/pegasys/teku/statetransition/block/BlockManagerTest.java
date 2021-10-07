@@ -83,7 +83,8 @@ public class BlockManagerTest {
           localRecentChainData,
           forkChoice,
           WeakSubjectivityFactory.lenientValidator(),
-          executionEngineChannel);
+          executionEngineChannel,
+          CurrentSlotProvider.NOOP);
   private final BlockManager blockManager =
       new BlockManager(
           localRecentChainData,
