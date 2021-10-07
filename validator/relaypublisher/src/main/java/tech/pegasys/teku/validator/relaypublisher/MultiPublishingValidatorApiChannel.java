@@ -214,10 +214,19 @@ public class MultiPublishingValidatorApiChannel implements ValidatorApiChannel {
       final List<SyncCommitteeMessage> syncCommitteeMessages) {
     final SafeFuture<List<SubmitDataError>> future =
         delegate.sendSyncCommitteeMessages(syncCommitteeMessages);
-    for (AdditionalPublisherApi api : additionalPublisherApis) {
-      api.sendSyncCommitteeMessages(syncCommitteeMessages)
-          .finish(error -> logPublishError("syncCommitteeMessages", api.getSanitizedUrl(), error));
-    }
+
+    // Sync Committee Messages can print 'failed to produce' if the main publish is slow,
+    // so don't publish to other nodes until it's been published by the primary
+    future.finish(
+        () -> {
+          for (AdditionalPublisherApi api : additionalPublisherApis) {
+            api.sendSyncCommitteeMessages(syncCommitteeMessages)
+                .finish(
+                    error ->
+                        logPublishError("syncCommitteeMessages", api.getSanitizedUrl(), error));
+          }
+        },
+        logger::error);
 
     return future;
   }

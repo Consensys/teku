@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.relaypublisher;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -42,6 +43,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
+import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class MultiPublishingValidatorApiChannelTest {
@@ -333,6 +335,8 @@ public class MultiPublishingValidatorApiChannelTest {
     final MultiPublishingValidatorApiChannel api =
         new MultiPublishingValidatorApiChannel(delegate, publishers);
     final List<SyncCommitteeMessage> syncCommitteeMessages = Collections.emptyList();
+    final SafeFuture<List<SubmitDataError>> future = new SafeFuture<>();
+    when(delegate.sendSyncCommitteeMessages(any())).thenReturn(future);
     publishers.forEach(
         val ->
             when(val.sendSyncCommitteeMessages(anyList()))
@@ -341,6 +345,7 @@ public class MultiPublishingValidatorApiChannelTest {
     ignoreFuture(api.sendSyncCommitteeMessages(syncCommitteeMessages));
     verify(delegate, times(1)).sendSyncCommitteeMessages(syncCommitteeMessages);
     verifyNoMoreInteractions(delegate);
+    future.complete(Collections.emptyList());
 
     publishers.forEach(
         val -> verify(val, times(1)).sendSyncCommitteeMessages(syncCommitteeMessages));
@@ -351,6 +356,8 @@ public class MultiPublishingValidatorApiChannelTest {
     final MultiPublishingValidatorApiChannel api =
         new MultiPublishingValidatorApiChannel(delegate, publishers, logger);
     final List<SyncCommitteeMessage> syncCommitteeMessages = Collections.emptyList();
+    final SafeFuture<List<SubmitDataError>> future = new SafeFuture<>();
+    when(delegate.sendSyncCommitteeMessages(any())).thenReturn(future);
     publishers.forEach(
         val -> {
           when(val.sendSyncCommitteeMessages(anyList()))
@@ -361,7 +368,7 @@ public class MultiPublishingValidatorApiChannelTest {
     ignoreFuture(api.sendSyncCommitteeMessages(syncCommitteeMessages));
     verify(delegate, times(1)).sendSyncCommitteeMessages(syncCommitteeMessages);
     verifyNoMoreInteractions(delegate);
-
+    future.complete(Collections.emptyList());
     publishers.forEach(
         val -> verify(val, times(1)).sendSyncCommitteeMessages(syncCommitteeMessages));
     verify(logger, times(2))
