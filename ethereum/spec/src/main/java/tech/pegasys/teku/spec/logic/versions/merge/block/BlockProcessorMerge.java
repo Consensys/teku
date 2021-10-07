@@ -194,7 +194,7 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
 
       checkArgument(
           executionPayloadStatus != ExecutionPayloadStatus.INVALID,
-          "process_execution_payload: Verify that the payload is valid with respect to execution state transition");
+          "process_execution_payload: Verify that the payload is not invalid with respect to execution state transition");
 
       if (executionPayloadStatus == ExecutionPayloadStatus.SYNCING) {
         throw new ExecutionEngineSyncing();
