@@ -45,10 +45,7 @@ public class OptimisticSyncExecutionEngineChannel implements ExecutionEngineChan
     return delegate
         .executePayload(executionPayload)
         .thenApply(
-            res ->
-                res == ExecutionPayloadStatus.INVALID
-                    ? ExecutionPayloadStatus.INVALID
-                    : ExecutionPayloadStatus.VALID);
+            res -> res == ExecutionPayloadStatus.SYNCING ? ExecutionPayloadStatus.VALID : res);
   }
 
   @Override
