@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.remote;
 
+import com.google.common.base.Preconditions;
 import java.net.URI;
 import java.util.concurrent.TimeUnit;
 import okhttp3.HttpUrl;
@@ -20,6 +21,7 @@ import okhttp3.OkHttpClient;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler;
+import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -58,6 +60,11 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
     final OkHttpClient.Builder httpClientBuilder =
         new OkHttpClient.Builder().readTimeout(readTimeoutInSeconds, TimeUnit.SECONDS);
     HttpUrl apiEndpoint = HttpUrl.get(beaconNodeApiEndpoint);
+    Preconditions.checkNotNull(
+        apiEndpoint,
+        String.format(
+            "Failed to convert remote api endpoint (%s) to a valid url",
+            UrlSanitizer.sanitizePotentialUrl(beaconNodeApiEndpoint.toString())));
     OkHttpClientAuthLoggingIntercepter.addAuthenticator(apiEndpoint, httpClientBuilder);
     // Strip any authentication info from the URL to ensure it doesn't get logged.
     apiEndpoint = apiEndpoint.newBuilder().username("").password("").build();

@@ -47,6 +47,7 @@ class MetricsPublisherManagerTest {
     this.metricsConfig = mock(MetricsConfig.class);
     this.metricsPublisher = mock(MetricsPublisher.class);
     this.prometheusMetricsSystem = mock(PrometheusMetricsSystem.class);
+    when(metricsConfig.getPublicationInterval()).thenReturn(1);
     when(metricsEndpoint.getMetricsSystem()).thenReturn(prometheusMetricsSystem);
     when(metricsEndpoint.getMetricConfig()).thenReturn(metricsConfig);
     when(metricsConfig.getMetricsEndpoint()).thenReturn("/");
@@ -56,7 +57,7 @@ class MetricsPublisherManagerTest {
   @Test
   public void shouldRunPublisherEveryXSeconds() throws InterruptedException, IOException {
     MetricsPublisherManager publisherManager =
-        new MetricsPublisherManager(asyncRunnerFactory, timeProvider, metricsEndpoint, 1);
+        new MetricsPublisherManager(asyncRunnerFactory, timeProvider, metricsEndpoint);
     publisherManager.setMetricsPublisher(metricsPublisher);
     verify(metricsPublisher, times(0)).publishMetrics(anyString(), anyString());
     SafeFuture<?> safeFuture = publisherManager.doStart();
@@ -71,7 +72,7 @@ class MetricsPublisherManagerTest {
   @Test
   public void shouldReturnHTTPStatusOk() throws IOException {
     MetricsPublisherManager publisherManager =
-        new MetricsPublisherManager(asyncRunnerFactory, timeProvider, metricsEndpoint, 1);
+        new MetricsPublisherManager(asyncRunnerFactory, timeProvider, metricsEndpoint);
     publisherManager.setMetricsPublisher(metricsPublisher);
     Assertions.assertThat(publisherManager.publishMetrics()).isEqualTo(200);
   }
@@ -79,7 +80,7 @@ class MetricsPublisherManagerTest {
   @Test
   public void shouldStopGracefully() throws IOException {
     MetricsPublisherManager publisherManager =
-        new MetricsPublisherManager(asyncRunnerFactory, timeProvider, metricsEndpoint, 1);
+        new MetricsPublisherManager(asyncRunnerFactory, timeProvider, metricsEndpoint);
     publisherManager.setMetricsPublisher(metricsPublisher);
     SafeFuture<?> safeFuture = publisherManager.doStart();
     Assertions.assertThat(safeFuture).isEqualTo(SafeFuture.COMPLETE);
