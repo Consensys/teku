@@ -13,7 +13,10 @@
 
 package tech.pegasys.teku.cli.options;
 
+import java.net.URI;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import picocli.CommandLine;
@@ -113,6 +116,15 @@ public class ValidatorOptions {
       arity = "0..1")
   private boolean sendAttestationsAsBatch = false;
 
+  @Option(
+      names = {"--Xvalidators-publish-to-additional-nodes"},
+      paramLabel = "<URL>",
+      description = "Publish validator duties to additional beacon nodes",
+      hidden = true,
+      split = ",",
+      arity = "1..*")
+  private List<URI> additionalPublishUrls = new ArrayList<>();
+
   public void configure(TekuConfiguration.Builder builder) {
     if (validatorPerformanceTrackingEnabled != null) {
       if (validatorPerformanceTrackingEnabled) {
@@ -135,7 +147,8 @@ public class ValidatorOptions {
                             Optional.ofNullable(graffiti), Optional.ofNullable(graffitiFile)))
                     .useDependentRoots(useDependentRoots)
                     .generateEarlyAttestations(generateEarlyAttestations)
-                    .sendAttestationsAsBatch(sendAttestationsAsBatch))
+                    .sendAttestationsAsBatch(sendAttestationsAsBatch)
+                    .additionalPublishUrls(additionalPublishUrls))
         // We don't need to update head for empty slots when using dependent roots
         .store(b -> b.updateHeadForEmptySlots(!useDependentRoots));
     validatorKeysOptions.configure(builder);

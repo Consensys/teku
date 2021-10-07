@@ -80,6 +80,15 @@ public class MetricsOptions {
       arity = "1")
   private String metricsEndpoint = null;
 
+  @Option(
+      names = {"--Xmetrics-publication-interval"},
+      hidden = true,
+      paramLabel = "<INTEGER>",
+      description =
+          "Interval between metric publications to the external endpoint service (measured in seconds)",
+      arity = "1")
+  private int metricsPublicationInterval = 60;
+
   public void configure(TekuConfiguration.Builder builder) {
     builder.metrics(
         b ->
@@ -88,6 +97,7 @@ public class MetricsOptions {
                 .metricsInterface(metricsInterface)
                 .metricsCategories(metricsCategories)
                 .metricsHostAllowlist(metricsHostAllowlist)
-                .metricsEndpoint(metricsEndpoint));
+                .metricsEndpoint(metricsEndpoint)
+                .metricsPublicationInterval(metricsPublicationInterval));
   }
 }
