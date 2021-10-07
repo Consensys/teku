@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.relaypublisher;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -30,7 +31,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -56,17 +56,12 @@ class MultiPublishingBeaconNodeApiTest {
 
   private final BeaconNodeApi delegate = mock(BeaconNodeApi.class);
   private final ValidatorApiChannel validator = mock(ValidatorApiChannel.class);
-  private final List<BeaconNodeApi> publishers =
-      List.of(mock(BeaconNodeApi.class), mock(BeaconNodeApi.class));
-  private final List<ValidatorApiChannel> publishersValidatorChannel =
-      List.of(mock(ValidatorApiChannel.class), mock(ValidatorApiChannel.class));
+  private final List<AdditionalPublisherApi> publishers =
+      List.of(mock(AdditionalPublisherApi.class), mock(AdditionalPublisherApi.class));
 
   @BeforeEach
   void setup() {
     when(delegate.getValidatorApi()).thenReturn(validator);
-    for (int i = 0; i < publishers.size(); i++) {
-      when(publishers.get(i).getValidatorApi()).thenReturn(publishersValidatorChannel.get(i));
-    }
   }
 
   @Test
@@ -245,7 +240,7 @@ class MultiPublishingBeaconNodeApiTest {
   void shouldCallDelegateAndPublishers_sendSignedAttestations() {
     MultiPublishingBeaconNodeApi api = new MultiPublishingBeaconNodeApi(delegate, publishers);
     final List<Attestation> attestationsList = Collections.emptyList();
-    publishersValidatorChannel.forEach(
+    publishers.forEach(
         val ->
             when(val.sendSignedAttestations(anyList()))
                 .thenReturn(SafeFuture.completedFuture(Collections.emptyList())));
@@ -254,8 +249,7 @@ class MultiPublishingBeaconNodeApiTest {
     verify(validator, times(1)).sendSignedAttestations(attestationsList);
     verifyNoMoreInteractions(validator);
 
-    publishersValidatorChannel.forEach(
-        val -> verify(val, times(1)).sendSignedAttestations(attestationsList));
+    publishers.forEach(val -> verify(val, times(1)).sendSignedAttestations(attestationsList));
   }
 
   @Test
@@ -264,26 +258,27 @@ class MultiPublishingBeaconNodeApiTest {
     MultiPublishingBeaconNodeApi api =
         new MultiPublishingBeaconNodeApi(delegate, publishers, logger);
     final List<Attestation> attestationsList = Collections.emptyList();
-    publishersValidatorChannel.forEach(
-        val ->
-            when(val.sendSignedAttestations(anyList()))
-                .thenReturn(
-                    SafeFuture.failedFuture(new IllegalStateException("computer says no"))));
+    publishers.forEach(
+        val -> {
+          when(val.sendSignedAttestations(anyList()))
+              .thenReturn(SafeFuture.failedFuture(new IllegalStateException("computer says no")));
+          when(val.getSanitizedUrl()).thenReturn("http://host");
+        });
 
     ignoreFuture(api.sendSignedAttestations(attestationsList));
     verify(validator, times(1)).sendSignedAttestations(attestationsList);
     verifyNoMoreInteractions(validator);
 
-    publishersValidatorChannel.forEach(
-        val -> verify(val, times(1)).sendSignedAttestations(attestationsList));
-    verify(logger, times(2)).warn(anyString(), ArgumentMatchers.eq("computer says no"));
+    publishers.forEach(val -> verify(val, times(1)).sendSignedAttestations(attestationsList));
+    verify(logger, times(2))
+        .warn(anyString(), eq("attestations"), eq("http://host"), eq("computer says no"));
   }
 
   @Test
   void shouldCallDelegateAndPublishers_sendAggregateAndProofs() {
     MultiPublishingBeaconNodeApi api = new MultiPublishingBeaconNodeApi(delegate, publishers);
     final List<SignedAggregateAndProof> signedAggregateAndProofs = Collections.emptyList();
-    publishersValidatorChannel.forEach(
+    publishers.forEach(
         val ->
             when(val.sendAggregateAndProofs(anyList()))
                 .thenReturn(SafeFuture.completedFuture(Collections.emptyList())));
@@ -292,7 +287,7 @@ class MultiPublishingBeaconNodeApiTest {
     verify(validator, times(1)).sendAggregateAndProofs(signedAggregateAndProofs);
     verifyNoMoreInteractions(validator);
 
-    publishersValidatorChannel.forEach(
+    publishers.forEach(
         val -> verify(val, times(1)).sendAggregateAndProofs(signedAggregateAndProofs));
   }
 
@@ -301,26 +296,28 @@ class MultiPublishingBeaconNodeApiTest {
     MultiPublishingBeaconNodeApi api =
         new MultiPublishingBeaconNodeApi(delegate, publishers, logger);
     final List<SignedAggregateAndProof> signedAggregateAndProofs = Collections.emptyList();
-    publishersValidatorChannel.forEach(
-        val ->
-            when(val.sendAggregateAndProofs(anyList()))
-                .thenReturn(
-                    SafeFuture.failedFuture(new IllegalStateException("computer says no"))));
+    publishers.forEach(
+        val -> {
+          when(val.sendAggregateAndProofs(anyList()))
+              .thenReturn(SafeFuture.failedFuture(new IllegalStateException("computer says no")));
+          when(val.getSanitizedUrl()).thenReturn("http://host");
+        });
 
     ignoreFuture(api.sendAggregateAndProofs(signedAggregateAndProofs));
     verify(validator, times(1)).sendAggregateAndProofs(signedAggregateAndProofs);
     verifyNoMoreInteractions(validator);
 
-    publishersValidatorChannel.forEach(
+    publishers.forEach(
         val -> verify(val, times(1)).sendAggregateAndProofs(signedAggregateAndProofs));
-    verify(logger, times(2)).warn(anyString(), ArgumentMatchers.eq("computer says no"));
+    verify(logger, times(2))
+        .warn(anyString(), eq("aggregateAndProofs"), eq("http://host"), eq("computer says no"));
   }
 
   @Test
   void shouldCallDelegateAndPublishers_sendSignedBlock() {
     MultiPublishingBeaconNodeApi api = new MultiPublishingBeaconNodeApi(delegate, publishers);
     final SignedBeaconBlock block = data.randomSignedBeaconBlock(1);
-    publishersValidatorChannel.forEach(
+    publishers.forEach(
         val ->
             when(val.sendSignedBlock(block))
                 .thenReturn(SafeFuture.completedFuture(mock(SendSignedBlockResult.class))));
@@ -329,7 +326,7 @@ class MultiPublishingBeaconNodeApiTest {
     verify(validator, times(1)).sendSignedBlock(block);
     verifyNoMoreInteractions(validator);
 
-    publishersValidatorChannel.forEach(val -> verify(val, times(1)).sendSignedBlock(block));
+    publishers.forEach(val -> verify(val, times(1)).sendSignedBlock(block));
   }
 
   @Test
@@ -337,25 +334,27 @@ class MultiPublishingBeaconNodeApiTest {
     MultiPublishingBeaconNodeApi api =
         new MultiPublishingBeaconNodeApi(delegate, publishers, logger);
     final SignedBeaconBlock block = data.randomSignedBeaconBlock(1);
-    publishersValidatorChannel.forEach(
-        val ->
-            when(val.sendSignedBlock(block))
-                .thenReturn(
-                    SafeFuture.failedFuture(new IllegalStateException("computer says no"))));
+    publishers.forEach(
+        val -> {
+          when(val.sendSignedBlock(block))
+              .thenReturn(SafeFuture.failedFuture(new IllegalStateException("computer says no")));
+          when(val.getSanitizedUrl()).thenReturn("http://host");
+        });
 
     ignoreFuture(api.sendSignedBlock(block));
     verify(validator, times(1)).sendSignedBlock(block);
     verifyNoMoreInteractions(validator);
 
-    publishersValidatorChannel.forEach(val -> verify(val, times(1)).sendSignedBlock(block));
-    verify(logger, times(2)).warn(anyString(), ArgumentMatchers.eq("computer says no"));
+    publishers.forEach(val -> verify(val, times(1)).sendSignedBlock(block));
+    verify(logger, times(2))
+        .warn(anyString(), eq("block"), eq("http://host"), eq("computer says no"));
   }
 
   @Test
   void shouldCallDelegateAndPublishers_sendSyncCommitteeMessages() {
     MultiPublishingBeaconNodeApi api = new MultiPublishingBeaconNodeApi(delegate, publishers);
     final List<SyncCommitteeMessage> syncCommitteeMessages = Collections.emptyList();
-    publishersValidatorChannel.forEach(
+    publishers.forEach(
         val ->
             when(val.sendSyncCommitteeMessages(anyList()))
                 .thenReturn(SafeFuture.completedFuture(Collections.emptyList())));
@@ -364,7 +363,7 @@ class MultiPublishingBeaconNodeApiTest {
     verify(validator, times(1)).sendSyncCommitteeMessages(syncCommitteeMessages);
     verifyNoMoreInteractions(validator);
 
-    publishersValidatorChannel.forEach(
+    publishers.forEach(
         val -> verify(val, times(1)).sendSyncCommitteeMessages(syncCommitteeMessages));
   }
 
@@ -373,26 +372,28 @@ class MultiPublishingBeaconNodeApiTest {
     MultiPublishingBeaconNodeApi api =
         new MultiPublishingBeaconNodeApi(delegate, publishers, logger);
     final List<SyncCommitteeMessage> syncCommitteeMessages = Collections.emptyList();
-    publishersValidatorChannel.forEach(
-        val ->
-            when(val.sendSyncCommitteeMessages(anyList()))
-                .thenReturn(
-                    SafeFuture.failedFuture(new IllegalStateException("computer says no"))));
+    publishers.forEach(
+        val -> {
+          when(val.sendSyncCommitteeMessages(anyList()))
+              .thenReturn(SafeFuture.failedFuture(new IllegalStateException("computer says no")));
+          when(val.getSanitizedUrl()).thenReturn("http://host");
+        });
 
     ignoreFuture(api.sendSyncCommitteeMessages(syncCommitteeMessages));
     verify(validator, times(1)).sendSyncCommitteeMessages(syncCommitteeMessages);
     verifyNoMoreInteractions(validator);
 
-    publishersValidatorChannel.forEach(
+    publishers.forEach(
         val -> verify(val, times(1)).sendSyncCommitteeMessages(syncCommitteeMessages));
-    verify(logger, times(2)).warn(anyString(), ArgumentMatchers.eq("computer says no"));
+    verify(logger, times(2))
+        .warn(anyString(), eq("syncCommitteeMessages"), eq("http://host"), eq("computer says no"));
   }
 
   @Test
   void shouldCallDelegateAndPublishers_sendSignedContributionAndProofs() {
     MultiPublishingBeaconNodeApi api = new MultiPublishingBeaconNodeApi(delegate, publishers);
     final List<SignedContributionAndProof> signedContributionAndProofs = Collections.emptyList();
-    publishersValidatorChannel.forEach(
+    publishers.forEach(
         val ->
             when(val.sendSignedContributionAndProofs(anyList())).thenReturn(SafeFuture.COMPLETE));
 
@@ -400,7 +401,7 @@ class MultiPublishingBeaconNodeApiTest {
     verify(validator, times(1)).sendSignedContributionAndProofs(signedContributionAndProofs);
     verifyNoMoreInteractions(validator);
 
-    publishersValidatorChannel.forEach(
+    publishers.forEach(
         val -> verify(val, times(1)).sendSignedContributionAndProofs(signedContributionAndProofs));
   }
 
@@ -409,18 +410,24 @@ class MultiPublishingBeaconNodeApiTest {
     MultiPublishingBeaconNodeApi api =
         new MultiPublishingBeaconNodeApi(delegate, publishers, logger);
     final List<SignedContributionAndProof> signedContributionAndProofs = Collections.emptyList();
-    publishersValidatorChannel.forEach(
-        val ->
-            when(val.sendSignedContributionAndProofs(anyList()))
-                .thenReturn(
-                    SafeFuture.failedFuture(new IllegalStateException("computer says no"))));
+    publishers.forEach(
+        val -> {
+          when(val.sendSignedContributionAndProofs(anyList()))
+              .thenReturn(SafeFuture.failedFuture(new IllegalStateException("computer says no")));
+          when(val.getSanitizedUrl()).thenReturn("http://host");
+        });
 
     ignoreFuture(api.sendSignedContributionAndProofs(signedContributionAndProofs));
     verify(validator, times(1)).sendSignedContributionAndProofs(signedContributionAndProofs);
     verifyNoMoreInteractions(validator);
 
-    publishersValidatorChannel.forEach(
+    publishers.forEach(
         val -> verify(val, times(1)).sendSignedContributionAndProofs(signedContributionAndProofs));
-    verify(logger, times(2)).warn(anyString(), ArgumentMatchers.eq("computer says no"));
+    verify(logger, times(2))
+        .warn(
+            anyString(),
+            eq("signedContributionAndProofs"),
+            eq("http://host"),
+            eq("computer says no"));
   }
 }

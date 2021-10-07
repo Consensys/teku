@@ -123,7 +123,7 @@ public class ValidatorOptions {
       hidden = true,
       split = ",",
       arity = "1..*")
-  private List<URI> publishUrls = new ArrayList<>();
+  private List<URI> additionalPublishUrls = new ArrayList<>();
 
   public void configure(TekuConfiguration.Builder builder) {
     if (validatorPerformanceTrackingEnabled != null) {
@@ -148,7 +148,7 @@ public class ValidatorOptions {
                     .useDependentRoots(useDependentRoots)
                     .generateEarlyAttestations(generateEarlyAttestations)
                     .sendAttestationsAsBatch(sendAttestationsAsBatch)
-                    .publishUrls(publishUrls))
+                    .additionalPublishUrls(additionalPublishUrls))
         // We don't need to update head for empty slots when using dependent roots
         .store(b -> b.updateHeadForEmptySlots(!useDependentRoots));
     validatorKeysOptions.configure(builder);

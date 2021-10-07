@@ -14,12 +14,12 @@
 package tech.pegasys.teku.validator.relaypublisher;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -58,18 +58,20 @@ public class MultiPublishingBeaconNodeApi implements BeaconNodeApi, ValidatorApi
   private final Logger logger;
 
   private final BeaconNodeApi delegate;
-  private final List<BeaconNodeApi> publishingApis;
+  private final List<AdditionalPublisherApi> additionalPublisherApis;
 
   MultiPublishingBeaconNodeApi(
-      final BeaconNodeApi delegate, final List<BeaconNodeApi> publishingApis, final Logger logger) {
+      final BeaconNodeApi delegate,
+      final List<AdditionalPublisherApi> additionalPublishingApis,
+      final Logger logger) {
     this.delegate = delegate;
-    this.publishingApis = publishingApis;
+    this.additionalPublisherApis = additionalPublishingApis;
     this.logger = logger;
   }
 
   MultiPublishingBeaconNodeApi(
-      final BeaconNodeApi delegate, final List<BeaconNodeApi> publishingApis) {
-    this(delegate, publishingApis, LogManager.getLogger());
+      final BeaconNodeApi delegate, List<AdditionalPublisherApi> additionalPublishingApis) {
+    this(delegate, additionalPublishingApis, LogManager.getLogger());
   }
 
   public static BeaconNodeApi create(
@@ -79,7 +81,7 @@ public class MultiPublishingBeaconNodeApi implements BeaconNodeApi, ValidatorApi
       final Spec spec,
       final boolean useIndependentAttestationTiming,
       final boolean generateEarlyAttestations,
-      final List<URI> publishUrls) {
+      final List<URI> additionalPublishingUrls) {
     final BeaconNodeApi primaryInterface =
         beaconNodeApiEndpoint
             .map(
@@ -100,20 +102,22 @@ public class MultiPublishingBeaconNodeApi implements BeaconNodeApi, ValidatorApi
                         generateEarlyAttestations,
                         spec));
 
-    final List<BeaconNodeApi> publishApis =
-        publishUrls.stream()
-            .map(
-                uri ->
-                    RemoteBeaconNodeApi.create(
-                        serviceConfig,
-                        asyncRunner,
-                        uri,
-                        spec,
-                        useIndependentAttestationTiming,
-                        generateEarlyAttestations))
-            .collect(Collectors.toList());
+    final List<AdditionalPublisherApi> additionalPublishingApis = new ArrayList<>();
+    for (int i = 0; i < additionalPublishingUrls.size(); i++) {
+      final URI uri = additionalPublishingUrls.get(i);
+      additionalPublishingApis.add(
+          new AdditionalPublisherApi(
+              uri,
+              RemoteBeaconNodeApi.create(
+                  serviceConfig,
+                  asyncRunner,
+                  uri,
+                  spec,
+                  useIndependentAttestationTiming,
+                  generateEarlyAttestations)));
+    }
 
-    return new MultiPublishingBeaconNodeApi(primaryInterface, publishApis);
+    return new MultiPublishingBeaconNodeApi(primaryInterface, additionalPublishingApis);
   }
 
   @Override
@@ -210,80 +214,75 @@ public class MultiPublishingBeaconNodeApi implements BeaconNodeApi, ValidatorApi
   @Override
   public SafeFuture<List<SubmitDataError>> sendSignedAttestations(
       final List<Attestation> attestations) {
-    publishingApis.stream()
-        .map(BeaconNodeApi::getValidatorApi)
-        .forEach(
-            api ->
-                api.sendSignedAttestations(attestations)
-                    .finish(
-                        error ->
-                            logger.warn(
-                                "Failed to send attestations to remote publishing host: {}",
-                                error.getMessage())));
+    final SafeFuture<List<SubmitDataError>> future =
+        delegate.getValidatorApi().sendSignedAttestations(attestations);
 
-    return delegate.getValidatorApi().sendSignedAttestations(attestations);
+    for (AdditionalPublisherApi api : additionalPublisherApis) {
+      api.sendSignedAttestations(attestations)
+          .finish(error -> logPublishError("attestations", api.getSanitizedUrl(), error));
+    }
+
+    return future;
   }
 
   @Override
   public SafeFuture<List<SubmitDataError>> sendAggregateAndProofs(
       final List<SignedAggregateAndProof> aggregateAndProofs) {
-    publishingApis.stream()
-        .map(BeaconNodeApi::getValidatorApi)
-        .forEach(
-            api ->
-                api.sendAggregateAndProofs(aggregateAndProofs)
-                    .finish(
-                        error ->
-                            logger.warn(
-                                "Failed to send aggregateAndProofs to remote publishing host: {}",
-                                error.getMessage())));
-    return delegate.getValidatorApi().sendAggregateAndProofs(aggregateAndProofs);
+    final SafeFuture<List<SubmitDataError>> future =
+        delegate.getValidatorApi().sendAggregateAndProofs(aggregateAndProofs);
+    for (AdditionalPublisherApi api : additionalPublisherApis) {
+      api.sendAggregateAndProofs(aggregateAndProofs)
+          .finish(error -> logPublishError("aggregateAndProofs", api.getSanitizedUrl(), error));
+    }
+    return future;
   }
 
   @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(final SignedBeaconBlock block) {
-    publishingApis.stream()
-        .map(BeaconNodeApi::getValidatorApi)
-        .forEach(
-            api ->
-                api.sendSignedBlock(block)
-                    .finish(
-                        error ->
-                            logger.warn(
-                                "Failed to send signedBlock to remote publishing host: {}",
-                                error.getMessage())));
-    return delegate.getValidatorApi().sendSignedBlock(block);
+    final SafeFuture<SendSignedBlockResult> future =
+        delegate.getValidatorApi().sendSignedBlock(block);
+    for (AdditionalPublisherApi api : additionalPublisherApis) {
+      api.sendSignedBlock(block)
+          .finish(error -> logPublishError("block", api.getSanitizedUrl(), error));
+    }
+
+    return future;
   }
 
   @Override
   public SafeFuture<List<SubmitDataError>> sendSyncCommitteeMessages(
       final List<SyncCommitteeMessage> syncCommitteeMessages) {
-    publishingApis.stream()
-        .map(BeaconNodeApi::getValidatorApi)
-        .forEach(
-            api ->
-                api.sendSyncCommitteeMessages(syncCommitteeMessages)
-                    .finish(
-                        error ->
-                            logger.warn(
-                                "Failed to send sync committee messages to remote publishing host: {}",
-                                error.getMessage())));
-    return delegate.getValidatorApi().sendSyncCommitteeMessages(syncCommitteeMessages);
+    final SafeFuture<List<SubmitDataError>> future =
+        delegate.getValidatorApi().sendSyncCommitteeMessages(syncCommitteeMessages);
+    for (AdditionalPublisherApi api : additionalPublisherApis) {
+      api.sendSyncCommitteeMessages(syncCommitteeMessages)
+          .finish(error -> logPublishError("syncCommitteeMessages", api.getSanitizedUrl(), error));
+    }
+
+    return future;
   }
 
   @Override
   public SafeFuture<Void> sendSignedContributionAndProofs(
       final Collection<SignedContributionAndProof> signedContributionAndProofs) {
-    publishingApis.stream()
-        .map(BeaconNodeApi::getValidatorApi)
-        .forEach(
-            api ->
-                api.sendSignedContributionAndProofs(signedContributionAndProofs)
-                    .finish(
-                        error ->
-                            logger.warn(
-                                "Failed to send signed contribution and proofs to remote publishing host: {}",
-                                error.getMessage())));
-    return delegate.getValidatorApi().sendSignedContributionAndProofs(signedContributionAndProofs);
+    final SafeFuture<Void> future =
+        delegate.getValidatorApi().sendSignedContributionAndProofs(signedContributionAndProofs);
+    for (AdditionalPublisherApi api : additionalPublisherApis) {
+      api.sendSignedContributionAndProofs(signedContributionAndProofs)
+          .finish(
+              error ->
+                  logPublishError("signedContributionAndProofs", api.getSanitizedUrl(), error));
+    }
+
+    return future;
+  }
+
+  private void logPublishError(
+      final String actionDescription, final String sanitizedUrl, final Throwable error) {
+    logger.warn(
+        "Failed to send {} to remote publishing host ({}): {}",
+        actionDescription,
+        sanitizedUrl,
+        error.getMessage());
   }
 }

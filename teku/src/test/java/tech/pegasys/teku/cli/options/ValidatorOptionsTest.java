@@ -125,7 +125,7 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
                 "--Xvalidators-publish-to-additional-nodes=http://u:h@t.net:9090,https://u:p@u.com")
             .validatorClient()
             .getValidatorConfig();
-    assertThat(config.getPublishUrls())
+    assertThat(config.getAdditionalPublishUrls())
         .containsExactlyInAnyOrder(new URI("http://u:h@t.net:9090"), new URI("https://u:p@u.com"));
   }
 

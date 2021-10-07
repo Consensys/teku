@@ -91,7 +91,7 @@ public class ValidatorClientService extends Service {
             config.getSpec(),
             useDependentRoots,
             generateEarlyAttestations,
-            config.getValidatorConfig().getPublishUrls());
+            config.getValidatorConfig().getAdditionalPublishUrls());
 
     final ValidatorApiChannel validatorApiChannel = beaconNodeApi.getValidatorApi();
     final GenesisDataProvider genesisDataProvider =
