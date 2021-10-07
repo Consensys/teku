@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic.versions.merge.block;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import com.google.common.base.Throwables;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -33,12 +34,14 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.MutableBeaconStateMerge;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel.ConsensusValidationResult;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.ExecutionEngineSyncing;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
@@ -112,7 +115,9 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
       }
       return postState;
     } catch (StateTransitionException e) {
-      if (miscHelpersMerge.isExecutionEnabled(blockSlotState, signedBlock.getMessage())) {
+      boolean isEESyncing = Throwables.getRootCause(e) instanceof ExecutionEngineSyncing;
+      if (!isEESyncing
+          && miscHelpersMerge.isExecutionEnabled(blockSlotState, signedBlock.getMessage())) {
         executionEngineChannel
             .consensusValidated(payloadBlockHash, ConsensusValidationResult.INVALID)
             .join();
@@ -188,8 +193,12 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
           executionPayloadUtil.verifyExecutionPayload(executionEngineChannel, executionPayload);
 
       checkArgument(
-          executionPayloadStatus.equals(ExecutionEngineChannel.ExecutionPayloadStatus.VALID),
+          executionPayloadStatus != ExecutionPayloadStatus.INVALID,
           "process_execution_payload: Verify that the payload is valid with respect to execution state transition");
+
+      if (executionPayloadStatus == ExecutionPayloadStatus.SYNCING) {
+        throw new ExecutionEngineSyncing();
+      }
 
       state.setLatestExecutionPayloadHeader(
           new ExecutionPayloadHeader(

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,16 +13,9 @@
 
 package tech.pegasys.teku.spec.logic.common.statetransition.exceptions;
 
-public class BlockProcessingException extends Exception {
-  public BlockProcessingException(String message, Exception cause) {
-    super(message, cause);
-  }
+public class ExecutionEngineSyncing extends BlockProcessingException {
 
-  public BlockProcessingException(String err) {
-    super(err);
-  }
-
-  public BlockProcessingException(Exception e) {
-    super(e);
+  public ExecutionEngineSyncing() {
+    super("Execution Engine is still syncing");
   }
 }
