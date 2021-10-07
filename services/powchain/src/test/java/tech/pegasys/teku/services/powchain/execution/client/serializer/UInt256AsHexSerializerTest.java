@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,16 +13,28 @@
 
 package tech.pegasys.teku.services.powchain.execution.client.serializer;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import java.io.IOException;
-import org.apache.tuweni.units.bigints.UInt256;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
-public class UInt256AsHexSerializer extends JsonSerializer<UInt256> {
-  @Override
-  public void serialize(UInt256 value, JsonGenerator gen, SerializerProvider serializers)
-      throws IOException {
-    gen.writeString(value.toMinimalBytes().toShortHexString());
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import org.apache.tuweni.units.bigints.UInt256;
+import org.junit.jupiter.api.Test;
+
+class UInt256AsHexSerializerTest {
+  private final JsonGenerator gen = mock(JsonGenerator.class);
+  private final SerializerProvider serializerProvider = mock(SerializerProvider.class);
+  private final UInt256AsHexSerializer serializer = new UInt256AsHexSerializer();
+
+  @Test
+  void shouldSerializeZeroAsPrefixOnly() throws Exception {
+    serializer.serialize(UInt256.ZERO, gen, serializerProvider);
+    verify(gen).writeString("0x");
+  }
+
+  @Test
+  void shouldSerializeWithNoZeroPrefix() throws Exception {
+    serializer.serialize(UInt256.valueOf(2), gen, serializerProvider);
+    verify(gen).writeString("0x2");
   }
 }

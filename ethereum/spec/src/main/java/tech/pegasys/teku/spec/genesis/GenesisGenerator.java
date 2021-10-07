@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -38,7 +37,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.ssz.SszMutableList;
 import tech.pegasys.teku.ssz.schema.SszListSchema;
-import tech.pegasys.teku.ssz.type.Bytes20;
 import tech.pegasys.teku.util.config.Constants;
 
 public class GenesisGenerator {
@@ -74,6 +72,12 @@ public class GenesisGenerator {
             .createWritableCopy();
   }
 
+  public void updateExecutionPayloadHeader(ExecutionPayloadHeader payloadHeader) {
+    state
+        .toMutableVersionMerge()
+        .ifPresent(stateMerge -> stateMerge.setLatestExecutionPayloadHeader(payloadHeader));
+  }
+
   public void updateCandidateState(
       Bytes32 eth1BlockHash, UInt64 eth1Timestamp, List<? extends Deposit> deposits) {
     updateGenesisTime(eth1Timestamp);
@@ -81,27 +85,6 @@ public class GenesisGenerator {
     state.setEth1_data(
         new Eth1Data(
             Bytes32.ZERO, UInt64.valueOf(depositDataList.size() + deposits.size()), eth1BlockHash));
-
-    state
-        .toMutableVersionMerge()
-        .ifPresent(
-            stateMerge ->
-                stateMerge.setLatestExecutionPayloadHeader(
-                    new ExecutionPayloadHeader(
-                        Bytes32.ZERO,
-                        Bytes20.ZERO,
-                        Bytes32.ZERO,
-                        Bytes32.ZERO,
-                        Bytes.wrap(new byte[SpecConfig.BYTES_PER_LOGS_BLOOM]),
-                        eth1BlockHash,
-                        UInt64.ZERO,
-                        specConfig.toVersionMerge().orElseThrow().getGenesisGasLimit(),
-                        UInt64.ZERO,
-                        eth1Timestamp,
-                        Bytes.EMPTY,
-                        specConfig.toVersionMerge().orElseThrow().getGenesisBaseFeePerGas(),
-                        eth1BlockHash,
-                        Bytes32.ZERO)));
 
     // Process deposits
     deposits.forEach(

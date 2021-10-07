@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -45,7 +46,7 @@ public class ExecutionPayloadTest {
             dataStructureUtil.randomUInt64(),
             dataStructureUtil.randomUInt64(),
             Bytes.random(SpecConfig.MAX_EXTRA_DATA_BYTES),
-            Bytes32.random(),
+            UInt256.fromBytes(Bytes32.random()),
             Bytes32.random(),
             Stream.of(Bytes.random(128), Bytes.random(256), Bytes.random(512))
                 .collect(Collectors.toList()));
