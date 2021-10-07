@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionengine.OptimisticSyncExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -42,11 +43,15 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
 public class BlockImporter {
   private static final Logger LOG = LogManager.getLogger();
+
+  private static final int OPTIMISTIC_EXECUTION_LAYER_SYNC_DISTANCE = 128;
+
   private final BlockImportNotifications blockImportNotifications;
   private final RecentChainData recentChainData;
   private final ForkChoice forkChoice;
   private final WeakSubjectivityValidator weakSubjectivityValidator;
   private final ExecutionEngineChannel executionEngineChannel;
+  private final CurrentSlotProvider currentSlotProvider;
 
   private final Subscribers<VerifiedBlockAttestationListener> attestationSubscribers =
       Subscribers.create(true);
@@ -65,12 +70,14 @@ public class BlockImporter {
       final RecentChainData recentChainData,
       final ForkChoice forkChoice,
       final WeakSubjectivityValidator weakSubjectivityValidator,
-      final ExecutionEngineChannel executionEngineChannel) {
+      final ExecutionEngineChannel executionEngineChannel,
+      final CurrentSlotProvider currentSlotProvider) {
     this.blockImportNotifications = blockImportNotifications;
     this.recentChainData = recentChainData;
     this.forkChoice = forkChoice;
     this.weakSubjectivityValidator = weakSubjectivityValidator;
     this.executionEngineChannel = executionEngineChannel;
+    this.currentSlotProvider = currentSlotProvider;
   }
 
   @CheckReturnValue
@@ -87,8 +94,17 @@ public class BlockImporter {
       return SafeFuture.completedFuture(BlockImportResult.FAILED_WEAK_SUBJECTIVITY_CHECKS);
     }
 
+    final ExecutionEngineChannel syncExecutionEngineChannel;
+    if (currentSlotProvider
+        .getCurrentSlot()
+        .isGreaterThan(block.getSlot().plus(OPTIMISTIC_EXECUTION_LAYER_SYNC_DISTANCE))) {
+      syncExecutionEngineChannel = new OptimisticSyncExecutionEngineChannel(executionEngineChannel);
+    } else {
+      syncExecutionEngineChannel = executionEngineChannel;
+    }
+
     return validateWeakSubjectivityPeriod()
-        .thenCompose(__ -> forkChoice.onBlock(executionEngineChannel, block))
+        .thenCompose(__ -> forkChoice.onBlock(syncExecutionEngineChannel, block))
         .thenApply(
             result -> {
               if (!result.isSuccessful()) {

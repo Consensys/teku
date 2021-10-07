@@ -70,6 +70,11 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
   }
 
   @Override
+  public SafeFuture<Boolean> isFarBehindCurrentSlot() {
+    return SafeFuture.completedFuture(false);
+  }
+
+  @Override
   public SafeFuture<UInt64> preparePayload(
       Bytes32 parentHash, UInt64 timestamp, Bytes32 random, Bytes20 feeRecipient) {
     return executionEngineClient

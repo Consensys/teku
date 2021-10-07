@@ -77,6 +77,11 @@ public interface ExecutionEngineChannel extends ChannelInterface {
         public SafeFuture<Block> getPowChainHead() {
           throw new UnsupportedOperationException();
         }
+
+        @Override
+        public SafeFuture<Boolean> isFarBehindCurrentSlot() {
+          return SafeFuture.completedFuture(false);
+        }
       };
 
   SafeFuture<UInt64> preparePayload(
@@ -93,4 +98,6 @@ public interface ExecutionEngineChannel extends ChannelInterface {
   SafeFuture<Optional<Block>> getPowBlock(Bytes32 blockHash);
 
   SafeFuture<EthBlock.Block> getPowChainHead();
+
+  SafeFuture<Boolean> isFarBehindCurrentSlot();
 }

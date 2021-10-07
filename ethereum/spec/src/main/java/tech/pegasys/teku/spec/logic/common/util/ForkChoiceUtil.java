@@ -429,6 +429,11 @@ public class ForkChoiceUtil {
     if (!mergeTransitionHelpers.isMergeBlock(blockSlotState, block)) {
       return Optional.empty();
     }
+
+    if (executionEngineChannel.isFarBehindCurrentSlot().join()) {
+      return Optional.empty();
+    }
+
     BeaconBlockBodyMerge blockBodyMerge = block.getBody().toVersionMerge().orElseThrow();
     PowBlock powBlock =
         mergeTransitionHelpers.getPowBlock(

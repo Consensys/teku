@@ -45,6 +45,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
+import tech.pegasys.teku.statetransition.block.CurrentSlotProvider;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -98,7 +99,8 @@ public class ProfilingRun {
               recentChainData,
               forkChoice,
               wsValidator,
-              ExecutionEngineChannel.NOOP);
+              ExecutionEngineChannel.NOOP,
+              CurrentSlotProvider.NOOP);
 
       System.out.println("Start blocks import from " + blocksFile);
       int blockCount = 0;
@@ -176,7 +178,8 @@ public class ProfilingRun {
               recentChainData,
               forkChoice,
               wsValidator,
-              ExecutionEngineChannel.NOOP);
+              ExecutionEngineChannel.NOOP,
+              CurrentSlotProvider.NOOP);
 
       System.out.println("Start blocks import from " + blocksFile);
       int counter = 1;
