@@ -23,8 +23,8 @@ public class RemoteMetricsServiceStub {
   public static final int PORT = 8001;
   private HttpServer server;
 
-  public RemoteMetricsServiceStub() throws IOException {
-    server = HttpServer.create(new InetSocketAddress(PORT), 0);
+  public RemoteMetricsServiceStub(InetSocketAddress inetSocketAddress) throws IOException {
+    server = HttpServer.create(inetSocketAddress, 0);
   }
 
   public void startServer() throws Throwable {

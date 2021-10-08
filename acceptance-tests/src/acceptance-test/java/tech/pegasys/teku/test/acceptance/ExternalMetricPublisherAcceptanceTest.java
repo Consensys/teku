@@ -15,6 +15,8 @@ package tech.pegasys.teku.test.acceptance;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.RemoteMetricsServiceStub;
@@ -22,12 +24,18 @@ import tech.pegasys.teku.test.acceptance.dsl.SuccessHandler;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 
 public class ExternalMetricPublisherAcceptanceTest extends AcceptanceTestBase {
-  String metricServerAddress = "http://host.docker.internal";
 
   @Test
   void shouldPublishDataFromPrometheus() throws Throwable {
+    InetAddress ip = InetAddress.getLocalHost();
+    String serverIp = ip.getHostAddress();
+    InetSocketAddress isa = new InetSocketAddress(serverIp, 8001);
+
+    String metricServerAddress = "http://" + serverIp;
+
     SuccessHandler successHandler = new SuccessHandler();
-    RemoteMetricsServiceStub server = new RemoteMetricsServiceStub();
+    RemoteMetricsServiceStub server = new RemoteMetricsServiceStub(isa);
+
     server.registerHandler("/metrics", successHandler);
     server.startServer();
 
@@ -39,6 +47,7 @@ public class ExternalMetricPublisherAcceptanceTest extends AcceptanceTestBase {
     node.start();
 
     node.waitForNewBlock();
+
     assertThat(successHandler.getResponse()).contains("version");
     server.stopServer();
   }
