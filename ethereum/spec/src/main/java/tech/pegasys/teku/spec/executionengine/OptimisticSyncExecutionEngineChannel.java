@@ -55,7 +55,7 @@ public class OptimisticSyncExecutionEngineChannel implements ExecutionEngineChan
 
   @Override
   public SafeFuture<Void> consensusValidated(Bytes32 blockHash, ConsensusValidationResult result) {
-    return SafeFuture.completedFuture(null);
+    return delegate.consensusValidated(blockHash, result);
   }
 
   @Override
