@@ -56,7 +56,9 @@ public class KvStoreTreeNodeStore implements TreeNodeStore {
   @Override
   public void storeBranchNode(
       final Bytes32 root, final long gIndex, final int depth, final Bytes32[] children) {
-    newlyStoredBranches.add(root);
+    if (knownStoredBranchesCache.contains(root) || !newlyStoredBranches.add(root)) {
+      return;
+    }
     transaction.put(
         schema.getColumnFinalizedStateMerkleTreeBranches(),
         root,
