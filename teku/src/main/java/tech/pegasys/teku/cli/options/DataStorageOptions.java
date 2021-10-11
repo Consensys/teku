@@ -55,6 +55,20 @@ public class DataStorageOptions {
       arity = "0..1")
   private boolean storeNonCanonicalBlocksEnabled = false;
 
+  /**
+   * Default value selected based on experimentation to minimise memory usage without affecting sync
+   * time. Not that states later in the chain with more validators have more branches so need a
+   * bigger cache. We may periodically need to review this setting but it shouldn't need to change
+   * often.
+   */
+  @CommandLine.Option(
+      names = {"--Xdata-storage-max-known-node-cache-size"},
+      paramLabel = "<INTEGER>",
+      description = "Maximum size of the in-memory known node cache for finalized states",
+      arity = "1",
+      hidden = true)
+  private int maxKnownNodeCacheSize = 100_000;
+
   public StateStorageMode getDataStorageMode() {
     return dataStorageMode;
   }
@@ -65,7 +79,8 @@ public class DataStorageOptions {
             b.dataStorageMode(dataStorageMode)
                 .dataStorageFrequency(dataStorageFrequency)
                 .dataStorageCreateDbVersion(parseDatabaseVersion())
-                .storeNonCanonicalBlocks(storeNonCanonicalBlocksEnabled));
+                .storeNonCanonicalBlocks(storeNonCanonicalBlocksEnabled)
+                .maxKnownNodeCacheSize(maxKnownNodeCacheSize));
   }
 
   private DatabaseVersion parseDatabaseVersion() {

@@ -56,6 +56,7 @@ public class StorageService extends Service {
                   config.getDataStorageFrequency(),
                   config.getEth1DepositContract(),
                   config.isStoreNonCanonicalBlocksEnabled(),
+                  config.getMaxKnownNodeCacheSize(),
                   config.getSpec());
           database = dbFactory.createDatabase();
 
