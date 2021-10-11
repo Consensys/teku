@@ -120,7 +120,7 @@ public class ForkChoice {
                       final Checkpoint justifiedCheckpoint =
                           recentChainData.getStore().getJustifiedCheckpoint();
                       if (!justifiedCheckpoint.equals(retrievedJustifiedCheckpoint)) {
-                        LOG.info(
+                        LOG.debug(
                             "Skipping head block update as justified checkpoint was updated while loading checkpoint state. Was {} ({}) but now {} ({})",
                             retrievedJustifiedCheckpoint.getEpoch(),
                             retrievedJustifiedCheckpoint.getRoot(),

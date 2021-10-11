@@ -41,7 +41,6 @@ import tech.pegasys.teku.util.config.Constants;
 
 public abstract class AbstractNode implements Node {
   private static final Logger LOG = LogManager.getLogger();
-  private static final long INTERVAL_BETWEEN_PUBLICATIONS = 60;
 
   private final Vertx vertx = Vertx.vertx();
   private final ExecutorService threadPool =
@@ -76,10 +75,7 @@ public abstract class AbstractNode implements Node {
             DataDirLayout.createFrom(tekuConfig.dataConfig()));
     this.metricsPublisher =
         new MetricsPublisherManager(
-            asyncRunnerFactory,
-            serviceConfig.getTimeProvider(),
-            metricsEndpoint,
-            INTERVAL_BETWEEN_PUBLICATIONS);
+            asyncRunnerFactory, serviceConfig.getTimeProvider(), metricsEndpoint);
     Constants.setConstants(tekuConfig.eth2NetworkConfiguration().getConstants());
   }
 
