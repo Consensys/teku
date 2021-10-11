@@ -61,7 +61,7 @@ public class DataStorageOptions {
       description = "Maximum size of the in-memory known node cache for finalized states",
       arity = "1",
       hidden = true)
-  private int maxKnownNodeCacheSize = 1_000_000;
+  private int maxKnownNodeCacheSize = 100_000;
 
   public StateStorageMode getDataStorageMode() {
     return dataStorageMode;
