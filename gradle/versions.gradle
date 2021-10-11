@@ -61,7 +61,10 @@ dependencyManagement {
     dependency 'io.github.classgraph:classgraph:4.8.87'
 
     dependencySet(group: 'io.netty', version: '4.1.69.Final') {
-      entry 'netty-all'
+      entry('netty-all') {
+        exclude "io.netty:netty-transport-rxtx"
+        exclude "org.rxtx:rxtx"
+      }
     }
 
     dependencySet(group: 'io.vertx', version: '3.9.9') {

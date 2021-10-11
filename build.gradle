@@ -297,7 +297,7 @@ task deploy() {}
 licenseReport {
   configurations = ['runtimeClasspath']
   outputDir = "${buildDir}/reports/licenses"
-  excludes = ['org.junit:junit-bom']
+  excludes = ['org.junit:junit-bom', 'org.rxtx:rxtx']
   allowedLicensesFile = new File("${rootDir}/gradle/license-report-config/allowed-licenses.json")
   filters = [new LicenseBundleNormalizer()]
   renderers = [new GroupedLicenseHtmlRenderer()]
