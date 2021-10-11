@@ -18,7 +18,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ## Unreleased Changes
 
 ### Additions and Improvements
-- Upgraded `io.netty` lib to 4.1.68.Final, `okhttp` lib to 4.9.0, `io.vertex` lib to 3.9.9.
+- Upgraded `io.netty` lib to 4.1.69.Final, `okhttp` lib to 4.9.0, `io.vertex` lib to 3.9.9.
 
 
 ### Bug Fixes
