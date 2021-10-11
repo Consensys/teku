@@ -14,6 +14,9 @@
 package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 
 import java.util.Optional;
+import java.util.Set;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -26,10 +29,12 @@ import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedTreeState;
 public class V4FinalizedStateTreeStorageLogic
     implements V4FinalizedStateStorageLogic<SchemaFinalizedTreeState> {
   private static final int MAX_BRANCH_LEVELS_SKIPPED = 5;
+  private Set<Bytes32> knownStoredBranchesCache;
   private final Spec spec;
 
-  public V4FinalizedStateTreeStorageLogic(final Spec spec) {
+  public V4FinalizedStateTreeStorageLogic(final Spec spec, final int maxKnownNodeCacheSize) {
     this.spec = spec;
+    this.knownStoredBranchesCache = LimitedSet.create(maxKnownNodeCacheSize);
   }
 
   @Override
@@ -49,12 +54,17 @@ public class V4FinalizedStateTreeStorageLogic
 
   @Override
   public FinalizedStateUpdater<SchemaFinalizedTreeState> updater() {
-    return new StateTreeUpdater();
+    return new StateTreeUpdater(knownStoredBranchesCache);
   }
 
   private static class StateTreeUpdater implements FinalizedStateUpdater<SchemaFinalizedTreeState> {
 
+    private final Set<Bytes32> knownStoredBranchesCache;
     private TreeNodeStore nodeStore;
+
+    private StateTreeUpdater(final Set<Bytes32> knownStoredBranchesCache) {
+      this.knownStoredBranchesCache = knownStoredBranchesCache;
+    }
 
     @Override
     public void addFinalizedState(
@@ -63,7 +73,7 @@ public class V4FinalizedStateTreeStorageLogic
         final SchemaFinalizedTreeState schema,
         final BeaconState state) {
       if (nodeStore == null) {
-        nodeStore = new KvStoreTreeNodeStore(db, transaction, schema);
+        nodeStore = new KvStoreTreeNodeStore(knownStoredBranchesCache, db, transaction, schema);
       }
       transaction.put(
           schema.getColumnFinalizedStateRootsBySlot(), state.getSlot(), state.hashTreeRoot());
@@ -74,6 +84,13 @@ public class V4FinalizedStateTreeStorageLogic
               MAX_BRANCH_LEVELS_SKIPPED,
               GIndexUtil.SELF_G_INDEX,
               state.getBackingNode());
+    }
+
+    @Override
+    public void commit() {
+      if (nodeStore != null) {
+        knownStoredBranchesCache.addAll(nodeStore.getStoredBranchRoots());
+      }
     }
   }
 }

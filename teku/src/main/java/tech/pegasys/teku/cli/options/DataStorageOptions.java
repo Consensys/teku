@@ -55,6 +55,14 @@ public class DataStorageOptions {
       arity = "0..1")
   private boolean storeNonCanonicalBlocksEnabled = false;
 
+  @CommandLine.Option(
+      names = {"--Xdata-storage-max-known-node-cache-size"},
+      paramLabel = "<INTEGER>",
+      description = "Maximum size of the in-memory known node cache for finalized states",
+      arity = "1",
+      hidden = true)
+  private int maxKnownNodeCacheSize = 100_000;
+
   public StateStorageMode getDataStorageMode() {
     return dataStorageMode;
   }
@@ -65,7 +73,8 @@ public class DataStorageOptions {
             b.dataStorageMode(dataStorageMode)
                 .dataStorageFrequency(dataStorageFrequency)
                 .dataStorageCreateDbVersion(parseDatabaseVersion())
-                .storeNonCanonicalBlocks(storeNonCanonicalBlocksEnabled));
+                .storeNonCanonicalBlocks(storeNonCanonicalBlocksEnabled)
+                .maxKnownNodeCacheSize(maxKnownNodeCacheSize));
   }
 
   private DatabaseVersion parseDatabaseVersion() {

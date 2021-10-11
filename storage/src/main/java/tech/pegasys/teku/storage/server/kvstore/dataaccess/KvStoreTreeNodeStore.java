@@ -15,6 +15,9 @@ package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.tree.LeafDataNode;
 import tech.pegasys.teku.ssz.tree.TreeNode;
@@ -26,14 +29,18 @@ import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedTreeState;
 
 public class KvStoreTreeNodeStore implements TreeNodeStore {
 
+  private final Set<Bytes32> knownStoredBranchesCache;
+  private final Set<Bytes32> newlyStoredBranches = new HashSet<>();
   private final KvStoreAccessor db;
   private final KvStoreTransaction transaction;
   private final SchemaFinalizedTreeState schema;
 
   public KvStoreTreeNodeStore(
+      final Set<Bytes32> knownStoredBranchesCache,
       final KvStoreAccessor db,
       final KvStoreTransaction transaction,
       final SchemaFinalizedTreeState schema) {
+    this.knownStoredBranchesCache = knownStoredBranchesCache;
     this.db = db;
     this.transaction = transaction;
     this.schema = schema;
@@ -41,12 +48,15 @@ public class KvStoreTreeNodeStore implements TreeNodeStore {
 
   @Override
   public boolean canSkipBranch(final Bytes32 root, final long gIndex) {
-    return db.get(schema.getColumnFinalizedStateMerkleTreeBranches(), root).isPresent();
+    return newlyStoredBranches.contains(root)
+        || knownStoredBranchesCache.contains(root)
+        || db.get(schema.getColumnFinalizedStateMerkleTreeBranches(), root).isPresent();
   }
 
   @Override
   public void storeBranchNode(
       final Bytes32 root, final long gIndex, final int depth, final Bytes32[] children) {
+    newlyStoredBranches.add(root);
     transaction.put(
         schema.getColumnFinalizedStateMerkleTreeBranches(),
         root,
@@ -61,5 +71,10 @@ public class KvStoreTreeNodeStore implements TreeNodeStore {
       transaction.put(
           schema.getColumnFinalizedStateMerkleTreeLeaves(), node.hashTreeRoot(), node.getData());
     }
+  }
+
+  @Override
+  public Collection<? extends Bytes32> getStoredBranchRoots() {
+    return newlyStoredBranches;
   }
 }

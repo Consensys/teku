@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.ssz.tree;
 
+import java.util.Collection;
 import org.apache.tuweni.bytes.Bytes32;
 
 public interface TreeNodeStore {
@@ -51,4 +52,6 @@ public interface TreeNodeStore {
    * @param gIndex the generalized index of the node
    */
   void storeLeafNode(TreeNode node, long gIndex);
+
+  Collection<? extends Bytes32> getStoredBranchRoots();
 }

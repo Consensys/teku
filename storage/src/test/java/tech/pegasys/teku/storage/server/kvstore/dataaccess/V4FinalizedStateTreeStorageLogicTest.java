@@ -37,7 +37,8 @@ class V4FinalizedStateTreeStorageLogicTest {
   private final KvStoreAccessor db =
       MockKvStoreInstance.createEmpty(schema.getAllColumns(), schema.getAllVariables());
 
-  private final V4FinalizedStateTreeStorageLogic logic = new V4FinalizedStateTreeStorageLogic(spec);
+  private final V4FinalizedStateTreeStorageLogic logic =
+      new V4FinalizedStateTreeStorageLogic(spec, 1000);
 
   @Test
   void shouldRoundTripState() {
