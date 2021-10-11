@@ -485,7 +485,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                 b.eth1DepositContract(address)
                     .dataStorageMode(PRUNE)
                     .dataStorageFrequency(VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY)
-                    .dataStorageCreateDbVersion(DatabaseVersion.DEFAULT_VERSION))
+                    .dataStorageCreateDbVersion(DatabaseVersion.DEFAULT_VERSION)
+                    .maxKnownNodeCacheSize(100_000))
         .data(b -> b.dataBasePath(dataPath))
         .p2p(
             b ->
