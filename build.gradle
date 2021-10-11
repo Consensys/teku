@@ -225,7 +225,7 @@ allprojects {
   }
 }
 
-def refTestVersion = 'v1.1.0-beta.4'
+def refTestVersion = 'v1.1.0'
 def blsRefTestVersion = 'v0.1.0'
 def refTestBaseUrl = 'https://github.com/ethereum/eth2.0-spec-tests/releases/download'
 def blsRefTestBaseUrl = 'https://github.com/ethereum/bls12-381-tests/releases/download'
@@ -331,7 +331,6 @@ application {
       // We shutdown log4j ourselves, as otherwise his shutdown hook runs before our own and whatever
       // happens during shutdown is not logged.
       "-Dlog4j.shutdownHookEnabled=false",
-      "-XX:+HeapDumpOnOutOfMemoryError",
       // run `jcmd <PID> VM.native_memory` to check JVM native memory consumption
       "-XX:NativeMemoryTracking=summary",
       // 32Mb for Netty Direct ByteBuf
@@ -599,8 +598,6 @@ subprojects {
     testImplementation 'org.junit.jupiter:junit-jupiter-api'
     testImplementation 'org.junit.jupiter:junit-jupiter-params'
 
-    testRuntimeOnly testFixtures(project(':infrastructure:logging'))
-
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 
     testFixturesImplementation 'org.assertj:assertj-core'
@@ -608,6 +605,7 @@ subprojects {
 
   if (project.name != 'unsigned') {
     dependencies.implementation(project(':infrastructure:unsigned'))
+    dependencies.testRuntimeOnly(dependencies.testFixtures(project(':infrastructure:logging')))
   }
 
   task integrationTest(type: Test, dependsOn:["compileIntegrationTestJava"]){

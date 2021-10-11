@@ -46,6 +46,7 @@ public abstract class Eth2ReferenceTestCase {
           .putAll(OperationsTestExecutor.OPERATIONS_TEST_TYPES)
           .putAll(SanityTests.SANITY_TEST_TYPES)
           .putAll(SszTestExecutorDeprecated.SSZ_TEST_TYPES)
+          .put("merkle/single_proof", TestExecutor.IGNORE_TESTS)
           .build();
 
   private final ImmutableMap<String, TestExecutor> PHASE_0_TEST_TYPES =

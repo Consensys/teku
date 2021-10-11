@@ -1,6 +1,7 @@
 dependencies {
   api 'org.bouncycastle:bcprov-jdk15on'
   implementation project(':bls')
+  implementation project(':infrastructure:crypto')
   implementation project(':infrastructure:exceptions')
   implementation project(':infrastructure:io')
   implementation project(':infrastructure:metrics')
@@ -14,8 +15,7 @@ dependencies {
   implementation project(':storage:api')
   implementation project(':validator:api')
   implementation project(':validator:beaconnode')
-  implementation project(':validator:eventadapter')
-  implementation project(':validator:remote')
+  implementation project(':validator:relaypublisher')
   implementation project(':util')
   implementation project(':data:serializer')
   implementation project(':data:provider')

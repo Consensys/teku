@@ -39,6 +39,7 @@ public class ValidatorConfig {
   private final ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode;
   private final boolean validatorKeystoreLockingEnabled;
   private final Optional<URI> beaconNodeApiEndpoint;
+  private final List<URI> additionalPublishUrls;
   private final int validatorExternalSignerConcurrentRequestLimit;
   private final boolean useDependentRoots;
   private final boolean generateEarlyAttestations;
@@ -61,7 +62,8 @@ public class ValidatorConfig {
       final int validatorExternalSignerConcurrentRequestLimit,
       final boolean useDependentRoots,
       final boolean generateEarlyAttestations,
-      final boolean sendAttestationsAsBatch) {
+      final boolean sendAttestationsAsBatch,
+      final List<URI> additionalPublishUrls) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
@@ -82,6 +84,7 @@ public class ValidatorConfig {
     this.useDependentRoots = useDependentRoots;
     this.generateEarlyAttestations = generateEarlyAttestations;
     this.sendAttestationsAsBatch = sendAttestationsAsBatch;
+    this.additionalPublishUrls = additionalPublishUrls;
   }
 
   public static Builder builder() {
@@ -157,9 +160,14 @@ public class ValidatorConfig {
     return sendAttestationsAsBatch;
   }
 
+  public List<URI> getAdditionalPublishUrls() {
+    return additionalPublishUrls;
+  }
+
   public static final class Builder {
 
     private List<String> validatorKeys = new ArrayList<>();
+    private List<URI> additionalPublishUrls = new ArrayList<>();
     private List<String> validatorExternalSignerPublicKeySources = new ArrayList<>();
     private URL validatorExternalSignerUrl;
     private int validatorExternalSignerConcurrentRequestLimit;
@@ -274,6 +282,11 @@ public class ValidatorConfig {
       return this;
     }
 
+    public Builder additionalPublishUrls(final List<URI> publishUrls) {
+      this.additionalPublishUrls = publishUrls;
+      return this;
+    }
+
     public ValidatorConfig build() {
       validateExternalSignerUrlAndPublicKeys();
       validateExternalSignerKeystoreAndPasswordFileConfig();
@@ -296,7 +309,8 @@ public class ValidatorConfig {
           validatorExternalSignerConcurrentRequestLimit,
           useDependentRoots,
           generateEarlyAttestations,
-          sendAttestationsAsBatch);
+          sendAttestationsAsBatch,
+          additionalPublishUrls);
     }
 
     private void validateExternalSignerUrlAndPublicKeys() {

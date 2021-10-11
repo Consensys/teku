@@ -25,5 +25,7 @@ public class HttpStatusCodes {
   public static final int SC_PRECONDITION_FAILED = 412;
   public static final int SC_TOO_MANY_REQUESTS = 429;
   public static final int SC_INTERNAL_SERVER_ERROR = 500;
+  public static final int SC_BAD_GATEWAY = 502;
   public static final int SC_SERVICE_UNAVAILABLE = 503;
+  public static final int SC_GATEWAY_TIMEOUT = 504;
 }
