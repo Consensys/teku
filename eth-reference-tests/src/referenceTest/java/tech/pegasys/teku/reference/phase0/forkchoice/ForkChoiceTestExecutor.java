@@ -21,6 +21,7 @@ import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.opentest4j.TestAbortedException;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
@@ -47,11 +48,26 @@ public class ForkChoiceTestExecutor implements TestExecutor {
   public static final ImmutableMap<String, TestExecutor> FORK_CHOICE_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
           .put("fork_choice/get_head", new ForkChoiceTestExecutor())
-          .put("fork_choice/on_block", TestExecutor.IGNORE_TESTS)
+          .put(
+              "fork_choice/on_block",
+              new ForkChoiceTestExecutor(
+                  "new_finalized_slot_is_justified_checkpoint_ancestor",
+                  "new_justified_is_later_than_store_justified"))
           .build();
+
+  private List<?> testsToSkip;
+
+  public ForkChoiceTestExecutor(String... testsToSkip) {
+    this.testsToSkip = List.of(testsToSkip);
+  }
 
   @Override
   public void runTest(final TestDefinition testDefinition) throws Throwable {
+    if (testsToSkip.contains(testDefinition.getTestName())) {
+      throw new TestAbortedException(
+          "Test " + testDefinition.getDisplayName() + " has been ignored");
+    }
+
     // Note: The fork choice spec says there may be settings in a meta.yaml file but currently no
     // tests actually have one, so we currently don't bother trying to load it.
     final BeaconState anchorState =

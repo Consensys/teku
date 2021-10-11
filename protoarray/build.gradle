@@ -3,6 +3,7 @@ dependencies {
     implementation 'org.apache.tuweni:tuweni-ssz'
     implementation project(':ethereum:spec')
     implementation project(':infrastructure:async')
+    implementation project(':infrastructure:events')
     implementation project(':util')
 
     testImplementation testFixtures(project(':ethereum:core'))

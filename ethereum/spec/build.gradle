@@ -1,12 +1,12 @@
 dependencies {
     api 'it.unimi.dsi:fastutil'
+    api 'org.apache.tuweni:tuweni-bytes'
 
     implementation project(':ssz')
 
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
     implementation 'org.apache.tuweni:tuweni-ssz'
-    implementation 'org.apache.tuweni:tuweni-bytes'
 
     testFixturesImplementation project(':infrastructure:unsigned')
     testFixturesImplementation testFixtures(project(':bls'))
@@ -30,6 +30,7 @@ dependencies {
 
     implementation project(':bls')
     implementation project(':infrastructure:async')
+    implementation project(':infrastructure:crypto')
     api project(':infrastructure:collections')
     implementation project(':infrastructure:io')
     implementation project(':infrastructure:logging')
