@@ -58,4 +58,6 @@ public interface TreeNodeStore {
   int getStoredBranchNodeCount();
 
   int getSkippedBranchNodeCount();
+
+  int getStoredLeafNodeCount();
 }

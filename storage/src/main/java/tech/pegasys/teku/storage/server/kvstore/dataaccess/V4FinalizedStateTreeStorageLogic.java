@@ -37,6 +37,7 @@ public class V4FinalizedStateTreeStorageLogic
   private final Counter statesStoredCounter;
   private final Set<Bytes32> knownStoredBranchesCache;
   private final Spec spec;
+  private final Counter leafNodeStoredCounter;
 
   public V4FinalizedStateTreeStorageLogic(
       final MetricsSystem metricsSystem, final Spec spec, final int maxKnownNodeCacheSize) {
@@ -48,6 +49,11 @@ public class V4FinalizedStateTreeStorageLogic
             "state_branch_nodes",
             "Number of finalized state tree branch nodes stored vs skipped",
             "type");
+    this.leafNodeStoredCounter =
+        metricsSystem.createCounter(
+            TekuMetricCategory.STORAGE_FINALIZED_DB,
+            "state_leaf_nodes",
+            "Number of finalized state tree leaf nodes stored");
     statesStoredCounter =
         metricsSystem.createCounter(
             TekuMetricCategory.STORAGE_FINALIZED_DB,
@@ -73,7 +79,7 @@ public class V4FinalizedStateTreeStorageLogic
   @Override
   public FinalizedStateUpdater<SchemaFinalizedTreeState> updater() {
     return new StateTreeUpdater(
-        knownStoredBranchesCache, branchNodeStoredCounter, statesStoredCounter);
+        knownStoredBranchesCache, branchNodeStoredCounter, statesStoredCounter, leafNodeStoredCounter);
   }
 
   private static class StateTreeUpdater implements FinalizedStateUpdater<SchemaFinalizedTreeState> {
@@ -81,16 +87,19 @@ public class V4FinalizedStateTreeStorageLogic
     private final Set<Bytes32> knownStoredBranchesCache;
     private final LabelledMetric<Counter> branchNodeStoredCounter;
     private final Counter statesStoredCounter;
+    private final Counter leafNodeStoredCounter;
     private TreeNodeStore nodeStore;
     private int statesStored = 0;
 
     private StateTreeUpdater(
         final Set<Bytes32> knownStoredBranchesCache,
         final LabelledMetric<Counter> branchNodeStoredCounter,
-        final Counter statesStoredCounter) {
+        final Counter statesStoredCounter,
+        final Counter leafNodeStoredCounter) {
       this.knownStoredBranchesCache = knownStoredBranchesCache;
       this.branchNodeStoredCounter = branchNodeStoredCounter;
       this.statesStoredCounter = statesStoredCounter;
+      this.leafNodeStoredCounter = leafNodeStoredCounter;
     }
 
     @Override
@@ -120,6 +129,7 @@ public class V4FinalizedStateTreeStorageLogic
         knownStoredBranchesCache.addAll(nodeStore.getStoredBranchRoots());
         branchNodeStoredCounter.labels("stored").inc(nodeStore.getStoredBranchNodeCount());
         branchNodeStoredCounter.labels("skipped").inc(nodeStore.getSkippedBranchNodeCount());
+        leafNodeStoredCounter.inc(nodeStore.getStoredLeafNodeCount());
         statesStoredCounter.inc(statesStored);
       }
     }

@@ -37,6 +37,7 @@ public class KvStoreTreeNodeStore implements TreeNodeStore {
 
   private int storedBranchNodes = 0;
   private int skippedBranchNodes = 0;
+  private int storedLeafNodes = 0;
 
   public KvStoreTreeNodeStore(
       final Set<Bytes32> knownStoredBranchesCache,
@@ -52,9 +53,7 @@ public class KvStoreTreeNodeStore implements TreeNodeStore {
   @Override
   public boolean canSkipBranch(final Bytes32 root, final long gIndex) {
     final boolean result =
-        newlyStoredBranches.contains(root)
-            || knownStoredBranchesCache.contains(root)
-            || db.get(schema.getColumnFinalizedStateMerkleTreeBranches(), root).isPresent();
+        newlyStoredBranches.contains(root) || knownStoredBranchesCache.contains(root);
     if (result) {
       skippedBranchNodes++;
     }
@@ -79,6 +78,7 @@ public class KvStoreTreeNodeStore implements TreeNodeStore {
     checkArgument(treeNode instanceof LeafDataNode, "Can't store a non-leaf node");
     final LeafDataNode node = (LeafDataNode) treeNode;
     if (node.getData().size() > Bytes32.SIZE && !node.hashTreeRoot().isZero()) {
+      storedLeafNodes++;
       transaction.put(
           schema.getColumnFinalizedStateMerkleTreeLeaves(), node.hashTreeRoot(), node.getData());
     }
@@ -97,5 +97,10 @@ public class KvStoreTreeNodeStore implements TreeNodeStore {
   @Override
   public int getSkippedBranchNodeCount() {
     return skippedBranchNodes;
+  }
+
+  @Override
+  public int getStoredLeafNodeCount() {
+    return storedLeafNodes;
   }
 }
