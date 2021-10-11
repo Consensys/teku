@@ -23,7 +23,6 @@ import tech.pegasys.teku.ssz.tree.LeafDataNode;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 import tech.pegasys.teku.ssz.tree.TreeNodeSource.CompressedBranchInfo;
 import tech.pegasys.teku.ssz.tree.TreeNodeStore;
-import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransaction;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedTreeState;
 
@@ -31,7 +30,6 @@ public class KvStoreTreeNodeStore implements TreeNodeStore {
 
   private final Set<Bytes32> knownStoredBranchesCache;
   private final Set<Bytes32> newlyStoredBranches = new HashSet<>();
-  private final KvStoreAccessor db;
   private final KvStoreTransaction transaction;
   private final SchemaFinalizedTreeState schema;
 
@@ -41,11 +39,9 @@ public class KvStoreTreeNodeStore implements TreeNodeStore {
 
   public KvStoreTreeNodeStore(
       final Set<Bytes32> knownStoredBranchesCache,
-      final KvStoreAccessor db,
       final KvStoreTransaction transaction,
       final SchemaFinalizedTreeState schema) {
     this.knownStoredBranchesCache = knownStoredBranchesCache;
-    this.db = db;
     this.transaction = transaction;
     this.schema = schema;
   }

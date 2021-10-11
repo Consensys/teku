@@ -79,7 +79,10 @@ public class V4FinalizedStateTreeStorageLogic
   @Override
   public FinalizedStateUpdater<SchemaFinalizedTreeState> updater() {
     return new StateTreeUpdater(
-        knownStoredBranchesCache, branchNodeStoredCounter, statesStoredCounter, leafNodeStoredCounter);
+        knownStoredBranchesCache,
+        branchNodeStoredCounter,
+        statesStoredCounter,
+        leafNodeStoredCounter);
   }
 
   private static class StateTreeUpdater implements FinalizedStateUpdater<SchemaFinalizedTreeState> {
@@ -109,7 +112,7 @@ public class V4FinalizedStateTreeStorageLogic
         final SchemaFinalizedTreeState schema,
         final BeaconState state) {
       if (nodeStore == null) {
-        nodeStore = new KvStoreTreeNodeStore(knownStoredBranchesCache, db, transaction, schema);
+        nodeStore = new KvStoreTreeNodeStore(knownStoredBranchesCache, transaction, schema);
       }
       transaction.put(
           schema.getColumnFinalizedStateRootsBySlot(), state.getSlot(), state.hashTreeRoot());
