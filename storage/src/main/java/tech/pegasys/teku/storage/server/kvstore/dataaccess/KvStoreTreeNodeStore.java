@@ -35,6 +35,9 @@ public class KvStoreTreeNodeStore implements TreeNodeStore {
   private final KvStoreTransaction transaction;
   private final SchemaFinalizedTreeState schema;
 
+  private int storedBranchNodes = 0;
+  private int skippedBranchNodes = 0;
+
   public KvStoreTreeNodeStore(
       final Set<Bytes32> knownStoredBranchesCache,
       final KvStoreAccessor db,
@@ -48,9 +51,14 @@ public class KvStoreTreeNodeStore implements TreeNodeStore {
 
   @Override
   public boolean canSkipBranch(final Bytes32 root, final long gIndex) {
-    return newlyStoredBranches.contains(root)
-        || knownStoredBranchesCache.contains(root)
-        || db.get(schema.getColumnFinalizedStateMerkleTreeBranches(), root).isPresent();
+    final boolean result =
+        newlyStoredBranches.contains(root)
+            || knownStoredBranchesCache.contains(root)
+            || db.get(schema.getColumnFinalizedStateMerkleTreeBranches(), root).isPresent();
+    if (result) {
+      skippedBranchNodes++;
+    }
+    return result;
   }
 
   @Override
@@ -59,6 +67,7 @@ public class KvStoreTreeNodeStore implements TreeNodeStore {
     if (knownStoredBranchesCache.contains(root) || !newlyStoredBranches.add(root)) {
       return;
     }
+    storedBranchNodes++;
     transaction.put(
         schema.getColumnFinalizedStateMerkleTreeBranches(),
         root,
@@ -78,5 +87,15 @@ public class KvStoreTreeNodeStore implements TreeNodeStore {
   @Override
   public Collection<? extends Bytes32> getStoredBranchRoots() {
     return newlyStoredBranches;
+  }
+
+  @Override
+  public int getStoredBranchNodeCount() {
+    return storedBranchNodes;
+  }
+
+  @Override
+  public int getSkippedBranchNodeCount() {
+    return skippedBranchNodes;
   }
 }

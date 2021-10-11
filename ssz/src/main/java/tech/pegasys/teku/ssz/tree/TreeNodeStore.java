@@ -54,4 +54,8 @@ public interface TreeNodeStore {
   void storeLeafNode(TreeNode node, long gIndex);
 
   Collection<? extends Bytes32> getStoredBranchRoots();
+
+  int getStoredBranchNodeCount();
+
+  int getSkippedBranchNodeCount();
 }

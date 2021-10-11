@@ -16,7 +16,11 @@ package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -29,12 +33,20 @@ import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedTreeState;
 public class V4FinalizedStateTreeStorageLogic
     implements V4FinalizedStateStorageLogic<SchemaFinalizedTreeState> {
   private static final int MAX_BRANCH_LEVELS_SKIPPED = 5;
+  private final LabelledMetric<Counter> branchNodeStoredCounter;
   private Set<Bytes32> knownStoredBranchesCache;
   private final Spec spec;
 
-  public V4FinalizedStateTreeStorageLogic(final Spec spec, final int maxKnownNodeCacheSize) {
+  public V4FinalizedStateTreeStorageLogic(
+      final MetricsSystem metricsSystem, final Spec spec, final int maxKnownNodeCacheSize) {
     this.spec = spec;
     this.knownStoredBranchesCache = LimitedSet.create(maxKnownNodeCacheSize);
+    this.branchNodeStoredCounter =
+        metricsSystem.createLabelledCounter(
+            TekuMetricCategory.STORAGE_FINALIZED_DB,
+            "state_branch_nodes",
+            "Number of finalized state tree branch nodes stored vs skipped",
+            "type");
   }
 
   @Override
@@ -54,16 +66,20 @@ public class V4FinalizedStateTreeStorageLogic
 
   @Override
   public FinalizedStateUpdater<SchemaFinalizedTreeState> updater() {
-    return new StateTreeUpdater(knownStoredBranchesCache);
+    return new StateTreeUpdater(knownStoredBranchesCache, branchNodeStoredCounter);
   }
 
   private static class StateTreeUpdater implements FinalizedStateUpdater<SchemaFinalizedTreeState> {
 
     private final Set<Bytes32> knownStoredBranchesCache;
+    private final LabelledMetric<Counter> branchNodeStoredCounter;
     private TreeNodeStore nodeStore;
 
-    private StateTreeUpdater(final Set<Bytes32> knownStoredBranchesCache) {
+    private StateTreeUpdater(
+        final Set<Bytes32> knownStoredBranchesCache,
+        final LabelledMetric<Counter> branchNodeStoredCounter) {
       this.knownStoredBranchesCache = knownStoredBranchesCache;
+      this.branchNodeStoredCounter = branchNodeStoredCounter;
     }
 
     @Override
@@ -90,6 +106,8 @@ public class V4FinalizedStateTreeStorageLogic
     public void commit() {
       if (nodeStore != null) {
         knownStoredBranchesCache.addAll(nodeStore.getStoredBranchRoots());
+        branchNodeStoredCounter.labels("stored").inc(nodeStore.getStoredBranchNodeCount());
+        branchNodeStoredCounter.labels("skipped").inc(nodeStore.getSkippedBranchNodeCount());
       }
     }
   }

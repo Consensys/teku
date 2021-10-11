@@ -64,6 +64,16 @@ public class InMemoryStoringTreeNodeStore implements TreeNodeStore, TreeNodeSour
   }
 
   @Override
+  public int getStoredBranchNodeCount() {
+    return 0;
+  }
+
+  @Override
+  public int getSkippedBranchNodeCount() {
+    return 0;
+  }
+
+  @Override
   public CompressedBranchInfo loadBranchNode(final Bytes32 rootHash, final long gIndex) {
     return checkNotNull(branchNodes.get(rootHash), "Unknown branch node %s", rootHash);
   }

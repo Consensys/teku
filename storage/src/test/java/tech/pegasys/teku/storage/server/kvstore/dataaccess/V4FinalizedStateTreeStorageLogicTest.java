@@ -16,6 +16,7 @@ package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Optional;
+import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -38,7 +39,7 @@ class V4FinalizedStateTreeStorageLogicTest {
       MockKvStoreInstance.createEmpty(schema.getAllColumns(), schema.getAllVariables());
 
   private final V4FinalizedStateTreeStorageLogic logic =
-      new V4FinalizedStateTreeStorageLogic(spec, 1000);
+      new V4FinalizedStateTreeStorageLogic(new NoOpMetricsSystem(), spec, 1000);
 
   @Test
   void shouldRoundTripState() {
