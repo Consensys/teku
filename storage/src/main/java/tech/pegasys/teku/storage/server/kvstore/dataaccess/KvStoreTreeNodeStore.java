@@ -81,7 +81,7 @@ public class KvStoreTreeNodeStore implements TreeNodeStore {
   }
 
   @Override
-  public Collection<? extends Bytes32> getStoredBranchRoots() {
+  public Collection<Bytes32> getStoredBranchRoots() {
     return newlyStoredBranches;
   }
 

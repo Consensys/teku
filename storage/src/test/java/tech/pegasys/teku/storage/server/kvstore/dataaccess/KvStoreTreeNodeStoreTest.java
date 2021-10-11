@@ -90,6 +90,7 @@ class KvStoreTreeNodeStoreTest {
             root,
             new CompressedBranchInfo(depth, children));
     assertThat(store.getStoredBranchNodeCount()).isEqualTo(1);
+    assertThat(store.getStoredBranchRoots()).containsExactlyInAnyOrder(root);
   }
 
   @Test
@@ -125,5 +126,25 @@ class KvStoreTreeNodeStoreTest {
 
     verifyNoInteractions(transaction);
     assertThat(store.getStoredBranchNodeCount()).isZero();
+  }
+
+  @Test
+  void storeBranchNode_shouldRecordMultipleStoredBranchRoots() {
+    final Bytes32 root1 = dataStructureUtil.randomBytes32();
+    final Bytes32 root2 = dataStructureUtil.randomBytes32();
+    final Bytes32 root3 = dataStructureUtil.randomBytes32();
+
+    store.storeBranchNode(
+        root1,
+        5,
+        2,
+        new Bytes32[] {dataStructureUtil.randomBytes32(), dataStructureUtil.randomBytes32()});
+
+    store.storeBranchNode(root2, 6, 3, new Bytes32[] {dataStructureUtil.randomBytes32()});
+
+    store.storeBranchNode(root3, 19, 4, new Bytes32[0]);
+
+    assertThat(store.getStoredBranchNodeCount()).isEqualTo(3);
+    assertThat(store.getStoredBranchRoots()).containsExactlyInAnyOrder(root1, root2, root3);
   }
 }
