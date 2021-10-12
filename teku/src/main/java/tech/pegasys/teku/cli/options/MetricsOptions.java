@@ -107,6 +107,6 @@ public class MetricsOptions {
                 .metricsHostAllowlist(metricsHostAllowlist)
                 .metricsEndpoint(metricsEndpoint)
                 .metricsPublicationInterval(metricsPublicationInterval)
-                .idleTimeoutSeconds(metricsPublicationInterval));
+                .idleTimeoutSeconds(idleTimeoutSeconds));
   }
 }
