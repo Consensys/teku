@@ -542,7 +542,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .metricsCategories(Set.of(BEACON, LIBP2P, NETWORK, EVENTBUS, JVM, PROCESS))
                     .metricsHostAllowlist(List.of("127.0.0.1", "localhost"))
                     .metricsEndpoint(null)
-                    .metricsPublicationInterval(60))
+                    .metricsPublicationInterval(60)
+                    .idleTimeoutSeconds(60))
         .interop(
             b ->
                 b.interopGenesisTime(1)

@@ -19,6 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.DoubleSupplier;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledGauge;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 import org.hyperledger.besu.plugin.services.metrics.OperationTimer;
@@ -40,16 +41,25 @@ public class StubMetricsSystem implements MetricsSystem {
   }
 
   @Override
+  public LabelledGauge createLabelledGauge(
+      final MetricCategory category,
+      final String name,
+      final String help,
+      final String... labelNames) {
+    throw new UnsupportedOperationException("Not yet implemented");
+  }
+
+  @Override
   public void createGauge(
       final MetricCategory category,
       final String name,
       final String help,
       final DoubleSupplier valueSupplier) {
-    final StubGauge guage = new StubGauge(category, name, help, valueSupplier);
+    final StubGauge gauge = new StubGauge(category, name, help, valueSupplier);
     final Map<String, StubGauge> gaugesInCategory =
         gauges.computeIfAbsent(category, key -> new ConcurrentHashMap<>());
 
-    if (gaugesInCategory.putIfAbsent(name, guage) != null) {
+    if (gaugesInCategory.putIfAbsent(name, gauge) != null) {
       throw new IllegalArgumentException("Attempting to create two gauges with the same name");
     }
   }
