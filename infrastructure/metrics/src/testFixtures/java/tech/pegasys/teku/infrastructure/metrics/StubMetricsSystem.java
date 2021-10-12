@@ -28,6 +28,8 @@ public class StubMetricsSystem implements MetricsSystem {
 
   private final Map<MetricCategory, Map<String, StubCounter>> counters = new ConcurrentHashMap<>();
   private final Map<MetricCategory, Map<String, StubGauge>> gauges = new ConcurrentHashMap<>();
+  private final Map<MetricCategory, Map<String, StubLabelledGauge>> labelledGauges =
+      new ConcurrentHashMap<>();
 
   @Override
   public LabelledMetric<Counter> createLabelledCounter(
@@ -46,7 +48,9 @@ public class StubMetricsSystem implements MetricsSystem {
       final String name,
       final String help,
       final String... labelNames) {
-    throw new UnsupportedOperationException("Not yet implemented");
+    return labelledGauges
+        .computeIfAbsent(category, __ -> new ConcurrentHashMap<>())
+        .computeIfAbsent(name, __ -> new StubLabelledGauge(category, name, help));
   }
 
   @Override
@@ -76,7 +80,14 @@ public class StubMetricsSystem implements MetricsSystem {
   public StubGauge getGauge(final MetricCategory category, final String name) {
     return Optional.ofNullable(gauges.get(category))
         .map(categoryGauges -> categoryGauges.get(name))
-        .orElseThrow(() -> new IllegalArgumentException("Unknown guage: " + category + " " + name));
+        .orElseThrow(() -> new IllegalArgumentException("Unknown gauge: " + category + " " + name));
+  }
+
+  public StubLabelledGauge getLabelledGauge(final MetricCategory category, final String name) {
+    return Optional.ofNullable(labelledGauges.get(category))
+        .map(categoryGauges -> categoryGauges.get(name))
+        .orElseThrow(
+            () -> new IllegalArgumentException("Unknown labelled gauge: " + category + " " + name));
   }
 
   public StubCounter getCounter(final MetricCategory category, final String name) {
