@@ -68,6 +68,13 @@ public class SpecConfigLoader {
           processor.processConfig(altairInput);
         }
       }
+
+      try (final InputStream altairInput = loadMergePreset(preset).orElse(null)) {
+        // Merge is optional
+        if (altairInput != null) {
+          processor.processConfig(altairInput);
+        }
+      }
     } catch (IOException | IllegalArgumentException e) {
       throw new IllegalArgumentException("Failed to load spec config: " + source, e);
     }
@@ -94,6 +101,11 @@ public class SpecConfigLoader {
   private static Optional<InputStream> loadAltairPreset(final String preset) throws IOException {
     return getPresetLoader()
         .load(PRESET_PATH + preset + "/altair.yaml", PRESET_PATH + preset + "/altair.yml");
+  }
+
+  private static Optional<InputStream> loadMergePreset(final String preset) throws IOException {
+    return getPresetLoader()
+        .load(PRESET_PATH + preset + "/merge.yaml", PRESET_PATH + preset + "/merge.yml");
   }
 
   private static ResourceLoader getConfigLoader() {
