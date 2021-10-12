@@ -76,12 +76,13 @@ public class SpecConfigMerge extends DelegatingSpecConfigAltair {
       return false;
     }
     SpecConfigMerge that = (SpecConfigMerge) o;
-    return Objects.equals(mergeForkVersion, that.mergeForkVersion)
+    return Objects.equals(specConfig, that.specConfig)
+        && Objects.equals(mergeForkVersion, that.mergeForkVersion)
         && Objects.equals(mergeForkEpoch, that.mergeForkEpoch);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(mergeForkVersion, mergeForkEpoch);
+    return Objects.hash(specConfig, mergeForkVersion, mergeForkEpoch);
   }
 }
