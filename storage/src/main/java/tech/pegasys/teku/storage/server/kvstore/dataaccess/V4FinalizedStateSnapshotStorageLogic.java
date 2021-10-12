@@ -73,6 +73,9 @@ public class V4FinalizedStateSnapshotStorageLogic
       }
     }
 
+    @Override
+    public void commit() {}
+
     private void addFinalizedState(
         final KvStoreTransaction transaction,
         final SchemaFinalizedSnapshotState schema,

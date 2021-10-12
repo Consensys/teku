@@ -221,16 +221,16 @@ public class V4FinalizedKvStoreDao<S extends SchemaFinalized> implements KvStore
     private final KvStoreTransaction transaction;
     private final KvStoreAccessor db;
     private final S schema;
-    private final V4FinalizedStateStorageLogic.FinalizedStateUpdater<S> stateStorageLogic;
+    private final V4FinalizedStateStorageLogic.FinalizedStateUpdater<S> stateStorageUpdater;
 
     V4FinalizedUpdater(
         final KvStoreAccessor db,
         final S schema,
-        final V4FinalizedStateStorageLogic.FinalizedStateUpdater<S> stateStorageLogic) {
+        final V4FinalizedStateStorageLogic.FinalizedStateUpdater<S> stateStorageUpdater) {
       this.transaction = db.startTransaction();
       this.db = db;
       this.schema = schema;
-      this.stateStorageLogic = stateStorageLogic;
+      this.stateStorageUpdater = stateStorageUpdater;
     }
 
     @Override
@@ -255,7 +255,7 @@ public class V4FinalizedKvStoreDao<S extends SchemaFinalized> implements KvStore
 
     @Override
     public void addFinalizedState(final Bytes32 blockRoot, final BeaconState state) {
-      stateStorageLogic.addFinalizedState(db, transaction, schema, state);
+      stateStorageUpdater.addFinalizedState(db, transaction, schema, state);
     }
 
     @Override
@@ -267,6 +267,7 @@ public class V4FinalizedKvStoreDao<S extends SchemaFinalized> implements KvStore
     public void commit() {
       // Commit db updates
       transaction.commit();
+      stateStorageUpdater.commit();
       close();
     }
 

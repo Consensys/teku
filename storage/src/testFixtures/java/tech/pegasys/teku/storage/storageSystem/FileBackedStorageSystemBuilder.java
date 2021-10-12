@@ -188,6 +188,7 @@ public class FileBackedStorageSystemBuilder {
         configDefault.withDatabaseDir(hotDir),
         storageMode,
         storeNonCanonicalBlocks,
+        10_000,
         spec);
   }
 

@@ -198,7 +198,8 @@ public class ValidatorClientService extends Service {
     }
     addValidatorCountMetric(metricsSystem, validators);
     this.validatorStatusLogger =
-        new DefaultValidatorStatusLogger(validators, validatorApiChannel, asyncRunner);
+        new DefaultValidatorStatusLogger(
+            metricsSystem, validators, validatorApiChannel, asyncRunner);
   }
 
   public static Path getSlashingProtectionPath(final DataDirLayout dataDirLayout) {

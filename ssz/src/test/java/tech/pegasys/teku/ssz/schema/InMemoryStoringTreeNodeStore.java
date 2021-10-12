@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
@@ -55,6 +56,26 @@ public class InMemoryStoringTreeNodeStore implements TreeNodeStore, TreeNodeSour
     if (node.getData().size() > Bytes32.SIZE && !node.hashTreeRoot().isZero()) {
       leafNodes.putIfAbsent(node.hashTreeRoot(), node.getData());
     }
+  }
+
+  @Override
+  public Collection<? extends Bytes32> getStoredBranchRoots() {
+    return branchNodes.keySet();
+  }
+
+  @Override
+  public int getStoredBranchNodeCount() {
+    return 0;
+  }
+
+  @Override
+  public int getSkippedBranchNodeCount() {
+    return 0;
+  }
+
+  @Override
+  public int getStoredLeafNodeCount() {
+    return 0;
   }
 
   @Override

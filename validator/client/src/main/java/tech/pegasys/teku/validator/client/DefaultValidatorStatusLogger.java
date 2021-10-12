@@ -22,14 +22,23 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
 public class DefaultValidatorStatusLogger implements ValidatorStatusLogger {
+  private static final Logger LOG = LogManager.getLogger();
 
   private static final int VALIDATOR_KEYS_PRINT_LIMIT = 20;
   private static final Duration INITIAL_STATUS_CHECK_RETRY_PERIOD = Duration.ofSeconds(5);
@@ -40,14 +49,23 @@ public class DefaultValidatorStatusLogger implements ValidatorStatusLogger {
       new AtomicReference<>();
   final AsyncRunner asyncRunner;
   final AtomicBoolean startupComplete = new AtomicBoolean(false);
+  private final SettableLabelledGauge localValidatorCounts;
 
   public DefaultValidatorStatusLogger(
+      MetricsSystem metricsSystem,
       OwnedValidators validators,
       ValidatorApiChannel validatorApiChannel,
       AsyncRunner asyncRunner) {
     this.validators = validators;
     this.validatorApiChannel = validatorApiChannel;
     this.asyncRunner = asyncRunner;
+    localValidatorCounts =
+        SettableLabelledGauge.create(
+            metricsSystem,
+            TekuMetricCategory.VALIDATOR,
+            "local_validator_counts",
+            "Current number of validators running in this validator client labelled by current status",
+            "status");
   }
 
   @Override
@@ -71,6 +89,7 @@ public class DefaultValidatorStatusLogger implements ValidatorStatusLogger {
               } else {
                 printValidatorStatusSummary(validatorStatuses);
               }
+              updateValidatorCountMetrics(validatorStatuses);
 
               startupComplete.set(true);
               return SafeFuture.completedFuture(null);
@@ -154,7 +173,22 @@ public class DefaultValidatorStatusLogger implements ValidatorStatusLogger {
                 STATUS_LOG.validatorStatusChange(
                     oldStatus.name(), newStatus.name(), key.toAbbreviatedString());
               }
+
+              updateValidatorCountMetrics(newValidatorStatuses);
             })
-        .reportExceptions();
+        .finish(error -> LOG.error("Failed to update validator statuses", error));
+  }
+
+  private void updateValidatorCountMetrics(
+      final Map<BLSPublicKey, ValidatorStatus> oldValidatorStatuses) {
+    final Map<ValidatorStatus, Long> validatorCountByStatus =
+        oldValidatorStatuses.values().stream()
+            .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+    Stream.of(ValidatorStatus.values())
+        .forEach(
+            status -> {
+              final long validatorCount = validatorCountByStatus.getOrDefault(status, 0L);
+              localValidatorCounts.set(validatorCount, status.name());
+            });
   }
 }

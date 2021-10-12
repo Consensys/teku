@@ -60,6 +60,7 @@ public class MetricsEndpoint {
         .host(config.getMetricsInterface())
         .metricCategories(config.getMetricsCategories())
         .hostsAllowlist(config.getMetricsHostAllowlist())
+        .idleTimeout(config.getIdleTimeoutSeconds())
         .build();
   }
 }

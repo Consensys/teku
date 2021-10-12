@@ -29,5 +29,7 @@ public interface V4FinalizedStateStorageLogic<S extends SchemaFinalized> {
   interface FinalizedStateUpdater<S extends SchemaFinalized> {
     void addFinalizedState(
         KvStoreAccessor db, KvStoreTransaction transaction, S schema, BeaconState state);
+
+    void commit();
   }
 }
