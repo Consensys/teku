@@ -23,8 +23,8 @@ dependencyManagement {
 
     dependency 'com.launchdarkly:okhttp-eventsource:2.3.2'
     
-    dependency 'com.squareup.okhttp3:okhttp:4.9.0'
-    dependency 'com.squareup.okhttp3:mockwebserver:4.9.0'
+    dependency 'com.squareup.okhttp3:okhttp:4.9.2'
+    dependency 'com.squareup.okhttp3:mockwebserver:4.9.2'
 
     dependency 'commons-cli:commons-cli:1.4'
 
