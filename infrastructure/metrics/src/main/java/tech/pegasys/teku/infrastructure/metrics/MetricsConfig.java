@@ -27,6 +27,7 @@ public class MetricsConfig {
   private final List<String> metricsHostAllowlist;
   private final String metricsEndpoint;
   private final int publicationInterval;
+  private final int idleTimeoutSeconds;
 
   private MetricsConfig(
       final boolean metricsEnabled,
@@ -35,7 +36,8 @@ public class MetricsConfig {
       final Set<MetricCategory> metricsCategories,
       final List<String> metricsHostAllowlist,
       final String metricsEndpoint,
-      final int publicationInterval) {
+      final int publicationInterval,
+      final int idleTimeoutSeconds) {
     this.metricsEnabled = metricsEnabled;
     this.metricsPort = metricsPort;
     this.metricsInterface = metricsInterface;
@@ -43,6 +45,7 @@ public class MetricsConfig {
     this.metricsHostAllowlist = metricsHostAllowlist;
     this.metricsEndpoint = metricsEndpoint;
     this.publicationInterval = publicationInterval;
+    this.idleTimeoutSeconds = idleTimeoutSeconds;
   }
 
   public static MetricsConfigBuilder builder() {
@@ -77,6 +80,10 @@ public class MetricsConfig {
     return publicationInterval;
   }
 
+  public int getIdleTimeoutSeconds() {
+    return idleTimeoutSeconds;
+  }
+
   public static final class MetricsConfigBuilder {
 
     private boolean metricsEnabled;
@@ -86,6 +93,7 @@ public class MetricsConfig {
     private List<String> metricsHostAllowlist;
     private String metricsEndpoint;
     private int metricsPublicationInterval;
+    private int idleTimeoutSeconds;
 
     private MetricsConfigBuilder() {}
 
@@ -124,6 +132,11 @@ public class MetricsConfig {
       return this;
     }
 
+    public MetricsConfigBuilder idleTimeoutSeconds(final int idleTimeoutSeconds) {
+      this.idleTimeoutSeconds = idleTimeoutSeconds;
+      return this;
+    }
+
     public MetricsConfig build() {
       return new MetricsConfig(
           metricsEnabled,
@@ -132,7 +145,8 @@ public class MetricsConfig {
           metricsCategories,
           metricsHostAllowlist,
           metricsEndpoint,
-          metricsPublicationInterval);
+          metricsPublicationInterval,
+          idleTimeoutSeconds);
     }
   }
 }
