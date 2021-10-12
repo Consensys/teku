@@ -50,6 +50,14 @@ public class UnusedValidatorClientOptions {
   private UInt64 altairForkEpoch;
 
   @Option(
+      names = {"--Xnetwork-merge-fork-epoch"},
+      hidden = true,
+      paramLabel = "<epoch>",
+      description = "Override the Merge fork activation epoch.",
+      arity = "1")
+  private UInt64 mergeForkEpoch;
+
+  @Option(
       names = {"--Xstartup-target-peer-count"},
       paramLabel = "<NUMBER>",
       description = "Number of peers to wait for before considering the node in sync.",
@@ -134,6 +142,9 @@ public class UnusedValidatorClientOptions {
     }
     if (altairForkEpoch != null) {
       builder.altairForkEpoch(altairForkEpoch);
+    }
+    if (mergeForkEpoch != null) {
+      builder.mergeForkEpoch(mergeForkEpoch);
     }
   }
 }

@@ -257,6 +257,11 @@ public class Eth2NetworkConfiguration {
       return this;
     }
 
+    public Builder mergeForkEpoch(final UInt64 mergeForkEpoch) {
+      this.mergeForkEpoch = Optional.of(mergeForkEpoch);
+      return this;
+    }
+
     public Builder applyNetworkDefaults(final String networkName) {
       Eth2Network.fromStringLenient(networkName)
           .ifPresentOrElse(this::applyNetworkDefaults, () -> reset().constants(networkName));
