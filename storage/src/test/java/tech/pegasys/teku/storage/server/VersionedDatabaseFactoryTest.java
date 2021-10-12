@@ -30,7 +30,9 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class VersionedDatabaseFactoryTest {
+
   private static final StateStorageMode DATA_STORAGE_MODE = PRUNE;
+  public static final int MAX_KNOWN_NODE_CACHE_SIZE = 10_000;
   private final Eth1Address eth1Address =
       Eth1Address.fromHexString("0x77f7bED277449F51505a4C54550B074030d989bC");
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
@@ -73,6 +75,7 @@ public class VersionedDatabaseFactoryTest {
             1L,
             eth1Address,
             false,
+            MAX_KNOWN_NODE_CACHE_SIZE,
             spec);
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
@@ -95,6 +98,7 @@ public class VersionedDatabaseFactoryTest {
             1L,
             eth1Address,
             false,
+            MAX_KNOWN_NODE_CACHE_SIZE,
             spec);
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
@@ -120,6 +124,7 @@ public class VersionedDatabaseFactoryTest {
             1L,
             eth1Address,
             false,
+            MAX_KNOWN_NODE_CACHE_SIZE,
             spec);
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
@@ -169,6 +174,7 @@ public class VersionedDatabaseFactoryTest {
             1L,
             eth1Address,
             false,
+            MAX_KNOWN_NODE_CACHE_SIZE,
             spec);
     assertThat(dbFactory.getDatabaseVersion()).isEqualTo(DatabaseVersion.V4);
   }
@@ -185,6 +191,7 @@ public class VersionedDatabaseFactoryTest {
             1L,
             eth1Address,
             false,
+            MAX_KNOWN_NODE_CACHE_SIZE,
             spec);
     assertThat(dbFactory.getDatabaseVersion()).isEqualTo(DatabaseVersion.V5);
   }

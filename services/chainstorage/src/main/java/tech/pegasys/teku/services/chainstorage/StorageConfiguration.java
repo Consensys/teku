@@ -26,6 +26,7 @@ public class StorageConfiguration {
   private final DatabaseVersion dataStorageCreateDbVersion;
   private final Spec spec;
   private final boolean storeNonCanonicalBlocks;
+  private final int maxKnownNodeCacheSize;
 
   private StorageConfiguration(
       final Eth1Address eth1DepositContract,
@@ -33,12 +34,14 @@ public class StorageConfiguration {
       final long dataStorageFrequency,
       final DatabaseVersion dataStorageCreateDbVersion,
       final boolean storeNonCanonicalBlocks,
+      final int maxKnownNodeCacheSize,
       final Spec spec) {
     this.eth1DepositContract = eth1DepositContract;
     this.dataStorageMode = dataStorageMode;
     this.dataStorageFrequency = dataStorageFrequency;
     this.dataStorageCreateDbVersion = dataStorageCreateDbVersion;
     this.storeNonCanonicalBlocks = storeNonCanonicalBlocks;
+    this.maxKnownNodeCacheSize = maxKnownNodeCacheSize;
     this.spec = spec;
   }
 
@@ -66,6 +69,10 @@ public class StorageConfiguration {
     return storeNonCanonicalBlocks;
   }
 
+  public int getMaxKnownNodeCacheSize() {
+    return maxKnownNodeCacheSize;
+  }
+
   public Spec getSpec() {
     return spec;
   }
@@ -78,6 +85,7 @@ public class StorageConfiguration {
     private DatabaseVersion dataStorageCreateDbVersion;
     private Spec spec;
     private boolean storeNonCanonicalBlocks;
+    private int maxKnownNodeCacheSize;
 
     private Builder() {}
 
@@ -111,6 +119,11 @@ public class StorageConfiguration {
       return this;
     }
 
+    public Builder maxKnownNodeCacheSize(final int maxKnownNodeCacheSize) {
+      this.maxKnownNodeCacheSize = maxKnownNodeCacheSize;
+      return this;
+    }
+
     public StorageConfiguration build() {
       return new StorageConfiguration(
           eth1DepositContract,
@@ -118,6 +131,7 @@ public class StorageConfiguration {
           dataStorageFrequency,
           dataStorageCreateDbVersion,
           storeNonCanonicalBlocks,
+          maxKnownNodeCacheSize,
           spec);
     }
   }
