@@ -131,7 +131,9 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   }
 
   public synchronized SszList<Attestation> getAttestationsForBlock(
-      final BeaconState stateAtBlockSlot, final AttestationForkChecker forkChecker) {
+      final BeaconState stateAtBlockSlot,
+      final AttestationForkChecker forkChecker,
+      final AttestationWorthinessChecker worthinessChecker) {
     final UInt64 currentEpoch = spec.getCurrentEpoch(stateAtBlockSlot);
     final int previousEpochLimit = spec.getPreviousEpochAttestationCapacity(stateAtBlockSlot);
 
@@ -142,6 +144,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .filter(Objects::nonNull)
         .filter(group -> isValid(stateAtBlockSlot, group.getAttestationData()))
         .filter(forkChecker::areAttestationsFromCorrectFork)
+        .filter(worthinessChecker::areAttestationsWorthy)
         .flatMap(MatchingDataAttestationGroup::stream)
         .limit(ATTESTATIONS_SCHEMA.getMaxLength())
         .map(ValidateableAttestation::getAttestation)

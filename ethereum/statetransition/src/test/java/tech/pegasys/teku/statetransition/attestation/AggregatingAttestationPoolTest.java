@@ -29,13 +29,17 @@ import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentMatchers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataValidator.AttestationInvalidReason;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -47,18 +51,23 @@ class AggregatingAttestationPoolTest {
 
   public static final UInt64 SLOT = UInt64.valueOf(1234);
 
-  private final Spec spec = TestSpecFactory.createMinimalPhase0();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private Spec spec;
+  private DataStructureUtil dataStructureUtil;
   private final Spec mockSpec = mock(Spec.class);
 
   private final AggregatingAttestationPool aggregatingPool =
       new AggregatingAttestationPool(mockSpec, new NoOpMetricsSystem());
 
   private final AttestationForkChecker forkChecker = mock(AttestationForkChecker.class);
+  private final AttestationWorthinessChecker worthinessChecker =
+      mock(AttestationWorthinessChecker.class);
 
   @BeforeEach
   public void setUp() {
+    spec = TestSpecFactory.createMinimalPhase0();
+    dataStructureUtil = new DataStructureUtil(spec);
     when(forkChecker.areAttestationsFromCorrectFork(any())).thenReturn(true);
+    when(worthinessChecker.areAttestationsWorthy(any())).thenReturn(true);
     when(mockSpec.getPreviousEpochAttestationCapacity(any())).thenReturn(Integer.MAX_VALUE);
     // Fwd some calls to the real spec
     when(mockSpec.computeEpochAtSlot(any()))
@@ -110,7 +119,7 @@ class AggregatingAttestationPoolTest {
     when(mockSpec.validateAttestation(any(), any())).thenReturn(Optional.empty());
     assertThat(
             aggregatingPool.getAttestationsForBlock(
-                dataStructureUtil.randomBeaconState(), forkChecker))
+                dataStructureUtil.randomBeaconState(), forkChecker, worthinessChecker))
         .isEmpty();
   }
 
@@ -125,7 +134,7 @@ class AggregatingAttestationPoolTest {
 
     assertThat(
             aggregatingPool.getAttestationsForBlock(
-                dataStructureUtil.randomBeaconState(), forkChecker))
+                dataStructureUtil.randomBeaconState(), forkChecker, worthinessChecker))
         .isEmpty();
   }
 
@@ -143,7 +152,8 @@ class AggregatingAttestationPoolTest {
     // Now it should just exclude the group from consideration
     final BeaconState state = dataStructureUtil.randomBeaconState(UInt64.valueOf(2));
     final SszList<Attestation> result =
-        aggregatingPool.getAttestationsForBlock(state, new AttestationForkChecker(spec, state));
+        aggregatingPool.getAttestationsForBlock(
+            state, new AttestationForkChecker(spec, state), worthinessChecker);
     assertThat(result).isEmpty();
   }
 
@@ -162,7 +172,7 @@ class AggregatingAttestationPoolTest {
     when(mockSpec.validateAttestation(state, attestation2.getData())).thenReturn(Optional.empty());
     when(mockSpec.validateAttestation(state, attestation3.getData())).thenReturn(Optional.empty());
 
-    assertThat(aggregatingPool.getAttestationsForBlock(state, forkChecker))
+    assertThat(aggregatingPool.getAttestationsForBlock(state, forkChecker, worthinessChecker))
         .containsExactlyInAnyOrder(attestation2, attestation3);
   }
 
@@ -174,7 +184,7 @@ class AggregatingAttestationPoolTest {
 
     assertThat(
             aggregatingPool.getAttestationsForBlock(
-                dataStructureUtil.randomBeaconState(), forkChecker))
+                dataStructureUtil.randomBeaconState(), forkChecker, worthinessChecker))
         .containsExactly(aggregateAttestations(attestation1, attestation2));
   }
 
@@ -188,7 +198,7 @@ class AggregatingAttestationPoolTest {
 
     assertThat(
             aggregatingPool.getAttestationsForBlock(
-                dataStructureUtil.randomBeaconState(), forkChecker))
+                dataStructureUtil.randomBeaconState(), forkChecker, worthinessChecker))
         .containsExactlyInAnyOrder(aggregateAttestations(attestation1, attestation2), attestation3);
   }
 
@@ -206,7 +216,9 @@ class AggregatingAttestationPoolTest {
 
     final BeaconState stateAtBlockSlot = dataStructureUtil.randomBeaconState(UInt64.valueOf(10));
 
-    assertThat(aggregatingPool.getAttestationsForBlock(stateAtBlockSlot, forkChecker))
+    assertThat(
+            aggregatingPool.getAttestationsForBlock(
+                stateAtBlockSlot, forkChecker, worthinessChecker))
         .containsExactly(attestation3, attestation2, attestation1);
   }
 
@@ -220,7 +232,7 @@ class AggregatingAttestationPoolTest {
     // Won't be included because of the 2 attestation limit.
     addAttestationFromValidators(attestationData, 2);
 
-    assertThat(aggregatingPool.getAttestationsForBlock(state, forkChecker))
+    assertThat(aggregatingPool.getAttestationsForBlock(state, forkChecker, worthinessChecker))
         .containsExactly(attestation1, attestation2);
   }
 
@@ -262,7 +274,9 @@ class AggregatingAttestationPoolTest {
     addAttestationFromValidators(startSlotAtCurrentEpoch.minus(3), 1);
     addAttestationFromValidators(startSlotAtCurrentEpoch.minus(4), 2);
 
-    assertThat(aggregatingPool.getAttestationsForBlock(stateAtBlockSlot, forkChecker))
+    assertThat(
+            aggregatingPool.getAttestationsForBlock(
+                stateAtBlockSlot, forkChecker, worthinessChecker))
         .containsExactlyElementsOf(expectedAttestations);
   }
 
@@ -286,7 +300,7 @@ class AggregatingAttestationPoolTest {
 
     assertThat(
             aggregatingPool.getAttestationsForBlock(
-                dataStructureUtil.randomBeaconState(), forkChecker))
+                dataStructureUtil.randomBeaconState(), forkChecker, worthinessChecker))
         .containsOnly(preserveAttestation);
     assertThat(aggregatingPool.getSize()).isEqualTo(1);
   }
@@ -372,7 +386,7 @@ class AggregatingAttestationPoolTest {
         .thenReturn(true);
 
     final BeaconState state = dataStructureUtil.randomBeaconState();
-    assertThat(aggregatingPool.getAttestationsForBlock(state, forkChecker))
+    assertThat(aggregatingPool.getAttestationsForBlock(state, forkChecker, worthinessChecker))
         .containsExactly(attestation2);
   }
 
@@ -476,5 +490,99 @@ class AggregatingAttestationPoolTest {
     final SszBitlist bitlist =
         Attestation.SSZ_SCHEMA.getAggregationBitsSchema().ofBits(20, validators);
     return new Attestation(bitlist, data, dataStructureUtil.randomSignature());
+  }
+
+  @ParameterizedTest
+  @EnumSource(
+      value = SpecMilestone.class,
+      names = {"MERGE"},
+      mode = EnumSource.Mode.EXCLUDE)
+  void getAttestationsForBlock_inAltairShouldNotIncludeWorthlessAttestations(
+      SpecMilestone milestone) {
+    switch (milestone) {
+      case PHASE0:
+        spec = TestSpecFactory.createMainnetPhase0();
+        break;
+      case ALTAIR:
+        spec = TestSpecFactory.createMainnetAltair();
+        break;
+      default:
+        throw new IllegalStateException("unsupported milestone");
+    }
+
+    dataStructureUtil = new DataStructureUtil(spec);
+
+    final var referenceAttestationData = dataStructureUtil.randomAttestationData(UInt64.valueOf(1));
+    final BeaconState stateAtBlockSlot = dataStructureUtil.randomBeaconState(UInt64.valueOf(10));
+
+    final var correctTarget =
+        new Checkpoint(
+            dataStructureUtil.randomEpoch(),
+            spec.atSlot(stateAtBlockSlot.getSlot())
+                .beaconStateAccessors()
+                .getBlockRootAtSlot(stateAtBlockSlot, ZERO));
+    final var wrongTarget = dataStructureUtil.randomCheckpoint();
+
+    final AttestationData attestationData1_OldSlot_TargetOK =
+        new AttestationData(
+            UInt64.valueOf(1),
+            referenceAttestationData.getIndex().plus(1),
+            referenceAttestationData.getBeacon_block_root(),
+            referenceAttestationData.getSource(),
+            correctTarget);
+
+    final AttestationData attestationData2_OldSlot_TargetWrong =
+        new AttestationData(
+            UInt64.valueOf(3),
+            referenceAttestationData.getIndex().plus(2),
+            referenceAttestationData.getBeacon_block_root(),
+            referenceAttestationData.getSource(),
+            wrongTarget);
+
+    final AttestationData attestationData3_OKSlot_TargetWrong =
+        new AttestationData(
+            UInt64.valueOf(5),
+            referenceAttestationData.getIndex().plus(3),
+            referenceAttestationData.getBeacon_block_root(),
+            referenceAttestationData.getSource(),
+            wrongTarget);
+
+    final AttestationData attestationData4_OKSlot_TargetOK =
+        new AttestationData(
+            UInt64.valueOf(7),
+            referenceAttestationData.getIndex().plus(4),
+            referenceAttestationData.getBeacon_block_root(),
+            referenceAttestationData.getSource(),
+            correctTarget);
+
+    final Attestation attestation1 =
+        addAttestationFromValidators(attestationData1_OldSlot_TargetOK, 1, 2);
+    final Attestation attestation2 =
+        addAttestationFromValidators(attestationData2_OldSlot_TargetWrong, 3, 4);
+    final Attestation attestation3 =
+        addAttestationFromValidators(attestationData3_OKSlot_TargetWrong, 5, 6);
+    final Attestation attestation4 =
+        addAttestationFromValidators(attestationData4_OKSlot_TargetOK, 7, 8);
+
+    switch (milestone) {
+      case PHASE0:
+        assertThat(
+                aggregatingPool.getAttestationsForBlock(
+                    stateAtBlockSlot,
+                    forkChecker,
+                    new AttestationWorthinessChecker(spec, stateAtBlockSlot)))
+            .containsExactly(attestation4, attestation3, attestation2, attestation1);
+        break;
+      case ALTAIR:
+        assertThat(
+                aggregatingPool.getAttestationsForBlock(
+                    stateAtBlockSlot,
+                    forkChecker,
+                    new AttestationWorthinessChecker(spec, stateAtBlockSlot)))
+            .containsExactly(attestation4, attestation3, attestation1);
+        break;
+      default:
+        throw new IllegalStateException("unsupported milestone");
+    }
   }
 }
