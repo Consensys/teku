@@ -525,7 +525,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .restApiCorsAllowedOrigins(new ArrayList<>())
                     .eth1DepositContractAddress(address)
                     .maxUrlLength(65535)
-                    .maxPendingEvents(BeaconRestApiOptions.DEFAULT_MAX_EVENT_QUEUE_SIZE))
+                    .maxPendingEvents(BeaconRestApiOptions.DEFAULT_MAX_EVENT_QUEUE_SIZE)
+                    .validatorThreads(1))
         .validator(
             b ->
                 b.validatorExternalSignerTimeout(Duration.ofSeconds(5))
