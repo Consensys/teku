@@ -63,7 +63,7 @@ public class PortAvailability {
               "P2P Port %d (TCP) is already in use. Check for other processes using this port.",
               tcpPort));
     }
-    if (!isPortAvailableForTcp(udpPort)) {
+    if (!isPortAvailableForUdp(udpPort)) {
       throw new InvalidConfigurationException(
           String.format(
               "P2P Port %d (UDP) is already in use. Check for other processes using this port.",
