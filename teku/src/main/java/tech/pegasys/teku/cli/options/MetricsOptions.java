@@ -73,6 +73,14 @@ public class MetricsOptions {
   private final List<String> metricsHostAllowlist = Arrays.asList("127.0.0.1", "localhost");
 
   @Option(
+      names = {"--Xmetrics-idle-timeout"},
+      paramLabel = "<INTEGER>",
+      description = "Idle timeout for metrics connections in seconds",
+      arity = "1",
+      hidden = true)
+  private int idleTimeoutSeconds = 60;
+
+  @Option(
       names = {"--Xmetrics-endpoint"},
       hidden = true,
       paramLabel = "<ENDPOINT>",
@@ -98,6 +106,7 @@ public class MetricsOptions {
                 .metricsCategories(metricsCategories)
                 .metricsHostAllowlist(metricsHostAllowlist)
                 .metricsEndpoint(metricsEndpoint)
-                .metricsPublicationInterval(metricsPublicationInterval));
+                .metricsPublicationInterval(metricsPublicationInterval)
+                .idleTimeoutSeconds(idleTimeoutSeconds));
   }
 }

@@ -19,6 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.DoubleSupplier;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledGauge;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 import org.hyperledger.besu.plugin.services.metrics.OperationTimer;
@@ -27,6 +28,8 @@ public class StubMetricsSystem implements MetricsSystem {
 
   private final Map<MetricCategory, Map<String, StubCounter>> counters = new ConcurrentHashMap<>();
   private final Map<MetricCategory, Map<String, StubGauge>> gauges = new ConcurrentHashMap<>();
+  private final Map<MetricCategory, Map<String, StubLabelledGauge>> labelledGauges =
+      new ConcurrentHashMap<>();
 
   @Override
   public LabelledMetric<Counter> createLabelledCounter(
@@ -40,16 +43,27 @@ public class StubMetricsSystem implements MetricsSystem {
   }
 
   @Override
+  public LabelledGauge createLabelledGauge(
+      final MetricCategory category,
+      final String name,
+      final String help,
+      final String... labelNames) {
+    return labelledGauges
+        .computeIfAbsent(category, __ -> new ConcurrentHashMap<>())
+        .computeIfAbsent(name, __ -> new StubLabelledGauge(category, name, help));
+  }
+
+  @Override
   public void createGauge(
       final MetricCategory category,
       final String name,
       final String help,
       final DoubleSupplier valueSupplier) {
-    final StubGauge guage = new StubGauge(category, name, help, valueSupplier);
+    final StubGauge gauge = new StubGauge(category, name, help, valueSupplier);
     final Map<String, StubGauge> gaugesInCategory =
         gauges.computeIfAbsent(category, key -> new ConcurrentHashMap<>());
 
-    if (gaugesInCategory.putIfAbsent(name, guage) != null) {
+    if (gaugesInCategory.putIfAbsent(name, gauge) != null) {
       throw new IllegalArgumentException("Attempting to create two gauges with the same name");
     }
   }
@@ -66,7 +80,14 @@ public class StubMetricsSystem implements MetricsSystem {
   public StubGauge getGauge(final MetricCategory category, final String name) {
     return Optional.ofNullable(gauges.get(category))
         .map(categoryGauges -> categoryGauges.get(name))
-        .orElseThrow(() -> new IllegalArgumentException("Unknown guage: " + category + " " + name));
+        .orElseThrow(() -> new IllegalArgumentException("Unknown gauge: " + category + " " + name));
+  }
+
+  public StubLabelledGauge getLabelledGauge(final MetricCategory category, final String name) {
+    return Optional.ofNullable(labelledGauges.get(category))
+        .map(categoryGauges -> categoryGauges.get(name))
+        .orElseThrow(
+            () -> new IllegalArgumentException("Unknown labelled gauge: " + category + " " + name));
   }
 
   public StubCounter getCounter(final MetricCategory category, final String name) {

@@ -92,6 +92,7 @@ public class LevelDbDatabaseFactory {
       final KvStoreConfiguration hotConfiguration,
       final StateStorageMode stateStorageMode,
       final boolean storeNonCanonicalBlocks,
+      final int maxKnownNodeCacheSize,
       final Spec spec) {
 
     final V4SchemaHot schemaHot = new V4SchemaHot(spec);
@@ -108,6 +109,7 @@ public class LevelDbDatabaseFactory {
         schemaFinalized,
         stateStorageMode,
         storeNonCanonicalBlocks,
+        maxKnownNodeCacheSize,
         spec);
   }
 }
