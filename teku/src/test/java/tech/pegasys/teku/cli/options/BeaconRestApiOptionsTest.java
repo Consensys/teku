@@ -142,4 +142,19 @@ public class BeaconRestApiOptionsTest extends AbstractBeaconNodeCommandTest {
     final String output = getCommandLineOutput();
     assertThat(output).contains("Invalid value '1052673'");
   }
+
+  @Test
+  void validatorThreads_shouldDefaultToOne() {
+    final int validatorThreads =
+        getConfig(getTekuConfigurationFromArguments()).getValidatorThreads();
+    assertThat(validatorThreads).isEqualTo(1);
+  }
+
+  @Test
+  void validatorThreads_shouldBeAbleToOverride() {
+    final int validatorThreads =
+        getConfig(getTekuConfigurationFromArguments("--Xrest-api-validator-threads=15"))
+            .getValidatorThreads();
+    assertThat(validatorThreads).isEqualTo(15);
+  }
 }

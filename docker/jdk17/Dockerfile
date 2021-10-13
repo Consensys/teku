@@ -1,9 +1,9 @@
-FROM openjdk:14 as jre-build
+FROM eclipse-temurin:17 as jre-build
 
 # Create a custom Java runtime
 RUN $JAVA_HOME/bin/jlink \
          --add-modules ALL-MODULE-PATH \
-         --strip-java-debug-attributes \
+         --strip-debug \
          --no-man-pages \
          --no-header-files \
          --compress=2 \
