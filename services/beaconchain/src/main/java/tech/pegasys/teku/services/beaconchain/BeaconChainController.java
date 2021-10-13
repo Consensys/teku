@@ -40,6 +40,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.io.PortAvailability;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
@@ -596,7 +597,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       return;
     }
 
-    beaconConfig.p2pConfig().getNetworkConfig().validateListenPortAvailable();
+    PortAvailability.checkPortsAvailable(
+        beaconConfig.p2pConfig().getNetworkConfig().getListenPort(),
+        beaconConfig.p2pConfig().getDiscoveryConfig().getListenUdpPort());
 
     final GossipPublisher<AttesterSlashing> attesterSlashingGossipPublisher =
         new GossipPublisher<>();
