@@ -44,6 +44,7 @@ public class Eth2NetworkConfiguration {
   private final int startupTimeoutSeconds;
   private final List<String> discoveryBootnodes;
   private final Optional<UInt64> altairForkEpoch;
+  private final Optional<UInt64> mergeForkEpoch;
   private final Eth1Address eth1DepositContractAddress;
   private final Optional<UInt64> eth1DepositContractDeployBlock;
   private final boolean balanceAttackMitigationEnabled;
@@ -59,7 +60,8 @@ public class Eth2NetworkConfiguration {
       final Eth1Address eth1DepositContractAddress,
       final Optional<UInt64> eth1DepositContractDeployBlock,
       final boolean balanceAttackMitigationEnabled,
-      final Optional<UInt64> altairForkEpoch) {
+      final Optional<UInt64> altairForkEpoch,
+      final Optional<UInt64> mergeForkEpoch) {
     this.spec = spec;
     this.constants = constants;
     this.initialState = initialState;
@@ -68,6 +70,7 @@ public class Eth2NetworkConfiguration {
     this.startupTimeoutSeconds = startupTimeoutSeconds;
     this.discoveryBootnodes = discoveryBootnodes;
     this.altairForkEpoch = altairForkEpoch;
+    this.mergeForkEpoch = mergeForkEpoch;
     this.eth1DepositContractAddress =
         eth1DepositContractAddress == null
             ? new Eth1Address(spec.getGenesisSpecConfig().getDepositContractAddress())
@@ -137,6 +140,10 @@ public class Eth2NetworkConfiguration {
     return altairForkEpoch;
   }
 
+  public Optional<UInt64> getMergeForkEpoch() {
+    return mergeForkEpoch;
+  }
+
   @Override
   public String toString() {
     return constants;
@@ -153,6 +160,7 @@ public class Eth2NetworkConfiguration {
     private Optional<UInt64> eth1DepositContractDeployBlock = Optional.empty();
     private boolean balanceAttackMitigationEnabled = false;
     private Optional<UInt64> altairForkEpoch = Optional.empty();
+    private Optional<UInt64> mergeForkEpoch = Optional.empty();
     private Spec spec;
 
     public void spec(Spec spec) {
@@ -162,7 +170,7 @@ public class Eth2NetworkConfiguration {
     public Eth2NetworkConfiguration build() {
       checkNotNull(constants, "Missing constants");
       if (spec == null) {
-        spec = SpecFactory.create(constants, altairForkEpoch);
+        spec = SpecFactory.create(constants, altairForkEpoch, mergeForkEpoch);
       }
       // if the deposit contract was not set, default from constants
       if (eth1DepositContractAddress == null) {
@@ -180,7 +188,8 @@ public class Eth2NetworkConfiguration {
           eth1DepositContractAddress,
           eth1DepositContractDeployBlock,
           balanceAttackMitigationEnabled,
-          altairForkEpoch);
+          altairForkEpoch,
+          mergeForkEpoch);
     }
 
     public Builder constants(final String constants) {
@@ -245,6 +254,11 @@ public class Eth2NetworkConfiguration {
 
     public Builder altairForkEpoch(final UInt64 altairForkEpoch) {
       this.altairForkEpoch = Optional.of(altairForkEpoch);
+      return this;
+    }
+
+    public Builder mergeForkEpoch(final UInt64 mergeForkEpoch) {
+      this.mergeForkEpoch = Optional.of(mergeForkEpoch);
       return this;
     }
 

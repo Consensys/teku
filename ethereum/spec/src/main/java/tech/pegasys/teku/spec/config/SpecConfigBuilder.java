@@ -99,9 +99,12 @@ public class SpecConfigBuilder {
   // Altair
   private Optional<AltairBuilder> altairBuilder = Optional.empty();
 
+  // Merge
+  private Optional<MergeBuilder> mergeBuilder = Optional.empty();
+
   public SpecConfig build() {
     validate();
-    final SpecConfig phase0 =
+    SpecConfig config =
         new SpecConfigPhase0(
             rawConfig,
             eth1FollowDistance,
@@ -153,7 +156,14 @@ public class SpecConfigBuilder {
             depositNetworkId,
             depositContractAddress);
 
-    return altairBuilder.map(b -> (SpecConfig) b.build(phase0)).orElse(phase0);
+    if (altairBuilder.isPresent()) {
+      final SpecConfigAltair altairConfig = altairBuilder.get().build(config);
+      config = altairConfig;
+      if (mergeBuilder.isPresent()) {
+        config = mergeBuilder.get().build(altairConfig);
+      }
+    }
+    return config;
   }
 
   private void validate() {
@@ -559,7 +569,7 @@ public class SpecConfigBuilder {
     private AltairBuilder() {}
 
     SpecConfigAltair build(final SpecConfig specConfig) {
-      return new SpecConfigAltair(
+      return new SpecConfigAltairImpl(
           specConfig,
           inactivityPenaltyQuotientAltair,
           minSlashingPenaltyQuotientAltair,
@@ -647,6 +657,44 @@ public class SpecConfigBuilder {
     public AltairBuilder minSyncCommitteeParticipants(final Integer minSyncCommitteeParticipants) {
       checkNotNull(minSyncCommitteeParticipants);
       this.minSyncCommitteeParticipants = minSyncCommitteeParticipants;
+      return this;
+    }
+  }
+
+  // Merge
+  public SpecConfigBuilder mergeBuilder(final Consumer<MergeBuilder> consumer) {
+    if (mergeBuilder.isEmpty()) {
+      mergeBuilder = Optional.of(new MergeBuilder());
+    }
+    consumer.accept(mergeBuilder.get());
+    return this;
+  }
+
+  public class MergeBuilder {
+    // Fork
+    private Bytes4 mergeForkVersion;
+    private UInt64 mergeForkEpoch;
+
+    private MergeBuilder() {}
+
+    SpecConfigMerge build(final SpecConfigAltair specConfig) {
+      return new SpecConfigMerge(specConfig, mergeForkVersion, mergeForkEpoch);
+    }
+
+    void validate() {
+      validateConstant("mergeForkVersion", mergeForkVersion);
+      validateConstant("mergeForkEpoch", mergeForkEpoch);
+    }
+
+    public MergeBuilder mergeForkVersion(final Bytes4 mergeForkVersion) {
+      checkNotNull(mergeForkVersion);
+      this.mergeForkVersion = mergeForkVersion;
+      return this;
+    }
+
+    public MergeBuilder mergeForkEpoch(final UInt64 mergeForkEpoch) {
+      checkNotNull(mergeForkEpoch);
+      this.mergeForkEpoch = mergeForkEpoch;
       return this;
     }
   }

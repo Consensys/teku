@@ -51,8 +51,6 @@ public class SpecConfigReader {
           PRESET_KEY,
           CONFIG_NAME_KEY,
           // Unsupported, upcoming fork-related keys
-          "MERGE_FORK_VERSION",
-          "MERGE_FORK_EPOCH",
           "SHARDING_FORK_VERSION",
           "SHARDING_FORK_EPOCH",
           "TRANSITION_TOTAL_DIFFICULTY",
@@ -158,6 +156,16 @@ public class SpecConfigReader {
               final String constantKey = camelToSnakeCase(setter.getName());
               final Object rawValue = unprocessedConfig.get(constantKey);
               invokeSetter(setter, configBuilder::altairBuilder, constantKey, rawValue);
+              unprocessedConfig.remove(constantKey);
+            });
+
+    // Process merge config
+    streamConfigSetters(SpecConfigBuilder.MergeBuilder.class)
+        .forEach(
+            setter -> {
+              final String constantKey = camelToSnakeCase(setter.getName());
+              final Object rawValue = unprocessedConfig.get(constantKey);
+              invokeSetter(setter, configBuilder::mergeBuilder, constantKey, rawValue);
               unprocessedConfig.remove(constantKey);
             });
 
