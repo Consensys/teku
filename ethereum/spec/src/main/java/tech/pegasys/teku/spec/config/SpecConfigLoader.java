@@ -69,10 +69,10 @@ public class SpecConfigLoader {
         }
       }
 
-      try (final InputStream altairInput = loadMergePreset(preset).orElse(null)) {
+      try (final InputStream mergeInput = loadMergePreset(preset).orElse(null)) {
         // Merge is optional
-        if (altairInput != null) {
-          processor.processConfig(altairInput);
+        if (mergeInput != null) {
+          processor.processConfig(mergeInput);
         }
       }
     } catch (IOException | IllegalArgumentException e) {

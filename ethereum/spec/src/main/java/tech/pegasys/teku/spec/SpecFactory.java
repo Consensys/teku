@@ -61,11 +61,15 @@ public class SpecFactory {
         config.toVersionAltair().map(SpecConfigAltair::getAltairForkEpoch).orElse(FAR_FUTURE_EPOCH);
     final UInt64 mergeForkEpoch =
         config.toVersionMerge().map(SpecConfigMerge::getMergeForkEpoch).orElse(FAR_FUTURE_EPOCH);
+    final SpecMilestone highestMilestoneSupported;
 
-    final SpecMilestone highestMilestoneSupported =
-        mergeForkEpoch.equals(FAR_FUTURE_EPOCH)
-            ? altairForkEpoch.equals(FAR_FUTURE_EPOCH) ? PHASE0 : ALTAIR
-            : MERGE;
+    if (!mergeForkEpoch.equals(FAR_FUTURE_EPOCH)) {
+      highestMilestoneSupported = MERGE;
+    } else if (!altairForkEpoch.equals(FAR_FUTURE_EPOCH)) {
+      highestMilestoneSupported = ALTAIR;
+    } else {
+      highestMilestoneSupported = PHASE0;
+    }
 
     return Spec.create(config, highestMilestoneSupported);
   }
