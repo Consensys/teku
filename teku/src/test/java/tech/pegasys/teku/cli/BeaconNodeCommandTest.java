@@ -431,7 +431,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .powchain(
             b -> {
               b.depositContract(networkConfig.getEth1DepositContractAddress());
-              b.eth1Endpoints(new ArrayList<String>())
+              b.eth1Endpoints(new ArrayList<>())
                   .depositContractDeployBlock(networkConfig.getEth1DepositContractDeployBlock());
             })
         .storageConfiguration(
@@ -446,7 +446,11 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
             b -> b.metricsCategories(DEFAULT_METRICS_CATEGORIES).metricsPublicationInterval(60))
         .restApi(b -> b.eth1DepositContractAddress(networkConfig.getEth1DepositContractAddress()))
         .p2p(p -> p.peerRateLimit(500).peerRequestLimit(50))
-        .discovery(d -> d.isDiscoveryEnabled(true).bootnodes(networkConfig.getDiscoveryBootnodes()))
+        .discovery(
+            d ->
+                d.isDiscoveryEnabled(true)
+                    .listenUdpPort(9000)
+                    .bootnodes(networkConfig.getDiscoveryBootnodes()))
         .network(
             n ->
                 n.advertisedPort(OptionalInt.empty())
@@ -495,7 +499,13 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .peerRequestLimit(50)
                     .batchVerifyAttestationSignatures(true))
         .discovery(
-            d -> d.isDiscoveryEnabled(false).minPeers(64).maxPeers(74).minRandomlySelectedPeers(12))
+            d ->
+                d.isDiscoveryEnabled(false)
+                    .listenUdpPort(1234)
+                    .advertisedUdpPort(OptionalInt.of(9000))
+                    .minPeers(64)
+                    .maxPeers(74)
+                    .minRandomlySelectedPeers(12))
         .network(
             n ->
                 n.isEnabled(false)

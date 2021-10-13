@@ -14,12 +14,16 @@
 package tech.pegasys.teku.networking.p2p.discovery;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.Builder.DEFAULT_P2P_PORT;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.OptionalInt;
 
 public class DiscoveryConfig {
   private final boolean isDiscoveryEnabled;
+  private final int listenUdpPort;
+  private final OptionalInt advertisedUdpPort;
   private final List<String> staticPeers;
   private final List<String> bootnodes;
   private final int minPeers;
@@ -28,12 +32,16 @@ public class DiscoveryConfig {
 
   private DiscoveryConfig(
       final boolean isDiscoveryEnabled,
+      final int listenUdpPort,
+      final OptionalInt advertisedUdpPort,
       final List<String> staticPeers,
       final List<String> bootnodes,
       final int minPeers,
       final int maxPeers,
       final int minRandomlySelectedPeers) {
     this.isDiscoveryEnabled = isDiscoveryEnabled;
+    this.listenUdpPort = listenUdpPort;
+    this.advertisedUdpPort = advertisedUdpPort;
     this.staticPeers = staticPeers;
     this.bootnodes = bootnodes;
     this.minPeers = minPeers;
@@ -47,6 +55,14 @@ public class DiscoveryConfig {
 
   public boolean isDiscoveryEnabled() {
     return isDiscoveryEnabled;
+  }
+
+  public int getListenUdpPort() {
+    return listenUdpPort;
+  }
+
+  public int getAdvertisedUdpPort() {
+    return advertisedUdpPort.orElse(listenUdpPort);
   }
 
   public List<String> getStaticPeers() {
@@ -76,8 +92,22 @@ public class DiscoveryConfig {
     private int minPeers = 64;
     private int maxPeers = 74;
     private int minRandomlySelectedPeers = 2;
+    private int listenUdpPort = DEFAULT_P2P_PORT;
+    private OptionalInt advertisedUdpPort = OptionalInt.empty();
 
     private Builder() {}
+
+    public DiscoveryConfig build() {
+      return new DiscoveryConfig(
+          isDiscoveryEnabled,
+          listenUdpPort,
+          advertisedUdpPort,
+          staticPeers,
+          bootnodes,
+          minPeers,
+          maxPeers,
+          minRandomlySelectedPeers);
+    }
 
     public Builder isDiscoveryEnabled(final Boolean discoveryEnabled) {
       checkNotNull(discoveryEnabled);
@@ -85,9 +115,15 @@ public class DiscoveryConfig {
       return this;
     }
 
-    public DiscoveryConfig build() {
-      return new DiscoveryConfig(
-          isDiscoveryEnabled, staticPeers, bootnodes, minPeers, maxPeers, minRandomlySelectedPeers);
+    public Builder listenUdpPort(final int listenUdpPort) {
+      this.listenUdpPort = listenUdpPort;
+      return this;
+    }
+
+    public Builder advertisedUdpPort(final OptionalInt advertisedUdpPort) {
+      checkNotNull(advertisedUdpPort);
+      this.advertisedUdpPort = advertisedUdpPort;
+      return this;
     }
 
     public Builder staticPeers(final List<String> staticPeers) {

@@ -86,7 +86,11 @@ public class DiscoveryNetworkFactory {
         final Random random = new Random();
         final int port = MIN_PORT + random.nextInt(MAX_PORT - MIN_PORT);
         final DiscoveryConfig discoveryConfig =
-            DiscoveryConfig.builder().staticPeers(staticPeers).bootnodes(bootnodes).build();
+            DiscoveryConfig.builder()
+                .listenUdpPort(port)
+                .staticPeers(staticPeers)
+                .bootnodes(bootnodes)
+                .build();
         final NetworkConfig config =
             NetworkConfig.builder()
                 .listenPort(port)

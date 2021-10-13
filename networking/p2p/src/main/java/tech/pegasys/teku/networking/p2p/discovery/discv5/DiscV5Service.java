@@ -73,13 +73,14 @@ public class DiscV5Service extends Service implements DiscoveryService {
     this.localNodePrivateKey = privateKey;
     this.currentSchemaDefinitionsSupplier = currentSchemaDefinitionsSupplier;
     final String listenAddress = p2pConfig.getNetworkInterface();
-    final int listenPort = p2pConfig.getListenPort();
+    final int listenUdpPort = discoConfig.getListenUdpPort();
     final String advertisedAddress = p2pConfig.getAdvertisedIp();
-    final int advertisedPort = p2pConfig.getAdvertisedPort();
+    final int advertisedTcpPort = p2pConfig.getAdvertisedPort();
+    final int advertisedUdpPort = discoConfig.getAdvertisedUdpPort();
     final UInt64 seqNo =
         kvStore.get(SEQ_NO_STORE_KEY).map(UInt64::fromBytes).orElse(UInt64.ZERO).add(1);
     final NewAddressHandler maybeUpdateNodeRecordHandler =
-        maybeUpdateNodeRecord(p2pConfig.hasUserExplicitlySetAdvertisedIp(), advertisedPort);
+        maybeUpdateNodeRecord(p2pConfig.hasUserExplicitlySetAdvertisedIp(), advertisedTcpPort);
     this.bootnodes =
         discoConfig.getBootnodes().stream()
             .map(NodeRecordFactory.DEFAULT::fromEnr)
@@ -87,12 +88,12 @@ public class DiscV5Service extends Service implements DiscoveryService {
     final NodeRecordBuilder nodeRecordBuilder =
         new NodeRecordBuilder().privateKey(privateKey).seq(seqNo);
     if (p2pConfig.hasUserExplicitlySetAdvertisedIp()) {
-      nodeRecordBuilder.address(advertisedAddress, advertisedPort);
+      nodeRecordBuilder.address(advertisedAddress, advertisedUdpPort, advertisedTcpPort);
     }
     final NodeRecord localNodeRecord = nodeRecordBuilder.build();
     this.discoverySystem =
         new DiscoverySystemBuilder()
-            .listen(listenAddress, listenPort)
+            .listen(listenAddress, listenUdpPort)
             .privateKey(privateKey)
             .bootnodes(bootnodes)
             .localNodeRecord(localNodeRecord)
@@ -146,7 +147,9 @@ public class DiscV5Service extends Service implements DiscoveryService {
   protected SafeFuture<?> doStop() {
     final Cancellable refreshTask = this.bootnodeRefreshTask;
     this.bootnodeRefreshTask = null;
-    refreshTask.cancel();
+    if (refreshTask != null) {
+      refreshTask.cancel();
+    }
     discoverySystem.stop();
     return SafeFuture.completedFuture(null);
   }

@@ -50,6 +50,13 @@ public class P2POptions {
   private int p2pPort = DEFAULT_P2P_PORT;
 
   @Option(
+      names = {"--p2p-udp-port"},
+      paramLabel = "<INTEGER>",
+      description = "UDP port used for discovery. The default is the port specified in --p2p-port",
+      arity = "1")
+  private Integer p2pUdpPort;
+
+  @Option(
       names = {"--p2p-discovery-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
@@ -79,6 +86,14 @@ public class P2POptions {
       description = "P2P advertised port. The default is the port specified in --p2p-port",
       arity = "1")
   private Integer p2pAdvertisedPort;
+
+  @Option(
+      names = {"--p2p-advertised-udp-port"},
+      paramLabel = "<INTEGER>",
+      description =
+          "Advertised UDP port to external peers. The default is the port specified in --p2p-advertised-port",
+      arity = "1")
+  private Integer p2pAdvertisedUdpPort;
 
   @Option(
       names = {"--p2p-private-key-file"},
@@ -186,6 +201,8 @@ public class P2POptions {
   }
 
   public void configure(final TekuConfiguration.Builder builder) {
+    final OptionalInt advertisedTcpPort =
+        p2pAdvertisedPort == null ? OptionalInt.empty() : OptionalInt.of(p2pAdvertisedPort);
     builder
         .p2p(
             b ->
@@ -199,6 +216,11 @@ public class P2POptions {
                 d.bootnodes(p2pDiscoveryBootnodes);
               }
               d.isDiscoveryEnabled(p2pDiscoveryEnabled)
+                  .listenUdpPort(p2pUdpPort != null ? p2pUdpPort : p2pPort)
+                  .advertisedUdpPort(
+                      p2pAdvertisedUdpPort == null
+                          ? advertisedTcpPort
+                          : OptionalInt.of(p2pAdvertisedUdpPort))
                   .staticPeers(p2pStaticPeers)
                   .minPeers(getP2pLowerBound())
                   .maxPeers(getP2pUpperBound())
@@ -213,10 +235,7 @@ public class P2POptions {
                   .isEnabled(p2pEnabled)
                   .listenPort(p2pPort)
                   .advertisedIp(Optional.ofNullable(p2pAdvertisedIp))
-                  .advertisedPort(
-                      p2pAdvertisedPort == null
-                          ? OptionalInt.empty()
-                          : OptionalInt.of(p2pAdvertisedPort));
+                  .advertisedPort(advertisedTcpPort);
             })
         .sync(s -> s.isSyncEnabled(p2pEnabled).isMultiPeerSyncEnabled(multiPeerSyncEnabled));
   }
