@@ -503,7 +503,10 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             syncCommitteeSubscriptionManager);
     eventChannels
         .subscribe(SlotEventsChannel.class, activeValidatorTracker)
-        .subscribe(ValidatorApiChannel.class, validatorApiHandler);
+        .subscribeMultithreaded(
+            ValidatorApiChannel.class,
+            validatorApiHandler,
+            beaconConfig.beaconRestApiConfig().getValidatorThreads());
 
     // if subscribeAllSubnets is set, the slot events in these handlers are empty,
     // so don't subscribe.

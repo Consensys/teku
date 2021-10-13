@@ -29,6 +29,7 @@ public class BeaconRestApiConfig {
   private final Eth1Address eth1DepositContractAddress;
   private final int maxUrlLength;
   private final int maxPendingEvents;
+  private final int validatorThreads;
 
   private BeaconRestApiConfig(
       final int restApiPort,
@@ -39,7 +40,8 @@ public class BeaconRestApiConfig {
       final List<String> restApiCorsAllowedOrigins,
       final Eth1Address eth1DepositContractAddress,
       final int maxUrlLength,
-      final int maxPendingEvents) {
+      final int maxPendingEvents,
+      final int validatorThreads) {
     this.restApiPort = restApiPort;
     this.restApiDocsEnabled = restApiDocsEnabled;
     this.restApiEnabled = restApiEnabled;
@@ -49,6 +51,7 @@ public class BeaconRestApiConfig {
     this.eth1DepositContractAddress = eth1DepositContractAddress;
     this.maxUrlLength = maxUrlLength;
     this.maxPendingEvents = maxPendingEvents;
+    this.validatorThreads = validatorThreads;
   }
 
   public int getRestApiPort() {
@@ -87,6 +90,10 @@ public class BeaconRestApiConfig {
     return maxUrlLength;
   }
 
+  public int getValidatorThreads() {
+    return validatorThreads;
+  }
+
   public static BeaconRestApiConfigBuilder builder() {
     return new BeaconRestApiConfigBuilder();
   }
@@ -102,6 +109,7 @@ public class BeaconRestApiConfig {
     private Eth1Address eth1DepositContractAddress;
     private int maxPendingEvents;
     private int maxUrlLength;
+    private int validatorThreads;
 
     private BeaconRestApiConfigBuilder() {}
 
@@ -149,6 +157,11 @@ public class BeaconRestApiConfig {
       return this;
     }
 
+    public BeaconRestApiConfigBuilder validatorThreads(final int validatorThreads) {
+      this.validatorThreads = validatorThreads;
+      return this;
+    }
+
     public BeaconRestApiConfig build() {
       return new BeaconRestApiConfig(
           restApiPort,
@@ -159,7 +172,8 @@ public class BeaconRestApiConfig {
           restApiCorsAllowedOrigins,
           eth1DepositContractAddress,
           maxUrlLength,
-          maxPendingEvents);
+          maxPendingEvents,
+          validatorThreads);
     }
 
     public BeaconRestApiConfigBuilder maxUrlLength(final int maxUrlLength) {
