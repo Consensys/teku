@@ -147,7 +147,9 @@ public class DiscV5Service extends Service implements DiscoveryService {
   protected SafeFuture<?> doStop() {
     final Cancellable refreshTask = this.bootnodeRefreshTask;
     this.bootnodeRefreshTask = null;
-    refreshTask.cancel();
+    if (refreshTask != null) {
+      refreshTask.cancel();
+    }
     discoverySystem.stop();
     return SafeFuture.completedFuture(null);
   }
