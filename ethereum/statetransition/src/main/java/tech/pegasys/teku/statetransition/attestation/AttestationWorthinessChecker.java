@@ -26,8 +26,8 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
  * This filter is meant to exclude attestations that pay no rewards, thus not worthy to be included
  * in a block
  *
- * <p>It currently filters out the attestations older than 5 slots having the wrong target (Altair
- * only)
+ * <p>It currently filters out the attestations older than {@code
+ * integerSquareRoot(specVersion.getSlotsPerEpoch())} slots having the wrong target (Altair only)
  */
 public class AttestationWorthinessChecker {
 
