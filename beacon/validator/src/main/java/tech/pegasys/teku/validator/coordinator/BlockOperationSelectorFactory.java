@@ -1,0 +1,122 @@
+/*
+ * Copyright 2021 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
+package tech.pegasys.teku.validator.coordinator;
+
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Consumer;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.statetransition.OperationPool;
+import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
+import tech.pegasys.teku.statetransition.attestation.AttestationForkChecker;
+import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
+
+public class BlockOperationSelectorFactory {
+
+  private final Spec spec;
+  private final AggregatingAttestationPool attestationPool;
+  private final OperationPool<AttesterSlashing> attesterSlashingPool;
+  private final OperationPool<ProposerSlashing> proposerSlashingPool;
+  private final OperationPool<SignedVoluntaryExit> voluntaryExitPool;
+  private final SyncCommitteeContributionPool contributionPool;
+  private final DepositProvider depositProvider;
+  private final Eth1DataCache eth1DataCache;
+  private final Bytes32 graffiti;
+
+  public BlockOperationSelectorFactory(
+      final Spec spec,
+      final AggregatingAttestationPool attestationPool,
+      final OperationPool<AttesterSlashing> attesterSlashingPool,
+      final OperationPool<ProposerSlashing> proposerSlashingPool,
+      final OperationPool<SignedVoluntaryExit> voluntaryExitPool,
+      final SyncCommitteeContributionPool contributionPool,
+      final DepositProvider depositProvider,
+      final Eth1DataCache eth1DataCache,
+      final Bytes32 graffiti) {
+    this.spec = spec;
+    this.attestationPool = attestationPool;
+    this.attesterSlashingPool = attesterSlashingPool;
+    this.proposerSlashingPool = proposerSlashingPool;
+    this.voluntaryExitPool = voluntaryExitPool;
+    this.contributionPool = contributionPool;
+    this.depositProvider = depositProvider;
+    this.eth1DataCache = eth1DataCache;
+    this.graffiti = graffiti;
+  }
+
+  public Consumer<BeaconBlockBodyBuilder> createSelector(
+      final Bytes32 parentRoot,
+      final BeaconState blockSlotState,
+      final BLSSignature randaoReveal,
+      final Optional<Bytes32> optionalGraffiti) {
+    return bodyBuilder -> {
+      final Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockSlotState);
+
+      SszList<Attestation> attestations =
+          attestationPool.getAttestationsForBlock(
+              blockSlotState, new AttestationForkChecker(spec, blockSlotState));
+
+      // Collect slashings to include
+      final Set<UInt64> slashedValidators = new HashSet<>();
+      final SszList<AttesterSlashing> attesterSlashings =
+          attesterSlashingPool.getItemsForBlock(
+              blockSlotState,
+              slashing ->
+                  !slashedValidators.containsAll(slashing.getIntersectingValidatorIndices()),
+              slashing -> slashedValidators.addAll(slashing.getIntersectingValidatorIndices()));
+
+      final SszList<ProposerSlashing> proposerSlashings =
+          proposerSlashingPool.getItemsForBlock(
+              blockSlotState,
+              slashing ->
+                  !slashedValidators.contains(
+                      slashing.getHeader_1().getMessage().getProposerIndex()),
+              slashing ->
+                  slashedValidators.add(slashing.getHeader_1().getMessage().getProposerIndex()));
+
+      // Collect exits to include
+      final SszList<SignedVoluntaryExit> voluntaryExits =
+          voluntaryExitPool.getItemsForBlock(
+              blockSlotState,
+              exit -> !slashedValidators.contains(exit.getMessage().getValidatorIndex()),
+              exit -> {});
+
+      bodyBuilder
+          .randaoReveal(randaoReveal)
+          .eth1Data(eth1Data)
+          .graffiti(optionalGraffiti.orElse(graffiti))
+          .attestations(attestations)
+          .proposerSlashings(proposerSlashings)
+          .attesterSlashings(attesterSlashings)
+          .deposits(depositProvider.getDeposits(blockSlotState, eth1Data))
+          .voluntaryExits(voluntaryExits)
+          .syncAggregate(
+              () ->
+                  contributionPool.createSyncAggregateForBlock(
+                      blockSlotState.getSlot(), parentRoot));
+    };
+  }
+}

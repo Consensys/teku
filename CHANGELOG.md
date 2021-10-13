@@ -20,6 +20,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Additions and Improvements
 - Added `validator_local_validator_counts` metric to report number of local validators by current status.
 - Upgraded dependencies `io.netty`, `okhttp` and `io.vertex`.
+- Maximize revenue from attester slashings by prioritising slashings that involve more validators first.
 
 
 ### Bug Fixes
