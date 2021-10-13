@@ -523,7 +523,7 @@ class AggregatingAttestationPoolTest {
                 .getBlockRootAtSlot(stateAtBlockSlot, ZERO));
     final var wrongTarget = dataStructureUtil.randomCheckpoint();
 
-    final AttestationData attestationData1_OldSlot_TargetOK =
+    final AttestationData attestationData1_SlotOld_TargetOK =
         new AttestationData(
             UInt64.valueOf(1),
             referenceAttestationData.getIndex().plus(1),
@@ -531,7 +531,7 @@ class AggregatingAttestationPoolTest {
             referenceAttestationData.getSource(),
             correctTarget);
 
-    final AttestationData attestationData2_OldSlot_TargetWrong =
+    final AttestationData attestationData2_SlotOld_TargetWrong =
         new AttestationData(
             UInt64.valueOf(3),
             referenceAttestationData.getIndex().plus(2),
@@ -539,7 +539,7 @@ class AggregatingAttestationPoolTest {
             referenceAttestationData.getSource(),
             wrongTarget);
 
-    final AttestationData attestationData3_OKSlot_TargetWrong =
+    final AttestationData attestationData3_SlotOK_TargetWrong =
         new AttestationData(
             UInt64.valueOf(5),
             referenceAttestationData.getIndex().plus(3),
@@ -547,7 +547,7 @@ class AggregatingAttestationPoolTest {
             referenceAttestationData.getSource(),
             wrongTarget);
 
-    final AttestationData attestationData4_OKSlot_TargetOK =
+    final AttestationData attestationData4_SlotOK_TargetOK =
         new AttestationData(
             UInt64.valueOf(7),
             referenceAttestationData.getIndex().plus(4),
@@ -556,13 +556,13 @@ class AggregatingAttestationPoolTest {
             correctTarget);
 
     final Attestation attestation1 =
-        addAttestationFromValidators(attestationData1_OldSlot_TargetOK, 1, 2);
+        addAttestationFromValidators(attestationData1_SlotOld_TargetOK, 1, 2);
     final Attestation attestation2 =
-        addAttestationFromValidators(attestationData2_OldSlot_TargetWrong, 3, 4);
+        addAttestationFromValidators(attestationData2_SlotOld_TargetWrong, 3, 4);
     final Attestation attestation3 =
-        addAttestationFromValidators(attestationData3_OKSlot_TargetWrong, 5, 6);
+        addAttestationFromValidators(attestationData3_SlotOK_TargetWrong, 5, 6);
     final Attestation attestation4 =
-        addAttestationFromValidators(attestationData4_OKSlot_TargetOK, 7, 8);
+        addAttestationFromValidators(attestationData4_SlotOK_TargetOK, 7, 8);
 
     switch (milestone) {
       case PHASE0:
@@ -584,5 +584,23 @@ class AggregatingAttestationPoolTest {
       default:
         throw new IllegalStateException("unsupported milestone");
     }
+  }
+
+  @Test
+  void getAttestationsForBlock_shouldIncludeAttestationCloseToGenesis() {
+    spec = TestSpecFactory.createMainnetAltair();
+    dataStructureUtil = new DataStructureUtil(spec);
+
+    final var attestationData = dataStructureUtil.randomAttestationData(UInt64.valueOf(1));
+    final BeaconState stateAtBlockSlot = dataStructureUtil.randomBeaconState(UInt64.valueOf(2));
+
+    final Attestation attestation = addAttestationFromValidators(attestationData, 1, 2);
+
+    assertThat(
+            aggregatingPool.getAttestationsForBlock(
+                stateAtBlockSlot,
+                forkChecker,
+                new AttestationWorthinessChecker(spec, stateAtBlockSlot)))
+        .containsExactly(attestation);
   }
 }
