@@ -50,7 +50,7 @@ public class AttestationWorthinessChecker {
               : specVersion.beaconStateAccessors().getBlockRootAtSlot(state, start_slot);
 
       oldestAcceptedAttestationSlot =
-          state.getSlot().minus(integerSquareRoot(specVersion.getSlotsPerEpoch()));
+          state.getSlot().minusMinZero(integerSquareRoot(specVersion.getSlotsPerEpoch()));
     } else {
       oldestAcceptedAttestationSlot = null;
       expectedAttestationTarget = null;
