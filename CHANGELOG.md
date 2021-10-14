@@ -29,3 +29,5 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Bug Fixes
  - Fixed a possible crash on shutdown when using levelDb.
  - Set an idle timeout for metrics connections, to clean up ports when no longer used
+ - Fixed error when building from a source download rather than a git checkout.
+   Now logs a warning when building without git information to warn users that version information will not be available.
