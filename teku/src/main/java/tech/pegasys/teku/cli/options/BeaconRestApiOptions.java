@@ -101,6 +101,13 @@ public class BeaconRestApiOptions {
     this.maxUrlLength = maxUrlLength;
   }
 
+  @Option(
+      names = {"--Xrest-api-validator-threads"},
+      description = "Set the number of threads used to handle validator api requests",
+      paramLabel = "<INTEGER>",
+      hidden = true)
+  private int validatorThreads = 1;
+
   public void configure(final TekuConfiguration.Builder builder) {
     builder.restApi(
         restApiBuilder ->
@@ -112,6 +119,7 @@ public class BeaconRestApiOptions {
                 .restApiHostAllowlist(restApiHostAllowlist)
                 .restApiCorsAllowedOrigins(restApiCorsAllowedOrigins)
                 .maxUrlLength(maxUrlLength)
-                .maxPendingEvents(maxPendingEvents));
+                .maxPendingEvents(maxPendingEvents)
+                .validatorThreads(validatorThreads));
   }
 }

@@ -225,7 +225,7 @@ allprojects {
   }
 }
 
-def refTestVersion = 'v1.1.0'
+def refTestVersion = 'v1.1.2'
 def blsRefTestVersion = 'v0.1.0'
 def refTestBaseUrl = 'https://github.com/ethereum/eth2.0-spec-tests/releases/download'
 def blsRefTestBaseUrl = 'https://github.com/ethereum/bls12-381-tests/releases/download'
@@ -407,8 +407,7 @@ tasks.register("dockerDistUntar") {
 
 def dockerVariants = [
   "jdk16",
-  "jdk15",
-  "jdk14",
+  "jdk17",
 ]
 
 task distDocker  {
@@ -688,7 +687,7 @@ def buildTime() {
 // Otherwise, use develop
 def calculatePublishVersion() {
   if (!grgit) {
-    return 'UNKNOWN'
+    return 'develop'
   }
   def specificVersion = calculateVersion()
   def isReleaseBranch = grgit.branch.current().name.startsWith('release-')
@@ -703,7 +702,8 @@ def calculatePublishVersion() {
 // Otherwise use git describe --tags and replace the - after the tag with a +
 def calculateVersion() {
   if (!grgit) {
-    return 'UNKNOWN'
+    logger.warn("Not building from a git checkout. Version information will not be available. Building from a git checkout is strongly recommended.")
+    return 'UNKNOWN+develop'
   }
   String version = grgit.describe(tags: true)
   if (version == null) {
