@@ -24,6 +24,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - Added JDK 17 docker images. The JDK 16 based images remain the default, append `-jdk17` to the docker image version to use the JDK 17 variant. 
 - Upgraded dependencies `io.netty`, `okhttp` and `io.vertex`.
 - Added new `--p2p-udp-port` and `--p2p-advertised-udp-port` options to support using different ports for TCP and UDP.
+- Added an additional bootnode for the Prater testnet.
 - Maximize revenue from attester slashings by prioritising slashings that involve more validators first.
 
 
