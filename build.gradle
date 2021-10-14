@@ -687,7 +687,7 @@ def buildTime() {
 // Otherwise, use develop
 def calculatePublishVersion() {
   if (!grgit) {
-    return 'UNKNOWN'
+    return 'develop'
   }
   def specificVersion = calculateVersion()
   def isReleaseBranch = grgit.branch.current().name.startsWith('release-')
@@ -702,7 +702,8 @@ def calculatePublishVersion() {
 // Otherwise use git describe --tags and replace the - after the tag with a +
 def calculateVersion() {
   if (!grgit) {
-    return 'UNKNOWN'
+    logger.warn("Not building from a git checkout. Version information will not be available. Checkout out source from git is strongly recommended.")
+    return 'UNKNOWN+develop'
   }
   String version = grgit.describe(tags: true)
   if (version == null) {
