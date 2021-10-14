@@ -23,12 +23,13 @@ For information on changes in released versions of Teku, see the [releases page]
 - Added `validator_local_validator_counts` metric to report number of local validators by current status.
 - Added JDK 17 docker images. The JDK 16 based images remain the default, append `-jdk17` to the docker image version to use the JDK 17 variant. 
 - Upgraded dependencies `io.netty`, `okhttp` and `io.vertex`.
+- Upgraded to BLST 0.3.6.
 - Added new `--p2p-udp-port` and `--p2p-advertised-udp-port` options to support using different ports for TCP and UDP.
 - Added an additional bootnode for the Prater testnet.
 
 
 ### Bug Fixes
  - Fixed a possible crash on shutdown when using levelDb.
- - Set an idle timeout for metrics connections, to clean up ports when no longer used
+ - Set an idle timeout for metrics connections, to clean up ports when no longer used.
  - Fixed error when building from a source download rather than a git checkout.
    Now logs a warning when building without git information to warn users that version information will not be available.
