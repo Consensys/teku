@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.statetransition.attestation.AttestationWorthinessChecker;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.schema.SszListSchema;
 import tech.pegasys.teku.util.config.Constants;
@@ -134,7 +135,8 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
       final BeaconState stateAtBlockSlot, final AttestationForkChecker forkChecker) {
     final UInt64 currentEpoch = spec.getCurrentEpoch(stateAtBlockSlot);
     final int previousEpochLimit = spec.getPreviousEpochAttestationCapacity(stateAtBlockSlot);
-    final var worthinessChecker = spec.createAttestationWorthinessChecker(stateAtBlockSlot);
+    final AttestationWorthinessChecker worthinessChecker =
+        spec.createAttestationWorthinessChecker(stateAtBlockSlot);
 
     final AtomicInteger prevEpochCount = new AtomicInteger(0);
     return dataHashBySlot.descendingMap().values().stream()

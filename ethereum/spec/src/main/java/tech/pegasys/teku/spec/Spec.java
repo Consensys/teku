@@ -68,7 +68,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
-import tech.pegasys.teku.spec.logic.versions.altair.statetransition.attestation.AttestationWorthinessCheckerAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.ssz.collections.SszBitlist;
 import tech.pegasys.teku.ssz.type.Bytes4;
@@ -607,11 +606,7 @@ public class Spec {
   }
 
   public AttestationWorthinessChecker createAttestationWorthinessChecker(final BeaconState state) {
-    return forkSchedule
-            .getSpecMilestoneAtSlot(state.getSlot())
-            .isGreaterThanOrEqualTo(SpecMilestone.ALTAIR)
-        ? new AttestationWorthinessCheckerAltair(this, state)
-        : AttestationWorthinessChecker.NOOP;
+    return atState(state).createAttestationWorthinessChecker(state);
   }
 
   // Private helpers

@@ -48,8 +48,7 @@ public class AttestationWorthinessCheckerAltairTest {
             referenceAttestationData.getSource(),
             correctTarget);
 
-    assertThat(
-            new AttestationWorthinessCheckerAltair(spec, state).areAttestationsWorthy(attestation))
+    assertThat(spec.createAttestationWorthinessChecker(state).areAttestationsWorthy(attestation))
         .isTrue();
   }
 
@@ -63,8 +62,7 @@ public class AttestationWorthinessCheckerAltairTest {
             referenceAttestationData.getSource(),
             wrongTarget);
 
-    assertThat(
-            new AttestationWorthinessCheckerAltair(spec, state).areAttestationsWorthy(attestation))
+    assertThat(spec.createAttestationWorthinessChecker(state).areAttestationsWorthy(attestation))
         .isFalse();
   }
 
@@ -78,8 +76,7 @@ public class AttestationWorthinessCheckerAltairTest {
             referenceAttestationData.getSource(),
             wrongTarget);
 
-    assertThat(
-            new AttestationWorthinessCheckerAltair(spec, state).areAttestationsWorthy(attestation))
+    assertThat(spec.createAttestationWorthinessChecker(state).areAttestationsWorthy(attestation))
         .isTrue();
   }
 
@@ -93,8 +90,7 @@ public class AttestationWorthinessCheckerAltairTest {
             referenceAttestationData.getSource(),
             correctTarget);
 
-    assertThat(
-            new AttestationWorthinessCheckerAltair(spec, state).areAttestationsWorthy(attestation))
+    assertThat(spec.createAttestationWorthinessChecker(state).areAttestationsWorthy(attestation))
         .isTrue();
   }
 
@@ -111,7 +107,7 @@ public class AttestationWorthinessCheckerAltairTest {
             wrongTarget);
 
     assertThat(
-            new AttestationWorthinessCheckerAltair(spec, closeToGenesisState)
+            spec.createAttestationWorthinessChecker(closeToGenesisState)
                 .areAttestationsWorthy(attestation))
         .isTrue();
   }

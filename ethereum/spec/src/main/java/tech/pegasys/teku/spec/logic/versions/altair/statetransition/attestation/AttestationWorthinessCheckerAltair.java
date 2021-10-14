@@ -13,14 +13,9 @@
 
 package tech.pegasys.teku.spec.logic.versions.altair.statetransition.attestation;
 
-import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.integerSquareRoot;
-
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.attestation.AttestationWorthinessChecker;
 
 /**
@@ -35,20 +30,10 @@ public class AttestationWorthinessCheckerAltair implements AttestationWorthiness
   private final Bytes32 expectedAttestationTarget;
   private final UInt64 oldestWorthySlotForSourceReward;
 
-  public AttestationWorthinessCheckerAltair(final Spec spec, final BeaconState state) {
-    UInt64 currentSlot = state.getSlot();
-    SpecVersion specVersion = spec.atSlot(currentSlot);
-
-    UInt64 start_slot =
-        specVersion.miscHelpers().computeStartSlotAtEpoch(spec.computeEpochAtSlot(currentSlot));
-
-    expectedAttestationTarget =
-        start_slot.compareTo(currentSlot) == 0 || state.getSlot().compareTo(start_slot) <= 0
-            ? state.getLatest_block_header().getRoot()
-            : specVersion.beaconStateAccessors().getBlockRootAtSlot(state, start_slot);
-
-    oldestWorthySlotForSourceReward =
-        state.getSlot().minusMinZero(integerSquareRoot(specVersion.getSlotsPerEpoch()));
+  public AttestationWorthinessCheckerAltair(
+      final Bytes32 expectedAttestationTarget, final UInt64 oldestWorthySlotForSourceReward) {
+    this.expectedAttestationTarget = expectedAttestationTarget;
+    this.oldestWorthySlotForSourceReward = oldestWorthySlotForSourceReward;
   }
 
   @Override
