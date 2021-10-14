@@ -80,29 +80,28 @@ public class BlockOperationSelectorFactory {
               blockSlotState, new AttestationForkChecker(spec, blockSlotState));
 
       // Collect slashings to include
-      final Set<UInt64> slashedValidators = new HashSet<>();
+      final Set<UInt64> exitedValidators = new HashSet<>();
       final SszList<AttesterSlashing> attesterSlashings =
           attesterSlashingPool.getItemsForBlock(
               blockSlotState,
-              slashing ->
-                  !slashedValidators.containsAll(slashing.getIntersectingValidatorIndices()),
-              slashing -> slashedValidators.addAll(slashing.getIntersectingValidatorIndices()));
+              slashing -> !exitedValidators.containsAll(slashing.getIntersectingValidatorIndices()),
+              slashing -> exitedValidators.addAll(slashing.getIntersectingValidatorIndices()));
 
       final SszList<ProposerSlashing> proposerSlashings =
           proposerSlashingPool.getItemsForBlock(
               blockSlotState,
               slashing ->
-                  !slashedValidators.contains(
+                  !exitedValidators.contains(
                       slashing.getHeader_1().getMessage().getProposerIndex()),
               slashing ->
-                  slashedValidators.add(slashing.getHeader_1().getMessage().getProposerIndex()));
+                  exitedValidators.add(slashing.getHeader_1().getMessage().getProposerIndex()));
 
       // Collect exits to include
       final SszList<SignedVoluntaryExit> voluntaryExits =
           voluntaryExitPool.getItemsForBlock(
               blockSlotState,
-              exit -> !slashedValidators.contains(exit.getMessage().getValidatorIndex()),
-              exit -> {});
+              exit -> !exitedValidators.contains(exit.getMessage().getValidatorIndex()),
+              exit -> exitedValidators.add(exit.getMessage().getValidatorIndex()));
 
       bodyBuilder
           .randaoReveal(randaoReveal)

@@ -193,6 +193,10 @@ class BlockOperationSelectorFactoryTest {
         dataStructureUtil.randomSignedVoluntaryExit(UInt64.valueOf(60));
     final SignedVoluntaryExit voluntaryExit2 =
         dataStructureUtil.randomSignedVoluntaryExit(UInt64.valueOf(65));
+    final SignedVoluntaryExit voluntaryExit3 =
+        dataStructureUtil.randomSignedVoluntaryExit(UInt64.valueOf(69));
+    final SignedVoluntaryExit voluntaryExit4 =
+        dataStructureUtil.randomSignedVoluntaryExit(UInt64.valueOf(69));
     final ProposerSlashing proposerSlashing1 =
         dataStructureUtil.randomProposerSlashing(UInt64.ONE, UInt64.valueOf(60));
     final ProposerSlashing proposerSlashing2 =
@@ -207,6 +211,8 @@ class BlockOperationSelectorFactoryTest {
         dataStructureUtil.randomSignedContributionAndProof(1, parentRoot);
     addToPool(voluntaryExitPool, voluntaryExit1);
     addToPool(voluntaryExitPool, voluntaryExit2);
+    addToPool(voluntaryExitPool, voluntaryExit3);
+    addToPool(voluntaryExitPool, voluntaryExit4);
     addToPool(proposerSlashingPool, proposerSlashing1);
     addToPool(proposerSlashingPool, proposerSlashing2);
     addToPool(attesterSlashingPool, attesterSlashing1);
@@ -229,7 +235,7 @@ class BlockOperationSelectorFactoryTest {
     assertThat(bodyBuilder.graffiti).isEqualTo(defaultGraffiti);
     assertThat(bodyBuilder.proposerSlashings).isEmpty();
     assertThat(bodyBuilder.attesterSlashings).containsOnly(attesterSlashing1);
-    assertThat(bodyBuilder.voluntaryExits).isEmpty();
+    assertThat(bodyBuilder.voluntaryExits).containsOnly(voluntaryExit3);
     assertThat(bodyBuilder.syncAggregate)
         .isEqualTo(
             spec.getSyncCommitteeUtilRequired(slot)
