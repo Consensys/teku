@@ -183,6 +183,7 @@ public class DatabaseMigrater {
             DEFAULT_STORAGE_FREQUENCY,
             config.getEth1DepositContractAddress(),
             true,
+            0,
             spec);
     final Database database = databaseFactory.createDatabase();
     if (!(database instanceof KvStoreDatabase)) {

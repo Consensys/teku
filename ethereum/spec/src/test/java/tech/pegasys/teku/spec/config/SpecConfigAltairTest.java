@@ -69,7 +69,7 @@ public class SpecConfigAltairTest {
   private SpecConfigAltair createRandomAltairConfig(final SpecConfig phase0Config, final int seed) {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
 
-    return new SpecConfigAltair(
+    return new SpecConfigAltairImpl(
         phase0Config,
         dataStructureUtil.randomUInt64(),
         dataStructureUtil.randomPositiveInt(),

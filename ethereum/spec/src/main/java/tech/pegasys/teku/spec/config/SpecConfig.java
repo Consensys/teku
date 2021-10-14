@@ -138,4 +138,8 @@ public interface SpecConfig {
   default Optional<SpecConfigAltair> toVersionAltair() {
     return Optional.empty();
   }
+
+  default Optional<SpecConfigMerge> toVersionMerge() {
+    return Optional.empty();
+  }
 }

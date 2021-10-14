@@ -45,7 +45,6 @@ public class PortAvailabilityTest {
     try (final ServerSocket serverSocket = new ServerSocket(0)) {
       final int port = serverSocket.getLocalPort();
       Assertions.assertThat(PortAvailability.isPortAvailableForTcp(port)).isFalse();
-      Assertions.assertThat(PortAvailability.isPortAvailable(port)).isFalse();
     }
   }
 
@@ -53,14 +52,12 @@ public class PortAvailabilityTest {
   void shouldDetectPortAvailableForTcp() {
     final int port = 0;
     Assertions.assertThat(PortAvailability.isPortAvailableForTcp(port)).isTrue();
-    Assertions.assertThat(PortAvailability.isPortAvailable(port)).isTrue();
   }
 
   @Test
   void shouldDetectPortAvailableForUdp() {
     final int port = 0;
     Assertions.assertThat(PortAvailability.isPortAvailableForUdp(port)).isTrue();
-    Assertions.assertThat(PortAvailability.isPortAvailable(port)).isTrue();
   }
 
   @Test
@@ -68,7 +65,6 @@ public class PortAvailabilityTest {
     try (final DatagramSocket datagramSocket = new DatagramSocket(0)) {
       final int port = datagramSocket.getPort();
       Assertions.assertThat(PortAvailability.isPortAvailableForUdp(port)).isFalse();
-      Assertions.assertThat(PortAvailability.isPortAvailable(port)).isFalse();
     }
   }
 }
