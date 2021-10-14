@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.attestation;
+package tech.pegasys.teku.spec.logic.versions.altair.statetransition.attestation;
 
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.integerSquareRoot;
 
@@ -19,7 +19,9 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.statetransition.attestation.AttestationWorthinessChecker;
 
 /**
  * This filter is meant to exclude attestations that pay no rewards, thus not worthy to be included
@@ -50,9 +52,7 @@ public class AttestationWorthinessCheckerAltair implements AttestationWorthiness
   }
 
   @Override
-  public boolean areAttestationsWorthy(final MatchingDataAttestationGroup attestationGroup) {
-    final var attestationData = attestationGroup.getAttestationData();
-
+  public boolean areAttestationsWorthy(final AttestationData attestationData) {
     return attestationData.getSlot().isGreaterThanOrEqualTo(oldestWorthySlotForSourceReward)
         || attestationData.getTarget().getRoot().equals(expectedAttestationTarget);
   }

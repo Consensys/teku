@@ -11,21 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.attestation;
+package tech.pegasys.teku.spec.logic.common.statetransition.attestation;
 
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 
 public interface AttestationWorthinessChecker {
   AttestationWorthinessChecker NOOP = attestationGroup -> true;
 
-  static AttestationWorthinessChecker createAttestationWorthinessChecker(
-      final Spec spec, final BeaconState state) {
-    return spec.atSlot(state.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ALTAIR)
-        ? new AttestationWorthinessCheckerAltair(spec, state)
-        : AttestationWorthinessChecker.NOOP;
-  }
-
-  boolean areAttestationsWorthy(final MatchingDataAttestationGroup attestationGroup);
+  boolean areAttestationsWorthy(final AttestationData attestationData);
 }

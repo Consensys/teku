@@ -59,6 +59,7 @@ import tech.pegasys.teku.spec.genesis.GenesisGenerator;
 import tech.pegasys.teku.spec.logic.StateTransition;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
+import tech.pegasys.teku.spec.logic.common.statetransition.attestation.AttestationWorthinessChecker;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
@@ -67,6 +68,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
+import tech.pegasys.teku.spec.logic.versions.altair.statetransition.attestation.AttestationWorthinessCheckerAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.ssz.collections.SszBitlist;
 import tech.pegasys.teku.ssz.type.Bytes4;
@@ -602,6 +604,14 @@ public class Spec {
         .getAttestationUtil()
         .isValidIndexedAttestationAsync(
             getForkAtSlot(slot), state, attestation, blsSignatureVerifier);
+  }
+
+  public AttestationWorthinessChecker createAttestationWorthinessChecker(final BeaconState state) {
+    return forkSchedule
+            .getSpecMilestoneAtSlot(state.getSlot())
+            .isGreaterThanOrEqualTo(SpecMilestone.ALTAIR)
+        ? new AttestationWorthinessCheckerAltair(this, state)
+        : AttestationWorthinessChecker.NOOP;
   }
 
   // Private helpers
