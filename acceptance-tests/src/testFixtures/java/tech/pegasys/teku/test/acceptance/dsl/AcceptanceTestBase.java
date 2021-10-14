@@ -36,7 +36,7 @@ public class AcceptanceTestBase {
 
   private final SimpleHttpClient httpClient = new SimpleHttpClient();
   private final List<Node> nodes = new ArrayList<>();
-  private final Network network = Network.newNetwork();
+  private Network network = Network.newNetwork();
   private final GenesisStateGenerator genesisStateGenerator = new GenesisStateGenerator();
 
   @AfterEach
@@ -51,6 +51,16 @@ public class AcceptanceTestBase {
 
   protected TekuNode createTekuNode(final Consumer<TekuNode.Config> configOptions) {
     try {
+      return addNode(TekuNode.create(httpClient, network, configOptions, genesisStateGenerator));
+    } catch (IOException | TimeoutException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  protected TekuNode createTekuNode(
+      final Consumer<TekuNode.Config> configOptions, final StubNode stubServer) {
+    try {
+      this.network = stubServer.getNetwork();
       return addNode(TekuNode.create(httpClient, network, configOptions, genesisStateGenerator));
     } catch (IOException | TimeoutException e) {
       throw new RuntimeException(e);

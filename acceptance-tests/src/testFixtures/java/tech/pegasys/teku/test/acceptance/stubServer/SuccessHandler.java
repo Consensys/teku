@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.test.acceptance.dsl;
+package tech.pegasys.teku.test.acceptance.stubServer;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -20,17 +20,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
-import org.apache.commons.io.IOUtils;
 
 public class SuccessHandler implements HttpHandler {
 
-  private String responseBody = "";
-
-  public SuccessHandler() {}
-
-  public SuccessHandler(String body) {
-    this.responseBody = body;
-  }
+  private String responseBody;
 
   public String getResponse() {
     return this.responseBody;
@@ -39,7 +32,8 @@ public class SuccessHandler implements HttpHandler {
   @Override
   public void handle(HttpExchange exchange) throws IOException {
     InputStream is = exchange.getRequestBody();
-    this.responseBody = IOUtils.toString(is, StandardCharsets.UTF_8);
+    this.responseBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+    System.out.println(this.responseBody);
     String response = "ok";
     exchange.getResponseHeaders().add("Content-Type", "application/json");
     exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, response.length());

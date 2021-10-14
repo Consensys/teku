@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.test.acceptance.dsl;
+package tech.pegasys.teku.test.acceptance.stubServer;
 
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -19,15 +19,13 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 
 public class RemoteMetricsServiceStub {
-
-  public static final int PORT = 8001;
   private HttpServer server;
 
   public RemoteMetricsServiceStub(InetSocketAddress inetSocketAddress) throws IOException {
     server = HttpServer.create(inetSocketAddress, 0);
   }
 
-  public void startServer() throws Throwable {
+  public void startServer() {
     server.setExecutor(null);
     server.start();
   }

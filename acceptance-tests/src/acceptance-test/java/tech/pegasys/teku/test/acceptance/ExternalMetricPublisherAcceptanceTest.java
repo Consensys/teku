@@ -15,40 +15,56 @@ package tech.pegasys.teku.test.acceptance;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
-import tech.pegasys.teku.test.acceptance.dsl.RemoteMetricsServiceStub;
-import tech.pegasys.teku.test.acceptance.dsl.SuccessHandler;
+import tech.pegasys.teku.test.acceptance.dsl.StubNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 
 public class ExternalMetricPublisherAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   void shouldPublishDataFromPrometheus() throws Throwable {
-    InetAddress ip = InetAddress.getLocalHost();
-    String serverIp = ip.getHostAddress();
-    InetSocketAddress isa = new InetSocketAddress(serverIp, 8001);
 
-    String metricServerAddress = "http://" + serverIp;
-
-    SuccessHandler successHandler = new SuccessHandler();
-    RemoteMetricsServiceStub server = new RemoteMetricsServiceStub(isa);
-
-    server.registerHandler("/metrics", successHandler);
-    server.startServer();
+    StubNode stubNode = StubNode.create();
+    stubNode.start();
+    String metricServerAddress = "http://" + stubNode.getContainerNetworkAlias();
 
     final TekuNode node =
         createTekuNode(
             config ->
                 config.withExternalMetricsClient(
-                    metricServerAddress + ":" + RemoteMetricsServiceStub.PORT + "/metrics", 1));
+                    metricServerAddress + ":" + StubNode.STUB_PORT + "/", 1),
+            stubNode);
     node.start();
 
     node.waitForNewBlock();
 
-    assertThat(successHandler.getResponse()).contains("version");
-    server.stopServer();
+    String data = readReply(stubNode);
+    assertThat(data).contains("version");
+
+    node.stop();
+    stubNode.stop();
+  }
+
+  private String readReply(StubNode n) {
+    String data = "";
+    try {
+      String s = n.getAddress() + "/content";
+      URL url = new URL(s);
+      HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+      conn.setRequestMethod("GET");
+      conn.setRequestProperty("Accept", "application/json");
+      if (conn.getResponseCode() != 200) {
+        throw new RuntimeException("Failed : HTTP Error code : " + conn.getResponseCode());
+      }
+      data = new String(conn.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+      conn.disconnect();
+    } catch (Exception e) {
+      System.out.println(e);
+    }
+    return data;
   }
 }

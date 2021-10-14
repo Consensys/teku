@@ -32,6 +32,7 @@ import org.apache.commons.compress.utils.IOUtils;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.output.OutputFrame;
+import org.testcontainers.images.builder.ImageFromDockerfile;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 
 public abstract class Node {
@@ -58,6 +59,12 @@ public abstract class Node {
             .withNetwork(network)
             .withNetworkAliases(nodeAlias)
             .withLogConsumer(frame -> log.debug(frame.getUtf8String().trim()));
+  }
+
+  protected Node(final Network network, final ImageFromDockerfile image) {
+    this.nodeAlias =
+        getClass().getSimpleName().toLowerCase(Locale.US) + NODE_UNIQUIFIER.incrementAndGet();
+    this.container = new NodeContainer(image).withNetwork(network).withNetworkAliases(nodeAlias);
   }
 
   public void stop() {
