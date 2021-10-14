@@ -581,7 +581,10 @@ class AggregatingAttestationPoolTest {
       case PHASE0:
         assertThat(
                 aggregatingPool.getAttestationsForBlock(
-                    stateAtBlockSlot, forkChecker, AttestationWorthinessChecker.NOOP))
+                    stateAtBlockSlot,
+                    forkChecker,
+                    AttestationWorthinessChecker.createAttestationWorthinessChecker(
+                        spec, stateAtBlockSlot)))
             .containsExactly(attestation4, attestation3, attestation2, attestation1);
         break;
       case ALTAIR:
@@ -589,7 +592,8 @@ class AggregatingAttestationPoolTest {
                 aggregatingPool.getAttestationsForBlock(
                     stateAtBlockSlot,
                     forkChecker,
-                    new AttestationWorthinessCheckerAltair(spec, stateAtBlockSlot)))
+                    AttestationWorthinessChecker.createAttestationWorthinessChecker(
+                        spec, stateAtBlockSlot)))
             .containsExactly(attestation4, attestation3, attestation1);
         break;
       default:
@@ -611,7 +615,8 @@ class AggregatingAttestationPoolTest {
             aggregatingPool.getAttestationsForBlock(
                 stateAtBlockSlot,
                 forkChecker,
-                new AttestationWorthinessCheckerAltair(spec, stateAtBlockSlot)))
+                AttestationWorthinessChecker.createAttestationWorthinessChecker(
+                    spec, stateAtBlockSlot)))
         .containsExactly(attestation);
   }
 }

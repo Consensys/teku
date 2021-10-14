@@ -33,7 +33,7 @@ public class AttestationWorthinessCheckerAltair implements AttestationWorthiness
   private final Bytes32 expectedAttestationTarget;
   private final UInt64 oldestWorthySlotForSourceReward;
 
-  public AttestationWorthinessCheckerAltair(final Spec spec, BeaconState state) {
+  public AttestationWorthinessCheckerAltair(final Spec spec, final BeaconState state) {
     UInt64 currentSlot = state.getSlot();
     SpecVersion specVersion = spec.atSlot(currentSlot);
 

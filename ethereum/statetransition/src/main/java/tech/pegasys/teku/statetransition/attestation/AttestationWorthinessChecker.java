@@ -13,14 +13,19 @@
 
 package tech.pegasys.teku.statetransition.attestation;
 
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+
 public interface AttestationWorthinessChecker {
-  AttestationWorthinessChecker NOOP =
-      new AttestationWorthinessChecker() {
-        @Override
-        public boolean areAttestationsWorthy(MatchingDataAttestationGroup attestationGroup) {
-          return true;
-        }
-      };
+  AttestationWorthinessChecker NOOP = attestationGroup -> true;
+
+  static AttestationWorthinessChecker createAttestationWorthinessChecker(
+      final Spec spec, final BeaconState state) {
+    return spec.atSlot(state.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ALTAIR)
+        ? new AttestationWorthinessCheckerAltair(spec, state)
+        : AttestationWorthinessChecker.NOOP;
+  }
 
   boolean areAttestationsWorthy(final MatchingDataAttestationGroup attestationGroup);
 }
