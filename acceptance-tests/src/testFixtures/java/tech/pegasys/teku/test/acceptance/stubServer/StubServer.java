@@ -21,10 +21,10 @@ public class StubServer {
     RemoteMetricsServiceStub remoteMetricsServiceStub =
         new RemoteMetricsServiceStub(new InetSocketAddress(8001));
     SuccessHandler handler = new SuccessHandler();
-    remoteMetricsServiceStub.registerHandler("/", handler);
+    remoteMetricsServiceStub.registerHandler("/input", handler);
 
     ReplyHandler reply = new ReplyHandler(handler);
-    remoteMetricsServiceStub.registerHandler("/content", reply);
+    remoteMetricsServiceStub.registerHandler("/output", reply);
 
     remoteMetricsServiceStub.startServer();
   }

@@ -15,56 +15,27 @@ package tech.pegasys.teku.test.acceptance;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
-import tech.pegasys.teku.test.acceptance.dsl.StubNode;
+import tech.pegasys.teku.test.acceptance.dsl.ExternalMetricNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 
 public class ExternalMetricPublisherAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   void shouldPublishDataFromPrometheus() throws Throwable {
+    ExternalMetricNode externalMetricNode = createExternalMetricNode();
+    externalMetricNode.start();
 
-    StubNode stubNode = StubNode.create();
-    stubNode.start();
-    String metricServerAddress = "http://" + stubNode.getContainerNetworkAlias();
+    final TekuNode tekuNode =
+        createTekuNode(config -> config.withExternalMetricsClient(externalMetricNode, 1));
+    tekuNode.start();
 
-    final TekuNode node =
-        createTekuNode(
-            config ->
-                config.withExternalMetricsClient(
-                    metricServerAddress + ":" + StubNode.STUB_PORT + "/", 1),
-            stubNode);
-    node.start();
+    externalMetricNode.waitForPublication();
 
-    node.waitForNewBlock();
+    assertThat(externalMetricNode.getResponse()).contains("version");
 
-    String data = readReply(stubNode);
-    assertThat(data).contains("version");
-
-    node.stop();
-    stubNode.stop();
-  }
-
-  private String readReply(StubNode n) {
-    String data = "";
-    try {
-      String s = n.getAddress() + "/content";
-      URL url = new URL(s);
-      HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-      conn.setRequestMethod("GET");
-      conn.setRequestProperty("Accept", "application/json");
-      if (conn.getResponseCode() != 200) {
-        throw new RuntimeException("Failed : HTTP Error code : " + conn.getResponseCode());
-      }
-      data = new String(conn.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-      conn.disconnect();
-    } catch (Exception e) {
-      System.out.println(e);
-    }
-    return data;
+    tekuNode.stop();
+    externalMetricNode.stop();
   }
 }

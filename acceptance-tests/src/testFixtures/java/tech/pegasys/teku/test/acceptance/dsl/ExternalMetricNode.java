@@ -14,47 +14,73 @@
 package tech.pegasys.teku.test.acceptance.dsl;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Path;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
 import org.testcontainers.images.builder.ImageFromDockerfile;
+import tech.pegasys.teku.infrastructure.async.Waiter;
 
-public class StubNode extends Node {
+public class ExternalMetricNode extends Node {
   private static final Logger LOG = LogManager.getLogger();
+  private final SimpleHttpClient httpClient;
 
   public static final int STUB_PORT = 8001;
   protected static final String WORKING_DIRECTORY =
       "/opt/tech/pegasys/teku/test/acceptance/stubServer/";
 
-  private static final Network network = Network.newNetwork();
   private boolean started = false;
 
-  private StubNode(Network network, ImageFromDockerfile image) {
+  private ExternalMetricNode(
+      final SimpleHttpClient httpClient, Network network, ImageFromDockerfile image) {
     super(network, image);
+    this.httpClient = httpClient;
     container.withWorkingDirectory(WORKING_DIRECTORY).withExposedPorts(STUB_PORT);
   }
 
-  public static StubNode create() {
+  public static ExternalMetricNode create(
+      final SimpleHttpClient httpClient, final Network network) {
     final ImageFromDockerfile image =
         new ImageFromDockerfile()
             .withDockerfile(
                 Path.of(
                     "src/testFixtures/java/tech/pegasys/teku/test/acceptance/stubServer/Dockerfile"));
-    return new StubNode(network, image);
+    return new ExternalMetricNode(httpClient, network, image);
   }
 
   public String getAddress() {
     return "http://" + this.container.getHost() + ":" + this.container.getMappedPort(STUB_PORT);
   }
 
-  public Network getNetwork() {
-    return network;
+  public String getPublicationEndpointURL() {
+    return "http://" + this.nodeAlias + ":" + STUB_PORT + "/input";
   }
 
-  public String getContainerNetworkAlias() {
-    return this.nodeAlias;
+  public void waitForPublication() {
+    try {
+      Waiter.waitFor(() -> assertThat(fetchPublication().get()).isNotEmpty(), 1, TimeUnit.MINUTES);
+    } catch (final Throwable t) {
+      fail(t.getMessage() + " Logs: " + container.getLogs(), t);
+    }
+  }
+
+  private Optional<String> fetchPublication() throws IOException, URISyntaxException {
+    final String result = httpClient.get(new URI(this.getAddress()), "/output");
+    if (result.isEmpty()) {
+      return Optional.empty();
+    }
+    return Optional.of(result);
+  }
+
+  public String getResponse() throws URISyntaxException, IOException {
+    return httpClient.get(new URI(this.getAddress()), "/output");
   }
 
   public void start() {
@@ -69,6 +95,7 @@ public class StubNode extends Node {
     if (!started) {
       return;
     }
+    started = false;
     LOG.debug("Shutting down");
     container.stop();
   }

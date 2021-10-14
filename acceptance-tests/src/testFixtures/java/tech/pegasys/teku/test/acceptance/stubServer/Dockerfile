@@ -1,4 +1,4 @@
-FROM eclipse-temurin:16
+FROM eclipse-temurin:17
 ENV JAVA_HOME=/opt/java/openjdk
 ENV PATH "${JAVA_HOME}/bin:${PATH}"
 
