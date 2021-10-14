@@ -702,7 +702,7 @@ def calculatePublishVersion() {
 // Otherwise use git describe --tags and replace the - after the tag with a +
 def calculateVersion() {
   if (!grgit) {
-    logger.warn("Not building from a git checkout. Version information will not be available. Checkout out source from git is strongly recommended.")
+    logger.warn("Not building from a git checkout. Version information will not be available. Building from a git checkout is strongly recommended.")
     return 'UNKNOWN+develop'
   }
   String version = grgit.describe(tags: true)
