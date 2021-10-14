@@ -49,6 +49,7 @@ public class AttestationWorthinessCheckerAltair implements AttestationWorthiness
         state.getSlot().minusMinZero(integerSquareRoot(specVersion.getSlotsPerEpoch()));
   }
 
+  @Override
   public boolean areAttestationsWorthy(final MatchingDataAttestationGroup attestationGroup) {
     final var attestationData = attestationGroup.getAttestationData();
 
