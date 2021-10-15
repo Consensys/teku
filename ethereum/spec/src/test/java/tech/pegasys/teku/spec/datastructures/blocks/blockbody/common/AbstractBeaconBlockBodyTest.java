@@ -80,7 +80,7 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
 
   protected abstract T createBlockBody(final Consumer<BeaconBlockBodyBuilder> contentProvider);
 
-  protected abstract BeaconBlockBodySchema<T> getBlockBodySchema();
+  protected abstract BeaconBlockBodySchema<? extends T> getBlockBodySchema();
 
   protected T createDefaultBlockBody() {
     return createBlockBody();
