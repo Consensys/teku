@@ -62,6 +62,7 @@ import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
+import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -160,6 +161,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
 
   private void setupAndStartRestAPI(BeaconRestApiConfig config) {
     combinedChainDataClient = storageSystem.combinedChainDataClient();
+    final ActiveValidatorChannel activeValidatorChannel = mock(ActiveValidatorChannel.class);
     dataProvider =
         new DataProvider(
             spec,
@@ -171,6 +173,8 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             attestationPool,
             blockManager,
             attestationManager,
+            false,
+            activeValidatorChannel,
             attesterSlashingPool,
             proposerSlashingPool,
             voluntaryExitPool,
