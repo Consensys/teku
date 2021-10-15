@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.v1.validator;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
@@ -31,6 +32,7 @@ import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostValidatorLiveness;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.sync.events.SyncState;
 
 public class PostValidatorLivenessIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
@@ -56,6 +58,7 @@ public class PostValidatorLivenessIntegrationTest extends AbstractDataBackedRest
     final UInt64 epoch = UInt64.ZERO;
     final UInt64 validatorIndex = UInt64.ONE;
     startRestAPIAtGenesis(SpecMilestone.ALTAIR);
+    blockReceivedFromProposer(spec.computeStartSlotAtEpoch(epoch).plus(1), validatorIndex);
     setCurrentSlot(12);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
 
@@ -67,5 +70,14 @@ public class PostValidatorLivenessIntegrationTest extends AbstractDataBackedRest
         jsonProvider.jsonToObject(response.body().string(), PostValidatorLivenessResponse.class);
     assertThat(result.data.get(0))
         .isEqualTo(new ValidatorLivenessAtEpoch(validatorIndex, epoch, true));
+  }
+
+  private void blockReceivedFromProposer(final UInt64 slot, final UInt64 proposerIndex) {
+    // prime the cache for validator, would be the same as seeing a block come in.
+    final SignedBeaconBlock block = mock(SignedBeaconBlock.class);
+    when(block.getSlot()).thenReturn(slot);
+    when(block.getProposerIndex()).thenReturn(proposerIndex);
+
+    activeValidatorChannel.onBlockImported(block);
   }
 }

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.attestation;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 import it.unimi.dsi.fastutil.ints.IntList;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
@@ -41,6 +42,7 @@ import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidato
 import tech.pegasys.teku.statetransition.validation.AttestationValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
+import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
@@ -69,6 +71,7 @@ class AttestationManagerIntegrationTest {
       SignatureVerificationService.createSimple();
   private final AttestationValidator attestationValidator =
       new AttestationValidator(spec, recentChainData, signatureVerificationService);
+  private final ActiveValidatorChannel activeValidatorChannel = mock(ActiveValidatorChannel.class);
 
   private final AttestationManager attestationManager =
       new AttestationManager(
@@ -79,8 +82,7 @@ class AttestationManagerIntegrationTest {
           attestationValidator,
           new AggregateAttestationValidator(recentChainData, attestationValidator, spec),
           signatureVerificationService,
-          spec,
-          spec.getGenesisSpec().getConfig().getMinGenesisActiveValidatorCount());
+          activeValidatorChannel);
 
   // Version of forks with same fork version for previous and current
   // Guarantees that's the version used for signing regardless of slot
