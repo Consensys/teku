@@ -51,7 +51,7 @@ import tech.pegasys.teku.storage.store.KeyValueStore;
 public class DiscV5Service extends Service implements DiscoveryService {
   private static final Logger LOG = LogManager.getLogger();
   private static final String SEQ_NO_STORE_KEY = "local-enr-seqno";
-  private static final Duration BOOTNODE_REFRESH_DELAY = Duration.ofMinutes(2);
+  private static final Duration BOOTNODE_REFRESH_DELAY = Duration.ofMinutes(4);
   private final AsyncRunner asyncRunner;
   private final Bytes localNodePrivateKey;
   private final SchemaDefinitionsSupplier currentSchemaDefinitionsSupplier;
