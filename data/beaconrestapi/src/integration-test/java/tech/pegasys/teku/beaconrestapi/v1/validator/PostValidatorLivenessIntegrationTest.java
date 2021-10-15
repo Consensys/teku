@@ -23,7 +23,6 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_U
 import java.io.IOException;
 import java.util.List;
 import okhttp3.Response;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.request.v1.validator.ValidatorLivenessRequest;
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
@@ -42,7 +41,7 @@ public class PostValidatorLivenessIntegrationTest extends AbstractDataBackedRest
     startRestAPIAtGenesis(SpecMilestone.ALTAIR);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     Response response = post(PostValidatorLiveness.ROUTE, jsonProvider.objectToJSON(""));
-    Assertions.assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
   }
 
   @Test
@@ -50,7 +49,7 @@ public class PostValidatorLivenessIntegrationTest extends AbstractDataBackedRest
     startRestAPIAtGenesis(SpecMilestone.ALTAIR);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
     Response response = post(PostValidatorLiveness.ROUTE, jsonProvider.objectToJSON(""));
-    Assertions.assertThat(response.code()).isEqualTo(SC_SERVICE_UNAVAILABLE);
+    assertThat(response.code()).isEqualTo(SC_SERVICE_UNAVAILABLE);
   }
 
   @Test
@@ -65,7 +64,7 @@ public class PostValidatorLivenessIntegrationTest extends AbstractDataBackedRest
     final ValidatorLivenessRequest request =
         new ValidatorLivenessRequest(epoch, List.of(validatorIndex));
     Response response = post(PostValidatorLiveness.ROUTE, jsonProvider.objectToJSON(request));
-    Assertions.assertThat(response.code()).isEqualTo(SC_OK);
+    assertThat(response.code()).isEqualTo(SC_OK);
     final PostValidatorLivenessResponse result =
         jsonProvider.jsonToObject(response.body().string(), PostValidatorLivenessResponse.class);
     assertThat(result.data.get(0))

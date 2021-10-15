@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.statetransition.validatorcache;
 
+import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
 import java.util.List;
-import java.util.Map;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -46,5 +46,6 @@ public interface ActiveValidatorChannel extends ChannelInterface {
    * @param validators the validator indices
    * @param epoch an epoch within current >= epoch >= current-2
    */
-  SafeFuture<Map<UInt64, Boolean>> validatorsLiveAtEpoch(List<UInt64> validators, UInt64 epoch);
+  SafeFuture<Object2BooleanMap<UInt64>> validatorsLiveAtEpoch(
+      List<UInt64> validators, UInt64 epoch);
 }

@@ -15,10 +15,10 @@ package tech.pegasys.teku.statetransition.validatorcache;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
+import it.unimi.dsi.fastutil.objects.Object2BooleanArrayMap;
+import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -26,14 +26,20 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 
 public class ActiveValidatorCache implements ActiveValidatorChannel {
   private final Spec spec;
   private static final Logger LOG = LogManager.getLogger();
   private static final int VALIDATOR_CACHE_SPARE_CAPACITY = 1000;
-  // validatorActiveEpochs is indexed by validator id, contains mod(3) of epoch values - basically
-  // rotating list
+  public static final int TRACKED_EPOCHS = 2;
+
+  // We will definitely receive events for the current epoch,
+  // and we want a certain number of FULL epochs of tracking to query,
+  // so the cache size will actually be the TRACKED_EPOCHS + 1
+  private static final int CACHED_EPOCHS = TRACKED_EPOCHS + 1;
+
+  // validatorActiveEpochs is indexed by validator id, contains mod(CACHED_EPOCHS) of epoch values
+  // - basically a rotating list
   private UInt64[][] validatorActiveEpochs;
 
   public ActiveValidatorCache(final Spec spec, final int initialSize) {
@@ -47,11 +53,16 @@ public class ActiveValidatorCache implements ActiveValidatorChannel {
     Preconditions.checkNotNull(epoch);
     LOG.trace("Touch validator {} at epoch {}", validatorIndex, epoch);
 
-    if (validatorIndex.intValue() >= validatorActiveEpochs.length) {
-      grow(validatorIndex);
-    }
     ensureNodeIsInitialized(validatorIndex);
-    validatorActiveEpochs[validatorIndex.intValue()][epoch.mod(3).intValue()] = epoch;
+    final int index = validatorIndex.intValue();
+    final int offset = epoch.mod(CACHED_EPOCHS).intValue();
+    if (validatorActiveEpochs[index][offset] == null) {
+      validatorActiveEpochs[index][offset] = epoch;
+    } else {
+      // Given the chain only ever goes forward,
+      // older epochs are not important in this cache
+      validatorActiveEpochs[index][offset] = validatorActiveEpochs[index][offset].max(epoch);
+    }
   }
 
   boolean isValidatorSeenAtEpoch(final UInt64 validatorIndex, final UInt64 epoch) {
@@ -59,13 +70,14 @@ public class ActiveValidatorCache implements ActiveValidatorChannel {
     Preconditions.checkNotNull(epoch);
 
     if (validatorActiveEpochs.length <= validatorIndex.intValue()) {
-      LOG.debug(
+      LOG.trace(
           "validator index {} exceeds array size {}", validatorIndex, validatorActiveEpochs.length);
       return false;
     }
 
     return validatorActiveEpochs[validatorIndex.intValue()] != null
-        && epoch.equals(validatorActiveEpochs[validatorIndex.intValue()][epoch.mod(3).intValue()]);
+        && epoch.equals(
+            validatorActiveEpochs[validatorIndex.intValue()][epoch.mod(CACHED_EPOCHS).intValue()]);
   }
 
   int getCacheSize() {
@@ -79,8 +91,12 @@ public class ActiveValidatorCache implements ActiveValidatorChannel {
   }
 
   private void ensureNodeIsInitialized(final UInt64 validatorIndex) {
+    if (validatorIndex.intValue() >= validatorActiveEpochs.length) {
+      grow(validatorIndex);
+    }
+
     if (validatorActiveEpochs[validatorIndex.intValue()] == null) {
-      validatorActiveEpochs[validatorIndex.intValue()] = new UInt64[3];
+      validatorActiveEpochs[validatorIndex.intValue()] = new UInt64[CACHED_EPOCHS];
     }
   }
 
@@ -104,19 +120,21 @@ public class ActiveValidatorCache implements ActiveValidatorChannel {
 
   @Override
   public void onAttestation(final ValidateableAttestation validateableAttestation) {
-    if (validateableAttestation.getIndexedAttestation().isPresent()) {
-      final IndexedAttestation attestation = validateableAttestation.getIndexedAttestation().get();
-      final UInt64 epoch = spec.computeEpochAtSlot(attestation.getData().getSlot());
-      attestation
-          .getAttesting_indices()
-          .forEach((validatorIndex) -> touch(validatorIndex.get(), epoch));
-    }
+    validateableAttestation
+        .getIndexedAttestation()
+        .ifPresent(
+            attestation -> {
+              final UInt64 epoch = spec.computeEpochAtSlot(attestation.getData().getSlot());
+              attestation
+                  .getAttesting_indices()
+                  .forEach((validatorIndex) -> touch(validatorIndex.get(), epoch));
+            });
   }
 
   @Override
-  public SafeFuture<Map<UInt64, Boolean>> validatorsLiveAtEpoch(
+  public SafeFuture<Object2BooleanMap<UInt64>> validatorsLiveAtEpoch(
       final List<UInt64> validators, final UInt64 epoch) {
-    final Map<UInt64, Boolean> result = new HashMap<>();
+    final Object2BooleanMap<UInt64> result = new Object2BooleanArrayMap<>();
     for (UInt64 validator : validators) {
       result.put(validator, isValidatorSeenAtEpoch(validator, epoch));
     }

@@ -19,6 +19,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
+import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -63,6 +64,16 @@ public class ActiveValidatorCacheTest {
       cache.touch(ZERO, i);
     }
     // Only the last 3 will be seen, wrapped array can only see 3 entries
+    assertThat(cache.getValidatorEpochs(ZERO)).containsExactly(THREE, FOUR, FIVE);
+  }
+
+  @Test
+  void shouldStoreMostRecentAtOffset() {
+    cache.touch(ZERO, ZERO);
+    for (UInt64 i = FIVE; i.isGreaterThan(ZERO); i = i.decrement()) {
+      cache.touch(ZERO, i);
+    }
+    // Only the first 3 will be seen, and max logic will override the lower values after
     assertThat(cache.getValidatorEpochs(ZERO)).containsExactly(THREE, FOUR, FIVE);
   }
 
@@ -142,7 +153,7 @@ public class ActiveValidatorCacheTest {
     cache.touch(ONE, THREE);
     cache.touch(SIX, SIX);
 
-    final SafeFuture<Map<UInt64, Boolean>> future =
+    final SafeFuture<Object2BooleanMap<UInt64>> future =
         cache.validatorsLiveAtEpoch(List.of(ONE, TWO, THREE, FOUR, FIVE, SIX), THREE);
     assertThat(future).isCompleted();
     final Map<UInt64, Boolean> result = future.get();
