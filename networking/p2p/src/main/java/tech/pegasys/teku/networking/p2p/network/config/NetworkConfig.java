@@ -24,7 +24,6 @@ import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
-import tech.pegasys.teku.infrastructure.io.PortAvailability;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
 
 public class NetworkConfig {
@@ -69,16 +68,6 @@ public class NetworkConfig {
 
   public static Builder builder() {
     return new Builder();
-  }
-
-  public void validateListenPortAvailable() {
-    if (listenPort != 0 && !PortAvailability.isPortAvailable(listenPort)) {
-      throw new InvalidConfigurationException(
-          String.format(
-              "P2P Port %d (TCP/UDP) is already in use. "
-                  + "Check for other processes using this port.",
-              listenPort));
-    }
   }
 
   public boolean isEnabled() {
@@ -142,7 +131,7 @@ public class NetworkConfig {
     private Optional<String> privateKeyFile = Optional.empty();
     private String networkInterface = "0.0.0.0";
     private Optional<String> advertisedIp = Optional.empty();
-    private Integer listenPort = DEFAULT_P2P_PORT;
+    private int listenPort = DEFAULT_P2P_PORT;
     private OptionalInt advertisedPort = OptionalInt.empty();
 
     private Builder() {}
@@ -193,8 +182,7 @@ public class NetworkConfig {
       return this;
     }
 
-    public Builder listenPort(final Integer listenPort) {
-      checkNotNull(listenPort);
+    public Builder listenPort(final int listenPort) {
       this.listenPort = listenPort;
       return this;
     }

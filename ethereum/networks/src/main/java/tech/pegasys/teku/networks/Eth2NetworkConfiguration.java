@@ -44,6 +44,7 @@ public class Eth2NetworkConfiguration {
   private final int startupTimeoutSeconds;
   private final List<String> discoveryBootnodes;
   private final Optional<UInt64> altairForkEpoch;
+  private final Optional<UInt64> mergeForkEpoch;
   private final Eth1Address eth1DepositContractAddress;
   private final Optional<UInt64> eth1DepositContractDeployBlock;
   private final boolean balanceAttackMitigationEnabled;
@@ -59,7 +60,8 @@ public class Eth2NetworkConfiguration {
       final Eth1Address eth1DepositContractAddress,
       final Optional<UInt64> eth1DepositContractDeployBlock,
       final boolean balanceAttackMitigationEnabled,
-      final Optional<UInt64> altairForkEpoch) {
+      final Optional<UInt64> altairForkEpoch,
+      final Optional<UInt64> mergeForkEpoch) {
     this.spec = spec;
     this.constants = constants;
     this.initialState = initialState;
@@ -68,6 +70,7 @@ public class Eth2NetworkConfiguration {
     this.startupTimeoutSeconds = startupTimeoutSeconds;
     this.discoveryBootnodes = discoveryBootnodes;
     this.altairForkEpoch = altairForkEpoch;
+    this.mergeForkEpoch = mergeForkEpoch;
     this.eth1DepositContractAddress =
         eth1DepositContractAddress == null
             ? new Eth1Address(spec.getGenesisSpecConfig().getDepositContractAddress())
@@ -137,6 +140,10 @@ public class Eth2NetworkConfiguration {
     return altairForkEpoch;
   }
 
+  public Optional<UInt64> getMergeForkEpoch() {
+    return mergeForkEpoch;
+  }
+
   @Override
   public String toString() {
     return constants;
@@ -153,6 +160,7 @@ public class Eth2NetworkConfiguration {
     private Optional<UInt64> eth1DepositContractDeployBlock = Optional.empty();
     private boolean balanceAttackMitigationEnabled = false;
     private Optional<UInt64> altairForkEpoch = Optional.empty();
+    private Optional<UInt64> mergeForkEpoch = Optional.empty();
     private Spec spec;
 
     public void spec(Spec spec) {
@@ -162,7 +170,7 @@ public class Eth2NetworkConfiguration {
     public Eth2NetworkConfiguration build() {
       checkNotNull(constants, "Missing constants");
       if (spec == null) {
-        spec = SpecFactory.create(constants, altairForkEpoch);
+        spec = SpecFactory.create(constants, altairForkEpoch, mergeForkEpoch);
       }
       // if the deposit contract was not set, default from constants
       if (eth1DepositContractAddress == null) {
@@ -180,7 +188,8 @@ public class Eth2NetworkConfiguration {
           eth1DepositContractAddress,
           eth1DepositContractDeployBlock,
           balanceAttackMitigationEnabled,
-          altairForkEpoch);
+          altairForkEpoch,
+          mergeForkEpoch);
     }
 
     public Builder constants(final String constants) {
@@ -245,6 +254,11 @@ public class Eth2NetworkConfiguration {
 
     public Builder altairForkEpoch(final UInt64 altairForkEpoch) {
       this.altairForkEpoch = Optional.of(altairForkEpoch);
+      return this;
+    }
+
+    public Builder mergeForkEpoch(final UInt64 mergeForkEpoch) {
+      this.mergeForkEpoch = Optional.of(mergeForkEpoch);
       return this;
     }
 
@@ -334,6 +348,8 @@ public class Eth2NetworkConfiguration {
           .defaultInitialState(
               "https://github.com/eth2-clients/eth2-testnets/raw/192c1b48ea5ff4adb4e6ef7d2a9e5f82fb5ffd72/shared/prater/genesis.ssz")
           .discoveryBootnodes(
+              // Teku bootnode
+              "enr:-KK4QH0RsNJmIG0EX9LSnVxMvg-CAOr3ZFF92hunU63uE7wcYBjG1cFbUTvEa5G_4nDJkRhUq9q2ck9xY-VX1RtBsruBtIRldGgykIL0pysBABAg__________-CaWSCdjSCaXCEEnXQ0YlzZWNwMjU2azGhA1grTzOdMgBvjNrk-vqWtTZsYQIi0QawrhoZrsn5Hd56g3RjcIIjKIN1ZHCCIyg",
               // q9f bootnode errai (lighthouse)
               "enr:-LK4QH1xnjotgXwg25IDPjrqRGFnH1ScgNHA3dv1Z8xHCp4uP3N3Jjl_aYv_WIxQRdwZvSukzbwspXZ7JjpldyeVDzMCh2F0dG5ldHOIAAAAAAAAAACEZXRoMpB53wQoAAAQIP__________gmlkgnY0gmlwhIe1te-Jc2VjcDI1NmsxoQOkcGXqbCJYbcClZ3z5f6NWhX_1YPFRYRRWQpJjwSHpVIN0Y3CCIyiDdWRwgiMo",
               // q9f bootnode gudja (teku)

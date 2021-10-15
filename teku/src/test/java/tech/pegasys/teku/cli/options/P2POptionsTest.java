@@ -69,6 +69,29 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  void p2pUdpPort_shouldDefaultToP2pPortWhenNeitherSet() {
+    final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments();
+    assertThat(tekuConfig.discovery().getListenUdpPort())
+        .isEqualTo(tekuConfig.network().getListenPort());
+  }
+
+  @Test
+  void p2pUdpPort_shouldDefaultToP2pPortWhenP2pPortIsSet() {
+    final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments("--p2p-port=9999");
+    assertThat(tekuConfig.discovery().getListenUdpPort())
+        .isEqualTo(tekuConfig.network().getListenPort());
+    assertThat(tekuConfig.discovery().getListenUdpPort()).isEqualTo(9999);
+  }
+
+  @Test
+  void p2pUdpPort_shouldOverrideP2pPortWhenBothSet() {
+    final TekuConfiguration tekuConfig =
+        getTekuConfigurationFromArguments("--p2p-udp-port=9888", "--p2p-port=9999");
+    assertThat(tekuConfig.discovery().getListenUdpPort()).isEqualTo(9888);
+    assertThat(tekuConfig.network().getListenPort()).isEqualTo(9999);
+  }
+
+  @Test
   public void advertisedIp_shouldDefaultToEmpty() {
     final NetworkConfig config = getTekuConfigurationFromArguments().network();
     assertThat(config.hasUserExplicitlySetAdvertisedIp()).isFalse();
@@ -96,6 +119,40 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
                 .network()
                 .getAdvertisedPort())
         .isEqualTo(8056);
+  }
+
+  @Test
+  void advertisedUdpPort_shouldDefaultToTcpListenPortWhenNeitherSet() {
+    final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments();
+    assertThat(tekuConfig.discovery().getAdvertisedUdpPort())
+        .isEqualTo(tekuConfig.network().getAdvertisedPort());
+  }
+
+  @Test
+  void advertisedUdpPort_shouldDefaultToTcpListenPortWhenListenPortSet() {
+    final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments("--p2p-port=8000");
+    assertThat(tekuConfig.discovery().getAdvertisedUdpPort()).isEqualTo(8000);
+    assertThat(tekuConfig.discovery().getAdvertisedUdpPort())
+        .isEqualTo(tekuConfig.network().getAdvertisedPort());
+  }
+
+  @Test
+  void advertisedUdpPort_shouldDefaultToAdvertisedTcpPortWhenAdvertisedPortSet() {
+    final TekuConfiguration tekuConfig =
+        getTekuConfigurationFromArguments("--p2p-port=8000", "--p2p-advertised-port=7000");
+    assertThat(tekuConfig.discovery().getAdvertisedUdpPort()).isEqualTo(7000);
+    assertThat(tekuConfig.discovery().getAdvertisedUdpPort())
+        .isEqualTo(tekuConfig.network().getAdvertisedPort());
+  }
+
+  @Test
+  void advertisedUdpPort_shouldOverrideAdvertisedUdpPort() {
+    final TekuConfiguration tekuConfig =
+        getTekuConfigurationFromArguments(
+            "--p2p-advertised-udp-port=6000", "--p2p-port=8000", "--p2p-advertised-port=7000");
+    assertThat(tekuConfig.discovery().getAdvertisedUdpPort()).isEqualTo(6000);
+    assertThat(tekuConfig.network().getAdvertisedPort()).isEqualTo(7000);
+    assertThat(tekuConfig.network().getListenPort()).isEqualTo(8000);
   }
 
   @Test
