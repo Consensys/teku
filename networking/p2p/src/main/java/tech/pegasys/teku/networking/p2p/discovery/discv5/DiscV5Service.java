@@ -51,6 +51,8 @@ import tech.pegasys.teku.storage.store.KeyValueStore;
 public class DiscV5Service extends Service implements DiscoveryService {
   private static final Logger LOG = LogManager.getLogger();
   private static final String SEQ_NO_STORE_KEY = "local-enr-seqno";
+  // Currently must be longer than the 3 minute NodeSession timeout in discovery
+  // See https://github.com/ConsenSys/teku/pull/4490
   private static final Duration BOOTNODE_REFRESH_DELAY = Duration.ofMinutes(4);
   private final AsyncRunner asyncRunner;
   private final Bytes localNodePrivateKey;
