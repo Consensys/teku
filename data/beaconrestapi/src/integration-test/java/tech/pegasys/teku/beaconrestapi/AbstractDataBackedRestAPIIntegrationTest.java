@@ -104,7 +104,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected final AggregatingAttestationPool attestationPool =
       mock(AggregatingAttestationPool.class);
   protected final BlockManager blockManager = mock(BlockManager.class);
-  private final AttestationManager attestationManager = mock(AttestationManager.class);
+  protected final AttestationManager attestationManager = mock(AttestationManager.class);
   protected final OperationPool<AttesterSlashing> attesterSlashingPool = mock(OperationPool.class);
   protected final OperationPool<ProposerSlashing> proposerSlashingPool = mock(OperationPool.class);
   protected final OperationPool<SignedVoluntaryExit> voluntaryExitPool = mock(OperationPool.class);

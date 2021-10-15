@@ -78,7 +78,9 @@ class AttestationManagerIntegrationTest {
           attestationPool,
           attestationValidator,
           new AggregateAttestationValidator(recentChainData, attestationValidator, spec),
-          signatureVerificationService);
+          signatureVerificationService,
+          spec,
+          spec.getGenesisSpec().getConfig().getMinGenesisActiveValidatorCount());
 
   // Version of forks with same fork version for previous and current
   // Guarantees that's the version used for signing regardless of slot

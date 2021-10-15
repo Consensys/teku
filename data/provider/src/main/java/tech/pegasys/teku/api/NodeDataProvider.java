@@ -13,9 +13,14 @@
 
 package tech.pegasys.teku.api;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import tech.pegasys.teku.api.exceptions.BadRequestException;
+import tech.pegasys.teku.api.request.v1.validator.ValidatorLivenessRequest;
+import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
+import tech.pegasys.teku.api.response.v1.validator.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttesterSlashing;
 import tech.pegasys.teku.api.schema.ProposerSlashing;
@@ -31,6 +36,7 @@ import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
 
 public class NodeDataProvider {
 
@@ -44,6 +50,8 @@ public class NodeDataProvider {
   private final SyncCommitteeContributionPool syncCommitteeContributionPool;
   private final BlockManager blockManager;
   private final AttestationManager attestationManager;
+  private final ActiveValidatorChannel activeValidatorChannel;
+  private final boolean isLivenessTrackingEnabled;
 
   public NodeDataProvider(
       AggregatingAttestationPool attestationPool,
@@ -55,7 +63,9 @@ public class NodeDataProvider {
           voluntaryExitPool,
       final SyncCommitteeContributionPool syncCommitteeContributionPool,
       BlockManager blockManager,
-      AttestationManager attestationManager) {
+      AttestationManager attestationManager,
+      final boolean isLivenessTrackingEnabled,
+      final ActiveValidatorChannel activeValidatorChannel) {
     this.attestationPool = attestationPool;
     this.attesterSlashingPool = attesterSlashingsPool;
     this.proposerSlashingPool = proposerSlashingPool;
@@ -63,6 +73,8 @@ public class NodeDataProvider {
     this.syncCommitteeContributionPool = syncCommitteeContributionPool;
     this.blockManager = blockManager;
     this.attestationManager = attestationManager;
+    this.activeValidatorChannel = activeValidatorChannel;
+    this.isLivenessTrackingEnabled = isLivenessTrackingEnabled;
   }
 
   public List<Attestation> getAttestations(
@@ -121,5 +133,47 @@ public class NodeDataProvider {
   public void subscribeToSyncCommitteeContributions(
       OperationPool.OperationAddedSubscriber<SignedContributionAndProof> listener) {
     syncCommitteeContributionPool.subscribeOperationAdded(listener);
+  }
+
+  public SafeFuture<Optional<PostValidatorLivenessResponse>> getValidatorLiveness(
+      final ValidatorLivenessRequest request, final Optional<UInt64> maybeCurrentEpoch) {
+    if (!isLivenessTrackingEnabled) {
+      return SafeFuture.failedFuture(
+          new BadRequestException(
+              "Validator liveness is not checked by this beacon node, cannot service request"));
+    }
+    // if no validator indices were requested, that's a bad request.
+    if (request.indices.isEmpty()) {
+      return SafeFuture.failedFuture(
+          new BadRequestException("No validator indices posted in validator liveness request"));
+    }
+    if (maybeCurrentEpoch.isPresent()) {
+      final UInt64 currentEpoch = maybeCurrentEpoch.get();
+      if (currentEpoch.isLessThan(request.epoch)) {
+        return SafeFuture.failedFuture(
+            new BadRequestException(
+                String.format(
+                    "Current node epoch %s, cannot check liveness for a future epoch %s",
+                    currentEpoch, request.epoch)));
+      } else if (currentEpoch.minusMinZero(2).isGreaterThan(request.epoch)) {
+        return SafeFuture.failedFuture(
+            new BadRequestException(
+                String.format(
+                    "Current node epoch %s, cannot check liveness for an epoch (%s) more than 2 in the past",
+                    currentEpoch, request.epoch)));
+      }
+    }
+
+    return activeValidatorChannel
+        .validatorsLiveAtEpoch(request.indices, request.epoch)
+        .thenApply(
+            validatorLivenessMap -> {
+              final List<ValidatorLivenessAtEpoch> livenessAtEpochs = new ArrayList<>();
+              validatorLivenessMap.forEach(
+                  (validatorIndex, liveness) ->
+                      livenessAtEpochs.add(
+                          new ValidatorLivenessAtEpoch(validatorIndex, request.epoch, liveness)));
+              return Optional.of(new PostValidatorLivenessResponse(livenessAtEpochs));
+            });
   }
 }
