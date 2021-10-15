@@ -16,7 +16,6 @@ package tech.pegasys.teku.ssz.schema;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -99,19 +98,28 @@ public class SszPrimitiveSchemaTest extends SszSchemaTestBase {
 
   @Test
   void SszUInt64_shouldBeStoredInLE() {
-    Bytes wrappedInput = Bytes.fromHexString("0x0102030405060708",8);
+    Bytes wrappedInput = Bytes.fromHexString("0x0102030405060708", 8);
 
     UInt64 inputUint64 = UInt64.fromLongBits(wrappedInput.toLong());
 
     SszUInt64 sszUInt64 = SszUInt64.of(inputUint64);
 
-    assertThat(sszUInt64.getBackingNode().hashTreeRoot()).isEqualByComparingTo(Bytes32.fromHexString("0x0807060504030201000000000000000000000000000000000000000000000000"));
+    assertThat(sszUInt64.getBackingNode().hashTreeRoot())
+        .isEqualByComparingTo(
+            Bytes32.fromHexString(
+                "0x0807060504030201000000000000000000000000000000000000000000000000"));
   }
 
   @Test
   void SszUInt256_shouldBeStoredInLE() {
-    SszUInt256 sszUInt256 = SszUInt256.of(UInt256.fromHexString("0x0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20"));
+    SszUInt256 sszUInt256 =
+        SszUInt256.of(
+            UInt256.fromHexString(
+                "0x0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20"));
 
-    assertThat(sszUInt256.getBackingNode().hashTreeRoot()).isEqualByComparingTo(Bytes32.fromHexString("0x201f1e1d1c1b1a191817161514131211100f0e0d0c0b0a090807060504030201"));
+    assertThat(sszUInt256.getBackingNode().hashTreeRoot())
+        .isEqualByComparingTo(
+            Bytes32.fromHexString(
+                "0x201f1e1d1c1b1a191817161514131211100f0e0d0c0b0a090807060504030201"));
   }
 }
