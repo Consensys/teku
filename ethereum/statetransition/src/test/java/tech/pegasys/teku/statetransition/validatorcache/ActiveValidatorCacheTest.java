@@ -87,7 +87,7 @@ public class ActiveValidatorCacheTest {
   @Test
   void shouldGrowCacheIncrementally() {
     cache.touch(UInt64.valueOf(1_100), ZERO);
-    assertThat(cache.getCacheSize()).isEqualTo(2_010);
+    assertThat(cache.getCacheSize()).isEqualTo(2_100);
     assertThat(cache.getValidatorEpochs(UInt64.valueOf(1_100))).containsExactly(ZERO, null, null);
   }
 

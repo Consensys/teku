@@ -13,8 +13,9 @@
 
 package tech.pegasys.teku.statetransition.validatorcache;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Preconditions;
 import it.unimi.dsi.fastutil.objects.Object2BooleanArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
 import java.util.Arrays;
@@ -43,14 +44,12 @@ public class ActiveValidatorCache implements ActiveValidatorChannel {
   private UInt64[][] validatorActiveEpochs;
 
   public ActiveValidatorCache(final Spec spec, final int initialSize) {
-    Preconditions.checkArgument(initialSize >= 0);
+    checkArgument(initialSize >= 0);
     validatorActiveEpochs = new UInt64[initialSize + VALIDATOR_CACHE_SPARE_CAPACITY][];
     this.spec = spec;
   }
 
   void touch(final UInt64 validatorIndex, final UInt64 epoch) {
-    Preconditions.checkNotNull(validatorIndex);
-    Preconditions.checkNotNull(epoch);
     LOG.trace("Touch validator {} at epoch {}", validatorIndex, epoch);
 
     ensureNodeIsInitialized(validatorIndex);
@@ -66,9 +65,6 @@ public class ActiveValidatorCache implements ActiveValidatorChannel {
   }
 
   boolean isValidatorSeenAtEpoch(final UInt64 validatorIndex, final UInt64 epoch) {
-    Preconditions.checkNotNull(validatorIndex);
-    Preconditions.checkNotNull(epoch);
-
     if (validatorActiveEpochs.length <= validatorIndex.intValue()) {
       LOG.trace(
           "validator index {} exceeds array size {}", validatorIndex, validatorActiveEpochs.length);
@@ -86,7 +82,7 @@ public class ActiveValidatorCache implements ActiveValidatorChannel {
 
   @VisibleForTesting
   UInt64[] getValidatorEpochs(final UInt64 validatorIndex) {
-    Preconditions.checkArgument(validatorIndex.intValue() < validatorActiveEpochs.length);
+    checkArgument(validatorIndex.intValue() < validatorActiveEpochs.length);
     return validatorActiveEpochs[validatorIndex.intValue()];
   }
 
@@ -101,11 +97,7 @@ public class ActiveValidatorCache implements ActiveValidatorChannel {
   }
 
   private void grow(final UInt64 requestedValidatorIndex) {
-    final int newSize =
-        requestedValidatorIndex.intValue()
-                < validatorActiveEpochs.length + VALIDATOR_CACHE_SPARE_CAPACITY
-            ? validatorActiveEpochs.length + VALIDATOR_CACHE_SPARE_CAPACITY
-            : requestedValidatorIndex.plus(VALIDATOR_CACHE_SPARE_CAPACITY).intValue();
+    final int newSize = requestedValidatorIndex.intValue() + VALIDATOR_CACHE_SPARE_CAPACITY;
     LOG.trace(
         "Growing ActiveValidatorCache from {} to {} elements",
         validatorActiveEpochs.length,
