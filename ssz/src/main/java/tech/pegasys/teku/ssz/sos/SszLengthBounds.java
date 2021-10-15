@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -78,6 +78,10 @@ public class SszLengthBounds {
 
   public SszLengthBounds mul(final long factor) {
     return new SszLengthBounds(this.min * factor, this.max * factor);
+  }
+
+  public SszLengthBounds or(final SszLengthBounds other) {
+    return new SszLengthBounds(Long.min(this.min, other.min), Long.max(this.max, other.max));
   }
 
   public boolean isWithinBounds(final long lengthBytes) {
