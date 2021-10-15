@@ -23,11 +23,14 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.TestConfigLoader;
+import tech.pegasys.teku.spec.logic.versions.altair.statetransition.attestation.AttestationWorthinessCheckerAltair;
 import tech.pegasys.teku.spec.networks.Eth2Network;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class SpecFactoryTest {
 
@@ -67,5 +70,32 @@ public class SpecFactoryTest {
   @SuppressWarnings("unused")
   static Stream<Arguments> getKnownConfigNames() {
     return Arrays.stream(Eth2Network.values()).map(Eth2Network::configName).map(Arguments::of);
+  }
+
+  @ParameterizedTest
+  @EnumSource(
+      value = SpecMilestone.class,
+      names = {"MERGE"},
+      mode = EnumSource.Mode.EXCLUDE)
+  public void shouldCreateTheRightAttestationWorthinessChecker(SpecMilestone milestone) {
+    final Spec spec;
+    final DataStructureUtil dataStructureUtil;
+
+    switch (milestone) {
+      case PHASE0:
+        spec = TestSpecFactory.createMainnetPhase0();
+        dataStructureUtil = new DataStructureUtil(spec);
+        assertThat(spec.createAttestationWorthinessChecker(dataStructureUtil.randomBeaconState()))
+            .isInstanceOf(AttestationWorthinessCheckerAltair.NOOP.getClass());
+        break;
+      case ALTAIR:
+        spec = TestSpecFactory.createMainnetAltair();
+        dataStructureUtil = new DataStructureUtil(spec);
+        assertThat(spec.createAttestationWorthinessChecker(dataStructureUtil.randomBeaconState()))
+            .isInstanceOf(AttestationWorthinessCheckerAltair.class);
+        break;
+      default:
+        throw new IllegalStateException("unsupported milestone");
+    }
   }
 }

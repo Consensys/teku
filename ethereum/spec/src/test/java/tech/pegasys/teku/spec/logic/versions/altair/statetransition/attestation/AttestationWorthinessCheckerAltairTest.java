@@ -40,13 +40,7 @@ public class AttestationWorthinessCheckerAltairTest {
 
   @Test
   void shouldIncludeSlotOldTargetOK() {
-    AttestationData attestation =
-        new AttestationData(
-            UInt64.valueOf(1),
-            referenceAttestationData.getIndex(),
-            referenceAttestationData.getBeacon_block_root(),
-            referenceAttestationData.getSource(),
-            correctTarget);
+    AttestationData attestation = generateAttestationData(UInt64.valueOf(1), correctTarget);
 
     assertThat(spec.createAttestationWorthinessChecker(state).areAttestationsWorthy(attestation))
         .isTrue();
@@ -54,13 +48,7 @@ public class AttestationWorthinessCheckerAltairTest {
 
   @Test
   void shouldIncludeSlotOldTargetWrong() {
-    AttestationData attestation =
-        new AttestationData(
-            UInt64.valueOf(3),
-            referenceAttestationData.getIndex(),
-            referenceAttestationData.getBeacon_block_root(),
-            referenceAttestationData.getSource(),
-            wrongTarget);
+    AttestationData attestation = generateAttestationData(UInt64.valueOf(3), wrongTarget);
 
     assertThat(spec.createAttestationWorthinessChecker(state).areAttestationsWorthy(attestation))
         .isFalse();
@@ -68,13 +56,7 @@ public class AttestationWorthinessCheckerAltairTest {
 
   @Test
   void shouldIncludeSlotOKTargetWrong() {
-    AttestationData attestation =
-        new AttestationData(
-            UInt64.valueOf(5),
-            referenceAttestationData.getIndex(),
-            referenceAttestationData.getBeacon_block_root(),
-            referenceAttestationData.getSource(),
-            wrongTarget);
+    AttestationData attestation = generateAttestationData(UInt64.valueOf(5), wrongTarget);
 
     assertThat(spec.createAttestationWorthinessChecker(state).areAttestationsWorthy(attestation))
         .isTrue();
@@ -82,13 +64,7 @@ public class AttestationWorthinessCheckerAltairTest {
 
   @Test
   void shouldIncludeSlotOKTargetOK() {
-    AttestationData attestation =
-        new AttestationData(
-            UInt64.valueOf(7),
-            referenceAttestationData.getIndex(),
-            referenceAttestationData.getBeacon_block_root(),
-            referenceAttestationData.getSource(),
-            correctTarget);
+    AttestationData attestation = generateAttestationData(UInt64.valueOf(7), correctTarget);
 
     assertThat(spec.createAttestationWorthinessChecker(state).areAttestationsWorthy(attestation))
         .isTrue();
@@ -98,17 +74,20 @@ public class AttestationWorthinessCheckerAltairTest {
   void shouldIncludeCloseToGenesis() {
     final BeaconState closeToGenesisState = dataStructureUtil.randomBeaconState(UInt64.valueOf(2));
 
-    AttestationData attestation =
-        new AttestationData(
-            UInt64.valueOf(1),
-            referenceAttestationData.getIndex(),
-            referenceAttestationData.getBeacon_block_root(),
-            referenceAttestationData.getSource(),
-            wrongTarget);
+    AttestationData attestation = generateAttestationData(UInt64.valueOf(1), wrongTarget);
 
     assertThat(
             spec.createAttestationWorthinessChecker(closeToGenesisState)
                 .areAttestationsWorthy(attestation))
         .isTrue();
+  }
+
+  private AttestationData generateAttestationData(UInt64 slot, Checkpoint target) {
+    return new AttestationData(
+        slot,
+        referenceAttestationData.getIndex(),
+        referenceAttestationData.getBeacon_block_root(),
+        referenceAttestationData.getSource(),
+        target);
   }
 }
