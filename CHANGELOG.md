@@ -26,6 +26,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - Upgraded to BLST 0.3.6.
 - Added new `--p2p-udp-port` and `--p2p-advertised-udp-port` options to support using different ports for TCP and UDP.
 - Added an additional bootnode for the Prater testnet.
+- Maximize revenue from attester slashings by prioritising slashings that involve more validators first.
 
 
 ### Bug Fixes

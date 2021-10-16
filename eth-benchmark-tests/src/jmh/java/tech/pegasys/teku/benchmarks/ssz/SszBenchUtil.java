@@ -60,7 +60,7 @@ public class SszBenchUtil {
 
   public static void iterateData(VoluntaryExit message, Blackhole bh) {
     bh.consume(message.getEpoch());
-    bh.consume(message.getValidator_index());
+    bh.consume(message.getValidatorIndex());
   }
 
   public static void iterateData(Deposit d, Blackhole bh) {

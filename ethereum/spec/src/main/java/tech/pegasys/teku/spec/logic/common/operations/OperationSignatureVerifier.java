@@ -96,7 +96,7 @@ public class OperationSignatureVerifier {
     final VoluntaryExit exit = signedExit.getMessage();
 
     Optional<BLSPublicKey> maybePublicKey =
-        beaconStateAccessors.getValidatorPubKey(state, exit.getValidator_index());
+        beaconStateAccessors.getValidatorPubKey(state, exit.getValidatorIndex());
     if (maybePublicKey.isEmpty()) {
       return false;
     }
