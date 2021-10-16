@@ -73,7 +73,10 @@ public class TransitionTestExecutor implements TestExecutor {
               testDefinition, "blocks_" + i + ".ssz_snappy", spec::deserializeSignedBeaconBlock);
 
       try {
-        result = spec.processBlock(result, block, BLSSignatureVerifier.SIMPLE);
+
+        final BLSSignatureVerifier signatureVerifier =
+            metadata.blsSetting == 2 ? BLSSignatureVerifier.NO_OP : BLSSignatureVerifier.SIMPLE;
+        result = spec.processBlock(result, block, signatureVerifier);
       } catch (final StateTransitionException e) {
         Assertions.fail(
             "Failed to process block " + i + " at slot " + block.getSlot() + ": " + e.getMessage(),
