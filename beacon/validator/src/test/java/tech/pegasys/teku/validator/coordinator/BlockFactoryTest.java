@@ -109,21 +109,23 @@ class BlockFactoryTest {
     final Bytes32 graffiti = dataStructureUtil.randomBytes32();
     final BlockFactory blockFactory =
         new BlockFactory(
-            attestationsPool,
-            attesterSlashingPool,
-            proposerSlashingPool,
-            voluntaryExitPool,
-            syncCommitteeContributionPool,
-            depositProvider,
-            eth1DataCache,
-            graffiti,
-            spec);
+            spec,
+            new BlockOperationSelectorFactory(
+                spec,
+                attestationsPool,
+                attesterSlashingPool,
+                proposerSlashingPool,
+                voluntaryExitPool,
+                syncCommitteeContributionPool,
+                depositProvider,
+                eth1DataCache,
+                graffiti));
 
     when(depositProvider.getDeposits(any(), any())).thenReturn(deposits);
     when(attestationsPool.getAttestationsForBlock(any(), any())).thenReturn(attestations);
-    when(attesterSlashingPool.getItemsForBlock(any())).thenReturn(attesterSlashings);
-    when(proposerSlashingPool.getItemsForBlock(any())).thenReturn(proposerSlashings);
-    when(voluntaryExitPool.getItemsForBlock(any())).thenReturn(voluntaryExits);
+    when(attesterSlashingPool.getItemsForBlock(any(), any(), any())).thenReturn(attesterSlashings);
+    when(proposerSlashingPool.getItemsForBlock(any(), any(), any())).thenReturn(proposerSlashings);
+    when(voluntaryExitPool.getItemsForBlock(any(), any(), any())).thenReturn(voluntaryExits);
     when(eth1DataCache.getEth1Vote(any())).thenReturn(ETH1_DATA);
     beaconChainUtil.initializeStorage();
 

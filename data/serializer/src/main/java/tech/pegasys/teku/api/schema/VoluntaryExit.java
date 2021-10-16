@@ -29,7 +29,7 @@ public class VoluntaryExit {
   public VoluntaryExit(
       tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit voluntaryExit) {
     this.epoch = voluntaryExit.getEpoch();
-    this.validator_index = voluntaryExit.getValidator_index();
+    this.validator_index = voluntaryExit.getValidatorIndex();
   }
 
   @JsonCreator

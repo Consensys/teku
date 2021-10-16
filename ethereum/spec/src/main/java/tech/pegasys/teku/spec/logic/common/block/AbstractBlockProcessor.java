@@ -739,7 +739,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
 
             // - Run initiate_validator_exit(state, exit.validator_index)
             beaconStateMutators.initiateValidatorExit(
-                state, toIntExact(signedExit.getMessage().getValidator_index().longValue()));
+                state, toIntExact(signedExit.getMessage().getValidatorIndex().longValue()));
           }
         });
   }

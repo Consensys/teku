@@ -17,12 +17,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.google.common.base.Function;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,9 +42,9 @@ import tech.pegasys.teku.spec.logic.common.operations.validation.VoluntaryExitVa
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.schema.SszListSchema;
+import tech.pegasys.teku.statetransition.OperationPool.OperationAddedSubscriber;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.OperationValidator;
-import tech.pegasys.teku.util.config.Constants;
 
 @SuppressWarnings({"unchecked", "FutureReturnValueIgnored"})
 public class OperationPoolTest {
@@ -82,10 +85,33 @@ public class OperationPoolTest {
             validator);
     when(validator.validateFully(any())).thenReturn(InternalValidationResult.ACCEPT);
     when(validator.validateForStateTransition(any(), any())).thenReturn(Optional.empty());
-    for (int i = 0; i < Constants.MAX_VOLUNTARY_EXITS + 1; i++) {
+    final int maxVoluntaryExits = spec.getGenesisSpecConfig().getMaxVoluntaryExits();
+    for (int i = 0; i < maxVoluntaryExits + 1; i++) {
       pool.add(dataStructureUtil.randomSignedVoluntaryExit());
     }
-    assertThat(pool.getItemsForBlock(state)).hasSize(Constants.MAX_VOLUNTARY_EXITS);
+    assertThat(pool.getItemsForBlock(state)).hasSize(maxVoluntaryExits);
+  }
+
+  @Test
+  void shouldNotCountFilteredOperationsInMaxItems() {
+    final Predicate<SignedVoluntaryExit> filter = mock(Predicate.class);
+    OperationValidator<SignedVoluntaryExit> validator = mock(OperationValidator.class);
+    OperationPool<SignedVoluntaryExit> pool =
+        new OperationPool<>(
+            "SignedVoluntaryExitPool",
+            metricsSystem,
+            beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getVoluntaryExitsSchema),
+            validator);
+    when(filter.test(any())).thenReturn(false);
+    when(validator.validateFully(any())).thenReturn(InternalValidationResult.ACCEPT);
+    when(validator.validateForStateTransition(any(), any())).thenReturn(Optional.empty());
+    final int maxVoluntaryExits = spec.getGenesisSpecConfig().getMaxVoluntaryExits();
+    for (int i = 0; i < maxVoluntaryExits + 10; i++) {
+      pool.add(dataStructureUtil.randomSignedVoluntaryExit());
+    }
+    // Didn't find any applicable items but tried them all
+    assertThat(pool.getItemsForBlock(state, filter, operation -> {})).isEmpty();
+    verify(filter, times(maxVoluntaryExits + 10)).test(any());
   }
 
   @Test
@@ -145,7 +171,7 @@ public class OperationPoolTest {
 
     // Set up subscriber
     final Map<ProposerSlashing, InternalValidationResult> addedSlashings = new HashMap<>();
-    OperationPool.OperationAddedSubscriber<ProposerSlashing> subscriber = addedSlashings::put;
+    OperationAddedSubscriber<ProposerSlashing> subscriber = addedSlashings::put;
     pool.subscribeOperationAdded(subscriber);
 
     ProposerSlashing slashing1 = dataStructureUtil.randomProposerSlashing();
