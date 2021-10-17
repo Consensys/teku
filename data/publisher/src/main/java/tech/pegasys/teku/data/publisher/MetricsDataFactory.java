@@ -115,7 +115,7 @@ public class MetricsDataFactory {
         networkPeersConnected,
         syncBeaconHeadSlot,
         MetricsDataFactory.CLIENT_NAME,
-        VersionProvider.IMPLEMENTATION_VERSION);
+        getStringValue(values, "teku_version"));
   }
 
   private static BaseMetricData extractValidatorData(
@@ -132,7 +132,7 @@ public class MetricsDataFactory {
         cpuProcessSecondsTotal,
         memoryProcessBytes,
         MetricsDataFactory.CLIENT_NAME,
-        VersionProvider.IMPLEMENTATION_VERSION,
+        getStringValue(values, "teku_version"),
         validatorTotal,
         validatorActive);
   }
@@ -149,6 +149,16 @@ public class MetricsDataFactory {
     if (values.containsKey(key)) {
       Double observation = (Double) values.get(key).getValue();
       return observation.intValue();
+    }
+    return null;
+  }
+
+  private static String getStringValue(Map<String, Observation> values, String key) {
+    if (values.containsKey(key)) {
+      Observation ob = values.get(key);
+      if (!ob.getLabels().isEmpty()) {
+        return ob.getLabels().get(0);
+      }
     }
     return null;
   }
