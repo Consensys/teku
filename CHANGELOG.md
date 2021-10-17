@@ -26,6 +26,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - Upgraded to BLST 0.3.6.
 - Added new `--p2p-udp-port` and `--p2p-advertised-udp-port` options to support using different ports for TCP and UDP.
 - Added an additional bootnode for the Prater testnet.
+- Maximize revenue from attester slashings by prioritising slashings that involve more validators first.
 
 
 ### Bug Fixes
@@ -33,3 +34,4 @@ For information on changes in released versions of Teku, see the [releases page]
  - Set an idle timeout for metrics connections, to clean up ports when no longer used.
  - Fixed error when building from a source download rather than a git checkout.
    Now logs a warning when building without git information to warn users that version information will not be available.
+ - Fixed an issue where discovery did not recover if it was initially started while the bootnodes were unavailable.
