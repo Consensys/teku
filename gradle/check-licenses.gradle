@@ -85,7 +85,10 @@ downloadLicenses {
          'The JSON License',
          license('The JSON License', 'http://json.org/license.html')
       ],
-      (mit)       : ['MIT','The MIT License'],
+      (mit)       : [
+          'MIT','The MIT License', 'MIT License',
+          license('The MIT License', 'http://opensource.org/licenses/MIT')
+      ],
       (bsd)       : [
           'BSD',
           'BSD licence',
