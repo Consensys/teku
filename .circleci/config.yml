@@ -152,7 +152,7 @@ jobs:
       name: win/default
     steps:
       - checkout
-      - run: gradlew.bat
+      - run: gradlew
 
   spotless:
     executor: small_executor
