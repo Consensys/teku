@@ -21,4 +21,7 @@ dependencies {
     testImplementation testFixtures(project(':infrastructure:time'))
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
 
+    testFixturesImplementation 'com.fasterxml.jackson.core:jackson-databind'
+    testFixturesImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+
 }

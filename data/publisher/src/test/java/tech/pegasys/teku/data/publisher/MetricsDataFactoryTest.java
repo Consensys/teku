@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.test.data.publisher.DeserializedMetricDataObject;
 
 class MetricsDataFactoryTest {
 
@@ -60,6 +61,20 @@ class MetricsDataFactoryTest {
     assertThat(baseMetricData.get(0)).isEqualTo(beaconNodeDeserialized);
     assertThat(baseMetricData.get(1)).isEqualTo(validatorDeserialized);
     assertThat(baseMetricData.get(2)).isEqualTo(systemDeserialized);
+  }
+
+  @Test
+  public void shouldDeserializeObjectFromString() throws JsonProcessingException {
+    when(prometheusMock.streamObservations()).thenReturn(getMockObservations().stream());
+    final MetricsDataFactory metricsDataFactory = new MetricsDataFactory(prometheusMock);
+    final List<BaseMetricData> baseMetricData = metricsDataFactory.getMetricData(timeProvider);
+    assertThat(baseMetricData.size()).isEqualTo(3);
+
+    String listOfMetrics = jsonProvider.objectToJSON(baseMetricData);
+    DeserializedMetricDataObject[] base =
+        jsonProvider.jsonToObject(listOfMetrics, DeserializedMetricDataObject[].class);
+
+    assertThat(base.length).isEqualTo(3);
   }
 
   @Test

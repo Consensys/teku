@@ -20,21 +20,16 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
 import org.testcontainers.images.builder.ImageFromDockerfile;
-import tech.pegasys.teku.data.publisher.BaseMetricData;
-import tech.pegasys.teku.data.publisher.BeaconNodeMetricData;
 import tech.pegasys.teku.data.publisher.MetricsDataClient;
-import tech.pegasys.teku.data.publisher.SystemMetricData;
-import tech.pegasys.teku.data.publisher.ValidatorMetricData;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.test.data.publisher.DeserializedMetricDataObject;
 
 public class ExternalMetricNode extends Node {
   private final JsonProvider jsonProvider = new JsonProvider();
@@ -92,57 +87,42 @@ public class ExternalMetricNode extends Node {
     return httpClient.get(new URI(this.getAddress()), "/output");
   }
 
-  private List<BaseMetricData> getPublishedObjects() throws URISyntaxException, IOException {
+  private DeserializedMetricDataObject[] getPublishedObjects()
+      throws URISyntaxException, IOException {
     waitForPublication();
     String response = getResponse();
-    String beaconJson = response.substring(1, response.indexOf("},") + 1);
-    String validatorJson =
-        response.substring(response.indexOf("},") + 2, response.lastIndexOf("},") + 1);
-    String systemJson = response.substring(response.lastIndexOf("},") + 2, response.length() - 1);
 
-    BeaconNodeMetricData beaconNodeMetricData =
-        jsonProvider.jsonToObject(beaconJson, BeaconNodeMetricData.class);
-    ValidatorMetricData validatorMetricData =
-        jsonProvider.jsonToObject(validatorJson, ValidatorMetricData.class);
-    SystemMetricData systemMetricData =
-        jsonProvider.jsonToObject(systemJson, SystemMetricData.class);
-    List<BaseMetricData> dataReadings = new ArrayList<>();
-    dataReadings.add(beaconNodeMetricData);
-    dataReadings.add(validatorMetricData);
-    dataReadings.add(systemMetricData);
-    return dataReadings;
+    String listOfMetrics = jsonProvider.objectToJSON(response);
+
+    return jsonProvider.jsonToObject(listOfMetrics, DeserializedMetricDataObject[].class);
   }
 
   public void waitForBeaconNodeMetricPublication() throws URISyntaxException, IOException {
-    List<BaseMetricData> publishedData = getPublishedObjects();
-    assertThat(publishedData.size()).isEqualTo(3);
+    DeserializedMetricDataObject[] publishedData = getPublishedObjects();
+    assertThat(publishedData.length).isEqualTo(3);
 
-    BeaconNodeMetricData beaconNodeMetricData = (BeaconNodeMetricData) publishedData.get(0);
-    assertThat(beaconNodeMetricData.process)
-        .isEqualTo(MetricsDataClient.BEACON_NODE.getDataClient());
-    assertThat(beaconNodeMetricData.network_peers_connected).isNotNull();
-    assertThat(beaconNodeMetricData.sync_beacon_head_slot).isNotNull();
+    assertThat(publishedData[0].process).isEqualTo(MetricsDataClient.BEACON_NODE.getDataClient());
+    assertThat(publishedData[0].network_peers_connected).isNotNull();
+    assertThat(publishedData[0].sync_beacon_head_slot).isNotNull();
   }
 
   public void waitForValidatorMetricPublication() throws URISyntaxException, IOException {
-    List<BaseMetricData> publishedData = getPublishedObjects();
-    assertThat(publishedData.size()).isEqualTo(3);
+    DeserializedMetricDataObject[] publishedData = getPublishedObjects();
+    assertThat(publishedData.length).isEqualTo(3);
 
-    ValidatorMetricData validatorMetricData = (ValidatorMetricData) publishedData.get(1);
-    assertThat(validatorMetricData.process).isEqualTo(MetricsDataClient.VALIDATOR.getDataClient());
-    assertThat(validatorMetricData.cpu_process_seconds_total).isNotNull();
-    assertThat(validatorMetricData.memory_process_bytes).isNotNull();
-    assertThat(validatorMetricData.validator_total).isNotNull();
-    assertThat(validatorMetricData.validator_active).isNotNull();
+    assertThat(publishedData[1].process).isEqualTo(MetricsDataClient.VALIDATOR.getDataClient());
+    assertThat(publishedData[1].cpu_process_seconds_total).isNotNull();
+    assertThat(publishedData[1].memory_process_bytes).isNotNull();
+    assertThat(publishedData[1].validator_total).isNotNull();
+    assertThat(publishedData[1].validator_active).isNotNull();
   }
 
   public void waitForSystemMetricPublication() throws URISyntaxException, IOException {
-    List<BaseMetricData> publishedData = getPublishedObjects();
-    assertThat(publishedData.size()).isEqualTo(3);
+    DeserializedMetricDataObject[] publishedData = getPublishedObjects();
+    assertThat(publishedData.length).isEqualTo(3);
 
-    SystemMetricData systemMetricData = (SystemMetricData) publishedData.get(2);
-    assertThat(systemMetricData.process).isEqualTo(MetricsDataClient.SYSTEM.getDataClient());
-    assertThat(systemMetricData.cpu_node_system_seconds_total).isNotNull();
+    assertThat(publishedData[2].process).isEqualTo(MetricsDataClient.SYSTEM.getDataClient());
+    assertThat(publishedData[2].cpu_node_system_seconds_total).isNotNull();
   }
 
   public void start() {
