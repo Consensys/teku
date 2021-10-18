@@ -398,6 +398,10 @@ public class ChainDataProvider {
                     state -> getCommitteesFromState(state, epoch, committeeIndex, slot)));
   }
 
+  public Optional<UInt64> getCurrentEpoch() {
+    return recentChainData.getCurrentEpoch();
+  }
+
   List<EpochCommitteeResponse> getCommitteesFromState(
       final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state,
       final Optional<UInt64> epoch,
