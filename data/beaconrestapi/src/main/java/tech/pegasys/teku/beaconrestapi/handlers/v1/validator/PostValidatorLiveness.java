@@ -38,6 +38,7 @@ import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
+import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.api.request.v1.validator.ValidatorLivenessRequest;
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
@@ -97,8 +98,9 @@ public class PostValidatorLiveness extends AbstractHandler {
   @Override
   public void handle(Context ctx) throws Exception {
     if (!chainDataProvider.isStoreAvailable() || syncDataProvider.isSyncing()) {
-      ctx.status(SC_SERVICE_UNAVAILABLE);
-      return;
+      throw new ServiceUnavailableException();
+      //      ctx.status(SC_SERVICE_UNAVAILABLE);
+      //      return;
     }
     try {
       final ValidatorLivenessRequest request =

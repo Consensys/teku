@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
+import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.api.request.v1.validator.ValidatorLivenessRequest;
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
 import tech.pegasys.teku.api.response.v1.validator.ValidatorLivenessAtEpoch;
@@ -150,10 +151,7 @@ public class NodeDataProvider {
           new BadRequestException("No validator indices posted in validator liveness request"));
     }
     if (maybeCurrentEpoch.isEmpty()) {
-      return SafeFuture.failedFuture(
-          new BadRequestException(
-              String.format(
-                  "Current epoch could not be identified, cannot perform a validator liveness check at this time.")));
+      return SafeFuture.failedFuture(new ServiceUnavailableException());
     }
 
     final UInt64 currentEpoch = maybeCurrentEpoch.get();

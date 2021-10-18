@@ -39,6 +39,7 @@ import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Server;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
+import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.Liveness;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.PutLogLevel;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.Readiness;
@@ -184,18 +185,9 @@ public class BeaconRestApi {
 
   private void addExceptionHandlers() {
     app.exception(ChainDataUnavailableException.class, (e, ctx) -> ctx.status(SC_NO_CONTENT));
-    app.exception(
-        NodeSyncingException.class,
-        (e, ctx) -> {
-          ctx.status(SC_SERVICE_UNAVAILABLE);
-          setErrorBody(ctx, () -> BadRequest.serviceUnavailable(jsonProvider));
-        });
-    app.exception(
-        BadRequestException.class,
-        (e, ctx) -> {
-          ctx.status(SC_BAD_REQUEST);
-          setErrorBody(ctx, () -> BadRequest.badRequest(jsonProvider, e.getMessage()));
-        });
+    app.exception(NodeSyncingException.class, this::serviceUnavailable);
+    app.exception(ServiceUnavailableException.class, this::serviceUnavailable);
+    app.exception(BadRequestException.class, this::badRequest);
     // Add catch-all handler
     app.exception(
         Exception.class,
@@ -205,6 +197,16 @@ public class BeaconRestApi {
           setErrorBody(
               ctx, () -> BadRequest.internalError(jsonProvider, "An unexpected error occurred"));
         });
+  }
+
+  private void serviceUnavailable(final Throwable throwable, final Context context) {
+    context.status(SC_SERVICE_UNAVAILABLE);
+    setErrorBody(context, () -> BadRequest.serviceUnavailable(jsonProvider));
+  }
+
+  private void badRequest(final Throwable throwable, final Context context) {
+    context.status(SC_BAD_REQUEST);
+    setErrorBody(context, () -> BadRequest.badRequest(jsonProvider, throwable.getMessage()));
   }
 
   private void setErrorBody(final Context ctx, final ExceptionThrowingSupplier<String> body) {
