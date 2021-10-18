@@ -137,6 +137,14 @@
     {
       "moduleName": "org.rocksdb:rocksdbjni",
       "moduleLicense": "Apache License, Version 2.0"
+    },
+    {
+      "moduleName": "org.codehaus.woodstox:stax2-api",
+      "moduleLicense": "Apache License, Version 2.0"
+    },
+    {
+      "moduleName": "org.java-websocket:Java-WebSocket",
+      "moduleLicense": "MIT License"
     }
   ]
 }
