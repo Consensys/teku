@@ -18,6 +18,7 @@ For information on changes in released versions of Teku, see the [releases page]
 
 
 ### Additions and Improvements
+ - Updated to Javalin 4 for the rest api.
 
 
 ### Bug Fixes
