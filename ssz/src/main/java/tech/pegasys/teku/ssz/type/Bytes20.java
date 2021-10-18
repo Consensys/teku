@@ -32,10 +32,6 @@ public class Bytes20 {
     this.bytes = bytes;
   }
 
-  public static Bytes20 random() {
-    return new Bytes20(Bytes.random(SIZE));
-  }
-
   public static Bytes20 fromHexString(String value) {
     return new Bytes20(Bytes.fromHexString(value));
   }
