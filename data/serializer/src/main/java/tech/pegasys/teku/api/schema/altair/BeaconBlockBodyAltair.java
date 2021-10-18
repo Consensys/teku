@@ -72,8 +72,8 @@ public class BeaconBlockBodyAltair extends BeaconBlockBody {
   @Override
   public tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody
       asInternalBeaconBlockBody(final SpecVersion spec) {
-    BeaconBlockBodySchemaAltair schema =
-        (BeaconBlockBodySchemaAltair) spec.getSchemaDefinitions().getBeaconBlockBodySchema();
+    BeaconBlockBodySchemaAltair<?> schema =
+        (BeaconBlockBodySchemaAltair<?>) spec.getSchemaDefinitions().getBeaconBlockBodySchema();
     SyncAggregateSchema syncAggregateSchema = schema.getSyncAggregateSchema();
     return super.asInternalBeaconBlockBody(
         spec,

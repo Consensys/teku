@@ -24,6 +24,7 @@ import com.google.common.base.Throwables;
 import java.net.BindException;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.Comparator;
 import java.util.Optional;
 import java.util.Random;
 import org.apache.logging.log4j.LogManager;
@@ -118,6 +119,7 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorPerformanceTrackingMode;
 import tech.pegasys.teku.validator.coordinator.ActiveValidatorTracker;
 import tech.pegasys.teku.validator.coordinator.BlockFactory;
+import tech.pegasys.teku.validator.coordinator.BlockOperationSelectorFactory;
 import tech.pegasys.teku.validator.coordinator.DepositProvider;
 import tech.pegasys.teku.validator.coordinator.DutyMetrics;
 import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
@@ -358,7 +360,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             "AttesterSlashingPool",
             metricsSystem,
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getAttesterSlashingsSchema),
-            new AttesterSlashingValidator(recentChainData, spec));
+            new AttesterSlashingValidator(recentChainData, spec),
+            // Prioritise slashings that include more validators at a time
+            Comparator.<AttesterSlashing>comparingInt(
+                    slashing -> slashing.getIntersectingValidatorIndices().size())
+                .reversed());
     blockImporter.subscribeToVerifiedBlockAttesterSlashings(attesterSlashingPool::removeAll);
   }
 
@@ -466,15 +472,17 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     LOG.debug("BeaconChainController.initValidatorApiHandler()");
     final BlockFactory blockFactory =
         new BlockFactory(
-            attestationPool,
-            attesterSlashingPool,
-            proposerSlashingPool,
-            voluntaryExitPool,
-            syncCommitteeContributionPool,
-            depositProvider,
-            eth1DataCache,
-            VersionProvider.getDefaultGraffiti(),
-            spec);
+            spec,
+            new BlockOperationSelectorFactory(
+                spec,
+                attestationPool,
+                attesterSlashingPool,
+                proposerSlashingPool,
+                voluntaryExitPool,
+                syncCommitteeContributionPool,
+                depositProvider,
+                eth1DataCache,
+                VersionProvider.getDefaultGraffiti()));
     syncCommitteeSubscriptionManager =
         beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()
             ? new AllSyncCommitteeSubscriptions(p2pNetwork, spec)

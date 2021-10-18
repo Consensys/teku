@@ -1,4 +1,5 @@
 dependencies {
+  implementation project(':beacon:validator')
   implementation project(':infrastructure:events')
   implementation project(':data:beaconrestapi')
   implementation project(':infrastructure:metrics')
@@ -28,7 +29,6 @@ dependencies {
   implementation project(':sync')
   implementation project(':util')
   implementation project(':validator:api')
-  implementation project(':validator:coordinator')
   implementation project(':validator:client')
 
   testImplementation testFixtures(project(':bls'))
