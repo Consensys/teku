@@ -21,3 +21,4 @@ For information on changes in released versions of Teku, see the [releases page]
 
 
 ### Bug Fixes
+- Fixed issue where discovery did not correctly abort handshake attempts when a request timed out.
