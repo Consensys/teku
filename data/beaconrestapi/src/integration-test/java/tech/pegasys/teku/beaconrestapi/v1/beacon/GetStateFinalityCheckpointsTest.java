@@ -44,6 +44,6 @@ public class GetStateFinalityCheckpointsTest extends AbstractDataBackedRestAPIIn
   }
 
   public Response get(final String stateIdString) throws IOException {
-    return getResponse(GetStateFinalityCheckpoints.ROUTE.replace(":state_id", stateIdString));
+    return getResponse(GetStateFinalityCheckpoints.ROUTE.replace("{state_id}", stateIdString));
   }
 }

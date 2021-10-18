@@ -53,7 +53,7 @@ import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 
 public class GetNewBlock extends AbstractHandler implements Handler {
-  public static final String ROUTE = "/eth/v1/validator/blocks/:slot";
+  public static final String ROUTE = "/eth/v1/validator/blocks/{slot}";
   protected final ValidatorDataProvider provider;
 
   public GetNewBlock(final DataProvider dataProvider, final JsonProvider jsonProvider) {
@@ -105,7 +105,7 @@ public class GetNewBlock extends AbstractHandler implements Handler {
       final BLSSignature randao = getParameterValueAsBLSSignature(queryParamMap, RANDAO_REVEAL);
       final Optional<Bytes32> graffiti =
           getOptionalParameterValueAsBytes32(queryParamMap, GRAFFITI);
-      ctx.result(
+      ctx.future(
           provider
               .getUnsignedBeaconBlockAtSlot(slot, randao, graffiti)
               .thenApplyChecked(
@@ -118,7 +118,7 @@ public class GetNewBlock extends AbstractHandler implements Handler {
               .exceptionallyCompose(error -> handleError(ctx, error)));
     } catch (final IllegalArgumentException e) {
       ctx.status(SC_BAD_REQUEST);
-      ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
+      ctx.json(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
     }
   }
 

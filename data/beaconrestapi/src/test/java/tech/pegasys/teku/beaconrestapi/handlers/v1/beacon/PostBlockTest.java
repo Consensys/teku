@@ -105,7 +105,7 @@ class PostBlockTest {
     handler.handle(context);
 
     verify(context).status(SC_OK);
-    verify(context).result(args.capture());
+    verify(context).json(args.capture());
     SafeFuture<String> data = args.getValue();
     assertThat(data.get()).isEqualTo("");
   }
@@ -124,7 +124,7 @@ class PostBlockTest {
     handler.handle(context);
 
     verify(context).status(SC_ACCEPTED);
-    verify(context).result(args.capture());
+    verify(context).json(args.capture());
     SafeFuture<String> data = args.getValue();
     assertThat(data.get()).isEqualTo("");
   }

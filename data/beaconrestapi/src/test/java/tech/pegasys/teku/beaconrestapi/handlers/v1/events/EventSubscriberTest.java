@@ -14,10 +14,8 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -29,7 +27,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.servlet.AsyncContext;
-import javax.servlet.ServletOutputStream;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -49,7 +46,7 @@ public class EventSubscriberTest {
   private final HttpServletResponse res = mock(HttpServletResponse.class);
   private final Runnable onCloseCallback = mock(Runnable.class);
   private final ServletResponse servletResponse = mock(ServletResponse.class);
-  private final ServletOutputStream outputStream = mock(ServletOutputStream.class);
+  private final TestServletOutputStream outputStream = new TestServletOutputStream();
   private final JsonProvider jsonProvider = new JsonProvider();
 
   private final Context context = new Context(req, res, Collections.emptyMap());
@@ -101,7 +98,7 @@ public class EventSubscriberTest {
     verify(onCloseCallback).run();
     verify(asyncContext).complete();
     asyncRunner.executeQueuedActions();
-    verify(outputStream, never()).print(anyString());
+    assertThat(outputStream.getWriteCounter()).isEqualTo(0);
   }
 
   @Test
@@ -118,7 +115,7 @@ public class EventSubscriberTest {
     }
     assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
     asyncRunner.executeQueuedActions();
-    verify(outputStream, times(allEventTypes.size())).print(anyString());
+    assertThat(outputStream.countEvents()).isEqualTo(allEventTypes.size());
   }
 
   @Test
@@ -131,7 +128,7 @@ public class EventSubscriberTest {
       eventSubscriber.onEvent(EventType.head, event("test"));
     }
     asyncRunner.executeQueuedActions();
-    verify(outputStream, times(10)).print(anyString());
+    assertThat(outputStream.countEvents()).isEqualTo(10);
 
     for (int i = 0; i < MAX_PENDING_EVENTS; i++) {
       eventSubscriber.onEvent(EventType.head, event("test"));
@@ -165,7 +162,7 @@ public class EventSubscriberTest {
 
     assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
     asyncRunner.executeQueuedActions();
-    verify(outputStream).print(anyString());
+    assertThat(outputStream.countEvents()).isEqualTo(1);
   }
 
   private EventSource event(final String message) {

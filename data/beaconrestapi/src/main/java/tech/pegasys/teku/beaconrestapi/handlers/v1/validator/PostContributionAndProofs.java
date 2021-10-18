@@ -79,14 +79,14 @@ public class PostContributionAndProofs extends AbstractHandler implements Handle
       signedContributionAndProofs =
           parseRequestBody(ctx.body(), SignedContributionAndProof[].class);
     } catch (IllegalArgumentException e) {
-      ctx.result(BadRequest.badRequest(jsonProvider, e.getMessage()));
+      ctx.json(BadRequest.badRequest(jsonProvider, e.getMessage()));
       ctx.status(HttpStatusCodes.SC_BAD_REQUEST);
       return;
     }
     final SafeFuture<Void> future =
         provider.sendContributionAndProofs(asList(signedContributionAndProofs));
 
-    ctx.result(
+    ctx.json(
         future
             .thenApplyChecked(result -> "")
             .exceptionallyCompose(error -> handleError(ctx, error)));

@@ -47,7 +47,7 @@ import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.SpecMilestone;
 
 public class GetBlock extends AbstractHandler implements Handler {
-  public static final String ROUTE = "/eth/v2/beacon/blocks/:block_id";
+  public static final String ROUTE = "/eth/v2/beacon/blocks/{block_id}";
   private final ChainDataProvider chainDataProvider;
 
   public GetBlock(final DataProvider dataProvider, final JsonProvider jsonProvider) {

@@ -56,6 +56,6 @@ public class GetForkSchedule implements Handler {
       })
   @Override
   public void handle(final Context ctx) throws Exception {
-    ctx.result(jsonProvider.objectToJSON(configProvider.getForkSchedule()));
+    ctx.json(jsonProvider.objectToJSON(configProvider.getForkSchedule()));
   }
 }

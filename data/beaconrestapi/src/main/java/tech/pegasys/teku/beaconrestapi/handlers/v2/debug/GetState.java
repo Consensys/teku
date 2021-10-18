@@ -50,7 +50,7 @@ import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.SpecMilestone;
 
 public class GetState extends AbstractHandler implements Handler {
-  public static final String ROUTE = "/eth/v2/debug/beacon/states/:state_id";
+  public static final String ROUTE = "/eth/v2/debug/beacon/states/{state_id}";
   private final ChainDataProvider chainDataProvider;
 
   public GetState(final DataProvider dataProvider, final JsonProvider jsonProvider) {

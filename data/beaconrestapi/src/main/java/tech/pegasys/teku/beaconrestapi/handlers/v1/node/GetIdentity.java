@@ -70,6 +70,6 @@ public class GetIdentity implements Handler {
             network.getListeningAddresses(),
             network.getDiscoveryAddresses(),
             network.getMetadata());
-    ctx.result(jsonProvider.objectToJSON(new IdentityResponse(networkIdentity)));
+    ctx.json(jsonProvider.objectToJSON(new IdentityResponse(networkIdentity)));
   }
 }

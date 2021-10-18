@@ -69,6 +69,6 @@ public class GetDepositContract implements Handler {
                   new GetDepositContractResponse(depositChainId, depositContractAddress)));
     }
     ctx.status(SC_OK);
-    ctx.result(this.depositContractResponse.orElse(""));
+    ctx.json(this.depositContractResponse.orElse(""));
   }
 }

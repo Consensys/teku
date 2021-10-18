@@ -98,14 +98,14 @@ public class PostBlock implements Handler {
     try {
       if (syncDataProvider.isSyncing()) {
         ctx.status(SC_SERVICE_UNAVAILABLE);
-        ctx.result(BadRequest.serviceUnavailable(jsonProvider));
+        ctx.json(BadRequest.serviceUnavailable(jsonProvider));
         return;
       }
 
       final SignedBeaconBlock signedBeaconBlock =
           validatorDataProvider.parseBlock(jsonProvider, ctx.body());
 
-      ctx.result(
+      ctx.json(
           validatorDataProvider
               .submitSignedBlock(signedBeaconBlock)
               .thenApplyChecked(
@@ -113,11 +113,11 @@ public class PostBlock implements Handler {
 
     } catch (final JsonProcessingException ex) {
       ctx.status(SC_BAD_REQUEST);
-      ctx.result(BadRequest.badRequest(jsonProvider, ex.getMessage()));
+      ctx.json(BadRequest.badRequest(jsonProvider, ex.getMessage()));
     } catch (final Exception ex) {
       LOG.error("Failed to post block due to internal error", ex);
       ctx.status(SC_INTERNAL_SERVER_ERROR);
-      ctx.result(BadRequest.internalError(jsonProvider, ex.getMessage()));
+      ctx.json(BadRequest.internalError(jsonProvider, ex.getMessage()));
     }
   }
 

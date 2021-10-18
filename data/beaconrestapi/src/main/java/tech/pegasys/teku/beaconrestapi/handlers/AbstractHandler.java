@@ -65,7 +65,7 @@ public abstract class AbstractHandler implements Handler {
       ResultProcessor<T> resultProcessor,
       ErrorProcessor errorProcessor,
       final T emptyResponse) {
-    ctx.result(
+    ctx.future(
         future
             .thenApplyChecked(
                 result -> resultProcessor.process(ctx, result.orElse(emptyResponse)).orElse(null))
@@ -78,7 +78,7 @@ public abstract class AbstractHandler implements Handler {
       ResultProcessor<T> resultProcessor,
       ErrorProcessor errorProcessor,
       final int missingStatus) {
-    ctx.result(
+    ctx.future(
         future
             .thenApplyChecked(
                 result -> {
@@ -97,14 +97,14 @@ public abstract class AbstractHandler implements Handler {
       SafeFuture<Optional<T>> future,
       ResultProcessor<T> resultProcessor,
       final int missingStatus) {
-    ctx.result(
+    ctx.future(
         future.thenApplyChecked(
             result -> {
               if (result.isPresent()) {
                 return resultProcessor.process(ctx, result.get()).orElse(null);
               } else {
                 ctx.status(missingStatus);
-                ctx.result(BadRequest.serialize(jsonProvider, missingStatus, "Not found"));
+                ctx.json(BadRequest.serialize(jsonProvider, missingStatus, "Not found"));
                 return null;
               }
             }));
@@ -116,7 +116,7 @@ public abstract class AbstractHandler implements Handler {
       ResultSszProcessor<T> resultProcessor,
       SszFilenameFromResult<T> resultFilename,
       final int missingStatus) {
-    ctx.result(
+    ctx.future(
         future.thenApplyChecked(
             result -> {
               if (result.isPresent()) {
@@ -127,7 +127,7 @@ public abstract class AbstractHandler implements Handler {
                 return resultProcessor.process(ctx, result.get()).orElse(null);
               } else {
                 ctx.status(missingStatus);
-                ctx.result(BadRequest.serialize(jsonProvider, missingStatus, "Not found"));
+                ctx.json(BadRequest.serialize(jsonProvider, missingStatus, "Not found"));
                 return null;
               }
             }));
@@ -135,7 +135,7 @@ public abstract class AbstractHandler implements Handler {
 
   protected void handlePostDataResult(
       final Context ctx, final SafeFuture<Optional<PostDataFailureResponse>> result) {
-    ctx.result(
+    ctx.future(
         result
             .thenApplyChecked(
                 errors -> {

@@ -62,6 +62,6 @@ public class GetSyncing implements Handler {
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
     ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
-    ctx.result(jsonProvider.objectToJSON(new SyncingResponse(syncProvider.getSyncing())));
+    ctx.json(jsonProvider.objectToJSON(new SyncingResponse(syncProvider.getSyncing())));
   }
 }

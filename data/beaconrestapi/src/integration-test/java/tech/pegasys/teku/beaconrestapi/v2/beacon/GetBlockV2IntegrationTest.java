@@ -72,6 +72,6 @@ public class GetBlockV2IntegrationTest extends AbstractDataBackedRestAPIIntegrat
   }
 
   public Response get(final String blockIdString) throws IOException {
-    return getResponse(GetBlock.ROUTE.replace(":block_id", blockIdString));
+    return getResponse(GetBlock.ROUTE.replace("{block_id}", blockIdString));
   }
 }
