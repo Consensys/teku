@@ -14,8 +14,13 @@
 package tech.pegasys.teku.statetransition;
 
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
@@ -40,16 +45,46 @@ public class OperationPool<T extends SszData> {
   private final Set<T> operations = LimitedSet.create(OPERATION_POOL_SIZE);
   private final Function<UInt64, SszListSchema<T, ?>> slotToSszListSchemaSupplier;
   private final OperationValidator<T> operationValidator;
+  private final Optional<Comparator<T>> priorityOrderComparator;
   private final Subscribers<OperationAddedSubscriber<T>> subscribers = Subscribers.create(true);
   private final LabelledMetric<Counter> validationReasonCounter;
 
   public OperationPool(
-      String metricType,
-      MetricsSystem metricsSystem,
-      Function<UInt64, SszListSchema<T, ?>> slotToSszListSchemaSupplier,
-      OperationValidator<T> operationValidator) {
+      final String metricType,
+      final MetricsSystem metricsSystem,
+      final Function<UInt64, SszListSchema<T, ?>> slotToSszListSchemaSupplier,
+      final OperationValidator<T> operationValidator) {
+    this(
+        metricType,
+        metricsSystem,
+        slotToSszListSchemaSupplier,
+        operationValidator,
+        Optional.empty());
+  }
+
+  public OperationPool(
+      final String metricType,
+      final MetricsSystem metricsSystem,
+      final Function<UInt64, SszListSchema<T, ?>> slotToSszListSchemaSupplier,
+      final OperationValidator<T> operationValidator,
+      final Comparator<T> priorityOrderComparator) {
+    this(
+        metricType,
+        metricsSystem,
+        slotToSszListSchemaSupplier,
+        operationValidator,
+        Optional.of(priorityOrderComparator));
+  }
+
+  private OperationPool(
+      final String metricType,
+      final MetricsSystem metricsSystem,
+      final Function<UInt64, SszListSchema<T, ?>> slotToSszListSchemaSupplier,
+      final OperationValidator<T> operationValidator,
+      final Optional<Comparator<T>> priorityOrderComparator) {
     this.slotToSszListSchemaSupplier = slotToSszListSchemaSupplier;
     this.operationValidator = operationValidator;
+    this.priorityOrderComparator = priorityOrderComparator;
 
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.BEACON,
@@ -64,23 +99,37 @@ public class OperationPool<T extends SszData> {
             "result");
   }
 
-  public void subscribeOperationAdded(OperationAddedSubscriber<T> subscriber) {
+  public void subscribeOperationAdded(final OperationAddedSubscriber<T> subscriber) {
     this.subscribers.subscribe(subscriber);
   }
 
-  public SszList<T> getItemsForBlock(BeaconState stateAtBlockSlot) {
-    SszListSchema<T, ?> schema = slotToSszListSchemaSupplier.apply(stateAtBlockSlot.getSlot());
+  public SszList<T> getItemsForBlock(final BeaconState stateAtBlockSlot) {
+    return getItemsForBlock(stateAtBlockSlot, operation -> true, operation -> {});
+  }
+
+  public SszList<T> getItemsForBlock(
+      final BeaconState stateAtBlockSlot,
+      final Predicate<T> filter,
+      final Consumer<T> includedItemConsumer) {
+    final SszListSchema<T, ?> schema =
+        slotToSszListSchemaSupplier.apply(stateAtBlockSlot.getSlot());
     // Note that iterating through all items does not affect their access time so we are effectively
     // evicting the oldest entries when the size is exceeded as we only ever access via iteration.
-    return operations.stream()
-        .limit(schema.getMaxLength())
+    final Stream<T> operationsStream =
+        priorityOrderComparator
+            .map(comparator -> operations.stream().sorted(comparator))
+            .orElseGet(operations::stream);
+    return operationsStream
+        .filter(filter)
         .filter(
             item -> operationValidator.validateForStateTransition(stateAtBlockSlot, item).isEmpty())
+        .limit(schema.getMaxLength())
+        .peek(includedItemConsumer)
         .collect(schema.collector());
   }
 
-  public SafeFuture<InternalValidationResult> add(T item) {
-    InternalValidationResult result = operationValidator.validateFully(item);
+  public SafeFuture<InternalValidationResult> add(final T item) {
+    final InternalValidationResult result = operationValidator.validateFully(item);
     validationReasonCounter.labels(result.code().toString()).inc();
     if (result.code().equals(ValidationResultCode.ACCEPT)
         || result.code().equals(ValidationResultCode.SAVE_FOR_FUTURE)) {
@@ -91,12 +140,13 @@ public class OperationPool<T extends SszData> {
     return SafeFuture.completedFuture(result);
   }
 
-  public void addAll(SszCollection<T> items) {
+  public void addAll(final SszCollection<T> items) {
     operations.addAll(items.asList());
   }
 
-  public void removeAll(SszCollection<T> items) {
-    operations.removeAll(items.asList());
+  public void removeAll(final SszCollection<T> items) {
+    // Avoid AbstractSet.removeAll with because it calls List.contains for each item in the set.
+    items.asList().forEach(operations::remove);
   }
 
   public Set<T> getAll() {

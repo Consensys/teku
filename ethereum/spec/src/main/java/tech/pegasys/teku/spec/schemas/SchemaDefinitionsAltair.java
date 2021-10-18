@@ -30,7 +30,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.B
 
 public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
   private final BeaconStateSchemaAltair beaconStateSchema;
-  private final BeaconBlockBodySchemaAltair beaconBlockBodySchema;
+  private final BeaconBlockBodySchemaAltair<?> beaconBlockBodySchema;
   private final BeaconBlockSchema beaconBlockSchema;
   private final SignedBeaconBlockSchema signedBeaconBlockSchema;
   private final SyncCommitteeContributionSchema syncCommitteeContributionSchema;

@@ -43,7 +43,7 @@ class BeaconBlockBodyAltairTest extends AbstractBeaconBlockBodyTest<BeaconBlockB
   }
 
   @Override
-  protected BeaconBlockBodySchema<BeaconBlockBodyAltair> getBlockBodySchema() {
+  protected BeaconBlockBodySchema<? extends BeaconBlockBodyAltair> getBlockBodySchema() {
     return BeaconBlockBodySchemaAltair.create(spec.getGenesisSpecConfig());
   }
 }
