@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.util.Optional;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 
@@ -42,4 +43,9 @@ public interface BeaconBlockBodySchemaAltair<T extends BeaconBlockBodyAltair>
   }
 
   SyncAggregateSchema getSyncAggregateSchema();
+
+  @Override
+  default Optional<BeaconBlockBodySchemaAltair<?>> toVersionAltair() {
+    return Optional.of(this);
+  }
 }

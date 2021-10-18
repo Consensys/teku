@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0;
+package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -23,37 +23,40 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.ssz.primitive.SszBytes32;
 
-public class BeaconBlockBodyBuilderPhase0 extends AbstractBeaconBlockBodyBuilder {
-  private BeaconBlockBodySchemaPhase0 schema;
+class BeaconBlockBodyBuilderMerge extends AbstractBeaconBlockBodyBuilder {
+  private BeaconBlockBodySchemaMergeImpl schema;
+  private SyncAggregate syncAggregate;
+  private ExecutionPayload executionPayload;
 
-  public BeaconBlockBodyBuilderPhase0 schema(final BeaconBlockBodySchemaPhase0 schema) {
+  public BeaconBlockBodyBuilderMerge schema(final BeaconBlockBodySchemaMergeImpl schema) {
     this.schema = schema;
     return this;
   }
 
   @Override
   public BeaconBlockBodyBuilder syncAggregate(final Supplier<SyncAggregate> syncAggregateSupplier) {
-    // No sync aggregate in phase 0
+    this.syncAggregate = syncAggregateSupplier.get();
     return this;
   }
 
   @Override
   public BeaconBlockBodyBuilder executionPayload(
-          Supplier<ExecutionPayload> executionPayloadSupplier) {
-    // No execution payload in altair
+      Supplier<ExecutionPayload> executionPayloadSupplier) {
+    this.executionPayload = executionPayloadSupplier.get();
     return this;
   }
-
 
   @Override
   protected void validate() {
     super.validate();
     checkNotNull(schema, "schema must be specified");
+    checkNotNull(syncAggregate, "syncAggregate must be specified");
+    checkNotNull(executionPayload, "executionPayload must be specified");
   }
 
-  public BeaconBlockBodyPhase0 build() {
+  public BeaconBlockBodyMergeImpl build() {
     validate();
-    return new BeaconBlockBodyPhase0(
+    return new BeaconBlockBodyMergeImpl(
         schema,
         new SszSignature(randaoReveal),
         eth1Data,
@@ -62,6 +65,8 @@ public class BeaconBlockBodyBuilderPhase0 extends AbstractBeaconBlockBodyBuilder
         attesterSlashings,
         attestations,
         deposits,
-        voluntaryExits);
+        voluntaryExits,
+        syncAggregate,
+        executionPayload);
   }
 }

@@ -21,8 +21,7 @@ import tech.pegasys.teku.ssz.SszList;
 
 public interface BeaconStatePhase0 extends BeaconState {
 
-  @Override
-  default BeaconStateSchemaPhase0 getBeaconStateSchema() {
+  default BeaconStateSchemaPhase0 getBeaconStateSchemaPhase0() {
     return (BeaconStateSchemaPhase0) getSchema();
   }
 

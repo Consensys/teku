@@ -49,7 +49,7 @@ public class BeaconStateSchemaAltair
     return new BeaconStateSchemaAltair(specConfig);
   }
 
-  private static List<SszField> getUniqueFields(final SpecConfig specConfig) {
+  public static List<SszField> getUniqueFields(final SpecConfig specConfig) {
     final SszField previousEpochAttestationsField =
         new SszField(
             PREVIOUS_EPOCH_PARTICIPATION_FIELD_INDEX,

@@ -23,30 +23,29 @@ import tech.pegasys.teku.ssz.primitive.SszByte;
 
 public interface BeaconStateAltair extends BeaconState {
 
-  @Override
-  default BeaconStateSchemaAltair getBeaconStateSchema() {
+  default BeaconStateSchemaAltair getBeaconStateSchemaAltair() {
     return (BeaconStateSchemaAltair) getSchema();
   }
 
   static BeaconStateAltair required(final BeaconState state) {
     return state
-        .toVersionAltair()
-        .orElseThrow(
-            () ->
-                new IllegalArgumentException(
-                    "Expected an altair state but got: " + state.getClass().getSimpleName()));
+            .toVersionAltair()
+            .orElseThrow(
+                    () ->
+                            new IllegalArgumentException(
+                                    "Expected an altair state but got: " + state.getClass().getSimpleName()));
   }
 
   // Participation
   default SszList<SszByte> getPreviousEpochParticipation() {
     final int fieldIndex =
-        getSchema().getFieldIndex(BeaconStateFields.PREVIOUS_EPOCH_PARTICIPATION.name());
+            getSchema().getFieldIndex(BeaconStateFields.PREVIOUS_EPOCH_PARTICIPATION.name());
     return getAny(fieldIndex);
   }
 
   default SszList<SszByte> getCurrentEpochParticipation() {
     final int fieldIndex =
-        getSchema().getFieldIndex(BeaconStateFields.CURRENT_EPOCH_PARTICIPATION.name());
+            getSchema().getFieldIndex(BeaconStateFields.CURRENT_EPOCH_PARTICIPATION.name());
     return getAny(fieldIndex);
   }
 
@@ -57,7 +56,7 @@ public interface BeaconStateAltair extends BeaconState {
 
   default SyncCommittee getCurrentSyncCommittee() {
     final int fieldIndex =
-        getSchema().getFieldIndex(BeaconStateFields.CURRENT_SYNC_COMMITTEE.name());
+            getSchema().getFieldIndex(BeaconStateFields.CURRENT_SYNC_COMMITTEE.name());
     return getAny(fieldIndex);
   }
 
@@ -71,7 +70,14 @@ public interface BeaconStateAltair extends BeaconState {
     return Optional.of(this);
   }
 
-  <E1 extends Exception, E2 extends Exception, E3 extends Exception>
-      BeaconStateAltair updatedAltair(Mutator<MutableBeaconStateAltair, E1, E2, E3> mutator)
-          throws E1, E2, E3;
+  @Override
+  MutableBeaconStateAltair createWritableCopy();
+
+  default <E1 extends Exception, E2 extends Exception, E3 extends Exception>
+  BeaconStateAltair updatedAltair(Mutator<MutableBeaconStateAltair, E1, E2, E3> mutator)
+          throws E1, E2, E3 {
+    MutableBeaconStateAltair writableCopy = createWritableCopy();
+    mutator.mutate(writableCopy);
+    return writableCopy.commitChanges();
+  }
 }

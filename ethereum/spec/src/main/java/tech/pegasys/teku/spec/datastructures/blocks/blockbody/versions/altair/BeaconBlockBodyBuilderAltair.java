@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.function.Supplier;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractBeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.ssz.primitive.SszBytes32;
 
@@ -36,6 +37,14 @@ public class BeaconBlockBodyBuilderAltair extends AbstractBeaconBlockBodyBuilder
     this.syncAggregate = syncAggregateSupplier.get();
     return this;
   }
+
+  @Override
+  public BeaconBlockBodyBuilder executionPayload(
+          Supplier<ExecutionPayload> executionPayloadSupplier) {
+    // No execution payload in altair
+    return this;
+  }
+
 
   @Override
   protected void validate() {
