@@ -39,11 +39,10 @@ public class BeaconBlockBodyBuilderPhase0 extends AbstractBeaconBlockBodyBuilder
 
   @Override
   public BeaconBlockBodyBuilder executionPayload(
-          Supplier<ExecutionPayload> executionPayloadSupplier) {
+      Supplier<ExecutionPayload> executionPayloadSupplier) {
     // No execution payload in altair
     return this;
   }
-
 
   @Override
   protected void validate() {
