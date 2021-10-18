@@ -741,7 +741,7 @@ task cloudsmithUpload {
 
 task dockerUpload {
   dependsOn([distDocker])
-  def dockerBuildVersion = "${rootProject.version}"
+  def dockerBuildVersion = "${rootProject.version}".replace('+', '-')
   def imageName = "consensys/teku"
   def image = "${imageName}:${dockerBuildVersion}"
 
