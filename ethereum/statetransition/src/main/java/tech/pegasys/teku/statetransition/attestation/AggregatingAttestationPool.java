@@ -132,11 +132,11 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   }
 
   public synchronized SszList<Attestation> getAttestationsForBlock(
-      final BeaconState stateAtBlockSlot, final AttestationForkChecker forkChecker) {
+      final BeaconState stateAtBlockSlot,
+      final AttestationForkChecker forkChecker,
+      final AttestationWorthinessChecker worthinessChecker) {
     final UInt64 currentEpoch = spec.getCurrentEpoch(stateAtBlockSlot);
     final int previousEpochLimit = spec.getPreviousEpochAttestationCapacity(stateAtBlockSlot);
-    final AttestationWorthinessChecker worthinessChecker =
-        spec.createAttestationWorthinessChecker(stateAtBlockSlot);
 
     final AtomicInteger prevEpochCount = new AtomicInteger(0);
     return dataHashBySlot.descendingMap().values().stream()

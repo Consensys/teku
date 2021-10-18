@@ -81,21 +81,15 @@ public class SpecFactoryTest {
     final Spec spec;
     final DataStructureUtil dataStructureUtil;
 
-    switch (milestone) {
-      case PHASE0:
-        spec = TestSpecFactory.createMainnetPhase0();
-        dataStructureUtil = new DataStructureUtil(spec);
-        assertThat(spec.createAttestationWorthinessChecker(dataStructureUtil.randomBeaconState()))
-            .isInstanceOf(AttestationWorthinessCheckerAltair.NOOP.getClass());
-        break;
-      case ALTAIR:
-        spec = TestSpecFactory.createMainnetAltair();
-        dataStructureUtil = new DataStructureUtil(spec);
-        assertThat(spec.createAttestationWorthinessChecker(dataStructureUtil.randomBeaconState()))
-            .isInstanceOf(AttestationWorthinessCheckerAltair.class);
-        break;
-      default:
-        throw new IllegalStateException("unsupported milestone");
+    spec = TestSpecFactory.createMainnet(milestone);
+    dataStructureUtil = new DataStructureUtil(spec);
+
+    if (milestone.isGreaterThanOrEqualTo(ALTAIR)) {
+      assertThat(spec.createAttestationWorthinessChecker(dataStructureUtil.randomBeaconState()))
+          .isInstanceOf(AttestationWorthinessCheckerAltair.class);
+    } else {
+      assertThat(spec.createAttestationWorthinessChecker(dataStructureUtil.randomBeaconState()))
+          .isInstanceOf(AttestationWorthinessCheckerAltair.NOOP.getClass());
     }
   }
 }
