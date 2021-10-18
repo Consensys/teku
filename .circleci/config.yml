@@ -152,7 +152,10 @@ jobs:
       name: win/default
     steps:
       - checkout
-      - run: gradlew
+      - run:
+          name: Build
+          command: |
+            .\gradlew.bat
 
   spotless:
     executor: small_executor
