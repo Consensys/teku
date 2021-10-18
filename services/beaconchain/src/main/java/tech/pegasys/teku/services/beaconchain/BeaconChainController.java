@@ -100,6 +100,8 @@ import tech.pegasys.teku.statetransition.validation.ProposerSlashingValidator;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.statetransition.validation.VoluntaryExitValidator;
 import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
+import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorCache;
+import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
@@ -571,7 +573,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             attestationPool,
             attestationValidator,
             aggregateValidator,
-            signatureVerificationService);
+            signatureVerificationService,
+            eventChannels.getPublisher(ActiveValidatorChannel.class, beaconAsyncRunner));
+
     eventChannels
         .subscribe(SlotEventsChannel.class, attestationManager)
         .subscribe(FinalizedCheckpointChannel.class, pendingAttestations)
@@ -724,6 +728,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             attestationPool,
             blockManager,
             attestationManager,
+            beaconConfig.beaconRestApiConfig().isBeaconLivenessTrackingEnabled(),
+            eventChannels.getPublisher(ActiveValidatorChannel.class, beaconAsyncRunner),
             attesterSlashingPool,
             proposerSlashingPool,
             voluntaryExitPool,
@@ -737,6 +743,17 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                   beaconConfig.beaconRestApiConfig(),
                   eventChannels,
                   eventAsyncRunner));
+
+      if (beaconConfig.beaconRestApiConfig().isBeaconLivenessTrackingEnabled()) {
+        final Optional<BeaconState> maybeState = recentChainData.getBestState();
+        final int initialValidatorsCount =
+            maybeState
+                .map(beaconState -> beaconState.getValidators().size())
+                .orElseGet(
+                    () -> spec.getGenesisSpec().getConfig().getMinGenesisActiveValidatorCount());
+        eventChannels.subscribe(
+            ActiveValidatorChannel.class, new ActiveValidatorCache(spec, initialValidatorsCount));
+      }
     } else {
       LOG.info("rest-api-enabled is false, not starting rest api.");
     }

@@ -35,11 +35,13 @@ import tech.pegasys.teku.statetransition.validation.AttestationValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
+import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
 
 public class AttestationManager extends Service
     implements SlotEventsChannel, BlockImportNotifications {
 
   private static final Logger LOG = LogManager.getLogger();
+  private final ActiveValidatorChannel activeValidatorChannel;
   private static final SafeFuture<AttestationProcessingResult> ATTESTATION_SAVED_FOR_FUTURE_RESULT =
       SafeFuture.completedFuture(AttestationProcessingResult.SAVED_FOR_FUTURE);
 
@@ -67,7 +69,8 @@ public class AttestationManager extends Service
       final AggregatingAttestationPool aggregatingAttestationPool,
       final AttestationValidator attestationValidator,
       final AggregateAttestationValidator aggregateValidator,
-      final SignatureVerificationService signatureVerificationService) {
+      final SignatureVerificationService signatureVerificationService,
+      final ActiveValidatorChannel activeValidatorChannel) {
     this.attestationProcessor = attestationProcessor;
     this.pendingAttestations = pendingAttestations;
     this.futureAttestations = futureAttestations;
@@ -75,6 +78,7 @@ public class AttestationManager extends Service
     this.attestationValidator = attestationValidator;
     this.aggregateValidator = aggregateValidator;
     this.signatureVerificationService = signatureVerificationService;
+    this.activeValidatorChannel = activeValidatorChannel;
   }
 
   public static AttestationManager create(
@@ -84,7 +88,8 @@ public class AttestationManager extends Service
       final AggregatingAttestationPool aggregatingAttestationPool,
       final AttestationValidator attestationValidator,
       final AggregateAttestationValidator aggregateValidator,
-      final SignatureVerificationService signatureVerificationService) {
+      final SignatureVerificationService signatureVerificationService,
+      final ActiveValidatorChannel activeValidatorChannel) {
     return new AttestationManager(
         attestationProcessor,
         pendingAttestations,
@@ -92,7 +97,8 @@ public class AttestationManager extends Service
         aggregatingAttestationPool,
         attestationValidator,
         aggregateValidator,
-        signatureVerificationService);
+        signatureVerificationService,
+        activeValidatorChannel);
   }
 
   public void subscribeToAllValidAttestations(ProcessedAttestationListener listener) {
@@ -165,6 +171,7 @@ public class AttestationManager extends Service
   @Override
   public void onBlockImported(final SignedBeaconBlock block) {
     final Bytes32 blockRoot = block.getMessage().hashTreeRoot();
+    activeValidatorChannel.onBlockImported(block);
     pendingAttestations
         .getItemsDependingOn(blockRoot, false)
         .forEach(
@@ -189,6 +196,8 @@ public class AttestationManager extends Service
         .onAttestation(attestation)
         .thenApply(
             result -> {
+              activeValidatorChannel.onAttestation(attestation);
+
               switch (result.getStatus()) {
                 case SUCCESSFUL:
                   LOG.trace("Processed attestation {} successfully", attestation::hash_tree_root);
