@@ -42,7 +42,7 @@ dependencyManagement {
     dependency 'io.protostuff:protostuff-runtime:1.6.2'
 
     dependency 'io.libp2p:jvm-libp2p-minimal:0.8.3-RELEASE'
-    dependency 'tech.pegasys:jblst:0.3.6'
+    dependency 'tech.pegasys:jblst:0.3.5'
 
     dependency 'org.hdrhistogram:HdrHistogram:2.1.12'
 
@@ -149,7 +149,7 @@ dependencyManagement {
     dependency "org.testcontainers:testcontainers:1.15.3"
     dependency "org.testcontainers:junit-jupiter:1.15.3"
 
-    dependency 'tech.pegasys.discovery:discovery:0.5.0'
+    dependency 'tech.pegasys.discovery:discovery:21.10.0'
 
     dependency 'tech.pegasys.signers.internal:bls-keystore:1.0.15'
 

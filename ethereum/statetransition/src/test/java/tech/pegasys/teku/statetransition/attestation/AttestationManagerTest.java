@@ -52,6 +52,7 @@ import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidator;
 import tech.pegasys.teku.statetransition.validation.AttestationValidator;
 import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
+import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorCache;
 
 class AttestationManagerTest {
   private final Spec spec = TestSpecFactory.createDefault();
@@ -65,6 +66,8 @@ class AttestationManagerTest {
       FutureItems.create(ValidateableAttestation::getEarliestSlotForForkChoiceProcessing);
   private final SignatureVerificationService signatureVerificationService =
       mock(SignatureVerificationService.class);
+  private final ActiveValidatorCache activeValidatorCache = mock(ActiveValidatorCache.class);
+
   private final AttestationManager attestationManager =
       new AttestationManager(
           forkChoice,
@@ -73,7 +76,8 @@ class AttestationManagerTest {
           attestationPool,
           mock(AttestationValidator.class),
           mock(AggregateAttestationValidator.class),
-          signatureVerificationService);
+          signatureVerificationService,
+          activeValidatorCache);
 
   @BeforeEach
   public void setup() {
