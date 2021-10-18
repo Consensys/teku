@@ -38,6 +38,7 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
+import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -62,6 +63,7 @@ class BeaconRestApiTest {
   private final OperationPool<SignedVoluntaryExit> voluntaryExitPool = mock(OperationPool.class);
   private final SyncCommitteeContributionPool syncCommitteeContributionPool =
       mock(SyncCommitteeContributionPool.class);
+  private final ActiveValidatorChannel activeValidatorChannel = mock(ActiveValidatorChannel.class);
 
   @BeforeEach
   public void setup() {
@@ -84,6 +86,8 @@ class BeaconRestApiTest {
             attestationPool,
             blockManager,
             attestationManager,
+            false,
+            activeValidatorChannel,
             attesterSlashingPool,
             proposerSlashingPool,
             voluntaryExitPool,

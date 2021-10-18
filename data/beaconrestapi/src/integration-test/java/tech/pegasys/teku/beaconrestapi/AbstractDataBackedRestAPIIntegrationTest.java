@@ -62,6 +62,8 @@ import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
+import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorCache;
+import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -78,6 +80,9 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected Spec spec = TestSpecFactory.createMinimalPhase0();
   protected SpecConfig specConfig = spec.getGenesisSpecConfig();
 
+  protected final ActiveValidatorChannel activeValidatorChannel =
+      new ActiveValidatorCache(spec, 10);
+
   private static final okhttp3.MediaType JSON =
       okhttp3.MediaType.parse("application/json; charset=utf-8");
   private static final BeaconRestApiConfig CONFIG =
@@ -87,6 +92,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
           .restApiDocsEnabled(true)
           .restApiHostAllowlist(List.of("127.0.0.1", "localhost"))
           .restApiCorsAllowedOrigins(new ArrayList<>())
+          .beaconLivenessTrackingEnabled(true)
           .eth1DepositContractAddress(Eth1Address.ZERO)
           .build();
 
@@ -104,7 +110,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected final AggregatingAttestationPool attestationPool =
       mock(AggregatingAttestationPool.class);
   protected final BlockManager blockManager = mock(BlockManager.class);
-  private final AttestationManager attestationManager = mock(AttestationManager.class);
+  protected final AttestationManager attestationManager = mock(AttestationManager.class);
   protected final OperationPool<AttesterSlashing> attesterSlashingPool = mock(OperationPool.class);
   protected final OperationPool<ProposerSlashing> proposerSlashingPool = mock(OperationPool.class);
   protected final OperationPool<SignedVoluntaryExit> voluntaryExitPool = mock(OperationPool.class);
@@ -171,6 +177,8 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             attestationPool,
             blockManager,
             attestationManager,
+            true,
+            activeValidatorChannel,
             attesterSlashingPool,
             proposerSlashingPool,
             voluntaryExitPool,

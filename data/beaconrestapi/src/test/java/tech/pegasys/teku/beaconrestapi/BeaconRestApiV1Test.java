@@ -80,6 +80,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostAttesterDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostContributionAndProofs;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSubscribeToBeaconCommitteeSubnet;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSyncCommitteeSubscriptions;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostValidatorLiveness;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -92,6 +93,7 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
+import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -113,6 +115,7 @@ public class BeaconRestApiV1Test {
   private final OperationPool<AttesterSlashing> attesterSlashingPool = mock(OperationPool.class);
   private final OperationPool<ProposerSlashing> proposerSlashingPool = mock(OperationPool.class);
   private final OperationPool<SignedVoluntaryExit> voluntaryExitPool = mock(OperationPool.class);
+  private final ActiveValidatorChannel activeValidatorChannel = mock(ActiveValidatorChannel.class);
   private final SyncCommitteeContributionPool syncCommitteeContributionPool =
       mock(SyncCommitteeContributionPool.class);
 
@@ -138,6 +141,8 @@ public class BeaconRestApiV1Test {
             attestationPool,
             blockManager,
             attestationManager,
+            true,
+            activeValidatorChannel,
             attesterSlashingPool,
             proposerSlashingPool,
             voluntaryExitPool,
@@ -250,7 +255,8 @@ public class BeaconRestApiV1Test {
         .add(Arguments.of(PostAttesterSlashing.ROUTE, PostAttesterSlashing.class))
         .add(Arguments.of(PostProposerSlashing.ROUTE, PostProposerSlashing.class))
         .add(Arguments.of(PostVoluntaryExit.ROUTE, PostVoluntaryExit.class))
-        .add(Arguments.of(PostBlock.ROUTE, PostBlock.class));
+        .add(Arguments.of(PostBlock.ROUTE, PostBlock.class))
+        .add(Arguments.of(PostValidatorLiveness.ROUTE, PostValidatorLiveness.class));
 
     // validator
     builder
