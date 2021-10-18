@@ -155,7 +155,7 @@ jobs:
       - run:
           name: Build
           command: |
-            cmd.exe /c gradlew.bat
+            cmd.exe /c gradlew.bat --parallel
 
   spotless:
     executor: small_executor
