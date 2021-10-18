@@ -13,15 +13,7 @@
 
 package tech.pegasys.teku.test.acceptance;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import java.util.List;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.data.publisher.BaseMetricData;
-import tech.pegasys.teku.data.publisher.BeaconNodeMetricData;
-import tech.pegasys.teku.data.publisher.MetricsDataClient;
-import tech.pegasys.teku.data.publisher.SystemMetricData;
-import tech.pegasys.teku.data.publisher.ValidatorMetricData;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.ExternalMetricNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
@@ -37,27 +29,9 @@ public class ExternalMetricPublisherAcceptanceTest extends AcceptanceTestBase {
         createTekuNode(config -> config.withExternalMetricsClient(externalMetricNode, 1));
     tekuNode.start();
 
-    externalMetricNode.waitForPublication();
-
-    List<BaseMetricData> publishedData = externalMetricNode.getPublishedObjects();
-    assertThat(publishedData.size()).isEqualTo(3);
-
-    BeaconNodeMetricData beaconNodeMetricData = (BeaconNodeMetricData) publishedData.get(0);
-    assertThat(beaconNodeMetricData.process)
-        .isEqualTo(MetricsDataClient.BEACON_NODE.getDataClient());
-    assertThat(beaconNodeMetricData.network_peers_connected).isNotNull();
-    assertThat(beaconNodeMetricData.sync_beacon_head_slot).isNotNull();
-
-    ValidatorMetricData validatorMetricData = (ValidatorMetricData) publishedData.get(1);
-    assertThat(validatorMetricData.process).isEqualTo(MetricsDataClient.VALIDATOR.getDataClient());
-    assertThat(validatorMetricData.cpu_process_seconds_total).isNotNull();
-    assertThat(validatorMetricData.memory_process_bytes).isNotNull();
-    assertThat(validatorMetricData.validator_total).isNotNull();
-    assertThat(validatorMetricData.validator_active).isNotNull();
-
-    SystemMetricData systemMetricData = (SystemMetricData) publishedData.get(2);
-    assertThat(systemMetricData.process).isEqualTo(MetricsDataClient.SYSTEM.getDataClient());
-    assertThat(systemMetricData.cpu_node_system_seconds_total).isNotNull();
+    externalMetricNode.waitForBeaconNodeMetricPublication();
+    externalMetricNode.waitForValidatorMetricPublication();
+    externalMetricNode.waitForSystemMetricPublication();
 
     tekuNode.stop();
     externalMetricNode.stop();

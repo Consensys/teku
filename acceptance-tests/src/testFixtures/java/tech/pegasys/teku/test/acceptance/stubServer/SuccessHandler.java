@@ -33,7 +33,6 @@ public class SuccessHandler implements HttpHandler {
   public void handle(HttpExchange exchange) throws IOException {
     InputStream is = exchange.getRequestBody();
     this.responseBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-    System.out.println(this.responseBody);
     String response = "ok";
     exchange.getResponseHeaders().add("Content-Type", "application/json");
     exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, response.length());

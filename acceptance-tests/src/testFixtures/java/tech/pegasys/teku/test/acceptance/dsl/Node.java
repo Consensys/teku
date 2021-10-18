@@ -61,10 +61,14 @@ public abstract class Node {
             .withLogConsumer(frame -> log.debug(frame.getUtf8String().trim()));
   }
 
-  protected Node(final Network network, final ImageFromDockerfile image) {
+  protected Node(final Network network, final ImageFromDockerfile image, final Logger log) {
     this.nodeAlias =
         getClass().getSimpleName().toLowerCase(Locale.US) + NODE_UNIQUIFIER.incrementAndGet();
-    this.container = new NodeContainer(image).withNetwork(network).withNetworkAliases(nodeAlias);
+    this.container =
+        new NodeContainer(image)
+            .withNetwork(network)
+            .withNetworkAliases(nodeAlias)
+            .withLogConsumer(frame -> log.debug(frame.getUtf8String().trim()));
   }
 
   public void stop() {

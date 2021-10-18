@@ -30,6 +30,7 @@ import org.testcontainers.containers.Network;
 import org.testcontainers.images.builder.ImageFromDockerfile;
 import tech.pegasys.teku.data.publisher.BaseMetricData;
 import tech.pegasys.teku.data.publisher.BeaconNodeMetricData;
+import tech.pegasys.teku.data.publisher.MetricsDataClient;
 import tech.pegasys.teku.data.publisher.SystemMetricData;
 import tech.pegasys.teku.data.publisher.ValidatorMetricData;
 import tech.pegasys.teku.infrastructure.async.Waiter;
@@ -48,7 +49,7 @@ public class ExternalMetricNode extends Node {
 
   private ExternalMetricNode(
       final SimpleHttpClient httpClient, Network network, ImageFromDockerfile image) {
-    super(network, image);
+    super(network, image, LOG);
     this.httpClient = httpClient;
     container.withWorkingDirectory(WORKING_DIRECTORY).withExposedPorts(STUB_PORT);
   }
@@ -71,7 +72,7 @@ public class ExternalMetricNode extends Node {
     return "http://" + this.nodeAlias + ":" + STUB_PORT + "/input";
   }
 
-  public void waitForPublication() {
+  private void waitForPublication() {
     try {
       Waiter.waitFor(() -> assertThat(fetchPublication().get()).isNotEmpty(), 1, TimeUnit.MINUTES);
     } catch (final Throwable t) {
@@ -91,7 +92,8 @@ public class ExternalMetricNode extends Node {
     return httpClient.get(new URI(this.getAddress()), "/output");
   }
 
-  public List<BaseMetricData> getPublishedObjects() throws URISyntaxException, IOException {
+  private List<BaseMetricData> getPublishedObjects() throws URISyntaxException, IOException {
+    waitForPublication();
     String response = getResponse();
     String beaconJson = response.substring(1, response.indexOf("},") + 1);
     String validatorJson =
@@ -109,6 +111,38 @@ public class ExternalMetricNode extends Node {
     dataReadings.add(validatorMetricData);
     dataReadings.add(systemMetricData);
     return dataReadings;
+  }
+
+  public void waitForBeaconNodeMetricPublication() throws URISyntaxException, IOException {
+    List<BaseMetricData> publishedData = getPublishedObjects();
+    assertThat(publishedData.size()).isEqualTo(3);
+
+    BeaconNodeMetricData beaconNodeMetricData = (BeaconNodeMetricData) publishedData.get(0);
+    assertThat(beaconNodeMetricData.process)
+        .isEqualTo(MetricsDataClient.BEACON_NODE.getDataClient());
+    assertThat(beaconNodeMetricData.network_peers_connected).isNotNull();
+    assertThat(beaconNodeMetricData.sync_beacon_head_slot).isNotNull();
+  }
+
+  public void waitForValidatorMetricPublication() throws URISyntaxException, IOException {
+    List<BaseMetricData> publishedData = getPublishedObjects();
+    assertThat(publishedData.size()).isEqualTo(3);
+
+    ValidatorMetricData validatorMetricData = (ValidatorMetricData) publishedData.get(1);
+    assertThat(validatorMetricData.process).isEqualTo(MetricsDataClient.VALIDATOR.getDataClient());
+    assertThat(validatorMetricData.cpu_process_seconds_total).isNotNull();
+    assertThat(validatorMetricData.memory_process_bytes).isNotNull();
+    assertThat(validatorMetricData.validator_total).isNotNull();
+    assertThat(validatorMetricData.validator_active).isNotNull();
+  }
+
+  public void waitForSystemMetricPublication() throws URISyntaxException, IOException {
+    List<BaseMetricData> publishedData = getPublishedObjects();
+    assertThat(publishedData.size()).isEqualTo(3);
+
+    SystemMetricData systemMetricData = (SystemMetricData) publishedData.get(2);
+    assertThat(systemMetricData.process).isEqualTo(MetricsDataClient.SYSTEM.getDataClient());
+    assertThat(systemMetricData.cpu_node_system_seconds_total).isNotNull();
   }
 
   public void start() {

@@ -29,7 +29,6 @@ public class ReplyHandler implements HttpHandler {
 
   @Override
   public void handle(HttpExchange exchange) throws IOException {
-    System.out.println("Preparing Response");
     String response = incoming.getResponse();
     exchange.getResponseHeaders().add("Content-Type", "application/json");
     exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, response.length());
