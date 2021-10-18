@@ -493,8 +493,8 @@ class AggregatingAttestationPoolTest {
 
     assertThat(
             aggregatingPool.getAttestationsForBlock(
-                    stateAtBlockSlot, forkChecker, worthinessChecker))
-            .containsExactly(attestation2);
+                stateAtBlockSlot, forkChecker, worthinessChecker))
+        .containsExactly(attestation2);
   }
 
   private Attestation addAttestationFromValidators(final UInt64 slot, final int... validators) {
