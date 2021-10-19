@@ -102,6 +102,7 @@ commands:
       - run:
           name: "Gather test artifacts"
           when: "always"
+          shell: bash -eo pipefail
           command: |
             FILES=`find . -name test-artifacts`
             for FILE in $FILES
@@ -156,6 +157,8 @@ jobs:
           name: Build
           command: |
             cmd.exe /c gradlew.bat --parallel
+      - notify
+      - capture_test_results
 
   spotless:
     executor: small_executor
