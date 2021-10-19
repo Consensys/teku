@@ -84,7 +84,6 @@ commands:
       - run:
           name: "Gather test results"
           when: "always"
-          shell: bash -eo pipefail
           command: |
             FILES=`find . -name test-results`
             for FILE in $FILES
@@ -158,7 +157,6 @@ jobs:
           name: Build
           command: |
             cmd.exe /c gradlew.bat --no-daemon --parallel
-      - notify
       - run:
           name: "Gather test artifacts"
           when: "always"
@@ -449,7 +447,113 @@ jobs:
 workflows:
   circleci:
     jobs:
-      - windowsBuild
+      - assemble:
+          filters:
+            tags: &filters-release-tags
+              only: /^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?/
+      - spotless:
+          filters:
+            tags:
+              <<: *filters-release-tags
+      - windowsBuild:
+          filters:
+            tags:
+              <<: *filters-release-tags
+      - referenceTestsPrep:
+          requires:
+            - assemble
+          filters:
+            tags:
+              <<: *filters-release-tags
+      - referenceTests:
+          requires:
+            - assemble
+            - referenceTestsPrep
+          filters:
+            tags:
+              <<: *filters-release-tags
+      - unitTests:
+          requires:
+            - assemble
+          filters:
+            tags:
+              <<: *filters-release-tags
+      - integrationTests:
+          requires:
+            - assemble
+          filters:
+            tags:
+              <<: *filters-release-tags
+      - acceptanceTests:
+          requires:
+            - assemble
+          filters:
+            tags:
+              <<: *filters-release-tags
+      - docker:
+          requires:
+            - assemble
+          filters:
+            tags:
+              <<: *filters-release-tags
+      - extractAPISpec:
+          requires:
+            - assemble
+          filters:
+            tags:
+              <<: *filters-release-tags
+      - publish-cloudsmith:
+          filters:
+            branches:
+              only:
+                - master
+                - /^release-.*/
+            tags:
+              <<: *filters-release-tags
+          requires:
+            - unitTests
+            - integrationTests
+            - acceptanceTests
+            - referenceTests
+            - docker
+            - extractAPISpec
+            - spotless
+          context:
+            - cloudsmith-protocols
+      - publishDocker:
+          filters:
+            branches:
+              only:
+                - master
+                - /^release-.*/
+            tags:
+              <<: *filters-release-tags
+          requires:
+            - unitTests
+            - integrationTests
+            - acceptanceTests
+            - referenceTests
+            - docker
+            - extractAPISpec
+            - spotless
+          context:
+            - dockerhub-quorumengineering-rw
+      - publishAPISpec:
+          filters:
+            branches:
+              only:
+                - master
+                - /^release-.*/
+            tags: # stable doc is published only on tags to prevent confusion on the doc site.
+              <<: *filters-release-tags
+          requires:
+            - unitTests
+            - integrationTests
+            - acceptanceTests
+            - referenceTests
+            - docker
+            - extractAPISpec
+            - spotless
   nightly:
     triggers:
       - schedule:
