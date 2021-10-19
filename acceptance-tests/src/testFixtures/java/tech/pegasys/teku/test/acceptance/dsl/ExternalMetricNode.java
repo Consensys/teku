@@ -89,8 +89,9 @@ public class ExternalMetricNode extends Node {
 
   private DeserializedMetricDataObject[] getPublishedObjects()
       throws URISyntaxException, IOException {
+    String response;
     waitForPublication();
-    String response = getResponse();
+    response = getResponse();
 
     return jsonProvider.jsonToObject(response, DeserializedMetricDataObject[].class);
   }
@@ -98,6 +99,11 @@ public class ExternalMetricNode extends Node {
   public void waitForBeaconNodeMetricPublication() throws URISyntaxException, IOException {
     DeserializedMetricDataObject[] publishedData = getPublishedObjects();
     assertThat(publishedData.length).isEqualTo(3);
+
+    if(publishedData[0].process == null) {
+      System.out.println(publishedData[0]);
+      LOG.error(publishedData[0]);
+    }
 
     assertThat(publishedData[0].process).isEqualTo(MetricsDataClient.BEACON_NODE.getDataClient());
     assertThat(publishedData[0].network_peers_connected).isNotNull();
