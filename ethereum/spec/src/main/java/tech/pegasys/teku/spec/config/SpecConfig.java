@@ -25,6 +25,14 @@ public interface SpecConfig {
   UInt64 GENESIS_EPOCH = UInt64.ZERO;
   UInt64 FAR_FUTURE_EPOCH = UInt64.MAX_VALUE;
 
+  // Execution
+  int BYTES_PER_LOGS_BLOOM = 256;
+  int MAX_BYTES_PER_OPAQUE_TRANSACTION = 1048576;
+  int MAX_EXECUTION_TRANSACTIONS = 16384;
+  int GAS_LIMIT_DENOMINATOR = 1024;
+  int MIN_GAS_LIMIT = 5000;
+  int MAX_EXTRA_DATA_BYTES = 32;
+
   static SpecConfigBuilder builder() {
     return new SpecConfigBuilder();
   }
