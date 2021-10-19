@@ -118,10 +118,11 @@ commands:
   notify:
     description: "Notify Slack"
     steps:
-      - slack/status:
+      - slack/notify:
+          event: fail
           mentions: "team-centaur"
-          fail_only: true
-          only_for_branches: 'master'
+          template: basic_fail_1
+          branch_pattern: 'master'
 jobs:
   assemble:
     executor: medium_executor
