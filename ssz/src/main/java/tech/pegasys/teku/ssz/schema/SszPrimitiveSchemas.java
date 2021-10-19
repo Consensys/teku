@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -21,12 +21,15 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.MutableBytes;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.primitive.SszBit;
 import tech.pegasys.teku.ssz.primitive.SszByte;
 import tech.pegasys.teku.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.ssz.primitive.SszBytes4;
+import tech.pegasys.teku.ssz.primitive.SszNone;
+import tech.pegasys.teku.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.ssz.schema.impl.AbstractSszPrimitiveSchema;
 import tech.pegasys.teku.ssz.sos.SszDeserializeException;
@@ -37,6 +40,36 @@ import tech.pegasys.teku.ssz.type.Bytes4;
 
 /** The collection of commonly used basic types */
 public interface SszPrimitiveSchemas {
+
+  AbstractSszPrimitiveSchema<Void, SszNone> NONE_SCHEMA =
+      new AbstractSszPrimitiveSchema<>(0) {
+        @Override
+        public SszNone createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
+          return SszNone.INSTANCE;
+        }
+
+        @Override
+        protected TreeNode updateBackingNode(
+            TreeNode srcNode, int internalIndex, SszData newValue) {
+          return srcNode;
+        }
+
+        @Override
+        public SszNone boxed(Void rawValue) {
+          return SszNone.INSTANCE;
+        }
+
+        @Override
+        public TreeNode getDefaultTree() {
+          return LeafNode.EMPTY_LEAF;
+        }
+
+        @Override
+        public String toString() {
+          return "None";
+        }
+      };
+
   AbstractSszPrimitiveSchema<Boolean, SszBit> BIT_SCHEMA =
       new AbstractSszPrimitiveSchema<>(1) {
         @Override
@@ -189,6 +222,36 @@ public interface SszPrimitiveSchemas {
         @Override
         public String toString() {
           return "UInt64";
+        }
+      };
+
+  AbstractSszPrimitiveSchema<UInt256, SszUInt256> UINT256_SCHEMA =
+      new AbstractSszPrimitiveSchema<>(256) {
+        @Override
+        public SszUInt256 createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
+          // reverse() is due to LE -> BE conversion
+          return SszUInt256.of(UInt256.fromBytes(node.hashTreeRoot().reverse()));
+        }
+
+        @Override
+        public TreeNode updateBackingNode(TreeNode srcNode, int internalIndex, SszData newValue) {
+          // reverse() is due to BE -> LE conversion
+          return LeafNode.create(((SszUInt256) newValue).get().toBytes().reverse());
+        }
+
+        @Override
+        public SszUInt256 boxed(UInt256 rawValue) {
+          return SszUInt256.of(rawValue);
+        }
+
+        @Override
+        public TreeNode getDefaultTree() {
+          return LeafNode.ZERO_LEAVES[32];
+        }
+
+        @Override
+        public String toString() {
+          return "UInt256";
         }
       };
 

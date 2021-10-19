@@ -108,6 +108,7 @@ import tech.pegasys.teku.ssz.schema.collections.SszBytes32VectorSchema;
 import tech.pegasys.teku.ssz.schema.collections.SszPrimitiveListSchema;
 import tech.pegasys.teku.ssz.schema.collections.SszPrimitiveVectorSchema;
 import tech.pegasys.teku.ssz.schema.collections.SszUInt64ListSchema;
+import tech.pegasys.teku.ssz.type.Bytes20;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
 public final class DataStructureUtil {
@@ -170,6 +171,10 @@ public final class DataStructureUtil {
 
   public Bytes4 randomBytes4() {
     return new Bytes4(randomBytes32().slice(0, 4));
+  }
+
+  public Bytes20 randomBytes20() {
+    return new Bytes20(randomBytes32().slice(0, 20));
   }
 
   public Bytes32 randomBytes32() {

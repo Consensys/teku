@@ -5,9 +5,11 @@ plugins {
 dependencies {
   implementation 'org.apache.commons:commons-lang3'
   implementation 'org.apache.tuweni:tuweni-bytes'
+  implementation 'org.apache.tuweni:tuweni-units'
   implementation 'org.apache.tuweni:tuweni-ssz'
 
   testFixturesApi 'org.apache.tuweni:tuweni-bytes'
+  testFixturesApi 'org.apache.tuweni:tuweni-units'
   testFixturesApi project(':infrastructure:unsigned')
 
   jmh 'org.openjdk.jmh:jmh-generator-annprocess'
