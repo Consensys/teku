@@ -46,7 +46,7 @@ public enum DatabaseVersion {
     } catch (final UnsatisfiedLinkError e) {
       LOG.info("LevelDB not supported on this system: {}", e.getMessage());
       return false;
-    } catch (ClassNotFoundException e) {
+    } catch (NoClassDefFoundError | ClassNotFoundException e) {
       LOG.error("Failed to check LevelDB support. Defaulting to RocksDB.", e);
       return false;
     }
