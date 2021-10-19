@@ -92,8 +92,7 @@ public class ExternalMetricNode extends Node {
       throws URISyntaxException, IOException {
     waitForPublication();
     String response = getResponse();
-    LOG.error("======================");
-    LOG.error(response);
+    LOG.debug("Metric data was published "+response);
     return jsonProvider.jsonToObject(response, DeserializedMetricDataObject[].class);
   }
 
