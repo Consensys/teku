@@ -100,7 +100,7 @@ public class ExternalMetricNode extends Node {
     DeserializedMetricDataObject[] publishedData = getPublishedObjects();
     assertThat(publishedData.length).isEqualTo(3);
 
-    if(publishedData[0].process == null) {
+    if (publishedData[0].process == null) {
       System.out.println(publishedData[0]);
       LOG.error(publishedData[0]);
     }
