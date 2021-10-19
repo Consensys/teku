@@ -90,11 +90,8 @@ public class ExternalMetricNode extends Node {
   private DeserializedMetricDataObject[] getPublishedObjects()
       throws URISyntaxException, IOException {
     waitForPublication();
-    String response = getResponse();
 
-    String listOfMetrics = jsonProvider.objectToJSON(response);
-
-    return jsonProvider.jsonToObject(listOfMetrics, DeserializedMetricDataObject[].class);
+    return jsonProvider.jsonToObject(getResponse(), DeserializedMetricDataObject[].class);
   }
 
   public void waitForBeaconNodeMetricPublication() throws URISyntaxException, IOException {
