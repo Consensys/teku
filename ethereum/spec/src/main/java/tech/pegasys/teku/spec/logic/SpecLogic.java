@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic;
 
 import java.util.Optional;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
@@ -22,6 +23,7 @@ import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
+import tech.pegasys.teku.spec.logic.common.statetransition.attestation.AttestationWorthinessChecker;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
@@ -63,4 +65,6 @@ public interface SpecLogic {
   BeaconStateMutators beaconStateMutators();
 
   OperationSignatureVerifier operationSignatureVerifier();
+
+  AttestationWorthinessChecker createAttestationWorthinessChecker(BeaconState state);
 }
