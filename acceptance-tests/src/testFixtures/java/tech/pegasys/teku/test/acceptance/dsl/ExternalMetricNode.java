@@ -68,6 +68,7 @@ public class ExternalMetricNode extends Node {
   }
 
   private void waitForPublication() {
+    LOG.debug("Wait for Teku to publish data metrics");
     try {
       Waiter.waitFor(() -> assertThat(fetchPublication().get()).isNotEmpty(), 1, TimeUnit.MINUTES);
     } catch (final Throwable t) {
@@ -89,10 +90,10 @@ public class ExternalMetricNode extends Node {
 
   private DeserializedMetricDataObject[] getPublishedObjects()
       throws URISyntaxException, IOException {
-    String response;
     waitForPublication();
-    response = getResponse();
-
+    String response = getResponse();
+    LOG.error("======================");
+    LOG.error(response);
     return jsonProvider.jsonToObject(response, DeserializedMetricDataObject[].class);
   }
 
@@ -100,6 +101,7 @@ public class ExternalMetricNode extends Node {
     DeserializedMetricDataObject[] publishedData = getPublishedObjects();
     assertThat(publishedData.length).isEqualTo(3);
 
+    assertThat(publishedData[0]).isNotNull();
     assertThat(publishedData[0].process).isNotNull();
 
     assertThat(publishedData[0].process).isEqualTo(MetricsDataClient.BEACON_NODE.getDataClient());
@@ -111,6 +113,7 @@ public class ExternalMetricNode extends Node {
     DeserializedMetricDataObject[] publishedData = getPublishedObjects();
     assertThat(publishedData.length).isEqualTo(3);
 
+    assertThat(publishedData[1]).isNotNull();
     assertThat(publishedData[1].process).isNotNull();
 
     assertThat(publishedData[1].process).isEqualTo(MetricsDataClient.VALIDATOR.getDataClient());
@@ -124,6 +127,7 @@ public class ExternalMetricNode extends Node {
     DeserializedMetricDataObject[] publishedData = getPublishedObjects();
     assertThat(publishedData.length).isEqualTo(3);
 
+    assertThat(publishedData[2]).isNotNull();
     assertThat(publishedData[2].process).isNotNull();
 
     assertThat(publishedData[2].process).isEqualTo(MetricsDataClient.SYSTEM.getDataClient());
