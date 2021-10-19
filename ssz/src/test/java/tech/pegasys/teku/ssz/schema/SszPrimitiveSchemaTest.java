@@ -18,12 +18,17 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SszDataAssert;
 import tech.pegasys.teku.ssz.SszPrimitive;
 import tech.pegasys.teku.ssz.primitive.SszBit;
+import tech.pegasys.teku.ssz.primitive.SszUInt256;
+import tech.pegasys.teku.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.ssz.tree.LeafNode;
 
@@ -35,6 +40,7 @@ public class SszPrimitiveSchemaTest extends SszSchemaTestBase {
         SszPrimitiveSchemas.BIT_SCHEMA,
         SszPrimitiveSchemas.BYTE_SCHEMA,
         SszPrimitiveSchemas.UINT64_SCHEMA,
+        SszPrimitiveSchemas.UINT256_SCHEMA,
         SszPrimitiveSchemas.BYTES4_SCHEMA,
         SszPrimitiveSchemas.BYTES32_SCHEMA);
   }
@@ -70,6 +76,7 @@ public class SszPrimitiveSchemaTest extends SszSchemaTestBase {
     assertThat(SszPrimitiveSchemas.BIT_SCHEMA.getBitsSize()).isEqualTo(1);
     assertThat(SszPrimitiveSchemas.BYTE_SCHEMA.getBitsSize()).isEqualTo(8);
     assertThat(SszPrimitiveSchemas.UINT64_SCHEMA.getBitsSize()).isEqualTo(64);
+    assertThat(SszPrimitiveSchemas.UINT256_SCHEMA.getBitsSize()).isEqualTo(256);
     assertThat(SszPrimitiveSchemas.BYTES4_SCHEMA.getBitsSize()).isEqualTo(32);
     assertThat(SszPrimitiveSchemas.BYTES32_SCHEMA.getBitsSize()).isEqualTo(256);
   }
@@ -87,5 +94,32 @@ public class SszPrimitiveSchemaTest extends SszSchemaTestBase {
         .isSameAs(SszBit.of(true));
     assertThat(SszPrimitiveSchemas.BIT_SCHEMA.sszDeserialize(Bytes.fromHexString("0x00")))
         .isSameAs(SszBit.of(false));
+  }
+
+  @Test
+  void SszUInt64_shouldBeStoredInLE() {
+    Bytes wrappedInput = Bytes.fromHexString("0x0102030405060708", 8);
+
+    UInt64 inputUint64 = UInt64.fromLongBits(wrappedInput.toLong());
+
+    SszUInt64 sszUInt64 = SszUInt64.of(inputUint64);
+
+    assertThat(sszUInt64.getBackingNode().hashTreeRoot())
+        .isEqualByComparingTo(
+            Bytes32.fromHexString(
+                "0x0807060504030201000000000000000000000000000000000000000000000000"));
+  }
+
+  @Test
+  void SszUInt256_shouldBeStoredInLE() {
+    SszUInt256 sszUInt256 =
+        SszUInt256.of(
+            UInt256.fromHexString(
+                "0x0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20"));
+
+    assertThat(sszUInt256.getBackingNode().hashTreeRoot())
+        .isEqualByComparingTo(
+            Bytes32.fromHexString(
+                "0x201f1e1d1c1b1a191817161514131211100f0e0d0c0b0a090807060504030201"));
   }
 }

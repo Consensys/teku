@@ -15,6 +15,7 @@ package tech.pegasys.teku.ssz;
 
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -23,6 +24,7 @@ import tech.pegasys.teku.ssz.primitive.SszBit;
 import tech.pegasys.teku.ssz.primitive.SszByte;
 import tech.pegasys.teku.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.ssz.primitive.SszBytes4;
+import tech.pegasys.teku.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
@@ -43,6 +45,10 @@ public class SszPrimitiveTest implements SszDataTestBase {
         SszUInt64.of(UInt64.fromLongBits(Long.MAX_VALUE)),
         SszUInt64.of(UInt64.fromLongBits(Long.MIN_VALUE)),
         SszUInt64.of(UInt64.fromLongBits(-1)),
+        SszUInt256.of(UInt256.ZERO),
+        SszUInt256.of(UInt256.ONE),
+        SszUInt256.of(UInt256.MAX_VALUE),
+        SszUInt256.of(UInt256.MIN_VALUE),
         SszBytes4.of(Bytes4.fromHexString("0x00000000")),
         SszBytes4.of(Bytes4.fromHexString("0x12345678")),
         SszBytes4.of(Bytes4.fromHexString("0xFFFFFFFF")),
