@@ -38,7 +38,7 @@ public enum DatabaseVersion {
     }
   }
 
-  private static boolean isLevelDbSupported() {
+  public static boolean isLevelDbSupported() {
     // Use JNI to load as the native library is loaded in a static block
     try {
       Class.forName("org.fusesource.leveldbjni.JniDBFactory");

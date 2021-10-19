@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.server.leveldb;
 
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.UINT64_SERIALIZER;
 
 import com.google.common.primitives.Ints;
@@ -31,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransaction;
@@ -63,6 +65,10 @@ class LevelDbInstanceTest {
 
   @BeforeEach
   void setUp(@TempDir final Path tempDir) {
+    assumeThat(DatabaseVersion.isLevelDbSupported())
+        .describedAs("LevelDB support required")
+        .isTrue();
+
     instance =
         LevelDbInstanceFactory.create(
             new NoOpMetricsSystem(),

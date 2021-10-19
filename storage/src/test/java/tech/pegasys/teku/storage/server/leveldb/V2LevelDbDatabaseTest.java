@@ -13,7 +13,10 @@
 
 package tech.pegasys.teku.storage.server.leveldb;
 
+import static org.assertj.core.api.Assumptions.assumeThat;
+
 import java.io.File;
+import org.junit.jupiter.api.BeforeEach;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.kvstore.AbstractKvStoreDatabaseWithHotStatesTest;
@@ -22,6 +25,14 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.StoreConfig;
 
 public class V2LevelDbDatabaseTest extends AbstractKvStoreDatabaseWithHotStatesTest {
+
+  @BeforeEach
+  void setUp() {
+    assumeThat(DatabaseVersion.isLevelDbSupported())
+        .describedAs("LevelDB support required")
+        .isTrue();
+  }
+
   @Override
   protected StorageSystem createStorageSystem(
       final File tempDir,
