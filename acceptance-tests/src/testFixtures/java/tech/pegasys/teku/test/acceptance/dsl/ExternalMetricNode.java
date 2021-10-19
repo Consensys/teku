@@ -100,10 +100,7 @@ public class ExternalMetricNode extends Node {
     DeserializedMetricDataObject[] publishedData = getPublishedObjects();
     assertThat(publishedData.length).isEqualTo(3);
 
-    if (publishedData[0].process == null) {
-      System.out.println(publishedData[0]);
-      LOG.error(publishedData[0]);
-    }
+    assertThat(publishedData[0].process).isNotNull();
 
     assertThat(publishedData[0].process).isEqualTo(MetricsDataClient.BEACON_NODE.getDataClient());
     assertThat(publishedData[0].network_peers_connected).isNotNull();
@@ -113,6 +110,8 @@ public class ExternalMetricNode extends Node {
   public void waitForValidatorMetricPublication() throws URISyntaxException, IOException {
     DeserializedMetricDataObject[] publishedData = getPublishedObjects();
     assertThat(publishedData.length).isEqualTo(3);
+
+    assertThat(publishedData[1].process).isNotNull();
 
     assertThat(publishedData[1].process).isEqualTo(MetricsDataClient.VALIDATOR.getDataClient());
     assertThat(publishedData[1].cpu_process_seconds_total).isNotNull();
@@ -124,6 +123,8 @@ public class ExternalMetricNode extends Node {
   public void waitForSystemMetricPublication() throws URISyntaxException, IOException {
     DeserializedMetricDataObject[] publishedData = getPublishedObjects();
     assertThat(publishedData.length).isEqualTo(3);
+
+    assertThat(publishedData[2].process).isNotNull();
 
     assertThat(publishedData[2].process).isEqualTo(MetricsDataClient.SYSTEM.getDataClient());
     assertThat(publishedData[2].cpu_node_system_seconds_total).isNotNull();
