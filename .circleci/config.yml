@@ -1,6 +1,6 @@
 version: 2.1
 orbs:
-  slack: circleci/slack@3.4.2
+  slack: circleci/slack@4.4.4
   win: circleci/windows@2.4.1
 executors:
   small_executor:
@@ -156,7 +156,7 @@ jobs:
       - run:
           name: Build
           command: |
-            cmd.exe /c gradlew.bat --parallel
+            cmd.exe /c gradlew.bat --no-daemon --parallel
       - notify
       - capture_test_results
 
