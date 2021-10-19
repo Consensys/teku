@@ -122,7 +122,7 @@ class BlockFactoryTest {
                 graffiti));
 
     when(depositProvider.getDeposits(any(), any())).thenReturn(deposits);
-    when(attestationsPool.getAttestationsForBlock(any(), any())).thenReturn(attestations);
+    when(attestationsPool.getAttestationsForBlock(any(), any(), any())).thenReturn(attestations);
     when(attesterSlashingPool.getItemsForBlock(any(), any(), any())).thenReturn(attesterSlashings);
     when(proposerSlashingPool.getItemsForBlock(any(), any(), any())).thenReturn(proposerSlashings);
     when(voluntaryExitPool.getItemsForBlock(any(), any(), any())).thenReturn(voluntaryExits);

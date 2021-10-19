@@ -32,10 +32,27 @@ public class TestSpecFactory {
   }
 
   public static Spec createMinimal(final SpecMilestone specMilestone) {
-    if (specMilestone == SpecMilestone.PHASE0) {
-      return createMinimalPhase0();
+    switch (specMilestone) {
+      case PHASE0:
+        return createMinimalPhase0();
+      case ALTAIR:
+        return createMinimalAltair();
+      case MERGE:
+      default:
+        throw new IllegalStateException("unsupported milestone");
     }
-    return createMinimalAltair();
+  }
+
+  public static Spec createMainnet(final SpecMilestone specMilestone) {
+    switch (specMilestone) {
+      case PHASE0:
+        return createMainnetPhase0();
+      case ALTAIR:
+        return createMainnetAltair();
+      case MERGE:
+      default:
+        throw new IllegalStateException("unsupported milestone");
+    }
   }
 
   /**
