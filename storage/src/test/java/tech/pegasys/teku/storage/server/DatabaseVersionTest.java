@@ -25,7 +25,11 @@ import org.junit.jupiter.params.provider.MethodSource;
 public class DatabaseVersionTest {
   @Test
   void defaultVersion() {
-    assertThat(DatabaseVersion.DEFAULT_VERSION).isEqualTo(DatabaseVersion.LEVELDB2);
+    if (DatabaseVersion.isLevelDbSupported()) {
+      assertThat(DatabaseVersion.DEFAULT_VERSION).isEqualTo(DatabaseVersion.LEVELDB2);
+    } else {
+      assertThat(DatabaseVersion.DEFAULT_VERSION).isEqualTo(DatabaseVersion.V5);
+    }
   }
 
   @ParameterizedTest

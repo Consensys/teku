@@ -27,6 +27,7 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -63,12 +64,15 @@ class LevelDbInstanceTest {
 
   private KvStoreAccessor instance;
 
-  @BeforeEach
-  void setUp(@TempDir final Path tempDir) {
+  @BeforeAll
+  static void setUp() {
     assumeThat(DatabaseVersion.isLevelDbSupported())
         .describedAs("LevelDB support required")
         .isTrue();
+  }
 
+  @BeforeEach
+  void setUp(@TempDir final Path tempDir) {
     instance =
         LevelDbInstanceFactory.create(
             new NoOpMetricsSystem(),

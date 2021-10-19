@@ -16,7 +16,7 @@ package tech.pegasys.teku.storage.server.leveldb;
 import static org.assertj.core.api.Assumptions.assumeThat;
 
 import java.io.File;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StateStorageMode;
@@ -28,8 +28,8 @@ import tech.pegasys.teku.storage.store.StoreConfig;
 @Disabled("https://github.com/ConsenSys/teku/issues/4173 still in progress")
 public class TrieLevelDbDatabaseTest extends AbstractKvStoreDatabaseWithHotStatesTest {
 
-  @BeforeEach
-  void setUp() {
+  @BeforeAll
+  static void setUp() {
     assumeThat(DatabaseVersion.isLevelDbSupported())
         .describedAs("LevelDB support required")
         .isTrue();
