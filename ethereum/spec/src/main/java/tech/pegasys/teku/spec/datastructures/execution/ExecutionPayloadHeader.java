@@ -123,36 +123,36 @@ public class ExecutionPayloadHeader
   }
 
   public ExecutionPayloadHeader(
-      Bytes32 parent_hash,
+      Bytes32 parentHash,
       Bytes20 coinbase,
-      Bytes32 state_root,
-      Bytes32 receipt_root,
-      Bytes logs_bloom,
+      Bytes32 stateRoot,
+      Bytes32 receiptRoot,
+      Bytes logsBloom,
       Bytes32 random,
       UInt64 blockNumber,
-      UInt64 gas_limit,
-      UInt64 gas_used,
+      UInt64 gasLimit,
+      UInt64 gasUsed,
       UInt64 timestamp,
-      Bytes extra_data,
+      Bytes extraData,
       UInt256 baseFeePerGas,
-      Bytes32 block_hash,
-      Bytes32 transactions_root) {
+      Bytes32 blockHash,
+      Bytes32 transactionsRoot) {
     super(
         SSZ_SCHEMA,
-        SszBytes32.of(parent_hash),
+        SszBytes32.of(parentHash),
         SszByteVector.fromBytes(coinbase.getWrappedBytes()),
-        SszBytes32.of(state_root),
-        SszBytes32.of(receipt_root),
-        SszByteVector.fromBytes(logs_bloom),
+        SszBytes32.of(stateRoot),
+        SszBytes32.of(receiptRoot),
+        SszByteVector.fromBytes(logsBloom),
         SszBytes32.of(random),
         SszUInt64.of(blockNumber),
-        SszUInt64.of(gas_limit),
-        SszUInt64.of(gas_used),
+        SszUInt64.of(gasLimit),
+        SszUInt64.of(gasUsed),
         SszUInt64.of(timestamp),
-        SSZ_SCHEMA.getExtraDataSchema().fromBytes(extra_data),
+        SSZ_SCHEMA.getExtraDataSchema().fromBytes(extraData),
         SszUInt256.of(baseFeePerGas),
-        SszBytes32.of(block_hash),
-        SszBytes32.of(transactions_root));
+        SszBytes32.of(blockHash),
+        SszBytes32.of(transactionsRoot));
   }
 
   public ExecutionPayloadHeader() {
@@ -164,7 +164,7 @@ public class ExecutionPayloadHeader
     return SSZ_SCHEMA;
   }
 
-  public Bytes32 getParent_hash() {
+  public Bytes32 getParentHash() {
     return getField0().get();
   }
 
@@ -172,15 +172,15 @@ public class ExecutionPayloadHeader
     return Bytes20.leftPad(getField1().getBytes());
   }
 
-  public Bytes32 getState_root() {
+  public Bytes32 getStateRoot() {
     return getField2().get();
   }
 
-  public Bytes32 getReceipt_root() {
+  public Bytes32 getReceiptRoot() {
     return getField3().get();
   }
 
-  public Bytes getLogs_bloom() {
+  public Bytes getLogsBloom() {
     return getField4().getBytes();
   }
 
@@ -192,11 +192,11 @@ public class ExecutionPayloadHeader
     return getField6().get();
   }
 
-  public UInt64 getGas_limit() {
+  public UInt64 getGasLimit() {
     return getField7().get();
   }
 
-  public UInt64 getGas_used() {
+  public UInt64 getGasUsed() {
     return getField8().get();
   }
 
@@ -212,11 +212,11 @@ public class ExecutionPayloadHeader
     return getField11().get();
   }
 
-  public Bytes32 getBlock_hash() {
+  public Bytes32 getBlockHash() {
     return getField12().get();
   }
 
-  public Bytes32 getTransactions_root() {
+  public Bytes32 getTransactionsRoot() {
     return getField13().get();
   }
 }
