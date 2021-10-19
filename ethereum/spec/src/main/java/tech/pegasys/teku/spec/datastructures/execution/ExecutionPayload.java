@@ -223,7 +223,7 @@ public class ExecutionPayload
     return getField11().get();
   }
 
-  public Bytes32 getBlock_hash() {
+  public Bytes32 getBlockHash() {
     return getField12().get();
   }
 
