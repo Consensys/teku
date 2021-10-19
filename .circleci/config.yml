@@ -84,6 +84,7 @@ commands:
       - run:
           name: "Gather test results"
           when: "always"
+          shell: bash -eo pipefail
           command: |
             FILES=`find . -name test-results`
             for FILE in $FILES
@@ -102,7 +103,6 @@ commands:
       - run:
           name: "Gather test artifacts"
           when: "always"
-          shell: bash -eo pipefail
           command: |
             FILES=`find . -name test-artifacts`
             for FILE in $FILES
