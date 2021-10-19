@@ -163,8 +163,9 @@ jobs:
           name: "Gather test artifacts"
           when: "always"
           command: |
-            Get-ChildItem -Recurse | Where-Object {$_.FullName -match "test-results\\.*\\.*.xml"} | Copy-Item -Destination build\test-results
-      - store_artifacts:
+            New-Item -ItemType Directory -Force build\test-results
+            Get-ChildItem -Recurse | Where-Object {$_.FullName -match "test-results\\.*\\.*.xml"} | Copy-Item -Destination build\test-results\
+      - store_test_results:
           path: build/test-results
 
   spotless:
