@@ -207,7 +207,7 @@ public class ExecutionPayload
     return getField7().get();
   }
 
-  public UInt64 getGas_used() {
+  public UInt64 getGasUsed() {
     return getField8().get();
   }
 
