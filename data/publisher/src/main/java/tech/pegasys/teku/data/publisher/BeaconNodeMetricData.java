@@ -21,34 +21,49 @@ import java.util.Objects;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class BeaconNodeMetricData extends BaseMetricData {
 
+  public final Long cpu_process_seconds_total;
+  public final Long memory_process_bytes;
+  public final String client_name;
+  public final String client_version;
   public final Long disk_beaconchain_bytes_total;
   public final Long network_libp2p_bytes_total_receive;
   public final Long network_libp2p_bytes_total_transmit;
   public final Integer network_peers_connected;
+  public final Boolean sync_eth1_connected;
+  public final Boolean sync_eth2_synced;
   public final Long sync_beacon_head_slot;
-  public final String client_name;
-  public final String client_version;
+  public final Boolean slasher_active;
 
   @JsonCreator
   public BeaconNodeMetricData(
       @JsonProperty("version") int version,
       @JsonProperty("timestamp") long timestamp,
       @JsonProperty("process") String process,
-      @JsonProperty("disk_beaconchain_bytes_total") Long disk_beaconchain_bytes_total,
-      @JsonProperty("network_libp2p_bytes_total_receive") Long network_libp2p_bytes_total_receive,
-      @JsonProperty("network_libp2p_bytes_total_transmit") Long network_libp2p_bytes_total_transmit,
-      @JsonProperty("network_peers_connected") Integer network_peers_connected,
-      @JsonProperty("sync_beacon_head_slot") Long sync_beacon_head_slot,
+      @JsonProperty("cpu_process_seconds_total") Long cpuProcessSecondsTotal,
+      @JsonProperty("memory_process_bytes") Long memoryProcessBytes,
       @JsonProperty("client_name") String clientName,
-      @JsonProperty("client_version") String clientVersion) {
+      @JsonProperty("client_version") String clientVersion,
+      @JsonProperty("disk_beaconchain_bytes_total") Long diskBeaconchainBytesTotal,
+      @JsonProperty("network_libp2p_bytes_total_receive") Long networkLibp2PBytesTotalReceive,
+      @JsonProperty("network_libp2p_bytes_total_transmit") Long networkLibp2PBytesTotalTransmit,
+      @JsonProperty("network_peers_connected") Integer networkPeersConnected,
+      @JsonProperty("sync_eth1_connected") Boolean syncEth1Connected,
+      @JsonProperty("sync_eth2_synced") Boolean syncEth2Synced,
+      @JsonProperty("sync_beacon_head_slot") Long syncBeaconHeadSlot,
+      @JsonProperty("slasher_active") Boolean slasherActive) {
     super(version, timestamp, process);
-    this.disk_beaconchain_bytes_total = disk_beaconchain_bytes_total;
-    this.network_libp2p_bytes_total_receive = network_libp2p_bytes_total_receive;
-    this.network_libp2p_bytes_total_transmit = network_libp2p_bytes_total_transmit;
-    this.network_peers_connected = network_peers_connected;
-    this.sync_beacon_head_slot = sync_beacon_head_slot;
+    this.cpu_process_seconds_total = cpuProcessSecondsTotal;
+    this.memory_process_bytes = memoryProcessBytes;
     this.client_name = clientName;
     this.client_version = clientVersion;
+    this.disk_beaconchain_bytes_total = diskBeaconchainBytesTotal;
+    this.network_libp2p_bytes_total_receive = networkLibp2PBytesTotalReceive;
+    this.network_libp2p_bytes_total_transmit = networkLibp2PBytesTotalTransmit;
+    this.network_peers_connected = networkPeersConnected;
+    this.sync_eth1_connected = syncEth1Connected;
+    this.sync_eth2_synced = syncEth2Synced;
+    this.sync_beacon_head_slot = syncBeaconHeadSlot;
+    this.slasher_active = slasherActive;
   }
 
   @Override
@@ -57,27 +72,37 @@ public class BeaconNodeMetricData extends BaseMetricData {
     if (o == null || getClass() != o.getClass()) return false;
     if (!super.equals(o)) return false;
     BeaconNodeMetricData that = (BeaconNodeMetricData) o;
-    return Objects.equals(disk_beaconchain_bytes_total, that.disk_beaconchain_bytes_total)
+    return Objects.equals(cpu_process_seconds_total, that.cpu_process_seconds_total)
+        && Objects.equals(memory_process_bytes, that.memory_process_bytes)
+        && Objects.equals(client_name, that.client_name)
+        && Objects.equals(client_version, that.client_version)
+        && Objects.equals(disk_beaconchain_bytes_total, that.disk_beaconchain_bytes_total)
         && Objects.equals(
             network_libp2p_bytes_total_receive, that.network_libp2p_bytes_total_receive)
         && Objects.equals(
             network_libp2p_bytes_total_transmit, that.network_libp2p_bytes_total_transmit)
         && Objects.equals(network_peers_connected, that.network_peers_connected)
+        && Objects.equals(sync_eth1_connected, that.sync_eth1_connected)
+        && Objects.equals(sync_eth2_synced, that.sync_eth2_synced)
         && Objects.equals(sync_beacon_head_slot, that.sync_beacon_head_slot)
-        && Objects.equals(client_name, that.client_name)
-        && Objects.equals(client_version, that.client_version);
+        && Objects.equals(slasher_active, that.slasher_active);
   }
 
   @Override
   public int hashCode() {
     return Objects.hash(
         super.hashCode(),
+        cpu_process_seconds_total,
+        memory_process_bytes,
+        client_name,
+        client_version,
         disk_beaconchain_bytes_total,
         network_libp2p_bytes_total_receive,
         network_libp2p_bytes_total_transmit,
         network_peers_connected,
+        sync_eth1_connected,
+        sync_eth2_synced,
         sync_beacon_head_slot,
-        client_name,
-        client_version);
+        slasher_active);
   }
 }

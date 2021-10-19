@@ -20,8 +20,12 @@ import java.util.Objects;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SystemMetricData extends BaseMetricData {
 
+  public final Integer cpu_cores;
+  public final Integer cpu_threads;
   public final Long cpu_node_system_seconds_total;
   public final Long cpu_node_user_seconds_total;
+  public final Long cpu_node_iowait_seconds_total;
+  public final Long cpu_node_idle_seconds_total;
 
   public final Long memory_node_bytes_total;
   public final Long memory_node_bytes_free;
@@ -37,13 +41,18 @@ public class SystemMetricData extends BaseMetricData {
   public final Long network_node_bytes_total_receive;
   public final Long network_node_bytes_total_transmit;
   public final Long misc_node_boot_ts_seconds;
+  public final String misc_os;
 
   public SystemMetricData(
       @JsonProperty("version") int version,
       @JsonProperty("timestamp") long timestamp,
       @JsonProperty("process") String process,
+      @JsonProperty("cpu_cores") Integer cpuCores,
+      @JsonProperty("cpu_threads") Integer cpuThreads,
       @JsonProperty("cpu_node_system_seconds_total") Long cpuNodeSystemSecondsTotal,
       @JsonProperty("cpu_node_user_seconds_total") Long cpuNodeUserSecondsTotal,
+      @JsonProperty("cpu_node_iowait_seconds_total") Long cpuNodeIowaitSecondsTotal,
+      @JsonProperty("cpu_node_idle_seconds_total") Long cpuNodeIdleSecondsTotal,
       @JsonProperty("memory_node_bytes_total") Long memoryNodeBytesTotal,
       @JsonProperty("memory_node_bytes_free") Long memoryNodeBytesFree,
       @JsonProperty("memory_node_bytes_cached") Long memoryNodeBytesCached,
@@ -55,10 +64,15 @@ public class SystemMetricData extends BaseMetricData {
       @JsonProperty("disk_node_writes_total") Long diskNodeWritesTotal,
       @JsonProperty("network_node_bytes_total_receive") Long networkNodeBytesTotalReceive,
       @JsonProperty("network_node_bytes_total_transmit") Long networkNodeBytesTotalTransmit,
-      @JsonProperty("misc_node_boot_ts_seconds") Long miscNodeBootTsSeconds) {
+      @JsonProperty("misc_node_boot_ts_seconds") Long miscNodeBootTsSeconds,
+      @JsonProperty("misc_os") String miscOS) {
     super(version, timestamp, process);
+    this.cpu_cores = cpuCores;
+    this.cpu_threads = cpuThreads;
     this.cpu_node_system_seconds_total = cpuNodeSystemSecondsTotal;
     this.cpu_node_user_seconds_total = cpuNodeUserSecondsTotal;
+    this.cpu_node_iowait_seconds_total = cpuNodeIowaitSecondsTotal;
+    this.cpu_node_idle_seconds_total = cpuNodeIdleSecondsTotal;
     this.memory_node_bytes_total = memoryNodeBytesTotal;
     this.memory_node_bytes_free = memoryNodeBytesFree;
     this.memory_node_bytes_cached = memoryNodeBytesCached;
@@ -71,6 +85,7 @@ public class SystemMetricData extends BaseMetricData {
     this.network_node_bytes_total_receive = networkNodeBytesTotalReceive;
     this.network_node_bytes_total_transmit = networkNodeBytesTotalTransmit;
     this.misc_node_boot_ts_seconds = miscNodeBootTsSeconds;
+    this.misc_os = miscOS;
   }
 
   @Override
@@ -79,8 +94,12 @@ public class SystemMetricData extends BaseMetricData {
     if (o == null || getClass() != o.getClass()) return false;
     if (!super.equals(o)) return false;
     SystemMetricData that = (SystemMetricData) o;
-    return Objects.equals(cpu_node_system_seconds_total, that.cpu_node_system_seconds_total)
+    return Objects.equals(cpu_cores, that.cpu_cores)
+        && Objects.equals(cpu_threads, that.cpu_threads)
+        && Objects.equals(cpu_node_system_seconds_total, that.cpu_node_system_seconds_total)
         && Objects.equals(cpu_node_user_seconds_total, that.cpu_node_user_seconds_total)
+        && Objects.equals(cpu_node_iowait_seconds_total, that.cpu_node_iowait_seconds_total)
+        && Objects.equals(cpu_node_idle_seconds_total, that.cpu_node_idle_seconds_total)
         && Objects.equals(memory_node_bytes_total, that.memory_node_bytes_total)
         && Objects.equals(memory_node_bytes_free, that.memory_node_bytes_free)
         && Objects.equals(memory_node_bytes_cached, that.memory_node_bytes_cached)
@@ -92,15 +111,20 @@ public class SystemMetricData extends BaseMetricData {
         && Objects.equals(disk_node_writes_total, that.disk_node_writes_total)
         && Objects.equals(network_node_bytes_total_receive, that.network_node_bytes_total_receive)
         && Objects.equals(network_node_bytes_total_transmit, that.network_node_bytes_total_transmit)
-        && Objects.equals(misc_node_boot_ts_seconds, that.misc_node_boot_ts_seconds);
+        && Objects.equals(misc_node_boot_ts_seconds, that.misc_node_boot_ts_seconds)
+        && Objects.equals(misc_os, that.misc_os);
   }
 
   @Override
   public int hashCode() {
     return Objects.hash(
         super.hashCode(),
+        cpu_cores,
+        cpu_threads,
         cpu_node_system_seconds_total,
         cpu_node_user_seconds_total,
+        cpu_node_iowait_seconds_total,
+        cpu_node_idle_seconds_total,
         memory_node_bytes_total,
         memory_node_bytes_free,
         memory_node_bytes_cached,
@@ -112,6 +136,7 @@ public class SystemMetricData extends BaseMetricData {
         disk_node_writes_total,
         network_node_bytes_total_receive,
         network_node_bytes_total_transmit,
-        misc_node_boot_ts_seconds);
+        misc_node_boot_ts_seconds,
+        misc_os);
   }
 }
