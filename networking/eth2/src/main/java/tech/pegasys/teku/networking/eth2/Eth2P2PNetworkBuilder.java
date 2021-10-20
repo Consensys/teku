@@ -184,7 +184,6 @@ public class Eth2P2PNetworkBuilder {
       final GossipEncoding gossipEncoding) {
     switch (forkAndSpecMilestone.getSpecMilestone()) {
       case PHASE0:
-      case MERGE:
         return new GossipForkSubscriptionsPhase0(
             forkAndSpecMilestone.getFork(),
             spec,
@@ -202,6 +201,7 @@ public class Eth2P2PNetworkBuilder {
             proposerSlashingGossipPublisher,
             gossipedVoluntaryExitConsumer,
             voluntaryExitGossipPublisher);
+      case MERGE:
       case ALTAIR:
         return new GossipForkSubscriptionsAltair(
             forkAndSpecMilestone.getFork(),
