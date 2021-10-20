@@ -17,28 +17,27 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
 import tech.pegasys.teku.api.schema.interfaces.State;
 import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
-import tech.pegasys.teku.spec.SpecMilestone;
 
 public class GetStateResponseV2 {
-  public final SpecMilestone version;
+  public final Version version;
 
   @JsonTypeInfo(
       use = JsonTypeInfo.Id.NAME,
       include = JsonTypeInfo.As.EXTERNAL_PROPERTY,
       property = "version")
   @JsonSubTypes({
-    @JsonSubTypes.Type(value = SignedBeaconBlockPhase0.class, name = "PHASE0"),
-    @JsonSubTypes.Type(value = SignedBeaconBlockAltair.class, name = "ALTAIR")
+    @JsonSubTypes.Type(value = SignedBeaconBlockPhase0.class, name = "phase0"),
+    @JsonSubTypes.Type(value = SignedBeaconBlockAltair.class, name = "altair")
   })
   public final State data;
 
   @JsonCreator
   public GetStateResponseV2(
-      @JsonProperty("version") final SpecMilestone version,
-      @JsonProperty("data") final State data) {
+      @JsonProperty("version") final Version version, @JsonProperty("data") final State data) {
     this.version = version;
     this.data = data;
   }

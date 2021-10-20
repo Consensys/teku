@@ -17,10 +17,10 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Set;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
-import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.api.schema.Version;
 
 public class GetAllBlocksAtSlotResponse {
-  private final SpecMilestone version;
+  private final Version version;
 
   private final Set<SignedBeaconBlock> data;
 
@@ -28,13 +28,13 @@ public class GetAllBlocksAtSlotResponse {
     return data;
   }
 
-  public SpecMilestone getVersion() {
+  public Version getVersion() {
     return version;
   }
 
   @JsonCreator
   public GetAllBlocksAtSlotResponse(
-      @JsonProperty("version") final SpecMilestone version,
+      @JsonProperty("version") final Version version,
       @JsonProperty("data") final Set<SignedBeaconBlock> data) {
     this.version = version;
     this.data = data;
