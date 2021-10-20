@@ -161,7 +161,7 @@ jobs:
       - run:
           name: Build
           command: |
-            cmd.exe /c gradlew.bat --no-daemon --parallel
+            cmd.exe /c gradlew.bat --no-daemon --parallel --build-cache
       - run:
           name: "Gather test artifacts"
           when: "always"
