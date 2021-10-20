@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -66,7 +67,8 @@ class ConstantsReader {
           "DOMAIN_DEPOSIT",
           "DOMAIN_VOLUNTARY_EXIT",
           "DOMAIN_SELECTION_PROOF",
-          "DOMAIN_AGGREGATE_AND_PROOF");
+          "DOMAIN_AGGREGATE_AND_PROOF",
+          "DEPOSIT_CONTRACT_ADDRESS");
 
   private static final ImmutableMap<Class<?>, Function<Object, ?>> PARSERS =
       ImmutableMap.<Class<?>, Function<Object, ?>>builder()
@@ -74,10 +76,30 @@ class ConstantsReader {
           .put(Long.TYPE, toString(Long::valueOf))
           .put(UInt64.class, toString(UInt64::valueOf))
           .put(String.class, Function.identity())
-          .put(Bytes.class, toString(Bytes::fromHexString))
-          .put(Bytes4.class, toString(Bytes4::fromHexString))
+          .put(Bytes.class, ConstantsReader::bytesParser)
+          .put(Bytes4.class, ConstantsReader::bytes4Parser)
           .put(boolean.class, toString(Boolean::valueOf))
           .build();
+
+  private static Bytes bytesParser(final Object value) {
+    if (value instanceof BigInteger) {
+      BigInteger bigInteger = (BigInteger) value;
+      final Bytes bytes = Bytes.of(bigInteger.toByteArray());
+      return bytes.trimLeadingZeros();
+    } else if (value instanceof Long) {
+      return Bytes.ofUnsignedLong((long) value);
+    } else if (value instanceof Integer) {
+      return Bytes.ofUnsignedInt((int) value);
+    }
+    throw new IllegalArgumentException("Could not determine type of " + value);
+  }
+
+  private static Bytes4 bytes4Parser(final Object value) {
+    if (value instanceof Long) {
+      return new Bytes4(Bytes.ofUnsignedLong((long) value));
+    }
+    return new Bytes4(Bytes.ofUnsignedInt((int) value));
+  }
 
   public static void loadConstantsFrom(final String source) {
     try (final InputStream input = createConfigInputStream(source)) {

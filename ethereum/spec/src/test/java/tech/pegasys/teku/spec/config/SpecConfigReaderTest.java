@@ -211,19 +211,6 @@ public class SpecConfigReaderTest {
   }
 
   @Test
-  public void read_invalidLong_wrongType() {
-    processFileAsInputStream(
-        getInvalidConfigPath("invalidLong_wrongType"),
-        stream -> {
-          assertThatThrownBy(() -> reader.read(stream))
-              .isInstanceOf(IllegalArgumentException.class)
-              .hasMessageContaining(
-                  "Failed to parse value for constant VALIDATOR_REGISTRY_LIMIT: '[1, 2, 3]'");
-          return null;
-        });
-  }
-
-  @Test
   public void read_invalidLong_tooLarge() {
     processFileAsInputStream(
         getInvalidConfigPath("invalidLong_tooLarge"),

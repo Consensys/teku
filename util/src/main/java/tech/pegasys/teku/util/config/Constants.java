@@ -102,10 +102,6 @@ public class Constants {
   @Deprecated public static int DEPOSIT_CHAIN_ID;
   @Deprecated public static int DEPOSIT_NETWORK_ID;
 
-  @Deprecated
-  public static Bytes DEPOSIT_CONTRACT_ADDRESS =
-      Bytes.fromHexString("0x1234567890123456789012345678901234567890");
-
   // Networking
   public static final int GOSSIP_MAX_SIZE = 1048576; // bytes
   public static final int MAX_REQUEST_BLOCKS = 1024;

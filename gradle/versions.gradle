@@ -1,8 +1,8 @@
 dependencyManagement {
   dependencies {
-    dependency 'com.fasterxml.jackson.core:jackson-databind:2.11.2'
-    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.11.2'
-    dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.11.2'
+    dependency 'com.fasterxml.jackson.core:jackson-databind:2.12.5'
+    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.12.5'
+    dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.12.5'
 
     dependency 'com.google.auto.service:auto-service:1.0-rc7'
 
@@ -22,7 +22,7 @@ dependencyManagement {
     dependency 'org.jsoup:jsoup:1.13.1'
 
     dependency 'com.launchdarkly:okhttp-eventsource:2.3.2'
-    
+
     dependency 'com.squareup.okhttp3:okhttp:4.9.2'
     dependency 'com.squareup.okhttp3:mockwebserver:4.9.2'
 
@@ -46,13 +46,13 @@ dependencyManagement {
 
     dependency 'org.hdrhistogram:HdrHistogram:2.1.12'
 
-    dependency 'org.jetbrains.kotlin:kotlin-stdlib:1.4.10'
+    dependency 'org.jetbrains.kotlin:kotlin-stdlib:1.5.31'
 
     dependency 'io.pkts:pkts-core:3.0.3'
 
-    dependency 'org.mock-server:mockserver-junit-jupiter:5.11.0'
+    dependency 'org.mock-server:mockserver-junit-jupiter:5.11.2'
 
-    dependencySet(group: 'io.swagger.core.v3', version: '2.1.5') {
+    dependencySet(group: 'io.swagger.core.v3', version: '2.1.10') {
       entry 'swagger-parser'
       entry 'swagger-core'
       entry 'swagger-models'
