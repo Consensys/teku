@@ -71,13 +71,4 @@ dependencies {
 
   testImplementation project(':data:provider')
   testImplementation 'org.awaitility:awaitility'
-
-  constraints{
-    integrationTestImplementation('com.github.java-json-tools:json-schema-validator'){
-      version{
-        strictly '[2.2.8, 2.2.14['
-      }
-      because 'later versions cause runtime issues with mockserver'
-    }
-  }
 }
