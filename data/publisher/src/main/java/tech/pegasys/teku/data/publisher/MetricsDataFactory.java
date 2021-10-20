@@ -61,24 +61,22 @@ public class MetricsDataFactory {
     final Integer cpuCores = null;
     final Integer cpuThreads = getIntegerValue(values, "threads_current");
     final Long cpuNodeSystemSecondsTotal = getLongValue(values, "cpu_seconds_total");
-    final Long cpuNodeUserSecondsTotal = getLongValue(values, "node_cpu_seconds_total");
+    final Long cpuNodeUserSecondsTotal = null;
     final Long cpuNodeIowaitSecondsTotal = null;
     final Long cpuNodeIdleSecondsTotal = null;
-    final Long memoryNodeBytesTotal = getLongValue(values, "node_memory_MemTotal_bytes");
-    final Long memoryNodeBytesFree = getLongValue(values, "node_memory_MemFree_bytes");
-    final Long memoryNodeBytesCached = getLongValue(values, "node_memory_Cached_bytes");
-    final Long memoryNodeBytesBuffers = getLongValue(values, "node_memory_Buffers_bytes");
-    final Long diskNodeBytesTotal = getLongValue(values, "node_filesystem_size_bytes");
-    final Long diskNodeBytesFree = getLongValue(values, "node_filesystem_free_bytes");
-    final Long diskNodeIoSeconds = getLongValue(values, "node_disk_io_time_seconds_total");
-    final Long diskNodeReadsTotal = getLongValue(values, "node_disk_read_bytes_total");
-    final Long diskNodeWritesTotal = getLongValue(values, "node_disk_written_bytes_total");
-    final Long networkNodeBytesTotalReceive =
-        getLongValue(values, "node_network_receive_bytes_total");
-    final Long networkNodeBytesTotalTransmit =
-        getLongValue(values, "node_network_transmit_bytes_total");
+    final Long memoryNodeBytesTotal = getLongValue(values, "memory_bytes_max");
+    final Long memoryNodeBytesFree = null;
+    final Long memoryNodeBytesCached = null;
+    final Long memoryNodeBytesBuffers = null;
+    final Long diskNodeBytesTotal = null;
+    final Long diskNodeBytesFree = null;
+    final Long diskNodeIoSeconds = null;
+    final Long diskNodeReadsTotal = null;
+    final Long diskNodeWritesTotal = null;
+    final Long networkNodeBytesTotalReceive = null;
+    final Long networkNodeBytesTotalTransmit = null;
     final Long miscNodeBootTsSeconds = getLongValue(values, "start_time_second");
-    final String miscOS = null;
+    final String miscOS = getNormalizedOSVersion();
     return new SystemMetricData(
         PROTOCOL_VERSION,
         timeProvider.getTimeInMillis().longValue(),
@@ -108,17 +106,15 @@ public class MetricsDataFactory {
       final Map<String, Observation> values, final TimeProvider timeProvider) {
 
     final Integer networkPeersConnected = getIntegerValue(values, "peer_count");
-    final Long diskBeaconchainBytesTotal = getLongValue(values, "filesystem_size_bytes");
+    final Long diskBeaconchainBytesTotal = null;
     final Long cpuProcessSecondsTotal = getLongValue(values, "cpu_seconds_total");
-    final Long memoryProcessBytes = getLongValue(values, "memory_pool_bytes_used");
+    final Long memoryProcessBytes = getLongValue(values, "resident_memory_bytes");
     final Boolean syncEth1Connected = null;
     final Boolean syncEth2Synced = null;
     final Long syncBeaconHeadSlot = getLongValue(values, "head_slot");
     final Boolean slasherActive = null;
-
-    final Long networkLibp2PBytesTotalReceive = getLongValue(values, "network_receive_bytes_total");
-    final Long networkLibp2PBytesTotalTransmit =
-        getLongValue(values, "network_transmit_bytes_total");
+    final Long networkLibp2PBytesTotalReceive = null;
+    final Long networkLibp2PBytesTotalTransmit = null;
 
     return new BeaconNodeMetricData(
         PROTOCOL_VERSION,
@@ -142,9 +138,9 @@ public class MetricsDataFactory {
       final Map<String, Observation> values, final TimeProvider timeProvider) {
 
     final Long cpuProcessSecondsTotal = getLongValue(values, "cpu_seconds_total");
-    final Long memoryProcessBytes = getLongValue(values, "memory_pool_bytes_used");
-    final Integer validatorTotal = getIntegerValue(values, "current_active_validators");
-    final Integer validatorActive = getIntegerValue(values, "current_live_validators");
+    final Long memoryProcessBytes = getLongValue(values, "resident_memory_bytes");
+    final Integer validatorTotal = getIntegerValue(values, "local_validator_count");
+    final Integer validatorActive = getIntegerValue(values, "local_validator_counts");
     return new ValidatorMetricData(
         PROTOCOL_VERSION,
         timeProvider.getTimeInMillis().longValue(),
@@ -171,6 +167,14 @@ public class MetricsDataFactory {
       return observation.intValue();
     }
     return null;
+  }
+
+  private static String getNormalizedOSVersion() {
+    String currentVersionInfo = VersionProvider.VERSION;
+    if (currentVersionInfo.contains("linux")) return "lin";
+    if (currentVersionInfo.contains("windows")) return "win";
+    if (currentVersionInfo.contains("osx")) return "mac";
+    return "unk";
   }
 
   private static Map<String, Observation> getStringObjectMap(

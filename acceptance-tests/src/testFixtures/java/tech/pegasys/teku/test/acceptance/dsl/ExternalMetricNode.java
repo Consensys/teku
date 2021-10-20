@@ -104,6 +104,12 @@ public class ExternalMetricNode extends Node {
     assertThat(publishedData[0].process).isNotNull();
 
     assertThat(publishedData[0].process).isEqualTo(MetricsDataClient.BEACON_NODE.getDataClient());
+    assertThat(publishedData[0].version).isNotNull();
+    assertThat(publishedData[0].timestamp).isNotNull();
+    assertThat(publishedData[0].client_name).isNotNull();
+    assertThat(publishedData[0].client_version).isNotNull();
+    assertThat(publishedData[0].cpu_process_seconds_total).isNotNull();
+    assertThat(publishedData[0].memory_process_bytes).isNotNull();
     assertThat(publishedData[0].network_peers_connected).isNotNull();
     assertThat(publishedData[0].sync_beacon_head_slot).isNotNull();
   }
@@ -116,10 +122,13 @@ public class ExternalMetricNode extends Node {
     assertThat(publishedData[1].process).isNotNull();
 
     assertThat(publishedData[1].process).isEqualTo(MetricsDataClient.VALIDATOR.getDataClient());
+    assertThat(publishedData[1].version).isNotNull();
+    assertThat(publishedData[1].timestamp).isNotNull();
+    assertThat(publishedData[1].client_name).isNotNull();
+    assertThat(publishedData[1].client_version).isNotNull();
     assertThat(publishedData[1].cpu_process_seconds_total).isNotNull();
     assertThat(publishedData[1].memory_process_bytes).isNotNull();
     assertThat(publishedData[1].validator_total).isNotNull();
-    assertThat(publishedData[1].validator_active).isNotNull();
   }
 
   public void waitForSystemMetricPublication() throws URISyntaxException, IOException {
@@ -130,7 +139,10 @@ public class ExternalMetricNode extends Node {
     assertThat(publishedData[2].process).isNotNull();
 
     assertThat(publishedData[2].process).isEqualTo(MetricsDataClient.SYSTEM.getDataClient());
+    assertThat(publishedData[2].version).isNotNull();
+    assertThat(publishedData[2].timestamp).isNotNull();
     assertThat(publishedData[2].cpu_node_system_seconds_total).isNotNull();
+    assertThat(publishedData[2].misc_os).isNotNull();
   }
 
   public void start() {
