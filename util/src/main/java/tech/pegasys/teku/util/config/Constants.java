@@ -56,9 +56,6 @@ public class Constants {
   @Deprecated public static UInt64 EJECTION_BALANCE;
   @Deprecated public static UInt64 EFFECTIVE_BALANCE_INCREMENT;
 
-  // Initial values
-  @Deprecated public static Bytes4 GENESIS_FORK_VERSION = Bytes4.fromHexString("0x00000000");
-
   // Time parameters
   @Deprecated public static UInt64 GENESIS_DELAY;
   @Deprecated public static int SECONDS_PER_SLOT = 12;

@@ -32,7 +32,6 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.type.Bytes4;
 
 class ConstantsReader {
   private static final ImmutableList<String> PRESETS = ImmutableList.of("mainnet", "minimal");
@@ -66,7 +65,9 @@ class ConstantsReader {
           "DOMAIN_DEPOSIT",
           "DOMAIN_VOLUNTARY_EXIT",
           "DOMAIN_SELECTION_PROOF",
-          "DOMAIN_AGGREGATE_AND_PROOF");
+          "DOMAIN_AGGREGATE_AND_PROOF",
+          // Removed from Constants (only available through SpecConfig)
+          "GENESIS_FORK_VERSION");
 
   private static final ImmutableMap<Class<?>, Function<Object, ?>> PARSERS =
       ImmutableMap.<Class<?>, Function<Object, ?>>builder()
@@ -75,7 +76,6 @@ class ConstantsReader {
           .put(UInt64.class, toString(UInt64::valueOf))
           .put(String.class, Function.identity())
           .put(Bytes.class, toString(Bytes::fromHexString))
-          .put(Bytes4.class, toString(Bytes4::fromHexString))
           .put(boolean.class, toString(Boolean::valueOf))
           .build();
 
