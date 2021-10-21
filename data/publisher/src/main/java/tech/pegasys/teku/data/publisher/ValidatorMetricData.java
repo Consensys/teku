@@ -37,15 +37,15 @@ public class ValidatorMetricData extends BaseMetricData {
       @JsonProperty("memory_process_bytes") Long memoryProcessBytes,
       @JsonProperty("client_name") String clientName,
       @JsonProperty("client_version") String clientVersion,
-      @JsonProperty("validator_total") Integer validator_total,
-      @JsonProperty("validator_active") Integer validator_active) {
+      @JsonProperty("validator_total") Integer validatorTotal,
+      @JsonProperty("validator_active") Integer validatorActive) {
     super(version, timestamp, process);
     this.cpu_process_seconds_total = cpuProcessSecondsTotal;
     this.memory_process_bytes = memoryProcessBytes;
     this.client_name = clientName;
     this.client_version = clientVersion;
-    this.validator_total = validator_total;
-    this.validator_active = validator_active;
+    this.validator_total = validatorTotal;
+    this.validator_active = validatorActive;
   }
 
   @Override
