@@ -526,15 +526,7 @@ public class ChainDataProvider {
     return spec.atSlot(slot).getMilestone();
   }
 
-  public SpecMilestone getMilestoneAtEpoch(final UInt64 epoch) {
-    return spec.atEpoch(epoch).getMilestone();
-  }
-
   public Version getVersionAtSlot(final UInt64 slot) {
     return Version.fromMilestone(spec.atSlot(slot).getMilestone());
-  }
-
-  public Version getVersionAtEpoch(final UInt64 epoch) {
-    return Version.fromMilestone(spec.atEpoch(epoch).getMilestone());
   }
 }

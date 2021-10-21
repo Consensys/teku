@@ -84,8 +84,7 @@ public class GetBlockV2IntegrationTest extends AbstractDataBackedRestAPIIntegrat
     createBlocksAtSlots(10);
     final Response response = get("head", HEADER_ACCEPT_OCTET);
     assertThat(response.code()).isEqualTo(SC_OK);
-    assertThat(response.header(HEADER_CONSENSUS_VERSION))
-        .isEqualTo(Version.altair.name());
+    assertThat(response.header(HEADER_CONSENSUS_VERSION)).isEqualTo(Version.altair.name());
   }
 
   public Response get(final String stateIdIdString, final String contentType) throws IOException {
