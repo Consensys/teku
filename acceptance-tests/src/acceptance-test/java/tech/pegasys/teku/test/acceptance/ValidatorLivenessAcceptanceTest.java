@@ -27,7 +27,7 @@ import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 
 public class ValidatorLivenessAcceptanceTest extends AcceptanceTestBase {
 
-  private static final int NODE_VALIDATORS = 8;
+  private static final int NODE_VALIDATORS = 2;
   private static final int TOTAL_VALIDATORS = NODE_VALIDATORS * 2;
   private final List<UInt64> validators = new ArrayList<>();
 
