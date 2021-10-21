@@ -75,10 +75,10 @@ public enum SpecMilestone {
     switch (milestone) {
       case PHASE0:
         return Optional.of(specConfig.getGenesisForkVersion());
-      case MERGE:
-        return specConfig.toVersionMerge().map(SpecConfigMerge::getMergeForkVersion);
       case ALTAIR:
         return specConfig.toVersionAltair().map(SpecConfigAltair::getAltairForkVersion);
+      case MERGE:
+        return specConfig.toVersionMerge().map(SpecConfigMerge::getMergeForkVersion);
       default:
         throw new UnsupportedOperationException("Unknown milestone requested: " + milestone.name());
     }
@@ -90,10 +90,10 @@ public enum SpecMilestone {
         // Phase0 can only ever start at epoch 0 - no non-zero slot is valid. However, another fork
         // may also be configured to start at epoch 0, effectively overriding phase0
         return Optional.of(UInt64.ZERO);
-      case MERGE:
-        return specConfig.toVersionMerge().map(SpecConfigMerge::getMergeForkEpoch);
       case ALTAIR:
         return specConfig.toVersionAltair().map(SpecConfigAltair::getAltairForkEpoch);
+      case MERGE:
+        return specConfig.toVersionMerge().map(SpecConfigMerge::getMergeForkEpoch);
       default:
         throw new UnsupportedOperationException("Unknown milestone requested: " + milestone.name());
     }

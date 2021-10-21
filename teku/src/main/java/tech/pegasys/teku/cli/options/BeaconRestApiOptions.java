@@ -101,6 +101,23 @@ public class BeaconRestApiOptions {
     this.maxUrlLength = maxUrlLength;
   }
 
+  // beacon-liveness-tracking-enabled
+  @Option(
+      names = {"--Xbeacon-liveness-tracking-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Track validator liveness and enable requests to the liveness rest api.",
+      arity = "0..1",
+      fallbackValue = "true",
+      hidden = true)
+  private Boolean beaconLivenessTrackingEnabled = false;
+
+  @Option(
+      names = {"--Xrest-api-validator-threads"},
+      description = "Set the number of threads used to handle validator api requests",
+      paramLabel = "<INTEGER>",
+      hidden = true)
+  private int validatorThreads = 1;
+
   public void configure(final TekuConfiguration.Builder builder) {
     builder.restApi(
         restApiBuilder ->
@@ -112,6 +129,8 @@ public class BeaconRestApiOptions {
                 .restApiHostAllowlist(restApiHostAllowlist)
                 .restApiCorsAllowedOrigins(restApiCorsAllowedOrigins)
                 .maxUrlLength(maxUrlLength)
-                .maxPendingEvents(maxPendingEvents));
+                .beaconLivenessTrackingEnabled(beaconLivenessTrackingEnabled)
+                .maxPendingEvents(maxPendingEvents)
+                .validatorThreads(validatorThreads));
   }
 }

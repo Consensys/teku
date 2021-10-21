@@ -62,6 +62,7 @@ import tech.pegasys.teku.spec.logic.SpecLogic;
 import tech.pegasys.teku.spec.logic.StateTransition;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
+import tech.pegasys.teku.spec.logic.common.statetransition.attestation.AttestationWorthinessChecker;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
@@ -655,6 +656,10 @@ public class Spec {
         .getAttestationUtil()
         .isValidIndexedAttestationAsync(
             getForkAtSlot(slot), state, attestation, blsSignatureVerifier);
+  }
+
+  public AttestationWorthinessChecker createAttestationWorthinessChecker(final BeaconState state) {
+    return atState(state).createAttestationWorthinessChecker(state);
   }
 
   // Misc helpers

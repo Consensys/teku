@@ -24,7 +24,6 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.type.Bytes20;
 
 public class ExecutionPayloadTest {
 
@@ -36,7 +35,7 @@ public class ExecutionPayloadTest {
     ExecutionPayload executionPayload =
         new ExecutionPayload(
             Bytes32.random(),
-            Bytes20.random(),
+            dataStructureUtil.randomBytes20(),
             Bytes32.random(),
             Bytes32.random(),
             Bytes.random(SpecConfig.BYTES_PER_LOGS_BLOOM),

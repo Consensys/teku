@@ -65,6 +65,16 @@ public class SpecConfigAltairImpl extends DelegatingSpecConfig implements SpecCo
     this.minSyncCommitteeParticipants = minSyncCommitteeParticipants;
   }
 
+  public static SpecConfigAltair required(final SpecConfig specConfig) {
+    return specConfig
+        .toVersionAltair()
+        .orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    "Expected altair spec config but got: "
+                        + specConfig.getClass().getSimpleName()));
+  }
+
   @Override
   public Bytes4 getAltairForkVersion() {
     return altairForkVersion;

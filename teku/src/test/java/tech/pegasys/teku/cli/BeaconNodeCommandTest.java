@@ -436,7 +436,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .powchain(
             b -> {
               b.depositContract(networkConfig.getEth1DepositContractAddress());
-              b.eth1Endpoints(new ArrayList<String>())
+              b.eth1Endpoints(new ArrayList<>())
                   .depositContractDeployBlock(networkConfig.getEth1DepositContractDeployBlock());
             })
         .storageConfiguration(
@@ -451,7 +451,11 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
             b -> b.metricsCategories(DEFAULT_METRICS_CATEGORIES).metricsPublicationInterval(60))
         .restApi(b -> b.eth1DepositContractAddress(networkConfig.getEth1DepositContractAddress()))
         .p2p(p -> p.peerRateLimit(500).peerRequestLimit(50))
-        .discovery(d -> d.isDiscoveryEnabled(true).bootnodes(networkConfig.getDiscoveryBootnodes()))
+        .discovery(
+            d ->
+                d.isDiscoveryEnabled(true)
+                    .listenUdpPort(9000)
+                    .bootnodes(networkConfig.getDiscoveryBootnodes()))
         .network(
             n ->
                 n.advertisedPort(OptionalInt.empty())
@@ -494,7 +498,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                 b.eth1DepositContract(address)
                     .dataStorageMode(PRUNE)
                     .dataStorageFrequency(VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY)
-                    .dataStorageCreateDbVersion(DatabaseVersion.DEFAULT_VERSION))
+                    .dataStorageCreateDbVersion(DatabaseVersion.DEFAULT_VERSION)
+                    .maxKnownNodeCacheSize(100_000))
         .data(b -> b.dataBasePath(dataPath))
         .p2p(
             b ->
@@ -503,7 +508,13 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .peerRequestLimit(50)
                     .batchVerifyAttestationSignatures(true))
         .discovery(
-            d -> d.isDiscoveryEnabled(false).minPeers(64).maxPeers(74).minRandomlySelectedPeers(12))
+            d ->
+                d.isDiscoveryEnabled(false)
+                    .listenUdpPort(1234)
+                    .advertisedUdpPort(OptionalInt.of(9000))
+                    .minPeers(64)
+                    .maxPeers(74)
+                    .minRandomlySelectedPeers(12))
         .network(
             n ->
                 n.isEnabled(false)
@@ -523,7 +534,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .restApiCorsAllowedOrigins(new ArrayList<>())
                     .eth1DepositContractAddress(address)
                     .maxUrlLength(65535)
-                    .maxPendingEvents(BeaconRestApiOptions.DEFAULT_MAX_EVENT_QUEUE_SIZE))
+                    .maxPendingEvents(BeaconRestApiOptions.DEFAULT_MAX_EVENT_QUEUE_SIZE)
+                    .validatorThreads(1))
         .validator(
             b ->
                 b.validatorExternalSignerTimeout(Duration.ofSeconds(5))
@@ -550,7 +562,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .metricsCategories(Set.of(BEACON, LIBP2P, NETWORK, EVENTBUS, JVM, PROCESS))
                     .metricsHostAllowlist(List.of("127.0.0.1", "localhost"))
                     .metricsEndpoint(null)
-                    .metricsPublicationInterval(60))
+                    .metricsPublicationInterval(60)
+                    .idleTimeoutSeconds(60))
         .interop(
             b ->
                 b.interopGenesisTime(1)

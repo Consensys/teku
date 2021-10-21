@@ -85,24 +85,34 @@ public class StorageSystemArgumentsProvider implements ArgumentsProvider {
                     .storageMode(mode)
                     .stateStorageFrequency(storageFrequency)
                     .build());
-        storageSystems.put(
-            describeStorage("leveldb1 (file-backed)", storageFrequency),
-            (dataPath) ->
-                FileBackedStorageSystemBuilder.create()
-                    .version(DatabaseVersion.LEVELDB1)
-                    .dataDir(dataPath)
-                    .storageMode(mode)
-                    .stateStorageFrequency(storageFrequency)
-                    .build());
-        storageSystems.put(
-            describeStorage("leveldb2 (file-backed)", storageFrequency),
-            (dataPath) ->
-                FileBackedStorageSystemBuilder.create()
-                    .version(DatabaseVersion.LEVELDB2)
-                    .dataDir(dataPath)
-                    .storageMode(mode)
-                    .stateStorageFrequency(storageFrequency)
-                    .build());
+        if (DatabaseVersion.isLevelDbSupported()) {
+          storageSystems.put(
+              describeStorage("leveldb1 (file-backed)", storageFrequency),
+              (dataPath) ->
+                  FileBackedStorageSystemBuilder.create()
+                      .version(DatabaseVersion.LEVELDB1)
+                      .dataDir(dataPath)
+                      .storageMode(mode)
+                      .stateStorageFrequency(storageFrequency)
+                      .build());
+          storageSystems.put(
+              describeStorage("leveldb2 (file-backed)", storageFrequency),
+              (dataPath) ->
+                  FileBackedStorageSystemBuilder.create()
+                      .version(DatabaseVersion.LEVELDB2)
+                      .dataDir(dataPath)
+                      .storageMode(mode)
+                      .stateStorageFrequency(storageFrequency)
+                      .build());
+          storageSystems.put(
+              describeStorage("leveldb-tree (file-backed)", storageFrequency),
+              (dataPath) ->
+                  FileBackedStorageSystemBuilder.create()
+                      .version(DatabaseVersion.LEVELDB_TREE)
+                      .dataDir(dataPath)
+                      .storageMode(mode)
+                      .build());
+        }
       }
     }
     return storageSystems.entrySet().stream()

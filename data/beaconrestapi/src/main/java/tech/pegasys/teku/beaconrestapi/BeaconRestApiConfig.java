@@ -23,12 +23,14 @@ public class BeaconRestApiConfig {
   private final int restApiPort;
   private final boolean restApiDocsEnabled;
   private final boolean restApiEnabled;
+  private final boolean beaconLivenessTrackingEnabled;
   private final String restApiInterface;
   private final List<String> restApiHostAllowlist;
   private final List<String> restApiCorsAllowedOrigins;
   private final Eth1Address eth1DepositContractAddress;
   private final int maxUrlLength;
   private final int maxPendingEvents;
+  private final int validatorThreads;
 
   private BeaconRestApiConfig(
       final int restApiPort,
@@ -39,7 +41,9 @@ public class BeaconRestApiConfig {
       final List<String> restApiCorsAllowedOrigins,
       final Eth1Address eth1DepositContractAddress,
       final int maxUrlLength,
-      final int maxPendingEvents) {
+      final int maxPendingEvents,
+      final int validatorThreads,
+      final boolean beaconLivenessTrackingEnabled) {
     this.restApiPort = restApiPort;
     this.restApiDocsEnabled = restApiDocsEnabled;
     this.restApiEnabled = restApiEnabled;
@@ -49,6 +53,8 @@ public class BeaconRestApiConfig {
     this.eth1DepositContractAddress = eth1DepositContractAddress;
     this.maxUrlLength = maxUrlLength;
     this.maxPendingEvents = maxPendingEvents;
+    this.validatorThreads = validatorThreads;
+    this.beaconLivenessTrackingEnabled = beaconLivenessTrackingEnabled;
   }
 
   public int getRestApiPort() {
@@ -61,6 +67,10 @@ public class BeaconRestApiConfig {
 
   public boolean isRestApiEnabled() {
     return restApiEnabled;
+  }
+
+  public boolean isBeaconLivenessTrackingEnabled() {
+    return beaconLivenessTrackingEnabled;
   }
 
   public String getRestApiInterface() {
@@ -87,6 +97,10 @@ public class BeaconRestApiConfig {
     return maxUrlLength;
   }
 
+  public int getValidatorThreads() {
+    return validatorThreads;
+  }
+
   public static BeaconRestApiConfigBuilder builder() {
     return new BeaconRestApiConfigBuilder();
   }
@@ -96,12 +110,14 @@ public class BeaconRestApiConfig {
     private int restApiPort;
     private boolean restApiDocsEnabled;
     private boolean restApiEnabled;
+    private boolean beaconLivenessTrackingEnabled;
     private String restApiInterface;
     private List<String> restApiHostAllowlist;
     private List<String> restApiCorsAllowedOrigins;
     private Eth1Address eth1DepositContractAddress;
     private int maxPendingEvents;
     private int maxUrlLength;
+    private int validatorThreads;
 
     private BeaconRestApiConfigBuilder() {}
 
@@ -149,6 +165,17 @@ public class BeaconRestApiConfig {
       return this;
     }
 
+    public BeaconRestApiConfigBuilder beaconLivenessTrackingEnabled(
+        final boolean beaconLivenessTrackingEnabled) {
+      this.beaconLivenessTrackingEnabled = beaconLivenessTrackingEnabled;
+      return this;
+    }
+
+    public BeaconRestApiConfigBuilder validatorThreads(final int validatorThreads) {
+      this.validatorThreads = validatorThreads;
+      return this;
+    }
+
     public BeaconRestApiConfig build() {
       return new BeaconRestApiConfig(
           restApiPort,
@@ -159,7 +186,9 @@ public class BeaconRestApiConfig {
           restApiCorsAllowedOrigins,
           eth1DepositContractAddress,
           maxUrlLength,
-          maxPendingEvents);
+          maxPendingEvents,
+          validatorThreads,
+          beaconLivenessTrackingEnabled);
     }
 
     public BeaconRestApiConfigBuilder maxUrlLength(final int maxUrlLength) {

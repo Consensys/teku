@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec;
 
 import static tech.pegasys.teku.spec.SpecMilestone.ALTAIR;
+import static tech.pegasys.teku.spec.SpecMilestone.MERGE;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
@@ -67,18 +68,18 @@ public class SpecFactory {
   public static Spec create(final SpecConfig config) {
     final UInt64 altairForkEpoch =
         config.toVersionAltair().map(SpecConfigAltair::getAltairForkEpoch).orElse(FAR_FUTURE_EPOCH);
-    final Optional<UInt64> mergeForkEpoch =
-        config
-            .toVersionMerge()
-            .map(SpecConfigMerge::getMergeForkEpoch)
-            .filter(epoch -> !epoch.equals(FAR_FUTURE_EPOCH));
-    // Merge takes precedence in the prototype
-    if (mergeForkEpoch.isPresent()) {
-      return Spec.create(config, SpecMilestone.MERGE);
+    final UInt64 mergeForkEpoch =
+        config.toVersionMerge().map(SpecConfigMerge::getMergeForkEpoch).orElse(FAR_FUTURE_EPOCH);
+    final SpecMilestone highestMilestoneSupported;
+
+    if (!mergeForkEpoch.equals(FAR_FUTURE_EPOCH)) {
+      highestMilestoneSupported = MERGE;
+    } else if (!altairForkEpoch.equals(FAR_FUTURE_EPOCH)) {
+      highestMilestoneSupported = ALTAIR;
+    } else {
+      highestMilestoneSupported = PHASE0;
     }
 
-    final SpecMilestone highestMilestoneSupported =
-        altairForkEpoch.equals(FAR_FUTURE_EPOCH) ? PHASE0 : ALTAIR;
     return Spec.create(config, highestMilestoneSupported);
   }
 }

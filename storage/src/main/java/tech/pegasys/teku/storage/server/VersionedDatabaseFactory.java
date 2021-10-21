@@ -46,6 +46,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
 
   private final MetricsSystem metricsSystem;
   private final File dataDirectory;
+  private final int maxKnownNodeCacheSize;
   private final File dbDirectory;
   private final File v5ArchiveDirectory;
   private final File dbVersionFile;
@@ -71,6 +72,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
         DEFAULT_STORAGE_FREQUENCY,
         depositContractAddress,
         storeNonCanonicalBlocks,
+        0,
         spec);
   }
 
@@ -82,9 +84,11 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final long stateStorageFrequency,
       final Eth1Address eth1Address,
       final boolean storeNonCanonicalBlocks,
+      final int maxKnownNodeCacheSize,
       final Spec spec) {
     this.metricsSystem = metricsSystem;
     this.dataDirectory = dataPath.toFile();
+    this.maxKnownNodeCacheSize = maxKnownNodeCacheSize;
     this.dbDirectory = this.dataDirectory.toPath().resolve(DB_PATH).toFile();
     this.v5ArchiveDirectory = this.dataDirectory.toPath().resolve(ARCHIVE_PATH).toFile();
     this.dbVersionFile = this.dataDirectory.toPath().resolve(DB_VERSION_PATH).toFile();
@@ -280,6 +284,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           dbConfiguration.withDatabaseDir(dbDirectory.toPath()),
           stateStorageMode,
           storeNonCanonicalBlocks,
+          maxKnownNodeCacheSize,
           spec);
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);

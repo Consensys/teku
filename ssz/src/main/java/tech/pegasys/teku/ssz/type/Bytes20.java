@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -30,10 +30,6 @@ public class Bytes20 {
     checkArgument(
         bytes.size() == SIZE, "Bytes20 should be 20 bytes, but was %s bytes.", bytes.size());
     this.bytes = bytes;
-  }
-
-  public static Bytes20 random() {
-    return new Bytes20(Bytes.random(SIZE));
   }
 
   public static Bytes20 fromHexString(String value) {

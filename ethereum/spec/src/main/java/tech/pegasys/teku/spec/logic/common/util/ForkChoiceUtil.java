@@ -437,7 +437,7 @@ public class ForkChoiceUtil {
     BeaconBlockBodyMerge blockBodyMerge = block.getBody().toVersionMerge().orElseThrow();
     PowBlock powBlock =
         mergeTransitionHelpers.getPowBlock(
-            executionEngineChannel, blockBodyMerge.getExecution_payload().getParent_hash());
+            executionEngineChannel, blockBodyMerge.getExecution_payload().getParentHash());
     PowBlock parentPowBlock =
         mergeTransitionHelpers.getPowBlock(executionEngineChannel, powBlock.getParentHash());
 

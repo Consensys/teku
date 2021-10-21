@@ -103,7 +103,7 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
 
     BeaconBlockBodyMerge blockBody =
         BeaconBlockBodyMerge.required(signedBlock.getMessage().getBody());
-    Bytes32 payloadBlockHash = blockBody.getExecution_payload().getBlock_hash();
+    Bytes32 payloadBlockHash = blockBody.getExecution_payload().getBlockHash();
     try {
       BeaconState postState =
           super.processAndValidateBlock(
@@ -161,8 +161,8 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
       if (miscHelpersMerge.isMergeComplete(state)) {
         checkArgument(
             executionPayload
-                .getParent_hash()
-                .equals(state.getLatest_execution_payload_header().getBlock_hash()),
+                .getParentHash()
+                .equals(state.getLatest_execution_payload_header().getBlockHash()),
             "process_execution_payload: Verify that the parent matches");
         checkArgument(
             executionPayload
@@ -202,19 +202,19 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
 
       state.setLatestExecutionPayloadHeader(
           new ExecutionPayloadHeader(
-              executionPayload.getParent_hash(),
+              executionPayload.getParentHash(),
               executionPayload.getCoinbase(),
-              executionPayload.getState_root(),
-              executionPayload.getReceipt_root(),
-              executionPayload.getLogs_bloom(),
+              executionPayload.getStateRoot(),
+              executionPayload.getReceiptRoot(),
+              executionPayload.getLogsBloom(),
               executionPayload.getRandom(),
               executionPayload.getBlockNumber(),
-              executionPayload.getGas_limit(),
-              executionPayload.getGas_used(),
+              executionPayload.getGasLimit(),
+              executionPayload.getGasUsed(),
               executionPayload.getTimestamp(),
               executionPayload.getExtraData(),
               executionPayload.getBaseFeePerGas(),
-              executionPayload.getBlock_hash(),
+              executionPayload.getBlockHash(),
               executionPayload.getTransactions().hashTreeRoot()));
 
     } catch (IllegalArgumentException e) {
@@ -224,24 +224,24 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
   }
 
   private boolean isValidGasLimit(ExecutionPayload payload, ExecutionPayloadHeader parent) {
-    final UInt64 parentGasLimit = parent.getGas_limit();
+    final UInt64 parentGasLimit = parent.getGasLimit();
 
     // Check if the payload used too much gas
-    if (payload.getGas_used().isGreaterThan(parentGasLimit)) {
+    if (payload.getGasUsed().isGreaterThan(parentGasLimit)) {
       return false;
     }
 
     // Check if the payload changed the gas limit too much
     final UInt64 gasLimitMaxDeviation = parentGasLimit.dividedBy(SpecConfig.GAS_LIMIT_DENOMINATOR);
-    if (payload.getGas_limit().isGreaterThanOrEqualTo(parentGasLimit.plus(gasLimitMaxDeviation))) {
+    if (payload.getGasLimit().isGreaterThanOrEqualTo(parentGasLimit.plus(gasLimitMaxDeviation))) {
       return false;
     }
-    if (payload.getGas_limit().isLessThanOrEqualTo(parentGasLimit.minus(gasLimitMaxDeviation))) {
+    if (payload.getGasLimit().isLessThanOrEqualTo(parentGasLimit.minus(gasLimitMaxDeviation))) {
       return false;
     }
 
     // Check if the gas limit is at least the minimum gas limit
-    if (payload.getGas_limit().isLessThan(SpecConfig.MIN_GAS_LIMIT)) {
+    if (payload.getGasLimit().isLessThan(SpecConfig.MIN_GAS_LIMIT)) {
       return false;
     }
 

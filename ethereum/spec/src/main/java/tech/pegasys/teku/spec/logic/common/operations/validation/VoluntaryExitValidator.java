@@ -52,7 +52,7 @@ public class VoluntaryExitValidator
     return firstOf(
         () ->
             check(
-                UInt64.valueOf(state.getValidators().size()).compareTo(exit.getValidator_index())
+                UInt64.valueOf(state.getValidators().size()).compareTo(exit.getValidatorIndex())
                     > 0,
                 ExitInvalidReason.INVALID_VALIDATOR_INDEX),
         () ->
@@ -81,7 +81,7 @@ public class VoluntaryExitValidator
   }
 
   private Validator getValidator(BeaconState state, VoluntaryExit exit) {
-    return state.getValidators().get(toIntExact(exit.getValidator_index().longValue()));
+    return state.getValidators().get(toIntExact(exit.getValidatorIndex().longValue()));
   }
 
   public enum ExitInvalidReason implements OperationInvalidReason {

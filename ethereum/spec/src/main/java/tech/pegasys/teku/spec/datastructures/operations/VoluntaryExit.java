@@ -44,15 +44,15 @@ public class VoluntaryExit extends Container2<VoluntaryExit, SszUInt64, SszUInt6
     super(type, backingNode);
   }
 
-  public VoluntaryExit(UInt64 epoch, UInt64 validator_index) {
-    super(SSZ_SCHEMA, SszUInt64.of(epoch), SszUInt64.of(validator_index));
+  public VoluntaryExit(UInt64 epoch, UInt64 validatorIndex) {
+    super(SSZ_SCHEMA, SszUInt64.of(epoch), SszUInt64.of(validatorIndex));
   }
 
   public UInt64 getEpoch() {
     return getField0().get();
   }
 
-  public UInt64 getValidator_index() {
+  public UInt64 getValidatorIndex() {
     return getField1().get();
   }
 }

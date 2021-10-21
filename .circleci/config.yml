@@ -1,6 +1,7 @@
 version: 2.1
 orbs:
   slack: circleci/slack@3.4.2
+  win: circleci/windows@2.4.1
 executors:
   small_executor:
     docker:
@@ -145,6 +146,36 @@ jobs:
           path:  build/distributions
           destination: distributions
           when: always
+
+  windowsBuild:
+    executor:
+      name: win/default
+    steps:
+      - checkout
+      - restore_cache:
+          name: Restore cached gradle dependencies
+          keys:
+            - windows-{{ checksum "build.gradle" }}-{{ checksum "gradle/versions.gradle" }}-{{ .Branch }}-{{ .Revision }}
+            - windows-{{ checksum "build.gradle" }}-{{ checksum "gradle/versions.gradle" }}
+            - windows-
+      - run:
+          name: Build
+          command: |
+            cmd.exe /c gradlew.bat --no-daemon --parallel --build-cache
+      - run:
+          name: "Gather test artifacts"
+          when: "always"
+          command: |
+            New-Item -ItemType Directory -Force build\test-results
+            Get-ChildItem -Recurse | Where-Object {$_.FullName -match "test-results\\.*\\.*.xml"} | Copy-Item -Destination build\test-results\
+      - store_test_results:
+          path: build/test-results
+      - save_cache:
+          name: Caching gradle dependencies
+          key: windows-{{ checksum "build.gradle" }}-{{ .Branch }}-{{ .Revision }}
+          paths:
+            - .gradle
+            - ~/.gradle
 
   spotless:
     executor: small_executor
@@ -432,6 +463,10 @@ workflows:
             tags: &filters-release-tags
               only: /^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?/
       - spotless:
+          filters:
+            tags:
+              <<: *filters-release-tags
+      - windowsBuild:
           filters:
             tags:
               <<: *filters-release-tags

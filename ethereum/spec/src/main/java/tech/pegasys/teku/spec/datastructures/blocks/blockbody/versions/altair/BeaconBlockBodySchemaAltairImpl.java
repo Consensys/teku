@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair;
 
 import java.util.function.Consumer;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFields;
@@ -31,7 +32,7 @@ import tech.pegasys.teku.ssz.schema.SszListSchema;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 
-class BeaconBlockBodySchemaAltairImpl
+public class BeaconBlockBodySchemaAltairImpl
     extends ContainerSchema9<
         BeaconBlockBodyAltairImpl,
         SszSignature,
@@ -66,6 +67,17 @@ class BeaconBlockBodySchemaAltairImpl
         depositsSchema,
         voluntaryExitsSchema,
         syncAggregateSchema);
+  }
+
+  public static BeaconBlockBodySchemaAltair<? extends BeaconBlockBodyAltair> create(
+      final SpecConfig specConfig) {
+    return create(
+        specConfig.getMaxProposerSlashings(),
+        specConfig.getMaxAttesterSlashings(),
+        specConfig.getMaxAttestations(),
+        specConfig.getMaxDeposits(),
+        specConfig.getMaxVoluntaryExits(),
+        specConfig.toVersionAltair().orElseThrow().getSyncCommitteeSize());
   }
 
   static BeaconBlockBodySchemaAltair<? extends BeaconBlockBodyAltair> create(

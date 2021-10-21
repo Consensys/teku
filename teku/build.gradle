@@ -1,4 +1,5 @@
 dependencies {
+  implementation project(':beacon:validator')
   implementation project(':bls')
   implementation project(':data')
   implementation project(':data:serializer')
@@ -37,7 +38,6 @@ dependencies {
   implementation project(':sync')
   implementation project(':util')
   implementation project(':validator:api')
-  implementation project(':validator:coordinator')
   implementation project(':validator:client')
   implementation project(':validator:remote')
 

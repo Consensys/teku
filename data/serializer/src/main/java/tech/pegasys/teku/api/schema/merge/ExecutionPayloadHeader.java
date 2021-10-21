@@ -73,20 +73,20 @@ public class ExecutionPayloadHeader {
   public ExecutionPayloadHeader(
       tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader
           executionPayloadHeader) {
-    this.parent_hash = executionPayloadHeader.getParent_hash();
+    this.parent_hash = executionPayloadHeader.getParentHash();
     this.miner = executionPayloadHeader.getCoinbase();
-    this.state_root = executionPayloadHeader.getState_root();
-    this.receipt_root = executionPayloadHeader.getReceipt_root();
-    this.logs_bloom = executionPayloadHeader.getLogs_bloom();
+    this.state_root = executionPayloadHeader.getStateRoot();
+    this.receipt_root = executionPayloadHeader.getReceiptRoot();
+    this.logs_bloom = executionPayloadHeader.getLogsBloom();
     this.random = executionPayloadHeader.getRandom();
     this.block_number = executionPayloadHeader.getBlockNumber();
-    this.gas_limit = executionPayloadHeader.getGas_limit();
-    this.gas_used = executionPayloadHeader.getGas_used();
+    this.gas_limit = executionPayloadHeader.getGasLimit();
+    this.gas_used = executionPayloadHeader.getGasUsed();
     this.timestamp = executionPayloadHeader.getTimestamp();
     this.extra_data = executionPayloadHeader.getExtraData();
     this.base_fee_per_gas = executionPayloadHeader.getBaseFeePerGas();
-    this.block_hash = executionPayloadHeader.getBlock_hash();
-    this.transactions_root = executionPayloadHeader.getTransactions_root();
+    this.block_hash = executionPayloadHeader.getBlockHash();
+    this.transactions_root = executionPayloadHeader.getTransactionsRoot();
   }
 
   public tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader

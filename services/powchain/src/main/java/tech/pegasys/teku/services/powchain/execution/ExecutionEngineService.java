@@ -76,7 +76,7 @@ public class ExecutionEngineService implements ChainHeadChannel {
         .flatMap(BeaconBlockBody::toVersionMerge)
         .map(BeaconBlockBodyMerge::getExecution_payload)
         .filter(executionPayload -> !DEFAULT_EXECUTION_PAYLOAD.equals(executionPayload))
-        .map(ExecutionPayload::getBlock_hash);
+        .map(ExecutionPayload::getBlockHash);
   }
 
   private SafeFuture<Void> updateForkChoice(Bytes32 headBlockRoot, Bytes32 finalizedBlockRoot) {

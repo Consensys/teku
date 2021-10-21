@@ -1,12 +1,11 @@
 # Changelog
 
 ## Upcoming Breaking Changes
+- Docker images will default to the JDK 17 variant in a future release.
 - The `/teku/v1/beacon/states/:state_id` endpoint has been deprecated in favor of the standard API `/eth/v1/debug/beacon/states/:state_id` which now returns the state as SSZ when the `Accept: application/octet-stream` header is specified on the request.
 - The `/eth/v1/debug/beacon/states/:state_id` endpoint has been deprecated in favor of the v2 Altair endpoint `/eth/v2/debug/beacon/states/:state_id`
 - The `/eth/v1/beacon/blocks/:block_id` endpoint has been deprecated in favor of the v2 Altair endpoint `/eth/v2/beacon/blocks/:block_id`
 - The `/eth/v1/validator/blocks/:slot` endpoint has been deprecated in favor of the v2 Altair endpoint `/eth/v2/validator/blocks/:slot`
-- The `-jdk14` and `-jdk15` docker image variants will be removed in a future release. JDK 14 and 15 are no longer receiving security updates from upstream vendors.
-  Note that the default docker image usage JDK 16 and is still receiving security updates.
 - The commandline option `--validators-performance-tracking-enabled` has been deprecated in favour of `--validators-performance-tracking-mode`
 - The commandline option `--network` of the `validator-client` subcommand introduces a new option value `auto`, which automatically 
 fetches network configuration information from the configured beacon node endpoint. Other `--network` option values for an external validator client 
@@ -17,8 +16,10 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ## Unreleased Changes
 
-### Additions and Improvements
 
+### Additions and Improvements
+- Support v.2.1.0 of the standard rest api. it should be noted that the 'version' has been changed to lower case to comply with the api specification.
 
 ### Bug Fixes
- - Fixed a possible crash on shutdown when using levelDb.
+- Fixed issue where discovery did not correctly abort handshake attempts when a request timed out.
+- Downgrade to jbslt 0.3.5 to resolve incompatibility with Windows 10.

@@ -43,7 +43,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.config.SpecConfigBuilder.MergeBuilder;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class SpecConfigReader {
@@ -165,7 +164,7 @@ public class SpecConfigReader {
             });
 
     // Process merge config
-    streamConfigSetters(MergeBuilder.class)
+    streamConfigSetters(SpecConfigBuilder.MergeBuilder.class)
         .forEach(
             setter -> {
               final String constantKey = camelToSnakeCase(setter.getName());

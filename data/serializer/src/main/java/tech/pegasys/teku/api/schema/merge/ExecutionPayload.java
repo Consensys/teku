@@ -77,19 +77,19 @@ public class ExecutionPayload {
 
   public ExecutionPayload(
       tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload executionPayload) {
-    this.parent_hash = executionPayload.getParent_hash();
+    this.parent_hash = executionPayload.getParentHash();
     this.coinbase = executionPayload.getCoinbase();
-    this.state_root = executionPayload.getState_root();
-    this.receipt_root = executionPayload.getReceipt_root();
-    this.logs_bloom = executionPayload.getLogs_bloom();
+    this.state_root = executionPayload.getStateRoot();
+    this.receipt_root = executionPayload.getReceiptRoot();
+    this.logs_bloom = executionPayload.getLogsBloom();
     this.random = executionPayload.getRandom();
     this.block_number = executionPayload.getBlockNumber();
-    this.gas_limit = executionPayload.getGas_limit();
-    this.gas_used = executionPayload.getGas_used();
+    this.gas_limit = executionPayload.getGasLimit();
+    this.gas_used = executionPayload.getGasUsed();
     this.timestamp = executionPayload.getTimestamp();
     this.extra_data = executionPayload.getExtraData();
     this.base_fee_per_gas = executionPayload.getBaseFeePerGas();
-    this.block_hash = executionPayload.getBlock_hash();
+    this.block_hash = executionPayload.getBlockHash();
     this.transactions =
         executionPayload.getTransactions().stream()
             .map(Transaction::getOpaqueTransaction)

@@ -15,6 +15,7 @@ package tech.pegasys.teku.infrastructure.io;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assumptions.assumeThat;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -35,7 +36,7 @@ public class SyncDataAccessorTest {
       @TempDir Path tempDir) throws IOException {
 
     OSUtils.makeNonWritable(tempDir);
-
+    assumeThat(tempDir.toFile().canWrite()).describedAs("Directory %s writable").isFalse();
     assertThatThrownBy(() -> SyncDataAccessor.create(tempDir))
         .isInstanceOf(InvalidConfigurationException.class)
         .hasMessageContaining("Cannot write to folder");

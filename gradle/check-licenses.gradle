@@ -188,6 +188,8 @@ downloadLicenses {
       'org.openjdk.jmh:jmh-core:1.21': apache,
       (group('io.libp2p')): apache,
       (group('tech.pegasys')): apache,
+      'org.codehaus.woodstox:stax2-api:4.0.0': bsd2Clause,
+      'org.java-websocket:Java-WebSocket:1.5.2': mit,
   ]
 }
 

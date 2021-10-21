@@ -80,14 +80,17 @@ public class SpecConfigMerge extends DelegatingSpecConfigAltair {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    SpecConfigMerge that = (SpecConfigMerge) o;
+    if (!super.equals(o)) {
+      return false;
+    }
+    final SpecConfigMerge that = (SpecConfigMerge) o;
     return Objects.equals(mergeForkVersion, that.mergeForkVersion)
         && Objects.equals(mergeForkEpoch, that.mergeForkEpoch)
         && Objects.equals(terminalTotalDifficulty, that.terminalTotalDifficulty);
@@ -95,6 +98,7 @@ public class SpecConfigMerge extends DelegatingSpecConfigAltair {
 
   @Override
   public int hashCode() {
-    return Objects.hash(mergeForkVersion, mergeForkEpoch, terminalTotalDifficulty);
+    return Objects.hash(
+        super.hashCode(), mergeForkVersion, mergeForkEpoch, terminalTotalDifficulty);
   }
 }

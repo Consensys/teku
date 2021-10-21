@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.config;
 
+import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
@@ -79,5 +80,22 @@ public class DelegatingSpecConfigAltair extends DelegatingSpecConfig implements 
   @Override
   public Optional<SpecConfigAltair> toVersionAltair() {
     return Optional.of(this);
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final DelegatingSpecConfigAltair that = (DelegatingSpecConfigAltair) o;
+    return Objects.equals(specConfigAltair, that.specConfigAltair);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(specConfigAltair);
   }
 }

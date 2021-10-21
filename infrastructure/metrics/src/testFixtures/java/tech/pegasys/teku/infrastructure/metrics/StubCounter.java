@@ -24,7 +24,7 @@ import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 
 public class StubCounter implements LabelledMetric<Counter> {
-  private Map<List<String>, UnlabelledCounter> values = new ConcurrentHashMap<>();
+  private final Map<List<String>, UnlabelledCounter> values = new ConcurrentHashMap<>();
 
   @Override
   public Counter labels(final String... labels) {

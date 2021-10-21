@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair;
 
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
@@ -28,7 +29,8 @@ import tech.pegasys.teku.ssz.containers.Container9;
 import tech.pegasys.teku.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 
-class BeaconBlockBodyAltairImpl
+/** A Beacon block body */
+public class BeaconBlockBodyAltairImpl
     extends Container9<
         BeaconBlockBodyAltairImpl,
         SszSignature,
@@ -130,5 +132,10 @@ class BeaconBlockBodyAltairImpl
   @Override
   public BeaconBlockBodySchemaAltairImpl getSchema() {
     return (BeaconBlockBodySchemaAltairImpl) super.getSchema();
+  }
+
+  @Override
+  public Optional<BeaconBlockBodyAltair> toVersionAltair() {
+    return Optional.of(this);
   }
 }
