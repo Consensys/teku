@@ -87,8 +87,8 @@ public class GetBlockV2IntegrationTest extends AbstractDataBackedRestAPIIntegrat
     assertThat(response.header(HEADER_CONSENSUS_VERSION)).isEqualTo(Version.altair.name());
   }
 
-  public Response get(final String stateIdIdString, final String contentType) throws IOException {
-    return getResponse(GetBlock.ROUTE.replace(":block_id", stateIdIdString), contentType);
+  public Response get(final String blockIdString, final String contentType) throws IOException {
+    return getResponse(GetBlock.ROUTE.replace("{block_id}", blockIdString), contentType);
   }
 
   public Response get(final String blockIdString) throws IOException {
