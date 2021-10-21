@@ -21,9 +21,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import tech.pegasys.teku.api.response.v2.debug.GetStateResponseV2;
 import tech.pegasys.teku.api.schema.BeaconState;
+import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.api.schema.altair.BeaconStateAltair;
 import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
-import tech.pegasys.teku.spec.SpecMilestone;
 
 public class GetStateResponseV2Deserializer extends JsonDeserializer<GetStateResponseV2> {
   private final ObjectMapper mapper;
@@ -36,18 +36,18 @@ public class GetStateResponseV2Deserializer extends JsonDeserializer<GetStateRes
   public GetStateResponseV2 deserialize(final JsonParser jp, final DeserializationContext ctxt)
       throws IOException {
     JsonNode node = jp.getCodec().readTree(jp);
-    final SpecMilestone milestone = SpecMilestone.valueOf(node.findValue("version").asText());
+    final Version version = Version.valueOf(node.findValue("version").asText());
     final BeaconState state;
-    switch (milestone) {
-      case ALTAIR:
+    switch (version) {
+      case altair:
         state = mapper.treeToValue(node.findValue("data"), BeaconStateAltair.class);
         break;
-      case PHASE0:
+      case phase0:
         state = mapper.treeToValue(node.findValue("data"), BeaconStatePhase0.class);
         break;
       default:
         throw new IOException("Milestone was not able to be decoded");
     }
-    return new GetStateResponseV2(milestone, state);
+    return new GetStateResponseV2(version, state);
   }
 }

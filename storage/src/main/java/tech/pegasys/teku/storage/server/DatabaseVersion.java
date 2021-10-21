@@ -38,7 +38,7 @@ public enum DatabaseVersion {
     }
   }
 
-  private static boolean isLevelDbSupported() {
+  public static boolean isLevelDbSupported() {
     // Use JNI to load as the native library is loaded in a static block
     try {
       Class.forName("org.fusesource.leveldbjni.JniDBFactory");
@@ -46,7 +46,7 @@ public enum DatabaseVersion {
     } catch (final UnsatisfiedLinkError e) {
       LOG.info("LevelDB not supported on this system: {}", e.getMessage());
       return false;
-    } catch (ClassNotFoundException e) {
+    } catch (NoClassDefFoundError | ClassNotFoundException e) {
       LOG.error("Failed to check LevelDB support. Defaulting to RocksDB.", e);
       return false;
     }

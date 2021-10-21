@@ -14,13 +14,20 @@
 package tech.pegasys.teku.api.response;
 
 import java.io.ByteArrayInputStream;
+import tech.pegasys.teku.api.schema.Version;
+import tech.pegasys.teku.spec.SpecMilestone;
 
 public class SszResponse {
   public final ByteArrayInputStream byteStream;
+  public final Version version;
   public final String abbreviatedHash;
 
-  public SszResponse(final ByteArrayInputStream byteStream, final String abbreviatedHash) {
+  public SszResponse(
+      final ByteArrayInputStream byteStream,
+      final String abbreviatedHash,
+      final SpecMilestone specMilestone) {
     this.byteStream = byteStream;
     this.abbreviatedHash = abbreviatedHash;
+    this.version = Version.fromMilestone(specMilestone);
   }
 }
