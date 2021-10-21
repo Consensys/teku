@@ -20,7 +20,7 @@ import javax.servlet.WriteListener;
 import org.apache.commons.lang3.StringUtils;
 
 public class TestServletOutputStream extends ServletOutputStream {
-  private StringBuffer buffer = new StringBuffer();
+  private StringBuilder builder = new StringBuilder();
   private int writeCounter = 0;
 
   @Override
@@ -34,11 +34,11 @@ public class TestServletOutputStream extends ServletOutputStream {
   @Override
   public void write(final int i) {
     writeCounter++;
-    buffer.append((char) i);
+    builder.append((char) i);
   }
 
   public String getString() {
-    return buffer.toString();
+    return builder.toString();
   }
 
   public int getWriteCounter() {
