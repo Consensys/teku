@@ -14,6 +14,7 @@
 package tech.pegasys.teku.cli.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.mockito.Mockito.mock;
 
 import com.google.common.io.Resources;
@@ -23,6 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.function.Consumer;
 import org.apache.commons.io.FileUtils;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
@@ -43,6 +45,13 @@ public class DatabaseMigraterTest {
   private final SubCommandLogger subCommandLogger = mock(SubCommandLogger.class);
   private final Consumer<String> logger = subCommandLogger::display;
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+
+  @BeforeEach
+  void setUp() {
+    assumeThat(DatabaseVersion.isLevelDbSupported())
+        .describedAs("LevelDB support required")
+        .isTrue();
+  }
 
   @Test
   void shouldSupplyOriginalDatabasePath(@TempDir Path tmpDir) throws IOException {
