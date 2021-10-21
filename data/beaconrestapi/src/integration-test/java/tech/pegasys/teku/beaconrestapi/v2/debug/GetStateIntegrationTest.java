@@ -16,11 +16,14 @@ package tech.pegasys.teku.beaconrestapi.v2.debug;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.HEADER_ACCEPT_JSON;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.HEADER_ACCEPT_OCTET;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.HEADER_CONSENSUS_VERSION;
 
 import java.io.IOException;
 import okhttp3.Response;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v2.debug.GetStateResponseV2;
+import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.api.schema.altair.BeaconStateAltair;
 import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
@@ -36,8 +39,9 @@ public class GetStateIntegrationTest extends AbstractDataBackedRestAPIIntegratio
     final GetStateResponseV2 stateResponse =
         jsonProvider.jsonToObject(response.body().string(), GetStateResponseV2.class);
     assertThat(stateResponse).isNotNull();
-    assertThat(stateResponse.version).isEqualTo(SpecMilestone.PHASE0);
+    assertThat(stateResponse.version).isEqualTo(Version.phase0);
     assertThat(stateResponse.data).isInstanceOf(BeaconStatePhase0.class);
+    assertThat(response.header(HEADER_CONSENSUS_VERSION)).isEqualTo(Version.phase0.name());
   }
 
   @Test
@@ -48,8 +52,17 @@ public class GetStateIntegrationTest extends AbstractDataBackedRestAPIIntegratio
     final GetStateResponseV2 stateResponse =
         jsonProvider.jsonToObject(response.body().string(), GetStateResponseV2.class);
     assertThat(stateResponse).isNotNull();
-    assertThat(stateResponse.version).isEqualTo(SpecMilestone.ALTAIR);
+    assertThat(stateResponse.version).isEqualTo(Version.altair);
     assertThat(stateResponse.data).isInstanceOf(BeaconStateAltair.class);
+    assertThat(response.header(HEADER_CONSENSUS_VERSION)).isEqualTo(Version.altair.name());
+  }
+
+  @Test
+  public void shouldGetAltairStateAsSsz() throws IOException {
+    startRestAPIAtGenesis(SpecMilestone.ALTAIR);
+    final Response response = get("head", HEADER_ACCEPT_OCTET);
+    assertThat(response.code()).isEqualTo(SC_OK);
+    assertThat(response.header(HEADER_CONSENSUS_VERSION)).isEqualTo(Version.altair.name());
   }
 
   public Response get(final String stateIdIdString, final String contentType) throws IOException {
