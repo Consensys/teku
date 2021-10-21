@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.config;
 import static tech.pegasys.teku.spec.config.SpecConfigFormatter.camelToSnakeCase;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.RuntimeJsonMappingException;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -220,6 +221,8 @@ public class SpecConfigReader {
       return values;
     } catch (NoSuchElementException e) {
       throw new IllegalArgumentException("Supplied spec config is empty");
+    } catch (RuntimeJsonMappingException e) {
+      throw new IllegalArgumentException("Cannot read spec config: " + e.getMessage());
     }
   }
 

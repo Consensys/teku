@@ -211,6 +211,19 @@ public class SpecConfigReaderTest {
   }
 
   @Test
+  public void read_invalidLong_wrongType() {
+    processFileAsInputStream(
+        getInvalidConfigPath("invalidLong_wrongType"),
+        stream -> {
+          assertThatThrownBy(() -> reader.read(stream))
+              .isInstanceOf(IllegalArgumentException.class)
+              .hasMessageContaining(
+                  "Cannot read spec config: Cannot deserialize value of type `java.lang.String` from Array");
+          return null;
+        });
+  }
+
+  @Test
   public void read_invalidLong_tooLarge() {
     processFileAsInputStream(
         getInvalidConfigPath("invalidLong_tooLarge"),

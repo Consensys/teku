@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.servlet.ServletOutputStream;
@@ -21,7 +20,7 @@ import javax.servlet.WriteListener;
 import org.apache.commons.lang3.StringUtils;
 
 public class TestServletOutputStream extends ServletOutputStream {
-  private String buffer = new String();
+  private StringBuffer buffer = new StringBuffer();
   private int writeCounter = 0;
 
   @Override
@@ -33,13 +32,13 @@ public class TestServletOutputStream extends ServletOutputStream {
   public void setWriteListener(final WriteListener writeListener) {}
 
   @Override
-  public void write(final int i) throws IOException {
+  public void write(final int i) {
     writeCounter++;
-    buffer += (char) i;
+    buffer.append((char) i);
   }
 
   public String getString() {
-    return buffer;
+    return buffer.toString();
   }
 
   public int getWriteCounter() {
@@ -47,12 +46,12 @@ public class TestServletOutputStream extends ServletOutputStream {
   }
 
   public int countEvents() {
-    return StringUtils.countMatches(buffer, "event: ");
+    return StringUtils.countMatches(getString(), "event: ");
   }
 
   public List<String> getEvents() {
     final List<String> result = new ArrayList<>();
-    String[] splits = StringUtils.splitByWholeSeparator(buffer, "event: ");
+    String[] splits = StringUtils.splitByWholeSeparator(getString(), "event: ");
     for (String s : splits) {
       result.add(String.format("event: %s", s));
     }
