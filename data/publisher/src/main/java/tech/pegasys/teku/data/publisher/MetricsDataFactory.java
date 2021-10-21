@@ -58,46 +58,18 @@ public class MetricsDataFactory {
   private BaseMetricData extractSystemData(
       final Map<String, Observation> values, final TimeProvider timeProvider) {
 
-    final Integer cpuCores = null;
     final Integer cpuThreads = getIntegerValue(values, "threads_current");
     final Long cpuNodeSystemSecondsTotal = getLongValue(values, "cpu_seconds_total");
-    final Long cpuNodeUserSecondsTotal = null;
-    final Long cpuNodeIowaitSecondsTotal = null;
-    final Long cpuNodeIdleSecondsTotal = null;
     final Long memoryNodeBytesTotal = getLongValue(values, "memory_bytes_max");
-    final Long memoryNodeBytesFree = null;
-    final Long memoryNodeBytesCached = null;
-    final Long memoryNodeBytesBuffers = null;
-    final Long diskNodeBytesTotal = null;
-    final Long diskNodeBytesFree = null;
-    final Long diskNodeIoSeconds = null;
-    final Long diskNodeReadsTotal = null;
-    final Long diskNodeWritesTotal = null;
-    final Long networkNodeBytesTotalReceive = null;
-    final Long networkNodeBytesTotalTransmit = null;
     final Long miscNodeBootTsSeconds = getLongValue(values, "start_time_second");
     final String miscOS = getNormalizedOSVersion();
     return new SystemMetricData(
         PROTOCOL_VERSION,
         timeProvider.getTimeInMillis().longValue(),
         MetricsDataClient.SYSTEM.getDataClient(),
-        cpuCores,
         cpuThreads,
         cpuNodeSystemSecondsTotal,
-        cpuNodeUserSecondsTotal,
-        cpuNodeIowaitSecondsTotal,
-        cpuNodeIdleSecondsTotal,
         memoryNodeBytesTotal,
-        memoryNodeBytesFree,
-        memoryNodeBytesCached,
-        memoryNodeBytesBuffers,
-        diskNodeBytesTotal,
-        diskNodeBytesFree,
-        diskNodeIoSeconds,
-        diskNodeReadsTotal,
-        diskNodeWritesTotal,
-        networkNodeBytesTotalReceive,
-        networkNodeBytesTotalTransmit,
         miscNodeBootTsSeconds,
         miscOS);
   }
@@ -106,15 +78,9 @@ public class MetricsDataFactory {
       final Map<String, Observation> values, final TimeProvider timeProvider) {
 
     final Integer networkPeersConnected = getIntegerValue(values, "peer_count");
-    final Long diskBeaconchainBytesTotal = null;
     final Long cpuProcessSecondsTotal = getLongValue(values, "cpu_seconds_total");
     final Long memoryProcessBytes = getLongValue(values, "resident_memory_bytes");
-    final Boolean syncEth1Connected = null;
-    final Boolean syncEth2Synced = null;
     final Long syncBeaconHeadSlot = getLongValue(values, "head_slot");
-    final Boolean slasherActive = null;
-    final Long networkLibp2PBytesTotalReceive = null;
-    final Long networkLibp2PBytesTotalTransmit = null;
 
     return new BeaconNodeMetricData(
         PROTOCOL_VERSION,
@@ -124,14 +90,8 @@ public class MetricsDataFactory {
         memoryProcessBytes,
         MetricsDataFactory.CLIENT_NAME,
         VersionProvider.IMPLEMENTATION_VERSION.replaceAll("^v", ""),
-        diskBeaconchainBytesTotal,
-        networkLibp2PBytesTotalReceive,
-        networkLibp2PBytesTotalTransmit,
         networkPeersConnected,
-        syncEth1Connected,
-        syncEth2Synced,
-        syncBeaconHeadSlot,
-        slasherActive);
+        syncBeaconHeadSlot);
   }
 
   private static BaseMetricData extractValidatorData(

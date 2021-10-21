@@ -103,7 +103,7 @@ class MetricsDataFactoryTest {
     assertThat(baseMetricData.get(1)).isEqualTo(validatorDeserialized);
     assertThat(baseMetricData.get(2)).isEqualTo(systemDeserialized);
 
-    assertThat(beaconNodeDeserialized.disk_beaconchain_bytes_total).isNull();
+    assertThat(beaconNodeDeserialized.network_peers_connected).isNull();
     assertThat(validatorDeserialized.validator_total).isNull();
     assertThat(systemDeserialized.cpu_node_system_seconds_total).isNull();
   }

@@ -102,7 +102,6 @@ public class ExternalMetricNode extends Node {
 
     assertThat(publishedData[0]).isNotNull();
     assertThat(publishedData[0].process).isNotNull();
-
     assertThat(publishedData[0].process).isEqualTo(MetricsDataClient.BEACON_NODE.getDataClient());
     assertThat(publishedData[0].version).isNotNull();
     assertThat(publishedData[0].timestamp).isNotNull();
@@ -120,7 +119,6 @@ public class ExternalMetricNode extends Node {
 
     assertThat(publishedData[1]).isNotNull();
     assertThat(publishedData[1].process).isNotNull();
-
     assertThat(publishedData[1].process).isEqualTo(MetricsDataClient.VALIDATOR.getDataClient());
     assertThat(publishedData[1].version).isNotNull();
     assertThat(publishedData[1].timestamp).isNotNull();
@@ -137,7 +135,6 @@ public class ExternalMetricNode extends Node {
 
     assertThat(publishedData[2]).isNotNull();
     assertThat(publishedData[2].process).isNotNull();
-
     assertThat(publishedData[2].process).isEqualTo(MetricsDataClient.SYSTEM.getDataClient());
     assertThat(publishedData[2].version).isNotNull();
     assertThat(publishedData[2].timestamp).isNotNull();
