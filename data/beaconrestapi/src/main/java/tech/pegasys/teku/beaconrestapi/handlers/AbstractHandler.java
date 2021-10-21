@@ -104,8 +104,7 @@ public abstract class AbstractHandler implements Handler {
                 return resultProcessor.process(ctx, result.get()).orElse(null);
               } else {
                 ctx.status(missingStatus);
-                ctx.json(BadRequest.serialize(jsonProvider, missingStatus, "Not found"));
-                return null;
+                return BadRequest.serialize(jsonProvider, missingStatus, "Not found");
               }
             }));
   }
@@ -127,8 +126,7 @@ public abstract class AbstractHandler implements Handler {
                 return resultProcessor.process(ctx, result.get()).orElse(null);
               } else {
                 ctx.status(missingStatus);
-                ctx.json(BadRequest.serialize(jsonProvider, missingStatus, "Not found"));
-                return null;
+                return BadRequest.serialize(jsonProvider, missingStatus, "Not found");
               }
             }));
   }
