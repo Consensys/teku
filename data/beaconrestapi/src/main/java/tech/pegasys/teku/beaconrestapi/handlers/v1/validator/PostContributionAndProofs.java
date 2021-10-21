@@ -86,7 +86,7 @@ public class PostContributionAndProofs extends AbstractHandler implements Handle
     final SafeFuture<Void> future =
         provider.sendContributionAndProofs(asList(signedContributionAndProofs));
 
-    ctx.json(
+    ctx.future(
         future
             .thenApplyChecked(result -> "")
             .exceptionallyCompose(error -> handleError(ctx, error)));
