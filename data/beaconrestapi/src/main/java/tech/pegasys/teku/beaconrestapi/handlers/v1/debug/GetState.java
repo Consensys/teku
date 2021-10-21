@@ -45,11 +45,11 @@ import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.SszResponse;
 import tech.pegasys.teku.api.response.v1.debug.GetStateResponse;
 import tech.pegasys.teku.api.schema.BeaconState;
+import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.spec.SpecMilestone;
 
 public class GetState extends AbstractHandler implements Handler {
   public static final String ROUTE = "/eth/v1/debug/beacon/states/{state_id}";
@@ -116,8 +116,8 @@ public class GetState extends AbstractHandler implements Handler {
 
   private Optional<String> handleJsonResult(Context ctx, final BeaconState response)
       throws JsonProcessingException {
-    final SpecMilestone milestone = chainDataProvider.getMilestoneAtSlot(response.slot);
-    if (!milestone.equals(SpecMilestone.PHASE0)) {
+    final Version version = chainDataProvider.getVersionAtSlot(response.slot);
+    if (!version.equals(Version.phase0)) {
       ctx.status(SC_BAD_REQUEST);
       return Optional.of(
           BadRequest.badRequest(
@@ -126,6 +126,6 @@ public class GetState extends AbstractHandler implements Handler {
                   "Slot %s is not a phase0 slot, please fetch via /eth/v2/debug/states",
                   response.slot)));
     }
-    return Optional.of(jsonProvider.objectToJSON(new GetStateResponse(milestone, response)));
+    return Optional.of(jsonProvider.objectToJSON(new GetStateResponse(version, response)));
   }
 }

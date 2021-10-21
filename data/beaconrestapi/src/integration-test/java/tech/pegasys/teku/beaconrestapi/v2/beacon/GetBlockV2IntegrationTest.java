@@ -13,7 +13,10 @@
 
 package tech.pegasys.teku.beaconrestapi.v2.beacon;
 
+import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.HEADER_ACCEPT_OCTET;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.HEADER_CONSENSUS_VERSION;
 
 import java.io.IOException;
 import java.util.List;
@@ -23,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v2.beacon.GetBlockResponseV2;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
+import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
 import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
@@ -40,7 +44,7 @@ public class GetBlockV2IntegrationTest extends AbstractDataBackedRestAPIIntegrat
     final GetBlockResponseV2 body =
         jsonProvider.jsonToObject(response.body().string(), GetBlockResponseV2.class);
 
-    assertThat(body.getVersion()).isEqualTo(SpecMilestone.PHASE0);
+    assertThat(body.getVersion()).isEqualTo(Version.phase0);
     assertThat(body.data).isInstanceOf(SignedBeaconBlockPhase0.class);
     final SignedBeaconBlockPhase0 data = (SignedBeaconBlockPhase0) body.getData();
     final SignedBlockAndState block = created.get(0);
@@ -49,6 +53,8 @@ public class GetBlockV2IntegrationTest extends AbstractDataBackedRestAPIIntegrat
             new SignedBeaconBlockPhase0(
                 new BeaconBlock(block.getBlock().getMessage()),
                 new BLSSignature(block.getBlock().getSignature())));
+
+    assertThat(response.header(HEADER_CONSENSUS_VERSION)).isEqualTo(Version.phase0.name());
   }
 
   @Test
@@ -60,7 +66,7 @@ public class GetBlockV2IntegrationTest extends AbstractDataBackedRestAPIIntegrat
     final GetBlockResponseV2 body =
         jsonProvider.jsonToObject(response.body().string(), GetBlockResponseV2.class);
 
-    assertThat(body.getVersion()).isEqualTo(SpecMilestone.ALTAIR);
+    assertThat(body.getVersion()).isEqualTo(Version.altair);
     assertThat(body.getData()).isInstanceOf(SignedBeaconBlockAltair.class);
     final SignedBeaconBlockAltair data = (SignedBeaconBlockAltair) body.getData();
     assertThat(data.signature.toHexString())
@@ -69,6 +75,20 @@ public class GetBlockV2IntegrationTest extends AbstractDataBackedRestAPIIntegrat
         .isEqualTo(created.get(0).getBlock().getMessage().getRoot().toHexString());
     assertThat(data.getMessage().getBody().syncAggregate.syncCommitteeBits)
         .isEqualTo(Bytes.fromHexString("0x00000000"));
+    assertThat(response.header(HEADER_CONSENSUS_VERSION)).isEqualTo(Version.altair.name());
+  }
+
+  @Test
+  public void shouldGetAltairBlockAsSsz() throws IOException {
+    startRestAPIAtGenesis(SpecMilestone.ALTAIR);
+    createBlocksAtSlots(10);
+    final Response response = get("head", HEADER_ACCEPT_OCTET);
+    assertThat(response.code()).isEqualTo(SC_OK);
+    assertThat(response.header(HEADER_CONSENSUS_VERSION)).isEqualTo(Version.altair.name());
+  }
+
+  public Response get(final String stateIdIdString, final String contentType) throws IOException {
+    return getResponse(GetBlock.ROUTE.replace(":block_id", stateIdIdString), contentType);
   }
 
   public Response get(final String blockIdString) throws IOException {

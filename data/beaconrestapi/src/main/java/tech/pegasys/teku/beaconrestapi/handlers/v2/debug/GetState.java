@@ -16,6 +16,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v2.debug;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.HEADER_ACCEPT;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.HEADER_ACCEPT_JSON;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.HEADER_ACCEPT_OCTET;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_STATE_ID;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_STATE_ID_DESCRIPTION;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
@@ -44,10 +45,10 @@ import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.SszResponse;
 import tech.pegasys.teku.api.response.v2.debug.GetStateResponseV2;
 import tech.pegasys.teku.api.schema.BeaconState;
+import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.spec.SpecMilestone;
 
 public class GetState extends AbstractHandler implements Handler {
   public static final String ROUTE = "/eth/v2/debug/beacon/states/{state_id}";
@@ -106,13 +107,15 @@ public class GetState extends AbstractHandler implements Handler {
   }
 
   private Optional<ByteArrayInputStream> handleSszResult(
-      final Context context, final SszResponse response) {
+      final Context ctx, final SszResponse response) {
+    ctx.header(HEADER_CONSENSUS_VERSION, response.version.name());
     return Optional.of(response.byteStream);
   }
 
   private Optional<String> handleJsonResult(Context ctx, final BeaconState response)
       throws JsonProcessingException {
-    final SpecMilestone milestone = chainDataProvider.getMilestoneAtSlot(response.slot);
-    return Optional.of(jsonProvider.objectToJSON(new GetStateResponseV2(milestone, response)));
+    final Version version = chainDataProvider.getVersionAtSlot(response.slot);
+    ctx.header(HEADER_CONSENSUS_VERSION, version.name());
+    return Optional.of(jsonProvider.objectToJSON(new GetStateResponseV2(version, response)));
   }
 }

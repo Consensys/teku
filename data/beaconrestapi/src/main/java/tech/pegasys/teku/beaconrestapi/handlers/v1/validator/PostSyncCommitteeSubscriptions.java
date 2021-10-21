@@ -32,7 +32,6 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
-import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionRequest;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
@@ -56,7 +55,7 @@ public class PostSyncCommitteeSubscriptions extends AbstractHandler {
       tags = {TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED},
       requestBody =
           @OpenApiRequestBody(
-              content = {@OpenApiContent(from = BeaconCommitteeSubscriptionRequest[].class)}),
+              content = {@OpenApiContent(from = SyncCommitteeSubnetSubscription[].class)}),
       description =
           "Subscribe to a number of sync committee subnets\n\n"
               + "Sync committees are not present in phase0, but are required for Altair networks.\n\n"

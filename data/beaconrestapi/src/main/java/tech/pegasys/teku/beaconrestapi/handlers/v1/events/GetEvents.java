@@ -97,7 +97,9 @@ public class GetEvents implements Handler {
       description =
           "Provides endpoint to subscribe to beacon node Server-Sent-Events stream. Consumers should use"
               + " [eventsource](https://html.spec.whatwg.org/multipage/server-sent-events.html#the-eventsource-interface)"
-              + " implementation to listen on those events.",
+              + " implementation to listen on those events.\n\n"
+              + "Servers _may_ send SSE comments beginning with `:` for any purpose, including to keep the"
+              + " event stream connection alive in the presence of proxy servers.",
       queryParams = {
         @OpenApiParam(
             name = TOPICS,
