@@ -52,6 +52,7 @@ import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.PublicKeyException;
 import tech.pegasys.teku.api.schema.Root;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
+import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.api.stateselector.StateSelectorFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -136,7 +137,8 @@ public class ChainDataProvider {
                     block ->
                         new SszResponse(
                             new ByteArrayInputStream(block.sszSerialize().toArrayUnsafe()),
-                            block.hashTreeRoot().toUnprefixedHexString())));
+                            block.hashTreeRoot().toUnprefixedHexString(),
+                            spec.atSlot(block.getSlot()).getMilestone())));
   }
 
   public SafeFuture<Optional<Root>> getBlockRoot(final String slotParameter) {
@@ -195,7 +197,8 @@ public class ChainDataProvider {
                     state ->
                         new SszResponse(
                             new ByteArrayInputStream(state.sszSerialize().toArrayUnsafe()),
-                            state.hashTreeRoot().toUnprefixedHexString())));
+                            state.hashTreeRoot().toUnprefixedHexString(),
+                            spec.atSlot(state.getSlot()).getMilestone())));
   }
 
   public SafeFuture<Set<SignedBeaconBlock>> getAllBlocksAtSlot(final String slot) {
@@ -223,7 +226,8 @@ public class ChainDataProvider {
                     state ->
                         new SszResponse(
                             new ByteArrayInputStream(state.sszSerialize().toArrayUnsafe()),
-                            state.hashTreeRoot().toUnprefixedHexString())));
+                            state.hashTreeRoot().toUnprefixedHexString(),
+                            spec.atSlot(state.getSlot()).getMilestone())));
   }
 
   public boolean isFinalized(final SignedBeaconBlock signedBeaconBlock) {
@@ -398,6 +402,10 @@ public class ChainDataProvider {
                     state -> getCommitteesFromState(state, epoch, committeeIndex, slot)));
   }
 
+  public Optional<UInt64> getCurrentEpoch() {
+    return recentChainData.getCurrentEpoch();
+  }
+
   List<EpochCommitteeResponse> getCommitteesFromState(
       final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state,
       final Optional<UInt64> epoch,
@@ -518,7 +526,7 @@ public class ChainDataProvider {
     return spec.atSlot(slot).getMilestone();
   }
 
-  public SpecMilestone getMilestoneAtEpoch(final UInt64 epoch) {
-    return spec.atEpoch(epoch).getMilestone();
+  public Version getVersionAtSlot(final UInt64 slot) {
+    return Version.fromMilestone(spec.atSlot(slot).getMilestone());
   }
 }

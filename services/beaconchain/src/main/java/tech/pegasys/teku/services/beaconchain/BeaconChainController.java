@@ -24,6 +24,7 @@ import com.google.common.base.Throwables;
 import java.net.BindException;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.Comparator;
 import java.util.Optional;
 import java.util.Random;
 import org.apache.logging.log4j.LogManager;
@@ -99,6 +100,8 @@ import tech.pegasys.teku.statetransition.validation.ProposerSlashingValidator;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.statetransition.validation.VoluntaryExitValidator;
 import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
+import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorCache;
+import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
@@ -118,6 +121,7 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorPerformanceTrackingMode;
 import tech.pegasys.teku.validator.coordinator.ActiveValidatorTracker;
 import tech.pegasys.teku.validator.coordinator.BlockFactory;
+import tech.pegasys.teku.validator.coordinator.BlockOperationSelectorFactory;
 import tech.pegasys.teku.validator.coordinator.DepositProvider;
 import tech.pegasys.teku.validator.coordinator.DutyMetrics;
 import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
@@ -358,7 +362,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             "AttesterSlashingPool",
             metricsSystem,
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getAttesterSlashingsSchema),
-            new AttesterSlashingValidator(recentChainData, spec));
+            new AttesterSlashingValidator(recentChainData, spec),
+            // Prioritise slashings that include more validators at a time
+            Comparator.<AttesterSlashing>comparingInt(
+                    slashing -> slashing.getIntersectingValidatorIndices().size())
+                .reversed());
     blockImporter.subscribeToVerifiedBlockAttesterSlashings(attesterSlashingPool::removeAll);
   }
 
@@ -466,15 +474,17 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     LOG.debug("BeaconChainController.initValidatorApiHandler()");
     final BlockFactory blockFactory =
         new BlockFactory(
-            attestationPool,
-            attesterSlashingPool,
-            proposerSlashingPool,
-            voluntaryExitPool,
-            syncCommitteeContributionPool,
-            depositProvider,
-            eth1DataCache,
-            VersionProvider.getDefaultGraffiti(),
-            spec);
+            spec,
+            new BlockOperationSelectorFactory(
+                spec,
+                attestationPool,
+                attesterSlashingPool,
+                proposerSlashingPool,
+                voluntaryExitPool,
+                syncCommitteeContributionPool,
+                depositProvider,
+                eth1DataCache,
+                VersionProvider.getDefaultGraffiti()));
     syncCommitteeSubscriptionManager =
         beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()
             ? new AllSyncCommitteeSubscriptions(p2pNetwork, spec)
@@ -563,7 +573,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             attestationPool,
             attestationValidator,
             aggregateValidator,
-            signatureVerificationService);
+            signatureVerificationService,
+            eventChannels.getPublisher(ActiveValidatorChannel.class, beaconAsyncRunner));
+
     eventChannels
         .subscribe(SlotEventsChannel.class, attestationManager)
         .subscribe(FinalizedCheckpointChannel.class, pendingAttestations)
@@ -716,6 +728,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             attestationPool,
             blockManager,
             attestationManager,
+            beaconConfig.beaconRestApiConfig().isBeaconLivenessTrackingEnabled(),
+            eventChannels.getPublisher(ActiveValidatorChannel.class, beaconAsyncRunner),
             attesterSlashingPool,
             proposerSlashingPool,
             voluntaryExitPool,
@@ -729,6 +743,17 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                   beaconConfig.beaconRestApiConfig(),
                   eventChannels,
                   eventAsyncRunner));
+
+      if (beaconConfig.beaconRestApiConfig().isBeaconLivenessTrackingEnabled()) {
+        final Optional<BeaconState> maybeState = recentChainData.getBestState();
+        final int initialValidatorsCount =
+            maybeState
+                .map(beaconState -> beaconState.getValidators().size())
+                .orElseGet(
+                    () -> spec.getGenesisSpec().getConfig().getMinGenesisActiveValidatorCount());
+        eventChannels.subscribe(
+            ActiveValidatorChannel.class, new ActiveValidatorCache(spec, initialValidatorsCount));
+      }
     } else {
       LOG.info("rest-api-enabled is false, not starting rest api.");
     }

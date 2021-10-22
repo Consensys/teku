@@ -21,13 +21,20 @@ import java.util.List;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SyncCommitteeSubnetSubscription {
+  @JsonProperty("validator_index")
   @Schema(type = "string", format = "uint64")
   public final UInt64 validatorIndex;
 
+  @JsonProperty("sync_committee_indices")
   @ArraySchema(schema = @Schema(type = "string", format = "uint64"))
   public final List<UInt64> syncCommitteeIndices;
 
-  @Schema(type = "string", format = "uint64")
+  @JsonProperty("until_epoch")
+  @Schema(
+      type = "string",
+      format = "uint64",
+      description =
+          "The final epoch (exclusive value) that the specified validator requires the subscription for.")
   public final UInt64 untilEpoch;
 
   @JsonCreator

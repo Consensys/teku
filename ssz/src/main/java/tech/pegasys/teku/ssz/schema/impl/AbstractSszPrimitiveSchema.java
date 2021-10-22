@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -47,7 +47,9 @@ public abstract class AbstractSszPrimitiveSchema<
 
   protected AbstractSszPrimitiveSchema(int bitsSize) {
     checkArgument(
-        bitsSize > 0 && bitsSize <= 256 && 256 % bitsSize == 0, "Invalid bitsize: %s", bitsSize);
+        bitsSize == 0 || (bitsSize > 0 && bitsSize <= 256 && 256 % bitsSize == 0),
+        "Invalid bitsize: %s",
+        bitsSize);
     this.bitsSize = bitsSize;
     this.sszSize = getSSZBytesSize();
     this.sszLengthBounds = SszLengthBounds.ofBits(bitsSize);

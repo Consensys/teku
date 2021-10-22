@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v2.beacon;
 
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.HEADER_ACCEPT;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.HEADER_ACCEPT_OCTET;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_BLOCK_ID;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_BLOCK_ID_DESCRIPTION;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
@@ -41,10 +42,10 @@ import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.SszResponse;
 import tech.pegasys.teku.api.response.v2.beacon.GetBlockResponseV2;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
+import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.spec.SpecMilestone;
 
 public class GetBlock extends AbstractHandler implements Handler {
   public static final String ROUTE = "/eth/v2/beacon/blocks/:block_id";
@@ -69,7 +70,10 @@ public class GetBlock extends AbstractHandler implements Handler {
       responses = {
         @OpenApiResponse(
             status = RES_OK,
-            content = @OpenApiContent(from = GetBlockResponseV2.class)),
+            content = {
+              @OpenApiContent(from = GetBlockResponseV2.class),
+              @OpenApiContent(type = HEADER_ACCEPT_OCTET)
+            }),
         @OpenApiResponse(status = RES_BAD_REQUEST),
         @OpenApiResponse(status = RES_NOT_FOUND),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
@@ -94,9 +98,9 @@ public class GetBlock extends AbstractHandler implements Handler {
 
   private Optional<String> handleJsonResult(Context ctx, final SignedBeaconBlock response)
       throws JsonProcessingException {
-    final SpecMilestone milestone =
-        chainDataProvider.getMilestoneAtSlot(response.getMessage().slot);
-    return Optional.of(jsonProvider.objectToJSON(new GetBlockResponseV2(milestone, response)));
+    final Version version = chainDataProvider.getVersionAtSlot(response.getMessage().slot);
+    ctx.header(HEADER_CONSENSUS_VERSION, version.name());
+    return Optional.of(jsonProvider.objectToJSON(new GetBlockResponseV2(version, response)));
   }
 
   private String resultFilename(final SszResponse response) {
@@ -104,7 +108,8 @@ public class GetBlock extends AbstractHandler implements Handler {
   }
 
   private Optional<ByteArrayInputStream> handleSszResult(
-      final Context context, final SszResponse response) {
+      final Context ctx, final SszResponse response) {
+    ctx.header(HEADER_CONSENSUS_VERSION, response.version.name());
     return Optional.of(response.byteStream);
   }
 }

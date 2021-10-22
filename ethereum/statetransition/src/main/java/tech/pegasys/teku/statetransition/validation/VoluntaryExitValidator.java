@@ -47,32 +47,32 @@ public class VoluntaryExitValidator implements OperationValidator<SignedVoluntar
     if (!isFirstValidExitForValidator(exit)) {
       LOG.trace(
           "VoluntaryExitValidator: Exit is not the first one for validator {}.",
-          exit.getMessage().getValidator_index());
+          exit.getMessage().getValidatorIndex());
       return InternalValidationResult.create(
           IGNORE,
           String.format(
               "Exit is not the first one for validator %s.",
-              exit.getMessage().getValidator_index()));
+              exit.getMessage().getValidatorIndex()));
     }
 
     final Optional<OperationInvalidReason> failureReason = getFailureReason(exit);
     if (failureReason.isPresent()) {
       return InternalValidationResult.reject(
           "Exit for validator %s is invalid: %s",
-          exit.getMessage().getValidator_index(), failureReason.get().describe());
+          exit.getMessage().getValidatorIndex(), failureReason.get().describe());
     }
 
-    if (receivedValidExitSet.add(exit.getMessage().getValidator_index())) {
+    if (receivedValidExitSet.add(exit.getMessage().getValidatorIndex())) {
       return InternalValidationResult.ACCEPT;
     } else {
       LOG.trace(
           "VoluntaryExitValidator: Exit is not the first one for validator {}.",
-          exit.getMessage().getValidator_index());
+          exit.getMessage().getValidatorIndex());
       return InternalValidationResult.create(
           IGNORE,
           String.format(
               "Exit is not the first one for validator %s.",
-              exit.getMessage().getValidator_index()));
+              exit.getMessage().getValidatorIndex()));
     }
   }
 
@@ -102,7 +102,7 @@ public class VoluntaryExitValidator implements OperationValidator<SignedVoluntar
   }
 
   private boolean isFirstValidExitForValidator(SignedVoluntaryExit exit) {
-    return !receivedValidExitSet.contains(exit.getMessage().getValidator_index());
+    return !receivedValidExitSet.contains(exit.getMessage().getValidatorIndex());
   }
 
   private BeaconState getState() {

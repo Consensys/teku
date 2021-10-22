@@ -14,6 +14,7 @@
 package tech.pegasys.teku.data;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -151,6 +152,8 @@ public class SlashingProtectionExporterTest {
         new SlashingProtectionExporter(logger, tempDir.toString());
     final File file = usingResourceFile("slashProtection.yml", tempDir);
     OSUtils.makeNonReadable(file.toPath());
+    // It's not always possible to remove read permissions from a file
+    assumeThat(file.canRead()).describedAs("Can read file %s", file).isFalse();
     exporter.readSlashProtectionFile(file);
     verify(logger).exit(eq(1), stringArgs.capture(), any(AccessDeniedException.class));
     assertThat(stringArgs.getValue()).startsWith("Failed to read from file");

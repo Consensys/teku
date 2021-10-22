@@ -23,6 +23,7 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
+import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.SyncService;
@@ -46,6 +47,8 @@ public class DataProvider {
       final AggregatingAttestationPool attestationPool,
       final BlockManager blockManager,
       final AttestationManager attestationManager,
+      final boolean isLivenessTrackingEnabled,
+      final ActiveValidatorChannel activeValidatorChannel,
       final OperationPool<AttesterSlashing> attesterSlashingPool,
       final OperationPool<ProposerSlashing> proposerSlashingPool,
       final OperationPool<SignedVoluntaryExit> voluntaryExitPool,
@@ -60,7 +63,9 @@ public class DataProvider {
             voluntaryExitPool,
             syncCommitteeContributionPool,
             blockManager,
-            attestationManager);
+            attestationManager,
+            isLivenessTrackingEnabled,
+            activeValidatorChannel);
     chainDataProvider = new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
     syncDataProvider = new SyncDataProvider(syncService);
     this.validatorDataProvider =

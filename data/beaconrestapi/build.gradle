@@ -1,4 +1,5 @@
 dependencies {
+    implementation project(':beacon:validator')
     implementation project(':data')
     implementation project(':data:provider')
     implementation project(':data:serializer')
@@ -15,7 +16,6 @@ dependencies {
     implementation project(':storage:api')
     implementation project(':sync')
     implementation project(':validator:api')
-    implementation project(':validator:coordinator')
 
     implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
     implementation 'com.google.guava:guava'

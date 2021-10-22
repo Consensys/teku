@@ -108,6 +108,7 @@ import tech.pegasys.teku.ssz.schema.collections.SszBytes32VectorSchema;
 import tech.pegasys.teku.ssz.schema.collections.SszPrimitiveListSchema;
 import tech.pegasys.teku.ssz.schema.collections.SszPrimitiveVectorSchema;
 import tech.pegasys.teku.ssz.schema.collections.SszUInt64ListSchema;
+import tech.pegasys.teku.ssz.type.Bytes20;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
 public final class DataStructureUtil {
@@ -170,6 +171,10 @@ public final class DataStructureUtil {
 
   public Bytes4 randomBytes4() {
     return new Bytes4(randomBytes32().slice(0, 4));
+  }
+
+  public Bytes20 randomBytes20() {
+    return new Bytes20(randomBytes32().slice(0, 20));
   }
 
   public Bytes32 randomBytes32() {
@@ -413,10 +418,12 @@ public final class DataStructureUtil {
   }
 
   public AttesterSlashing randomAttesterSlashing() {
-    IndexedAttestation attestation1 = randomIndexedAttestation();
-    IndexedAttestation attestation2 =
-        new IndexedAttestation(
-            attestation1.getAttesting_indices(), randomAttestationData(), randomSignature());
+    return randomAttesterSlashing(randomUInt64(), randomUInt64(), randomUInt64());
+  }
+
+  public AttesterSlashing randomAttesterSlashing(final UInt64... attestingIndices) {
+    IndexedAttestation attestation1 = randomIndexedAttestation(attestingIndices);
+    IndexedAttestation attestation2 = randomIndexedAttestation(attestingIndices);
     return new AttesterSlashing(attestation1, attestation2);
   }
 
@@ -606,12 +613,22 @@ public final class DataStructureUtil {
   }
 
   public SignedBeaconBlockHeader randomSignedBeaconBlockHeader() {
-    return new SignedBeaconBlockHeader(randomBeaconBlockHeader(), randomSignature());
+    return randomSignedBeaconBlockHeader(randomUInt64(), randomUInt64());
+  }
+
+  public SignedBeaconBlockHeader randomSignedBeaconBlockHeader(
+      final UInt64 slot, final UInt64 proposerIndex) {
+    return new SignedBeaconBlockHeader(
+        randomBeaconBlockHeader(slot, proposerIndex), randomSignature());
   }
 
   public BeaconBlockHeader randomBeaconBlockHeader() {
+    return randomBeaconBlockHeader(randomUInt64(), randomUInt64());
+  }
+
+  public BeaconBlockHeader randomBeaconBlockHeader(final UInt64 slot, final UInt64 proposerIndex) {
     return new BeaconBlockHeader(
-        randomUInt64(), randomUInt64(), randomBytes32(), randomBytes32(), randomBytes32());
+        slot, proposerIndex, randomBytes32(), randomBytes32(), randomBytes32());
   }
 
   public BeaconBlockBody randomBeaconBlockBody() {
@@ -663,14 +680,22 @@ public final class DataStructureUtil {
   }
 
   public ProposerSlashing randomProposerSlashing() {
-    return new ProposerSlashing(randomSignedBeaconBlockHeader(), randomSignedBeaconBlockHeader());
+    return randomProposerSlashing(randomUInt64(), randomUInt64());
+  }
+
+  public ProposerSlashing randomProposerSlashing(final UInt64 slot, final UInt64 proposerIndex) {
+    return new ProposerSlashing(
+        randomSignedBeaconBlockHeader(slot, proposerIndex),
+        randomSignedBeaconBlockHeader(slot, proposerIndex));
   }
 
   public IndexedAttestation randomIndexedAttestation() {
+    return randomIndexedAttestation(randomUInt64(), randomUInt64(), randomUInt64());
+  }
+
+  public IndexedAttestation randomIndexedAttestation(final UInt64... attestingIndices) {
     SszUInt64List attesting_indices =
-        IndexedAttestation.SSZ_SCHEMA
-            .getAttestingIndicesSchema()
-            .of(randomUInt64(), randomUInt64(), randomUInt64());
+        IndexedAttestation.SSZ_SCHEMA.getAttestingIndicesSchema().of(attestingIndices);
     return new IndexedAttestation(attesting_indices, randomAttestationData(), randomSignature());
   }
 
@@ -774,11 +799,19 @@ public final class DataStructureUtil {
   }
 
   public SignedVoluntaryExit randomSignedVoluntaryExit() {
-    return new SignedVoluntaryExit(randomVoluntaryExit(), randomSignature());
+    return randomSignedVoluntaryExit(randomUInt64());
+  }
+
+  public SignedVoluntaryExit randomSignedVoluntaryExit(final UInt64 validatorIndex) {
+    return new SignedVoluntaryExit(randomVoluntaryExit(validatorIndex), randomSignature());
   }
 
   public VoluntaryExit randomVoluntaryExit() {
-    return new VoluntaryExit(randomUInt64(), randomUInt64());
+    return randomVoluntaryExit(randomUInt64());
+  }
+
+  public VoluntaryExit randomVoluntaryExit(final UInt64 validatorIndex) {
+    return new VoluntaryExit(randomUInt64(), validatorIndex);
   }
 
   public List<DepositWithIndex> newDeposits(int numDeposits) {
@@ -893,20 +926,31 @@ public final class DataStructureUtil {
   }
 
   public SignedContributionAndProof randomSignedContributionAndProof(final long slot) {
-    return randomSignedContributionAndProof(UInt64.valueOf(slot));
+    return randomSignedContributionAndProof(slot, randomBytes32());
   }
 
-  public SignedContributionAndProof randomSignedContributionAndProof(final UInt64 slot) {
-    final ContributionAndProof contributionAndProof = randomContributionAndProof(slot);
+  public SignedContributionAndProof randomSignedContributionAndProof(
+      final long slot, final Bytes32 beaconBlockRoot) {
+    return randomSignedContributionAndProof(UInt64.valueOf(slot), beaconBlockRoot);
+  }
+
+  public SignedContributionAndProof randomSignedContributionAndProof(
+      final UInt64 slot, final Bytes32 beaconBlockRoot) {
+    final ContributionAndProof contributionAndProof =
+        randomContributionAndProof(slot, beaconBlockRoot);
     return getAltairSchemaDefinitions(slot)
         .getSignedContributionAndProofSchema()
         .create(contributionAndProof, randomSignature());
   }
 
-  private ContributionAndProof randomContributionAndProof(final UInt64 slot) {
+  private ContributionAndProof randomContributionAndProof(
+      final UInt64 slot, final Bytes32 beaconBlockRoot) {
     return getAltairSchemaDefinitions(slot)
         .getContributionAndProofSchema()
-        .create(randomUInt64(), randomSyncCommitteeContribution(slot), randomSignature());
+        .create(
+            randomUInt64(),
+            randomSyncCommitteeContribution(slot, beaconBlockRoot),
+            randomSignature());
   }
 
   public SyncCommitteeContribution randomSyncCommitteeContribution(final UInt64 slot) {
