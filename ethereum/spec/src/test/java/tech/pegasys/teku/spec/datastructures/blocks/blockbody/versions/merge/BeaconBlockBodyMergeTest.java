@@ -22,7 +22,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySch
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractBeaconBlockBodyTest;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 
 class BeaconBlockBodyMergeTest extends AbstractBeaconBlockBodyTest<BeaconBlockBodyMerge> {
 
@@ -39,24 +38,6 @@ class BeaconBlockBodyMergeTest extends AbstractBeaconBlockBodyTest<BeaconBlockBo
     assertThat(blockBody.getSyncAggregate()).isEqualTo(emptySyncAggregate);
   }
 
-  @Test
-  void shouldCreateWithEmptyExecutionPayload() {
-    final BeaconBlockBodyMerge blockBody = createDefaultBlockBody();
-    final ExecutionPayload executionPayload = new ExecutionPayload();
-    assertThat(blockBody.getExecutionPayload()).isEqualTo(executionPayload);
-  }
-
-  @Test
-  void shouldCreateWithExecutionPayload() {
-    final ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload();
-    final BeaconBlockBodyMerge blockBody =
-        getBlockBodySchema()
-            .createBlockBody(
-                createContentProvider()
-                    .andThen(builder -> builder.executionPayload(() -> executionPayload)));
-    assertThat(blockBody.getExecutionPayload()).isEqualTo(executionPayload);
-  }
-
   @Override
   protected BeaconBlockBodyMerge createBlockBody(
       final Consumer<BeaconBlockBodyBuilder> contentProvider) {
@@ -66,5 +47,11 @@ class BeaconBlockBodyMergeTest extends AbstractBeaconBlockBodyTest<BeaconBlockBo
   @Override
   protected BeaconBlockBodySchema<? extends BeaconBlockBodyMerge> getBlockBodySchema() {
     return BeaconBlockBodySchemaMerge.create(spec.getGenesisSpecConfig());
+  }
+
+  @Override
+  protected Consumer<BeaconBlockBodyBuilder> createContentProvider() {
+    return super.createContentProvider()
+        .andThen(builder -> builder.executionPayload(() -> executionPayload));
   }
 }
