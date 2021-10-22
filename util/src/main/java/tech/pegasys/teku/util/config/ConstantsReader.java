@@ -67,7 +67,24 @@ class ConstantsReader {
           "DOMAIN_SELECTION_PROOF",
           "DOMAIN_AGGREGATE_AND_PROOF",
           // Removed from Constants (only available through SpecConfig)
-          "GENESIS_FORK_VERSION");
+          "GENESIS_FORK_VERSION",
+          "BASE_REWARDS_PER_EPOCH",
+          "DEPOSIT_CONTRACT_TREE_DEPTH",
+          "JUSTIFICATION_BITS_LENGTH",
+          "BLS_WITHDRAWAL_PREFIX",
+          "TARGET_AGGREGATORS_PER_COMMITTEE",
+          "RANDOM_SUBNETS_PER_VALIDATOR",
+          "EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION",
+          "BASE_REWARD_FACTOR",
+          "INACTIVITY_PENALTY_QUOTIENT",
+          "MAX_PROPOSER_SLASHINGS",
+          "MAX_ATTESTER_SLASHINGS",
+          "MAX_ATTESTATIONS",
+          "MAX_DEPOSITS",
+          "MAX_VOLUNTARY_EXITS",
+          "SAFE_SLOTS_TO_UPDATE_JUSTIFIED",
+          "DEPOSIT_NETWORK_ID",
+          "DEPOSIT_CONTRACT_ADDRESS");
 
   private static final ImmutableMap<Class<?>, Function<Object, ?>> PARSERS =
       ImmutableMap.<Class<?>, Function<Object, ?>>builder()

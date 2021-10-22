@@ -55,7 +55,6 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.type.Bytes4;
 import tech.pegasys.teku.util.config.Constants;
 
 @ExtendWith(BouncyCastleExtension.class)
@@ -359,8 +358,8 @@ class BeaconStateUtilTest {
               beaconState.setSlot(dataStructureUtil.randomUInt64());
               beaconState.setFork(
                   new Fork(
-                      Bytes4.leftPad(Bytes.EMPTY),
-                      Bytes4.leftPad(Bytes.EMPTY),
+                      spec.getGenesisSpecConfig().getGenesisForkVersion(),
+                      spec.getGenesisSpecConfig().getGenesisForkVersion(),
                       SpecConfig.GENESIS_EPOCH));
 
               List<Validator> validatorList =
