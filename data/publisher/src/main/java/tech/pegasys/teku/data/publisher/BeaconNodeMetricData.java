@@ -21,34 +21,31 @@ import java.util.Objects;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class BeaconNodeMetricData extends BaseMetricData {
 
-  public final Long disk_beaconchain_bytes_total;
-  public final Long network_libp2p_bytes_total_receive;
-  public final Long network_libp2p_bytes_total_transmit;
-  public final Integer network_peers_connected;
-  public final Long sync_beacon_head_slot;
+  public final Long cpu_process_seconds_total;
+  public final Long memory_process_bytes;
   public final String client_name;
   public final String client_version;
+  public final Integer network_peers_connected;
+  public final Long sync_beacon_head_slot;
 
   @JsonCreator
   public BeaconNodeMetricData(
       @JsonProperty("version") int version,
       @JsonProperty("timestamp") long timestamp,
       @JsonProperty("process") String process,
-      @JsonProperty("disk_beaconchain_bytes_total") Long disk_beaconchain_bytes_total,
-      @JsonProperty("network_libp2p_bytes_total_receive") Long network_libp2p_bytes_total_receive,
-      @JsonProperty("network_libp2p_bytes_total_transmit") Long network_libp2p_bytes_total_transmit,
-      @JsonProperty("network_peers_connected") Integer network_peers_connected,
-      @JsonProperty("sync_beacon_head_slot") Long sync_beacon_head_slot,
+      @JsonProperty("cpu_process_seconds_total") Long cpuProcessSecondsTotal,
+      @JsonProperty("memory_process_bytes") Long memoryProcessBytes,
       @JsonProperty("client_name") String clientName,
-      @JsonProperty("client_version") String clientVersion) {
+      @JsonProperty("client_version") String clientVersion,
+      @JsonProperty("network_peers_connected") Integer networkPeersConnected,
+      @JsonProperty("sync_beacon_head_slot") Long syncBeaconHeadSlot) {
     super(version, timestamp, process);
-    this.disk_beaconchain_bytes_total = disk_beaconchain_bytes_total;
-    this.network_libp2p_bytes_total_receive = network_libp2p_bytes_total_receive;
-    this.network_libp2p_bytes_total_transmit = network_libp2p_bytes_total_transmit;
-    this.network_peers_connected = network_peers_connected;
-    this.sync_beacon_head_slot = sync_beacon_head_slot;
+    this.cpu_process_seconds_total = cpuProcessSecondsTotal;
+    this.memory_process_bytes = memoryProcessBytes;
     this.client_name = clientName;
     this.client_version = clientVersion;
+    this.network_peers_connected = networkPeersConnected;
+    this.sync_beacon_head_slot = syncBeaconHeadSlot;
   }
 
   @Override
@@ -57,27 +54,23 @@ public class BeaconNodeMetricData extends BaseMetricData {
     if (o == null || getClass() != o.getClass()) return false;
     if (!super.equals(o)) return false;
     BeaconNodeMetricData that = (BeaconNodeMetricData) o;
-    return Objects.equals(disk_beaconchain_bytes_total, that.disk_beaconchain_bytes_total)
-        && Objects.equals(
-            network_libp2p_bytes_total_receive, that.network_libp2p_bytes_total_receive)
-        && Objects.equals(
-            network_libp2p_bytes_total_transmit, that.network_libp2p_bytes_total_transmit)
-        && Objects.equals(network_peers_connected, that.network_peers_connected)
-        && Objects.equals(sync_beacon_head_slot, that.sync_beacon_head_slot)
+    return Objects.equals(cpu_process_seconds_total, that.cpu_process_seconds_total)
+        && Objects.equals(memory_process_bytes, that.memory_process_bytes)
         && Objects.equals(client_name, that.client_name)
-        && Objects.equals(client_version, that.client_version);
+        && Objects.equals(client_version, that.client_version)
+        && Objects.equals(network_peers_connected, that.network_peers_connected)
+        && Objects.equals(sync_beacon_head_slot, that.sync_beacon_head_slot);
   }
 
   @Override
   public int hashCode() {
     return Objects.hash(
         super.hashCode(),
-        disk_beaconchain_bytes_total,
-        network_libp2p_bytes_total_receive,
-        network_libp2p_bytes_total_transmit,
-        network_peers_connected,
-        sync_beacon_head_slot,
+        cpu_process_seconds_total,
+        memory_process_bytes,
         client_name,
-        client_version);
+        client_version,
+        network_peers_connected,
+        sync_beacon_head_slot);
   }
 }
