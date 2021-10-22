@@ -358,8 +358,8 @@ class BeaconStateUtilTest {
               beaconState.setSlot(dataStructureUtil.randomUInt64());
               beaconState.setFork(
                   new Fork(
-                      Constants.GENESIS_FORK_VERSION,
-                      Constants.GENESIS_FORK_VERSION,
+                      spec.getGenesisSpecConfig().getGenesisForkVersion(),
+                      spec.getGenesisSpecConfig().getGenesisForkVersion(),
                       SpecConfig.GENESIS_EPOCH));
 
               List<Validator> validatorList =

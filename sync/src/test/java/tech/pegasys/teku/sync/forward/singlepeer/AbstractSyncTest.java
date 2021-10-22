@@ -21,6 +21,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.mockito.ArgumentCaptor;
@@ -35,9 +36,9 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.ssz.type.Bytes4;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.config.Constants;
 
 public abstract class AbstractSyncTest {
   protected final Spec spec = TestSpecFactory.createDefault();
@@ -94,7 +95,7 @@ public abstract class AbstractSyncTest {
     final PeerStatus peer_status =
         PeerStatus.fromStatusMessage(
             new StatusMessage(
-                Constants.GENESIS_FORK_VERSION,
+                Bytes4.leftPad(Bytes.EMPTY),
                 Bytes32.ZERO,
                 peerFinalizedEpoch,
                 peerHeadBlockRoot,
