@@ -14,14 +14,11 @@
 package tech.pegasys.teku.test.acceptance.dsl;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
@@ -67,79 +64,72 @@ public class ExternalMetricNode extends Node {
     return "http://" + this.nodeAlias + ":" + STUB_PORT + "/input";
   }
 
-  private void waitForPublication() {
-    LOG.debug("Wait for Teku to publish data metrics");
-    try {
-      Waiter.waitFor(() -> assertThat(fetchPublication().get()).isNotEmpty(), 1, TimeUnit.MINUTES);
-    } catch (final Throwable t) {
-      fail(t.getMessage() + " Logs: " + container.getLogs(), t);
-    }
-  }
-
-  private Optional<String> fetchPublication() throws IOException, URISyntaxException {
-    final String result = httpClient.get(new URI(this.getAddress()), "/output");
-    if (result.isEmpty()) {
-      return Optional.empty();
-    }
-    return Optional.of(result);
-  }
-
   public String getResponse() throws URISyntaxException, IOException {
     return httpClient.get(new URI(this.getAddress()), "/output");
   }
 
   private DeserializedMetricDataObject[] getPublishedObjects()
       throws URISyntaxException, IOException {
-    waitForPublication();
     String response = getResponse();
     LOG.debug("Metric data was published " + response);
     return jsonProvider.jsonToObject(response, DeserializedMetricDataObject[].class);
   }
 
-  public void waitForBeaconNodeMetricPublication() throws URISyntaxException, IOException {
-    DeserializedMetricDataObject[] publishedData = getPublishedObjects();
-    assertThat(publishedData.length).isEqualTo(3);
+  public void waitForBeaconNodeMetricPublication() {
+    Waiter.waitFor(
+        () -> {
+          DeserializedMetricDataObject[] publishedData = getPublishedObjects();
+          assertThat(publishedData.length).isEqualTo(3);
 
-    assertThat(publishedData[0]).isNotNull();
-    assertThat(publishedData[0].process).isNotNull();
-    assertThat(publishedData[0].process).isEqualTo(MetricsDataClient.BEACON_NODE.getDataClient());
-    assertThat(publishedData[0].version).isNotNull();
-    assertThat(publishedData[0].timestamp).isNotNull();
-    assertThat(publishedData[0].client_name).isNotNull();
-    assertThat(publishedData[0].client_version).isNotNull();
-    assertThat(publishedData[0].cpu_process_seconds_total).isNotNull();
-    assertThat(publishedData[0].memory_process_bytes).isNotNull();
-    assertThat(publishedData[0].network_peers_connected).isNotNull();
-    assertThat(publishedData[0].sync_beacon_head_slot).isNotNull();
+          assertThat(publishedData[0]).isNotNull();
+          assertThat(publishedData[0].process).isNotNull();
+          assertThat(publishedData[0].process)
+              .isEqualTo(MetricsDataClient.BEACON_NODE.getDataClient());
+          assertThat(publishedData[0].version).isNotNull();
+          assertThat(publishedData[0].timestamp).isNotNull();
+          assertThat(publishedData[0].client_name).isNotNull();
+          assertThat(publishedData[0].client_version).isNotNull();
+          assertThat(publishedData[0].cpu_process_seconds_total).isNotNull();
+          assertThat(publishedData[0].memory_process_bytes).isNotNull();
+          assertThat(publishedData[0].network_peers_connected).isNotNull();
+          assertThat(publishedData[0].sync_beacon_head_slot).isNotNull();
+        });
   }
 
-  public void waitForValidatorMetricPublication() throws URISyntaxException, IOException {
-    DeserializedMetricDataObject[] publishedData = getPublishedObjects();
-    assertThat(publishedData.length).isEqualTo(3);
+  public void waitForValidatorMetricPublication() {
+    Waiter.waitFor(
+        () -> {
+          DeserializedMetricDataObject[] publishedData = getPublishedObjects();
+          assertThat(publishedData.length).isEqualTo(3);
 
-    assertThat(publishedData[1]).isNotNull();
-    assertThat(publishedData[1].process).isNotNull();
-    assertThat(publishedData[1].process).isEqualTo(MetricsDataClient.VALIDATOR.getDataClient());
-    assertThat(publishedData[1].version).isNotNull();
-    assertThat(publishedData[1].timestamp).isNotNull();
-    assertThat(publishedData[1].client_name).isNotNull();
-    assertThat(publishedData[1].client_version).isNotNull();
-    assertThat(publishedData[1].cpu_process_seconds_total).isNotNull();
-    assertThat(publishedData[1].memory_process_bytes).isNotNull();
-    assertThat(publishedData[1].validator_total).isNotNull();
+          assertThat(publishedData[1]).isNotNull();
+          assertThat(publishedData[1].process).isNotNull();
+          assertThat(publishedData[1].process)
+              .isEqualTo(MetricsDataClient.VALIDATOR.getDataClient());
+          assertThat(publishedData[1].version).isNotNull();
+          assertThat(publishedData[1].timestamp).isNotNull();
+          assertThat(publishedData[1].client_name).isNotNull();
+          assertThat(publishedData[1].client_version).isNotNull();
+          assertThat(publishedData[1].cpu_process_seconds_total).isNotNull();
+          assertThat(publishedData[1].memory_process_bytes).isNotNull();
+          assertThat(publishedData[1].validator_total).isNotNull();
+        });
   }
 
-  public void waitForSystemMetricPublication() throws URISyntaxException, IOException {
-    DeserializedMetricDataObject[] publishedData = getPublishedObjects();
-    assertThat(publishedData.length).isEqualTo(3);
+  public void waitForSystemMetricPublication() {
+    Waiter.waitFor(
+        () -> {
+          DeserializedMetricDataObject[] publishedData = getPublishedObjects();
+          assertThat(publishedData.length).isEqualTo(3);
 
-    assertThat(publishedData[2]).isNotNull();
-    assertThat(publishedData[2].process).isNotNull();
-    assertThat(publishedData[2].process).isEqualTo(MetricsDataClient.SYSTEM.getDataClient());
-    assertThat(publishedData[2].version).isNotNull();
-    assertThat(publishedData[2].timestamp).isNotNull();
-    assertThat(publishedData[2].cpu_node_system_seconds_total).isNotNull();
-    assertThat(publishedData[2].misc_os).isNotNull();
+          assertThat(publishedData[2]).isNotNull();
+          assertThat(publishedData[2].process).isNotNull();
+          assertThat(publishedData[2].process).isEqualTo(MetricsDataClient.SYSTEM.getDataClient());
+          assertThat(publishedData[2].version).isNotNull();
+          assertThat(publishedData[2].timestamp).isNotNull();
+          assertThat(publishedData[2].cpu_node_system_seconds_total).isNotNull();
+          assertThat(publishedData[2].misc_os).isNotNull();
+        });
   }
 
   public void start() {

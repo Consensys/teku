@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.function.Supplier;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
@@ -47,6 +48,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.ssz.type.Bytes4;
 import tech.pegasys.teku.util.config.Constants;
 
 public class PeerSyncTest extends AbstractSyncTest {
@@ -59,7 +61,7 @@ public class PeerSyncTest extends AbstractSyncTest {
   private static final PeerStatus PEER_STATUS =
       PeerStatus.fromStatusMessage(
           new StatusMessage(
-              Constants.GENESIS_FORK_VERSION,
+              Bytes4.leftPad(Bytes.EMPTY),
               Bytes32.ZERO,
               PEER_FINALIZED_EPOCH,
               PEER_HEAD_BLOCK_ROOT,
@@ -552,7 +554,7 @@ public class PeerSyncTest extends AbstractSyncTest {
     final PeerStatus peer_status =
         PeerStatus.fromStatusMessage(
             new StatusMessage(
-                Constants.GENESIS_FORK_VERSION,
+                Bytes4.leftPad(Bytes.EMPTY),
                 Bytes32.ZERO,
                 finalizedEpoch,
                 PEER_HEAD_BLOCK_ROOT,
