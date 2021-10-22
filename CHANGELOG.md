@@ -29,4 +29,4 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Bug Fixes
  - Fixed a possible crash on shutdown when using levelDb.
  - Set an idle timeout for metrics connections, to clean up ports when no longer used.
- - Fixed `Syncing Completed` message duplicated.
+ - Fixed issue where `Syncing Completed` message was printing multiple times.

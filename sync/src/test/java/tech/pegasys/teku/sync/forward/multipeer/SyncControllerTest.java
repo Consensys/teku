@@ -29,6 +29,8 @@ import java.util.Optional;
 import java.util.concurrent.Executor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
@@ -235,6 +237,20 @@ class SyncControllerTest {
     syncResult.complete(SyncResult.COMPLETE);
     assertNotSyncing();
     verify(eventLogger, times(1)).syncCompleted();
+  }
+
+  @ParameterizedTest
+  @EnumSource(
+      value = SyncResult.class,
+      names = {"TARGET_CHANGED", "FAILED"})
+  void shouldNotExecuteCompleteSyncMessageWhenFailsOrTargetChanges(final SyncResult result) {
+    final SafeFuture<SyncResult> syncResult = startFinalizedSync();
+
+    assertThat(syncController.isSyncActive()).isTrue();
+    verify(eventLogger, never()).syncCompleted();
+    syncResult.complete(SyncResult.valueOf(result.name()));
+    assertNotSyncing();
+    verify(eventLogger, never()).syncCompleted();
   }
 
   @Test

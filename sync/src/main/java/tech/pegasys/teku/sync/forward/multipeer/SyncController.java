@@ -90,7 +90,7 @@ public class SyncController {
     }
     currentSync = newSync;
     if (!currentlySyncing && isSyncActive()) {
-      notifySubscribers(true);
+      notifySubscribers(true, null);
     }
   }
 
@@ -116,9 +116,9 @@ public class SyncController {
         result);
     // See if there's a new sync we should start (possibly switching to non-finalized sync)
     currentSync = selectNewSyncTarget();
-    if (!isSyncActive() && result == SyncResult.COMPLETE) {
+    if (!isSyncActive()) {
       currentSync = Optional.empty();
-      notifySubscribers(false);
+      notifySubscribers(false, result);
     }
   }
 
@@ -142,12 +142,12 @@ public class SyncController {
     subscribers.unsubscribe(subscriberId);
   }
 
-  private void notifySubscribers(final boolean syncing) {
+  private void notifySubscribers(final boolean syncing, final SyncResult result) {
     subscriberExecutor.execute(() -> subscribers.deliver(SyncSubscriber::onSyncingChange, syncing));
     if (syncing) {
       eventLogger.syncStart();
     } else {
-      eventLogger.syncCompleted();
+      if (result == SyncResult.COMPLETE) eventLogger.syncCompleted();
     }
   }
 
