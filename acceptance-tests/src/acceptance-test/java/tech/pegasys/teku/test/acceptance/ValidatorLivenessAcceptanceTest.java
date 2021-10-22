@@ -19,7 +19,6 @@ import static tech.pegasys.teku.test.acceptance.dsl.ValidatorLivenessExpectation
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 
