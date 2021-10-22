@@ -16,8 +16,6 @@ package tech.pegasys.teku.test.acceptance;
 import static tech.pegasys.teku.test.acceptance.dsl.ValidatorLivenessExpectation.expectLive;
 import static tech.pegasys.teku.test.acceptance.dsl.ValidatorLivenessExpectation.expectNotLive;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
@@ -29,7 +27,6 @@ public class ValidatorLivenessAcceptanceTest extends AcceptanceTestBase {
 
   private static final int NODE_VALIDATORS = 2;
   private static final int TOTAL_VALIDATORS = NODE_VALIDATORS * 2;
-  private final List<UInt64> validators = new ArrayList<>();
 
   private final SystemTimeProvider timeProvider = new SystemTimeProvider();
   private TekuNode primaryNode;
@@ -63,7 +60,7 @@ public class ValidatorLivenessAcceptanceTest extends AcceptanceTestBase {
   void shouldTrackValidatorLivenessOverEpochs() throws Exception {
     primaryNode.start();
 
-    primaryNode.waitForSlot(8);
+    primaryNode.waitForBlockAtOrAfterSlot(8);
     secondaryNode.start();
     primaryNode.checkValidatorLiveness(
         1,
@@ -71,7 +68,7 @@ public class ValidatorLivenessAcceptanceTest extends AcceptanceTestBase {
         expectLive(0, NODE_VALIDATORS),
         expectNotLive(NODE_VALIDATORS, NODE_VALIDATORS));
 
-    primaryNode.waitForSlot(16);
+    primaryNode.waitForBlockAtOrAfterSlot(16);
     primaryNode.checkValidatorLiveness(3, TOTAL_VALIDATORS, expectLive(0, TOTAL_VALIDATORS));
     secondaryNode.checkValidatorLiveness(3, TOTAL_VALIDATORS, expectLive(0, TOTAL_VALIDATORS));
   }

@@ -173,7 +173,7 @@ public class TekuNode extends Node {
     waitFor(this::fetchGenesisTime);
   }
 
-  public void waitForSlot(final long slot) {
+  public void waitForBlockAtOrAfterSlot(final long slot) {
     if (maybeEventStreamListener.isEmpty()) {
       startEventListener(List.of(EventType.head));
     }
@@ -201,6 +201,7 @@ public class TekuNode extends Node {
           jsonProvider.jsonToObject(packedMessage.getMessageEvent().getData(), HeadEvent.class)
               .slot);
     } catch (JsonProcessingException e) {
+      LOG.error("Failed to process head event", e);
       return Optional.empty();
     }
   }

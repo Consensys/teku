@@ -23,7 +23,7 @@ public class ValidatorLivenessExpectation {
   private final int count;
   private final boolean isLive;
 
-  public ValidatorLivenessExpectation(final int start, final int count, final boolean isLive) {
+  private ValidatorLivenessExpectation(final int start, final int count, final boolean isLive) {
     this.start = start;
     this.count = count;
     this.isLive = isLive;
