@@ -69,7 +69,7 @@ public class SpecVersion extends DelegatingSpecLogic {
   static SpecVersion createMerge(final SpecConfigMerge specConfig) {
     final SchemaDefinitionsAltair schemaDefinitions = new SchemaDefinitionsAltair(specConfig);
     final SpecLogic specLogic = SpecLogicAltair.create(specConfig, schemaDefinitions);
-    return new SpecVersion(SpecMilestone.ALTAIR, specConfig, schemaDefinitions, specLogic);
+    return new SpecVersion(SpecMilestone.MERGE, specConfig, schemaDefinitions, specLogic);
   }
 
   public SpecMilestone getMilestone() {
