@@ -35,9 +35,6 @@ public class ValidatorLivenessAcceptanceTest extends AcceptanceTestBase {
   @BeforeEach
   public void setup() {
     final int genesisTime = timeProvider.getTimeInSeconds().plus(5).intValue();
-    for (UInt64 i = UInt64.ZERO; i.isLessThan(TOTAL_VALIDATORS); i = i.increment()) {
-      validators.add(i);
-    }
     primaryNode =
         createTekuNode(
             config -> configureNode(config, genesisTime).withInteropValidators(0, NODE_VALIDATORS));
