@@ -21,8 +21,8 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_TEKU;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 
 import io.javalin.core.util.Header;
@@ -40,11 +40,11 @@ import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.v1.teku.GetAllBlocksAtSlotResponse;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
+import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.spec.SpecMilestone;
 
 public class GetAllBlocksAtSlot implements Handler {
   public static final String ROUTE = "/teku/v1/beacon/blocks/:slot";
@@ -65,7 +65,7 @@ public class GetAllBlocksAtSlot implements Handler {
       path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get blocks at slot",
-      tags = {TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED},
+      tags = {TAG_TEKU},
       description = "Get all blocks (canonical and non-canonical) by slot.",
       pathParams = {@OpenApiParam(name = SLOT, description = "slot of the blocks to retrieve.")},
       responses = {
@@ -82,19 +82,26 @@ public class GetAllBlocksAtSlot implements Handler {
     final Map<String, String> pathParamMap = ctx.pathParamMap();
     ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
 
-    SafeFuture<Set<SignedBeaconBlock>> future =
-        chainDataProvider.getAllBlocksAtSlot(pathParamMap.get(SLOT));
-    ctx.result(
-        future.thenApplyChecked(
-            result -> {
-              if (result.isEmpty()) {
-                ctx.status(SC_NOT_FOUND);
-                return BadRequest.serialize(
-                    jsonProvider, SC_NOT_FOUND, "Blocks not found: " + pathParamMap.get(SLOT));
-              }
-              final SpecMilestone milestone =
-                  chainDataProvider.getMilestoneAtSlot(UInt64.valueOf(pathParamMap.get(SLOT)));
-              return jsonProvider.objectToJSON(new GetAllBlocksAtSlotResponse(milestone, result));
-            }));
+    try {
+      SafeFuture<Set<SignedBeaconBlock>> future =
+          chainDataProvider.getAllBlocksAtSlot(pathParamMap.get(SLOT));
+      ctx.result(
+          future.thenApplyChecked(
+              result -> {
+                if (result.isEmpty()) {
+                  ctx.status(SC_NOT_FOUND);
+                  return BadRequest.serialize(
+                      jsonProvider, SC_NOT_FOUND, "Blocks not found: " + pathParamMap.get(SLOT));
+                }
+                final Version version =
+                    chainDataProvider.getVersionAtSlot(UInt64.valueOf(pathParamMap.get(SLOT)));
+                return jsonProvider.objectToJSON(new GetAllBlocksAtSlotResponse(version, result));
+              }));
+    } catch (NumberFormatException ex) {
+      ctx.status(SC_BAD_REQUEST);
+      ctx.result(
+          BadRequest.badRequest(
+              jsonProvider, "Could not retrieve slot (uint64) from parameter " + ex.getMessage()));
+    }
   }
 }

@@ -57,6 +57,10 @@ public class AcceptanceTestBase {
     }
   }
 
+  protected ExternalMetricNode createExternalMetricNode() {
+    return addNode(ExternalMetricNode.create(httpClient, network));
+  }
+
   protected TekuVoluntaryExit createVoluntaryExit(
       final Consumer<TekuVoluntaryExit.Config> configOptions) {
     return addNode(TekuVoluntaryExit.create(network, configOptions));

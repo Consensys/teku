@@ -11,23 +11,21 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.response.v2.validator;
+package tech.pegasys.teku.test.acceptance.stubServer;
 
-import tech.pegasys.teku.api.schema.Version;
-import tech.pegasys.teku.api.schema.interfaces.UnsignedBlock;
-import tech.pegasys.teku.spec.SpecMilestone;
+import java.net.InetSocketAddress;
 
-public class GetNewBlockResponseV2 {
+public class StubServer {
 
-  public final Version version;
-  public final UnsignedBlock data;
+  public static void main(String[] args) throws Throwable {
+    RemoteMetricsServiceStub remoteMetricsServiceStub =
+        new RemoteMetricsServiceStub(new InetSocketAddress(8001));
+    SuccessHandler handler = new SuccessHandler();
+    remoteMetricsServiceStub.registerHandler("/input", handler);
 
-  public GetNewBlockResponseV2(final Version version, final UnsignedBlock data) {
-    this.version = version;
-    this.data = data;
-  }
+    ReplyHandler reply = new ReplyHandler(handler);
+    remoteMetricsServiceStub.registerHandler("/output", reply);
 
-  public GetNewBlockResponseV2(final SpecMilestone milestone, final UnsignedBlock data) {
-    this(Version.fromMilestone(milestone), data);
+    remoteMetricsServiceStub.startServer();
   }
 }
