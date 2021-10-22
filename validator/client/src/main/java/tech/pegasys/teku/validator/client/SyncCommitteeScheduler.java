@@ -152,9 +152,8 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
       final Bytes32 currentDutyDependentRoot,
       final Bytes32 headBlockRoot) {
 
-    // recalculation of sync committee duties at the slot prior to the altair fork activation slot
-    if (spec.getSyncCommitteeUtil(slot).isEmpty()
-        && spec.getSyncCommitteeUtil(slot.plus(1)).isPresent()) {
+    // recalculation of sync committee duties on every new block prior to the altair fork activation
+    if (spec.getSyncCommitteeUtil(slot).isEmpty()) {
       currentSyncCommitteePeriod.ifPresent(SyncCommitteePeriod::recalculate);
       nextSyncCommitteePeriod.ifPresent(SyncCommitteePeriod::recalculate);
     }
