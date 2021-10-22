@@ -107,7 +107,7 @@ public class BeaconBlockBodySchemaPhase0
       final Consumer<BeaconBlockBodyBuilder> builderConsumer) {
     final BeaconBlockBodyBuilderPhase0 builder = new BeaconBlockBodyBuilderPhase0().schema(this);
     builderConsumer.accept(builder);
-    return builder.build();
+    return builder.buildPhase0();
   }
 
   @Override

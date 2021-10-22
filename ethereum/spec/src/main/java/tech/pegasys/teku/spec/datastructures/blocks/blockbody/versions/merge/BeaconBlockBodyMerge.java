@@ -31,7 +31,7 @@ public interface BeaconBlockBodyMerge extends BeaconBlockBodyAltair {
     return (BeaconBlockBodyMerge) body;
   }
 
-  ExecutionPayload getExecution_payload();
+  ExecutionPayload getExecutionPayload();
 
   @Override
   BeaconBlockBodySchemaMerge<?> getSchema();

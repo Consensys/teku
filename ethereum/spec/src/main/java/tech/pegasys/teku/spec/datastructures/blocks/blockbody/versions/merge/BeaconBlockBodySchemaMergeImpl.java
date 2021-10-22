@@ -21,6 +21,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFi
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -109,8 +110,11 @@ class BeaconBlockBodySchemaMergeImpl
   public BeaconBlockBodyMergeImpl createBlockBody(
       final Consumer<BeaconBlockBodyBuilder> builderConsumer) {
     final BeaconBlockBodyBuilderMerge builder = new BeaconBlockBodyBuilderMerge().schema(this);
+    // Provide a default empty sync aggregate
+    builder.syncAggregate(getSyncAggregateSchema()::createEmpty);
+    builder.executionPayload(ExecutionPayload::new);
     builderConsumer.accept(builder);
-    return builder.build();
+    return builder.buildMerge();
   }
 
   @Override
@@ -156,6 +160,11 @@ class BeaconBlockBodySchemaMergeImpl
   @Override
   public BeaconBlockBodyMergeImpl createFromBackingNode(TreeNode node) {
     return new BeaconBlockBodyMergeImpl(this, node);
+  }
+
+  @Override
+  public ExecutionPayloadSchema getExecutionPayloadSchema() {
+    return (ExecutionPayloadSchema) getFieldSchema9();
   }
 
   @Override

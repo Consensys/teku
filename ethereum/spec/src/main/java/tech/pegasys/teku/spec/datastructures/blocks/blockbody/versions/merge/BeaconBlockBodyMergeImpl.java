@@ -136,7 +136,7 @@ class BeaconBlockBodyMergeImpl
   }
 
   @Override
-  public ExecutionPayload getExecution_payload() {
+  public ExecutionPayload getExecutionPayload() {
     return getField9();
   }
 

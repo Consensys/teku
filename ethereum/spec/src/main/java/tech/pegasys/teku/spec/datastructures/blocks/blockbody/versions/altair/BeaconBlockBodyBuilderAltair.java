@@ -15,17 +15,19 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.errorprone.annotations.DoNotCall;
 import java.util.function.Supplier;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractBeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodyBuilderPhase0;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodyPhase0;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.ssz.primitive.SszBytes32;
 
-public class BeaconBlockBodyBuilderAltair extends AbstractBeaconBlockBodyBuilder {
+public class BeaconBlockBodyBuilderAltair extends BeaconBlockBodyBuilderPhase0 {
 
   private BeaconBlockBodySchemaAltairImpl schema;
-  private SyncAggregate syncAggregate;
+  protected SyncAggregate syncAggregate;
 
   public BeaconBlockBodyBuilderAltair schema(final BeaconBlockBodySchemaAltairImpl schema) {
     this.schema = schema;
@@ -46,13 +48,23 @@ public class BeaconBlockBodyBuilderAltair extends AbstractBeaconBlockBodyBuilder
   }
 
   @Override
+  protected void validateSchema() {
+    checkNotNull(schema, "schema must be specified");
+  }
+
+  @Override
   protected void validate() {
     super.validate();
-    checkNotNull(schema, "schema must be specified");
     checkNotNull(syncAggregate, "syncAggregate must be specified");
   }
 
-  public BeaconBlockBodyAltairImpl build() {
+  @DoNotCall
+  @Override
+  public final BeaconBlockBodyPhase0 buildPhase0() {
+    throw new IllegalStateException("");
+  }
+
+  public BeaconBlockBodyAltairImpl buildAltair() {
     validate();
 
     return new BeaconBlockBodyAltairImpl(

@@ -24,7 +24,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractBea
 class BeaconBlockBodyAltairTest extends AbstractBeaconBlockBodyTest<BeaconBlockBodyAltair> {
 
   @Test
-  void shouldCreateWithEmtpySyncAggregate() {
+  void shouldCreateWithEmptySyncAggregate() {
     // This won't always be true but until we can calculate the actual SyncAggregate, use the empty
     // one to make the block valid
 
