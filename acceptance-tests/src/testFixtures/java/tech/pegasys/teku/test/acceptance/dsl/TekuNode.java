@@ -623,6 +623,13 @@ public class TekuNode extends Node {
       return this;
     }
 
+    public Config withExternalMetricsClient(
+        final ExternalMetricNode externalMetricsNode, final int intervalBetweenPublications) {
+      configMap.put("Xmetrics-endpoint", externalMetricsNode.getPublicationEndpointURL());
+      configMap.put("Xmetrics-publication-interval", intervalBetweenPublications);
+      return this;
+    }
+
     public Config withValidatorKeystores(final ValidatorKeystores keystores) {
       tarballsToCopy.add(keystores.getTarball());
       configMap.put(

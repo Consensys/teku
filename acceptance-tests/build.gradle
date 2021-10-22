@@ -10,6 +10,8 @@ dependencies {
   testFixturesImplementation testFixtures(project(':ethereum:spec'))
   testFixturesImplementation project(':ethereum:networks')
   testFixturesImplementation project(':pow')
+  testFixturesImplementation project(':data:publisher')
+  testFixturesImplementation testFixtures(project(':data:publisher'))
   testFixturesImplementation project(':infrastructure:async')
   testFixturesImplementation testFixtures(project(':infrastructure:async'))
   testFixturesImplementation project(':teku')
