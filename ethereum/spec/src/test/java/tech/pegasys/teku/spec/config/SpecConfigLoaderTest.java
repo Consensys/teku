@@ -147,8 +147,8 @@ public class SpecConfigLoaderTest {
         Arguments.of(Eth2Network.PYRMONT.configName(), SpecConfigAltair.class),
         Arguments.of(Eth2Network.PRATER.configName(), SpecConfigAltair.class),
         Arguments.of(Eth2Network.MINIMAL.configName(), SpecConfigAltair.class),
-        Arguments.of(Eth2Network.SWIFT.configName(), SpecConfigPhase0.class),
-        Arguments.of(Eth2Network.LESS_SWIFT.configName(), SpecConfigPhase0.class));
+        Arguments.of(Eth2Network.SWIFT.configName(), SpecConfigAltair.class),
+        Arguments.of(Eth2Network.LESS_SWIFT.configName(), SpecConfigAltair.class));
   }
 
   private void writeStreamToFile(final InputStream inputStream, final Path filePath)

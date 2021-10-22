@@ -35,7 +35,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
 class ConstantsReader {
-  private static final ImmutableList<String> PRESETS = ImmutableList.of("mainnet", "minimal");
+  private static final ImmutableList<String> PRESETS =
+      ImmutableList.of("mainnet", "minimal", "swift");
   private static final String PRESET_PATH = "presets/";
   private static final String CONFIG_PATH = "configs/";
   private static final String PRESET_FIELD = "PRESET_BASE";
