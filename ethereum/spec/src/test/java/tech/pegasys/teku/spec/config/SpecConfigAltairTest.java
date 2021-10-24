@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -55,11 +54,10 @@ public class SpecConfigAltairTest {
     assertThat(configA.hashCode()).isNotEqualTo(configB.hashCode());
   }
 
-  @Disabled
   @Test
   public void equals_phase0ConfigDiffer() {
-    SpecConfig phase0A = SpecConfigLoader.loadConfig("swift");
-    SpecConfig phase0B = SpecConfigLoader.loadConfig("swift");
+    SpecConfig phase0A = SpecConfigLoader.loadConfig("swift", b -> {});
+    SpecConfig phase0B = SpecConfigLoader.loadConfig("swift", b -> b.maxValidatorsPerCommittee(1));
 
     SpecConfigAltair configA = createRandomAltairConfig(phase0A, 1);
     SpecConfigAltair configB = createRandomAltairConfig(phase0B, 1);
