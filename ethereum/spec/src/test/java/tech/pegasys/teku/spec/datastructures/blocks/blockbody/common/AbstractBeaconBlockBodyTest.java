@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.common;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static tech.pegasys.teku.util.config.Constants.MAX_DEPOSITS;
 
 import java.util.Collections;
 import java.util.List;
@@ -63,8 +62,7 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
           dataStructureUtil.randomAttestation(),
           dataStructureUtil.randomAttestation());
   protected SszList<Deposit> deposits =
-      blockBodyLists.createDeposits(
-          dataStructureUtil.randomDeposits(MAX_DEPOSITS).toArray(new Deposit[0]));
+      blockBodyLists.createDeposits(dataStructureUtil.randomDeposits(2).toArray(new Deposit[0]));
   protected SszList<SignedVoluntaryExit> voluntaryExits =
       blockBodyLists.createVoluntaryExits(
           dataStructureUtil.randomSignedVoluntaryExit(),

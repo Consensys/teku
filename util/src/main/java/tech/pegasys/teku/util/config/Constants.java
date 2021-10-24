@@ -15,25 +15,13 @@ package tech.pegasys.teku.util.config;
 
 import com.google.common.collect.ImmutableList;
 import java.time.Duration;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class Constants {
 
   public static final ImmutableList<String> NETWORK_DEFINITIONS =
       ImmutableList.of("mainnet", "minimal", "swift", "pyrmont", "prater", "less-swift");
-
-  @Deprecated public static final UInt64 BASE_REWARDS_PER_EPOCH = UInt64.valueOf(4);
-  @Deprecated public static final int DEPOSIT_CONTRACT_TREE_DEPTH = 32;
-  @Deprecated public static final int JUSTIFICATION_BITS_LENGTH = 4;
-
-  // Phase0 constants which may exist in legacy config files, but are no longer configurable
-  @Deprecated public static final Bytes BLS_WITHDRAWAL_PREFIX = Bytes.fromHexString("0x00");
-  @Deprecated public static final int TARGET_AGGREGATORS_PER_COMMITTEE = 16;
-  @Deprecated public static final int RANDOM_SUBNETS_PER_VALIDATOR = 1;
-  @Deprecated public static final int EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION = 256;
 
   // Misc
   @Deprecated public static UInt64 ETH1_FOLLOW_DISTANCE = UInt64.valueOf(1024);
@@ -56,9 +44,6 @@ public class Constants {
   @Deprecated public static UInt64 EJECTION_BALANCE;
   @Deprecated public static UInt64 EFFECTIVE_BALANCE_INCREMENT;
 
-  // Initial values
-  @Deprecated public static Bytes4 GENESIS_FORK_VERSION = Bytes4.fromHexString("0x00000000");
-
   // Time parameters
   @Deprecated public static UInt64 GENESIS_DELAY;
   @Deprecated public static int SECONDS_PER_SLOT = 12;
@@ -78,33 +63,15 @@ public class Constants {
   @Deprecated public static int HISTORICAL_ROOTS_LIMIT;
   @Deprecated public static long VALIDATOR_REGISTRY_LIMIT;
 
-  // Reward and penalty quotients
-  @Deprecated public static int BASE_REWARD_FACTOR;
   @Deprecated public static int WHISTLEBLOWER_REWARD_QUOTIENT;
   @Deprecated public static UInt64 PROPOSER_REWARD_QUOTIENT;
-  @Deprecated public static UInt64 INACTIVITY_PENALTY_QUOTIENT;
   @Deprecated public static int MIN_SLASHING_PENALTY_QUOTIENT;
-
-  // Max transactions per block
-  @Deprecated public static int MAX_PROPOSER_SLASHINGS;
-  @Deprecated public static int MAX_ATTESTER_SLASHINGS;
-  @Deprecated public static int MAX_ATTESTATIONS;
-  @Deprecated public static int MAX_DEPOSITS;
-  @Deprecated public static int MAX_VOLUNTARY_EXITS = 16;
 
   // Validator
   @Deprecated public static UInt64 SECONDS_PER_ETH1_BLOCK = UInt64.valueOf(14L);
 
-  // Fork Choice
-  @Deprecated public static int SAFE_SLOTS_TO_UPDATE_JUSTIFIED = 8;
-
   // Deposit Contract
   @Deprecated public static int DEPOSIT_CHAIN_ID;
-  @Deprecated public static int DEPOSIT_NETWORK_ID;
-
-  @Deprecated
-  public static Bytes DEPOSIT_CONTRACT_ADDRESS =
-      Bytes.fromHexString("0x1234567890123456789012345678901234567890");
 
   // Networking
   public static final int GOSSIP_MAX_SIZE = 1048576; // bytes
