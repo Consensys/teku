@@ -19,6 +19,7 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Additions and Improvements
 - Support v.2.1.0 of the standard rest api. it should be noted that the 'version' has been changed to lower case to comply with the api specification.
+- Attestations are now sent to the beacon node in batches by default when using the validator-client.
 
 ### Bug Fixes
 - Fixed issue where discovery did not correctly abort handshake attempts when a request timed out.

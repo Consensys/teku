@@ -110,11 +110,11 @@ public class ValidatorOptions {
       names = {"--Xvalidators-batch-attestations-enabled"},
       paramLabel = "<BOOLEAN>",
       description =
-          "Send all attestations for a slot to the beacon node in a single batch. Default: false",
+          "Send all attestations for a slot to the beacon node in a single batch. Default: true",
       fallbackValue = "true",
       hidden = true,
       arity = "0..1")
-  private boolean sendAttestationsAsBatch = false;
+  private boolean sendAttestationsAsBatch = true;
 
   @Option(
       names = {"--Xvalidators-publish-to-additional-nodes"},

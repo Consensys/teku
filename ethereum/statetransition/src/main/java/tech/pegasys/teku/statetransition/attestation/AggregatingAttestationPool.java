@@ -40,7 +40,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.attestation.AttestationWorthinessChecker;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.schema.SszListSchema;
-import tech.pegasys.teku.util.config.Constants;
 
 /**
  * Maintains a pool of attestations. Attestations can be retrieved either for inclusion in a block
@@ -51,7 +50,7 @@ import tech.pegasys.teku.util.config.Constants;
 public class AggregatingAttestationPool implements SlotEventsChannel {
   static final long ATTESTATION_RETENTION_EPOCHS = 2;
   private static final SszListSchema<Attestation, ?> ATTESTATIONS_SCHEMA =
-      SszListSchema.create(Attestation.SSZ_SCHEMA, Constants.MAX_ATTESTATIONS);
+      SszListSchema.create(Attestation.SSZ_SCHEMA, 128);
 
   private final Map<Bytes, MatchingDataAttestationGroup> attestationGroupByDataHash =
       new HashMap<>();
