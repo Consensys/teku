@@ -300,7 +300,7 @@ public class MockKvStoreInstance implements KvStoreAccessor {
       columnUpdates.forEach(
           (col, updates) -> {
             final NavigableMap<Bytes, Bytes> targetColumn = dbInstance.columnData.get(col);
-            updates.forEach(targetColumn::put);
+            update.forEach(targetColumn::put);
           });
       deletedColumnKeys.forEach(
           (col, deletedKeys) -> {
