@@ -56,8 +56,8 @@ public class SpecConfigAltairTest {
 
   @Test
   public void equals_phase0ConfigDiffer() {
-    SpecConfig phase0A = SpecConfigLoader.loadConfig("swift", b -> {});
-    SpecConfig phase0B = SpecConfigLoader.loadConfig("swift", b -> b.maxValidatorsPerCommittee(1));
+    SpecConfig phase0A = TestConfigLoader.loadConfig("swift", b -> {});
+    SpecConfig phase0B = TestConfigLoader.loadConfig("swift", b -> b.maxValidatorsPerCommittee(1));
 
     SpecConfigAltair configA = createRandomAltairConfig(phase0A, 1);
     SpecConfigAltair configB = createRandomAltairConfig(phase0B, 1);
