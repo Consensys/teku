@@ -25,6 +25,7 @@ import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,6 +40,7 @@ import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
+import tech.pegasys.teku.ssz.type.Bytes4;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.events.SyncingStatus;
 import tech.pegasys.teku.sync.forward.ForwardSync.SyncSubscriber;
@@ -53,7 +55,7 @@ public class SyncManagerTest {
   private static final PeerStatus PEER_STATUS =
       PeerStatus.fromStatusMessage(
           new StatusMessage(
-              Constants.GENESIS_FORK_VERSION,
+              Bytes4.leftPad(Bytes.EMPTY),
               Bytes32.ZERO,
               PEER_FINALIZED_EPOCH,
               PEER_HEAD_BLOCK_ROOT,

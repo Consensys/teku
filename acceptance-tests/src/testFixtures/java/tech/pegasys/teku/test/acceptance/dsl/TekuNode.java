@@ -50,12 +50,16 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.utility.MountableFile;
+import tech.pegasys.teku.api.request.v1.validator.ValidatorLivenessRequest;
 import tech.pegasys.teku.api.response.v1.EventType;
+import tech.pegasys.teku.api.response.v1.HeadEvent;
 import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetBlockRootResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateFinalityCheckpointsResponse;
 import tech.pegasys.teku.api.response.v1.debug.GetStateResponse;
+import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
+import tech.pegasys.teku.api.response.v1.validator.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.response.v2.beacon.GetBlockResponseV2;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
@@ -167,6 +171,69 @@ public class TekuNode extends Node {
   public void waitForGenesis() {
     LOG.debug("Wait for genesis");
     waitFor(this::fetchGenesisTime);
+  }
+
+  public void waitForBlockAtOrAfterSlot(final long slot) {
+    if (maybeEventStreamListener.isEmpty()) {
+      startEventListener(List.of(EventType.head));
+    }
+    waitFor(
+        () ->
+            assertThat(
+                    getSlotsFromHeadEvents().stream()
+                        .filter(v -> v.isGreaterThanOrEqualTo(slot))
+                        .count())
+                .isGreaterThan(0));
+  }
+
+  private List<UInt64> getSlotsFromHeadEvents() {
+    return maybeEventStreamListener.get().getMessages().stream()
+        .filter(packedMessage -> packedMessage.getEvent().equals(EventType.head.name()))
+        .map(this::getSlotFromHeadEvent)
+        .flatMap(Optional::stream)
+        .collect(toList());
+  }
+
+  private Optional<UInt64> getSlotFromHeadEvent(
+      final Eth2EventHandler.PackedMessage packedMessage) {
+    try {
+      return Optional.of(
+          jsonProvider.jsonToObject(packedMessage.getMessageEvent().getData(), HeadEvent.class)
+              .slot);
+    } catch (JsonProcessingException e) {
+      LOG.error("Failed to process head event", e);
+      return Optional.empty();
+    }
+  }
+
+  public void checkValidatorLiveness(
+      final int epoch, final int totalValidatorCount, ValidatorLivenessExpectation... args)
+      throws IOException {
+    final List<UInt64> validators = new ArrayList<>();
+    for (UInt64 i = UInt64.ZERO; i.isLessThan(totalValidatorCount); i = i.increment()) {
+      validators.add(i);
+    }
+    final Map<UInt64, Boolean> data =
+        getValidatorLivenessAtEpoch(UInt64.valueOf(epoch), validators);
+    for (ValidatorLivenessExpectation expectation : args) {
+      expectation.verify(data);
+    }
+  }
+
+  private Map<UInt64, Boolean> getValidatorLivenessAtEpoch(
+      final UInt64 epoch, List<UInt64> validators) throws IOException {
+
+    final ValidatorLivenessRequest request = new ValidatorLivenessRequest(epoch, validators);
+    final String response =
+        httpClient.post(
+            getRestApiUrl(), "/eth/v1/validator/liveness", jsonProvider.objectToJSON(request));
+    final PostValidatorLivenessResponse livenessResponse =
+        jsonProvider.jsonToObject(response, PostValidatorLivenessResponse.class);
+    final Map<UInt64, Boolean> output = new HashMap<>();
+    for (ValidatorLivenessAtEpoch entry : livenessResponse.data) {
+      output.put(entry.index, entry.isLive);
+    }
+    return output;
   }
 
   public void waitForGenesisTime(final UInt64 expectedGenesisTime) {
@@ -546,8 +613,20 @@ public class TekuNode extends Node {
       return this;
     }
 
+    public Config withValidatorLivenessTracking() {
+      configMap.put("Xbeacon-liveness-tracking-enabled", true);
+      return this;
+    }
+
     public Config withInteropNumberOfValidators(final int validatorCount) {
       configMap.put("Xinterop-number-of-validators", validatorCount);
+      return this;
+    }
+
+    public Config withExternalMetricsClient(
+        final ExternalMetricNode externalMetricsNode, final int intervalBetweenPublications) {
+      configMap.put("Xmetrics-endpoint", externalMetricsNode.getPublicationEndpointURL());
+      configMap.put("Xmetrics-publication-interval", intervalBetweenPublications);
       return this;
     }
 

@@ -33,7 +33,6 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.type.Bytes4;
 
 class ConstantsReader {
   private static final ImmutableList<String> PRESETS = ImmutableList.of("mainnet", "minimal");
@@ -68,6 +67,24 @@ class ConstantsReader {
           "DOMAIN_VOLUNTARY_EXIT",
           "DOMAIN_SELECTION_PROOF",
           "DOMAIN_AGGREGATE_AND_PROOF",
+          // Removed from Constants (only available through SpecConfig)
+          "GENESIS_FORK_VERSION",
+          "BASE_REWARDS_PER_EPOCH",
+          "DEPOSIT_CONTRACT_TREE_DEPTH",
+          "JUSTIFICATION_BITS_LENGTH",
+          "BLS_WITHDRAWAL_PREFIX",
+          "TARGET_AGGREGATORS_PER_COMMITTEE",
+          "RANDOM_SUBNETS_PER_VALIDATOR",
+          "EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION",
+          "BASE_REWARD_FACTOR",
+          "INACTIVITY_PENALTY_QUOTIENT",
+          "MAX_PROPOSER_SLASHINGS",
+          "MAX_ATTESTER_SLASHINGS",
+          "MAX_ATTESTATIONS",
+          "MAX_DEPOSITS",
+          "MAX_VOLUNTARY_EXITS",
+          "SAFE_SLOTS_TO_UPDATE_JUSTIFIED",
+          "DEPOSIT_NETWORK_ID",
           "DEPOSIT_CONTRACT_ADDRESS");
 
   private static final ImmutableMap<Class<?>, Function<Object, ?>> PARSERS =
@@ -77,7 +94,6 @@ class ConstantsReader {
           .put(UInt64.class, toString(UInt64::valueOf))
           .put(String.class, Function.identity())
           .put(Bytes.class, ConstantsReader::bytesParser)
-          .put(Bytes4.class, ConstantsReader::bytes4Parser)
           .put(boolean.class, toString(Boolean::valueOf))
           .build();
 
@@ -92,13 +108,6 @@ class ConstantsReader {
       return Bytes.ofUnsignedInt((int) value);
     }
     throw new IllegalArgumentException("Could not determine type of " + value);
-  }
-
-  private static Bytes4 bytes4Parser(final Object value) {
-    if (value instanceof Long) {
-      return new Bytes4(Bytes.ofUnsignedLong((long) value));
-    }
-    return new Bytes4(Bytes.ofUnsignedInt((int) value));
   }
 
   public static void loadConstantsFrom(final String source) {
