@@ -107,7 +107,7 @@ public class GetAttestationData extends AbstractHandler {
           provider.createAttestationDataAtSlot(slot, committeeIndex);
       handleOptionalResult(ctx, future, this::processResult, SC_BAD_REQUEST);
     } catch (final IllegalArgumentException e) {
-      ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
+      ctx.json(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
       ctx.status(SC_BAD_REQUEST);
     }
   }

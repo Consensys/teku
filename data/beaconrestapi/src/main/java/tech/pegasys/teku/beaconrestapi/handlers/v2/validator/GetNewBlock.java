@@ -40,7 +40,7 @@ import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetNewBlock extends tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlock
     implements Handler {
-  public static final String ROUTE = "/eth/v2/validator/blocks/:slot";
+  public static final String ROUTE = "/eth/v2/validator/blocks/{slot}";
 
   public GetNewBlock(final DataProvider dataProvider, final JsonProvider jsonProvider) {
     super(dataProvider, jsonProvider);

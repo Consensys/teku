@@ -85,7 +85,7 @@ public class PostSyncCommittees extends AbstractHandler {
       handlePostDataResult(ctx, future);
 
     } catch (final IllegalArgumentException e) {
-      ctx.result(BadRequest.badRequest(jsonProvider, e.getMessage()));
+      ctx.json(BadRequest.badRequest(jsonProvider, e.getMessage()));
       ctx.status(SC_BAD_REQUEST);
     }
   }
