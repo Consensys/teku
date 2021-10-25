@@ -51,7 +51,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetStateCommittees extends AbstractHandler implements Handler {
-  public static final String ROUTE = "/eth/v1/beacon/states/:state_id/committees";
+  public static final String ROUTE = "/eth/v1/beacon/states/{state_id}/committees";
 
   private final ChainDataProvider chainDataProvider;
 

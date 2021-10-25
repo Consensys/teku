@@ -43,7 +43,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetStateFork extends AbstractHandler implements Handler {
-  public static final String ROUTE = "/eth/v1/beacon/states/:state_id/fork";
+  public static final String ROUTE = "/eth/v1/beacon/states/{state_id}/fork";
   private final ChainDataProvider chainDataProvider;
 
   public GetStateFork(final DataProvider dataProvider, final JsonProvider jsonProvider) {

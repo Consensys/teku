@@ -47,6 +47,6 @@ public class GetStateRootIntegrationTest extends AbstractDataBackedRestAPIIntegr
   }
 
   public Response get(final String stateIdString) throws IOException {
-    return getResponse(GetStateRoot.ROUTE.replace(":state_id", stateIdString));
+    return getResponse(GetStateRoot.ROUTE.replace("{state_id}", stateIdString));
   }
 }

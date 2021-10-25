@@ -76,7 +76,7 @@ public class PostAttestationTest {
     final ArgumentCaptor<CompletableFuture<Object>> captor =
         ArgumentCaptor.forClass(SafeFuture.class);
 
-    verify(context).result(captor.capture());
+    verify(context).future(captor.capture());
     verify(context).status(SC_BAD_REQUEST);
     final CompletableFuture<Object> bodyResult = captor.getValue();
     final String value = jsonProvider.objectToJSON(failureResponse);

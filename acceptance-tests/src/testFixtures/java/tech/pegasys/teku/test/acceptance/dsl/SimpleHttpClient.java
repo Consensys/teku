@@ -19,11 +19,14 @@ import java.io.IOException;
 import java.net.URI;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 
 public class SimpleHttpClient {
   private final OkHttpClient httpClient = new OkHttpClient();
+  private static final okhttp3.MediaType JSON =
+      okhttp3.MediaType.parse("application/json; charset=utf-8");
 
   public String get(final URI baseUrl, final String path) throws IOException {
     final Response response =
@@ -34,5 +37,19 @@ public class SimpleHttpClient {
     final ResponseBody body = response.body();
     assertThat(body).isNotNull();
     return body.string();
+  }
+
+  public String post(final URI baseUrl, final String path, final String jsonBody)
+      throws IOException {
+    final RequestBody requestBody = RequestBody.create(jsonBody, JSON);
+    final Response response =
+        httpClient
+            .newCall(
+                new Request.Builder().url(baseUrl.resolve(path).toURL()).post(requestBody).build())
+            .execute();
+    assertThat(response.isSuccessful()).isTrue();
+    final ResponseBody responseBody = response.body();
+    assertThat(responseBody).isNotNull();
+    return responseBody.string();
   }
 }
