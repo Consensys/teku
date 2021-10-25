@@ -1,4 +1,8 @@
 # Swift preset - Phase0
+# Differences from Minimal:
+#   MIN_SLASHING_PENALTY_QUOTIENT: 32
+#   PROPORTIONAL_SLASHING_MULTIPLIER: 3
+#   INACTIVITY_PENALTY_QUOTIENT: 16777216
 
 # Misc
 # ---------------------------------------------------------------
@@ -73,11 +77,11 @@ WHISTLEBLOWER_REWARD_QUOTIENT: 512
 # 2**3 (= 8)
 PROPOSER_REWARD_QUOTIENT: 8
 # [customized] 2**25 (= 33,554,432)
-INACTIVITY_PENALTY_QUOTIENT: 33554432
+INACTIVITY_PENALTY_QUOTIENT: 16777216
 # [customized] 2**6 (= 64)
-MIN_SLASHING_PENALTY_QUOTIENT: 64
+MIN_SLASHING_PENALTY_QUOTIENT: 32
 # [customized] 2 (lower safety margin than Phase 0 genesis but different than mainnet config for testing)
-PROPORTIONAL_SLASHING_MULTIPLIER: 2
+PROPORTIONAL_SLASHING_MULTIPLIER: 3
 
 
 # Max operations per block
