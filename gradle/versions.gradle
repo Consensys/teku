@@ -126,7 +126,9 @@ dependencyManagement {
     }
     dependency 'org.quartz-scheduler:quartz:2.3.2'
     dependency 'org.rocksdb:rocksdbjni:6.11.4'
-    dependency 'org.fusesource.leveldbjni:leveldbjni-all:1.8'
+    dependency 'org.fusesource.leveldbjni:leveldbjni-win64:1.8'
+    dependency 'org.fusesource.leveldbjni:leveldbjni-win32:1.8'
+    dependency 'tech.pegasys:leveldb-native:0.1.0'
 
     dependencySet(group: "org.web3j", version: "4.8.7") {
       entry 'core'
