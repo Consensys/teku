@@ -65,13 +65,13 @@ public abstract class AbstractBeaconHandlerTest {
   }
 
   protected <T> T getResponseObject(Class<T> clazz) throws JsonProcessingException {
-    verify(context).result(stringArgs.capture());
+    verify(context).json(stringArgs.capture());
     String val = stringArgs.getValue();
     return jsonProvider.jsonToObject(val, clazz);
   }
 
   protected <T> T getResponseFromFuture(Class<T> clazz) throws JsonProcessingException {
-    verify(context).result(args.capture());
+    verify(context).future(args.capture());
     SafeFuture<String> future = args.getValue();
     assertThat(future).isCompleted();
     String data = future.join();
@@ -79,7 +79,7 @@ public abstract class AbstractBeaconHandlerTest {
   }
 
   protected BadRequest getBadRequestFromFuture() throws JsonProcessingException {
-    verify(context).result(args.capture());
+    verify(context).future(args.capture());
     SafeFuture<String> future = args.getValue();
     assertThat(future).isCompleted();
     String data = future.join();

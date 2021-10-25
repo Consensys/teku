@@ -51,7 +51,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetStateValidators extends AbstractHandler {
-  public static final String ROUTE = "/eth/v1/beacon/states/:state_id/validators";
+  public static final String ROUTE = "/eth/v1/beacon/states/{state_id}/validators";
 
   private final StateValidatorsUtil stateValidatorsUtil = new StateValidatorsUtil();
   private final ChainDataProvider chainDataProvider;

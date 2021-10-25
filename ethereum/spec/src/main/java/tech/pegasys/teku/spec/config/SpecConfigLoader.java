@@ -42,7 +42,7 @@ public class SpecConfigLoader {
     return reader.build(modifier);
   }
 
-  public static SpecConfig loadConfig(final Map<String, ?> config) {
+  public static SpecConfig loadConfig(final Map<String, String> config) {
     final SpecConfigReader reader = new SpecConfigReader();
     reader.loadFromMap(config);
     return reader.build();

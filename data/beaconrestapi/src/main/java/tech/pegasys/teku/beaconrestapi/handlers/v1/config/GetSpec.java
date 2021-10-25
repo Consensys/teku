@@ -55,9 +55,9 @@ public class GetSpec implements Handler {
   @Override
   public void handle(final Context ctx) throws Exception {
     try {
-      ctx.result(jsonProvider.objectToJSON(configProvider.getConfig()));
+      ctx.json(jsonProvider.objectToJSON(configProvider.getConfig()));
     } catch (JsonProcessingException e) {
-      ctx.result(BadRequest.badRequest(jsonProvider, e.getMessage()));
+      ctx.json(BadRequest.badRequest(jsonProvider, e.getMessage()));
       ctx.status(SC_INTERNAL_SERVER_ERROR);
     }
   }
