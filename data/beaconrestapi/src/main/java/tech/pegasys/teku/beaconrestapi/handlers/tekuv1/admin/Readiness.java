@@ -39,26 +39,33 @@ import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
+import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
+import tech.pegasys.teku.provider.JsonProvider;
 
 public class Readiness implements Handler {
   public static final String ROUTE = "/teku/v1/admin/readiness";
   private final SyncDataProvider syncProvider;
   private final ChainDataProvider chainDataProvider;
   private final NetworkDataProvider networkDataProvider;
+  private final JsonProvider jsonProvider;
 
-  public Readiness(final DataProvider provider) {
-    this.syncProvider = provider.getSyncDataProvider();
-    this.chainDataProvider = provider.getChainDataProvider();
-    this.networkDataProvider = provider.getNetworkDataProvider();
+  public Readiness(final DataProvider provider, final JsonProvider jsonProvider) {
+    this(
+        provider.getSyncDataProvider(),
+        provider.getChainDataProvider(),
+        provider.getNetworkDataProvider(),
+        jsonProvider);
   }
 
   Readiness(
       final SyncDataProvider syncProvider,
       final ChainDataProvider chainDataProvider,
-      final NetworkDataProvider networkDataProvider) {
+      final NetworkDataProvider networkDataProvider,
+      final JsonProvider jsonProvider) {
     this.syncProvider = syncProvider;
     this.chainDataProvider = chainDataProvider;
     this.networkDataProvider = networkDataProvider;
+    this.jsonProvider = jsonProvider;
   }
 
   @OpenApi(
@@ -87,7 +94,7 @@ public class Readiness implements Handler {
       targetPeerCount = parseTargetPeerCountParameter(ctx);
     } catch (final IllegalArgumentException e) {
       ctx.status(SC_BAD_REQUEST);
-      ctx.result("Invalid " + TARGET_PEER_COUNT);
+      ctx.json(BadRequest.badRequest(jsonProvider, "Invalid " + TARGET_PEER_COUNT));
       return;
     }
     if (!chainDataProvider.isStoreAvailable()

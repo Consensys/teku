@@ -42,7 +42,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetBlockRoot extends AbstractHandler implements Handler {
-  public static final String ROUTE = "/eth/v1/beacon/blocks/:block_id/root";
+  public static final String ROUTE = "/eth/v1/beacon/blocks/{block_id}/root";
   private final ChainDataProvider chainDataProvider;
 
   public GetBlockRoot(final DataProvider dataProvider, final JsonProvider jsonProvider) {

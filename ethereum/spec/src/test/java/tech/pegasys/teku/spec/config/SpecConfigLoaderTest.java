@@ -108,9 +108,7 @@ public class SpecConfigLoaderTest {
       writeStreamToFile(inputStream, file);
       assertThatThrownBy(() -> SpecConfigLoader.loadConfig(file.toAbsolutePath().toString()))
           .isInstanceOf(IllegalArgumentException.class)
-          .hasMessageContaining("Failed to load spec config")
-          .hasRootCauseMessage(
-              "Unable to parse config field 'PRESET_BASE' (value = '300') as a string");
+          .hasMessageContaining("Failed to load spec config");
     }
   }
 

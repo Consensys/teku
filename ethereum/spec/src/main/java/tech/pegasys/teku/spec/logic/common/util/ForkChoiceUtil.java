@@ -452,11 +452,10 @@ public class ForkChoiceUtil {
 
   private boolean shouldUpdateJustifiedCheckpoint(
       ReadOnlyStore store,
-      Checkpoint new_justified_checkpoint,
+      Checkpoint newJustifiedCheckpoint,
       ReadOnlyForkChoiceStrategy forkChoiceStrategy) {
-    if (computeSlotsSinceEpochStart(getCurrentSlot(store, true))
-            .compareTo(UInt64.valueOf(specConfig.getSafeSlotsToUpdateJustified()))
-        < 0) {
+    if (computeSlotsSinceEpochStart(getCurrentSlot(store))
+        .isLessThan(specConfig.getSafeSlotsToUpdateJustified())) {
       return true;
     }
 
@@ -464,7 +463,7 @@ public class ForkChoiceUtil {
         miscHelpers.computeStartSlotAtEpoch(store.getJustifiedCheckpoint().getEpoch());
     return hasAncestorAtSlot(
         forkChoiceStrategy,
-        new_justified_checkpoint.getRoot(),
+        newJustifiedCheckpoint.getRoot(),
         justifiedSlot,
         store.getJustifiedCheckpoint().getRoot());
   }

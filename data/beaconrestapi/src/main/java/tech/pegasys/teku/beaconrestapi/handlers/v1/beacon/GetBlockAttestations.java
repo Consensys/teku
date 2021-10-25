@@ -43,7 +43,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetBlockAttestations extends AbstractHandler implements Handler {
-  public static final String ROUTE = "/eth/v1/beacon/blocks/:block_id/attestations";
+  public static final String ROUTE = "/eth/v1/beacon/blocks/{block_id}/attestations";
   private final ChainDataProvider chainDataProvider;
 
   public GetBlockAttestations(final DataProvider dataProvider, final JsonProvider jsonProvider) {

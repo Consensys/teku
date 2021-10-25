@@ -75,7 +75,7 @@ public class PutLogLevel extends AbstractHandler implements Handler {
 
       ctx.status(SC_NO_CONTENT);
     } catch (final IllegalArgumentException e) {
-      ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
+      ctx.json(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
       ctx.status(SC_BAD_REQUEST);
     }
   }

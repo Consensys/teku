@@ -218,7 +218,7 @@ public class SpecConfigReaderTest {
           assertThatThrownBy(() -> reader.read(stream))
               .isInstanceOf(IllegalArgumentException.class)
               .hasMessageContaining(
-                  "Failed to parse value for constant VALIDATOR_REGISTRY_LIMIT: '[1, 2, 3]'");
+                  "Cannot read spec config: Cannot deserialize value of type `java.lang.String` from Array");
           return null;
         });
   }

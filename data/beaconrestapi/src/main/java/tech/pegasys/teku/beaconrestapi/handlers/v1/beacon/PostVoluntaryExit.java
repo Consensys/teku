@@ -76,7 +76,7 @@ public class PostVoluntaryExit extends AbstractHandler {
       if (result.code().equals(ValidationResultCode.IGNORE)
           || result.code().equals(ValidationResultCode.REJECT)) {
         ctx.status(SC_BAD_REQUEST);
-        ctx.result(
+        ctx.json(
             BadRequest.badRequest(
                 jsonProvider,
                 result
@@ -87,7 +87,7 @@ public class PostVoluntaryExit extends AbstractHandler {
         ctx.status(SC_OK);
       }
     } catch (final IllegalArgumentException | JsonMappingException e) {
-      ctx.result(BadRequest.badRequest(jsonProvider, e.getMessage()));
+      ctx.json(BadRequest.badRequest(jsonProvider, e.getMessage()));
       ctx.status(SC_BAD_REQUEST);
     }
   }

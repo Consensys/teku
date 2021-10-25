@@ -16,12 +16,13 @@ package tech.pegasys.teku.api.response.v1.config;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
+import java.util.TreeMap;
 
 public class GetSpecResponse {
   public final Map<String, String> data;
 
   @JsonCreator
   public GetSpecResponse(@JsonProperty("data") final Map<String, String> data) {
-    this.data = data;
+    this.data = new TreeMap<>(data);
   }
 }

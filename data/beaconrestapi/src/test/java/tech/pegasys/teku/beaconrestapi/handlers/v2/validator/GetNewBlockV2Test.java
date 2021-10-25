@@ -79,7 +79,7 @@ public class GetNewBlockV2Test {
         .thenReturn(SafeFuture.completedFuture(Optional.of(altairBlock)));
     handler.handle(context);
 
-    verify(context).result(args.capture());
+    verify(context).future(args.capture());
     SafeFuture<String> result = args.getValue();
     assertThat(result)
         .isCompletedWithValue(

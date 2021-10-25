@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -93,9 +94,22 @@ class ConstantsReader {
           .put(Long.TYPE, toString(Long::valueOf))
           .put(UInt64.class, toString(UInt64::valueOf))
           .put(String.class, Function.identity())
-          .put(Bytes.class, toString(Bytes::fromHexString))
+          .put(Bytes.class, ConstantsReader::bytesParser)
           .put(boolean.class, toString(Boolean::valueOf))
           .build();
+
+  private static Bytes bytesParser(final Object value) {
+    if (value instanceof BigInteger) {
+      BigInteger bigInteger = (BigInteger) value;
+      final Bytes bytes = Bytes.of(bigInteger.toByteArray());
+      return bytes.trimLeadingZeros();
+    } else if (value instanceof Long) {
+      return Bytes.ofUnsignedLong((long) value);
+    } else if (value instanceof Integer) {
+      return Bytes.ofUnsignedInt((int) value);
+    }
+    throw new IllegalArgumentException("Could not determine type of " + value);
+  }
 
   public static void loadConstantsFrom(final String source) {
     try (final InputStream input = createConfigInputStream(source)) {

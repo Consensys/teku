@@ -37,7 +37,7 @@ import tech.pegasys.teku.api.response.v1.node.PeerResponse;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetPeerById implements Handler {
-  public static final String ROUTE = "/eth/v1/node/peers/:peer_id";
+  public static final String ROUTE = "/eth/v1/node/peers/{peer_id}";
   private final JsonProvider jsonProvider;
   private final NetworkDataProvider network;
 
@@ -70,7 +70,7 @@ public class GetPeerById implements Handler {
     if (peer.isEmpty()) {
       ctx.status(SC_NOT_FOUND);
     } else {
-      ctx.result(jsonProvider.objectToJSON(new PeerResponse(peer.get())));
+      ctx.json(jsonProvider.objectToJSON(new PeerResponse(peer.get())));
     }
   }
 }

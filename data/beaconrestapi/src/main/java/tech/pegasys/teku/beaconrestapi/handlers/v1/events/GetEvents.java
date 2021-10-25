@@ -128,7 +128,7 @@ public class GetEvents implements Handler {
     } catch (IllegalArgumentException ex) {
       LOG.trace(ex);
       sseClient.ctx.status(SC_BAD_REQUEST);
-      sseClient.ctx.result(getBadRequestString(ex.getMessage()));
+      sseClient.ctx.json(getBadRequestString(ex.getMessage()));
     }
   }
 

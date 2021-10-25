@@ -54,6 +54,6 @@ public class GetVersion implements Handler {
     Version v = new Version(VersionProvider.VERSION);
     VersionResponse response = new VersionResponse(v);
     ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
-    ctx.result(jsonProvider.objectToJSON(response));
+    ctx.json(jsonProvider.objectToJSON(response));
   }
 }
