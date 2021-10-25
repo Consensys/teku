@@ -2,7 +2,7 @@
 PRESET_BASE: 'swift'
 
 # Unlike minimal:
-# SECONDS_PER_SLOT: 1
+# SECONDS_PER_SLOT: 3
 # MIN_GENESIS_ACTIVE_VALIDATOR_COUNT: 4
 # SECONDS_PER_ETH1_BLOCK: 1
 
@@ -16,7 +16,7 @@ MIN_GENESIS_TIME: 1578009600
 # Highest byte set to 0x01 to avoid collisions with mainnet versioning
 GENESIS_FORK_VERSION: 0x00000001
 # [customized] Faster to spin up testnets, but does not give validator reasonable warning time for genesis
-GENESIS_DELAY: 30
+GENESIS_DELAY: 300
 
 
 # Forking
@@ -41,7 +41,7 @@ TRANSITION_TOTAL_DIFFICULTY: 4294967296
 # Time parameters
 # ---------------------------------------------------------------
 # [customized] Faster for testing purposes
-SECONDS_PER_SLOT: 1
+SECONDS_PER_SLOT: 3
 # 14 (estimate from Eth1 mainnet)
 # [ customized] faster for testing
 SECONDS_PER_ETH1_BLOCK: 1

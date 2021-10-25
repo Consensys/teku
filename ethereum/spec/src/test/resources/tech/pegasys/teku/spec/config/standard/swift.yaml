@@ -37,7 +37,7 @@ TRANSITION_TOTAL_DIFFICULTY: 4294967296
 # Time parameters
 # ---------------------------------------------------------------
 # [customized] Faster for testing purposes
-SECONDS_PER_SLOT: 1
+SECONDS_PER_SLOT: 3
 # 14 (estimate from Eth1 mainnet)
 # [customized]
 SECONDS_PER_ETH1_BLOCK: 1
