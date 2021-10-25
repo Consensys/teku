@@ -149,7 +149,7 @@ public class ProtoArray {
         || !this.finalizedEpoch.equals(finalizedEpoch)) {
       this.justifiedEpoch = justifiedEpoch;
       this.finalizedEpoch = finalizedEpoch;
-      // Justified or finalized epoch changed we we have to re-evaluate all best descendants.
+      // Justified or finalized epoch changed so we have to re-evaluate all best descendants.
       applyToNodes(this::updateBestDescendantOfParent);
     }
     int justifiedIndex =
