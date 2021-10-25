@@ -36,6 +36,11 @@ class MutableBeaconStateMergeImpl extends AbstractMutableBeaconState<BeaconState
   }
 
   @Override
+  public BeaconStateSchemaMerge getBeaconStateSchema() {
+    return (BeaconStateSchemaMerge) getSchema();
+  }
+
+  @Override
   protected BeaconStateMergeImpl createImmutableBeaconState(
       TreeNode backingNode, IntCache<SszData> viewCache, TransitionCaches transitionCache) {
     return new BeaconStateMergeImpl(getSchema(), backingNode, viewCache, transitionCache);

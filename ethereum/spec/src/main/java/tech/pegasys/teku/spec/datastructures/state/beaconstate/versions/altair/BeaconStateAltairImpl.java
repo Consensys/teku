@@ -47,6 +47,11 @@ class BeaconStateAltairImpl extends AbstractBeaconState<MutableBeaconStateAltair
   }
 
   @Override
+  public BeaconStateSchemaAltair getBeaconStateSchema() {
+    return (BeaconStateSchemaAltair) getSchema();
+  }
+
+  @Override
   public MutableBeaconStateAltair createWritableCopy() {
     return new MutableBeaconStateAltairImpl(this);
   }

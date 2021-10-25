@@ -47,6 +47,11 @@ class BeaconStateMergeImpl extends AbstractBeaconState<MutableBeaconStateMerge>
   }
 
   @Override
+  public BeaconStateSchemaMerge getBeaconStateSchema() {
+    return (BeaconStateSchemaMerge) getSchema();
+  }
+
+  @Override
   public MutableBeaconStateMerge createWritableCopy() {
     return new MutableBeaconStateMergeImpl(this);
   }

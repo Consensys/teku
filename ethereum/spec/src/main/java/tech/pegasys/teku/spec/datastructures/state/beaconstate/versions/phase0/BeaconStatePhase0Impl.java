@@ -47,6 +47,11 @@ class BeaconStatePhase0Impl extends AbstractBeaconState<MutableBeaconStatePhase0
   }
 
   @Override
+  public BeaconStateSchemaPhase0 getBeaconStateSchema() {
+    return (BeaconStateSchemaPhase0) getSchema();
+  }
+
+  @Override
   public <E1 extends Exception, E2 extends Exception, E3 extends Exception>
       BeaconStatePhase0 updatedPhase0(Mutator<MutableBeaconStatePhase0, E1, E2, E3> mutator)
           throws E1, E2, E3 {
