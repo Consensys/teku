@@ -29,8 +29,7 @@ public interface ValidatorStatsAltair extends BeaconStateAltair {
     return getValidatorStats(getCurrentEpochParticipation());
   }
 
-  private static CorrectAndLiveValidators getValidatorStats(
-      final SszList<SszByte> participationFlags) {
+  private CorrectAndLiveValidators getValidatorStats(final SszList<SszByte> participationFlags) {
     int numberOfCorrectValidators = 0;
     int numberOfLiveValidators = 0;
     for (SszByte participationFlag : participationFlags) {
