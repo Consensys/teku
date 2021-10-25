@@ -40,7 +40,7 @@ public class TestConfigLoader {
   }
 
   private static URL getLegacyMainnetConfigResourceAsUrl(final String configName) {
-    final String resourcePath = "tech/pegasys/teku/spec/config/legacy/" + configName + ".yaml";
+    final String resourcePath = "tech/pegasys/teku/spec/config/standard/" + configName + ".yaml";
     final URL resource = TestConfigLoader.class.getClassLoader().getResource(resourcePath);
 
     checkNotNull(resource, "Unable to load config resource at: " + resourcePath);

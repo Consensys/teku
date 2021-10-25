@@ -47,7 +47,7 @@ class TimeBasedEth1HeadTrackerTest {
 
   private final Spec spec =
       TestSpecFactory.createPhase0(
-          TestConfigLoader.loadPhase0Config(
+          TestConfigLoader.loadConfig(
               "minimal",
               builder ->
                   builder

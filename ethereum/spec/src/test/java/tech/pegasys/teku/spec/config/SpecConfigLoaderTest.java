@@ -17,7 +17,6 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllAltairFieldsSet;
 import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllFieldsSet;
-import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllPhase0FieldsSet;
 
 import java.io.InputStream;
 import java.net.URL;
@@ -81,23 +80,6 @@ public class SpecConfigLoaderTest {
       writeStreamToFile(inputStream, file);
       final SpecConfig config = SpecConfigLoader.loadConfig(file.toAbsolutePath().toString());
       assertAllAltairFieldsSet(config);
-    }
-  }
-
-  @Test
-  public void shouldLoadLegacyMainnetConfigFromFileUrl() throws Exception {
-    final URL url = getLegacyMainnetConfigResourceAsUrl();
-    final SpecConfig config = SpecConfigLoader.loadConfig(url.toString());
-    assertAllPhase0FieldsSet(config);
-  }
-
-  @Test
-  public void shouldLoadLegacyMainnetConfigFromFile(@TempDir Path tempDir) throws Exception {
-    try (final InputStream inputStream = getLegacyMainnetConfigAsStream()) {
-      final Path file = tempDir.resolve("mainnet.yml");
-      writeStreamToFile(inputStream, file);
-      final SpecConfig config = SpecConfigLoader.loadConfig(file.toAbsolutePath().toString());
-      assertAllPhase0FieldsSet(config);
     }
   }
 
@@ -166,18 +148,6 @@ public class SpecConfigLoaderTest {
     return Constants.class
         .getClassLoader()
         .getResource("tech/pegasys/teku/util/config/configs/mainnet.yaml");
-  }
-
-  private InputStream getLegacyMainnetConfigAsStream() {
-    return getClass()
-        .getClassLoader()
-        .getResourceAsStream("tech/pegasys/teku/spec/config/legacy/mainnet.yaml");
-  }
-
-  private URL getLegacyMainnetConfigResourceAsUrl() {
-    return getClass()
-        .getClassLoader()
-        .getResource("tech/pegasys/teku/spec/config/legacy/mainnet.yaml");
   }
 
   private InputStream loadInvalidFile(final String file) {

@@ -172,15 +172,6 @@ public class ForkScheduleTest {
   }
 
   @Test
-  public void getActiveMilestones_onlyPhase0Configured() {
-    final ForkSchedule forkSchedule = buildForkSchedule(PHASE0_CONFIG);
-    final Fork phase0Fork = getPhase0Fork(PHASE0_CONFIG);
-
-    assertThat(forkSchedule.getActiveMilestones())
-        .containsExactly(new ForkAndSpecMilestone(phase0Fork, SpecMilestone.PHASE0));
-  }
-
-  @Test
   public void getFork_withTransition() {
     final ForkSchedule forkSchedule = buildForkSchedule(TRANSITION_CONFIG);
 
@@ -196,16 +187,6 @@ public class ForkScheduleTest {
         epoch = epoch.increment()) {
       assertThat(forkSchedule.getFork(epoch)).isEqualTo(altairFork);
     }
-  }
-
-  @Test
-  public void getFork_phase0Only() {
-    final ForkSchedule forkSchedule = buildForkSchedule(PHASE0_CONFIG);
-
-    final Fork phase0Fork = getPhase0Fork(PHASE0_CONFIG);
-    assertThat(forkSchedule.getFork(UInt64.ZERO)).isEqualTo(phase0Fork);
-    assertThat(forkSchedule.getFork(UInt64.valueOf(10_000))).isEqualTo(phase0Fork);
-    assertThat(forkSchedule.getFork(UInt64.MAX_VALUE)).isEqualTo(phase0Fork);
   }
 
   @Test
@@ -236,15 +217,6 @@ public class ForkScheduleTest {
   }
 
   @Test
-  public void getNextFork_phase0Only() {
-    final ForkSchedule forkSchedule = buildForkSchedule(PHASE0_CONFIG);
-
-    assertThat(forkSchedule.getNextFork(UInt64.ZERO)).isEmpty();
-    assertThat(forkSchedule.getNextFork(UInt64.valueOf(10_000))).isEmpty();
-    assertThat(forkSchedule.getNextFork(UInt64.MAX_VALUE.minus(1))).isEmpty();
-  }
-
-  @Test
   public void getNextFork_altairOnly() {
     final ForkSchedule forkSchedule = buildForkSchedule(ALTAIR_CONFIG);
 
@@ -260,14 +232,6 @@ public class ForkScheduleTest {
     final Fork phase0Fork = getPhase0Fork(TRANSITION_CONFIG);
     final Fork altairFork = getAltairFork(TRANSITION_CONFIG);
     assertThat(forkSchedule.getForks()).containsExactly(phase0Fork, altairFork);
-  }
-
-  @Test
-  public void getForks_phase0Only() {
-    final ForkSchedule forkSchedule = buildForkSchedule(PHASE0_CONFIG);
-
-    final Fork phase0Fork = getPhase0Fork(PHASE0_CONFIG);
-    assertThat(forkSchedule.getForks()).containsExactly(phase0Fork);
   }
 
   @Test
@@ -295,17 +259,6 @@ public class ForkScheduleTest {
   }
 
   @Test
-  public void getSpecMilestoneAtEpoch_phase0Only() {
-    final ForkSchedule forkSchedule = buildForkSchedule(PHASE0_CONFIG);
-
-    assertThat(forkSchedule.getSpecMilestoneAtEpoch(UInt64.ZERO)).isEqualTo(SpecMilestone.PHASE0);
-    assertThat(forkSchedule.getSpecMilestoneAtEpoch(UInt64.valueOf(10_000)))
-        .isEqualTo(SpecMilestone.PHASE0);
-    assertThat(forkSchedule.getSpecMilestoneAtEpoch(UInt64.MAX_VALUE))
-        .isEqualTo(SpecMilestone.PHASE0);
-  }
-
-  @Test
   public void getSpecMilestoneAtEpoch_altairOnly() {
     final ForkSchedule forkSchedule = buildForkSchedule(ALTAIR_CONFIG);
 
@@ -328,17 +281,6 @@ public class ForkScheduleTest {
         slot = slot.increment()) {
       assertThat(forkSchedule.getSpecMilestoneAtSlot(slot)).isEqualTo(SpecMilestone.ALTAIR);
     }
-  }
-
-  @Test
-  public void getSpecMilestoneAtSlot_phase0Only() {
-    final ForkSchedule forkSchedule = buildForkSchedule(PHASE0_CONFIG);
-
-    assertThat(forkSchedule.getSpecMilestoneAtSlot(UInt64.ZERO)).isEqualTo(SpecMilestone.PHASE0);
-    assertThat(forkSchedule.getSpecMilestoneAtSlot(UInt64.valueOf(10_000)))
-        .isEqualTo(SpecMilestone.PHASE0);
-    assertThat(forkSchedule.getSpecMilestoneAtSlot(UInt64.MAX_VALUE))
-        .isEqualTo(SpecMilestone.PHASE0);
   }
 
   @Test
@@ -396,18 +338,6 @@ public class ForkScheduleTest {
   }
 
   @Test
-  public void getSpecMilestoneAtTime_phase0Only() {
-    final ForkSchedule forkSchedule = buildForkSchedule(PHASE0_CONFIG);
-
-    assertThat(forkSchedule.getSpecMilestoneAtTime(UInt64.ZERO, UInt64.ZERO))
-        .isEqualTo(SpecMilestone.PHASE0);
-    assertThat(forkSchedule.getSpecMilestoneAtTime(UInt64.ZERO, UInt64.valueOf(10_000)))
-        .isEqualTo(SpecMilestone.PHASE0);
-    assertThat(forkSchedule.getSpecMilestoneAtTime(UInt64.ZERO, UInt64.MAX_VALUE))
-        .isEqualTo(SpecMilestone.PHASE0);
-  }
-
-  @Test
   public void getSpecMilestoneAtTime_altairOnly() {
     final ForkSchedule forkSchedule = buildForkSchedule(ALTAIR_CONFIG);
 
@@ -427,16 +357,6 @@ public class ForkScheduleTest {
         .contains(SpecMilestone.PHASE0);
     assertThat(forkSchedule.getSpecMilestoneAtForkVersion(ALTAIR_FORK_VERSION))
         .contains(SpecMilestone.ALTAIR);
-    assertThat(forkSchedule.getSpecMilestoneAtForkVersion(UNKNOWN_FORK_VERSION)).isEmpty();
-  }
-
-  @Test
-  public void getSpecMilestoneAtForkVersion_phase0Only() {
-    final ForkSchedule forkSchedule = buildForkSchedule(PHASE0_CONFIG);
-
-    assertThat(forkSchedule.getSpecMilestoneAtForkVersion(PHASE_0_FORK_VERSION))
-        .contains(SpecMilestone.PHASE0);
-    assertThat(forkSchedule.getSpecMilestoneAtForkVersion(ALTAIR_FORK_VERSION)).isEmpty();
     assertThat(forkSchedule.getSpecMilestoneAtForkVersion(UNKNOWN_FORK_VERSION)).isEmpty();
   }
 

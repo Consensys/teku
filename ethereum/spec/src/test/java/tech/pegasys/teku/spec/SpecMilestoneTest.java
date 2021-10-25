@@ -123,16 +123,6 @@ public class SpecMilestoneTest {
   }
 
   @Test
-  public void getForkVersion_altairNotScheduled() {
-    assertThat(SpecMilestone.getForkVersion(phase0SpecConfig, SpecMilestone.ALTAIR)).isEmpty();
-  }
-
-  @Test
-  public void getForkVersion_mergeNotScheduled() {
-    assertThat(SpecMilestone.getForkVersion(phase0SpecConfig, SpecMilestone.MERGE)).isEmpty();
-  }
-
-  @Test
   public void getForkSlot_phase0() {
     final UInt64 expected = UInt64.ZERO;
     assertThat(SpecMilestone.getForkEpoch(altairSpecConfig, SpecMilestone.PHASE0))
@@ -154,11 +144,13 @@ public class SpecMilestoneTest {
 
   @Test
   public void getForkSlot_altairNotScheduled() {
-    assertThat(SpecMilestone.getForkEpoch(phase0SpecConfig, SpecMilestone.ALTAIR)).isEmpty();
+    assertThat(SpecMilestone.getForkEpoch(phase0SpecConfig, SpecMilestone.ALTAIR))
+        .contains(UInt64.MAX_VALUE);
   }
 
   @Test
   public void getForkSlot_mergeNotScheduled() {
-    assertThat(SpecMilestone.getForkEpoch(phase0SpecConfig, SpecMilestone.MERGE)).isEmpty();
+    assertThat(SpecMilestone.getForkEpoch(phase0SpecConfig, SpecMilestone.MERGE))
+        .contains(UInt64.MAX_VALUE);
   }
 }
