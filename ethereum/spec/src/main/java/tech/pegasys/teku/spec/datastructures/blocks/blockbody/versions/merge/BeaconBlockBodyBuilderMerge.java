@@ -15,10 +15,9 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.google.errorprone.annotations.DoNotCall;
 import java.util.function.Supplier;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltairImpl;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyBuilderAltair;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
@@ -51,13 +50,8 @@ class BeaconBlockBodyBuilderMerge extends BeaconBlockBodyBuilderAltair {
     checkNotNull(executionPayload, "executionPayload must be specified");
   }
 
-  @DoNotCall
   @Override
-  public final BeaconBlockBodyAltairImpl buildAltair() {
-    throw new IllegalStateException("");
-  }
-
-  public BeaconBlockBodyMergeImpl buildMerge() {
+  public BeaconBlockBody build() {
     validate();
     return new BeaconBlockBodyMergeImpl(
         schema,

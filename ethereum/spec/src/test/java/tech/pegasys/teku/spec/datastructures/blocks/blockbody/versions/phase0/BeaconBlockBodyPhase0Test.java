@@ -23,7 +23,7 @@ public class BeaconBlockBodyPhase0Test extends AbstractBeaconBlockBodyTest<Beaco
   @Override
   protected BeaconBlockBodyPhase0 createBlockBody(
       final Consumer<BeaconBlockBodyBuilder> contentProvider) {
-    return getBlockBodySchema().createBlockBody(contentProvider);
+    return (BeaconBlockBodyPhase0) getBlockBodySchema().createBlockBody(contentProvider);
   }
 
   @Override

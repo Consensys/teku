@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge;
 import java.util.Optional;
 import java.util.function.Consumer;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFields;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
@@ -107,13 +108,12 @@ class BeaconBlockBodySchemaMergeImpl
   }
 
   @Override
-  public BeaconBlockBodyMergeImpl createBlockBody(
-      final Consumer<BeaconBlockBodyBuilder> builderConsumer) {
+  public BeaconBlockBody createBlockBody(final Consumer<BeaconBlockBodyBuilder> builderConsumer) {
     final BeaconBlockBodyBuilderMerge builder = new BeaconBlockBodyBuilderMerge().schema(this);
     // Provide a default empty sync aggregate
     builder.syncAggregate(getSyncAggregateSchema()::createEmpty);
     builderConsumer.accept(builder);
-    return builder.buildMerge();
+    return builder.build();
   }
 
   @Override

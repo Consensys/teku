@@ -27,9 +27,9 @@ import tech.pegasys.teku.ssz.schema.SszListSchema;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 
 public interface BeaconBlockBodySchema<T extends BeaconBlockBody> extends SszContainerSchema<T> {
-  T createBlockBody(Consumer<BeaconBlockBodyBuilder> bodyBuilder);
+  BeaconBlockBody createBlockBody(Consumer<BeaconBlockBodyBuilder> bodyBuilder);
 
-  T createEmpty();
+  BeaconBlockBody createEmpty();
 
   @Override
   T createFromBackingNode(TreeNode node);

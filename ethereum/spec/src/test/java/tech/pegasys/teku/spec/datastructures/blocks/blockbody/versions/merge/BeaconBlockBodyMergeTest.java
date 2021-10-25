@@ -41,7 +41,7 @@ class BeaconBlockBodyMergeTest extends AbstractBeaconBlockBodyTest<BeaconBlockBo
   @Override
   protected BeaconBlockBodyMerge createBlockBody(
       final Consumer<BeaconBlockBodyBuilder> contentProvider) {
-    return getBlockBodySchema().createBlockBody(contentProvider);
+    return (BeaconBlockBodyMerge) getBlockBodySchema().createBlockBody(contentProvider);
   }
 
   @Override

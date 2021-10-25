@@ -39,7 +39,7 @@ class BeaconBlockBodyAltairTest extends AbstractBeaconBlockBodyTest<BeaconBlockB
   @Override
   protected BeaconBlockBodyAltair createBlockBody(
       final Consumer<BeaconBlockBodyBuilder> contentProvider) {
-    return getBlockBodySchema().createBlockBody(contentProvider);
+    return (BeaconBlockBodyAltair) getBlockBodySchema().createBlockBody(contentProvider);
   }
 
   @Override

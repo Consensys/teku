@@ -34,6 +34,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
@@ -252,9 +253,6 @@ class BlockOperationSelectorFactoryTest {
     private SszList<SignedVoluntaryExit> voluntaryExits;
     private SyncAggregate syncAggregate;
 
-    // TODO
-    // private ExecutionPayload executionPayload;
-
     @Override
     public BeaconBlockBodyBuilder randaoReveal(final BLSSignature randaoReveal) {
       this.randaoReveal = randaoReveal;
@@ -313,8 +311,12 @@ class BlockOperationSelectorFactoryTest {
     @Override
     public BeaconBlockBodyBuilder executionPayload(
         Supplier<ExecutionPayload> executionPayloadSupplier) {
-      // this.executionPayload = executionPayloadSupplier.get();
       return this;
+    }
+
+    @Override
+    public BeaconBlockBody build() {
+      return null;
     }
   }
 }

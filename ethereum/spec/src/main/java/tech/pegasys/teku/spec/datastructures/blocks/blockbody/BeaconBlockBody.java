@@ -28,21 +28,21 @@ import tech.pegasys.teku.ssz.SszContainer;
 import tech.pegasys.teku.ssz.SszList;
 
 public interface BeaconBlockBody extends SszContainer {
-  BLSSignature getRandao_reveal();
+  BLSSignature getRandaoReveal();
 
-  Eth1Data getEth1_data();
+  Eth1Data getEth1Data();
 
   Bytes32 getGraffiti();
 
-  SszList<ProposerSlashing> getProposer_slashings();
+  SszList<ProposerSlashing> getProposerSlashings();
 
-  SszList<AttesterSlashing> getAttester_slashings();
+  SszList<AttesterSlashing> getAttesterSlashings();
 
   SszList<Attestation> getAttestations();
 
   SszList<Deposit> getDeposits();
 
-  SszList<SignedVoluntaryExit> getVoluntary_exits();
+  SszList<SignedVoluntaryExit> getVoluntaryExits();
 
   @Override
   BeaconBlockBodySchema<? extends BeaconBlockBody> getSchema();

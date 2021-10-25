@@ -19,6 +19,7 @@ import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -106,7 +107,7 @@ public class BeaconBlockBodyBuilderPhase0 implements BeaconBlockBodyBuilder {
   @Override
   public BeaconBlockBodyBuilder executionPayload(
       Supplier<ExecutionPayload> executionPayloadSupplier) {
-    // No execution payload in altair
+    // No execution payload in phase 0
     return this;
   }
 
@@ -126,7 +127,8 @@ public class BeaconBlockBodyBuilderPhase0 implements BeaconBlockBodyBuilder {
     validateSchema();
   }
 
-  public BeaconBlockBodyPhase0 buildPhase0() {
+  @Override
+  public BeaconBlockBody build() {
     validate();
     return new BeaconBlockBodyPhase0(
         schema,
