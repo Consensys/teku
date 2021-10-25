@@ -53,7 +53,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetStateSyncCommittees extends AbstractHandler implements Handler {
-  public static final String ROUTE = "/eth/v1/beacon/states/:state_id/sync_committees";
+  public static final String ROUTE = "/eth/v1/beacon/states/{state_id}/sync_committees";
   private final ChainDataProvider chainDataProvider;
 
   public GetStateSyncCommittees(final DataProvider dataProvider, final JsonProvider jsonProvider) {
@@ -94,7 +94,7 @@ public class GetStateSyncCommittees extends AbstractHandler implements Handler {
 
       if (!chainDataProvider.stateParameterMaySupportAltair(pathParams.get(PARAM_STATE_ID))) {
         ctx.status(SC_OK);
-        ctx.result(jsonProvider.objectToJSON(List.of()));
+        ctx.json(jsonProvider.objectToJSON(List.of()));
       }
 
       final SafeFuture<Optional<StateSyncCommittees>> future =
@@ -104,7 +104,7 @@ public class GetStateSyncCommittees extends AbstractHandler implements Handler {
           ctx, future, this::handleResult, this::handleError, SC_SERVICE_UNAVAILABLE);
     } catch (IllegalArgumentException ex) {
       ctx.status(SC_BAD_REQUEST);
-      ctx.result(BadRequest.badRequest(jsonProvider, ex.getMessage()));
+      ctx.json(BadRequest.badRequest(jsonProvider, ex.getMessage()));
     }
   }
 

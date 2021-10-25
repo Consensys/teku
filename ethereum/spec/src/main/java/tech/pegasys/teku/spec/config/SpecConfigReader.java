@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.config;
 import static tech.pegasys.teku.spec.config.SpecConfigFormatter.camelToSnakeCase;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.RuntimeJsonMappingException;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -110,7 +111,7 @@ public class SpecConfigReader {
    * @throws IOException Thrown if an error occurs reading the source
    */
   public Optional<String> read(final InputStream source) throws IOException {
-    final Map<String, Object> rawValues = readValues(source);
+    final Map<String, String> rawValues = readValues(source);
     loadFromMap(rawValues);
     return Optional.ofNullable(rawValues.get(PRESET_KEY)).map(this::castPresetValue);
   }
@@ -124,10 +125,10 @@ public class SpecConfigReader {
     return (String) preset;
   }
 
-  public void loadFromMap(final Map<String, ?> rawValues) {
+  public void loadFromMap(final Map<String, String> rawValues) {
     processSeenValues(rawValues);
-    final Map<String, Object> unprocessedConfig = new HashMap<>(rawValues);
-    final Map<String, Object> apiSpecConfig = new HashMap<>(rawValues);
+    final Map<String, String> unprocessedConfig = new HashMap<>(rawValues);
+    final Map<String, String> apiSpecConfig = new HashMap<>(rawValues);
     // Remove any keys that we're ignoring
     KEYS_TO_IGNORE.forEach(
         key -> {
@@ -205,21 +206,23 @@ public class SpecConfigReader {
   }
 
   @SuppressWarnings("unchecked")
-  private Map<String, Object> readValues(final InputStream source) throws IOException {
+  private Map<String, String> readValues(final InputStream source) throws IOException {
     final ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
     try {
-      final Map<String, Object> values =
-          (Map<String, Object>)
+      final Map<String, String> values =
+          (Map<String, String>)
               mapper
                   .readerFor(
                       mapper
                           .getTypeFactory()
-                          .constructMapType(Map.class, String.class, Object.class))
+                          .constructMapType(Map.class, String.class, String.class))
                   .readValues(source)
                   .next();
       return values;
     } catch (NoSuchElementException e) {
       throw new IllegalArgumentException("Supplied spec config is empty");
+    } catch (RuntimeJsonMappingException e) {
+      throw new IllegalArgumentException("Cannot read spec config: " + e.getMessage());
     }
   }
 

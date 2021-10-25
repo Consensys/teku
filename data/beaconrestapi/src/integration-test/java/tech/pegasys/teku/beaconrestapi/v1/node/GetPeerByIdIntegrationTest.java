@@ -64,6 +64,6 @@ public class GetPeerByIdIntegrationTest extends AbstractDataBackedRestAPIIntegra
   }
 
   private Response get(final String peerId) throws IOException {
-    return getResponse(GetPeerById.ROUTE.replace(":peer_id", peerId));
+    return getResponse(GetPeerById.ROUTE.replace("{epoch}", peerId));
   }
 }

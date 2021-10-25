@@ -70,6 +70,6 @@ public class GetStateValidatorBalancesIntegrationTest
 
   public Response get(final String stateIdString, final Map<String, String> query)
       throws IOException {
-    return getResponse(GetStateValidatorBalances.ROUTE.replace(":state_id", stateIdString), query);
+    return getResponse(GetStateValidatorBalances.ROUTE.replace("{state_id}", stateIdString), query);
   }
 }

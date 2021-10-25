@@ -64,6 +64,6 @@ public class GetPeerCount implements Handler {
   public void handle(@NotNull final Context ctx) throws Exception {
     ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
     List<Peer> peers = network.getPeers();
-    ctx.result(jsonProvider.objectToJSON(GetPeerCountResponse.create(peers)));
+    ctx.json(jsonProvider.objectToJSON(GetPeerCountResponse.create(peers)));
   }
 }

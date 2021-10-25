@@ -80,7 +80,7 @@ public class PostAggregateAndProofs extends AbstractHandler implements Handler {
 
       handlePostDataResult(ctx, future);
     } catch (IllegalArgumentException e) {
-      ctx.result(BadRequest.badRequest(jsonProvider, e.getMessage()));
+      ctx.json(BadRequest.badRequest(jsonProvider, e.getMessage()));
       ctx.status(SC_BAD_REQUEST);
     }
   }

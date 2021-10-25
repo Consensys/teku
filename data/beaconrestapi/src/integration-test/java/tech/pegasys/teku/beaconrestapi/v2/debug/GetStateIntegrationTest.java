@@ -66,10 +66,10 @@ public class GetStateIntegrationTest extends AbstractDataBackedRestAPIIntegratio
   }
 
   public Response get(final String stateIdIdString, final String contentType) throws IOException {
-    return getResponse(GetState.ROUTE.replace(":state_id", stateIdIdString), contentType);
+    return getResponse(GetState.ROUTE.replace("{state_id}", stateIdIdString), contentType);
   }
 
   public Response get(final String stateIdIdString) throws IOException {
-    return getResponse(GetState.ROUTE.replace(":state_id", stateIdIdString));
+    return getResponse(GetState.ROUTE.replace("{state_id}", stateIdIdString));
   }
 }

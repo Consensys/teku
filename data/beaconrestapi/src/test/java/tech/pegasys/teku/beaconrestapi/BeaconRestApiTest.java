@@ -22,7 +22,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.javalin.Javalin;
-import io.javalin.core.JavalinServer;
+import io.javalin.jetty.JettyServer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.DataProvider;
@@ -50,7 +50,7 @@ class BeaconRestApiTest {
   private final RecentChainData storageClient = MemoryOnlyRecentChainData.create();
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
-  private final JavalinServer server = mock(JavalinServer.class);
+  private final JettyServer server = mock(JettyServer.class);
   private final Javalin app = mock(Javalin.class);
   private final SyncService syncService = mock(SyncService.class);
   private final EventChannels eventChannels = mock(EventChannels.class);
@@ -74,7 +74,7 @@ class BeaconRestApiTest {
             .eth1DepositContractAddress(Eth1Address.ZERO)
             .build();
 
-    when(app.server()).thenReturn(server);
+    when(app.jettyServer()).thenReturn(server);
     new BeaconRestApi(
         new DataProvider(
             TestSpecFactory.createMinimalPhase0(),

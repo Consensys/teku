@@ -50,7 +50,7 @@ import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetProposerDuties extends AbstractHandler implements Handler {
   private static final Logger LOG = LogManager.getLogger();
-  public static final String ROUTE = "/eth/v1/validator/duties/proposer/:epoch";
+  public static final String ROUTE = "/eth/v1/validator/duties/proposer/{epoch}";
   private final ValidatorDataProvider validatorDataProvider;
   private final SyncDataProvider syncDataProvider;
 
@@ -109,7 +109,7 @@ public class GetProposerDuties extends AbstractHandler implements Handler {
     } catch (NumberFormatException ex) {
       LOG.trace("Error parsing", ex);
       ctx.status(SC_BAD_REQUEST);
-      ctx.result(
+      ctx.json(
           jsonProvider.objectToJSON(
               new BadRequest("Invalid epoch " + parameters.get(EPOCH) + " or index specified")));
     }

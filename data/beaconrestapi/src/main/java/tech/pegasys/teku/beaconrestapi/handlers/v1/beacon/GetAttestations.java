@@ -73,6 +73,6 @@ public class GetAttestations extends AbstractHandler {
     ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
     List<Attestation> attestations =
         nodeDataProvider.getAttestations(maybeSlot, maybeCommitteeIndex);
-    ctx.result(jsonProvider.objectToJSON(new GetAttestationsResponse(attestations)));
+    ctx.json(jsonProvider.objectToJSON(new GetAttestationsResponse(attestations)));
   }
 }

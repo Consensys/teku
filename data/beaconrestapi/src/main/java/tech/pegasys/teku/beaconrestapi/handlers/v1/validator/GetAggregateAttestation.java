@@ -107,13 +107,13 @@ public class GetAggregateAttestation extends AbstractHandler implements Handler 
       Bytes32 beacon_block_root = getParameterValueAsBytes32(parameters, ATTESTATION_DATA_ROOT);
       final UInt64 slot = getParameterValueAsUInt64(parameters, SLOT);
 
-      ctx.result(
+      ctx.future(
           provider
               .createAggregate(slot, beacon_block_root)
               .thenApplyChecked(optionalAttestation -> serializeResult(ctx, optionalAttestation))
               .exceptionallyCompose(error -> handleError(ctx, error)));
     } catch (final IllegalArgumentException e) {
-      ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
+      ctx.json(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
       ctx.status(SC_BAD_REQUEST);
     }
   }

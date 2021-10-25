@@ -52,7 +52,7 @@ import tech.pegasys.teku.provider.JsonProvider;
 
 public class PostSyncDuties extends AbstractHandler implements Handler {
   private static final Logger LOG = LogManager.getLogger();
-  public static final String ROUTE = "/eth/v1/validator/duties/sync/:epoch";
+  public static final String ROUTE = "/eth/v1/validator/duties/sync/{epoch}";
   private final ValidatorDataProvider validatorDataProvider;
   private final SyncDataProvider syncDataProvider;
 
@@ -112,11 +112,11 @@ public class PostSyncDuties extends AbstractHandler implements Handler {
       LOG.trace("Error parsing", ex);
       ctx.status(SC_BAD_REQUEST);
       final String message = "Invalid epoch " + parameters.get(EPOCH) + " or index specified";
-      ctx.result(BadRequest.badRequest(jsonProvider, message));
+      ctx.json(BadRequest.badRequest(jsonProvider, message));
     } catch (IllegalArgumentException ex) {
       LOG.trace("Illegal argument in PostSyncDuties", ex);
       ctx.status(SC_BAD_REQUEST);
-      ctx.result(BadRequest.badRequest(jsonProvider, ex.getMessage()));
+      ctx.json(BadRequest.badRequest(jsonProvider, ex.getMessage()));
     }
   }
 
