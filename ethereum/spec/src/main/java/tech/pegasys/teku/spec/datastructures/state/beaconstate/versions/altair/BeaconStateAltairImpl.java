@@ -47,16 +47,12 @@ class BeaconStateAltairImpl extends AbstractBeaconState<MutableBeaconStateAltair
   }
 
   @Override
-  public <E1 extends Exception, E2 extends Exception, E3 extends Exception>
-      BeaconStateAltair updatedAltair(Mutator<MutableBeaconStateAltair, E1, E2, E3> mutator)
-          throws E1, E2, E3 {
-    MutableBeaconStateAltair writableCopy = createWritableCopyPriv();
-    mutator.mutate(writableCopy);
-    return writableCopy.commitChanges();
+  public BeaconStateSchemaAltair getBeaconStateSchema() {
+    return (BeaconStateSchemaAltair) getSchema();
   }
 
   @Override
-  protected MutableBeaconStateAltair createWritableCopyPriv() {
+  public MutableBeaconStateAltair createWritableCopy() {
     return new MutableBeaconStateAltairImpl(this);
   }
 

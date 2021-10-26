@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -68,6 +69,7 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
           dataStructureUtil.randomSignedVoluntaryExit(),
           dataStructureUtil.randomSignedVoluntaryExit(),
           dataStructureUtil.randomSignedVoluntaryExit());
+  protected ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload();
 
   private final T defaultBlockBody = createDefaultBlockBody();
   BeaconBlockBodySchema<?> blockBodySchema = defaultBlockBody.getSchema();

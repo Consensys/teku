@@ -13,7 +13,10 @@
 
 package tech.pegasys.teku.spec.util;
 
+import static java.util.stream.Collectors.toList;
+import static tech.pegasys.teku.spec.config.SpecConfig.BYTES_PER_LOGS_BLOOM;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
+import static tech.pegasys.teku.spec.config.SpecConfig.MAX_EXTRA_DATA_BYTES;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
 
 import java.util.ArrayList;
@@ -26,6 +29,7 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -55,6 +59,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Be
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
@@ -113,6 +119,8 @@ import tech.pegasys.teku.ssz.type.Bytes4;
 
 public final class DataStructureUtil {
   private static final Spec DEFAULT_SPEC_PROVIDER = TestSpecFactory.createMinimalPhase0();
+  private static final int MAX_EP_RANDOM_TRANSACTIONS = 10;
+  private static final int MAX_EP_RANDOM_TRANSACTIONS_SIZE = 32;
 
   private final Spec spec;
 
@@ -163,6 +171,10 @@ public final class DataStructureUtil {
 
   public UInt64 randomUInt64() {
     return UInt64.fromLongBits(randomLong());
+  }
+
+  public UInt256 randomUInt256() {
+    return UInt256.fromBytes(randomBytes(32));
   }
 
   public Eth1Address randomEth1Address() {
@@ -355,6 +367,48 @@ public final class DataStructureUtil {
             syncCommitteeSchema.getPubkeysSchema(),
             () -> new SszPublicKey(randomValidatorKey(validators))),
         new SszPublicKey(randomPublicKey()));
+  }
+
+  public ExecutionPayloadHeader randomExecutionPayloadHeader() {
+    return new ExecutionPayloadHeader(
+        randomBytes32(),
+        randomBytes20(),
+        randomBytes32(),
+        randomBytes32(),
+        randomBytes(BYTES_PER_LOGS_BLOOM),
+        randomBytes32(),
+        randomUInt64(),
+        randomUInt64(),
+        randomUInt64(),
+        randomUInt64(),
+        randomBytes(randomInt(MAX_EXTRA_DATA_BYTES)),
+        randomUInt256(),
+        randomBytes32(),
+        randomBytes32());
+  }
+
+  public ExecutionPayload randomExecutionPayload() {
+    return new ExecutionPayload(
+        randomBytes32(),
+        randomBytes20(),
+        randomBytes32(),
+        randomBytes32(),
+        randomBytes(BYTES_PER_LOGS_BLOOM),
+        randomBytes32(),
+        randomUInt64(),
+        randomUInt64(),
+        randomUInt64(),
+        randomUInt64(),
+        randomBytes(randomInt(MAX_EXTRA_DATA_BYTES)),
+        randomUInt256(),
+        randomBytes32(),
+        randomExecutionPayloadTransactions());
+  }
+
+  public List<Bytes> randomExecutionPayloadTransactions() {
+    return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_TRANSACTIONS))
+        .mapToObj(__ -> randomBytes(randomInt(MAX_EP_RANDOM_TRANSACTIONS_SIZE)))
+        .collect(toList());
   }
 
   private BLSPublicKey randomValidatorKey(final SszList<Validator> validators) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0;
+package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge;
 
 import com.google.common.base.MoreObjects.ToStringHelper;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -19,35 +19,36 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractMutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.ValidatorStatsAltair;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.cache.IntCache;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 
-class MutableBeaconStatePhase0Impl extends AbstractMutableBeaconState<BeaconStatePhase0Impl>
-    implements MutableBeaconStatePhase0, BeaconStateCache, ValidatorStatsPhase0 {
+class MutableBeaconStateMergeImpl extends AbstractMutableBeaconState<BeaconStateMergeImpl>
+    implements MutableBeaconStateMerge, BeaconStateCache, ValidatorStatsAltair {
 
-  MutableBeaconStatePhase0Impl(BeaconStatePhase0Impl backingImmutableView) {
+  MutableBeaconStateMergeImpl(BeaconStateMergeImpl backingImmutableView) {
     super(backingImmutableView);
   }
 
-  MutableBeaconStatePhase0Impl(BeaconStatePhase0Impl backingImmutableView, boolean builder) {
+  MutableBeaconStateMergeImpl(BeaconStateMergeImpl backingImmutableView, boolean builder) {
     super(backingImmutableView, builder);
   }
 
   @Override
-  public BeaconStateSchemaPhase0 getBeaconStateSchema() {
-    return (BeaconStateSchemaPhase0) getSchema();
+  public BeaconStateSchemaMerge getBeaconStateSchema() {
+    return (BeaconStateSchemaMerge) getSchema();
   }
 
   @Override
-  protected BeaconStatePhase0Impl createImmutableBeaconState(
+  protected BeaconStateMergeImpl createImmutableBeaconState(
       TreeNode backingNode, IntCache<SszData> viewCache, TransitionCaches transitionCache) {
-    return new BeaconStatePhase0Impl(getSchema(), backingNode, viewCache, transitionCache);
+    return new BeaconStateMergeImpl(getSchema(), backingNode, viewCache, transitionCache);
   }
 
   @Override
-  public BeaconStatePhase0 commitChanges() {
-    return (BeaconStatePhase0) super.commitChanges();
+  public BeaconStateMerge commitChanges() {
+    return (BeaconStateMerge) super.commitChanges();
   }
 
   @Override
@@ -57,14 +58,12 @@ class MutableBeaconStatePhase0Impl extends AbstractMutableBeaconState<BeaconStat
   }
 
   @Override
-  public <E1 extends Exception, E2 extends Exception, E3 extends Exception>
-      BeaconStatePhase0 updatedPhase0(Mutator<MutableBeaconStatePhase0, E1, E2, E3> mutator)
-          throws E1, E2, E3 {
-    throw new UnsupportedOperationException();
+  protected void addCustomFields(ToStringHelper stringBuilder) {
+    BeaconStateMergeImpl.describeCustomFields(stringBuilder, this);
   }
 
   @Override
-  protected void addCustomFields(ToStringHelper stringBuilder) {
-    BeaconStatePhase0Impl.describeCustomFields(stringBuilder, this);
+  public MutableBeaconStateMerge createWritableCopy() {
+    return (MutableBeaconStateMerge) super.createWritableCopy();
   }
 }

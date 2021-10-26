@@ -19,6 +19,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
+import tech.pegasys.teku.spec.config.SpecConfigMerge;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 class SpecVersionTest {
@@ -47,4 +48,16 @@ class SpecVersionTest {
     assertThat(actualVersion.get().getSchemaDefinitions())
         .hasSameClassAs(expectedVersion.getSchemaDefinitions());
   }
+  @Test
+  void shouldCreateMergeSpec() {
+    final SpecConfigMerge mergeSpecConfig = SpecConfigMerge.required(minimalConfig);
+    final SpecVersion expectedVersion = SpecVersion.createMerge(mergeSpecConfig);
+    final Optional<SpecVersion> actualVersion =
+        SpecVersion.create(SpecMilestone.MERGE, minimalConfig);
+    assertThat(actualVersion).isPresent();
+    assertThat(actualVersion.get().getMilestone()).isEqualTo(SpecMilestone.MERGE);
+    assertThat(actualVersion.get().getSchemaDefinitions())
+        .hasSameClassAs(expectedVersion.getSchemaDefinitions());
+  }
+
 }

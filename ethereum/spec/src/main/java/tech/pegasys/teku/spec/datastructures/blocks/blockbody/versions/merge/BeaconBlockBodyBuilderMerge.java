@@ -11,30 +11,31 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair;
+package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.function.Supplier;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodyBuilderPhase0;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyBuilderAltair;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.ssz.primitive.SszBytes32;
 
-public class BeaconBlockBodyBuilderAltair extends BeaconBlockBodyBuilderPhase0 {
+class BeaconBlockBodyBuilderMerge extends BeaconBlockBodyBuilderAltair {
+  private BeaconBlockBodySchemaMergeImpl schema;
+  protected ExecutionPayload executionPayload;
 
-  private BeaconBlockBodySchemaAltairImpl schema;
-  protected SyncAggregate syncAggregate;
-
-  public BeaconBlockBodyBuilderAltair schema(final BeaconBlockBodySchemaAltairImpl schema) {
+  public BeaconBlockBodyBuilderMerge schema(final BeaconBlockBodySchemaMergeImpl schema) {
     this.schema = schema;
     return this;
   }
 
   @Override
-  public BeaconBlockBodyBuilder syncAggregate(final Supplier<SyncAggregate> syncAggregateSupplier) {
-    this.syncAggregate = syncAggregateSupplier.get();
+  public BeaconBlockBodyBuilder executionPayload(
+      Supplier<ExecutionPayload> executionPayloadSupplier) {
+    this.executionPayload = executionPayloadSupplier.get();
     return this;
   }
 
@@ -46,14 +47,13 @@ public class BeaconBlockBodyBuilderAltair extends BeaconBlockBodyBuilderPhase0 {
   @Override
   protected void validate() {
     super.validate();
-    checkNotNull(syncAggregate, "syncAggregate must be specified");
+    checkNotNull(executionPayload, "executionPayload must be specified");
   }
 
   @Override
   public BeaconBlockBody build() {
     validate();
-
-    return new BeaconBlockBodyAltairImpl(
+    return new BeaconBlockBodyMergeImpl(
         schema,
         new SszSignature(randaoReveal),
         eth1Data,
@@ -63,6 +63,7 @@ public class BeaconBlockBodyBuilderAltair extends BeaconBlockBodyBuilderPhase0 {
         attestations,
         deposits,
         voluntaryExits,
-        syncAggregate);
+        syncAggregate,
+        executionPayload);
   }
 }

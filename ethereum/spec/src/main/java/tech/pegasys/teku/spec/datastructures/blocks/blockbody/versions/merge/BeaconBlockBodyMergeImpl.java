@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,14 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0;
+package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge;
 
-import java.util.Optional;
+import static com.google.common.base.Preconditions.checkArgument;
+
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -26,14 +28,14 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.ssz.SszList;
-import tech.pegasys.teku.ssz.containers.Container8;
+import tech.pegasys.teku.ssz.containers.Container10;
 import tech.pegasys.teku.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 
 /** A Beacon block body */
-public class BeaconBlockBodyPhase0
-    extends Container8<
-        BeaconBlockBodyPhase0,
+class BeaconBlockBodyMergeImpl
+    extends Container10<
+        BeaconBlockBodyMergeImpl,
         SszSignature,
         Eth1Data,
         SszBytes32,
@@ -41,37 +43,51 @@ public class BeaconBlockBodyPhase0
         SszList<AttesterSlashing>,
         SszList<Attestation>,
         SszList<Deposit>,
-        SszList<SignedVoluntaryExit>>
-    implements BeaconBlockBody {
+        SszList<SignedVoluntaryExit>,
+        SyncAggregate,
+        ExecutionPayload>
+    implements BeaconBlockBodyMerge {
 
-  BeaconBlockBodyPhase0(BeaconBlockBodySchemaPhase0 type) {
+  BeaconBlockBodyMergeImpl(BeaconBlockBodySchemaMergeImpl type) {
     super(type);
   }
 
-  BeaconBlockBodyPhase0(BeaconBlockBodySchemaPhase0 type, TreeNode backingNode) {
+  BeaconBlockBodyMergeImpl(BeaconBlockBodySchemaMergeImpl type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  BeaconBlockBodyPhase0(
-      BeaconBlockBodySchemaPhase0 type,
+  BeaconBlockBodyMergeImpl(
+      BeaconBlockBodySchemaMergeImpl type,
       SszSignature randaoReveal,
-      Eth1Data eth1Data,
+      Eth1Data eth1_data,
       SszBytes32 graffiti,
       SszList<ProposerSlashing> proposerSlashings,
       SszList<AttesterSlashing> attesterSlashings,
       SszList<Attestation> attestations,
       SszList<Deposit> deposits,
-      SszList<SignedVoluntaryExit> voluntaryExits) {
+      SszList<SignedVoluntaryExit> voluntaryExits,
+      SyncAggregate syncAggregate,
+      ExecutionPayload executionPayload) {
     super(
         type,
         randaoReveal,
-        eth1Data,
+        eth1_data,
         graffiti,
         proposerSlashings,
         attesterSlashings,
         attestations,
         deposits,
-        voluntaryExits);
+        voluntaryExits,
+        syncAggregate,
+        executionPayload);
+  }
+
+  public static BeaconBlockBodyMergeImpl required(final BeaconBlockBody body) {
+    checkArgument(
+        body instanceof BeaconBlockBodyMergeImpl,
+        "Expected merge block body but got %s",
+        body.getClass());
+    return (BeaconBlockBodyMergeImpl) body;
   }
 
   @Override
@@ -115,12 +131,17 @@ public class BeaconBlockBodyPhase0
   }
 
   @Override
-  public BeaconBlockBodySchemaPhase0 getSchema() {
-    return (BeaconBlockBodySchemaPhase0) super.getSchema();
+  public SyncAggregate getSyncAggregate() {
+    return getField8();
   }
 
   @Override
-  public Optional<BeaconBlockBodyAltair> toVersionAltair() {
-    return Optional.empty();
+  public ExecutionPayload getExecutionPayload() {
+    return getField9();
+  }
+
+  @Override
+  public BeaconBlockBodySchemaMergeImpl getSchema() {
+    return (BeaconBlockBodySchemaMergeImpl) super.getSchema();
   }
 }
