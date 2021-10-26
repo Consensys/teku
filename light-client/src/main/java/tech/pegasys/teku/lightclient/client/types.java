@@ -10,9 +10,10 @@ public class types {
 	
 	public static void LightClientSnapshotFast() {
 		//Beacon block header
-		
-		//Sync Committees corresponding to the header
-		
+		  //header: phase0.BeaconBlockHeader;
+		  // Sync committees corresponding to the header
+//		  currentSyncCommittee: SyncCommitteeFast;
+//		  nextSyncCommittee: SyncCommitteeFast;
 	}
 	
 	public static void SyncCommitteeFast(BLSPublicKey PublicKey) {
