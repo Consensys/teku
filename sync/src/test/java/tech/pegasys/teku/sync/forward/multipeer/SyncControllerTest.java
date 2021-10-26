@@ -29,8 +29,6 @@ import java.util.Optional;
 import java.util.concurrent.Executor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
@@ -239,17 +237,20 @@ class SyncControllerTest {
     verify(eventLogger, times(1)).syncCompleted();
   }
 
-  @ParameterizedTest
-  @EnumSource(
-      value = SyncResult.class,
-      names = {"TARGET_CHANGED", "FAILED"})
-  void shouldNotExecuteCompleteSyncMessageWhenFailsOrTargetChanges(final SyncResult result) {
-    final SafeFuture<SyncResult> syncResult = startFinalizedSync();
+  @Test
+  void shouldNotNotifySubscribersWhenRunningSpeculativeTarget() {
+    final SyncSubscriber subscriber = mock(SyncSubscriber.class);
+    syncController.subscribeToSyncChanges(subscriber);
 
-    assertThat(syncController.isSyncActive()).isTrue();
-    verify(eventLogger, never()).syncCompleted();
-    syncResult.complete(SyncResult.valueOf(result.name()));
-    assertNotSyncing();
+    final SafeFuture<SyncResult> syncResult = new SafeFuture<>();
+    when(syncTargetSelector.selectSyncTarget(any()))
+        .thenReturn(Optional.of(SyncTarget.speculativeTarget(targetChain)));
+    when(sync.syncToChain(targetChain)).thenReturn(syncResult);
+
+    onTargetChainsUpdated();
+    syncResult.complete(SyncResult.COMPLETE);
+
+    verify(subscriberExecutor, never()).execute(any());
     verify(eventLogger, never()).syncCompleted();
   }
 
