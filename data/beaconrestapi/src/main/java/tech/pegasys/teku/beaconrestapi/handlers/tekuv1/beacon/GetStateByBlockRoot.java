@@ -44,7 +44,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetStateByBlockRoot implements Handler {
-  public static final String ROUTE = "/teku/v1/beacon/blocks/:block_id/state";
+  public static final String ROUTE = "/teku/v1/beacon/blocks/{block_id}/state";
   private final ChainDataProvider chainDataProvider;
   private final JsonProvider jsonProvider;
 
@@ -82,7 +82,7 @@ public class GetStateByBlockRoot implements Handler {
 
     SafeFuture<Optional<SszResponse>> future =
         chainDataProvider.getBeaconStateSszByBlockRoot(pathParamMap.get(PARAM_BLOCK_ID));
-    ctx.result(
+    ctx.future(
         future.thenApplyChecked(
             result -> {
               if (result.isEmpty()) {

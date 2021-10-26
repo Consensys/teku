@@ -44,7 +44,7 @@ public class PostSyncDutiesIntegrationTest extends AbstractDataBackedRestAPIInte
     startRestAPIAtGenesis(SpecMilestone.ALTAIR);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     Response response =
-        post(PostSyncDuties.ROUTE.replace(":epoch", "1"), jsonProvider.objectToJSON(""));
+        post(PostSyncDuties.ROUTE.replace("{epoch}", "1"), jsonProvider.objectToJSON(""));
     Assertions.assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
   }
 
@@ -63,7 +63,7 @@ public class PostSyncDutiesIntegrationTest extends AbstractDataBackedRestAPIInte
     when(validatorApiChannel.getSyncCommitteeDuties(ONE, validators)).thenReturn(out);
 
     Response response =
-        post(PostSyncDuties.ROUTE.replace(":epoch", "1"), jsonProvider.objectToJSON(validators));
+        post(PostSyncDuties.ROUTE.replace("{epoch}", "1"), jsonProvider.objectToJSON(validators));
 
     Assertions.assertThat(response.code()).isEqualTo(SC_OK);
     final PostSyncDutiesResponse dutiesResponse =

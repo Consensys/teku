@@ -119,7 +119,7 @@ public class GetSyncCommitteeContribution extends AbstractHandler {
           provider.createSyncCommitteeContribution(slot, subcommitteeIndex, blockRoot);
       handleOptionalResult(ctx, future, this::processResult, SC_BAD_REQUEST);
     } catch (final IllegalArgumentException e) {
-      ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
+      ctx.json(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
       ctx.status(SC_BAD_REQUEST);
     }
   }

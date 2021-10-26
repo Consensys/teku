@@ -63,6 +63,6 @@ public class GetVoluntaryExits extends AbstractHandler {
   public void handle(final Context ctx) throws Exception {
     ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
     List<SignedVoluntaryExit> exits = nodeDataProvider.getVoluntaryExits();
-    ctx.result(jsonProvider.objectToJSON(new GetVoluntaryExitsResponse(exits)));
+    ctx.json(jsonProvider.objectToJSON(new GetVoluntaryExitsResponse(exits)));
   }
 }

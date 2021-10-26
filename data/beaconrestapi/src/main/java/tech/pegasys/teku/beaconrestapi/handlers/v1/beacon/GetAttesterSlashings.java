@@ -63,6 +63,6 @@ public class GetAttesterSlashings extends AbstractHandler {
   public void handle(final Context ctx) throws Exception {
     ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
     List<AttesterSlashing> attesterSlashings = nodeDataProvider.getAttesterSlashings();
-    ctx.result(jsonProvider.objectToJSON(new GetAttesterSlashingsResponse(attesterSlashings)));
+    ctx.json(jsonProvider.objectToJSON(new GetAttesterSlashingsResponse(attesterSlashings)));
   }
 }

@@ -19,14 +19,14 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.ssz.type.Bytes4;
 
 class StatusMessageTest {
   @Test
   public void shouldRoundTripViaSsz() {
     final StatusMessage message =
         new StatusMessage(
-            Constants.GENESIS_FORK_VERSION,
+            Bytes4.leftPad(Bytes.EMPTY),
             Bytes32.fromHexStringLenient("0x01"),
             UInt64.valueOf(2),
             Bytes32.fromHexStringLenient("0x03"),

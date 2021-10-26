@@ -84,7 +84,7 @@ public class PostSubscribeToBeaconCommitteeSubnet extends AbstractHandler {
       provider.subscribeToBeaconCommittee(asList(request));
       ctx.status(SC_OK);
     } catch (IllegalArgumentException e) {
-      ctx.result(BadRequest.badRequest(jsonProvider, e.getMessage()));
+      ctx.json(BadRequest.badRequest(jsonProvider, e.getMessage()));
       ctx.status(SC_BAD_REQUEST);
     }
   }

@@ -63,6 +63,6 @@ public class GetProposerSlashings extends AbstractHandler {
   public void handle(final Context ctx) throws Exception {
     ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
     List<ProposerSlashing> proposerSlashings = nodeDataProvider.getProposerSlashings();
-    ctx.result(jsonProvider.objectToJSON(new GetProposerSlashingsResponse(proposerSlashings)));
+    ctx.json(jsonProvider.objectToJSON(new GetProposerSlashingsResponse(proposerSlashings)));
   }
 }

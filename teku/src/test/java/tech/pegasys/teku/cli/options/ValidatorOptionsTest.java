@@ -94,10 +94,10 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  void shouldDisableSendAttestationsAsBatchByDefault() {
+  void shouldEnableSendAttestationsAsBatchByDefault() {
     final ValidatorConfig config =
         getTekuConfigurationFromArguments().validatorClient().getValidatorConfig();
-    assertThat(config.sendAttestationsAsBatch()).isFalse();
+    assertThat(config.sendAttestationsAsBatch()).isTrue();
   }
 
   @Test

@@ -64,7 +64,7 @@ public class GetStateValidatorIntegrationTest extends AbstractDataBackedRestAPII
       throws IOException {
     return getResponse(
         GetStateValidator.ROUTE
-            .replace(":state_id", stateIdString)
-            .replace(":validator_id", validatorIdString));
+            .replace("{state_id}", stateIdString)
+            .replace("{validator_id}", validatorIdString));
   }
 }

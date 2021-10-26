@@ -71,7 +71,7 @@ public class GetGenesis extends AbstractHandler implements Handler {
       ctx.status(SC_NOT_FOUND);
       return;
     }
-    ctx.result(jsonProvider.objectToJSON(new GetGenesisResponse(maybeData.get())));
+    ctx.json(jsonProvider.objectToJSON(new GetGenesisResponse(maybeData.get())));
   }
 
   private Optional<GenesisData> getGenesisData() {

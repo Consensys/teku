@@ -99,8 +99,6 @@ public class PostValidatorLiveness extends AbstractHandler {
   public void handle(Context ctx) throws Exception {
     if (!chainDataProvider.isStoreAvailable() || syncDataProvider.isSyncing()) {
       throw new ServiceUnavailableException();
-      //      ctx.status(SC_SERVICE_UNAVAILABLE);
-      //      return;
     }
     try {
       final ValidatorLivenessRequest request =
@@ -112,7 +110,7 @@ public class PostValidatorLiveness extends AbstractHandler {
     } catch (IllegalArgumentException ex) {
       LOG.trace("Illegal argument in PostValidatorLiveness", ex);
       ctx.status(SC_BAD_REQUEST);
-      ctx.result(BadRequest.badRequest(jsonProvider, ex.getMessage()));
+      ctx.json(BadRequest.badRequest(jsonProvider, ex.getMessage()));
     }
   }
 

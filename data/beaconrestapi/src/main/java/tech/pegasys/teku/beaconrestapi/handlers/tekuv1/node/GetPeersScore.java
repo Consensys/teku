@@ -65,6 +65,6 @@ public class GetPeersScore implements Handler {
     ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
     List<PeerScore> peerScores = network.getPeerScores();
 
-    ctx.result(jsonProvider.objectToJSON(new GetPeerScoresResponse(peerScores)));
+    ctx.json(jsonProvider.objectToJSON(new GetPeerScoresResponse(peerScores)));
   }
 }

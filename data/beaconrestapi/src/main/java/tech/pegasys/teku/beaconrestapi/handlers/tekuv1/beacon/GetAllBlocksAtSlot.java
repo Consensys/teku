@@ -47,7 +47,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetAllBlocksAtSlot implements Handler {
-  public static final String ROUTE = "/teku/v1/beacon/blocks/:slot";
+  public static final String ROUTE = "/teku/v1/beacon/blocks/{slot}";
   private final ChainDataProvider chainDataProvider;
   private final JsonProvider jsonProvider;
 
@@ -85,7 +85,7 @@ public class GetAllBlocksAtSlot implements Handler {
     try {
       SafeFuture<Set<SignedBeaconBlock>> future =
           chainDataProvider.getAllBlocksAtSlot(pathParamMap.get(SLOT));
-      ctx.result(
+      ctx.future(
           future.thenApplyChecked(
               result -> {
                 if (result.isEmpty()) {

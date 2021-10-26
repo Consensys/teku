@@ -46,6 +46,6 @@ public class GetForkIntegrationTest extends AbstractDataBackedRestAPIIntegration
   }
 
   public Response get(final String stateIdString) throws IOException {
-    return getResponse(GetStateFork.ROUTE.replace(":state_id", stateIdString));
+    return getResponse(GetStateFork.ROUTE.replace("{state_id}", stateIdString));
   }
 }
