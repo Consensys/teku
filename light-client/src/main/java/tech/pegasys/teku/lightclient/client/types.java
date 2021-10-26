@@ -9,6 +9,9 @@ public class types {
 	}
 	
 	public static void LightClientSnapshotFast() {
+		//Beacon block header
+		
+		//Sync Committees corresponding to the header
 		
 	}
 	
