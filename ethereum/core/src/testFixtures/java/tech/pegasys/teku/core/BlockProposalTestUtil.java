@@ -85,8 +85,7 @@ public class BlockProposalTestUtil {
                     .voluntaryExits(exits)
                     .syncAggregate(
                         () ->
-                            dataStructureUtil.randomSyncAggregateIfRequiredByState(
-                                blockSlotState)));
+                            dataStructureUtil.emptySyncAggregateIfRequiredByState(blockSlotState)));
 
     // Sign block and set block signature
     final BeaconBlock block = newBlockAndState.getBlock();

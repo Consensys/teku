@@ -338,8 +338,26 @@ public final class DataStructureUtil {
     return state.toVersionAltair().map(__ -> randomSyncAggregate()).orElse(null);
   }
 
+  public SyncAggregate emptySyncAggregateIfRequiredByState(BeaconState state) {
+    return state.toVersionAltair().map(__ -> emptySyncAggregate()).orElse(null);
+  }
+
   public SyncAggregate randomSyncAggregate() {
     return randomSyncAggregate(randomInt(4), randomInt(4));
+  }
+
+  public SyncAggregate emptySyncAggregate() {
+    SpecVersion specVersionAltair =
+        Optional.ofNullable(spec.forMilestone(SpecMilestone.ALTAIR)).orElseThrow();
+
+    final SyncAggregateSchema schema =
+        SchemaDefinitionsAltair.required(specVersionAltair.getSchemaDefinitions())
+            .getBeaconBlockBodySchema()
+            .toVersionAltair()
+            .orElseThrow()
+            .getSyncAggregateSchema();
+
+    return schema.createEmpty();
   }
 
   public SyncAggregate randomSyncAggregate(final Integer... participantIndices) {

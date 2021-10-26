@@ -35,11 +35,11 @@ import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.store.StoreConfig;
 
 public class StorageSystem implements AutoCloseable {
-  private final TrackingChainHeadChannel reorgEventChannel;
   private final ChainBuilder chainBuilder;
   private final ChainUpdater chainUpdater;
   private final TrackingEth1EventsChannel eth1EventsChannel = new TrackingEth1EventsChannel();
 
+  private final TrackingChainHeadChannel reorgEventChannel;
   private final StubMetricsSystem metricsSystem;
   private final RecentChainData recentChainData;
   private final StateStorageMode storageMode;
