@@ -48,6 +48,7 @@ class SpecVersionTest {
     assertThat(actualVersion.get().getSchemaDefinitions())
         .hasSameClassAs(expectedVersion.getSchemaDefinitions());
   }
+
   @Test
   void shouldCreateMergeSpec() {
     final SpecConfigMerge mergeSpecConfig = SpecConfigMerge.required(minimalConfig);
@@ -59,5 +60,4 @@ class SpecVersionTest {
     assertThat(actualVersion.get().getSchemaDefinitions())
         .hasSameClassAs(expectedVersion.getSchemaDefinitions());
   }
-
 }
