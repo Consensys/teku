@@ -110,8 +110,6 @@ class BeaconBlockBodySchemaMergeImpl
   @Override
   public BeaconBlockBody createBlockBody(final Consumer<BeaconBlockBodyBuilder> builderConsumer) {
     final BeaconBlockBodyBuilderMerge builder = new BeaconBlockBodyBuilderMerge().schema(this);
-    // Provide a default empty sync aggregate
-    builder.syncAggregate(getSyncAggregateSchema()::createEmpty);
     builderConsumer.accept(builder);
     return builder.build();
   }

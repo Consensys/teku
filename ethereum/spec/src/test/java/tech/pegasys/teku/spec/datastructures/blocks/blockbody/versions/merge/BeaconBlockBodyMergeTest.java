@@ -13,31 +13,12 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import java.util.function.Consumer;
-import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractBeaconBlockBodyTest;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 
 class BeaconBlockBodyMergeTest extends AbstractBeaconBlockBodyTest<BeaconBlockBodyMerge> {
-
-  @Test
-  void shouldCreateWithEmptySyncAggregate() {
-    // This won't always be true but until we can calculate the actual SyncAggregate, use the empty
-    // one to make the block valid
-
-    final BeaconBlockBodyMerge blockBody = createDefaultBlockBody();
-    final SyncAggregate emptySyncAggregate =
-        SyncAggregateSchema.create(
-                spec.getGenesisSpecConfig().toVersionMerge().orElseThrow().getSyncCommitteeSize())
-            .createEmpty();
-    assertThat(blockBody.getSyncAggregate()).isEqualTo(emptySyncAggregate);
-  }
-
   @Override
   protected BeaconBlockBodyMerge createBlockBody(
       final Consumer<BeaconBlockBodyBuilder> contentProvider) {
@@ -46,12 +27,16 @@ class BeaconBlockBodyMergeTest extends AbstractBeaconBlockBodyTest<BeaconBlockBo
 
   @Override
   protected BeaconBlockBodySchema<? extends BeaconBlockBodyMerge> getBlockBodySchema() {
-    return BeaconBlockBodySchemaMerge.create(spec.getGenesisSpecConfig());
+    return BeaconBlockBodySchemaMerge.create(specMerge.getGenesisSpecConfig());
   }
 
   @Override
   protected Consumer<BeaconBlockBodyBuilder> createContentProvider() {
     return super.createContentProvider()
-        .andThen(builder -> builder.executionPayload(() -> executionPayload));
+        .andThen(
+            builder ->
+                builder
+                    .syncAggregate(() -> syncAggregate)
+                    .executionPayload(() -> executionPayload));
   }
 }

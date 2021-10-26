@@ -113,8 +113,6 @@ public class BeaconBlockBodySchemaAltairImpl
   @Override
   public BeaconBlockBody createBlockBody(final Consumer<BeaconBlockBodyBuilder> builderConsumer) {
     final BeaconBlockBodyBuilderAltair builder = new BeaconBlockBodyBuilderAltair().schema(this);
-    // Provide a default empty sync aggregate
-    builder.syncAggregate(getSyncAggregateSchema()::createEmpty);
     builderConsumer.accept(builder);
     return builder.build();
   }

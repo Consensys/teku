@@ -28,6 +28,6 @@ public class BeaconBlockBodyPhase0Test extends AbstractBeaconBlockBodyTest<Beaco
 
   @Override
   protected BeaconBlockBodySchema<BeaconBlockBodyPhase0> getBlockBodySchema() {
-    return BeaconBlockBodySchemaPhase0.create(spec.getGenesisSpecConfig());
+    return BeaconBlockBodySchemaPhase0.create(specPhase0.getGenesisSpecConfig());
   }
 }
