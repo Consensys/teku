@@ -18,7 +18,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.interfaces.SignedBlock;
-import tech.pegasys.teku.spec.Spec;
 
 public class SignedBeaconBlockAltair extends SignedBeaconBlock implements SignedBlock {
   private final BeaconBlockAltair message;
@@ -27,15 +26,6 @@ public class SignedBeaconBlockAltair extends SignedBeaconBlock implements Signed
       tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock internalBlock) {
     super(internalBlock);
     this.message = new BeaconBlockAltair(internalBlock.getMessage());
-  }
-
-  @Override
-  public tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock asInternalSignedBeaconBlock(
-      final Spec spec) {
-    final tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock beaconBlock =
-        message.asInternalBeaconBlock(spec);
-    return tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock.create(
-        spec, beaconBlock, signature.asInternalBLSSignature());
   }
 
   @Override
