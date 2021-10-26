@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,13 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0;
+package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge;
 
 import com.google.common.base.MoreObjects.ToStringHelper;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.ValidatorStatsAltair;
 import tech.pegasys.teku.ssz.SszContainer;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.cache.IntCache;
@@ -25,15 +26,14 @@ import tech.pegasys.teku.ssz.schema.SszCompositeSchema;
 import tech.pegasys.teku.ssz.schema.impl.AbstractSszContainerSchema;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 
-class BeaconStatePhase0Impl extends AbstractBeaconState<MutableBeaconStatePhase0>
-    implements BeaconStatePhase0, BeaconStateCache, ValidatorStatsPhase0 {
+class BeaconStateMergeImpl extends AbstractBeaconState<MutableBeaconStateMerge>
+    implements BeaconStateMerge, BeaconStateCache, ValidatorStatsAltair {
 
-  BeaconStatePhase0Impl(
-      final BeaconStateSchema<BeaconStatePhase0, MutableBeaconStatePhase0> schema) {
+  BeaconStateMergeImpl(final BeaconStateSchema<BeaconStateMerge, MutableBeaconStateMerge> schema) {
     super(schema);
   }
 
-  BeaconStatePhase0Impl(
+  BeaconStateMergeImpl(
       SszCompositeSchema<?> type,
       TreeNode backingNode,
       IntCache<SszData> cache,
@@ -41,28 +41,19 @@ class BeaconStatePhase0Impl extends AbstractBeaconState<MutableBeaconStatePhase0
     super(type, backingNode, cache, transitionCaches);
   }
 
-  BeaconStatePhase0Impl(
+  BeaconStateMergeImpl(
       AbstractSszContainerSchema<? extends SszContainer> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   @Override
-  public BeaconStateSchemaPhase0 getBeaconStateSchema() {
-    return (BeaconStateSchemaPhase0) getSchema();
+  public BeaconStateSchemaMerge getBeaconStateSchema() {
+    return (BeaconStateSchemaMerge) getSchema();
   }
 
   @Override
-  public <E1 extends Exception, E2 extends Exception, E3 extends Exception>
-      BeaconStatePhase0 updatedPhase0(Mutator<MutableBeaconStatePhase0, E1, E2, E3> mutator)
-          throws E1, E2, E3 {
-    MutableBeaconStatePhase0 writableCopy = createWritableCopy();
-    mutator.mutate(writableCopy);
-    return writableCopy.commitChanges();
-  }
-
-  @Override
-  public MutableBeaconStatePhase0 createWritableCopy() {
-    return new MutableBeaconStatePhase0Impl(this);
+  public MutableBeaconStateMerge createWritableCopy() {
+    return new MutableBeaconStateMergeImpl(this);
   }
 
   @Override
@@ -70,9 +61,7 @@ class BeaconStatePhase0Impl extends AbstractBeaconState<MutableBeaconStatePhase0
     describeCustomFields(stringBuilder, this);
   }
 
-  static void describeCustomFields(ToStringHelper stringBuilder, final BeaconStatePhase0 state) {
-    stringBuilder
-        .add("previous_epoch_attestations", state.getPrevious_epoch_attestations())
-        .add("current_epoch_attestations", state.getCurrent_epoch_attestations());
+  static void describeCustomFields(ToStringHelper stringBuilder, final BeaconStateMerge state) {
+    stringBuilder.add("execution_payload_header", state.getLatest_execution_payload_header());
   }
 }

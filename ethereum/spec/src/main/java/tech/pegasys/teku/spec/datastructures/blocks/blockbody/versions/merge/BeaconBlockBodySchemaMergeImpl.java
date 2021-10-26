@@ -11,14 +11,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair;
+package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge;
 
+import java.util.Optional;
 import java.util.function.Consumer;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFields;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -27,15 +31,15 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 import tech.pegasys.teku.ssz.SszList;
-import tech.pegasys.teku.ssz.containers.ContainerSchema9;
+import tech.pegasys.teku.ssz.containers.ContainerSchema10;
 import tech.pegasys.teku.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.ssz.schema.SszListSchema;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 
-public class BeaconBlockBodySchemaAltairImpl
-    extends ContainerSchema9<
-        BeaconBlockBodyAltairImpl,
+class BeaconBlockBodySchemaMergeImpl
+    extends ContainerSchema10<
+        BeaconBlockBodyMergeImpl,
         SszSignature,
         Eth1Data,
         SszBytes32,
@@ -44,10 +48,11 @@ public class BeaconBlockBodySchemaAltairImpl
         SszList<Attestation>,
         SszList<Deposit>,
         SszList<SignedVoluntaryExit>,
-        SyncAggregate>
-    implements BeaconBlockBodySchemaAltair<BeaconBlockBodyAltairImpl> {
+        SyncAggregate,
+        ExecutionPayload>
+    implements BeaconBlockBodySchemaMerge<BeaconBlockBodyMergeImpl> {
 
-  private BeaconBlockBodySchemaAltairImpl(
+  private BeaconBlockBodySchemaMergeImpl(
       NamedSchema<SszSignature> randaoRevealSchema,
       NamedSchema<Eth1Data> eth1DataSchema,
       NamedSchema<SszBytes32> graffitiSchema,
@@ -56,7 +61,8 @@ public class BeaconBlockBodySchemaAltairImpl
       NamedSchema<SszList<Attestation>> attestationsSchema,
       NamedSchema<SszList<Deposit>> depositsSchema,
       NamedSchema<SszList<SignedVoluntaryExit>> voluntaryExitsSchema,
-      NamedSchema<SyncAggregate> syncAggregateSchema) {
+      NamedSchema<SyncAggregate> syncAggregateSchema,
+      NamedSchema<ExecutionPayload> executionPayloadSchema) {
     super(
         "BeaconBlockBody",
         randaoRevealSchema,
@@ -67,28 +73,18 @@ public class BeaconBlockBodySchemaAltairImpl
         attestationsSchema,
         depositsSchema,
         voluntaryExitsSchema,
-        syncAggregateSchema);
+        syncAggregateSchema,
+        executionPayloadSchema);
   }
 
-  public static BeaconBlockBodySchemaAltair<? extends BeaconBlockBodyAltair> create(
-      final SpecConfig specConfig) {
-    return create(
-        specConfig.getMaxProposerSlashings(),
-        specConfig.getMaxAttesterSlashings(),
-        specConfig.getMaxAttestations(),
-        specConfig.getMaxDeposits(),
-        specConfig.getMaxVoluntaryExits(),
-        specConfig.toVersionAltair().orElseThrow().getSyncCommitteeSize());
-  }
-
-  static BeaconBlockBodySchemaAltair<? extends BeaconBlockBodyAltair> create(
+  static BeaconBlockBodySchemaMergeImpl create(
       final long maxProposerSlashings,
       final long maxAttesterSlashings,
       final long maxAttestations,
       final long maxDeposits,
       final long maxVoluntaryExits,
       final int syncCommitteeSize) {
-    return new BeaconBlockBodySchemaAltairImpl(
+    return new BeaconBlockBodySchemaMergeImpl(
         namedSchema(BlockBodyFields.RANDAO_REVEAL.name(), SszSignatureSchema.INSTANCE),
         namedSchema(BlockBodyFields.ETH1_DATA.name(), Eth1Data.SSZ_SCHEMA),
         namedSchema(BlockBodyFields.GRAFFITI.name(), SszPrimitiveSchemas.BYTES32_SCHEMA),
@@ -107,12 +103,13 @@ public class BeaconBlockBodySchemaAltairImpl
             BlockBodyFields.VOLUNTARY_EXITS.name(),
             SszListSchema.create(SignedVoluntaryExit.SSZ_SCHEMA, maxVoluntaryExits)),
         namedSchema(
-            BlockBodyFields.SYNC_AGGREGATE.name(), SyncAggregateSchema.create(syncCommitteeSize)));
+            BlockBodyFields.SYNC_AGGREGATE.name(), SyncAggregateSchema.create(syncCommitteeSize)),
+        namedSchema(BlockBodyFields.EXECUTION_PAYLOAD.name(), ExecutionPayload.SSZ_SCHEMA));
   }
 
   @Override
   public BeaconBlockBody createBlockBody(final Consumer<BeaconBlockBodyBuilder> builderConsumer) {
-    final BeaconBlockBodyBuilderAltair builder = new BeaconBlockBodyBuilderAltair().schema(this);
+    final BeaconBlockBodyBuilderMerge builder = new BeaconBlockBodyBuilderMerge().schema(this);
     // Provide a default empty sync aggregate
     builder.syncAggregate(getSyncAggregateSchema()::createEmpty);
     builderConsumer.accept(builder);
@@ -120,8 +117,8 @@ public class BeaconBlockBodySchemaAltairImpl
   }
 
   @Override
-  public BeaconBlockBodyAltairImpl createEmpty() {
-    return new BeaconBlockBodyAltairImpl(this);
+  public BeaconBlockBodyMergeImpl createEmpty() {
+    return new BeaconBlockBodyMergeImpl(this);
   }
 
   @SuppressWarnings("unchecked")
@@ -160,7 +157,17 @@ public class BeaconBlockBodySchemaAltairImpl
   }
 
   @Override
-  public BeaconBlockBodyAltairImpl createFromBackingNode(TreeNode node) {
-    return new BeaconBlockBodyAltairImpl(this, node);
+  public BeaconBlockBodyMergeImpl createFromBackingNode(TreeNode node) {
+    return new BeaconBlockBodyMergeImpl(this, node);
+  }
+
+  @Override
+  public ExecutionPayloadSchema getExecutionPayloadSchema() {
+    return (ExecutionPayloadSchema) getFieldSchema9();
+  }
+
+  @Override
+  public Optional<BeaconBlockBodySchemaMerge<?>> toVersionMerge() {
+    return Optional.of(this);
   }
 }
