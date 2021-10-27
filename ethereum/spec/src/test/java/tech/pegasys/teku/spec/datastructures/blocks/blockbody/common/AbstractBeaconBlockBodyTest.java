@@ -54,8 +54,8 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
   protected SszList<Deposit> deposits;
   protected SszList<SignedVoluntaryExit> voluntaryExits;
 
-  private T defaultBlockBody;
-  BeaconBlockBodySchema<?> blockBodySchema;
+  protected T defaultBlockBody;
+  protected BeaconBlockBodySchema<?> blockBodySchema;
 
   protected void setUpBaseClass(final SpecMilestone milestone, Runnable additionalSetup) {
     spec = TestSpecFactory.createMinimal(milestone);
@@ -91,7 +91,7 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
     blockBodySchema = defaultBlockBody.getSchema();
   }
 
-  private T createBlockBody() {
+  protected T createBlockBody() {
     return createBlockBody(createContentProvider());
   }
 
