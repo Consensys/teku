@@ -57,7 +57,7 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
 
     // exits will fail before epoch 3, because they're too early in the lifecycle of the key.
     failedExitRequest.start();
-    failedExitRequest.waitForLogMessageContaining("Failed to submit exit for validator");
+    failedExitRequest.waitForLogMessageContaining("Invalid params response");
 
     final TekuVoluntaryExit voluntaryExitProcess =
         createVoluntaryExit(config -> config.withBeaconNode(beaconNode))
