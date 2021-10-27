@@ -44,7 +44,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetSszState implements Handler {
-  public static final String ROUTE = "/teku/v1/beacon/states/:state_id";
+  public static final String ROUTE = "/teku/v1/beacon/states/{state_id}";
   private final ChainDataProvider chainDataProvider;
   private final JsonProvider jsonProvider;
 
@@ -65,7 +65,7 @@ public class GetSszState implements Handler {
       tags = {TAG_TEKU},
       description =
           "Download the state SSZ object for given state_id.\n"
-              + "Deprecated - use `/eth/v1/debug/beacon/states/:state_id` instead.",
+              + "Deprecated - use `/eth/v1/debug/beacon/states/{state_id}` instead.",
       pathParams = {@OpenApiParam(name = PARAM_STATE_ID, description = PARAM_STATE_ID_DESCRIPTION)},
       responses = {
         @OpenApiResponse(
@@ -83,7 +83,7 @@ public class GetSszState implements Handler {
 
     SafeFuture<Optional<SszResponse>> future =
         chainDataProvider.getBeaconStateSsz(pathParamMap.get(PARAM_STATE_ID));
-    ctx.result(
+    ctx.future(
         future.thenApplyChecked(
             result -> {
               if (result.isEmpty()) {

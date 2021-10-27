@@ -17,6 +17,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
+import tech.pegasys.teku.spec.config.SpecConfigMerge;
 import tech.pegasys.teku.spec.config.TestConfigLoader;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
@@ -26,11 +27,6 @@ public class TestSpecFactory {
     return createMinimalPhase0();
   }
 
-  public static Spec createMinimalAltair() {
-    final SpecConfigAltair specConfig = getAltairSpecConfig(Eth2Network.MINIMAL);
-    return create(specConfig, SpecMilestone.ALTAIR);
-  }
-
   public static Spec createMinimal(final SpecMilestone specMilestone) {
     switch (specMilestone) {
       case PHASE0:
@@ -38,6 +34,7 @@ public class TestSpecFactory {
       case ALTAIR:
         return createMinimalAltair();
       case MERGE:
+        return createMinimalMerge();
       default:
         throw new IllegalStateException("unsupported milestone");
     }
@@ -50,9 +47,20 @@ public class TestSpecFactory {
       case ALTAIR:
         return createMainnetAltair();
       case MERGE:
+        return createMainnetMerge();
       default:
         throw new IllegalStateException("unsupported milestone");
     }
+  }
+
+  public static Spec createMinimalMerge() {
+    final SpecConfigMerge specConfig = getMergeSpecConfig(Eth2Network.MINIMAL);
+    return create(specConfig, SpecMilestone.MERGE);
+  }
+
+  public static Spec createMinimalAltair() {
+    final SpecConfigAltair specConfig = getAltairSpecConfig(Eth2Network.MINIMAL);
+    return create(specConfig, SpecMilestone.ALTAIR);
   }
 
   /**
@@ -69,6 +77,11 @@ public class TestSpecFactory {
   public static Spec createMinimalPhase0() {
     final SpecConfig specConfig = SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName());
     return create(specConfig, SpecMilestone.PHASE0);
+  }
+
+  public static Spec createMainnetMerge() {
+    final SpecConfigMerge specConfig = getMergeSpecConfig(Eth2Network.MAINNET);
+    return create(specConfig, SpecMilestone.MERGE);
   }
 
   public static Spec createMainnetAltair() {
@@ -94,6 +107,10 @@ public class TestSpecFactory {
     return create(config, SpecMilestone.ALTAIR);
   }
 
+  public static Spec createMerge(final SpecConfig config) {
+    return create(config, SpecMilestone.MERGE);
+  }
+
   private static Spec create(
       final SpecConfig config, final SpecMilestone highestSupportedMilestone) {
     return Spec.create(config, highestSupportedMilestone);
@@ -108,5 +125,19 @@ public class TestSpecFactory {
     return SpecConfigAltair.required(
         TestConfigLoader.loadConfig(
             network.configName(), c -> c.altairBuilder(a -> a.altairForkEpoch(altairForkEpoch))));
+  }
+
+  private static SpecConfigMerge getMergeSpecConfig(final Eth2Network network) {
+    return getMergeSpecConfig(network, UInt64.ZERO, UInt64.ZERO);
+  }
+
+  private static SpecConfigMerge getMergeSpecConfig(
+      final Eth2Network network, final UInt64 altairForkEpoch, UInt64 mergeForkEpoch) {
+    return SpecConfigMerge.required(
+        TestConfigLoader.loadConfig(
+            network.configName(),
+            c ->
+                c.altairBuilder(a -> a.altairForkEpoch(altairForkEpoch))
+                    .mergeBuilder(m -> m.mergeForkEpoch(mergeForkEpoch))));
   }
 }

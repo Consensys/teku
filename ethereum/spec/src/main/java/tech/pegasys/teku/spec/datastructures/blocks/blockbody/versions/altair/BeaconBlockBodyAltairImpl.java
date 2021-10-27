@@ -85,12 +85,12 @@ public class BeaconBlockBodyAltairImpl
   }
 
   @Override
-  public BLSSignature getRandao_reveal() {
+  public BLSSignature getRandaoReveal() {
     return getField0().getSignature();
   }
 
   @Override
-  public Eth1Data getEth1_data() {
+  public Eth1Data getEth1Data() {
     return getField1();
   }
 
@@ -100,12 +100,12 @@ public class BeaconBlockBodyAltairImpl
   }
 
   @Override
-  public SszList<ProposerSlashing> getProposer_slashings() {
+  public SszList<ProposerSlashing> getProposerSlashings() {
     return getField3();
   }
 
   @Override
-  public SszList<AttesterSlashing> getAttester_slashings() {
+  public SszList<AttesterSlashing> getAttesterSlashings() {
     return getField4();
   }
 
@@ -120,7 +120,7 @@ public class BeaconBlockBodyAltairImpl
   }
 
   @Override
-  public SszList<SignedVoluntaryExit> getVoluntary_exits() {
+  public SszList<SignedVoluntaryExit> getVoluntaryExits() {
     return getField7();
   }
 

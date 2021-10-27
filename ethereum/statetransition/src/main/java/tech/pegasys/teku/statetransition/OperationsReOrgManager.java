@@ -96,9 +96,9 @@ public class OperationsReOrgManager implements ChainHeadChannel {
                       maybeBlock.ifPresentOrElse(
                           block -> {
                             BeaconBlockBody blockBody = block.getBody();
-                            proposerSlashingPool.addAll(blockBody.getProposer_slashings());
-                            attesterSlashingPool.addAll(blockBody.getAttester_slashings());
-                            exitPool.addAll(blockBody.getVoluntary_exits());
+                            proposerSlashingPool.addAll(blockBody.getProposerSlashings());
+                            attesterSlashingPool.addAll(blockBody.getAttesterSlashings());
+                            exitPool.addAll(blockBody.getVoluntaryExits());
 
                             processNonCanonicalBlockAttestations(blockBody.getAttestations(), root);
                           },
@@ -152,9 +152,9 @@ public class OperationsReOrgManager implements ChainHeadChannel {
                       maybeBlock.ifPresentOrElse(
                           block -> {
                             BeaconBlockBody blockBody = block.getBody();
-                            proposerSlashingPool.removeAll(blockBody.getProposer_slashings());
-                            attesterSlashingPool.removeAll(blockBody.getAttester_slashings());
-                            exitPool.removeAll(blockBody.getVoluntary_exits());
+                            proposerSlashingPool.removeAll(blockBody.getProposerSlashings());
+                            attesterSlashingPool.removeAll(blockBody.getAttesterSlashings());
+                            exitPool.removeAll(blockBody.getVoluntaryExits());
                             attestationPool.onAttestationsIncludedInBlock(
                                 block.getSlot(), blockBody.getAttestations());
                           },

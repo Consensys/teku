@@ -35,6 +35,11 @@ class MutableBeaconStatePhase0Impl extends AbstractMutableBeaconState<BeaconStat
   }
 
   @Override
+  public BeaconStateSchemaPhase0 getBeaconStateSchema() {
+    return (BeaconStateSchemaPhase0) getSchema();
+  }
+
+  @Override
   protected BeaconStatePhase0Impl createImmutableBeaconState(
       TreeNode backingNode, IntCache<SszData> viewCache, TransitionCaches transitionCache) {
     return new BeaconStatePhase0Impl(getSchema(), backingNode, viewCache, transitionCache);

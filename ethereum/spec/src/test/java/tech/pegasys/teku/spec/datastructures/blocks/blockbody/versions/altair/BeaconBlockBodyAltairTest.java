@@ -24,7 +24,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractBea
 class BeaconBlockBodyAltairTest extends AbstractBeaconBlockBodyTest<BeaconBlockBodyAltair> {
 
   @Test
-  void shouldCreateWithEmtpySyncAggregate() {
+  void shouldCreateWithEmptySyncAggregate() {
     // This won't always be true but until we can calculate the actual SyncAggregate, use the empty
     // one to make the block valid
 
@@ -39,7 +39,7 @@ class BeaconBlockBodyAltairTest extends AbstractBeaconBlockBodyTest<BeaconBlockB
   @Override
   protected BeaconBlockBodyAltair createBlockBody(
       final Consumer<BeaconBlockBodyBuilder> contentProvider) {
-    return getBlockBodySchema().createBlockBody(contentProvider);
+    return (BeaconBlockBodyAltair) getBlockBodySchema().createBlockBody(contentProvider);
   }
 
   @Override

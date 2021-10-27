@@ -88,7 +88,7 @@ public class GetNewBlockTest {
         .thenReturn(SafeFuture.completedFuture(optionalBeaconBlock));
     handler.handle(context);
 
-    verify(context).result(args.capture());
+    verify(context).future(args.capture());
     SafeFuture<String> result = args.getValue();
     assertThat(result)
         .isCompletedWithValue(
@@ -113,7 +113,7 @@ public class GetNewBlockTest {
         .thenReturn(SafeFuture.completedFuture(optionalBeaconBlock));
     handler.handle(context);
 
-    verify(context).result(args.capture());
+    verify(context).future(args.capture());
     SafeFuture<String> result = args.getValue();
 
     assertThat(result)
@@ -135,7 +135,7 @@ public class GetNewBlockTest {
     // Exception should just be propagated up via the future
     verify(context, never()).status(anyInt());
     verify(context)
-        .result(
+        .future(
             argThat((ArgumentMatcher<SafeFuture<?>>) CompletableFuture::isCompletedExceptionally));
   }
 
@@ -164,7 +164,7 @@ public class GetNewBlockTest {
 
     if (StringUtils.isNotEmpty(message)) {
       BadRequest badRequest = new BadRequest(message);
-      verify(context).result(jsonProvider.objectToJSON(badRequest));
+      verify(context).json(jsonProvider.objectToJSON(badRequest));
     }
   }
 }

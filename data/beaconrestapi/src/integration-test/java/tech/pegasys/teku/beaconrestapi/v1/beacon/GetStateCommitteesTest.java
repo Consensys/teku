@@ -121,6 +121,6 @@ public class GetStateCommitteesTest extends AbstractDataBackedRestAPIIntegration
 
   public Response get(final String stateIdString, final Map<String, String> query)
       throws IOException {
-    return getResponse(GetStateCommittees.ROUTE.replace(":state_id", stateIdString), query);
+    return getResponse(GetStateCommittees.ROUTE.replace("{state_id}", stateIdString), query);
   }
 }

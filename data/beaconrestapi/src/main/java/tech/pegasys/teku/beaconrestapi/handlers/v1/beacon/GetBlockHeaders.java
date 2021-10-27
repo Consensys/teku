@@ -85,7 +85,7 @@ public class GetBlockHeaders extends AbstractHandler implements Handler {
     final Optional<UInt64> slot =
         SingleQueryParameterUtils.getParameterValueAsUInt64IfPresent(queryParameters, SLOT);
     try {
-      ctx.result(
+      ctx.future(
           chainDataProvider
               .getBlockHeaders(parentRoot, slot)
               .thenApplyChecked(
@@ -93,7 +93,7 @@ public class GetBlockHeaders extends AbstractHandler implements Handler {
               .exceptionallyCompose(error -> handleError(ctx, error)));
     } catch (final IllegalArgumentException e) {
       ctx.status(SC_BAD_REQUEST);
-      ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
+      ctx.json(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
     }
   }
 
