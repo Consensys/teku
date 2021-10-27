@@ -258,7 +258,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private SafeFuture<?> initialize() {
     final StoreConfig storeConfig = beaconConfig.storeConfig();
     coalescingChainHeadChannel =
-        new CoalescingChainHeadChannel(eventChannels.getPublisher(ChainHeadChannel.class));
+        new CoalescingChainHeadChannel(
+            eventChannels.getPublisher(ChainHeadChannel.class), EVENT_LOG);
 
     StorageQueryChannel storageQueryChannel =
         eventChannels.getPublisher(StorageQueryChannel.class, beaconAsyncRunner);

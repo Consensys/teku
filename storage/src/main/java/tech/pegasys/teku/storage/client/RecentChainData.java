@@ -300,7 +300,12 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         reorgCounter.inc();
         optionalReorgContext =
             ReorgContext.of(
-                previousChainHead.getRoot(), previousChainHead.getStateRoot(), commonAncestorSlot);
+                previousChainHead.getRoot(),
+                previousChainHead.getStateRoot(),
+                commonAncestorSlot,
+                getBlockRootBySlot(commonAncestorSlot).orElse(Bytes32.ZERO),
+                newChainHead.getSlot(),
+                previousChainHead.getSlot());
       } else {
         optionalReorgContext = ReorgContext.empty();
       }
@@ -323,7 +328,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
           beaconStateUtil.getCurrentDutyDependentRoot(newChainHead.getState()),
           optionalReorgContext);
     }
-
     bestBlockInitialized.complete(null);
   }
 

@@ -13,27 +13,26 @@
 
 package tech.pegasys.teku.sync.events;
 
-import static tech.pegasys.teku.infrastructure.logging.LogFormatter.formatHashRoot;
-
 import java.util.Optional;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.ReorgContext;
 import tech.pegasys.teku.sync.forward.ForwardSync.SyncSubscriber;
 
 public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscriber {
-  private static final Logger LOG = LogManager.getLogger();
 
   private final ChainHeadChannel delegate;
   private boolean syncing = false;
 
   private Optional<PendingEvent> pendingEvent = Optional.empty();
+  private final EventLogger eventLogger;
 
-  public CoalescingChainHeadChannel(final ChainHeadChannel delegate) {
+  public CoalescingChainHeadChannel(
+      final ChainHeadChannel delegate, final EventLogger eventLogger) {
     this.delegate = delegate;
+    this.eventLogger = eventLogger;
   }
 
   @Override
@@ -48,12 +47,14 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
     if (!syncing) {
       optionalReorgContext.ifPresent(
           reorg ->
-              LOG.info(
-                  "Chain reorg at slot {} from {} to {}. Common ancestor at slot {}",
+              eventLogger.reorgEvent(
                   slot,
-                  formatHashRoot(reorg.getOldBestBlockRoot()),
-                  formatHashRoot(bestBlockRoot),
-                  reorg.getCommonAncestorSlot()));
+                  reorg.getOldBestBlockRoot(),
+                  bestBlockRoot,
+                  reorg.getCommonAncestorSlot(),
+                  reorg.getOldBestChainHeadSlot(),
+                  reorg.getNewChainHeadSlot(),
+                  reorg.getCommonAncestorRoot()));
       delegate.chainHeadUpdated(
           slot,
           stateRoot,

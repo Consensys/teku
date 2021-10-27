@@ -22,13 +22,24 @@ public class ReorgContext {
   private final Bytes32 oldBestStateRoot;
   private final UInt64 commonAncestorSlot;
 
+  private final Bytes32 commonAncestorRoot;
+  private final UInt64 newChainHeadSlot;
+  private final UInt64 oldBestChainHeadSlot;
+
   public ReorgContext(
       final Bytes32 oldBestBlockRoot,
       final Bytes32 oldBestStateRoot,
-      final UInt64 commonAncestorSlot) {
+      final UInt64 commonAncestorSlot,
+      final Bytes32 commonAncestorRoot,
+      final UInt64 newChainHeadSlot,
+      final UInt64 oldBestChainHeadSlot) {
     this.oldBestBlockRoot = oldBestBlockRoot;
     this.oldBestStateRoot = oldBestStateRoot;
     this.commonAncestorSlot = commonAncestorSlot;
+
+    this.commonAncestorRoot = commonAncestorRoot;
+    this.newChainHeadSlot = newChainHeadSlot;
+    this.oldBestChainHeadSlot = oldBestChainHeadSlot;
   }
 
   public Bytes32 getOldBestBlockRoot() {
@@ -43,11 +54,33 @@ public class ReorgContext {
     return commonAncestorSlot;
   }
 
+  public Bytes32 getCommonAncestorRoot() {
+    return commonAncestorRoot;
+  }
+
+  public UInt64 getNewChainHeadSlot() {
+    return newChainHeadSlot;
+  }
+
+  public UInt64 getOldBestChainHeadSlot() {
+    return oldBestChainHeadSlot;
+  }
+
   public static Optional<ReorgContext> of(
       final Bytes32 oldBestBlockRoot,
       final Bytes32 oldBestStateRoot,
-      final UInt64 commonAncestorSlot) {
-    return Optional.of(new ReorgContext(oldBestBlockRoot, oldBestStateRoot, commonAncestorSlot));
+      final UInt64 commonAncestorSlot,
+      final Bytes32 commonAncestorRoot,
+      final UInt64 newChainHeadSlot,
+      final UInt64 oldBestChainHeadSlot) {
+    return Optional.of(
+        new ReorgContext(
+            oldBestBlockRoot,
+            oldBestStateRoot,
+            commonAncestorSlot,
+            commonAncestorRoot,
+            newChainHeadSlot,
+            oldBestChainHeadSlot));
   }
 
   public static Optional<ReorgContext> empty() {
