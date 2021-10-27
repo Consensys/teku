@@ -26,6 +26,8 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
@@ -36,6 +38,7 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 
 public class PostVoluntaryExit extends AbstractHandler {
+  private static final Logger LOG = LogManager.getLogger();
   public static final String ROUTE = "/eth/v1/beacon/pool/voluntary_exits";
   private final NodeDataProvider nodeDataProvider;
 
@@ -77,6 +80,7 @@ public class PostVoluntaryExit extends AbstractHandler {
               .thenApplyChecked(result -> handleResponseContext(ctx, result)));
 
     } catch (final IllegalArgumentException e) {
+      LOG.error("PJH Illegal Args", e);
       ctx.json(BadRequest.badRequest(jsonProvider, e.getMessage()));
       ctx.status(SC_BAD_REQUEST);
     }
@@ -85,6 +89,10 @@ public class PostVoluntaryExit extends AbstractHandler {
   private String handleResponseContext(final Context ctx, final InternalValidationResult result) {
     if (result.code().equals(ValidationResultCode.IGNORE)
         || result.code().equals(ValidationResultCode.REJECT)) {
+      LOG.error(
+          "PJH voluntary exit failed status {}, {}",
+          result.code(),
+          result.getDescription().orElse(""));
       ctx.status(SC_BAD_REQUEST);
       return BadRequest.serialize(
           jsonProvider,
@@ -94,6 +102,7 @@ public class PostVoluntaryExit extends AbstractHandler {
               .orElse("Invalid voluntary exit, it will never pass validation so it's rejected"));
     }
     ctx.status(SC_OK);
+    LOG.info("PJH Exit succeeded");
     return "";
   }
 }
