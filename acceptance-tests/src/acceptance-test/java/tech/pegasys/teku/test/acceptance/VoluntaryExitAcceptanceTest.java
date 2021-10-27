@@ -44,7 +44,7 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
                         .withBeaconNode(beaconNode))
             .withValidatorKeystores(validatorKeystores);
 
-    final TekuVoluntaryExit failedExitRequest =
+    final TekuVoluntaryExit voluntaryExitProcess =
         createVoluntaryExit(config -> config.withBeaconNode(beaconNode))
             .withValidatorKeystores(validatorKeystores);
 
@@ -55,17 +55,9 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
     validatorClient.waitForLogMessageContaining("Published attestation");
     validatorClient.waitForLogMessageContaining("Published aggregate");
 
-    // exits will fail before epoch 3, because they're too early in the lifecycle of the key.
-    failedExitRequest.start();
-    failedExitRequest.waitForLogMessageContaining("Invalid params response");
-
-    final TekuVoluntaryExit voluntaryExitProcess =
-        createVoluntaryExit(config -> config.withBeaconNode(beaconNode))
-            .withValidatorKeystores(validatorKeystores);
-
-    // At epoch 3, voluntary exit should succeed, as the key has been active long enough
-    beaconNode.waitForLogMessageContaining("Epoch: 3");
+    beaconNode.waitForLogMessageContaining("Epoch: 1");
     voluntaryExitProcess.start();
+    voluntaryExitProcess.waitForLogMessageContaining("Failed to submit exit for validator");
 
     validatorClient.waitForLogMessageContaining("has changed status from");
   }
