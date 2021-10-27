@@ -13,27 +13,21 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import java.util.function.Consumer;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractBeaconBlockBodyTest;
 
 class BeaconBlockBodyAltairTest extends AbstractBeaconBlockBodyTest<BeaconBlockBodyAltair> {
 
-  @Test
-  void shouldCreateWithEmptySyncAggregate() {
-    // This won't always be true but until we can calculate the actual SyncAggregate, use the empty
-    // one to make the block valid
+  protected SyncAggregate syncAggregate;
 
-    final BeaconBlockBodyAltair blockBody = createDefaultBlockBody();
-    final SyncAggregate emptySyncAggregate =
-        SyncAggregateSchema.create(
-                spec.getGenesisSpecConfig().toVersionAltair().orElseThrow().getSyncCommitteeSize())
-            .createEmpty();
-    assertThat(blockBody.getSyncAggregate()).isEqualTo(emptySyncAggregate);
+  @BeforeEach
+  void setup() {
+    super.setUpBaseClass(
+        SpecMilestone.ALTAIR, () -> syncAggregate = dataStructureUtil.randomSyncAggregate());
   }
 
   @Override
@@ -45,5 +39,11 @@ class BeaconBlockBodyAltairTest extends AbstractBeaconBlockBodyTest<BeaconBlockB
   @Override
   protected BeaconBlockBodySchema<? extends BeaconBlockBodyAltair> getBlockBodySchema() {
     return BeaconBlockBodySchemaAltair.create(spec.getGenesisSpecConfig());
+  }
+
+  @Override
+  protected Consumer<BeaconBlockBodyBuilder> createContentProvider() {
+    return super.createContentProvider()
+        .andThen(builder -> builder.syncAggregate(() -> syncAggregate));
   }
 }
