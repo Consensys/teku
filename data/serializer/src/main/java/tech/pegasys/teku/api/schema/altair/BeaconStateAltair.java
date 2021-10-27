@@ -126,7 +126,7 @@ public class BeaconStateAltair extends BeaconState implements State {
             beaconStateAltair -> {
               final tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSchema
                   syncCommitteeSchema =
-                      ((BeaconStateSchemaAltair) beaconStateAltair.getBeaconStateSchema())
+                      BeaconStateSchemaAltair.required(beaconStateAltair.getBeaconStateSchema())
                           .getCurrentSyncCommitteeSchema();
               final SszList<SszByte> previousEpochParticipation =
                   beaconStateAltair
