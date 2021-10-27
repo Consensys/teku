@@ -80,7 +80,7 @@ public class PostVoluntaryExit extends AbstractHandler {
               .thenApplyChecked(result -> handleResponseContext(ctx, result)));
 
     } catch (final IllegalArgumentException e) {
-      LOG.error("PJH Illegal Args", e);
+      LOG.debug("Voluntary exit failed", e);
       ctx.json(BadRequest.badRequest(jsonProvider, e.getMessage()));
       ctx.status(SC_BAD_REQUEST);
     }
@@ -89,10 +89,8 @@ public class PostVoluntaryExit extends AbstractHandler {
   private String handleResponseContext(final Context ctx, final InternalValidationResult result) {
     if (result.code().equals(ValidationResultCode.IGNORE)
         || result.code().equals(ValidationResultCode.REJECT)) {
-      LOG.error(
-          "PJH voluntary exit failed status {}, {}",
-          result.code(),
-          result.getDescription().orElse(""));
+      LOG.debug(
+          "Voluntary exit failed status {} {}", result.code(), result.getDescription().orElse(""));
       ctx.status(SC_BAD_REQUEST);
       return BadRequest.serialize(
           jsonProvider,
@@ -102,7 +100,7 @@ public class PostVoluntaryExit extends AbstractHandler {
               .orElse("Invalid voluntary exit, it will never pass validation so it's rejected"));
     }
     ctx.status(SC_OK);
-    LOG.info("PJH Exit succeeded");
+    LOG.debug("PJH Exit succeeded");
     return "";
   }
 }
