@@ -3,8 +3,8 @@ PRESET_BASE: 'swift'
 
 # Unlike swift:
 # SECONDS_PER_SLOT: 6
-# allow voluntary exits straight away (after 1 epoch active) for tests
-# SHARD_COMMITTEE_PERIOD: 1
+# allow voluntary exits straight away (after 3 epochs active) for tests
+# SHARD_COMMITTEE_PERIOD: 3
 
 # Genesis
 # ---------------------------------------------------------------
@@ -47,7 +47,7 @@ SECONDS_PER_ETH1_BLOCK: 1
 # 2**8 (= 256) epochs
 MIN_VALIDATOR_WITHDRAWABILITY_DELAY: 256
 # [customized] higher frequency of committee turnover and faster time to acceptable voluntary exit
-SHARD_COMMITTEE_PERIOD: 1
+SHARD_COMMITTEE_PERIOD: 3
 # [customized] process deposits more quickly, but insecure
 ETH1_FOLLOW_DISTANCE: 16
 

@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.test.acceptance;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
@@ -35,6 +37,14 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
     final TekuNode beaconNode =
         createTekuNode(config -> config.withNetwork(networkName).withDepositsFrom(eth1Node));
 
+    final TekuVoluntaryExit voluntaryExitProcessFailing =
+        createVoluntaryExit(config -> config.withBeaconNode(beaconNode))
+            .withValidatorKeystores(validatorKeystores);
+
+    final TekuVoluntaryExit voluntaryExitProcessSuccessful =
+        createVoluntaryExit(config -> config.withBeaconNode(beaconNode))
+            .withValidatorKeystores(validatorKeystores);
+
     final TekuValidatorNode validatorClient =
         createValidatorNode(
                 config ->
@@ -42,10 +52,6 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
                         .withNetwork(networkName)
                         .withInteropModeDisabled()
                         .withBeaconNode(beaconNode))
-            .withValidatorKeystores(validatorKeystores);
-
-    final TekuVoluntaryExit voluntaryExitProcess =
-        createVoluntaryExit(config -> config.withBeaconNode(beaconNode))
             .withValidatorKeystores(validatorKeystores);
 
     beaconNode.start();
@@ -56,9 +62,12 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
     validatorClient.waitForLogMessageContaining("Published aggregate");
 
     beaconNode.waitForLogMessageContaining("Epoch: 1");
-    voluntaryExitProcess.start();
-    voluntaryExitProcess.waitForLogMessageContaining("Failed to submit exit for validator");
+    voluntaryExitProcessFailing.start();
 
+    beaconNode.waitForLogMessageContaining("Epoch: 3");
+    voluntaryExitProcessSuccessful.start();
     validatorClient.waitForLogMessageContaining("has changed status from");
+    assertThat(voluntaryExitProcessFailing.getLoggedErrors())
+        .contains("Failed to submit exit for validator");
   }
 }
