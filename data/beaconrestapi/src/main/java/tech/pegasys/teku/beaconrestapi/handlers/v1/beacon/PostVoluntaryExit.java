@@ -20,7 +20,6 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
-import com.fasterxml.jackson.databind.JsonMappingException;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
@@ -72,23 +71,29 @@ public class PostVoluntaryExit extends AbstractHandler {
   public void handle(final Context ctx) throws Exception {
     try {
       final SignedVoluntaryExit exit = parseRequestBody(ctx.body(), SignedVoluntaryExit.class);
-      InternalValidationResult result = nodeDataProvider.postVoluntaryExit(exit).join();
-      if (result.code().equals(ValidationResultCode.IGNORE)
-          || result.code().equals(ValidationResultCode.REJECT)) {
-        ctx.status(SC_BAD_REQUEST);
-        ctx.json(
-            BadRequest.badRequest(
-                jsonProvider,
-                result
-                    .getDescription()
-                    .orElse(
-                        "Invalid voluntary exit, it will never pass validation so it's rejected")));
-      } else {
-        ctx.status(SC_OK);
-      }
-    } catch (final IllegalArgumentException | JsonMappingException e) {
+      ctx.future(
+          nodeDataProvider
+              .postVoluntaryExit(exit)
+              .thenApplyChecked(result -> handleResponseContext(ctx, result)));
+
+    } catch (final IllegalArgumentException e) {
       ctx.json(BadRequest.badRequest(jsonProvider, e.getMessage()));
       ctx.status(SC_BAD_REQUEST);
     }
+  }
+
+  private String handleResponseContext(final Context ctx, final InternalValidationResult result) {
+    if (result.code().equals(ValidationResultCode.IGNORE)
+        || result.code().equals(ValidationResultCode.REJECT)) {
+      ctx.status(SC_BAD_REQUEST);
+      return BadRequest.serialize(
+          jsonProvider,
+          SC_BAD_REQUEST,
+          result
+              .getDescription()
+              .orElse("Invalid voluntary exit, it will never pass validation so it's rejected"));
+    }
+    ctx.status(SC_OK);
+    return "";
   }
 }
