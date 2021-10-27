@@ -14,19 +14,27 @@
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge;
 
 import java.util.function.Consumer;
+import org.junit.jupiter.api.BeforeEach;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractBeaconBlockBodyTest;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 
 class BeaconBlockBodyMergeTest extends AbstractBeaconBlockBodyTest<BeaconBlockBodyMerge> {
 
-  private final SyncAggregate syncAggregate;
+  protected SyncAggregate syncAggregate;
+  protected ExecutionPayload executionPayload;
 
-  public BeaconBlockBodyMergeTest() {
-    super(SpecMilestone.MERGE);
-    syncAggregate = dataStructureUtil.randomSyncAggregate();
+  @BeforeEach
+  void setup() {
+    super.setUpBaseClass(
+        SpecMilestone.MERGE,
+        () -> {
+          syncAggregate = dataStructureUtil.randomSyncAggregate();
+          executionPayload = dataStructureUtil.randomExecutionPayload();
+        });
   }
 
   @Override

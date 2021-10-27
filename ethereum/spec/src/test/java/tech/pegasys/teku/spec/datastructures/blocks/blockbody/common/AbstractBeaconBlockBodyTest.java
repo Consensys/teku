@@ -22,7 +22,6 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.spec.Spec;
@@ -32,7 +31,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -44,8 +42,8 @@ import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.SszList;
 
 public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
-  protected final Spec spec;
-  protected final DataStructureUtil dataStructureUtil;
+  protected Spec spec;
+  protected DataStructureUtil dataStructureUtil;
 
   protected BLSSignature randaoReveal;
   protected Eth1Data eth1Data;
@@ -55,52 +53,42 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
   protected SszList<Attestation> attestations;
   protected SszList<Deposit> deposits;
   protected SszList<SignedVoluntaryExit> voluntaryExits;
-  protected ExecutionPayload executionPayload;
 
   private T defaultBlockBody;
   BeaconBlockBodySchema<?> blockBodySchema;
 
-  private boolean isSetUp;
-
-  protected AbstractBeaconBlockBodyTest(final SpecMilestone milestone) {
+  protected void setUpBaseClass(final SpecMilestone milestone, Runnable additionalSetup) {
     spec = TestSpecFactory.createMinimal(milestone);
     dataStructureUtil = new DataStructureUtil(spec);
-    isSetUp = false;
-  }
+    BeaconBlockBodyLists blockBodyLists = BeaconBlockBodyLists.ofSpec(spec);
 
-  @BeforeEach
-  void setUpBaseClass() {
-    if (!isSetUp) {
-      isSetUp = true;
+    voluntaryExits =
+        blockBodyLists.createVoluntaryExits(
+            dataStructureUtil.randomSignedVoluntaryExit(),
+            dataStructureUtil.randomSignedVoluntaryExit(),
+            dataStructureUtil.randomSignedVoluntaryExit());
+    deposits =
+        blockBodyLists.createDeposits(dataStructureUtil.randomDeposits(2).toArray(new Deposit[0]));
+    attestations =
+        blockBodyLists.createAttestations(
+            dataStructureUtil.randomAttestation(),
+            dataStructureUtil.randomAttestation(),
+            dataStructureUtil.randomAttestation());
+    attesterSlashings =
+        blockBodyLists.createAttesterSlashings(dataStructureUtil.randomAttesterSlashing());
+    proposerSlashings =
+        blockBodyLists.createProposerSlashings(
+            dataStructureUtil.randomProposerSlashing(),
+            dataStructureUtil.randomProposerSlashing(),
+            dataStructureUtil.randomProposerSlashing());
+    graffiti = dataStructureUtil.randomBytes32();
+    eth1Data = dataStructureUtil.randomEth1Data();
+    randaoReveal = dataStructureUtil.randomSignature();
 
-      BeaconBlockBodyLists blockBodyLists = BeaconBlockBodyLists.ofSpec(spec);
-      executionPayload = dataStructureUtil.randomExecutionPayload();
-      voluntaryExits =
-          blockBodyLists.createVoluntaryExits(
-              dataStructureUtil.randomSignedVoluntaryExit(),
-              dataStructureUtil.randomSignedVoluntaryExit(),
-              dataStructureUtil.randomSignedVoluntaryExit());
-      deposits =
-          blockBodyLists.createDeposits(
-              dataStructureUtil.randomDeposits(2).toArray(new Deposit[0]));
-      attestations =
-          blockBodyLists.createAttestations(
-              dataStructureUtil.randomAttestation(),
-              dataStructureUtil.randomAttestation(),
-              dataStructureUtil.randomAttestation());
-      attesterSlashings =
-          blockBodyLists.createAttesterSlashings(dataStructureUtil.randomAttesterSlashing());
-      proposerSlashings =
-          blockBodyLists.createProposerSlashings(
-              dataStructureUtil.randomProposerSlashing(),
-              dataStructureUtil.randomProposerSlashing(),
-              dataStructureUtil.randomProposerSlashing());
-      graffiti = dataStructureUtil.randomBytes32();
-      eth1Data = dataStructureUtil.randomEth1Data();
-      randaoReveal = dataStructureUtil.randomSignature();
-      defaultBlockBody = createDefaultBlockBody();
-      blockBodySchema = defaultBlockBody.getSchema();
-    }
+    additionalSetup.run();
+
+    defaultBlockBody = createDefaultBlockBody();
+    blockBodySchema = defaultBlockBody.getSchema();
   }
 
   private T createBlockBody() {

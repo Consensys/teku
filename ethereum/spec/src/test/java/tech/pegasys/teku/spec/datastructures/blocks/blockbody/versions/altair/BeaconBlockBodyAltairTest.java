@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair;
 
 import java.util.function.Consumer;
+import org.junit.jupiter.api.BeforeEach;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
@@ -21,11 +22,12 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractBea
 
 class BeaconBlockBodyAltairTest extends AbstractBeaconBlockBodyTest<BeaconBlockBodyAltair> {
 
-  private final SyncAggregate syncAggregate;
+  protected SyncAggregate syncAggregate;
 
-  public BeaconBlockBodyAltairTest() {
-    super(SpecMilestone.ALTAIR);
-    syncAggregate = dataStructureUtil.randomSyncAggregate();
+  @BeforeEach
+  void setup() {
+    super.setUpBaseClass(
+        SpecMilestone.ALTAIR, () -> syncAggregate = dataStructureUtil.randomSyncAggregate());
   }
 
   @Override
