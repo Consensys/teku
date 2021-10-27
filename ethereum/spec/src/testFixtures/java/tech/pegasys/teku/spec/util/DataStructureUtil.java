@@ -350,27 +350,22 @@ public final class DataStructureUtil {
     SpecVersion specVersionAltair =
         Optional.ofNullable(spec.forMilestone(SpecMilestone.ALTAIR)).orElseThrow();
 
-    final SyncAggregateSchema schema =
-        SchemaDefinitionsAltair.required(specVersionAltair.getSchemaDefinitions())
-            .getBeaconBlockBodySchema()
-            .toVersionAltair()
-            .orElseThrow()
-            .getSyncAggregateSchema();
-
-    return schema.createEmpty();
+    return getSyncAggregateSchema(specVersionAltair).createEmpty();
   }
 
   public SyncAggregate randomSyncAggregate(final Integer... participantIndices) {
     SpecVersion specVersionAltair =
         Optional.ofNullable(spec.forMilestone(SpecMilestone.ALTAIR)).orElseThrow();
 
-    final SyncAggregateSchema schema =
-        SchemaDefinitionsAltair.required(specVersionAltair.getSchemaDefinitions())
+    return getSyncAggregateSchema(specVersionAltair).create(List.of(participantIndices), randomSignature());
+  }
+
+  private SyncAggregateSchema getSyncAggregateSchema(SpecVersion specVersionAltair) {
+    return SchemaDefinitionsAltair.required(specVersionAltair.getSchemaDefinitions())
             .getBeaconBlockBodySchema()
             .toVersionAltair()
             .orElseThrow()
             .getSyncAggregateSchema();
-    return schema.create(List.of(participantIndices), randomSignature());
   }
 
   public SyncCommittee randomSyncCommittee() {

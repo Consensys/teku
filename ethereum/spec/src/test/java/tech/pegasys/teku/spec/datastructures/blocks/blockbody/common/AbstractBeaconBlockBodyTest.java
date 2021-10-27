@@ -60,39 +60,46 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
   private T defaultBlockBody;
   BeaconBlockBodySchema<?> blockBodySchema;
 
+  private boolean isSetUp;
+
   protected AbstractBeaconBlockBodyTest(final SpecMilestone milestone) {
     spec = TestSpecFactory.createMinimal(milestone);
     dataStructureUtil = new DataStructureUtil(spec);
+    isSetUp = false;
   }
 
   @BeforeEach
   void setUpBaseClass() {
-    BeaconBlockBodyLists blockBodyLists = BeaconBlockBodyLists.ofSpec(spec);
-    executionPayload = dataStructureUtil.randomExecutionPayload();
-    voluntaryExits =
-        blockBodyLists.createVoluntaryExits(
-            dataStructureUtil.randomSignedVoluntaryExit(),
-            dataStructureUtil.randomSignedVoluntaryExit(),
-            dataStructureUtil.randomSignedVoluntaryExit());
-    deposits =
-        blockBodyLists.createDeposits(dataStructureUtil.randomDeposits(2).toArray(new Deposit[0]));
-    attestations =
-        blockBodyLists.createAttestations(
-            dataStructureUtil.randomAttestation(),
-            dataStructureUtil.randomAttestation(),
-            dataStructureUtil.randomAttestation());
-    attesterSlashings =
-        blockBodyLists.createAttesterSlashings(dataStructureUtil.randomAttesterSlashing());
-    proposerSlashings =
-        blockBodyLists.createProposerSlashings(
-            dataStructureUtil.randomProposerSlashing(),
-            dataStructureUtil.randomProposerSlashing(),
-            dataStructureUtil.randomProposerSlashing());
-    graffiti = dataStructureUtil.randomBytes32();
-    eth1Data = dataStructureUtil.randomEth1Data();
-    randaoReveal = dataStructureUtil.randomSignature();
-    defaultBlockBody = createDefaultBlockBody();
-    blockBodySchema = defaultBlockBody.getSchema();
+    if(!isSetUp) {
+      isSetUp = true;
+
+      BeaconBlockBodyLists blockBodyLists = BeaconBlockBodyLists.ofSpec(spec);
+      executionPayload = dataStructureUtil.randomExecutionPayload();
+      voluntaryExits =
+              blockBodyLists.createVoluntaryExits(
+                      dataStructureUtil.randomSignedVoluntaryExit(),
+                      dataStructureUtil.randomSignedVoluntaryExit(),
+                      dataStructureUtil.randomSignedVoluntaryExit());
+      deposits =
+              blockBodyLists.createDeposits(dataStructureUtil.randomDeposits(2).toArray(new Deposit[0]));
+      attestations =
+              blockBodyLists.createAttestations(
+                      dataStructureUtil.randomAttestation(),
+                      dataStructureUtil.randomAttestation(),
+                      dataStructureUtil.randomAttestation());
+      attesterSlashings =
+              blockBodyLists.createAttesterSlashings(dataStructureUtil.randomAttesterSlashing());
+      proposerSlashings =
+              blockBodyLists.createProposerSlashings(
+                      dataStructureUtil.randomProposerSlashing(),
+                      dataStructureUtil.randomProposerSlashing(),
+                      dataStructureUtil.randomProposerSlashing());
+      graffiti = dataStructureUtil.randomBytes32();
+      eth1Data = dataStructureUtil.randomEth1Data();
+      randaoReveal = dataStructureUtil.randomSignature();
+      defaultBlockBody = createDefaultBlockBody();
+      blockBodySchema = defaultBlockBody.getSchema();
+    }
   }
 
   private T createBlockBody() {
