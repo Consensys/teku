@@ -14,11 +14,21 @@
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge;
 
 import java.util.function.Consumer;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractBeaconBlockBodyTest;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 
 class BeaconBlockBodyMergeTest extends AbstractBeaconBlockBodyTest<BeaconBlockBodyMerge> {
+
+  private final SyncAggregate syncAggregate;
+
+  public BeaconBlockBodyMergeTest() {
+    super(SpecMilestone.MERGE);
+    syncAggregate = dataStructureUtil.randomSyncAggregate();
+  }
+
   @Override
   protected BeaconBlockBodyMerge createBlockBody(
       final Consumer<BeaconBlockBodyBuilder> contentProvider) {
@@ -27,7 +37,7 @@ class BeaconBlockBodyMergeTest extends AbstractBeaconBlockBodyTest<BeaconBlockBo
 
   @Override
   protected BeaconBlockBodySchema<? extends BeaconBlockBodyMerge> getBlockBodySchema() {
-    return BeaconBlockBodySchemaMerge.create(specMerge.getGenesisSpecConfig());
+    return BeaconBlockBodySchemaMerge.create(spec.getGenesisSpecConfig());
   }
 
   @Override
