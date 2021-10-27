@@ -52,10 +52,8 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
     validatorClient.start();
 
     validatorClient.waitForLogMessageContaining("Published block");
-    validatorClient.waitForLogMessageContaining("Published attestation");
-    validatorClient.waitForLogMessageContaining("Published aggregate");
 
-    beaconNode.waitForLogMessageContaining("Epoch: 1");
+    beaconNode.waitForLogMessageContaining("Epoch: 3");
     voluntaryExitProcess.start();
 
     validatorClient.waitForLogMessageContaining("has changed status from");
