@@ -21,6 +21,7 @@ import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_S
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -55,7 +56,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
@@ -330,16 +330,43 @@ public final class DataStructureUtil {
     return new Checkpoint(randomEpoch(), randomBytes32());
   }
 
+  public SyncAggregate randomSyncAggregateIfRequiredBySchema(BeaconBlockBodySchema<?> schema) {
+    return schema.toVersionAltair().map(__ -> randomSyncAggregate()).orElse(null);
+  }
+
+  public SyncAggregate randomSyncAggregateIfRequiredByState(BeaconState state) {
+    return state.toVersionAltair().map(__ -> randomSyncAggregate()).orElse(null);
+  }
+
+  public SyncAggregate emptySyncAggregateIfRequiredByState(BeaconState state) {
+    return state.toVersionAltair().map(__ -> emptySyncAggregate()).orElse(null);
+  }
+
   public SyncAggregate randomSyncAggregate() {
     return randomSyncAggregate(randomInt(4), randomInt(4));
   }
 
+  public SyncAggregate emptySyncAggregate() {
+    SpecVersion specVersionAltair =
+        Optional.ofNullable(spec.forMilestone(SpecMilestone.ALTAIR)).orElseThrow();
+
+    return getSyncAggregateSchema(specVersionAltair).createEmpty();
+  }
+
   public SyncAggregate randomSyncAggregate(final Integer... participantIndices) {
-    final SyncAggregateSchema schema =
-        BeaconBlockBodySchemaAltair.required(
-                spec.getGenesisSchemaDefinitions().getBeaconBlockBodySchema())
-            .getSyncAggregateSchema();
-    return schema.create(List.of(participantIndices), randomSignature());
+    SpecVersion specVersionAltair =
+        Optional.ofNullable(spec.forMilestone(SpecMilestone.ALTAIR)).orElseThrow();
+
+    return getSyncAggregateSchema(specVersionAltair)
+        .create(List.of(participantIndices), randomSignature());
+  }
+
+  private SyncAggregateSchema getSyncAggregateSchema(SpecVersion specVersionAltair) {
+    return SchemaDefinitionsAltair.required(specVersionAltair.getSchemaDefinitions())
+        .getBeaconBlockBodySchema()
+        .toVersionAltair()
+        .orElseThrow()
+        .getSyncAggregateSchema();
   }
 
   public SyncCommittee randomSyncCommittee() {
@@ -385,6 +412,11 @@ public final class DataStructureUtil {
         randomUInt256(),
         randomBytes32(),
         randomBytes32());
+  }
+
+  public ExecutionPayload randomExecutionPayloadIfRequiredBySchema(
+      BeaconBlockBodySchema<?> schema) {
+    return schema.toVersionMerge().map(__ -> randomExecutionPayload()).orElse(null);
   }
 
   public ExecutionPayload randomExecutionPayload() {
@@ -706,7 +738,9 @@ public final class DataStructureUtil {
                     randomSszList(schema.getDepositsSchema(), this::randomDepositWithoutIndex, 1))
                 .voluntaryExits(
                     randomSszList(
-                        schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit, 1)));
+                        schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit, 1))
+                .syncAggregate(() -> this.randomSyncAggregateIfRequiredBySchema(schema))
+                .executionPayload(() -> this.randomExecutionPayloadIfRequiredBySchema(schema)));
   }
 
   public BeaconBlockBody randomFullBeaconBlockBody() {

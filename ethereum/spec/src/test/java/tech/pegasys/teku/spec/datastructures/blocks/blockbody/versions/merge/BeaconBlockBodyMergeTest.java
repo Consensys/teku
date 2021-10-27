@@ -13,29 +13,28 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import java.util.function.Consumer;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractBeaconBlockBodyTest;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 
 class BeaconBlockBodyMergeTest extends AbstractBeaconBlockBodyTest<BeaconBlockBodyMerge> {
 
-  @Test
-  void shouldCreateWithEmptySyncAggregate() {
-    // This won't always be true but until we can calculate the actual SyncAggregate, use the empty
-    // one to make the block valid
+  protected SyncAggregate syncAggregate;
+  protected ExecutionPayload executionPayload;
 
-    final BeaconBlockBodyMerge blockBody = createDefaultBlockBody();
-    final SyncAggregate emptySyncAggregate =
-        SyncAggregateSchema.create(
-                spec.getGenesisSpecConfig().toVersionMerge().orElseThrow().getSyncCommitteeSize())
-            .createEmpty();
-    assertThat(blockBody.getSyncAggregate()).isEqualTo(emptySyncAggregate);
+  @BeforeEach
+  void setup() {
+    super.setUpBaseClass(
+        SpecMilestone.MERGE,
+        () -> {
+          syncAggregate = dataStructureUtil.randomSyncAggregate();
+          executionPayload = dataStructureUtil.randomExecutionPayload();
+        });
   }
 
   @Override
@@ -52,6 +51,10 @@ class BeaconBlockBodyMergeTest extends AbstractBeaconBlockBodyTest<BeaconBlockBo
   @Override
   protected Consumer<BeaconBlockBodyBuilder> createContentProvider() {
     return super.createContentProvider()
-        .andThen(builder -> builder.executionPayload(() -> executionPayload));
+        .andThen(
+            builder ->
+                builder
+                    .syncAggregate(() -> syncAggregate)
+                    .executionPayload(() -> executionPayload));
   }
 }

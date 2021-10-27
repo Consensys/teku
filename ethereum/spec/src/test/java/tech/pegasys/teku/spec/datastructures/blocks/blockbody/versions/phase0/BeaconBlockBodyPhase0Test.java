@@ -14,11 +14,18 @@
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0;
 
 import java.util.function.Consumer;
+import org.junit.jupiter.api.BeforeEach;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractBeaconBlockBodyTest;
 
 public class BeaconBlockBodyPhase0Test extends AbstractBeaconBlockBodyTest<BeaconBlockBodyPhase0> {
+
+  @BeforeEach
+  void setup() {
+    super.setUpBaseClass(SpecMilestone.PHASE0, () -> {});
+  }
 
   @Override
   protected BeaconBlockBodyPhase0 createBlockBody(
