@@ -70,30 +70,31 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
 
   @BeforeEach
   void setUpBaseClass() {
-    if(!isSetUp) {
+    if (!isSetUp) {
       isSetUp = true;
 
       BeaconBlockBodyLists blockBodyLists = BeaconBlockBodyLists.ofSpec(spec);
       executionPayload = dataStructureUtil.randomExecutionPayload();
       voluntaryExits =
-              blockBodyLists.createVoluntaryExits(
-                      dataStructureUtil.randomSignedVoluntaryExit(),
-                      dataStructureUtil.randomSignedVoluntaryExit(),
-                      dataStructureUtil.randomSignedVoluntaryExit());
+          blockBodyLists.createVoluntaryExits(
+              dataStructureUtil.randomSignedVoluntaryExit(),
+              dataStructureUtil.randomSignedVoluntaryExit(),
+              dataStructureUtil.randomSignedVoluntaryExit());
       deposits =
-              blockBodyLists.createDeposits(dataStructureUtil.randomDeposits(2).toArray(new Deposit[0]));
+          blockBodyLists.createDeposits(
+              dataStructureUtil.randomDeposits(2).toArray(new Deposit[0]));
       attestations =
-              blockBodyLists.createAttestations(
-                      dataStructureUtil.randomAttestation(),
-                      dataStructureUtil.randomAttestation(),
-                      dataStructureUtil.randomAttestation());
+          blockBodyLists.createAttestations(
+              dataStructureUtil.randomAttestation(),
+              dataStructureUtil.randomAttestation(),
+              dataStructureUtil.randomAttestation());
       attesterSlashings =
-              blockBodyLists.createAttesterSlashings(dataStructureUtil.randomAttesterSlashing());
+          blockBodyLists.createAttesterSlashings(dataStructureUtil.randomAttesterSlashing());
       proposerSlashings =
-              blockBodyLists.createProposerSlashings(
-                      dataStructureUtil.randomProposerSlashing(),
-                      dataStructureUtil.randomProposerSlashing(),
-                      dataStructureUtil.randomProposerSlashing());
+          blockBodyLists.createProposerSlashings(
+              dataStructureUtil.randomProposerSlashing(),
+              dataStructureUtil.randomProposerSlashing(),
+              dataStructureUtil.randomProposerSlashing());
       graffiti = dataStructureUtil.randomBytes32();
       eth1Data = dataStructureUtil.randomEth1Data();
       randaoReveal = dataStructureUtil.randomSignature();

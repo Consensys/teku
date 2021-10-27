@@ -357,15 +357,16 @@ public final class DataStructureUtil {
     SpecVersion specVersionAltair =
         Optional.ofNullable(spec.forMilestone(SpecMilestone.ALTAIR)).orElseThrow();
 
-    return getSyncAggregateSchema(specVersionAltair).create(List.of(participantIndices), randomSignature());
+    return getSyncAggregateSchema(specVersionAltair)
+        .create(List.of(participantIndices), randomSignature());
   }
 
   private SyncAggregateSchema getSyncAggregateSchema(SpecVersion specVersionAltair) {
     return SchemaDefinitionsAltair.required(specVersionAltair.getSchemaDefinitions())
-            .getBeaconBlockBodySchema()
-            .toVersionAltair()
-            .orElseThrow()
-            .getSyncAggregateSchema();
+        .getBeaconBlockBodySchema()
+        .toVersionAltair()
+        .orElseThrow()
+        .getSyncAggregateSchema();
   }
 
   public SyncCommittee randomSyncCommittee() {
