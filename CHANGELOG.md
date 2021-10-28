@@ -21,7 +21,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - Support v.2.1.0 of the standard rest api. it should be noted that the 'version' has been changed to lower case to comply with the api specification.
 - Attestations are now sent to the beacon node in batches by default when using the validator-client.
 - Updated to Javalin 4 for the rest api.
-- Removed validation for aggregate messages with the same attestation root.
+- Aggregate attestation messages with the same attestation root are no longer discarded.
 
 ### Bug Fixes
 - Fixed issue where discovery did not correctly abort handshake attempts when a request timed out.
