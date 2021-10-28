@@ -417,16 +417,16 @@ public class TekuNode extends Node {
           final Optional<BeaconState> maybeState = fetchHeadState();
           assertThat(maybeBlock).isPresent();
           assertThat(maybeState).isPresent();
-          SignedBeaconBlock block = (SignedBeaconBlock) maybeBlock.get();
+          SignedBeaconBlock<?> block = (SignedBeaconBlock<?>) maybeBlock.get();
           BeaconState state = maybeState.get();
 
           // Check that the fetched block and state are in sync
           assertThat(state.latest_block_header.parent_root)
-              .isEqualTo(block.getMessage().parent_root);
+              .isEqualTo(block.getMessage().parentRoot);
 
           tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState internalBeaconState =
               state.asInternalBeaconState(spec);
-          UInt64 proposerIndex = block.getMessage().proposer_index;
+          UInt64 proposerIndex = block.getMessage().proposerIndex;
 
           Set<UInt64> attesterIndicesInAttestations =
               block.getMessage().getBody().attestations.stream()

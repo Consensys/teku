@@ -27,11 +27,11 @@ import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
-import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.api.schema.SubnetSubscription;
 import tech.pegasys.teku.api.schema.Validator;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeContribution;
+import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -104,8 +104,8 @@ public class SchemaObjectsTestFixture {
     return new SyncCommitteeContribution(altairData.randomSyncCommitteeContribution(slot));
   }
 
-  public SignedBeaconBlock signedBeaconBlock() {
-    return new SignedBeaconBlock(dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE));
+  public SignedBeaconBlockPhase0 signedBeaconBlock() {
+    return new SignedBeaconBlockPhase0(dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE));
   }
 
   public Attestation attestation() {

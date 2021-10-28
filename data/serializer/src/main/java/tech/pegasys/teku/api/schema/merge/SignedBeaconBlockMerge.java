@@ -11,25 +11,22 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.schema.phase0;
+package tech.pegasys.teku.api.schema.merge;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import tech.pegasys.teku.api.schema.BLSSignature;
-import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
-import tech.pegasys.teku.api.schema.interfaces.SignedBlock;
 
-public class SignedBeaconBlockPhase0 extends SignedBeaconBlock<BeaconBlock> implements SignedBlock {
-
-  public SignedBeaconBlockPhase0(
+public class SignedBeaconBlockMerge extends SignedBeaconBlock<BeaconBlockMerge> {
+  public SignedBeaconBlockMerge(
       tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock internalBlock) {
-    super(internalBlock, new BeaconBlock(internalBlock.getMessage()));
+    super(internalBlock, new BeaconBlockMerge(internalBlock.getMessage()));
   }
 
   @JsonCreator
-  public SignedBeaconBlockPhase0(
-      @JsonProperty("message") final BeaconBlock message,
+  public SignedBeaconBlockMerge(
+      @JsonProperty("message") final BeaconBlockMerge message,
       @JsonProperty("signature") final BLSSignature signature) {
     super(message, signature);
   }

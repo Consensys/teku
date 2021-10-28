@@ -31,8 +31,8 @@ import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.schema.BeaconBlock;
-import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
+import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
@@ -130,7 +130,8 @@ class PostBlockTest {
   }
 
   private String buildSignedBeaconBlock() throws JsonProcessingException {
-    SignedBeaconBlock block = new SignedBeaconBlock(dataStructureUtil.randomSignedBeaconBlock(3));
+    SignedBeaconBlockPhase0 block =
+        new SignedBeaconBlockPhase0(dataStructureUtil.randomSignedBeaconBlock(3));
     return jsonProvider.objectToJSON(block);
   }
 }

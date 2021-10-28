@@ -113,14 +113,14 @@ public class ChainDataProvider {
         .thenApply(maybeBlock -> maybeBlock.map(block -> new BlockHeader(block, true)));
   }
 
-  public SafeFuture<Optional<SignedBeaconBlock>> getBlock(final String slotParameter) {
+  public SafeFuture<Optional<SignedBeaconBlock<?>>> getBlock(final String slotParameter) {
     return defaultBlockSelectorFactory
         .defaultBlockSelector(slotParameter)
         .getSingleBlock()
-        .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::new));
+        .thenApply(maybeBlock -> maybeBlock.map(schemaObjectProvider::getSignedBeaconBlock));
   }
 
-  public SafeFuture<Optional<SignedBeaconBlock>> getBlockV2(final String slotParameter) {
+  public SafeFuture<Optional<SignedBeaconBlock<?>>> getBlockV2(final String slotParameter) {
     return defaultBlockSelectorFactory
         .defaultBlockSelector(slotParameter)
         .getSingleBlock()
@@ -201,7 +201,7 @@ public class ChainDataProvider {
                             spec.atSlot(state.getSlot()).getMilestone())));
   }
 
-  public SafeFuture<Set<SignedBeaconBlock>> getAllBlocksAtSlot(final String slot) {
+  public SafeFuture<Set<SignedBeaconBlock<?>>> getAllBlocksAtSlot(final String slot) {
     if (slot.startsWith("0x")) {
       throw new BadRequestException(
           String.format("block roots are not currently supported: %s", slot));
@@ -211,7 +211,9 @@ public class ChainDataProvider {
           .getBlock()
           .thenApply(
               blockList ->
-                  blockList.stream().map(SignedBeaconBlock::new).collect(Collectors.toSet()));
+                  blockList.stream()
+                      .map(schemaObjectProvider::getSignedBeaconBlock)
+                      .collect(Collectors.toSet()));
     }
   }
 
@@ -230,7 +232,7 @@ public class ChainDataProvider {
                             spec.atSlot(state.getSlot()).getMilestone())));
   }
 
-  public boolean isFinalized(final SignedBeaconBlock signedBeaconBlock) {
+  public boolean isFinalized(final SignedBeaconBlock<?> signedBeaconBlock) {
     return combinedChainDataClient.isFinalized(signedBeaconBlock.getMessage().slot);
   }
 

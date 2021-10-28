@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.schema.altair;
+package tech.pegasys.teku.api.schema.merge;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -22,69 +22,74 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttesterSlashing;
 import tech.pegasys.teku.api.schema.BLSSignature;
-import tech.pegasys.teku.api.schema.BeaconBlockBody;
 import tech.pegasys.teku.api.schema.Deposit;
 import tech.pegasys.teku.api.schema.Eth1Data;
 import tech.pegasys.teku.api.schema.ProposerSlashing;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
+import tech.pegasys.teku.api.schema.altair.BeaconBlockBodyAltair;
+import tech.pegasys.teku.api.schema.altair.SyncAggregate;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 
-public class BeaconBlockBodyAltair extends BeaconBlockBody {
-  @JsonProperty("sync_aggregate")
-  public final SyncAggregate syncAggregate;
+public class BeaconBlockBodyMerge extends BeaconBlockBodyAltair {
+  @JsonProperty("execution_payload")
+  public final ExecutionPayload executionPayload;
 
   @JsonCreator
-  public BeaconBlockBodyAltair(
-      @JsonProperty("randao_reveal") final BLSSignature randao_reveal,
-      @JsonProperty("eth1_data") final Eth1Data eth1_data,
+  public BeaconBlockBodyMerge(
+      @JsonProperty("randao_reveal") final BLSSignature randaoReveal,
+      @JsonProperty("eth1_data") final Eth1Data eth1Data,
       @JsonProperty("graffiti") final Bytes32 graffiti,
       @JsonProperty("proposer_slashings") final List<ProposerSlashing> proposerSlashings,
       @JsonProperty("attester_slashings") final List<AttesterSlashing> attesterSlashings,
       @JsonProperty("attestations") final List<Attestation> attestations,
       @JsonProperty("deposits") final List<Deposit> deposits,
       @JsonProperty("voluntary_exits") final List<SignedVoluntaryExit> voluntaryExits,
-      @JsonProperty("sync_aggregate") final SyncAggregate syncAggregate) {
+      @JsonProperty("sync_aggregate") final SyncAggregate syncAggregate,
+      @JsonProperty("execution_payload") final ExecutionPayload executionPayload) {
     super(
-        randao_reveal,
-        eth1_data,
+        randaoReveal,
+        eth1Data,
         graffiti,
         proposerSlashings,
         attesterSlashings,
         attestations,
         deposits,
-        voluntaryExits);
-    checkNotNull(syncAggregate, "Sync Aggregate is required for altair blocks");
-    this.syncAggregate = syncAggregate;
+        voluntaryExits,
+        syncAggregate);
+    checkNotNull(executionPayload, "Execution Payload is required for merge blocks");
+    this.executionPayload = executionPayload;
   }
 
-  public BeaconBlockBodyAltair(
-      final tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair
-              .BeaconBlockBodyAltair
+  public BeaconBlockBodyMerge(
+      tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge.BeaconBlockBodyMerge
           message) {
     super(message);
-    this.syncAggregate =
-        new tech.pegasys.teku.api.schema.altair.SyncAggregate(message.getSyncAggregate());
-    checkNotNull(syncAggregate, "Sync Aggregate is required for altair blocks");
+    checkNotNull(message.getExecutionPayload(), "Execution Payload is required for merge blocks");
+    this.executionPayload = new ExecutionPayload(message.getExecutionPayload());
   }
 
   @Override
   public tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody
       asInternalBeaconBlockBody(final SpecVersion spec) {
-    BeaconBlockBodySchemaAltair<?> schema =
-        (BeaconBlockBodySchemaAltair<?>) spec.getSchemaDefinitions().getBeaconBlockBodySchema();
-    SyncAggregateSchema syncAggregateSchema = schema.getSyncAggregateSchema();
     return super.asInternalBeaconBlockBody(
         spec,
         (builder) ->
-            builder.syncAggregate(
+            builder.executionPayload(
                 () ->
-                    syncAggregateSchema.create(
-                        syncAggregateSchema
-                            .getSyncCommitteeBitsSchema()
-                            .fromBytes(syncAggregate.syncCommitteeBits)
-                            .getAllSetBits(),
-                        syncAggregate.syncCommitteeSignature.asInternalBLSSignature())));
+                    new tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload(
+                        executionPayload.parentHash,
+                        executionPayload.coinbase,
+                        executionPayload.stateRoot,
+                        executionPayload.receiptRoot,
+                        executionPayload.logsBloom,
+                        executionPayload.random,
+                        executionPayload.blockNumber,
+                        executionPayload.gasLimit,
+                        executionPayload.gasUsed,
+                        executionPayload.timestamp,
+                        executionPayload.extraData,
+                        executionPayload.baseFeePerGas,
+                        executionPayload.blockHash,
+                        executionPayload.transactions)));
   }
 }

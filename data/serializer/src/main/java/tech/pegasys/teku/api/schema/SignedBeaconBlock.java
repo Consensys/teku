@@ -22,25 +22,25 @@ import java.util.Objects;
 import tech.pegasys.teku.api.schema.interfaces.SignedBlock;
 import tech.pegasys.teku.spec.Spec;
 
-public class SignedBeaconBlock implements SignedBlock {
-  private final BeaconBlock message;
+public abstract class SignedBeaconBlock<T extends BeaconBlock> implements SignedBlock {
+  private final T message;
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
   public final BLSSignature signature;
 
-  public BeaconBlock getMessage() {
+  public T getMessage() {
     return message;
   }
 
   public SignedBeaconBlock(
-      tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock internalBlock) {
+      tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock internalBlock, T block) {
     this.signature = new BLSSignature(internalBlock.getSignature());
-    this.message = new BeaconBlock(internalBlock.getMessage());
+    this.message = block;
   }
 
   @JsonCreator
   public SignedBeaconBlock(
-      @JsonProperty("message") final BeaconBlock message,
+      @JsonProperty("message") final T message,
       @JsonProperty("signature") final BLSSignature signature) {
     this.message = message;
     this.signature = signature;
@@ -57,8 +57,8 @@ public class SignedBeaconBlock implements SignedBlock {
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (!(o instanceof SignedBeaconBlock)) return false;
-    SignedBeaconBlock that = (SignedBeaconBlock) o;
+    if (!(o instanceof SignedBeaconBlock<?>)) return false;
+    SignedBeaconBlock<?> that = (SignedBeaconBlock<?>) o;
     return Objects.equals(message, that.message) && Objects.equals(signature, that.signature);
   }
 

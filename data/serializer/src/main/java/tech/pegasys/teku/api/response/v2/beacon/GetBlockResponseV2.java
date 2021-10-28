@@ -47,7 +47,7 @@ public class GetBlockResponseV2 {
   @JsonCreator
   public GetBlockResponseV2(
       @JsonProperty("version") final Version version,
-      @JsonProperty("data") final SignedBeaconBlock data) {
+      @JsonProperty("data") final SignedBeaconBlock<?> data) {
     this.version = version;
     this.data = data;
   }

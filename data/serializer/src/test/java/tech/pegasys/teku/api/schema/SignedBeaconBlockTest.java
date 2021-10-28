@@ -16,6 +16,7 @@ package tech.pegasys.teku.api.schema;
 import static tech.pegasys.teku.ssz.SszDataAssert.assertThatSszData;
 
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -29,7 +30,7 @@ class SignedBeaconBlockTest {
   public void shouldConvertSchemaToInternalCorrectly() {
     final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock internalBlock =
         dataStructureUtil.randomSignedBeaconBlock(1);
-    final SignedBeaconBlock apiBlock = new SignedBeaconBlock(internalBlock);
+    final SignedBeaconBlockPhase0 apiBlock = new SignedBeaconBlockPhase0(internalBlock);
     assertThatSszData(apiBlock.asInternalSignedBeaconBlock(spec))
         .isEqualByAllMeansTo(internalBlock);
   }

@@ -171,11 +171,11 @@ public class ValidatorDataProviderTest {
   @Test
   void parseBlock_shouldParsePhase0Blocks() throws JsonProcessingException {
     final SignedBeaconBlock internalSignedBlock = dataStructureUtil.randomSignedBeaconBlock(ONE);
-    final tech.pegasys.teku.api.schema.SignedBeaconBlock signedBlock =
+    final tech.pegasys.teku.api.schema.SignedBeaconBlock<?> signedBlock =
         schemaProvider.getSignedBeaconBlock(internalSignedBlock);
     final String signedBlockJson = jsonProvider.objectToJSON(signedBlock);
 
-    final tech.pegasys.teku.api.schema.SignedBeaconBlock parsedBlock =
+    final tech.pegasys.teku.api.schema.SignedBeaconBlock<?> parsedBlock =
         provider.parseBlock(jsonProvider, signedBlockJson);
 
     assertThat(parsedBlock).isEqualTo(signedBlock);
@@ -191,11 +191,11 @@ public class ValidatorDataProviderTest {
         new ValidatorDataProvider(spec, validatorApiChannel, combinedChainDataClient);
 
     final SignedBeaconBlock internalSignedBlock = dataStructureUtil.randomSignedBeaconBlock(ONE);
-    final tech.pegasys.teku.api.schema.SignedBeaconBlock signedBlock =
+    final tech.pegasys.teku.api.schema.SignedBeaconBlock<?> signedBlock =
         schemaProvider.getSignedBeaconBlock(internalSignedBlock);
     final String signedBlockJson = jsonProvider.objectToJSON(signedBlock);
 
-    final tech.pegasys.teku.api.schema.SignedBeaconBlock parsedBlock =
+    final tech.pegasys.teku.api.schema.SignedBeaconBlock<?> parsedBlock =
         provider.parseBlock(jsonProvider, signedBlockJson);
 
     assertThat(parsedBlock).isEqualTo(signedBlock);
@@ -245,8 +245,8 @@ public class ValidatorDataProviderTest {
       throws ExecutionException, InterruptedException {
     final SignedBeaconBlock internalSignedBeaconBlock =
         dataStructureUtil.randomSignedBeaconBlock(1);
-    final tech.pegasys.teku.api.schema.SignedBeaconBlock signedBeaconBlock =
-        new tech.pegasys.teku.api.schema.SignedBeaconBlock(internalSignedBeaconBlock);
+    final tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0 signedBeaconBlock =
+        new tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0(internalSignedBeaconBlock);
 
     final SafeFuture<SendSignedBlockResult> successImportResult =
         completedFuture(SendSignedBlockResult.success(internalSignedBeaconBlock.getRoot()));
@@ -263,8 +263,8 @@ public class ValidatorDataProviderTest {
   public void submitSignedBlock_shouldReturn202ForInvalidBlock() {
     final SignedBeaconBlock internalSignedBeaconBlock =
         dataStructureUtil.randomSignedBeaconBlock(1);
-    final tech.pegasys.teku.api.schema.SignedBeaconBlock signedBeaconBlock =
-        new tech.pegasys.teku.api.schema.SignedBeaconBlock(internalSignedBeaconBlock);
+    final tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0 signedBeaconBlock =
+        new tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0(internalSignedBeaconBlock);
     final AtomicInteger failReasonCount = new AtomicInteger();
 
     Stream.of(FailureReason.values())
@@ -297,8 +297,8 @@ public class ValidatorDataProviderTest {
       throws ExecutionException, InterruptedException {
     final SignedBeaconBlock internalSignedBeaconBlock =
         dataStructureUtil.randomSignedBeaconBlock(1);
-    final tech.pegasys.teku.api.schema.SignedBeaconBlock signedBeaconBlock =
-        new tech.pegasys.teku.api.schema.SignedBeaconBlock(internalSignedBeaconBlock);
+    final tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0 signedBeaconBlock =
+        new tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0(internalSignedBeaconBlock);
 
     final SafeFuture<SendSignedBlockResult> failImportResult =
         completedFuture(SendSignedBlockResult.rejected(FailureReason.INTERNAL_ERROR.name()));

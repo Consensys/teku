@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.api;
 
-import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.BeaconBlockBody;
 import tech.pegasys.teku.api.schema.BeaconState;
@@ -21,7 +20,13 @@ import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.altair.BeaconBlockAltair;
 import tech.pegasys.teku.api.schema.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.api.schema.altair.BeaconStateAltair;
+import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
+import tech.pegasys.teku.api.schema.merge.BeaconBlockBodyMerge;
+import tech.pegasys.teku.api.schema.merge.BeaconBlockMerge;
+import tech.pegasys.teku.api.schema.merge.SignedBeaconBlockMerge;
 import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
+import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 
@@ -37,34 +42,63 @@ public class SchemaObjectProvider {
     this.spec = spec;
   }
 
-  public SignedBeaconBlock getSignedBeaconBlock(
+  public SignedBeaconBlock<?> getSignedBeaconBlock(
       final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock internalBlock) {
-    return new SignedBeaconBlock(
-        getBeaconBlock(internalBlock.getMessage()), new BLSSignature(internalBlock.getSignature()));
+    final UInt64 slot = internalBlock.getMessage().getSlot();
+
+    switch (spec.atSlot(slot).getMilestone()) {
+      case PHASE0:
+        return new SignedBeaconBlockPhase0(internalBlock);
+      case ALTAIR:
+        return new SignedBeaconBlockAltair(internalBlock);
+      case MERGE:
+        return new SignedBeaconBlockMerge(internalBlock);
+      default:
+        throw new IllegalArgumentException("Unsupported milestone for slot " + slot);
+    }
   }
 
   public BeaconBlock getBeaconBlock(
       final tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock block) {
-    if (spec.atSlot(block.getSlot()).getMilestone().equals(SpecMilestone.ALTAIR)) {
-      return new BeaconBlockAltair(
-          block.getSlot(),
-          block.getProposerIndex(),
-          block.getParentRoot(),
-          block.getStateRoot(),
-          getBeaconBlockBodyAltair(block.getBody()));
+    final UInt64 slot = block.getSlot();
+    switch (spec.atSlot(slot).getMilestone()) {
+      case PHASE0:
+        return new BeaconBlock(
+            block.getSlot(),
+            block.getProposerIndex(),
+            block.getParentRoot(),
+            block.getStateRoot(),
+            new BeaconBlockBody(block.getBody()));
+      case ALTAIR:
+        return new BeaconBlockAltair(
+            block.getSlot(),
+            block.getProposerIndex(),
+            block.getParentRoot(),
+            block.getStateRoot(),
+            getBeaconBlockBodyAltair(block.getBody()));
+      case MERGE:
+        return new BeaconBlockMerge(
+            block.getSlot(),
+            block.getProposerIndex(),
+            block.getParentRoot(),
+            block.getStateRoot(),
+            getBeaconBlockBodyMerge(block.getBody()));
+      default:
+        throw new IllegalArgumentException("Unsupported milestone for slot " + slot);
     }
-    return new BeaconBlock(
-        block.getSlot(),
-        block.getProposerIndex(),
-        block.getParentRoot(),
-        block.getStateRoot(),
-        new BeaconBlockBody(block.getBody()));
   }
 
   private BeaconBlockBodyAltair getBeaconBlockBodyAltair(
       final tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody body) {
     return new BeaconBlockBodyAltair(
         tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair
+            .required(body));
+  }
+
+  private BeaconBlockBodyMerge getBeaconBlockBodyMerge(
+      final tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody body) {
+    return new BeaconBlockBodyMerge(
+        tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge.BeaconBlockBodyMerge
             .required(body));
   }
 

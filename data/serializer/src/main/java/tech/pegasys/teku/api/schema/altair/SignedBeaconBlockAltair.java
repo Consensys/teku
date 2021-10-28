@@ -19,18 +19,12 @@ import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.interfaces.SignedBlock;
 
-public class SignedBeaconBlockAltair extends SignedBeaconBlock implements SignedBlock {
-  private final BeaconBlockAltair message;
+public class SignedBeaconBlockAltair extends SignedBeaconBlock<BeaconBlockAltair>
+    implements SignedBlock {
 
   public SignedBeaconBlockAltair(
       tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock internalBlock) {
-    super(internalBlock);
-    this.message = new BeaconBlockAltair(internalBlock.getMessage());
-  }
-
-  @Override
-  public BeaconBlockAltair getMessage() {
-    return message;
+    super(internalBlock, new BeaconBlockAltair(internalBlock.getMessage()));
   }
 
   @JsonCreator
@@ -38,6 +32,5 @@ public class SignedBeaconBlockAltair extends SignedBeaconBlock implements Signed
       @JsonProperty("message") final BeaconBlockAltair message,
       @JsonProperty("signature") final BLSSignature signature) {
     super(message, signature);
-    this.message = message;
   }
 }
