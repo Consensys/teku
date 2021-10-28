@@ -14,6 +14,7 @@ dependencies {
   implementation project(':services:serviceutils')
   implementation project(':storage:api')
   implementation project(':validator:api')
+  implementation project(':validator:restapi')
   implementation project(':validator:beaconnode')
   implementation project(':validator:relaypublisher')
   implementation project(':util')

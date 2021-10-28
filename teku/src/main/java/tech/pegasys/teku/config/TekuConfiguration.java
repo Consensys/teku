@@ -36,6 +36,7 @@ import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.InteropConfig.InteropConfigBuilder;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.client.ValidatorClientConfiguration;
+import tech.pegasys.teku.validator.restapi.ValidatorRestApiConfig;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 public class TekuConfiguration {
@@ -49,6 +50,7 @@ public class TekuConfiguration {
   private final ValidatorClientConfiguration validatorClientConfig;
   private final PowchainConfiguration powchainConfiguration;
   private final NatConfiguration natConfiguration;
+  private final ValidatorRestApiConfig validatorRestApiConfig;
 
   private TekuConfiguration(
       final Eth2NetworkConfiguration eth2NetworkConfiguration,
@@ -65,7 +67,8 @@ public class TekuConfiguration {
       final LoggingConfig loggingConfig,
       final MetricsConfig metricsConfig,
       final StoreConfig storeConfig,
-      final NatConfiguration natConfiguration) {
+      final NatConfiguration natConfiguration,
+      final ValidatorRestApiConfig validatorRestApiConfig) {
     this.eth2NetworkConfiguration = eth2NetworkConfiguration;
     this.storageConfiguration = storageConfiguration;
     this.weakSubjectivityConfig = weakSubjectivityConfig;
@@ -87,8 +90,10 @@ public class TekuConfiguration {
             storeConfig,
             spec);
     this.validatorClientConfig =
-        new ValidatorClientConfiguration(validatorConfig, interopConfig, spec);
+        new ValidatorClientConfiguration(
+            validatorConfig, interopConfig, validatorRestApiConfig, spec);
     this.natConfiguration = natConfiguration;
+    this.validatorRestApiConfig = validatorRestApiConfig;
   }
 
   public static Builder builder() {
@@ -151,6 +156,10 @@ public class TekuConfiguration {
     return natConfiguration;
   }
 
+  public ValidatorRestApiConfig validatorRestApiConfig() {
+    return validatorRestApiConfig;
+  }
+
   public static class Builder {
     private final Eth2NetworkConfiguration.Builder eth2NetworkConfigurationBuilder =
         Eth2NetworkConfiguration.builder().applyMainnetNetworkDefaults();
@@ -167,6 +176,8 @@ public class TekuConfiguration {
     private final SyncConfig.Builder syncConfig = SyncConfig.builder();
     private final BeaconRestApiConfig.BeaconRestApiConfigBuilder restApiBuilder =
         BeaconRestApiConfig.builder();
+    private final ValidatorRestApiConfig.ValidatorRestApiConfigBuilder
+        validatorRestApiConfigBuilder = ValidatorRestApiConfig.builder();
     private final LoggingConfig.LoggingConfigBuilder loggingConfigBuilder = LoggingConfig.builder();
     private final MetricsConfig.MetricsConfigBuilder metricsConfigBuilder = MetricsConfig.builder();
     private final NatConfiguration.Builder natConfigBuilder = NatConfiguration.builder();
@@ -202,7 +213,8 @@ public class TekuConfiguration {
           loggingConfigBuilder.build(),
           metricsConfigBuilder.build(),
           storeConfigBuilder.build(),
-          natConfigBuilder.build());
+          natConfigBuilder.build(),
+          validatorRestApiConfigBuilder.build());
     }
 
     public Builder eth2NetworkConfig(final Consumer<Eth2NetworkConfiguration.Builder> consumer) {
@@ -275,6 +287,12 @@ public class TekuConfiguration {
         final Consumer<BeaconRestApiConfig.BeaconRestApiConfigBuilder>
             beaconRestApiConfigConsumer) {
       beaconRestApiConfigConsumer.accept(restApiBuilder);
+      return this;
+    }
+
+    public Builder validatorApi(
+        final Consumer<ValidatorRestApiConfig.ValidatorRestApiConfigBuilder> validatorApiConsumer) {
+      validatorApiConsumer.accept(validatorRestApiConfigBuilder);
       return this;
     }
 

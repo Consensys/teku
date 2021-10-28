@@ -11,12 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi;
+package tech.pegasys.teku.infrastructure.http;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.beaconrestapi.HostAllowlistUtils.getAndValidateHostHeader;
-import static tech.pegasys.teku.beaconrestapi.HostAllowlistUtils.hostIsInAllowlist;
-import static tech.pegasys.teku.beaconrestapi.HostAllowlistUtils.isHostAuthorized;
+import static tech.pegasys.teku.infrastructure.http.HostAllowlistUtils.getAndValidateHostHeader;
+import static tech.pegasys.teku.infrastructure.http.HostAllowlistUtils.hostIsInAllowlist;
+import static tech.pegasys.teku.infrastructure.http.HostAllowlistUtils.isHostAuthorized;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
