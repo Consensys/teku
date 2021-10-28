@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi;
+package tech.pegasys.teku.infrastructure.http;
 
 import static com.google.common.collect.Streams.stream;
 

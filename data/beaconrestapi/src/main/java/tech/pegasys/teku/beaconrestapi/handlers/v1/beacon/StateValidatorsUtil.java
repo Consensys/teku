@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_ID;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.STATUS;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_ID;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.STATUS;
 
 import io.javalin.http.Context;
 import java.util.List;

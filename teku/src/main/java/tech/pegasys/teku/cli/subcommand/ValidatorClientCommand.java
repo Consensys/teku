@@ -31,6 +31,7 @@ import tech.pegasys.teku.cli.options.UnusedValidatorClientOptions;
 import tech.pegasys.teku.cli.options.ValidatorClientDataOptions;
 import tech.pegasys.teku.cli.options.ValidatorClientOptions;
 import tech.pegasys.teku.cli.options.ValidatorOptions;
+import tech.pegasys.teku.cli.options.ValidatorRestApiOptions;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
@@ -59,6 +60,9 @@ public class ValidatorClientCommand implements Callable<Integer> {
 
   @Mixin(name = "Validator Client")
   private ValidatorClientOptions validatorClientOptions;
+
+  @Mixin(name = "Validator REST API")
+  private ValidatorRestApiOptions validatorRestApiOptions;
 
   @Mixin(name = "Data")
   private ValidatorClientDataOptions dataOptions;
@@ -148,6 +152,7 @@ public class ValidatorClientCommand implements Callable<Integer> {
     validatorOptions.configure(builder);
     validatorClientOptions.configure(builder);
     dataOptions.configure(builder);
+    validatorRestApiOptions.configure(builder);
     loggingOptions.configure(builder, dataOptions.getDataBasePath(), LOG_FILE, LOG_PATTERN);
     interopOptions.configure(builder);
     metricsOptions.configure(builder);
