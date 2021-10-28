@@ -13,8 +13,11 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair;
 
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+
 import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
@@ -28,6 +31,14 @@ class BeaconBlockBodyAltairTest extends AbstractBeaconBlockBodyTest<BeaconBlockB
   void setup() {
     super.setUpBaseClass(
         SpecMilestone.ALTAIR, () -> syncAggregate = dataStructureUtil.randomSyncAggregate());
+  }
+
+  @Test
+  void equalsReturnsFalseWhenSyncAggregateIsDifferent() {
+    syncAggregate = dataStructureUtil.randomSyncAggregate();
+    BeaconBlockBodyAltair testBeaconBlockBody = createBlockBody();
+
+    assertNotEquals(defaultBlockBody, testBeaconBlockBody);
   }
 
   @Override
