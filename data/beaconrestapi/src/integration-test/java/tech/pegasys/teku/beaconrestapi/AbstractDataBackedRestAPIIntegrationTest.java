@@ -36,6 +36,7 @@ import okhttp3.Response;
 import org.junit.jupiter.api.AfterEach;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
+import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.ChainBuilder;
@@ -269,16 +270,16 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     return results;
   }
 
-  public List<SignedBeaconBlock> createBlocksAtSlotsAndMapToApiResult(long... slots) {
+  public List<SignedBeaconBlock<?>> createBlocksAtSlotsAndMapToApiResult(long... slots) {
     final UInt64[] unsignedSlots =
         Arrays.stream(slots).mapToObj(UInt64::valueOf).toArray(UInt64[]::new);
     return createBlocksAtSlotsAndMapToApiResult(unsignedSlots);
   }
 
-  public List<SignedBeaconBlock> createBlocksAtSlotsAndMapToApiResult(UInt64... slots) {
+  public List<SignedBeaconBlock<?>> createBlocksAtSlotsAndMapToApiResult(UInt64... slots) {
     return createBlocksAtSlots(slots).stream()
         .map(SignedBlockAndState::getBlock)
-        .map(SignedBeaconBlock::new)
+        .map(SignedBeaconBlockPhase0::new)
         .collect(Collectors.toList());
   }
 

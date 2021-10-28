@@ -23,6 +23,7 @@ import tech.pegasys.teku.api.response.v1.beacon.GetBlockResponse;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
+import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlock;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -38,11 +39,11 @@ public class GetBlockIntegrationTest extends AbstractDataBackedRestAPIIntegratio
 
     final GetBlockResponse body =
         jsonProvider.jsonToObject(response.body().string(), GetBlockResponse.class);
-    final SignedBeaconBlock data = body.data;
+    final SignedBeaconBlock<?> data = body.data;
     final SignedBlockAndState block = created.get(0);
     assertThat(data)
         .isEqualTo(
-            new SignedBeaconBlock(
+            new SignedBeaconBlockPhase0(
                 new BeaconBlock(block.getBlock().getMessage()),
                 new BLSSignature(block.getBlock().getSignature())));
   }
