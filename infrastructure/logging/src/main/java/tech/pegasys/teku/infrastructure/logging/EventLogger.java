@@ -125,17 +125,15 @@ public class EventLogger {
   }
 
   public void reorgEvent(
-      final UInt64 slot,
       final Bytes32 previousHeadRoot,
-      final Bytes32 newHeadRoot,
-      final UInt64 commonAncestorSlot,
       final UInt64 previousHeadSlot,
+      final Bytes32 newHeadRoot,
       final UInt64 newHeadSlot,
-      final Bytes32 commonAncestorRoot) {
+      final Bytes32 commonAncestorRoot,
+      final UInt64 commonAncestorSlot) {
     String reorgEventLog =
         String.format(
-            "Reorg Event *** Slot: %s, New Head: %s, Previous Head: %s, Common Ancestor: %s",
-            slot,
+            "Reorg Event *** New Head: %s, Previous Head: %s, Common Ancestor: %s",
             LogFormatter.formatBlock(newHeadSlot, newHeadRoot),
             LogFormatter.formatBlock(previousHeadSlot, previousHeadRoot),
             LogFormatter.formatBlock(commonAncestorSlot, commonAncestorRoot));

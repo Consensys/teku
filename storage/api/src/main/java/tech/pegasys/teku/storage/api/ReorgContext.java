@@ -19,31 +19,30 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ReorgContext {
   private final Bytes32 oldBestBlockRoot;
+  private final UInt64 oldBestBlockSlot;
   private final Bytes32 oldBestStateRoot;
   private final UInt64 commonAncestorSlot;
-
   private final Bytes32 commonAncestorRoot;
-  private final UInt64 newChainHeadSlot;
-  private final UInt64 oldBestChainHeadSlot;
 
   public ReorgContext(
       final Bytes32 oldBestBlockRoot,
+      final UInt64 oldBestBlockSlot,
       final Bytes32 oldBestStateRoot,
       final UInt64 commonAncestorSlot,
-      final Bytes32 commonAncestorRoot,
-      final UInt64 newChainHeadSlot,
-      final UInt64 oldBestChainHeadSlot) {
+      final Bytes32 commonAncestorRoot) {
     this.oldBestBlockRoot = oldBestBlockRoot;
+    this.oldBestBlockSlot = oldBestBlockSlot;
     this.oldBestStateRoot = oldBestStateRoot;
     this.commonAncestorSlot = commonAncestorSlot;
-
     this.commonAncestorRoot = commonAncestorRoot;
-    this.newChainHeadSlot = newChainHeadSlot;
-    this.oldBestChainHeadSlot = oldBestChainHeadSlot;
   }
 
   public Bytes32 getOldBestBlockRoot() {
     return oldBestBlockRoot;
+  }
+
+  public UInt64 getOldBestBlockSlot() {
+    return oldBestBlockSlot;
   }
 
   public Bytes32 getOldBestStateRoot() {
@@ -58,29 +57,19 @@ public class ReorgContext {
     return commonAncestorRoot;
   }
 
-  public UInt64 getNewChainHeadSlot() {
-    return newChainHeadSlot;
-  }
-
-  public UInt64 getOldBestChainHeadSlot() {
-    return oldBestChainHeadSlot;
-  }
-
   public static Optional<ReorgContext> of(
       final Bytes32 oldBestBlockRoot,
+      final UInt64 oldBestBlockSlot,
       final Bytes32 oldBestStateRoot,
       final UInt64 commonAncestorSlot,
-      final Bytes32 commonAncestorRoot,
-      final UInt64 newChainHeadSlot,
-      final UInt64 oldBestChainHeadSlot) {
+      final Bytes32 commonAncestorRoot) {
     return Optional.of(
         new ReorgContext(
             oldBestBlockRoot,
+            oldBestBlockSlot,
             oldBestStateRoot,
             commonAncestorSlot,
-            commonAncestorRoot,
-            newChainHeadSlot,
-            oldBestChainHeadSlot));
+            commonAncestorRoot));
   }
 
   public static Optional<ReorgContext> empty() {

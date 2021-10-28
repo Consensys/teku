@@ -362,11 +362,10 @@ public class EventSubscriptionManagerTest {
         Optional.of(
             new ReorgContext(
                 chainReorgEvent.oldHeadBlock,
+                UInt64.ZERO,
                 chainReorgEvent.oldHeadState,
                 chainReorgEvent.slot.minus(depth),
-                Bytes32.ZERO,
-                UInt64.ZERO,
-                UInt64.ZERO)));
+                Bytes32.ZERO)));
     asyncRunner.executeQueuedActions();
   }
 

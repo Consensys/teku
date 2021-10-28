@@ -245,22 +245,19 @@ class CoalescingChainHeadChannelTest {
     final Bytes32 currentDutyDependentRoot = dataStructureUtil.randomBytes32();
 
     final Bytes32 oldBestBlockRoot = dataStructureUtil.randomBytes32();
+    final UInt64 oldBestBlockSlot = dataStructureUtil.randomUInt64();
     final Bytes32 oldBestStateRoot = dataStructureUtil.randomBytes32();
     final UInt64 commonAncestorSlot = dataStructureUtil.randomUInt64();
-
     final Bytes32 commonAncestorRoot = dataStructureUtil.randomBytes32();
-    final UInt64 newChainHeadSlot = dataStructureUtil.randomUInt64();
-    final UInt64 oldBestChainHeadSlot = dataStructureUtil.randomUInt64();
 
     final Optional<ReorgContext> reorgContext =
         Optional.of(
             new ReorgContext(
                 oldBestBlockRoot,
+                oldBestBlockSlot,
                 oldBestStateRoot,
                 commonAncestorSlot,
-                commonAncestorRoot,
-                newChainHeadSlot,
-                oldBestChainHeadSlot));
+                commonAncestorRoot));
     channel.onSyncingChange(false);
 
     channel.chainHeadUpdated(
@@ -274,13 +271,12 @@ class CoalescingChainHeadChannelTest {
 
     verify(eventLogger, times(1))
         .reorgEvent(
-            slot,
             oldBestBlockRoot,
+            oldBestBlockSlot,
             bestBlockRoot,
-            commonAncestorSlot,
-            oldBestChainHeadSlot,
-            newChainHeadSlot,
-            commonAncestorRoot);
+            slot,
+            commonAncestorRoot,
+            commonAncestorSlot);
   }
 
   @Test
@@ -295,20 +291,18 @@ class CoalescingChainHeadChannelTest {
         Optional.of(
             new ReorgContext(
                 dataStructureUtil.randomBytes32(),
+                dataStructureUtil.randomUInt64(),
                 dataStructureUtil.randomBytes32(),
                 UInt64.valueOf(100),
-                dataStructureUtil.randomBytes32(),
-                dataStructureUtil.randomUInt64(),
-                dataStructureUtil.randomUInt64()));
+                dataStructureUtil.randomBytes32()));
     final Optional<ReorgContext> reorgContext2 =
         Optional.of(
             new ReorgContext(
                 dataStructureUtil.randomBytes32(),
+                dataStructureUtil.randomUInt64(),
                 dataStructureUtil.randomBytes32(),
                 UInt64.valueOf(80),
-                dataStructureUtil.randomBytes32(),
-                dataStructureUtil.randomUInt64(),
-                dataStructureUtil.randomUInt64()));
+                dataStructureUtil.randomBytes32()));
 
     channel.onSyncingChange(true);
 

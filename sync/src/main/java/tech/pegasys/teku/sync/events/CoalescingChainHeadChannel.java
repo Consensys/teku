@@ -48,13 +48,12 @@ public class CoalescingChainHeadChannel implements ChainHeadChannel, SyncSubscri
       optionalReorgContext.ifPresent(
           reorg ->
               eventLogger.reorgEvent(
-                  slot,
                   reorg.getOldBestBlockRoot(),
+                  reorg.getOldBestBlockSlot(),
                   bestBlockRoot,
-                  reorg.getCommonAncestorSlot(),
-                  reorg.getOldBestChainHeadSlot(),
-                  reorg.getNewChainHeadSlot(),
-                  reorg.getCommonAncestorRoot()));
+                  slot,
+                  reorg.getCommonAncestorRoot(),
+                  reorg.getCommonAncestorSlot()));
       delegate.chainHeadUpdated(
           slot,
           stateRoot,

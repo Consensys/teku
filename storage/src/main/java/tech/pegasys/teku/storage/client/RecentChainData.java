@@ -301,11 +301,10 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         optionalReorgContext =
             ReorgContext.of(
                 previousChainHead.getRoot(),
+                previousChainHead.getSlot(),
                 previousChainHead.getStateRoot(),
                 commonAncestorSlot,
-                getBlockRootBySlot(commonAncestorSlot).orElse(Bytes32.ZERO),
-                newChainHead.getSlot(),
-                previousChainHead.getSlot());
+                getBlockRootBySlot(commonAncestorSlot).orElse(Bytes32.ZERO));
       } else {
         optionalReorgContext = ReorgContext.empty();
       }
