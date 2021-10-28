@@ -65,22 +65,22 @@ public class BeaconBlockBody {
 
   public BeaconBlockBody(
       tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody body) {
-    this.randao_reveal = new BLSSignature(body.getRandao_reveal().toSSZBytes());
-    this.eth1_data = new Eth1Data(body.getEth1_data());
+    this.randao_reveal = new BLSSignature(body.getRandaoReveal().toSSZBytes());
+    this.eth1_data = new Eth1Data(body.getEth1Data());
     this.graffiti = body.getGraffiti();
     this.proposer_slashings =
-        body.getProposer_slashings().stream()
+        body.getProposerSlashings().stream()
             .map(ProposerSlashing::new)
             .collect(Collectors.toList());
     this.attester_slashings =
-        body.getAttester_slashings().stream()
+        body.getAttesterSlashings().stream()
             .map(AttesterSlashing::new)
             .collect(Collectors.toList());
     this.attestations =
         body.getAttestations().stream().map(Attestation::new).collect(Collectors.toList());
     this.deposits = body.getDeposits().stream().map(Deposit::new).collect(Collectors.toList());
     this.voluntary_exits =
-        body.getVoluntary_exits().stream()
+        body.getVoluntaryExits().stream()
             .map(SignedVoluntaryExit::new)
             .collect(Collectors.toList());
   }

@@ -17,6 +17,7 @@ import com.google.common.base.MoreObjects.ToStringHelper;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.cache.IntCache;
@@ -40,6 +41,11 @@ public abstract class AbstractMutableBeaconState<
     this.transitionCaches =
         builder ? TransitionCaches.getNoOp() : backingImmutableView.getTransitionCaches().copy();
     this.builder = builder;
+  }
+
+  @Override
+  public BeaconStateSchema<?, ?> getBeaconStateSchema() {
+    return (BeaconStateSchema<?, ?>) getSchema();
   }
 
   @Override

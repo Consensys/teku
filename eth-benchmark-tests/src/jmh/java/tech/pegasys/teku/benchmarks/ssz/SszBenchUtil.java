@@ -43,14 +43,14 @@ public class SszBenchUtil {
   }
 
   public static void iterateData(BeaconBlockBody bbb, Blackhole bh) {
-    bh.consume(bbb.getRandao_reveal());
-    iterateData(bbb.getEth1_data(), bh);
+    bh.consume(bbb.getRandaoReveal());
+    iterateData(bbb.getEth1Data(), bh);
     bh.consume(bbb.getGraffiti());
-    bbb.getProposer_slashings().forEach(s -> iterateData(s, bh));
-    bbb.getAttester_slashings().forEach(s -> iterateData(s, bh));
+    bbb.getProposerSlashings().forEach(s -> iterateData(s, bh));
+    bbb.getAttesterSlashings().forEach(s -> iterateData(s, bh));
     bbb.getAttestations().forEach(a -> iterateData(a, bh));
     bbb.getDeposits().forEach(d -> iterateData(d, bh));
-    bbb.getVoluntary_exits().forEach(d -> iterateData(d, bh));
+    bbb.getVoluntaryExits().forEach(d -> iterateData(d, bh));
   }
 
   public static void iterateData(SignedVoluntaryExit d, Blackhole bh) {

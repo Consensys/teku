@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair;
+package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge;
 
 import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,31 +19,42 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractBeaconBlockBodyTest;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 
-class BeaconBlockBodyAltairTest extends AbstractBeaconBlockBodyTest<BeaconBlockBodyAltair> {
+class BeaconBlockBodyMergeTest extends AbstractBeaconBlockBodyTest<BeaconBlockBodyMerge> {
 
   protected SyncAggregate syncAggregate;
+  protected ExecutionPayload executionPayload;
 
   @BeforeEach
   void setup() {
     super.setUpBaseClass(
-        SpecMilestone.ALTAIR, () -> syncAggregate = dataStructureUtil.randomSyncAggregate());
+        SpecMilestone.MERGE,
+        () -> {
+          syncAggregate = dataStructureUtil.randomSyncAggregate();
+          executionPayload = dataStructureUtil.randomExecutionPayload();
+        });
   }
 
   @Override
-  protected BeaconBlockBodyAltair createBlockBody(
+  protected BeaconBlockBodyMerge createBlockBody(
       final Consumer<BeaconBlockBodyBuilder> contentProvider) {
-    return (BeaconBlockBodyAltair) getBlockBodySchema().createBlockBody(contentProvider);
+    return (BeaconBlockBodyMerge) getBlockBodySchema().createBlockBody(contentProvider);
   }
 
   @Override
-  protected BeaconBlockBodySchema<? extends BeaconBlockBodyAltair> getBlockBodySchema() {
-    return BeaconBlockBodySchemaAltair.create(spec.getGenesisSpecConfig());
+  protected BeaconBlockBodySchema<? extends BeaconBlockBodyMerge> getBlockBodySchema() {
+    return BeaconBlockBodySchemaMerge.create(spec.getGenesisSpecConfig());
   }
 
   @Override
   protected Consumer<BeaconBlockBodyBuilder> createContentProvider() {
     return super.createContentProvider()
-        .andThen(builder -> builder.syncAggregate(() -> syncAggregate));
+        .andThen(
+            builder ->
+                builder
+                    .syncAggregate(() -> syncAggregate)
+                    .executionPayload(() -> executionPayload));
   }
 }

@@ -49,7 +49,7 @@ public class SignedBeaconBlock implements SignedBlock {
   public tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock asInternalSignedBeaconBlock(
       final Spec spec) {
     final tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock beaconBlock =
-        message.asInternalBeaconBlock(spec);
+        getMessage().asInternalBeaconBlock(spec);
     return tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock.create(
         spec, beaconBlock, signature.asInternalBLSSignature());
   }

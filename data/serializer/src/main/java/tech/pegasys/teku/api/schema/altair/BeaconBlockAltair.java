@@ -19,9 +19,31 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.interfaces.UnsignedBlock;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 
 public class BeaconBlockAltair extends BeaconBlock implements UnsignedBlock {
   private final BeaconBlockBodyAltair body;
+
+  public BeaconBlockAltair(tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock message) {
+    super(message);
+    this.body = new BeaconBlockBodyAltair(message.getBody().toVersionAltair().orElseThrow());
+  }
+
+  @Override
+  public tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock asInternalBeaconBlock(
+      final Spec spec) {
+    final SpecVersion specVersion = spec.atSlot(slot);
+    return SchemaDefinitionsAltair.required(specVersion.getSchemaDefinitions())
+        .getBeaconBlockSchema()
+        .create(
+            slot,
+            proposer_index,
+            parent_root,
+            state_root,
+            body.asInternalBeaconBlockBody(specVersion));
+  }
 
   @JsonProperty("body")
   @Override

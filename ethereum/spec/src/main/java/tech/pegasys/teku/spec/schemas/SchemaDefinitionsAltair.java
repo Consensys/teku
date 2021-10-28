@@ -26,7 +26,10 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionDataSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContributionSchema;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessageSchema;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
 
 public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
   private final BeaconStateSchemaAltair beaconStateSchema;
@@ -61,7 +64,8 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
   }
 
   @Override
-  public BeaconStateSchemaAltair getBeaconStateSchema() {
+  public BeaconStateSchema<? extends BeaconStateAltair, ? extends MutableBeaconStateAltair>
+      getBeaconStateSchema() {
     return beaconStateSchema;
   }
 

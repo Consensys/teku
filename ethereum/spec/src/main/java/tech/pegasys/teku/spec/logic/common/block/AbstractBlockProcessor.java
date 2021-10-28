@@ -209,8 +209,8 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
                 preState, blockBody.getAttestations(), signatureVerifier, indexedAttestationCache),
         () -> verifyRandao(preState, blockMessage, signatureVerifier),
         () ->
-            verifyProposerSlashings(preState, blockBody.getProposer_slashings(), signatureVerifier),
-        () -> verifyVoluntaryExits(preState, blockBody.getVoluntary_exits(), signatureVerifier));
+            verifyProposerSlashings(preState, blockBody.getProposerSlashings(), signatureVerifier),
+        () -> verifyVoluntaryExits(preState, blockBody.getVoluntaryExits(), signatureVerifier));
   }
 
   @CheckReturnValue
@@ -345,7 +345,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
           Bytes32 mix =
               beaconStateAccessors
                   .getRandaoMix(state, epoch)
-                  .xor(Hash.sha2_256(body.getRandao_reveal().toSSZBytes()));
+                  .xor(Hash.sha2_256(body.getRandaoReveal().toSSZBytes()));
           int index = epoch.mod(specConfig.getEpochsPerHistoricalVector()).intValue();
           state.getRandao_mixes().setElement(index, mix);
         });
@@ -359,17 +359,17 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
         beaconStateAccessors.getValidatorPubKey(state, block.getProposerIndex()).orElseThrow();
     final Bytes32 domain = getDomain(state, Domain.RANDAO);
     final Bytes signing_root = miscHelpers.computeSigningRoot(epoch, domain);
-    if (!bls.verify(proposerPublicKey, signing_root, block.getBody().getRandao_reveal())) {
+    if (!bls.verify(proposerPublicKey, signing_root, block.getBody().getRandaoReveal())) {
       return BlockValidationResult.failed("Randao reveal is invalid.");
     }
     return BlockValidationResult.SUCCESSFUL;
   }
 
   protected void processEth1Data(final MutableBeaconState state, final BeaconBlockBody body) {
-    state.getEth1_data_votes().append(body.getEth1_data());
-    long vote_count = getVoteCount(state, body.getEth1_data());
+    state.getEth1_data_votes().append(body.getEth1Data());
+    long vote_count = getVoteCount(state, body.getEth1Data());
     if (isEnoughVotesToUpdateEth1Data(vote_count)) {
-      state.setEth1_data(body.getEth1_data());
+      state.setEth1_data(body.getEth1Data());
     }
   }
 
@@ -403,11 +403,11 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
                               .longValue())),
               "process_operations: Verify that outstanding deposits are processed up to the maximum number of deposits");
 
-          processProposerSlashingsNoValidation(state, body.getProposer_slashings());
-          processAttesterSlashings(state, body.getAttester_slashings());
+          processProposerSlashingsNoValidation(state, body.getProposerSlashings());
+          processAttesterSlashings(state, body.getAttesterSlashings());
           processAttestationsNoVerification(state, body.getAttestations(), indexedAttestationCache);
           processDeposits(state, body.getDeposits());
-          processVoluntaryExitsNoValidation(state, body.getVoluntary_exits());
+          processVoluntaryExitsNoValidation(state, body.getVoluntaryExits());
           // @process_shard_receipt_proofs
         });
   }

@@ -34,9 +34,11 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -304,6 +306,17 @@ class BlockOperationSelectorFactoryTest {
         final Supplier<SyncAggregate> syncAggregateSupplier) {
       this.syncAggregate = syncAggregateSupplier.get();
       return this;
+    }
+
+    @Override
+    public BeaconBlockBodyBuilder executionPayload(
+        Supplier<ExecutionPayload> executionPayloadSupplier) {
+      return this;
+    }
+
+    @Override
+    public BeaconBlockBody build() {
+      return null;
     }
   }
 }
