@@ -13,8 +13,11 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge;
 
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+
 import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
@@ -35,6 +38,14 @@ class BeaconBlockBodyMergeTest extends AbstractBeaconBlockBodyTest<BeaconBlockBo
           syncAggregate = dataStructureUtil.randomSyncAggregate();
           executionPayload = dataStructureUtil.randomExecutionPayload();
         });
+  }
+
+  @Test
+  void equalsReturnsFalseWhenExecutionPayloadIsDifferent() {
+    executionPayload = dataStructureUtil.randomExecutionPayload();
+    BeaconBlockBodyMerge testBeaconBlockBody = createBlockBody();
+
+    assertNotEquals(defaultBlockBody, testBeaconBlockBody);
   }
 
   @Override
