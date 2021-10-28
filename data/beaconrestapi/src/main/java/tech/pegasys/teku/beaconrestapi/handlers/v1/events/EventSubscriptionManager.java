@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TOPICS;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TOPICS;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.sse.SseClient;
