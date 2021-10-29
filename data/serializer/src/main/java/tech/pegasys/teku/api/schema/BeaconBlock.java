@@ -15,8 +15,6 @@ package tech.pegasys.teku.api.schema;
 
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
@@ -52,13 +50,12 @@ public class BeaconBlock implements UnsignedBlock {
     this.body = new BeaconBlockBody(message.getBody());
   }
 
-  @JsonCreator
   public BeaconBlock(
-      @JsonProperty("slot") final UInt64 slot,
-      @JsonProperty("proposer_index") final UInt64 proposerIndex,
-      @JsonProperty("parent_root") final Bytes32 parentRoot,
-      @JsonProperty("state_root") final Bytes32 stateRoot,
-      @JsonProperty("body") final BeaconBlockBody body) {
+      final UInt64 slot,
+      final UInt64 proposerIndex,
+      final Bytes32 parentRoot,
+      final Bytes32 stateRoot,
+      final BeaconBlockBody body) {
     this.slot = slot;
     this.proposerIndex = proposerIndex;
     this.parentRoot = parentRoot;

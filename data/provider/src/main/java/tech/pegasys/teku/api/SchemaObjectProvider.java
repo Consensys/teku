@@ -22,10 +22,11 @@ import tech.pegasys.teku.api.schema.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.api.schema.altair.BeaconStateAltair;
 import tech.pegasys.teku.api.schema.merge.BeaconBlockBodyMerge;
 import tech.pegasys.teku.api.schema.merge.BeaconBlockMerge;
+import tech.pegasys.teku.api.schema.merge.BeaconStateMerge;
+import tech.pegasys.teku.api.schema.phase0.BeaconBlockPhase0;
 import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 
 /**
  * Takes objects from Internal layers and converts to an appropriate schema object.
@@ -50,7 +51,7 @@ public class SchemaObjectProvider {
     final UInt64 slot = block.getSlot();
     switch (spec.atSlot(slot).getMilestone()) {
       case PHASE0:
-        return new BeaconBlock(
+        return new BeaconBlockPhase0(
             block.getSlot(),
             block.getProposerIndex(),
             block.getParentRoot(),
@@ -91,9 +92,16 @@ public class SchemaObjectProvider {
 
   public BeaconState getBeaconState(
       final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state) {
-    if (spec.atSlot(state.getSlot()).getMilestone().equals(SpecMilestone.ALTAIR)) {
-      return new BeaconStateAltair(state);
+    final UInt64 slot = state.getSlot();
+    switch (spec.atSlot(slot).getMilestone()) {
+      case PHASE0:
+        return new BeaconStatePhase0(state);
+      case ALTAIR:
+        return new BeaconStateAltair(state);
+      case MERGE:
+        return new BeaconStateMerge(state);
+      default:
+        throw new IllegalArgumentException("Unsupported milestone for slot " + slot);
     }
-    return new BeaconStatePhase0(state);
   }
 }

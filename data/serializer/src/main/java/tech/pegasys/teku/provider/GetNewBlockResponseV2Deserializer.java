@@ -23,6 +23,8 @@ import tech.pegasys.teku.api.response.v2.validator.GetNewBlockResponseV2;
 import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.api.schema.altair.BeaconBlockAltair;
+import tech.pegasys.teku.api.schema.merge.BeaconBlockMerge;
+import tech.pegasys.teku.api.schema.phase0.BeaconBlockPhase0;
 
 public class GetNewBlockResponseV2Deserializer extends JsonDeserializer<GetNewBlockResponseV2> {
   private final ObjectMapper mapper;
@@ -38,11 +40,14 @@ public class GetNewBlockResponseV2Deserializer extends JsonDeserializer<GetNewBl
     final Version version = Version.valueOf(node.findValue("version").asText());
     final BeaconBlock block;
     switch (version) {
+      case merge:
+        block = mapper.treeToValue(node.findValue("data"), BeaconBlockMerge.class);
+        break;
       case altair:
         block = mapper.treeToValue(node.findValue("data"), BeaconBlockAltair.class);
         break;
       case phase0:
-        block = mapper.treeToValue(node.findValue("data"), BeaconBlock.class);
+        block = mapper.treeToValue(node.findValue("data"), BeaconBlockPhase0.class);
         break;
       default:
         throw new IOException("Milestone was not able to be decoded");
