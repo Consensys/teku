@@ -407,13 +407,14 @@ class RemoteValidatorApiHandlerTest {
         dataStructureUtil.signedBlock(beaconBlock, signature);
     final SendSignedBlockResult expectedResult = SendSignedBlockResult.success(Bytes32.ZERO);
 
-    final tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0 schemaSignedBlock =
-        new tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0(signedBeaconBlock);
+    final tech.pegasys.teku.api.schema.SignedBeaconBlock<?> schemaSignedBlock =
+        tech.pegasys.teku.api.schema.SignedBeaconBlock.create(signedBeaconBlock);
 
     when(apiClient.sendSignedBlock(any())).thenReturn(expectedResult);
 
-    ArgumentCaptor<tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0> argumentCaptor =
-        ArgumentCaptor.forClass(tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0.class);
+    ArgumentCaptor<tech.pegasys.teku.api.schema.SignedBeaconBlock<?>> argumentCaptor =
+        ArgumentCaptor.forClass(
+            tech.pegasys.teku.api.schema.SignedBeaconBlock.SignedBeaconBlockPhase0.class);
 
     final SafeFuture<SendSignedBlockResult> result = apiHandler.sendSignedBlock(signedBeaconBlock);
     asyncRunner.executeQueuedActions();

@@ -18,10 +18,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
+import tech.pegasys.teku.api.schema.SignedBeaconBlock.SignedBeaconBlockAltair;
+import tech.pegasys.teku.api.schema.SignedBeaconBlock.SignedBeaconBlockMerge;
+import tech.pegasys.teku.api.schema.SignedBeaconBlock.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.api.schema.Version;
-import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
 import tech.pegasys.teku.api.schema.interfaces.SignedBlock;
-import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 
 public class GetBlockResponseV2 {
   private final Version version;
@@ -32,7 +33,8 @@ public class GetBlockResponseV2 {
       property = "version")
   @JsonSubTypes({
     @JsonSubTypes.Type(value = SignedBeaconBlockPhase0.class, name = "phase0"),
-    @JsonSubTypes.Type(value = SignedBeaconBlockAltair.class, name = "altair")
+    @JsonSubTypes.Type(value = SignedBeaconBlockAltair.class, name = "altair"),
+    @JsonSubTypes.Type(value = SignedBeaconBlockMerge.class, name = "merge")
   })
   public final SignedBlock data;
 

@@ -20,12 +20,9 @@ import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.altair.BeaconBlockAltair;
 import tech.pegasys.teku.api.schema.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.api.schema.altair.BeaconStateAltair;
-import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
 import tech.pegasys.teku.api.schema.merge.BeaconBlockBodyMerge;
 import tech.pegasys.teku.api.schema.merge.BeaconBlockMerge;
-import tech.pegasys.teku.api.schema.merge.SignedBeaconBlockMerge;
 import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
-import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -44,18 +41,8 @@ public class SchemaObjectProvider {
 
   public SignedBeaconBlock<?> getSignedBeaconBlock(
       final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock internalBlock) {
-    final UInt64 slot = internalBlock.getMessage().getSlot();
 
-    switch (spec.atSlot(slot).getMilestone()) {
-      case PHASE0:
-        return new SignedBeaconBlockPhase0(internalBlock);
-      case ALTAIR:
-        return new SignedBeaconBlockAltair(internalBlock);
-      case MERGE:
-        return new SignedBeaconBlockMerge(internalBlock);
-      default:
-        throw new IllegalArgumentException("Unsupported milestone for slot " + slot);
-    }
+    return SignedBeaconBlock.create(internalBlock);
   }
 
   public BeaconBlock getBeaconBlock(
