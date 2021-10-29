@@ -24,11 +24,14 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
 
 public class BeaconBlockMerge extends BeaconBlockAltair {
-  private final BeaconBlockBodyMerge body;
 
   public BeaconBlockMerge(BeaconBlock message) {
-    super(message);
-    this.body = new BeaconBlockBodyMerge(message.getBody().toVersionMerge().orElseThrow());
+    super(
+        message.getSlot(),
+        message.getProposerIndex(),
+        message.getParentRoot(),
+        message.getStateRoot(),
+        new BeaconBlockBodyMerge(message.getBody().toVersionMerge().orElseThrow()));
   }
 
   @Override
@@ -47,7 +50,7 @@ public class BeaconBlockMerge extends BeaconBlockAltair {
   @JsonProperty("body")
   @Override
   public BeaconBlockBodyMerge getBody() {
-    return body;
+    return (BeaconBlockBodyMerge) body;
   }
 
   @JsonCreator
@@ -58,6 +61,5 @@ public class BeaconBlockMerge extends BeaconBlockAltair {
       @JsonProperty("state_root") final Bytes32 stateRoot,
       @JsonProperty("body") final BeaconBlockBodyMerge body) {
     super(slot, proposerIndex, parentRoot, stateRoot, body);
-    this.body = body;
   }
 }

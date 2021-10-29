@@ -27,6 +27,7 @@ import java.util.stream.Stream;
 import tech.pegasys.teku.api.schema.altair.BeaconBlockAltair;
 import tech.pegasys.teku.api.schema.interfaces.SignedBlock;
 import tech.pegasys.teku.api.schema.merge.BeaconBlockMerge;
+import tech.pegasys.teku.api.schema.phase0.BeaconBlockPhase0;
 import tech.pegasys.teku.spec.Spec;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, property = "type")
@@ -123,17 +124,17 @@ public abstract class SignedBeaconBlock<T extends BeaconBlock> implements Signed
     }
   }
 
-  public static class SignedBeaconBlockPhase0 extends SignedBeaconBlock<BeaconBlock> {
+  public static class SignedBeaconBlockPhase0 extends SignedBeaconBlock<BeaconBlockPhase0> {
     @JsonCreator
     private SignedBeaconBlockPhase0(
-        @JsonProperty("message") final BeaconBlock message,
+        @JsonProperty("message") final BeaconBlockPhase0 message,
         @JsonProperty("signature") final BLSSignature signature) {
       super(message, signature);
     }
 
     private SignedBeaconBlockPhase0(
         tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock internalBlock) {
-      super(internalBlock, new BeaconBlock(internalBlock.getMessage()));
+      super(internalBlock, new BeaconBlockPhase0(internalBlock.getMessage()));
     }
   }
 }

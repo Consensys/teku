@@ -387,7 +387,7 @@ class RemoteValidatorApiHandlerTest {
     final tech.pegasys.teku.api.schema.BLSSignature schemaBlsSignature =
         new tech.pegasys.teku.api.schema.BLSSignature(blsSignature);
     final tech.pegasys.teku.api.schema.BeaconBlock schemaBeaconBlock =
-        new tech.pegasys.teku.api.schema.BeaconBlock(beaconBlock);
+        new tech.pegasys.teku.api.schema.phase0.BeaconBlockPhase0(beaconBlock);
 
     when(apiClient.createUnsignedBlock(
             eq(beaconBlock.getSlot()), refEq(schemaBlsSignature), eq(graffiti)))

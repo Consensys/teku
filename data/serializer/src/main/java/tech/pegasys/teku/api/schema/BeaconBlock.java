@@ -36,13 +36,13 @@ public class BeaconBlock implements UnsignedBlock {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
   public final Bytes32 stateRoot;
 
-  private final BeaconBlockBody body;
+  protected final BeaconBlockBody body;
 
   public BeaconBlockBody getBody() {
     return body;
   }
 
-  public BeaconBlock(tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock message) {
+  protected BeaconBlock(tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock message) {
     this.slot = message.getSlot();
     this.proposerIndex = message.getProposerIndex();
     this.parentRoot = message.getParentRoot();

@@ -32,6 +32,7 @@ import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.api.schema.SubnetSubscription;
 import tech.pegasys.teku.api.schema.Validator;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeContribution;
+import tech.pegasys.teku.api.schema.phase0.BeaconBlockPhase0;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -88,7 +89,7 @@ public class SchemaObjectsTestFixture {
   }
 
   public BeaconBlock beaconBlock() {
-    return new BeaconBlock(dataStructureUtil.randomBeaconBlock(UInt64.ONE));
+    return new BeaconBlockPhase0(dataStructureUtil.randomBeaconBlock(UInt64.ONE));
   }
 
   public BeaconBlock beaconBlockAltair() {

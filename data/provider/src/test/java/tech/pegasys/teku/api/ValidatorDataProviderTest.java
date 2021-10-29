@@ -50,6 +50,7 @@ import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock.SignedBeaconBlockAltair;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
+import tech.pegasys.teku.api.schema.phase0.BeaconBlockPhase0;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
@@ -84,7 +85,7 @@ public class ValidatorDataProviderTest {
       new ValidatorDataProvider(spec, validatorApiChannel, combinedChainDataClient);
   private final tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock blockInternal =
       dataStructureUtil.randomBeaconBlock(123);
-  private final BeaconBlock block = new BeaconBlock(blockInternal);
+  private final BeaconBlock block = new BeaconBlockPhase0(blockInternal);
   private final tech.pegasys.teku.bls.BLSSignature signatureInternal =
       BLSTestUtil.randomSignature(1234);
   private final BLSSignature signature = new BLSSignature(signatureInternal);

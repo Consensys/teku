@@ -40,6 +40,7 @@ import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.response.v1.validator.GetNewBlockResponse;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
+import tech.pegasys.teku.api.schema.phase0.BeaconBlockPhase0;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -80,7 +81,8 @@ public class GetNewBlockTest {
         Map.of(RANDAO_REVEAL, List.of(signature.toHexString()));
     Optional<BeaconBlock> optionalBeaconBlock =
         Optional.of(
-            new BeaconBlock(dataStructureUtil.randomBeaconBlock(dataStructureUtil.randomLong())));
+            new BeaconBlockPhase0(
+                dataStructureUtil.randomBeaconBlock(dataStructureUtil.randomLong())));
     when(context.queryParamMap()).thenReturn(queryParams);
     when(context.pathParamMap()).thenReturn(pathParams);
     when(provider.getMilestoneAtSlot(UInt64.ONE)).thenReturn(SpecMilestone.PHASE0);
@@ -105,7 +107,8 @@ public class GetNewBlockTest {
             List.of(graffiti.toHexString()));
     Optional<BeaconBlock> optionalBeaconBlock =
         Optional.of(
-            new BeaconBlock(dataStructureUtil.randomBeaconBlock(dataStructureUtil.randomLong())));
+            new BeaconBlockPhase0(
+                dataStructureUtil.randomBeaconBlock(dataStructureUtil.randomLong())));
     when(context.queryParamMap()).thenReturn(params);
     when(context.pathParamMap()).thenReturn(Map.of(SLOT, "1"));
     when(provider.getMilestoneAtSlot(UInt64.ONE)).thenReturn(SpecMilestone.PHASE0);
