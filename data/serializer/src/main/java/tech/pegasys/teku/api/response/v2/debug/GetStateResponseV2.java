@@ -33,7 +33,7 @@ public class GetStateResponseV2 {
   @JsonSubTypes({
     @JsonSubTypes.Type(value = SignedBeaconBlockPhase0.class, name = "phase0"),
     @JsonSubTypes.Type(value = SignedBeaconBlockAltair.class, name = "altair"),
-    @JsonSubTypes.Type(value = SignedBeaconBlockMerge.class, name = "altair")
+    @JsonSubTypes.Type(value = SignedBeaconBlockMerge.class, name = "merge")
   })
   public final State data;
 
