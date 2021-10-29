@@ -50,7 +50,7 @@ public class SpecTestInvocationContextProvider implements TestTemplateInvocation
 
       @Override
       public List<Extension> getAdditionalExtensions() {
-        return List.of(new GenericTypedParameterResolver(specContext));
+        return List.of(new GenericTypedParameterResolver<>(specContext));
       }
     };
   }
