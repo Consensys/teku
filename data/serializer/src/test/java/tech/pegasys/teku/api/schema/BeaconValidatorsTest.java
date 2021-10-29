@@ -20,24 +20,22 @@ import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_EPOCH;
 
 import java.util.List;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestTemplate;
+import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.testutils.SpecTestInvocationContextProvider;
+import tech.pegasys.teku.testutils.SpecTestInvocationContextProvider.SpecContext;
 
+@ExtendWith(SpecTestInvocationContextProvider.class)
 class BeaconValidatorsTest {
 
-  private final Spec spec = TestSpecFactory.createMinimalPhase0();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-
-  @Test
-  public void validatorsResponseShouldConformToDefaults() {
-    BeaconState beaconState = dataStructureUtil.randomBeaconState();
+  @TestTemplate
+  public void validatorsResponseShouldConformToDefaults(SpecContext ctx) {
+    BeaconState beaconState = ctx.getDataStructureUtil().randomBeaconState();
     SszList<Validator> validatorList = beaconState.getValidators();
     BeaconValidators response = new BeaconValidators(beaconState, FAR_FUTURE_EPOCH);
     assertThat(response.total_size).isEqualTo(beaconState.getValidators().size());
@@ -51,30 +49,32 @@ class BeaconValidatorsTest {
     assertThat(response.validators.get(0).validator_index).isEqualTo(0);
   }
 
-  @Test
-  public void activeValidatorsResponseShouldConformToDefaults() {
-    BeaconState beaconState = dataStructureUtil.randomBeaconState();
+  @TestTemplate
+  public void activeValidatorsResponseShouldConformToDefaults(SpecContext ctx) {
+    BeaconState beaconState = ctx.getDataStructureUtil().randomBeaconState();
     BeaconValidators validators =
         new BeaconValidators(
             beaconState,
             true,
-            spec.getCurrentEpoch(beaconState),
+            ctx.getSpec().getCurrentEpoch(beaconState),
             PAGE_SIZE_DEFAULT,
             PAGE_TOKEN_DEFAULT);
     int expectedNextPageToken =
         beaconState.getValidators().size() < PAGE_SIZE_DEFAULT ? 0 : PAGE_TOKEN_DEFAULT + 1;
     long activeValidatorCount =
         BeaconValidators.getEffectiveListSize(
-            getValidators(beaconState), true, spec.computeEpochAtSlot(beaconState.getSlot()));
+            getValidators(beaconState),
+            true,
+            ctx.getSpec().computeEpochAtSlot(beaconState.getSlot()));
     assertThat(validators.validators.size())
         .isEqualTo(Math.min(PAGE_SIZE_DEFAULT, activeValidatorCount));
     assertThat(validators.total_size).isEqualTo(activeValidatorCount);
     assertThat(validators.next_page_token).isEqualTo(expectedNextPageToken);
   }
 
-  @Test
-  public void suppliedPageSizeParamIsUsed() {
-    BeaconState beaconState = dataStructureUtil.randomBeaconState();
+  @TestTemplate
+  public void suppliedPageSizeParamIsUsed(SpecContext ctx) {
+    BeaconState beaconState = ctx.getDataStructureUtil().randomBeaconState();
     final int suppliedPageSizeParam = 10;
 
     BeaconValidators beaconValidators =
@@ -85,9 +85,9 @@ class BeaconValidatorsTest {
     assertThat(beaconValidators.next_page_token).isEqualTo(PAGE_TOKEN_DEFAULT + 1);
   }
 
-  @Test
-  public void suppliedPageParamsAreUsed() {
-    BeaconState beaconState = dataStructureUtil.randomBeaconState();
+  @TestTemplate
+  public void suppliedPageParamsAreUsed(SpecContext ctx) {
+    BeaconState beaconState = ctx.getDataStructureUtil().randomBeaconState();
     final int suppliedPageSizeParam = 9;
     final int suppliedPageTokenParam = 2;
 
@@ -103,9 +103,9 @@ class BeaconValidatorsTest {
     assertThat(beaconValidators.validators.size()).isEqualTo(suppliedPageSizeParam);
   }
 
-  @Test
-  public void returnEmptyListIfPageParamsOutOfBounds() {
-    BeaconState beaconState = dataStructureUtil.randomBeaconState();
+  @TestTemplate
+  public void returnEmptyListIfPageParamsOutOfBounds(SpecContext ctx) {
+    BeaconState beaconState = ctx.getDataStructureUtil().randomBeaconState();
     final int suppliedPageSizeParam = 1000;
     final int suppliedPageTokenParam = 1000;
 
@@ -123,9 +123,9 @@ class BeaconValidatorsTest {
     assertThat(beaconValidators.validators.size()).isEqualTo(0);
   }
 
-  @Test
-  public void returnRemainderIfEdgeCasePageParams() {
-    BeaconState beaconState = dataStructureUtil.randomBeaconState();
+  @TestTemplate
+  public void returnRemainderIfEdgeCasePageParams(SpecContext ctx) {
+    BeaconState beaconState = ctx.getDataStructureUtil().randomBeaconState();
     final SszList<Validator> validators = beaconState.getValidators();
     final int validatorsSize = validators.size();
     final int suppliedPageSizeParam = validatorsSize / 10 - 1;
@@ -147,16 +147,18 @@ class BeaconValidatorsTest {
     assertThat(beaconValidators.validators.size()).isEqualTo(expectedRemainderSize);
   }
 
-  @Test
-  public void getActiveValidatorsCount() {
-    BeaconState beaconState = dataStructureUtil.randomBeaconState();
+  @TestTemplate
+  public void getActiveValidatorsCount(SpecContext ctx) {
+    BeaconState beaconState = ctx.getDataStructureUtil().randomBeaconState();
 
     System.out.println(beaconState.hashTreeRoot());
 
     SszList<Validator> allValidators = beaconState.getValidators();
     long originalActiveValidatorCount =
         BeaconValidators.getEffectiveListSize(
-            getValidators(beaconState), true, spec.computeEpochAtSlot(beaconState.getSlot()));
+            getValidators(beaconState),
+            true,
+            ctx.getSpec().computeEpochAtSlot(beaconState.getSlot()));
     int originalValidatorCount = allValidators.size();
 
     assertThat(originalActiveValidatorCount)
@@ -164,7 +166,7 @@ class BeaconValidatorsTest {
 
     // create one validator which IS active and add it to the list
     Validator v =
-        dataStructureUtil
+        ctx.getDataStructureUtil()
             .randomValidator()
             .withActivation_eligibility_epoch(UInt64.ZERO)
             .withActivation_epoch(GENESIS_EPOCH);
@@ -174,7 +176,9 @@ class BeaconValidatorsTest {
     int updatedValidatorCount = beaconStateW.getValidators().size();
     long updatedActiveValidatorCount =
         BeaconValidators.getEffectiveListSize(
-            getValidators(beaconStateW), true, spec.computeEpochAtSlot(beaconStateW.getSlot()));
+            getValidators(beaconStateW),
+            true,
+            ctx.getSpec().computeEpochAtSlot(beaconStateW.getSlot()));
 
     SszList<Validator> updatedValidators = beaconStateW.getValidators();
 

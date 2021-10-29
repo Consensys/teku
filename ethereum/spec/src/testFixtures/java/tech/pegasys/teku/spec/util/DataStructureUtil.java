@@ -443,6 +443,28 @@ public final class DataStructureUtil {
             randomExecutionPayloadTransactions());
   }
 
+  public ExecutionPayload emptyExecutionPayloadIfRequiredByState(BeaconState state) {
+    return state.toVersionAltair().map(__ -> emptyExecutionPayload()).orElse(null);
+  }
+
+  public ExecutionPayload emptyExecutionPayload() {
+    return new ExecutionPayload(
+        Bytes32.ZERO,
+        Bytes20.ZERO,
+        Bytes32.ZERO,
+        Bytes32.ZERO,
+        Bytes.EMPTY,
+        Bytes32.ZERO,
+        UInt64.ZERO,
+        UInt64.ZERO,
+        UInt64.ZERO,
+        UInt64.ZERO,
+        Bytes.EMPTY,
+        UInt256.ZERO,
+        Bytes32.ZERO,
+        List.of());
+  }
+
   public List<Bytes> randomExecutionPayloadTransactions() {
     return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_TRANSACTIONS))
         .mapToObj(__ -> randomBytes(randomInt(MAX_EP_RANDOM_TRANSACTIONS_SIZE)))
