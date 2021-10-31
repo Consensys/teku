@@ -1,8 +1,8 @@
 dependencies {
-    implementation project(':services:serviceutils')
     implementation project(':infrastructure:async')
     implementation project(':util')
     implementation project(':infrastructure:events')
+    implementation project(':infrastructure:serviceutils')
     implementation 'com.google.guava:guava'
     implementation('org.quartz-scheduler:quartz') {
         exclude group: 'com.mchange'

@@ -1,0 +1,24 @@
+dependencies {
+  implementation project(':data')
+  implementation project(':data:provider')
+  implementation project(':data:serializer')
+  implementation project(':infrastructure:async')
+  implementation project(':infrastructure:exceptions')
+  implementation project(':infrastructure:http')
+  implementation project(':infrastructure:logging')
+  implementation project(':infrastructure:restapi')
+  implementation project(':infrastructure:serviceutils')
+  implementation project(':infrastructure:version')
+  implementation project(':validator:api')
+
+  implementation 'com.google.guava:guava'
+  implementation 'io.javalin:javalin'
+  implementation 'org.apache.tuweni:tuweni-crypto'
+  implementation 'org.apache.tuweni:tuweni-units'
+  implementation 'org.webjars:swagger-ui'
+
+  testImplementation testFixtures(project(':infrastructure:async'))
+
+  integrationTestImplementation 'com.squareup.okhttp3:okhttp'
+  integrationTestImplementation 'org.jsoup:jsoup'
+}

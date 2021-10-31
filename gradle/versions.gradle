@@ -58,6 +58,7 @@ dependencyManagement {
       entry 'swagger-models'
       entry 'swagger-annotations'
     }
+    dependency "org.webjars:swagger-ui:3.43.0"
     dependency 'io.github.classgraph:classgraph:4.8.87'
 
     dependencySet(group: 'io.netty', version: '4.1.69.Final') {

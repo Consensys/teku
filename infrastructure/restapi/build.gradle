@@ -1,0 +1,15 @@
+dependencies {
+  implementation project(':infrastructure:async')
+  implementation project(':infrastructure:exceptions')
+  implementation project(':infrastructure:http')
+  implementation project(':infrastructure:logging')
+  implementation project(':infrastructure:serviceutils')
+
+  implementation 'com.fasterxml.jackson.core:jackson-databind'
+  implementation 'com.google.guava:guava'
+  implementation 'io.javalin:javalin'
+  implementation 'org.webjars:swagger-ui'
+  implementation 'it.unimi.dsi:fastutil'
+
+  testImplementation testFixtures(project(':infrastructure:async'))
+}
