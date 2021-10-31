@@ -17,17 +17,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.config.SpecConfigMerge;
-import tech.pegasys.teku.spec.config.TestConfigLoader;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 class SpecVersionTest {
-
-  private final SpecConfig minimalPhase0Config =
-      TestConfigLoader.loadPhase0Config(Eth2Network.MINIMAL.configName());
   private final SpecConfigAltair minimalConfig =
       SpecConfigAltair.required(SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()));
 
@@ -64,12 +59,5 @@ class SpecVersionTest {
     assertThat(actualVersion.get().getMilestone()).isEqualTo(SpecMilestone.MERGE);
     assertThat(actualVersion.get().getSchemaDefinitions())
         .hasSameClassAs(expectedVersion.getSchemaDefinitions());
-  }
-
-  @Test
-  void shouldReturnEmptyWhen_altairRequestedWithPhase0Config() {
-    final Optional<SpecVersion> actualVersion =
-        SpecVersion.create(SpecMilestone.ALTAIR, minimalPhase0Config);
-    assertThat(actualVersion).isEmpty();
   }
 }

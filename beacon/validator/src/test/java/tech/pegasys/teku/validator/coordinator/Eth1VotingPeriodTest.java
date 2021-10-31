@@ -24,13 +24,13 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.TestConfigLoader;
+import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.util.config.Constants;
 
 class Eth1VotingPeriodTest {
 
   final SpecConfig specConfig =
-      TestConfigLoader.loadConfig(
+      SpecConfigLoader.loadConfig(
           "minimal",
           b ->
               b.secondsPerEth1Block(UInt64.valueOf(3))

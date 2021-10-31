@@ -1,11 +1,10 @@
 # Extends the swift preset
 PRESET_BASE: 'swift'
 
-# Unlike minimal:
-# SECONDS_PER_SLOT: 3
-# MIN_GENESIS_ACTIVE_VALIDATOR_COUNT: 4
-# SECONDS_PER_ETH1_BLOCK: 1
-
+# Unlike swift:
+# SECONDS_PER_SLOT: 6
+# allow voluntary exits straight away (after 3 epochs active) for tests
+# SHARD_COMMITTEE_PERIOD: 3
 
 # Genesis
 # ---------------------------------------------------------------
@@ -16,7 +15,7 @@ MIN_GENESIS_TIME: 1578009600
 # Highest byte set to 0x01 to avoid collisions with mainnet versioning
 GENESIS_FORK_VERSION: 0x00000001
 # [customized] Faster to spin up testnets, but does not give validator reasonable warning time for genesis
-GENESIS_DELAY: 300
+GENESIS_DELAY: 30
 
 
 # Forking
@@ -40,15 +39,15 @@ TRANSITION_TOTAL_DIFFICULTY: 4294967296
 
 # Time parameters
 # ---------------------------------------------------------------
-# [customized] Faster for testing purposes
-SECONDS_PER_SLOT: 3
+
+SECONDS_PER_SLOT: 6
 # 14 (estimate from Eth1 mainnet)
-# [ customized] faster for testing
+# [customized]
 SECONDS_PER_ETH1_BLOCK: 1
 # 2**8 (= 256) epochs
 MIN_VALIDATOR_WITHDRAWABILITY_DELAY: 256
 # [customized] higher frequency of committee turnover and faster time to acceptable voluntary exit
-SHARD_COMMITTEE_PERIOD: 64
+SHARD_COMMITTEE_PERIOD: 3
 # [customized] process deposits more quickly, but insecure
 ETH1_FOLLOW_DISTANCE: 16
 
@@ -64,7 +63,7 @@ EJECTION_BALANCE: 16000000000
 # 2**2 (= 4)
 MIN_PER_EPOCH_CHURN_LIMIT: 4
 # 2**16 (= 65,536)
-CHURN_LIMIT_QUOTIENT: 65536
+CHURN_LIMIT_QUOTIENT: 32
 
 
 # Deposit contract

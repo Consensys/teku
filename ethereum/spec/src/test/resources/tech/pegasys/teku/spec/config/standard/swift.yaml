@@ -1,11 +1,7 @@
-# Extends the swift preset
+# swift config
+
+# Extends the minimal preset
 PRESET_BASE: 'swift'
-
-# Unlike minimal:
-# SECONDS_PER_SLOT: 3
-# MIN_GENESIS_ACTIVE_VALIDATOR_COUNT: 4
-# SECONDS_PER_ETH1_BLOCK: 1
-
 
 # Genesis
 # ---------------------------------------------------------------
@@ -43,7 +39,7 @@ TRANSITION_TOTAL_DIFFICULTY: 4294967296
 # [customized] Faster for testing purposes
 SECONDS_PER_SLOT: 3
 # 14 (estimate from Eth1 mainnet)
-# [ customized] faster for testing
+# [customized]
 SECONDS_PER_ETH1_BLOCK: 1
 # 2**8 (= 256) epochs
 MIN_VALIDATOR_WITHDRAWABILITY_DELAY: 256
