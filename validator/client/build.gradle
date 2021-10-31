@@ -11,7 +11,7 @@ dependencies {
   implementation project(':infrastructure:events')
   implementation project(':infrastructure:async')
   implementation project(':infrastructure:logging')
-  implementation project(':services:serviceutils')
+  implementation project(':infrastructure:serviceutils')
   implementation project(':storage:api')
   implementation project(':validator:api')
   implementation project(':validator:restapi')
