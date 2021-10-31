@@ -11,7 +11,7 @@ dependencies {
     implementation project(':infrastructure:logging')
     implementation project(':infrastructure:metrics')
     implementation project(':infrastructure:subscribers')
-    implementation project(':services:serviceutils')
+    implementation project(':infrastructure:serviceutils')
     implementation project(':ssz')
     implementation project(':storage')
     implementation project(':storage:api')
@@ -35,7 +35,7 @@ dependencies {
     integrationTestImplementation testFixtures(project('::networking:eth2'))
     integrationTestImplementation testFixtures(project(':sync'))
 
-    testFixturesImplementation project(':services:serviceutils')
+    testFixturesImplementation project(':infrastructure:serviceutils')
     testFixturesImplementation project(':ethereum:statetransition')
     testFixturesImplementation project(':ethereum:weaksubjectivity')
     testFixturesImplementation project(':util')

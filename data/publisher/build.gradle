@@ -5,7 +5,7 @@ dependencies {
     implementation project (':infrastructure:version')
     implementation project (':infrastructure:time')
     implementation project (':data:serializer')
-    implementation project (':services:serviceutils')
+    implementation project (':infrastructure:serviceutils')
 
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
