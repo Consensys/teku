@@ -71,7 +71,7 @@ class SyncCommitteePerformanceTrackerTest {
   void shouldCalculatePerformanceWhenNoSyncCommitteeDutiesExpectedInEpoch() {
     UInt64 epoch = UInt64.ONE;
     assertThat(tracker.calculatePerformance(epoch))
-        .isCompletedWithValue(new SyncCommitteePerformance(epoch.intValue(), 0, 0, 0, 0));
+        .isCompletedWithValue(new SyncCommitteePerformance(epoch, 0, 0, 0, 0));
     verifyNoInteractions(combinedChainDataClient);
   }
 

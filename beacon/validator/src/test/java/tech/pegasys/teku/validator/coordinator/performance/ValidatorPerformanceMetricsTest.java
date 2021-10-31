@@ -19,10 +19,11 @@ import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.VALIDA
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ValidatorPerformanceMetricsTest {
 
-  private static final int EPOCH = 1;
+  private static final UInt64 EPOCH = UInt64.ONE;
   private static final int NUMBER_OF_EXPECTED_MESSAGES = 64;
   private static final int NUMBER_OF_PRODUCED_MESSAGES = 60;
   private static final int NUMBER_OF_CORRECT_MESSAGES = 55;

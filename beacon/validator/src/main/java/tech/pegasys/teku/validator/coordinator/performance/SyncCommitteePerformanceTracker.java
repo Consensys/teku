@@ -176,7 +176,7 @@ public class SyncCommitteePerformanceTracker {
         .thenApply(
             numberOfIncludedMessages ->
                 new SyncCommitteePerformance(
-                    epoch.intValue(),
+                    epoch,
                     numberOfExpectedMessages,
                     numberOfProducedMessages,
                     numberOfCorrectMessages,
