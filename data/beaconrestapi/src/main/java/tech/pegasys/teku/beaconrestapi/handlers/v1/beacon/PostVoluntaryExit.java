@@ -100,7 +100,6 @@ public class PostVoluntaryExit extends AbstractHandler {
               .orElse("Invalid voluntary exit, it will never pass validation so it's rejected"));
     }
     ctx.status(SC_OK);
-    LOG.debug("PJH Exit succeeded");
     return "";
   }
 }
