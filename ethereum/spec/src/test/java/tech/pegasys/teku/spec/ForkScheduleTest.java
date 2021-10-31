@@ -21,7 +21,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
-import tech.pegasys.teku.spec.config.TestConfigLoader;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.networks.Eth2Network;
@@ -37,20 +36,20 @@ public class ForkScheduleTest {
       FORK_EPOCH_ALTAIR.times(MINIMAL_CONFIG.getSlotsPerEpoch());
   private static final SpecConfigAltair TRANSITION_CONFIG =
       SpecConfigAltair.required(
-          TestConfigLoader.loadConfig(
+          SpecConfigLoader.loadConfig(
               Eth2Network.MINIMAL.configName(),
               c -> c.altairBuilder(a -> a.altairForkEpoch(FORK_EPOCH_ALTAIR))));
 
   // Set config starting altair at genesis
   private static final SpecConfigAltair ALTAIR_CONFIG =
       SpecConfigAltair.required(
-          TestConfigLoader.loadConfig(
+          SpecConfigLoader.loadConfig(
               Eth2Network.MINIMAL.configName(),
               c -> c.altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))));
 
   // Set up default config
   private static final SpecConfig PHASE0_CONFIG =
-      TestConfigLoader.loadPhase0Config(Eth2Network.MINIMAL.configName());
+      SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName());
 
   // Fork versions
   static final Bytes4 PHASE_0_FORK_VERSION = TRANSITION_CONFIG.getGenesisForkVersion();

@@ -28,7 +28,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.TestConfigLoader;
+import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
@@ -71,7 +71,7 @@ public abstract class AbstractBeaconStateSchemaTest<
   public void changeSpecConfigTest() {
     final Spec standardSpec = TestSpecFactory.createMinimalPhase0();
     final SpecConfig modifiedConfig =
-        TestConfigLoader.loadConfig(
+        SpecConfigLoader.loadConfig(
             "minimal",
             b ->
                 b.slotsPerHistoricalRoot(123)

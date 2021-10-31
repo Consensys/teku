@@ -22,7 +22,7 @@ import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.TestConfigLoader;
+import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
@@ -32,7 +32,7 @@ public class SyncCommitteeCurrentSlotUtilTest {
 
   private final Spec spec =
       TestSpecFactory.createAltair(
-          TestConfigLoader.loadConfig(
+          SpecConfigLoader.loadConfig(
               "minimal",
               phase0Builder ->
                   phase0Builder.altairBuilder(

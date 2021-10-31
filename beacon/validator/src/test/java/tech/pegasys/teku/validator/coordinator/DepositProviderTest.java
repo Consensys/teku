@@ -35,7 +35,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.TestConfigLoader;
+import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
@@ -66,7 +66,7 @@ public class DepositProviderTest {
   void setup(final int maxDeposits) {
     when(state.getSlot()).thenReturn(UInt64.valueOf(1234));
 
-    SpecConfig specConfig = TestConfigLoader.loadConfig("minimal", b -> b.maxDeposits(maxDeposits));
+    SpecConfig specConfig = SpecConfigLoader.loadConfig("minimal", b -> b.maxDeposits(maxDeposits));
     spec = TestSpecFactory.createPhase0(specConfig);
     dataStructureUtil = new DataStructureUtil(spec);
     depositProvider =
