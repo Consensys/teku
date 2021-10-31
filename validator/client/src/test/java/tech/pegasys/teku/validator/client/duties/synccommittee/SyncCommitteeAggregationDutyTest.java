@@ -37,7 +37,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.TestConfigLoader;
+import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionData;
@@ -95,7 +95,7 @@ class SyncCommitteeAggregationDutyTest {
   }
 
   private static SpecConfig createSpecConfig() {
-    return TestConfigLoader.loadConfig(
+    return SpecConfigLoader.loadConfig(
             "minimal",
             modifier ->
                 modifier.altairBuilder(
