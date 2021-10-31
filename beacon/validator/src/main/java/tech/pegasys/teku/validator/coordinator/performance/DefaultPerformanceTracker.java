@@ -289,6 +289,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
     int numberOfProducedAttestations = producedAttestations.size();
     return producedAttestations.size() > 0
         ? new AttestationPerformance(
+            analyzedEpoch.intValue(),
             validatorTracker.getNumberOfValidatorsForEpoch(analyzedEpoch),
             numberOfProducedAttestations,
             (int) inclusionDistanceStatistics.getCount(),
@@ -298,6 +299,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
             correctTargetCount,
             correctHeadBlockCount)
         : AttestationPerformance.empty(
+            analyzedEpoch.intValue(),
             validatorTracker.getNumberOfValidatorsForEpoch(analyzedEpoch));
   }
 

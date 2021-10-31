@@ -18,6 +18,7 @@ import static tech.pegasys.teku.validator.coordinator.performance.DefaultPerform
 import com.google.common.base.Objects;
 
 public class AttestationPerformance {
+  final int epoch;
   final int numberOfExpectedAttestations;
   final int numberOfProducedAttestations;
   final int numberOfIncludedAttestations;
@@ -28,6 +29,7 @@ public class AttestationPerformance {
   final int correctHeadBlockCount;
 
   public AttestationPerformance(
+      int epoch,
       int numberOfExpectedAttestations,
       int numberOfProducedAttestations,
       int numberOfIncludedAttestations,
@@ -36,6 +38,7 @@ public class AttestationPerformance {
       double inclusionDistanceAverage,
       int correctTargetCount,
       int correctHeadBlockCount) {
+    this.epoch = epoch;
     this.numberOfExpectedAttestations = numberOfExpectedAttestations;
     this.numberOfProducedAttestations = numberOfProducedAttestations;
     this.numberOfIncludedAttestations = numberOfIncludedAttestations;
@@ -46,8 +49,8 @@ public class AttestationPerformance {
     this.correctHeadBlockCount = correctHeadBlockCount;
   }
 
-  public static AttestationPerformance empty(int numberOfExpectedAttestations) {
-    return new AttestationPerformance(numberOfExpectedAttestations, 0, 0, 0, 0, 0, 0, 0);
+  public static AttestationPerformance empty(int epoch, int numberOfExpectedAttestations) {
+    return new AttestationPerformance(epoch, numberOfExpectedAttestations, 0, 0, 0, 0, 0, 0, 0);
   }
 
   @Override
@@ -55,7 +58,8 @@ public class AttestationPerformance {
     if (this == o) return true;
     if (!(o instanceof AttestationPerformance)) return false;
     AttestationPerformance that = (AttestationPerformance) o;
-    return numberOfExpectedAttestations == that.numberOfExpectedAttestations
+    return epoch == that.epoch
+        && numberOfExpectedAttestations == that.numberOfExpectedAttestations
         && numberOfProducedAttestations == that.numberOfProducedAttestations
         && numberOfIncludedAttestations == that.numberOfIncludedAttestations
         && inclusionDistanceMax == that.inclusionDistanceMax
@@ -68,6 +72,7 @@ public class AttestationPerformance {
   @Override
   public int hashCode() {
     return Objects.hashCode(
+        epoch,
         numberOfExpectedAttestations,
         numberOfProducedAttestations,
         numberOfIncludedAttestations,
@@ -82,9 +87,10 @@ public class AttestationPerformance {
   public String toString() {
     return String.format(
         "Attestation performance: "
-            + "expected %d, produced %d, included %d (%d%%), "
+            + "epoch %d, expected %d, produced %d, included %d (%d%%), "
             + "distance %d / %.2f / %d, "
             + "correct target %d (%d%%), correct head %d (%d%%)",
+        epoch,
         numberOfExpectedAttestations,
         numberOfProducedAttestations,
         numberOfIncludedAttestations,

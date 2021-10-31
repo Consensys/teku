@@ -18,16 +18,19 @@ import static tech.pegasys.teku.validator.coordinator.performance.DefaultPerform
 import java.util.Objects;
 
 public class SyncCommitteePerformance {
+  private final int epoch;
   private final int numberOfExpectedMessages;
   private final int numberOfProducedMessages;
   private final int numberOfCorrectMessages;
   private final int numberOfIncludedMessages;
 
   public SyncCommitteePerformance(
+      final int epoch,
       final int numberOfExpectedMessages,
       final int numberOfProducedMessages,
       final int numberOfCorrectMessages,
       final int numberOfIncludedMessages) {
+    this.epoch = epoch;
     this.numberOfExpectedMessages = numberOfExpectedMessages;
     this.numberOfProducedMessages = numberOfProducedMessages;
     this.numberOfCorrectMessages = numberOfCorrectMessages;
@@ -59,7 +62,8 @@ public class SyncCommitteePerformance {
       return false;
     }
     final SyncCommitteePerformance that = (SyncCommitteePerformance) o;
-    return numberOfExpectedMessages == that.numberOfExpectedMessages
+    return epoch == that.epoch
+        && numberOfExpectedMessages == that.numberOfExpectedMessages
         && numberOfProducedMessages == that.numberOfProducedMessages
         && numberOfCorrectMessages == that.numberOfCorrectMessages
         && numberOfIncludedMessages == that.numberOfIncludedMessages;
@@ -68,6 +72,7 @@ public class SyncCommitteePerformance {
   @Override
   public int hashCode() {
     return Objects.hash(
+        epoch,
         numberOfExpectedMessages,
         numberOfProducedMessages,
         numberOfCorrectMessages,
@@ -77,7 +82,9 @@ public class SyncCommitteePerformance {
   @Override
   public String toString() {
     return String.format(
-        "Sync committee performance: " + "expected %d, produced %d, correct %d, included %d (%d%%)",
+        "Sync committee performance: "
+            + "epoch %d, expected %d, produced %d, correct %d, included %d (%d%%)",
+        epoch,
         numberOfExpectedMessages,
         numberOfProducedMessages,
         numberOfCorrectMessages,

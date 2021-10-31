@@ -22,6 +22,7 @@ import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 
 public class ValidatorPerformanceMetricsTest {
 
+  private static final int EPOCH = 1;
   private static final int NUMBER_OF_EXPECTED_MESSAGES = 64;
   private static final int NUMBER_OF_PRODUCED_MESSAGES = 60;
   private static final int NUMBER_OF_CORRECT_MESSAGES = 55;
@@ -45,6 +46,7 @@ public class ValidatorPerformanceMetricsTest {
 
   private final AttestationPerformance attestationPerformance =
       new AttestationPerformance(
+          EPOCH,
           NUMBER_OF_EXPECTED_ATTESTATIONS,
           NUMBER_OF_PRODUCED_ATTESTATIONS,
           NUMBER_OF_INCLUDED_ATTESTATIONS,
@@ -60,6 +62,7 @@ public class ValidatorPerformanceMetricsTest {
 
   private final SyncCommitteePerformance syncCommitteePerformance =
       new SyncCommitteePerformance(
+          EPOCH,
           NUMBER_OF_EXPECTED_MESSAGES,
           NUMBER_OF_PRODUCED_MESSAGES,
           NUMBER_OF_CORRECT_MESSAGES,
