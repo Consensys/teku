@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.infrastructure.restapi.types;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import java.io.IOException;
@@ -26,25 +28,21 @@ public class StringBasedPrimitiveTypeDefinition<T> implements DeserializableType
   private final Optional<String> description;
   private final String example;
   private final Optional<String> format;
+  private final Optional<String> pattern;
 
-  StringBasedPrimitiveTypeDefinition(
-      final Function<String, T> objectFromString,
-      final Function<T, String> stringFromObject,
-      final String example) {
-    this(objectFromString, stringFromObject, example, Optional.empty(), Optional.empty());
-  }
-
-  StringBasedPrimitiveTypeDefinition(
+  private StringBasedPrimitiveTypeDefinition(
       final Function<String, T> objectFromString,
       final Function<T, String> stringFromObject,
       final String example,
       final Optional<String> description,
-      final Optional<String> format) {
+      final Optional<String> format,
+      final Optional<String> pattern) {
     this.objectFromString = objectFromString;
     this.stringFromObject = stringFromObject;
     this.example = example;
     this.description = description;
     this.format = format;
+    this.pattern = pattern;
   }
 
   @Override
@@ -68,6 +66,58 @@ public class StringBasedPrimitiveTypeDefinition<T> implements DeserializableType
     if (format.isPresent()) {
       gen.writeStringField("format", format.get());
     }
+    if (pattern.isPresent()) {
+      gen.writeStringField("pattern", pattern.get());
+    }
     gen.writeEndObject();
+  }
+
+  public static class StringTypeBuilder<T> {
+
+    private Function<String, T> parser;
+    private Function<T, String> formatter;
+    private String example;
+    private Optional<String> description = Optional.empty();
+    private Optional<String> format = Optional.empty();
+    private Optional<String> pattern = Optional.empty();
+
+    public StringTypeBuilder<T> parser(final Function<String, T> parser) {
+      this.parser = parser;
+      return this;
+    }
+
+    public StringTypeBuilder<T> formatter(final Function<T, String> formatter) {
+      this.formatter = formatter;
+      return this;
+    }
+
+    public StringTypeBuilder<T> example(final String example) {
+      this.example = example;
+      return this;
+    }
+
+    public StringTypeBuilder<T> description(final String description) {
+      this.description = Optional.of(description);
+      return this;
+    }
+
+    public StringTypeBuilder<T> format(final String format) {
+      this.format = Optional.of(format);
+      return this;
+    }
+
+    public StringTypeBuilder<T> pattern(final String pattern) {
+      this.pattern = Optional.of(pattern);
+      return this;
+    }
+
+    public DeserializableTypeDefinition<T> build() {
+      checkNotNull(parser, "Must specify parser");
+      checkNotNull(formatter, "Must specify formatter");
+      checkNotNull(example, "Must specify example");
+
+      return new StringBasedPrimitiveTypeDefinition<>(
+          parser, formatter, example, description, format, pattern);
+    }
   }
 }

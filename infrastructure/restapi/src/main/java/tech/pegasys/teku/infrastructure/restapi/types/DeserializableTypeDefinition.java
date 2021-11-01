@@ -15,8 +15,13 @@ package tech.pegasys.teku.infrastructure.restapi.types;
 
 import com.fasterxml.jackson.core.JsonParser;
 import java.io.IOException;
+import tech.pegasys.teku.infrastructure.restapi.types.StringBasedPrimitiveTypeDefinition.StringTypeBuilder;
 
 public interface DeserializableTypeDefinition<T> extends SerializableTypeDefinition<T> {
 
   T deserialize(JsonParser parser) throws IOException;
+
+  static <T> StringTypeBuilder<T> string(@SuppressWarnings("unused") final Class<T> clazz) {
+    return new StringTypeBuilder<>();
+  }
 }

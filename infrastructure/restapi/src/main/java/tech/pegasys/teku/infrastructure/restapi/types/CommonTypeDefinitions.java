@@ -13,22 +13,26 @@
 
 package tech.pegasys.teku.infrastructure.restapi.types;
 
-import java.util.Optional;
 import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class CommonTypeDefinitions {
   public static final DeserializableTypeDefinition<String> STRING_TYPE =
-      new StringBasedPrimitiveTypeDefinition<>(Function.identity(), Function.identity(), "value");
+      DeserializableTypeDefinition.string(String.class)
+          .formatter(Function.identity())
+          .parser(Function.identity())
+          .example("value")
+          .build();
 
   public static final DeserializableTypeDefinition<UInt64> UINT64_TYPE =
-      new StringBasedPrimitiveTypeDefinition<>(
-          UInt64::valueOf,
-          UInt64::toString,
-          "1",
-          Optional.of("unsigned 64 bit integer"),
-          Optional.of("uint64"));
+      DeserializableTypeDefinition.string(UInt64.class)
+          .formatter(UInt64::toString)
+          .parser(UInt64::valueOf)
+          .example("1")
+          .description("unsigned 64 bit integer")
+          .format("uint64")
+          .build();
 
   public static final DeserializableTypeDefinition<Integer> INTEGER_TYPE =
       new IntegerTypeDefinition();
