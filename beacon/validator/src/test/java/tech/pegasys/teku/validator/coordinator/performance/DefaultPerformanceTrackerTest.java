@@ -89,7 +89,8 @@ public class DefaultPerformanceTrackerTest {
     performanceTracker.saveProducedBlock(chainUpdater.chainBuilder.getBlockAtSlot(1));
     performanceTracker.saveProducedBlock(chainUpdater.chainBuilder.getBlockAtSlot(2));
     performanceTracker.onSlot(spec.computeStartSlotAtEpoch(BLOCK_PERFORMANCE_EVALUATION_INTERVAL));
-    BlockPerformance expectedBlockPerformance = new BlockPerformance(2, 2, 2);
+    BlockPerformance expectedBlockPerformance =
+        new BlockPerformance(BLOCK_PERFORMANCE_EVALUATION_INTERVAL, 2, 2, 2);
     verify(log).performance(expectedBlockPerformance.toString());
   }
 
@@ -101,7 +102,8 @@ public class DefaultPerformanceTrackerTest {
     performanceTracker.reportBlockProductionAttempt(spec.computeEpochAtSlot(bestBlock.getSlot()));
     performanceTracker.saveProducedBlock(bestBlock.getBlock());
     performanceTracker.onSlot(lastSlot);
-    BlockPerformance expectedBlockPerformance = new BlockPerformance(1, 1, 1);
+    BlockPerformance expectedBlockPerformance =
+        new BlockPerformance(BLOCK_PERFORMANCE_EVALUATION_INTERVAL, 1, 1, 1);
     verify(log).performance(expectedBlockPerformance.toString());
   }
 
@@ -115,7 +117,8 @@ public class DefaultPerformanceTrackerTest {
     performanceTracker.saveProducedBlock(chainUpdater.chainBuilder.getBlockAtSlot(2));
     performanceTracker.saveProducedBlock(dataStructureUtil.randomSignedBeaconBlock(3));
     performanceTracker.onSlot(spec.computeStartSlotAtEpoch(BLOCK_PERFORMANCE_EVALUATION_INTERVAL));
-    BlockPerformance expectedBlockPerformance = new BlockPerformance(3, 2, 3);
+    BlockPerformance expectedBlockPerformance =
+        new BlockPerformance(BLOCK_PERFORMANCE_EVALUATION_INTERVAL, 3, 2, 3);
     verify(log).performance(expectedBlockPerformance.toString());
   }
 

@@ -205,7 +205,10 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
 
     int numberOfProducedBlocks = producedBlocks.size();
     return new BlockPerformance(
-        numberOfBlockProductionAttempts, (int) numberOfIncludedBlocks, numberOfProducedBlocks);
+        endEpochExclusive,
+        numberOfBlockProductionAttempts,
+        (int) numberOfIncludedBlocks,
+        numberOfProducedBlocks);
   }
 
   private boolean isInHistoricBlockRoots(
