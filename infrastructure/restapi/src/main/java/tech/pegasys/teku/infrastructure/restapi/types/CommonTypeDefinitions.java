@@ -13,13 +13,12 @@
 
 package tech.pegasys.teku.infrastructure.restapi.types;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import java.io.IOException;
 import java.util.Optional;
 import java.util.function.Function;
+import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class PrimitiveTypes {
+public class CommonTypeDefinitions {
   public static final DeserializableTypeDefinition<String> STRING_TYPE =
       new StringBasedPrimitiveTypeDefinition<>(
           Function.identity(), Function.identity(), Optional.empty(), Optional.empty());
@@ -31,19 +30,12 @@ public class PrimitiveTypes {
           Optional.of("unsigned 64 bit integer"),
           Optional.empty());
 
-  public static final SerializableTypeDefinition<Integer> INTEGER_TYPE =
-      new SerializableTypeDefinition<>() {
+  public static final DeserializableTypeDefinition<Integer> INTEGER_TYPE =
+      new IntegerTypeDefinition();
 
-        @Override
-        public void serializeOpenApiType(final JsonGenerator gen) throws IOException {
-          gen.writeStartObject();
-          gen.writeStringField("type", "number");
-          gen.writeEndObject();
-        }
-
-        @Override
-        public void serialize(final Integer value, final JsonGenerator gen) throws IOException {
-          gen.writeNumber(value);
-        }
-      };
+  public static final SerializableTypeDefinition<HttpErrorResponse> HTTP_ERROR_RESPONSE_TYPE =
+      SerializableTypeDefinition.object(HttpErrorResponse.class)
+          .withField("status", INTEGER_TYPE, HttpErrorResponse::getStatus)
+          .withField("message", STRING_TYPE, HttpErrorResponse::getMessage)
+          .build();
 }

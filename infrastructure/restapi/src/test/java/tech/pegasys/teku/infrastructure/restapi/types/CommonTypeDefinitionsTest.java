@@ -14,26 +14,45 @@
 package tech.pegasys.teku.infrastructure.restapi.types;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
+import static tech.pegasys.teku.infrastructure.restapi.json.JsonUtil.parse;
+import static tech.pegasys.teku.infrastructure.restapi.json.JsonUtil.serialize;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.restapi.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
+import tech.pegasys.teku.infrastructure.restapi.JsonTestUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-class PrimitiveTypesTest {
+class CommonTypeDefinitionsTest {
   @Test
   void uint64_shouldRoundTrip() throws Exception {
-    assertRoundTrip(UInt64.valueOf(200), PrimitiveTypes.UINT64_TYPE);
+    assertRoundTrip(UInt64.valueOf(200), CommonTypeDefinitions.UINT64_TYPE);
   }
 
   @Test
   void string_shouldRoundTrip() throws Exception {
-    assertRoundTrip("some string", PrimitiveTypes.STRING_TYPE);
+    assertRoundTrip("some string", CommonTypeDefinitions.STRING_TYPE);
+  }
+
+  @Test
+  void integer_shouldRoundTrip() throws Exception {
+    assertRoundTrip(458, CommonTypeDefinitions.INTEGER_TYPE);
+  }
+
+  @Test
+  void httpErrorResponse_shouldSerialize() throws Exception {
+    final HttpErrorResponse value = new HttpErrorResponse(442, "No good");
+    final Map<String, Object> result =
+        JsonTestUtil.parse(serialize(value, CommonTypeDefinitions.HTTP_ERROR_RESPONSE_TYPE));
+
+    assertThat(result).containsOnly(entry("status", 442), entry("message", "No good"));
   }
 
   private <T> void assertRoundTrip(final T value, final DeserializableTypeDefinition<T> type)
       throws JsonProcessingException {
-    final T result = JsonUtil.parse(JsonUtil.serialize(value, type), type);
+    final T result = parse(serialize(value, type), type);
     assertThat(result).isEqualTo(value);
   }
 }

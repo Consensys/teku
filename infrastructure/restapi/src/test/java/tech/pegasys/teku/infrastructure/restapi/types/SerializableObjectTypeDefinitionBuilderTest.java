@@ -15,8 +15,8 @@ package tech.pegasys.teku.infrastructure.restapi.types;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
-import static tech.pegasys.teku.infrastructure.restapi.types.PrimitiveTypes.STRING_TYPE;
-import static tech.pegasys.teku.infrastructure.restapi.types.PrimitiveTypes.UINT64_TYPE;
+import static tech.pegasys.teku.infrastructure.restapi.types.CommonTypeDefinitions.STRING_TYPE;
+import static tech.pegasys.teku.infrastructure.restapi.types.CommonTypeDefinitions.UINT64_TYPE;
 
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
