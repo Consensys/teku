@@ -16,15 +16,27 @@ package tech.pegasys.teku.validator.restapi;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 
+import org.apache.commons.lang3.StringUtils;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.restapi.RestApi;
 import tech.pegasys.teku.infrastructure.restapi.RestApiBuilder;
+import tech.pegasys.teku.infrastructure.version.VersionProvider;
 
 public class ValidatorRestApi {
   public static RestApi create(final ValidatorRestApiConfig config) {
     return new RestApiBuilder()
+        .openApiInfo(
+            openApi ->
+                openApi
+                    .title(
+                        StringUtils.capitalize(
+                            VersionProvider.CLIENT_IDENTITY + " Validator Rest API"))
+                    .version(VersionProvider.IMPLEMENTATION_VERSION)
+                    .description("An implementation of the key management standard Rest API.")
+                    .license("Apache 2.0", "https://www.apache.org/licenses/LICENSE-2.0.html"))
+        .openApiDocsEnabled(config.isRestApiDocsEnabled())
         .listenAddress(config.getRestApiInterface())
         .port(config.getRestApiPort())
         .maxUrlLength(config.getMaxUrlLength())

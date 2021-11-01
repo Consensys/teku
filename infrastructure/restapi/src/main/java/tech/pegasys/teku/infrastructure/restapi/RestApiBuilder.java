@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.OptionalInt;
+import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.jetty.server.Connector;
@@ -31,10 +32,13 @@ import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Server;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
+import tech.pegasys.teku.infrastructure.restapi.openapi.OpenApiDocBuilder;
 
 public class RestApiBuilder {
   private static final Logger LOG = LogManager.getLogger();
 
+  // Note: Currently using plain objectMapper for error responses
+  // Should be replaced with TypeDefinition based serialization once we have it ready
   private final ObjectMapper objectMapper = new ObjectMapper();
 
   private int port;
@@ -44,6 +48,9 @@ public class RestApiBuilder {
   private List<String> hostAllowlist = emptyList();
   private final Map<Class<? extends Exception>, RestApiExceptionHandler<?>> exceptionHandlers =
       new HashMap<>();
+
+  private final OpenApiDocBuilder openApiDocBuilder = new OpenApiDocBuilder();
+  private boolean openApiDocsEnabled = false;
 
   public RestApiBuilder listenAddress(final String listenAddress) {
     this.listenAddress = listenAddress;
@@ -76,6 +83,16 @@ public class RestApiBuilder {
     return this;
   }
 
+  public RestApiBuilder openApiDocsEnabled(final boolean openApiDocsEnabled) {
+    this.openApiDocsEnabled = openApiDocsEnabled;
+    return this;
+  }
+
+  public RestApiBuilder openApiInfo(final Consumer<OpenApiDocBuilder> handler) {
+    handler.accept(openApiDocBuilder);
+    return this;
+  }
+
   public RestApi build() {
     final Javalin app =
         Javalin.create(
@@ -90,6 +107,16 @@ public class RestApiBuilder {
       app.before(new HostAllowlistHandler(hostAllowlist));
     }
 
+    addExceptionHandlers(app);
+
+    if (openApiDocsEnabled) {
+      final String openApiJson = openApiDocBuilder.build();
+      app.get("/swagger-docs", ctx -> ctx.json(openApiJson));
+    }
+    return new RestApi(app);
+  }
+
+  private void addExceptionHandlers(final Javalin app) {
     exceptionHandlers.forEach(
         (exceptionType, handler) -> addExceptionHandler(app, exceptionType, handler));
     // Always register a catch-all exception handler
@@ -100,9 +127,6 @@ public class RestApiBuilder {
           LOG.error("Failed to process request to URL {}", url, e);
           return new HttpErrorResponse(SC_INTERNAL_SERVER_ERROR, "An unexpected error occurred");
         });
-
-    // TODO: Register /swagger-docs handler to expose OpenAPI spec
-    return new RestApi(app);
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"}) // builder API guarantees types match up
@@ -115,7 +139,6 @@ public class RestApiBuilder {
             final HttpErrorResponse response =
                 ((RestApiExceptionHandler) handler).handleException(exception, ctx.url());
             ctx.status(response.getStatus());
-            // TODO: Convert this over to use TypeDefinition when we have it
             ctx.json(objectMapper.writeValueAsString(response));
           } catch (final Throwable t) {
             ctx.status(SC_INTERNAL_SERVER_ERROR);
