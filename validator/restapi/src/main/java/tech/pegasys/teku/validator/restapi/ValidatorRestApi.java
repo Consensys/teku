@@ -13,11 +13,16 @@
 
 package tech.pegasys.teku.validator.restapi;
 
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
+
+import tech.pegasys.teku.api.exceptions.BadRequestException;
+import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
+import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.restapi.RestApi;
 import tech.pegasys.teku.infrastructure.restapi.RestApiBuilder;
 
 public class ValidatorRestApi {
-
   public static RestApi create(final ValidatorRestApiConfig config) {
     return new RestApiBuilder()
         .listenAddress(config.getRestApiInterface())
@@ -25,6 +30,13 @@ public class ValidatorRestApi {
         .maxUrlLength(config.getMaxUrlLength())
         .corsAllowedOrigins(config.getRestApiCorsAllowedOrigins())
         .hostAllowlist(config.getRestApiHostAllowlist())
+        .exceptionHandler(
+            ServiceUnavailableException.class,
+            (throwable, url) ->
+                new HttpErrorResponse(SC_SERVICE_UNAVAILABLE, "Service unavailable"))
+        .exceptionHandler(
+            BadRequestException.class,
+            (throwable, url) -> new HttpErrorResponse(SC_BAD_REQUEST, throwable.getMessage()))
         .build();
   }
 }
