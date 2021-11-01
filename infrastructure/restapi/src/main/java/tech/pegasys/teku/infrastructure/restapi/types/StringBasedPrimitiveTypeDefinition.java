@@ -26,7 +26,12 @@ public class StringBasedPrimitiveTypeDefinition<T> implements DeserializableType
   private final Optional<String> description;
   private final Optional<String> format;
 
-  public StringBasedPrimitiveTypeDefinition(
+  StringBasedPrimitiveTypeDefinition(
+      final Function<String, T> objectFromString, final Function<T, String> stringFromObject) {
+    this(objectFromString, stringFromObject, Optional.empty(), Optional.empty());
+  }
+
+  StringBasedPrimitiveTypeDefinition(
       final Function<String, T> objectFromString,
       final Function<T, String> stringFromObject,
       final Optional<String> description,
