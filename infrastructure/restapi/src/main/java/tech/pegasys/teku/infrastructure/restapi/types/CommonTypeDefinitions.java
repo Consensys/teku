@@ -20,12 +20,13 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class CommonTypeDefinitions {
   public static final DeserializableTypeDefinition<String> STRING_TYPE =
-      new StringBasedPrimitiveTypeDefinition<>(Function.identity(), Function.identity());
+      new StringBasedPrimitiveTypeDefinition<>(Function.identity(), Function.identity(), "value");
 
   public static final DeserializableTypeDefinition<UInt64> UINT64_TYPE =
       new StringBasedPrimitiveTypeDefinition<>(
           UInt64::valueOf,
           UInt64::toString,
+          "1",
           Optional.of("unsigned 64 bit integer"),
           Optional.of("uint64"));
 

@@ -31,10 +31,16 @@ class StringBasedPrimitiveTypeDefinitionTest {
   void serializeOpenApiType_withFormat() throws Exception {
     final StringBasedPrimitiveTypeDefinition<String> type =
         new StringBasedPrimitiveTypeDefinition<>(
-            Function.identity(), Function.identity(), Optional.empty(), Optional.of("My format"));
+            Function.identity(),
+            Function.identity(),
+            "ex",
+            Optional.empty(),
+            Optional.of("My format"));
 
     final Map<String, Object> result = parse(serialize(type::serializeOpenApiType));
-    assertThat(result).containsOnly(entry("type", "string"), entry("format", "My format"));
+    assertThat(result)
+        .containsOnly(
+            entry("type", "string"), entry("format", "My format"), entry("example", "ex"));
   }
 
   @Test
@@ -43,11 +49,14 @@ class StringBasedPrimitiveTypeDefinitionTest {
         new StringBasedPrimitiveTypeDefinition<>(
             Function.identity(),
             Function.identity(),
+            "ex",
             Optional.of("A description"),
             Optional.empty());
 
     final Map<String, Object> result = parse(serialize(type::serializeOpenApiType));
-    assertThat(result).containsOnly(entry("type", "string"), entry("description", "A description"));
+    assertThat(result)
+        .containsOnly(
+            entry("type", "string"), entry("description", "A description"), entry("example", "ex"));
   }
 
   @Test
@@ -56,21 +65,30 @@ class StringBasedPrimitiveTypeDefinitionTest {
         new StringBasedPrimitiveTypeDefinition<>(
             Function.identity(),
             Function.identity(),
+            "ex",
             Optional.of("A description"),
             Optional.empty());
 
     final Map<String, Object> result = parse(serialize(type::serializeOpenApiType));
-    assertThat(result).containsOnly(entry("type", "string"), entry("description", "A description"));
+    assertThat(result)
+        .containsOnly(
+            entry("type", "string"), entry("description", "A description"), entry("example", "ex"));
   }
 
   @Test
   void serializeOpenApiType_withoutDescription() throws Exception {
     final StringBasedPrimitiveTypeDefinition<String> type =
         new StringBasedPrimitiveTypeDefinition<>(
-            Function.identity(), Function.identity(), Optional.empty(), Optional.of("my format"));
+            Function.identity(),
+            Function.identity(),
+            "ex",
+            Optional.empty(),
+            Optional.of("my format"));
 
     final Map<String, Object> result = parse(serialize(type::serializeOpenApiType));
-    assertThat(result).containsOnly(entry("type", "string"), entry("format", "my format"));
+    assertThat(result)
+        .containsOnly(
+            entry("type", "string"), entry("format", "my format"), entry("example", "ex"));
   }
 
   @Test
@@ -79,6 +97,7 @@ class StringBasedPrimitiveTypeDefinitionTest {
         new StringBasedPrimitiveTypeDefinition<>(
             value -> null,
             value -> value.toUpperCase(Locale.ROOT),
+            "ex",
             Optional.of("description"),
             Optional.empty());
 
@@ -93,6 +112,7 @@ class StringBasedPrimitiveTypeDefinitionTest {
         new StringBasedPrimitiveTypeDefinition<>(
             value -> value.toUpperCase(Locale.ROOT),
             value -> null,
+            "ex",
             Optional.of("description"),
             Optional.empty());
 

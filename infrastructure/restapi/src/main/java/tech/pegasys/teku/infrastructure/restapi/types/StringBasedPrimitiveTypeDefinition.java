@@ -24,20 +24,25 @@ public class StringBasedPrimitiveTypeDefinition<T> implements DeserializableType
   private final Function<String, T> objectFromString;
   private final Function<T, String> stringFromObject;
   private final Optional<String> description;
+  private final String example;
   private final Optional<String> format;
 
   StringBasedPrimitiveTypeDefinition(
-      final Function<String, T> objectFromString, final Function<T, String> stringFromObject) {
-    this(objectFromString, stringFromObject, Optional.empty(), Optional.empty());
+      final Function<String, T> objectFromString,
+      final Function<T, String> stringFromObject,
+      final String example) {
+    this(objectFromString, stringFromObject, example, Optional.empty(), Optional.empty());
   }
 
   StringBasedPrimitiveTypeDefinition(
       final Function<String, T> objectFromString,
       final Function<T, String> stringFromObject,
+      final String example,
       final Optional<String> description,
       final Optional<String> format) {
     this.objectFromString = objectFromString;
     this.stringFromObject = stringFromObject;
+    this.example = example;
     this.description = description;
     this.format = format;
   }
@@ -56,6 +61,7 @@ public class StringBasedPrimitiveTypeDefinition<T> implements DeserializableType
   public void serializeOpenApiType(final JsonGenerator gen) throws IOException {
     gen.writeStartObject();
     gen.writeStringField("type", "string");
+    gen.writeStringField("example", example);
     if (description.isPresent()) {
       gen.writeStringField("description", description.get());
     }
