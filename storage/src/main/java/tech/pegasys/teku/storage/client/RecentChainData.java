@@ -295,7 +295,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
         final ChainHead previousChainHead = originalHead.get();
 
-        // final UInt64 commonAncestorSlot = previousChainHead.findCommonAncestor(newChainHead);
         final SlotAndBlockRoot commonAncestorSlotAndBlockRoot =
             previousChainHead.findCommonAncestor(newChainHead);
 
