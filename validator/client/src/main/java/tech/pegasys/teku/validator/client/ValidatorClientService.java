@@ -29,6 +29,7 @@ import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
 import tech.pegasys.teku.infrastructure.io.SystemSignalListener;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.restapi.RestApi;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
@@ -56,7 +57,7 @@ public class ValidatorClientService extends Service {
   private final EventChannels eventChannels;
   private final ValidatorLoader validatorLoader;
   private final BeaconNodeApi beaconNodeApi;
-  private final Optional<ValidatorRestApi> validatorRestApi;
+  private final Optional<RestApi> validatorRestApi;
   private final ForkProvider forkProvider;
   private final Spec spec;
 
@@ -72,7 +73,7 @@ public class ValidatorClientService extends Service {
       final EventChannels eventChannels,
       final ValidatorLoader validatorLoader,
       final BeaconNodeApi beaconNodeApi,
-      final Optional<ValidatorRestApi> validatorRestApi,
+      final Optional<RestApi> validatorRestApi,
       final ForkProvider forkProvider,
       final Spec spec,
       final MetricsSystem metricsSystem) {
@@ -110,10 +111,9 @@ public class ValidatorClientService extends Service {
     final ValidatorLoader validatorLoader = createValidatorLoader(config, asyncRunner, services);
 
     final ValidatorRestApiConfig validatorApiConfig = config.getValidatorRestApiConfig();
-    Optional<ValidatorRestApi> validatorRestApi = Optional.empty();
+    Optional<RestApi> validatorRestApi = Optional.empty();
     if (validatorApiConfig.isRestApiEnabled()) {
-      validatorRestApi = Optional.of(new ValidatorRestApi(validatorApiConfig));
-
+      validatorRestApi = Optional.of(ValidatorRestApi.create(validatorApiConfig));
     } else {
       LOG.info("validator-api-enabled is false, not starting rest api.");
     }
@@ -248,7 +248,7 @@ public class ValidatorClientService extends Service {
                   spec,
                   metricsSystem));
           validatorStatusLogger.printInitialValidatorStatuses().reportExceptions();
-          validatorRestApi.ifPresent(ValidatorRestApi::start);
+          validatorRestApi.ifPresent(RestApi::start);
           return beaconNodeApi.subscribeToEvents();
         });
   }
@@ -256,7 +256,7 @@ public class ValidatorClientService extends Service {
   @Override
   protected SafeFuture<?> doStop() {
     return SafeFuture.allOf(
-        SafeFuture.fromRunnable(() -> validatorRestApi.ifPresent(ValidatorRestApi::stop)),
+        SafeFuture.fromRunnable(() -> validatorRestApi.ifPresent(RestApi::stop)),
         beaconNodeApi.unsubscribeFromEvents());
   }
 }
