@@ -295,7 +295,9 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
         final ChainHead previousChainHead = originalHead.get();
 
-        final UInt64 commonAncestorSlot = previousChainHead.findCommonAncestor(newChainHead);
+        // final UInt64 commonAncestorSlot = previousChainHead.findCommonAncestor(newChainHead);
+        final SlotAndBlockRoot commonAncestorSlotAndBlockRoot =
+            previousChainHead.findCommonAncestor(newChainHead);
 
         reorgCounter.inc();
         optionalReorgContext =
@@ -303,8 +305,8 @@ public abstract class RecentChainData implements StoreUpdateHandler {
                 previousChainHead.getRoot(),
                 previousChainHead.getSlot(),
                 previousChainHead.getStateRoot(),
-                commonAncestorSlot,
-                getBlockRootBySlot(commonAncestorSlot).orElse(Bytes32.ZERO));
+                commonAncestorSlotAndBlockRoot.getSlot(),
+                commonAncestorSlotAndBlockRoot.getBlockRoot());
       } else {
         optionalReorgContext = ReorgContext.empty();
       }
