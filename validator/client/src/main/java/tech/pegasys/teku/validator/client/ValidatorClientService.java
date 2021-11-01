@@ -248,7 +248,7 @@ public class ValidatorClientService extends Service {
                   spec,
                   metricsSystem));
           validatorStatusLogger.printInitialValidatorStatuses().reportExceptions();
-          validatorRestApi.ifPresent(RestApi::start);
+          validatorRestApi.ifPresent(restApi -> restApi.start().reportExceptions());
           return beaconNodeApi.subscribeToEvents();
         });
   }
@@ -256,7 +256,8 @@ public class ValidatorClientService extends Service {
   @Override
   protected SafeFuture<?> doStop() {
     return SafeFuture.allOf(
-        SafeFuture.fromRunnable(() -> validatorRestApi.ifPresent(RestApi::stop)),
+        SafeFuture.fromRunnable(
+            () -> validatorRestApi.ifPresent(restApi -> restApi.stop().reportExceptions())),
         beaconNodeApi.unsubscribeFromEvents());
   }
 }

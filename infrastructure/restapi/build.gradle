@@ -1,3 +1,9 @@
+publishing {
+  publications {
+    mavenJava(MavenPublication) { artifactId 'infrastructure-restapi' }
+  }
+}
+
 dependencies {
   implementation project(':infrastructure:async')
   implementation project(':infrastructure:exceptions')
