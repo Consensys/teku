@@ -19,7 +19,7 @@ import java.io.IOException;
 import java.util.Optional;
 import java.util.function.Function;
 
-public class StringBasedPrimitiveTypeDefinition<T> implements TwoWayTypeDefinition<T> {
+public class StringBasedPrimitiveTypeDefinition<T> implements DeserializableTypeDefinition<T> {
 
   private final Function<String, T> objectFromString;
   private final Function<T, String> stringFromObject;

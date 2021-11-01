@@ -31,7 +31,7 @@ class PrimitiveTypesTest {
     assertRoundTrip("some string", PrimitiveTypes.STRING_TYPE);
   }
 
-  private <T> void assertRoundTrip(final T value, final TwoWayTypeDefinition<T> type)
+  private <T> void assertRoundTrip(final T value, final DeserializableTypeDefinition<T> type)
       throws JsonProcessingException {
     final T result = JsonUtil.parse(JsonUtil.serialize(value, type), type);
     assertThat(result).isEqualTo(value);

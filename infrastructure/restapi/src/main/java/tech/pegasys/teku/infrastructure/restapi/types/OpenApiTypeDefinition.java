@@ -17,7 +17,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import java.io.IOException;
 import java.util.Optional;
 
-public interface TypeDefinition {
+public interface OpenApiTypeDefinition {
   default Optional<String> getTypeName() {
     return Optional.empty();
   }

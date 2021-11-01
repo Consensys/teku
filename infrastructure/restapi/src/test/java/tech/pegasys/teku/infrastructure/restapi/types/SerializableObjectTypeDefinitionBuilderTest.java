@@ -30,7 +30,7 @@ class SerializableObjectTypeDefinitionBuilderTest {
   @Test
   void shouldSerializeSimpleValue() throws Exception {
     final SerializableTypeDefinition<SimpleValue> type =
-        SerializableObjectTypeDefinitionBuilder.objectTypeFor(SimpleValue.class)
+        SerializableTypeDefinition.object(SimpleValue.class)
             .withField("value1", STRING_TYPE, SimpleValue::getValue1)
             .withField("value2", UINT64_TYPE, SimpleValue::getValue2)
             .build();

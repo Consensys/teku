@@ -16,6 +16,7 @@ package tech.pegasys.teku.infrastructure.restapi.types;
 import com.fasterxml.jackson.core.JsonParser;
 import java.io.IOException;
 
-public interface DeserializableTypeDefinition<T> extends TypeDefinition {
+public interface DeserializableTypeDefinition<T> extends SerializableTypeDefinition<T> {
+
   T deserialize(JsonParser parser) throws IOException;
 }

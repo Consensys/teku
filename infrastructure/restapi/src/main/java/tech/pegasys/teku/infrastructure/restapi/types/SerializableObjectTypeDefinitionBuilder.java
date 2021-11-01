@@ -23,12 +23,7 @@ public class SerializableObjectTypeDefinitionBuilder<TObject> {
 
   private final Map<String, ObjectFieldDefinition<TObject, ?>> fields = new LinkedHashMap<>();
 
-  public static <TObject> SerializableObjectTypeDefinitionBuilder<TObject> objectTypeFor(
-      @SuppressWarnings("unused") final Class<TObject> clazz) {
-    return new SerializableObjectTypeDefinitionBuilder<>();
-  }
-
-  private SerializableObjectTypeDefinitionBuilder() {}
+  SerializableObjectTypeDefinitionBuilder() {}
 
   public <TField> SerializableObjectTypeDefinitionBuilder<TObject> withField(
       final String name,

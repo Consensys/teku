@@ -24,12 +24,12 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.restapi.JsonTestUtil;
 import tech.pegasys.teku.infrastructure.restapi.json.JsonUtil;
 
-class TypeDefinitionTest {
+class OpenApiTypeDefinitionTest {
 
   @Test
   void serializeOpenApiTypeOrReference_shouldSerializeAsReferenceWhenNamePresent()
       throws Exception {
-    final NameableTypeDefinition type = new NameableTypeDefinition("foo");
+    final NameableOpenApiTypeDefinition type = new NameableOpenApiTypeDefinition("foo");
     final String json = JsonUtil.serialize(type::serializeOpenApiTypeOrReference);
     final Map<String, Object> result = JsonTestUtil.parse(json);
 
@@ -38,7 +38,7 @@ class TypeDefinitionTest {
 
   @Test
   void serializeOpenApiTypeOrReference_shouldSerializeInlineWhenNameNotPresent() throws Exception {
-    final NameableTypeDefinition type = new NameableTypeDefinition();
+    final NameableOpenApiTypeDefinition type = new NameableOpenApiTypeDefinition();
     final String json = JsonUtil.serialize(type::serializeOpenApiTypeOrReference);
     final Map<String, Object> result = JsonTestUtil.parse(json);
 
@@ -47,7 +47,7 @@ class TypeDefinitionTest {
 
   @Test
   void serializeOpenApiType_shouldSerializeInlineWhenNamePresent() throws Exception {
-    final NameableTypeDefinition type = new NameableTypeDefinition("foo");
+    final NameableOpenApiTypeDefinition type = new NameableOpenApiTypeDefinition("foo");
     final String json = JsonUtil.serialize(type::serializeOpenApiType);
     final Map<String, Object> result = JsonTestUtil.parse(json);
 
@@ -56,21 +56,21 @@ class TypeDefinitionTest {
 
   @Test
   void serializeOpenApiType_shouldSerializeInlineWhenNameNotPresent() throws Exception {
-    final NameableTypeDefinition type = new NameableTypeDefinition();
+    final NameableOpenApiTypeDefinition type = new NameableOpenApiTypeDefinition();
     final String json = JsonUtil.serialize(type::serializeOpenApiType);
     final Map<String, Object> result = JsonTestUtil.parse(json);
 
     assertThat(result).containsOnly(entry("type", "custom"));
   }
 
-  private static class NameableTypeDefinition implements TypeDefinition {
+  private static class NameableOpenApiTypeDefinition implements OpenApiTypeDefinition {
     private final Optional<String> name;
 
-    public NameableTypeDefinition(final String name) {
+    public NameableOpenApiTypeDefinition(final String name) {
       this.name = Optional.of(name);
     }
 
-    public NameableTypeDefinition() {
+    public NameableOpenApiTypeDefinition() {
       this.name = Optional.empty();
     }
 

@@ -20,11 +20,11 @@ import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class PrimitiveTypes {
-  public static final TwoWayTypeDefinition<String> STRING_TYPE =
+  public static final DeserializableTypeDefinition<String> STRING_TYPE =
       new StringBasedPrimitiveTypeDefinition<>(
           Function.identity(), Function.identity(), Optional.empty(), Optional.empty());
 
-  public static final TwoWayTypeDefinition<UInt64> UINT64_TYPE =
+  public static final DeserializableTypeDefinition<UInt64> UINT64_TYPE =
       new StringBasedPrimitiveTypeDefinition<>(
           UInt64::valueOf,
           UInt64::toString,

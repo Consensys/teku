@@ -34,7 +34,6 @@ import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.restapi.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.restapi.openapi.OpenApiDocBuilder;
 import tech.pegasys.teku.infrastructure.restapi.types.PrimitiveTypes;
-import tech.pegasys.teku.infrastructure.restapi.types.SerializableObjectTypeDefinitionBuilder;
 import tech.pegasys.teku.infrastructure.restapi.types.SerializableTypeDefinition;
 
 public class RestApiBuilder {
@@ -43,7 +42,7 @@ public class RestApiBuilder {
   // Note: Currently using plain objectMapper for error responses
   // Should be replaced with TypeDefinition based serialization once we have it ready
   private static final SerializableTypeDefinition<HttpErrorResponse> ERROR_RESPONSE_TYPE =
-      SerializableObjectTypeDefinitionBuilder.objectTypeFor(HttpErrorResponse.class)
+      SerializableTypeDefinition.object(HttpErrorResponse.class)
           .withField("status", PrimitiveTypes.INTEGER_TYPE, HttpErrorResponse::getStatus)
           .withField("message", PrimitiveTypes.STRING_TYPE, HttpErrorResponse::getMessage)
           .build();
