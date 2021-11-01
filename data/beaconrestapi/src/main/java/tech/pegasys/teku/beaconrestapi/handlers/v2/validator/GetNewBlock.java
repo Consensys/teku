@@ -40,7 +40,8 @@ import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetNewBlock extends tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlock
     implements Handler {
-  public static final String ROUTE = "/eth/v2/validator/blocks/{slot}";
+  private static final String OAPI_ROUTE = "/eth/v2/validator/blocks/:slot";
+  public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
 
   public GetNewBlock(final DataProvider dataProvider, final JsonProvider jsonProvider) {
     super(dataProvider, jsonProvider);
@@ -51,7 +52,7 @@ public class GetNewBlock extends tech.pegasys.teku.beaconrestapi.handlers.v1.val
   }
 
   @OpenApi(
-      path = ROUTE,
+      path = OAPI_ROUTE,
       method = HttpMethod.GET,
       summary = "Produce unsigned block",
       tags = {TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED},
