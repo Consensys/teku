@@ -53,8 +53,6 @@ public class AggregateAttestationValidator {
   private static final Logger LOG = LogManager.getLogger();
   private final Set<AggregatorIndexAndEpoch> receivedAggregatorIndexAndEpochs =
       LimitedSet.create(VALID_AGGREGATE_SET_SIZE);
-  private final Set<Bytes32> receivedValidAggregations =
-      LimitedSet.create(VALID_AGGREGATE_SET_SIZE);
   private final AttestationValidator attestationValidator;
   private final RecentChainData recentChainData;
   private final Spec spec;
@@ -66,10 +64,6 @@ public class AggregateAttestationValidator {
     this.recentChainData = recentChainData;
     this.attestationValidator = attestationValidator;
     this.spec = spec;
-  }
-
-  public void addSeenAggregate(final ValidateableAttestation attestation) {
-    receivedValidAggregations.add(attestation.hash_tree_root());
   }
 
   public SafeFuture<InternalValidationResult> validate(final ValidateableAttestation attestation) {
@@ -84,10 +78,6 @@ public class AggregateAttestationValidator {
             aggregateAndProof.getIndex(), compute_epoch_at_slot(aggregateSlot));
     if (receivedAggregatorIndexAndEpochs.contains(aggregatorIndexAndEpoch)) {
       return completedFuture(ignore("Ignoring duplicate aggregate"));
-    }
-
-    if (receivedValidAggregations.contains(attestation.hash_tree_root())) {
-      return completedFuture(ignore("Ignoring duplicate aggregate based on hash tree root"));
     }
 
     final BatchSignatureVerifier signatureVerifier = new BatchSignatureVerifier();
@@ -163,10 +153,6 @@ public class AggregateAttestationValidator {
 
                         if (!receivedAggregatorIndexAndEpochs.add(aggregatorIndexAndEpoch)) {
                           return ignore("Ignoring duplicate aggregate");
-                        }
-
-                        if (!receivedValidAggregations.add(attestation.hash_tree_root())) {
-                          return ignore("Ignoring duplicate aggregate based on hash tree root");
                         }
 
                         return aggregateInternalValidationResult;
