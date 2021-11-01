@@ -13,7 +13,10 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody;
 
+import java.util.Optional;
 import java.util.function.Consumer;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge.BeaconBlockBodySchemaMerge;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -24,9 +27,9 @@ import tech.pegasys.teku.ssz.schema.SszListSchema;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 
 public interface BeaconBlockBodySchema<T extends BeaconBlockBody> extends SszContainerSchema<T> {
-  T createBlockBody(Consumer<BeaconBlockBodyBuilder> bodyBuilder);
+  BeaconBlockBody createBlockBody(Consumer<BeaconBlockBodyBuilder> bodyBuilder);
 
-  T createEmpty();
+  BeaconBlockBody createEmpty();
 
   @Override
   T createFromBackingNode(TreeNode node);
@@ -40,4 +43,12 @@ public interface BeaconBlockBodySchema<T extends BeaconBlockBody> extends SszCon
   SszListSchema<Deposit, ?> getDepositsSchema();
 
   SszListSchema<SignedVoluntaryExit, ?> getVoluntaryExitsSchema();
+
+  default Optional<BeaconBlockBodySchemaAltair<?>> toVersionAltair() {
+    return Optional.empty();
+  }
+
+  default Optional<BeaconBlockBodySchemaMerge<?>> toVersionMerge() {
+    return Optional.empty();
+  }
 }

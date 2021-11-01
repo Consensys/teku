@@ -13,15 +13,19 @@
 
 package tech.pegasys.teku.spec.datastructures.state.beaconstate;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSchema;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.ssz.schema.SszContainerSchema;
 import tech.pegasys.teku.ssz.schema.SszListSchema;
+import tech.pegasys.teku.ssz.schema.SszSchema;
 import tech.pegasys.teku.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.ssz.schema.collections.SszBytes32VectorSchema;
 import tech.pegasys.teku.ssz.schema.collections.SszPrimitiveListSchema;
@@ -81,5 +85,24 @@ public interface BeaconStateSchema<T extends BeaconState, TMutable extends Mutab
   default SszBitvectorSchema<?> getJustificationBitsSchema() {
     return (SszBitvectorSchema<?>)
         getChildSchema(getFieldIndex(BeaconStateFields.JUSTIFICATION_BITS.name()));
+  }
+
+  default SyncCommitteeSchema getCurrentSyncCommitteeSchemaOrThrow() {
+    return (SyncCommitteeSchema) getSchemaOrThrow(BeaconStateFields.CURRENT_SYNC_COMMITTEE);
+  }
+
+  default SyncCommitteeSchema getNextSyncCommitteeSchemaOrThrow() {
+    return (SyncCommitteeSchema) getSchemaOrThrow(BeaconStateFields.NEXT_SYNC_COMMITTEE);
+  }
+
+  private SszSchema<?> getSchemaOrThrow(final BeaconStateFields field) {
+    final String fieldName = field.name();
+    final int fieldIndex = getFieldIndex(fieldName);
+    checkArgument(
+        fieldIndex >= 0,
+        "Expected a %s field in schema %s but was not found",
+        fieldName,
+        getClass());
+    return getChildSchema(fieldIndex);
   }
 }

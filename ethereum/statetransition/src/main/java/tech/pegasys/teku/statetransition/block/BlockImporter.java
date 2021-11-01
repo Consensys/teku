@@ -165,13 +165,13 @@ public class BlockImporter {
                 block.getSlot(), block.getMessage().getBody().getAttestations()));
     attesterSlashingSubscribers.deliver(
         VerifiedBlockOperationsListener::onOperationsFromBlock,
-        block.getMessage().getBody().getAttester_slashings());
+        block.getMessage().getBody().getAttesterSlashings());
     proposerSlashingSubscribers.deliver(
         VerifiedBlockOperationsListener::onOperationsFromBlock,
-        block.getMessage().getBody().getProposer_slashings());
+        block.getMessage().getBody().getProposerSlashings());
     voluntaryExitSubscribers.deliver(
         VerifiedBlockOperationsListener::onOperationsFromBlock,
-        block.getMessage().getBody().getVoluntary_exits());
+        block.getMessage().getBody().getVoluntaryExits());
   }
 
   public void subscribeToVerifiedBlockAttestations(

@@ -60,7 +60,9 @@ public enum BeaconStateFields {
   CURRENT_EPOCH_PARTICIPATION,
   INACTIVITY_SCORES,
   CURRENT_SYNC_COMMITTEE,
-  NEXT_SYNC_COMMITTEE;
+  NEXT_SYNC_COMMITTEE,
+  // Merge fields
+  LATEST_EXECUTION_PAYLOAD_HEADER;
 
   public static void copyCommonFieldsFromSource(
       final MutableBeaconState state, final BeaconState source) {

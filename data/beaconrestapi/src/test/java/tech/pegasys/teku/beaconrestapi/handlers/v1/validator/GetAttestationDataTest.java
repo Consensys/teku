@@ -19,8 +19,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.COMMITTEE_INDEX;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.COMMITTEE_INDEX;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
 
 import io.javalin.http.Context;
 import java.util.List;
