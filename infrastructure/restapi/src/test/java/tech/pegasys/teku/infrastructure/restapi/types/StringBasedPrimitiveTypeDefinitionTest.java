@@ -21,21 +21,33 @@ import static tech.pegasys.teku.infrastructure.restapi.json.JsonUtil.serialize;
 
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.restapi.json.JsonUtil;
 
 class StringBasedPrimitiveTypeDefinitionTest {
   @Test
+  void serializeOpenApiType_minimalOptions() throws Exception {
+    final DeserializableTypeDefinition<String> type =
+        DeserializableTypeDefinition.string(String.class)
+            .formatter(Function.identity())
+            .parser(Function.identity())
+            .example("ex")
+            .build();
+
+    final Map<String, Object> result = parse(serialize(type::serializeOpenApiType));
+    assertThat(result).containsOnly(entry("type", "string"), entry("example", "ex"));
+  }
+
+  @Test
   void serializeOpenApiType_withFormat() throws Exception {
-    final StringBasedPrimitiveTypeDefinition<String> type =
-        new StringBasedPrimitiveTypeDefinition<>(
-            Function.identity(),
-            Function.identity(),
-            "ex",
-            Optional.empty(),
-            Optional.of("My format"));
+    final DeserializableTypeDefinition<String> type =
+        DeserializableTypeDefinition.string(String.class)
+            .formatter(Function.identity())
+            .parser(Function.identity())
+            .example("ex")
+            .format("My format")
+            .build();
 
     final Map<String, Object> result = parse(serialize(type::serializeOpenApiType));
     assertThat(result)
@@ -44,62 +56,29 @@ class StringBasedPrimitiveTypeDefinitionTest {
   }
 
   @Test
-  void serializeOpenApiType_withoutFormat() throws Exception {
-    final StringBasedPrimitiveTypeDefinition<String> type =
-        new StringBasedPrimitiveTypeDefinition<>(
-            Function.identity(),
-            Function.identity(),
-            "ex",
-            Optional.of("A description"),
-            Optional.empty());
-
-    final Map<String, Object> result = parse(serialize(type::serializeOpenApiType));
-    assertThat(result)
-        .containsOnly(
-            entry("type", "string"), entry("description", "A description"), entry("example", "ex"));
-  }
-
-  @Test
   void serializeOpenApiType_withDescription() throws Exception {
-    final StringBasedPrimitiveTypeDefinition<String> type =
-        new StringBasedPrimitiveTypeDefinition<>(
-            Function.identity(),
-            Function.identity(),
-            "ex",
-            Optional.of("A description"),
-            Optional.empty());
+    final DeserializableTypeDefinition<String> type =
+        DeserializableTypeDefinition.string(String.class)
+            .formatter(Function.identity())
+            .parser(Function.identity())
+            .example("ex")
+            .description("A description")
+            .build();
 
     final Map<String, Object> result = parse(serialize(type::serializeOpenApiType));
     assertThat(result)
         .containsOnly(
             entry("type", "string"), entry("description", "A description"), entry("example", "ex"));
-  }
-
-  @Test
-  void serializeOpenApiType_withoutDescription() throws Exception {
-    final StringBasedPrimitiveTypeDefinition<String> type =
-        new StringBasedPrimitiveTypeDefinition<>(
-            Function.identity(),
-            Function.identity(),
-            "ex",
-            Optional.empty(),
-            Optional.of("my format"));
-
-    final Map<String, Object> result = parse(serialize(type::serializeOpenApiType));
-    assertThat(result)
-        .containsOnly(
-            entry("type", "string"), entry("format", "my format"), entry("example", "ex"));
   }
 
   @Test
   void serialize_shouldApplyConverter() throws Exception {
-    final StringBasedPrimitiveTypeDefinition<String> type =
-        new StringBasedPrimitiveTypeDefinition<>(
-            value -> null,
-            value -> value.toUpperCase(Locale.ROOT),
-            "ex",
-            Optional.of("description"),
-            Optional.empty());
+    final DeserializableTypeDefinition<String> type =
+        DeserializableTypeDefinition.string(String.class)
+            .formatter(value -> value.toUpperCase(Locale.ROOT))
+            .parser(value -> null)
+            .example("ex")
+            .build();
 
     final String result = parseString(serialize(gen -> type.serialize("Foo", gen)));
 
@@ -108,13 +87,12 @@ class StringBasedPrimitiveTypeDefinitionTest {
 
   @Test
   void deserialize_shouldApplyConverter() throws Exception {
-    final StringBasedPrimitiveTypeDefinition<String> type =
-        new StringBasedPrimitiveTypeDefinition<>(
-            value -> value.toUpperCase(Locale.ROOT),
-            value -> null,
-            "ex",
-            Optional.of("description"),
-            Optional.empty());
+    final DeserializableTypeDefinition<String> type =
+        DeserializableTypeDefinition.string(String.class)
+            .parser(value -> value.toUpperCase(Locale.ROOT))
+            .formatter(value -> null)
+            .example("ex")
+            .build();
 
     final String result = JsonUtil.parse("\"Foo\"", type);
 
