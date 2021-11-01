@@ -16,10 +16,9 @@ package tech.pegasys.teku.infrastructure.restapi.openapi;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.entry;
+import static tech.pegasys.teku.infrastructure.restapi.JsonTestUtil.getObject;
+import static tech.pegasys.teku.infrastructure.restapi.JsonTestUtil.parse;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.type.TypeFactory;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
@@ -66,23 +65,5 @@ class OpenApiDocBuilderTest {
 
   private OpenApiDocBuilder validBuilder() {
     return new OpenApiDocBuilder().title("My Title").version("My Version");
-  }
-
-  @SuppressWarnings("unchecked")
-  private Map<String, Object> getObject(final Map<String, Object> input, final String... names) {
-    Map<String, Object> current = input;
-    for (String name : names) {
-      assertThat(current).containsKey(name);
-      current = (Map<String, Object>) current.get(name);
-    }
-    return current;
-  }
-
-  private Map<String, Object> parse(final String json) throws Exception {
-    return new ObjectMapper()
-        .readerFor(
-            TypeFactory.defaultInstance()
-                .constructMapType(LinkedHashMap.class, String.class, Object.class))
-        .readValue(json);
   }
 }
