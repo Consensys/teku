@@ -16,7 +16,6 @@ package tech.pegasys.teku.infrastructure.restapi;
 import static java.util.Collections.emptyList;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.javalin.Javalin;
 import io.javalin.core.JavalinConfig;
 import java.net.InetSocketAddress;
@@ -32,14 +31,22 @@ import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Server;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
+import tech.pegasys.teku.infrastructure.restapi.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.restapi.openapi.OpenApiDocBuilder;
+import tech.pegasys.teku.infrastructure.restapi.types.PrimitiveTypes;
+import tech.pegasys.teku.infrastructure.restapi.types.SerializableObjectTypeDefinitionBuilder;
+import tech.pegasys.teku.infrastructure.restapi.types.SerializableTypeDefinition;
 
 public class RestApiBuilder {
   private static final Logger LOG = LogManager.getLogger();
 
   // Note: Currently using plain objectMapper for error responses
   // Should be replaced with TypeDefinition based serialization once we have it ready
-  private final ObjectMapper objectMapper = new ObjectMapper();
+  private static final SerializableTypeDefinition<HttpErrorResponse> ERROR_RESPONSE_TYPE =
+      SerializableObjectTypeDefinitionBuilder.objectTypeFor(HttpErrorResponse.class)
+          .withField("status", PrimitiveTypes.INTEGER_TYPE, HttpErrorResponse::getStatus)
+          .withField("message", PrimitiveTypes.STRING_TYPE, HttpErrorResponse::getMessage)
+          .build();
 
   private int port;
   private String listenAddress = "127.0.0.1";
@@ -139,7 +146,7 @@ public class RestApiBuilder {
             final HttpErrorResponse response =
                 ((RestApiExceptionHandler) handler).handleException(exception, ctx.url());
             ctx.status(response.getStatus());
-            ctx.json(objectMapper.writeValueAsString(response));
+            ctx.json(JsonUtil.serialize(response, ERROR_RESPONSE_TYPE));
           } catch (final Throwable t) {
             ctx.status(SC_INTERNAL_SERVER_ERROR);
             LOG.error("Exception handler throw exception", t);

@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.infrastructure.restapi.types;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import java.io.IOException;
 import java.util.Optional;
 import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -28,4 +30,20 @@ public class PrimitiveTypes {
           UInt64::toString,
           Optional.of("unsigned 64 bit integer"),
           Optional.empty());
+
+  public static final SerializableTypeDefinition<Integer> INTEGER_TYPE =
+      new SerializableTypeDefinition<>() {
+
+        @Override
+        public void serializeOpenApiType(final JsonGenerator gen) throws IOException {
+          gen.writeStartObject();
+          gen.writeStringField("type", "number");
+          gen.writeEndObject();
+        }
+
+        @Override
+        public void serialize(final Integer value, final JsonGenerator gen) throws IOException {
+          gen.writeNumber(value);
+        }
+      };
 }
