@@ -48,7 +48,8 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetBlock extends AbstractHandler implements Handler {
-  public static final String ROUTE = "/eth/v2/beacon/blocks/{block_id}";
+  private static final String OAPI_ROUTE = "/eth/v2/beacon/blocks/:block_id";
+  public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
   private final ChainDataProvider chainDataProvider;
 
   public GetBlock(final DataProvider dataProvider, final JsonProvider jsonProvider) {
@@ -61,7 +62,7 @@ public class GetBlock extends AbstractHandler implements Handler {
   }
 
   @OpenApi(
-      path = ROUTE,
+      path = OAPI_ROUTE,
       method = HttpMethod.GET,
       summary = "Get block",
       tags = {TAG_BEACON},

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon;
 
+import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
@@ -47,7 +48,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetAllBlocksAtSlot implements Handler {
-  public static final String ROUTE = "/teku/v1/beacon/blocks/{slot}";
+  private static final String OAPI_ROUTE = "/teku/v1/beacon/blocks/:slot";
+  public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
   private final ChainDataProvider chainDataProvider;
   private final JsonProvider jsonProvider;
 
@@ -62,7 +64,7 @@ public class GetAllBlocksAtSlot implements Handler {
   }
 
   @OpenApi(
-      path = ROUTE,
+      path = OAPI_ROUTE,
       method = HttpMethod.GET,
       summary = "Get blocks at slot",
       tags = {TAG_TEKU},

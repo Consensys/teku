@@ -179,4 +179,8 @@ public abstract class AbstractHandler implements Handler {
   public interface ErrorProcessor {
     SafeFuture<String> handleError(Context context, Throwable t);
   }
+
+  public static String routeWithBracedParameters(final String route) {
+    return route.replaceAll(":([a-z_A-Z]+)", "{$1}");
+  }
 }

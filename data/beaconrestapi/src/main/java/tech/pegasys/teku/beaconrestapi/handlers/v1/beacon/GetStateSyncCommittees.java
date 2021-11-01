@@ -53,7 +53,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetStateSyncCommittees extends AbstractHandler implements Handler {
-  public static final String ROUTE = "/eth/v1/beacon/states/{state_id}/sync_committees";
+  private static final String OAPI_ROUTE = "/eth/v1/beacon/states/:state_id/sync_committees";
+  public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
   private final ChainDataProvider chainDataProvider;
 
   public GetStateSyncCommittees(final DataProvider dataProvider, final JsonProvider jsonProvider) {
@@ -67,7 +68,7 @@ public class GetStateSyncCommittees extends AbstractHandler implements Handler {
   }
 
   @OpenApi(
-      path = ROUTE,
+      path = OAPI_ROUTE,
       method = HttpMethod.GET,
       summary = "Get sync committees",
       tags = {TAG_BEACON, TAG_VALIDATOR_REQUIRED},
