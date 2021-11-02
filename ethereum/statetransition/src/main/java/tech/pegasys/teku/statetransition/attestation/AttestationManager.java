@@ -239,10 +239,6 @@ public class AttestationManager extends Service
       return;
     }
 
-    if (attestation.isAggregate()) {
-      aggregateValidator.addSeenAggregate(attestation);
-    }
-
     notifyAttestationsToSendSubscribers(attestation);
     notifyAllValidAttestationsSubscribers(attestation);
     attestation.markGossiped();

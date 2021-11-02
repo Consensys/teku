@@ -18,7 +18,6 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.config.SpecConfigMerge;
-import tech.pegasys.teku.spec.config.TestConfigLoader;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class TestSpecFactory {
@@ -123,7 +122,7 @@ public class TestSpecFactory {
   private static SpecConfigAltair getAltairSpecConfig(
       final Eth2Network network, final UInt64 altairForkEpoch) {
     return SpecConfigAltair.required(
-        TestConfigLoader.loadConfig(
+        SpecConfigLoader.loadConfig(
             network.configName(), c -> c.altairBuilder(a -> a.altairForkEpoch(altairForkEpoch))));
   }
 
@@ -134,7 +133,7 @@ public class TestSpecFactory {
   private static SpecConfigMerge getMergeSpecConfig(
       final Eth2Network network, final UInt64 altairForkEpoch, UInt64 mergeForkEpoch) {
     return SpecConfigMerge.required(
-        TestConfigLoader.loadConfig(
+        SpecConfigLoader.loadConfig(
             network.configName(),
             c ->
                 c.altairBuilder(a -> a.altairForkEpoch(altairForkEpoch))

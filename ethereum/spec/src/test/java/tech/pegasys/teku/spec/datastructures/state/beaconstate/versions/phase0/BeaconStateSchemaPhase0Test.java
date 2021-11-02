@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.TestConfigLoader;
+import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchemaTest;
 
@@ -46,7 +46,7 @@ public class BeaconStateSchemaPhase0Test
   public void changeSpecConfigTest_checkPhase0Fields() {
     final Spec standardSpec = TestSpecFactory.createMinimalPhase0();
     final SpecConfig modifiedConfig =
-        TestConfigLoader.loadConfig("minimal", b -> b.maxAttestations(123));
+        SpecConfigLoader.loadConfig("minimal", b -> b.maxAttestations(123));
 
     BeaconStatePhase0 s1 = getSchema(modifiedConfig).createEmpty();
     BeaconStatePhase0 s2 = getSchema(standardSpec.getGenesisSpecConfig()).createEmpty();

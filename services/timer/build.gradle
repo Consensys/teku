@@ -1,5 +1,5 @@
 dependencies {
-    implementation project(':services:serviceutils')
+    implementation project(':infrastructure:serviceutils')
     implementation project(':infrastructure:async')
     implementation project(':util')
     implementation project(':infrastructure:events')

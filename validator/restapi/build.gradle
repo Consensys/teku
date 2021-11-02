@@ -4,6 +4,7 @@ dependencies {
   implementation project(':infrastructure:events')
   implementation project(':infrastructure:exceptions')
   implementation project(':infrastructure:http')
+  implementation project(':infrastructure:restapi')
   implementation project(':infrastructure:version')
   implementation project(':ethereum:core')
   implementation project(':ethereum:spec')
