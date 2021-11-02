@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec;
 import java.util.Optional;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
+import tech.pegasys.teku.spec.config.SpecConfigMerge;
 import tech.pegasys.teku.spec.logic.DelegatingSpecLogic;
 import tech.pegasys.teku.spec.logic.SpecLogic;
 import tech.pegasys.teku.spec.logic.versions.altair.SpecLogicAltair;
@@ -46,6 +47,8 @@ public class SpecVersion extends DelegatingSpecLogic {
         return Optional.of(createPhase0(specConfig));
       case ALTAIR:
         return specConfig.toVersionAltair().map(SpecVersion::createAltair);
+      case MERGE:
+        return specConfig.toVersionMerge().map(SpecVersion::createMerge);
       default:
         throw new UnsupportedOperationException("Unknown milestone requested: " + milestone);
     }
@@ -61,6 +64,12 @@ public class SpecVersion extends DelegatingSpecLogic {
     final SchemaDefinitionsAltair schemaDefinitions = new SchemaDefinitionsAltair(specConfig);
     final SpecLogic specLogic = SpecLogicAltair.create(specConfig, schemaDefinitions);
     return new SpecVersion(SpecMilestone.ALTAIR, specConfig, schemaDefinitions, specLogic);
+  }
+
+  static SpecVersion createMerge(final SpecConfigMerge specConfig) {
+    final SchemaDefinitionsAltair schemaDefinitions = new SchemaDefinitionsAltair(specConfig);
+    final SpecLogic specLogic = SpecLogicAltair.create(specConfig, schemaDefinitions);
+    return new SpecVersion(SpecMilestone.MERGE, specConfig, schemaDefinitions, specLogic);
   }
 
   public SpecMilestone getMilestone() {

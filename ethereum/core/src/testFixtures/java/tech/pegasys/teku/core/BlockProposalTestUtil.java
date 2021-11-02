@@ -36,14 +36,17 @@ import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SszList;
 
 public class BlockProposalTestUtil {
   private final Spec spec;
+  private final DataStructureUtil dataStructureUtil;
   private final BeaconBlockBodyLists blockBodyLists;
 
   public BlockProposalTestUtil(final Spec spec) {
     this.spec = spec;
+    this.dataStructureUtil = new DataStructureUtil(spec);
     blockBodyLists = BeaconBlockBodyLists.ofSpec(spec);
   }
 
@@ -79,7 +82,10 @@ public class BlockProposalTestUtil {
                     .proposerSlashings(slashings)
                     .attesterSlashings(blockBodyLists.createAttesterSlashings())
                     .deposits(deposits)
-                    .voluntaryExits(exits));
+                    .voluntaryExits(exits)
+                    .syncAggregate(
+                        () ->
+                            dataStructureUtil.emptySyncAggregateIfRequiredByState(blockSlotState)));
 
     // Sign block and set block signature
     final BeaconBlock block = newBlockAndState.getBlock();

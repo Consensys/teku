@@ -21,7 +21,6 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.config.SpecConfigMerge;
-import tech.pegasys.teku.spec.config.TestConfigLoader;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
@@ -31,7 +30,7 @@ public class SpecMilestoneTest {
   private final SpecConfigAltair altairSpecConfig =
       SpecConfigAltair.required(SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()));
   private final SpecConfig phase0SpecConfig =
-      TestConfigLoader.loadPhase0Config(Eth2Network.MINIMAL.configName());
+      SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName());
 
   @Test
   public void isGreaterThanOrEqualTo() {
@@ -123,16 +122,6 @@ public class SpecMilestoneTest {
   }
 
   @Test
-  public void getForkVersion_altairNotScheduled() {
-    assertThat(SpecMilestone.getForkVersion(phase0SpecConfig, SpecMilestone.ALTAIR)).isEmpty();
-  }
-
-  @Test
-  public void getForkVersion_mergeNotScheduled() {
-    assertThat(SpecMilestone.getForkVersion(phase0SpecConfig, SpecMilestone.MERGE)).isEmpty();
-  }
-
-  @Test
   public void getForkSlot_phase0() {
     final UInt64 expected = UInt64.ZERO;
     assertThat(SpecMilestone.getForkEpoch(altairSpecConfig, SpecMilestone.PHASE0))
@@ -154,11 +143,13 @@ public class SpecMilestoneTest {
 
   @Test
   public void getForkSlot_altairNotScheduled() {
-    assertThat(SpecMilestone.getForkEpoch(phase0SpecConfig, SpecMilestone.ALTAIR)).isEmpty();
+    assertThat(SpecMilestone.getForkEpoch(phase0SpecConfig, SpecMilestone.ALTAIR))
+        .contains(UInt64.MAX_VALUE);
   }
 
   @Test
   public void getForkSlot_mergeNotScheduled() {
-    assertThat(SpecMilestone.getForkEpoch(phase0SpecConfig, SpecMilestone.MERGE)).isEmpty();
+    assertThat(SpecMilestone.getForkEpoch(phase0SpecConfig, SpecMilestone.MERGE))
+        .contains(UInt64.MAX_VALUE);
   }
 }

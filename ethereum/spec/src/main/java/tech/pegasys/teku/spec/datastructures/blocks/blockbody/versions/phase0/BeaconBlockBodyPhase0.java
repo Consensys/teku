@@ -54,33 +54,33 @@ public class BeaconBlockBodyPhase0
 
   BeaconBlockBodyPhase0(
       BeaconBlockBodySchemaPhase0 type,
-      SszSignature randao_reveal,
-      Eth1Data eth1_data,
+      SszSignature randaoReveal,
+      Eth1Data eth1Data,
       SszBytes32 graffiti,
-      SszList<ProposerSlashing> proposer_slashings,
-      SszList<AttesterSlashing> attester_slashings,
+      SszList<ProposerSlashing> proposerSlashings,
+      SszList<AttesterSlashing> attesterSlashings,
       SszList<Attestation> attestations,
       SszList<Deposit> deposits,
-      SszList<SignedVoluntaryExit> voluntary_exits) {
+      SszList<SignedVoluntaryExit> voluntaryExits) {
     super(
         type,
-        randao_reveal,
-        eth1_data,
+        randaoReveal,
+        eth1Data,
         graffiti,
-        proposer_slashings,
-        attester_slashings,
+        proposerSlashings,
+        attesterSlashings,
         attestations,
         deposits,
-        voluntary_exits);
+        voluntaryExits);
   }
 
   @Override
-  public BLSSignature getRandao_reveal() {
+  public BLSSignature getRandaoReveal() {
     return getField0().getSignature();
   }
 
   @Override
-  public Eth1Data getEth1_data() {
+  public Eth1Data getEth1Data() {
     return getField1();
   }
 
@@ -90,12 +90,12 @@ public class BeaconBlockBodyPhase0
   }
 
   @Override
-  public SszList<ProposerSlashing> getProposer_slashings() {
+  public SszList<ProposerSlashing> getProposerSlashings() {
     return getField3();
   }
 
   @Override
-  public SszList<AttesterSlashing> getAttester_slashings() {
+  public SszList<AttesterSlashing> getAttesterSlashings() {
     return getField4();
   }
 
@@ -110,7 +110,7 @@ public class BeaconBlockBodyPhase0
   }
 
   @Override
-  public SszList<SignedVoluntaryExit> getVoluntary_exits() {
+  public SszList<SignedVoluntaryExit> getVoluntaryExits() {
     return getField7();
   }
 

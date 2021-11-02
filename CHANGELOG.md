@@ -21,7 +21,10 @@ For information on changes in released versions of Teku, see the [releases page]
 - Support v.2.1.0 of the standard rest api. it should be noted that the 'version' has been changed to lower case to comply with the api specification.
 - Attestations are now sent to the beacon node in batches by default when using the validator-client.
 - Updated to Javalin 4 for the rest api.
+- Added relevant epoch to attestation and sync committee performance log message.
+- Removed ignore rule for aggregate attestation gossip where the attestation root has previously been seen.
 
 ### Bug Fixes
 - Fixed issue where discovery did not correctly abort handshake attempts when a request timed out.
 - Downgrade to jbslt 0.3.5 to resolve incompatibility with Windows 10.
+- Fixed issue where `Syncing Completed` message was printing multiple times.

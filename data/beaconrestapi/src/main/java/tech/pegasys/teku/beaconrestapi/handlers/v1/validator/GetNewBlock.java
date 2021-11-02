@@ -14,18 +14,18 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.GRAFFITI;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RANDAO_REVEAL;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_SERVICE_UNAVAILABLE;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SERVICE_UNAVAILABLE;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBLSSignature;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBytes32;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.GRAFFITI;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RANDAO_REVEAL;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_SERVICE_UNAVAILABLE;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNAVAILABLE;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Throwables;
@@ -53,7 +53,8 @@ import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 
 public class GetNewBlock extends AbstractHandler implements Handler {
-  public static final String ROUTE = "/eth/v1/validator/blocks/{slot}";
+  private static final String OAPI_ROUTE = "/eth/v1/validator/blocks/:slot";
+  public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
   protected final ValidatorDataProvider provider;
 
   public GetNewBlock(final DataProvider dataProvider, final JsonProvider jsonProvider) {
@@ -67,7 +68,7 @@ public class GetNewBlock extends AbstractHandler implements Handler {
   }
 
   @OpenApi(
-      path = ROUTE,
+      path = OAPI_ROUTE,
       deprecated = true,
       method = HttpMethod.GET,
       summary = "Produce unsigned block",

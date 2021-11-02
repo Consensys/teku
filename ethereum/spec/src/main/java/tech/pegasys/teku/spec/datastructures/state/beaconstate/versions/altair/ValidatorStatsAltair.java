@@ -18,7 +18,7 @@ import tech.pegasys.teku.spec.constants.ParticipationFlags;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.primitive.SszByte;
 
-interface ValidatorStatsAltair extends BeaconStateAltair {
+public interface ValidatorStatsAltair extends BeaconStateAltair {
   @Override
   default CorrectAndLiveValidators getValidatorStatsPreviousEpoch(final Bytes32 correctTargetRoot) {
     return getValidatorStats(getPreviousEpochParticipation());

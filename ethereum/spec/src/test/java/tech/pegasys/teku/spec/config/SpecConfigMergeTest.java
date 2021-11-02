@@ -58,9 +58,9 @@ public class SpecConfigMergeTest {
   @Test
   public void equals_altairConfigDiffer() {
     SpecConfigAltair altairA =
-        TestConfigLoader.loadConfig("mainnet", b -> {}).toVersionAltair().orElseThrow();
+        SpecConfigLoader.loadConfig("mainnet", b -> {}).toVersionAltair().orElseThrow();
     SpecConfigAltair altairB =
-        TestConfigLoader.loadConfig(
+        SpecConfigLoader.loadConfig(
                 "mainnet",
                 b ->
                     b.altairBuilder(ab -> ab.syncCommitteeSize(altairA.getSyncCommitteeSize() + 4)))

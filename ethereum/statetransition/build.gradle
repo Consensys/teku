@@ -15,7 +15,7 @@ dependencies {
   implementation project(':infrastructure:time')
   implementation project(':pow')
   implementation project(':protoarray')
-  implementation project(':services:serviceutils')
+  implementation project(':infrastructure:serviceutils')
   implementation project(':ssz')
   implementation project(':storage')
   implementation project(':storage:api')

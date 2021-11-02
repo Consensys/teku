@@ -37,7 +37,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.Eth1HeadTracker.HeadUpdatedSubscriber;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.TestConfigLoader;
+import tech.pegasys.teku.spec.config.SpecConfigLoader;
 
 class TimeBasedEth1HeadTrackerTest {
 
@@ -47,7 +47,7 @@ class TimeBasedEth1HeadTrackerTest {
 
   private final Spec spec =
       TestSpecFactory.createPhase0(
-          TestConfigLoader.loadPhase0Config(
+          SpecConfigLoader.loadConfig(
               "minimal",
               builder ->
                   builder

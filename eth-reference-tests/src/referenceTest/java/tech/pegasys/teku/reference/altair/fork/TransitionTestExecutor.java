@@ -27,7 +27,7 @@ import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.TestConfigLoader;
+import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
@@ -57,7 +57,7 @@ public class TransitionTestExecutor implements TestExecutor {
 
     final UInt64 forkEpoch = UInt64.valueOf(metadata.forkEpoch);
     final SpecConfig config =
-        TestConfigLoader.loadConfig(
+        SpecConfigLoader.loadConfig(
             testDefinition.getConfigName(),
             c -> c.altairBuilder(a -> a.altairForkEpoch(forkEpoch)));
     final Spec spec = SpecFactory.create(config);
