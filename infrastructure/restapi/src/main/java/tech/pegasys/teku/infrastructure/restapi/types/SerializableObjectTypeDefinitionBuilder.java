@@ -15,6 +15,7 @@ package tech.pegasys.teku.infrastructure.restapi.types;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -79,6 +80,11 @@ public class SerializableObjectTypeDefinitionBuilder<TObject> {
       gen.writeFieldName(name);
       type.serializeOpenApiTypeOrReference(gen);
     }
+
+    @Override
+    public Collection<OpenApiTypeDefinition> getReferencedTypeDefinitions() {
+      return type.getSelfAndReferencedTypeDefinitions();
+    }
   }
 
   private static class OptionalFieldDefinition<TObject, TField>
@@ -109,6 +115,11 @@ public class SerializableObjectTypeDefinitionBuilder<TObject> {
     public void writeOpenApiField(final JsonGenerator gen) throws IOException {
       gen.writeFieldName(name);
       type.serializeOpenApiTypeOrReference(gen);
+    }
+
+    @Override
+    public Collection<OpenApiTypeDefinition> getReferencedTypeDefinitions() {
+      return type.getSelfAndReferencedTypeDefinitions();
     }
   }
 }

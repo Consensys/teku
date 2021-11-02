@@ -21,11 +21,14 @@ import io.javalin.http.HandlerType;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
+import tech.pegasys.teku.infrastructure.restapi.types.OpenApiTypeDefinition;
 
 public class OpenApiDocBuilder {
 
@@ -78,6 +81,8 @@ public class OpenApiDocBuilder {
       gen.writeStringField("openapi", OPENAPI_VERSION);
       writeInfo(gen);
       writePaths(gen);
+
+      writeComponents(gen);
       gen.writeEndObject();
 
     } catch (IOException e) {
@@ -111,6 +116,30 @@ public class OpenApiDocBuilder {
         metadata.writeOpenApi(gen);
       }
       gen.writeEndObject();
+    }
+    gen.writeEndObject();
+  }
+
+  private void writeComponents(final JsonGenerator gen) throws IOException {
+    gen.writeObjectFieldStart("components");
+    writeSchemas(gen);
+    gen.writeEndObject();
+  }
+
+  private void writeSchemas(final JsonGenerator gen) throws IOException {
+    final Set<OpenApiTypeDefinition> typeDefinitions = new HashSet<>();
+    for (Map<HandlerType, RestApiEndpoint> pathEndpoints : endpoints.values()) {
+      for (RestApiEndpoint endpoint : pathEndpoints.values()) {
+        typeDefinitions.addAll(endpoint.getMetadata().getReferencedTypeDefinitions());
+      }
+    }
+    gen.writeObjectFieldStart("schemas");
+    for (OpenApiTypeDefinition type : typeDefinitions) {
+      if (type.getTypeName().isEmpty()) {
+        continue;
+      }
+      gen.writeFieldName(type.getTypeName().get());
+      type.serializeOpenApiType(gen);
     }
     gen.writeEndObject();
   }
