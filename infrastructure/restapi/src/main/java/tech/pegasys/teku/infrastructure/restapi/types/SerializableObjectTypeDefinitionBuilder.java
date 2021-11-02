@@ -68,6 +68,7 @@ public class SerializableObjectTypeDefinitionBuilder<TObject> {
       this.type = type;
     }
 
+    @Override
     public void writeField(final TObject source, final JsonGenerator gen) throws IOException {
       gen.writeFieldName(name);
       type.serialize(getter.apply(source), gen);
@@ -95,6 +96,7 @@ public class SerializableObjectTypeDefinitionBuilder<TObject> {
       this.type = type;
     }
 
+    @Override
     public void writeField(final TObject source, final JsonGenerator gen) throws IOException {
       final Optional<TField> maybeValue = getter.apply(source);
       if (maybeValue.isPresent()) {
