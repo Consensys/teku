@@ -20,6 +20,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 class ChainHead extends StateAndBlockSummary {
@@ -51,7 +52,11 @@ class ChainHead extends StateAndBlockSummary {
   public SlotAndBlockRoot findCommonAncestor(final ChainHead other) {
     if (getSlot().equals(UInt64.ZERO) || other.getSlot().equals(UInt64.ZERO)) {
       // One fork has no blocks so the only possible common ancestor is genesis.
-      return new SlotAndBlockRoot(UInt64.ZERO, getBlockRootAtSlot(UInt64.ZERO));
+      if (getSlot().equals(UInt64.ZERO)) {
+        return new SlotAndBlockRoot(UInt64.ZERO, getRoot());
+      } else {
+        return new SlotAndBlockRoot(UInt64.ZERO, other.getRoot());
+      }
     }
     UInt64 slot = getSlot().min(other.getSlot());
     final UInt64 longestChainSlot = getSlot().max(other.getSlot());
@@ -60,18 +65,19 @@ class ChainHead extends StateAndBlockSummary {
             .max(spec.getSlotsPerHistoricalRoot(slot)) // Avoid underflow
             .minus(spec.getSlotsPerHistoricalRoot(slot));
     while (slot.isGreaterThan(minSlotWithHistoricRoot)) {
-      if (getBlockRootAtSlot(slot).equals(other.getBlockRootAtSlot(slot))) {
-        return new SlotAndBlockRoot(slot, getBlockRootAtSlot(slot));
+      final Bytes32 blockRootAtSlot = getBlockRootAtSlot(slot);
+      if (blockRootAtSlot.equals(other.getBlockRootAtSlot(slot))) {
+        return new SlotAndBlockRoot(slot, blockRootAtSlot);
       }
       slot = slot.minus(1);
     }
     // Couldn't find a common ancestor in the available block roots so fallback to finalized
-    UInt64 finalizedBlock =
-        getState()
-            .getFinalized_checkpoint()
+    final Checkpoint finalizedCheckpoint = getState().getFinalized_checkpoint();
+    final UInt64 finalizedBlock =
+        finalizedCheckpoint
             .getEpochStartSlot(spec)
             .min(other.getState().getFinalized_checkpoint().getEpochStartSlot(spec));
-    return new SlotAndBlockRoot(finalizedBlock, getState().getFinalized_checkpoint().getRoot());
+    return new SlotAndBlockRoot(finalizedBlock, finalizedCheckpoint.getRoot());
   }
 
   private Bytes32 getBlockRootAtSlot(final UInt64 slot) {
