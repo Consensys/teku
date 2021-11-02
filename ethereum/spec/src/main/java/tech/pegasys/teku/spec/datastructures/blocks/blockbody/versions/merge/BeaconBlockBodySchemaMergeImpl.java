@@ -155,13 +155,13 @@ class BeaconBlockBodySchemaMergeImpl
   }
 
   @Override
-  public BeaconBlockBodyMergeImpl createFromBackingNode(TreeNode node) {
-    return new BeaconBlockBodyMergeImpl(this, node);
+  public ExecutionPayloadSchema getExecutionPayloadSchema() {
+    return (ExecutionPayloadSchema) getFieldSchema9();
   }
 
   @Override
-  public ExecutionPayloadSchema getExecutionPayloadSchema() {
-    return (ExecutionPayloadSchema) getFieldSchema9();
+  public BeaconBlockBodyMergeImpl createFromBackingNode(TreeNode node) {
+    return new BeaconBlockBodyMergeImpl(this, node);
   }
 
   @Override
