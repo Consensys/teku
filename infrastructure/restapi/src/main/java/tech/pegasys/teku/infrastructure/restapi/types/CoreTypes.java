@@ -15,15 +15,11 @@ package tech.pegasys.teku.infrastructure.restapi.types;
 
 import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
+import tech.pegasys.teku.infrastructure.restapi.types.StringBasedPrimitiveTypeDefinition.StringTypeBuilder;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class CommonTypeDefinitions {
-  public static final DeserializableTypeDefinition<String> STRING_TYPE =
-      DeserializableTypeDefinition.string(String.class)
-          .formatter(Function.identity())
-          .parser(Function.identity())
-          .example("value")
-          .build();
+public class CoreTypes {
+  public static final DeserializableTypeDefinition<String> STRING_TYPE = stringBuilder().build();
 
   public static final DeserializableTypeDefinition<UInt64> UINT64_TYPE =
       DeserializableTypeDefinition.string(UInt64.class)
@@ -39,7 +35,18 @@ public class CommonTypeDefinitions {
 
   public static final SerializableTypeDefinition<HttpErrorResponse> HTTP_ERROR_RESPONSE_TYPE =
       SerializableTypeDefinition.object(HttpErrorResponse.class)
+          .name("HttpErrorResponse")
           .withField("status", INTEGER_TYPE, HttpErrorResponse::getStatus)
           .withField("message", STRING_TYPE, HttpErrorResponse::getMessage)
           .build();
+
+  public static DeserializableTypeDefinition<String> string(final String description) {
+    return stringBuilder().description(description).build();
+  }
+
+  private static StringTypeBuilder<String> stringBuilder() {
+    return DeserializableTypeDefinition.string(String.class)
+        .formatter(Function.identity())
+        .parser(Function.identity());
+  }
 }

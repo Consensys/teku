@@ -25,6 +25,7 @@ import tech.pegasys.teku.infrastructure.restapi.RestApiBuilder;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 
 public class ValidatorRestApi {
+
   public static RestApi create(final ValidatorRestApiConfig config) {
     return new RestApiBuilder()
         .openApiInfo(

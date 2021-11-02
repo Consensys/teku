@@ -15,11 +15,12 @@ package tech.pegasys.teku.infrastructure.restapi.types;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
-import static tech.pegasys.teku.infrastructure.restapi.types.CommonTypeDefinitions.STRING_TYPE;
-import static tech.pegasys.teku.infrastructure.restapi.types.CommonTypeDefinitions.UINT64_TYPE;
+import static tech.pegasys.teku.infrastructure.restapi.types.CoreTypes.STRING_TYPE;
+import static tech.pegasys.teku.infrastructure.restapi.types.CoreTypes.UINT64_TYPE;
 
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.restapi.JsonTestUtil;
 import tech.pegasys.teku.infrastructure.restapi.json.JsonUtil;
@@ -38,6 +39,62 @@ class SerializableObjectTypeDefinitionBuilderTest {
     final String json = JsonUtil.serialize(new SimpleValue("abc", UInt64.valueOf(300)), type);
     assertThat(JsonTestUtil.parse(json))
         .containsExactly(entry("value1", "abc"), entry("value2", "300"));
+  }
+
+  @Test
+  void shouldNotIncludeOptionalFieldWithValue() throws Exception {
+    final SerializableTypeDefinition<WithOptionalValue> type =
+        SerializableTypeDefinition.object(WithOptionalValue.class)
+            .withOptionalField("optional", STRING_TYPE, WithOptionalValue::getValue)
+            .build();
+
+    final String json = JsonUtil.serialize(new WithOptionalValue(Optional.of("foo")), type);
+    assertThat(JsonTestUtil.parse(json)).containsExactly(entry("optional", "foo"));
+  }
+
+  @Test
+  void shouldNotIncludeOptionalFieldWithNoValue() throws Exception {
+    final SerializableTypeDefinition<WithOptionalValue> type =
+        SerializableTypeDefinition.object(WithOptionalValue.class)
+            .withOptionalField("optional", STRING_TYPE, WithOptionalValue::getValue)
+            .build();
+
+    final String json = JsonUtil.serialize(new WithOptionalValue(Optional.empty()), type);
+    assertThat(JsonTestUtil.parse(json)).isEmpty();
+  }
+
+  private static class WithOptionalValue {
+    private final Optional<String> value;
+
+    private WithOptionalValue(final Optional<String> value) {
+      this.value = value;
+    }
+
+    public Optional<String> getValue() {
+      return value;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      final WithOptionalValue that = (WithOptionalValue) o;
+      return Objects.equals(value, that.value);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(value);
+    }
+
+    @Override
+    public String toString() {
+      return MoreObjects.toStringHelper(this).add("value", value).toString();
+    }
   }
 
   private static class SimpleValue {

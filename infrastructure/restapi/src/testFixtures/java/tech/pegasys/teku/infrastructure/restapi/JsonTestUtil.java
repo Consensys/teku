@@ -17,7 +17,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public class JsonTestUtil {
@@ -33,6 +35,11 @@ public class JsonTestUtil {
     return current;
   }
 
+  @SuppressWarnings("unchecked")
+  public static <T> List<T> getList(final Map<String, Object> input, final String name) {
+    return (List<T>) input.get(name);
+  }
+
   public static Map<String, Object> parse(final String json) throws Exception {
     return new ObjectMapper()
         .readerFor(
@@ -43,5 +50,13 @@ public class JsonTestUtil {
 
   public static String parseString(final String json) throws Exception {
     return new ObjectMapper().readerFor(String.class).readValue(json);
+  }
+
+  public static List<Object> parseList(final String json) throws Exception {
+    return new ObjectMapper()
+        .readerFor(
+            TypeFactory.defaultInstance()
+                .constructCollectionLikeType(ArrayList.class, Object.class))
+        .readValue(json);
   }
 }

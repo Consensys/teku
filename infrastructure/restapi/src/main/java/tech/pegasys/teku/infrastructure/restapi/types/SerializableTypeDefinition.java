@@ -15,12 +15,21 @@ package tech.pegasys.teku.infrastructure.restapi.types;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import java.io.IOException;
+import java.util.List;
 
 public interface SerializableTypeDefinition<T> extends OpenApiTypeDefinition {
   void serialize(T value, JsonGenerator gen) throws IOException;
 
   static <T> SerializableObjectTypeDefinitionBuilder<T> object(
       @SuppressWarnings("unused") final Class<T> type) {
+    return object();
+  }
+
+  static <T> SerializableObjectTypeDefinitionBuilder<T> object() {
     return new SerializableObjectTypeDefinitionBuilder<>();
+  }
+
+  static <T> SerializableTypeDefinition<List<T>> listOf(SerializableTypeDefinition<T> itemType) {
+    return new SerializableArrayTypeDefinition<>(itemType);
   }
 }
