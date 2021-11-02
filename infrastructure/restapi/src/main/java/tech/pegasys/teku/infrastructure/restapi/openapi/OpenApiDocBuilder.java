@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.restapi.openapi;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.stream.Collectors.toSet;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -21,7 +22,6 @@ import io.javalin.http.HandlerType;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -127,17 +127,14 @@ public class OpenApiDocBuilder {
   }
 
   private void writeSchemas(final JsonGenerator gen) throws IOException {
-    final Set<OpenApiTypeDefinition> typeDefinitions = new HashSet<>();
-    for (Map<HandlerType, RestApiEndpoint> pathEndpoints : endpoints.values()) {
-      for (RestApiEndpoint endpoint : pathEndpoints.values()) {
-        typeDefinitions.addAll(endpoint.getMetadata().getReferencedTypeDefinitions());
-      }
-    }
+    final Set<OpenApiTypeDefinition> typeDefinitions =
+        endpoints.values().stream()
+            .flatMap(pathEndpoints -> pathEndpoints.values().stream())
+            .flatMap(endpoint -> endpoint.getMetadata().getReferencedTypeDefinitions().stream())
+            .filter(type -> type.getTypeName().isPresent())
+            .collect(toSet());
     gen.writeObjectFieldStart("schemas");
     for (OpenApiTypeDefinition type : typeDefinitions) {
-      if (type.getTypeName().isEmpty()) {
-        continue;
-      }
       gen.writeFieldName(type.getTypeName().get());
       type.serializeOpenApiType(gen);
     }
