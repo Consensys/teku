@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon;
 
+import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_BLOCK_ID;
@@ -44,7 +45,8 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetStateByBlockRoot implements Handler {
-  public static final String ROUTE = "/teku/v1/beacon/blocks/{block_id}/state";
+  private static final String OAPI_ROUTE = "/teku/v1/beacon/blocks/:block_id/state";
+  public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
   private final ChainDataProvider chainDataProvider;
   private final JsonProvider jsonProvider;
 
@@ -59,7 +61,7 @@ public class GetStateByBlockRoot implements Handler {
   }
 
   @OpenApi(
-      path = ROUTE,
+      path = OAPI_ROUTE,
       method = HttpMethod.GET,
       summary = "Get SSZ State By Block id",
       tags = {TAG_TEKU},
