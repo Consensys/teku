@@ -16,8 +16,6 @@ package tech.pegasys.teku.validator.restapi;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 
-import com.google.common.io.Resources;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -72,9 +70,6 @@ class ValidatorTypesTest {
   }
 
   private Map<String, Object> parseJsonResource(final String resourceName) throws Exception {
-    final String expected =
-        Resources.toString(
-            Resources.getResource(ValidatorTypesTest.class, resourceName), StandardCharsets.UTF_8);
-    return JsonTestUtil.parse(expected);
+    return JsonTestUtil.parseJsonResource(ValidatorTypesTest.class, resourceName);
   }
 }

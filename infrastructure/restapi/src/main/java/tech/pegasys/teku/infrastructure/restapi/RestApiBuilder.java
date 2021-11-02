@@ -32,6 +32,7 @@ import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Server;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.restapi.openapi.OpenApiDocBuilder;
 
@@ -87,6 +88,11 @@ public class RestApiBuilder {
 
   public RestApiBuilder openApiInfo(final Consumer<OpenApiDocBuilder> handler) {
     handler.accept(openApiDocBuilder);
+    return this;
+  }
+
+  public RestApiBuilder endpoint(final RestApiEndpoint endpoint) {
+    openApiDocBuilder.endpoint(endpoint);
     return this;
   }
 
