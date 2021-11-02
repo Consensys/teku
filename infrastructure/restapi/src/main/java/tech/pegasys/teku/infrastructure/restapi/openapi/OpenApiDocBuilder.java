@@ -135,7 +135,7 @@ public class OpenApiDocBuilder {
             .collect(toSet());
     gen.writeObjectFieldStart("schemas");
     for (OpenApiTypeDefinition type : typeDefinitions) {
-      gen.writeFieldName(type.getTypeName().get());
+      gen.writeFieldName(type.getTypeName().orElseThrow());
       type.serializeOpenApiType(gen);
     }
     gen.writeEndObject();
