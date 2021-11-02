@@ -13,12 +13,12 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
 import io.javalin.http.Context;
@@ -78,7 +78,7 @@ public class PostAttesterSlashing extends AbstractHandler {
       if (result.code().equals(ValidationResultCode.IGNORE)
           || result.code().equals(ValidationResultCode.REJECT)) {
         ctx.status(SC_BAD_REQUEST);
-        ctx.result(
+        ctx.json(
             BadRequest.badRequest(
                 jsonProvider,
                 "Invalid attester slashing, it will never pass validation so it's rejected."));
@@ -86,7 +86,7 @@ public class PostAttesterSlashing extends AbstractHandler {
         ctx.status(SC_OK);
       }
     } catch (final IllegalArgumentException | JsonMappingException e) {
-      ctx.result(BadRequest.badRequest(jsonProvider, e.getMessage()));
+      ctx.json(BadRequest.badRequest(jsonProvider, e.getMessage()));
       ctx.status(SC_BAD_REQUEST);
     }
   }

@@ -150,13 +150,13 @@ class BlockFactoryTest {
 
     assertThat(block).isNotNull();
     assertThat(block.getSlot()).isEqualTo(newSlot);
-    assertThat(block.getBody().getRandao_reveal()).isEqualTo(randaoReveal);
-    assertThat(block.getBody().getEth1_data()).isEqualTo(ETH1_DATA);
+    assertThat(block.getBody().getRandaoReveal()).isEqualTo(randaoReveal);
+    assertThat(block.getBody().getEth1Data()).isEqualTo(ETH1_DATA);
     assertThat(block.getBody().getDeposits()).isEqualTo(deposits);
     assertThat(block.getBody().getAttestations()).isEqualTo(attestations);
-    assertThat(block.getBody().getAttester_slashings()).isEqualTo(attesterSlashings);
-    assertThat(block.getBody().getProposer_slashings()).isEqualTo(proposerSlashings);
-    assertThat(block.getBody().getVoluntary_exits()).isEqualTo(voluntaryExits);
+    assertThat(block.getBody().getAttesterSlashings()).isEqualTo(attesterSlashings);
+    assertThat(block.getBody().getProposerSlashings()).isEqualTo(proposerSlashings);
+    assertThat(block.getBody().getVoluntaryExits()).isEqualTo(voluntaryExits);
     assertThat(block.getBody().getGraffiti()).isEqualTo(graffiti);
     return block;
   }

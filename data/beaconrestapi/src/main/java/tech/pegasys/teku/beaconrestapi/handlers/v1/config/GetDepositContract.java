@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.config;
 
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_CONFIG;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_CONFIG;
 
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -69,6 +69,6 @@ public class GetDepositContract implements Handler {
                   new GetDepositContractResponse(depositChainId, depositContractAddress)));
     }
     ctx.status(SC_OK);
-    ctx.result(this.depositContractResponse.orElse(""));
+    ctx.json(this.depositContractResponse.orElse(""));
   }
 }

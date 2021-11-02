@@ -21,10 +21,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.B
 
 public interface BeaconStateMerge extends BeaconStateAltair {
 
-  default BeaconStateSchemaMerge getBeaconStateSchemaMerge() {
-    return (BeaconStateSchemaMerge) getSchema();
-  }
-
   static BeaconStateMerge required(final BeaconState state) {
     return state
         .toVersionMerge()

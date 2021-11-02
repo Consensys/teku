@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.node;
 
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.CACHE_NONE;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_NODE;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_NODE;
 
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -70,6 +70,6 @@ public class GetIdentity implements Handler {
             network.getListeningAddresses(),
             network.getDiscoveryAddresses(),
             network.getMetadata());
-    ctx.result(jsonProvider.objectToJSON(new IdentityResponse(networkIdentity)));
+    ctx.json(jsonProvider.objectToJSON(new IdentityResponse(networkIdentity)));
   }
 }

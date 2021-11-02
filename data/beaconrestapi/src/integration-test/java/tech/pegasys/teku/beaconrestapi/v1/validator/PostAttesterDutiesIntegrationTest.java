@@ -33,7 +33,7 @@ public class PostAttesterDutiesIntegrationTest extends AbstractDataBackedRestAPI
 
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
 
-    Response response = post(PostAttesterDuties.ROUTE.replace(":epoch", "1"), "");
+    Response response = post(PostAttesterDuties.ROUTE.replace("{epoch}", "1"), "");
 
     assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
     assertThat(response.body().string()).contains("Could read request body to get required data.");

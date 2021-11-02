@@ -17,6 +17,7 @@ import java.util.Optional;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigMerge;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload.ExecutionPayloadSchema;
 
 public interface BeaconBlockBodySchemaMerge<T extends BeaconBlockBodyMerge>
     extends BeaconBlockBodySchemaAltair<T> {
@@ -31,9 +32,10 @@ public interface BeaconBlockBodySchemaMerge<T extends BeaconBlockBodyMerge>
                 config.getMaxAttestations(),
                 config.getMaxDeposits(),
                 config.getMaxVoluntaryExits(),
-                // TODO SpecConfigMerge inherits SpecConfigAltair
-                config.toVersionAltair().orElseThrow().getSyncCommitteeSize()));
+                config.getSyncCommitteeSize()));
   }
+
+  ExecutionPayloadSchema getExecutionPayloadSchema();
 
   @Override
   default Optional<BeaconBlockBodySchemaMerge<?>> toVersionMerge() {

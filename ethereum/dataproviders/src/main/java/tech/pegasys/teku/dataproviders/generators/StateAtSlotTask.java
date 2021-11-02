@@ -121,7 +121,7 @@ public class StateAtSlotTask implements CacheableTask<SlotAndBlockRoot, BeaconSt
         return state;
       }
 
-      return spec.processSlots(state, slotAndBlockRoot.getSlot(), executionEngineChannel);
+      return spec.processSlots(state, slotAndBlockRoot.getSlot());
     } catch (SlotProcessingException | EpochProcessingException | IllegalArgumentException e) {
       throw new InvalidCheckpointException(e);
     }

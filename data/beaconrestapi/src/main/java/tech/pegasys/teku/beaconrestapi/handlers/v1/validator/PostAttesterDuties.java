@@ -15,15 +15,15 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.EPOCH;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_SERVICE_UNAVAILABLE;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SERVICE_UNAVAILABLE;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EPOCH;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_SERVICE_UNAVAILABLE;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNAVAILABLE;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Throwables;
@@ -52,7 +52,8 @@ import tech.pegasys.teku.provider.JsonProvider;
 
 public class PostAttesterDuties extends AbstractHandler implements Handler {
   private static final Logger LOG = LogManager.getLogger();
-  public static final String ROUTE = "/eth/v1/validator/duties/attester/:epoch";
+  private static final String OAPI_ROUTE = "/eth/v1/validator/duties/attester/:epoch";
+  public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
   private final ValidatorDataProvider validatorDataProvider;
   private final SyncDataProvider syncDataProvider;
 
@@ -72,7 +73,7 @@ public class PostAttesterDuties extends AbstractHandler implements Handler {
   }
 
   @OpenApi(
-      path = ROUTE,
+      path = OAPI_ROUTE,
       method = HttpMethod.POST,
       summary = "Get attester duties",
       tags = {TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED},
@@ -126,11 +127,11 @@ public class PostAttesterDuties extends AbstractHandler implements Handler {
       LOG.trace("Error parsing", ex);
       ctx.status(SC_BAD_REQUEST);
       final String message = "Invalid epoch " + parameters.get(EPOCH) + " or index specified";
-      ctx.result(BadRequest.badRequest(jsonProvider, message));
+      ctx.json(BadRequest.badRequest(jsonProvider, message));
     } catch (IllegalArgumentException ex) {
       LOG.trace("Illegal argument in PostAttesterDuties", ex);
       ctx.status(SC_BAD_REQUEST);
-      ctx.result(BadRequest.badRequest(jsonProvider, ex.getMessage()));
+      ctx.json(BadRequest.badRequest(jsonProvider, ex.getMessage()));
     }
   }
 

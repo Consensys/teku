@@ -17,8 +17,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RANDAO_REVEAL;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RANDAO_REVEAL;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import io.javalin.http.Context;
@@ -79,7 +79,7 @@ public class GetNewBlockV2Test {
         .thenReturn(SafeFuture.completedFuture(Optional.of(altairBlock)));
     handler.handle(context);
 
-    verify(context).result(args.capture());
+    verify(context).future(args.capture());
     SafeFuture<String> result = args.getValue();
     assertThat(result)
         .isCompletedWithValue(

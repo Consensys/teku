@@ -16,7 +16,10 @@ package tech.pegasys.teku.validator.client;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.signatures.LocalSlashingProtector;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
@@ -26,6 +29,7 @@ import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
 import tech.pegasys.teku.infrastructure.io.SystemSignalListener;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.restapi.RestApi;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
@@ -45,11 +49,15 @@ import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 import tech.pegasys.teku.validator.client.loader.PublicKeyLoader;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
 import tech.pegasys.teku.validator.relaypublisher.MultiPublishingBeaconNodeApi;
+import tech.pegasys.teku.validator.restapi.ValidatorRestApi;
+import tech.pegasys.teku.validator.restapi.ValidatorRestApiConfig;
 
 public class ValidatorClientService extends Service {
+  private static final Logger LOG = LogManager.getLogger();
   private final EventChannels eventChannels;
   private final ValidatorLoader validatorLoader;
   private final BeaconNodeApi beaconNodeApi;
+  private final Optional<RestApi> validatorRestApi;
   private final ForkProvider forkProvider;
   private final Spec spec;
 
@@ -65,12 +73,14 @@ public class ValidatorClientService extends Service {
       final EventChannels eventChannels,
       final ValidatorLoader validatorLoader,
       final BeaconNodeApi beaconNodeApi,
+      final Optional<RestApi> validatorRestApi,
       final ForkProvider forkProvider,
       final Spec spec,
       final MetricsSystem metricsSystem) {
     this.eventChannels = eventChannels;
     this.validatorLoader = validatorLoader;
     this.beaconNodeApi = beaconNodeApi;
+    this.validatorRestApi = validatorRestApi;
     this.forkProvider = forkProvider;
     this.spec = spec;
     this.metricsSystem = metricsSystem;
@@ -100,11 +110,19 @@ public class ValidatorClientService extends Service {
 
     final ValidatorLoader validatorLoader = createValidatorLoader(config, asyncRunner, services);
 
+    final ValidatorRestApiConfig validatorApiConfig = config.getValidatorRestApiConfig();
+    Optional<RestApi> validatorRestApi = Optional.empty();
+    if (validatorApiConfig.isRestApiEnabled()) {
+      validatorRestApi = Optional.of(ValidatorRestApi.create(validatorApiConfig));
+    } else {
+      LOG.info("validator-api-enabled is false, not starting rest api.");
+    }
     ValidatorClientService validatorClientService =
         new ValidatorClientService(
             eventChannels,
             validatorLoader,
             beaconNodeApi,
+            validatorRestApi,
             forkProvider,
             config.getSpec(),
             services.getMetricsSystem());
@@ -230,12 +248,16 @@ public class ValidatorClientService extends Service {
                   spec,
                   metricsSystem));
           validatorStatusLogger.printInitialValidatorStatuses().reportExceptions();
+          validatorRestApi.ifPresent(restApi -> restApi.start().reportExceptions());
           return beaconNodeApi.subscribeToEvents();
         });
   }
 
   @Override
   protected SafeFuture<?> doStop() {
-    return beaconNodeApi.unsubscribeFromEvents();
+    return SafeFuture.allOf(
+        SafeFuture.fromRunnable(
+            () -> validatorRestApi.ifPresent(restApi -> restApi.stop().reportExceptions())),
+        beaconNodeApi.unsubscribeFromEvents());
   }
 }

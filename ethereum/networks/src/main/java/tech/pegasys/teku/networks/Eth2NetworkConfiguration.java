@@ -22,6 +22,7 @@ import static tech.pegasys.teku.spec.networks.Eth2Network.PRATER;
 import static tech.pegasys.teku.spec.networks.Eth2Network.PYRMONT;
 import static tech.pegasys.teku.spec.networks.Eth2Network.SWIFT;
 
+import com.google.common.base.Strings;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -185,8 +186,13 @@ public class Eth2NetworkConfiguration {
       }
       // if the deposit contract was not set, default from constants
       if (eth1DepositContractAddress == null) {
-        eth1DepositContractAddress(
-            spec.getGenesisSpec().getConfig().getDepositContractAddress().toHexString());
+        final String contractAddress =
+            spec.getGenesisSpec().getConfig().getDepositContractAddress().toUnprefixedHexString();
+        if (contractAddress.length() < 40) {
+          eth1DepositContractAddress("0x" + Strings.padStart(contractAddress, 40, '0'));
+        } else {
+          eth1DepositContractAddress("0x" + contractAddress);
+        }
       }
       return new Eth2NetworkConfiguration(
           spec,

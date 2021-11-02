@@ -27,7 +27,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.TestConfigLoader;
+import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.attestation.AttestationWorthinessCheckerAltair;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -56,7 +56,7 @@ public class SpecFactoryTest {
   @Test
   void shouldSupportAltairWhenForkEpochSetInConfig() {
     final SpecConfig config =
-        TestConfigLoader.loadConfig(
+        SpecConfigLoader.loadConfig(
             "mainnet",
             phase0Builder ->
                 phase0Builder.altairBuilder(

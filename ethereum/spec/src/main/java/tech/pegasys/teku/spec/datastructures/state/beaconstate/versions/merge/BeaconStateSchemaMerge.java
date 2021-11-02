@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
@@ -91,6 +92,11 @@ public class BeaconStateSchemaMerge
   public SyncCommitteeSchema getNextSyncCommitteeSchema() {
     return (SyncCommitteeSchema)
         getChildSchema(getFieldIndex(BeaconStateFields.NEXT_SYNC_COMMITTEE.name()));
+  }
+
+  public ExecutionPayloadHeader.ExecutionPayloadHeaderSchema getLastExecutionPayloadHeaderSchema() {
+    return (ExecutionPayloadHeaderSchema)
+        getChildSchema(getFieldIndex(BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER.name()));
   }
 
   @Override

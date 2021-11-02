@@ -13,17 +13,18 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon;
 
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.CACHE_NONE;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_STATE_ID;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_STATE_ID_DESCRIPTION;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_NOT_FOUND;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_SERVICE_UNAVAILABLE;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SERVICE_UNAVAILABLE;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_TEKU;
+import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID_DESCRIPTION;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_NOT_FOUND;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_SERVICE_UNAVAILABLE;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNAVAILABLE;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_TEKU;
 
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -44,7 +45,8 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetSszState implements Handler {
-  public static final String ROUTE = "/teku/v1/beacon/states/:state_id";
+  private static final String OAPI_ROUTE = "/teku/v1/beacon/states/:state_id";
+  public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
   private final ChainDataProvider chainDataProvider;
   private final JsonProvider jsonProvider;
 
@@ -58,14 +60,14 @@ public class GetSszState implements Handler {
   }
 
   @OpenApi(
-      path = ROUTE,
+      path = OAPI_ROUTE,
       method = HttpMethod.GET,
       deprecated = true,
       summary = "Get SSZ State",
       tags = {TAG_TEKU},
       description =
           "Download the state SSZ object for given state_id.\n"
-              + "Deprecated - use `/eth/v1/debug/beacon/states/:state_id` instead.",
+              + "Deprecated - use `/eth/v1/debug/beacon/states/{state_id}` instead.",
       pathParams = {@OpenApiParam(name = PARAM_STATE_ID, description = PARAM_STATE_ID_DESCRIPTION)},
       responses = {
         @OpenApiResponse(
@@ -83,7 +85,7 @@ public class GetSszState implements Handler {
 
     SafeFuture<Optional<SszResponse>> future =
         chainDataProvider.getBeaconStateSsz(pathParamMap.get(PARAM_STATE_ID));
-    ctx.result(
+    ctx.future(
         future.thenApplyChecked(
             result -> {
               if (result.isEmpty()) {

@@ -15,11 +15,11 @@ package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.INVALID_BODY_SUPPLIED;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_TEKU;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.INVALID_BODY_SUPPLIED;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_NO_CONTENT;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_TEKU;
 
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -75,7 +75,7 @@ public class PutLogLevel extends AbstractHandler implements Handler {
 
       ctx.status(SC_NO_CONTENT);
     } catch (final IllegalArgumentException e) {
-      ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
+      ctx.json(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
       ctx.status(SC_BAD_REQUEST);
     }
   }

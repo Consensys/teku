@@ -231,7 +231,6 @@ class AggregatingAttestationPoolTest {
   @Test
   public void getAttestationsForBlock_shouldNotAddMoreAttestationsThanAllowedInBlock() {
     final BeaconState state = dataStructureUtil.randomBeaconState();
-    Constants.MAX_ATTESTATIONS = 2;
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
     final Attestation attestation1 = addAttestationFromValidators(attestationData, 1, 2, 3, 4);
     final Attestation attestation2 = addAttestationFromValidators(attestationData, 2, 5);

@@ -12,7 +12,7 @@ dependencies {
   implementation project(':infrastructure:time')
   implementation project(':infrastructure:version')
   implementation project(':pow')
-  implementation project(':services:serviceutils')
+  implementation project(':infrastructure:serviceutils')
   implementation project(':storage')
   implementation project(':util')
   implementation project(':ssz')

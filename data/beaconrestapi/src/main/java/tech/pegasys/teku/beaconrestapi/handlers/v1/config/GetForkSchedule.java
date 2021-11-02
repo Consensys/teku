@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.config;
 
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_CONFIG;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_CONFIG;
 
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -56,6 +56,6 @@ public class GetForkSchedule implements Handler {
       })
   @Override
   public void handle(final Context ctx) throws Exception {
-    ctx.result(jsonProvider.objectToJSON(configProvider.getForkSchedule()));
+    ctx.json(jsonProvider.objectToJSON(configProvider.getForkSchedule()));
   }
 }

@@ -20,7 +20,7 @@ dependencies {
   implementation project(':networking:eth2')
   implementation project(':pow')
   implementation project(':protoarray')
-  implementation project(':services:serviceutils')
+  implementation project(':infrastructure:serviceutils')
   implementation project(':services:powchain')
   implementation project(':services:timer')
   implementation project(':ssz')

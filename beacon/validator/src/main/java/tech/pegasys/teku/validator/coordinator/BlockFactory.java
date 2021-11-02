@@ -66,9 +66,9 @@ public class BlockFactory {
       if (previousState.getSlot().equals(slotBeforeBlock)) {
         blockPreState = previousState;
       } else {
-        blockPreState = spec.processSlots(previousState, slotBeforeBlock, executionEngineChannel);
+        blockPreState = spec.processSlots(previousState, slotBeforeBlock);
       }
-      blockSlotState = spec.processSlots(blockPreState, newSlot, executionEngineChannel);
+      blockSlotState = spec.processSlots(blockPreState, newSlot);
     }
 
     final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, slotBeforeBlock);

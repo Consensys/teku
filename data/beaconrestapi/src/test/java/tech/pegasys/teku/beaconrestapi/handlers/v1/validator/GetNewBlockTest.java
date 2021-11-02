@@ -21,8 +21,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RANDAO_REVEAL;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RANDAO_REVEAL;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import io.javalin.http.Context;
@@ -40,10 +40,10 @@ import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.response.v1.validator.GetNewBlockResponse;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
-import tech.pegasys.teku.beaconrestapi.RestApiConstants;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -88,7 +88,7 @@ public class GetNewBlockTest {
         .thenReturn(SafeFuture.completedFuture(optionalBeaconBlock));
     handler.handle(context);
 
-    verify(context).result(args.capture());
+    verify(context).future(args.capture());
     SafeFuture<String> result = args.getValue();
     assertThat(result)
         .isCompletedWithValue(
@@ -113,7 +113,7 @@ public class GetNewBlockTest {
         .thenReturn(SafeFuture.completedFuture(optionalBeaconBlock));
     handler.handle(context);
 
-    verify(context).result(args.capture());
+    verify(context).future(args.capture());
     SafeFuture<String> result = args.getValue();
 
     assertThat(result)
@@ -135,7 +135,7 @@ public class GetNewBlockTest {
     // Exception should just be propagated up via the future
     verify(context, never()).status(anyInt());
     verify(context)
-        .result(
+        .future(
             argThat((ArgumentMatcher<SafeFuture<?>>) CompletableFuture::isCompletedExceptionally));
   }
 
@@ -164,7 +164,7 @@ public class GetNewBlockTest {
 
     if (StringUtils.isNotEmpty(message)) {
       BadRequest badRequest = new BadRequest(message);
-      verify(context).result(jsonProvider.objectToJSON(badRequest));
+      verify(context).json(jsonProvider.objectToJSON(badRequest));
     }
   }
 }

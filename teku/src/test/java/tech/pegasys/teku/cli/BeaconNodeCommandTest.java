@@ -536,6 +536,13 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .maxUrlLength(65535)
                     .maxPendingEvents(BeaconRestApiOptions.DEFAULT_MAX_EVENT_QUEUE_SIZE)
                     .validatorThreads(1))
+        .validatorApi(
+            b ->
+                b.restApiPort(5052)
+                    .maxUrlLength(65535)
+                    .restApiInterface("127.0.0.1")
+                    .restApiHostAllowlist(List.of("127.0.0.1", "localhost"))
+                    .restApiCorsAllowedOrigins(new ArrayList<>()))
         .validator(
             b ->
                 b.validatorExternalSignerTimeout(Duration.ofSeconds(5))

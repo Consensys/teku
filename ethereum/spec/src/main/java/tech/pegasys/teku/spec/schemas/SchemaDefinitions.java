@@ -38,7 +38,9 @@ public interface SchemaDefinitions {
 
   SszBitvectorSchema<SszBitvector> getSyncnetsENRFieldSchema();
 
-  Optional<SchemaDefinitionsAltair> toVersionAltair();
+  default Optional<SchemaDefinitionsAltair> toVersionAltair() {
+    return Optional.empty();
+  }
 
   default Optional<SchemaDefinitionsMerge> toVersionMerge() {
     return Optional.empty();

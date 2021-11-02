@@ -10,7 +10,7 @@ dependencies {
   implementation project(':infrastructure:metrics')
   implementation project(':infrastructure:subscribers')
   implementation project(':infrastructure:time')
-  implementation project(':services:serviceutils')
+  implementation project(':infrastructure:serviceutils')
   implementation project(':storage:api')
 
   api 'org.web3j:core'

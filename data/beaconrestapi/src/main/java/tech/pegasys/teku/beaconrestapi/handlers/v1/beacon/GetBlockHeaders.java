@@ -14,12 +14,12 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARENT_ROOT;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_BEACON;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARENT_ROOT;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 
 import com.google.common.base.Throwables;
 import io.javalin.http.Context;
@@ -85,7 +85,7 @@ public class GetBlockHeaders extends AbstractHandler implements Handler {
     final Optional<UInt64> slot =
         SingleQueryParameterUtils.getParameterValueAsUInt64IfPresent(queryParameters, SLOT);
     try {
-      ctx.result(
+      ctx.future(
           chainDataProvider
               .getBlockHeaders(parentRoot, slot)
               .thenApplyChecked(
@@ -93,7 +93,7 @@ public class GetBlockHeaders extends AbstractHandler implements Handler {
               .exceptionallyCompose(error -> handleError(ctx, error)));
     } catch (final IllegalArgumentException e) {
       ctx.status(SC_BAD_REQUEST);
-      ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
+      ctx.json(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
     }
   }
 

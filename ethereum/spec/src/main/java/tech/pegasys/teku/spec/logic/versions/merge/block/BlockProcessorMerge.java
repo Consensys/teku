@@ -103,7 +103,7 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
 
     BeaconBlockBodyMerge blockBody =
         BeaconBlockBodyMerge.required(signedBlock.getMessage().getBody());
-    Bytes32 payloadBlockHash = blockBody.getExecution_payload().getBlockHash();
+    Bytes32 payloadBlockHash = blockBody.getExecutionPayload().getBlockHash();
     try {
       BeaconState postState =
           super.processAndValidateBlock(
@@ -140,7 +140,7 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
     processBlockHeader(state, block);
 
     if (miscHelpersMerge.isExecutionEnabled(genericState, block)) {
-      processExecutionPayload(executionEngineChannel, state, blockBody.getExecution_payload());
+      processExecutionPayload(executionEngineChannel, state, blockBody.getExecutionPayload());
     }
 
     processRandaoNoValidation(state, block.getBody());

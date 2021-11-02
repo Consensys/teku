@@ -127,7 +127,6 @@ public class Eth2P2PNetworkBuilder {
             asyncRunner,
             recentChainData,
             historicalChainData,
-            executionEngineChannel,
             metricsSystem,
             attestationSubnetService,
             syncCommitteeSubnetService,

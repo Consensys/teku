@@ -18,8 +18,8 @@ import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.CACHE_NONE;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TARGET_PEER_COUNT;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TARGET_PEER_COUNT;
 
 import java.util.List;
 import java.util.Map;
@@ -33,7 +33,8 @@ public class ReadinessTest extends AbstractBeaconHandlerTest {
 
   @Test
   public void shouldReturnOkWhenInSyncAndReady() throws Exception {
-    final Readiness handler = new Readiness(syncDataProvider, chainDataProvider, network);
+    final Readiness handler =
+        new Readiness(syncDataProvider, chainDataProvider, network, jsonProvider);
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
 
@@ -45,7 +46,8 @@ public class ReadinessTest extends AbstractBeaconHandlerTest {
   @Test
   public void shouldReturnOkWhenInSyncAndReadyAndTargetPeerCountReached() throws Exception {
     final Eth2Peer peer1 = mock(Eth2Peer.class);
-    final Readiness handler = new Readiness(syncDataProvider, chainDataProvider, network);
+    final Readiness handler =
+        new Readiness(syncDataProvider, chainDataProvider, network, jsonProvider);
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(eth2P2PNetwork.streamPeers())
@@ -60,7 +62,8 @@ public class ReadinessTest extends AbstractBeaconHandlerTest {
 
   @Test
   public void shouldReturnUnavailableWhenStoreNotAvailable() throws Exception {
-    final Readiness handler = new Readiness(syncDataProvider, chainDataProvider, network);
+    final Readiness handler =
+        new Readiness(syncDataProvider, chainDataProvider, network, jsonProvider);
     when(chainDataProvider.isStoreAvailable()).thenReturn(false);
 
     handler.handle(context);
@@ -70,7 +73,8 @@ public class ReadinessTest extends AbstractBeaconHandlerTest {
 
   @Test
   public void shouldReturnUnavailableWhenStartingUp() throws Exception {
-    final Readiness handler = new Readiness(syncDataProvider, chainDataProvider, network);
+    final Readiness handler =
+        new Readiness(syncDataProvider, chainDataProvider, network, jsonProvider);
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.START_UP);
 
@@ -81,7 +85,8 @@ public class ReadinessTest extends AbstractBeaconHandlerTest {
 
   @Test
   public void shouldReturnUnavailableWhenSyncing() throws Exception {
-    final Readiness handler = new Readiness(syncDataProvider, chainDataProvider, network);
+    final Readiness handler =
+        new Readiness(syncDataProvider, chainDataProvider, network, jsonProvider);
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
 
@@ -92,7 +97,8 @@ public class ReadinessTest extends AbstractBeaconHandlerTest {
 
   @Test
   public void shouldReturnBadRequestWhenWrongTargetPeerCountParam() throws Exception {
-    final Readiness handler = new Readiness(syncDataProvider, chainDataProvider, network);
+    final Readiness handler =
+        new Readiness(syncDataProvider, chainDataProvider, network, jsonProvider);
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(context.queryParamMap()).thenReturn(Map.of(TARGET_PEER_COUNT, List.of("a")));
@@ -105,7 +111,8 @@ public class ReadinessTest extends AbstractBeaconHandlerTest {
   @Test
   public void shouldReturnUnavailableWhenTargetPeerCountNotReached() throws Exception {
     final Eth2Peer peer1 = mock(Eth2Peer.class);
-    final Readiness handler = new Readiness(syncDataProvider, chainDataProvider, network);
+    final Readiness handler =
+        new Readiness(syncDataProvider, chainDataProvider, network, jsonProvider);
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(eth2P2PNetwork.streamPeers()).thenReturn(Stream.of(peer1)).thenReturn(Stream.of(peer1));

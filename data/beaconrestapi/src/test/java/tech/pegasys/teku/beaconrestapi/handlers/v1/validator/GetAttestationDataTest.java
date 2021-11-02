@@ -19,8 +19,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.COMMITTEE_INDEX;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.COMMITTEE_INDEX;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
 
 import io.javalin.http.Context;
 import java.util.List;
@@ -92,7 +92,7 @@ class GetAttestationDataTest {
         .thenReturn(SafeFuture.failedFuture(new ChainDataUnavailableException()));
     handler.handle(context);
 
-    verify(context).result(resultCaptor.capture());
+    verify(context).future(resultCaptor.capture());
     final SafeFuture<String> result = resultCaptor.getValue();
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::join).hasRootCauseInstanceOf(ChainDataUnavailableException.class);
@@ -108,7 +108,7 @@ class GetAttestationDataTest {
         .thenReturn(SafeFuture.completedFuture(Optional.of(attestationData)));
     handler.handle(context);
 
-    verify(context).result(resultCaptor.capture());
+    verify(context).future(resultCaptor.capture());
     final SafeFuture<String> result = resultCaptor.getValue();
     assertThat(result)
         .isCompletedWithValue(
@@ -124,7 +124,7 @@ class GetAttestationDataTest {
 
     if (StringUtils.isNotEmpty(message)) {
       BadRequest badRequest = new BadRequest(message);
-      verify(context).result(jsonProvider.objectToJSON(badRequest));
+      verify(context).json(jsonProvider.objectToJSON(badRequest));
     }
   }
 }

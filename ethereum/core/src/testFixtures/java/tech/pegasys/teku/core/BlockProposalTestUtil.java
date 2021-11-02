@@ -39,14 +39,17 @@ import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SszList;
 
 public class BlockProposalTestUtil {
   private final Spec spec;
+  private final DataStructureUtil dataStructureUtil;
   private final BeaconBlockBodyLists blockBodyLists;
 
   public BlockProposalTestUtil(final Spec spec) {
     this.spec = spec;
+    this.dataStructureUtil = new DataStructureUtil(spec);
     blockBodyLists = BeaconBlockBodyLists.ofSpec(spec);
   }
 
@@ -66,8 +69,7 @@ public class BlockProposalTestUtil {
     final BLSSignature randaoReveal =
         signer.createRandaoReveal(newEpoch, state.getForkInfo()).join();
 
-    final BeaconState blockSlotState =
-        spec.processSlots(state, newSlot, ExecutionEngineChannel.NOOP);
+    final BeaconState blockSlotState = spec.processSlots(state, newSlot);
     final BeaconBlockAndState newBlockAndState =
         spec.createNewUnsignedBlock(
             ExecutionEngineChannel.NOOP,
@@ -85,6 +87,8 @@ public class BlockProposalTestUtil {
                     .attesterSlashings(blockBodyLists.createAttesterSlashings())
                     .deposits(deposits)
                     .voluntaryExits(exits)
+                    .syncAggregate(
+                        () -> dataStructureUtil.emptySyncAggregateIfRequiredByState(blockSlotState))
                     .executionPayload(() -> getExecutionPayload(spec, blockSlotState)));
 
     // Sign block and set block signature
@@ -140,7 +144,7 @@ public class BlockProposalTestUtil {
   public int getProposerIndexForSlot(final BeaconState preState, final UInt64 slot) {
     BeaconState state;
     try {
-      state = spec.processSlots(preState, slot, ExecutionEngineChannel.NOOP);
+      state = spec.processSlots(preState, slot);
     } catch (SlotProcessingException | EpochProcessingException e) {
       throw new RuntimeException(e);
     }

@@ -15,9 +15,9 @@ package tech.pegasys.teku.beaconrestapi.v2.debug;
 
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.HEADER_ACCEPT_JSON;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.HEADER_ACCEPT_OCTET;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.HEADER_CONSENSUS_VERSION;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_ACCEPT_JSON;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_ACCEPT_OCTET;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 
 import java.io.IOException;
 import okhttp3.Response;
@@ -66,10 +66,10 @@ public class GetStateIntegrationTest extends AbstractDataBackedRestAPIIntegratio
   }
 
   public Response get(final String stateIdIdString, final String contentType) throws IOException {
-    return getResponse(GetState.ROUTE.replace(":state_id", stateIdIdString), contentType);
+    return getResponse(GetState.ROUTE.replace("{state_id}", stateIdIdString), contentType);
   }
 
   public Response get(final String stateIdIdString) throws IOException {
-    return getResponse(GetState.ROUTE.replace(":state_id", stateIdIdString));
+    return getResponse(GetState.ROUTE.replace("{state_id}", stateIdIdString));
   }
 }

@@ -62,8 +62,8 @@ public class BeaconBlockBodyMerge extends BeaconBlockBody {
               .BeaconBlockBodyMerge
           message) {
     super(message);
-    checkNotNull(message.getExecution_payload(), "Execution Payload is required for merge blocks");
-    this.executionPayload = new ExecutionPayload(message.getExecution_payload());
+    checkNotNull(message.getExecutionPayload(), "Execution Payload is required for merge blocks");
+    this.executionPayload = new ExecutionPayload(message.getExecutionPayload());
   }
 
   @Override

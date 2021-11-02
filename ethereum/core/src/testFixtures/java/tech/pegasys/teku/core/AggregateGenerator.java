@@ -31,7 +31,6 @@ import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 
@@ -135,6 +134,24 @@ public class AggregateGenerator {
       throw new NoSuchElementException("No valid aggregate possible");
     }
 
+    public SignedAggregateAndProof generateWithOtherValidAggregator(
+        final StateAndBlockSummary chainHead, final UInt64 index) {
+      this.stateAtSlot = generateHeadState(chainHead.getState(), chainHead.getSlot());
+      final Attestation aggregateValue = this.aggregate.orElseGet(() -> createAttestation(slot));
+      final List<Integer> beaconCommittee =
+          spec.getBeaconCommittee(
+              stateAtSlot, aggregateValue.getData().getSlot(), aggregateValue.getData().getIndex());
+      for (int validatorIndex : beaconCommittee) {
+        final Optional<BLSSignature> maybeSelectionProof =
+            createValidSelectionProof(validatorIndex, stateAtSlot, aggregateValue);
+        if (maybeSelectionProof.isPresent() && !UInt64.valueOf(validatorIndex).equals(index)) {
+          return generate(
+              aggregateValue, UInt64.valueOf(validatorIndex), maybeSelectionProof.get());
+        }
+      }
+      throw new NoSuchElementException("No valid aggregate possible");
+    }
+
     private SignedAggregateAndProof generateWithFixedAggregatorIndex(
         final UInt64 slot, final Attestation aggregate, final UInt64 aggregatorIndex) {
       final BLSSignature validSelectionProof =
@@ -206,7 +223,7 @@ public class AggregateGenerator {
       }
 
       try {
-        return spec.processSlots(state, slot, ExecutionEngineChannel.NOOP);
+        return spec.processSlots(state, slot);
       } catch (EpochProcessingException | SlotProcessingException e) {
         throw new IllegalStateException(e);
       }

@@ -47,6 +47,7 @@ import tech.pegasys.teku.cli.options.NatOptions;
 import tech.pegasys.teku.cli.options.P2POptions;
 import tech.pegasys.teku.cli.options.StoreOptions;
 import tech.pegasys.teku.cli.options.ValidatorOptions;
+import tech.pegasys.teku.cli.options.ValidatorRestApiOptions;
 import tech.pegasys.teku.cli.options.WeakSubjectivityOptions;
 import tech.pegasys.teku.cli.subcommand.GenesisCommand;
 import tech.pegasys.teku.cli.subcommand.MigrateDatabaseCommand;
@@ -176,8 +177,11 @@ public class BeaconNodeCommand implements Callable<Integer> {
   @Mixin(name = "Store")
   private StoreOptions storeOptions;
 
-  @Mixin(name = "REST API")
+  @Mixin(name = "Beacon REST API")
   private BeaconRestApiOptions beaconRestApiOptions;
+
+  @Mixin(name = "Validator REST API")
+  private ValidatorRestApiOptions validatorRestApiOptions;
 
   @Mixin(name = "Weak Subjectivity")
   private WeakSubjectivityOptions weakSubjectivityOptions;
@@ -353,6 +357,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
       dataOptions.configure(builder);
       p2POptions.configure(builder);
       beaconRestApiOptions.configure(builder);
+      validatorRestApiOptions.configure(builder);
       loggingOptions.configure(builder, dataOptions.getDataBasePath(), LOG_FILE, LOG_PATTERN);
       interopOptions.configure(builder);
       dataStorageOptions.configure(builder);

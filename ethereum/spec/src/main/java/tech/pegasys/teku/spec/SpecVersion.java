@@ -20,11 +20,9 @@ import tech.pegasys.teku.spec.config.SpecConfigMerge;
 import tech.pegasys.teku.spec.logic.DelegatingSpecLogic;
 import tech.pegasys.teku.spec.logic.SpecLogic;
 import tech.pegasys.teku.spec.logic.versions.altair.SpecLogicAltair;
-import tech.pegasys.teku.spec.logic.versions.merge.SpecLogicMerge;
 import tech.pegasys.teku.spec.logic.versions.phase0.SpecLogicPhase0;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsPhase0;
 
 public class SpecVersion extends DelegatingSpecLogic {
@@ -47,10 +45,10 @@ public class SpecVersion extends DelegatingSpecLogic {
     switch (milestone) {
       case PHASE0:
         return Optional.of(createPhase0(specConfig));
-      case MERGE:
-        return specConfig.toVersionMerge().map(SpecVersion::createMerge);
       case ALTAIR:
         return specConfig.toVersionAltair().map(SpecVersion::createAltair);
+      case MERGE:
+        return specConfig.toVersionMerge().map(SpecVersion::createMerge);
       default:
         throw new UnsupportedOperationException("Unknown milestone requested: " + milestone);
     }
@@ -68,14 +66,14 @@ public class SpecVersion extends DelegatingSpecLogic {
     return new SpecVersion(SpecMilestone.ALTAIR, specConfig, schemaDefinitions, specLogic);
   }
 
-  public SpecMilestone getMilestone() {
-    return milestone;
+  static SpecVersion createMerge(final SpecConfigMerge specConfig) {
+    final SchemaDefinitionsAltair schemaDefinitions = new SchemaDefinitionsAltair(specConfig);
+    final SpecLogic specLogic = SpecLogicAltair.create(specConfig, schemaDefinitions);
+    return new SpecVersion(SpecMilestone.MERGE, specConfig, schemaDefinitions, specLogic);
   }
 
-  public static SpecVersion createMerge(final SpecConfigMerge specConfig) {
-    final SchemaDefinitionsMerge schemaDefinitions = new SchemaDefinitionsMerge(specConfig);
-    final SpecLogic specLogic = SpecLogicMerge.create(specConfig, schemaDefinitions);
-    return new SpecVersion(SpecMilestone.MERGE, specConfig, schemaDefinitions, specLogic);
+  public SpecMilestone getMilestone() {
+    return milestone;
   }
 
   public SpecConfig getConfig() {

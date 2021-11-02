@@ -15,8 +15,8 @@ package tech.pegasys.teku.beaconrestapi.v2.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.HEADER_ACCEPT_OCTET;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.HEADER_CONSENSUS_VERSION;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_ACCEPT_OCTET;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 
 import java.io.IOException;
 import java.util.List;
@@ -87,11 +87,11 @@ public class GetBlockV2IntegrationTest extends AbstractDataBackedRestAPIIntegrat
     assertThat(response.header(HEADER_CONSENSUS_VERSION)).isEqualTo(Version.altair.name());
   }
 
-  public Response get(final String stateIdIdString, final String contentType) throws IOException {
-    return getResponse(GetBlock.ROUTE.replace(":block_id", stateIdIdString), contentType);
+  public Response get(final String blockIdString, final String contentType) throws IOException {
+    return getResponse(GetBlock.ROUTE.replace("{block_id}", blockIdString), contentType);
   }
 
   public Response get(final String blockIdString) throws IOException {
-    return getResponse(GetBlock.ROUTE.replace(":block_id", blockIdString));
+    return getResponse(GetBlock.ROUTE.replace("{block_id}", blockIdString));
   }
 }

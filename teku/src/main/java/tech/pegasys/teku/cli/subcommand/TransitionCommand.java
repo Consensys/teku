@@ -115,7 +115,7 @@ public class TransitionCommand implements Runnable {
           if (delta) {
             targetSlot = state.getSlot().plus(targetSlot);
           }
-          return specProvider.processSlots(state, targetSlot, ExecutionEngineChannel.NOOP);
+          return specProvider.processSlots(state, targetSlot);
         });
   }
 

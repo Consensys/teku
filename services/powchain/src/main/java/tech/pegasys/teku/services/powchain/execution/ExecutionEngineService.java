@@ -74,7 +74,7 @@ public class ExecutionEngineService implements ChainHeadChannel {
     return block
         .map(BeaconBlock::getBody)
         .flatMap(BeaconBlockBody::toVersionMerge)
-        .map(BeaconBlockBodyMerge::getExecution_payload)
+        .map(BeaconBlockBodyMerge::getExecutionPayload)
         .filter(executionPayload -> !DEFAULT_EXECUTION_PAYLOAD.equals(executionPayload))
         .map(ExecutionPayload::getBlockHash);
   }

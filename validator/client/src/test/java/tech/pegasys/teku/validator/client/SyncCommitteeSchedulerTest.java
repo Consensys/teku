@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.client;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -33,6 +34,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.client.SyncCommitteeScheduler.EarlySubscribeRandomSource;
 import tech.pegasys.teku.validator.client.duties.synccommittee.SyncCommitteeScheduledDuties;
 
@@ -265,6 +267,43 @@ class SyncCommitteeSchedulerTest {
     // subscriptions are refreshed
     scheduler.onPossibleMissedEvents();
     verify(dutyLoader, times(2)).loadDutiesForEpoch(getRequestEpochForCommitteePeriod(0));
+  }
+
+  @Test
+  void shouldRecalculateDutiesOnHeadUpdateWithSlotPriorToAltairActivation() {
+    // simulates altair activation at slot 1
+    Spec mockedSpec = spy(spec);
+    SyncCommitteeScheduler schedulerWithMockedSpec =
+        new SyncCommitteeScheduler(
+            new StubMetricsSystem(), mockedSpec, dutyLoader, earlySubscribeRandomSource);
+    when(mockedSpec.getSyncCommitteeUtil(UInt64.ZERO)).thenReturn(Optional.empty());
+
+    schedulerWithMockedSpec.onSlot(UInt64.ONE);
+    verify(dutyLoader).loadDutiesForEpoch(getRequestEpochForCommitteePeriod(0));
+
+    DataStructureUtil dataStructureUtil = new DataStructureUtil(mockedSpec);
+
+    schedulerWithMockedSpec.onHeadUpdate(
+        UInt64.ZERO,
+        dataStructureUtil.randomBytes32(),
+        dataStructureUtil.randomBytes32(),
+        dataStructureUtil.randomBytes32());
+    verify(dutyLoader, times(2)).loadDutiesForEpoch(getRequestEpochForCommitteePeriod(0));
+  }
+
+  @Test
+  void shouldNotRecalculateDutiesOnHeadUpdateWithSlotNonPriorToAltairActivation() {
+    scheduler.onSlot(UInt64.ONE);
+    verify(dutyLoader).loadDutiesForEpoch(getRequestEpochForCommitteePeriod(0));
+
+    DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+
+    scheduler.onHeadUpdate(
+        UInt64.ZERO,
+        dataStructureUtil.randomBytes32(),
+        dataStructureUtil.randomBytes32(),
+        dataStructureUtil.randomBytes32());
+    verifyNoMoreInteractions(dutyLoader);
   }
 
   private SafeFuture<Optional<SyncCommitteeScheduledDuties>>

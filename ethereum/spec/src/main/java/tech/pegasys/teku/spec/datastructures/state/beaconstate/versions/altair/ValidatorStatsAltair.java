@@ -19,7 +19,6 @@ import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.primitive.SszByte;
 
 public interface ValidatorStatsAltair extends BeaconStateAltair {
-
   @Override
   default CorrectAndLiveValidators getValidatorStatsPreviousEpoch(final Bytes32 correctTargetRoot) {
     return getValidatorStats(getPreviousEpochParticipation());
@@ -30,8 +29,7 @@ public interface ValidatorStatsAltair extends BeaconStateAltair {
     return getValidatorStats(getCurrentEpochParticipation());
   }
 
-  private static CorrectAndLiveValidators getValidatorStats(
-      final SszList<SszByte> participationFlags) {
+  private CorrectAndLiveValidators getValidatorStats(final SszList<SszByte> participationFlags) {
     int numberOfCorrectValidators = 0;
     int numberOfLiveValidators = 0;
     for (SszByte participationFlag : participationFlags) {

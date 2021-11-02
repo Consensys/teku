@@ -16,11 +16,13 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge;
 import java.util.Optional;
 import java.util.function.Consumer;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFields;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -106,8 +108,7 @@ class BeaconBlockBodySchemaMergeImpl
   }
 
   @Override
-  public BeaconBlockBodyMergeImpl createBlockBody(
-      final Consumer<BeaconBlockBodyBuilder> builderConsumer) {
+  public BeaconBlockBody createBlockBody(final Consumer<BeaconBlockBodyBuilder> builderConsumer) {
     final BeaconBlockBodyBuilderMerge builder = new BeaconBlockBodyBuilderMerge().schema(this);
     builderConsumer.accept(builder);
     return builder.build();
@@ -156,6 +157,11 @@ class BeaconBlockBodySchemaMergeImpl
   @Override
   public BeaconBlockBodyMergeImpl createFromBackingNode(TreeNode node) {
     return new BeaconBlockBodyMergeImpl(this, node);
+  }
+
+  @Override
+  public ExecutionPayloadSchema getExecutionPayloadSchema() {
+    return (ExecutionPayloadSchema) getFieldSchema9();
   }
 
   @Override

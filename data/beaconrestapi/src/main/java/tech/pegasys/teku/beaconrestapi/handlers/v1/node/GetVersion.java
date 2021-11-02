@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.node;
 
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.CACHE_NONE;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_NODE;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_NODE;
 
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -54,6 +54,6 @@ public class GetVersion implements Handler {
     Version v = new Version(VersionProvider.VERSION);
     VersionResponse response = new VersionResponse(v);
     ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
-    ctx.result(jsonProvider.objectToJSON(response));
+    ctx.json(jsonProvider.objectToJSON(response));
   }
 }

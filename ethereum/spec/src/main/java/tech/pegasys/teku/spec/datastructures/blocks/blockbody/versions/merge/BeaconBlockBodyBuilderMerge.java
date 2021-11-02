@@ -16,26 +16,19 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.function.Supplier;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractBeaconBlockBodyBuilder;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyBuilderAltair;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.ssz.primitive.SszBytes32;
 
-class BeaconBlockBodyBuilderMerge extends AbstractBeaconBlockBodyBuilder {
+class BeaconBlockBodyBuilderMerge extends BeaconBlockBodyBuilderAltair {
   private BeaconBlockBodySchemaMergeImpl schema;
-  private SyncAggregate syncAggregate;
-  private ExecutionPayload executionPayload;
+  protected ExecutionPayload executionPayload;
 
   public BeaconBlockBodyBuilderMerge schema(final BeaconBlockBodySchemaMergeImpl schema) {
     this.schema = schema;
-    return this;
-  }
-
-  @Override
-  public BeaconBlockBodyBuilder syncAggregate(final Supplier<SyncAggregate> syncAggregateSupplier) {
-    this.syncAggregate = syncAggregateSupplier.get();
     return this;
   }
 
@@ -47,14 +40,18 @@ class BeaconBlockBodyBuilderMerge extends AbstractBeaconBlockBodyBuilder {
   }
 
   @Override
+  protected void validateSchema() {
+    checkNotNull(schema, "schema must be specified");
+  }
+
+  @Override
   protected void validate() {
     super.validate();
-    checkNotNull(schema, "schema must be specified");
-    checkNotNull(syncAggregate, "syncAggregate must be specified");
     checkNotNull(executionPayload, "executionPayload must be specified");
   }
 
-  public BeaconBlockBodyMergeImpl build() {
+  @Override
+  public BeaconBlockBody build() {
     validate();
     return new BeaconBlockBodyMergeImpl(
         schema,

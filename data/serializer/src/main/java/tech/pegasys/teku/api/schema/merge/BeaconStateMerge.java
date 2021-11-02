@@ -35,6 +35,7 @@ import tech.pegasys.teku.api.schema.altair.SyncCommittee;
 import tech.pegasys.teku.api.schema.interfaces.State;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.BeaconStateSchemaMerge;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.collections.SszBitvector;
 import tech.pegasys.teku.ssz.primitive.SszByte;
@@ -133,7 +134,8 @@ public class BeaconStateMerge extends BeaconState implements State {
             beaconStateMerge -> {
               final tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSchema
                   syncCommitteeSchema =
-                      beaconStateMerge.getBeaconStateSchemaAltair().getCurrentSyncCommitteeSchema();
+                      BeaconStateSchemaMerge.required(beaconStateMerge.getBeaconStateSchema())
+                          .getCurrentSyncCommitteeSchema();
               final SszList<SszByte> previousEpochParticipation =
                   beaconStateMerge
                       .getPreviousEpochParticipation()

@@ -506,10 +506,9 @@ public class Spec {
         .blockDescendsFromLatestFinalizedBlock(block, store, forkChoiceStrategy);
   }
 
-  public BeaconState processSlots(
-      BeaconState preState, UInt64 slot, ExecutionEngineChannel executionEngineChannel)
+  public BeaconState processSlots(BeaconState preState, UInt64 slot)
       throws SlotProcessingException, EpochProcessingException {
-    return stateTransition.processSlots(preState, slot, executionEngineChannel);
+    return stateTransition.processSlots(preState, slot);
   }
 
   // Block Proposal
@@ -545,8 +544,7 @@ public class Spec {
       final BLSSignatureVerifier signatureVerifier)
       throws StateTransitionException {
     try {
-      final BeaconState blockSlotState =
-          stateTransition.processSlots(preState, block.getSlot(), executionEngineChannel);
+      final BeaconState blockSlotState = stateTransition.processSlots(preState, block.getSlot());
       return getBlockProcessor(block.getSlot())
           .processAndValidateBlock(
               executionEngineChannel,
@@ -565,8 +563,7 @@ public class Spec {
       final SignedBeaconBlock block)
       throws StateTransitionException {
     try {
-      final BeaconState blockSlotState =
-          stateTransition.processSlots(preState, block.getSlot(), executionEngineChannel);
+      final BeaconState blockSlotState = stateTransition.processSlots(preState, block.getSlot());
       return getBlockProcessor(block.getSlot())
           .processUnsignedBlock(
               executionEngineChannel,

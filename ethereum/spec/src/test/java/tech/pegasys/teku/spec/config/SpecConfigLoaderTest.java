@@ -17,7 +17,6 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllFieldsSet;
 import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllMergeFieldsSet;
-import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllPhase0FieldsSet;
 
 import java.io.InputStream;
 import java.net.URL;
@@ -85,32 +84,13 @@ public class SpecConfigLoaderTest {
   }
 
   @Test
-  public void shouldLoadLegacyMainnetConfigFromFileUrl() throws Exception {
-    final URL url = getLegacyMainnetConfigResourceAsUrl();
-    final SpecConfig config = SpecConfigLoader.loadConfig(url.toString());
-    assertAllPhase0FieldsSet(config);
-  }
-
-  @Test
-  public void shouldLoadLegacyMainnetConfigFromFile(@TempDir Path tempDir) throws Exception {
-    try (final InputStream inputStream = getLegacyMainnetConfigAsStream()) {
-      final Path file = tempDir.resolve("mainnet.yml");
-      writeStreamToFile(inputStream, file);
-      final SpecConfig config = SpecConfigLoader.loadConfig(file.toAbsolutePath().toString());
-      assertAllPhase0FieldsSet(config);
-    }
-  }
-
-  @Test
   public void shouldHandleInvalidPresetValue_wrongType(@TempDir Path tempDir) throws Exception {
     try (final InputStream inputStream = loadInvalidFile("invalidPreset_wrongType.yaml")) {
       final Path file = tempDir.resolve("invalid.yml");
       writeStreamToFile(inputStream, file);
       assertThatThrownBy(() -> SpecConfigLoader.loadConfig(file.toAbsolutePath().toString()))
           .isInstanceOf(IllegalArgumentException.class)
-          .hasMessageContaining("Failed to load spec config")
-          .hasRootCauseMessage(
-              "Unable to parse config field 'PRESET_BASE' (value = '300') as a string");
+          .hasMessageContaining("Failed to load spec config");
     }
   }
 
@@ -147,8 +127,8 @@ public class SpecConfigLoaderTest {
         Arguments.of(Eth2Network.PYRMONT.configName(), SpecConfigMerge.class),
         Arguments.of(Eth2Network.PRATER.configName(), SpecConfigMerge.class),
         Arguments.of(Eth2Network.MINIMAL.configName(), SpecConfigMerge.class),
-        Arguments.of(Eth2Network.SWIFT.configName(), SpecConfigPhase0.class),
-        Arguments.of(Eth2Network.LESS_SWIFT.configName(), SpecConfigPhase0.class));
+        Arguments.of(Eth2Network.SWIFT.configName(), SpecConfigMerge.class),
+        Arguments.of(Eth2Network.LESS_SWIFT.configName(), SpecConfigMerge.class));
   }
 
   private void writeStreamToFile(final InputStream inputStream, final Path filePath)
@@ -168,18 +148,6 @@ public class SpecConfigLoaderTest {
     return Constants.class
         .getClassLoader()
         .getResource("tech/pegasys/teku/util/config/configs/mainnet.yaml");
-  }
-
-  private InputStream getLegacyMainnetConfigAsStream() {
-    return getClass()
-        .getClassLoader()
-        .getResourceAsStream("tech/pegasys/teku/spec/config/legacy/mainnet.yaml");
-  }
-
-  private URL getLegacyMainnetConfigResourceAsUrl() {
-    return getClass()
-        .getClassLoader()
-        .getResource("tech/pegasys/teku/spec/config/legacy/mainnet.yaml");
   }
 
   private InputStream loadInvalidFile(final String file) {

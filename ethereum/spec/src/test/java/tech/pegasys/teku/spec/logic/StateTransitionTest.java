@@ -32,7 +32,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 
 public class StateTransitionTest {
   private static final List<BLSKeyPair> VALIDATOR_KEYS =
@@ -49,9 +48,7 @@ public class StateTransitionTest {
   public void processSlots_acrossAltairFork_slotBySlot() throws Exception {
     BeaconState currentState = genesis;
     for (int i = 1; i <= altairTransitionSlot.intValue(); i++) {
-      currentState =
-          stateTransition.processSlots(
-              currentState, UInt64.valueOf(i), ExecutionEngineChannel.NOOP);
+      currentState = stateTransition.processSlots(currentState, UInt64.valueOf(i));
       assertThat(currentState.getSlot()).isEqualTo(UInt64.valueOf(i));
       if (i == altairTransitionSlot.intValue()) {
         assertThat(currentState).isInstanceOf(BeaconStateAltair.class);
@@ -63,8 +60,7 @@ public class StateTransitionTest {
 
   @Test
   public void processSlots_acrossAltairFork_acrossManySlots() throws Exception {
-    final BeaconState result =
-        stateTransition.processSlots(genesis, altairTransitionSlot, ExecutionEngineChannel.NOOP);
+    final BeaconState result = stateTransition.processSlots(genesis, altairTransitionSlot);
     assertThat(result).isInstanceOf(BeaconStateAltair.class);
     assertThat(result.getSlot()).isEqualTo(altairTransitionSlot);
   }
@@ -72,8 +68,7 @@ public class StateTransitionTest {
   @Test
   public void processSlots_pastAltairFork() throws Exception {
     final UInt64 targetSlot = altairTransitionSlot.plus(9);
-    final BeaconState result =
-        stateTransition.processSlots(genesis, targetSlot, ExecutionEngineChannel.NOOP);
+    final BeaconState result = stateTransition.processSlots(genesis, targetSlot);
     assertThat(result).isInstanceOf(BeaconStateAltair.class);
     assertThat(result.getSlot()).isEqualTo(targetSlot);
   }

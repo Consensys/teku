@@ -183,7 +183,7 @@ public class ValidatorConfig {
     private boolean validatorExternalSignerSlashingProtectionEnabled = true;
     private boolean useDependentRoots = false;
     private boolean generateEarlyAttestations = true;
-    private boolean sendAttestationsAsBatch = false;
+    private boolean sendAttestationsAsBatch = true;
 
     private Builder() {}
 

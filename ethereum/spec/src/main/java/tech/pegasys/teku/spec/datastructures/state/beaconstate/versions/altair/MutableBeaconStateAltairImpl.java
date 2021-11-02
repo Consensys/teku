@@ -33,6 +33,11 @@ class MutableBeaconStateAltairImpl extends AbstractMutableBeaconState<BeaconStat
   }
 
   @Override
+  public BeaconStateSchemaAltair getBeaconStateSchema() {
+    return (BeaconStateSchemaAltair) getSchema();
+  }
+
+  @Override
   protected BeaconStateAltairImpl createImmutableBeaconState(
       TreeNode backingNode, IntCache<SszData> viewCache, TransitionCaches transitionCache) {
     return new BeaconStateAltairImpl(getSchema(), backingNode, viewCache, transitionCache);

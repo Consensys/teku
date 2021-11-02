@@ -37,7 +37,7 @@ public class MiscHelpersMerge extends MiscHelpersAltair {
     final BeaconStateMerge state = BeaconStateMerge.required(genericState);
     final BeaconBlockBodyMerge blockBody = BeaconBlockBodyMerge.required(block.getBody());
     return !isMergeComplete(state)
-        && !blockBody.getExecution_payload().equals(new ExecutionPayload());
+        && !blockBody.getExecutionPayload().equals(new ExecutionPayload());
   }
 
   public boolean isExecutionEnabled(final BeaconState genericState, final BeaconBlock block) {

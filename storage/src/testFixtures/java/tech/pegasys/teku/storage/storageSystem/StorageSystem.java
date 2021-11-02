@@ -58,7 +58,8 @@ public class StorageSystem implements AutoCloseable {
       final RecentChainData recentChainData,
       final CombinedChainDataClient combinedChainDataClient,
       final RestartedStorageSupplier restartedSupplier,
-      final ChainBuilder chainBuilder) {
+      final ChainBuilder chainBuilder,
+      final Spec spec) {
     this.metricsSystem = metricsSystem;
     this.chainStorage = chainStorage;
     this.recentChainData = recentChainData;
@@ -69,7 +70,7 @@ public class StorageSystem implements AutoCloseable {
     this.restartedSupplier = restartedSupplier;
 
     this.chainBuilder = chainBuilder;
-    chainUpdater = new ChainUpdater(this.recentChainData, this.chainBuilder);
+    chainUpdater = new ChainUpdater(this.recentChainData, this.chainBuilder, spec);
   }
 
   static StorageSystem create(
@@ -107,8 +108,7 @@ public class StorageSystem implements AutoCloseable {
 
     // Create combined client
     final CombinedChainDataClient combinedChainDataClient =
-        new CombinedChainDataClient(
-            recentChainData, chainStorageServer, executionEngineChannel, spec);
+        new CombinedChainDataClient(recentChainData, chainStorageServer, spec);
 
     // Return storage system
     return new StorageSystem(
@@ -120,7 +120,8 @@ public class StorageSystem implements AutoCloseable {
         recentChainData,
         combinedChainDataClient,
         restartedSupplier,
-        chainBuilder);
+        chainBuilder,
+        spec);
   }
 
   public StubMetricsSystem getMetricsSystem() {

@@ -238,6 +238,23 @@ class SyncControllerTest {
   }
 
   @Test
+  void shouldNotNotifySubscribersWhenRunningSpeculativeTarget() {
+    final SyncSubscriber subscriber = mock(SyncSubscriber.class);
+    syncController.subscribeToSyncChanges(subscriber);
+
+    final SafeFuture<SyncResult> syncResult = new SafeFuture<>();
+    when(syncTargetSelector.selectSyncTarget(any()))
+        .thenReturn(Optional.of(SyncTarget.speculativeTarget(targetChain)));
+    when(sync.syncToChain(targetChain)).thenReturn(syncResult);
+
+    onTargetChainsUpdated();
+    syncResult.complete(SyncResult.COMPLETE);
+
+    verify(subscriberExecutor, never()).execute(any());
+    verify(eventLogger, never()).syncCompleted();
+  }
+
+  @Test
   void shouldExecuteStartSyncMessage() {
     final SyncSubscriber subscriber = mock(SyncSubscriber.class);
     syncController.subscribeToSyncChanges(subscriber);

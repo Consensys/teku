@@ -49,4 +49,6 @@ public interface BeaconBlockBodyBuilder {
 
   // Not required by all hard forks so provided via a Supplier that is only invoked when needed.
   BeaconBlockBodyBuilder executionPayload(Supplier<ExecutionPayload> executionPayloadSupplier);
+
+  BeaconBlockBody build();
 }

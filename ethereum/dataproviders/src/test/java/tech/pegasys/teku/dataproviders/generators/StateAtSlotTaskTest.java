@@ -102,8 +102,7 @@ class StateAtSlotTaskTest {
 
     final StateAtSlotTask task = createTask(slot, blockAndState.getRoot());
     final SafeFuture<Optional<BeaconState>> result = task.performTask();
-    final BeaconState expectedState =
-        spec.processSlots(blockAndState.getState(), slot, ExecutionEngineChannel.NOOP);
+    final BeaconState expectedState = spec.processSlots(blockAndState.getState(), slot);
     assertThatSafeFuture(result).isCompletedWithOptionalContaining(expectedState);
   }
 

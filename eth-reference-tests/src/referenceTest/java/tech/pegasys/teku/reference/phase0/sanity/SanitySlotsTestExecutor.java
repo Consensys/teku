@@ -22,7 +22,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 
@@ -43,6 +42,6 @@ public class SanitySlotsTestExecutor implements TestExecutor {
   private BeaconState processSlots(
       final Spec spec, final BeaconState preState, final UInt64 endSlot)
       throws EpochProcessingException, SlotProcessingException {
-    return spec.processSlots(preState, endSlot, ExecutionEngineChannel.NOOP);
+    return spec.processSlots(preState, endSlot);
   }
 }

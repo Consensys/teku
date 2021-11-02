@@ -15,52 +15,17 @@ package tech.pegasys.teku.spec.config;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllAltairFieldsSet;
 import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllMergeFieldsSet;
-import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllPhase0FieldsSet;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Stream;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 
 public class SpecConfigReaderTest {
   private SpecConfigReader reader = new SpecConfigReader();
-
-  @ParameterizedTest(name = "{0}")
-  @MethodSource("getConfigArgs")
-  public void read_standardConfigs(final String network, final String filePath) throws Exception {
-    processFileAsInputStream(filePath, reader::read);
-    final SpecConfig result = reader.build();
-
-    assertThat(result).isNotNull();
-    assertAllPhase0FieldsSet(result);
-  }
-
-  @Test
-  public void read_altair() throws Exception {
-    processFileAsInputStream(getLegacyConfigPath("mainnetAltair"), reader::read);
-    final SpecConfig result = reader.build();
-
-    assertThat(result).isNotNull();
-    assertAllAltairFieldsSet(result);
-  }
-
-  @Test
-  public void read_multiFileFormat() throws Exception {
-    processFileAsInputStream(getLegacyConfigPath("multifile/phase0"), reader::read);
-    processFileAsInputStream(getLegacyConfigPath("multifile/altair"), reader::read);
-    final SpecConfig result = reader.build();
-
-    assertThat(result).isNotNull();
-    assertAllAltairFieldsSet(result);
-  }
 
   @Test
   public void read_multiFileFormat_mismatchedDuplicateFields() {
@@ -96,41 +61,6 @@ public class SpecConfigReaderTest {
     assertThat(config.getMaxCommitteesPerSlot()).isEqualTo(4);
     Assertions.assertThat(config.getTargetCommitteeSize()).isEqualTo(4);
     assertAllMergeFieldsSet(config);
-  }
-
-  @Test
-  public void read_legacyMainnet() throws Exception {
-    final SpecConfig config = readLegacyMainnet();
-    assertThat(config).isNotNull();
-
-    // Spot check a few values
-    assertThat(config.getMaxCommitteesPerSlot()).isEqualTo(64);
-    Assertions.assertThat(config.getTargetCommitteeSize()).isEqualTo(128);
-    assertAllPhase0FieldsSet(config);
-  }
-
-  @Test
-  public void read_legacyMinimal() throws Exception {
-    final SpecConfig config = readLegacyMinimal();
-    assertThat(config).isNotNull();
-
-    // Spot check a few values
-    assertThat(config.getMaxCommitteesPerSlot()).isEqualTo(4);
-    Assertions.assertThat(config.getTargetCommitteeSize()).isEqualTo(4);
-    assertAllPhase0FieldsSet(config);
-  }
-
-  @Test
-  public void read_distinctFilesProduceDifferentValues() throws Exception {
-    final SpecConfig mainnet = readLegacyMainnet();
-    assertThat(mainnet).isNotNull();
-    // Reset config reader
-    reader = new SpecConfigReader();
-    final SpecConfig minimal = readLegacyMinimal();
-    assertThat(mainnet).isNotNull();
-
-    assertThat(mainnet).isNotEqualTo(minimal);
-    assertThat(minimal).isNotEqualTo(mainnet);
   }
 
   @Test
@@ -219,7 +149,7 @@ public class SpecConfigReaderTest {
           assertThatThrownBy(() -> reader.read(stream))
               .isInstanceOf(IllegalArgumentException.class)
               .hasMessageContaining(
-                  "Failed to parse value for constant VALIDATOR_REGISTRY_LIMIT: '[1, 2, 3]'");
+                  "Cannot read spec config: Cannot deserialize value of type `java.lang.String` from Array");
           return null;
         });
   }
@@ -301,19 +231,6 @@ public class SpecConfigReaderTest {
         });
   }
 
-  private SpecConfig readLegacyMainnet() throws IOException {
-    return readConfig(getLegacyConfigPath("mainnet"));
-  }
-
-  private SpecConfig readLegacyMinimal() throws IOException {
-    return readConfig(getLegacyConfigPath("minimal"));
-  }
-
-  private SpecConfig readConfig(final String path) {
-    processFileAsInputStream(path, reader::read);
-    return reader.build();
-  }
-
   private SpecConfig readStandardConfigWithPreset(final String configName) {
     final String configPath = getStandardConfigPath(configName);
     final SpecConfigReader reader = new SpecConfigReader();
@@ -333,25 +250,12 @@ public class SpecConfigReaderTest {
         getStandardConfigPath("presets/" + presetName + "/altair"));
   }
 
-  public static Stream<Arguments> getConfigArgs() {
-    return Stream.of(
-        Arguments.of("mainnet", getLegacyConfigPath("mainnet")),
-        Arguments.of("minimal", getLegacyConfigPath("minimal")),
-        Arguments.of("pyrmont", getLegacyConfigPath("pyrmont")),
-        Arguments.of("prater", getLegacyConfigPath("prater")),
-        Arguments.of("swift", getLegacyConfigPath("swift")));
-  }
-
   private static String getStandardConfigPath(final String name) {
     return getConfigPath("standard/" + name);
   }
 
   private static String getInvalidConfigPath(final String name) {
     return getConfigPath("invalid/" + name);
-  }
-
-  private static String getLegacyConfigPath(final String name) {
-    return getConfigPath("legacy/" + name);
   }
 
   private static String getConfigPath(final String name) {

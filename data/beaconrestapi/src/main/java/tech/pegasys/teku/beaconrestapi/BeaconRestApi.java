@@ -13,11 +13,11 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
-import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
-import static tech.pegasys.teku.beaconrestapi.HostAllowlistUtils.isHostAuthorized;
+import static tech.pegasys.teku.infrastructure.http.HostAllowlistUtils.isHostAuthorized;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 
 import com.google.common.base.Throwables;
 import io.javalin.Javalin;
@@ -115,9 +115,9 @@ public class BeaconRestApi {
       final BeaconRestApiConfig configuration,
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner) {
-    if (app.config != null) {
+    if (app._conf != null) {
       // the beaconRestApi test mocks the app object, and will skip this
-      app.config.server(
+      app._conf.server(
           () -> {
             jettyServer = new Server(configuration.getRestApiPort());
             LOG.debug("Setting Max URL length to {}", configuration.getMaxUrlLength());
@@ -132,8 +132,8 @@ public class BeaconRestApi {
             return jettyServer;
           });
     }
-    app.server().setServerHost(configuration.getRestApiInterface());
-    app.server().setServerPort(configuration.getRestApiPort());
+    app.jettyServer().setServerHost(configuration.getRestApiInterface());
+    app.jettyServer().setServerPort(configuration.getRestApiPort());
 
     addHostAllowlistHandler(configuration);
 
@@ -211,7 +211,7 @@ public class BeaconRestApi {
 
   private void setErrorBody(final Context ctx, final ExceptionThrowingSupplier<String> body) {
     try {
-      ctx.result(body.get());
+      ctx.json(body.get());
     } catch (final Throwable e) {
       LOG.error("Failed to serialize internal server error response", e);
     }
@@ -228,7 +228,6 @@ public class BeaconRestApi {
               config.registerPlugin(
                   new OpenApiPlugin(getOpenApiOptions(jsonProvider, configuration)));
               config.defaultContentType = "application/json";
-              config.logIfServerNotStarted = false;
               config.showJavalinBanner = false;
               if (configuration.getRestApiCorsAllowedOrigins() != null
                   && !configuration.getRestApiCorsAllowedOrigins().isEmpty()) {
@@ -268,7 +267,7 @@ public class BeaconRestApi {
   }
 
   public int getListenPort() {
-    return app.server().getServerPort();
+    return app.jettyServer().getServerPort();
   }
 
   private static OpenApiOptions getOpenApiOptions(
@@ -300,7 +299,7 @@ public class BeaconRestApi {
     app.get(GetSszState.ROUTE, new GetSszState(provider, jsonProvider));
     app.get(GetStateByBlockRoot.ROUTE, new GetStateByBlockRoot(provider, jsonProvider));
     app.get(Liveness.ROUTE, new Liveness());
-    app.get(Readiness.ROUTE, new Readiness(provider));
+    app.get(Readiness.ROUTE, new Readiness(provider, jsonProvider));
     app.get(GetAllBlocksAtSlot.ROUTE, new GetAllBlocksAtSlot(provider, jsonProvider));
     app.get(GetPeersScore.ROUTE, new GetPeersScore(provider, jsonProvider));
   }
