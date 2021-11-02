@@ -22,5 +22,7 @@ dependencies {
   implementation 'org.webjars:swagger-ui'
 
   testImplementation testFixtures(project(':bls'))
+  testImplementation testFixtures(project(':ethereum:spec'))
+  testImplementation testFixtures(project(':infrastructure:restapi'))
 }
 

@@ -23,26 +23,34 @@ import java.util.function.Function;
 
 public class StringBasedPrimitiveTypeDefinition<T> implements DeserializableTypeDefinition<T> {
 
+  private final Optional<String> name;
   private final Function<String, T> objectFromString;
   private final Function<T, String> stringFromObject;
   private final Optional<String> description;
-  private final String example;
+  private final Optional<String> example;
   private final Optional<String> format;
   private final Optional<String> pattern;
 
   private StringBasedPrimitiveTypeDefinition(
+      final Optional<String> name,
       final Function<String, T> objectFromString,
       final Function<T, String> stringFromObject,
-      final String example,
+      final Optional<String> example,
       final Optional<String> description,
       final Optional<String> format,
       final Optional<String> pattern) {
+    this.name = name;
     this.objectFromString = objectFromString;
     this.stringFromObject = stringFromObject;
     this.example = example;
     this.description = description;
     this.format = format;
     this.pattern = pattern;
+  }
+
+  @Override
+  public Optional<String> getTypeName() {
+    return name;
   }
 
   @Override
@@ -59,27 +67,38 @@ public class StringBasedPrimitiveTypeDefinition<T> implements DeserializableType
   public void serializeOpenApiType(final JsonGenerator gen) throws IOException {
     gen.writeStartObject();
     gen.writeStringField("type", "string");
-    gen.writeStringField("example", example);
-    if (description.isPresent()) {
-      gen.writeStringField("description", description.get());
-    }
-    if (format.isPresent()) {
-      gen.writeStringField("format", format.get());
+    if (name.isPresent()) {
+      gen.writeStringField("title", name.get());
     }
     if (pattern.isPresent()) {
       gen.writeStringField("pattern", pattern.get());
+    }
+    if (description.isPresent()) {
+      gen.writeStringField("description", description.get());
+    }
+    if (example.isPresent()) {
+      gen.writeStringField("example", example.get());
+    }
+    if (format.isPresent()) {
+      gen.writeStringField("format", format.get());
     }
     gen.writeEndObject();
   }
 
   public static class StringTypeBuilder<T> {
 
+    private Optional<String> name = Optional.empty();
     private Function<String, T> parser;
     private Function<T, String> formatter;
-    private String example;
+    private Optional<String> example = Optional.empty();
     private Optional<String> description = Optional.empty();
     private Optional<String> format = Optional.empty();
     private Optional<String> pattern = Optional.empty();
+
+    public StringTypeBuilder<T> name(final String name) {
+      this.name = Optional.of(name);
+      return this;
+    }
 
     public StringTypeBuilder<T> parser(final Function<String, T> parser) {
       this.parser = parser;
@@ -92,7 +111,7 @@ public class StringBasedPrimitiveTypeDefinition<T> implements DeserializableType
     }
 
     public StringTypeBuilder<T> example(final String example) {
-      this.example = example;
+      this.example = Optional.of(example);
       return this;
     }
 
@@ -114,10 +133,9 @@ public class StringBasedPrimitiveTypeDefinition<T> implements DeserializableType
     public DeserializableTypeDefinition<T> build() {
       checkNotNull(parser, "Must specify parser");
       checkNotNull(formatter, "Must specify formatter");
-      checkNotNull(example, "Must specify example");
 
       return new StringBasedPrimitiveTypeDefinition<>(
-          parser, formatter, example, description, format, pattern);
+          name, parser, formatter, example, description, format, pattern);
     }
   }
 }

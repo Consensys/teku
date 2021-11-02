@@ -15,7 +15,7 @@ package tech.pegasys.teku.infrastructure.restapi;
 
 import static java.util.Collections.emptyList;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
-import static tech.pegasys.teku.infrastructure.restapi.types.CommonTypeDefinitions.HTTP_ERROR_RESPONSE_TYPE;
+import static tech.pegasys.teku.infrastructure.restapi.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 
 import io.javalin.Javalin;
 import io.javalin.core.JavalinConfig;
