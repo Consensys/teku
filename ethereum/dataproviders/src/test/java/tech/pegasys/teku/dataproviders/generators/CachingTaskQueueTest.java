@@ -19,6 +19,7 @@ import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -96,6 +97,7 @@ class CachingTaskQueueTest {
     assertNewTaskCount(3);
 
     // Task 3 is queued until one of the previous tasks finishes
+    assertQueuedTaskCount(1);
     task1.completeTask();
     task3.assertPerformedWithoutRebase();
     assertNewTaskCount(3);
@@ -174,6 +176,31 @@ class CachingTaskQueueTest {
     assertThat(resultC).isCompletedWithValue(taskC.getExpectedValue());
     taskC.assertNotRebased();
     taskC.assertNotPerformed();
+  }
+
+  @Test
+  void shouldRecordAndUpdateTaskStatusMetrics() {
+    final StubTask taskA = new StubTask(1);
+    final StubTask taskB = new StubTask(2);
+    final StubTask taskC = new StubTask(3);
+    final SafeFuture<Optional<String>> resultA = taskQueue.perform(taskA);
+    final SafeFuture<Optional<String>> resultB = taskQueue.perform(taskB);
+    final SafeFuture<Optional<String>> resultC = taskQueue.perform(taskC);
+
+    assertThat(resultA).isNotDone();
+    assertThat(resultB).isNotDone();
+    assertThat(resultC).isNotDone();
+
+    assertPendingTaskCount(3);
+    assertActiveTaskCount(2);
+    assertQueuedTaskCount(1);
+
+    taskA.completeTask();
+    taskB.completeTask();
+
+    assertPendingTaskCount(1);
+    assertActiveTaskCount(1);
+    assertQueuedTaskCount(0);
   }
 
   @Test
@@ -276,10 +303,29 @@ class CachingTaskQueueTest {
   }
 
   private void assertPendingTaskCount(final int expectedCount) {
-    final double value =
+    final OptionalDouble optionalValue =
         metricsSystem
-            .getGauge(TekuMetricCategory.STORAGE, METRICS_PREFIX + "_tasks_requested")
-            .getValue();
+            .getLabelledGauge(TekuMetricCategory.STORAGE, METRICS_PREFIX + "_tasks")
+            .getValue("requested");
+    final double value = optionalValue.orElseThrow();
+    assertThat(value).isEqualTo(expectedCount);
+  }
+
+  private void assertActiveTaskCount(final int expectedCount) {
+    final OptionalDouble optionalValue =
+        metricsSystem
+            .getLabelledGauge(TekuMetricCategory.STORAGE, METRICS_PREFIX + "_tasks")
+            .getValue("active");
+    final double value = optionalValue.orElseThrow();
+    assertThat(value).isEqualTo(expectedCount);
+  }
+
+  private void assertQueuedTaskCount(final int expectedCount) {
+    final OptionalDouble optionalValue =
+        metricsSystem
+            .getLabelledGauge(TekuMetricCategory.STORAGE, METRICS_PREFIX + "_tasks")
+            .getValue("queued");
+    final double value = optionalValue.orElseThrow();
     assertThat(value).isEqualTo(expectedCount);
   }
 
