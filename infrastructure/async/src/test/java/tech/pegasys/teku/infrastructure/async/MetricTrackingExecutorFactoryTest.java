@@ -26,6 +26,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.metrics.StubLabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 
@@ -60,8 +61,10 @@ class MetricTrackingExecutorFactoryTest {
     task2.assertStarted();
     assertThat(task3.isStarted()).isFalse();
 
-    assertThat(metricSystem.getGauge(TekuMetricCategory.EXECUTOR, "foo_queue_size").getValue())
-        .isEqualTo(1);
+    final StubLabelledGauge gauge =
+        metricSystem.getLabelledGauge(TekuMetricCategory.EXECUTOR, "queues");
+    assertThat(gauge.getValue("queue_size").getAsDouble()).isEqualTo(1.0);
+
     assertThat(
             metricSystem
                 .getGauge(TekuMetricCategory.EXECUTOR, "foo_thread_active_count")
@@ -74,8 +77,7 @@ class MetricTrackingExecutorFactoryTest {
     task1.allowCompletion();
 
     task3.assertStarted();
-    assertThat(metricSystem.getGauge(TekuMetricCategory.EXECUTOR, "foo_queue_size").getValue())
-        .isEqualTo(0);
+    assertThat(gauge.getValue("queue_size").getAsDouble()).isEqualTo(0.0);
 
     task2.allowCompletion();
     task3.allowCompletion();

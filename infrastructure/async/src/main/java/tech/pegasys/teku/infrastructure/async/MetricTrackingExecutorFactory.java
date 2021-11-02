@@ -66,11 +66,14 @@ public class MetricTrackingExecutorFactory {
             threadFactory);
     executor.allowCoreThreadTimeOut(true);
 
-    metricsSystem.createIntegerGauge(
-        TekuMetricCategory.EXECUTOR,
-        name + "_queue_size",
-        "Current size of the executor task queue",
-        () -> executor.getQueue().size());
+    metricsSystem
+        .createLabelledGauge(
+            TekuMetricCategory.EXECUTOR,
+            "queues",
+            "Current queues size for this executor",
+            "queue_size")
+        .labels(() -> executor.getQueue().size(), "queue_size");
+
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.EXECUTOR,
         name + "_thread_pool_size",
