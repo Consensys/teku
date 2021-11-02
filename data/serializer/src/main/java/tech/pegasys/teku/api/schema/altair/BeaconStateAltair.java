@@ -148,10 +148,7 @@ public class BeaconStateAltair extends BeaconState implements State {
 
               beaconStateAltair.setPreviousEpochParticipation(previousEpochParticipation);
               beaconStateAltair.setCurrentEpochParticipation(currentEpochParticipation);
-              beaconStateAltair
-                  .getInactivityScores()
-                  .createWritableCopy()
-                  .setAllElements(inactivityScores);
+              beaconStateAltair.getInactivityScores().setAllElements(inactivityScores);
 
               beaconStateAltair.setCurrentSyncCommittee(
                   currentSyncCommittee.asInternalSyncCommittee(syncCommitteeSchema));

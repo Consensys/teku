@@ -22,6 +22,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.BeaconState;
@@ -48,17 +49,45 @@ class JsonProviderTest {
   }
 
   @Test
-  public void UInt64ShouldSerializeToJson() throws JsonProcessingException {
-    UInt64 data = dataStructureUtil.randomUInt64();
-    String serialized = jsonProvider.objectToJSON(data);
+  public void UInt64ShouldSerializeAndDeserialize() throws JsonProcessingException {
+    final UInt64 data = dataStructureUtil.randomUInt64();
+    final String serialized = jsonProvider.objectToJSON(data);
     assertEquals(serialized, Q + data.toString() + Q);
+    final UInt64 data2 = jsonProvider.jsonToObject(serialized, UInt64.class);
+    assertEquals(data2, data);
   }
 
   @Test
-  public void maxUInt64ShouldSerializeToJson() throws JsonProcessingException {
-    UInt64 data = UInt64.MAX_VALUE;
-    String serialized = jsonProvider.objectToJSON(data);
+  public void maxUInt64ShouldSerializeAndDeserialize() throws JsonProcessingException {
+    final UInt64 data = UInt64.MAX_VALUE;
+    final String serialized = jsonProvider.objectToJSON(data);
     assertEquals(serialized, Q + data.toString() + Q);
+    final UInt64 data2 = jsonProvider.jsonToObject(serialized, UInt64.class);
+    assertEquals(data2, data);
+  }
+
+  @Test
+  public void UInt256ShouldSerializeAndDeserialize() throws JsonProcessingException {
+    final UInt256 data = dataStructureUtil.randomUInt256();
+    final String serialized = jsonProvider.objectToJSON(data);
+    assertEquals(serialized, Q + data.toShortHexString() + Q);
+    final UInt256 data2 = jsonProvider.jsonToObject(serialized, UInt256.class);
+    assertEquals(data2, data);
+  }
+
+  @Test
+  public void maxUInt256ShouldSerializeAndDeserialize() throws JsonProcessingException {
+    final UInt256 data = UInt256.MAX_VALUE;
+    final String serialized = jsonProvider.objectToJSON(data);
+    assertEquals(serialized, Q + data.toShortHexString() + Q);
+    final UInt256 data2 = jsonProvider.jsonToObject(serialized, UInt256.class);
+    assertEquals(data2, data);
+  }
+
+  @Test
+  public void UInt64ShouldDeserializeNonHex() throws JsonProcessingException {
+    final UInt256 data = jsonProvider.jsonToObject("10", UInt256.class);
+    assertEquals(data, UInt256.fromHexString("0xa"));
   }
 
   @Test

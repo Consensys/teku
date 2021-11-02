@@ -16,6 +16,7 @@ package tech.pegasys.teku.api.schema.merge;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.Objects;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.BeaconBlockHeader;
 import tech.pegasys.teku.api.schema.Checkpoint;
@@ -27,9 +28,13 @@ import tech.pegasys.teku.api.schema.altair.SyncCommittee;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.BeaconStateSchemaMerge;
+import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.collections.SszBitvector;
+import tech.pegasys.teku.ssz.primitive.SszByte;
 
 public class BeaconStateMerge extends BeaconStateAltair {
+  @JsonProperty("latest_execution_payload_header")
   public final ExecutionPayloadHeader latestExecutionPayloadHeader;
 
   public BeaconStateMerge(
@@ -89,11 +94,33 @@ public class BeaconStateMerge extends BeaconStateAltair {
 
   @Override
   protected void applyAdditionalFields(MutableBeaconState state) {
-    super.applyAdditionalFields(state);
     state
         .toMutableVersionMerge()
         .ifPresent(
             beaconStateMerge -> {
+              final tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSchema
+                  syncCommitteeSchema =
+                      BeaconStateSchemaMerge.required(beaconStateMerge.getBeaconStateSchema())
+                          .getCurrentSyncCommitteeSchema();
+              final SszList<SszByte> previousEpochParticipation =
+                  beaconStateMerge
+                      .getPreviousEpochParticipation()
+                      .getSchema()
+                      .sszDeserialize(Bytes.wrap(this.previousEpochParticipation));
+              final SszList<SszByte> currentEpochParticipation =
+                  beaconStateMerge
+                      .getCurrentEpochParticipation()
+                      .getSchema()
+                      .sszDeserialize(Bytes.wrap(this.currentEpochParticipation));
+
+              beaconStateMerge.setPreviousEpochParticipation(previousEpochParticipation);
+              beaconStateMerge.setCurrentEpochParticipation(currentEpochParticipation);
+              beaconStateMerge.getInactivityScores().setAllElements(inactivityScores);
+
+              beaconStateMerge.setCurrentSyncCommittee(
+                  currentSyncCommittee.asInternalSyncCommittee(syncCommitteeSchema));
+              beaconStateMerge.setNextSyncCommittee(
+                  nextSyncCommittee.asInternalSyncCommittee(syncCommitteeSchema));
               beaconStateMerge.setLatestExecutionPayloadHeader(
                   new tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader(
                       latestExecutionPayloadHeader.parentHash,
@@ -118,7 +145,7 @@ public class BeaconStateMerge extends BeaconStateAltair {
     final tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.BeaconStateMerge
         merge = beaconState.toVersionMerge().orElseThrow();
     this.latestExecutionPayloadHeader =
-        new ExecutionPayloadHeader(merge.getLatest_execution_payload_header());
+        new ExecutionPayloadHeader(merge.getLatestExecutionPayloadHeader());
   }
 
   @Override
