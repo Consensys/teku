@@ -13,8 +13,11 @@
 
 package tech.pegasys.teku.api.schema.merge;
 
+import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -22,21 +25,13 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.type.Bytes20;
 
-public class ExecutionPayloadHeader {
+public class ExecutionPayloadHeader extends ExecutionPayloadCommon {
 
-  public final Bytes32 parentHash;
-  public final Bytes20 coinbase;
-  public final Bytes32 stateRoot;
-  public final Bytes32 receiptRoot;
-  public final Bytes logsBloom;
-  public final Bytes32 random;
-  public final UInt64 blockNumber;
-  public final UInt64 gasLimit;
-  public final UInt64 gasUsed;
-  public final UInt64 timestamp;
-  public final Bytes extraData;
-  public final UInt256 baseFeePerGas;
-  public final Bytes32 blockHash;
+  @Schema(
+      name = "transactions_root",
+      type = "string",
+      format = "byte",
+      description = DESCRIPTION_BYTES32)
   public final Bytes32 transactionsRoot;
 
   public ExecutionPayloadHeader(
@@ -46,7 +41,7 @@ public class ExecutionPayloadHeader {
       @JsonProperty("receipt_root") Bytes32 receiptRoot,
       @JsonProperty("logs_bloom") Bytes logsBloom,
       @JsonProperty("random") Bytes32 random,
-      @JsonProperty("number") UInt64 blockNumber,
+      @JsonProperty("block_number") UInt64 blockNumber,
       @JsonProperty("gas_limit") UInt64 gasLimit,
       @JsonProperty("gas_used") UInt64 gasUsed,
       @JsonProperty("timestamp") UInt64 timestamp,
@@ -54,38 +49,40 @@ public class ExecutionPayloadHeader {
       @JsonProperty("base_fee_per_gas") UInt256 baseFeePerGas,
       @JsonProperty("block_hash") Bytes32 blockHash,
       @JsonProperty("transactions_root") Bytes32 transactionsRoot) {
-    this.parentHash = parentHash;
-    this.coinbase = coinbase;
-    this.stateRoot = stateRoot;
-    this.receiptRoot = receiptRoot;
-    this.logsBloom = logsBloom;
-    this.random = random;
-    this.blockNumber = blockNumber;
-    this.gasLimit = gasLimit;
-    this.gasUsed = gasUsed;
-    this.timestamp = timestamp;
-    this.extraData = extraData;
-    this.baseFeePerGas = baseFeePerGas;
-    this.blockHash = blockHash;
+    super(
+        parentHash,
+        coinbase,
+        stateRoot,
+        receiptRoot,
+        logsBloom,
+        random,
+        blockNumber,
+        gasLimit,
+        gasUsed,
+        timestamp,
+        extraData,
+        baseFeePerGas,
+        blockHash);
     this.transactionsRoot = transactionsRoot;
   }
 
   public ExecutionPayloadHeader(
       tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader
           executionPayloadHeader) {
-    this.parentHash = executionPayloadHeader.getParentHash();
-    this.coinbase = executionPayloadHeader.getCoinbase();
-    this.stateRoot = executionPayloadHeader.getStateRoot();
-    this.receiptRoot = executionPayloadHeader.getReceiptRoot();
-    this.logsBloom = executionPayloadHeader.getLogsBloom();
-    this.random = executionPayloadHeader.getRandom();
-    this.blockNumber = executionPayloadHeader.getBlockNumber();
-    this.gasLimit = executionPayloadHeader.getGasLimit();
-    this.gasUsed = executionPayloadHeader.getGasUsed();
-    this.timestamp = executionPayloadHeader.getTimestamp();
-    this.extraData = executionPayloadHeader.getExtraData();
-    this.baseFeePerGas = executionPayloadHeader.getBaseFeePerGas();
-    this.blockHash = executionPayloadHeader.getBlockHash();
+    super(
+        executionPayloadHeader.getParentHash(),
+        executionPayloadHeader.getCoinbase(),
+        executionPayloadHeader.getStateRoot(),
+        executionPayloadHeader.getReceiptRoot(),
+        executionPayloadHeader.getLogsBloom(),
+        executionPayloadHeader.getRandom(),
+        executionPayloadHeader.getBlockNumber(),
+        executionPayloadHeader.getGasLimit(),
+        executionPayloadHeader.getGasUsed(),
+        executionPayloadHeader.getTimestamp(),
+        executionPayloadHeader.getExtraData(),
+        executionPayloadHeader.getBaseFeePerGas(),
+        executionPayloadHeader.getBlockHash());
     this.transactionsRoot = executionPayloadHeader.getTransactionsRoot();
   }
 
@@ -116,40 +113,16 @@ public class ExecutionPayloadHeader {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
+    if (!super.equals(o)) {
+      return false;
+    }
     final ExecutionPayloadHeader that = (ExecutionPayloadHeader) o;
-    return Objects.equals(parentHash, that.parentHash)
-        && Objects.equals(coinbase, that.coinbase)
-        && Objects.equals(stateRoot, that.stateRoot)
-        && Objects.equals(receiptRoot, that.receiptRoot)
-        && Objects.equals(logsBloom, that.logsBloom)
-        && Objects.equals(random, that.random)
-        && Objects.equals(blockNumber, that.blockNumber)
-        && Objects.equals(gasLimit, that.gasLimit)
-        && Objects.equals(gasUsed, that.gasUsed)
-        && Objects.equals(timestamp, that.timestamp)
-        && Objects.equals(extraData, that.extraData)
-        && Objects.equals(baseFeePerGas, that.baseFeePerGas)
-        && Objects.equals(blockHash, that.blockHash)
-        && Objects.equals(transactionsRoot, that.transactionsRoot);
+    return Objects.equals(transactionsRoot, that.transactionsRoot);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(
-        parentHash,
-        coinbase,
-        stateRoot,
-        receiptRoot,
-        logsBloom,
-        random,
-        blockNumber,
-        gasLimit,
-        gasUsed,
-        timestamp,
-        extraData,
-        baseFeePerGas,
-        blockHash,
-        transactionsRoot);
+    return Objects.hash(super.hashCode(), transactionsRoot);
   }
 
   @Override

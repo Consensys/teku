@@ -40,17 +40,24 @@ import tech.pegasys.teku.ssz.collections.SszBitvector;
 import tech.pegasys.teku.ssz.primitive.SszByte;
 
 public class BeaconStateAltair extends BeaconState implements State {
-  @ArraySchema(schema = @Schema(type = "string", example = EXAMPLE_UINT8))
+  @ArraySchema(
+      schema =
+          @Schema(name = "previous_epoch_participation", type = "string", example = EXAMPLE_UINT8))
   public final byte[] previousEpochParticipation;
 
-  @ArraySchema(schema = @Schema(type = "string", example = EXAMPLE_UINT8))
+  @ArraySchema(
+      schema =
+          @Schema(name = "current_epoch_participation", type = "string", example = EXAMPLE_UINT8))
   public final byte[] currentEpochParticipation;
 
-  @JsonProperty("inactivity_scores")
-  @ArraySchema(schema = @Schema(type = "string", example = EXAMPLE_UINT64))
+  @ArraySchema(
+      schema = @Schema(name = "inactivity_scores", type = "string", example = EXAMPLE_UINT64))
   public final List<UInt64> inactivityScores;
 
+  @Schema(name = "current_sync_committee")
   public final SyncCommittee currentSyncCommittee;
+
+  @Schema(name = "next_sync_committee")
   public final SyncCommittee nextSyncCommittee;
 
   @JsonCreator
