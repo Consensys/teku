@@ -13,10 +13,14 @@
 
 package tech.pegasys.teku.infrastructure.restapi.openapi;
 
+import static java.util.stream.Collectors.toSet;
+
 import com.fasterxml.jackson.core.JsonGenerator;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
+import tech.pegasys.teku.infrastructure.restapi.types.OpenApiTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.types.SerializableTypeDefinition;
 
 public class OpenApiResponse {
@@ -42,5 +46,11 @@ public class OpenApiResponse {
 
     gen.writeEndObject();
     gen.writeEndObject();
+  }
+
+  public Collection<OpenApiTypeDefinition> getReferencedTypeDefinitions() {
+    return content.values().stream()
+        .flatMap(type -> type.getSelfAndReferencedTypeDefinitions().stream())
+        .collect(toSet());
   }
 }

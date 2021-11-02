@@ -13,8 +13,12 @@
 
 package tech.pegasys.teku.infrastructure.restapi.types;
 
+import static java.util.stream.Collectors.toSet;
+
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.google.common.base.MoreObjects;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 
@@ -58,9 +62,23 @@ class SerializableObjectTypeDefinition<TObject> implements SerializableTypeDefin
     gen.writeEndObject();
   }
 
+  @Override
+  public Collection<OpenApiTypeDefinition> getReferencedTypeDefinitions() {
+    return fields.values().stream()
+        .flatMap(field -> field.getReferencedTypeDefinitions().stream())
+        .collect(toSet());
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this).add("name", name).add("fields", fields).toString();
+  }
+
   interface FieldDefinition<TObject> {
     void writeField(final TObject source, JsonGenerator gen) throws IOException;
 
     void writeOpenApiField(JsonGenerator gen) throws IOException;
+
+    Collection<OpenApiTypeDefinition> getReferencedTypeDefinitions();
   }
 }

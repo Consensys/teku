@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.restapi.openapi;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.stream.Collectors.toSet;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -24,8 +25,10 @@ import java.io.UncheckedIOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
+import tech.pegasys.teku.infrastructure.restapi.types.OpenApiTypeDefinition;
 
 public class OpenApiDocBuilder {
 
@@ -78,6 +81,8 @@ public class OpenApiDocBuilder {
       gen.writeStringField("openapi", OPENAPI_VERSION);
       writeInfo(gen);
       writePaths(gen);
+
+      writeComponents(gen);
       gen.writeEndObject();
 
     } catch (IOException e) {
@@ -111,6 +116,27 @@ public class OpenApiDocBuilder {
         metadata.writeOpenApi(gen);
       }
       gen.writeEndObject();
+    }
+    gen.writeEndObject();
+  }
+
+  private void writeComponents(final JsonGenerator gen) throws IOException {
+    gen.writeObjectFieldStart("components");
+    writeSchemas(gen);
+    gen.writeEndObject();
+  }
+
+  private void writeSchemas(final JsonGenerator gen) throws IOException {
+    final Set<OpenApiTypeDefinition> typeDefinitions =
+        endpoints.values().stream()
+            .flatMap(pathEndpoints -> pathEndpoints.values().stream())
+            .flatMap(endpoint -> endpoint.getMetadata().getReferencedTypeDefinitions().stream())
+            .filter(type -> type.getTypeName().isPresent())
+            .collect(toSet());
+    gen.writeObjectFieldStart("schemas");
+    for (OpenApiTypeDefinition type : typeDefinitions) {
+      gen.writeFieldName(type.getTypeName().orElseThrow());
+      type.serializeOpenApiType(gen);
     }
     gen.writeEndObject();
   }

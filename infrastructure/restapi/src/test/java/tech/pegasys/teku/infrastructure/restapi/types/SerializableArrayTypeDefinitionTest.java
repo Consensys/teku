@@ -39,4 +39,18 @@ public class SerializableArrayTypeDefinitionTest {
         JsonTestUtil.parseList(JsonUtil.serialize(List.of("a", "b", "c"), stringListType));
     assertThat(result).containsExactly("a", "b", "c");
   }
+
+  @Test
+  void shouldGetReferencedTypesRecursively() {
+    final SerializableTypeDefinition<String> type1 =
+        SerializableTypeDefinition.object(String.class).name("Type1").build();
+    final SerializableTypeDefinition<String> type2 =
+        SerializableTypeDefinition.object(String.class)
+            .name("Type2")
+            .withField("type1", type1, __ -> null)
+            .build();
+
+    assertThat(SerializableTypeDefinition.listOf(type2).getReferencedTypeDefinitions())
+        .containsExactlyInAnyOrder(type1, type2);
+  }
 }
