@@ -16,7 +16,6 @@ package tech.pegasys.teku.storage.client;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.ChainBuilder;
@@ -143,8 +142,11 @@ public class ChainHeadTest {
     final SlotAndBlockRoot slotAndBlockRootChainB = chainHeadB.findCommonAncestor(chainHeadA);
     assertThat(slotAndBlockRootChainA.getSlot()).isEqualTo(UInt64.ZERO);
     assertThat(slotAndBlockRootChainB.getSlot()).isEqualTo(UInt64.ZERO);
-    assertThat(slotAndBlockRootChainA.getBlockRoot()).isEqualTo(Bytes32.ZERO);
-    assertThat(slotAndBlockRootChainB.getBlockRoot()).isEqualTo(Bytes32.ZERO);
+
+    assertThat(slotAndBlockRootChainA.getBlockRoot())
+        .isEqualTo(chainHeadA.getState().getFinalized_checkpoint().getRoot());
+    assertThat(slotAndBlockRootChainB.getBlockRoot())
+        .isEqualTo(chainHeadB.getState().getFinalized_checkpoint().getRoot());
   }
 
   @SuppressWarnings("unchecked")

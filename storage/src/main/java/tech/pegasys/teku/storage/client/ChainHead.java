@@ -50,11 +50,11 @@ class ChainHead extends StateAndBlockSummary {
   }
 
   public SlotAndBlockRoot findCommonAncestor(final ChainHead other) {
-    if (getSlot().equals(UInt64.ZERO) || other.getSlot().equals(UInt64.ZERO)) {
+    if (getSlot().isZero() || other.getSlot().isZero()) {
       // One fork has no blocks so the only possible common ancestor is genesis.
-      if (getSlot().equals(UInt64.ZERO)) {
+      if (getSlot().isZero()) {
         return new SlotAndBlockRoot(UInt64.ZERO, getRoot());
-      } else {
+      } else if (other.getSlot().isZero()) {
         return new SlotAndBlockRoot(UInt64.ZERO, other.getRoot());
       }
     }
@@ -72,12 +72,15 @@ class ChainHead extends StateAndBlockSummary {
       slot = slot.minus(1);
     }
     // Couldn't find a common ancestor in the available block roots so fallback to finalized
-    final Checkpoint finalizedCheckpoint = getState().getFinalized_checkpoint();
-    final UInt64 finalizedBlock =
-        finalizedCheckpoint
-            .getEpochStartSlot(spec)
-            .min(other.getState().getFinalized_checkpoint().getEpochStartSlot(spec));
-    return new SlotAndBlockRoot(finalizedBlock, finalizedCheckpoint.getRoot());
+    final Checkpoint earliestFinalizedCheckpoint =
+        getState()
+                .getFinalized_checkpoint()
+                .getEpoch()
+                .isLessThanOrEqualTo(other.getState().getFinalized_checkpoint().getEpoch())
+            ? getState().getFinalized_checkpoint()
+            : other.getState().getFinalized_checkpoint();
+    return new SlotAndBlockRoot(
+        earliestFinalizedCheckpoint.getEpochStartSlot(spec), earliestFinalizedCheckpoint.getRoot());
   }
 
   private Bytes32 getBlockRootAtSlot(final UInt64 slot) {
