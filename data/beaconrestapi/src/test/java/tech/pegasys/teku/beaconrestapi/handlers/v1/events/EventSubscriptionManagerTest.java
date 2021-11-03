@@ -27,6 +27,7 @@ import javax.servlet.AsyncContext;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.ChainDataProvider;
@@ -361,8 +362,10 @@ public class EventSubscriptionManagerTest {
         Optional.of(
             new ReorgContext(
                 chainReorgEvent.oldHeadBlock,
+                UInt64.ZERO,
                 chainReorgEvent.oldHeadState,
-                chainReorgEvent.slot.minus(depth))));
+                chainReorgEvent.slot.minus(depth),
+                Bytes32.ZERO)));
     asyncRunner.executeQueuedActions();
   }
 

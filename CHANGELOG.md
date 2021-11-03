@@ -26,6 +26,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - Added support for Apple Silicon (M1 chips).
 - Added LevelDB support for Linux/arm64.
 - Switched executor queue size metrics to use labelled gauge.
+- New console message when Teku switches forks. 
 
 ### Bug Fixes
 - Fixed issue where discovery did not correctly abort handshake attempts when a request timed out.
