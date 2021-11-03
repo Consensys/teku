@@ -51,6 +51,11 @@ public class DelegatingPeer implements Peer {
   }
 
   @Override
+  public void checkPeerIdentity() {
+    peer.checkPeerIdentity();
+  }
+
+  @Override
   public <
           TOutgoingHandler extends RpcRequestHandler,
           TRequest,

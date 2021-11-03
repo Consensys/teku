@@ -28,6 +28,7 @@ import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.LabelledGauge;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
@@ -53,6 +54,7 @@ public class PeerManager implements ConnectionHandler {
       new ConcurrentHashMap<>();
   private final ReputationManager reputationManager;
   private final List<PeerHandler> peerHandlers;
+  private final LabelledGauge peersLabelledGauge;
 
   private final Subscribers<PeerConnectedSubscriber<Peer>> connectSubscribers =
       Subscribers.create(true);
@@ -69,12 +71,29 @@ public class PeerManager implements ConnectionHandler {
     this.peerScoreFunction = peerScoreFunction;
     metricsSystem.createGauge(
         TekuMetricCategory.LIBP2P, "peers", "Tracks number of libp2p peers", this::getPeerCount);
+    peersLabelledGauge =
+        metricsSystem.createLabelledGauge(
+            TekuMetricCategory.LIBP2P,
+            "connected_peers_current",
+            "The number of clients connected by client type",
+            "client");
+
+    for (PeerClientType type : PeerClientType.values()) {
+      peersLabelledGauge.labels(() -> countConnectedPeersOfType(type), type.getDisplayName());
+    }
   }
 
   @Override
   public void handleConnection(@NotNull final Connection connection) {
     Peer peer = new LibP2PPeer(connection, rpcHandlers, reputationManager, peerScoreFunction);
     onConnectedPeer(peer);
+  }
+
+  double countConnectedPeersOfType(final PeerClientType type) {
+    return connectedPeerMap.values().stream()
+        .filter(Peer::isConnected)
+        .filter(peer -> type.equals(peer.getPeerClient()))
+        .count();
   }
 
   public long subscribeConnect(final PeerConnectedSubscriber<Peer> subscriber) {

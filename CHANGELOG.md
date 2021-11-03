@@ -22,6 +22,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - Attestations are now sent to the beacon node in batches by default when using the validator-client.
 - Updated to Javalin 4 for the rest api.
 - Removed ignore rule for aggregate attestation gossip where the attestation root has previously been seen.
+- add metrics to report client type - `libp2p_connected_peers_current`, with client tag `Teku`, `Lighthouse`, `Prysm`, `Nimbus`, `Unknown`.
 
 ### Bug Fixes
 - Fixed issue where discovery did not correctly abort handshake attempts when a request timed out.
