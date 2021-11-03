@@ -43,8 +43,7 @@ public class RestApiRequest {
   @SuppressWarnings({"rawtypes", "unchecked"})
   private void respond(final int statusCode, final String contentType, final Object response)
       throws JsonProcessingException {
-    context.status(statusCode);
     final SerializableTypeDefinition type = metadata.getResponseType(statusCode, contentType);
-    context.result(JsonUtil.serialize(response, type));
+    context.status(statusCode).result(JsonUtil.serialize(response, type));
   }
 }

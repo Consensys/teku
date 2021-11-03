@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.infrastructure.restapi.endpoints;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Collections.emptyMap;
@@ -69,11 +70,14 @@ public class EndpointMetadata {
   public SerializableTypeDefinition<?> getResponseType(
       final int statusCode, final String contentType) {
     final OpenApiResponse response = responses.get(Integer.toString(statusCode));
-    checkNotNull(response, "Unexpected response for status code %s", statusCode);
+    checkArgument(response != null, "Unexpected response for status code %s", statusCode);
 
     final SerializableTypeDefinition<?> responseType = response.getType(contentType);
-    checkNotNull(
-        responseType, "Unexpected content type %s for status code %s", contentType, statusCode);
+    checkArgument(
+        responseType != null,
+        "Unexpected content type %s for status code %s",
+        contentType,
+        statusCode);
     return responseType;
   }
 

@@ -14,7 +14,6 @@
 package tech.pegasys.teku.validator.restapi;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.api.schema.PublicKeyException;
@@ -48,10 +47,10 @@ public class ValidatorTypes {
   public static SerializableTypeDefinition<BLSPublicKey> VALIDATOR_KEY_TYPE =
       SerializableTypeDefinition.object(BLSPublicKey.class)
           .withField("validating_pubkey", PUBKEY_TYPE, Function.identity())
-          .withOptionalField(
+          .withField(
               "derivation_path",
               CoreTypes.string("The derivation path (if present in the imported keystore)."),
-              __ -> Optional.empty())
+              __ -> null)
           .build();
 
   public static SerializableTypeDefinition<List<BLSPublicKey>> LIST_KEYS_RESPONSE_TYPE =
