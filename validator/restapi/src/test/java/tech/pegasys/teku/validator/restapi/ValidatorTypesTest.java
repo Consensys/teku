@@ -47,7 +47,9 @@ class ValidatorTypesTest {
     assertThat(keysList).hasSize(keys.size());
     for (int i = 0; i < keys.size(); i++) {
       assertThat(keysList.get(i))
-          .containsOnly(entry("validating_pubkey", keys.get(i).toBytesCompressed().toHexString()));
+          .containsOnly(
+              entry("validating_pubkey", keys.get(i).toBytesCompressed().toHexString()),
+              entry("derivation_path", null));
     }
   }
 

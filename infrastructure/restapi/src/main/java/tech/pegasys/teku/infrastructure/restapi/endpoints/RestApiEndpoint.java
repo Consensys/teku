@@ -13,7 +13,9 @@
 
 package tech.pegasys.teku.infrastructure.restapi.endpoints;
 
-public class RestApiEndpoint {
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+public abstract class RestApiEndpoint {
 
   private final EndpointMetadata metadata;
 
@@ -24,4 +26,6 @@ public class RestApiEndpoint {
   public EndpointMetadata getMetadata() {
     return metadata;
   }
+
+  public abstract void handle(RestApiRequest request) throws JsonProcessingException;
 }
