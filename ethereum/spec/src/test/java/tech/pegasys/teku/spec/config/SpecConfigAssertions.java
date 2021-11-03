@@ -13,12 +13,13 @@
 
 package tech.pegasys.teku.spec.config;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.assertj.core.api.Assertions;
 
 public class SpecConfigAssertions {
 
@@ -30,10 +31,14 @@ public class SpecConfigAssertions {
     assertAllFieldsSet(config, SpecConfigAltair.class);
   }
 
+  static void assertAllMergeFieldsSet(final SpecConfig config) throws Exception {
+    assertAllFieldsSet(config, SpecConfigMerge.class);
+  }
+
   static void assertAllFieldsSet(final SpecConfig config, Class<?> targetConfig) throws Exception {
     for (Method method : listGetters(targetConfig)) {
       final Object value = method.invoke(config);
-      Assertions.assertThat(value).describedAs(method.getName().substring(3)).isNotNull();
+      assertThat(value).describedAs(method.getName().substring(3)).isNotNull();
     }
   }
 

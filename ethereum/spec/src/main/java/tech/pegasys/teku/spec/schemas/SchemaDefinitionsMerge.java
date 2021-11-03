@@ -13,12 +13,16 @@
 
 package tech.pegasys.teku.spec.schemas;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.util.Optional;
 import tech.pegasys.teku.spec.config.SpecConfigMerge;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge.BeaconBlockBodySchemaMerge;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.BeaconStateMerge;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.BeaconStateSchemaMerge;
@@ -29,6 +33,7 @@ public class SchemaDefinitionsMerge extends SchemaDefinitionsAltair {
   private final BeaconBlockBodySchemaMerge<?> beaconBlockBodySchema;
   private final BeaconBlockSchema beaconBlockSchema;
   private final SignedBeaconBlockSchema signedBeaconBlockSchema;
+  private final ExecutionPayloadHeaderSchema executionPayloadHeaderSchema;
 
   public SchemaDefinitionsMerge(final SpecConfigMerge specConfig) {
     super(specConfig.toVersionAltair().orElseThrow());
@@ -36,6 +41,16 @@ public class SchemaDefinitionsMerge extends SchemaDefinitionsAltair {
     this.beaconBlockBodySchema = BeaconBlockBodySchemaMerge.create(specConfig);
     this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema);
     this.signedBeaconBlockSchema = new SignedBeaconBlockSchema(beaconBlockSchema);
+    this.executionPayloadHeaderSchema = new ExecutionPayloadHeaderSchema(specConfig);
+  }
+
+  public static SchemaDefinitionsMerge required(final SchemaDefinitions schemaDefinitions) {
+    checkArgument(
+        schemaDefinitions instanceof SchemaDefinitionsMerge,
+        "Expected definitions of type %s by got %s",
+        SchemaDefinitionsMerge.class,
+        schemaDefinitions.getClass());
+    return (SchemaDefinitionsMerge) schemaDefinitions;
   }
 
   @Override
@@ -57,6 +72,14 @@ public class SchemaDefinitionsMerge extends SchemaDefinitionsAltair {
   @Override
   public BeaconBlockBodySchema<?> getBeaconBlockBodySchema() {
     return beaconBlockBodySchema;
+  }
+
+  public ExecutionPayloadSchema getExecutionPayloadSchema() {
+    return beaconBlockBodySchema.getExecutionPayloadSchema();
+  }
+
+  public ExecutionPayloadHeaderSchema getExecutionPayloadHeaderSchema() {
+    return executionPayloadHeaderSchema;
   }
 
   @Override
