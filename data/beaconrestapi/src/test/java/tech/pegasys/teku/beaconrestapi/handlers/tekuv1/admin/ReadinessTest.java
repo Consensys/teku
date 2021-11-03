@@ -18,8 +18,8 @@ import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.CACHE_NONE;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TARGET_PEER_COUNT;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TARGET_PEER_COUNT;
 
 import java.util.List;
 import java.util.Map;

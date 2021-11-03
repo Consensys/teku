@@ -16,8 +16,10 @@ package tech.pegasys.teku.validator.coordinator.performance;
 import static tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker.getPercentage;
 
 import com.google.common.base.Objects;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class AttestationPerformance {
+  final UInt64 epoch;
   final int numberOfExpectedAttestations;
   final int numberOfProducedAttestations;
   final int numberOfIncludedAttestations;
@@ -28,6 +30,7 @@ public class AttestationPerformance {
   final int correctHeadBlockCount;
 
   public AttestationPerformance(
+      UInt64 epoch,
       int numberOfExpectedAttestations,
       int numberOfProducedAttestations,
       int numberOfIncludedAttestations,
@@ -36,6 +39,7 @@ public class AttestationPerformance {
       double inclusionDistanceAverage,
       int correctTargetCount,
       int correctHeadBlockCount) {
+    this.epoch = epoch;
     this.numberOfExpectedAttestations = numberOfExpectedAttestations;
     this.numberOfProducedAttestations = numberOfProducedAttestations;
     this.numberOfIncludedAttestations = numberOfIncludedAttestations;
@@ -46,8 +50,8 @@ public class AttestationPerformance {
     this.correctHeadBlockCount = correctHeadBlockCount;
   }
 
-  public static AttestationPerformance empty(int numberOfExpectedAttestations) {
-    return new AttestationPerformance(numberOfExpectedAttestations, 0, 0, 0, 0, 0, 0, 0);
+  public static AttestationPerformance empty(UInt64 epoch, int numberOfExpectedAttestations) {
+    return new AttestationPerformance(epoch, numberOfExpectedAttestations, 0, 0, 0, 0, 0, 0, 0);
   }
 
   @Override
@@ -62,12 +66,14 @@ public class AttestationPerformance {
         && inclusionDistanceMin == that.inclusionDistanceMin
         && Double.compare(that.inclusionDistanceAverage, inclusionDistanceAverage) == 0
         && Double.compare(that.correctTargetCount, correctTargetCount) == 0
-        && Double.compare(that.correctHeadBlockCount, correctHeadBlockCount) == 0;
+        && Double.compare(that.correctHeadBlockCount, correctHeadBlockCount) == 0
+        && epoch.equals(that.epoch);
   }
 
   @Override
   public int hashCode() {
     return Objects.hashCode(
+        epoch,
         numberOfExpectedAttestations,
         numberOfProducedAttestations,
         numberOfIncludedAttestations,
@@ -82,9 +88,10 @@ public class AttestationPerformance {
   public String toString() {
     return String.format(
         "Attestation performance: "
-            + "expected %d, produced %d, included %d (%d%%), "
-            + "distance %d / %.2f / %d, "
-            + "correct target %d (%d%%), correct head %d (%d%%)",
+            + "epoch %s, expected %s, produced %s, included %s (%s%%), "
+            + "distance %s / %.2f / %s, "
+            + "correct target %s (%s%%), correct head %s (%s%%)",
+        epoch,
         numberOfExpectedAttestations,
         numberOfProducedAttestations,
         numberOfIncludedAttestations,

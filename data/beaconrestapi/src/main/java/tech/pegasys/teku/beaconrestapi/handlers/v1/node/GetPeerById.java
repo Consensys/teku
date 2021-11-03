@@ -14,11 +14,12 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.node;
 
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.CACHE_NONE;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_NOT_FOUND;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_NODE;
+import static tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler.routeWithBracedParameters;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_NOT_FOUND;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_NODE;
 
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -37,7 +38,8 @@ import tech.pegasys.teku.api.response.v1.node.PeerResponse;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetPeerById implements Handler {
-  public static final String ROUTE = "/eth/v1/node/peers/{peer_id}";
+  private static final String OAPI_ROUTE = "/eth/v1/node/peers/:peer_id";
+  public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
   private final JsonProvider jsonProvider;
   private final NetworkDataProvider network;
 
@@ -52,7 +54,7 @@ public class GetPeerById implements Handler {
   }
 
   @OpenApi(
-      path = ROUTE,
+      path = OAPI_ROUTE,
       method = HttpMethod.GET,
       summary = "Get node peer",
       tags = {TAG_NODE},

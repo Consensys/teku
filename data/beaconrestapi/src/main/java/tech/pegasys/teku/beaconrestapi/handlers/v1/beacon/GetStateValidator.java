@@ -13,19 +13,19 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_STATE_ID;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_STATE_ID_DESCRIPTION;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_VALIDATOR_DESCRIPTION;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_VALIDATOR_ID;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_NOT_FOUND;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_SERVICE_UNAVAILABLE;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SERVICE_UNAVAILABLE;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_BEACON;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATE_ID_DESCRIPTION;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_VALIDATOR_DESCRIPTION;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_VALIDATOR_ID;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_NOT_FOUND;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_SERVICE_UNAVAILABLE;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNAVAILABLE;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
@@ -45,7 +45,9 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetStateValidator extends AbstractHandler {
-  public static final String ROUTE = "/eth/v1/beacon/states/{state_id}/validators/{validator_id}";
+  private static final String OAPI_ROUTE =
+      "/eth/v1/beacon/states/:state_id/validators/:validator_id";
+  public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
   private final ChainDataProvider chainDataProvider;
 
   public GetStateValidator(final DataProvider dataProvider, final JsonProvider jsonProvider) {
@@ -59,7 +61,7 @@ public class GetStateValidator extends AbstractHandler {
   }
 
   @OpenApi(
-      path = ROUTE,
+      path = OAPI_ROUTE,
       method = HttpMethod.GET,
       summary = "Get validator from state",
       tags = {TAG_BEACON, TAG_VALIDATOR_REQUIRED},

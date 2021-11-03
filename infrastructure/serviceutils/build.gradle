@@ -1,0 +1,17 @@
+dependencies {
+  api project(':infrastructure:time')
+
+  implementation project(':infrastructure:metrics')
+  implementation project(':infrastructure:events')
+  implementation project(':infrastructure:exceptions')
+  implementation project(':infrastructure:async')
+  implementation project(':infrastructure:logging')
+
+  implementation 'io.vertx:vertx-core'
+  implementation 'io.vertx:vertx-web'
+  implementation 'org.apache.tuweni:tuweni-config'
+  implementation 'org.apache.tuweni:tuweni-crypto'
+  implementation 'org.hyperledger.besu:plugin-api'
+
+  testImplementation testFixtures(project(':infrastructure:async'))
+}

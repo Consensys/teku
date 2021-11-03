@@ -13,13 +13,13 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.CACHE_NONE;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.COMMITTEE_INDEX;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_BEACON;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.COMMITTEE_INDEX;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
