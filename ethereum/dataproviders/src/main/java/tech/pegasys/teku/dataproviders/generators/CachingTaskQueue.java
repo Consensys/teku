@@ -26,6 +26,7 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledGauge;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -87,21 +88,15 @@ public class CachingTaskQueue<K, V> {
   }
 
   public void startMetrics() {
-    metricsSystem.createIntegerGauge(
-        TekuMetricCategory.STORAGE,
-        metricsPrefix + "_tasks_requested",
-        "Number of tasks requested but not yet completed",
-        pendingTasks::size);
-    metricsSystem.createIntegerGauge(
-        TekuMetricCategory.STORAGE,
-        metricsPrefix + "_tasks_active",
-        "Number of tasks actively being processed",
-        activeTasks::get);
-    metricsSystem.createIntegerGauge(
-        TekuMetricCategory.STORAGE,
-        metricsPrefix + "_tasks_queued",
-        "Number of tasks queued for later processing",
-        queuedTasks::size);
+    final LabelledGauge taskQueueMetrics =
+        metricsSystem.createLabelledGauge(
+            TekuMetricCategory.STORAGE,
+            metricsPrefix + "_tasks",
+            "Labelled task queue metrics",
+            "status");
+    taskQueueMetrics.labels(pendingTasks::size, "requested");
+    taskQueueMetrics.labels(activeTasks::get, "active");
+    taskQueueMetrics.labels(queuedTasks::size, "queued");
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.STORAGE,
         metricsPrefix + "_cache_size",

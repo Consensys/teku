@@ -42,7 +42,8 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetStateFinalityCheckpoints extends AbstractHandler implements Handler {
-  public static final String ROUTE = "/eth/v1/beacon/states/{state_id}/finality_checkpoints";
+  private static final String OAPI_ROUTE = "/eth/v1/beacon/states/:state_id/finality_checkpoints";
+  public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
   private final ChainDataProvider chainDataProvider;
 
   public GetStateFinalityCheckpoints(
@@ -58,7 +59,7 @@ public class GetStateFinalityCheckpoints extends AbstractHandler implements Hand
   }
 
   @OpenApi(
-      path = ROUTE,
+      path = OAPI_ROUTE,
       method = HttpMethod.GET,
       summary = "Get state finality checkpoints",
       tags = {TAG_BEACON},

@@ -45,7 +45,8 @@ import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.SpecMilestone;
 
 public class GetBlock extends AbstractHandler implements Handler {
-  public static final String ROUTE = "/eth/v1/beacon/blocks/{block_id}";
+  private static final String OAPI_ROUTE = "/eth/v1/beacon/blocks/:block_id";
+  public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
   private final ChainDataProvider chainDataProvider;
 
   public GetBlock(final DataProvider dataProvider, final JsonProvider jsonProvider) {
@@ -58,7 +59,7 @@ public class GetBlock extends AbstractHandler implements Handler {
   }
 
   @OpenApi(
-      path = ROUTE,
+      path = OAPI_ROUTE,
       method = HttpMethod.GET,
       deprecated = true,
       summary = "Get block",

@@ -198,6 +198,7 @@ public class Eth2P2PNetworkBuilder {
             proposerSlashingGossipPublisher,
             gossipedVoluntaryExitConsumer,
             voluntaryExitGossipPublisher);
+      case MERGE:
       case ALTAIR:
         return new GossipForkSubscriptionsAltair(
             forkAndSpecMilestone.getFork(),
