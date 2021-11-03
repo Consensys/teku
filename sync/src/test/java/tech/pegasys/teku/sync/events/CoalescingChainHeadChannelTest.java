@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.sync.events;
 
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -21,6 +22,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
@@ -31,7 +33,10 @@ class CoalescingChainHeadChannelTest {
 
   private final ChainHeadChannel delegate = Mockito.mock(ChainHeadChannel.class);
 
-  private final CoalescingChainHeadChannel channel = new CoalescingChainHeadChannel(delegate);
+  private final EventLogger eventLogger = Mockito.mock(EventLogger.class);
+
+  private final CoalescingChainHeadChannel channel =
+      new CoalescingChainHeadChannel(delegate, eventLogger);
 
   @Test
   void shouldNotBeSyncingInitially() {
@@ -231,6 +236,50 @@ class CoalescingChainHeadChannelTest {
   }
 
   @Test
+  void shouldNotifyReorg() {
+    final UInt64 slot = dataStructureUtil.randomUInt64();
+    final Bytes32 stateRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 bestBlockRoot = dataStructureUtil.randomBytes32();
+    final boolean epochTransition = true;
+    final Bytes32 previousDutyDependentRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 currentDutyDependentRoot = dataStructureUtil.randomBytes32();
+
+    final Bytes32 oldBestBlockRoot = dataStructureUtil.randomBytes32();
+    final UInt64 oldBestBlockSlot = dataStructureUtil.randomUInt64();
+    final Bytes32 oldBestStateRoot = dataStructureUtil.randomBytes32();
+    final UInt64 commonAncestorSlot = dataStructureUtil.randomUInt64();
+    final Bytes32 commonAncestorRoot = dataStructureUtil.randomBytes32();
+
+    final Optional<ReorgContext> reorgContext =
+        Optional.of(
+            new ReorgContext(
+                oldBestBlockRoot,
+                oldBestBlockSlot,
+                oldBestStateRoot,
+                commonAncestorSlot,
+                commonAncestorRoot));
+    channel.onSyncingChange(false);
+
+    channel.chainHeadUpdated(
+        slot,
+        stateRoot,
+        bestBlockRoot,
+        epochTransition,
+        previousDutyDependentRoot,
+        currentDutyDependentRoot,
+        reorgContext);
+
+    verify(eventLogger, times(1))
+        .reorgEvent(
+            oldBestBlockRoot,
+            oldBestBlockSlot,
+            bestBlockRoot,
+            slot,
+            commonAncestorRoot,
+            commonAncestorSlot);
+  }
+
+  @Test
   void shouldUseReorgContextWithEarliestCommonAncestorSlotWhenMultipleEventsReceived() {
     final UInt64 slot = dataStructureUtil.randomUInt64();
     final Bytes32 stateRoot = dataStructureUtil.randomBytes32();
@@ -242,14 +291,18 @@ class CoalescingChainHeadChannelTest {
         Optional.of(
             new ReorgContext(
                 dataStructureUtil.randomBytes32(),
+                dataStructureUtil.randomUInt64(),
                 dataStructureUtil.randomBytes32(),
-                UInt64.valueOf(100)));
+                UInt64.valueOf(100),
+                dataStructureUtil.randomBytes32()));
     final Optional<ReorgContext> reorgContext2 =
         Optional.of(
             new ReorgContext(
                 dataStructureUtil.randomBytes32(),
+                dataStructureUtil.randomUInt64(),
                 dataStructureUtil.randomBytes32(),
-                UInt64.valueOf(80)));
+                UInt64.valueOf(80),
+                dataStructureUtil.randomBytes32()));
 
     channel.onSyncingChange(true);
 

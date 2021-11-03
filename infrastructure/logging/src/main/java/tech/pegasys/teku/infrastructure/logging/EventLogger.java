@@ -124,6 +124,22 @@ public class EventLogger {
     info(slotEventLog, Color.WHITE);
   }
 
+  public void reorgEvent(
+      final Bytes32 previousHeadRoot,
+      final UInt64 previousHeadSlot,
+      final Bytes32 newHeadRoot,
+      final UInt64 newHeadSlot,
+      final Bytes32 commonAncestorRoot,
+      final UInt64 commonAncestorSlot) {
+    String reorgEventLog =
+        String.format(
+            "Reorg Event *** New Head: %s, Previous Head: %s, Common Ancestor: %s",
+            LogFormatter.formatBlock(newHeadSlot, newHeadRoot),
+            LogFormatter.formatBlock(previousHeadSlot, previousHeadRoot),
+            LogFormatter.formatBlock(commonAncestorSlot, commonAncestorRoot));
+    info(reorgEventLog, Color.YELLOW);
+  }
+
   public void networkUpgradeActivated(final UInt64 nodeEpoch, final String upgradeName) {
     info(
         String.format(
