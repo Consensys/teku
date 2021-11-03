@@ -16,6 +16,7 @@ package tech.pegasys.teku.infrastructure.restapi.endpoints;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Collections.emptyMap;
+import static tech.pegasys.teku.infrastructure.restapi.json.JsonUtil.JSON_CONTENT_TYPE;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import io.javalin.http.HandlerType;
@@ -63,6 +64,17 @@ public class EndpointMetadata {
 
   public String getPath() {
     return path;
+  }
+
+  public SerializableTypeDefinition<?> getResponseType(
+      final int statusCode, final String contentType) {
+    final OpenApiResponse response = responses.get(Integer.toString(statusCode));
+    checkNotNull(response, "Unexpected response for status code %s", statusCode);
+
+    final SerializableTypeDefinition<?> responseType = response.getType(contentType);
+    checkNotNull(
+        responseType, "Unexpected content type %s for status code %s", contentType, statusCode);
+    return responseType;
   }
 
   public void writeOpenApi(final JsonGenerator gen) throws IOException {
@@ -127,7 +139,7 @@ public class EndpointMetadata {
         final int responseCode,
         final String description,
         final SerializableTypeDefinition<?> content) {
-      return response(responseCode, description, Map.of("application/json", content));
+      return response(responseCode, description, Map.of(JSON_CONTENT_TYPE, content));
     }
 
     public EndpointMetaDataBuilder response(

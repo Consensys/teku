@@ -20,6 +20,7 @@ import static tech.pegasys.teku.infrastructure.restapi.types.CoreTypes.HTTP_ERRO
 import io.javalin.Javalin;
 import io.javalin.core.JavalinConfig;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +33,7 @@ import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Server;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.JavalinEndpointAdapter;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.restapi.openapi.OpenApiDocBuilder;
@@ -46,6 +48,7 @@ public class RestApiBuilder {
   private List<String> hostAllowlist = emptyList();
   private final Map<Class<? extends Exception>, RestApiExceptionHandler<?>> exceptionHandlers =
       new HashMap<>();
+  private List<RestApiEndpoint> endpoints = new ArrayList<>();
 
   private final OpenApiDocBuilder openApiDocBuilder = new OpenApiDocBuilder();
   private boolean openApiDocsEnabled = false;
@@ -92,7 +95,8 @@ public class RestApiBuilder {
   }
 
   public RestApiBuilder endpoint(final RestApiEndpoint endpoint) {
-    openApiDocBuilder.endpoint(endpoint);
+    this.openApiDocBuilder.endpoint(endpoint);
+    this.endpoints.add(endpoint);
     return this;
   }
 
@@ -109,6 +113,8 @@ public class RestApiBuilder {
     if (!hostAllowlist.isEmpty()) {
       app.before(new HostAllowlistHandler(hostAllowlist));
     }
+
+    endpoints.forEach(endpoint -> JavalinEndpointAdapter.addEndpoint(app, endpoint));
 
     addExceptionHandlers(app);
 
