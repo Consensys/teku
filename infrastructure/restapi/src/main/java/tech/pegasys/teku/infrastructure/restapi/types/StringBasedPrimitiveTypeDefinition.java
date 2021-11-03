@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
+import com.google.common.base.MoreObjects;
 import java.io.IOException;
 import java.util.Optional;
 import java.util.function.Function;
@@ -83,6 +84,17 @@ public class StringBasedPrimitiveTypeDefinition<T> implements DeserializableType
       gen.writeStringField("format", format.get());
     }
     gen.writeEndObject();
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("name", name)
+        .add("description", description)
+        .add("example", example)
+        .add("format", format)
+        .add("pattern", pattern)
+        .toString();
   }
 
   public static class StringTypeBuilder<T> {

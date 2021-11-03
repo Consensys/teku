@@ -15,6 +15,7 @@ package tech.pegasys.teku.infrastructure.restapi.types;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 
 public class SerializableArrayTypeDefinition<T> implements SerializableTypeDefinition<List<T>> {
@@ -40,5 +41,10 @@ public class SerializableArrayTypeDefinition<T> implements SerializableTypeDefin
     gen.writeFieldName("items");
     itemType.serializeOpenApiTypeOrReference(gen);
     gen.writeEndObject();
+  }
+
+  @Override
+  public Collection<OpenApiTypeDefinition> getReferencedTypeDefinitions() {
+    return itemType.getSelfAndReferencedTypeDefinitions();
   }
 }

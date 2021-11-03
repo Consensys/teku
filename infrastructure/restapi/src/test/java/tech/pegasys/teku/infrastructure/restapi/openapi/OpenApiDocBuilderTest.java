@@ -21,8 +21,10 @@ import static tech.pegasys.teku.infrastructure.restapi.JsonTestUtil.parse;
 
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.restapi.JsonTestUtil;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
+import tech.pegasys.teku.infrastructure.restapi.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.restapi.types.CoreTypes;
 
 class OpenApiDocBuilderTest {
@@ -140,6 +142,15 @@ class OpenApiDocBuilderTest {
                     "$ref",
                     "#/components/schemas/"
                         + CoreTypes.HTTP_ERROR_RESPONSE_TYPE.getTypeName().orElseThrow())));
+
+    // Should include referenced types as schemas
+    final Map<String, Object> schemas = getObject(result, "components", "schemas");
+    assertThat(schemas).containsOnlyKeys("HttpErrorResponse");
+    // Full type should be serialized in schemas
+    assertThat(getObject(schemas, "HttpErrorResponse"))
+        .isEqualTo(
+            JsonTestUtil.parse(
+                JsonUtil.serialize(CoreTypes.HTTP_ERROR_RESPONSE_TYPE::serializeOpenApiType)));
   }
 
   private OpenApiDocBuilder validBuilder() {
