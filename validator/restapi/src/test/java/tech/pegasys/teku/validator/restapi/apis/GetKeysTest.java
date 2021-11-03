@@ -14,10 +14,14 @@
 package tech.pegasys.teku.validator.restapi.apis;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.restapi.JsonTestUtil;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 
 class GetKeysTest {
   @Test
@@ -30,5 +34,14 @@ class GetKeysTest {
         JsonTestUtil.parseJsonResource(GetKeysTest.class, "GetKeys.json");
 
     assertThat(result).isEqualTo(expected);
+  }
+
+  @Test
+  void shouldBeNotImplemented() throws Exception {
+    final GetKeys endpoint = new GetKeys();
+    final RestApiRequest request = mock(RestApiRequest.class);
+    endpoint.handle(request);
+
+    verify(request).respondError(SC_INTERNAL_SERVER_ERROR, "Not implemented");
   }
 }
