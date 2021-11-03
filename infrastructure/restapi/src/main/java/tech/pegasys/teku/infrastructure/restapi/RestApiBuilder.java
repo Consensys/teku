@@ -48,7 +48,7 @@ public class RestApiBuilder {
   private List<String> hostAllowlist = emptyList();
   private final Map<Class<? extends Exception>, RestApiExceptionHandler<?>> exceptionHandlers =
       new HashMap<>();
-  private List<RestApiEndpoint> endpoints = new ArrayList<>();
+  private final List<RestApiEndpoint> endpoints = new ArrayList<>();
 
   private final OpenApiDocBuilder openApiDocBuilder = new OpenApiDocBuilder();
   private boolean openApiDocsEnabled = false;
