@@ -65,13 +65,11 @@ class AggregatingSignatureVerificationService extends SignatureVerificationServi
 
     this.batchSignatureTasks = new ArrayBlockingQueue<>(queueCapacity);
     this.minBatchSizeToSplit = minBatchSizeToSplit;
-    metricsSystem
-        .createLabelledGauge(
-            TekuMetricCategory.EXECUTOR,
-            "queues",
-            "Current queues size for this executor",
-            "signature_verifications_queue_size")
-        .labels(this::getQueueSize, "signature_verifications_queue_size");
+    metricsSystem.createGauge(
+        TekuMetricCategory.EXECUTOR,
+        "signature_verifications_queue_size",
+        "Tracks number of signatures waiting to be batch verified",
+        this::getQueueSize);
   }
 
   AggregatingSignatureVerificationService(

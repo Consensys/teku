@@ -36,9 +36,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.Waiter;
-import tech.pegasys.teku.infrastructure.metrics.StubLabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
-import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.service.serviceutils.ServiceCapacityExceededException;
 import tech.pegasys.teku.statetransition.validation.signatures.AggregatingSignatureVerificationService.SignatureTask;
 
@@ -51,11 +49,10 @@ public class AggregatingSignatureVerificationServiceTest {
   private final int numThreads = 2;
 
   private final StubAsyncRunnerFactory asyncRunnerFactory = new StubAsyncRunnerFactory();
-  private final StubMetricsSystem metricSystem = new StubMetricsSystem();
 
   private AggregatingSignatureVerificationService service =
       new AggregatingSignatureVerificationService(
-          metricSystem,
+          new StubMetricsSystem(),
           asyncRunnerFactory,
           numThreads,
           queueCapacity,
@@ -88,15 +85,8 @@ public class AggregatingSignatureVerificationServiceTest {
   public void verify_withFullQueue() {
     startService();
 
-    final StubLabelledGauge gauge =
-        metricSystem.getLabelledGauge(TekuMetricCategory.EXECUTOR, "queues");
-    assertThat(gauge.getValue("signature_verifications_queue_size").getAsDouble()).isEqualTo(0.0);
-
     fillQueue();
     final SafeFuture<Boolean> future = executeInvalidVerify(0, 0);
-
-    assertThat(gauge.getValue("signature_verifications_queue_size").getAsDouble())
-        .isEqualTo(Double.valueOf(queueCapacity));
 
     assertThat(future).isDone();
     assertThat(future).isCompletedExceptionally();
