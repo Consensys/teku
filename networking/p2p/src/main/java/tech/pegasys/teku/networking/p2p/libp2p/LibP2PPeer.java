@@ -51,8 +51,8 @@ public class LibP2PPeer implements Peer {
   private final AtomicBoolean connected = new AtomicBoolean(true);
   private final MultiaddrPeerAddress peerAddress;
   private final PeerId peerId;
-  private volatile PeerClientType peerClient = PeerClientType.UNKNOWN;
-  private volatile Optional<String> peerClientType = Optional.empty();
+  private volatile PeerClientType peerClientType = PeerClientType.UNKNOWN;
+  private volatile Optional<String> maybeAgentString = Optional.empty();
 
   private volatile Optional<DisconnectReason> disconnectReason = Optional.empty();
   private volatile boolean disconnectLocallyInitiated = false;
@@ -87,20 +87,20 @@ public class LibP2PPeer implements Peer {
   @Override
   public void checkPeerIdentity() {
     if (isConnected()) {
-      getClientFromIdentity()
+      getAgentVersionFromIdentity()
           .thenAccept(
-              maybeClientIdentity -> {
-                LOG.debug("Connected peer has identity: {}", maybeClientIdentity.orElse("Unknown"));
-                peerClientType = maybeClientIdentity;
-                if (maybeClientIdentity.isPresent()) {
-                  peerClient = getPeerClientFromIdentity(maybeClientIdentity.get());
+              maybeAgent -> {
+                LOG.debug("Connected peer has agent string: {}", maybeAgent.orElse("Unknown"));
+                maybeAgentString = maybeAgent;
+                if (maybeAgent.isPresent()) {
+                  peerClientType = getPeerTypeFromAgentString(maybeAgent.get());
                 }
               })
           .finish(error -> LOG.error("Failed to retrieve client identity", error));
     }
   }
 
-  private PeerClientType getPeerClientFromIdentity(final String agentVersion) {
+  private PeerClientType getPeerTypeFromAgentString(final String agentVersion) {
     String agent = agentVersion;
     if (agentVersion.contains("/")) {
       agent = agentVersion.substring(0, agentVersion.indexOf("/"));
@@ -108,8 +108,8 @@ public class LibP2PPeer implements Peer {
     return EnumUtils.getEnumIgnoreCase(PeerClientType.class, agent, PeerClientType.UNKNOWN);
   }
 
-  public Optional<String> getPeerClientType() {
-    return peerClientType;
+  public Optional<String> getMaybeAgentString() {
+    return maybeAgentString;
   }
 
   @Override
@@ -128,8 +128,8 @@ public class LibP2PPeer implements Peer {
   }
 
   @Override
-  public PeerClientType getPeerClient() {
-    return peerClient;
+  public PeerClientType getPeerClientType() {
+    return peerClientType;
   }
 
   @Override
@@ -144,7 +144,7 @@ public class LibP2PPeer implements Peer {
             error -> LOG.warn("Failed to disconnect from peer {}", getId(), error));
   }
 
-  private SafeFuture<Optional<String>> getClientFromIdentity() {
+  private SafeFuture<Optional<String>> getAgentVersionFromIdentity() {
     return getIdentify()
         .thenApply(
             id -> id.hasAgentVersion() ? Optional.of(id.getAgentVersion()) : Optional.empty());

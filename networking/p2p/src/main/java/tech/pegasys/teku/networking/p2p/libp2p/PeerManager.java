@@ -92,7 +92,7 @@ public class PeerManager implements ConnectionHandler {
   double countConnectedPeersOfType(final PeerClientType type) {
     return connectedPeerMap.values().stream()
         .filter(Peer::isConnected)
-        .filter(peer -> type.equals(peer.getPeerClient()))
+        .filter(peer -> type.equals(peer.getPeerClientType()))
         .count();
   }
 

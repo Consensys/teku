@@ -36,7 +36,7 @@ public interface Peer {
 
   boolean isConnected();
 
-  default PeerClientType getPeerClient() {
+  default PeerClientType getPeerClientType() {
     return PeerClientType.UNKNOWN;
   }
 
