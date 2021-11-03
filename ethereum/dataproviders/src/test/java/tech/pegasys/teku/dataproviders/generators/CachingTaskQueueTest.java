@@ -307,8 +307,7 @@ class CachingTaskQueueTest {
         metricsSystem
             .getLabelledGauge(TekuMetricCategory.STORAGE, METRICS_PREFIX + "_tasks")
             .getValue("requested");
-    final double value = optionalValue.orElseThrow();
-    assertThat(value).isEqualTo(expectedCount);
+    assertThat(optionalValue).hasValue(expectedCount);
   }
 
   private void assertActiveTaskCount(final int expectedCount) {
@@ -316,8 +315,7 @@ class CachingTaskQueueTest {
         metricsSystem
             .getLabelledGauge(TekuMetricCategory.STORAGE, METRICS_PREFIX + "_tasks")
             .getValue("active");
-    final double value = optionalValue.orElseThrow();
-    assertThat(value).isEqualTo(expectedCount);
+    assertThat(optionalValue).hasValue(expectedCount);
   }
 
   private void assertQueuedTaskCount(final int expectedCount) {
@@ -325,8 +323,7 @@ class CachingTaskQueueTest {
         metricsSystem
             .getLabelledGauge(TekuMetricCategory.STORAGE, METRICS_PREFIX + "_tasks")
             .getValue("queued");
-    final double value = optionalValue.orElseThrow();
-    assertThat(value).isEqualTo(expectedCount);
+    assertThat(optionalValue).hasValue(expectedCount);
   }
 
   public static class StubTask implements CacheableTask<Integer, String> {
