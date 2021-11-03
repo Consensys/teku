@@ -61,9 +61,6 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
   final NavigableMap<UInt64, AtomicInteger> blockProductionAttemptsByEpoch =
       new ConcurrentSkipListMap<>();
 
-  @VisibleForTesting
-  static final UInt64 BLOCK_PERFORMANCE_EVALUATION_INTERVAL = UInt64.valueOf(2); // epochs
-
   public static final UInt64 ATTESTATION_INCLUSION_RANGE = UInt64.valueOf(2);
 
   private final CombinedChainDataClient combinedChainDataClient;
@@ -137,26 +134,18 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
       producedAttestationsByEpoch.headMap(analyzedEpoch, true).clear();
     }
 
-    // Output block performance information for the past BLOCK_PERFORMANCE_INTERVAL epochs
-    if (currentEpoch.isGreaterThanOrEqualTo(BLOCK_PERFORMANCE_EVALUATION_INTERVAL)) {
-      if (currentEpoch.mod(BLOCK_PERFORMANCE_EVALUATION_INTERVAL).equals(UInt64.ZERO)) {
-        UInt64 oldestAnalyzedEpoch = currentEpoch.minus(BLOCK_PERFORMANCE_EVALUATION_INTERVAL);
-        BlockPerformance blockPerformance =
-            getBlockPerformanceForEpochs(oldestAnalyzedEpoch, currentEpoch);
-        if (blockPerformance.numberOfExpectedBlocks > 0) {
-
-          if (mode.isLoggingEnabled()) {
-            statusLogger.performance(blockPerformance.toString());
-          }
-
-          if (mode.isMetricsEnabled()) {
-            validatorPerformanceMetrics.updateBlockPerformanceMetrics(blockPerformance);
-          }
-
-          producedBlocksByEpoch.headMap(oldestAnalyzedEpoch, true).clear();
-          blockProductionAttemptsByEpoch.headMap(oldestAnalyzedEpoch, true).clear();
-        }
+    BlockPerformance blockPerformance = getBlockPerformanceForEpoch(currentEpoch);
+    if (blockPerformance.numberOfExpectedBlocks > 0) {
+      if (mode.isLoggingEnabled()) {
+        statusLogger.performance(blockPerformance.toString());
       }
+
+      if (mode.isMetricsEnabled()) {
+        validatorPerformanceMetrics.updateBlockPerformanceMetrics(blockPerformance);
+      }
+
+      producedBlocksByEpoch.headMap(currentEpoch, true).clear();
+      blockProductionAttemptsByEpoch.headMap(currentEpoch, true).clear();
     }
 
     // Nothing to report until epoch 0 is complete
@@ -175,23 +164,13 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
     }
   }
 
-  private BlockPerformance getBlockPerformanceForEpochs(
-      UInt64 startEpochInclusive, UInt64 endEpochExclusive) {
+  private BlockPerformance getBlockPerformanceForEpoch(UInt64 currentEpoch) {
     int numberOfBlockProductionAttempts =
-        blockProductionAttemptsByEpoch
-            .subMap(startEpochInclusive, true, endEpochExclusive, false)
-            .values()
-            .stream()
-            .mapToInt(AtomicInteger::get)
-            .sum();
+        blockProductionAttemptsByEpoch.values().stream().mapToInt(AtomicInteger::get).sum();
     List<SlotAndBlockRoot> producedBlocks =
-        producedBlocksByEpoch
-            .subMap(startEpochInclusive, true, endEpochExclusive, false)
-            .values()
-            .stream()
+        producedBlocksByEpoch.values().stream()
             .flatMap(Collection::stream)
             .collect(Collectors.toList());
-
     final StateAndBlockSummary chainHead = combinedChainDataClient.getChainHead().orElseThrow();
     final BeaconState state = chainHead.getState();
     final long numberOfIncludedBlocks =
@@ -205,7 +184,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
 
     int numberOfProducedBlocks = producedBlocks.size();
     return new BlockPerformance(
-        endEpochExclusive,
+        currentEpoch,
         numberOfBlockProductionAttempts,
         (int) numberOfIncludedBlocks,
         numberOfProducedBlocks);
