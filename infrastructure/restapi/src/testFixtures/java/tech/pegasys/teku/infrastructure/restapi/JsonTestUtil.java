@@ -17,8 +17,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
+import com.google.common.io.Resources;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
+import tech.pegasys.teku.infrastructure.restapi.json.JsonUtil;
 
 public class JsonTestUtil {
 
@@ -33,6 +39,11 @@ public class JsonTestUtil {
     return current;
   }
 
+  @SuppressWarnings("unchecked")
+  public static <T> List<T> getList(final Map<String, Object> input, final String name) {
+    return (List<T>) input.get(name);
+  }
+
   public static Map<String, Object> parse(final String json) throws Exception {
     return new ObjectMapper()
         .readerFor(
@@ -43,5 +54,30 @@ public class JsonTestUtil {
 
   public static String parseString(final String json) throws Exception {
     return new ObjectMapper().readerFor(String.class).readValue(json);
+  }
+
+  public static List<Object> parseList(final String json) throws Exception {
+    return new ObjectMapper()
+        .readerFor(
+            TypeFactory.defaultInstance()
+                .constructCollectionLikeType(ArrayList.class, Object.class))
+        .readValue(json);
+  }
+
+  public static String serializeEndpointMetadata(final RestApiEndpoint endpoint) throws Exception {
+    return JsonUtil.serialize(
+        gen -> {
+          gen.writeStartObject();
+          endpoint.getMetadata().writeOpenApi(gen);
+          gen.writeEndObject();
+        });
+  }
+
+  public static Map<String, Object> parseJsonResource(
+      final Class<?> contextClass, final String resourceName) throws Exception {
+    final String expected =
+        Resources.toString(
+            Resources.getResource(contextClass, resourceName), StandardCharsets.UTF_8);
+    return JsonTestUtil.parse(expected);
   }
 }

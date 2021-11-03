@@ -72,6 +72,22 @@ class StringBasedPrimitiveTypeDefinitionTest {
   }
 
   @Test
+  void serializeOpenApiType_withName() throws Exception {
+    final DeserializableTypeDefinition<String> type =
+        DeserializableTypeDefinition.string(String.class)
+            .name("TestName")
+            .formatter(Function.identity())
+            .parser(Function.identity())
+            .example("ex")
+            .build();
+
+    final Map<String, Object> result = parse(serialize(type::serializeOpenApiType));
+    assertThat(result)
+        .containsOnly(entry("type", "string"), entry("title", "TestName"), entry("example", "ex"));
+    assertThat(type.getTypeName()).contains("TestName");
+  }
+
+  @Test
   void serialize_shouldApplyConverter() throws Exception {
     final DeserializableTypeDefinition<String> type =
         DeserializableTypeDefinition.string(String.class)

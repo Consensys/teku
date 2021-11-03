@@ -13,9 +13,14 @@
 
 package tech.pegasys.teku.infrastructure.restapi.types;
 
+import static java.util.stream.Collectors.toSet;
+
 import com.fasterxml.jackson.core.JsonGenerator;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 public interface OpenApiTypeDefinition {
   default Optional<String> getTypeName() {
@@ -23,6 +28,14 @@ public interface OpenApiTypeDefinition {
   }
 
   void serializeOpenApiType(JsonGenerator gen) throws IOException;
+
+  default Collection<OpenApiTypeDefinition> getReferencedTypeDefinitions() {
+    return Collections.emptySet();
+  }
+
+  default Collection<OpenApiTypeDefinition> getSelfAndReferencedTypeDefinitions() {
+    return Stream.concat(Stream.of(this), getReferencedTypeDefinitions().stream()).collect(toSet());
+  }
 
   default void serializeOpenApiTypeOrReference(final JsonGenerator gen) throws IOException {
     if (getTypeName().isPresent()) {

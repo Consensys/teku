@@ -20,6 +20,7 @@ public class HttpStatusCodes {
   public static final int SC_NO_CONTENT = 204;
   public static final int SC_PARTIAL_CONTENT = 206;
   public static final int SC_BAD_REQUEST = 400;
+  public static final int SC_UNAUTHORIZED = 401;
   public static final int SC_FORBIDDEN = 403;
   public static final int SC_NOT_FOUND = 404;
   public static final int SC_PRECONDITION_FAILED = 412;

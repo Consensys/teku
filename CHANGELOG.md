@@ -21,8 +21,12 @@ For information on changes in released versions of Teku, see the [releases page]
 - Support v.2.1.0 of the standard rest api. it should be noted that the 'version' has been changed to lower case to comply with the api specification.
 - Attestations are now sent to the beacon node in batches by default when using the validator-client.
 - Updated to Javalin 4 for the rest api.
+- Added relevant epoch to attestation and sync committee performance log message.
 - Removed ignore rule for aggregate attestation gossip where the attestation root has previously been seen.
 - add metrics to report client type - `libp2p_connected_peers_current`, with client tag `Teku`, `Lighthouse`, `Prysm`, `Nimbus`, `Unknown`.
+- Added support for Apple Silicon (M1 chips).
+- Added LevelDB support for Linux/arm64.
+- New console message when Teku switches forks.
 
 ### Bug Fixes
 - Fixed issue where discovery did not correctly abort handshake attempts when a request timed out.

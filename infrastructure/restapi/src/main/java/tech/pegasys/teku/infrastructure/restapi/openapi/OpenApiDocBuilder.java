@@ -14,12 +14,21 @@
 package tech.pegasys.teku.infrastructure.restapi.openapi;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.stream.Collectors.toSet;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.javalin.http.HandlerType;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
+import tech.pegasys.teku.infrastructure.restapi.types.OpenApiTypeDefinition;
 
 public class OpenApiDocBuilder {
 
@@ -31,6 +40,8 @@ public class OpenApiDocBuilder {
   private String description;
   private String licenseName;
   private String licenseUrl;
+
+  private final Map<String, Map<HandlerType, RestApiEndpoint>> endpoints = new LinkedHashMap<>();
 
   public OpenApiDocBuilder title(final String title) {
     this.title = title;
@@ -53,6 +64,13 @@ public class OpenApiDocBuilder {
     return this;
   }
 
+  public OpenApiDocBuilder endpoint(final RestApiEndpoint endpoint) {
+    this.endpoints
+        .computeIfAbsent(endpoint.getMetadata().getPath(), __ -> new LinkedHashMap<>())
+        .put(endpoint.getMetadata().getMethod(), endpoint);
+    return this;
+  }
+
   public String build() {
     checkNotNull(title, "title must be supplied");
     checkNotNull(version, "version must be supplied");
@@ -61,8 +79,10 @@ public class OpenApiDocBuilder {
 
       gen.writeStartObject();
       gen.writeStringField("openapi", OPENAPI_VERSION);
-      gen.writeFieldName("info");
       writeInfo(gen);
+      writePaths(gen);
+
+      writeComponents(gen);
       gen.writeEndObject();
 
     } catch (IOException e) {
@@ -72,7 +92,7 @@ public class OpenApiDocBuilder {
   }
 
   private void writeInfo(final JsonGenerator gen) throws IOException {
-    gen.writeStartObject();
+    gen.writeObjectFieldStart("info");
     gen.writeStringField("title", title);
     if (description != null) {
       gen.writeStringField("description", description);
@@ -84,6 +104,40 @@ public class OpenApiDocBuilder {
       gen.writeEndObject();
     }
     gen.writeStringField("version", version);
+    gen.writeEndObject();
+  }
+
+  private void writePaths(final JsonGenerator gen) throws IOException {
+    gen.writeObjectFieldStart("paths");
+    for (final Entry<String, Map<HandlerType, RestApiEndpoint>> pathEntry : endpoints.entrySet()) {
+      gen.writeObjectFieldStart(pathEntry.getKey());
+      for (RestApiEndpoint endpoint : pathEntry.getValue().values()) {
+        final EndpointMetadata metadata = endpoint.getMetadata();
+        metadata.writeOpenApi(gen);
+      }
+      gen.writeEndObject();
+    }
+    gen.writeEndObject();
+  }
+
+  private void writeComponents(final JsonGenerator gen) throws IOException {
+    gen.writeObjectFieldStart("components");
+    writeSchemas(gen);
+    gen.writeEndObject();
+  }
+
+  private void writeSchemas(final JsonGenerator gen) throws IOException {
+    final Set<OpenApiTypeDefinition> typeDefinitions =
+        endpoints.values().stream()
+            .flatMap(pathEndpoints -> pathEndpoints.values().stream())
+            .flatMap(endpoint -> endpoint.getMetadata().getReferencedTypeDefinitions().stream())
+            .filter(type -> type.getTypeName().isPresent())
+            .collect(toSet());
+    gen.writeObjectFieldStart("schemas");
+    for (OpenApiTypeDefinition type : typeDefinitions) {
+      gen.writeFieldName(type.getTypeName().orElseThrow());
+      type.serializeOpenApiType(gen);
+    }
     gen.writeEndObject();
   }
 }

@@ -25,27 +25,27 @@ import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.restapi.JsonTestUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-class CommonTypeDefinitionsTest {
+class CoreTypesTest {
   @Test
   void uint64_shouldRoundTrip() throws Exception {
-    assertRoundTrip(UInt64.valueOf(200), CommonTypeDefinitions.UINT64_TYPE);
+    assertRoundTrip(UInt64.valueOf(200), CoreTypes.UINT64_TYPE);
   }
 
   @Test
   void string_shouldRoundTrip() throws Exception {
-    assertRoundTrip("some string", CommonTypeDefinitions.STRING_TYPE);
+    assertRoundTrip("some string", CoreTypes.STRING_TYPE);
   }
 
   @Test
   void integer_shouldRoundTrip() throws Exception {
-    assertRoundTrip(458, CommonTypeDefinitions.INTEGER_TYPE);
+    assertRoundTrip(458, CoreTypes.INTEGER_TYPE);
   }
 
   @Test
   void httpErrorResponse_shouldSerialize() throws Exception {
     final HttpErrorResponse value = new HttpErrorResponse(442, "No good");
     final Map<String, Object> result =
-        JsonTestUtil.parse(serialize(value, CommonTypeDefinitions.HTTP_ERROR_RESPONSE_TYPE));
+        JsonTestUtil.parse(serialize(value, CoreTypes.HTTP_ERROR_RESPONSE_TYPE));
 
     assertThat(result).containsOnly(entry("status", 442), entry("message", "No good"));
   }

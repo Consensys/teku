@@ -15,7 +15,7 @@ package tech.pegasys.teku.infrastructure.restapi;
 
 import static java.util.Collections.emptyList;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
-import static tech.pegasys.teku.infrastructure.restapi.types.CommonTypeDefinitions.HTTP_ERROR_RESPONSE_TYPE;
+import static tech.pegasys.teku.infrastructure.restapi.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 
 import io.javalin.Javalin;
 import io.javalin.core.JavalinConfig;
@@ -32,6 +32,7 @@ import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Server;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.restapi.openapi.OpenApiDocBuilder;
 
@@ -87,6 +88,11 @@ public class RestApiBuilder {
 
   public RestApiBuilder openApiInfo(final Consumer<OpenApiDocBuilder> handler) {
     handler.accept(openApiDocBuilder);
+    return this;
+  }
+
+  public RestApiBuilder endpoint(final RestApiEndpoint endpoint) {
+    openApiDocBuilder.endpoint(endpoint);
     return this;
   }
 
