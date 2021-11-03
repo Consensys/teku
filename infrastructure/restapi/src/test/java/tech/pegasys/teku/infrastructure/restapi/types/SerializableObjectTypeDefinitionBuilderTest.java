@@ -63,6 +63,24 @@ class SerializableObjectTypeDefinitionBuilderTest {
     assertThat(JsonTestUtil.parse(json)).isEmpty();
   }
 
+  @Test
+  void shouldGetReferencedTypesRecursively() {
+    final SerializableTypeDefinition<String> type1 =
+        SerializableTypeDefinition.object(String.class).name("Type1").build();
+    final SerializableTypeDefinition<String> type2 =
+        SerializableTypeDefinition.object(String.class)
+            .name("Type2")
+            .withField("type1", type1, __ -> null)
+            .build();
+    final SerializableTypeDefinition<String> type3 =
+        SerializableTypeDefinition.object(String.class)
+            .name("Type3")
+            .withField("type2", type2, __ -> null)
+            .build();
+
+    assertThat(type3.getReferencedTypeDefinitions()).containsExactlyInAnyOrder(type1, type2);
+  }
+
   private static class WithOptionalValue {
     private final Optional<String> value;
 

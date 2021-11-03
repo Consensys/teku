@@ -20,11 +20,14 @@ import static java.util.Collections.emptyMap;
 import com.fasterxml.jackson.core.JsonGenerator;
 import io.javalin.http.HandlerType;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import tech.pegasys.teku.infrastructure.restapi.openapi.OpenApiResponse;
+import tech.pegasys.teku.infrastructure.restapi.types.OpenApiTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.types.SerializableTypeDefinition;
 
 public class EndpointMetadata {
@@ -75,6 +78,12 @@ public class EndpointMetadata {
     }
     gen.writeEndObject();
     gen.writeEndObject();
+  }
+
+  public Collection<OpenApiTypeDefinition> getReferencedTypeDefinitions() {
+    return responses.values().stream()
+        .flatMap(response -> response.getReferencedTypeDefinitions().stream())
+        .collect(Collectors.toSet());
   }
 
   public static class EndpointMetaDataBuilder {
