@@ -16,18 +16,22 @@ package tech.pegasys.teku.validator.coordinator.performance;
 import static tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker.getPercentage;
 
 import java.util.Objects;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SyncCommitteePerformance {
+  private final UInt64 epoch;
   private final int numberOfExpectedMessages;
   private final int numberOfProducedMessages;
   private final int numberOfCorrectMessages;
   private final int numberOfIncludedMessages;
 
   public SyncCommitteePerformance(
+      final UInt64 epoch,
       final int numberOfExpectedMessages,
       final int numberOfProducedMessages,
       final int numberOfCorrectMessages,
       final int numberOfIncludedMessages) {
+    this.epoch = epoch;
     this.numberOfExpectedMessages = numberOfExpectedMessages;
     this.numberOfProducedMessages = numberOfProducedMessages;
     this.numberOfCorrectMessages = numberOfCorrectMessages;
@@ -62,12 +66,14 @@ public class SyncCommitteePerformance {
     return numberOfExpectedMessages == that.numberOfExpectedMessages
         && numberOfProducedMessages == that.numberOfProducedMessages
         && numberOfCorrectMessages == that.numberOfCorrectMessages
-        && numberOfIncludedMessages == that.numberOfIncludedMessages;
+        && numberOfIncludedMessages == that.numberOfIncludedMessages
+        && epoch.equals(that.epoch);
   }
 
   @Override
   public int hashCode() {
     return Objects.hash(
+        epoch,
         numberOfExpectedMessages,
         numberOfProducedMessages,
         numberOfCorrectMessages,
@@ -77,7 +83,9 @@ public class SyncCommitteePerformance {
   @Override
   public String toString() {
     return String.format(
-        "Sync committee performance: " + "expected %d, produced %d, correct %d, included %d (%d%%)",
+        "Sync committee performance: "
+            + "epoch %s, expected %s, produced %s, correct %s, included %s (%s%%)",
+        epoch,
         numberOfExpectedMessages,
         numberOfProducedMessages,
         numberOfCorrectMessages,

@@ -45,7 +45,9 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetStateValidator extends AbstractHandler {
-  public static final String ROUTE = "/eth/v1/beacon/states/{state_id}/validators/{validator_id}";
+  private static final String OAPI_ROUTE =
+      "/eth/v1/beacon/states/:state_id/validators/:validator_id";
+  public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
   private final ChainDataProvider chainDataProvider;
 
   public GetStateValidator(final DataProvider dataProvider, final JsonProvider jsonProvider) {
@@ -59,7 +61,7 @@ public class GetStateValidator extends AbstractHandler {
   }
 
   @OpenApi(
-      path = ROUTE,
+      path = OAPI_ROUTE,
       method = HttpMethod.GET,
       summary = "Get validator from state",
       tags = {TAG_BEACON, TAG_VALIDATOR_REQUIRED},

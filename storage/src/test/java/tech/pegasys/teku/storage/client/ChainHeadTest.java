@@ -24,6 +24,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SszData;
@@ -78,8 +79,12 @@ public class ChainHeadTest {
     final SignedBlockAndState block2 = chainBuilder.generateBlockAtSlot(2);
     final ChainHead chainHeadA = ChainHead.create(genesis, UInt64.valueOf(10), spec);
     final ChainHead chainHeadB = ChainHead.create(block2, UInt64.valueOf(12), spec);
-    assertThat(chainHeadA.findCommonAncestor(chainHeadB)).isEqualTo(UInt64.ZERO);
-    assertThat(chainHeadB.findCommonAncestor(chainHeadA)).isEqualTo(UInt64.ZERO);
+    final SlotAndBlockRoot slotAndBlockRootChainA = chainHeadA.findCommonAncestor(chainHeadB);
+    final SlotAndBlockRoot slotAndBlockRootChainB = chainHeadB.findCommonAncestor(chainHeadA);
+    assertThat(slotAndBlockRootChainA.getSlot()).isEqualTo(UInt64.ZERO);
+    assertThat(slotAndBlockRootChainB.getSlot()).isEqualTo(UInt64.ZERO);
+    assertThat(slotAndBlockRootChainB.getBlockRoot()).isEqualTo(genesis.getRoot());
+    assertThat(slotAndBlockRootChainB.getBlockRoot()).isEqualTo(genesis.getRoot());
   }
 
   @Test
@@ -88,8 +93,12 @@ public class ChainHeadTest {
     final SignedBlockAndState block2 = chainBuilder.generateBlockAtSlot(2);
     final ChainHead chainHeadA = ChainHead.create(block1, UInt64.valueOf(2), spec);
     final ChainHead chainHeadB = ChainHead.create(block2, UInt64.valueOf(2), spec);
-    assertThat(chainHeadA.findCommonAncestor(chainHeadB)).isEqualTo(UInt64.ONE);
-    assertThat(chainHeadB.findCommonAncestor(chainHeadA)).isEqualTo(UInt64.ONE);
+    final SlotAndBlockRoot slotAndBlockRootChainA = chainHeadA.findCommonAncestor(chainHeadB);
+    final SlotAndBlockRoot slotAndBlockRootChainB = chainHeadB.findCommonAncestor(chainHeadA);
+    assertThat(slotAndBlockRootChainA.getSlot()).isEqualTo(UInt64.ONE);
+    assertThat(slotAndBlockRootChainB.getSlot()).isEqualTo(UInt64.ONE);
+    assertThat(slotAndBlockRootChainA.getBlockRoot()).isEqualTo(block1.getRoot());
+    assertThat(slotAndBlockRootChainB.getBlockRoot()).isEqualTo(block1.getRoot());
   }
 
   @Test
@@ -106,8 +115,13 @@ public class ChainHeadTest {
 
     final ChainHead chainHeadA = ChainHead.create(chainHead, UInt64.valueOf(8), spec);
     final ChainHead chainHeadB = ChainHead.create(forkHead, UInt64.valueOf(9), spec);
-    assertThat(chainHeadA.findCommonAncestor(chainHeadB)).isEqualTo(UInt64.valueOf(2));
-    assertThat(chainHeadB.findCommonAncestor(chainHeadA)).isEqualTo(UInt64.valueOf(2));
+    final SlotAndBlockRoot slotAndBlockRootChainA = chainHeadA.findCommonAncestor(chainHeadB);
+    final SlotAndBlockRoot slotAndBlockRootChainB = chainHeadB.findCommonAncestor(chainHeadA);
+    final SignedBeaconBlock commonBlock = chainBuilder.getBlockAtSlot(UInt64.valueOf(2));
+    assertThat(slotAndBlockRootChainA.getSlot()).isEqualTo(UInt64.valueOf(2));
+    assertThat(slotAndBlockRootChainB.getSlot()).isEqualTo(UInt64.valueOf(2));
+    assertThat(slotAndBlockRootChainA.getBlockRoot()).isEqualTo(commonBlock.getRoot());
+    assertThat(slotAndBlockRootChainB.getBlockRoot()).isEqualTo(commonBlock.getRoot());
   }
 
   @Test
@@ -124,8 +138,15 @@ public class ChainHeadTest {
 
     final ChainHead chainHeadA = ChainHead.create(chainHead, chainHead.getSlot(), spec);
     final ChainHead chainHeadB = ChainHead.create(forkHead, forkHead.getSlot(), spec);
-    assertThat(chainHeadA.findCommonAncestor(chainHeadB)).isEqualTo(UInt64.ZERO);
-    assertThat(chainHeadB.findCommonAncestor(chainHeadA)).isEqualTo(UInt64.ZERO);
+    final SlotAndBlockRoot slotAndBlockRootChainA = chainHeadA.findCommonAncestor(chainHeadB);
+    final SlotAndBlockRoot slotAndBlockRootChainB = chainHeadB.findCommonAncestor(chainHeadA);
+    assertThat(slotAndBlockRootChainA.getSlot()).isEqualTo(UInt64.ZERO);
+    assertThat(slotAndBlockRootChainB.getSlot()).isEqualTo(UInt64.ZERO);
+
+    assertThat(slotAndBlockRootChainA.getBlockRoot())
+        .isEqualTo(chainHeadA.getState().getFinalized_checkpoint().getRoot());
+    assertThat(slotAndBlockRootChainB.getBlockRoot())
+        .isEqualTo(chainHeadB.getState().getFinalized_checkpoint().getRoot());
   }
 
   @SuppressWarnings("unchecked")

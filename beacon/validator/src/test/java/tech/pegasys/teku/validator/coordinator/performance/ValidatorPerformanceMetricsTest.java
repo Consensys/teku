@@ -47,6 +47,7 @@ public class ValidatorPerformanceMetricsTest {
 
   private final AttestationPerformance attestationPerformance =
       new AttestationPerformance(
+          EPOCH,
           NUMBER_OF_EXPECTED_ATTESTATIONS,
           NUMBER_OF_PRODUCED_ATTESTATIONS,
           NUMBER_OF_INCLUDED_ATTESTATIONS,
@@ -62,6 +63,7 @@ public class ValidatorPerformanceMetricsTest {
 
   private final SyncCommitteePerformance syncCommitteePerformance =
       new SyncCommitteePerformance(
+          EPOCH,
           NUMBER_OF_EXPECTED_MESSAGES,
           NUMBER_OF_PRODUCED_MESSAGES,
           NUMBER_OF_CORRECT_MESSAGES,

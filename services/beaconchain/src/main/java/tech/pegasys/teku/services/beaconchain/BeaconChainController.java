@@ -258,7 +258,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private SafeFuture<?> initialize() {
     final StoreConfig storeConfig = beaconConfig.storeConfig();
     coalescingChainHeadChannel =
-        new CoalescingChainHeadChannel(eventChannels.getPublisher(ChainHeadChannel.class));
+        new CoalescingChainHeadChannel(
+            eventChannels.getPublisher(ChainHeadChannel.class), EVENT_LOG);
 
     StorageQueryChannel storageQueryChannel =
         eventChannels.getPublisher(StorageQueryChannel.class, beaconAsyncRunner);
@@ -559,12 +560,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         new AttestationValidator(spec, recentChainData, signatureVerificationService);
     AggregateAttestationValidator aggregateValidator =
         new AggregateAttestationValidator(recentChainData, attestationValidator, spec);
-    blockImporter.subscribeToVerifiedBlockAttestations(
-        (slot, attestations) ->
-            attestations.forEach(
-                attestation ->
-                    aggregateValidator.addSeenAggregate(
-                        ValidateableAttestation.from(spec, attestation))));
     attestationManager =
         AttestationManager.create(
             pendingAttestations,

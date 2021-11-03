@@ -51,7 +51,8 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetState extends AbstractHandler implements Handler {
-  public static final String ROUTE = "/eth/v2/debug/beacon/states/{state_id}";
+  private static final String OAPI_ROUTE = "/eth/v2/debug/beacon/states/:state_id";
+  public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
   private final ChainDataProvider chainDataProvider;
 
   public GetState(final DataProvider dataProvider, final JsonProvider jsonProvider) {
@@ -64,7 +65,7 @@ public class GetState extends AbstractHandler implements Handler {
   }
 
   @OpenApi(
-      path = ROUTE,
+      path = OAPI_ROUTE,
       method = HttpMethod.GET,
       summary = "Get state",
       tags = {TAG_DEBUG},

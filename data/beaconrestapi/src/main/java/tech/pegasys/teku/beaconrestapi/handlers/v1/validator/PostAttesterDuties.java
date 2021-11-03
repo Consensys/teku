@@ -52,7 +52,8 @@ import tech.pegasys.teku.provider.JsonProvider;
 
 public class PostAttesterDuties extends AbstractHandler implements Handler {
   private static final Logger LOG = LogManager.getLogger();
-  public static final String ROUTE = "/eth/v1/validator/duties/attester/{epoch}";
+  private static final String OAPI_ROUTE = "/eth/v1/validator/duties/attester/:epoch";
+  public static final String ROUTE = routeWithBracedParameters(OAPI_ROUTE);
   private final ValidatorDataProvider validatorDataProvider;
   private final SyncDataProvider syncDataProvider;
 
@@ -72,7 +73,7 @@ public class PostAttesterDuties extends AbstractHandler implements Handler {
   }
 
   @OpenApi(
-      path = ROUTE,
+      path = OAPI_ROUTE,
       method = HttpMethod.POST,
       summary = "Get attester duties",
       tags = {TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED},

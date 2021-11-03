@@ -4,6 +4,7 @@ dependencies {
   implementation project(':infrastructure:events')
   implementation project(':infrastructure:exceptions')
   implementation project(':infrastructure:http')
+  implementation project(':infrastructure:restapi')
   implementation project(':infrastructure:version')
   implementation project(':ethereum:core')
   implementation project(':ethereum:spec')
@@ -21,5 +22,7 @@ dependencies {
   implementation 'org.webjars:swagger-ui'
 
   testImplementation testFixtures(project(':bls'))
+  testImplementation testFixtures(project(':ethereum:spec'))
+  testImplementation testFixtures(project(':infrastructure:restapi'))
 }
 

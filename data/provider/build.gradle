@@ -10,7 +10,7 @@ dependencies {
     implementation project(':infrastructure:async')
     implementation project(':infrastructure:http')
     implementation project(':networking:eth2')
-    implementation project(':services:serviceutils')
+    implementation project(':infrastructure:serviceutils')
     implementation project(':ssz')
     implementation project(':storage')
     implementation project(':sync')

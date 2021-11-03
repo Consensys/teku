@@ -271,6 +271,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
     int numberOfProducedAttestations = producedAttestations.size();
     return producedAttestations.size() > 0
         ? new AttestationPerformance(
+            analyzedEpoch,
             validatorTracker.getNumberOfValidatorsForEpoch(analyzedEpoch),
             numberOfProducedAttestations,
             (int) inclusionDistanceStatistics.getCount(),
@@ -280,7 +281,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
             correctTargetCount,
             correctHeadBlockCount)
         : AttestationPerformance.empty(
-            validatorTracker.getNumberOfValidatorsForEpoch(analyzedEpoch));
+            analyzedEpoch, validatorTracker.getNumberOfValidatorsForEpoch(analyzedEpoch));
   }
 
   private Set<BeaconBlock> getBlocksInEpochs(UInt64 startEpochInclusive, UInt64 endEpochExclusive) {
