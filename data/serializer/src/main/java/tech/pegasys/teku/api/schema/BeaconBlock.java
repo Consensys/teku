@@ -27,13 +27,13 @@ public class BeaconBlock implements UnsignedBlock {
   @Schema(type = "string", format = "uint64")
   public final UInt64 slot;
 
-  @Schema(type = "string", format = "uint64")
+  @Schema(name = "proposer_index", type = "string", format = "uint64")
   public final UInt64 proposerIndex;
 
-  @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
+  @Schema(name = "parent_root", type = "string", format = "byte", description = DESCRIPTION_BYTES32)
   public final Bytes32 parentRoot;
 
-  @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
+  @Schema(name = "state_root", type = "string", format = "byte", description = DESCRIPTION_BYTES32)
   public final Bytes32 stateRoot;
 
   protected final BeaconBlockBody body;
