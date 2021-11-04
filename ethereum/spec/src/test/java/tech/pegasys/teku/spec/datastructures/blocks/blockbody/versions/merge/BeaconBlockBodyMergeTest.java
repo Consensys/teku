@@ -56,7 +56,8 @@ class BeaconBlockBodyMergeTest extends AbstractBeaconBlockBodyTest<BeaconBlockBo
 
   @Override
   protected BeaconBlockBodySchema<? extends BeaconBlockBodyMerge> getBlockBodySchema() {
-    return BeaconBlockBodySchemaMerge.create(spec.getGenesisSpecConfig());
+    return (BeaconBlockBodySchemaMerge<?>)
+        spec.getGenesisSchemaDefinitions().getBeaconBlockBodySchema();
   }
 
   @Override

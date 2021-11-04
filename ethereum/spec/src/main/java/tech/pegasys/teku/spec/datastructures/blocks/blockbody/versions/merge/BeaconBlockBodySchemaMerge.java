@@ -14,25 +14,15 @@
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge;
 
 import java.util.Optional;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigMerge;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload.ExecutionPayloadSchema;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 
 public interface BeaconBlockBodySchemaMerge<T extends BeaconBlockBodyMerge>
     extends BeaconBlockBodySchemaAltair<T> {
 
-  static BeaconBlockBodySchemaMerge<?> create(final SpecConfig specConfig) {
-    return SpecConfigMerge.required(
-        specConfig,
-        config ->
-            BeaconBlockBodySchemaMergeImpl.create(
-                config.getMaxProposerSlashings(),
-                config.getMaxAttesterSlashings(),
-                config.getMaxAttestations(),
-                config.getMaxDeposits(),
-                config.getMaxVoluntaryExits(),
-                config.getSyncCommitteeSize()));
+  static BeaconBlockBodySchemaMerge<?> create(final SpecConfigMerge specConfig) {
+    return BeaconBlockBodySchemaMergeImpl.create(specConfig);
   }
 
   ExecutionPayloadSchema getExecutionPayloadSchema();
