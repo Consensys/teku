@@ -22,10 +22,6 @@ public class TransactionSchema extends SszByteListSchemaImpl<Transaction> {
   public TransactionSchema(final SpecConfigMerge specConfig) {
     super(specConfig.getMaxBytesPerTransaction());
   }
-  //
-  //  public Transaction createOpaque(SszByteList bytes) {
-  //    return createFromValue(Transaction.OPAQUE_TRANSACTION_SELECTOR, bytes);
-  //  }
 
   @Override
   public Transaction createFromBackingNode(TreeNode node) {
