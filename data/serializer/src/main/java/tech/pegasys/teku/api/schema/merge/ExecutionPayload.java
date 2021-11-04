@@ -28,7 +28,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
 import tech.pegasys.teku.ssz.collections.SszByteList;
 import tech.pegasys.teku.ssz.type.Bytes20;
@@ -89,7 +88,6 @@ public class ExecutionPayload extends ExecutionPayloadCommon {
         executionPayload.getBlockHash());
     this.transactions =
         executionPayload.getTransactions().stream()
-            .map(Transaction::getOpaqueTransaction)
             .map(SszByteList::getBytes)
             .collect(Collectors.toList());
   }
