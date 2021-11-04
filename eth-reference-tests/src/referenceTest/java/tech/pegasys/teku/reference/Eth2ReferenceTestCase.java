@@ -70,16 +70,12 @@ public abstract class Eth2ReferenceTestCase {
 
           // Disabled while work continues to bring over the merge work
           .put("sanity/blocks", TestExecutor.IGNORE_TESTS)
-          .put("operations/proposer_slashing", TestExecutor.IGNORE_TESTS)
-          .put("operations/attester_slashing", TestExecutor.IGNORE_TESTS)
           .put("operations/execution_payload", TestExecutor.IGNORE_TESTS)
           .put("genesis/initialization", TestExecutor.IGNORE_TESTS)
           .put("fork_choice/on_merge_block", TestExecutor.IGNORE_TESTS)
           .put("fork_choice/on_block", TestExecutor.IGNORE_TESTS)
           .put("fork_choice/get_head", TestExecutor.IGNORE_TESTS)
           .put("finality/finality", TestExecutor.IGNORE_TESTS)
-          .put("epoch_processing/slashings", TestExecutor.IGNORE_TESTS)
-          .put("epoch_processing/rewards_and_penalties", TestExecutor.IGNORE_TESTS)
           .put("epoch_processing/sync_committee_updates", TestExecutor.IGNORE_TESTS)
           .build();
 
