@@ -105,7 +105,7 @@ class BeaconBlockBodySchemaMergeImpl
             BlockBodyFields.SYNC_AGGREGATE.name(),
             SyncAggregateSchema.create(specConfig.getSyncCommitteeSize())),
         namedSchema(
-            BlockBodyFields.EXECUTION_PAYLOAD.name(), ExecutionPayloadSchema.create(specConfig)));
+            BlockBodyFields.EXECUTION_PAYLOAD.name(), new ExecutionPayloadSchema(specConfig)));
   }
 
   @Override

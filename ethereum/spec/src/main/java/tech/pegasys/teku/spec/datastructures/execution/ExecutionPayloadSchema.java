@@ -51,10 +51,7 @@ public class ExecutionPayloadSchema
         SszBytes32,
         SszList<Transaction>> {
 
-  private final TransactionSchema transactionSchema;
-
-  private ExecutionPayloadSchema(
-      final SpecConfigMerge specConfig, final TransactionSchema transactionSchema) {
+  public ExecutionPayloadSchema(final SpecConfigMerge specConfig) {
     super(
         "ExecutionPayload",
         namedSchema("parent_hash", SszPrimitiveSchemas.BYTES32_SCHEMA),
@@ -72,13 +69,8 @@ public class ExecutionPayloadSchema
         namedSchema("block_hash", SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(
             "transactions",
-            SszListSchema.create(transactionSchema, specConfig.getMaxTransactionsPerPayload())));
-    this.transactionSchema = transactionSchema;
-  }
-
-  public static ExecutionPayloadSchema create(final SpecConfigMerge specConfig) {
-    final TransactionSchema transactionSchema = new TransactionSchema(specConfig);
-    return new ExecutionPayloadSchema(specConfig, transactionSchema);
+            SszListSchema.create(
+                new TransactionSchema(specConfig), specConfig.getMaxTransactionsPerPayload())));
   }
 
   public ExecutionPayload create(
@@ -112,9 +104,13 @@ public class ExecutionPayloadSchema
         SszUInt256.of(baseFeePerGas),
         SszBytes32.of(blockHash),
         transactions.stream()
-            .map(txBytes -> transactionSchema.getOpaqueTransactionSchema().fromBytes(txBytes))
-            .map(transactionSchema::createOpaque)
+            .map(getTransactionSchema()::fromBytes)
             .collect(getTransactionsSchema().collector()));
+  }
+
+  @SuppressWarnings("unchecked")
+  private TransactionSchema getTransactionSchema() {
+    return (TransactionSchema) getTransactionsSchema().getElementSchema();
   }
 
   @SuppressWarnings("unchecked")

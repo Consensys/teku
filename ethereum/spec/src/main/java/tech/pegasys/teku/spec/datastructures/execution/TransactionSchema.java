@@ -13,27 +13,19 @@
 
 package tech.pegasys.teku.spec.datastructures.execution;
 
-import java.util.List;
 import tech.pegasys.teku.spec.config.SpecConfigMerge;
-import tech.pegasys.teku.ssz.collections.SszByteList;
-import tech.pegasys.teku.ssz.schema.collections.SszByteListSchema;
-import tech.pegasys.teku.ssz.schema.impl.SszUnionSchemaImpl;
+import tech.pegasys.teku.ssz.schema.collections.impl.SszByteListSchemaImpl;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 
-public class TransactionSchema extends SszUnionSchemaImpl<Transaction> {
+public class TransactionSchema extends SszByteListSchemaImpl<Transaction> {
 
   public TransactionSchema(final SpecConfigMerge specConfig) {
-    super(List.of(SszByteListSchema.create(specConfig.getMaxBytesPerTransaction())));
+    super(specConfig.getMaxBytesPerTransaction());
   }
-
-  public Transaction createOpaque(SszByteList bytes) {
-    return createFromValue(Transaction.OPAQUE_TRANSACTION_SELECTOR, bytes);
-  }
-
-  @SuppressWarnings("unchecked")
-  public SszByteListSchema<?> getOpaqueTransactionSchema() {
-    return (SszByteListSchema<?>) getChildSchema(Transaction.OPAQUE_TRANSACTION_SELECTOR);
-  }
+  //
+  //  public Transaction createOpaque(SszByteList bytes) {
+  //    return createFromValue(Transaction.OPAQUE_TRANSACTION_SELECTOR, bytes);
+  //  }
 
   @Override
   public Transaction createFromBackingNode(TreeNode node) {
