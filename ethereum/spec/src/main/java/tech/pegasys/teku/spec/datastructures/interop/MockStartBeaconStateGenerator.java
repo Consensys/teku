@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.datastructures.interop;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -47,7 +48,7 @@ public class MockStartBeaconStateGenerator {
       deposits.add(deposit);
     }
     final BeaconState initialState =
-        spec.initializeBeaconStateFromEth1(BLOCK_HASH, genesisTime, deposits);
+        spec.initializeBeaconStateFromEth1(BLOCK_HASH, genesisTime, deposits, Optional.empty());
     return initialState.updated(state -> state.setGenesis_time(genesisTime));
   }
 }
