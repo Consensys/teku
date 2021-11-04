@@ -66,6 +66,6 @@ public class EpochProcessorMerge extends EpochProcessorAltair {
 
   @Override
   protected int getProportionalSlashingMultiplier() {
-    return specConfigMerge.getProportionalSlashingMultiplier();
+    return specConfigMerge.getProportionalSlashingMultiplierMerge();
   }
 }
