@@ -86,18 +86,16 @@ public class LibP2PPeer implements Peer {
 
   @Override
   public void checkPeerIdentity() {
-    if (isConnected()) {
-      getAgentVersionFromIdentity()
-          .thenAccept(
-              maybeAgent -> {
-                LOG.debug("Connected peer has agent string: {}", maybeAgent.orElse("Unknown"));
-                maybeAgentString = maybeAgent;
-                if (maybeAgent.isPresent()) {
-                  peerClientType = getPeerTypeFromAgentString(maybeAgent.get());
-                }
-              })
-          .finish(error -> LOG.error("Failed to retrieve client identity", error));
-    }
+    getAgentVersionFromIdentity()
+        .thenAccept(
+            maybeAgent -> {
+              LOG.debug("Connected peer has agent string: {}", maybeAgent.orElse("Unknown"));
+              maybeAgentString = maybeAgent;
+              if (maybeAgent.isPresent()) {
+                peerClientType = getPeerTypeFromAgentString(maybeAgent.get());
+              }
+            })
+        .finish(error -> LOG.debug("Failed to retrieve client identity", error));
   }
 
   private PeerClientType getPeerTypeFromAgentString(final String agentVersion) {
@@ -156,7 +154,7 @@ public class LibP2PPeer implements Peer {
                 .muxerSession()
                 .createStream(new Identify())
                 .getController()
-                .thenCompose(controller -> SafeFuture.of(controller.id())))
+                .thenCompose(controller -> controller.id()))
         .exceptionallyCompose(
             error -> {
               LOG.debug("Failed to get peer identity", error);

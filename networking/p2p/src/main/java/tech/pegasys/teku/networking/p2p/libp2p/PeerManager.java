@@ -54,7 +54,6 @@ public class PeerManager implements ConnectionHandler {
       new ConcurrentHashMap<>();
   private final ReputationManager reputationManager;
   private final List<PeerHandler> peerHandlers;
-  private final LabelledGauge peersLabelledGauge;
 
   private final Subscribers<PeerConnectedSubscriber<Peer>> connectSubscribers =
       Subscribers.create(true);
@@ -71,7 +70,7 @@ public class PeerManager implements ConnectionHandler {
     this.peerScoreFunction = peerScoreFunction;
     metricsSystem.createGauge(
         TekuMetricCategory.LIBP2P, "peers", "Tracks number of libp2p peers", this::getPeerCount);
-    peersLabelledGauge =
+    final LabelledGauge peersLabelledGauge =
         metricsSystem.createLabelledGauge(
             TekuMetricCategory.LIBP2P,
             "connected_peers_current",
