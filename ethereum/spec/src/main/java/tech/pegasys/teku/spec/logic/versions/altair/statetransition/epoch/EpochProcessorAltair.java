@@ -37,8 +37,8 @@ import tech.pegasys.teku.ssz.primitive.SszByte;
 public class EpochProcessorAltair extends AbstractEpochProcessor {
 
   private final SpecConfigAltair specConfigAltair;
-  private final MiscHelpersAltair miscHelpersAltair;
-  private final BeaconStateAccessorsAltair beaconStateAccessorsAltair;
+  protected final MiscHelpersAltair miscHelpersAltair;
+  protected final BeaconStateAccessorsAltair beaconStateAccessorsAltair;
 
   public EpochProcessorAltair(
       final SpecConfigAltair specConfig,
