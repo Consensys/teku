@@ -28,6 +28,7 @@ import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.collections.SszBitlist;
 import tech.pegasys.teku.ssz.collections.SszBitvector;
+import tech.pegasys.teku.ssz.type.Bytes20;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class JsonProvider {
@@ -47,6 +48,8 @@ public class JsonProvider {
     module.addDeserializer(Bytes32.class, new Bytes32Deserializer());
     module.addDeserializer(Bytes4.class, new Bytes4Deserializer());
     module.addSerializer(Bytes4.class, new Bytes4Serializer());
+    module.addDeserializer(Bytes20.class, new Bytes20Deserializer());
+    module.addSerializer(Bytes20.class, new Bytes20Serializer());
     module.addDeserializer(Bytes.class, new BytesDeserializer());
     module.addSerializer(Bytes.class, new BytesSerializer());
     module.addDeserializer(Double.class, new DoubleDeserializer());
