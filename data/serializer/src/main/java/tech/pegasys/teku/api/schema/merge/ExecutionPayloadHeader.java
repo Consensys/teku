@@ -15,6 +15,7 @@ package tech.pegasys.teku.api.schema.merge;
 
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -37,6 +38,7 @@ public class ExecutionPayloadHeader extends ExecutionPayloadCommon {
       description = DESCRIPTION_BYTES32)
   public final Bytes32 transactionsRoot;
 
+  @JsonCreator
   public ExecutionPayloadHeader(
       @JsonProperty("parent_hash") Bytes32 parentHash,
       @JsonProperty("coinbase") Bytes20 coinbase,

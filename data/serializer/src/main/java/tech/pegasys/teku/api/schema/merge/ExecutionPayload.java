@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.api.schema.merge;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -37,6 +38,7 @@ public class ExecutionPayload extends ExecutionPayloadCommon {
   @ArraySchema(schema = @Schema(type = "string", format = "byte"))
   public final List<Bytes> transactions;
 
+  @JsonCreator
   public ExecutionPayload(
       @JsonProperty("parent_hash") Bytes32 parentHash,
       @JsonProperty("coinbase") Bytes20 coinbase,

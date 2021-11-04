@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.api.schema.merge;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.Objects;
@@ -37,6 +38,7 @@ public class BeaconStateMerge extends BeaconStateAltair {
   @JsonProperty("latest_execution_payload_header")
   public final ExecutionPayloadHeader latestExecutionPayloadHeader;
 
+  @JsonCreator
   public BeaconStateMerge(
       @JsonProperty("genesis_time") final UInt64 genesisTime,
       @JsonProperty("genesis_validators_root") final Bytes32 genesisValidatorsRoot,
