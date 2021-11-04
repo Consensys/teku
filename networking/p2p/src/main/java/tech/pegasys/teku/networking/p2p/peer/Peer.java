@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.p2p.peer;
 import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.networking.p2p.libp2p.PeerClientType;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
@@ -34,6 +35,12 @@ public interface Peer {
   Double getGossipScore();
 
   boolean isConnected();
+
+  default PeerClientType getPeerClientType() {
+    return PeerClientType.UNKNOWN;
+  }
+
+  default void checkPeerIdentity() {}
 
   void disconnectImmediately(Optional<DisconnectReason> reason, boolean locallyInitiated);
 
