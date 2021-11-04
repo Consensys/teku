@@ -79,6 +79,15 @@ public class SpecConfigMergeTest {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
 
     return new SpecConfigMerge(
-        altairConfig, dataStructureUtil.randomBytes4(), dataStructureUtil.randomUInt64());
+        altairConfig,
+        dataStructureUtil.randomBytes4(),
+        dataStructureUtil.randomUInt64(),
+        dataStructureUtil.randomUInt64(),
+        dataStructureUtil.randomPositiveInt(),
+        dataStructureUtil.randomPositiveInt(),
+        dataStructureUtil.randomPositiveInt(),
+        dataStructureUtil.randomPositiveInt(),
+        dataStructureUtil.randomPositiveInt(),
+        dataStructureUtil.randomPositiveInt());
   }
 }
