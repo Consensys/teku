@@ -23,10 +23,13 @@ For information on changes in released versions of Teku, see the [releases page]
 - Updated to Javalin 4 for the rest api.
 - Added relevant epoch to attestation and sync committee performance log message.
 - Removed ignore rule for aggregate attestation gossip where the attestation root has previously been seen.
+- Added metrics to report client type of connected peers - `libp2p_connected_peers_current`, with client tag `Teku`, `Lighthouse`, `Prysm`, `Nimbus`, `Unknown`.
 - Added support for Apple Silicon (M1 chips).
 - Added LevelDB support for Linux/arm64.
 - Switched executor queue size metrics to use labelled gauge.
 - New console message when Teku switches forks. 
+
+
 
 ### Bug Fixes
 - Fixed issue where discovery did not correctly abort handshake attempts when a request timed out.

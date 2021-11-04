@@ -218,6 +218,7 @@ public class SpecConfigBuilder {
     validateConstant("depositContractAddress", depositContractAddress);
 
     altairBuilder.ifPresent(AltairBuilder::validate);
+    mergeBuilder.ifPresent(MergeBuilder::validate);
   }
 
   private void validateConstant(final String name, final Object value) {
@@ -674,16 +675,40 @@ public class SpecConfigBuilder {
     // Fork
     private Bytes4 mergeForkVersion;
     private UInt64 mergeForkEpoch;
+    private UInt64 inactivityPenaltyQuotientMerge;
+    private Integer minSlashingPenaltyQuotientMerge;
+    private Integer proportionalSlashingMultiplierMerge;
+    private Integer maxBytesPerTransaction;
+    private Integer maxTransactionsPerPayload;
+    private Integer bytesPerLogsBloom;
+    private Integer maxExtraDataBytes;
 
     private MergeBuilder() {}
 
     SpecConfigMerge build(final SpecConfigAltair specConfig) {
-      return new SpecConfigMerge(specConfig, mergeForkVersion, mergeForkEpoch);
+      return new SpecConfigMerge(
+          specConfig,
+          mergeForkVersion,
+          mergeForkEpoch,
+          inactivityPenaltyQuotientMerge,
+          minSlashingPenaltyQuotientMerge,
+          proportionalSlashingMultiplierMerge,
+          maxBytesPerTransaction,
+          maxTransactionsPerPayload,
+          bytesPerLogsBloom,
+          maxExtraDataBytes);
     }
 
     void validate() {
       validateConstant("mergeForkVersion", mergeForkVersion);
       validateConstant("mergeForkEpoch", mergeForkEpoch);
+      validateConstant("inactivityPenaltyQuotientMerge", inactivityPenaltyQuotientMerge);
+      validateConstant("minSlashingPenaltyQuotientMerge", minSlashingPenaltyQuotientMerge);
+      validateConstant("proportionalSlashingMultiplierMerge", proportionalSlashingMultiplierMerge);
+      validateConstant("maxBytesPerTransaction", maxBytesPerTransaction);
+      validateConstant("maxTransactionsPerPayload", maxTransactionsPerPayload);
+      validateConstant("bytesPerLogsBloom", bytesPerLogsBloom);
+      validateConstant("maxExtraDataBytes", maxExtraDataBytes);
     }
 
     public MergeBuilder mergeForkVersion(final Bytes4 mergeForkVersion) {
@@ -695,6 +720,44 @@ public class SpecConfigBuilder {
     public MergeBuilder mergeForkEpoch(final UInt64 mergeForkEpoch) {
       checkNotNull(mergeForkEpoch);
       this.mergeForkEpoch = mergeForkEpoch;
+      return this;
+    }
+
+    public MergeBuilder inactivityPenaltyQuotientMerge(
+        final UInt64 inactivityPenaltyQuotientMerge) {
+      this.inactivityPenaltyQuotientMerge = inactivityPenaltyQuotientMerge;
+      return this;
+    }
+
+    public MergeBuilder minSlashingPenaltyQuotientMerge(
+        final Integer minSlashingPenaltyQuotientMerge) {
+      this.minSlashingPenaltyQuotientMerge = minSlashingPenaltyQuotientMerge;
+      return this;
+    }
+
+    public MergeBuilder proportionalSlashingMultiplierMerge(
+        final Integer proportionalSlashingMultiplierMerge) {
+      this.proportionalSlashingMultiplierMerge = proportionalSlashingMultiplierMerge;
+      return this;
+    }
+
+    public MergeBuilder maxBytesPerTransaction(final int maxBytesPerTransaction) {
+      this.maxBytesPerTransaction = maxBytesPerTransaction;
+      return this;
+    }
+
+    public MergeBuilder maxTransactionsPerPayload(final int maxTransactionsPerPayload) {
+      this.maxTransactionsPerPayload = maxTransactionsPerPayload;
+      return this;
+    }
+
+    public MergeBuilder bytesPerLogsBloom(final int bytesPerLogsBloom) {
+      this.bytesPerLogsBloom = bytesPerLogsBloom;
+      return this;
+    }
+
+    public MergeBuilder maxExtraDataBytes(final int maxExtraDataBytes) {
+      this.maxExtraDataBytes = maxExtraDataBytes;
       return this;
     }
   }

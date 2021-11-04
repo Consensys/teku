@@ -20,8 +20,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader.ExecutionPayloadHeaderSchema;
+import tech.pegasys.teku.spec.config.SpecConfigMerge;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
@@ -52,7 +52,7 @@ public class BeaconStateSchemaMerge
         new SszField(
             LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX,
             BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER.name(),
-            () -> ExecutionPayloadHeader.SSZ_SCHEMA);
+            () -> new ExecutionPayloadHeaderSchema(SpecConfigMerge.required(specConfig)));
     return Stream.concat(
             BeaconStateSchemaAltair.getUniqueFields(specConfig).stream(),
             Stream.of(latestExecutionPayloadHeaderField))
@@ -94,7 +94,7 @@ public class BeaconStateSchemaMerge
         getChildSchema(getFieldIndex(BeaconStateFields.NEXT_SYNC_COMMITTEE.name()));
   }
 
-  public ExecutionPayloadHeader.ExecutionPayloadHeaderSchema getLastExecutionPayloadHeaderSchema() {
+  public ExecutionPayloadHeaderSchema getLastExecutionPayloadHeaderSchema() {
     return (ExecutionPayloadHeaderSchema)
         getChildSchema(getFieldIndex(BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER.name()));
   }

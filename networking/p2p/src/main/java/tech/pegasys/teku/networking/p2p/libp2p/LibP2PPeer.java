@@ -13,14 +13,17 @@
 
 package tech.pegasys.teku.networking.p2p.libp2p;
 
+import identify.pb.IdentifyOuterClass;
 import io.libp2p.core.Connection;
 import io.libp2p.core.PeerId;
+import io.libp2p.protocol.Identify;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -48,6 +51,8 @@ public class LibP2PPeer implements Peer {
   private final AtomicBoolean connected = new AtomicBoolean(true);
   private final MultiaddrPeerAddress peerAddress;
   private final PeerId peerId;
+  private volatile PeerClientType peerClientType = PeerClientType.UNKNOWN;
+  private volatile Optional<String> maybeAgentString = Optional.empty();
 
   private volatile Optional<DisconnectReason> disconnectReason = Optional.empty();
   private volatile boolean disconnectLocallyInitiated = false;
@@ -80,6 +85,32 @@ public class LibP2PPeer implements Peer {
   }
 
   @Override
+  public void checkPeerIdentity() {
+    getAgentVersionFromIdentity()
+        .thenAccept(
+            maybeAgent -> {
+              LOG.debug("Connected peer has agent string: {}", maybeAgent.orElse("Unknown"));
+              maybeAgentString = maybeAgent;
+              if (maybeAgent.isPresent()) {
+                peerClientType = getPeerTypeFromAgentString(maybeAgent.get());
+              }
+            })
+        .finish(error -> LOG.debug("Failed to retrieve client identity", error));
+  }
+
+  private PeerClientType getPeerTypeFromAgentString(final String agentVersion) {
+    String agent = agentVersion;
+    if (agentVersion.contains("/")) {
+      agent = agentVersion.substring(0, agentVersion.indexOf("/"));
+    }
+    return EnumUtils.getEnumIgnoreCase(PeerClientType.class, agent, PeerClientType.UNKNOWN);
+  }
+
+  public Optional<String> getMaybeAgentString() {
+    return maybeAgentString;
+  }
+
+  @Override
   public PeerAddress getAddress() {
     return peerAddress;
   }
@@ -95,6 +126,11 @@ public class LibP2PPeer implements Peer {
   }
 
   @Override
+  public PeerClientType getPeerClientType() {
+    return peerClientType;
+  }
+
+  @Override
   public void disconnectImmediately(
       final Optional<DisconnectReason> reason, final boolean locallyInitiated) {
     connected.set(false);
@@ -104,6 +140,26 @@ public class LibP2PPeer implements Peer {
         .finish(
             () -> LOG.trace("Disconnected from {} because {}", getId(), reason),
             error -> LOG.warn("Failed to disconnect from peer {}", getId(), error));
+  }
+
+  private SafeFuture<Optional<String>> getAgentVersionFromIdentity() {
+    return getIdentify()
+        .thenApply(
+            id -> id.hasAgentVersion() ? Optional.of(id.getAgentVersion()) : Optional.empty());
+  }
+
+  private SafeFuture<IdentifyOuterClass.Identify> getIdentify() {
+    return SafeFuture.of(
+            connection
+                .muxerSession()
+                .createStream(new Identify())
+                .getController()
+                .thenCompose(controller -> controller.id()))
+        .exceptionallyCompose(
+            error -> {
+              LOG.debug("Failed to get peer identity", error);
+              return SafeFuture.failedFuture(error);
+            });
   }
 
   @Override

@@ -11,21 +11,22 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.infrastructure.restapi.endpoints;
+package tech.pegasys.teku.networking.p2p.libp2p;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+public enum PeerClientType {
+  UNKNOWN("Unknown"),
+  LIGHTHOUSE("Lighthouse"),
+  NIMBUS("Nimbus"),
+  PRYSM("Prysm"),
+  TEKU("Teku");
 
-public abstract class RestApiEndpoint {
+  private final String displayName;
 
-  private final EndpointMetadata metadata;
-
-  protected RestApiEndpoint(final EndpointMetadata metadata) {
-    this.metadata = metadata;
+  PeerClientType(final String displayName) {
+    this.displayName = displayName;
   }
 
-  public EndpointMetadata getMetadata() {
-    return metadata;
+  public String getDisplayName() {
+    return displayName;
   }
-
-  public abstract void handle(RestApiRequest request) throws JsonProcessingException;
 }
