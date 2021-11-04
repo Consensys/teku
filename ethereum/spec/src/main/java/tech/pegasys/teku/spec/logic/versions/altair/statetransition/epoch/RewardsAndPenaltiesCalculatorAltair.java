@@ -137,12 +137,14 @@ public class RewardsAndPenaltiesCalculatorAltair extends RewardsAndPenaltiesCalc
               .getCurrentEpochEffectiveBalance()
               .times(stateAltair.getInactivityScores().get(i).get());
       final UInt64 penaltyDenominator =
-          specConfigAltair
-              .getInactivityScoreBias()
-              .times(specConfigAltair.getInactivityPenaltyQuotientAltair());
+          specConfigAltair.getInactivityScoreBias().times(getInactivityPenaltyQuotient());
       final UInt64 penalty = penaltyNumerator.dividedBy(penaltyDenominator);
       deltas.getDelta(i).penalize(penalty);
     }
+  }
+
+  protected UInt64 getInactivityPenaltyQuotient() {
+    return specConfigAltair.getInactivityPenaltyQuotientAltair();
   }
 
   private boolean validatorHasPrevEpochParticipationFlag(
