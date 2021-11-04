@@ -36,11 +36,11 @@ import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.block.BlockProcessorAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.forktransition.AltairStateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
-import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateMutatorsAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.attestation.AttestationWorthinessCheckerAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.EpochProcessorAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.ValidatorStatusFactoryAltair;
+import tech.pegasys.teku.spec.logic.versions.merge.helpers.BeaconStateMutatorsMerge;
 import tech.pegasys.teku.spec.logic.versions.merge.statetransition.epoch.EpochProcessorMerge;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
 
@@ -94,8 +94,8 @@ public class SpecLogicMerge extends AbstractSpecLogic {
     final MiscHelpersAltair miscHelpers = new MiscHelpersAltair(config);
     final BeaconStateAccessorsAltair beaconStateAccessors =
         new BeaconStateAccessorsAltair(config, predicates, miscHelpers);
-    final BeaconStateMutatorsAltair beaconStateMutators =
-        new BeaconStateMutatorsAltair(config, miscHelpers, beaconStateAccessors);
+    final BeaconStateMutatorsMerge beaconStateMutators =
+        new BeaconStateMutatorsMerge(config, miscHelpers, beaconStateAccessors);
 
     // Operation validaton
     final OperationSignatureVerifier operationSignatureVerifier =
