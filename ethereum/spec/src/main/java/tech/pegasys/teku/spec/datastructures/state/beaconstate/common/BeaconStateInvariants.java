@@ -118,6 +118,6 @@ public class BeaconStateInvariants {
             .add("finalized_checkpoint", state.getFinalized_checkpoint());
 
     modifier.accept(builder);
-    return builder.toString().replace(",", "\n");
+    return builder.toString();
   }
 }
