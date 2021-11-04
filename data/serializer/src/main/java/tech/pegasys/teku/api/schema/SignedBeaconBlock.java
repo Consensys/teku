@@ -18,6 +18,7 @@ import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES96;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import java.util.Optional;
@@ -29,6 +30,7 @@ import tech.pegasys.teku.api.schema.merge.BeaconBlockMerge;
 import tech.pegasys.teku.api.schema.phase0.BeaconBlockPhase0;
 import tech.pegasys.teku.spec.Spec;
 
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
 @JsonSubTypes({
   @JsonSubTypes.Type(value = SignedBeaconBlock.SignedBeaconBlockMerge.class),
   @JsonSubTypes.Type(value = SignedBeaconBlock.SignedBeaconBlockAltair.class),
