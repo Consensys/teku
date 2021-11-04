@@ -49,7 +49,7 @@ public class AttestationManager extends Service
 
   private final ForkChoice attestationProcessor;
 
-  private final Set<Bytes32> processedAggregateAttestations = LimitedSet.create(1000);
+  private final Set<Bytes32> processedAggregateAttestations = LimitedSet.create(5000);
   private final PendingPool<ValidateableAttestation> pendingAttestations;
   private final FutureItems<ValidateableAttestation> futureAttestations;
   private final AggregatingAttestationPool aggregatingAttestationPool;
