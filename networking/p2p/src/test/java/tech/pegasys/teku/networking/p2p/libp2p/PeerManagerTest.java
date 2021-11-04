@@ -14,6 +14,8 @@
 package tech.pegasys.teku.networking.p2p.libp2p;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -30,9 +32,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.LabelledGauge;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
@@ -68,6 +73,26 @@ public class PeerManagerTest {
     when(peer2.getId()).thenReturn(new MockNodeId(2));
     peerManager.onConnectedPeer(peer2);
     assertThat(connectedPeers).containsExactly(peer, peer2);
+  }
+
+  @Test
+  public void shouldCreatePeerTypeMetrics() {
+    final MetricsSystem metricsSystem = mock(MetricsSystem.class);
+    final LabelledGauge gauge = mock(LabelledGauge.class);
+
+    when(metricsSystem.createLabelledGauge(
+            eq(TekuMetricCategory.LIBP2P), eq("connected_peers_current"), any(), any()))
+        .thenReturn(gauge);
+    new PeerManager(
+        metricsSystem,
+        reputationManager,
+        Collections.emptyList(),
+        Collections.emptyList(),
+        peerId -> 0.0);
+
+    for (PeerClientType type : PeerClientType.values()) {
+      verify(gauge).labels(any(), eq(type.getDisplayName()));
+    }
   }
 
   @Test
