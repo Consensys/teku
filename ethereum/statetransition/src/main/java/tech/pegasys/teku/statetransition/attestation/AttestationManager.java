@@ -14,11 +14,13 @@
 package tech.pegasys.teku.statetransition.attestation;
 
 import java.util.List;
+import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
@@ -47,6 +49,7 @@ public class AttestationManager extends Service
 
   private final ForkChoice attestationProcessor;
 
+  private final Set<Bytes32> processedAggregateAttestations = LimitedSet.create(1000);
   private final PendingPool<ValidateableAttestation> pendingAttestations;
   private final FutureItems<ValidateableAttestation> futureAttestations;
   private final AggregatingAttestationPool aggregatingAttestationPool;
@@ -128,7 +131,11 @@ public class AttestationManager extends Service
   public SafeFuture<InternalValidationResult> addAggregate(ValidateableAttestation attestation) {
     SafeFuture<InternalValidationResult> validationResult =
         aggregateValidator.validate(attestation);
-    processInternallyValidatedAttestation(validationResult, attestation);
+    // We have to validate every aggregate as part of gossip handling since the aggregator may
+    // differ but if we've already processed the wrapped attestation we can skip processing
+    if (processedAggregateAttestations.add(attestation.hash_tree_root())) {
+      processInternallyValidatedAttestation(validationResult, attestation);
+    }
     return validationResult;
   }
 
