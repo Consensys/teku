@@ -61,6 +61,29 @@ public abstract class Eth2ReferenceTestCase {
           .putAll(RewardsTestExecutorAltair.REWARDS_TEST_TYPES)
           .build();
 
+  private final ImmutableMap<String, TestExecutor> MERGE_TEST_TYPES =
+      ImmutableMap.<String, TestExecutor>builder()
+          .putAll(TransitionTestExecutor.TRANSITION_TEST_TYPES)
+          .putAll(ForkUpgradeTestExecutor.FORK_UPGRADE_TEST_TYPES)
+
+          // Disabled while work continues to bring over the merge work
+          .put("sanity/blocks", TestExecutor.IGNORE_TESTS)
+          .put("rewards/leak", TestExecutor.IGNORE_TESTS)
+          .put("rewards/basic", TestExecutor.IGNORE_TESTS)
+          .put("rewards/random", TestExecutor.IGNORE_TESTS)
+          .put("operations/proposer_slashing", TestExecutor.IGNORE_TESTS)
+          .put("operations/attester_slashing", TestExecutor.IGNORE_TESTS)
+          .put("operations/execution_payload", TestExecutor.IGNORE_TESTS)
+          .put("genesis/initialization", TestExecutor.IGNORE_TESTS)
+          .put("fork_choice/on_merge_block", TestExecutor.IGNORE_TESTS)
+          .put("fork_choice/on_block", TestExecutor.IGNORE_TESTS)
+          .put("fork_choice/get_head", TestExecutor.IGNORE_TESTS)
+          .put("finality/finality", TestExecutor.IGNORE_TESTS)
+          .put("epoch_processing/slashings", TestExecutor.IGNORE_TESTS)
+          .put("epoch_processing/rewards_and_penalties", TestExecutor.IGNORE_TESTS)
+          .put("epoch_processing/sync_committee_updates", TestExecutor.IGNORE_TESTS)
+          .build();
+
   protected void runReferenceTest(final TestDefinition testDefinition) throws Throwable {
     setConstants(testDefinition.getConfigName());
     getExecutorFor(testDefinition).runTest(testDefinition);
@@ -74,15 +97,20 @@ public abstract class Eth2ReferenceTestCase {
   }
 
   private TestExecutor getExecutorFor(final TestDefinition testDefinition) {
-    TestExecutor testExecutor = COMMON_TEST_TYPES.get(testDefinition.getTestType());
+    TestExecutor testExecutor = null;
 
-    // Look for fork-specific tests if there is no common test type
+    // Look for fork-specific tests first
+    if (testDefinition.getFork().equals(TestFork.PHASE0)) {
+      testExecutor = PHASE_0_TEST_TYPES.get(testDefinition.getTestType());
+    } else if (testDefinition.getFork().equals(TestFork.ALTAIR)) {
+      testExecutor = ALTAIR_TEST_TYPES.get(testDefinition.getTestType());
+    } else if (testDefinition.getFork().equals(TestFork.MERGE)) {
+      testExecutor = MERGE_TEST_TYPES.get(testDefinition.getTestType());
+    }
+
+    // Look for a common test type if no specific override present
     if (testExecutor == null) {
-      if (testDefinition.getFork().equals(TestFork.PHASE0)) {
-        testExecutor = PHASE_0_TEST_TYPES.get(testDefinition.getTestType());
-      } else if (testDefinition.getFork().equals(TestFork.ALTAIR)) {
-        testExecutor = ALTAIR_TEST_TYPES.get(testDefinition.getTestType());
-      }
+      testExecutor = COMMON_TEST_TYPES.get(testDefinition.getTestType());
     }
 
     if (testExecutor == null) {
