@@ -30,7 +30,6 @@ import tech.pegasys.teku.api.schema.merge.BeaconBlockMerge;
 import tech.pegasys.teku.api.schema.phase0.BeaconBlockPhase0;
 import tech.pegasys.teku.spec.Spec;
 
-@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, property = "type")
 @JsonSubTypes({
   @JsonSubTypes.Type(value = SignedBeaconBlock.SignedBeaconBlockMerge.class),
   @JsonSubTypes.Type(value = SignedBeaconBlock.SignedBeaconBlockAltair.class),
