@@ -62,8 +62,8 @@ class MetricTrackingExecutorFactoryTest {
     assertThat(task3.isStarted()).isFalse();
 
     final StubLabelledGauge gauge =
-        metricSystem.getLabelledGauge(TekuMetricCategory.EXECUTOR, "foo_queue");
-    assertThat(gauge.getValue("size").getAsDouble()).isEqualTo(1.0);
+        metricSystem.getLabelledGauge(TekuMetricCategory.EXECUTOR, "queue_size");
+    assertThat(gauge.getValue("foo").getAsDouble()).isEqualTo(1.0);
 
     assertThat(
             metricSystem
@@ -77,7 +77,7 @@ class MetricTrackingExecutorFactoryTest {
     task1.allowCompletion();
 
     task3.assertStarted();
-    assertThat(gauge.getValue("size").getAsDouble()).isEqualTo(0.0);
+    assertThat(gauge.getValue("foo").getAsDouble()).isEqualTo(0.0);
 
     task2.allowCompletion();
     task3.allowCompletion();

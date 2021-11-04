@@ -69,10 +69,10 @@ public class MetricTrackingExecutorFactory {
     metricsSystem
         .createLabelledGauge(
             TekuMetricCategory.EXECUTOR,
-            name + "_queue",
+            "queue_size",
             "Current size of the executor task queue",
             "name")
-        .labels(() -> executor.getQueue().size(), "size");
+        .labels(() -> executor.getQueue().size(), name);
 
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.EXECUTOR,
