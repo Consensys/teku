@@ -88,6 +88,9 @@ public class SpecConfigMergeTest {
         dataStructureUtil.randomPositiveInt(),
         dataStructureUtil.randomPositiveInt(),
         dataStructureUtil.randomPositiveInt(),
-        dataStructureUtil.randomPositiveInt());
+        dataStructureUtil.randomPositiveInt(),
+        dataStructureUtil.randomUInt256(),
+        dataStructureUtil.randomBytes32(),
+        dataStructureUtil.randomUInt64());
   }
 }

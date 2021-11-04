@@ -15,6 +15,8 @@ package tech.pegasys.teku.spec.config;
 
 import java.util.Objects;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
@@ -31,6 +33,11 @@ public class SpecConfigMerge extends DelegatingSpecConfigAltair {
   private final int bytesPerLogsBloom;
   private final int maxExtraDataBytes;
 
+  // Transition
+  private final UInt256 terminalTotalDifficulty;
+  private final Bytes32 terminalBlockHash;
+  private final UInt64 terminalBlockHashActivationEpoch;
+
   public SpecConfigMerge(
       final SpecConfigAltair specConfig,
       final Bytes4 mergeForkVersion,
@@ -41,7 +48,10 @@ public class SpecConfigMerge extends DelegatingSpecConfigAltair {
       final int maxBytesPerTransaction,
       final int maxTransactionsPerPayload,
       final int bytesPerLogsBloom,
-      final int maxExtraDataBytes) {
+      final int maxExtraDataBytes,
+      final UInt256 terminalTotalDifficulty,
+      final Bytes32 terminalBlockHash,
+      final UInt64 terminalBlockHashActivationEpoch) {
     super(specConfig);
     this.mergeForkVersion = mergeForkVersion;
     this.mergeForkEpoch = mergeForkEpoch;
@@ -52,6 +62,9 @@ public class SpecConfigMerge extends DelegatingSpecConfigAltair {
     this.maxTransactionsPerPayload = maxTransactionsPerPayload;
     this.bytesPerLogsBloom = bytesPerLogsBloom;
     this.maxExtraDataBytes = maxExtraDataBytes;
+    this.terminalTotalDifficulty = terminalTotalDifficulty;
+    this.terminalBlockHash = terminalBlockHash;
+    this.terminalBlockHashActivationEpoch = terminalBlockHashActivationEpoch;
   }
 
   public static SpecConfigMerge required(final SpecConfig specConfig) {
@@ -100,6 +113,18 @@ public class SpecConfigMerge extends DelegatingSpecConfigAltair {
     return maxExtraDataBytes;
   }
 
+  public UInt256 getTerminalTotalDifficulty() {
+    return terminalTotalDifficulty;
+  }
+
+  public Bytes32 getTerminalBlockHash() {
+    return terminalBlockHash;
+  }
+
+  public UInt64 getTerminalBlockHashActivationEpoch() {
+    return terminalBlockHashActivationEpoch;
+  }
+
   @Override
   public Optional<SpecConfigMerge> toVersionMerge() {
     return Optional.of(this);
@@ -123,7 +148,10 @@ public class SpecConfigMerge extends DelegatingSpecConfigAltair {
         && maxExtraDataBytes == that.maxExtraDataBytes
         && Objects.equals(mergeForkVersion, that.mergeForkVersion)
         && Objects.equals(mergeForkEpoch, that.mergeForkEpoch)
-        && Objects.equals(inactivityPenaltyQuotientMerge, that.inactivityPenaltyQuotientMerge);
+        && Objects.equals(inactivityPenaltyQuotientMerge, that.inactivityPenaltyQuotientMerge)
+        && Objects.equals(terminalTotalDifficulty, that.terminalTotalDifficulty)
+        && Objects.equals(terminalBlockHash, that.terminalBlockHash)
+        && Objects.equals(terminalBlockHashActivationEpoch, that.terminalBlockHashActivationEpoch);
   }
 
   @Override
@@ -138,6 +166,9 @@ public class SpecConfigMerge extends DelegatingSpecConfigAltair {
         maxBytesPerTransaction,
         maxTransactionsPerPayload,
         bytesPerLogsBloom,
-        maxExtraDataBytes);
+        maxExtraDataBytes,
+        terminalTotalDifficulty,
+        terminalBlockHash,
+        terminalBlockHashActivationEpoch);
   }
 }

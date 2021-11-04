@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
@@ -160,7 +162,8 @@ public class SpecConfigBuilder {
       final SpecConfigAltair altairConfig = altairBuilder.get().build(config);
       config = altairConfig;
       if (mergeBuilder.isPresent()) {
-        config = mergeBuilder.get().build(altairConfig);
+        final SpecConfigMerge mergeConfig = mergeBuilder.get().build(altairConfig);
+        config = mergeBuilder.get().build(mergeConfig);
       }
     }
     return config;
@@ -683,6 +686,11 @@ public class SpecConfigBuilder {
     private Integer bytesPerLogsBloom;
     private Integer maxExtraDataBytes;
 
+    // Transition
+    private UInt256 terminalTotalDifficulty;
+    private Bytes32 terminalBlockHash;
+    private UInt64 terminalBlockHashActivationEpoch;
+
     private MergeBuilder() {}
 
     SpecConfigMerge build(final SpecConfigAltair specConfig) {
@@ -696,7 +704,10 @@ public class SpecConfigBuilder {
           maxBytesPerTransaction,
           maxTransactionsPerPayload,
           bytesPerLogsBloom,
-          maxExtraDataBytes);
+          maxExtraDataBytes,
+          terminalTotalDifficulty,
+          terminalBlockHash,
+          terminalBlockHashActivationEpoch);
     }
 
     void validate() {
@@ -709,6 +720,9 @@ public class SpecConfigBuilder {
       validateConstant("maxTransactionsPerPayload", maxTransactionsPerPayload);
       validateConstant("bytesPerLogsBloom", bytesPerLogsBloom);
       validateConstant("maxExtraDataBytes", maxExtraDataBytes);
+      validateConstant("terminalTotalDifficulty", terminalTotalDifficulty);
+      validateConstant("terminalBlockHash", terminalBlockHash);
+      validateConstant("terminalBlockHashActivationEpoch", terminalBlockHashActivationEpoch);
     }
 
     public MergeBuilder mergeForkVersion(final Bytes4 mergeForkVersion) {
@@ -753,6 +767,22 @@ public class SpecConfigBuilder {
 
     public MergeBuilder bytesPerLogsBloom(final int bytesPerLogsBloom) {
       this.bytesPerLogsBloom = bytesPerLogsBloom;
+      return this;
+    }
+
+    public MergeBuilder terminalTotalDifficulty(final UInt256 terminalTotalDifficulty) {
+      this.terminalTotalDifficulty = terminalTotalDifficulty;
+      return this;
+    }
+
+    public MergeBuilder terminalBlockHash(final Bytes32 terminalBlockHash) {
+      this.terminalBlockHash = terminalBlockHash;
+      return this;
+    }
+
+    public MergeBuilder terminalBlockHashActivationEpoch(
+        final UInt64 terminalBlockHashActivationEpoch) {
+      this.terminalBlockHashActivationEpoch = terminalBlockHashActivationEpoch;
       return this;
     }
 

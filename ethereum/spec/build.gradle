@@ -1,6 +1,7 @@
 dependencies {
     api 'it.unimi.dsi:fastutil'
     api 'org.apache.tuweni:tuweni-bytes'
+    api 'org.web3j:core'
 
     implementation project(':ssz')
 
@@ -34,6 +35,7 @@ dependencies {
     implementation project(':infrastructure:async')
     implementation project(':infrastructure:crypto')
     api project(':infrastructure:collections')
+    implementation project(':infrastructure:events')
     implementation project(':infrastructure:io')
     implementation project(':infrastructure:logging')
     implementation project(':ethereum:pow:api')

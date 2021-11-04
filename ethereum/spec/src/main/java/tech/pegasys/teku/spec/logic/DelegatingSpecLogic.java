@@ -29,9 +29,11 @@ import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.Validato
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
+import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.logic.versions.merge.helpers.MergeTransitionHelpers;
 
 public class DelegatingSpecLogic implements SpecLogic {
   private final SpecLogic specLogic;
@@ -93,6 +95,16 @@ public class DelegatingSpecLogic implements SpecLogic {
   @Override
   public ValidatorStatusFactory getValidatorStatusFactory() {
     return specLogic.getValidatorStatusFactory();
+  }
+
+  @Override
+  public Optional<ExecutionPayloadUtil> getExecutionPayloadUtil() {
+    return specLogic.getExecutionPayloadUtil();
+  }
+
+  @Override
+  public Optional<MergeTransitionHelpers> getMergeTransitionHelpers() {
+    return specLogic.getMergeTransitionHelpers();
   }
 
   @Override
