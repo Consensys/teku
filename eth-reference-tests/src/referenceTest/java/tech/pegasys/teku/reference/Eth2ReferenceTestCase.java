@@ -20,6 +20,7 @@ import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.altair.fork.ForkUpgradeTestExecutor;
 import tech.pegasys.teku.reference.altair.fork.TransitionTestExecutor;
 import tech.pegasys.teku.reference.altair.rewards.RewardsTestExecutorAltair;
+import tech.pegasys.teku.reference.altair.rewards.RewardsTestExecutorMerge;
 import tech.pegasys.teku.reference.common.epoch_processing.EpochProcessingTestExecutor;
 import tech.pegasys.teku.reference.common.operations.OperationsTestExecutor;
 import tech.pegasys.teku.reference.phase0.bls.BlsTests;
@@ -65,12 +66,10 @@ public abstract class Eth2ReferenceTestCase {
       ImmutableMap.<String, TestExecutor>builder()
           .putAll(TransitionTestExecutor.TRANSITION_TEST_TYPES)
           .putAll(ForkUpgradeTestExecutor.FORK_UPGRADE_TEST_TYPES)
+          .putAll(RewardsTestExecutorMerge.REWARDS_TEST_TYPES)
 
           // Disabled while work continues to bring over the merge work
           .put("sanity/blocks", TestExecutor.IGNORE_TESTS)
-          .put("rewards/leak", TestExecutor.IGNORE_TESTS)
-          .put("rewards/basic", TestExecutor.IGNORE_TESTS)
-          .put("rewards/random", TestExecutor.IGNORE_TESTS)
           .put("operations/proposer_slashing", TestExecutor.IGNORE_TESTS)
           .put("operations/attester_slashing", TestExecutor.IGNORE_TESTS)
           .put("operations/execution_payload", TestExecutor.IGNORE_TESTS)

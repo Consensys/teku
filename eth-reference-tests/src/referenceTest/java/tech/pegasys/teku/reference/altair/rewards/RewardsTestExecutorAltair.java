@@ -53,13 +53,20 @@ public class RewardsTestExecutorAltair implements TestExecutor {
 
     final SpecVersion spec = testDefinition.getSpec().getGenesisSpec();
     final RewardsAndPenaltiesCalculatorAltair calculator =
-        new RewardsAndPenaltiesCalculatorAltair(
-            SpecConfigAltair.required(spec.getConfig()),
-            BeaconStateAltair.required(preState),
-            validatorStatuses,
-            (MiscHelpersAltair) spec.miscHelpers(),
-            (BeaconStateAccessorsAltair) spec.beaconStateAccessors());
+        createRewardsAndPenaltiesCalculator(preState, validatorStatuses, spec);
     runTest(testDefinition, calculator, validatorStatuses);
+  }
+
+  protected RewardsAndPenaltiesCalculatorAltair createRewardsAndPenaltiesCalculator(
+      final BeaconState preState,
+      final ValidatorStatuses validatorStatuses,
+      final SpecVersion spec) {
+    return new RewardsAndPenaltiesCalculatorAltair(
+        SpecConfigAltair.required(spec.getConfig()),
+        BeaconStateAltair.required(preState),
+        validatorStatuses,
+        (MiscHelpersAltair) spec.miscHelpers(),
+        (BeaconStateAccessorsAltair) spec.beaconStateAccessors());
   }
 
   private void runTest(
