@@ -121,8 +121,13 @@ public class BeaconStateMerge extends BeaconStateAltair {
                   currentSyncCommittee.asInternalSyncCommittee(syncCommitteeSchema));
               beaconStateMerge.setNextSyncCommittee(
                   nextSyncCommittee.asInternalSyncCommittee(syncCommitteeSchema));
+
+              final tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema
+                  executionPayloadHeaderSchema =
+                      BeaconStateSchemaMerge.required(beaconStateMerge.getBeaconStateSchema())
+                          .getLastExecutionPayloadHeaderSchema();
               beaconStateMerge.setLatestExecutionPayloadHeader(
-                  new tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader(
+                  executionPayloadHeaderSchema.create(
                       latestExecutionPayloadHeader.parentHash,
                       latestExecutionPayloadHeader.coinbase,
                       latestExecutionPayloadHeader.stateRoot,

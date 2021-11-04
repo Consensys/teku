@@ -16,18 +16,18 @@ package tech.pegasys.teku.api.schema;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.TestTemplate;
-import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.teku.api.schema.altair.BeaconStateAltair;
 import tech.pegasys.teku.api.schema.merge.BeaconStateMerge;
 import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.testutils.SpecTestInvocationContextProvider;
+import tech.pegasys.teku.spec.TestSpecContext;
+import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 
-@ExtendWith(SpecTestInvocationContextProvider.class)
+@TestSpecContext(allMilestones = true)
 public class BeaconStateTest {
 
   @TestTemplate
-  public void shouldConvertToInternalObject(SpecTestInvocationContextProvider.SpecContext ctx) {
+  public void shouldConvertToInternalObject(SpecContext ctx) {
     final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState beaconStateInternal =
         ctx.getDataStructureUtil().randomBeaconState();
     final Spec spec = ctx.getSpec();

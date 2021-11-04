@@ -16,11 +16,10 @@ package tech.pegasys.teku.api.schema;
 import static tech.pegasys.teku.ssz.SszDataAssert.assertThatSszData;
 
 import org.junit.jupiter.api.TestTemplate;
-import org.junit.jupiter.api.extension.ExtendWith;
-import tech.pegasys.teku.testutils.SpecTestInvocationContextProvider;
-import tech.pegasys.teku.testutils.SpecTestInvocationContextProvider.SpecContext;
+import tech.pegasys.teku.spec.TestSpecContext;
+import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 
-@ExtendWith(SpecTestInvocationContextProvider.class)
+@TestSpecContext(allMilestones = true)
 class SignedBeaconBlockTest {
 
   @TestTemplate

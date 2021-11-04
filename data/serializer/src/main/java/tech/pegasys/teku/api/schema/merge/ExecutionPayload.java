@@ -20,12 +20,15 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
 import tech.pegasys.teku.ssz.collections.SszByteList;
 import tech.pegasys.teku.ssz.type.Bytes20;
 
@@ -89,23 +92,37 @@ public class ExecutionPayload extends ExecutionPayloadCommon {
             .collect(Collectors.toList());
   }
 
-  public tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload
-      asInternalExecutionPayload() {
-    return new tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload(
-        parentHash,
-        coinbase,
-        stateRoot,
-        receiptRoot,
-        logsBloom,
-        random,
-        blockNumber,
-        gasLimit,
-        gasUsed,
-        timestamp,
-        extraData,
-        baseFeePerGas,
-        blockHash,
-        transactions);
+  public Optional<tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload>
+      asInternalExecutionPayload(final Spec spec, final UInt64 slot) {
+
+    final Optional<SchemaDefinitionsMerge> maybeSchema =
+        spec.atSlot(slot).getSchemaDefinitions().toVersionMerge();
+
+    if (maybeSchema.isEmpty()) {
+      final String message =
+          String.format("Could not create execution payload at non-merge slot %s", slot);
+      throw new IllegalArgumentException(message);
+    }
+
+    return maybeSchema.map(
+        schema ->
+            schema
+                .getExecutionPayloadSchema()
+                .create(
+                    parentHash,
+                    coinbase,
+                    stateRoot,
+                    receiptRoot,
+                    logsBloom,
+                    random,
+                    blockNumber,
+                    gasLimit,
+                    gasUsed,
+                    timestamp,
+                    extraData,
+                    baseFeePerGas,
+                    blockHash,
+                    transactions));
   }
 
   @Override

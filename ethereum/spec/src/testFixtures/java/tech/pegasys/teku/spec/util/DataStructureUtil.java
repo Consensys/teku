@@ -448,21 +448,23 @@ public final class DataStructureUtil {
   }
 
   public ExecutionPayload emptyExecutionPayload() {
-    return new ExecutionPayload(
-        Bytes32.ZERO,
-        Bytes20.ZERO,
-        Bytes32.ZERO,
-        Bytes32.ZERO,
-        Bytes.EMPTY,
-        Bytes32.ZERO,
-        UInt64.ZERO,
-        UInt64.ZERO,
-        UInt64.ZERO,
-        UInt64.ZERO,
-        Bytes.EMPTY,
-        UInt256.ZERO,
-        Bytes32.ZERO,
-        List.of());
+    return getMergeSchemaDefinitions(UInt64.ZERO)
+        .getExecutionPayloadSchema()
+        .create(
+            Bytes32.ZERO,
+            Bytes20.ZERO,
+            Bytes32.ZERO,
+            Bytes32.ZERO,
+            Bytes.EMPTY,
+            Bytes32.ZERO,
+            UInt64.ZERO,
+            UInt64.ZERO,
+            UInt64.ZERO,
+            UInt64.ZERO,
+            Bytes.EMPTY,
+            UInt256.ZERO,
+            Bytes32.ZERO,
+            List.of());
   }
 
   public List<Bytes> randomExecutionPayloadTransactions() {
@@ -1109,6 +1111,10 @@ public final class DataStructureUtil {
 
   private SchemaDefinitionsAltair getAltairSchemaDefinitions(final UInt64 slot) {
     return SchemaDefinitionsAltair.required(spec.atSlot(slot).getSchemaDefinitions());
+  }
+
+  private SchemaDefinitionsMerge getMergeSchemaDefinitions(final UInt64 slot) {
+    return SchemaDefinitionsMerge.required(spec.atSlot(slot).getSchemaDefinitions());
   }
 
   int getEpochsPerEth1VotingPeriod() {

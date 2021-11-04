@@ -29,6 +29,8 @@ import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.api.schema.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.api.schema.altair.SyncAggregate;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge.BeaconBlockBodySchemaMerge;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 
 public class BeaconBlockBodyMerge extends BeaconBlockBodyAltair {
   @JsonProperty("execution_payload")
@@ -71,12 +73,17 @@ public class BeaconBlockBodyMerge extends BeaconBlockBodyAltair {
   @Override
   public tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody
       asInternalBeaconBlockBody(final SpecVersion spec) {
+
+    BeaconBlockBodySchemaMerge<?> schema =
+        (BeaconBlockBodySchemaMerge<?>) spec.getSchemaDefinitions().getBeaconBlockBodySchema();
+    ExecutionPayloadSchema executionPayloadSchema = schema.getExecutionPayloadSchema();
+
     return super.asInternalBeaconBlockBody(
         spec,
         (builder) ->
             builder.executionPayload(
                 () ->
-                    new tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload(
+                    executionPayloadSchema.create(
                         executionPayload.parentHash,
                         executionPayload.coinbase,
                         executionPayload.stateRoot,
