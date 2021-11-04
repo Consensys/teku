@@ -14,6 +14,10 @@
 package tech.pegasys.teku.infrastructure.restapi.endpoints;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.restapi.json.JsonUtil.JSON_CONTENT_TYPE;
 
 import io.javalin.http.HandlerType;
 import java.util.Map;
@@ -63,5 +67,35 @@ class EndpointMetadataTest {
             CoreTypes.HTTP_ERROR_RESPONSE_TYPE,
             CoreTypes.STRING_TYPE,
             CoreTypes.INTEGER_TYPE);
+  }
+
+  @Test
+  void getResponseType_shouldThrowExceptionWhenStatusCodeNodeDeclared() {
+    final EndpointMetadata metadata =
+        validBuilder().response(SC_OK, "Success", CoreTypes.STRING_TYPE).build();
+    assertThatThrownBy(() -> metadata.getResponseType(SC_NOT_FOUND, JSON_CONTENT_TYPE))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  void getResponseType_shouldThrowExceptionWhenStatusCodeMatchesButContentTypeNotDeclared() {
+    final EndpointMetadata metadata =
+        validBuilder().response(SC_OK, "Success", CoreTypes.STRING_TYPE).build();
+    assertThatThrownBy(() -> metadata.getResponseType(SC_OK, "foo"))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  void getResponseType_shouldGetDeclaredType() {
+    final SerializableTypeDefinition<String> type = CoreTypes.STRING_TYPE;
+    final EndpointMetadata metadata = validBuilder().response(SC_OK, "Success", type).build();
+    assertThat(metadata.getResponseType(SC_OK, JSON_CONTENT_TYPE)).isSameAs(type);
+  }
+
+  private EndpointMetaDataBuilder validBuilder() {
+    return EndpointMetadata.get("/foo")
+        .operationId("fooId")
+        .summary("foo summary")
+        .description("foo description");
   }
 }

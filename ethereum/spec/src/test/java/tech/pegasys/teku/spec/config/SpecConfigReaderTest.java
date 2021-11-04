@@ -247,7 +247,8 @@ public class SpecConfigReaderTest {
   private List<String> getPresetPaths(final String presetName) {
     return List.of(
         getStandardConfigPath("presets/" + presetName + "/phase0"),
-        getStandardConfigPath("presets/" + presetName + "/altair"));
+        getStandardConfigPath("presets/" + presetName + "/altair"),
+        getStandardConfigPath("presets/" + presetName + "/merge"));
   }
 
   private static String getStandardConfigPath(final String name) {

@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.restapi.JsonTestUtil;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.restapi.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.restapi.types.CoreTypes;
 
@@ -158,6 +159,9 @@ class OpenApiDocBuilderTest {
   }
 
   private RestApiEndpoint endpoint(final EndpointMetadata metadata) {
-    return new RestApiEndpoint(metadata) {};
+    return new RestApiEndpoint(metadata) {
+      @Override
+      public void handle(final RestApiRequest request) {}
+    };
   }
 }

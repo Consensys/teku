@@ -24,6 +24,7 @@ import tech.pegasys.teku.infrastructure.restapi.types.DeserializableTypeDefiniti
 import tech.pegasys.teku.infrastructure.restapi.types.SerializableTypeDefinition;
 
 public class JsonUtil {
+  public static final String JSON_CONTENT_TYPE = "application/json";
 
   public static final JsonFactory FACTORY = new JsonFactory();
 
