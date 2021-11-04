@@ -49,7 +49,6 @@ public class AggregatingSignatureVerificationServiceTest {
   private final int numThreads = 2;
 
   private final StubAsyncRunnerFactory asyncRunnerFactory = new StubAsyncRunnerFactory();
-
   private AggregatingSignatureVerificationService service =
       new AggregatingSignatureVerificationService(
           new StubMetricsSystem(),
