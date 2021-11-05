@@ -559,7 +559,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     AttestationValidator attestationValidator =
         new AttestationValidator(spec, recentChainData, signatureVerificationService);
     AggregateAttestationValidator aggregateValidator =
-        new AggregateAttestationValidator(recentChainData, attestationValidator, spec);
+        new AggregateAttestationValidator(
+            spec, recentChainData, attestationValidator, signatureVerificationService);
     attestationManager =
         AttestationManager.create(
             pendingAttestations,
@@ -584,7 +585,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         new SyncCommitteeContributionPool(
             spec,
             new SignedContributionAndProofValidator(
-                spec, recentChainData, syncCommitteeStateUtils, timeProvider));
+                spec,
+                recentChainData,
+                syncCommitteeStateUtils,
+                timeProvider,
+                signatureVerificationService));
 
     syncCommitteeMessagePool =
         new SyncCommitteeMessagePool(

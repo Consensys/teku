@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
@@ -69,6 +70,12 @@ public class GenesisGenerator {
         SszListSchema.create(DepositData.SSZ_SCHEMA, 1L << specConfig.getDepositContractTreeDepth())
             .getDefault()
             .createWritableCopy();
+  }
+
+  public void updateExecutionPayloadHeader(ExecutionPayloadHeader payloadHeader) {
+    state
+        .toMutableVersionMerge()
+        .ifPresent(stateMerge -> stateMerge.setLatestExecutionPayloadHeader(payloadHeader));
   }
 
   public void updateCandidateState(

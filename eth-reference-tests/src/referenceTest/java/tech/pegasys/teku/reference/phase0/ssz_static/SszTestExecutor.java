@@ -22,9 +22,9 @@ import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.TestDataUtils;
 import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.schema.SszSchema;
 
@@ -49,9 +49,7 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
           .put(
               "ssz_static/SyncCommittee",
               new SszTestExecutor<>(
-                  schemas ->
-                      BeaconStateSchemaAltair.required(schemas.getBeaconStateSchema())
-                          .getCurrentSyncCommitteeSchema()))
+                  schemas -> schemas.getBeaconStateSchema().getCurrentSyncCommitteeSchemaOrThrow()))
           .put(
               "ssz_static/SyncAggregate",
               new SszTestExecutor<>(
@@ -89,6 +87,18 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
           .put("ssz_static/LightClientStore", IGNORE_TESTS)
           .put("ssz_static/LightClientSnapshot", IGNORE_TESTS)
           .put("ssz_static/LightClientUpdate", IGNORE_TESTS)
+
+          // Merge types
+          .put(
+              "ssz_static/ExecutionPayloadHeader",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsMerge.required(schemas).getExecutionPayloadHeaderSchema()))
+          .put(
+              "ssz_static/ExecutionPayload",
+              new SszTestExecutor<>(
+                  schemas -> SchemaDefinitionsMerge.required(schemas).getExecutionPayloadSchema()))
+          .put("ssz_static/PowBlock", IGNORE_TESTS)
 
           // SSZ Generic
           .put("ssz_generic/basic_vector", IGNORE_TESTS)

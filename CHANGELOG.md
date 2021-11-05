@@ -28,6 +28,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - Added LevelDB support for Linux/arm64.
 - Switched executor queue size metrics to use labelled gauge.
 - New console message when Teku switches forks. 
+- Reduce CPU usage by using batching signature verification service for aggregate attestation and sync committee contributions.
 
 
 

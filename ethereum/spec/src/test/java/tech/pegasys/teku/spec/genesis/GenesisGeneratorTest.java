@@ -21,6 +21,7 @@ import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_EPOCH;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.assertj.core.api.Assertions;
@@ -32,12 +33,14 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartDepositGenerator;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.BeaconStateMerge;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -78,7 +81,8 @@ class GenesisGeneratorTest {
             deposit.getIndex());
     deposits.set(1, invalidSigDeposit);
 
-    BeaconState state = spec.initializeBeaconStateFromEth1(Bytes32.ZERO, UInt64.ZERO, deposits);
+    BeaconState state =
+        spec.initializeBeaconStateFromEth1(Bytes32.ZERO, UInt64.ZERO, deposits, Optional.empty());
     assertEquals(2, state.getValidators().size());
     assertEquals(
         deposits.get(0).getData().getPubkey().toBytesCompressed(),
@@ -96,7 +100,8 @@ class GenesisGeneratorTest {
     final UInt64 genesisTime = UInt64.valueOf(982928293223232L);
 
     final BeaconState expectedState =
-        spec.initializeBeaconStateFromEth1(eth1BlockHash2, genesisTime, initialDeposits);
+        spec.initializeBeaconStateFromEth1(
+            eth1BlockHash2, genesisTime, initialDeposits, Optional.empty());
 
     genesisGenerator.updateCandidateState(
         eth1BlockHash1, genesisTime.minus(UInt64.ONE), initialDeposits.subList(0, 8));
@@ -182,5 +187,24 @@ class GenesisGeneratorTest {
     final Validator validator = state.getValidators().get(expectedIndex);
     assertThat(validator.getPubkeyBytes()).isEqualTo(validData.getPubkey().toBytesCompressed());
     assertThat(genesisSpec.predicates().isActiveValidator(validator, GENESIS_EPOCH)).isTrue();
+  }
+
+  @Test
+  public void shouldGenerateStateWithExecutionPayload() {
+    final Spec spec = TestSpecFactory.createMinimalMerge();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    final GenesisGenerator genesisGenerator =
+        new GenesisGenerator(spec.getGenesisSpec(), spec.fork(UInt64.ZERO));
+
+    genesisGenerator.updateCandidateState(
+        dataStructureUtil.randomBytes32(),
+        UInt64.valueOf(982928293223232L),
+        initialDeposits.subList(0, 8));
+    final ExecutionPayloadHeader payloadHeader = dataStructureUtil.randomExecutionPayloadHeader();
+    genesisGenerator.updateExecutionPayloadHeader(payloadHeader);
+    final BeaconState actualState = genesisGenerator.getGenesisState();
+    assertThat(actualState).isInstanceOf(BeaconStateMerge.class);
+    assertThat(BeaconStateMerge.required(actualState).getLatest_execution_payload_header())
+        .isEqualTo(payloadHeader);
   }
 }
