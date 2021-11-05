@@ -28,7 +28,7 @@ public class MiscHelpersMerge extends MiscHelpersAltair {
 
   public boolean isMergeComplete(final BeaconState genericState) {
     final BeaconStateMerge state = BeaconStateMerge.required(genericState);
-    return !state.getLatest_execution_payload_header().isDefault();
+    return !state.getLatestExecutionPayloadHeader().isDefault();
   }
 
   public boolean isMergeBlock(final BeaconState genericState, final BeaconBlock block) {
