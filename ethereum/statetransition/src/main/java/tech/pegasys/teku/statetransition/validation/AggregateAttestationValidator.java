@@ -54,7 +54,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class AggregateAttestationValidator {
   private static final Logger LOG = LogManager.getLogger();
   private final Map<Bytes32, SafeFuture<InternalValidationResult>> aggregateAttestationResultCache =
-      LimitedMap.create(5000);
+      LimitedMap.create(VALID_AGGREGATE_SET_SIZE);
   private final Set<AggregatorIndexAndEpoch> receivedAggregatorIndexAndEpochs =
       LimitedSet.create(VALID_AGGREGATE_SET_SIZE);
   private final AttestationValidator attestationValidator;

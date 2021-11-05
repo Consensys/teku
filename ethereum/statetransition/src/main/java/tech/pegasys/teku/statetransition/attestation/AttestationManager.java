@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.statetransition.attestation;
 
+import static tech.pegasys.teku.util.config.Constants.VALID_AGGREGATE_SET_SIZE;
+
 import java.util.List;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
@@ -49,7 +51,8 @@ public class AttestationManager extends Service
 
   private final ForkChoice attestationProcessor;
 
-  private final Set<Bytes32> processedAggregateAttestations = LimitedSet.create(5000);
+  private final Set<Bytes32> processedAggregateAttestations =
+      LimitedSet.create(VALID_AGGREGATE_SET_SIZE);
   private final PendingPool<ValidateableAttestation> pendingAttestations;
   private final FutureItems<ValidateableAttestation> futureAttestations;
   private final AggregatingAttestationPool aggregatingAttestationPool;
