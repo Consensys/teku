@@ -15,26 +15,25 @@ package tech.pegasys.teku.spec.executionengine;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import org.web3j.protocol.core.methods.response.EthBlock;
-import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
+import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 
 public interface ExecutionEngineChannel extends ChannelInterface {
   ExecutionEngineChannel NOOP =
       new ExecutionEngineChannel() {
         @Override
-        public SafeFuture<Optional<Block>> getPowBlock(Bytes32 blockHash) {
+        public SafeFuture<Optional<PowBlock>> getPowBlock(Bytes32 blockHash) {
           return SafeFuture.completedFuture(Optional.empty());
         }
 
         @Override
-        public SafeFuture<Block> getPowChainHead() {
+        public SafeFuture<PowBlock> getPowChainHead() {
           throw new UnsupportedOperationException();
         }
       };
 
-  SafeFuture<Optional<Block>> getPowBlock(Bytes32 blockHash);
+  SafeFuture<Optional<PowBlock>> getPowBlock(Bytes32 blockHash);
 
-  SafeFuture<EthBlock.Block> getPowChainHead();
+  SafeFuture<PowBlock> getPowChainHead();
 }

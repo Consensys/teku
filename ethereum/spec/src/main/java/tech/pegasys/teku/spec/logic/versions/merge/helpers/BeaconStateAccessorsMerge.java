@@ -13,13 +13,15 @@
 
 package tech.pegasys.teku.spec.logic.versions.merge.helpers;
 
-import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigMerge;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 
 public class BeaconStateAccessorsMerge extends BeaconStateAccessorsAltair {
   public BeaconStateAccessorsMerge(
-      final SpecConfig config, final Predicates predicates, final MiscHelpersMerge miscHelpers) {
-    super(config.toVersionAltair().orElseThrow(), predicates, miscHelpers);
+      final SpecConfigMerge config,
+      final Predicates predicates,
+      final MiscHelpersMerge miscHelpers) {
+    super(config, predicates, miscHelpers);
   }
 }

@@ -51,11 +51,10 @@ public class MergeTransitionHelpers {
     return executionEngineChannel
         .getPowBlock(blockHash)
         .join()
-        .map(PowBlock::new)
         .orElse(new PowBlock(blockHash, Bytes32.ZERO, UInt256.ZERO, UInt256.ZERO));
   }
 
   public PowBlock getPowChainHead(ExecutionEngineChannel executionEngineChannel) {
-    return new PowBlock(executionEngineChannel.getPowChainHead().join());
+    return executionEngineChannel.getPowChainHead().join();
   }
 }
