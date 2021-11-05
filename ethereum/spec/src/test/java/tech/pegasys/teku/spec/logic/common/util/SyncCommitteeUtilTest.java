@@ -262,6 +262,8 @@ class SyncCommitteeUtilTest {
 
   @Test
   void isStateUsableForCommitteeCalculationAtEpoch_shouldBeFalseWhenStateIsNotFromAltairFork() {
+    final Spec spec = TestSpecFactory.createMinimalPhase0();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     assertThat(
             syncCommitteeUtil.isStateUsableForCommitteeCalculationAtEpoch(
                 dataStructureUtil.randomBeaconState(UInt64.ZERO), UInt64.ZERO))

@@ -11,15 +11,20 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.response.v1.validator;
+package tech.pegasys.teku.provider;
 
-import tech.pegasys.teku.api.schema.BeaconBlock;
-import tech.pegasys.teku.api.schema.interfaces.UnsignedBlock;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import java.io.IOException;
+import tech.pegasys.teku.ssz.type.Bytes20;
 
-public class GetNewBlockResponse {
-  public final UnsignedBlock data;
+public class Bytes20Deserializer extends JsonDeserializer<Bytes20> {
 
-  public GetNewBlockResponse(final BeaconBlock data) {
-    this.data = data;
+  @Override
+  public Bytes20 deserialize(JsonParser p, DeserializationContext ctxt)
+      throws IOException, JsonProcessingException {
+    return Bytes20.fromHexString(p.getValueAsString());
   }
 }

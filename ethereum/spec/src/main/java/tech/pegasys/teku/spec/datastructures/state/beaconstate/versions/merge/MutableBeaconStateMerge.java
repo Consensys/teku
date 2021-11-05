@@ -30,7 +30,6 @@ public interface MutableBeaconStateMerge extends MutableBeaconStateAltair, Beaco
                     "Expected a merge state but got: " + state.getClass().getSimpleName()));
   }
 
-  // Execution
   default void setLatestExecutionPayloadHeader(ExecutionPayloadHeader executionPayloadHeader) {
     final int fieldIndex =
         getSchema().getFieldIndex(BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER.name());

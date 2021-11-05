@@ -11,57 +11,35 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.schema.altair;
-
-import static tech.pegasys.teku.api.schema.SchemaConstants.EXAMPLE_UINT64;
-import static tech.pegasys.teku.api.schema.SchemaConstants.EXAMPLE_UINT8;
+package tech.pegasys.teku.api.schema.merge;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.BeaconBlockHeader;
-import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.Checkpoint;
 import tech.pegasys.teku.api.schema.Eth1Data;
 import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.Validator;
-import tech.pegasys.teku.api.schema.interfaces.State;
+import tech.pegasys.teku.api.schema.altair.BeaconStateAltair;
+import tech.pegasys.teku.api.schema.altair.SyncCommittee;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.BeaconStateSchemaMerge;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.collections.SszBitvector;
 import tech.pegasys.teku.ssz.primitive.SszByte;
 
-public class BeaconStateAltair extends BeaconState implements State {
-  @ArraySchema(
-      schema =
-          @Schema(name = "previous_epoch_participation", type = "string", example = EXAMPLE_UINT8))
-  public final byte[] previousEpochParticipation;
-
-  @ArraySchema(
-      schema =
-          @Schema(name = "current_epoch_participation", type = "string", example = EXAMPLE_UINT8))
-  public final byte[] currentEpochParticipation;
-
-  @ArraySchema(
-      schema = @Schema(name = "inactivity_scores", type = "string", example = EXAMPLE_UINT64))
-  public final List<UInt64> inactivityScores;
-
-  @Schema(name = "current_sync_committee")
-  public final SyncCommittee currentSyncCommittee;
-
-  @Schema(name = "next_sync_committee")
-  public final SyncCommittee nextSyncCommittee;
+public class BeaconStateMerge extends BeaconStateAltair {
+  @JsonProperty("latest_execution_payload_header")
+  public final ExecutionPayloadHeader latestExecutionPayloadHeader;
 
   @JsonCreator
-  public BeaconStateAltair(
+  public BeaconStateMerge(
       @JsonProperty("genesis_time") final UInt64 genesisTime,
       @JsonProperty("genesis_validators_root") final Bytes32 genesisValidatorsRoot,
       @JsonProperty("slot") final UInt64 slot,
@@ -85,7 +63,9 @@ public class BeaconStateAltair extends BeaconState implements State {
       @JsonProperty("finalized_checkpoint") final Checkpoint finalizedCheckpoint,
       @JsonProperty("inactivity_scores") final List<UInt64> inactivityScores,
       @JsonProperty("current_sync_committee") final SyncCommittee currentSyncCommittee,
-      @JsonProperty("next_sync_committee") final SyncCommittee nextSyncCommittee) {
+      @JsonProperty("next_sync_committee") final SyncCommittee nextSyncCommittee,
+      @JsonProperty("latest_execution_payload_header")
+          final ExecutionPayloadHeader latestExecutionPayloadHeader) {
     super(
         genesisTime,
         genesisValidatorsRoot,
@@ -102,88 +82,94 @@ public class BeaconStateAltair extends BeaconState implements State {
         balances,
         randaoMixes,
         slashings,
+        previousEpochParticipation,
+        currentEpochParticipation,
         justificationBits,
         previousJustifiedCheckpoint,
         currentJustifiedCheckpoint,
-        finalizedCheckpoint);
-    this.previousEpochParticipation = previousEpochParticipation;
-    this.currentEpochParticipation = currentEpochParticipation;
-    this.inactivityScores = inactivityScores;
-    this.currentSyncCommittee = currentSyncCommittee;
-    this.nextSyncCommittee = nextSyncCommittee;
-  }
-
-  public BeaconStateAltair(
-      final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState beaconState) {
-    super(beaconState);
-    final tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair
-        altair = beaconState.toVersionAltair().orElseThrow();
-    this.previousEpochParticipation = toByteArray(altair.getPreviousEpochParticipation());
-    this.currentEpochParticipation = toByteArray(altair.getCurrentEpochParticipation());
-    this.inactivityScores = altair.getInactivityScores().asListUnboxed();
-    this.currentSyncCommittee = new SyncCommittee(altair.getCurrentSyncCommittee());
-    this.nextSyncCommittee = new SyncCommittee(altair.getNextSyncCommittee());
+        finalizedCheckpoint,
+        inactivityScores,
+        currentSyncCommittee,
+        nextSyncCommittee);
+    this.latestExecutionPayloadHeader = latestExecutionPayloadHeader;
   }
 
   @Override
-  protected void applyAdditionalFields(final MutableBeaconState state) {
+  protected void applyAdditionalFields(MutableBeaconState state) {
     state
-        .toMutableVersionAltair()
+        .toMutableVersionMerge()
         .ifPresent(
-            beaconStateAltair -> {
+            beaconStateMerge -> {
               final tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSchema
                   syncCommitteeSchema =
-                      BeaconStateSchemaAltair.required(beaconStateAltair.getBeaconStateSchema())
+                      BeaconStateSchemaMerge.required(beaconStateMerge.getBeaconStateSchema())
                           .getCurrentSyncCommitteeSchema();
               final SszList<SszByte> previousEpochParticipation =
-                  beaconStateAltair
+                  beaconStateMerge
                       .getPreviousEpochParticipation()
                       .getSchema()
                       .sszDeserialize(Bytes.wrap(this.previousEpochParticipation));
               final SszList<SszByte> currentEpochParticipation =
-                  beaconStateAltair
+                  beaconStateMerge
                       .getCurrentEpochParticipation()
                       .getSchema()
                       .sszDeserialize(Bytes.wrap(this.currentEpochParticipation));
 
-              beaconStateAltair.setPreviousEpochParticipation(previousEpochParticipation);
-              beaconStateAltair.setCurrentEpochParticipation(currentEpochParticipation);
-              beaconStateAltair.getInactivityScores().setAllElements(inactivityScores);
+              beaconStateMerge.setPreviousEpochParticipation(previousEpochParticipation);
+              beaconStateMerge.setCurrentEpochParticipation(currentEpochParticipation);
+              beaconStateMerge.getInactivityScores().setAllElements(inactivityScores);
 
-              beaconStateAltair.setCurrentSyncCommittee(
+              beaconStateMerge.setCurrentSyncCommittee(
                   currentSyncCommittee.asInternalSyncCommittee(syncCommitteeSchema));
-              beaconStateAltair.setNextSyncCommittee(
+              beaconStateMerge.setNextSyncCommittee(
                   nextSyncCommittee.asInternalSyncCommittee(syncCommitteeSchema));
+
+              final tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema
+                  executionPayloadHeaderSchema =
+                      BeaconStateSchemaMerge.required(beaconStateMerge.getBeaconStateSchema())
+                          .getLastExecutionPayloadHeaderSchema();
+              beaconStateMerge.setLatestExecutionPayloadHeader(
+                  executionPayloadHeaderSchema.create(
+                      latestExecutionPayloadHeader.parentHash,
+                      latestExecutionPayloadHeader.coinbase,
+                      latestExecutionPayloadHeader.stateRoot,
+                      latestExecutionPayloadHeader.receiptRoot,
+                      latestExecutionPayloadHeader.logsBloom,
+                      latestExecutionPayloadHeader.random,
+                      latestExecutionPayloadHeader.blockNumber,
+                      latestExecutionPayloadHeader.gasLimit,
+                      latestExecutionPayloadHeader.gasUsed,
+                      latestExecutionPayloadHeader.timestamp,
+                      latestExecutionPayloadHeader.extraData,
+                      latestExecutionPayloadHeader.baseFeePerGas,
+                      latestExecutionPayloadHeader.blockHash,
+                      latestExecutionPayloadHeader.transactionsRoot));
             });
   }
 
+  public BeaconStateMerge(BeaconState beaconState) {
+    super(beaconState);
+    final tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.BeaconStateMerge
+        merge = beaconState.toVersionMerge().orElseThrow();
+    this.latestExecutionPayloadHeader =
+        new ExecutionPayloadHeader(merge.getLatestExecutionPayloadHeader());
+  }
+
   @Override
-  public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof BeaconStateMerge)) {
+      return false;
+    }
     if (!super.equals(o)) return false;
-    final BeaconStateAltair that = (BeaconStateAltair) o;
-    return Arrays.equals(previousEpochParticipation, that.previousEpochParticipation)
-        && Arrays.equals(currentEpochParticipation, that.currentEpochParticipation)
-        && Objects.equals(inactivityScores, that.inactivityScores)
-        && Objects.equals(currentSyncCommittee, that.currentSyncCommittee)
-        && Objects.equals(nextSyncCommittee, that.nextSyncCommittee);
+    BeaconStateMerge that = (BeaconStateMerge) o;
+    return Objects.equals(latestExecutionPayloadHeader, that.latestExecutionPayloadHeader);
   }
 
   @Override
   public int hashCode() {
-    int result =
-        Objects.hash(super.hashCode(), inactivityScores, currentSyncCommittee, nextSyncCommittee);
-    result = 31 * result + Arrays.hashCode(previousEpochParticipation);
-    result = 31 * result + Arrays.hashCode(currentEpochParticipation);
-    return result;
-  }
-
-  private byte[] toByteArray(final SszList<SszByte> byteList) {
-    final byte[] array = new byte[byteList.size()];
-    for (int i = 0; i < array.length; i++) {
-      array[i] = byteList.get(i).get();
-    }
-    return array;
+    return Objects.hash(super.hashCode(), latestExecutionPayloadHeader);
   }
 }

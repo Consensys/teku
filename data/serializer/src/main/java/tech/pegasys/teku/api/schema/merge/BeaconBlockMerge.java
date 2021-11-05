@@ -11,34 +11,33 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.schema.altair;
+package tech.pegasys.teku.api.schema.merge;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.api.schema.BeaconBlock;
-import tech.pegasys.teku.api.schema.interfaces.UnsignedBlock;
+import tech.pegasys.teku.api.schema.altair.BeaconBlockAltair;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
 
-public class BeaconBlockAltair extends BeaconBlock implements UnsignedBlock {
+public class BeaconBlockMerge extends BeaconBlockAltair {
 
-  public BeaconBlockAltair(tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock message) {
+  public BeaconBlockMerge(BeaconBlock message) {
     super(
         message.getSlot(),
         message.getProposerIndex(),
         message.getParentRoot(),
         message.getStateRoot(),
-        new BeaconBlockBodyAltair(message.getBody().toVersionAltair().orElseThrow()));
+        new BeaconBlockBodyMerge(message.getBody().toVersionMerge().orElseThrow()));
   }
 
   @Override
-  public tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock asInternalBeaconBlock(
-      final Spec spec) {
+  public BeaconBlock asInternalBeaconBlock(Spec spec) {
     final SpecVersion specVersion = spec.atSlot(slot);
-    return SchemaDefinitionsAltair.required(specVersion.getSchemaDefinitions())
+    return SchemaDefinitionsMerge.required(specVersion.getSchemaDefinitions())
         .getBeaconBlockSchema()
         .create(
             slot,
@@ -50,17 +49,17 @@ public class BeaconBlockAltair extends BeaconBlock implements UnsignedBlock {
 
   @JsonProperty("body")
   @Override
-  public BeaconBlockBodyAltair getBody() {
-    return (BeaconBlockBodyAltair) body;
+  public BeaconBlockBodyMerge getBody() {
+    return (BeaconBlockBodyMerge) body;
   }
 
   @JsonCreator
-  public BeaconBlockAltair(
+  public BeaconBlockMerge(
       @JsonProperty("slot") final UInt64 slot,
-      @JsonProperty("proposer_index") final UInt64 proposer_index,
-      @JsonProperty("parent_root") final Bytes32 parent_root,
-      @JsonProperty("state_root") final Bytes32 state_root,
-      @JsonProperty("body") final BeaconBlockBodyAltair body) {
-    super(slot, proposer_index, parent_root, state_root, body);
+      @JsonProperty("proposer_index") final UInt64 proposerIndex,
+      @JsonProperty("parent_root") final Bytes32 parentRoot,
+      @JsonProperty("state_root") final Bytes32 stateRoot,
+      @JsonProperty("body") final BeaconBlockBodyMerge body) {
+    super(slot, proposerIndex, parentRoot, stateRoot, body);
   }
 }

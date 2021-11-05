@@ -84,8 +84,11 @@ public class BlockProposalTestUtil {
                     .deposits(deposits)
                     .voluntaryExits(exits)
                     .syncAggregate(
+                        () -> dataStructureUtil.emptySyncAggregateIfRequiredByState(blockSlotState))
+                    .executionPayload(
                         () ->
-                            dataStructureUtil.emptySyncAggregateIfRequiredByState(blockSlotState)));
+                            dataStructureUtil.emptyExecutionPayloadIfRequiredByState(
+                                blockSlotState)));
 
     // Sign block and set block signature
     final BeaconBlock block = newBlockAndState.getBlock();

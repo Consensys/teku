@@ -11,15 +11,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.response.v1.validator;
+package tech.pegasys.teku.provider;
 
-import tech.pegasys.teku.api.schema.BeaconBlock;
-import tech.pegasys.teku.api.schema.interfaces.UnsignedBlock;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import java.io.IOException;
+import tech.pegasys.teku.ssz.type.Bytes20;
 
-public class GetNewBlockResponse {
-  public final UnsignedBlock data;
-
-  public GetNewBlockResponse(final BeaconBlock data) {
-    this.data = data;
+public class Bytes20Serializer extends JsonSerializer<Bytes20> {
+  @Override
+  public void serialize(Bytes20 value, JsonGenerator gen, SerializerProvider serializers)
+      throws IOException {
+    gen.writeString(value.toHexString().toLowerCase());
   }
 }

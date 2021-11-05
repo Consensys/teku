@@ -30,8 +30,7 @@ public interface BeaconStateMerge extends BeaconStateAltair {
                     "Expected a merge state but got: " + state.getClass().getSimpleName()));
   }
 
-  // Execution
-  default ExecutionPayloadHeader getLatest_execution_payload_header() {
+  default ExecutionPayloadHeader getLatestExecutionPayloadHeader() {
     final int fieldIndex =
         getSchema().getFieldIndex(BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER.name());
     return getAny(fieldIndex);

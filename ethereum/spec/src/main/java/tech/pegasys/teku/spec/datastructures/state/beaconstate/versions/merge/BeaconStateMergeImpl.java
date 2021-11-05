@@ -62,6 +62,6 @@ class BeaconStateMergeImpl extends AbstractBeaconState<MutableBeaconStateMerge>
   }
 
   static void describeCustomFields(ToStringHelper stringBuilder, final BeaconStateMerge state) {
-    stringBuilder.add("execution_payload_header", state.getLatest_execution_payload_header());
+    stringBuilder.add("execution_payload_header", state.getLatestExecutionPayloadHeader());
   }
 }

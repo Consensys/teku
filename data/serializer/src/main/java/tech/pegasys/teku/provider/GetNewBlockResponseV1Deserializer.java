@@ -19,39 +19,22 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
-import tech.pegasys.teku.api.response.v2.validator.GetNewBlockResponseV2;
+import tech.pegasys.teku.api.response.v1.validator.GetNewBlockResponse;
 import tech.pegasys.teku.api.schema.BeaconBlock;
-import tech.pegasys.teku.api.schema.Version;
-import tech.pegasys.teku.api.schema.altair.BeaconBlockAltair;
-import tech.pegasys.teku.api.schema.merge.BeaconBlockMerge;
 import tech.pegasys.teku.api.schema.phase0.BeaconBlockPhase0;
 
-public class GetNewBlockResponseV2Deserializer extends JsonDeserializer<GetNewBlockResponseV2> {
+public class GetNewBlockResponseV1Deserializer extends JsonDeserializer<GetNewBlockResponse> {
   private final ObjectMapper mapper;
 
-  public GetNewBlockResponseV2Deserializer(final ObjectMapper mapper) {
+  public GetNewBlockResponseV1Deserializer(final ObjectMapper mapper) {
     this.mapper = mapper;
   }
 
   @Override
-  public GetNewBlockResponseV2 deserialize(final JsonParser jp, final DeserializationContext ctxt)
+  public GetNewBlockResponse deserialize(final JsonParser jp, final DeserializationContext ctxt)
       throws IOException {
     JsonNode node = jp.getCodec().readTree(jp);
-    final Version version = Version.valueOf(node.findValue("version").asText());
-    final BeaconBlock block;
-    switch (version) {
-      case merge:
-        block = mapper.treeToValue(node.findValue("data"), BeaconBlockMerge.class);
-        break;
-      case altair:
-        block = mapper.treeToValue(node.findValue("data"), BeaconBlockAltair.class);
-        break;
-      case phase0:
-        block = mapper.treeToValue(node.findValue("data"), BeaconBlockPhase0.class);
-        break;
-      default:
-        throw new IOException("Milestone was not able to be decoded");
-    }
-    return new GetNewBlockResponseV2(version, block);
+    final BeaconBlock block = mapper.treeToValue(node.findValue("data"), BeaconBlockPhase0.class);
+    return new GetNewBlockResponse(block);
   }
 }

@@ -11,15 +11,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.response.v1.validator;
+package tech.pegasys.teku.provider;
 
-import tech.pegasys.teku.api.schema.BeaconBlock;
-import tech.pegasys.teku.api.schema.interfaces.UnsignedBlock;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import java.io.IOException;
+import org.apache.tuweni.units.bigints.UInt256;
 
-public class GetNewBlockResponse {
-  public final UnsignedBlock data;
-
-  public GetNewBlockResponse(final BeaconBlock data) {
-    this.data = data;
+public class UInt256Serializer extends JsonSerializer<UInt256> {
+  @Override
+  public void serialize(UInt256 value, JsonGenerator gen, SerializerProvider serializers)
+      throws IOException {
+    gen.writeString(value.toShortHexString());
   }
 }
