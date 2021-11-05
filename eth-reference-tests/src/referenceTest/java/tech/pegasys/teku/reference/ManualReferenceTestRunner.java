@@ -39,10 +39,13 @@ public class ManualReferenceTestRunner extends Eth2ReferenceTestCase {
    * <p>e.g. set to "ssz_static" to run only ssz static tests or "ssz_static/Attestation" for only
    * attestation ssz tests.
    */
-  private static final String TEST_TYPE = "fork_choice/on_block";
+  private static final String TEST_TYPE = "ssz_static";
 
   /** Filter test to run to those from the specified spec. One of general, minimal or mainnet */
-  private static final String SPEC = "minimal";
+  private static final String SPEC = "";
+
+  /** Filter test to run only those for a specific milestone. Use values from TestFork. */
+  private static final String MILESTONE = null;
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("loadReferenceTests")
@@ -59,6 +62,12 @@ public class ManualReferenceTestRunner extends Eth2ReferenceTestCase {
             testDefinition ->
                 SPEC.isBlank() || testDefinition.getConfigName().equalsIgnoreCase(SPEC))
         .filter(testDefinition -> testDefinition.getTestType().startsWith(TEST_TYPE))
+        .filter(ManualReferenceTestRunner::isSelectedMilestone)
         .map(testDefinition -> Arguments.of(testDefinition.getDisplayName(), testDefinition));
+  }
+
+  @SuppressWarnings("ConstantConditions")
+  private static boolean isSelectedMilestone(final TestDefinition testDefinition) {
+    return MILESTONE == null || MILESTONE.equals(testDefinition.getFork());
   }
 }
