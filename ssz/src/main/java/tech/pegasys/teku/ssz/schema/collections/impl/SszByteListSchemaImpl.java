@@ -39,12 +39,11 @@ public class SszByteListSchemaImpl<SszListT extends SszByteList>
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public SszListT fromBytes(Bytes bytes) {
     checkArgument(bytes.size() <= getMaxLength(), "Bytes size greater than list max length");
     TreeNode dataTreeNode = SchemaUtils.createTreeFromBytes(bytes, treeDepth());
     TreeNode listTreeNode = createTree(dataTreeNode, bytes.size());
-    return (SszListT) new SszByteListImpl(this, listTreeNode);
+    return createFromBackingNode(listTreeNode);
   }
 
   @Override
