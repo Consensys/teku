@@ -75,7 +75,6 @@ public abstract class Eth2ReferenceTestCase {
           .put("fork_choice/on_block", TestExecutor.IGNORE_TESTS)
           .put("fork_choice/get_head", TestExecutor.IGNORE_TESTS)
           .put("finality/finality", TestExecutor.IGNORE_TESTS)
-          .put("epoch_processing/sync_committee_updates", TestExecutor.IGNORE_TESTS)
           .build();
 
   protected void runReferenceTest(final TestDefinition testDefinition) throws Throwable {
