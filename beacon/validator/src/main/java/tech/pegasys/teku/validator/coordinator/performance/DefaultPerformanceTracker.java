@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -109,9 +108,10 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
     }
 
     UInt64 currentEpoch = spec.computeEpochAtSlot(slot);
-    if (currentEpoch.isLessThanOrEqualTo(
-        latestAnalyzedEpoch.getAndUpdate(
-            val -> val.isLessThan(currentEpoch) ? currentEpoch : val))) {
+    if (!latestAnalyzedEpoch.get().isZero()
+        && currentEpoch.isLessThanOrEqualTo(
+            latestAnalyzedEpoch.getAndUpdate(
+                val -> val.isLessThan(currentEpoch) ? currentEpoch : val))) {
       return;
     }
 
@@ -165,12 +165,17 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
   }
 
   private BlockPerformance getBlockPerformanceForEpoch(UInt64 currentEpoch) {
-    int numberOfBlockProductionAttempts =
-        blockProductionAttemptsByEpoch.values().stream().mapToInt(AtomicInteger::get).sum();
-    List<SlotAndBlockRoot> producedBlocks =
-        producedBlocksByEpoch.values().stream()
-            .flatMap(Collection::stream)
-            .collect(Collectors.toList());
+    int numberOfBlockProductionAttempts = 0;
+    AtomicInteger blocksAtEpoch = blockProductionAttemptsByEpoch.get(currentEpoch);
+    if (blocksAtEpoch != null) {
+      numberOfBlockProductionAttempts = blocksAtEpoch.get();
+    }
+
+    List<SlotAndBlockRoot> producedBlocks = new ArrayList<>();
+    if (producedBlocksByEpoch.get(currentEpoch) != null) {
+      producedBlocks =
+          producedBlocksByEpoch.get(currentEpoch).stream().collect(Collectors.toList());
+    }
     final StateAndBlockSummary chainHead = combinedChainDataClient.getChainHead().orElseThrow();
     final BeaconState state = chainHead.getState();
     final long numberOfIncludedBlocks =

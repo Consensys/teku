@@ -46,7 +46,7 @@ import tech.pegasys.teku.validator.coordinator.ActiveValidatorTracker;
 
 public class DefaultPerformanceTrackerTest {
 
-  private static final UInt64 EPOCH = UInt64.valueOf(2);
+  private static final UInt64 EPOCH = UInt64.ZERO;
   private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(64);
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   protected StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
@@ -89,8 +89,9 @@ public class DefaultPerformanceTrackerTest {
     performanceTracker.reportBlockProductionAttempt(spec.computeEpochAtSlot(UInt64.valueOf(2)));
     performanceTracker.saveProducedBlock(chainUpdater.chainBuilder.getBlockAtSlot(1));
     performanceTracker.saveProducedBlock(chainUpdater.chainBuilder.getBlockAtSlot(2));
-    performanceTracker.onSlot(spec.computeStartSlotAtEpoch(EPOCH));
-    BlockPerformance expectedBlockPerformance = new BlockPerformance(EPOCH, 2, 2, 2);
+    performanceTracker.onSlot(spec.computeEpochAtSlot(UInt64.ONE));
+    BlockPerformance expectedBlockPerformance =
+        new BlockPerformance(spec.computeEpochAtSlot(UInt64.ONE), 2, 2, 2);
     verify(log).performance(expectedBlockPerformance.toString());
   }
 
@@ -252,17 +253,17 @@ public class DefaultPerformanceTrackerTest {
 
   @Test
   void shouldClearOldSentObjects() {
-    chainUpdater.updateBestBlock(chainUpdater.advanceChainUntil(10));
-    performanceTracker.reportBlockProductionAttempt(spec.computeEpochAtSlot(UInt64.valueOf(1)));
-    performanceTracker.reportBlockProductionAttempt(spec.computeEpochAtSlot(UInt64.valueOf(2)));
-    performanceTracker.saveProducedBlock(chainUpdater.chainBuilder.getBlockAtSlot(1));
-    performanceTracker.saveProducedBlock(chainUpdater.chainBuilder.getBlockAtSlot(2));
+    chainUpdater.updateBestBlock(chainUpdater.advanceChainUntil(22));
+    performanceTracker.reportBlockProductionAttempt(spec.computeEpochAtSlot(UInt64.valueOf(16)));
+    performanceTracker.reportBlockProductionAttempt(spec.computeEpochAtSlot(UInt64.valueOf(17)));
+    performanceTracker.saveProducedBlock(chainUpdater.chainBuilder.getBlockAtSlot(16));
+    performanceTracker.saveProducedBlock(chainUpdater.chainBuilder.getBlockAtSlot(17));
     performanceTracker.saveProducedAttestation(
         new Attestation(
             dataStructureUtil.randomBitlist(),
             dataStructureUtil.randomAttestationData(UInt64.ONE),
             BLSTestUtil.randomSignature(0)));
-    performanceTracker.onSlot(spec.computeStartSlotAtEpoch(EPOCH));
+    performanceTracker.onSlot(spec.computeStartSlotAtEpoch(UInt64.valueOf(2)));
     assertThat(performanceTracker.producedAttestationsByEpoch).isEmpty();
     assertThat(performanceTracker.producedBlocksByEpoch).isEmpty();
     assertThat(performanceTracker.blockProductionAttemptsByEpoch).isEmpty();
