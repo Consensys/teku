@@ -16,4 +16,5 @@ package tech.pegasys.teku.ethtests;
 public class TestFork {
   public static String PHASE0 = "phase0";
   public static String ALTAIR = "altair";
+  public static String MERGE = "merge";
 }

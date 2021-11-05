@@ -20,6 +20,7 @@ import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.altair.fork.ForkUpgradeTestExecutor;
 import tech.pegasys.teku.reference.altair.fork.TransitionTestExecutor;
 import tech.pegasys.teku.reference.altair.rewards.RewardsTestExecutorAltair;
+import tech.pegasys.teku.reference.altair.rewards.RewardsTestExecutorMerge;
 import tech.pegasys.teku.reference.common.epoch_processing.EpochProcessingTestExecutor;
 import tech.pegasys.teku.reference.common.operations.OperationsTestExecutor;
 import tech.pegasys.teku.reference.phase0.bls.BlsTests;
@@ -61,6 +62,23 @@ public abstract class Eth2ReferenceTestCase {
           .putAll(RewardsTestExecutorAltair.REWARDS_TEST_TYPES)
           .build();
 
+  private final ImmutableMap<String, TestExecutor> MERGE_TEST_TYPES =
+      ImmutableMap.<String, TestExecutor>builder()
+          .putAll(TransitionTestExecutor.TRANSITION_TEST_TYPES)
+          .putAll(ForkUpgradeTestExecutor.FORK_UPGRADE_TEST_TYPES)
+          .putAll(RewardsTestExecutorMerge.REWARDS_TEST_TYPES)
+
+          // Disabled while work continues to bring over the merge work
+          .put("sanity/blocks", TestExecutor.IGNORE_TESTS)
+          .put("operations/execution_payload", TestExecutor.IGNORE_TESTS)
+          .put("genesis/initialization", TestExecutor.IGNORE_TESTS)
+          .put("fork_choice/on_merge_block", TestExecutor.IGNORE_TESTS)
+          .put("fork_choice/on_block", TestExecutor.IGNORE_TESTS)
+          .put("fork_choice/get_head", TestExecutor.IGNORE_TESTS)
+          .put("finality/finality", TestExecutor.IGNORE_TESTS)
+          .put("epoch_processing/sync_committee_updates", TestExecutor.IGNORE_TESTS)
+          .build();
+
   protected void runReferenceTest(final TestDefinition testDefinition) throws Throwable {
     setConstants(testDefinition.getConfigName());
     getExecutorFor(testDefinition).runTest(testDefinition);
@@ -74,15 +92,20 @@ public abstract class Eth2ReferenceTestCase {
   }
 
   private TestExecutor getExecutorFor(final TestDefinition testDefinition) {
-    TestExecutor testExecutor = COMMON_TEST_TYPES.get(testDefinition.getTestType());
+    TestExecutor testExecutor = null;
 
-    // Look for fork-specific tests if there is no common test type
+    // Look for fork-specific tests first
+    if (testDefinition.getFork().equals(TestFork.PHASE0)) {
+      testExecutor = PHASE_0_TEST_TYPES.get(testDefinition.getTestType());
+    } else if (testDefinition.getFork().equals(TestFork.ALTAIR)) {
+      testExecutor = ALTAIR_TEST_TYPES.get(testDefinition.getTestType());
+    } else if (testDefinition.getFork().equals(TestFork.MERGE)) {
+      testExecutor = MERGE_TEST_TYPES.get(testDefinition.getTestType());
+    }
+
+    // Look for a common test type if no specific override present
     if (testExecutor == null) {
-      if (testDefinition.getFork().equals(TestFork.PHASE0)) {
-        testExecutor = PHASE_0_TEST_TYPES.get(testDefinition.getTestType());
-      } else if (testDefinition.getFork().equals(TestFork.ALTAIR)) {
-        testExecutor = ALTAIR_TEST_TYPES.get(testDefinition.getTestType());
-      }
+      testExecutor = COMMON_TEST_TYPES.get(testDefinition.getTestType());
     }
 
     if (testExecutor == null) {
