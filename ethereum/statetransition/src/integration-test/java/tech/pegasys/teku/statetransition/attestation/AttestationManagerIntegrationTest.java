@@ -80,7 +80,8 @@ class AttestationManagerIntegrationTest {
           futureAttestations,
           attestationPool,
           attestationValidator,
-          new AggregateAttestationValidator(recentChainData, attestationValidator, spec),
+          new AggregateAttestationValidator(
+              spec, recentChainData, attestationValidator, signatureVerificationService),
           signatureVerificationService,
           activeValidatorChannel);
 

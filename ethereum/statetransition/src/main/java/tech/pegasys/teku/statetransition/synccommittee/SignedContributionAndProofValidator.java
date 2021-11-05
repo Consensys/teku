@@ -41,7 +41,8 @@ import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
-import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BatchSignatureVerifier;
+import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
+import tech.pegasys.teku.spec.logic.common.util.AsyncBatchBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
@@ -53,15 +54,18 @@ public class SignedContributionAndProofValidator {
   private final Set<UniquenessKey> seenIndices =
       LimitedSet.create(VALID_CONTRIBUTION_AND_PROOF_SET_SIZE);
   private final SyncCommitteeStateUtils syncCommitteeStateUtils;
+  private final AsyncBLSSignatureVerifier signatureVerifier;
   private final SyncCommitteeCurrentSlotUtil slotUtil;
 
   public SignedContributionAndProofValidator(
       final Spec spec,
       final RecentChainData recentChainData,
       final SyncCommitteeStateUtils syncCommitteeStateUtils,
-      final TimeProvider timeProvider) {
+      final TimeProvider timeProvider,
+      final AsyncBLSSignatureVerifier signatureVerifier) {
     this.spec = spec;
     this.syncCommitteeStateUtils = syncCommitteeStateUtils;
+    this.signatureVerifier = signatureVerifier;
     slotUtil = new SyncCommitteeCurrentSlotUtil(recentChainData, spec, timeProvider);
   }
 
@@ -109,11 +113,11 @@ public class SignedContributionAndProofValidator {
 
     return syncCommitteeStateUtils
         .getStateForSyncCommittee(contribution.getSlot())
-        .thenApply(
+        .thenCompose(
             maybeState -> {
               if (maybeState.isEmpty()) {
                 LOG.trace("Ignoring proof because state is not available or not from Altair fork");
-                return IGNORE;
+                return SafeFuture.completedFuture(IGNORE);
               }
               return validateWithState(
                   proof,
@@ -138,7 +142,7 @@ public class SignedContributionAndProofValidator {
     return InternalValidationResult.create(ValidationResultCode.REJECT, contextMessage);
   }
 
-  private InternalValidationResult validateWithState(
+  private SafeFuture<InternalValidationResult> validateWithState(
       final SignedContributionAndProof proof,
       final ContributionAndProof contributionAndProof,
       final SyncCommitteeContribution contribution,
@@ -151,7 +155,7 @@ public class SignedContributionAndProofValidator {
     final Optional<BLSPublicKey> aggregatorPublicKey =
         beaconStateAccessors.getValidatorPubKey(state, contributionAndProof.getAggregatorIndex());
     if (aggregatorPublicKey.isEmpty()) {
-      return failureResult(
+      return futureFailureResult(
           "Rejecting proof because aggregator index %s is an unknown validator",
           contributionAndProof.getAggregatorIndex());
     }
@@ -167,7 +171,7 @@ public class SignedContributionAndProofValidator {
         state,
         contributionEpoch,
         contributionAndProof.getAggregatorIndex())) {
-      return failureResult(
+      return futureFailureResult(
           "Rejecting proof because aggregator index %s is not in the current sync subcommittee",
           contributionAndProof.getAggregatorIndex());
     }
@@ -176,12 +180,13 @@ public class SignedContributionAndProofValidator {
     // aggregator for the slot -- i.e. is_sync_committee_aggregator(state,
     // contribution.slot, contribution_and_proof.selection_proof) returns True.
     if (!syncCommitteeUtil.isSyncCommitteeAggregator(contributionAndProof.getSelectionProof())) {
-      return failureResult(
+      return futureFailureResult(
           "Rejecting proof because selection proof %s is not an aggregator",
           contributionAndProof.getSelectionProof());
     }
 
-    final BatchSignatureVerifier signatureVerifier = new BatchSignatureVerifier();
+    final AsyncBatchBLSSignatureVerifier signatureVerifier =
+        new AsyncBatchBLSSignatureVerifier(this.signatureVerifier);
 
     // [REJECT] The contribution_and_proof.selection_proof is a valid signature of the
     // contribution.slot by the validator with index
@@ -193,7 +198,7 @@ public class SignedContributionAndProofValidator {
             state.getForkInfo());
     if (!signatureVerifier.verify(
         aggregatorPublicKey.get(), signingRoot, contributionAndProof.getSelectionProof())) {
-      return failureResult(
+      return futureFailureResult(
           "Rejecting proof at slot %s for subcommittee index %s because selection proof is invalid",
           contribution.getSlot(), contribution.getSubcommitteeIndex());
     }
@@ -204,7 +209,7 @@ public class SignedContributionAndProofValidator {
         aggregatorPublicKey.get(),
         syncCommitteeUtil.getContributionAndProofSigningRoot(state, contributionAndProof),
         proof.getSignature())) {
-      return failureResult(
+      return futureFailureResult(
           "Rejecting proof %s because aggregator signature is invalid", proof.getSignature());
     }
 
@@ -232,22 +237,27 @@ public class SignedContributionAndProofValidator {
         syncCommitteeUtil.getSyncCommitteeMessageSigningRoot(
             contribution.getBeaconBlockRoot(), contributionEpoch, state.getForkInfo()),
         contribution.getSignature())) {
-      return failureResult(
+      return futureFailureResult(
           "Rejecting proof because aggregate signature %s is invalid", contribution.getSignature());
     }
 
-    if (!signatureVerifier.batchVerify()) {
-      return failureResult(
-          "Rejecting proof with signature %s because batch signature check failed",
-          contribution.getSignature());
-    }
+    return signatureVerifier
+        .batchVerify()
+        .thenApply(
+            signatureValid -> {
+              if (!signatureValid) {
+                return failureResult(
+                    "Rejecting proof with signature %s because batch signature check failed",
+                    contribution.getSignature());
+              }
 
-    if (!seenIndices.add(uniquenessKey)) {
-      // Got added by another thread while we were validating it
-      return IGNORE;
-    }
+              if (!seenIndices.add(uniquenessKey)) {
+                // Got added by another thread while we were validating it
+                return IGNORE;
+              }
 
-    return ACCEPT;
+              return ACCEPT;
+            });
   }
 
   private BLSPublicKey getParticipantPublicKey(
