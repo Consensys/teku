@@ -14,6 +14,7 @@
 package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.math.BigInteger;
 import java.util.Optional;
@@ -97,5 +98,28 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
             "--Xnetwork-merge-terminal-block-hash-epoch-override", "120000");
     assertThat(config.eth2NetworkConfiguration().getMergeTerminalBlockHashEpochOverride())
         .isEqualTo(Optional.of(UInt64.valueOf(120000)));
+  }
+
+  @Test
+  void shouldFailLoadingInvalidMergeTransitionOverrides() {
+    assertThrows(
+        AssertionError.class,
+        () -> {
+          getTekuConfigurationFromArguments(
+              "--Xnetwork-merge-total-terminal-difficulty-override", "asd");
+        });
+
+    assertThrows(
+        AssertionError.class,
+        () -> {
+          getTekuConfigurationFromArguments("--Xnetwork-merge-terminal-block-hash-override", "756");
+        });
+
+    assertThrows(
+        AssertionError.class,
+        () -> {
+          getTekuConfigurationFromArguments(
+              "--Xnetwork-merge-terminal-block-hash-epoch-override", "asd");
+        });
   }
 }
