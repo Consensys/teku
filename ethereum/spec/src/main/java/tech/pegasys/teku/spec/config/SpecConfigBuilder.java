@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static tech.pegasys.teku.spec.config.SpecConfigFormatter.camelToSnakeCase;
 
+import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -720,9 +721,24 @@ public class SpecConfigBuilder {
       validateConstant("maxTransactionsPerPayload", maxTransactionsPerPayload);
       validateConstant("bytesPerLogsBloom", bytesPerLogsBloom);
       validateConstant("maxExtraDataBytes", maxExtraDataBytes);
-      validateConstant("terminalTotalDifficulty", terminalTotalDifficulty);
-      validateConstant("terminalBlockHash", terminalBlockHash);
-      validateConstant("terminalBlockHashActivationEpoch", terminalBlockHashActivationEpoch);
+
+      // temporary, provide default values for backward compatibility
+      if (terminalTotalDifficulty == null) {
+        terminalTotalDifficulty =
+            UInt256.valueOf(
+                new BigInteger(
+                    "115792089237316195423570985008687907853269984665640564039457584007913129638912"));
+      }
+      if (terminalBlockHash == null) {
+        terminalBlockHash = Bytes32.fromHexStringLenient("0x00");
+      }
+      if (terminalBlockHashActivationEpoch == null) {
+        terminalBlockHashActivationEpoch = UInt64.valueOf("18446744073709551615");
+      }
+      // later activate the following checks
+      // validateConstant("terminalTotalDifficulty", terminalTotalDifficulty);
+      // validateConstant("terminalBlockHash", terminalBlockHash);
+      // validateConstant("terminalBlockHashActivationEpoch", terminalBlockHashActivationEpoch);
     }
 
     public MergeBuilder mergeForkVersion(final Bytes4 mergeForkVersion) {
