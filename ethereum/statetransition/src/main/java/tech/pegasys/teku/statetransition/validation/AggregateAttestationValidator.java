@@ -23,6 +23,7 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 import static tech.pegasys.teku.util.config.Constants.VALID_AGGREGATE_SET_SIZE;
 
 import it.unimi.dsi.fastutil.ints.IntList;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -35,6 +36,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -51,6 +53,8 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class AggregateAttestationValidator {
   private static final Logger LOG = LogManager.getLogger();
+  private final Map<Bytes32, SafeFuture<InternalValidationResult>> aggregateAttestationResultCache =
+      LimitedMap.create(VALID_AGGREGATE_SET_SIZE);
   private final Set<AggregatorIndexAndEpoch> receivedAggregatorIndexAndEpochs =
       LimitedSet.create(VALID_AGGREGATE_SET_SIZE);
   private final AttestationValidator attestationValidator;
@@ -197,10 +201,15 @@ public class AggregateAttestationValidator {
       final BLSSignatureVerifier signatureVerifier,
       final ValidateableAttestation validateableAttestation,
       final OptionalInt receivedOnSubnetId) {
-    return attestationValidator.singleOrAggregateAttestationChecks(
-        AsyncBLSSignatureVerifier.wrap(signatureVerifier),
-        validateableAttestation,
-        receivedOnSubnetId);
+    // We get a lot of aggregate attestations with the same Attestation but different aggregator
+    // These have to be individually processed but we can skip re-validating the Attestation
+    return aggregateAttestationResultCache.computeIfAbsent(
+        validateableAttestation.hash_tree_root(),
+        __ ->
+            attestationValidator.singleOrAggregateAttestationChecks(
+                AsyncBLSSignatureVerifier.wrap(signatureVerifier),
+                validateableAttestation,
+                receivedOnSubnetId));
   }
 
   private static class AggregatorIndexAndEpoch {
