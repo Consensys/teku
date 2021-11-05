@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -171,10 +172,9 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
       numberOfBlockProductionAttempts = blocksAtEpoch.get();
     }
 
-    List<SlotAndBlockRoot> producedBlocks = new ArrayList<>();
+    Collection<SlotAndBlockRoot> producedBlocks = Collections.emptyList();
     if (producedBlocksByEpoch.get(currentEpoch) != null) {
-      producedBlocks =
-          producedBlocksByEpoch.get(currentEpoch).stream().collect(Collectors.toList());
+      producedBlocks = producedBlocksByEpoch.get(currentEpoch);
     }
     final StateAndBlockSummary chainHead = combinedChainDataClient.getChainHead().orElseThrow();
     final BeaconState state = chainHead.getState();
