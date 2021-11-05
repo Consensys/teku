@@ -585,7 +585,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         new SyncCommitteeContributionPool(
             spec,
             new SignedContributionAndProofValidator(
-                spec, recentChainData, syncCommitteeStateUtils, timeProvider));
+                spec,
+                recentChainData,
+                syncCommitteeStateUtils,
+                timeProvider,
+                signatureVerificationService));
 
     syncCommitteeMessagePool =
         new SyncCommitteeMessagePool(
