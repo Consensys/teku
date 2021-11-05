@@ -204,7 +204,7 @@ class GenesisGeneratorTest {
     genesisGenerator.updateExecutionPayloadHeader(payloadHeader);
     final BeaconState actualState = genesisGenerator.getGenesisState();
     assertThat(actualState).isInstanceOf(BeaconStateMerge.class);
-    assertThat(BeaconStateMerge.required(actualState).getLatest_execution_payload_header())
+    assertThat(BeaconStateMerge.required(actualState).getLatestExecutionPayloadHeader())
         .isEqualTo(payloadHeader);
   }
 }
