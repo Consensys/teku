@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.cli;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -26,8 +25,7 @@ import java.nio.file.Path;
 import java.util.Collections;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.cli.BeaconNodeCommand.StartAction;
@@ -46,15 +44,7 @@ public abstract class AbstractBeaconNodeCommandTest {
 
   @TempDir Path dataPath;
 
-  @BeforeAll
-  static void disablePicocliColors() {
-    System.setProperty("picocli.ansi", "false");
-  }
 
-  @AfterAll
-  static void resetPicocliColors() {
-    System.clearProperty("picocli.ansi");
-  }
 
   public TekuConfiguration getResultingTekuConfiguration() {
     try {
