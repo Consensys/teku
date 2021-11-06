@@ -50,7 +50,7 @@ public class ValidatorClientCommandTest {
 
   private final StartAction startAction = mock(StartAction.class);
 
-  private String[] argsNetworkOptAuto, argsNetworkOptAutoInConfig;
+  private String[] argsNetworkOptDefault, argsNetworkOptAuto, argsNetworkOptAutoInConfig;
 
   private ClientAndServer mockBeaconServer;
 
@@ -70,6 +70,8 @@ public class ValidatorClientCommandTest {
     this.mockBeaconServer = server;
     String mockBeaconServerEndpoint =
         String.format("http://127.0.0.1:%s/", mockBeaconServer.getLocalPort());
+    argsNetworkOptDefault =
+        new String[] {"vc", "--beacon-node-api-endpoint", mockBeaconServerEndpoint};
     argsNetworkOptAuto =
         new String[] {
           "vc", "--network", "auto", "--beacon-node-api-endpoint", mockBeaconServerEndpoint
@@ -105,6 +107,12 @@ public class ValidatorClientCommandTest {
   public void autoDetectNetwork_ShouldFetchNetworkDetailsFromBeaconNode_IfEnabledInConfigFile() {
     configureMockServer(0);
     fetchAndVerifySpec(argsNetworkOptAutoInConfig);
+  }
+
+  @Test
+  public void networkOption_ShouldDefaultToAuto_IfNotSpecified() {
+    configureMockServer(0);
+    fetchAndVerifySpec(argsNetworkOptDefault);
   }
 
   private void fetchAndVerifySpec(String[] args) {

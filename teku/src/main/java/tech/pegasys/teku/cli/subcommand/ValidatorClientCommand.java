@@ -88,7 +88,7 @@ public class ValidatorClientCommand implements Callable<Integer> {
               + "Use `auto` to fetch network configuration from the beacon node endpoint directly."
               + "Note that all other values for this option have been deprecated.",
       arity = "1")
-  private String networkOption = "mainnet";
+  private String networkOption = AUTO_NETWORK_OPTION;
 
   @ParentCommand private BeaconNodeCommand parentCommand;
 
