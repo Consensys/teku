@@ -4,6 +4,11 @@ import tech.pegasys.teku.bls.impl.PublicKey;
 
 public class types {
 	
+	// LightClientStore
+	
+	//LightClientSnapshot
+	// - header for BeconBlockHeader
+	
 	private PublicKey pubKey;
 	
 	public PublicKey getPubkey() {
