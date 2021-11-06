@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.cli;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -44,7 +46,7 @@ public abstract class AbstractBeaconNodeCommandTest {
       new BeaconNodeCommand(outputWriter, errorWriter, Collections.emptyMap(), startAction);
 
   @TempDir Path dataPath;
-  
+
   @BeforeAll
   static void disablePicocliColors() {
     System.setProperty("picocli.ansi", "false");
