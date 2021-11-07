@@ -12,6 +12,7 @@ dependencies {
     testFixturesImplementation testFixtures(project(':bls'))
     testFixturesImplementation project(':infrastructure:io')
     testFixturesImplementation 'org.apache.tuweni:tuweni-units'
+    testFixturesImplementation 'org.junit.jupiter:junit-jupiter-api'
 
     testFixturesApi project(':ethereum:pow:api')
     testFixturesApi 'com.google.guava:guava'

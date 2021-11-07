@@ -35,6 +35,7 @@ public abstract class BeaconState implements State {
   @Schema(type = "string", format = "uint64")
   public final UInt64 genesis_time;
 
+  @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
   public final Bytes32 genesis_validators_root;
 
   @Schema(type = "string", format = "uint64")

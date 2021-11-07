@@ -42,7 +42,6 @@ import tech.pegasys.teku.api.response.v1.SyncStateChangeEvent;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
-import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -96,8 +95,8 @@ public class EventSubscriptionManagerTest {
       new FinalizedCheckpointEvent(data.randomBytes32(), data.randomBytes32(), epoch);
 
   private final SyncState sampleSyncState = SyncState.IN_SYNC;
-  private final SignedBeaconBlock sampleBlock =
-      new SignedBeaconBlockAltair(data.randomSignedBeaconBlock(0));
+  private final SignedBeaconBlock<?> sampleBlock =
+      SignedBeaconBlock.create(data.randomSignedBeaconBlock(0));
   private final Attestation sampleAttestation = new Attestation(data.randomAttestation(0));
   private final SignedVoluntaryExit sampleVoluntaryExit =
       new SignedVoluntaryExit(data.randomSignedVoluntaryExit());

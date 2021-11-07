@@ -14,9 +14,7 @@
 package tech.pegasys.teku.spec.util;
 
 import static java.util.stream.Collectors.toList;
-import static tech.pegasys.teku.spec.config.SpecConfig.BYTES_PER_LOGS_BLOOM;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
-import static tech.pegasys.teku.spec.config.SpecConfig.MAX_EXTRA_DATA_BYTES;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
 
 import java.util.ArrayList;
@@ -44,6 +42,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigMerge;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
@@ -95,6 +94,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.SszPrimitive;
@@ -397,21 +397,24 @@ public final class DataStructureUtil {
   }
 
   public ExecutionPayloadHeader randomExecutionPayloadHeader() {
-    return new ExecutionPayloadHeader(
-        randomBytes32(),
-        randomBytes20(),
-        randomBytes32(),
-        randomBytes32(),
-        randomBytes(BYTES_PER_LOGS_BLOOM),
-        randomBytes32(),
-        randomUInt64(),
-        randomUInt64(),
-        randomUInt64(),
-        randomUInt64(),
-        randomBytes(randomInt(MAX_EXTRA_DATA_BYTES)),
-        randomUInt256(),
-        randomBytes32(),
-        randomBytes32());
+    final SpecConfigMerge specConfigMerge = SpecConfigMerge.required(spec.getGenesisSpecConfig());
+    return SchemaDefinitionsMerge.required(spec.getGenesisSchemaDefinitions())
+        .getExecutionPayloadHeaderSchema()
+        .create(
+            randomBytes32(),
+            randomBytes20(),
+            randomBytes32(),
+            randomBytes32(),
+            randomBytes(specConfigMerge.getBytesPerLogsBloom()),
+            randomBytes32(),
+            randomUInt64(),
+            randomUInt64(),
+            randomUInt64(),
+            randomUInt64(),
+            randomBytes(randomInt(specConfigMerge.getMaxExtraDataBytes())),
+            randomUInt256(),
+            randomBytes32(),
+            randomBytes32());
   }
 
   public ExecutionPayload randomExecutionPayloadIfRequiredBySchema(
@@ -420,21 +423,48 @@ public final class DataStructureUtil {
   }
 
   public ExecutionPayload randomExecutionPayload() {
-    return new ExecutionPayload(
-        randomBytes32(),
-        randomBytes20(),
-        randomBytes32(),
-        randomBytes32(),
-        randomBytes(BYTES_PER_LOGS_BLOOM),
-        randomBytes32(),
-        randomUInt64(),
-        randomUInt64(),
-        randomUInt64(),
-        randomUInt64(),
-        randomBytes(randomInt(MAX_EXTRA_DATA_BYTES)),
-        randomUInt256(),
-        randomBytes32(),
-        randomExecutionPayloadTransactions());
+    final SpecConfigMerge specConfigMerge = SpecConfigMerge.required(spec.getGenesisSpecConfig());
+    return SchemaDefinitionsMerge.required(spec.getGenesisSchemaDefinitions())
+        .getExecutionPayloadSchema()
+        .create(
+            randomBytes32(),
+            randomBytes20(),
+            randomBytes32(),
+            randomBytes32(),
+            randomBytes(specConfigMerge.getBytesPerLogsBloom()),
+            randomBytes32(),
+            randomUInt64(),
+            randomUInt64(),
+            randomUInt64(),
+            randomUInt64(),
+            randomBytes(randomInt(specConfigMerge.getMaxExtraDataBytes())),
+            randomUInt256(),
+            randomBytes32(),
+            randomExecutionPayloadTransactions());
+  }
+
+  public ExecutionPayload emptyExecutionPayloadIfRequiredByState(BeaconState state) {
+    return state.toVersionAltair().map(__ -> emptyExecutionPayload()).orElse(null);
+  }
+
+  public ExecutionPayload emptyExecutionPayload() {
+    return getMergeSchemaDefinitions(UInt64.ZERO)
+        .getExecutionPayloadSchema()
+        .create(
+            Bytes32.ZERO,
+            Bytes20.ZERO,
+            Bytes32.ZERO,
+            Bytes32.ZERO,
+            Bytes.EMPTY,
+            Bytes32.ZERO,
+            UInt64.ZERO,
+            UInt64.ZERO,
+            UInt64.ZERO,
+            UInt64.ZERO,
+            Bytes.EMPTY,
+            UInt256.ZERO,
+            Bytes32.ZERO,
+            List.of());
   }
 
   public List<Bytes> randomExecutionPayloadTransactions() {
@@ -953,7 +983,19 @@ public final class DataStructureUtil {
   }
 
   public BeaconState randomBeaconState(final int validatorCount, final int numItemsInSSZLists) {
-    return BeaconStateBuilderPhase0.create(this, spec, validatorCount, numItemsInSSZLists).build();
+    switch (spec.getGenesisSpec().getMilestone()) {
+      case PHASE0:
+        return BeaconStateBuilderPhase0.create(this, spec, validatorCount, numItemsInSSZLists)
+            .build();
+      case ALTAIR:
+        return BeaconStateBuilderAltair.create(this, spec, validatorCount, numItemsInSSZLists)
+            .build();
+      case MERGE:
+        return BeaconStateBuilderMerge.create(this, spec, validatorCount, numItemsInSSZLists)
+            .build();
+      default:
+        throw new IllegalStateException("Unsupported milestone");
+    }
   }
 
   public BeaconStateBuilderPhase0 stateBuilderPhase0() {
@@ -967,6 +1009,10 @@ public final class DataStructureUtil {
 
   public BeaconStateBuilderAltair stateBuilderAltair() {
     return BeaconStateBuilderAltair.create(this, spec, 10, 10);
+  }
+
+  public BeaconStateBuilderMerge stateBuilderMerge() {
+    return BeaconStateBuilderMerge.create(this, spec, 10, 10);
   }
 
   public BeaconState randomBeaconState(UInt64 slot) {
@@ -1065,6 +1111,10 @@ public final class DataStructureUtil {
 
   private SchemaDefinitionsAltair getAltairSchemaDefinitions(final UInt64 slot) {
     return SchemaDefinitionsAltair.required(spec.atSlot(slot).getSchemaDefinitions());
+  }
+
+  private SchemaDefinitionsMerge getMergeSchemaDefinitions(final UInt64 slot) {
+    return SchemaDefinitionsMerge.required(spec.atSlot(slot).getSchemaDefinitions());
   }
 
   int getEpochsPerEth1VotingPeriod() {

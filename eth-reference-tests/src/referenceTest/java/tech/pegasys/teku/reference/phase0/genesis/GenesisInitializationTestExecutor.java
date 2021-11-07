@@ -20,6 +20,7 @@ import static tech.pegasys.teku.reference.TestDataUtils.loadYaml;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
@@ -27,8 +28,10 @@ import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
 
 public class GenesisInitializationTestExecutor implements TestExecutor {
 
@@ -46,9 +49,25 @@ public class GenesisInitializationTestExecutor implements TestExecutor {
                         testDefinition, "deposits_" + index + ".ssz_snappy", Deposit.SSZ_SCHEMA))
             .collect(Collectors.toList());
 
+    final Optional<ExecutionPayloadHeader> executionPayloadHeader;
+    if (metaData.hasExecutionPayloadHeader()) {
+      executionPayloadHeader =
+          Optional.of(
+              loadSsz(
+                  testDefinition,
+                  "execution_payload_header.ssz_snappy",
+                  SchemaDefinitionsMerge.required(spec.getGenesisSchemaDefinitions())
+                      .getExecutionPayloadHeaderSchema()));
+    } else {
+      executionPayloadHeader = Optional.empty();
+    }
+
     final BeaconState result =
         spec.initializeBeaconStateFromEth1(
-            eth1MetaData.getEth1BlockHash(), eth1MetaData.getEth1Timestamp(), deposits);
+            eth1MetaData.getEth1BlockHash(),
+            eth1MetaData.getEth1Timestamp(),
+            deposits,
+            executionPayloadHeader);
     assertThat(result).isEqualTo(expectedGenesisState);
   }
 
@@ -60,8 +79,15 @@ public class GenesisInitializationTestExecutor implements TestExecutor {
     @JsonProperty(value = "deposits_count", required = true)
     private int depositsCount;
 
+    @JsonProperty(value = "execution_payload_header", required = false)
+    private boolean executionPayloadHeader = false;
+
     public int getDepositsCount() {
       return depositsCount;
+    }
+
+    public boolean hasExecutionPayloadHeader() {
+      return executionPayloadHeader;
     }
   }
 

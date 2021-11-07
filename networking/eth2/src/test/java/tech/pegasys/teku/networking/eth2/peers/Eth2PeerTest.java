@@ -29,10 +29,13 @@ import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessage
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class Eth2PeerTest {
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final Spec spec = TestSpecFactory.createMinimalAltair();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final Peer delegate = mock(Peer.class);
   private final BeaconChainMethods rpcMethods = mock(BeaconChainMethods.class);
   private final StatusMessageFactory statusMessageFactory = mock(StatusMessageFactory.class);
@@ -71,6 +74,15 @@ class Eth2PeerTest {
     assertThat(peer.hasStatus()).isTrue();
     assertThat(peer.getStatus()).isEqualTo(randomPeerStatus);
     verify(peerStatusSubscriber).onPeerStatus(randomPeerStatus);
+  }
+
+  @Test
+  void shouldCallCheckPeerIdentity() {
+    final SafeFuture<Boolean> validationResult = new SafeFuture<>();
+    when(peerChainValidator.validate(peer, randomPeerStatus)).thenReturn(validationResult);
+    peer.updateStatus(randomPeerStatus);
+    validationResult.complete(true);
+    verify(delegate).checkPeerIdentity();
   }
 
   @Test

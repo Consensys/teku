@@ -92,7 +92,7 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
  *
  * <p>The signature of aggregate is valid.
  */
-class SignedAggregateAndProofValidatorTest {
+class AggregateAttestationValidatorTest {
 
   private static final List<BLSKeyPair> VALIDATOR_KEYS =
       new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 1024);
@@ -113,7 +113,8 @@ class SignedAggregateAndProofValidatorTest {
   private final AsyncBLSSignatureVerifier signatureVerifier =
       AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE);
   private final AggregateAttestationValidator validator =
-      new AggregateAttestationValidator(recentChainData, attestationValidator, spec);
+      new AggregateAttestationValidator(
+          spec, recentChainData, attestationValidator, signatureVerifier);
   private SignedBlockAndState bestBlock;
   private SignedBlockAndState genesis;
 

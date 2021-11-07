@@ -18,8 +18,10 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNAUTHORIZED;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.restapi.types.CoreTypes;
 import tech.pegasys.teku.validator.restapi.ValidatorTypes;
 
@@ -48,5 +50,10 @@ public class GetKeys extends RestApiEndpoint {
                 "Internal server error",
                 CoreTypes.HTTP_ERROR_RESPONSE_TYPE)
             .build());
+  }
+
+  @Override
+  public void handle(final RestApiRequest request) throws JsonProcessingException {
+    request.respondError(SC_INTERNAL_SERVER_ERROR, "Not implemented");
   }
 }

@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge;
 
 import java.util.Optional;
 import java.util.function.Consumer;
+import tech.pegasys.teku.spec.config.SpecConfigMerge;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
@@ -22,7 +23,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFi
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload.ExecutionPayloadSchema;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -77,34 +78,34 @@ class BeaconBlockBodySchemaMergeImpl
         executionPayloadSchema);
   }
 
-  static BeaconBlockBodySchemaMergeImpl create(
-      final long maxProposerSlashings,
-      final long maxAttesterSlashings,
-      final long maxAttestations,
-      final long maxDeposits,
-      final long maxVoluntaryExits,
-      final int syncCommitteeSize) {
+  static BeaconBlockBodySchemaMergeImpl create(final SpecConfigMerge specConfig) {
     return new BeaconBlockBodySchemaMergeImpl(
         namedSchema(BlockBodyFields.RANDAO_REVEAL.name(), SszSignatureSchema.INSTANCE),
         namedSchema(BlockBodyFields.ETH1_DATA.name(), Eth1Data.SSZ_SCHEMA),
         namedSchema(BlockBodyFields.GRAFFITI.name(), SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(
             BlockBodyFields.PROPOSER_SLASHINGS.name(),
-            SszListSchema.create(ProposerSlashing.SSZ_SCHEMA, maxProposerSlashings)),
+            SszListSchema.create(
+                ProposerSlashing.SSZ_SCHEMA, specConfig.getMaxProposerSlashings())),
         namedSchema(
             BlockBodyFields.ATTESTER_SLASHINGS.name(),
-            SszListSchema.create(AttesterSlashing.SSZ_SCHEMA, maxAttesterSlashings)),
+            SszListSchema.create(
+                AttesterSlashing.SSZ_SCHEMA, specConfig.getMaxAttesterSlashings())),
         namedSchema(
             BlockBodyFields.ATTESTATIONS.name(),
-            SszListSchema.create(Attestation.SSZ_SCHEMA, maxAttestations)),
+            SszListSchema.create(Attestation.SSZ_SCHEMA, specConfig.getMaxAttestations())),
         namedSchema(
-            BlockBodyFields.DEPOSITS.name(), SszListSchema.create(Deposit.SSZ_SCHEMA, maxDeposits)),
+            BlockBodyFields.DEPOSITS.name(),
+            SszListSchema.create(Deposit.SSZ_SCHEMA, specConfig.getMaxDeposits())),
         namedSchema(
             BlockBodyFields.VOLUNTARY_EXITS.name(),
-            SszListSchema.create(SignedVoluntaryExit.SSZ_SCHEMA, maxVoluntaryExits)),
+            SszListSchema.create(
+                SignedVoluntaryExit.SSZ_SCHEMA, specConfig.getMaxVoluntaryExits())),
         namedSchema(
-            BlockBodyFields.SYNC_AGGREGATE.name(), SyncAggregateSchema.create(syncCommitteeSize)),
-        namedSchema(BlockBodyFields.EXECUTION_PAYLOAD.name(), ExecutionPayload.SSZ_SCHEMA));
+            BlockBodyFields.SYNC_AGGREGATE.name(),
+            SyncAggregateSchema.create(specConfig.getSyncCommitteeSize())),
+        namedSchema(
+            BlockBodyFields.EXECUTION_PAYLOAD.name(), new ExecutionPayloadSchema(specConfig)));
   }
 
   @Override

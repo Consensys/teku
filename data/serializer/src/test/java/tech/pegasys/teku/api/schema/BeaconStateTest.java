@@ -15,21 +15,37 @@ package tech.pegasys.teku.api.schema;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestTemplate;
+import tech.pegasys.teku.api.schema.altair.BeaconStateAltair;
+import tech.pegasys.teku.api.schema.merge.BeaconStateMerge;
 import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.spec.TestSpecContext;
+import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 
+@TestSpecContext(allMilestones = true)
 public class BeaconStateTest {
-  private final Spec spec = TestSpecFactory.createMinimalPhase0();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState
-      beaconStateInternal = dataStructureUtil.randomBeaconState();
 
-  @Test
-  public void shouldConvertToInternalObject() {
-    BeaconState beaconState = new BeaconStatePhase0(beaconStateInternal);
+  @TestTemplate
+  public void shouldConvertToInternalObject(SpecContext ctx) {
+    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState beaconStateInternal =
+        ctx.getDataStructureUtil().randomBeaconState();
+    final Spec spec = ctx.getSpec();
+    final BeaconState beaconState;
+
+    switch (spec.getGenesisSpec().getMilestone()) {
+      case PHASE0:
+        beaconState = new BeaconStatePhase0(beaconStateInternal);
+        break;
+      case ALTAIR:
+        beaconState = new BeaconStateAltair(beaconStateInternal);
+        break;
+      case MERGE:
+        beaconState = new BeaconStateMerge(beaconStateInternal);
+        break;
+      default:
+        throw new IllegalStateException("Unsupported milestone");
+    }
 
     assertThat(beaconState.asInternalBeaconState(spec)).isEqualTo(beaconStateInternal);
   }

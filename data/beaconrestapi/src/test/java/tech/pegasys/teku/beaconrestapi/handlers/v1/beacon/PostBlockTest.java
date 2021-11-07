@@ -30,9 +30,9 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
-import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
+import tech.pegasys.teku.api.schema.phase0.BeaconBlockPhase0;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
@@ -78,7 +78,7 @@ class PostBlockTest {
   @Test
   void shouldReturnBadRequestIfArgumentNotSignedBeaconBlock() throws Exception {
     final String notASignedBlock =
-        jsonProvider.objectToJSON(new BeaconBlock(dataStructureUtil.randomBeaconBlock(3)));
+        jsonProvider.objectToJSON(new BeaconBlockPhase0(dataStructureUtil.randomBeaconBlock(3)));
 
     when(syncDataProvider.isSyncing()).thenReturn(false);
     when(context.body()).thenReturn(notASignedBlock);
@@ -130,7 +130,8 @@ class PostBlockTest {
   }
 
   private String buildSignedBeaconBlock() throws JsonProcessingException {
-    SignedBeaconBlock block = new SignedBeaconBlock(dataStructureUtil.randomSignedBeaconBlock(3));
+    SignedBeaconBlock<?> block =
+        SignedBeaconBlock.create(dataStructureUtil.randomSignedBeaconBlock(3));
     return jsonProvider.objectToJSON(block);
   }
 }

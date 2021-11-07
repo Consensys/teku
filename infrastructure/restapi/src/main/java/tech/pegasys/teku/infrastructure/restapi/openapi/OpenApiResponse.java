@@ -33,6 +33,10 @@ public class OpenApiResponse {
     this.content = content;
   }
 
+  public SerializableTypeDefinition<?> getType(final String contentType) {
+    return content.get(contentType);
+  }
+
   public void writeOpenApi(final JsonGenerator gen) throws IOException {
     gen.writeStartObject();
     gen.writeStringField("description", description);

@@ -68,6 +68,8 @@ class SyncCommitteeMetricsTest {
 
   @Test
   void shouldNotUpdateWhenChainHeadIsNotInAltair() {
+    final Spec spec = TestSpecFactory.createMinimalPhase0();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     final BeaconBlockAndState chainHead = dataStructureUtil.randomBlockAndState(50);
     syncCommitteeMetrics.updateSlotBasedMetrics(chainHead.getSlot(), chainHead);
 

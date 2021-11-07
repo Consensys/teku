@@ -95,6 +95,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
               if (valid) {
                 remoteStatus = Optional.of(status);
                 initialStatus.complete(status);
+                checkPeerIdentity();
                 statusSubscribers.deliver(PeerStatusSubscriber::onPeerStatus, status);
               } // Otherwise will have already been disconnected.
             },
