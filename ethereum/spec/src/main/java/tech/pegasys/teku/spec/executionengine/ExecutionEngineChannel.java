@@ -46,8 +46,7 @@ public interface ExecutionEngineChannel extends ChannelInterface {
         }
 
         @Override
-        public SafeFuture<ExecutionPayloadStatus> executePayload(
-            ExecutionPayload executionPayload) {
+        public SafeFuture<ExecutePayloadResult> executePayload(ExecutionPayload executionPayload) {
           return SafeFuture.completedFuture(null);
         }
       };
@@ -61,5 +60,5 @@ public interface ExecutionEngineChannel extends ChannelInterface {
 
   SafeFuture<ExecutionPayload> getPayload(Bytes8 payloadId);
 
-  SafeFuture<ExecutionPayloadStatus> executePayload(ExecutionPayload executionPayload);
+  SafeFuture<ExecutePayloadResult> executePayload(ExecutionPayload executionPayload);
 }
