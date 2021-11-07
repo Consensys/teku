@@ -60,8 +60,10 @@ import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
+import tech.pegasys.teku.services.executionengine.ExecutionEngineService;
 import tech.pegasys.teku.services.timer.TimeTickChannel;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
@@ -73,6 +75,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.SpecLogic;
 import tech.pegasys.teku.statetransition.EpochCachePrimer;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.OperationsReOrgManager;
@@ -303,6 +306,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   public void initAll() {
+    initExecutionEngineService();
     initForkChoice();
     initBlockImporter();
     initCombinedChainDataClient();
@@ -804,6 +808,16 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             spec);
 
     syncService.getForwardSync().subscribeToSyncChanges(coalescingChainHeadChannel);
+  }
+
+  private void initExecutionEngineService() {
+    Optional<SpecLogic> specLogic = Optional.ofNullable(spec.forMilestone(SpecMilestone.MERGE));
+
+    if (specLogic.isPresent()) {
+      ExecutionEngineService executionEngineService =
+          new ExecutionEngineService(spec, null, recentChainData);
+      executionEngineService.initialize(eventChannels);
+    }
   }
 
   private void initOperationsReOrgManager() {

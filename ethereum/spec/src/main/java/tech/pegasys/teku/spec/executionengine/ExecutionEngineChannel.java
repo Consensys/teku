@@ -17,7 +17,9 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.ssz.type.Bytes8;
 
 public interface ExecutionEngineChannel extends ChannelInterface {
   ExecutionEngineChannel NOOP =
@@ -31,9 +33,33 @@ public interface ExecutionEngineChannel extends ChannelInterface {
         public SafeFuture<PowBlock> getPowChainHead() {
           throw new UnsupportedOperationException();
         }
+
+        @Override
+        public SafeFuture<Void> forkChoiceUpdated(
+            ForkchoicheState forkchoicheState, Optional<PayloadAttributes> payloadAttributes) {
+          return SafeFuture.COMPLETE;
+        }
+
+        @Override
+        public SafeFuture<ExecutionPayload> getPayload(Bytes8 payloadId) {
+          return SafeFuture.completedFuture(null);
+        }
+
+        @Override
+        public SafeFuture<ExecutionPayloadStatus> executePayload(
+            ExecutionPayload executionPayload) {
+          return SafeFuture.completedFuture(null);
+        }
       };
 
   SafeFuture<Optional<PowBlock>> getPowBlock(Bytes32 blockHash);
 
   SafeFuture<PowBlock> getPowChainHead();
+
+  SafeFuture<Void> forkChoiceUpdated(
+      ForkchoicheState forkchoicheState, Optional<PayloadAttributes> payloadAttributes);
+
+  SafeFuture<ExecutionPayload> getPayload(Bytes8 payloadId);
+
+  SafeFuture<ExecutionPayloadStatus> executePayload(ExecutionPayload executionPayload);
 }
