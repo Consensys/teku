@@ -16,11 +16,12 @@ package tech.pegasys.teku.lightclient.client;
 import tech.pegasys.teku.bls.impl.PublicKey;
 
 public class types {
-
-  // LightClientStore
-
-  // LightClientSnapshot
-  // - header for BeconBlockHeader
+	
+  public void LightClientSnapshot() {
+	  //Sync committees corresponding to the header
+	  
+	  
+  }
 
   private PublicKey pubKey;
 
