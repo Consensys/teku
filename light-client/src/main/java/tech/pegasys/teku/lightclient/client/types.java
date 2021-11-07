@@ -13,27 +13,38 @@
 
 package tech.pegasys.teku.lightclient.client;
 
-import tech.pegasys.teku.bls.impl.PublicKey;
-
 public class types {
 	
-  public void LightClientSnapshot() {
+	//SyncCommittee Getters & Setters
+  private SyncCommittee currentSyncCommittee;
+  private SyncCommittee nextSyncCommittee;
+  
+	public SyncCommittee getCurrentSyncCommittee() {
+		return currentSyncCommittee;
+	}
+	
+	public void setCurrentSyncCommittee(SyncCommittee currentSyncCommittee) {
+		this.currentSyncCommittee = currentSyncCommittee;
+	}
+
+	public SyncCommittee getNextSyncCommittee() {
+		return nextSyncCommittee;
+	}
+
+	public void setNextSyncCommittee(SyncCommittee nextSyncCommittee) {
+		this.nextSyncCommittee = nextSyncCommittee;
+	}  
+
+		
+  public void LightClientSnapshot(
+		  SyncCommittee currentSyncCommittee,
+		  SyncCommittee nextSyncCommittee) {
 	  //Sync committees corresponding to the header
+	  this.setCurrentSyncCommittee(currentSyncCommittee);
+	  this.setCurrentSyncCommittee(nextSyncCommittee);
 	  
-	  
   }
 
-  private PublicKey pubKey;
 
-  public PublicKey getPubkey() {
-    return pubKey;
-  }
-
-  public void setPubkey(PublicKey pubKey) {
-    this.pubKey = pubKey;
-  }
-
-  public void SyncCommittee() {
-    this.setPubkey(pubKey);
-  }
+  
 }
