@@ -37,15 +37,15 @@ public class DeleteKeys extends RestApiEndpoint {
             .operationId("DeleteKeys")
             .summary("Delete Keys")
             .description(
-                "DELETE must delete all keys from `request.pubkeys` that are known to the keymanager and exist in its\n"
-                    + "        persistent storage. Additionally, DELETE must fetch the slashing protection data for the requested keys from\n"
-                    + "        persistent storage, which must be retained (and not deleted) after the response has been sent. Therefore in the\n"
-                    + "        case of two identical delete requests being made, both will have access to slashing protection data.\n"
-                    + "        In a single atomic sequential operation the keymanager must:\n"
-                    + "        1. Guarantee that key(s) can not produce any more signature; only then\n"
-                    + "        2. Delete key(s) and serialize its associated slashing protection data\n"
-                    + "        DELETE should never return a 404 response, even if all pubkeys from request.pubkeys have no extant keystores\n"
-                    + "        nor slashing protection data.")
+                "DELETE must delete all keys from `request.pubkeys` that are known to the key manager."
+                    + "<br>Additionally, DELETE must fetch the slashing protection data for the requested keys, "
+                    + "which must be retained after the response has been sent. "
+                    + "<br>In the case of two identical delete requests being made, both will have access to slashing protection data."
+                    + "<br>In a single atomic sequential operation the key manager must:"
+                    + "<br>1. Guarantee that key(s) can not produce any more signatures; only then"
+                    + "<br>2. Delete key(s) and serialize its associated slashing protection data"
+                    + "<br><br>DELETE should never return a 404 response, even if all pubkeys from `request.pubkeys` have no key stores "
+                    + "or slashing protection data.")
             .requestBodyType(DeserializableTypeDefinition.listOf(ValidatorTypes.PUBKEY_TYPE))
             .response(SC_OK, "Success response", ValidatorTypes.DELETE_KEYS_RESPONSE_TYPE)
             .withAuthenticationResponses()
