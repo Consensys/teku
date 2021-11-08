@@ -19,6 +19,9 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNAUTHORIZED;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.List;
+import java.util.Set;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
@@ -28,8 +31,9 @@ import tech.pegasys.teku.validator.restapi.ValidatorTypes;
 public class GetKeys extends RestApiEndpoint {
 
   public static final String ROUTE = "/eth/v1/keystores";
+  private final Set<BLSPublicKey> validatorKeys;
 
-  public GetKeys() {
+  public GetKeys(Set<BLSPublicKey> validatorKeys) {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("ListKeys")
@@ -50,10 +54,11 @@ public class GetKeys extends RestApiEndpoint {
                 "Internal server error",
                 CoreTypes.HTTP_ERROR_RESPONSE_TYPE)
             .build());
+    this.validatorKeys = validatorKeys;
   }
 
   @Override
   public void handle(final RestApiRequest request) throws JsonProcessingException {
-    request.respondError(SC_INTERNAL_SERVER_ERROR, "Not implemented");
+    request.respondOk(List.copyOf(validatorKeys));
   }
 }

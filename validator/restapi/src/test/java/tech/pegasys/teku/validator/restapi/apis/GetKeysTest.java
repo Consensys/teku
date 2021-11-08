@@ -16,17 +16,24 @@ package tech.pegasys.teku.validator.restapi.apis;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 
+import com.google.common.collect.Sets;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.restapi.JsonTestUtil;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 
 class GetKeysTest {
   @Test
   void metadata_shouldProduceCorrectOpenApi() throws Exception {
-    final GetKeys endpoint = new GetKeys();
+    final Set<BLSPublicKey> validatorLoader = getList();
+    final GetKeys endpoint = new GetKeys(validatorLoader);
     final String json = JsonTestUtil.serializeEndpointMetadata(endpoint);
     final Map<String, Object> result = JsonTestUtil.parse(json);
 
@@ -37,11 +44,31 @@ class GetKeysTest {
   }
 
   @Test
-  void shouldBeNotImplemented() throws Exception {
-    final GetKeys endpoint = new GetKeys();
+  void shouldListValidatorKeys() throws Exception {
+    final Set<BLSPublicKey> validatorKeys = getList();
+    final GetKeys endpoint = new GetKeys(validatorKeys);
     final RestApiRequest request = mock(RestApiRequest.class);
     endpoint.handle(request);
 
-    verify(request).respondError(SC_INTERNAL_SERVER_ERROR, "Not implemented");
+    verify(request).respondOk(List.copyOf(validatorKeys));
+  }
+
+  @Test
+  void shouldListEmpytValidatorKeys() throws Exception {
+    final Set<BLSPublicKey> validatorKeys = Collections.emptySet();
+    final GetKeys endpoint = new GetKeys(validatorKeys);
+    final RestApiRequest request = mock(RestApiRequest.class);
+    endpoint.handle(request);
+
+    verify(request).respondOk(List.copyOf(validatorKeys));
+  }
+
+  private Set<BLSPublicKey> getList() {
+    BLSKeyPair keyPair1 = BLSTestUtil.randomKeyPair(1);
+    BLSKeyPair keyPair2 = BLSTestUtil.randomKeyPair(2);
+    BLSKeyPair keyPair3 = BLSTestUtil.randomKeyPair(3);
+
+    return Sets.newHashSet(
+        keyPair1.getPublicKey(), keyPair2.getPublicKey(), keyPair3.getPublicKey());
   }
 }
