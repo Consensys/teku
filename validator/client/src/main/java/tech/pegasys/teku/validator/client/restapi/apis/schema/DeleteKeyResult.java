@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.restapi.apis.schema;
+package tech.pegasys.teku.validator.client.restapi.apis.schema;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.MoreObjects;

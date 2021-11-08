@@ -40,7 +40,6 @@ dependencies {
   implementation project(':validator:api')
   implementation project(':validator:client')
   implementation project(':validator:remote')
-  implementation project(':validator:restapi')
 
   api 'com.google.guava:guava'
 

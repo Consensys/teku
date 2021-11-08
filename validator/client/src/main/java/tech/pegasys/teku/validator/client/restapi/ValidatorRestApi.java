@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.restapi;
+package tech.pegasys.teku.validator.client.restapi;
 
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
@@ -26,9 +26,9 @@ import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.restapi.RestApi;
 import tech.pegasys.teku.infrastructure.restapi.RestApiBuilder;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
-import tech.pegasys.teku.validator.restapi.apis.DeleteKeys;
-import tech.pegasys.teku.validator.restapi.apis.GetKeys;
-import tech.pegasys.teku.validator.restapi.apis.PostKeys;
+import tech.pegasys.teku.validator.client.restapi.apis.DeleteKeys;
+import tech.pegasys.teku.validator.client.restapi.apis.GetKeys;
+import tech.pegasys.teku.validator.client.restapi.apis.PostKeys;
 
 public class ValidatorRestApi {
   public static RestApi create(
