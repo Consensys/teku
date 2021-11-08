@@ -36,6 +36,10 @@ public interface SszData extends Merkleizable, SimpleOffsetSerializable {
     return true;
   }
 
+  default boolean isDefault() {
+    return this.equals(getSchema().getDefault());
+  }
+
   /** Gets the schema of this structure */
   SszSchema<? extends SszData> getSchema();
 
