@@ -17,7 +17,6 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
-import java.util.Set;
 import java.util.function.Supplier;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
@@ -28,9 +27,9 @@ import tech.pegasys.teku.validator.restapi.ValidatorTypes;
 public class GetKeys extends RestApiEndpoint {
 
   public static final String ROUTE = "/eth/v1/keystores";
-  private final Supplier<Set<BLSPublicKey>> validatorKeys;
+  private final Supplier<List<BLSPublicKey>> validatorKeys;
 
-  public GetKeys(Supplier<Set<BLSPublicKey>> validatorKeys) {
+  public GetKeys(Supplier<List<BLSPublicKey>> validatorKeys) {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("ListKeys")
@@ -45,6 +44,6 @@ public class GetKeys extends RestApiEndpoint {
 
   @Override
   public void handle(final RestApiRequest request) throws JsonProcessingException {
-    request.respondOk(List.copyOf(validatorKeys.get()));
+    request.respondOk(validatorKeys.get());
   }
 }

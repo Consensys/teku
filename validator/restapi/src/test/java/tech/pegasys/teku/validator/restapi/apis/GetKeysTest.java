@@ -17,11 +17,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-import com.google.common.collect.Sets;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyPair;
@@ -33,7 +32,7 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 class GetKeysTest {
   @Test
   void metadata_shouldProduceCorrectOpenApi() throws Exception {
-    final Supplier<Set<BLSPublicKey>> validatorLoader = getList();
+    final Supplier<List<BLSPublicKey>> validatorLoader = getList();
     final GetKeys endpoint = new GetKeys(validatorLoader);
     final String json = JsonTestUtil.serializeEndpointMetadata(endpoint);
     final Map<String, Object> result = JsonTestUtil.parse(json);
@@ -46,7 +45,7 @@ class GetKeysTest {
 
   @Test
   void shouldListValidatorKeys() throws Exception {
-    final Supplier<Set<BLSPublicKey>> validatorKeys = getList();
+    final Supplier<List<BLSPublicKey>> validatorKeys = getList();
     final GetKeys endpoint = new GetKeys(validatorKeys);
     final RestApiRequest request = mock(RestApiRequest.class);
     endpoint.handle(request);
@@ -56,7 +55,7 @@ class GetKeysTest {
 
   @Test
   void shouldListEmpytValidatorKeys() throws Exception {
-    final Supplier<Set<BLSPublicKey>> validatorKeys = Collections::emptySet;
+    final Supplier<List<BLSPublicKey>> validatorKeys = Collections::emptyList;
     final GetKeys endpoint = new GetKeys(validatorKeys);
     final RestApiRequest request = mock(RestApiRequest.class);
     endpoint.handle(request);
@@ -64,13 +63,13 @@ class GetKeysTest {
     verify(request).respondOk(List.copyOf(validatorKeys.get()));
   }
 
-  private Supplier<Set<BLSPublicKey>> getList() {
+  private Supplier<List<BLSPublicKey>> getList() {
     BLSKeyPair keyPair1 = BLSTestUtil.randomKeyPair(1);
     BLSKeyPair keyPair2 = BLSTestUtil.randomKeyPair(2);
     BLSKeyPair keyPair3 = BLSTestUtil.randomKeyPair(3);
 
-    Set<BLSPublicKey> publicKeys =
-        Sets.newHashSet(keyPair1.getPublicKey(), keyPair2.getPublicKey(), keyPair3.getPublicKey());
+    List<BLSPublicKey> publicKeys =
+        Arrays.asList(keyPair1.getPublicKey(), keyPair2.getPublicKey(), keyPair3.getPublicKey());
     return () -> publicKeys;
   }
 }
