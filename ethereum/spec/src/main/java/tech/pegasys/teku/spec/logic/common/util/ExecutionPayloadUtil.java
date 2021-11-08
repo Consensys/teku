@@ -11,21 +11,6 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.client.restapi.apis.schema;
+package tech.pegasys.teku.spec.logic.common.util;
 
-public enum DeletionStatus {
-  DELETED("deleted"),
-  NOT_ACTIVE("not_active"),
-  NOT_FOUND("not_found"),
-  ERROR("error");
-  private final String displayName;
-
-  DeletionStatus(final String displayName) {
-    this.displayName = displayName;
-  }
-
-  @Override
-  public String toString() {
-    return displayName;
-  }
-}
+public class ExecutionPayloadUtil {}

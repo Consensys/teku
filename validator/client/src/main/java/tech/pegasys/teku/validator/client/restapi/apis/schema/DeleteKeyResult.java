@@ -35,20 +35,20 @@ public class DeleteKeyResult {
 
   public static DeleteKeyResult success(final String slashingProtection) {
     return new DeleteKeyResult(
-        DeletionStatus.deleted, Optional.empty(), Optional.of(slashingProtection));
+        DeletionStatus.DELETED, Optional.empty(), Optional.of(slashingProtection));
   }
 
   public static DeleteKeyResult notFound() {
-    return new DeleteKeyResult(DeletionStatus.not_found, Optional.empty(), Optional.empty());
+    return new DeleteKeyResult(DeletionStatus.NOT_FOUND, Optional.empty(), Optional.empty());
   }
 
   public static DeleteKeyResult notActive(final String slashingProtection) {
     return new DeleteKeyResult(
-        DeletionStatus.not_active, Optional.empty(), Optional.of(slashingProtection));
+        DeletionStatus.NOT_ACTIVE, Optional.empty(), Optional.of(slashingProtection));
   }
 
   public static DeleteKeyResult error(final String message) {
-    return new DeleteKeyResult(DeletionStatus.error, Optional.of(message), Optional.empty());
+    return new DeleteKeyResult(DeletionStatus.ERROR, Optional.of(message), Optional.empty());
   }
 
   public DeletionStatus getStatus() {
