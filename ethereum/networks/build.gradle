@@ -2,6 +2,7 @@ dependencies {
     api project(':ethereum:spec')
 
     implementation project(':infrastructure:io')
+    implementation 'org.apache.tuweni:tuweni-units'
 
     testImplementation 'tech.pegasys.discovery:discovery'
 

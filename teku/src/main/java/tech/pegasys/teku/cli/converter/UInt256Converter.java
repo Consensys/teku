@@ -11,21 +11,20 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.restapi.apis.schema;
+package tech.pegasys.teku.cli.converter;
 
-public enum DeletionStatus {
-  DELETED("deleted"),
-  NOT_ACTIVE("not_active"),
-  NOT_FOUND("not_found"),
-  ERROR("error");
-  private final String displayName;
+import java.math.BigInteger;
+import org.apache.tuweni.units.bigints.UInt256;
+import picocli.CommandLine.ITypeConverter;
+import picocli.CommandLine.TypeConversionException;
 
-  DeletionStatus(final String displayName) {
-    this.displayName = displayName;
-  }
-
+public class UInt256Converter implements ITypeConverter<UInt256> {
   @Override
-  public String toString() {
-    return displayName;
+  public UInt256 convert(final String value) {
+    try {
+      return UInt256.valueOf(new BigInteger(value));
+    } catch (final NumberFormatException e) {
+      throw new TypeConversionException("Invalid format: must be a numeric value but was " + value);
+    }
   }
 }
