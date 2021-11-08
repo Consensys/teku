@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-import com.google.common.base.Suppliers;
 import com.google.common.collect.Sets;
 import java.util.Collections;
 import java.util.List;
@@ -57,7 +56,7 @@ class GetKeysTest {
 
   @Test
   void shouldListEmpytValidatorKeys() throws Exception {
-    final Supplier<Set<BLSPublicKey>> validatorKeys = Suppliers.memoize(Collections::emptySet);
+    final Supplier<Set<BLSPublicKey>> validatorKeys = Collections::emptySet;
     final GetKeys endpoint = new GetKeys(validatorKeys);
     final RestApiRequest request = mock(RestApiRequest.class);
     endpoint.handle(request);
@@ -70,8 +69,8 @@ class GetKeysTest {
     BLSKeyPair keyPair2 = BLSTestUtil.randomKeyPair(2);
     BLSKeyPair keyPair3 = BLSTestUtil.randomKeyPair(3);
 
-    Set<BLSPublicKey> b =
+    Set<BLSPublicKey> publicKeys =
         Sets.newHashSet(keyPair1.getPublicKey(), keyPair2.getPublicKey(), keyPair3.getPublicKey());
-    return Suppliers.memoize(() -> b);
+    return () -> publicKeys;
   }
 }
