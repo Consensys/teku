@@ -32,8 +32,8 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 class GetKeysTest {
   @Test
   void metadata_shouldProduceCorrectOpenApi() throws Exception {
-    final Supplier<List<BLSPublicKey>> validatorLoader = getList();
-    final GetKeys endpoint = new GetKeys(validatorLoader);
+    final Supplier<List<BLSPublicKey>> validatorKeys = getList();
+    final GetKeys endpoint = new GetKeys(validatorKeys);
     final String json = JsonTestUtil.serializeEndpointMetadata(endpoint);
     final Map<String, Object> result = JsonTestUtil.parse(json);
 
