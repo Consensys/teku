@@ -109,10 +109,9 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
     }
 
     UInt64 currentEpoch = spec.computeEpochAtSlot(slot);
-    if (!latestAnalyzedEpoch.get().isZero()
-        && currentEpoch.isLessThanOrEqualTo(
-            latestAnalyzedEpoch.getAndUpdate(
-                val -> val.isLessThan(currentEpoch) ? currentEpoch : val))) {
+    if (currentEpoch.isLessThanOrEqualTo(
+        latestAnalyzedEpoch.getAndUpdate(
+            val -> val.isLessThan(currentEpoch) ? currentEpoch : val))) {
       return;
     }
 
@@ -135,18 +134,21 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
       producedAttestationsByEpoch.headMap(analyzedEpoch, true).clear();
     }
 
-    BlockPerformance blockPerformance = getBlockPerformanceForEpoch(currentEpoch);
-    if (blockPerformance.numberOfExpectedBlocks > 0) {
-      if (mode.isLoggingEnabled()) {
-        statusLogger.performance(blockPerformance.toString());
-      }
+    // Nothing to report until epoch 0 is complete
+    if (!currentEpoch.isZero()) {
+      final UInt64 blockProductionEpoch = currentEpoch.minus(1);
+      BlockPerformance blockPerformance = getBlockPerformanceForEpoch(blockProductionEpoch);
+      if (blockPerformance.numberOfExpectedBlocks > 0) {
+        if (mode.isLoggingEnabled()) {
+          statusLogger.performance(blockPerformance.toString());
+        }
 
-      if (mode.isMetricsEnabled()) {
-        validatorPerformanceMetrics.updateBlockPerformanceMetrics(blockPerformance);
+        if (mode.isMetricsEnabled()) {
+          validatorPerformanceMetrics.updateBlockPerformanceMetrics(blockPerformance);
+        }
       }
-
-      producedBlocksByEpoch.headMap(currentEpoch, true).clear();
-      blockProductionAttemptsByEpoch.headMap(currentEpoch, true).clear();
+      producedBlocksByEpoch.headMap(blockProductionEpoch, true).clear();
+      blockProductionAttemptsByEpoch.headMap(blockProductionEpoch, true).clear();
     }
 
     // Nothing to report until epoch 0 is complete
