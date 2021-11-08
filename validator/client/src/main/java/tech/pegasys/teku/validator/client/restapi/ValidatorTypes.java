@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.restapi;
+package tech.pegasys.teku.validator.client.restapi;
 
 import java.util.List;
 import java.util.function.Function;
@@ -21,8 +21,8 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.restapi.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.restapi.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.types.SerializableTypeDefinition;
-import tech.pegasys.teku.validator.restapi.apis.schema.DeleteKeyResult;
-import tech.pegasys.teku.validator.restapi.apis.schema.DeletionStatus;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.DeletionStatus;
 
 public class ValidatorTypes {
   public static DeserializableTypeDefinition<BLSPublicKey> PUBKEY_TYPE =

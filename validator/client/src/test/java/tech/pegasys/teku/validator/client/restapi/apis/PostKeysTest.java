@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.restapi.apis;
+package tech.pegasys.teku.validator.client.restapi.apis;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -23,22 +23,22 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.restapi.JsonTestUtil;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 
-class GetKeysTest {
+public class PostKeysTest {
   @Test
   void metadata_shouldProduceCorrectOpenApi() throws Exception {
-    final GetKeys endpoint = new GetKeys();
+    final PostKeys endpoint = new PostKeys();
     final String json = JsonTestUtil.serializeEndpointMetadata(endpoint);
     final Map<String, Object> result = JsonTestUtil.parse(json);
 
     final Map<String, Object> expected =
-        JsonTestUtil.parseJsonResource(GetKeysTest.class, "GetKeys.json");
+        JsonTestUtil.parseJsonResource(PostKeysTest.class, "PostKeys.json");
 
     assertThat(result).isEqualTo(expected);
   }
 
   @Test
   void shouldBeNotImplemented() throws Exception {
-    final GetKeys endpoint = new GetKeys();
+    final PostKeys endpoint = new PostKeys();
     final RestApiRequest request = mock(RestApiRequest.class);
     endpoint.handle(request);
 
