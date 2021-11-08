@@ -13,7 +13,13 @@
 
 package tech.pegasys.teku.lightclient.client;
 
-public class types {
+import tech.pegasys.teku.spec.logic.versions.altair.SpecLogicAltair;
+
+public class Types {
+	
+	
+	
+	private SpecLogicAltair header;
 	
 	//SyncCommittee Getters & Setters
   private SyncCommittee currentSyncCommittee;
