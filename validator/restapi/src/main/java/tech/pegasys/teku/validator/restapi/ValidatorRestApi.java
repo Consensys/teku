@@ -17,17 +17,23 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUE
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.restapi.RestApi;
 import tech.pegasys.teku.infrastructure.restapi.RestApiBuilder;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
+import tech.pegasys.teku.validator.restapi.apis.DeleteKeys;
 import tech.pegasys.teku.validator.restapi.apis.GetKeys;
+import tech.pegasys.teku.validator.restapi.apis.PostKeys;
 
 public class ValidatorRestApi {
+  private static final Logger LOG = LogManager.getLogger();
 
   public static RestApi create(final ValidatorRestApiConfig config) {
+    LOG.error("PJH CORS: {}", config.getRestApiCorsAllowedOrigins());
     return new RestApiBuilder()
         .openApiInfo(
             openApi ->
@@ -52,6 +58,8 @@ public class ValidatorRestApi {
             BadRequestException.class,
             (throwable, url) -> new HttpErrorResponse(SC_BAD_REQUEST, throwable.getMessage()))
         .endpoint(new GetKeys())
+        .endpoint(new DeleteKeys())
+        .endpoint(new PostKeys())
         .build();
   }
 }

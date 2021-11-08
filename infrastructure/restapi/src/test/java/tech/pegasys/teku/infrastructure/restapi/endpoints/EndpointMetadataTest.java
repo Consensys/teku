@@ -24,6 +24,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata.EndpointMetaDataBuilder;
 import tech.pegasys.teku.infrastructure.restapi.types.CoreTypes;
+import tech.pegasys.teku.infrastructure.restapi.types.DeserializableArrayTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.types.SerializableTypeDefinition;
 
@@ -83,6 +84,30 @@ class EndpointMetadataTest {
         validBuilder().response(SC_OK, "Success", CoreTypes.STRING_TYPE).build();
     assertThatThrownBy(() -> metadata.getResponseType(SC_OK, "foo"))
         .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  void requestBodyType_shouldAcceptTypes() {
+    final DeserializableTypeDefinition<String> type = CoreTypes.STRING_TYPE;
+    final EndpointMetadata metadata =
+        validBuilder()
+            .requestBodyType(CoreTypes.STRING_TYPE)
+            .response(SC_OK, "Success", CoreTypes.STRING_TYPE)
+            .build();
+    assertThat(metadata.getRequestBodyType()).isSameAs(type);
+  }
+
+  @Test
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  void requestBodyType_shouldAcceptLists() {
+    final DeserializableArrayTypeDefinition<String> type =
+        new DeserializableArrayTypeDefinition(CoreTypes.STRING_TYPE);
+    final EndpointMetadata metadata =
+        validBuilder()
+            .requestBodyType(type)
+            .response(SC_OK, "Success", CoreTypes.STRING_TYPE)
+            .build();
+    assertThat(metadata.getRequestBodyType()).isSameAs(type);
   }
 
   @Test
