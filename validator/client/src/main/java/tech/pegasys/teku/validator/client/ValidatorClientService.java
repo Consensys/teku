@@ -113,7 +113,11 @@ public class ValidatorClientService extends Service {
     final ValidatorRestApiConfig validatorApiConfig = config.getValidatorRestApiConfig();
     Optional<RestApi> validatorRestApi = Optional.empty();
     if (validatorApiConfig.isRestApiEnabled()) {
-      validatorRestApi = Optional.of(ValidatorRestApi.create(validatorApiConfig));
+      validatorRestApi =
+          Optional.of(
+              ValidatorRestApi.create(
+                  validatorApiConfig,
+                  () -> List.copyOf(validatorLoader.getOwnedValidators().getPublicKeys())));
     } else {
       LOG.info("validator-api-enabled is false, not starting rest api.");
     }

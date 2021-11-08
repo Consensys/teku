@@ -31,7 +31,6 @@ For information on changes in released versions of Teku, see the [releases page]
 - Reduce CPU usage by using batching signature verification service for aggregate attestation and sync committee contributions.
 
 
-
 ### Bug Fixes
 - Fixed issue where discovery did not correctly abort handshake attempts when a request timed out.
 - Downgrade to jbslt 0.3.5 to resolve incompatibility with Windows 10.
