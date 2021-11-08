@@ -26,13 +26,13 @@ import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.restapi.RestApi;
 import tech.pegasys.teku.infrastructure.restapi.RestApiBuilder;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
+import tech.pegasys.teku.validator.restapi.apis.DeleteKeys;
 import tech.pegasys.teku.validator.restapi.apis.GetKeys;
+import tech.pegasys.teku.validator.restapi.apis.PostKeys;
 
 public class ValidatorRestApi {
-
   public static RestApi create(
       final ValidatorRestApiConfig config, final Supplier<Set<BLSPublicKey>> validatorKeys) {
-
     return new RestApiBuilder()
         .openApiInfo(
             openApi ->
@@ -57,6 +57,8 @@ public class ValidatorRestApi {
             BadRequestException.class,
             (throwable, url) -> new HttpErrorResponse(SC_BAD_REQUEST, throwable.getMessage()))
         .endpoint(new GetKeys(validatorKeys))
+        .endpoint(new DeleteKeys())
+        .endpoint(new PostKeys())
         .build();
   }
 }

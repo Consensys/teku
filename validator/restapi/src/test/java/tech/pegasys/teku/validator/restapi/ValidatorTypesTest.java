@@ -63,6 +63,16 @@ class ValidatorTypesTest {
     assertOpenApi(ValidatorTypes.PUBKEY_TYPE, "PubKey.json");
   }
 
+  @Test
+  void deleteKeysResponse_shouldSerializeOpenApi() throws Exception {
+    assertOpenApi(ValidatorTypes.DELETE_KEYS_RESPONSE_TYPE, "DeleteKeysResponse.json");
+  }
+
+  @Test
+  void deleteKeyResult_shouldSerializeOpenApi() throws Exception {
+    assertOpenApi(ValidatorTypes.DELETE_KEY_RESULT, "DeleteKeyResult.json");
+  }
+
   private void assertOpenApi(final SerializableTypeDefinition<?> type, final String resourceName)
       throws Exception {
     final Map<String, Object> expectedParsed = parseJsonResource(resourceName);

@@ -17,6 +17,9 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Collections.emptyMap;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_FORBIDDEN;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNAUTHORIZED;
 import static tech.pegasys.teku.infrastructure.restapi.json.JsonUtil.JSON_CONTENT_TYPE;
 
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -27,8 +30,11 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.infrastructure.restapi.openapi.OpenApiResponse;
+import tech.pegasys.teku.infrastructure.restapi.types.CoreTypes;
+import tech.pegasys.teku.infrastructure.restapi.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.types.OpenApiTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.types.SerializableTypeDefinition;
 
@@ -39,6 +45,7 @@ public class EndpointMetadata {
   private final String summary;
   private final String description;
   private final Map<String, OpenApiResponse> responses;
+  private final Optional<DeserializableTypeDefinition<?>> requestBodyType;
 
   private EndpointMetadata(
       final HandlerType method,
@@ -46,17 +53,27 @@ public class EndpointMetadata {
       final String operationId,
       final String summary,
       final String description,
-      final Map<String, OpenApiResponse> responses) {
+      final Map<String, OpenApiResponse> responses,
+      final Optional<DeserializableTypeDefinition<?>> requestBodyType) {
     this.method = method;
     this.path = path;
     this.operationId = operationId;
     this.summary = summary;
     this.description = description;
     this.responses = responses;
+    this.requestBodyType = requestBodyType;
   }
 
   public static EndpointMetaDataBuilder get(final String path) {
     return new EndpointMetaDataBuilder().method(HandlerType.GET).path(path);
+  }
+
+  public static EndpointMetaDataBuilder post(final String path) {
+    return new EndpointMetaDataBuilder().method(HandlerType.POST).path(path);
+  }
+
+  public static EndpointMetaDataBuilder delete(final String path) {
+    return new EndpointMetaDataBuilder().method(HandlerType.DELETE).path(path);
   }
 
   public HandlerType getMethod() {
@@ -87,6 +104,19 @@ public class EndpointMetadata {
     gen.writeStringField("summary", summary);
     gen.writeStringField("description", description);
 
+    if (requestBodyType.isPresent()) {
+      final DeserializableTypeDefinition<?> content = requestBodyType.get();
+      gen.writeObjectFieldStart("requestBody");
+      gen.writeObjectFieldStart("content");
+      gen.writeObjectFieldStart(JSON_CONTENT_TYPE);
+      gen.writeFieldName("schema");
+      content.serializeOpenApiTypeOrReference(gen);
+      gen.writeEndObject();
+
+      gen.writeEndObject();
+      gen.writeEndObject();
+    }
+
     gen.writeObjectFieldStart("responses");
     for (Entry<String, OpenApiResponse> responseEntry : responses.entrySet()) {
       gen.writeFieldName(responseEntry.getKey());
@@ -102,12 +132,17 @@ public class EndpointMetadata {
         .collect(Collectors.toSet());
   }
 
+  public DeserializableTypeDefinition<?> getRequestBodyType() {
+    return requestBodyType.orElseThrow();
+  }
+
   public static class EndpointMetaDataBuilder {
     private HandlerType method;
     private String path;
     private String operationId;
     private String summary;
     private String description;
+    private Optional<DeserializableTypeDefinition<?>> requestBodyType = Optional.empty();
     private final Map<String, OpenApiResponse> responses = new LinkedHashMap<>();
 
     public EndpointMetaDataBuilder method(final HandlerType method) {
@@ -139,11 +174,38 @@ public class EndpointMetadata {
       return response(responseCode, description, emptyMap());
     }
 
+    public EndpointMetaDataBuilder requestBodyType(
+        final DeserializableTypeDefinition<?> requestBodyType) {
+      this.requestBodyType = Optional.of(requestBodyType);
+      return this;
+    }
+
     public EndpointMetaDataBuilder response(
         final int responseCode,
         final String description,
         final SerializableTypeDefinition<?> content) {
       return response(responseCode, description, Map.of(JSON_CONTENT_TYPE, content));
+    }
+
+    public EndpointMetaDataBuilder withUnauthorizedResponse() {
+      return response(
+          SC_UNAUTHORIZED, "Unauthorized, no token is found", CoreTypes.HTTP_ERROR_RESPONSE_TYPE);
+    }
+
+    public EndpointMetaDataBuilder withForbiddenResponse() {
+      return response(
+          SC_FORBIDDEN,
+          "Forbidden, a token is found but is invalid",
+          CoreTypes.HTTP_ERROR_RESPONSE_TYPE);
+    }
+
+    public EndpointMetaDataBuilder withAuthenticationResponses() {
+      return withUnauthorizedResponse().withForbiddenResponse();
+    }
+
+    public EndpointMetaDataBuilder withInternalErrorResponse() {
+      return response(
+          SC_INTERNAL_SERVER_ERROR, "Internal server error", CoreTypes.HTTP_ERROR_RESPONSE_TYPE);
     }
 
     public EndpointMetaDataBuilder response(
@@ -161,7 +223,13 @@ public class EndpointMetadata {
       checkNotNull(summary, "summary must be specified");
       checkNotNull(description, "description must be specified");
       checkState(!responses.isEmpty(), "Must specify at least one response");
-      return new EndpointMetadata(method, path, operationId, summary, description, responses);
+
+      if (!responses.containsKey(Integer.toString(SC_INTERNAL_SERVER_ERROR))) {
+        // add internal error response if a custom response hasn't been defined
+        withInternalErrorResponse();
+      }
+      return new EndpointMetadata(
+          method, path, operationId, summary, description, responses, requestBodyType);
     }
   }
 }
