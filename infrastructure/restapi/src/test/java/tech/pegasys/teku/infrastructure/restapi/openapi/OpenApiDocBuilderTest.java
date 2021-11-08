@@ -92,7 +92,7 @@ class OpenApiDocBuilderTest {
             entry("description", "The description"));
 
     final Map<String, Object> responses = getObject(getHandler, "responses");
-    assertThat(responses).containsOnlyKeys("200");
+    assertThat(responses).containsOnlyKeys("200", "500");
     final Map<String, Object> okResponses = getObject(responses, "200");
     assertThat(okResponses).containsOnlyKeys("description", "content");
     assertThat(okResponses).containsEntry("description", "A simple string");
@@ -121,7 +121,7 @@ class OpenApiDocBuilderTest {
     final Map<String, Object> result = parse(validBuilder().endpoint(endpoint).build());
     final Map<String, Object> responses =
         getObject(result, "paths", "/test/endpoint", "get", "responses");
-    assertThat(responses).containsOnlyKeys("200", "404");
+    assertThat(responses).containsOnlyKeys("200", "404", "500");
 
     final Map<String, Object> okResponses = getObject(responses, "200");
     assertThat(okResponses).containsEntry("description", "It depends");
