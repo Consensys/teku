@@ -16,9 +16,12 @@ package tech.pegasys.teku.validator.restapi;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 
+import java.util.List;
+import java.util.function.Supplier;
 import org.apache.commons.lang3.StringUtils;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.restapi.RestApi;
 import tech.pegasys.teku.infrastructure.restapi.RestApiBuilder;
@@ -28,7 +31,9 @@ import tech.pegasys.teku.validator.restapi.apis.GetKeys;
 import tech.pegasys.teku.validator.restapi.apis.PostKeys;
 
 public class ValidatorRestApi {
-  public static RestApi create(final ValidatorRestApiConfig config) {
+  public static RestApi create(
+      final ValidatorRestApiConfig config,
+      final Supplier<List<BLSPublicKey>> validatorKeysSupplier) {
     return new RestApiBuilder()
         .openApiInfo(
             openApi ->
@@ -52,7 +57,7 @@ public class ValidatorRestApi {
         .exceptionHandler(
             BadRequestException.class,
             (throwable, url) -> new HttpErrorResponse(SC_BAD_REQUEST, throwable.getMessage()))
-        .endpoint(new GetKeys())
+        .endpoint(new GetKeys(validatorKeysSupplier))
         .endpoint(new DeleteKeys())
         .endpoint(new PostKeys())
         .build();
