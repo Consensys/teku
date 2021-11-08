@@ -21,9 +21,10 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.restapi.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.restapi.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.types.SerializableTypeDefinition;
+import tech.pegasys.teku.validator.restapi.apis.schema.DeleteKeyResult;
+import tech.pegasys.teku.validator.restapi.apis.schema.DeletionStatus;
 
 public class ValidatorTypes {
-
   public static DeserializableTypeDefinition<BLSPublicKey> PUBKEY_TYPE =
       DeserializableTypeDefinition.string(BLSPublicKey.class)
           .name("PubKey")
@@ -58,5 +59,22 @@ public class ValidatorTypes {
           .name("ListKeysResponse")
           .withField(
               "keys", SerializableTypeDefinition.listOf(VALIDATOR_KEY_TYPE), Function.identity())
+          .build();
+
+  static SerializableTypeDefinition<DeleteKeyResult> DELETE_KEY_RESULT =
+      SerializableTypeDefinition.object(DeleteKeyResult.class)
+          .name("DeleteKeyResult")
+          .withField(
+              "status", DeserializableTypeDefinition.enumOf(DeletionStatus.class), __ -> null)
+          .withOptionalField("message", CoreTypes.STRING_TYPE, DeleteKeyResult::getMessage)
+          .withOptionalField(
+              "slashing_protection", CoreTypes.STRING_TYPE, DeleteKeyResult::getSlashingProtection)
+          .build();
+
+  public static SerializableTypeDefinition<List<DeleteKeyResult>> DELETE_KEYS_RESPONSE_TYPE =
+      SerializableTypeDefinition.<List<DeleteKeyResult>>object()
+          .name("DeleteKeysResponse")
+          .withField(
+              "data", SerializableTypeDefinition.listOf(DELETE_KEY_RESULT), Function.identity())
           .build();
 }

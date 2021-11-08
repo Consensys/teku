@@ -18,16 +18,21 @@ import java.io.IOException;
 import java.util.List;
 import tech.pegasys.teku.infrastructure.restapi.types.StringBasedPrimitiveTypeDefinition.StringTypeBuilder;
 
-public interface DeserializableTypeDefinition<T> extends SerializableTypeDefinition<T> {
+public interface DeserializableTypeDefinition<TObject> extends SerializableTypeDefinition<TObject> {
 
-  T deserialize(JsonParser parser) throws IOException;
+  TObject deserialize(JsonParser parser) throws IOException;
 
-  static <T> StringTypeBuilder<T> string(@SuppressWarnings("unused") final Class<T> clazz) {
+  static <TObject> StringTypeBuilder<TObject> string(
+      @SuppressWarnings("unused") final Class<TObject> clazz) {
     return new StringTypeBuilder<>();
   }
 
   static <T> DeserializableTypeDefinition<List<T>> listOf(
       final DeserializableTypeDefinition<T> itemType) {
     return new DeserializableArrayTypeDefinition<>(itemType);
+  }
+
+  static <T extends Enum<T>> DeserializableTypeDefinition<T> enumOf(final Class<T> itemType) {
+    return new EnumTypeDefinition<>(itemType);
   }
 }

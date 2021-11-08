@@ -21,7 +21,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker.ATTESTATION_INCLUSION_RANGE;
-import static tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker.BLOCK_PERFORMANCE_EVALUATION_INTERVAL;
 
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -89,20 +88,20 @@ public class DefaultPerformanceTrackerTest {
     performanceTracker.reportBlockProductionAttempt(spec.computeEpochAtSlot(UInt64.valueOf(2)));
     performanceTracker.saveProducedBlock(chainUpdater.chainBuilder.getBlockAtSlot(1));
     performanceTracker.saveProducedBlock(chainUpdater.chainBuilder.getBlockAtSlot(2));
-    performanceTracker.onSlot(spec.computeStartSlotAtEpoch(BLOCK_PERFORMANCE_EVALUATION_INTERVAL));
-    BlockPerformance expectedBlockPerformance = new BlockPerformance(2, 2, 2);
+    performanceTracker.onSlot(spec.computeStartSlotAtEpoch(UInt64.ONE));
+    BlockPerformance expectedBlockPerformance = new BlockPerformance(UInt64.ZERO, 2, 2, 2);
     verify(log).performance(expectedBlockPerformance.toString());
   }
 
   @Test
   void shouldDisplayBlockInclusionWhenProducedBlockIsChainHead() {
-    final UInt64 lastSlot = spec.computeStartSlotAtEpoch(BLOCK_PERFORMANCE_EVALUATION_INTERVAL);
+    final UInt64 lastSlot = spec.computeStartSlotAtEpoch(UInt64.ONE);
     final SignedBlockAndState bestBlock = chainUpdater.advanceChainUntil(2);
     chainUpdater.updateBestBlock(bestBlock);
     performanceTracker.reportBlockProductionAttempt(spec.computeEpochAtSlot(bestBlock.getSlot()));
     performanceTracker.saveProducedBlock(bestBlock.getBlock());
     performanceTracker.onSlot(lastSlot);
-    BlockPerformance expectedBlockPerformance = new BlockPerformance(1, 1, 1);
+    BlockPerformance expectedBlockPerformance = new BlockPerformance(UInt64.ZERO, 1, 1, 1);
     verify(log).performance(expectedBlockPerformance.toString());
   }
 
@@ -115,8 +114,8 @@ public class DefaultPerformanceTrackerTest {
     performanceTracker.saveProducedBlock(chainUpdater.chainBuilder.getBlockAtSlot(1));
     performanceTracker.saveProducedBlock(chainUpdater.chainBuilder.getBlockAtSlot(2));
     performanceTracker.saveProducedBlock(dataStructureUtil.randomSignedBeaconBlock(3));
-    performanceTracker.onSlot(spec.computeStartSlotAtEpoch(BLOCK_PERFORMANCE_EVALUATION_INTERVAL));
-    BlockPerformance expectedBlockPerformance = new BlockPerformance(3, 2, 3);
+    performanceTracker.onSlot(spec.computeStartSlotAtEpoch(UInt64.ONE));
+    BlockPerformance expectedBlockPerformance = new BlockPerformance(UInt64.ZERO, 3, 2, 3);
     verify(log).performance(expectedBlockPerformance.toString());
   }
 
@@ -262,7 +261,7 @@ public class DefaultPerformanceTrackerTest {
             dataStructureUtil.randomBitlist(),
             dataStructureUtil.randomAttestationData(UInt64.ONE),
             BLSTestUtil.randomSignature(0)));
-    performanceTracker.onSlot(spec.computeStartSlotAtEpoch(BLOCK_PERFORMANCE_EVALUATION_INTERVAL));
+    performanceTracker.onSlot(spec.computeStartSlotAtEpoch(UInt64.valueOf(2)));
     assertThat(performanceTracker.producedAttestationsByEpoch).isEmpty();
     assertThat(performanceTracker.producedBlocksByEpoch).isEmpty();
     assertThat(performanceTracker.blockProductionAttemptsByEpoch).isEmpty();
