@@ -26,7 +26,11 @@ For information on changes in released versions of Teku, see the [releases page]
 - Added metrics to report client type of connected peers - `libp2p_connected_peers_current`, with client tag `Teku`, `Lighthouse`, `Prysm`, `Nimbus`, `Unknown`.
 - Added support for Apple Silicon (M1 chips).
 - Added LevelDB support for Linux/arm64.
-- New console message when Teku switches forks.
+- Switched executor queue size metrics to use labelled gauge.
+- New console message when Teku switches forks. 
+- Reduce CPU usage by using batching signature verification service for aggregate attestation and sync committee contributions.
+
+
 
 ### Bug Fixes
 - Fixed issue where discovery did not correctly abort handshake attempts when a request timed out.

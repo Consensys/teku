@@ -6,6 +6,7 @@ dependencies {
   implementation project(':ethereum:spec')
   implementation project(':util')
   implementation 'org.apache.tuweni:tuweni-bytes'
+  implementation 'org.apache.tuweni:tuweni-units'
 
   testImplementation project(':data:provider')
   testImplementation testFixtures(project(':ethereum:spec'))

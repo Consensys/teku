@@ -13,21 +13,12 @@
 
 package tech.pegasys.teku.spec.datastructures.execution;
 
-import static com.google.common.base.Preconditions.checkState;
-
-import tech.pegasys.teku.ssz.collections.SszByteList;
-import tech.pegasys.teku.ssz.impl.SszUnionImpl;
+import tech.pegasys.teku.ssz.collections.impl.SszByteListImpl;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 
-public class Transaction extends SszUnionImpl {
-  public static final int OPAQUE_TRANSACTION_SELECTOR = 0;
+public class Transaction extends SszByteListImpl {
 
   Transaction(TransactionSchema schema, TreeNode backingNode) {
     super(schema, backingNode);
-  }
-
-  public SszByteList getOpaqueTransaction() {
-    checkState(getSelector() == OPAQUE_TRANSACTION_SELECTOR);
-    return (SszByteList) getValue();
   }
 }

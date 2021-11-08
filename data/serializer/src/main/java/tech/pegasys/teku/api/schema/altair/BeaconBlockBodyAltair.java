@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
+import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttesterSlashing;
@@ -28,6 +29,7 @@ import tech.pegasys.teku.api.schema.Eth1Data;
 import tech.pegasys.teku.api.schema.ProposerSlashing;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 
@@ -40,23 +42,23 @@ public class BeaconBlockBodyAltair extends BeaconBlockBody {
       @JsonProperty("randao_reveal") final BLSSignature randao_reveal,
       @JsonProperty("eth1_data") final Eth1Data eth1_data,
       @JsonProperty("graffiti") final Bytes32 graffiti,
-      @JsonProperty("proposer_slashings") final List<ProposerSlashing> proposer_slashings,
-      @JsonProperty("attester_slashings") final List<AttesterSlashing> attester_slashings,
+      @JsonProperty("proposer_slashings") final List<ProposerSlashing> proposerSlashings,
+      @JsonProperty("attester_slashings") final List<AttesterSlashing> attesterSlashings,
       @JsonProperty("attestations") final List<Attestation> attestations,
       @JsonProperty("deposits") final List<Deposit> deposits,
-      @JsonProperty("voluntary_exits") final List<SignedVoluntaryExit> voluntary_exits,
-      @JsonProperty("sync_aggregate") final SyncAggregate sync_aggregate) {
+      @JsonProperty("voluntary_exits") final List<SignedVoluntaryExit> voluntaryExits,
+      @JsonProperty("sync_aggregate") final SyncAggregate syncAggregate) {
     super(
         randao_reveal,
         eth1_data,
         graffiti,
-        proposer_slashings,
-        attester_slashings,
+        proposerSlashings,
+        attesterSlashings,
         attestations,
         deposits,
-        voluntary_exits);
-    checkNotNull(sync_aggregate, "Sync Aggregate is required for altair blocks");
-    this.syncAggregate = sync_aggregate;
+        voluntaryExits);
+    checkNotNull(syncAggregate, "Sync Aggregate is required for altair blocks");
+    this.syncAggregate = syncAggregate;
   }
 
   public BeaconBlockBodyAltair(
@@ -71,20 +73,23 @@ public class BeaconBlockBodyAltair extends BeaconBlockBody {
 
   @Override
   public tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody
-      asInternalBeaconBlockBody(final SpecVersion spec) {
+      asInternalBeaconBlockBody(
+          final SpecVersion spec, Consumer<BeaconBlockBodyBuilder> builderRef) {
     BeaconBlockBodySchemaAltair<?> schema =
         (BeaconBlockBodySchemaAltair<?>) spec.getSchemaDefinitions().getBeaconBlockBodySchema();
     SyncAggregateSchema syncAggregateSchema = schema.getSyncAggregateSchema();
     return super.asInternalBeaconBlockBody(
         spec,
-        (builder) ->
-            builder.syncAggregate(
-                () ->
-                    syncAggregateSchema.create(
-                        syncAggregateSchema
-                            .getSyncCommitteeBitsSchema()
-                            .fromBytes(syncAggregate.syncCommitteeBits)
-                            .getAllSetBits(),
-                        syncAggregate.syncCommitteeSignature.asInternalBLSSignature())));
+        (builder) -> {
+          builderRef.accept(builder);
+          builder.syncAggregate(
+              () ->
+                  syncAggregateSchema.create(
+                      syncAggregateSchema
+                          .getSyncCommitteeBitsSchema()
+                          .fromBytes(syncAggregate.syncCommitteeBits)
+                          .getAllSetBits(),
+                      syncAggregate.syncCommitteeSignature.asInternalBLSSignature()));
+        });
   }
 }

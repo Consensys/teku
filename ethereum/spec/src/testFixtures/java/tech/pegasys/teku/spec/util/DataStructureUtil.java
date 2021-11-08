@@ -443,6 +443,30 @@ public final class DataStructureUtil {
             randomExecutionPayloadTransactions());
   }
 
+  public ExecutionPayload emptyExecutionPayloadIfRequiredByState(BeaconState state) {
+    return state.toVersionAltair().map(__ -> emptyExecutionPayload()).orElse(null);
+  }
+
+  public ExecutionPayload emptyExecutionPayload() {
+    return getMergeSchemaDefinitions(UInt64.ZERO)
+        .getExecutionPayloadSchema()
+        .create(
+            Bytes32.ZERO,
+            Bytes20.ZERO,
+            Bytes32.ZERO,
+            Bytes32.ZERO,
+            Bytes.EMPTY,
+            Bytes32.ZERO,
+            UInt64.ZERO,
+            UInt64.ZERO,
+            UInt64.ZERO,
+            UInt64.ZERO,
+            Bytes.EMPTY,
+            UInt256.ZERO,
+            Bytes32.ZERO,
+            List.of());
+  }
+
   public List<Bytes> randomExecutionPayloadTransactions() {
     return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_TRANSACTIONS))
         .mapToObj(__ -> randomBytes(randomInt(MAX_EP_RANDOM_TRANSACTIONS_SIZE)))
@@ -959,7 +983,19 @@ public final class DataStructureUtil {
   }
 
   public BeaconState randomBeaconState(final int validatorCount, final int numItemsInSSZLists) {
-    return BeaconStateBuilderPhase0.create(this, spec, validatorCount, numItemsInSSZLists).build();
+    switch (spec.getGenesisSpec().getMilestone()) {
+      case PHASE0:
+        return BeaconStateBuilderPhase0.create(this, spec, validatorCount, numItemsInSSZLists)
+            .build();
+      case ALTAIR:
+        return BeaconStateBuilderAltair.create(this, spec, validatorCount, numItemsInSSZLists)
+            .build();
+      case MERGE:
+        return BeaconStateBuilderMerge.create(this, spec, validatorCount, numItemsInSSZLists)
+            .build();
+      default:
+        throw new IllegalStateException("Unsupported milestone");
+    }
   }
 
   public BeaconStateBuilderPhase0 stateBuilderPhase0() {
@@ -973,6 +1009,10 @@ public final class DataStructureUtil {
 
   public BeaconStateBuilderAltair stateBuilderAltair() {
     return BeaconStateBuilderAltair.create(this, spec, 10, 10);
+  }
+
+  public BeaconStateBuilderMerge stateBuilderMerge() {
+    return BeaconStateBuilderMerge.create(this, spec, 10, 10);
   }
 
   public BeaconState randomBeaconState(UInt64 slot) {
@@ -1071,6 +1111,10 @@ public final class DataStructureUtil {
 
   private SchemaDefinitionsAltair getAltairSchemaDefinitions(final UInt64 slot) {
     return SchemaDefinitionsAltair.required(spec.atSlot(slot).getSchemaDefinitions());
+  }
+
+  private SchemaDefinitionsMerge getMergeSchemaDefinitions(final UInt64 slot) {
+    return SchemaDefinitionsMerge.required(spec.atSlot(slot).getSchemaDefinitions());
   }
 
   int getEpochsPerEth1VotingPeriod() {

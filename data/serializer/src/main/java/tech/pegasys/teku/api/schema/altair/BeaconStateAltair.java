@@ -40,70 +40,77 @@ import tech.pegasys.teku.ssz.collections.SszBitvector;
 import tech.pegasys.teku.ssz.primitive.SszByte;
 
 public class BeaconStateAltair extends BeaconState implements State {
-  @ArraySchema(schema = @Schema(type = "string", example = EXAMPLE_UINT8))
-  public final byte[] previous_epoch_participation;
+  @ArraySchema(
+      schema =
+          @Schema(name = "previous_epoch_participation", type = "string", example = EXAMPLE_UINT8))
+  public final byte[] previousEpochParticipation;
 
-  @ArraySchema(schema = @Schema(type = "string", example = EXAMPLE_UINT8))
-  public final byte[] current_epoch_participation;
+  @ArraySchema(
+      schema =
+          @Schema(name = "current_epoch_participation", type = "string", example = EXAMPLE_UINT8))
+  public final byte[] currentEpochParticipation;
 
-  @JsonProperty("inactivity_scores")
-  @ArraySchema(schema = @Schema(type = "string", example = EXAMPLE_UINT64))
-  public final List<UInt64> inactivity_scores;
+  @ArraySchema(
+      schema = @Schema(name = "inactivity_scores", type = "string", example = EXAMPLE_UINT64))
+  public final List<UInt64> inactivityScores;
 
-  public final SyncCommittee current_sync_committee;
-  public final SyncCommittee next_sync_committee;
+  @Schema(name = "current_sync_committee")
+  public final SyncCommittee currentSyncCommittee;
+
+  @Schema(name = "next_sync_committee")
+  public final SyncCommittee nextSyncCommittee;
 
   @JsonCreator
   public BeaconStateAltair(
-      @JsonProperty("genesis_time") final UInt64 genesis_time,
-      @JsonProperty("genesis_validators_root") final Bytes32 genesis_validators_root,
+      @JsonProperty("genesis_time") final UInt64 genesisTime,
+      @JsonProperty("genesis_validators_root") final Bytes32 genesisValidatorsRoot,
       @JsonProperty("slot") final UInt64 slot,
       @JsonProperty("fork") final Fork fork,
-      @JsonProperty("latest_block_header") final BeaconBlockHeader latest_block_header,
-      @JsonProperty("block_roots") final List<Bytes32> block_roots,
-      @JsonProperty("state_roots") final List<Bytes32> state_roots,
-      @JsonProperty("historical_roots") final List<Bytes32> historical_roots,
-      @JsonProperty("eth1_data") final Eth1Data eth1_data,
-      @JsonProperty("eth1_data_votes") final List<Eth1Data> eth1_data_votes,
-      @JsonProperty("eth1_deposit_index") final UInt64 eth1_deposit_index,
+      @JsonProperty("latest_block_header") final BeaconBlockHeader latestBlockHeader,
+      @JsonProperty("block_roots") final List<Bytes32> blockRoots,
+      @JsonProperty("state_roots") final List<Bytes32> stateRoots,
+      @JsonProperty("historical_roots") final List<Bytes32> historicalRoots,
+      @JsonProperty("eth1_data") final Eth1Data eth1Data,
+      @JsonProperty("eth1_data_votes") final List<Eth1Data> eth1DataVotes,
+      @JsonProperty("eth1_deposit_index") final UInt64 eth1DepositIndex,
       @JsonProperty("validators") final List<Validator> validators,
       @JsonProperty("balances") final List<UInt64> balances,
-      @JsonProperty("randao_mixes") final List<Bytes32> randao_mixes,
+      @JsonProperty("randao_mixes") final List<Bytes32> randaoMixes,
       @JsonProperty("slashings") final List<UInt64> slashings,
-      @JsonProperty("previous_epoch_participation") final byte[] previous_epoch_participation,
-      @JsonProperty("current_epoch_participation") final byte[] current_epoch_participation,
-      @JsonProperty("justification_bits") final SszBitvector justification_bits,
-      @JsonProperty("previous_justified_checkpoint") final Checkpoint previous_justified_checkpoint,
-      @JsonProperty("current_justified_checkpoint") final Checkpoint current_justified_checkpoint,
-      @JsonProperty("finalized_checkpoint") final Checkpoint finalized_checkpoint,
-      @JsonProperty("inactivity_scores") final List<UInt64> inactivity_scores,
-      @JsonProperty("current_sync_committee") final SyncCommittee current_sync_committee,
-      @JsonProperty("next_sync_committee") final SyncCommittee next_sync_committee) {
+      @JsonProperty("previous_epoch_participation") final byte[] previousEpochParticipation,
+      @JsonProperty("current_epoch_participation") final byte[] currentEpochParticipation,
+      @JsonProperty("justification_bits") final SszBitvector justificationBits,
+      @JsonProperty("previous_justified_checkpoint") final Checkpoint previousJustifiedCheckpoint,
+      @JsonProperty("current_justified_checkpoint") final Checkpoint currentJustifiedCheckpoint,
+      @JsonProperty("finalized_checkpoint") final Checkpoint finalizedCheckpoint,
+      @JsonProperty("inactivity_scores") final List<UInt64> inactivityScores,
+      @JsonProperty("current_sync_committee") final SyncCommittee currentSyncCommittee,
+      @JsonProperty("next_sync_committee") final SyncCommittee nextSyncCommittee) {
     super(
-        genesis_time,
-        genesis_validators_root,
+        genesisTime,
+        genesisValidatorsRoot,
         slot,
         fork,
-        latest_block_header,
-        block_roots,
-        state_roots,
-        historical_roots,
-        eth1_data,
-        eth1_data_votes,
-        eth1_deposit_index,
+        latestBlockHeader,
+        blockRoots,
+        stateRoots,
+        historicalRoots,
+        eth1Data,
+        eth1DataVotes,
+        eth1DepositIndex,
         validators,
         balances,
-        randao_mixes,
+        randaoMixes,
         slashings,
-        justification_bits,
-        previous_justified_checkpoint,
-        current_justified_checkpoint,
-        finalized_checkpoint);
-    this.previous_epoch_participation = previous_epoch_participation;
-    this.current_epoch_participation = current_epoch_participation;
-    this.inactivity_scores = inactivity_scores;
-    this.current_sync_committee = current_sync_committee;
-    this.next_sync_committee = next_sync_committee;
+        justificationBits,
+        previousJustifiedCheckpoint,
+        currentJustifiedCheckpoint,
+        finalizedCheckpoint);
+    this.previousEpochParticipation = previousEpochParticipation;
+    this.currentEpochParticipation = currentEpochParticipation;
+    this.inactivityScores = inactivityScores;
+    this.currentSyncCommittee = currentSyncCommittee;
+    this.nextSyncCommittee = nextSyncCommittee;
   }
 
   public BeaconStateAltair(
@@ -111,11 +118,11 @@ public class BeaconStateAltair extends BeaconState implements State {
     super(beaconState);
     final tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair
         altair = beaconState.toVersionAltair().orElseThrow();
-    this.previous_epoch_participation = toByteArray(altair.getPreviousEpochParticipation());
-    this.current_epoch_participation = toByteArray(altair.getCurrentEpochParticipation());
-    this.inactivity_scores = altair.getInactivityScores().asListUnboxed();
-    this.current_sync_committee = new SyncCommittee(altair.getCurrentSyncCommittee());
-    this.next_sync_committee = new SyncCommittee(altair.getNextSyncCommittee());
+    this.previousEpochParticipation = toByteArray(altair.getPreviousEpochParticipation());
+    this.currentEpochParticipation = toByteArray(altair.getCurrentEpochParticipation());
+    this.inactivityScores = altair.getInactivityScores().asListUnboxed();
+    this.currentSyncCommittee = new SyncCommittee(altair.getCurrentSyncCommittee());
+    this.nextSyncCommittee = new SyncCommittee(altair.getNextSyncCommittee());
   }
 
   @Override
@@ -132,24 +139,21 @@ public class BeaconStateAltair extends BeaconState implements State {
                   beaconStateAltair
                       .getPreviousEpochParticipation()
                       .getSchema()
-                      .sszDeserialize(Bytes.wrap(previous_epoch_participation));
+                      .sszDeserialize(Bytes.wrap(this.previousEpochParticipation));
               final SszList<SszByte> currentEpochParticipation =
                   beaconStateAltair
                       .getCurrentEpochParticipation()
                       .getSchema()
-                      .sszDeserialize(Bytes.wrap(current_epoch_participation));
+                      .sszDeserialize(Bytes.wrap(this.currentEpochParticipation));
 
               beaconStateAltair.setPreviousEpochParticipation(previousEpochParticipation);
               beaconStateAltair.setCurrentEpochParticipation(currentEpochParticipation);
-              beaconStateAltair
-                  .getInactivityScores()
-                  .createWritableCopy()
-                  .setAllElements(inactivity_scores);
+              beaconStateAltair.getInactivityScores().setAllElements(inactivityScores);
 
               beaconStateAltair.setCurrentSyncCommittee(
-                  current_sync_committee.asInternalSyncCommittee(syncCommitteeSchema));
+                  currentSyncCommittee.asInternalSyncCommittee(syncCommitteeSchema));
               beaconStateAltair.setNextSyncCommittee(
-                  next_sync_committee.asInternalSyncCommittee(syncCommitteeSchema));
+                  nextSyncCommittee.asInternalSyncCommittee(syncCommitteeSchema));
             });
   }
 
@@ -157,19 +161,21 @@ public class BeaconStateAltair extends BeaconState implements State {
   public boolean equals(final Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
+    if (!super.equals(o)) return false;
     final BeaconStateAltair that = (BeaconStateAltair) o;
-    return Arrays.equals(previous_epoch_participation, that.previous_epoch_participation)
-        && Arrays.equals(current_epoch_participation, that.current_epoch_participation)
-        && Objects.equals(inactivity_scores, that.inactivity_scores)
-        && Objects.equals(current_sync_committee, that.current_sync_committee)
-        && Objects.equals(next_sync_committee, that.next_sync_committee);
+    return Arrays.equals(previousEpochParticipation, that.previousEpochParticipation)
+        && Arrays.equals(currentEpochParticipation, that.currentEpochParticipation)
+        && Objects.equals(inactivityScores, that.inactivityScores)
+        && Objects.equals(currentSyncCommittee, that.currentSyncCommittee)
+        && Objects.equals(nextSyncCommittee, that.nextSyncCommittee);
   }
 
   @Override
   public int hashCode() {
-    int result = Objects.hash(inactivity_scores, current_sync_committee, next_sync_committee);
-    result = 31 * result + Arrays.hashCode(previous_epoch_participation);
-    result = 31 * result + Arrays.hashCode(current_epoch_participation);
+    int result =
+        Objects.hash(super.hashCode(), inactivityScores, currentSyncCommittee, nextSyncCommittee);
+    result = 31 * result + Arrays.hashCode(previousEpochParticipation);
+    result = 31 * result + Arrays.hashCode(currentEpochParticipation);
     return result;
   }
 

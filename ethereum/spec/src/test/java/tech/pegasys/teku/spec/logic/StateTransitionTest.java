@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyPair;
@@ -85,7 +86,7 @@ public class StateTransitionTest {
       deposits.add(deposit);
     }
     final BeaconState initialState =
-        spec.initializeBeaconStateFromEth1(Bytes32.ZERO, UInt64.ZERO, deposits);
+        spec.initializeBeaconStateFromEth1(Bytes32.ZERO, UInt64.ZERO, deposits, Optional.empty());
     return initialState.updated(state -> state.setGenesis_time(UInt64.ZERO));
   }
 }

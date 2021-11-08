@@ -19,14 +19,22 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.LabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 
 public class MetricTrackingExecutorFactory {
 
   private final MetricsSystem metricsSystem;
+  private final LabelledGauge labelledGaugeQueueSize;
 
   public MetricTrackingExecutorFactory(final MetricsSystem metricsSystem) {
     this.metricsSystem = metricsSystem;
+    this.labelledGaugeQueueSize =
+        metricsSystem.createLabelledGauge(
+            TekuMetricCategory.EXECUTOR,
+            "queue_size",
+            "Current size of the executor task queue",
+            "name");
   }
 
   /**
@@ -66,11 +74,8 @@ public class MetricTrackingExecutorFactory {
             threadFactory);
     executor.allowCoreThreadTimeOut(true);
 
-    metricsSystem.createIntegerGauge(
-        TekuMetricCategory.EXECUTOR,
-        name + "_queue_size",
-        "Current size of the executor task queue",
-        () -> executor.getQueue().size());
+    labelledGaugeQueueSize.labels(() -> executor.getQueue().size(), name);
+
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.EXECUTOR,
         name + "_thread_pool_size",

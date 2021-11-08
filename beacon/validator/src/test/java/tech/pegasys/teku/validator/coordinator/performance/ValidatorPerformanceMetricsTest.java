@@ -59,7 +59,7 @@ public class ValidatorPerformanceMetricsTest {
 
   private final BlockPerformance blockPerformance =
       new BlockPerformance(
-          NUMBER_OF_EXPECTED_BLOCKS, NUMBER_OF_PRODUCED_BLOCKS, NUMBER_OF_INCLUDED_BLOCKS);
+          EPOCH, NUMBER_OF_EXPECTED_BLOCKS, NUMBER_OF_PRODUCED_BLOCKS, NUMBER_OF_INCLUDED_BLOCKS);
 
   private final SyncCommitteePerformance syncCommitteePerformance =
       new SyncCommitteePerformance(
