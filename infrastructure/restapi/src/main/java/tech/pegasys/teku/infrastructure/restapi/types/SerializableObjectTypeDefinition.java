@@ -25,7 +25,7 @@ import java.util.Optional;
 class SerializableObjectTypeDefinition<TObject> implements SerializableTypeDefinition<TObject> {
 
   private final Optional<String> name;
-  private final Map<String, FieldDefinition<TObject>> fields;
+  final Map<String, FieldDefinition<TObject>> fields;
 
   SerializableObjectTypeDefinition(
       final Optional<String> name, final Map<String, FieldDefinition<TObject>> fields) {

@@ -17,8 +17,6 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUE
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
@@ -30,10 +28,7 @@ import tech.pegasys.teku.validator.restapi.apis.GetKeys;
 import tech.pegasys.teku.validator.restapi.apis.PostKeys;
 
 public class ValidatorRestApi {
-  private static final Logger LOG = LogManager.getLogger();
-
   public static RestApi create(final ValidatorRestApiConfig config) {
-    LOG.error("PJH CORS: {}", config.getRestApiCorsAllowedOrigins());
     return new RestApiBuilder()
         .openApiInfo(
             openApi ->

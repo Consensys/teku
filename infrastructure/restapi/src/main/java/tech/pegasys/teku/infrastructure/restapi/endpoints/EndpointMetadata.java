@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import tech.pegasys.teku.infrastructure.restapi.openapi.OpenApiRequestBody;
 import tech.pegasys.teku.infrastructure.restapi.openapi.OpenApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.restapi.types.DeserializableTypeDefinition;
@@ -105,7 +104,18 @@ public class EndpointMetadata {
     gen.writeStringField("summary", summary);
     gen.writeStringField("description", description);
 
-    OpenApiRequestBody.writeOpenApi(gen, requestBodyType);
+    if (requestBodyType.isPresent()) {
+      final DeserializableTypeDefinition<?> content = requestBodyType.get();
+      gen.writeObjectFieldStart("requestBody");
+      gen.writeObjectFieldStart("content");
+      gen.writeObjectFieldStart(JSON_CONTENT_TYPE);
+      gen.writeFieldName("schema");
+      content.serializeOpenApiTypeOrReference(gen);
+      gen.writeEndObject();
+
+      gen.writeEndObject();
+      gen.writeEndObject();
+    }
 
     gen.writeObjectFieldStart("responses");
     for (Entry<String, OpenApiResponse> responseEntry : responses.entrySet()) {
