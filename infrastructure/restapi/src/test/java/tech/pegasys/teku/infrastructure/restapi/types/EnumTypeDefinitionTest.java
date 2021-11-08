@@ -24,16 +24,27 @@ public class EnumTypeDefinitionTest {
   @Test
   void shouldSerializeEnum() throws Exception {
     final String json = JsonUtil.serialize(YesNo.YES, definition);
-    assertThat(json).isEqualTo("\"YES\"");
+    assertThat(json).isEqualTo("\"yes\"");
   }
 
   @Test
   void shouldParseEnum() throws Exception {
-    assertThat(JsonUtil.parse("\"NO\"", definition)).isEqualTo(YesNo.NO);
+    assertThat(JsonUtil.parse("\"no\"", definition)).isEqualTo(YesNo.NO);
   }
 
   private enum YesNo {
-    YES,
-    NO,
+    YES("yes"),
+    NO("no");
+
+    private final String displayName;
+
+    YesNo(final String displayName) {
+      this.displayName = displayName;
+    }
+
+    @Override
+    public String toString() {
+      return displayName;
+    }
   }
 }

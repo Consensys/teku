@@ -26,14 +26,14 @@ public class DeleteKeyResultTest {
     assertThat(DeleteKeyResult.success(slashingString))
         .isEqualTo(
             new DeleteKeyResult(
-                DeletionStatus.deleted, Optional.empty(), Optional.of(slashingString)));
+                DeletionStatus.DELETED, Optional.empty(), Optional.of(slashingString)));
   }
 
   @Test
   void shouldProduceNotFoundResult() {
     assertThat(DeleteKeyResult.notFound())
         .isEqualTo(
-            new DeleteKeyResult(DeletionStatus.not_found, Optional.empty(), Optional.empty()));
+            new DeleteKeyResult(DeletionStatus.NOT_FOUND, Optional.empty(), Optional.empty()));
   }
 
   @Test
@@ -41,13 +41,13 @@ public class DeleteKeyResultTest {
     assertThat(DeleteKeyResult.notActive(slashingString))
         .isEqualTo(
             new DeleteKeyResult(
-                DeletionStatus.not_active, Optional.empty(), Optional.of(slashingString)));
+                DeletionStatus.NOT_ACTIVE, Optional.empty(), Optional.of(slashingString)));
   }
 
   @Test
   void shouldProduceErrorResult() {
     assertThat(DeleteKeyResult.error("message"))
         .isEqualTo(
-            new DeleteKeyResult(DeletionStatus.error, Optional.of("message"), Optional.empty()));
+            new DeleteKeyResult(DeletionStatus.ERROR, Optional.of("message"), Optional.empty()));
   }
 }
