@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.attestation.Attestati
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
+import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
@@ -40,6 +41,7 @@ import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.attestation.AttestationWorthinessCheckerAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.EpochProcessorAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.ValidatorStatusFactoryAltair;
+import tech.pegasys.teku.spec.logic.versions.merge.helpers.MergeTransitionHelpers;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 
 public class SpecLogicAltair extends AbstractSpecLogic {
@@ -192,5 +194,15 @@ public class SpecLogicAltair extends AbstractSpecLogic {
         state.getSlot().minusMinZero(integerSquareRoot(specConfig.getSlotsPerEpoch()));
     return new AttestationWorthinessCheckerAltair(
         expectedAttestationTarget, oldestWorthySlotForSourceReward);
+  }
+
+  @Override
+  public Optional<MergeTransitionHelpers> getMergeTransitionHelpers() {
+    return Optional.empty();
+  }
+
+  @Override
+  public Optional<ExecutionPayloadUtil> getExecutionPayloadUtil() {
+    return Optional.empty();
   }
 }

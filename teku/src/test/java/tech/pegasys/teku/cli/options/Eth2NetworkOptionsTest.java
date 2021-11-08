@@ -14,7 +14,12 @@
 package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.math.BigInteger;
+import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
@@ -32,7 +37,7 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  void shouldUseAltairForkBlockIfSpecified() {
+  void shouldUseAltairForkEpochIfSpecified() {
     final TekuConfiguration config =
         getTekuConfigurationFromArguments("--Xnetwork-altair-fork-epoch", "64");
     final Spec spec = config.eth2NetworkConfiguration().getSpec();
@@ -40,5 +45,81 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
         .isEqualTo(SpecMilestone.PHASE0);
     assertThat(spec.getForkSchedule().getSpecMilestoneAtEpoch(UInt64.valueOf(64)))
         .isEqualTo(SpecMilestone.ALTAIR);
+  }
+
+  @Test
+  void shouldUseMergeForkEpochIfSpecified() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments("--Xnetwork-merge-fork-epoch", "120000");
+    final Spec spec = config.eth2NetworkConfiguration().getSpec();
+    assertThat(spec.getForkSchedule().getSpecMilestoneAtEpoch(UInt64.valueOf(119999)))
+        .isEqualTo(SpecMilestone.ALTAIR);
+    assertThat(spec.getForkSchedule().getSpecMilestoneAtEpoch(UInt64.valueOf(120000)))
+        .isEqualTo(SpecMilestone.MERGE);
+  }
+
+  @Test
+  void shouldMergeTransitionsOverrideBeEmptyByDefault() {
+    final TekuConfiguration config = getTekuConfigurationFromArguments();
+    assertThat(config.eth2NetworkConfiguration().getMergeTotalTerminalDifficultyOverride())
+        .isEqualTo(Optional.empty());
+    assertThat(config.eth2NetworkConfiguration().getMergeTerminalBlockHashOverride())
+        .isEqualTo(Optional.empty());
+    assertThat(config.eth2NetworkConfiguration().getMergeTerminalBlockHashEpochOverride())
+        .isEqualTo(Optional.empty());
+  }
+
+  @Test
+  void shouldLoadMergeTerminalTotalDifficultyOverride() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments(
+            "--Xnetwork-merge-total-terminal-difficulty-override", "123456789012345678901");
+    assertThat(config.eth2NetworkConfiguration().getMergeTotalTerminalDifficultyOverride())
+        .isEqualTo(Optional.of(UInt256.valueOf(new BigInteger("123456789012345678901"))));
+  }
+
+  @Test
+  void shouldLoadMergeTerminalBlockHashOverride() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments(
+            "--Xnetwork-merge-terminal-block-hash-override",
+            "0x7562f205a2d14e80a3a67da9df0b769b0ba0111a8e81034606f8f27f51f4dd8e");
+    assertThat(config.eth2NetworkConfiguration().getMergeTerminalBlockHashOverride())
+        .isEqualTo(
+            Optional.of(
+                Bytes32.fromHexStringStrict(
+                    "0x7562f205a2d14e80a3a67da9df0b769b0ba0111a8e81034606f8f27f51f4dd8e")));
+  }
+
+  @Test
+  void shouldLoadMergeTerminalBlockHashEpochOverride() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments(
+            "--Xnetwork-merge-terminal-block-hash-epoch-override", "120000");
+    assertThat(config.eth2NetworkConfiguration().getMergeTerminalBlockHashEpochOverride())
+        .isEqualTo(Optional.of(UInt64.valueOf(120000)));
+  }
+
+  @Test
+  void shouldFailLoadingInvalidMergeTransitionOverrides() {
+    assertThrows(
+        AssertionError.class,
+        () -> {
+          getTekuConfigurationFromArguments(
+              "--Xnetwork-merge-total-terminal-difficulty-override", "asd");
+        });
+
+    assertThrows(
+        AssertionError.class,
+        () -> {
+          getTekuConfigurationFromArguments("--Xnetwork-merge-terminal-block-hash-override", "756");
+        });
+
+    assertThrows(
+        AssertionError.class,
+        () -> {
+          getTekuConfigurationFromArguments(
+              "--Xnetwork-merge-terminal-block-hash-epoch-override", "asd");
+        });
   }
 }

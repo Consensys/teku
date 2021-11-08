@@ -11,21 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.restapi.apis.schema;
+package tech.pegasys.teku.spec.logic.versions.merge.helpers;
 
-public enum DeletionStatus {
-  DELETED("deleted"),
-  NOT_ACTIVE("not_active"),
-  NOT_FOUND("not_found"),
-  ERROR("error");
-  private final String displayName;
+import tech.pegasys.teku.spec.config.SpecConfigMerge;
+import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
+import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 
-  DeletionStatus(final String displayName) {
-    this.displayName = displayName;
-  }
-
-  @Override
-  public String toString() {
-    return displayName;
+public class BeaconStateAccessorsMerge extends BeaconStateAccessorsAltair {
+  public BeaconStateAccessorsMerge(
+      final SpecConfigMerge config,
+      final Predicates predicates,
+      final MiscHelpersMerge miscHelpers) {
+    super(config, predicates, miscHelpers);
   }
 }

@@ -38,7 +38,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestTemplate;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailure;
@@ -57,7 +58,10 @@ import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.TestSpecContext;
+import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
+import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContextExecutionHelper;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
@@ -68,6 +72,7 @@ import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
+@TestSpecContext(allMilestones = true)
 public class ValidatorDataProviderTest {
 
   @SuppressWarnings("unchecked")
@@ -75,34 +80,43 @@ public class ValidatorDataProviderTest {
       args = ArgumentCaptor.forClass(List.class);
 
   private final JsonProvider jsonProvider = new JsonProvider();
-  private final Spec spec = TestSpecFactory.createMinimalPhase0();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final SchemaObjectProvider schemaProvider = new SchemaObjectProvider(spec);
+  private Spec spec;
+  private DataStructureUtil dataStructureUtil;
+  private SchemaObjectProvider schemaProvider;
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
-  private final ValidatorDataProvider provider =
-      new ValidatorDataProvider(spec, validatorApiChannel, combinedChainDataClient);
-  private final tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock blockInternal =
-      dataStructureUtil.randomBeaconBlock(123);
-  private final BeaconBlock block = new BeaconBlockPhase0(blockInternal);
+  private ValidatorDataProvider provider;
+  private tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock blockInternal;
+  private BeaconBlock block;
   private final tech.pegasys.teku.bls.BLSSignature signatureInternal =
       BLSTestUtil.randomSignature(1234);
   private final BLSSignature signature = new BLSSignature(signatureInternal);
 
-  @Test
+  @BeforeEach
+  @TestTemplate
+  public void setup(SpecContext specContext) {
+    spec = specContext.getSpec();
+    dataStructureUtil = specContext.getDataStructureUtil();
+    schemaProvider = new SchemaObjectProvider(spec);
+    provider = new ValidatorDataProvider(spec, validatorApiChannel, combinedChainDataClient);
+    blockInternal = dataStructureUtil.randomBeaconBlock(123);
+    block = new BeaconBlockPhase0(blockInternal);
+  }
+
+  @TestTemplate
   void getUnsignedBeaconBlockAtSlot_throwsWithoutSlotDefined() {
     assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(() -> provider.getUnsignedBeaconBlockAtSlot(null, null, Optional.empty()));
   }
 
-  @Test
+  @TestTemplate
   void getUnsignedBeaconBlockAtSlot_shouldThrowWithoutRandaoDefined() {
     assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(() -> provider.getUnsignedBeaconBlockAtSlot(ONE, null, Optional.empty()));
   }
 
-  @Test
+  @TestTemplate
   void getUnsignedBeaconBlockAtSlot_shouldThrowIfHistoricSlotRequested() {
     when(combinedChainDataClient.getCurrentSlot()).thenReturn(ONE);
 
@@ -110,7 +124,7 @@ public class ValidatorDataProviderTest {
         .isThrownBy(() -> provider.getUnsignedBeaconBlockAtSlot(ZERO, signature, Optional.empty()));
   }
 
-  @Test
+  @TestTemplate
   void getUnsignedBeaconBlockAtSlot_shouldThrowIfFarFutureSlotRequested() {
     when(combinedChainDataClient.getCurrentSlot()).thenReturn(ONE);
 
@@ -121,7 +135,7 @@ public class ValidatorDataProviderTest {
                     UInt64.valueOf(10L), signature, Optional.empty()));
   }
 
-  @Test
+  @TestTemplate
   void getUnsignedBeaconBlockAtSlot_shouldCreateAnUnsignedBlock() {
     when(combinedChainDataClient.getCurrentSlot()).thenReturn(ZERO);
     when(validatorApiChannel.createUnsignedBlock(ONE, signatureInternal, Optional.empty()))
@@ -134,7 +148,7 @@ public class ValidatorDataProviderTest {
     assertThat(data.getNow(null).orElseThrow()).usingRecursiveComparison().isEqualTo(block);
   }
 
-  @Test
+  @TestTemplate
   void getAttestationDataAtSlot_shouldThrowIfFutureSlotRequested() {
     when(combinedChainDataClient.isStoreAvailable()).thenReturn(true);
     when(validatorApiChannel.createAttestationData(ONE, 0))
@@ -147,7 +161,7 @@ public class ValidatorDataProviderTest {
         .isCompletedExceptionallyWith(BadRequestException.class);
   }
 
-  @Test
+  @TestTemplate
   void getAttestationDataAtSlot_shouldThrowIfStoreNotFound() {
     when(combinedChainDataClient.isStoreAvailable()).thenReturn(false);
     final SafeFuture<Optional<tech.pegasys.teku.api.schema.AttestationData>> result =
@@ -157,7 +171,7 @@ public class ValidatorDataProviderTest {
     verify(combinedChainDataClient).isStoreAvailable();
   }
 
-  @Test
+  @TestTemplate
   void getAttestationDataAtSlot_shouldReturnEmptyIfBlockNotFound() {
     when(combinedChainDataClient.isStoreAvailable()).thenReturn(true);
     when(validatorApiChannel.createAttestationData(ZERO, 0))
@@ -169,8 +183,8 @@ public class ValidatorDataProviderTest {
     assertThat(result).isCompletedWithValue(Optional.empty());
   }
 
-  @Test
-  void parseBlock_shouldParsePhase0Blocks() throws JsonProcessingException {
+  @TestTemplate
+  void parseBlock_shouldParseBlocks() throws JsonProcessingException {
     final SignedBeaconBlock internalSignedBlock = dataStructureUtil.randomSignedBeaconBlock(ONE);
     final tech.pegasys.teku.api.schema.SignedBeaconBlock<?> signedBlock =
         schemaProvider.getSignedBeaconBlock(internalSignedBlock);
@@ -183,13 +197,9 @@ public class ValidatorDataProviderTest {
     assertThat(parsedBlock).isInstanceOf(tech.pegasys.teku.api.schema.SignedBeaconBlock.class);
   }
 
-  @Test
-  void parseBlock_shouldParseAltairBlocks() throws JsonProcessingException {
-    final Spec spec = TestSpecFactory.createMinimalAltair();
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-    final SchemaObjectProvider schemaProvider = new SchemaObjectProvider(spec);
-    final ValidatorDataProvider provider =
-        new ValidatorDataProvider(spec, validatorApiChannel, combinedChainDataClient);
+  @TestTemplate
+  void parseBlock_shouldParseAltairBlocks(SpecContext specContext) throws JsonProcessingException {
+    SpecContextExecutionHelper.only(specContext, SpecMilestone.ALTAIR);
 
     final SignedBeaconBlock internalSignedBlock = dataStructureUtil.randomSignedBeaconBlock(ONE);
     final tech.pegasys.teku.api.schema.SignedBeaconBlock<?> signedBlock =
@@ -203,7 +213,7 @@ public class ValidatorDataProviderTest {
     assertThat(parsedBlock).isInstanceOf(SignedBeaconBlockAltair.class);
   }
 
-  @Test
+  @TestTemplate
   void getAttestationDataAtSlot_shouldReturnAttestationData() {
     when(combinedChainDataClient.isStoreAvailable()).thenReturn(true);
     final tech.pegasys.teku.spec.datastructures.operations.AttestationData internalData =
@@ -220,7 +230,7 @@ public class ValidatorDataProviderTest {
     assertThat(data.beacon_block_root).isEqualTo(internalData.getBeacon_block_root());
   }
 
-  @Test
+  @TestTemplate
   void submitAttestation_shouldSubmitAnInternalAttestationStructure() {
     tech.pegasys.teku.spec.datastructures.operations.Attestation internalAttestation =
         dataStructureUtil.randomAttestation();
@@ -241,7 +251,7 @@ public class ValidatorDataProviderTest {
     assertThatSszData(args.getValue().get(0)).isEqualByAllMeansTo(internalAttestation);
   }
 
-  @Test
+  @TestTemplate
   public void submitSignedBlock_shouldReturn200ForSuccess()
       throws ExecutionException, InterruptedException {
     final SignedBeaconBlock internalSignedBeaconBlock =
@@ -260,7 +270,7 @@ public class ValidatorDataProviderTest {
     assertThat(validatorBlockResultSafeFuture.get().getResponseCode()).isEqualTo(200);
   }
 
-  @Test
+  @TestTemplate
   public void submitSignedBlock_shouldReturn202ForInvalidBlock() {
     final SignedBeaconBlock internalSignedBeaconBlock =
         dataStructureUtil.randomSignedBeaconBlock(1);
@@ -293,7 +303,7 @@ public class ValidatorDataProviderTest {
     assertThat(failReasonCount.get()).isEqualTo(FailureReason.values().length - 1);
   }
 
-  @Test
+  @TestTemplate
   public void submitSignedBlock_shouldReturn500ForInternalError()
       throws ExecutionException, InterruptedException {
     final SignedBeaconBlock internalSignedBeaconBlock =
@@ -312,7 +322,7 @@ public class ValidatorDataProviderTest {
     assertThat(validatorBlockResultSafeFuture.get().getResponseCode()).isEqualTo(500);
   }
 
-  @Test
+  @TestTemplate
   public void getAttesterDuties_shouldHandleEmptyIndexesList() {
     final Bytes32 previousTargetRoot = dataStructureUtil.randomBytes32();
     when(validatorApiChannel.getAttestationDuties(eq(ONE), any()))
@@ -329,7 +339,7 @@ public class ValidatorDataProviderTest {
     assertThat(maybeData.get().data).isEmpty();
   }
 
-  @Test
+  @TestTemplate
   public void getAttesterDuties_shouldReturnDutiesForKnownValidator() {
     AttesterDuty v1 = new AttesterDuty(BLSTestUtil.randomPublicKey(0), 1, 2, 3, 15, 4, ONE);
     AttesterDuty v2 = new AttesterDuty(BLSTestUtil.randomPublicKey(1), 11, 12, 13, 15, 14, ZERO);

@@ -57,7 +57,7 @@ public abstract class AbstractNode implements Node {
     LoggingConfigurator.update(tekuConfig.loggingConfig());
 
     STATUS_LOG.onStartup(VersionProvider.VERSION);
-    reportForkSlotOverrides(tekuConfig);
+    reportOverrides(tekuConfig);
     this.metricsEndpoint = new MetricsEndpoint(tekuConfig.metricsConfig(), vertx);
     final MetricsSystem metricsSystem = metricsEndpoint.getMetricsSystem();
     final TekuDefaultExceptionHandler subscriberExceptionHandler =
@@ -79,12 +79,40 @@ public abstract class AbstractNode implements Node {
     Constants.setConstants(tekuConfig.eth2NetworkConfiguration().getConstants());
   }
 
-  private void reportForkSlotOverrides(final TekuConfiguration tekuConfig) {
+  private void reportOverrides(final TekuConfiguration tekuConfig) {
     tekuConfig
         .eth2NetworkConfiguration()
         .getAltairForkEpoch()
         .ifPresent(
             forkEpoch -> STATUS_LOG.warnForkEpochChanged(SpecMilestone.ALTAIR.name(), forkEpoch));
+
+    tekuConfig
+        .eth2NetworkConfiguration()
+        .getMergeForkEpoch()
+        .ifPresent(
+            forkEpoch -> STATUS_LOG.warnForkEpochChanged(SpecMilestone.MERGE.name(), forkEpoch));
+
+    tekuConfig
+        .eth2NetworkConfiguration()
+        .getMergeTotalTerminalDifficultyOverride()
+        .ifPresent(
+            ttdo ->
+                STATUS_LOG.warnMergeParameterChanged(
+                    "TERMINAL_TOTAL_DIFFICULTY", ttdo.toHexString()));
+
+    tekuConfig
+        .eth2NetworkConfiguration()
+        .getMergeTerminalBlockHashOverride()
+        .ifPresent(
+            tbho -> STATUS_LOG.warnMergeParameterChanged("TERMINAL_BLOCK_HASH", tbho.toString()));
+
+    tekuConfig
+        .eth2NetworkConfiguration()
+        .getMergeTerminalBlockHashEpochOverride()
+        .ifPresent(
+            tbheo ->
+                STATUS_LOG.warnMergeParameterChanged(
+                    "TERMINAL_BLOCK_HASH_ACTIVATION_EPOCH", tbheo.toString()));
   }
 
   protected abstract ServiceController getServiceController();

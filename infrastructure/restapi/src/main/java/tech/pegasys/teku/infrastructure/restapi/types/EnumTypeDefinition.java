@@ -26,7 +26,13 @@ public class EnumTypeDefinition<T extends Enum<T>> implements DeserializableType
 
   @Override
   public T deserialize(final JsonParser parser) throws IOException {
-    return Enum.valueOf(itemType, parser.getValueAsString());
+    final String value = parser.getValueAsString();
+    for (T t : itemType.getEnumConstants()) {
+      if (t.toString().equalsIgnoreCase(value)) {
+        return t;
+      }
+    }
+    throw new IllegalArgumentException("Unknown enum value: " + value);
   }
 
   @Override
@@ -36,7 +42,7 @@ public class EnumTypeDefinition<T extends Enum<T>> implements DeserializableType
     gen.writeArrayFieldStart("enum");
 
     for (T value : itemType.getEnumConstants()) {
-      gen.writeString(value.name());
+      gen.writeString(value.toString());
     }
     gen.writeEndArray();
     gen.writeEndObject();
@@ -44,6 +50,6 @@ public class EnumTypeDefinition<T extends Enum<T>> implements DeserializableType
 
   @Override
   public void serialize(final T value, final JsonGenerator gen) throws IOException {
-    gen.writeString(value.name());
+    gen.writeString(value.toString());
   }
 }

@@ -11,21 +11,20 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.restapi.apis.schema;
+package tech.pegasys.teku.cli.converter;
 
-public enum DeletionStatus {
-  DELETED("deleted"),
-  NOT_ACTIVE("not_active"),
-  NOT_FOUND("not_found"),
-  ERROR("error");
-  private final String displayName;
+import org.apache.tuweni.bytes.Bytes32;
+import picocli.CommandLine.ITypeConverter;
+import picocli.CommandLine.TypeConversionException;
 
-  DeletionStatus(final String displayName) {
-    this.displayName = displayName;
-  }
-
+public class Bytes32Converter implements ITypeConverter<Bytes32> {
   @Override
-  public String toString() {
-    return displayName;
+  public Bytes32 convert(final String value) {
+    try {
+      return Bytes32.fromHexStringStrict(value);
+    } catch (final NumberFormatException e) {
+      throw new TypeConversionException(
+          "Invalid format: must be a 32 bytes in hex format but was " + value);
+    }
   }
 }

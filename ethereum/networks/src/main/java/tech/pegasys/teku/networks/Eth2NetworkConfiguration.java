@@ -26,6 +26,8 @@ import com.google.common.base.Strings;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
@@ -49,6 +51,9 @@ public class Eth2NetworkConfiguration {
   private final Eth1Address eth1DepositContractAddress;
   private final Optional<UInt64> eth1DepositContractDeployBlock;
   private final boolean balanceAttackMitigationEnabled;
+  private final Optional<Bytes32> mergeTerminalBlockHashOverride;
+  private final Optional<UInt256> mergeTotalTerminalDifficultyOverride;
+  private final Optional<UInt64> mergeTerminalBlockHashEpochOverride;
 
   private Eth2NetworkConfiguration(
       final Spec spec,
@@ -62,7 +67,10 @@ public class Eth2NetworkConfiguration {
       final Optional<UInt64> eth1DepositContractDeployBlock,
       final boolean balanceAttackMitigationEnabled,
       final Optional<UInt64> altairForkEpoch,
-      final Optional<UInt64> mergeForkEpoch) {
+      final Optional<UInt64> mergeForkEpoch,
+      final Optional<Bytes32> mergeTerminalBlockHashOverride,
+      final Optional<UInt256> mergeTotalTerminalDifficultyOverride,
+      final Optional<UInt64> mergeTerminalBlockHashEpochOverride) {
     this.spec = spec;
     this.constants = constants;
     this.initialState = initialState;
@@ -78,6 +86,9 @@ public class Eth2NetworkConfiguration {
             : eth1DepositContractAddress;
     this.eth1DepositContractDeployBlock = eth1DepositContractDeployBlock;
     this.balanceAttackMitigationEnabled = balanceAttackMitigationEnabled;
+    this.mergeTerminalBlockHashOverride = mergeTerminalBlockHashOverride;
+    this.mergeTotalTerminalDifficultyOverride = mergeTotalTerminalDifficultyOverride;
+    this.mergeTerminalBlockHashEpochOverride = mergeTerminalBlockHashEpochOverride;
   }
 
   public static Eth2NetworkConfiguration.Builder builder(final String network) {
@@ -145,6 +156,18 @@ public class Eth2NetworkConfiguration {
     return mergeForkEpoch;
   }
 
+  public Optional<Bytes32> getMergeTerminalBlockHashOverride() {
+    return mergeTerminalBlockHashOverride;
+  }
+
+  public Optional<UInt256> getMergeTotalTerminalDifficultyOverride() {
+    return mergeTotalTerminalDifficultyOverride;
+  }
+
+  public Optional<UInt64> getMergeTerminalBlockHashEpochOverride() {
+    return mergeTerminalBlockHashEpochOverride;
+  }
+
   @Override
   public String toString() {
     return constants;
@@ -162,6 +185,9 @@ public class Eth2NetworkConfiguration {
     private boolean balanceAttackMitigationEnabled = false;
     private Optional<UInt64> altairForkEpoch = Optional.empty();
     private Optional<UInt64> mergeForkEpoch = Optional.empty();
+    private Optional<Bytes32> mergeTerminalBlockHashOverride = Optional.empty();
+    private Optional<UInt256> mergeTotalTerminalDifficultyOverride = Optional.empty();
+    private Optional<UInt64> mergeTerminalBlockHashEpochOverride = Optional.empty();
     private Spec spec;
 
     public void spec(Spec spec) {
@@ -195,7 +221,10 @@ public class Eth2NetworkConfiguration {
           eth1DepositContractDeployBlock,
           balanceAttackMitigationEnabled,
           altairForkEpoch,
-          mergeForkEpoch);
+          mergeForkEpoch,
+          mergeTerminalBlockHashOverride,
+          mergeTotalTerminalDifficultyOverride,
+          mergeTerminalBlockHashEpochOverride);
     }
 
     public Builder constants(final String constants) {
@@ -265,6 +294,23 @@ public class Eth2NetworkConfiguration {
 
     public Builder mergeForkEpoch(final UInt64 mergeForkEpoch) {
       this.mergeForkEpoch = Optional.of(mergeForkEpoch);
+      return this;
+    }
+
+    public Builder mergeTotalTerminalDifficultyOverride(
+        final UInt256 mergeTotalTerminalDifficultyOverride) {
+      this.mergeTotalTerminalDifficultyOverride = Optional.of(mergeTotalTerminalDifficultyOverride);
+      return this;
+    }
+
+    public Builder mergeTerminalBlockHashOverride(final Bytes32 mergeTerminalBlockHashOverride) {
+      this.mergeTerminalBlockHashOverride = Optional.of(mergeTerminalBlockHashOverride);
+      return this;
+    }
+
+    public Builder mergeTerminalBlockHashEpochOverride(
+        final UInt64 mergeTerminalBlockHashEpochOverride) {
+      this.mergeTerminalBlockHashEpochOverride = Optional.of(mergeTerminalBlockHashEpochOverride);
       return this;
     }
 
