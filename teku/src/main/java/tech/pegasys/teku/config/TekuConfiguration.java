@@ -28,6 +28,7 @@ import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
 import tech.pegasys.teku.services.beaconchain.BeaconChainConfiguration;
 import tech.pegasys.teku.services.chainstorage.StorageConfiguration;
+import tech.pegasys.teku.services.executionengine.ExecutionEngineConfiguration;
 import tech.pegasys.teku.services.powchain.PowchainConfiguration;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.store.StoreConfig;
@@ -49,6 +50,7 @@ public class TekuConfiguration {
   private final BeaconChainConfiguration beaconChainConfig;
   private final ValidatorClientConfiguration validatorClientConfig;
   private final PowchainConfiguration powchainConfiguration;
+  private final ExecutionEngineConfiguration executionEngineConfiguration;
   private final NatConfiguration natConfiguration;
   private final ValidatorRestApiConfig validatorRestApiConfig;
 
@@ -59,6 +61,7 @@ public class TekuConfiguration {
       final WeakSubjectivityConfig weakSubjectivityConfig,
       final ValidatorConfig validatorConfig,
       final PowchainConfiguration powchainConfiguration,
+      final ExecutionEngineConfiguration executionEngineConfiguration,
       final InteropConfig interopConfig,
       final DataConfig dataConfig,
       final P2PConfig p2PConfig,
@@ -73,6 +76,7 @@ public class TekuConfiguration {
     this.storageConfiguration = storageConfiguration;
     this.weakSubjectivityConfig = weakSubjectivityConfig;
     this.powchainConfiguration = powchainConfiguration;
+    this.executionEngineConfiguration = executionEngineConfiguration;
     this.dataConfig = dataConfig;
     this.loggingConfig = loggingConfig;
     this.metricsConfig = metricsConfig;
@@ -86,6 +90,7 @@ public class TekuConfiguration {
             syncConfig,
             beaconRestApiConfig,
             powchainConfiguration,
+            executionEngineConfiguration,
             loggingConfig,
             storeConfig,
             spec);
@@ -140,6 +145,10 @@ public class TekuConfiguration {
     return powchainConfiguration;
   }
 
+  public ExecutionEngineConfiguration executionEngine() {
+    return executionEngineConfiguration;
+  }
+
   public DataConfig dataConfig() {
     return dataConfig;
   }
@@ -170,6 +179,8 @@ public class TekuConfiguration {
     private final ValidatorConfig.Builder validatorConfigBuilder = ValidatorConfig.builder();
     private final PowchainConfiguration.Builder powchainConfigBuilder =
         PowchainConfiguration.builder();
+    private final ExecutionEngineConfiguration.Builder executionEngineConfigBuilder =
+        ExecutionEngineConfiguration.builder();
     private final InteropConfig.InteropConfigBuilder interopConfigBuilder = InteropConfig.builder();
     private final DataConfig.Builder dataConfigBuilder = DataConfig.builder();
     private final P2PConfig.Builder p2pConfigBuilder = P2PConfig.builder();
@@ -197,6 +208,7 @@ public class TekuConfiguration {
       weakSubjectivityBuilder.specProvider(spec);
       p2pConfigBuilder.specProvider(spec);
       powchainConfigBuilder.specProvider(spec);
+      executionEngineConfigBuilder.specProvider(spec);
 
       return new TekuConfiguration(
           eth2NetworkConfiguration,
@@ -205,6 +217,7 @@ public class TekuConfiguration {
           weakSubjectivityBuilder.build(),
           validatorConfigBuilder.build(),
           powchainConfigBuilder.build(),
+          executionEngineConfigBuilder.build(),
           interopConfigBuilder.build(),
           dataConfigBuilder.build(),
           p2pConfigBuilder.build(),
@@ -245,6 +258,11 @@ public class TekuConfiguration {
 
     public Builder powchain(final Consumer<PowchainConfiguration.Builder> consumer) {
       consumer.accept(powchainConfigBuilder);
+      return this;
+    }
+
+    public Builder executionEngine(final Consumer<ExecutionEngineConfiguration.Builder> consumer) {
+      consumer.accept(executionEngineConfigBuilder);
       return this;
     }
 
