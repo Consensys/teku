@@ -22,6 +22,7 @@ import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Scanner;
@@ -67,6 +68,7 @@ import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient
     footer = "Teku is licensed under the Apache License 2.0")
 public class VoluntaryExitCommand implements Runnable {
   public static final SubCommandLogger SUB_COMMAND_LOG = new SubCommandLogger();
+  private static final int MAX_PUBLIC_KEY_BATCH_SIZE = 50;
   private OkHttpValidatorRestApiClient apiClient;
   private tech.pegasys.teku.spec.datastructures.state.Fork fork;
   private Bytes32 genesisRoot;
@@ -139,18 +141,23 @@ public class VoluntaryExitCommand implements Runnable {
 
   private Map<BLSPublicKey, Integer> getValidatorIndices(OwnedValidators blsPublicKeyValidatorMap) {
     Map<BLSPublicKey, Integer> validatorIndices = new HashMap<>();
-    apiClient
-        .getValidators(
-            blsPublicKeyValidatorMap.getPublicKeys().stream()
-                .map(BLSPublicKey::toString)
-                .collect(Collectors.toList()))
-        .ifPresent(
-            validatorResponses ->
-                validatorResponses.forEach(
-                    response ->
-                        validatorIndices.put(
-                            response.validator.pubkey.asBLSPublicKey(),
-                            response.index.intValue())));
+    final List<String> publicKeys =
+        blsPublicKeyValidatorMap.getPublicKeys().stream()
+            .map(BLSPublicKey::toString)
+            .collect(Collectors.toList());
+    for (int i = 0; i < publicKeys.size(); i += MAX_PUBLIC_KEY_BATCH_SIZE) {
+      final List<String> batch =
+          publicKeys.subList(i, Math.min(publicKeys.size(), i + MAX_PUBLIC_KEY_BATCH_SIZE));
+      apiClient
+          .getValidators(batch)
+          .ifPresent(
+              validatorResponses ->
+                  validatorResponses.forEach(
+                      response ->
+                          validatorIndices.put(
+                              response.validator.pubkey.asBLSPublicKey(),
+                              response.index.intValue())));
+    }
     return validatorIndices;
   }
 
