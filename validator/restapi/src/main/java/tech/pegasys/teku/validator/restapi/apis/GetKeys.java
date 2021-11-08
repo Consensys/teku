@@ -27,9 +27,9 @@ import tech.pegasys.teku.validator.restapi.ValidatorTypes;
 public class GetKeys extends RestApiEndpoint {
 
   public static final String ROUTE = "/eth/v1/keystores";
-  private final Supplier<List<BLSPublicKey>> validatorKeys;
+  private final Supplier<List<BLSPublicKey>> validatorKeysSupplier;
 
-  public GetKeys(Supplier<List<BLSPublicKey>> validatorKeys) {
+  public GetKeys(Supplier<List<BLSPublicKey>> validatorKeysSupplier) {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("ListKeys")
@@ -39,11 +39,11 @@ public class GetKeys extends RestApiEndpoint {
             .response(SC_OK, "Success response", ValidatorTypes.LIST_KEYS_RESPONSE_TYPE)
             .withAuthenticationResponses()
             .build());
-    this.validatorKeys = validatorKeys;
+    this.validatorKeysSupplier = validatorKeysSupplier;
   }
 
   @Override
   public void handle(final RestApiRequest request) throws JsonProcessingException {
-    request.respondOk(validatorKeys.get());
+    request.respondOk(validatorKeysSupplier.get());
   }
 }
