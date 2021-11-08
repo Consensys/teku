@@ -110,8 +110,8 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
 
     UInt64 currentEpoch = spec.computeEpochAtSlot(slot);
     if (currentEpoch.isLessThanOrEqualTo(
-            latestAnalyzedEpoch.getAndUpdate(
-                val -> val.isLessThan(currentEpoch) ? currentEpoch : val))) {
+        latestAnalyzedEpoch.getAndUpdate(
+            val -> val.isLessThan(currentEpoch) ? currentEpoch : val))) {
       return;
     }
 
@@ -146,7 +146,6 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
         if (mode.isMetricsEnabled()) {
           validatorPerformanceMetrics.updateBlockPerformanceMetrics(blockPerformance);
         }
-
       }
       producedBlocksByEpoch.headMap(blockProductionEpoch, true).clear();
       blockProductionAttemptsByEpoch.headMap(blockProductionEpoch, true).clear();
