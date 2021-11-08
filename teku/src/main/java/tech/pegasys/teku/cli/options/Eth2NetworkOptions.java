@@ -16,14 +16,13 @@ package tech.pegasys.teku.cli.options;
 import static tech.pegasys.teku.networking.eth2.P2PConfig.Builder.DEFAULT_PEER_RATE_LIMIT;
 import static tech.pegasys.teku.networking.eth2.P2PConfig.Builder.DEFAULT_PEER_REQUEST_LIMIT;
 
-import java.math.BigInteger;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import picocli.CommandLine;
-import picocli.CommandLine.ITypeConverter;
 import picocli.CommandLine.Option;
-import picocli.CommandLine.TypeConversionException;
+import tech.pegasys.teku.cli.converter.Bytes32Converter;
+import tech.pegasys.teku.cli.converter.UInt256Converter;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
@@ -203,29 +202,5 @@ public class Eth2NetworkOptions {
 
   public String getNetwork() {
     return network;
-  }
-
-  private static class UInt256Converter implements ITypeConverter<UInt256> {
-    @Override
-    public UInt256 convert(final String value) {
-      try {
-        return UInt256.valueOf(new BigInteger(value));
-      } catch (final NumberFormatException e) {
-        throw new TypeConversionException(
-            "Invalid format: must be a numeric value but was " + value);
-      }
-    }
-  }
-
-  private static class Bytes32Converter implements ITypeConverter<Bytes32> {
-    @Override
-    public Bytes32 convert(final String value) {
-      try {
-        return Bytes32.fromHexStringStrict(value);
-      } catch (final NumberFormatException e) {
-        throw new TypeConversionException(
-            "Invalid format: must be a 32 bytes in hex format but was " + value);
-      }
-    }
   }
 }
