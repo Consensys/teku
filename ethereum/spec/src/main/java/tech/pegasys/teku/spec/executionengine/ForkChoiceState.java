@@ -27,8 +27,7 @@ public class ForkChoiceState {
         headBlock -> new ForkChoiceState(headBlock, headBlock, finalizedBlock));
   }
 
-  public ForkChoiceState(
-      Bytes32 headBlockHash, Bytes32 safeBlockHash, Bytes32 finalizedBlockHash) {
+  public ForkChoiceState(Bytes32 headBlockHash, Bytes32 safeBlockHash, Bytes32 finalizedBlockHash) {
     this.headBlockHash = headBlockHash;
     this.safeBlockHash = safeBlockHash;
     this.finalizedBlockHash = finalizedBlockHash;
