@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -118,9 +117,7 @@ public class ValidatorClientService extends Service {
           Optional.of(
               ValidatorRestApi.create(
                   validatorApiConfig,
-                  () ->
-                      validatorLoader.getOwnedValidators().getPublicKeys().stream()
-                          .collect(Collectors.toList())));
+                  () -> List.copyOf(validatorLoader.getOwnedValidators().getPublicKeys())));
     } else {
       LOG.info("validator-api-enabled is false, not starting rest api.");
     }
