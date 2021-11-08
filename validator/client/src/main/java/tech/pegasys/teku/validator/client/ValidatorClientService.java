@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.client;
 
+import com.google.common.base.Suppliers;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -116,7 +117,8 @@ public class ValidatorClientService extends Service {
       validatorRestApi =
           Optional.of(
               ValidatorRestApi.create(
-                  validatorApiConfig, validatorLoader.getOwnedValidators().getPublicKeys()));
+                  validatorApiConfig,
+                  Suppliers.memoize(() -> validatorLoader.getOwnedValidators().getPublicKeys())));
     } else {
       LOG.info("validator-api-enabled is false, not starting rest api.");
     }

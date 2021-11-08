@@ -17,6 +17,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUE
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 
 import java.util.Set;
+import java.util.function.Supplier;
 import org.apache.commons.lang3.StringUtils;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
@@ -30,7 +31,7 @@ import tech.pegasys.teku.validator.restapi.apis.GetKeys;
 public class ValidatorRestApi {
 
   public static RestApi create(
-      final ValidatorRestApiConfig config, final Set<BLSPublicKey> validatorKeys) {
+      final ValidatorRestApiConfig config, final Supplier<Set<BLSPublicKey>> validatorKeys) {
 
     return new RestApiBuilder()
         .openApiInfo(
