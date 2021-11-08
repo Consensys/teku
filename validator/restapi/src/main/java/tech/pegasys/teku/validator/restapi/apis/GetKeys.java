@@ -30,7 +30,7 @@ public class GetKeys extends RestApiEndpoint {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("ListKeys")
-            .summary("List Keys.")
+            .summary("List Keys")
             .description(
                 "List all validating pubkeys known to and decrypted by this keymanager binary")
             .response(SC_OK, "Success response", ValidatorTypes.LIST_KEYS_RESPONSE_TYPE)
