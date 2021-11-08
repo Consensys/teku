@@ -16,18 +16,18 @@ package tech.pegasys.teku.spec.executionengine;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 
-public class ForkchoicheState {
+public class ForkChoiceState {
   private final Bytes32 headBlockHash;
   private final Bytes32 safeBlockHash;
   private final Bytes32 finalizedBlockHash;
 
-  public static Optional<ForkchoicheState> fromHeadAndFinalized(
+  public static Optional<ForkChoiceState> fromHeadAndFinalized(
       Optional<Bytes32> maybeHeadBlock, Bytes32 finalizedBlock) {
     return maybeHeadBlock.map(
-        headBlock -> new ForkchoicheState(headBlock, headBlock, finalizedBlock));
+        headBlock -> new ForkChoiceState(headBlock, headBlock, finalizedBlock));
   }
 
-  public ForkchoicheState(
+  public ForkChoiceState(
       Bytes32 headBlockHash, Bytes32 safeBlockHash, Bytes32 finalizedBlockHash) {
     this.headBlockHash = headBlockHash;
     this.safeBlockHash = safeBlockHash;

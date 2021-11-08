@@ -735,10 +735,6 @@ public class SpecConfigBuilder {
       if (terminalBlockHashActivationEpoch == null) {
         terminalBlockHashActivationEpoch = UInt64.valueOf("18446744073709551615");
       }
-      // later activate the following checks
-      // validateConstant("terminalTotalDifficulty", terminalTotalDifficulty);
-      // validateConstant("terminalBlockHash", terminalBlockHash);
-      // validateConstant("terminalBlockHashActivationEpoch", terminalBlockHashActivationEpoch);
     }
 
     public MergeBuilder mergeForkVersion(final Bytes4 mergeForkVersion) {
