@@ -70,7 +70,6 @@ public abstract class Eth2ReferenceTestCase {
 
           // Disabled while work continues to bring over the merge work
           .put("sanity/blocks", TestExecutor.IGNORE_TESTS)
-          .put("operations/execution_payload", TestExecutor.IGNORE_TESTS)
           .put("fork_choice/on_merge_block", TestExecutor.IGNORE_TESTS)
           .put("fork_choice/on_block", TestExecutor.IGNORE_TESTS)
           .put("fork_choice/get_head", TestExecutor.IGNORE_TESTS)

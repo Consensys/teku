@@ -15,12 +15,14 @@ package tech.pegasys.teku.reference.common.operations;
 
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 
 public interface OperationProcessor {
@@ -39,9 +41,15 @@ public interface OperationProcessor {
   void processVoluntaryExit(MutableBeaconState state, SignedVoluntaryExit voluntaryExit)
       throws BlockProcessingException;
 
-  void processAttestation(MutableBeaconState state, final Attestation attestation)
+  void processAttestation(MutableBeaconState state, Attestation attestation)
       throws BlockProcessingException;
 
-  void processSyncCommittee(final MutableBeaconState state, final SyncAggregate aggregate)
+  void processSyncCommittee(MutableBeaconState state, SyncAggregate aggregate)
+      throws BlockProcessingException;
+
+  void processExecutionPayload(
+      MutableBeaconState state,
+      ExecutionPayload executionPayload,
+      ExecutionEngineChannel executionEngine)
       throws BlockProcessingException;
 }

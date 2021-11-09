@@ -17,11 +17,13 @@ import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.MutableBeaconStatePhase0;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
@@ -89,5 +91,14 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
       final BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No SyncAggregates in phase0");
+  }
+
+  @Override
+  public void processExecutionPayload(
+      final MutableBeaconState state,
+      final ExecutionPayload executionPayload,
+      final ExecutionEngineChannel executionEngine)
+      throws BlockProcessingException {
+    throw new UnsupportedOperationException("No ExecutionPayload in phase0");
   }
 }

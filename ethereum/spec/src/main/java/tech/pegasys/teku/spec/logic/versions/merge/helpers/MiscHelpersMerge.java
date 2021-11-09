@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.merge.helpers;
 
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge.BeaconBlockBodyMerge;
@@ -39,5 +40,9 @@ public class MiscHelpersMerge extends MiscHelpersAltair {
 
   public boolean isExecutionEnabled(final BeaconState genericState, final BeaconBlock block) {
     return isMergeBlock(genericState, block) || isMergeComplete(genericState);
+  }
+
+  public UInt64 computeTimestampAtSlot(final BeaconState state, final UInt64 slot) {
+    return state.getGenesis_time().plus(slot.times(specConfig.getSecondsPerSlot()));
   }
 }
