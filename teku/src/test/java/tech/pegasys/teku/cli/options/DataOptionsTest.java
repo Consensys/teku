@@ -77,7 +77,7 @@ public class DataOptionsTest extends AbstractBeaconNodeCommandTest {
   public void dataStorageCreateDbVersion_shouldDefault() {
     final StorageConfiguration config = getTekuConfigurationFromArguments().storageConfiguration();
     final DatabaseVersion expectedDefault =
-        DatabaseVersion.isLevelDbSupported() ? DatabaseVersion.LEVELDB2 : DatabaseVersion.V5;
+        DatabaseVersion.isLevelDbSupported() ? DatabaseVersion.LEVELDB_TREE : DatabaseVersion.V5;
     assertThat(config.getDataStorageCreateDbVersion()).isEqualTo(expectedDefault);
   }
 

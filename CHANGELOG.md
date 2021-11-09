@@ -29,6 +29,8 @@ For information on changes in released versions of Teku, see the [releases page]
 - Switched executor queue size metrics to use labelled gauge.
 - New console message when Teku switches forks. 
 - Reduce CPU usage by using batching signature verification service for aggregate attestation and sync committee contributions.
+- Introduces a new database format for archive nodes that significantly improves response times for queries that require historic state data.
+    Existing databases and nodes using the default PRUNE storage mode are unchanged. Archive nodes wishing to take advantage of this will need to perform a full resync.
 
 
 ### Bug Fixes

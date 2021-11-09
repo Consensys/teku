@@ -31,6 +31,7 @@ import tech.pegasys.teku.storage.server.kvstore.MockKvStoreInstance;
 import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaFinalized;
 import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaHot;
 import tech.pegasys.teku.storage.server.kvstore.schema.V6SnapshotSchemaFinalized;
+import tech.pegasys.teku.storage.server.kvstore.schema.V6TreeSchemaFinalized;
 import tech.pegasys.teku.storage.store.StoreConfig;
 
 public class InMemoryStorageSystemBuilder {
@@ -70,6 +71,9 @@ public class InMemoryStorageSystemBuilder {
   public StorageSystem build() {
     final Database database;
     switch (version) {
+      case LEVELDB_TREE:
+        database = createLevelDbTreeDatabase();
+        break;
       case LEVELDB2: // Leveldb only varies by db type which doesn't apply to in-memory
       case V6:
         database = createV6Database();
@@ -163,6 +167,21 @@ public class InMemoryStorageSystemBuilder {
     ArrayList<T> ret = new ArrayList<>(l1);
     ret.addAll(l2);
     return ret;
+  }
+
+  private Database createLevelDbTreeDatabase() {
+    if (hotDb == null) {
+      hotDb =
+          MockKvStoreInstance.createEmpty(
+              concat(
+                  new V4SchemaHot(spec).getAllColumns(),
+                  new V6TreeSchemaFinalized(spec).getAllColumns()),
+              concat(
+                  new V4SchemaHot(spec).getAllVariables(),
+                  new V6TreeSchemaFinalized(spec).getAllVariables()));
+    }
+    return InMemoryKvStoreDatabaseFactory.createTree(
+        hotDb, storageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
   }
 
   private Database createV6Database() {
