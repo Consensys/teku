@@ -40,7 +40,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
 
 public class BlockProcessorMerge extends BlockProcessorAltair {
 
-  private final MiscHelpersMerge miscHelpers;
+  private final MiscHelpersMerge miscHelpersMerge;
   private final SchemaDefinitionsMerge schemaDefinitions;
 
   public BlockProcessorMerge(
@@ -66,7 +66,7 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
         attestationUtil,
         validatorsUtil,
         operationValidator);
-    this.miscHelpers = miscHelpers;
+    this.miscHelpersMerge = miscHelpers;
     this.schemaDefinitions = schemaDefinitions;
   }
 
@@ -81,7 +81,7 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
     final MutableBeaconStateMerge state = MutableBeaconStateMerge.required(genericState);
     final BeaconBlockBodyMerge blockBody = BeaconBlockBodyMerge.required(block.getBody());
     processBlockHeader(state, block);
-    if (miscHelpers.isExecutionEnabled(genericState, block)) {
+    if (miscHelpersMerge.isExecutionEnabled(genericState, block)) {
       processExecutionPayload(state, blockBody.getExecutionPayload(), executionEngine);
     }
     processRandaoNoValidation(state, block.getBody());
@@ -97,7 +97,7 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
       final ExecutionEngineChannel executionEngine)
       throws BlockProcessingException {
     final MutableBeaconStateMerge state = MutableBeaconStateMerge.required(genericState);
-    if (miscHelpers.isMergeComplete(state)) {
+    if (miscHelpersMerge.isMergeComplete(state)) {
       if (!payload.getParentHash().equals(state.getLatestExecutionPayloadHeader().getBlockHash())) {
         throw new BlockProcessingException(
             "Execution payload parent hash does not match previous execution payload header");
@@ -110,7 +110,7 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
       throw new BlockProcessingException("Execution payload random does not match state randao");
     }
 
-    if (!miscHelpers
+    if (!miscHelpersMerge
         .computeTimestampAtSlot(state, state.getSlot())
         .equals(payload.getTimestamp())) {
       throw new BlockProcessingException(
