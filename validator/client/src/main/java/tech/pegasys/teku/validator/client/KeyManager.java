@@ -28,4 +28,8 @@ public class KeyManager {
   public Set<BLSPublicKey> getValidatorKeys() {
     return validatorLoader.getOwnedValidators().getPublicKeys();
   }
+
+    public void addValidatorKeys(final String newKeys) {
+
+    }
 }
