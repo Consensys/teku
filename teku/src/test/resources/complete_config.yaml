@@ -24,6 +24,10 @@ eth1-deposit-contract-address: "0x77f7bED277449F51505a4C54550B074030d989bC"
 eth1-endpoint: "http://localhost:8545"
 #Xeth1-deposits-from-storage-enabled: true
 
+# execution engine
+Xee-endpoint: "http://localhost:8550"
+Xee-fee-recipient-address: "0x00220204f295dbb79fbbe619dd1b94463800f9d9"
+
 # output
 #Xtransaction-record-directory: "/tmp/teku"
 
