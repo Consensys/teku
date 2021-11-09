@@ -251,7 +251,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
       final ExecutionPayload executionPayload,
       final ExecutionEngineChannel executionEngine)
       throws BlockProcessingException {
-    throw new UnsupportedOperationException("No ExecutionPayload in phase0");
+    throw new UnsupportedOperationException("No ExecutionPayload in Altair");
   }
 
   public static boolean eth2FastAggregateVerify(
