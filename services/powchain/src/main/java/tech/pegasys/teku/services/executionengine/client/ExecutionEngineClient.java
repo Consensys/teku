@@ -13,4 +13,8 @@
 
 package tech.pegasys.teku.services.executionengine.client;
 
-public interface ExecutionEngineClient {}
+public interface ExecutionEngineClient {
+  // SafeFuture<Response<ExecutionPayloadV1>> getPayload(Bytes8 payloadId);
+  // SafeFuture<Response<ExecutionPayloadV1>> executePayload(ExecutionPayloadV1 executionPayload);
+
+}

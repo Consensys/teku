@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.base.MoreObjects;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -36,6 +37,7 @@ import tech.pegasys.teku.services.executionengine.client.serialization.UInt64AsH
 import tech.pegasys.teku.services.executionengine.client.serialization.UInt64AsHexSerializer;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
+import tech.pegasys.teku.ssz.collections.impl.SszByteListImpl;
 import tech.pegasys.teku.ssz.type.Bytes20;
 
 public class ExecutionPayloadV1 {
@@ -157,6 +159,26 @@ public class ExecutionPayloadV1 {
         baseFeePerGas,
         blockHash,
         transactions);
+  }
+
+  public static ExecutionPayloadV1 fromInternalExecutionPayload(ExecutionPayload executionPayload) {
+    return new ExecutionPayloadV1(
+        executionPayload.getParentHash(),
+        executionPayload.getCoinbase(),
+        executionPayload.getStateRoot(),
+        executionPayload.getReceiptRoot(),
+        executionPayload.getLogsBloom(),
+        executionPayload.getRandom(),
+        executionPayload.getBlockNumber(),
+        executionPayload.getGasLimit(),
+        executionPayload.getGasUsed(),
+        executionPayload.getTimestamp(),
+        executionPayload.getExtraData(),
+        executionPayload.getBaseFeePerGas(),
+        executionPayload.getBlockHash(),
+        executionPayload.getTransactions().stream()
+            .map(SszByteListImpl::getBytes)
+            .collect(Collectors.toList()));
   }
 
   @Override

@@ -13,8 +13,13 @@
 
 package tech.pegasys.teku.services.executionengine.client.schema;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.common.base.MoreObjects;
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.services.executionengine.client.serialization.Bytes20Deserializer;
@@ -38,9 +43,39 @@ public class PayloadAttributesV1 {
   @JsonDeserialize(using = Bytes20Deserializer.class)
   private final Bytes20 feeRecipient;
 
-  public PayloadAttributesV1(UInt64 timestamp, Bytes32 random, Bytes20 feeRecipient) {
+  public PayloadAttributesV1(
+      @JsonProperty("timestamp") UInt64 timestamp,
+      @JsonProperty("random") Bytes32 random,
+      @JsonProperty("feeRecipient") Bytes20 feeRecipient) {
+    checkNotNull(timestamp, "timestamp");
+    checkNotNull(random, "random");
+    checkNotNull(feeRecipient, "feeRecipient");
     this.timestamp = timestamp;
     this.random = random;
     this.feeRecipient = feeRecipient;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    final PayloadAttributesV1 that = (PayloadAttributesV1) o;
+    return Objects.equals(timestamp, that.timestamp)
+        && Objects.equals(random, that.random)
+        && Objects.equals(feeRecipient, that.feeRecipient);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(timestamp, random, feeRecipient);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("timestamp", timestamp)
+        .add("random", random)
+        .add("feeRecipient", feeRecipient)
+        .toString();
   }
 }
