@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.restapi.apis.schema;
+package tech.pegasys.teku.validator.client.restapi.apis.schema;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 

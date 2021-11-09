@@ -11,22 +11,25 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.restapi.apis;
+package tech.pegasys.teku.validator.client.restapi.apis;
 
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.List;
+import java.util.function.Supplier;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.validator.restapi.ValidatorTypes;
+import tech.pegasys.teku.validator.client.restapi.ValidatorTypes;
 
 public class GetKeys extends RestApiEndpoint {
 
   public static final String ROUTE = "/eth/v1/keystores";
+  private final Supplier<List<BLSPublicKey>> validatorKeysSupplier;
 
-  public GetKeys() {
+  public GetKeys(Supplier<List<BLSPublicKey>> validatorKeysSupplier) {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("ListKeys")
@@ -36,10 +39,11 @@ public class GetKeys extends RestApiEndpoint {
             .response(SC_OK, "Success response", ValidatorTypes.LIST_KEYS_RESPONSE_TYPE)
             .withAuthenticationResponses()
             .build());
+    this.validatorKeysSupplier = validatorKeysSupplier;
   }
 
   @Override
   public void handle(final RestApiRequest request) throws JsonProcessingException {
-    request.respondError(SC_INTERNAL_SERVER_ERROR, "Not implemented");
+    request.respondOk(validatorKeysSupplier.get());
   }
 }

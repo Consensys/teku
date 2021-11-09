@@ -19,6 +19,7 @@ import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.kvstore.schema.V4SchemaHot;
 import tech.pegasys.teku.storage.server.kvstore.schema.V6SnapshotSchemaFinalized;
+import tech.pegasys.teku.storage.server.kvstore.schema.V6TreeSchemaFinalized;
 
 public class InMemoryKvStoreDatabaseFactory {
 
@@ -54,6 +55,23 @@ public class InMemoryKvStoreDatabaseFactory {
         storageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
+        spec);
+  }
+
+  public static Database createTree(
+      MockKvStoreInstance db,
+      final StateStorageMode storageMode,
+      final long stateStorageFrequency,
+      final boolean storeNonCanonicalBlocks,
+      final Spec spec) {
+    return KvStoreDatabase.createWithStateTree(
+        new StubMetricsSystem(),
+        db,
+        new V4SchemaHot(spec),
+        new V6TreeSchemaFinalized(spec),
+        storageMode,
+        storeNonCanonicalBlocks,
+        1000,
         spec);
   }
 }

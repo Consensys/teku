@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.restapi.apis;
+package tech.pegasys.teku.validator.client.restapi.apis;
 
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
@@ -25,7 +25,7 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.restapi.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.validator.restapi.ValidatorTypes;
+import tech.pegasys.teku.validator.client.restapi.ValidatorTypes;
 
 public class DeleteKeys extends RestApiEndpoint {
   private static final Logger LOG = LogManager.getLogger();

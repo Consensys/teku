@@ -48,9 +48,9 @@ import tech.pegasys.teku.validator.client.duties.synccommittee.SyncCommitteeSche
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 import tech.pegasys.teku.validator.client.loader.PublicKeyLoader;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
+import tech.pegasys.teku.validator.client.restapi.ValidatorRestApi;
+import tech.pegasys.teku.validator.client.restapi.ValidatorRestApiConfig;
 import tech.pegasys.teku.validator.relaypublisher.MultiPublishingBeaconNodeApi;
-import tech.pegasys.teku.validator.restapi.ValidatorRestApi;
-import tech.pegasys.teku.validator.restapi.ValidatorRestApiConfig;
 
 public class ValidatorClientService extends Service {
   private static final Logger LOG = LogManager.getLogger();
@@ -113,7 +113,11 @@ public class ValidatorClientService extends Service {
     final ValidatorRestApiConfig validatorApiConfig = config.getValidatorRestApiConfig();
     Optional<RestApi> validatorRestApi = Optional.empty();
     if (validatorApiConfig.isRestApiEnabled()) {
-      validatorRestApi = Optional.of(ValidatorRestApi.create(validatorApiConfig));
+      validatorRestApi =
+          Optional.of(
+              ValidatorRestApi.create(
+                  validatorApiConfig,
+                  () -> List.copyOf(validatorLoader.getOwnedValidators().getPublicKeys())));
     } else {
       LOG.info("validator-api-enabled is false, not starting rest api.");
     }
