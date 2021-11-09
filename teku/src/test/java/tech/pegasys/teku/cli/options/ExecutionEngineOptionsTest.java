@@ -35,7 +35,7 @@ public class ExecutionEngineOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void shouldReportEEEnabledIfEndpointSpecified() {
-    final String[] args = {"--ee-endpoint", "http://example.com:1234/path/"};
+    final String[] args = {"--Xee-endpoint", "http://example.com:1234/path/"};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     assertThat(config.executionEngine().isEnabled()).isTrue();
   }
@@ -48,7 +48,7 @@ public class ExecutionEngineOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void shouldReportEEDisabledIfEndpointIsEmpty() {
-    final String[] args = {"--ee-endpoint", "   "};
+    final String[] args = {"--Xee-endpoint", "   "};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     assertThat(config.executionEngine().isEnabled()).isFalse();
   }
@@ -56,7 +56,7 @@ public class ExecutionEngineOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void multiple_eeEndpoints_areSupported() {
     final String[] args = {
-      "--ee-endpoints",
+      "--Xee-endpoints",
       "http://example.com:1234/path/,http://example-2.com:1234/path/",
       "http://example-3.com:1234/path/"
     };
@@ -72,9 +72,9 @@ public class ExecutionEngineOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void multiple_eeEndpoints_areSupported_mixedParams() {
     final String[] args = {
-      "--ee-endpoint",
+      "--Xee-endpoint",
       "http://example-single.com:1234/path/",
-      "--ee-endpoints",
+      "--Xee-endpoints",
       "http://example.com:1234/path/,http://example-2.com:1234/path/",
       "http://example-3.com:1234/path/"
     };
@@ -97,7 +97,7 @@ public class ExecutionEngineOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void ShouldReportAddressIfFeeRecipientSpecified() {
     final String[] args = {
-      "--ee-fee-recipient-address", "0xfe3b557e8fb62b89f4916b721be55ceb828dbd73"
+      "--Xee-fee-recipient-address", "0xfe3b557e8fb62b89f4916b721be55ceb828dbd73"
     };
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     assertThat(config.executionEngine().getFeeRecipient())

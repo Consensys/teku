@@ -22,20 +22,18 @@ import picocli.CommandLine.Option;
 public class ExecutionEngineOptions {
 
   @Option(
-      names = {"--ee-endpoints", "--ee-endpoint"},
+      names = {"--Xee-endpoints", "--Xee-endpoint"},
       paramLabel = "<NETWORK>",
       description = "URLs for Execution Engine nodes.",
-      hidden = true,
       split = ",",
       arity = "0..*")
   private List<String> eeEndpoints = new ArrayList<>();
 
   @Option(
-      names = {"--ee-fee-recipient-address"},
+      names = {"--Xee-fee-recipient-address"},
       paramLabel = "<ADDRESS>",
       description =
           "Suggested fee recipient sent to the execution engine, which could use it as coinbase when producing a new execution block.",
-      hidden = true,
       arity = "0..1")
   private String feeRecipient = null;
 
