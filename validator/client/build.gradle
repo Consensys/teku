@@ -13,9 +13,9 @@ dependencies {
   implementation project(':infrastructure:logging')
   implementation project(':infrastructure:restapi')
   implementation project(':infrastructure:serviceutils')
+  implementation project(':infrastructure:version')
   implementation project(':storage:api')
   implementation project(':validator:api')
-  implementation project(':validator:restapi')
   implementation project(':validator:beaconnode')
   implementation project(':validator:relaypublisher')
   implementation project(':util')
@@ -36,5 +36,7 @@ dependencies {
   testImplementation testFixtures(project(':ethereum:networks'))
   testImplementation testFixtures(project(':infrastructure:async'))
   testImplementation testFixtures(project(':infrastructure:time'))
+  testImplementation testFixtures(project(':infrastructure:restapi'))
   testImplementation testFixtures(project(':bls'))
+
 }

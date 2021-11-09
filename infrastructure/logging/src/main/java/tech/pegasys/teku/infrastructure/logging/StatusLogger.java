@@ -56,6 +56,13 @@ public class StatusLogger {
             Color.YELLOW));
   }
 
+  public void warnMergeParameterChanged(final String parameterName, final String newValue) {
+    log.warn(
+        print(
+            "Merge parameter " + parameterName + " has been overridden to " + newValue,
+            Color.YELLOW));
+  }
+
   public void fatalError(final String description, final Throwable cause) {
     log.fatal("Exiting due to fatal error in {}", description, cause);
   }

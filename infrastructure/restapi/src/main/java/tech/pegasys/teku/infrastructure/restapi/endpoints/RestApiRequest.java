@@ -20,11 +20,19 @@ import io.javalin.http.Context;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.infrastructure.restapi.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.restapi.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.types.SerializableTypeDefinition;
 
 public class RestApiRequest {
   private final Context context;
   private final EndpointMetadata metadata;
+
+  @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
+  public <T> T getRequestBody() throws JsonProcessingException {
+    DeserializableTypeDefinition<T> bodySchema =
+        (DeserializableTypeDefinition<T>) metadata.getRequestBodyType();
+    return JsonUtil.parse(context.body(), bodySchema);
+  }
 
   public RestApiRequest(final Context context, final EndpointMetadata metadata) {
     this.context = context;

@@ -34,6 +34,7 @@ dependencies {
     implementation project(':infrastructure:async')
     implementation project(':infrastructure:crypto')
     api project(':infrastructure:collections')
+    implementation project(':infrastructure:events')
     implementation project(':infrastructure:io')
     implementation project(':infrastructure:logging')
     implementation project(':ethereum:pow:api')

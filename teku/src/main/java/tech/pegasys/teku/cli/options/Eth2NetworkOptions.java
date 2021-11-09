@@ -17,8 +17,12 @@ import static tech.pegasys.teku.networking.eth2.P2PConfig.Builder.DEFAULT_PEER_R
 import static tech.pegasys.teku.networking.eth2.P2PConfig.Builder.DEFAULT_PEER_REQUEST_LIMIT;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import picocli.CommandLine;
 import picocli.CommandLine.Option;
+import tech.pegasys.teku.cli.converter.Bytes32Converter;
+import tech.pegasys.teku.cli.converter.UInt256Converter;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
@@ -63,6 +67,34 @@ public class Eth2NetworkOptions {
       description = "Override the Merge fork activation epoch.",
       arity = "1")
   private UInt64 mergeForkEpoch;
+
+  @Option(
+      names = {"--Xnetwork-merge-total-terminal-difficulty-override"},
+      hidden = true,
+      paramLabel = "<uint256>",
+      description = "Override total terminal difficulty for The Merge",
+      arity = "1",
+      converter = UInt256Converter.class)
+  private UInt256 mergeTotalTerminalDifficultyOverride;
+
+  @Option(
+      names = {"--Xnetwork-merge-terminal-block-hash-override"},
+      hidden = true,
+      paramLabel = "<Bytes32 hex>",
+      description =
+          "Override terminal block hash for The Merge. To be used in conjunction with --Xnetwork-merge-terminal-block-hash-epoch-override",
+      arity = "1",
+      converter = Bytes32Converter.class)
+  private Bytes32 mergeTerminalBlockHashOverride;
+
+  @Option(
+      names = {"--Xnetwork-merge-terminal-block-hash-epoch-override"},
+      hidden = true,
+      paramLabel = "<epoch>",
+      description =
+          "Override terminal block hash for The Merge. To be used in conjunction with --Xnetwork-merge-terminal-block-hash-override",
+      arity = "1")
+  private UInt64 mergeTerminalBlockHashEpochOverride;
 
   @Option(
       names = {"--Xstartup-target-peer-count"},
@@ -155,7 +187,16 @@ public class Eth2NetworkOptions {
       builder.altairForkEpoch(altairForkEpoch);
     }
     if (mergeForkEpoch != null) {
-      builder.mergeForkEpoch(altairForkEpoch);
+      builder.mergeForkEpoch(mergeForkEpoch);
+    }
+    if (mergeTotalTerminalDifficultyOverride != null) {
+      builder.mergeTotalTerminalDifficultyOverride(mergeTotalTerminalDifficultyOverride);
+    }
+    if (mergeTerminalBlockHashOverride != null) {
+      builder.mergeTerminalBlockHashOverride(mergeTerminalBlockHashOverride);
+    }
+    if (mergeTerminalBlockHashEpochOverride != null) {
+      builder.mergeTerminalBlockHashEpochOverride(mergeTerminalBlockHashEpochOverride);
     }
   }
 

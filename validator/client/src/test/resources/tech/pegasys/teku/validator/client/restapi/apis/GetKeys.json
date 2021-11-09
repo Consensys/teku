@@ -1,0 +1,49 @@
+{
+  "get": {
+    "operationId": "ListKeys",
+    "summary": "List Keys",
+    "description": "List all validating pubkeys known to and decrypted by this keymanager binary",
+    "responses": {
+      "200": {
+        "description": "Success response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ListKeysResponse"
+            }
+          }
+        }
+      },
+      "401": {
+        "description": "Unauthorized, no token is found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "403": {
+        "description": "Forbidden, a token is found but is invalid",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Internal server error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  }
+}

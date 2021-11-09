@@ -18,7 +18,6 @@ import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.integerSqu
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigMerge;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
@@ -30,30 +29,36 @@ import tech.pegasys.teku.spec.logic.common.statetransition.attestation.Attestati
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
+import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.block.BlockProcessorAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.forktransition.AltairStateUpgrade;
-import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.attestation.AttestationWorthinessCheckerAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.EpochProcessorAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.ValidatorStatusFactoryAltair;
+import tech.pegasys.teku.spec.logic.versions.merge.helpers.BeaconStateAccessorsMerge;
 import tech.pegasys.teku.spec.logic.versions.merge.helpers.BeaconStateMutatorsMerge;
+import tech.pegasys.teku.spec.logic.versions.merge.helpers.MergeTransitionHelpers;
+import tech.pegasys.teku.spec.logic.versions.merge.helpers.MiscHelpersMerge;
 import tech.pegasys.teku.spec.logic.versions.merge.statetransition.epoch.EpochProcessorMerge;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
 
 public class SpecLogicMerge extends AbstractSpecLogic {
 
-  private final SpecConfigAltair specConfig;
+  private final SpecConfigMerge specConfig;
   private final Optional<SyncCommitteeUtil> syncCommitteeUtil;
 
+  private final Optional<ExecutionPayloadUtil> executionPayloadUtil;
+  private final Optional<MergeTransitionHelpers> mergeTransitionHelpers;
+
   private SpecLogicMerge(
-      final SpecConfigAltair specConfig,
+      final SpecConfigMerge specConfig,
       final Predicates predicates,
       final MiscHelpersAltair miscHelpers,
-      final BeaconStateAccessorsAltair beaconStateAccessors,
+      final BeaconStateAccessorsMerge beaconStateAccessors,
       final BeaconStateMutators beaconStateMutators,
       final OperationSignatureVerifier operationSignatureVerifier,
       final ValidatorsUtil validatorsUtil,
@@ -66,7 +71,9 @@ public class SpecLogicMerge extends AbstractSpecLogic {
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil,
       final SyncCommitteeUtil syncCommitteeUtil,
-      final AltairStateUpgrade stateUpgrade) {
+      final AltairStateUpgrade stateUpgrade,
+      final ExecutionPayloadUtil executionPayloadUtil,
+      final MergeTransitionHelpers mergeTransitionHelpers) {
     super(
         predicates,
         miscHelpers,
@@ -85,15 +92,17 @@ public class SpecLogicMerge extends AbstractSpecLogic {
         Optional.of(stateUpgrade));
     this.specConfig = specConfig;
     this.syncCommitteeUtil = Optional.of(syncCommitteeUtil);
+    this.executionPayloadUtil = Optional.of(executionPayloadUtil);
+    this.mergeTransitionHelpers = Optional.of(mergeTransitionHelpers);
   }
 
   public static SpecLogicMerge create(
       final SpecConfigMerge config, final SchemaDefinitionsMerge schemaDefinitions) {
     // Helpers
     final Predicates predicates = new Predicates();
-    final MiscHelpersAltair miscHelpers = new MiscHelpersAltair(config);
-    final BeaconStateAccessorsAltair beaconStateAccessors =
-        new BeaconStateAccessorsAltair(config, predicates, miscHelpers);
+    final MiscHelpersMerge miscHelpers = new MiscHelpersMerge(config);
+    final BeaconStateAccessorsMerge beaconStateAccessors =
+        new BeaconStateAccessorsMerge(config, predicates, miscHelpers);
     final BeaconStateMutatorsMerge beaconStateMutators =
         new BeaconStateMutatorsMerge(config, miscHelpers, beaconStateAccessors);
 
@@ -154,6 +163,11 @@ public class SpecLogicMerge extends AbstractSpecLogic {
         new AltairStateUpgrade(
             config, schemaDefinitions, beaconStateAccessors, attestationUtil, miscHelpers);
 
+    final MergeTransitionHelpers mergeTransitionHelpers =
+        new MergeTransitionHelpers(miscHelpers, config);
+
+    final ExecutionPayloadUtil executionPayloadUtil = new ExecutionPayloadUtil();
+
     return new SpecLogicMerge(
         config,
         predicates,
@@ -171,7 +185,9 @@ public class SpecLogicMerge extends AbstractSpecLogic {
         forkChoiceUtil,
         blockProposalUtil,
         syncCommitteeUtil,
-        stateUpgrade);
+        stateUpgrade,
+        executionPayloadUtil,
+        mergeTransitionHelpers);
   }
 
   @Override
@@ -194,5 +210,15 @@ public class SpecLogicMerge extends AbstractSpecLogic {
         state.getSlot().minusMinZero(integerSquareRoot(specConfig.getSlotsPerEpoch()));
     return new AttestationWorthinessCheckerAltair(
         expectedAttestationTarget, oldestWorthySlotForSourceReward);
+  }
+
+  @Override
+  public Optional<ExecutionPayloadUtil> getExecutionPayloadUtil() {
+    return executionPayloadUtil;
+  }
+
+  @Override
+  public Optional<MergeTransitionHelpers> getMergeTransitionHelpers() {
+    return mergeTransitionHelpers;
   }
 }

@@ -54,8 +54,11 @@ class ConstantsReader {
           "MERGE_FORK_EPOCH",
           "SHARDING_FORK_VERSION",
           "SHARDING_FORK_EPOCH",
-          "TRANSITION_TOTAL_DIFFICULTY",
+          "TRANSITION_TOTAL_DIFFICULTY", // has been renamed to TERMINAL_TOTAL_DIFFICULTY
           "MIN_ANCHOR_POW_BLOCK_DIFFICULTY",
+          "TERMINAL_TOTAL_DIFFICULTY",
+          "TERMINAL_BLOCK_HASH",
+          "TERMINAL_BLOCK_HASH_ACTIVATION_EPOCH",
           // Phase0 constants which may exist in legacy config files, but should now be ignored
           "BLS_WITHDRAWAL_PREFIX",
           "TARGET_AGGREGATORS_PER_COMMITTEE",
