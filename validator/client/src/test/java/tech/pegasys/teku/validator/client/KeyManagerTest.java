@@ -18,7 +18,6 @@ import static org.mockito.Mockito.when;
 
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -39,9 +38,9 @@ class KeyManagerTest {
     Set<BLSPublicKey> keySet = getList();
     when(ownedValidators.getPublicKeys()).thenReturn(keySet);
     when(validatorLoader.getOwnedValidators()).thenReturn(ownedValidators);
-    List<BLSPublicKey> keyList = keyManager.getValidatorKeys();
+    Set<BLSPublicKey> receivedKeySet = keyManager.getValidatorKeys();
 
-    assertThat(keyList).isEqualTo(List.copyOf(keySet));
+    assertThat(receivedKeySet).isEqualTo(keySet);
   }
 
   @Test
@@ -49,9 +48,9 @@ class KeyManagerTest {
     Set<BLSPublicKey> keySet = Collections.emptySet();
     when(ownedValidators.getPublicKeys()).thenReturn(keySet);
     when(validatorLoader.getOwnedValidators()).thenReturn(ownedValidators);
-    List<BLSPublicKey> keyList = keyManager.getValidatorKeys();
+    Set<BLSPublicKey> receivedKeySet = keyManager.getValidatorKeys();
 
-    assertThat(keyList).isEmpty();
+    assertThat(receivedKeySet).isEmpty();
   }
 
   private Set<BLSPublicKey> getList() {

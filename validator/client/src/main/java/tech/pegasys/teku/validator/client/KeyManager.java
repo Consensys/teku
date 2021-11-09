@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.validator.client;
 
-import java.util.List;
+import java.util.Set;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
 
@@ -25,7 +25,7 @@ public class KeyManager {
     this.validatorLoader = validatorLoader;
   }
 
-  public List<BLSPublicKey> getValidatorKeys() {
-    return List.copyOf(validatorLoader.getOwnedValidators().getPublicKeys());
+  public Set<BLSPublicKey> getValidatorKeys() {
+    return validatorLoader.getOwnedValidators().getPublicKeys();
   }
 }
