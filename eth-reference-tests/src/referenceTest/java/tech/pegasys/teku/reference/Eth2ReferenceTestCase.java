@@ -68,12 +68,8 @@ public abstract class Eth2ReferenceTestCase {
           .putAll(ForkUpgradeTestExecutor.FORK_UPGRADE_TEST_TYPES)
           .putAll(RewardsTestExecutorMerge.REWARDS_TEST_TYPES)
 
-          // Disabled while work continues to bring over the merge work
-          .put("sanity/blocks", TestExecutor.IGNORE_TESTS)
+          // We don't yet support on_merge_block reference tests
           .put("fork_choice/on_merge_block", TestExecutor.IGNORE_TESTS)
-          .put("fork_choice/on_block", TestExecutor.IGNORE_TESTS)
-          .put("fork_choice/get_head", TestExecutor.IGNORE_TESTS)
-          .put("finality/finality", TestExecutor.IGNORE_TESTS)
           .build();
 
   protected void runReferenceTest(final TestDefinition testDefinition) throws Throwable {
