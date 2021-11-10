@@ -34,7 +34,14 @@ public class ValidatorRestApi {
   public static RestApi create(
       final ValidatorRestApiConfig config,
       final Supplier<List<BLSPublicKey>> validatorKeysSupplier) {
-    return new RestApiBuilder()
+    return create(config, validatorKeysSupplier, new RestApiBuilder());
+  }
+
+  static RestApi create(
+      final ValidatorRestApiConfig config,
+      final Supplier<List<BLSPublicKey>> validatorKeysSupplier,
+      final RestApiBuilder builder) {
+    return builder
         .openApiInfo(
             openApi ->
                 openApi

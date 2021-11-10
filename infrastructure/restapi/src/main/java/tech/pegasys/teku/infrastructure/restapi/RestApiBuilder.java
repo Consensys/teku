@@ -17,6 +17,7 @@ import static java.util.Collections.emptyList;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.restapi.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 
+import com.google.common.annotations.VisibleForTesting;
 import io.javalin.Javalin;
 import io.javalin.core.JavalinConfig;
 import java.net.InetSocketAddress;
@@ -56,6 +57,11 @@ public class RestApiBuilder {
   public RestApiBuilder listenAddress(final String listenAddress) {
     this.listenAddress = listenAddress;
     return this;
+  }
+
+  @VisibleForTesting
+  public String getOpenApiDocument() {
+    return openApiDocBuilder.build();
   }
 
   public RestApiBuilder port(final int port) {
