@@ -26,17 +26,19 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.restapi.RestApi;
+import tech.pegasys.teku.validator.client.KeyManager;
 
 class ValidatorRestApiTest {
   private final ObjectMapper objectMapper = new ObjectMapper();
   private final ValidatorRestApiConfig config = mock(ValidatorRestApiConfig.class);
+  private final KeyManager keyManager = mock(KeyManager.class);
   private RestApi restApi;
 
   @BeforeEach
   void setup() {
     when(config.getRestApiInterface()).thenReturn("127.1.1.1");
     when(config.isRestApiDocsEnabled()).thenReturn(true);
-    restApi = ValidatorRestApi.create(config, List::of);
+    restApi = ValidatorRestApi.create(config, keyManager);
   }
 
   @Test
@@ -49,7 +51,6 @@ class ValidatorRestApiTest {
 
   private void checkReferences(final JsonNode jsonNode) {
     for (JsonNode node : jsonNode.findValues("$ref")) {
-      System.out.println(node.asText());
       assertThat(node.asText())
           .withFailMessage("Did not start with '#/' " + node.asText())
           .startsWith("#/");
