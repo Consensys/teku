@@ -108,21 +108,21 @@ public class BeaconStateMerge extends BeaconStateAltair {
                   beaconStateMerge
                       .getPreviousEpochParticipation()
                       .getSchema()
-                      .sszDeserialize(Bytes.wrap(this.previousEpochParticipation));
+                      .sszDeserialize(Bytes.wrap(this.previous_epoch_participation));
               final SszList<SszByte> currentEpochParticipation =
                   beaconStateMerge
                       .getCurrentEpochParticipation()
                       .getSchema()
-                      .sszDeserialize(Bytes.wrap(this.currentEpochParticipation));
+                      .sszDeserialize(Bytes.wrap(this.current_epoch_participation));
 
               beaconStateMerge.setPreviousEpochParticipation(previousEpochParticipation);
               beaconStateMerge.setCurrentEpochParticipation(currentEpochParticipation);
-              beaconStateMerge.getInactivityScores().setAllElements(inactivityScores);
+              beaconStateMerge.getInactivityScores().setAllElements(inactivity_scores);
 
               beaconStateMerge.setCurrentSyncCommittee(
-                  currentSyncCommittee.asInternalSyncCommittee(syncCommitteeSchema));
+                  current_sync_committee.asInternalSyncCommittee(syncCommitteeSchema));
               beaconStateMerge.setNextSyncCommittee(
-                  nextSyncCommittee.asInternalSyncCommittee(syncCommitteeSchema));
+                  next_sync_committee.asInternalSyncCommittee(syncCommitteeSchema));
 
               final tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema
                   executionPayloadHeaderSchema =

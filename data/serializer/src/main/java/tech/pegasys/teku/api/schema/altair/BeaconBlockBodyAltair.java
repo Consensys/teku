@@ -42,23 +42,23 @@ public class BeaconBlockBodyAltair extends BeaconBlockBody {
       @JsonProperty("randao_reveal") final BLSSignature randao_reveal,
       @JsonProperty("eth1_data") final Eth1Data eth1_data,
       @JsonProperty("graffiti") final Bytes32 graffiti,
-      @JsonProperty("proposer_slashings") final List<ProposerSlashing> proposerSlashings,
-      @JsonProperty("attester_slashings") final List<AttesterSlashing> attesterSlashings,
+      @JsonProperty("proposer_slashings") final List<ProposerSlashing> proposer_slashings,
+      @JsonProperty("attester_slashings") final List<AttesterSlashing> attester_slashings,
       @JsonProperty("attestations") final List<Attestation> attestations,
       @JsonProperty("deposits") final List<Deposit> deposits,
-      @JsonProperty("voluntary_exits") final List<SignedVoluntaryExit> voluntaryExits,
-      @JsonProperty("sync_aggregate") final SyncAggregate syncAggregate) {
+      @JsonProperty("voluntary_exits") final List<SignedVoluntaryExit> voluntary_exits,
+      @JsonProperty("sync_aggregate") final SyncAggregate sync_aggregate) {
     super(
         randao_reveal,
         eth1_data,
         graffiti,
-        proposerSlashings,
-        attesterSlashings,
+        proposer_slashings,
+        attester_slashings,
         attestations,
         deposits,
-        voluntaryExits);
-    checkNotNull(syncAggregate, "Sync Aggregate is required for altair blocks");
-    this.syncAggregate = syncAggregate;
+        voluntary_exits);
+    checkNotNull(sync_aggregate, "Sync Aggregate is required for altair blocks");
+    this.syncAggregate = sync_aggregate;
   }
 
   public BeaconBlockBodyAltair(

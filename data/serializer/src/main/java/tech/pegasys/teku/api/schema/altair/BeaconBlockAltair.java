@@ -42,9 +42,9 @@ public class BeaconBlockAltair extends BeaconBlock implements UnsignedBlock {
         .getBeaconBlockSchema()
         .create(
             slot,
-            proposerIndex,
-            parentRoot,
-            stateRoot,
+            proposer_index,
+            parent_root,
+            state_root,
             body.asInternalBeaconBlockBody(specVersion));
   }
 
