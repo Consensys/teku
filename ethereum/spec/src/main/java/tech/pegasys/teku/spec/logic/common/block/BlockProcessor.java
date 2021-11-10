@@ -23,6 +23,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -31,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
@@ -43,7 +45,8 @@ public interface BlockProcessor {
   BeaconState processAndValidateBlock(
       SignedBeaconBlock signedBlock,
       BeaconState blockSlotState,
-      IndexedAttestationCache indexedAttestationCache)
+      IndexedAttestationCache indexedAttestationCache,
+      ExecutionEngineChannel executionEngine)
       throws StateTransitionException;
 
   /**
@@ -53,6 +56,8 @@ public interface BlockProcessor {
    * @param blockSlotState The preState on which this block should be procssed, this preState must
    *     already be advanced to the block's slot
    * @param indexedAttestationCache A cache of indexed attestations
+   * @param signatureVerifier The signature verifier to use
+   * @param executionEngine The execution engine to verify payloads via
    * @return The post state after processing the block on top of {@code blockSlotState}
    * @throws StateTransitionException If the block is invalid or cannot be processed
    */
@@ -60,14 +65,16 @@ public interface BlockProcessor {
       SignedBeaconBlock signedBlock,
       BeaconState blockSlotState,
       IndexedAttestationCache indexedAttestationCache,
-      BLSSignatureVerifier signatureVerifier)
+      BLSSignatureVerifier signatureVerifier,
+      ExecutionEngineChannel executionEngine)
       throws StateTransitionException;
 
   BeaconState processUnsignedBlock(
       BeaconState preState,
       BeaconBlock block,
       IndexedAttestationCache indexedAttestationCache,
-      BLSSignatureVerifier signatureVerifier)
+      BLSSignatureVerifier signatureVerifier,
+      ExecutionEngineChannel executionEngine)
       throws BlockProcessingException;
 
   void processBlockHeader(MutableBeaconState state, BeaconBlockSummary blockHeader)
@@ -109,5 +116,11 @@ public interface BlockProcessor {
 
   void processSyncAggregate(
       MutableBeaconState state, SyncAggregate syncAggregate, BLSSignatureVerifier signatureVerifier)
+      throws BlockProcessingException;
+
+  void processExecutionPayload(
+      MutableBeaconState state,
+      ExecutionPayload executionPayload,
+      ExecutionEngineChannel executionEngine)
       throws BlockProcessingException;
 }

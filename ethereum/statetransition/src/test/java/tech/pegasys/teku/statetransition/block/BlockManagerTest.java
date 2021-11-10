@@ -37,6 +37,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
@@ -80,7 +81,8 @@ public class BlockManagerTest {
           blockImportNotifications,
           localRecentChainData,
           forkChoice,
-          WeakSubjectivityFactory.lenientValidator());
+          WeakSubjectivityFactory.lenientValidator(),
+          ExecutionEngineChannel.NOOP);
   private final BlockManager blockManager =
       new BlockManager(
           localRecentChainData,

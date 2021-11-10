@@ -41,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel.ReorgEvent;
@@ -92,7 +93,8 @@ class ForkChoiceTest {
   @Test
   void onBlock_shouldImmediatelyMakeChildOfCurrentHeadTheNewHead() {
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
-    final SafeFuture<BlockImportResult> importResult = forkChoice.onBlock(blockAndState.getBlock());
+    final SafeFuture<BlockImportResult> importResult =
+        forkChoice.onBlock(blockAndState.getBlock(), ExecutionEngineChannel.NOOP);
     assertBlockImportedSuccessfully(importResult);
 
     assertThat(recentChainData.getHeadBlock()).contains(blockAndState.getBlock());
@@ -106,7 +108,8 @@ class ForkChoiceTest {
     processHead(nodeSlot);
 
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
-    final SafeFuture<BlockImportResult> importResult = forkChoice.onBlock(blockAndState.getBlock());
+    final SafeFuture<BlockImportResult> importResult =
+        forkChoice.onBlock(blockAndState.getBlock(), ExecutionEngineChannel.NOOP);
     assertBlockImportedSuccessfully(importResult);
 
     assertThat(recentChainData.getHeadBlock()).contains(blockAndState.getBlock());
@@ -404,7 +407,8 @@ class ForkChoiceTest {
   }
 
   private void importBlock(final SignedBlockAndState block) {
-    final SafeFuture<BlockImportResult> result = forkChoice.onBlock(block.getBlock());
+    final SafeFuture<BlockImportResult> result =
+        forkChoice.onBlock(block.getBlock(), ExecutionEngineChannel.NOOP);
     assertBlockImportedSuccessfully(result);
   }
 
