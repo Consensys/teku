@@ -20,6 +20,7 @@ import picocli.CommandLine;
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.validator.coordinator.ValidatorApiHandler;
 
 public class BeaconRestApiOptions {
   @CommandLine.Spec CommandLine.Model.CommandSpec cliSpec;
@@ -116,7 +117,7 @@ public class BeaconRestApiOptions {
       description = "Set the number of threads used to handle validator api requests",
       paramLabel = "<INTEGER>",
       hidden = true)
-  private int validatorThreads = 1;
+  private int validatorThreads = ValidatorApiHandler.DEFAULT_SUBSCRIBE_THREADS_COUNT;
 
   public void configure(final TekuConfiguration.Builder builder) {
     builder.restApi(

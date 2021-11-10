@@ -30,4 +30,6 @@ public enum ValidatorPerformanceTrackingMode {
   public boolean isLoggingEnabled() {
     return this != NONE && this != METRICS;
   }
+
+  public static final ValidatorPerformanceTrackingMode DEFAULT_MODE = ALL;
 }

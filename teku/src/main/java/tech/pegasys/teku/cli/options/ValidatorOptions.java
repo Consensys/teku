@@ -67,7 +67,7 @@ public class ValidatorOptions {
               + "Valid values: ${COMPLETION-CANDIDATES}",
       arity = "1")
   private ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode =
-      ValidatorPerformanceTrackingMode.ALL;
+      ValidatorPerformanceTrackingMode.DEFAULT_MODE;
 
   @Option(
       names = {"--validators-keystore-locking-enabled"},

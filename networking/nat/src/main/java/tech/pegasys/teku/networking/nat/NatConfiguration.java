@@ -32,7 +32,7 @@ public class NatConfiguration {
 
     public Builder() {}
 
-    private NatMethod natMethod;
+    private NatMethod natMethod = NatMethod.NONE;
 
     public Builder natMethod(final NatMethod natMethod) {
       this.natMethod = natMethod;

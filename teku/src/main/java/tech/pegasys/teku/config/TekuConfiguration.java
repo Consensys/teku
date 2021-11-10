@@ -31,6 +31,7 @@ import tech.pegasys.teku.services.chainstorage.StorageConfiguration;
 import tech.pegasys.teku.services.executionengine.ExecutionEngineConfiguration;
 import tech.pegasys.teku.services.powchain.PowchainConfiguration;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.sync.SyncConfig;
 import tech.pegasys.teku.validator.api.InteropConfig;
@@ -201,6 +202,16 @@ public class TekuConfiguration {
       final Eth2NetworkConfiguration eth2NetworkConfiguration =
           eth2NetworkConfigurationBuilder.build();
       final Spec spec = eth2NetworkConfiguration.getSpec();
+
+      Eth1Address depositContractAddress = eth2NetworkConfiguration
+          .getEth1DepositContractAddress();
+      storageConfigurationBuilder.eth1DepositContractDefault(depositContractAddress);
+      powchainConfigBuilder.depositContractDefault(depositContractAddress);
+      powchainConfigBuilder
+          .depositContractDeployBlock(eth2NetworkConfiguration.getEth1DepositContractDeployBlock());
+      p2pConfigBuilder
+          .discovery(b -> b.bootnodesDefault(eth2NetworkConfiguration.getDiscoveryBootnodes()));
+      restApiBuilder.eth1DepositContractAddressDefault(depositContractAddress);
 
       // Add specs
       interopConfigBuilder.specProvider(spec);

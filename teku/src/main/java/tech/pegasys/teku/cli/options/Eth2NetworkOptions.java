@@ -148,16 +148,7 @@ public class Eth2NetworkOptions {
 
     builder
         .eth2NetworkConfig(this::configureEth2Network)
-        .powchain(
-            b -> {
-              b.depositContract(eth2Config.getEth1DepositContractAddress());
-              b.depositContractDeployBlock(eth2Config.getEth1DepositContractDeployBlock());
-            })
-        .storageConfiguration(
-            b -> b.eth1DepositContract(eth2Config.getEth1DepositContractAddress()))
-        .p2p(b -> b.peerRateLimit(peerRateLimit).peerRequestLimit(peerRequestLimit))
-        .discovery(b -> b.bootnodes(eth2Config.getDiscoveryBootnodes()))
-        .restApi(b -> b.eth1DepositContractAddress(eth2Config.getEth1DepositContractAddress()));
+        .p2p(b -> b.peerRateLimit(peerRateLimit).peerRequestLimit(peerRequestLimit));
   }
 
   private Eth2NetworkConfiguration createEth2NetworkConfig() {

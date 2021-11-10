@@ -177,7 +177,7 @@ public class ValidatorConfig {
     private Path validatorExternalSignerTruststore;
     private Path validatorExternalSignerTruststorePasswordFile;
     private GraffitiProvider graffitiProvider;
-    private ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode;
+    private ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode = ValidatorPerformanceTrackingMode.DEFAULT_MODE;
     private boolean validatorKeystoreLockingEnabled;
     private Optional<URI> beaconNodeApiEndpoint = Optional.empty();
     private boolean validatorExternalSignerSlashingProtectionEnabled = true;

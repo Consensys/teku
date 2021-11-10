@@ -14,8 +14,11 @@
 package tech.pegasys.teku.storage.server;
 
 public enum StateStorageMode {
+
   // All historical state is available to query in archive mode
   ARCHIVE,
   // No historical state is available to query in mode "prune"
-  PRUNE
+  PRUNE;
+
+  public static StateStorageMode DEFAULT_MODE = PRUNE;
 }

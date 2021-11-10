@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.List;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
+import tech.pegasys.teku.validator.coordinator.ValidatorApiHandler;
 
 public class BeaconRestApiConfig {
   // Beacon REST API
@@ -117,7 +118,7 @@ public class BeaconRestApiConfig {
     private Eth1Address eth1DepositContractAddress;
     private int maxPendingEvents;
     private int maxUrlLength;
-    private int validatorThreads;
+    private int validatorThreads = ValidatorApiHandler.DEFAULT_SUBSCRIBE_THREADS_COUNT;
 
     private BeaconRestApiConfigBuilder() {}
 
@@ -157,6 +158,14 @@ public class BeaconRestApiConfig {
         final Eth1Address eth1DepositContractAddress) {
       checkNotNull(eth1DepositContractAddress);
       this.eth1DepositContractAddress = eth1DepositContractAddress;
+      return this;
+    }
+
+    public BeaconRestApiConfigBuilder eth1DepositContractAddressDefault(
+        final Eth1Address eth1DepositContractAddress) {
+      if (this.eth1DepositContractAddress == null) {
+        this.eth1DepositContractAddress = eth1DepositContractAddress;
+      }
       return this;
     }
 

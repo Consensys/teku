@@ -122,6 +122,13 @@ public class PowchainConfiguration {
       return this;
     }
 
+    public Builder depositContractDefault(final Eth1Address depositContract) {
+      if (this.depositContract == null) {
+        this.depositContract = depositContract;
+      }
+      return this;
+    }
+
     public Builder depositContractDeployBlock(final UInt64 depositContractDeployBlock) {
       checkNotNull(depositContractDeployBlock);
       this.depositContractDeployBlock = Optional.of(depositContractDeployBlock);
@@ -131,6 +138,14 @@ public class PowchainConfiguration {
     public Builder depositContractDeployBlock(final Optional<UInt64> depositContractDeployBlock) {
       checkNotNull(depositContractDeployBlock);
       this.depositContractDeployBlock = depositContractDeployBlock;
+      return this;
+    }
+
+    public Builder depositContractDeployBlockDefault(final Optional<UInt64> depositContractDeployBlock) {
+      checkNotNull(depositContractDeployBlock);
+      if (this.depositContractDeployBlock.isEmpty()) {
+        this.depositContractDeployBlock = depositContractDeployBlock;
+      }
       return this;
     }
 

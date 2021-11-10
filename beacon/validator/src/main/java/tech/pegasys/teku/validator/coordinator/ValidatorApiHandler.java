@@ -91,6 +91,9 @@ import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 public class ValidatorApiHandler implements ValidatorApiChannel {
 
   private static final Logger LOG = LogManager.getLogger();
+
+  public static final int DEFAULT_SUBSCRIBE_THREADS_COUNT = 1;
+
   /**
    * Number of epochs ahead of the current head that duties can be requested. This provides some
    * tolerance for validator clients clocks being slightly ahead while still limiting the number of

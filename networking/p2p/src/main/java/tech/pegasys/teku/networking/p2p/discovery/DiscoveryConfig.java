@@ -88,7 +88,7 @@ public class DiscoveryConfig {
   public static class Builder {
     private Boolean isDiscoveryEnabled = true;
     private List<String> staticPeers = Collections.emptyList();
-    private List<String> bootnodes = Collections.emptyList();
+    private List<String> bootnodes;
     private int minPeers = 64;
     private int maxPeers = 74;
     private int minRandomlySelectedPeers = 2;
@@ -103,7 +103,7 @@ public class DiscoveryConfig {
           listenUdpPort,
           advertisedUdpPort,
           staticPeers,
-          bootnodes,
+          bootnodes == null ? Collections.emptyList() : bootnodes,
           minPeers,
           maxPeers,
           minRandomlySelectedPeers);
@@ -135,6 +135,14 @@ public class DiscoveryConfig {
     public Builder bootnodes(final List<String> bootnodes) {
       checkNotNull(bootnodes);
       this.bootnodes = bootnodes;
+      return this;
+    }
+
+    public Builder bootnodesDefault(final List<String> bootnodes) {
+      checkNotNull(bootnodes);
+      if (this.bootnodes == null) {
+        this.bootnodes = bootnodes;
+      }
       return this;
     }
 
