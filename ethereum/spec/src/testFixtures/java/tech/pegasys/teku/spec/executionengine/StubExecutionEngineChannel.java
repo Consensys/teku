@@ -36,16 +36,21 @@ public class StubExecutionEngineChannel implements ExecutionEngineChannel {
   private final Map<Bytes32, PowBlock> knownBlocks = new ConcurrentHashMap<>();
   private final LRUCache<Bytes8, HeadAndAttributes> payloadIdToHeadAndAttrsCache;
   private final AtomicLong payloadIdCounter = new AtomicLong(0);
-  private final ExecutionPayloadSchema executionPayloadSchema;
+  private final Optional<ExecutionPayloadSchema> executionPayloadSchema;
 
   public StubExecutionEngineChannel(Spec spec) {
     this.payloadIdToHeadAndAttrsCache = LRUCache.create(10);
-    this.executionPayloadSchema =
-        spec.forMilestone(SpecMilestone.MERGE)
-            .getSchemaDefinitions()
-            .toVersionMerge()
-            .orElseThrow()
-            .getExecutionPayloadSchema();
+    if (spec.isMilestoneSupported(SpecMilestone.MERGE)) {
+      this.executionPayloadSchema =
+          Optional.of(
+              spec.forMilestone(SpecMilestone.MERGE)
+                  .getSchemaDefinitions()
+                  .toVersionMerge()
+                  .orElseThrow()
+                  .getExecutionPayloadSchema());
+    } else {
+      this.executionPayloadSchema = Optional.empty();
+    }
   }
 
   public void addPowBlock(final PowBlock block) {
@@ -83,30 +88,38 @@ public class StubExecutionEngineChannel implements ExecutionEngineChannel {
 
   @Override
   public SafeFuture<ExecutionPayload> getPayload(final Bytes8 payloadId) {
+    if (executionPayloadSchema.isEmpty()) {
+      return SafeFuture.failedFuture(
+          new UnsupportedOperationException("getPayload not supported for non-Merge milestones"));
+    }
+
     Optional<HeadAndAttributes> maybeHeadAndAttrs =
         payloadIdToHeadAndAttrsCache.getCached(payloadId);
     if (maybeHeadAndAttrs.isEmpty()) {
       return SafeFuture.failedFuture(new RuntimeException("payloadId not found in cache"));
     }
+
     HeadAndAttributes headAndAttrs = maybeHeadAndAttrs.get();
     PayloadAttributes payloadAttributes = headAndAttrs.attributes;
 
     return SafeFuture.completedFuture(
-        executionPayloadSchema.create(
-            headAndAttrs.head,
-            payloadAttributes.getFeeRecipient(),
-            Bytes32.ZERO,
-            Bytes32.ZERO,
-            Bytes.EMPTY,
-            payloadAttributes.getRandom(),
-            UInt64.valueOf(payloadIdCounter.get()),
-            UInt64.ONE,
-            UInt64.ZERO,
-            payloadAttributes.getTimestamp(),
-            Bytes.EMPTY,
-            UInt256.ONE,
-            Bytes32.random(),
-            List.of()));
+        executionPayloadSchema
+            .get()
+            .create(
+                headAndAttrs.head,
+                payloadAttributes.getFeeRecipient(),
+                Bytes32.ZERO,
+                Bytes32.ZERO,
+                Bytes.EMPTY,
+                payloadAttributes.getRandom(),
+                UInt64.valueOf(payloadIdCounter.get()),
+                UInt64.ONE,
+                UInt64.ZERO,
+                payloadAttributes.getTimestamp(),
+                Bytes.EMPTY,
+                UInt256.ONE,
+                Bytes32.random(),
+                List.of()));
   }
 
   @Override
