@@ -112,24 +112,6 @@ public class Eth2NetworkOptions {
   private Integer startupTimeoutSeconds;
 
   @Option(
-      names = {"--Xpeer-rate-limit"},
-      paramLabel = "<NUMBER>",
-      description =
-          "The number of requested objects per peer to allow per minute before disconnecting the peer.",
-      arity = "1",
-      hidden = true)
-  private Integer peerRateLimit = DEFAULT_PEER_RATE_LIMIT;
-
-  @Option(
-      names = {"--Xpeer-request-limit"},
-      paramLabel = "<NUMBER>",
-      description =
-          "The number of requests per peer to allow per minute before disconnecting the peer.",
-      arity = "1",
-      hidden = true)
-  private Integer peerRequestLimit = DEFAULT_PEER_REQUEST_LIMIT;
-
-  @Option(
       names = {"--Xfork-choice-balance-attack-mitigation-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "Whether to enable the HF1 fork choice balance attack mitigation.",
@@ -143,9 +125,7 @@ public class Eth2NetworkOptions {
   }
 
   public void configure(final TekuConfiguration.Builder builder) {
-    builder
-        .eth2NetworkConfig(this::configureEth2Network)
-        .p2p(b -> b.peerRateLimit(peerRateLimit).peerRequestLimit(peerRequestLimit));
+    builder.eth2NetworkConfig(this::configureEth2Network);
   }
 
   private Eth2NetworkConfiguration createEth2NetworkConfig() {

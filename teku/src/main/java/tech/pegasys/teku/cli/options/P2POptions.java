@@ -14,6 +14,8 @@
 package tech.pegasys.teku.cli.options;
 
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.networking.eth2.P2PConfig.Builder.DEFAULT_PEER_RATE_LIMIT;
+import static tech.pegasys.teku.networking.eth2.P2PConfig.Builder.DEFAULT_PEER_REQUEST_LIMIT;
 import static tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.Builder.DEFAULT_P2P_PORT;
 
 import java.util.ArrayList;
@@ -176,6 +178,24 @@ public class P2POptions {
       arity = "0..1")
   private boolean batchVerifyAttestationSignatures = true;
 
+  @Option(
+      names = {"--Xpeer-rate-limit"},
+      paramLabel = "<NUMBER>",
+      description =
+          "The number of requested objects per peer to allow per minute before disconnecting the peer.",
+      arity = "1",
+      hidden = true)
+  private Integer peerRateLimit = DEFAULT_PEER_RATE_LIMIT;
+
+  @Option(
+      names = {"--Xpeer-request-limit"},
+      paramLabel = "<NUMBER>",
+      description =
+          "The number of requests per peer to allow per minute before disconnecting the peer.",
+      arity = "1",
+      hidden = true)
+  private Integer peerRequestLimit = DEFAULT_PEER_REQUEST_LIMIT;
+
   private int getP2pLowerBound() {
     if (p2pLowerBound > p2pUpperBound) {
       STATUS_LOG.adjustingP2pLowerBoundToUpperBound(p2pUpperBound);
@@ -209,7 +229,9 @@ public class P2POptions {
                 b.subscribeAllSubnetsEnabled(subscribeAllSubnetsEnabled)
                     .batchVerifyAttestationSignatures(batchVerifyAttestationSignatures)
                     .targetSubnetSubscriberCount(p2pTargetSubnetSubscriberCount)
-                    .isGossipScoringEnabled(gossipScoringEnabled))
+                    .isGossipScoringEnabled(gossipScoringEnabled)
+                    .peerRateLimit(peerRateLimit)
+                    .peerRequestLimit(peerRequestLimit))
         .discovery(
             d -> {
               if (p2pDiscoveryBootnodes != null) {
