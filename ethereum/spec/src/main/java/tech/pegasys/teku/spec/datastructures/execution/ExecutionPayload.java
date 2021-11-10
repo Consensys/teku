@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.execution;
 
+import com.google.common.base.MoreObjects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -161,5 +162,24 @@ public class ExecutionPayload
 
   public SszList<Transaction> getTransactions() {
     return getField13();
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("parentHash", getParentHash())
+        .add("coinbase", getCoinbase())
+        .add("stateRoot", getStateRoot())
+        .add("receiptRoot", getReceiptRoot())
+        .add("logsBloom", getLogsBloom())
+        .add("random", getRandom())
+        .add("blockNumber", getBlockNumber())
+        .add("gasLimit", getGasLimit())
+        .add("gasUsed", getGasUsed())
+        .add("extraData", getExtraData())
+        .add("baseFeePerGas", getBaseFeePerGas())
+        .add("blockHash", getBlockHash())
+        .add("transactions", getTransactions())
+        .toString();
   }
 }

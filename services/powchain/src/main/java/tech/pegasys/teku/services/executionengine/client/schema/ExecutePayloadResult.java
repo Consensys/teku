@@ -11,35 +11,40 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.executionengine;
+package tech.pegasys.teku.services.executionengine.client.schema;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.services.executionengine.client.serialization.Bytes32Deserializer;
+import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
 
 public class ExecutePayloadResult {
   private final ExecutionPayloadStatus status;
-  private final Optional<Bytes32> latestValidHash;
-  private final Optional<String> message;
+
+  @JsonDeserialize(using = Bytes32Deserializer.class)
+  private final Bytes32 latestValidHash;
+
+  private final String message;
 
   public ExecutePayloadResult(
-      ExecutionPayloadStatus status, Optional<Bytes32> latestValidHash, Optional<String> message) {
+      @JsonProperty("status") ExecutionPayloadStatus status,
+      @JsonProperty("latestValidHash") Bytes32 latestValidHash,
+      @JsonProperty("message") String message) {
+    checkNotNull(status, "status");
     this.status = status;
     this.latestValidHash = latestValidHash;
     this.message = message;
   }
 
-  public ExecutionPayloadStatus getStatus() {
-    return status;
-  }
-
-  public Optional<Bytes32> getLatestValidHash() {
-    return latestValidHash;
-  }
-
-  public Optional<String> getMessage() {
-    return message;
+  public tech.pegasys.teku.spec.executionengine.ExecutePayloadResult asInternalExecutionPayload() {
+    return new tech.pegasys.teku.spec.executionengine.ExecutePayloadResult(
+        status, Optional.ofNullable(latestValidHash), Optional.ofNullable(message));
   }
 
   @Override

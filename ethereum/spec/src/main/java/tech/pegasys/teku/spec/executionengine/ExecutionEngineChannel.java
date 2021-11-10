@@ -35,9 +35,9 @@ public interface ExecutionEngineChannel extends ChannelInterface {
         }
 
         @Override
-        public SafeFuture<Void> forkChoiceUpdated(
+        public SafeFuture<ForkChoiceUpdatedResult> forkChoiceUpdated(
             ForkChoiceState forkChoiceState, Optional<PayloadAttributes> payloadAttributes) {
-          return SafeFuture.COMPLETE;
+          return SafeFuture.completedFuture(null);
         }
 
         @Override
@@ -55,7 +55,7 @@ public interface ExecutionEngineChannel extends ChannelInterface {
 
   SafeFuture<PowBlock> getPowChainHead();
 
-  SafeFuture<Void> forkChoiceUpdated(
+  SafeFuture<ForkChoiceUpdatedResult> forkChoiceUpdated(
       ForkChoiceState forkChoiceState, Optional<PayloadAttributes> payloadAttributes);
 
   SafeFuture<ExecutionPayload> getPayload(Bytes8 payloadId);

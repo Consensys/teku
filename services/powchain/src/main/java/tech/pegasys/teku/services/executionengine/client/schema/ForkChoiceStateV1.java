@@ -23,6 +23,7 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.services.executionengine.client.serialization.Bytes32Deserializer;
 import tech.pegasys.teku.services.executionengine.client.serialization.BytesSerializer;
+import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
 
 public class ForkChoiceStateV1 {
   @JsonSerialize(using = BytesSerializer.class)
@@ -47,6 +48,13 @@ public class ForkChoiceStateV1 {
     this.headBlockHash = headBlockHash;
     this.safeBlockHash = safeBlockHash;
     this.finalizedBlockHash = finalizedBlockHash;
+  }
+
+  public static ForkChoiceStateV1 fromInternalForkChoiceState(ForkChoiceState forkChoiceState) {
+    return new ForkChoiceStateV1(
+        forkChoiceState.getHeadBlockHash(),
+        forkChoiceState.getSafeBlockHash(),
+        forkChoiceState.getHeadBlockHash());
   }
 
   @Override

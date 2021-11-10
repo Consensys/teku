@@ -14,27 +14,35 @@
 package tech.pegasys.teku.services.executionengine.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.fasterxml.jackson.databind.exc.ValueInstantiationException;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.provider.Bytes20Deserializer;
-import tech.pegasys.teku.provider.Bytes20Serializer;
+import tech.pegasys.teku.services.executionengine.client.schema.ExecutePayloadResult;
 import tech.pegasys.teku.services.executionengine.client.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.services.executionengine.client.schema.ForkChoiceStateV1;
+import tech.pegasys.teku.services.executionengine.client.schema.ForkChoiceUpdatedRequest;
+import tech.pegasys.teku.services.executionengine.client.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.services.executionengine.client.schema.PayloadAttributesV1;
+import tech.pegasys.teku.services.executionengine.client.serialization.Bytes20Deserializer;
+import tech.pegasys.teku.services.executionengine.client.serialization.Bytes20Serializer;
 import tech.pegasys.teku.services.executionengine.client.serialization.Bytes32Deserializer;
+import tech.pegasys.teku.services.executionengine.client.serialization.Bytes8Deserializer;
 import tech.pegasys.teku.services.executionengine.client.serialization.BytesSerializer;
 import tech.pegasys.teku.services.executionengine.client.serialization.UInt256AsHexDeserializer;
 import tech.pegasys.teku.services.executionengine.client.serialization.UInt256AsHexSerializer;
@@ -44,8 +52,11 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
+import tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedStatus;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.type.Bytes20;
+import tech.pegasys.teku.ssz.type.Bytes8;
 
 @TestSpecContext(milestone = SpecMilestone.MERGE)
 public class Web3JExecutionEngineClientTest {
@@ -66,17 +77,27 @@ public class Web3JExecutionEngineClientTest {
   }
 
   @TestTemplate
+  void shouldDeserializeBytes8() throws IOException {
+    Bytes8 originalBytes8 = dataStructureUtil.randomBytes8();
+
+    JsonParser parser = prepareDeserializationContext("\"" + originalBytes8.toHexString() + "\"");
+    Bytes8Deserializer deserializer = new Bytes8Deserializer();
+    Bytes8 result = deserializer.deserialize(parser, objectMapper.getDeserializationContext());
+
+    assertThat(originalBytes8).isEqualTo(result);
+  }
+
+  @TestTemplate
   void shouldSerializeDeserializeBytes20() throws IOException {
     Bytes20 originalBytes20 = dataStructureUtil.randomBytes20();
 
     new Bytes20Serializer().serialize(originalBytes20, jsonGenerator, serializerProvider);
     jsonGenerator.flush();
 
-    DeserializationContext deserializationContext = objectMapper.getDeserializationContext();
-    JsonParser parser =
-        prepareDeserializationContext(jsonWriter.toString(), deserializationContext);
+    JsonParser parser = prepareDeserializationContext(jsonWriter.toString());
     Bytes20Deserializer deserializer = new Bytes20Deserializer();
-    Bytes20 result = deserializer.deserialize(parser, deserializationContext);
+    Bytes20 result = deserializer.deserialize(parser, objectMapper.getDeserializationContext());
+
     assertThat(originalBytes20).isEqualTo(result);
   }
 
@@ -87,11 +108,10 @@ public class Web3JExecutionEngineClientTest {
     new BytesSerializer().serialize(originalBytes32, jsonGenerator, serializerProvider);
     jsonGenerator.flush();
 
-    DeserializationContext deserializationContext = objectMapper.getDeserializationContext();
-    JsonParser parser =
-        prepareDeserializationContext(jsonWriter.toString(), deserializationContext);
+    JsonParser parser = prepareDeserializationContext(jsonWriter.toString());
     Bytes32Deserializer deserializer = new Bytes32Deserializer();
-    Bytes32 result = deserializer.deserialize(parser, deserializationContext);
+    Bytes32 result = deserializer.deserialize(parser, objectMapper.getDeserializationContext());
+
     assertThat(originalBytes32).isEqualTo(result);
   }
 
@@ -102,11 +122,10 @@ public class Web3JExecutionEngineClientTest {
     new UInt64AsHexSerializer().serialize(originalUInt64, jsonGenerator, serializerProvider);
     jsonGenerator.flush();
 
-    DeserializationContext deserializationContext = objectMapper.getDeserializationContext();
-    JsonParser parser =
-        prepareDeserializationContext(jsonWriter.toString(), deserializationContext);
+    JsonParser parser = prepareDeserializationContext(jsonWriter.toString());
     UInt64AsHexDeserializer deserializer = new UInt64AsHexDeserializer();
-    UInt64 result = deserializer.deserialize(parser, deserializationContext);
+    UInt64 result = deserializer.deserialize(parser, objectMapper.getDeserializationContext());
+
     assertThat(originalUInt64).isEqualTo(result);
   }
 
@@ -117,16 +136,14 @@ public class Web3JExecutionEngineClientTest {
     new UInt256AsHexSerializer().serialize(originalUInt256, jsonGenerator, serializerProvider);
     jsonGenerator.flush();
 
-    DeserializationContext deserializationContext = objectMapper.getDeserializationContext();
-    JsonParser parser =
-        prepareDeserializationContext(jsonWriter.toString(), deserializationContext);
+    JsonParser parser = prepareDeserializationContext(jsonWriter.toString());
     UInt256AsHexDeserializer deserializer = new UInt256AsHexDeserializer();
-    UInt256 result = deserializer.deserialize(parser, deserializationContext);
+    UInt256 result = deserializer.deserialize(parser, objectMapper.getDeserializationContext());
+
     assertThat(originalUInt256).isEqualTo(result);
   }
 
-  private JsonParser prepareDeserializationContext(
-      String serializedValue, DeserializationContext deserializationContext) throws IOException {
+  private JsonParser prepareDeserializationContext(String serializedValue) throws IOException {
     String json = String.format("{\"value\":%s}", serializedValue);
     JsonParser parser = objectMapper.getFactory().createParser(json);
     parser.nextToken();
@@ -181,5 +198,157 @@ public class Web3JExecutionEngineClientTest {
     assertThat(
             executionPayloadV1Orig.asInternalExecutionPayload(internalExecutionPayload.getSchema()))
         .isEqualTo(internalExecutionPayload);
+  }
+
+  @TestTemplate
+  void shouldDeserializeExecutionPayloadResultWithNulls() throws IOException {
+    ExecutePayloadResult executePayloadResultExpected =
+        new ExecutePayloadResult(ExecutionPayloadStatus.VALID, null, null);
+    tech.pegasys.teku.spec.executionengine.ExecutePayloadResult
+        internalExecutePayloadResultExpected =
+            new tech.pegasys.teku.spec.executionengine.ExecutePayloadResult(
+                ExecutionPayloadStatus.VALID, Optional.empty(), Optional.empty());
+    String json = "{\"status\": \"VALID\", \"latestValidHash\": null, \"message\": null }";
+    ExecutePayloadResult executePayloadResultDeserialized =
+        objectMapper.readValue(json, ExecutePayloadResult.class);
+
+    tech.pegasys.teku.spec.executionengine.ExecutePayloadResult internalExecutePayloadResult =
+        executePayloadResultDeserialized.asInternalExecutionPayload();
+
+    assertThat(executePayloadResultDeserialized).isEqualTo(executePayloadResultExpected);
+    assertThat(internalExecutePayloadResult).isEqualTo(internalExecutePayloadResultExpected);
+  }
+
+  @TestTemplate
+  void shouldDeserializeExecutionPayloadResult() throws IOException {
+    Bytes32 lastValidHash = dataStructureUtil.randomBytes32();
+    ExecutePayloadResult executePayloadResultExpected =
+        new ExecutePayloadResult(ExecutionPayloadStatus.INVALID, lastValidHash, "test");
+    tech.pegasys.teku.spec.executionengine.ExecutePayloadResult
+        internalExecutePayloadResultExpected =
+            new tech.pegasys.teku.spec.executionengine.ExecutePayloadResult(
+                ExecutionPayloadStatus.INVALID, Optional.of(lastValidHash), Optional.of("test"));
+
+    String json =
+        "{\"status\": \"INVALID\", \"latestValidHash\": \""
+            + lastValidHash.toHexString()
+            + "\", \"message\": \"test\" }";
+    ExecutePayloadResult executePayloadResultDeserialized =
+        objectMapper.readValue(json, ExecutePayloadResult.class);
+
+    tech.pegasys.teku.spec.executionengine.ExecutePayloadResult internalExecutePayloadResult =
+        executePayloadResultDeserialized.asInternalExecutionPayload();
+
+    assertThat(executePayloadResultDeserialized).isEqualTo(executePayloadResultExpected);
+    assertThat(internalExecutePayloadResult).isEqualTo(internalExecutePayloadResultExpected);
+  }
+
+  @TestTemplate
+  void shouldThrowDeserializingInvalidExecutionPayloadResult() throws IOException {
+    assertThrows(
+        InvalidFormatException.class,
+        () -> {
+          String json = "{\"status\": \"wrong\", \"latestValidHash\": null, \"message\": null }";
+          objectMapper.readValue(json, ExecutePayloadResult.class);
+        });
+
+    assertThrows(
+        ValueInstantiationException.class,
+        () -> {
+          String json = "{\"status\": null, \"latestValidHash\": null, \"message\": null }";
+          objectMapper.readValue(json, ExecutePayloadResult.class);
+        });
+
+    assertThrows(
+        JsonMappingException.class,
+        () -> {
+          String json = "{\"status\": null, \"latestValidHash\": \"wrong\", \"message\": null }";
+          objectMapper.readValue(json, ExecutePayloadResult.class);
+        });
+  }
+
+  @TestTemplate
+  void shouldDeserializeForkChoiceUpdatedResultWithNulls() throws IOException {
+    ForkChoiceUpdatedResult forkChoiceUpdatedResultExpected =
+        new ForkChoiceUpdatedResult(ForkChoiceUpdatedStatus.SYNCING, null);
+    tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult
+        internalForkChoiceUpdatedResultExpected =
+            new tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult(
+                ForkChoiceUpdatedStatus.SYNCING, Optional.empty());
+    String json = "{\"status\": \"SYNCING\", \"payloadId\": null }";
+    ForkChoiceUpdatedResult executeForkChoiceUpdatedResultDeserialized =
+        objectMapper.readValue(json, ForkChoiceUpdatedResult.class);
+
+    tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult internalForkChoiceUpdatedResult =
+        executeForkChoiceUpdatedResultDeserialized.asInternalExecutionPayload();
+
+    assertThat(executeForkChoiceUpdatedResultDeserialized)
+        .isEqualTo(forkChoiceUpdatedResultExpected);
+    assertThat(internalForkChoiceUpdatedResult).isEqualTo(internalForkChoiceUpdatedResultExpected);
+  }
+
+  @TestTemplate
+  void shouldDeserializeForkChoiceUpdatedResult() throws IOException {
+    Bytes8 payloadId = dataStructureUtil.randomBytes8();
+    ForkChoiceUpdatedResult forkChoiceUpdatedResultExpected =
+        new ForkChoiceUpdatedResult(ForkChoiceUpdatedStatus.SUCCESS, payloadId);
+    tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult
+        internalForkChoiceUpdatedResultExpected =
+            new tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult(
+                ForkChoiceUpdatedStatus.SUCCESS, Optional.of(payloadId));
+    String json = "{\"status\": \"SUCCESS\", \"payloadId\": \"" + payloadId.toHexString() + "\" }";
+    ForkChoiceUpdatedResult executeForkChoiceUpdatedResultDeserialized =
+        objectMapper.readValue(json, ForkChoiceUpdatedResult.class);
+
+    tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult internalForkChoiceUpdatedResult =
+        executeForkChoiceUpdatedResultDeserialized.asInternalExecutionPayload();
+
+    assertThat(executeForkChoiceUpdatedResultDeserialized)
+        .isEqualTo(forkChoiceUpdatedResultExpected);
+    assertThat(internalForkChoiceUpdatedResult).isEqualTo(internalForkChoiceUpdatedResultExpected);
+  }
+
+  @TestTemplate
+  void shouldThrowDeserializingInvalidForkChoiceUpdatedResult() throws IOException {
+    assertThrows(
+        InvalidFormatException.class,
+        () -> {
+          String json = "{\"status\": \"wrong\", \"payloadId\": null }";
+          objectMapper.readValue(json, ForkChoiceUpdatedResult.class);
+        });
+
+    assertThrows(
+        ValueInstantiationException.class,
+        () -> {
+          String json = "{\"status\": null, \"payloadId\": null }";
+          objectMapper.readValue(json, ForkChoiceUpdatedResult.class);
+        });
+
+    assertThrows(
+        JsonMappingException.class,
+        () -> {
+          String json = "{\"status\": null, \"payloadId\": \"wrong\" }";
+          objectMapper.readValue(json, ForkChoiceUpdatedResult.class);
+        });
+  }
+
+  @TestTemplate
+  void shouldSerializeForkChoiceUpdatedRequest() throws IOException {
+
+    ForkChoiceUpdatedRequest forkChoiceUpdatedRequest =
+        new ForkChoiceUpdatedRequest(
+            new ForkChoiceStateV1(
+                dataStructureUtil.randomBytes32(),
+                dataStructureUtil.randomBytes32(),
+                dataStructureUtil.randomBytes32()),
+            new PayloadAttributesV1(
+                dataStructureUtil.randomUInt64(),
+                dataStructureUtil.randomBytes32(),
+                dataStructureUtil.randomBytes20()));
+
+    String forkChoiceUpdatedRequestSerialized =
+        objectMapper.writeValueAsString(forkChoiceUpdatedRequest);
+
+    assertThat(forkChoiceUpdatedRequestSerialized).isNotEmpty();
   }
 }

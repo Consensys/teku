@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.services.executionengine.client.serialization.Bytes20Deserializer;
@@ -28,6 +29,7 @@ import tech.pegasys.teku.services.executionengine.client.serialization.Bytes32De
 import tech.pegasys.teku.services.executionengine.client.serialization.BytesSerializer;
 import tech.pegasys.teku.services.executionengine.client.serialization.UInt64AsHexDeserializer;
 import tech.pegasys.teku.services.executionengine.client.serialization.UInt64AsHexSerializer;
+import tech.pegasys.teku.spec.executionengine.PayloadAttributes;
 import tech.pegasys.teku.ssz.type.Bytes20;
 
 public class PayloadAttributesV1 {
@@ -53,6 +55,16 @@ public class PayloadAttributesV1 {
     this.timestamp = timestamp;
     this.random = random;
     this.feeRecipient = feeRecipient;
+  }
+
+  public static Optional<PayloadAttributesV1> fromInternalForkChoiceState(
+      Optional<PayloadAttributes> maybePayloadAttributes) {
+    return maybePayloadAttributes.map(
+        (payloadAttributes) ->
+            new PayloadAttributesV1(
+                payloadAttributes.getTimestamp(),
+                payloadAttributes.getRandom(),
+                payloadAttributes.getFeeRecipient()));
   }
 
   @Override

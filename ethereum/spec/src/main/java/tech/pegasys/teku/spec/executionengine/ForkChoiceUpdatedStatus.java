@@ -11,18 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.services.executionengine.client.serialization;
+package tech.pegasys.teku.spec.executionengine;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import java.io.IOException;
-import org.apache.tuweni.bytes.Bytes32;
-
-public class Bytes32Deserializer extends JsonDeserializer<Bytes32> {
-
-  @Override
-  public Bytes32 deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-    return Bytes32.fromHexStringStrict(p.getValueAsString());
-  }
+public enum ForkChoiceUpdatedStatus {
+  SUCCESS,
+  SYNCING
 }

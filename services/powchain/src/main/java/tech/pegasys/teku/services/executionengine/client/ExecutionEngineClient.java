@@ -13,8 +13,27 @@
 
 package tech.pegasys.teku.services.executionengine.client;
 
-public interface ExecutionEngineClient {
-  // SafeFuture<Response<ExecutionPayloadV1>> getPayload(Bytes8 payloadId);
-  // SafeFuture<Response<ExecutionPayloadV1>> executePayload(ExecutionPayloadV1 executionPayload);
+import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.services.executionengine.client.schema.ExecutePayloadResult;
+import tech.pegasys.teku.services.executionengine.client.schema.ExecutionPayloadV1;
+import tech.pegasys.teku.services.executionengine.client.schema.ForkChoiceStateV1;
+import tech.pegasys.teku.services.executionengine.client.schema.ForkChoiceUpdatedResult;
+import tech.pegasys.teku.services.executionengine.client.schema.PayloadAttributesV1;
+import tech.pegasys.teku.services.executionengine.client.schema.Response;
+import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.ssz.type.Bytes8;
 
+public interface ExecutionEngineClient {
+  SafeFuture<Optional<PowBlock>> getPowBlock(Bytes32 blockHash);
+
+  SafeFuture<PowBlock> getPowChainHead();
+
+  SafeFuture<Response<ExecutionPayloadV1>> getPayload(Bytes8 payloadId);
+
+  SafeFuture<Response<ExecutePayloadResult>> executePayload(ExecutionPayloadV1 executionPayload);
+
+  SafeFuture<Response<ForkChoiceUpdatedResult>> forkChoiceUpdated(
+      ForkChoiceStateV1 forkChoiceState, Optional<PayloadAttributesV1> payloadAttributes);
 }
