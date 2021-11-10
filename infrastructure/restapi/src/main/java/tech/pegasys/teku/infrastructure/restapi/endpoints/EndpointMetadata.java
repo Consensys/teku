@@ -31,8 +31,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.restapi.openapi.OpenApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.restapi.types.DeserializableTypeDefinition;
@@ -128,16 +128,12 @@ public class EndpointMetadata {
   }
 
   public Collection<OpenApiTypeDefinition> getReferencedTypeDefinitions() {
-    final Set<OpenApiTypeDefinition> referencedTypeDefinitions =
-        responses.values().stream()
-            .flatMap(response -> response.getReferencedTypeDefinitions().stream())
-            .collect(Collectors.toSet());
-    if (requestBodyType.isPresent()) {
-      referencedTypeDefinitions.add(requestBodyType.get());
-      referencedTypeDefinitions.addAll(requestBodyType.get().getReferencedTypeDefinitions());
-    }
-
-    return referencedTypeDefinitions;
+    return Stream.concat(
+            responses.values().stream()
+                .flatMap(response -> response.getReferencedTypeDefinitions().stream()),
+            requestBodyType.stream()
+                .flatMap(bodyType -> bodyType.getReferencedTypeDefinitions().stream()))
+        .collect(Collectors.toSet());
   }
 
   public DeserializableTypeDefinition<?> getRequestBodyType() {
