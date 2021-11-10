@@ -20,7 +20,6 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.teku.ethtests.TestFork;
 import tech.pegasys.teku.ethtests.finder.ReferenceTestFinder;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 
@@ -40,13 +39,13 @@ public class ManualReferenceTestRunner extends Eth2ReferenceTestCase {
    * <p>e.g. set to "ssz_static" to run only ssz static tests or "ssz_static/Attestation" for only
    * attestation ssz tests.
    */
-  private static final String TEST_TYPE = "fork_choice/on_merge_block";
+  private static final String TEST_TYPE = "operations/execution_payload";
 
   /** Filter test to run to those from the specified spec. One of general, minimal or mainnet */
-  private static final String SPEC = "minimal";
+  private static final String SPEC = "";
 
   /** Filter test to run only those for a specific milestone. Use values from TestFork. */
-  private static final String MILESTONE = TestFork.MERGE;
+  private static final String MILESTONE = null;
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("loadReferenceTests")
