@@ -15,6 +15,8 @@ package tech.pegasys.teku.validator.client;
 
 import java.nio.file.Path;
 import java.util.Set;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.signers.bls.keystore.KeyStore;
 import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
 import tech.pegasys.signers.bls.keystore.KeyStoreValidationException;
@@ -24,6 +26,7 @@ import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
 
 public class KeyManager {
 
+  private static final Logger LOG = LogManager.getLogger();
   private final ValidatorLoader validatorLoader;
 
   public KeyManager(final ValidatorLoader validatorLoader) {
@@ -39,6 +42,7 @@ public class KeyManager {
       KeyStoreData keyStoreData = KeyStoreLoader.loadFromFile(filePath);
       return KeyStore.validatePassword(password, keyStoreData);
     } catch (KeyStoreValidationException e) {
+      LOG.error("Invalid Keystore is invalid: ", e);
       return false;
     }
   }
