@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku;
 
-public interface Node extends NodeFacade {
+import tech.pegasys.teku.services.ServiceControllerFacade;
 
-  void start();
+public interface NodeFacade {
 
-  void stop();
+  ServiceControllerFacade getServiceController();
 }

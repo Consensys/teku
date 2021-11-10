@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,9 +13,15 @@
 
 package tech.pegasys.teku;
 
-public interface Node extends NodeFacade {
+import tech.pegasys.teku.config.TekuConfiguration;
 
-  void start();
+public interface TekuFacade {
 
-  void stop();
+  static TekuFacade getInstance() {
+    return Teku.INSTANCE;
+  }
+
+  NodeFacade startFromCLIArgs(String[] cliArgs);
+
+  BeaconNodeFacade startBeaconNode(TekuConfiguration config);
 }

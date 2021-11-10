@@ -28,7 +28,7 @@ public class ValidatorNode extends AbstractNode {
   }
 
   @Override
-  protected ValidatorNodeServiceController getServiceController() {
+  public ValidatorNodeServiceController getServiceController() {
     return serviceController;
   }
 }

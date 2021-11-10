@@ -19,23 +19,38 @@ import java.security.Security;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import tech.pegasys.teku.bls.impl.blst.BlstLoader;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
+import tech.pegasys.teku.cli.BeaconNodeCommand.StartAction;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
-public final class Teku {
+public final class Teku implements TekuFacade {
 
-  public static void main(final String... args) {
-    Thread.setDefaultUncaughtExceptionHandler(new TekuDefaultExceptionHandler());
-    Security.addProvider(new BouncyCastleProvider());
-    final PrintWriter outputWriter = new PrintWriter(System.out, true, Charset.defaultCharset());
-    final PrintWriter errorWriter = new PrintWriter(System.err, true, Charset.defaultCharset());
-    final int result =
-        new BeaconNodeCommand(outputWriter, errorWriter, System.getenv(), Teku::start).parse(args);
+  static final Teku INSTANCE = new Teku();
+
+  public static void main(String[] args) {
+    Teku teku = INSTANCE;
+    int result = teku.start(teku::start, args);
     if (result != 0) {
       System.exit(result);
     }
   }
 
-  private static void start(final TekuConfiguration config, final boolean validatorOnly) {
+  private final PrintWriter outputWriter =
+      new PrintWriter(System.out, true, Charset.defaultCharset());
+  private final PrintWriter errorWriter =
+      new PrintWriter(System.err, true, Charset.defaultCharset());
+
+  private Teku() {
+    Thread.setDefaultUncaughtExceptionHandler(new TekuDefaultExceptionHandler());
+    Security.addProvider(new BouncyCastleProvider());
+  }
+
+  private int start(StartAction startAction, final String... args) {
+    return new BeaconNodeCommand(outputWriter, errorWriter, System.getenv(), startAction)
+        .parse(args);
+  }
+
+  private Node start(final TekuConfiguration config, final boolean validatorOnly) {
     final Node node;
     if (validatorOnly) {
       node = new ValidatorNode(config);
@@ -56,5 +71,24 @@ public final class Teku {
                   System.out.println("Teku is shutting down");
                   node.stop();
                 }));
+    return node;
+  }
+
+  @Override
+  public NodeFacade startFromCLIArgs(String[] cliArgs) {
+    SafeFuture<Node> nodePromise = new SafeFuture<>();
+    int result =
+        start(
+            (config, validatorClient) -> nodePromise.complete(start(config, validatorClient)),
+            cliArgs);
+    if (result != 0) {
+      throw new RuntimeException("Unable to start Teku. Exit code: " + result);
+    }
+    return nodePromise.join();
+  }
+
+  @Override
+  public BeaconNodeFacade startBeaconNode(TekuConfiguration config) {
+    return (BeaconNodeFacade) start(config, false);
   }
 }
