@@ -17,7 +17,6 @@ import static java.util.Collections.emptyList;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.restapi.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 
-import com.google.common.annotations.VisibleForTesting;
 import io.javalin.Javalin;
 import io.javalin.core.JavalinConfig;
 import java.net.InetSocketAddress;
@@ -25,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
@@ -57,11 +57,6 @@ public class RestApiBuilder {
   public RestApiBuilder listenAddress(final String listenAddress) {
     this.listenAddress = listenAddress;
     return this;
-  }
-
-  @VisibleForTesting
-  public String getOpenApiDocument() {
-    return openApiDocBuilder.build();
   }
 
   public RestApiBuilder port(final int port) {
@@ -124,11 +119,11 @@ public class RestApiBuilder {
 
     addExceptionHandlers(app);
 
+    Optional<String> restApiDocs = Optional.empty();
     if (openApiDocsEnabled) {
-      final String openApiJson = openApiDocBuilder.build();
-      app.get("/swagger-docs", ctx -> ctx.json(openApiJson));
+      restApiDocs = Optional.of(openApiDocBuilder.build());
     }
-    return new RestApi(app);
+    return new RestApi(app, restApiDocs);
   }
 
   private void addExceptionHandlers(final Javalin app) {

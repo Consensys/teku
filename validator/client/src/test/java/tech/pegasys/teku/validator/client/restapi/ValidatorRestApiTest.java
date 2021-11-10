@@ -20,21 +20,30 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.restapi.RestApiBuilder;
+import tech.pegasys.teku.infrastructure.restapi.RestApi;
 
 class ValidatorRestApiTest {
-  private final RestApiBuilder builder = new RestApiBuilder();
+  private final ObjectMapper objectMapper = new ObjectMapper();
+  private final ValidatorRestApiConfig config = mock(ValidatorRestApiConfig.class);
+  private RestApi restApi;
+
+  @BeforeEach
+  void setup() {
+    when(config.getRestApiInterface()).thenReturn("127.1.1.1");
+    when(config.isRestApiDocsEnabled()).thenReturn(true);
+    restApi = ValidatorRestApi.create(config, List::of);
+  }
 
   @Test
   void shouldHaveReferencesInOpenApiDoc() throws JsonProcessingException {
-    final ValidatorRestApiConfig config = mock(ValidatorRestApiConfig.class);
-    when(config.getRestApiInterface()).thenReturn("127.1.1.1");
-    ValidatorRestApi.create(config, List::of, builder);
-    final String json = builder.getOpenApiDocument();
-    final ObjectMapper objectMapper = new ObjectMapper();
-    final JsonNode jsonNode = objectMapper.readTree(json);
+    final Optional<String> maybeJson = restApi.getRestApiDocs();
+    assertThat(maybeJson).isPresent();
+    final JsonNode jsonNode = objectMapper.readTree(maybeJson.orElseThrow());
     checkReferences(jsonNode);
   }
 
@@ -44,21 +53,25 @@ class ValidatorRestApiTest {
       assertThat(node.asText())
           .withFailMessage("Did not start with '#/' " + node.asText())
           .startsWith("#/");
-      assertThat(pathExists(jsonNode, node.asText().substring(2)))
-          .withFailMessage("Missing reference " + node.asText())
-          .isTrue();
+      final List<JsonNode> found = getNodesAtPath(jsonNode, node.asText().substring(2));
+      assertThat(found.isEmpty()).withFailMessage("Missing reference " + node.asText()).isFalse();
+      assertThat(found.size())
+          .withFailMessage("Multiple schema objects satisfy reference " + node.asText())
+          .isEqualTo(1);
     }
   }
 
-  private boolean pathExists(final JsonNode jsonNode, final String path) {
+  private List<JsonNode> getNodesAtPath(final JsonNode jsonNode, final String path) {
     JsonNode node;
     if (path.contains("/")) {
       node = jsonNode.path(path.substring(0, path.indexOf("/")));
       if (node.isMissingNode()) {
-        return false;
+        return Collections.emptyList();
       }
-      return pathExists(node, path.substring(path.indexOf("/") + 1));
+      return getNodesAtPath(node, path.substring(path.indexOf("/") + 1));
     }
-    return !jsonNode.path(path).isMissingNode();
+    return jsonNode.path(path).isMissingNode()
+        ? Collections.emptyList()
+        : jsonNode.findValues(path);
   }
 }

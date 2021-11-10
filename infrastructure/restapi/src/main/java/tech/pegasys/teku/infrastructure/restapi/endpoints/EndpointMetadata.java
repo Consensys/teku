@@ -132,7 +132,7 @@ public class EndpointMetadata {
             responses.values().stream()
                 .flatMap(response -> response.getReferencedTypeDefinitions().stream()),
             requestBodyType.stream()
-                .flatMap(bodyType -> bodyType.getReferencedTypeDefinitions().stream()))
+                .flatMap(bodyType -> bodyType.getSelfAndReferencedTypeDefinitions().stream()))
         .collect(Collectors.toSet());
   }
 
