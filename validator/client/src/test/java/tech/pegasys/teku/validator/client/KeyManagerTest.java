@@ -67,15 +67,15 @@ class KeyManagerTest {
   void shouldDecryptReceivedKeystoreFile(@TempDir final Path tempDir)
       throws IOException, URISyntaxException {
     final Path pbkdf2Keystore = Path.of(Resources.getResource("pbkdf2TestVector.json").toURI());
-    KeyStoreData receivedKeyStoreFromRest = KeyStoreLoader.loadFromFile(pbkdf2Keystore);
+    KeyStoreData receivedKeystoreFromRest = KeyStoreLoader.loadFromFile(pbkdf2Keystore);
     KeyStoreData encryptedKeystore =
         KeyStore.encrypt(
-            receivedKeyStoreFromRest.getPubkey(),
-            receivedKeyStoreFromRest.getPubkey(),
+            receivedKeystoreFromRest.getPubkey(),
+            receivedKeystoreFromRest.getPubkey(),
             "testpassword",
-            receivedKeyStoreFromRest.getPath(),
-            receivedKeyStoreFromRest.getCrypto().getKdf().getParam(),
-            receivedKeyStoreFromRest.getCrypto().getCipher());
+            receivedKeystoreFromRest.getPath(),
+            receivedKeystoreFromRest.getCrypto().getKdf().getParam(),
+            receivedKeystoreFromRest.getCrypto().getCipher());
 
     final KeyManager keyManager = new KeyManager(validatorLoader);
     Path receivedKeystoreFile = Files.createTempFile(tempDir, "newKeystore", "json");
@@ -89,15 +89,15 @@ class KeyManagerTest {
   void shouldNotDecryptReceivedKeystoreFileWithWrongPass(@TempDir final Path tempDir)
       throws IOException, URISyntaxException {
     final Path pbkdf2Keystore = Path.of(Resources.getResource("pbkdf2TestVector.json").toURI());
-    KeyStoreData receivedKeyStoreFromRest = KeyStoreLoader.loadFromFile(pbkdf2Keystore);
+    KeyStoreData receivedKeystoreFromRest = KeyStoreLoader.loadFromFile(pbkdf2Keystore);
     KeyStoreData encryptedKeystore =
         KeyStore.encrypt(
-            receivedKeyStoreFromRest.getPubkey(),
-            receivedKeyStoreFromRest.getPubkey(),
+            receivedKeystoreFromRest.getPubkey(),
+            receivedKeystoreFromRest.getPubkey(),
             "testpassword",
-            receivedKeyStoreFromRest.getPath(),
-            receivedKeyStoreFromRest.getCrypto().getKdf().getParam(),
-            receivedKeyStoreFromRest.getCrypto().getCipher());
+            receivedKeystoreFromRest.getPath(),
+            receivedKeystoreFromRest.getCrypto().getKdf().getParam(),
+            receivedKeystoreFromRest.getCrypto().getCipher());
 
     final KeyManager keyManager = new KeyManager(validatorLoader);
     Path receivedKeystoreFile = Files.createTempFile(tempDir, "newKeystore", "json");
