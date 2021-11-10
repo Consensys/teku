@@ -36,8 +36,8 @@ public class KeyManager {
 
   public boolean isValidKeystoreFile(final Path filePath, final String password) {
     try {
-      KeyStoreData kd = KeyStoreLoader.loadFromFile(filePath);
-      return KeyStore.validatePassword(password, kd);
+      KeyStoreData keyStoreData = KeyStoreLoader.loadFromFile(filePath);
+      return KeyStore.validatePassword(password, keyStoreData);
     } catch (KeyStoreValidationException e) {
       return false;
     }
