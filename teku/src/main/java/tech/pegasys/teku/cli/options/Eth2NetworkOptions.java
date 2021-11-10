@@ -143,9 +143,6 @@ public class Eth2NetworkOptions {
   }
 
   public void configure(final TekuConfiguration.Builder builder) {
-    // Create a config instance so we can inspect the values in the other builders
-    final Eth2NetworkConfiguration eth2Config = createEth2NetworkConfig();
-
     builder
         .eth2NetworkConfig(this::configureEth2Network)
         .p2p(b -> b.peerRateLimit(peerRateLimit).peerRequestLimit(peerRequestLimit));

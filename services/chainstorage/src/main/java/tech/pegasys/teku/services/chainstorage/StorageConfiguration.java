@@ -82,7 +82,8 @@ public class StorageConfiguration {
 
     private Eth1Address eth1DepositContract;
     private StateStorageMode dataStorageMode = StateStorageMode.DEFAULT_MODE;
-    private long dataStorageFrequency = VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY;;
+    private long dataStorageFrequency = VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY;
+    ;
     private DatabaseVersion dataStorageCreateDbVersion = DatabaseVersion.DEFAULT_VERSION;
     private Spec spec;
     private boolean storeNonCanonicalBlocks = false;

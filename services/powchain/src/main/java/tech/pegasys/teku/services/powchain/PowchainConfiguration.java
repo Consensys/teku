@@ -141,7 +141,8 @@ public class PowchainConfiguration {
       return this;
     }
 
-    public Builder depositContractDeployBlockDefault(final Optional<UInt64> depositContractDeployBlock) {
+    public Builder depositContractDeployBlockDefault(
+        final Optional<UInt64> depositContractDeployBlock) {
       checkNotNull(depositContractDeployBlock);
       if (this.depositContractDeployBlock.isEmpty()) {
         this.depositContractDeployBlock = depositContractDeployBlock;
