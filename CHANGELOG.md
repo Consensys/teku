@@ -15,24 +15,9 @@ fetches network configuration information from the configured beacon node endpoi
 For information on changes in released versions of Teku, see the [releases page](https://github.com/ConsenSys/teku/releases).
 
 ## Unreleased Changes
-
-
 ### Additions and Improvements
-- Support v.2.1.0 of the standard rest api. it should be noted that the 'version' has been changed to lower case to comply with the api specification.
-- Attestations are now sent to the beacon node in batches by default when using the validator-client.
-- Updated to Javalin 4 for the rest api.
-- Added relevant epoch to attestation and sync committee performance log message.
-- Removed ignore rule for aggregate attestation gossip where the attestation root has previously been seen.
-- Added metrics to report client type of connected peers - `libp2p_connected_peers_current`, with client tag `Teku`, `Lighthouse`, `Prysm`, `Nimbus`, `Unknown`.
-- Added support for Apple Silicon (M1 chips).
-- Added LevelDB support for Linux/arm64.
-- Switched executor queue size metrics to use labelled gauge.
-- New console message when Teku switches forks. 
-- Reduce CPU usage by using batching signature verification service for aggregate attestation and sync committee contributions.
+- Introduces a new database format for archive nodes that significantly improves response times for queries that require historic state data.
+    Existing databases and nodes using the default PRUNE storage mode are unchanged. Archive nodes wishing to take advantage of this will need to perform a full resync.
 
 
 ### Bug Fixes
-- Fixed issue where discovery did not correctly abort handshake attempts when a request timed out.
-- Downgrade to jbslt 0.3.5 to resolve incompatibility with Windows 10.
-- Fixed issue where `Syncing Completed` message was printing multiple times.
-- Limited the number of validator public keys to lookup per request in `voluntary-exit` subcommand to avoid exceeding maximum URL length limits.

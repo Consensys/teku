@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionengine.NonValidatingExecutionEngineChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -153,7 +154,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
         TestDataUtils.loadSsz(
             testDefinition, blockName + ".ssz_snappy", spec::deserializeSignedBeaconBlock);
     LOG.info("Importing block {} at slot {}", block.getRoot(), block.getSlot());
-    assertThat(forkChoice.onBlock(block)).isCompleted();
+    assertThat(forkChoice.onBlock(block, new NonValidatingExecutionEngineChannel())).isCompleted();
   }
 
   @SuppressWarnings("unchecked")

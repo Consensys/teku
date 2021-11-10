@@ -39,6 +39,7 @@ import tech.pegasys.teku.cli.options.BeaconRestApiOptions;
 import tech.pegasys.teku.cli.options.DataStorageOptions;
 import tech.pegasys.teku.cli.options.DepositOptions;
 import tech.pegasys.teku.cli.options.Eth2NetworkOptions;
+import tech.pegasys.teku.cli.options.ExecutionEngineOptions;
 import tech.pegasys.teku.cli.options.InteropOptions;
 import tech.pegasys.teku.cli.options.LoggingOptions;
 import tech.pegasys.teku.cli.options.MetricsOptions;
@@ -157,6 +158,9 @@ public class BeaconNodeCommand implements Callable<Integer> {
 
   @Mixin(name = "Deposit")
   private DepositOptions depositOptions;
+
+  @Mixin(name = "Execution Engine")
+  private ExecutionEngineOptions executionEngineOptions;
 
   @Mixin(name = "Logging")
   private LoggingOptions loggingOptions;
@@ -347,6 +351,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
       // Eth2NetworkOptions configures network defaults across builders, so configure this first
       eth2NetworkOptions.configure(builder);
       depositOptions.configure(builder);
+      executionEngineOptions.configure(builder);
       weakSubjectivityOptions.configure(builder);
       validatorOptions.configure(builder);
       dataOptions.configure(builder);

@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas;
@@ -109,7 +110,12 @@ public class EpochTransitionBenchmark {
     localChain.initializeStorage();
 
     blockImporter =
-        new BlockImporter(blockImportNotifications, recentChainData, forkChoice, wsValidator);
+        new BlockImporter(
+            blockImportNotifications,
+            recentChainData,
+            forkChoice,
+            wsValidator,
+            ExecutionEngineChannel.NOOP);
     blockIterator = BlockIO.createResourceReader(spec, blocksFile).iterator();
     System.out.println("Importing 63 blocks from " + blocksFile);
 

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.executionengine;
 
+import com.google.common.base.MoreObjects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 
@@ -38,5 +39,14 @@ public class ExecutePayloadResult {
 
   public Optional<String> getMessage() {
     return message;
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("status", status)
+        .add("latestValidHash", latestValidHash)
+        .add("message", message)
+        .toString();
   }
 }

@@ -205,7 +205,7 @@ public class MockKvStoreInstance implements KvStoreAccessor {
   }
 
   private void assertValidColumn(KvStoreColumn<?, ?> column) {
-    checkArgument(columns.contains(column), "Unknown RocksDbColumn supplied");
+    checkArgument(columns.contains(column), "Unknown RocksDbColumn %s supplied", column.getId());
   }
 
   private void assertOpen() {
