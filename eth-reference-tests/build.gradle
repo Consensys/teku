@@ -19,6 +19,7 @@ dependencies {
   referenceTestImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
   referenceTestImplementation 'org.apache.tuweni:tuweni-bytes'
   referenceTestImplementation 'org.apache.tuweni:tuweni-junit'
+  referenceTestImplementation 'org.apache.tuweni:tuweni-ssz'
   referenceTestImplementation 'org.xerial.snappy:snappy-java'
 }
 
