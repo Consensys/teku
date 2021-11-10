@@ -13,7 +13,9 @@
 
 package tech.pegasys.teku.spec.executionengine;
 
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -22,9 +24,15 @@ import tech.pegasys.teku.ssz.type.Bytes8;
 
 public class NonValidatingExecutionEngineChannel implements ExecutionEngineChannel {
 
+  private Map<Bytes32, PowBlock> knownBlocks = new ConcurrentHashMap<>();
+
+  public void addPowBlock(final PowBlock block) {
+    knownBlocks.put(block.getBlockHash(), block);
+  }
+
   @Override
   public SafeFuture<Optional<PowBlock>> getPowBlock(final Bytes32 blockHash) {
-    return SafeFuture.completedFuture(Optional.empty());
+    return SafeFuture.completedFuture(Optional.ofNullable(knownBlocks.get(blockHash)));
   }
 
   @Override

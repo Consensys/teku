@@ -67,9 +67,6 @@ public abstract class Eth2ReferenceTestCase {
           .putAll(TransitionTestExecutor.TRANSITION_TEST_TYPES)
           .putAll(ForkUpgradeTestExecutor.FORK_UPGRADE_TEST_TYPES)
           .putAll(RewardsTestExecutorMerge.REWARDS_TEST_TYPES)
-
-          // We don't yet support on_merge_block reference tests
-          .put("fork_choice/on_merge_block", TestExecutor.IGNORE_TESTS)
           .build();
 
   protected void runReferenceTest(final TestDefinition testDefinition) throws Throwable {
