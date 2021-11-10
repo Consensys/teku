@@ -20,6 +20,10 @@ import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 
 public class StorageConfiguration {
+
+  public static final boolean DEFAULT_STORE_NON_CANONICAL_BLOCKS_ENABLED = false;
+  public static final int DEFAULT_MAX_KNOWN_NODE_CACHE_SIZE = 100_000;
+
   private final Eth1Address eth1DepositContract;
 
   private final StateStorageMode dataStorageMode;
@@ -86,8 +90,8 @@ public class StorageConfiguration {
     ;
     private DatabaseVersion dataStorageCreateDbVersion = DatabaseVersion.DEFAULT_VERSION;
     private Spec spec;
-    private boolean storeNonCanonicalBlocks = false;
-    private int maxKnownNodeCacheSize;
+    private boolean storeNonCanonicalBlocks = DEFAULT_STORE_NON_CANONICAL_BLOCKS_ENABLED;
+    private int maxKnownNodeCacheSize = DEFAULT_MAX_KNOWN_NODE_CACHE_SIZE;
 
     private Builder() {}
 
