@@ -42,7 +42,7 @@ public class KeyManager {
       KeyStoreData keyStoreData = KeyStoreLoader.loadFromFile(filePath);
       return KeyStore.validatePassword(password, keyStoreData);
     } catch (KeyStoreValidationException e) {
-      LOG.error("Invalid Keystore is invalid: ", e);
+      LOG.error("Received Keystore is invalid: ", e);
       return false;
     }
   }
