@@ -44,7 +44,8 @@ public class DepositOptions {
       hidden = true,
       arity = "0..1",
       fallbackValue = "true")
-  private boolean useTimeBasedHeadTracking = PowchainConfiguration.DEFAULT_USE_TIME_BASED_HEAD_TRACKING;
+  private boolean useTimeBasedHeadTracking =
+      PowchainConfiguration.DEFAULT_USE_TIME_BASED_HEAD_TRACKING;
 
   public void configure(final TekuConfiguration.Builder builder) {
     builder.powchain(

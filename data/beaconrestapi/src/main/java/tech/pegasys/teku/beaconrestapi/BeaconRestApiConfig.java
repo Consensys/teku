@@ -25,7 +25,8 @@ public class BeaconRestApiConfig {
   public static final int DEFAULT_MAX_EVENT_QUEUE_SIZE = 250;
   public static final int DEFAULT_MAX_URL_LENGTH = 65535;
   public static final String DEFAULT_REST_API_INTERFACE = "127.0.0.1";
-  public static final List<String> DEFAULT_REST_API_HOST_ALLOWLIST = List.of("127.0.0.1", "localhost");
+  public static final List<String> DEFAULT_REST_API_HOST_ALLOWLIST =
+      List.of("127.0.0.1", "localhost");
   public static final List<String> DEFAULT_REST_API_CORS_ALLOWED_ORIGINS = new ArrayList<>();
   public static final boolean DEFAULT_BEACON_LIVENESS_TRACKING_ENABLED = false;
 

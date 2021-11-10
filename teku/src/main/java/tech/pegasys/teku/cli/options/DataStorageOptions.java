@@ -55,7 +55,8 @@ public class DataStorageOptions {
       description = "Store non-canonical blocks",
       fallbackValue = "true",
       arity = "0..1")
-  private boolean storeNonCanonicalBlocksEnabled = StorageConfiguration.DEFAULT_STORE_NON_CANONICAL_BLOCKS_ENABLED;
+  private boolean storeNonCanonicalBlocksEnabled =
+      StorageConfiguration.DEFAULT_STORE_NON_CANONICAL_BLOCKS_ENABLED;
 
   /**
    * Default value selected based on experimentation to minimise memory usage without affecting sync

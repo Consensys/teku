@@ -24,7 +24,6 @@ import tech.pegasys.teku.validator.coordinator.ValidatorApiHandler;
 public class BeaconRestApiOptions {
   @CommandLine.Spec CommandLine.Model.CommandSpec cliSpec;
 
-
   private int maxUrlLength = BeaconRestApiConfig.DEFAULT_MAX_URL_LENGTH;
 
   @Option(
@@ -65,7 +64,8 @@ public class BeaconRestApiOptions {
       description = "Comma-separated list of hostnames to allow, or * to allow any host",
       split = ",",
       arity = "0..*")
-  private final List<String> restApiHostAllowlist = BeaconRestApiConfig.DEFAULT_REST_API_HOST_ALLOWLIST;
+  private final List<String> restApiHostAllowlist =
+      BeaconRestApiConfig.DEFAULT_REST_API_HOST_ALLOWLIST;
 
   @Option(
       names = {"--rest-api-cors-origins"},
@@ -73,7 +73,8 @@ public class BeaconRestApiOptions {
       description = "Comma separated list of origins to allow, or * to allow any origin",
       split = ",",
       arity = "0..*")
-  private final List<String> restApiCorsAllowedOrigins = BeaconRestApiConfig.DEFAULT_REST_API_CORS_ALLOWED_ORIGINS;
+  private final List<String> restApiCorsAllowedOrigins =
+      BeaconRestApiConfig.DEFAULT_REST_API_CORS_ALLOWED_ORIGINS;
 
   @Option(
       names = {"--Xrest-api-max-pending-events"},
@@ -108,7 +109,8 @@ public class BeaconRestApiOptions {
       arity = "0..1",
       fallbackValue = "true",
       hidden = true)
-  private Boolean beaconLivenessTrackingEnabled = BeaconRestApiConfig.DEFAULT_BEACON_LIVENESS_TRACKING_ENABLED;
+  private Boolean beaconLivenessTrackingEnabled =
+      BeaconRestApiConfig.DEFAULT_BEACON_LIVENESS_TRACKING_ENABLED;
 
   @Option(
       names = {"--Xrest-api-validator-threads"},
