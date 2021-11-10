@@ -33,12 +33,12 @@ import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
-import tech.pegasys.teku.spec.logic.versions.altair.block.BlockProcessorAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.forktransition.AltairStateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.attestation.AttestationWorthinessCheckerAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.EpochProcessorAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.ValidatorStatusFactoryAltair;
+import tech.pegasys.teku.spec.logic.versions.merge.block.BlockProcessorMerge;
 import tech.pegasys.teku.spec.logic.versions.merge.helpers.BeaconStateAccessorsMerge;
 import tech.pegasys.teku.spec.logic.versions.merge.helpers.BeaconStateMutatorsMerge;
 import tech.pegasys.teku.spec.logic.versions.merge.helpers.MergeTransitionHelpers;
@@ -67,7 +67,7 @@ public class SpecLogicMerge extends AbstractSpecLogic {
       final OperationValidator operationValidator,
       final ValidatorStatusFactoryAltair validatorStatusFactory,
       final EpochProcessorAltair epochProcessor,
-      final BlockProcessorAltair blockProcessor,
+      final BlockProcessorMerge blockProcessor,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil,
       final SyncCommitteeUtil syncCommitteeUtil,
@@ -137,8 +137,8 @@ public class SpecLogicMerge extends AbstractSpecLogic {
             validatorsUtil,
             beaconStateUtil,
             validatorStatusFactory);
-    final BlockProcessorAltair blockProcessor =
-        new BlockProcessorAltair(
+    final BlockProcessorMerge blockProcessor =
+        new BlockProcessorMerge(
             config,
             predicates,
             miscHelpers,
@@ -148,7 +148,8 @@ public class SpecLogicMerge extends AbstractSpecLogic {
             beaconStateUtil,
             attestationUtil,
             validatorsUtil,
-            operationValidator);
+            operationValidator,
+            schemaDefinitions);
     final ForkChoiceUtil forkChoiceUtil =
         new ForkChoiceUtil(
             config, beaconStateAccessors, attestationUtil, blockProcessor, miscHelpers);

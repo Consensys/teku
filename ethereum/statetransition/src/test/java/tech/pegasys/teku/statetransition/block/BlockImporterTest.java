@@ -48,6 +48,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
@@ -82,7 +83,11 @@ public class BlockImporterTest {
 
   private final BlockImporter blockImporter =
       new BlockImporter(
-          blockImportNotifications, recentChainData, forkChoice, weakSubjectivityValidator);
+          blockImportNotifications,
+          recentChainData,
+          forkChoice,
+          weakSubjectivityValidator,
+          ExecutionEngineChannel.NOOP);
 
   @BeforeAll
   public static void init() {
@@ -354,7 +359,11 @@ public class BlockImporterTest {
         WeakSubjectivityValidator.lenient(wsConfig);
     final BlockImporter blockImporter =
         new BlockImporter(
-            blockImportNotifications, recentChainData, forkChoice, weakSubjectivityValidator);
+            blockImportNotifications,
+            recentChainData,
+            forkChoice,
+            weakSubjectivityValidator,
+            ExecutionEngineChannel.NOOP);
 
     final BlockImportResult result = blockImporter.importBlock(otherBlock).get();
     assertImportFailed(result, FailureReason.FAILED_WEAK_SUBJECTIVITY_CHECKS);
@@ -379,7 +388,11 @@ public class BlockImporterTest {
         WeakSubjectivityValidator.lenient(wsConfig);
     final BlockImporter blockImporter =
         new BlockImporter(
-            blockImportNotifications, recentChainData, forkChoice, weakSubjectivityValidator);
+            blockImportNotifications,
+            recentChainData,
+            forkChoice,
+            weakSubjectivityValidator,
+            ExecutionEngineChannel.NOOP);
 
     // Import wsBlock
     final BlockImportResult result = blockImporter.importBlock(wsBlock).get();
@@ -400,7 +413,8 @@ public class BlockImporterTest {
             blockImportNotifications,
             storageSystem.recentChainData(),
             forkChoice,
-            weakSubjectivityValidator);
+            weakSubjectivityValidator,
+            ExecutionEngineChannel.NOOP);
 
     // The current slot is far ahead of the block being imported
     final UInt64 wsPeriod = UInt64.valueOf(10);
@@ -436,7 +450,8 @@ public class BlockImporterTest {
             blockImportNotifications,
             storageSystem.recentChainData(),
             forkChoice,
-            weakSubjectivityValidator);
+            weakSubjectivityValidator,
+            ExecutionEngineChannel.NOOP);
 
     // Set current time to be several WSP's ahead of finalized checkpoint
     final UInt64 wsPeriod = UInt64.valueOf(10);
@@ -480,7 +495,8 @@ public class BlockImporterTest {
             blockImportNotifications,
             storageSystem.recentChainData(),
             forkChoice,
-            weakSubjectivityValidator);
+            weakSubjectivityValidator,
+            ExecutionEngineChannel.NOOP);
 
     // Set current time to be several WSP's ahead of finalized checkpoint
     final UInt64 wsPeriod = UInt64.valueOf(10);
@@ -516,7 +532,8 @@ public class BlockImporterTest {
             blockImportNotifications,
             storageSystem.recentChainData(),
             forkChoice,
-            weakSubjectivityValidator);
+            weakSubjectivityValidator,
+            ExecutionEngineChannel.NOOP);
 
     final SignedBlockAndState genesis = storageSystem.chainUpdater().initializeGenesis();
 
@@ -540,7 +557,8 @@ public class BlockImporterTest {
             blockImportNotifications,
             storageSystem.recentChainData(),
             forkChoice,
-            weakSubjectivityValidator);
+            weakSubjectivityValidator,
+            ExecutionEngineChannel.NOOP);
 
     final SignedBlockAndState genesis = storageSystem.chainUpdater().initializeGenesis();
 
