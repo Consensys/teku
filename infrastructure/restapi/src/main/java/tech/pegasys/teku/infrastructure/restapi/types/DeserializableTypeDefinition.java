@@ -27,12 +27,22 @@ public interface DeserializableTypeDefinition<TObject> extends SerializableTypeD
     return new StringTypeBuilder<>();
   }
 
-  static <T> DeserializableTypeDefinition<List<T>> listOf(
-      final DeserializableTypeDefinition<T> itemType) {
+  static <TObject> DeserializableTypeDefinition<List<TObject>> listOf(
+      final DeserializableTypeDefinition<TObject> itemType) {
     return new DeserializableArrayTypeDefinition<>(itemType);
   }
 
-  static <T extends Enum<T>> DeserializableTypeDefinition<T> enumOf(final Class<T> itemType) {
+  static <TObject extends Enum<TObject>> DeserializableTypeDefinition<TObject> enumOf(
+      final Class<TObject> itemType) {
     return new EnumTypeDefinition<>(itemType);
+  }
+
+  static <TObject> DeserializableObjectTypeDefinitionBuilder<TObject> object(
+      @SuppressWarnings("unused") final Class<TObject> type) {
+    return object();
+  }
+
+  static <TObject> DeserializableObjectTypeDefinitionBuilder<TObject> object() {
+    return new DeserializableObjectTypeDefinitionBuilder<>();
   }
 }

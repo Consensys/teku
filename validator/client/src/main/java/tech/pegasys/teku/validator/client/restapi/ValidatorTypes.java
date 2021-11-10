@@ -22,6 +22,7 @@ import tech.pegasys.teku.infrastructure.restapi.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.restapi.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.types.SerializableTypeDefinition;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysRequest;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeletionStatus;
 
 public class ValidatorTypes {
@@ -76,5 +77,16 @@ public class ValidatorTypes {
           .name("DeleteKeysResponse")
           .withField(
               "data", SerializableTypeDefinition.listOf(DELETE_KEY_RESULT), Function.identity())
+          .build();
+
+  public static DeserializableTypeDefinition<DeleteKeysRequest> DELETE_KEYS_REQUEST =
+      DeserializableTypeDefinition.object(DeleteKeysRequest.class)
+          .name("DeleteKeysRequest")
+          .initializer(DeleteKeysRequest::new)
+          .withField(
+              "pubkeys",
+              DeserializableTypeDefinition.listOf(ValidatorTypes.PUBKEY_TYPE),
+              DeleteKeysRequest::getPublicKeys,
+              DeleteKeysRequest::setPublicKeys)
           .build();
 }
