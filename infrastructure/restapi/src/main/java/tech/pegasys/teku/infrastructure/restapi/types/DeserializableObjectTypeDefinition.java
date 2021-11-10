@@ -15,10 +15,8 @@ package tech.pegasys.teku.infrastructure.restapi.types;
 
 import static java.util.stream.Collectors.toSet;
 
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
-import com.google.common.base.MoreObjects;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
@@ -27,48 +25,19 @@ import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-class DeserializableObjectTypeDefinition<TObject> implements DeserializableTypeDefinition<TObject> {
+class DeserializableObjectTypeDefinition<TObject> extends SerializableObjectTypeDefinition<TObject>
+    implements DeserializableTypeDefinition<TObject> {
   private static final Logger LOG = LogManager.getLogger();
-  private final Optional<String> name;
-  private final Map<String, FieldDefinition<TObject>> fields;
+  private final Map<String, DeserializableFieldDefinition<TObject>> deserializableFields;
   private final Supplier<TObject> initializer;
 
   DeserializableObjectTypeDefinition(
       final Optional<String> name,
       final Supplier<TObject> initializer,
-      final Map<String, FieldDefinition<TObject>> fields) {
-    this.name = name;
+      final Map<String, DeserializableFieldDefinition<TObject>> fields) {
+    super(name, fields);
     this.initializer = initializer;
-    this.fields = fields;
-  }
-
-  @Override
-  public Optional<String> getTypeName() {
-    return name;
-  }
-
-  @Override
-  public void serialize(final TObject value, final JsonGenerator gen) throws IOException {
-    gen.writeStartObject();
-    for (FieldDefinition<TObject> field : fields.values()) {
-      field.writeField(value, gen);
-    }
-    gen.writeEndObject();
-  }
-
-  @Override
-  public void serializeOpenApiType(final JsonGenerator gen) throws IOException {
-    gen.writeStartObject();
-    if (name.isPresent()) {
-      gen.writeStringField("title", name.get());
-    }
-    gen.writeStringField("type", "object");
-    gen.writeObjectFieldStart("properties");
-    for (FieldDefinition<TObject> field : fields.values()) {
-      field.writeOpenApiField(gen);
-    }
-    gen.writeEndObject();
-    gen.writeEndObject();
+    this.deserializableFields = fields;
   }
 
   @Override
@@ -84,7 +53,8 @@ class DeserializableObjectTypeDefinition<TObject> implements DeserializableTypeD
     for (; t == JsonToken.FIELD_NAME; t = p.nextToken()) {
       String fieldName = p.getCurrentName();
       p.nextToken();
-      final FieldDefinition<TObject> objectField = fields.get(fieldName);
+      final DeserializableFieldDefinition<TObject> objectField =
+          deserializableFields.get(fieldName);
       if (objectField != null) {
         objectField.readField(result, p);
       } else {
@@ -97,23 +67,8 @@ class DeserializableObjectTypeDefinition<TObject> implements DeserializableTypeD
 
   @Override
   public Collection<OpenApiTypeDefinition> getReferencedTypeDefinitions() {
-    return fields.values().stream()
+    return deserializableFields.values().stream()
         .flatMap(field -> field.getReferencedTypeDefinitions().stream())
         .collect(toSet());
-  }
-
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this).add("name", name).add("fields", fields).toString();
-  }
-
-  interface FieldDefinition<TObject> {
-    void writeField(final TObject source, JsonGenerator gen) throws IOException;
-
-    void writeOpenApiField(JsonGenerator gen) throws IOException;
-
-    void readField(TObject target, JsonParser parser) throws IOException;
-
-    Collection<OpenApiTypeDefinition> getReferencedTypeDefinitions();
   }
 }

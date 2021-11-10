@@ -25,10 +25,11 @@ import java.util.Optional;
 class SerializableObjectTypeDefinition<TObject> implements SerializableTypeDefinition<TObject> {
 
   private final Optional<String> name;
-  private final Map<String, FieldDefinition<TObject>> fields;
+  private final Map<String, ? extends SerializableFieldDefinition<TObject>> fields;
 
   SerializableObjectTypeDefinition(
-      final Optional<String> name, final Map<String, FieldDefinition<TObject>> fields) {
+      final Optional<String> name,
+      final Map<String, ? extends SerializableFieldDefinition<TObject>> fields) {
     this.name = name;
     this.fields = fields;
   }
@@ -41,7 +42,7 @@ class SerializableObjectTypeDefinition<TObject> implements SerializableTypeDefin
   @Override
   public void serialize(final TObject value, final JsonGenerator gen) throws IOException {
     gen.writeStartObject();
-    for (FieldDefinition<TObject> field : fields.values()) {
+    for (SerializableFieldDefinition<TObject> field : fields.values()) {
       field.writeField(value, gen);
     }
     gen.writeEndObject();
@@ -55,7 +56,7 @@ class SerializableObjectTypeDefinition<TObject> implements SerializableTypeDefin
     }
     gen.writeStringField("type", "object");
     gen.writeObjectFieldStart("properties");
-    for (FieldDefinition<TObject> field : fields.values()) {
+    for (SerializableFieldDefinition<TObject> field : fields.values()) {
       field.writeOpenApiField(gen);
     }
     gen.writeEndObject();
@@ -72,13 +73,5 @@ class SerializableObjectTypeDefinition<TObject> implements SerializableTypeDefin
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this).add("name", name).add("fields", fields).toString();
-  }
-
-  interface FieldDefinition<TObject> {
-    void writeField(final TObject source, JsonGenerator gen) throws IOException;
-
-    void writeOpenApiField(JsonGenerator gen) throws IOException;
-
-    Collection<OpenApiTypeDefinition> getReferencedTypeDefinitions();
   }
 }
