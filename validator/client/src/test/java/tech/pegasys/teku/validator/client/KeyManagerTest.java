@@ -81,7 +81,7 @@ class KeyManagerTest {
     Path receivedKeystoreFile = Files.createTempFile(tempDir, "newKeystore", "json");
     KeyStoreLoader.saveToFile(receivedKeystoreFile, encryptedKeystore);
     boolean isValid = keyManager.isValidKeystoreFile(receivedKeystoreFile, "testpassword");
-    
+
     assertThat(isValid).isTrue();
   }
 
@@ -103,7 +103,7 @@ class KeyManagerTest {
     Path receivedKeystoreFile = Files.createTempFile(tempDir, "newKeystore", "json");
     KeyStoreLoader.saveToFile(receivedKeystoreFile, encryptedKeystore);
     boolean isValid = keyManager.isValidKeystoreFile(receivedKeystoreFile, "wrongPass");
-    
+
     assertThat(isValid).isFalse();
   }
 
