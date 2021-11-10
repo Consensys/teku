@@ -203,15 +203,18 @@ public class TekuConfiguration {
           eth2NetworkConfigurationBuilder.build();
       final Spec spec = eth2NetworkConfiguration.getSpec();
 
-      Eth1Address depositContractAddress = eth2NetworkConfiguration
-          .getEth1DepositContractAddress();
+      Eth1Address depositContractAddress = eth2NetworkConfiguration.getEth1DepositContractAddress();
       storageConfigurationBuilder.eth1DepositContractDefault(depositContractAddress);
       powchainConfigBuilder.depositContractDefault(depositContractAddress);
-      powchainConfigBuilder
-          .depositContractDeployBlock(eth2NetworkConfiguration.getEth1DepositContractDeployBlock());
-      p2pConfigBuilder
-          .discovery(b -> b.bootnodesDefault(eth2NetworkConfiguration.getDiscoveryBootnodes()));
+      powchainConfigBuilder.depositContractDeployBlock(
+          eth2NetworkConfiguration.getEth1DepositContractDeployBlock());
+      p2pConfigBuilder.discovery(
+          b -> b.bootnodesDefault(eth2NetworkConfiguration.getDiscoveryBootnodes()));
       restApiBuilder.eth1DepositContractAddressDefault(depositContractAddress);
+
+      DataConfig dataConfig = dataConfigBuilder.build();
+      loggingConfigBuilder.logDirectory(
+          dataConfig.getDataBasePath().normalize().toAbsolutePath().toString());
 
       // Add specs
       interopConfigBuilder.specProvider(spec);
@@ -230,7 +233,7 @@ public class TekuConfiguration {
           powchainConfigBuilder.build(),
           executionEngineConfigBuilder.build(),
           interopConfigBuilder.build(),
-          dataConfigBuilder.build(),
+          dataConfig,
           p2pConfigBuilder.build(),
           syncConfig.build(),
           restApiBuilder.build(),

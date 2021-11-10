@@ -14,6 +14,10 @@
 package tech.pegasys.teku.infrastructure.logging;
 
 public class LoggingConfig {
+  public static final String DEFAULT_LOG_SHORT_FILE_NAME = "teku-node";
+  public static final String DEFAULT_LOG_FILE_EXTENSION = "log";
+  public static final String DEFAULT_LOG_PATTERN = "%d{yyyy-MM-dd}";
+  public static final String DEFAULT_LOG_DIRECTORY = ".";
 
   private final boolean colorEnabled;
   private final boolean includeEventsEnabled;
@@ -73,16 +77,35 @@ public class LoggingConfig {
   }
 
   public static final class LoggingConfigBuilder {
+    public static final String SEP = System.getProperty("file.separator");
 
-    private boolean colorEnabled;
-    private boolean includeEventsEnabled;
-    private boolean includeValidatorDutiesEnabled;
-    private boolean includeP2pWarningsEnabled;
-    private LoggingDestination destination;
+    private boolean colorEnabled = true;
+    private boolean includeEventsEnabled = true;
+    private boolean includeValidatorDutiesEnabled = true;
+    private boolean includeP2pWarningsEnabled = false;
+    private LoggingDestination destination = LoggingDestination.DEFAULT_BOTH;
+
+    private String logShortFileName = DEFAULT_LOG_SHORT_FILE_NAME;
+    private String logFileExtension = DEFAULT_LOG_FILE_EXTENSION;
+    private String logPattern = DEFAULT_LOG_PATTERN;
+    private String logDirectory;
     private String logFile;
     private String logFileNamePattern;
 
     private LoggingConfigBuilder() {}
+
+    private void initMissingDefaults() {
+      if (logDirectory == null) {
+        logDirectory = DEFAULT_LOG_DIRECTORY;
+      }
+      if (logFile == null) {
+        logFile = logDirectory + SEP + logShortFileName + "." + logFileExtension;
+      }
+      if (logFileNamePattern == null) {
+        logFileNamePattern =
+            logDirectory + SEP + logShortFileName + "_" + logPattern + "." + logFileExtension;
+      }
+    }
 
     public LoggingConfigBuilder colorEnabled(boolean colorEnabled) {
       this.colorEnabled = colorEnabled;
@@ -110,6 +133,33 @@ public class LoggingConfig {
       return this;
     }
 
+    public LoggingConfigBuilder logShortFileName(String logShortFileName) {
+      this.logShortFileName = logShortFileName;
+      return this;
+    }
+
+    public LoggingConfigBuilder logFileExtension(String logFileExtension) {
+      this.logFileExtension = logFileExtension;
+      return this;
+    }
+
+    public LoggingConfigBuilder logPattern(String logPattern) {
+      this.logPattern = logPattern;
+      return this;
+    }
+
+    public LoggingConfigBuilder logDirectory(String logDirectory) {
+      this.logDirectory = logDirectory;
+      return this;
+    }
+
+    public LoggingConfigBuilder logDirectoryDefault(String logDirectory) {
+      if (this.logDirectory == null) {
+        this.logDirectory = logDirectory;
+      }
+      return this;
+    }
+
     public LoggingConfigBuilder logFile(String logFile) {
       this.logFile = logFile;
       return this;
@@ -121,6 +171,7 @@ public class LoggingConfig {
     }
 
     public LoggingConfig build() {
+      initMissingDefaults();
       return new LoggingConfig(
           colorEnabled,
           includeEventsEnabled,
