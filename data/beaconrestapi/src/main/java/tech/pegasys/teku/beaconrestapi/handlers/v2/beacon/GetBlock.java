@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v2.beacon;
 
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_ACCEPT;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_ACCEPT_JSON;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_ACCEPT_OCTET;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_BLOCK_ID;
@@ -72,7 +73,7 @@ public class GetBlock extends AbstractHandler implements Handler {
         @OpenApiResponse(
             status = RES_OK,
             content = {
-              @OpenApiContent(from = GetBlockResponseV2.class),
+              @OpenApiContent(type = HEADER_ACCEPT_JSON, from = GetBlockResponseV2.class),
               @OpenApiContent(type = HEADER_ACCEPT_OCTET)
             }),
         @OpenApiResponse(status = RES_BAD_REQUEST),
