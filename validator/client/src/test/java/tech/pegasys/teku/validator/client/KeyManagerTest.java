@@ -16,28 +16,25 @@ package tech.pegasys.teku.validator.client;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
-import java.io.File;
-import java.io.FileReader;
+import com.google.common.io.Resources;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-
-import com.google.common.io.Resources;
-import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
+import tech.pegasys.signers.bls.keystore.KeyStore;
+import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
+import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSTestUtil;
-import tech.pegasys.teku.infrastructure.restapi.json.JsonUtil;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
-import tech.pegasys.teku.validator.client.restapi.ValidatorTypes;
 
 class KeyManagerTest {
 
@@ -67,33 +64,45 @@ class KeyManagerTest {
   }
 
   @Test
-  void shouldAddNewKey() throws URISyntaxException, IOException {
-    final BLSPublicKey PUBLIC_KEY1 =
-            BLSPublicKey.fromSSZBytes(
-                    Bytes.fromHexString(
-                            "0x9612d7a727c9d0a22e185a1c768478dfe919cada9266988cb32359c11f2b7b27f4ae4040902382ae2910c15e2b420d07"));
-    final KeyManager keyManager = new KeyManager(validatorLoader);
+  void shouldDecryptReceivedKeystoreFile(@TempDir final Path tempDir)
+      throws IOException, URISyntaxException {
     final Path pbkdf2Keystore = Path.of(Resources.getResource("pbkdf2TestVector.json").toURI());
-    String newKeys = new String(Files.readAllBytes(pbkdf2Keystore), Charset.defaultCharset());
-    assertThat(keyManager.getValidatorKeys()).isEmpty();
-    keyManager.addValidatorKeys(newKeys);
-    assertThat(keyManager.getValidatorKeys()).contains(PUBLIC_KEY1);
+    KeyStoreData receivedKeyStoreFromRest = KeyStoreLoader.loadFromFile(pbkdf2Keystore);
+    KeyStoreData encryptedKeystore =
+        KeyStore.encrypt(
+            receivedKeyStoreFromRest.getPubkey(),
+            receivedKeyStoreFromRest.getPubkey(),
+            "testpassword",
+            receivedKeyStoreFromRest.getPath(),
+            receivedKeyStoreFromRest.getCrypto().getKdf().getParam(),
+            receivedKeyStoreFromRest.getCrypto().getCipher());
+
+    final KeyManager keyManager = new KeyManager(validatorLoader);
+    Path receivedKeystoreFile = Files.createTempFile(tempDir, "newKeystore", "json");
+    KeyStoreLoader.saveToFile(receivedKeystoreFile, encryptedKeystore);
+    boolean isValid = keyManager.isValidKeystoreFile(receivedKeystoreFile, "testpassword");
+    assertThat(isValid).isTrue();
   }
 
   @Test
-  void shouldFailToAddDuplicatedKey() throws URISyntaxException, IOException {
-    final BLSPublicKey PUBLIC_KEY1 =
-            BLSPublicKey.fromSSZBytes(
-                    Bytes.fromHexString(
-                            "0x9612d7a727c9d0a22e185a1c768478dfe919cada9266988cb32359c11f2b7b27f4ae4040902382ae2910c15e2b420d07"));
-    final KeyManager keyManager = new KeyManager(validatorLoader);
+  void shouldNotDecryptReceivedKeystoreFileWithWrongPass(@TempDir final Path tempDir)
+      throws IOException, URISyntaxException {
     final Path pbkdf2Keystore = Path.of(Resources.getResource("pbkdf2TestVector.json").toURI());
-    String newKeys = new String(Files.readAllBytes(pbkdf2Keystore), Charset.defaultCharset());
-    assertThat(keyManager.getValidatorKeys()).isEmpty();
-    keyManager.addValidatorKeys(newKeys);
-    assertThat(keyManager.getValidatorKeys()).containsOnly(PUBLIC_KEY1);
-    keyManager.addValidatorKeys(newKeys);
-    assertThat(keyManager.getValidatorKeys()).containsOnly(PUBLIC_KEY1);
+    KeyStoreData receivedKeyStoreFromRest = KeyStoreLoader.loadFromFile(pbkdf2Keystore);
+    KeyStoreData encryptedKeystore =
+        KeyStore.encrypt(
+            receivedKeyStoreFromRest.getPubkey(),
+            receivedKeyStoreFromRest.getPubkey(),
+            "testpassword",
+            receivedKeyStoreFromRest.getPath(),
+            receivedKeyStoreFromRest.getCrypto().getKdf().getParam(),
+            receivedKeyStoreFromRest.getCrypto().getCipher());
+
+    final KeyManager keyManager = new KeyManager(validatorLoader);
+    Path receivedKeystoreFile = Files.createTempFile(tempDir, "newKeystore", "json");
+    KeyStoreLoader.saveToFile(receivedKeystoreFile, encryptedKeystore);
+    boolean isValid = keyManager.isValidKeystoreFile(receivedKeystoreFile, "wrongPass");
+    assertThat(isValid).isFalse();
   }
 
   private Set<BLSPublicKey> getList() {

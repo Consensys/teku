@@ -13,7 +13,12 @@
 
 package tech.pegasys.teku.validator.client;
 
+import java.nio.file.Path;
 import java.util.Set;
+import tech.pegasys.signers.bls.keystore.KeyStore;
+import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
+import tech.pegasys.signers.bls.keystore.KeyStoreValidationException;
+import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
 
@@ -29,7 +34,12 @@ public class KeyManager {
     return validatorLoader.getOwnedValidators().getPublicKeys();
   }
 
-    public void addValidatorKeys(final String newKeys) {
-
+  public boolean isValidKeystoreFile(final Path filePath, final String password) {
+    try {
+      KeyStoreData kd = KeyStoreLoader.loadFromFile(filePath);
+      return KeyStore.validatePassword(password, kd);
+    } catch (KeyStoreValidationException e) {
+      return false;
     }
+  }
 }
