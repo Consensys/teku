@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.cli.options;
 
-import static tech.pegasys.teku.cli.options.BeaconRestApiOptions.DEFAULT_REST_API_PORT;
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiConfig.DEFAULT_REST_API_PORT;
 
 import java.net.URI;
 import java.net.URISyntaxException;
