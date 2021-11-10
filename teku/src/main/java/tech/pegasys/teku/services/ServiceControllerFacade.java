@@ -15,8 +15,13 @@ package tech.pegasys.teku.services;
 
 import java.util.List;
 import tech.pegasys.teku.service.serviceutils.Service;
+import tech.pegasys.teku.service.serviceutils.ServiceFacade;
 
+/**
+ * CAUTION: this API is unstable and primarily intended for debugging and testing purposes
+ *          this API might be changed in any version in backward incompatible way
+ */
 public interface ServiceControllerFacade {
 
-  List<Service> getServices();
+  List<? extends ServiceFacade> getServices();
 }

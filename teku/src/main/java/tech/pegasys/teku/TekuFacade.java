@@ -15,6 +15,12 @@ package tech.pegasys.teku;
 
 import tech.pegasys.teku.config.TekuConfiguration;
 
+/**
+ * The main entry point to start Teku node
+ *
+ * CAUTION: this API is unstable and primarily intended for debugging and testing purposes
+ *          this API might be changed in any version in backward incompatible way
+ */
 public interface TekuFacade {
 
   static TekuFacade getInstance() {

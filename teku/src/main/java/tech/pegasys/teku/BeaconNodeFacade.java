@@ -16,8 +16,15 @@ package tech.pegasys.teku;
 import java.util.Optional;
 import tech.pegasys.teku.services.beaconchain.BeaconChainServiceFacade;
 
+/**
+ * CAUTION: this API is unstable and primarily intended for debugging and testing purposes
+ *          this API might be changed in any version in backward incompatible way
+ */
 public interface BeaconNodeFacade extends NodeFacade {
 
+  /**
+   * Shortcut method to find {@link BeaconChainServiceFacade} service if any
+   */
   default Optional<BeaconChainServiceFacade> getBeaconChainService() {
     return getServiceController().getServices().stream()
         .filter(service -> service instanceof BeaconChainServiceFacade)

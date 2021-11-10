@@ -18,6 +18,7 @@ import java.util.Iterator;
 import java.util.List;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.service.serviceutils.Service;
+import tech.pegasys.teku.service.serviceutils.ServiceFacade;
 
 public abstract class ServiceController extends Service implements ServiceControllerFacade {
 
@@ -40,7 +41,7 @@ public abstract class ServiceController extends Service implements ServiceContro
   }
 
   @Override
-  public List<Service> getServices() {
+  public List<? extends ServiceFacade> getServices() {
     return services;
   }
 }
