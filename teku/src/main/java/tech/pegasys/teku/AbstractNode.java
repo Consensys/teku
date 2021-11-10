@@ -115,6 +115,7 @@ public abstract class AbstractNode implements Node {
                     "TERMINAL_BLOCK_HASH_ACTIVATION_EPOCH", tbheo.toString()));
   }
 
+  @Override
   public abstract ServiceController getServiceController();
 
   @Override
