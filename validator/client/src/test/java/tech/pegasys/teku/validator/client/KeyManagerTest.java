@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashSet;
@@ -59,6 +60,14 @@ class KeyManagerTest {
 
   @Test
   void shouldCheckExistingPathStructure(@TempDir Path tempDir) throws IOException {
+    Path createdPath = Files.createDirectory(tempDir.resolve("keystores"));
+    final KeyManager keyManager = new KeyManager(validatorLoader, tempDir);
+    Path keystorePath = keyManager.getKeystorePath();
+    assertThat(keystorePath).isEqualTo(createdPath);
+  }
+
+  @Test
+  void shouldCreatePathStructure(@TempDir Path tempDir) throws IOException {
     final KeyManager keyManager = new KeyManager(validatorLoader, tempDir);
     Path keystorePath = keyManager.getKeystorePath();
     assertThat(keystorePath).exists();
