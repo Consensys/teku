@@ -22,7 +22,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.ssz.type.Bytes8;
 
-public class NonValidatingExecutionEngineChannel implements ExecutionEngineChannel {
+public class StubExecutionEngineChannel implements ExecutionEngineChannel {
 
   private Map<Bytes32, PowBlock> knownBlocks = new ConcurrentHashMap<>();
 

@@ -41,7 +41,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.executionengine.NonValidatingExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionengine.StubExecutionEngineChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -89,8 +89,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
 
     final ForkChoice forkChoice =
         ForkChoice.create(spec, new InlineEventThread(), recentChainData, false);
-    final NonValidatingExecutionEngineChannel executionEngine =
-        new NonValidatingExecutionEngineChannel();
+    final StubExecutionEngineChannel executionEngine = new StubExecutionEngineChannel();
 
     runSteps(testDefinition, spec, recentChainData, forkChoice, executionEngine);
   }
@@ -116,7 +115,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       final Spec spec,
       final RecentChainData recentChainData,
       final ForkChoice forkChoice,
-      final NonValidatingExecutionEngineChannel executionEngine)
+      final StubExecutionEngineChannel executionEngine)
       throws java.io.IOException {
     final List<Map<String, Object>> steps = loadSteps(testDefinition);
     for (Map<String, Object> step : steps) {
@@ -145,7 +144,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
   private void applyPowBlock(
       final TestDefinition testDefinition,
       final Map<String, Object> step,
-      final NonValidatingExecutionEngineChannel executionEngine) {
+      final StubExecutionEngineChannel executionEngine) {
     final String filename = (String) step.get("pow_block");
     final PowBlock block =
         TestDataUtils.loadSsz(testDefinition, filename + ".ssz_snappy", this::parsePowBlock);
@@ -182,7 +181,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       final Spec spec,
       final ForkChoice forkChoice,
       final Map<String, Object> step,
-      final NonValidatingExecutionEngineChannel executionEngine) {
+      final StubExecutionEngineChannel executionEngine) {
     final String blockName = get(step, "block");
     final SignedBeaconBlock block =
         TestDataUtils.loadSsz(
