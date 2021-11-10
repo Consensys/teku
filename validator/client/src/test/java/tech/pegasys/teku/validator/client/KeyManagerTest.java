@@ -16,10 +16,13 @@ package tech.pegasys.teku.validator.client;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -31,10 +34,10 @@ class KeyManagerTest {
 
   final ValidatorLoader validatorLoader = Mockito.mock(ValidatorLoader.class);
   final OwnedValidators ownedValidators = Mockito.mock(OwnedValidators.class);
-  final KeyManager keyManager = new KeyManager(validatorLoader);
 
   @Test
-  void shouldReturnKeyList() {
+  void shouldReturnKeyList(@TempDir Path tempDir) {
+    final KeyManager keyManager = new KeyManager(validatorLoader, tempDir);
     Set<BLSPublicKey> keySet = getList();
     when(ownedValidators.getPublicKeys()).thenReturn(keySet);
     when(validatorLoader.getOwnedValidators()).thenReturn(ownedValidators);
@@ -44,13 +47,21 @@ class KeyManagerTest {
   }
 
   @Test
-  void shouldReturnEmptyKeyList() {
+  void shouldReturnEmptyKeyList(@TempDir Path tempDir) {
+    final KeyManager keyManager = new KeyManager(validatorLoader, tempDir);
     Set<BLSPublicKey> keySet = Collections.emptySet();
     when(ownedValidators.getPublicKeys()).thenReturn(keySet);
     when(validatorLoader.getOwnedValidators()).thenReturn(ownedValidators);
     Set<BLSPublicKey> receivedKeySet = keyManager.getValidatorKeys();
 
     assertThat(receivedKeySet).isEmpty();
+  }
+
+  @Test
+  void shouldCheckExistingPathStructure(@TempDir Path tempDir) throws IOException {
+    final KeyManager keyManager = new KeyManager(validatorLoader, tempDir);
+    Path keystorePath = keyManager.getKeystorePath();
+    assertThat(keystorePath).exists();
   }
 
   private Set<BLSPublicKey> getList() {

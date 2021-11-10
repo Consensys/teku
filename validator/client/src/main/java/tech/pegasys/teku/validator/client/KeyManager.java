@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.validator.client;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Set;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
@@ -20,12 +23,22 @@ import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
 public class KeyManager {
 
   private final ValidatorLoader validatorLoader;
+  private final Path validatorDataDirectory;
 
-  public KeyManager(final ValidatorLoader validatorLoader) {
+  public KeyManager(final ValidatorLoader validatorLoader, Path validatorDataDirectory) {
     this.validatorLoader = validatorLoader;
+    this.validatorDataDirectory = validatorDataDirectory;
   }
 
   public Set<BLSPublicKey> getValidatorKeys() {
     return validatorLoader.getOwnedValidators().getPublicKeys();
+  }
+
+  public Path getKeystorePath() throws IOException {
+    Path keystorePath = validatorDataDirectory.resolve("keystores");
+    if (!keystorePath.toFile().exists()) {
+      Files.createDirectory(keystorePath);
+    }
+    return keystorePath;
   }
 }
