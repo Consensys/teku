@@ -27,14 +27,20 @@ public class RemoteValidatorCompatibilityAcceptanceTest extends AcceptanceTestBa
   private TekuValidatorNode validatorClient;
 
   @Test
-  void shouldRunUpdatedValidatorAgainstOlderBeaconNode() throws Exception {
+  void shouldRunUpdatedValidatorAgainstOldBeaconNode() throws Exception {
+    verifyCompatibility(DockerVersion.V21_10_0, DockerVersion.LOCAL_BUILD);
+  }
+
+  @Test
+  @Disabled("Last release currently has incorrect REST API format")
+  void shouldRunUpdatedValidatorAgainstLastReleaseBeaconNode() throws Exception {
     verifyCompatibility(DockerVersion.LAST_RELEASE, DockerVersion.LOCAL_BUILD);
   }
 
   @Test
   @Disabled("Older validator doesn't ignore unknown config items")
-  void shouldRunOlderValidatorAgainstUpdatedBeaconNode() throws Exception {
-    verifyCompatibility(DockerVersion.LOCAL_BUILD, DockerVersion.LAST_RELEASE);
+  void shouldRunLastReleaseValidatorAgainstUpdatedBeaconNode() throws Exception {
+    verifyCompatibility(DockerVersion.LOCAL_BUILD, DockerVersion.V21_10_0);
   }
 
   private void verifyCompatibility(
