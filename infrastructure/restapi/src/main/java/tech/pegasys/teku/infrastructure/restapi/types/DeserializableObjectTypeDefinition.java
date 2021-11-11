@@ -42,7 +42,7 @@ class DeserializableObjectTypeDefinition<TObject> extends SerializableObjectType
 
   @Override
   public TObject deserialize(final JsonParser p) throws IOException {
-    TObject result = initializer.get();
+    final TObject result = initializer.get();
     JsonToken t = p.getCurrentToken();
     if (t == null) {
       t = p.nextToken();

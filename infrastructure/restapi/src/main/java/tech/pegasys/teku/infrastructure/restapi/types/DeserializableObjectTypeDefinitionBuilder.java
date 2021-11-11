@@ -50,7 +50,7 @@ public class DeserializableObjectTypeDefinitionBuilder<TObject> {
   }
 
   public DeserializableTypeDefinition<TObject> build() {
-    checkNotNull(initializer);
+    checkNotNull(initializer, "Must specify an initializer");
     return new DeserializableObjectTypeDefinition<>(name, initializer, fields);
   }
 }

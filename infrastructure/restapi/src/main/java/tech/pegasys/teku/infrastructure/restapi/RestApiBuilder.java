@@ -121,7 +121,9 @@ public class RestApiBuilder {
 
     Optional<String> restApiDocs = Optional.empty();
     if (openApiDocsEnabled) {
-      restApiDocs = Optional.of(openApiDocBuilder.build());
+      final String apiDocs = openApiDocBuilder.build();
+      app.get("/swagger-docs", ctx -> ctx.json(apiDocs));
+      restApiDocs = Optional.of(apiDocs);
     }
     return new RestApi(app, restApiDocs);
   }

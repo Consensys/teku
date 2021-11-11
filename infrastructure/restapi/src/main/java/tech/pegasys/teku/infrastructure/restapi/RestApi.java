@@ -28,9 +28,7 @@ public class RestApi extends Service {
   public RestApi(final Javalin app, final Optional<String> restApiDocs) {
     this.app = app;
     this.restApiDocs = restApiDocs;
-    if (restApiDocs.isPresent()) {
-      app.get("/swagger-docs", ctx -> ctx.json(restApiDocs.get()));
-    }
+    if (restApiDocs.isPresent()) {}
   }
 
   public Optional<String> getRestApiDocs() {
