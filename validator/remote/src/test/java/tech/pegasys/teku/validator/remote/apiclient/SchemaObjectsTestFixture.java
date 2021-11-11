@@ -105,8 +105,8 @@ public class SchemaObjectsTestFixture {
     return new SyncCommitteeContribution(altairData.randomSyncCommitteeContribution(slot));
   }
 
-  public SignedBeaconBlock<?> signedBeaconBlock() {
-    return SignedBeaconBlock.create(dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE));
+  public SignedBeaconBlock signedBeaconBlock() {
+    return new SignedBeaconBlock(dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE));
   }
 
   public Attestation attestation() {

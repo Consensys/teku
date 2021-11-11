@@ -95,8 +95,8 @@ public class EventSubscriptionManagerTest {
       new FinalizedCheckpointEvent(data.randomBytes32(), data.randomBytes32(), epoch);
 
   private final SyncState sampleSyncState = SyncState.IN_SYNC;
-  private final SignedBeaconBlock<?> sampleBlock =
-      SignedBeaconBlock.create(data.randomSignedBeaconBlock(0));
+  private final SignedBeaconBlock sampleBlock =
+      new SignedBeaconBlock(data.randomSignedBeaconBlock(0));
   private final Attestation sampleAttestation = new Attestation(data.randomAttestation(0));
   private final SignedVoluntaryExit sampleVoluntaryExit =
       new SignedVoluntaryExit(data.randomSignedVoluntaryExit());

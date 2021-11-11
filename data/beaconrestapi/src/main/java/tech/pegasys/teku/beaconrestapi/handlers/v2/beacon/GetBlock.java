@@ -92,13 +92,13 @@ public class GetBlock extends AbstractHandler implements Handler {
           ctx, future, this::handleSszResult, this::resultFilename, SC_NOT_FOUND);
 
     } else {
-      final SafeFuture<Optional<SignedBeaconBlock<?>>> future =
+      final SafeFuture<Optional<SignedBeaconBlock>> future =
           chainDataProvider.getBlockV2(blockIdentifier);
       handleOptionalResult(ctx, future, this::handleJsonResult, SC_NOT_FOUND);
     }
   }
 
-  private Optional<String> handleJsonResult(Context ctx, final SignedBeaconBlock<?> response)
+  private Optional<String> handleJsonResult(Context ctx, final SignedBeaconBlock response)
       throws JsonProcessingException {
     final Version version = chainDataProvider.getVersionAtSlot(response.getMessage().slot);
     ctx.header(HEADER_CONSENSUS_VERSION, version.name());

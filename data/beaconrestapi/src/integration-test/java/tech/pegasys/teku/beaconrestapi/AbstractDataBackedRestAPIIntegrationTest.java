@@ -269,16 +269,16 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     return results;
   }
 
-  public List<SignedBeaconBlock<?>> createBlocksAtSlotsAndMapToApiResult(long... slots) {
+  public List<SignedBeaconBlock> createBlocksAtSlotsAndMapToApiResult(long... slots) {
     final UInt64[] unsignedSlots =
         Arrays.stream(slots).mapToObj(UInt64::valueOf).toArray(UInt64[]::new);
     return createBlocksAtSlotsAndMapToApiResult(unsignedSlots);
   }
 
-  public List<SignedBeaconBlock<?>> createBlocksAtSlotsAndMapToApiResult(UInt64... slots) {
+  public List<SignedBeaconBlock> createBlocksAtSlotsAndMapToApiResult(UInt64... slots) {
     return createBlocksAtSlots(slots).stream()
         .map(SignedBlockAndState::getBlock)
-        .map(SignedBeaconBlock::create)
+        .map(SignedBeaconBlock::new)
         .collect(Collectors.toList());
   }
 

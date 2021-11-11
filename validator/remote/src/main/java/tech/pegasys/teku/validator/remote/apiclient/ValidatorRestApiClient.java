@@ -54,7 +54,7 @@ public interface ValidatorRestApiClient {
   Optional<BeaconBlock> createUnsignedBlock(
       UInt64 slot, BLSSignature randaoReveal, Optional<Bytes32> graffiti);
 
-  SendSignedBlockResult sendSignedBlock(SignedBeaconBlock<?> beaconBlock);
+  SendSignedBlockResult sendSignedBlock(SignedBeaconBlock beaconBlock);
 
   Optional<AttestationData> createAttestationData(UInt64 slot, int committeeIndex);
 

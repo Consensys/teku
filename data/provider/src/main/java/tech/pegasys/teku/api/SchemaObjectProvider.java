@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.api;
 
+import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.BeaconBlockBody;
 import tech.pegasys.teku.api.schema.BeaconState;
@@ -40,10 +41,11 @@ public class SchemaObjectProvider {
     this.spec = spec;
   }
 
-  public SignedBeaconBlock<?> getSignedBeaconBlock(
+  public SignedBeaconBlock getSignedBeaconBlock(
       final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock internalBlock) {
 
-    return SignedBeaconBlock.create(internalBlock);
+    return new SignedBeaconBlock(
+        getBeaconBlock(internalBlock.getMessage()), new BLSSignature(internalBlock.getSignature()));
   }
 
   public BeaconBlock getBeaconBlock(

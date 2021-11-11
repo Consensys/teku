@@ -25,9 +25,9 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v2.beacon.GetBlockResponseV2;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
-import tech.pegasys.teku.api.schema.SignedBeaconBlock.SignedBeaconBlockAltair;
-import tech.pegasys.teku.api.schema.SignedBeaconBlock.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.api.schema.Version;
+import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
+import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetBlock;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -47,7 +47,7 @@ public class GetBlockV2IntegrationTest extends AbstractDataBackedRestAPIIntegrat
     assertThat(body.data).isInstanceOf(SignedBeaconBlockPhase0.class);
     final SignedBeaconBlockPhase0 data = (SignedBeaconBlockPhase0) body.getData();
     final SignedBlockAndState block = created.get(0);
-    assertThat(data).isEqualTo(SignedBeaconBlock.create(block.getBlock()));
+    assertThat(data).isEqualTo(new SignedBeaconBlock(block.getBlock()));
 
     assertThat(response.header(HEADER_CONSENSUS_VERSION)).isEqualTo(Version.phase0.name());
   }
