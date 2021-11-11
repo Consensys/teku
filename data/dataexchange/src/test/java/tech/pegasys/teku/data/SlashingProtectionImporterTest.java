@@ -144,6 +144,19 @@ public class SlashingProtectionImporterTest {
                 repairedEpoch));
   }
 
+  @Test
+  void shouldImportSlashProtectionFromString(@TempDir Path tempDir) throws IOException {
+    final SubCommandLogger logger = mock(SubCommandLogger.class);
+    final String slashStringInput =
+        "{\"metadata\":{\"interchange_format_version\":\"5\",\"genesis_validators_root\":\"0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2\"},\"data\":[{\"pubkey\":\"0x93247f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74a\",\"signed_blocks\":[],\"signed_attestations\":[]}]}";
+
+    SlashingProtectionImporter importer =
+        new SlashingProtectionImporter(logger, tempDir.toString());
+    importer.initialise(slashStringInput);
+
+    verify(logger, never()).error(any());
+  }
+
   private ValidatorSigningRecord loadSigningRecord(final File repairedRuleFile) throws IOException {
     return ValidatorSigningRecord.fromBytes(
         Bytes.wrap(Files.readAllBytes(repairedRuleFile.toPath())));

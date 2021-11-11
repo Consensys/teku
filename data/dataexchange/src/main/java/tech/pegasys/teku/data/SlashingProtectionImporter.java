@@ -16,6 +16,7 @@ package tech.pegasys.teku.data;
 import static tech.pegasys.teku.data.slashinginterchange.Metadata.INTERCHANGE_VERSION;
 
 import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -52,36 +53,28 @@ public class SlashingProtectionImporter {
     syncDataAccessor = SyncDataAccessor.create(Paths.get(path));
   }
 
+  public void initialise(final String inputString) throws IOException {
+    final ObjectMapper jsonMapper = jsonProvider.getObjectMapper();
+    try {
+      final JsonNode jsonNode = jsonMapper.readTree(inputString);
+
+      processJsonData("string input", jsonMapper, jsonNode);
+
+    } catch (JsonMappingException e) {
+      String cause = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
+      log.exit(1, "Failed to load data from string input. " + cause);
+    } catch (JsonParseException e) {
+      String cause = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
+      log.exit(1, "Json does not appear valid in string input. " + cause);
+    }
+  }
+
   public void initialise(final File inputFile) throws IOException {
     final ObjectMapper jsonMapper = jsonProvider.getObjectMapper();
     try {
       final JsonNode jsonNode = jsonMapper.readTree(inputFile);
 
-      metadata = jsonMapper.treeToValue(jsonNode.get("metadata"), Metadata.class);
-      if (metadata == null) {
-        log.exit(
-            1,
-            "Import file "
-                + inputFile.toString()
-                + " does not appear to have metadata information, and cannot be loaded.");
-        return; // Testing mocks log.exit
-      }
-      if (!INTERCHANGE_VERSION.equals(UInt64.valueOf(4))
-          && !INTERCHANGE_VERSION.equals(metadata.interchangeFormatVersion)) {
-        log.exit(
-            1,
-            "Import file "
-                + inputFile.toString()
-                + " has unsupported format version "
-                + metadata.interchangeFormatVersion
-                + ". Required version is "
-                + INTERCHANGE_VERSION);
-        return; // Testing mocks log.exit
-      }
-
-      data =
-          summariseCompleteInterchangeFormat(
-              Arrays.asList(jsonMapper.treeToValue(jsonNode.get("data"), SigningHistory[].class)));
+      processJsonData("file " + inputFile.toString(), jsonMapper, jsonNode);
 
     } catch (JsonMappingException e) {
       String cause = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
@@ -90,6 +83,36 @@ public class SlashingProtectionImporter {
       String cause = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
       log.exit(1, "Json does not appear valid in file " + inputFile.getName() + ". " + cause);
     }
+  }
+
+  private void processJsonData(
+      final String importFromMessage, final ObjectMapper jsonMapper, final JsonNode jsonNode)
+      throws JsonProcessingException {
+    metadata = jsonMapper.treeToValue(jsonNode.get("metadata"), Metadata.class);
+    if (metadata == null) {
+      log.exit(
+          1,
+          "Import "
+              + importFromMessage
+              + " does not appear to have metadata information, and cannot be loaded.");
+      return; // Testing mocks log.exit
+    }
+    if (!INTERCHANGE_VERSION.equals(UInt64.valueOf(4))
+        && !INTERCHANGE_VERSION.equals(metadata.interchangeFormatVersion)) {
+      log.exit(
+          1,
+          "Import "
+              + importFromMessage
+              + " has unsupported format version "
+              + metadata.interchangeFormatVersion
+              + ". Required version is "
+              + INTERCHANGE_VERSION);
+      return; // Testing mocks log.exit
+    }
+
+    data =
+        summariseCompleteInterchangeFormat(
+            Arrays.asList(jsonMapper.treeToValue(jsonNode.get("data"), SigningHistory[].class)));
   }
 
   private List<SigningHistory> summariseCompleteInterchangeFormat(
