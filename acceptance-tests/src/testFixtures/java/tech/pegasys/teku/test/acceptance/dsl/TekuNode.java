@@ -88,8 +88,12 @@ public class TekuNode extends Node {
   private boolean started = false;
   private Set<File> configFiles;
 
-  private TekuNode(final SimpleHttpClient httpClient, final Network network, final Config config) {
-    super(network, TEKU_DOCKER_IMAGE, LOG);
+  private TekuNode(
+      final SimpleHttpClient httpClient,
+      final Network network,
+      final DockerVersion version,
+      final Config config) {
+    super(network, TEKU_DOCKER_IMAGE_NAME, version, LOG);
     this.httpClient = httpClient;
     this.config = config;
     this.spec = SpecFactory.create(config.getNetworkName());
@@ -108,14 +112,15 @@ public class TekuNode extends Node {
   public static TekuNode create(
       final SimpleHttpClient httpClient,
       final Network network,
-      Consumer<Config> configOptions,
+      final DockerVersion version,
+      final Consumer<Config> configOptions,
       final GenesisStateGenerator genesisStateGenerator)
       throws TimeoutException, IOException {
 
     final Config config = new Config();
     configOptions.accept(config);
 
-    final TekuNode node = new TekuNode(httpClient, network, config);
+    final TekuNode node = new TekuNode(httpClient, network, version, config);
 
     if (config.getGenesisStateConfig().isPresent()) {
       final GenesisStateConfig genesisConfig = config.getGenesisStateConfig().get();
