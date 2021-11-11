@@ -24,7 +24,6 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.infrastructure.restapi.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.validator.client.restapi.ValidatorTypes;
 
 public class DeleteKeys extends RestApiEndpoint {
@@ -46,7 +45,7 @@ public class DeleteKeys extends RestApiEndpoint {
                     + "<br>2. Delete key(s) and serialize its associated slashing protection data"
                     + "<br><br>DELETE should never return a 404 response, even if all pubkeys from `request.pubkeys` have no key stores "
                     + "or slashing protection data.")
-            .requestBodyType(DeserializableTypeDefinition.listOf(ValidatorTypes.PUBKEY_TYPE))
+            .requestBodyType(ValidatorTypes.DELETE_KEYS_REQUEST)
             .response(SC_OK, "Success response", ValidatorTypes.DELETE_KEYS_RESPONSE_TYPE)
             .withAuthenticationResponses()
             .build());

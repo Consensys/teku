@@ -22,6 +22,8 @@ import tech.pegasys.teku.infrastructure.restapi.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.restapi.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.types.SerializableTypeDefinition;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysRequest;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysResponse;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeletionStatus;
 
 public class ValidatorTypes {
@@ -67,14 +69,29 @@ public class ValidatorTypes {
           .withField(
               "status", DeserializableTypeDefinition.enumOf(DeletionStatus.class), __ -> null)
           .withOptionalField("message", CoreTypes.STRING_TYPE, DeleteKeyResult::getMessage)
-          .withOptionalField(
-              "slashing_protection", CoreTypes.STRING_TYPE, DeleteKeyResult::getSlashingProtection)
           .build();
 
-  public static SerializableTypeDefinition<List<DeleteKeyResult>> DELETE_KEYS_RESPONSE_TYPE =
-      SerializableTypeDefinition.<List<DeleteKeyResult>>object()
+  public static SerializableTypeDefinition<DeleteKeysResponse> DELETE_KEYS_RESPONSE_TYPE =
+      SerializableTypeDefinition.object(DeleteKeysResponse.class)
           .name("DeleteKeysResponse")
           .withField(
-              "data", SerializableTypeDefinition.listOf(DELETE_KEY_RESULT), Function.identity())
+              "data",
+              SerializableTypeDefinition.listOf(DELETE_KEY_RESULT),
+              DeleteKeysResponse::getData)
+          .withField(
+              "slashing_protection",
+              CoreTypes.STRING_TYPE,
+              DeleteKeysResponse::getSlashingProtection)
+          .build();
+
+  public static DeserializableTypeDefinition<DeleteKeysRequest> DELETE_KEYS_REQUEST =
+      DeserializableTypeDefinition.object(DeleteKeysRequest.class)
+          .name("DeleteKeysRequest")
+          .initializer(DeleteKeysRequest::new)
+          .withField(
+              "pubkeys",
+              DeserializableTypeDefinition.listOf(ValidatorTypes.PUBKEY_TYPE),
+              DeleteKeysRequest::getPublicKeys,
+              DeleteKeysRequest::setPublicKeys)
           .build();
 }

@@ -1,0 +1,12 @@
+{
+  "title": "DeleteKeysRequest",
+  "type": "object",
+  "properties": {
+    "pubkeys": {
+      "type": "array",
+      "items": {
+        "$ref": "#/components/schemas/PubKey"
+      }
+    }
+  }
+}

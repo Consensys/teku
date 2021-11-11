@@ -13,9 +13,6 @@
     },
     "message": {
       "type": "string"
-    },
-    "slashing_protection": {
-      "type": "string"
     }
   }
 }
