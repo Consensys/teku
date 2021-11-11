@@ -22,6 +22,11 @@ import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
 
 public class KeyManager {
 
+  public enum ValidatorKeystoreDirectories {
+    KEYSTORES,
+    KEYSTORE_PASSWORDS
+  }
+
   private final ValidatorLoader validatorLoader;
   private final Path validatorDataDirectory;
 
@@ -34,8 +39,8 @@ public class KeyManager {
     return validatorLoader.getOwnedValidators().getPublicKeys();
   }
 
-  public Path getKeystorePath() throws IOException {
-    Path keystorePath = validatorDataDirectory.resolve("keystores");
+  public Path getKeystorePathFor(final ValidatorKeystoreDirectories directory) throws IOException {
+    Path keystorePath = validatorDataDirectory.resolve(directory.toString().toLowerCase());
     if (!keystorePath.toFile().exists()) {
       Files.createDirectory(keystorePath);
     }

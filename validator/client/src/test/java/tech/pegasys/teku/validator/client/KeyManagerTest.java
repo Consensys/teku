@@ -62,14 +62,16 @@ class KeyManagerTest {
   void shouldCheckExistingPathStructure(@TempDir Path tempDir) throws IOException {
     Path createdPath = Files.createDirectory(tempDir.resolve("keystores"));
     final KeyManager keyManager = new KeyManager(validatorLoader, tempDir);
-    Path keystorePath = keyManager.getKeystorePath();
+    Path keystorePath =
+        keyManager.getKeystorePathFor(KeyManager.ValidatorKeystoreDirectories.KEYSTORES);
     assertThat(keystorePath).isEqualTo(createdPath);
   }
 
   @Test
   void shouldCreatePathStructure(@TempDir Path tempDir) throws IOException {
     final KeyManager keyManager = new KeyManager(validatorLoader, tempDir);
-    Path keystorePath = keyManager.getKeystorePath();
+    Path keystorePath =
+        keyManager.getKeystorePathFor(KeyManager.ValidatorKeystoreDirectories.KEYSTORE_PASSWORDS);
     assertThat(keystorePath).exists();
   }
 
