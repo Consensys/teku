@@ -215,6 +215,10 @@ public class TekuConfiguration {
       DataConfig dataConfig = dataConfigBuilder.build();
       loggingConfigBuilder.dataDirectory(dataConfig.getDataBasePath().toString());
 
+      ValidatorConfig validatorConfig = validatorConfigBuilder.build();
+      // We don't need to update head for empty slots when using dependent roots
+      storeConfigBuilder.updateHeadForEmptySlotsDefault(!validatorConfig.useDependentRoots());
+
       // Add specs
       interopConfigBuilder.specProvider(spec);
       storageConfigurationBuilder.specProvider(spec);
@@ -228,7 +232,7 @@ public class TekuConfiguration {
           spec,
           storageConfigurationBuilder.build(),
           weakSubjectivityBuilder.build(),
-          validatorConfigBuilder.build(),
+          validatorConfig,
           powchainConfigBuilder.build(),
           executionEngineConfigBuilder.build(),
           interopConfigBuilder.build(),

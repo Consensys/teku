@@ -148,9 +148,7 @@ public class ValidatorOptions {
                     .useDependentRoots(useDependentRoots)
                     .generateEarlyAttestations(generateEarlyAttestations)
                     .sendAttestationsAsBatch(sendAttestationsAsBatch)
-                    .additionalPublishUrls(additionalPublishUrls))
-        // We don't need to update head for empty slots when using dependent roots
-        .store(b -> b.updateHeadForEmptySlots(!useDependentRoots));
+                    .additionalPublishUrls(additionalPublishUrls));
     validatorKeysOptions.configure(builder);
   }
 }
