@@ -15,10 +15,21 @@ package tech.pegasys.teku.beaconrestapi;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.util.ArrayList;
 import java.util.List;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class BeaconRestApiConfig {
+  public static final int DEFAULT_REST_API_PORT = 5051;
+  public static final int DEFAULT_MAX_EVENT_QUEUE_SIZE = 250;
+  public static final int DEFAULT_MAX_URL_LENGTH = 65535;
+  public static final String DEFAULT_REST_API_INTERFACE = "127.0.0.1";
+  public static final List<String> DEFAULT_REST_API_HOST_ALLOWLIST =
+      List.of("127.0.0.1", "localhost");
+  public static final List<String> DEFAULT_REST_API_CORS_ALLOWED_ORIGINS = new ArrayList<>();
+  public static final boolean DEFAULT_BEACON_LIVENESS_TRACKING_ENABLED = false;
+  public static final int DEFAULT_SUBSCRIBE_THREADS_COUNT = 1;
+
   // Beacon REST API
   private final int restApiPort;
   private final boolean restApiDocsEnabled;
@@ -107,17 +118,18 @@ public class BeaconRestApiConfig {
 
   public static final class BeaconRestApiConfigBuilder {
     // Beacon REST API
-    private int restApiPort;
-    private boolean restApiDocsEnabled;
-    private boolean restApiEnabled;
-    private boolean beaconLivenessTrackingEnabled;
-    private String restApiInterface;
-    private List<String> restApiHostAllowlist;
-    private List<String> restApiCorsAllowedOrigins;
+    private int restApiPort = DEFAULT_REST_API_PORT;
+    private boolean restApiDocsEnabled = false;
+    private boolean restApiEnabled = false;
+    private boolean beaconLivenessTrackingEnabled = DEFAULT_BEACON_LIVENESS_TRACKING_ENABLED;
+    private String restApiInterface = DEFAULT_REST_API_INTERFACE;
+    private List<String> restApiHostAllowlist = DEFAULT_REST_API_HOST_ALLOWLIST;
+    private List<String> restApiCorsAllowedOrigins = DEFAULT_REST_API_CORS_ALLOWED_ORIGINS;
+    private int maxPendingEvents = DEFAULT_MAX_EVENT_QUEUE_SIZE;
+    private int maxUrlLength = DEFAULT_MAX_URL_LENGTH;
+    private int validatorThreads = DEFAULT_SUBSCRIBE_THREADS_COUNT;
+
     private Eth1Address eth1DepositContractAddress;
-    private int maxPendingEvents;
-    private int maxUrlLength;
-    private int validatorThreads;
 
     private BeaconRestApiConfigBuilder() {}
 
@@ -157,6 +169,14 @@ public class BeaconRestApiConfig {
         final Eth1Address eth1DepositContractAddress) {
       checkNotNull(eth1DepositContractAddress);
       this.eth1DepositContractAddress = eth1DepositContractAddress;
+      return this;
+    }
+
+    public BeaconRestApiConfigBuilder eth1DepositContractAddressDefault(
+        final Eth1Address eth1DepositContractAddress) {
+      if (this.eth1DepositContractAddress == null) {
+        this.eth1DepositContractAddress = eth1DepositContractAddress;
+      }
       return this;
     }
 
