@@ -100,8 +100,7 @@ import tech.pegasys.teku.storage.server.DatabaseStorageException;
     footer = "Teku is licensed under the Apache License 2.0")
 public class BeaconNodeCommand implements Callable<Integer> {
 
-  public static final String LOG_FILE = "teku.log";
-  public static final String LOG_PATTERN = "teku_%d{yyyy-MM-dd}.log";
+  public static final String LOG_FILE_PREFIX = "teku";
 
   public static final String CONFIG_FILE_OPTION_NAME = "--config-file";
   static final String TEKU_CONFIG_FILE_ENV = "TEKU_CONFIG_FILE";
@@ -358,7 +357,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
       p2POptions.configure(builder);
       beaconRestApiOptions.configure(builder);
       validatorRestApiOptions.configure(builder);
-      loggingOptions.configure(builder, dataOptions.getDataBasePath(), LOG_FILE, LOG_PATTERN);
+      loggingOptions.configure(builder, LOG_FILE_PREFIX);
       interopOptions.configure(builder);
       dataStorageOptions.configure(builder);
       metricsOptions.configure(builder);

@@ -14,9 +14,10 @@
 package tech.pegasys.teku.infrastructure.logging;
 
 public class LoggingConfig {
-  public static final String DEFAULT_LOG_SHORT_FILE_NAME = "teku-node";
-  public static final String DEFAULT_LOG_FILE_EXTENSION = "log";
-  public static final String DEFAULT_LOG_PATTERN = "%d{yyyy-MM-dd}";
+  public static final String DEFAULT_LOG_FILE_NAME_PREFIX = "teku-node";
+  public static final String DEFAULT_LOG_FILE_NAME_SUFFIX = ".log";
+  public static final String DEFAULT_LOG_FILE_NAME_PATTERN_SUFFIX = "_%d{yyyy-MM-dd}.log";
+
   public static final String DEFAULT_LOG_DIRECTORY = ".";
   public static final String DATA_LOG_SUBDIRECTORY = "logs";
 
@@ -86,30 +87,41 @@ public class LoggingConfig {
     private boolean includeP2pWarningsEnabled = false;
     private LoggingDestination destination = LoggingDestination.DEFAULT_BOTH;
 
-    private String logShortFileName = DEFAULT_LOG_SHORT_FILE_NAME;
-    private String logFileExtension = DEFAULT_LOG_FILE_EXTENSION;
-    private String logPattern = DEFAULT_LOG_PATTERN;
+    private String logFileNamePrefix = DEFAULT_LOG_FILE_NAME_PREFIX;
+    private String logFileName;
+    private String logFileNamePattern;
+
     private String dataDirectory;
     private String logDirectory;
-    private String logFile;
-    private String logFileNamePattern;
+    private String logPathFile;
+    private String logPathFilePattern;
 
     private LoggingConfigBuilder() {}
 
     private void initMissingDefaults() {
-      if (logDirectory == null) {
-        if (dataDirectory == null) {
-          logDirectory = DEFAULT_LOG_DIRECTORY;
-        } else {
-          logDirectory = dataDirectory + SEP + DATA_LOG_SUBDIRECTORY;
+      if (logPathFile == null || logPathFilePattern == null) {
+        if (logFileName == null) {
+          logFileName = logFileNamePrefix + DEFAULT_LOG_FILE_NAME_SUFFIX;
         }
-      }
-      if (logFile == null) {
-        logFile = logDirectory + SEP + logShortFileName + "." + logFileExtension;
-      }
-      if (logFileNamePattern == null) {
-        logFileNamePattern =
-            logDirectory + SEP + logShortFileName + "_" + logPattern + "." + logFileExtension;
+        if (logFileNamePattern == null) {
+          logFileNamePattern = logFileNamePrefix + DEFAULT_LOG_FILE_NAME_PATTERN_SUFFIX;
+        }
+
+        if (logDirectory == null) {
+          if (dataDirectory == null) {
+            logDirectory = DEFAULT_LOG_DIRECTORY;
+          } else {
+            logDirectory = dataDirectory + SEP + DATA_LOG_SUBDIRECTORY;
+          }
+        }
+
+        if (logPathFile == null) {
+          logPathFile = logDirectory + SEP + logFileName;
+        }
+        if (logPathFilePattern == null) {
+          logPathFilePattern =
+              logDirectory + SEP + logFileNamePattern;
+        }
       }
     }
 
@@ -139,18 +151,8 @@ public class LoggingConfig {
       return this;
     }
 
-    public LoggingConfigBuilder logShortFileName(String logShortFileName) {
-      this.logShortFileName = logShortFileName;
-      return this;
-    }
-
-    public LoggingConfigBuilder logFileExtension(String logFileExtension) {
-      this.logFileExtension = logFileExtension;
-      return this;
-    }
-
-    public LoggingConfigBuilder logPattern(String logPattern) {
-      this.logPattern = logPattern;
+    public LoggingConfigBuilder dataDirectory(String dataDirectory) {
+      this.dataDirectory = dataDirectory;
       return this;
     }
 
@@ -159,18 +161,28 @@ public class LoggingConfig {
       return this;
     }
 
-    public LoggingConfigBuilder dataDirectory(String dataDirectory) {
-      this.dataDirectory = dataDirectory;
+    public LoggingConfigBuilder logFilePrefix(String logShortFileName) {
+      this.logFileNamePrefix = logShortFileName;
       return this;
     }
 
-    public LoggingConfigBuilder logFile(String logFile) {
-      this.logFile = logFile;
+    public LoggingConfigBuilder logFileName(String logFileName) {
+      this.logFileName = logFileName;
       return this;
     }
 
     public LoggingConfigBuilder logFileNamePattern(String logFileNamePattern) {
       this.logFileNamePattern = logFileNamePattern;
+      return this;
+    }
+
+    public LoggingConfigBuilder logPathFile(String logPathFile) {
+      this.logPathFile = logPathFile;
+      return this;
+    }
+
+    public LoggingConfigBuilder logPathFilePattern(String logPathFilePattern) {
+      this.logPathFilePattern = logPathFilePattern;
       return this;
     }
 
@@ -182,8 +194,8 @@ public class LoggingConfig {
           includeValidatorDutiesEnabled,
           includeP2pWarningsEnabled,
           destination,
-          logFile,
-          logFileNamePattern);
+          logPathFile,
+          logPathFilePattern);
     }
   }
 }

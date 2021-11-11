@@ -18,8 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hyperledger.besu.metrics.StandardMetricCategory.JVM;
 import static org.hyperledger.besu.metrics.StandardMetricCategory.PROCESS;
 import static tech.pegasys.teku.cli.BeaconNodeCommand.CONFIG_FILE_OPTION_NAME;
-import static tech.pegasys.teku.cli.BeaconNodeCommand.LOG_FILE;
-import static tech.pegasys.teku.cli.BeaconNodeCommand.LOG_PATTERN;
+import static tech.pegasys.teku.cli.BeaconNodeCommand.LOG_FILE_PREFIX;
 import static tech.pegasys.teku.cli.OSUtils.SLASH;
 import static tech.pegasys.teku.infrastructure.metrics.MetricsConfig.DEFAULT_METRICS_CATEGORIES;
 import static tech.pegasys.teku.infrastructure.logging.LoggingDestination.BOTH;
@@ -50,6 +49,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import picocli.CommandLine;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApiConfig;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.networking.nat.NatMethod;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
@@ -61,6 +61,11 @@ import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.ValidatorPerformanceTrackingMode;
 
 public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
+
+  private static final String LOG_FILE =
+      LOG_FILE_PREFIX + LoggingConfig.DEFAULT_LOG_FILE_NAME_SUFFIX;
+  private static final String LOG_PATTERN =
+      LOG_FILE_PREFIX + LoggingConfig.DEFAULT_LOG_FILE_NAME_PATTERN_SUFFIX;
 
   final Eth1Address address =
       Eth1Address.fromHexString("0x77f7bED277449F51505a4C54550B074030d989bC");
@@ -444,8 +449,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .logging(
             b ->
                 b.destination(DEFAULT_BOTH)
-                    .logFile(StringUtils.joinWith(SLASH, dataPath.toString(), "logs", LOG_FILE))
-                    .logFileNamePattern(
+                    .logPathFile(StringUtils.joinWith(SLASH, dataPath.toString(), "logs", LOG_FILE))
+                    .logPathFilePattern(
                         StringUtils.joinWith(SLASH, dataPath.toString(), "logs", LOG_PATTERN)))
         .metrics(
             b -> b.metricsCategories(DEFAULT_METRICS_CATEGORIES).metricsPublicationInterval(60))
@@ -474,8 +479,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .logging(
             b ->
                 b.destination(BOTH)
-                    .logFile(StringUtils.joinWith(SLASH, dataPath.toString(), "logs", LOG_FILE))
-                    .logFileNamePattern(
+                    .logPathFile(StringUtils.joinWith(SLASH, dataPath.toString(), "logs", LOG_FILE))
+                    .logPathFilePattern(
                         StringUtils.joinWith(SLASH, dataPath.toString(), "logs", LOG_PATTERN)));
   }
 
@@ -556,8 +561,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
             b ->
                 b.colorEnabled(true)
                     .destination(DEFAULT_BOTH)
-                    .logFile(StringUtils.joinWith(SLASH, dataPath.toString(), "logs", LOG_FILE))
-                    .logFileNamePattern(
+                    .logPathFile(StringUtils.joinWith(SLASH, dataPath.toString(), "logs", LOG_FILE))
+                    .logPathFilePattern(
                         StringUtils.joinWith(SLASH, dataPath.toString(), "logs", LOG_PATTERN))
                     .includeEventsEnabled(true)
                     .includeValidatorDutiesEnabled(true))
