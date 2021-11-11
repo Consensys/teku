@@ -1,0 +1,16 @@
+{
+  "type" : "object",
+  "properties" : {
+    "epoch" : {
+      "type" : "string",
+      "format" : "uint64"
+    },
+    "indices" : {
+      "type" : "array",
+      "items" : {
+        "type" : "string",
+        "format" : "uint64"
+      }
+    }
+  }
+}

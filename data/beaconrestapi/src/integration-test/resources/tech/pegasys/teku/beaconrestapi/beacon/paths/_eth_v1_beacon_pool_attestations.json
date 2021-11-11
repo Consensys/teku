@@ -1,0 +1,62 @@
+{
+  "get" : {
+    "tags" : [ "Beacon" ],
+    "summary" : "Get attestations",
+    "description" : "Retrieves attestations known by the node but not necessarily incorporated into any block.",
+    "operationId" : "getEthV1BeaconPoolAttestations",
+    "responses" : {
+      "200" : {
+        "description" : "OK",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetAttestationsResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "Bad Request"
+      },
+      "500" : {
+        "description" : "Server Error"
+      }
+    }
+  },
+  "post" : {
+    "tags" : [ "Beacon", "Validator Required Api" ],
+    "summary" : "Submit signed attestations",
+    "description" : "Submit signed attestations to the beacon node to be validated and submitted if valid.\n\nThis endpoint does not protected against slashing.",
+    "operationId" : "postEthV1BeaconPoolAttestations",
+    "requestBody" : {
+      "content" : {
+        "application/json" : {
+          "schema" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Attestation"
+            }
+          }
+        }
+      }
+    },
+    "responses" : {
+      "200" : {
+        "description" : "The Attestation was accepted, validated, and submitted"
+      },
+      "400" : {
+        "description" : "Errors with one or more sync committee messages",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/PostDataFailureResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Server Error"
+      }
+    }
+  }
+}

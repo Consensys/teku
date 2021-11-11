@@ -1,0 +1,13 @@
+{
+  "type" : "object",
+  "properties" : {
+    "message" : {
+      "$ref" : "#/components/schemas/BeaconBlockHeader"
+    },
+    "signature" : {
+      "type" : "string",
+      "description" : "Bytes96 hexadecimal",
+      "format" : "byte"
+    }
+  }
+}

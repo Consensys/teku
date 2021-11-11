@@ -1,0 +1,27 @@
+{
+  "get" : {
+    "tags" : [ "Node" ],
+    "summary" : "Get node health",
+    "description" : "Returns node health status in http status codes. Useful for load balancers.",
+    "operationId" : "getEthV1NodeHealth",
+    "parameters" : [ {
+      "name" : "syncing_status",
+      "in" : "query",
+      "description" : "Customize syncing status instead of default status code (206)",
+      "schema" : {
+        "type" : "string"
+      }
+    } ],
+    "responses" : {
+      "200" : {
+        "description" : "Node is ready"
+      },
+      "206" : {
+        "description" : "Node is syncing but can serve incomplete data"
+      },
+      "503" : {
+        "description" : "Node not initialized or having issues"
+      }
+    }
+  }
+}

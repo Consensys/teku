@@ -1,0 +1,49 @@
+{
+  "get" : {
+    "tags" : [ "Beacon", "Validator Required Api" ],
+    "summary" : "Get validator from state",
+    "description" : "Returns validator specified by state and id or public key along with status and balance.",
+    "operationId" : "getEthV1BeaconStatesWithState_idValidatorsWithValidator_id",
+    "parameters" : [ {
+      "name" : "state_id",
+      "in" : "path",
+      "description" : "State identifier. Can be one of: \"head\" (canonical head in node's view), \"genesis\", \"finalized\", \"justified\", &lt;slot&gt;, &lt;hex encoded stateRoot with 0x prefix&gt;.",
+      "required" : true,
+      "schema" : {
+        "type" : "string"
+      }
+    }, {
+      "name" : "validator_id",
+      "in" : "path",
+      "description" : "Either hex encoded public key (with 0x prefix) or validator index",
+      "required" : true,
+      "schema" : {
+        "type" : "string"
+      }
+    } ],
+    "responses" : {
+      "200" : {
+        "description" : "OK",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetStateValidatorResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "Bad Request"
+      },
+      "404" : {
+        "description" : "Not Found"
+      },
+      "500" : {
+        "description" : "Server Error"
+      },
+      "503" : {
+        "description" : "Beacon node is currently syncing and not serving requests"
+      }
+    }
+  }
+}

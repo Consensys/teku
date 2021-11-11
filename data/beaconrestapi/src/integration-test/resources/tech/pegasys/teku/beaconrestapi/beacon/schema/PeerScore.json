@@ -1,0 +1,16 @@
+{
+  "type" : "object",
+  "properties" : {
+    "peer_id" : {
+      "type" : "string",
+      "description" : "Cryptographic hash of a peer’s public key. '[Read more](https://docs.libp2p.io/concepts/peer-id/)",
+      "example" : "QmYyQSo1c1Ym7orWxLYvCrM2EmxFTANf8wXmmE7DWjhx5N"
+    },
+    "gossip_score" : {
+      "type" : "number",
+      "description" : "Gossip score for the associated peer.",
+      "format" : "double",
+      "example" : 1.2
+    }
+  }
+}

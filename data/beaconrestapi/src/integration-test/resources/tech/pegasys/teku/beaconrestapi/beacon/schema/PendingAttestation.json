@@ -1,0 +1,21 @@
+{
+  "type" : "object",
+  "properties" : {
+    "aggregation_bits" : {
+      "type" : "string",
+      "description" : "SSZ hexadecimal",
+      "format" : "byte"
+    },
+    "data" : {
+      "$ref" : "#/components/schemas/AttestationData"
+    },
+    "inclusion_delay" : {
+      "type" : "string",
+      "format" : "uint64"
+    },
+    "proposer_index" : {
+      "type" : "string",
+      "format" : "uint64"
+    }
+  }
+}
