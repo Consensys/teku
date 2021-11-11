@@ -408,7 +408,7 @@ class RemoteValidatorApiHandlerTest {
     final SendSignedBlockResult expectedResult = SendSignedBlockResult.success(Bytes32.ZERO);
 
     final tech.pegasys.teku.api.schema.SignedBeaconBlock schemaSignedBlock =
-        new tech.pegasys.teku.api.schema.SignedBeaconBlock(signedBeaconBlock);
+        tech.pegasys.teku.api.schema.SignedBeaconBlock.create(signedBeaconBlock);
 
     when(apiClient.sendSignedBlock(any())).thenReturn(expectedResult);
 

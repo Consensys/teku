@@ -130,7 +130,8 @@ class PostBlockTest {
   }
 
   private String buildSignedBeaconBlock() throws JsonProcessingException {
-    SignedBeaconBlock block = new SignedBeaconBlock(dataStructureUtil.randomSignedBeaconBlock(3));
+    SignedBeaconBlock block =
+        SignedBeaconBlock.create(dataStructureUtil.randomSignedBeaconBlock(3));
     return jsonProvider.objectToJSON(block);
   }
 }

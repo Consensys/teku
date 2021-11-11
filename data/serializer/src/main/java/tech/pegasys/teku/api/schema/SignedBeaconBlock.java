@@ -19,7 +19,13 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
+import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
 import tech.pegasys.teku.api.schema.interfaces.SignedBlock;
+import tech.pegasys.teku.api.schema.merge.SignedBeaconBlockMerge;
+import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.spec.Spec;
 
 public class SignedBeaconBlock implements SignedBlock {
@@ -32,7 +38,7 @@ public class SignedBeaconBlock implements SignedBlock {
     return message;
   }
 
-  public SignedBeaconBlock(
+  protected SignedBeaconBlock(
       tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock internalBlock) {
     this.signature = new BLSSignature(internalBlock.getSignature());
     this.message = new BeaconBlock(internalBlock.getMessage());
@@ -44,6 +50,23 @@ public class SignedBeaconBlock implements SignedBlock {
       @JsonProperty("signature") final BLSSignature signature) {
     this.message = message;
     this.signature = signature;
+  }
+
+  public static SignedBeaconBlock create(
+      tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock internalBlock) {
+    tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody beaconBlock =
+        internalBlock.getMessage().getBody();
+
+    return Stream.of(
+            () -> beaconBlock.toVersionMerge().map(__ -> new SignedBeaconBlockMerge(internalBlock)),
+            () ->
+                beaconBlock.toVersionAltair().map(__ -> new SignedBeaconBlockAltair(internalBlock)),
+            (Supplier<Optional<SignedBeaconBlock>>)
+                () -> Optional.<SignedBeaconBlock>of(new SignedBeaconBlockPhase0(internalBlock)))
+        .map(Supplier::get)
+        .flatMap(Optional::stream)
+        .findFirst()
+        .orElseThrow();
   }
 
   public tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock asInternalSignedBeaconBlock(

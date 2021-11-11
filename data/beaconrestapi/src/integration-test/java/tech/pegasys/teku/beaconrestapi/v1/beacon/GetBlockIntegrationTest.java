@@ -38,7 +38,7 @@ public class GetBlockIntegrationTest extends AbstractDataBackedRestAPIIntegratio
         jsonProvider.jsonToObject(response.body().string(), GetBlockResponse.class);
     final SignedBeaconBlock data = body.data;
     final SignedBlockAndState block = created.get(0);
-    assertThat(data).isEqualTo(new SignedBeaconBlock(block.getBlock()));
+    assertThat(data).isEqualTo(SignedBeaconBlock.create(block.getBlock()));
   }
 
   @Test

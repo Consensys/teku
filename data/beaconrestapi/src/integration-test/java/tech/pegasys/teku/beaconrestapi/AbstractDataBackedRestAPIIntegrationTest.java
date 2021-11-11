@@ -248,7 +248,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   public List<SignedBeaconBlock> createBlocksAtSlotsAndMapToApiResult(UInt64... slots) {
     return createBlocksAtSlots(slots).stream()
         .map(SignedBlockAndState::getBlock)
-        .map(SignedBeaconBlock::new)
+        .map(SignedBeaconBlock::create)
         .collect(Collectors.toList());
   }
 

@@ -106,7 +106,7 @@ public class SchemaObjectsTestFixture {
   }
 
   public SignedBeaconBlock signedBeaconBlock() {
-    return new SignedBeaconBlock(dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE));
+    return SignedBeaconBlock.create(dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE));
   }
 
   public Attestation attestation() {
