@@ -1,0 +1,23 @@
+{
+  "type" : "object",
+  "properties" : {
+    "slot" : {
+      "type" : "string",
+      "format" : "uint64"
+    },
+    "beacon_block_root" : {
+      "type" : "string",
+      "description" : "Bytes32 hexadecimal",
+      "format" : "byte"
+    },
+    "validator_index" : {
+      "type" : "string",
+      "format" : "uint64"
+    },
+    "signature" : {
+      "type" : "string",
+      "description" : "Bytes96 hexadecimal",
+      "format" : "byte"
+    }
+  }
+}

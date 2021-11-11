@@ -1,0 +1,45 @@
+{
+  "get" : {
+    "tags" : [ "Beacon", "Validator Required Api" ],
+    "summary" : "Get sync committees",
+    "description" : "Retrieves the sync committees for the given state.",
+    "operationId" : "getEthV1BeaconStatesWithState_idSync_committees",
+    "parameters" : [ {
+      "name" : "state_id",
+      "in" : "path",
+      "description" : "State identifier. Can be one of: \"head\" (canonical head in node's view), \"genesis\", \"finalized\", \"justified\", &lt;slot&gt;, &lt;hex encoded stateRoot with 0x prefix&gt;.",
+      "required" : true,
+      "schema" : {
+        "type" : "string"
+      }
+    }, {
+      "name" : "epoch",
+      "in" : "query",
+      "description" : "`uint64` Epoch number to query.",
+      "schema" : {
+        "type" : "string"
+      }
+    } ],
+    "responses" : {
+      "200" : {
+        "description" : "OK",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetStateSyncCommitteesResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "Bad Request"
+      },
+      "404" : {
+        "description" : "Not Found"
+      },
+      "500" : {
+        "description" : "Server Error"
+      }
+    }
+  }
+}

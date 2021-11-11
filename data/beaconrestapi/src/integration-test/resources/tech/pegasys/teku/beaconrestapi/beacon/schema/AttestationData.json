@@ -1,0 +1,24 @@
+{
+  "type" : "object",
+  "properties" : {
+    "slot" : {
+      "type" : "string",
+      "format" : "uint64"
+    },
+    "index" : {
+      "type" : "string",
+      "format" : "uint64"
+    },
+    "beacon_block_root" : {
+      "type" : "string",
+      "description" : "Bytes32 hexadecimal",
+      "format" : "byte"
+    },
+    "source" : {
+      "$ref" : "#/components/schemas/Checkpoint"
+    },
+    "target" : {
+      "$ref" : "#/components/schemas/Checkpoint"
+    }
+  }
+}

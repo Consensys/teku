@@ -1,0 +1,18 @@
+{
+  "type" : "object",
+  "properties" : {
+    "previous_version" : {
+      "pattern" : "^0x[a-fA-F0-9]{8}$",
+      "type" : "string",
+      "description" : "Bytes4 hexadecimal"
+    },
+    "current_version" : {
+      "pattern" : "^0x[a-fA-F0-9]{8}$",
+      "type" : "string",
+      "description" : "Bytes4 hexadecimal"
+    },
+    "epoch" : {
+      "type" : "string"
+    }
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "post" : {
+    "tags" : [ "Beacon", "Validator Required Api" ],
+    "summary" : "Publish a signed block",
+    "description" : "Submit a signed beacon block to the beacon node to be imported. The beacon node performs the required validation.",
+    "operationId" : "postEthV1BeaconBlocks",
+    "requestBody" : {
+      "content" : {
+        "application/json" : {
+          "schema" : {
+            "$ref" : "#/components/schemas/SignedBlock"
+          }
+        }
+      }
+    },
+    "responses" : {
+      "200" : {
+        "description" : "Block has been successfully broadcast, validated and imported."
+      },
+      "202" : {
+        "description" : "Block has been successfully broadcast, but failed validation and has not been imported."
+      },
+      "400" : {
+        "description" : "Unable to parse request body."
+      },
+      "500" : {
+        "description" : "Beacon node experienced an internal error."
+      },
+      "503" : {
+        "description" : "Beacon node is currently syncing."
+      }
+    }
+  }
+}

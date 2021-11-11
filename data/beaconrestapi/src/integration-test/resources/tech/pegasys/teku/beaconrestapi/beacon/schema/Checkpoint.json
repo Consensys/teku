@@ -1,0 +1,14 @@
+{
+  "type" : "object",
+  "properties" : {
+    "epoch" : {
+      "type" : "string",
+      "format" : "uint64"
+    },
+    "root" : {
+      "type" : "string",
+      "description" : "Bytes32 hexadecimal",
+      "format" : "byte"
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "type" : "object",
+  "properties" : {
+    "slot" : {
+      "type" : "string",
+      "format" : "uint64"
+    },
+    "beacon_block_root" : {
+      "type" : "string",
+      "description" : "Bytes32 hexadecimal",
+      "format" : "byte"
+    },
+    "subcommittee_index" : {
+      "type" : "string",
+      "format" : "uint64"
+    },
+    "aggregation_bits" : {
+      "type" : "string",
+      "description" : "SSZ hexadecimal",
+      "format" : "byte"
+    },
+    "signature" : {
+      "type" : "string",
+      "description" : "Bytes96 hexadecimal",
+      "format" : "byte"
+    }
+  }
+}

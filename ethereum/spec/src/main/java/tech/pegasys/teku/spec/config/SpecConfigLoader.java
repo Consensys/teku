@@ -32,20 +32,31 @@ public class SpecConfigLoader {
   private static final String CONFIG_PATH = "configs/";
   private static final String PRESET_PATH = "presets/";
 
+  public static SpecConfig loadConfigStrict(final String configName) {
+    return loadConfig(configName, false, __ -> {});
+  }
+
   public static SpecConfig loadConfig(final String configName) {
     return loadConfig(configName, __ -> {});
   }
 
   public static SpecConfig loadConfig(
       final String configName, final Consumer<SpecConfigBuilder> modifier) {
+    return loadConfig(configName, true, modifier);
+  }
+
+  public static SpecConfig loadConfig(
+      final String configName,
+      final boolean ignoreUnknownConfigItems,
+      final Consumer<SpecConfigBuilder> modifier) {
     final SpecConfigReader reader = new SpecConfigReader();
-    processConfig(configName, reader::read);
+    processConfig(configName, source -> reader.read(source, ignoreUnknownConfigItems));
     return reader.build(modifier);
   }
 
-  public static SpecConfig loadConfig(final Map<String, String> config) {
+  public static SpecConfig loadRemoteConfig(final Map<String, String> config) {
     final SpecConfigReader reader = new SpecConfigReader();
-    reader.loadFromMap(config);
+    reader.loadFromMap(config, true);
     return reader.build();
   }
 

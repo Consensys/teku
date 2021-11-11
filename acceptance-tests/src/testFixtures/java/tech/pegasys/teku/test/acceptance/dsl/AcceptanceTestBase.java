@@ -50,8 +50,14 @@ public class AcceptanceTestBase {
   }
 
   protected TekuNode createTekuNode(final Consumer<TekuNode.Config> configOptions) {
+    return createTekuNode(DockerVersion.LOCAL_BUILD, configOptions);
+  }
+
+  protected TekuNode createTekuNode(
+      final DockerVersion version, final Consumer<TekuNode.Config> configOptions) {
     try {
-      return addNode(TekuNode.create(httpClient, network, configOptions, genesisStateGenerator));
+      return addNode(
+          TekuNode.create(httpClient, network, version, configOptions, genesisStateGenerator));
     } catch (IOException | TimeoutException e) {
       throw new RuntimeException(e);
     }
@@ -68,7 +74,12 @@ public class AcceptanceTestBase {
 
   protected TekuValidatorNode createValidatorNode(
       final Consumer<TekuValidatorNode.Config> configOptions) {
-    return addNode(TekuValidatorNode.create(network, configOptions));
+    return createValidatorNode(DockerVersion.LOCAL_BUILD, configOptions);
+  }
+
+  protected TekuValidatorNode createValidatorNode(
+      final DockerVersion version, final Consumer<TekuValidatorNode.Config> configOptions) {
+    return addNode(TekuValidatorNode.create(network, version, configOptions));
   }
 
   protected TekuDepositSender createTekuDepositSender(final String networkName) {

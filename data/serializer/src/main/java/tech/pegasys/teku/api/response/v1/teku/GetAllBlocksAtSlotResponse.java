@@ -22,9 +22,9 @@ import tech.pegasys.teku.api.schema.Version;
 public class GetAllBlocksAtSlotResponse {
   private final Version version;
 
-  private final Set<SignedBeaconBlock<?>> data;
+  private final Set<SignedBeaconBlock> data;
 
-  public Set<SignedBeaconBlock<?>> getData() {
+  public Set<SignedBeaconBlock> getData() {
     return data;
   }
 
@@ -35,7 +35,7 @@ public class GetAllBlocksAtSlotResponse {
   @JsonCreator
   public GetAllBlocksAtSlotResponse(
       @JsonProperty("version") final Version version,
-      @JsonProperty("data") final Set<SignedBeaconBlock<?>> data) {
+      @JsonProperty("data") final Set<SignedBeaconBlock> data) {
     this.version = version;
     this.data = data;
   }

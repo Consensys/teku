@@ -85,7 +85,7 @@ public class GetAllBlocksAtSlot implements Handler {
     ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
 
     try {
-      SafeFuture<Set<SignedBeaconBlock<?>>> future =
+      SafeFuture<Set<SignedBeaconBlock>> future =
           chainDataProvider.getAllBlocksAtSlot(pathParamMap.get(SLOT));
       ctx.future(
           future.thenApplyChecked(
