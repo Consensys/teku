@@ -18,10 +18,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 
 public class GetBlockResponse {
-  public final SignedBeaconBlock<?> data;
+  public final SignedBeaconBlock data;
 
   @JsonCreator
-  public GetBlockResponse(@JsonProperty("data") final SignedBeaconBlock<?> data) {
+  public GetBlockResponse(@JsonProperty("data") final SignedBeaconBlock data) {
     this.data = data;
   }
 }

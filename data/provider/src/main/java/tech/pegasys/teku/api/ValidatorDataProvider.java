@@ -41,13 +41,13 @@ import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
-import tech.pegasys.teku.api.schema.SignedBeaconBlock.SignedBeaconBlockAltair;
-import tech.pegasys.teku.api.schema.SignedBeaconBlock.SignedBeaconBlockMerge;
-import tech.pegasys.teku.api.schema.SignedBeaconBlock.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
+import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
 import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeSubnetSubscription;
+import tech.pegasys.teku.api.schema.merge.SignedBeaconBlockMerge;
+import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -156,12 +156,12 @@ public class ValidatorDataProvider {
         .thenApply(this::convertToPostDataFailureResponse);
   }
 
-  public SignedBeaconBlock<?> parseBlock(final JsonProvider jsonProvider, final String jsonBlock)
+  public SignedBeaconBlock parseBlock(final JsonProvider jsonProvider, final String jsonBlock)
       throws JsonProcessingException {
     final ObjectMapper mapper = jsonProvider.getObjectMapper();
     final JsonNode jsonNode = mapper.readTree(jsonBlock);
     final UInt64 slot = mapper.treeToValue(jsonNode.findValue("slot"), UInt64.class);
-    final SignedBeaconBlock<?> signedBeaconBlock;
+    final SignedBeaconBlock signedBeaconBlock;
     checkNotNull(slot, "Slot was not found in json block");
     switch (spec.atSlot(slot).getMilestone()) {
       case PHASE0:
@@ -180,7 +180,7 @@ public class ValidatorDataProvider {
   }
 
   public SafeFuture<ValidatorBlockResult> submitSignedBlock(
-      final SignedBeaconBlock<?> signedBeaconBlock) {
+      final SignedBeaconBlock signedBeaconBlock) {
     return validatorApiChannel
         .sendSignedBlock(signedBeaconBlock.asInternalSignedBeaconBlock(spec))
         .thenApply(
