@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.test.acceptance;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.DockerVersion;
@@ -31,6 +32,7 @@ public class RemoteValidatorCompatibilityAcceptanceTest extends AcceptanceTestBa
   }
 
   @Test
+  @Disabled("Older validator doesn't ignore unknown config items")
   void shouldRunOlderValidatorAgainstUpdatedBeaconNode() throws Exception {
     verifyCompatibility(DockerVersion.LOCAL_BUILD, DockerVersion.LAST_RELEASE);
   }
