@@ -26,6 +26,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import okhttp3.Response;
+import org.assertj.core.api.Fail;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -92,7 +93,15 @@ public class SwaggerIntegrationTest extends AbstractDataBackedRestAPIIntegration
       throws IOException {
     final String filename = elementName.replaceAll("/", "_") + ".json";
     Files.write(tempDir.resolve(filename), prettyJson(node).getBytes(UTF_8));
-    final JsonNode expectedNode = loadResourceFile(namespace + "/" + filename);
+    JsonNode expectedNode = null;
+    try {
+      expectedNode = loadResourceFile(namespace + "/" + filename);
+    } catch (Exception e) {
+      Fail.fail(
+          String.format(
+              "Expected to find %s with content %s, does it need to be added?",
+              namespace + "/" + filename, prettyJson(node)));
+    }
     assertThat(node)
         .withFailMessage(
             String.format(

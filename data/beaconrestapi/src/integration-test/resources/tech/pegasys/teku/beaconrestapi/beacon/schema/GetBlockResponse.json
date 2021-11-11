@@ -2,7 +2,7 @@
   "type" : "object",
   "properties" : {
     "data" : {
-      "$ref" : "#/components/schemas/SignedBeaconBlockObject"
+      "$ref" : "#/components/schemas/SignedBeaconBlock"
     }
   }
 }

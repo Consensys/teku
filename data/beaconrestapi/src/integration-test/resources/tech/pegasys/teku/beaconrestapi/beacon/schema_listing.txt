@@ -4,6 +4,7 @@ AttestationData.json
 AttesterDuty.json
 AttesterSlashing.json
 BeaconBlockAltair.json
+BeaconBlock.json
 BeaconBlockBody.json
 BeaconBlockBodyAltair.json
 BeaconBlockBodyMerge.json
@@ -84,10 +85,10 @@ ProposerDuty.json
 ProposerSlashing.json
 Root.json
 SignedAggregateAndProof.json
+SignedBeaconBlock.json
 SignedBeaconBlockAltair.json
 SignedBeaconBlockHeader.json
 SignedBeaconBlockMerge.json
-SignedBeaconBlockObject.json
 SignedBeaconBlockPhase0.json
 SignedBlock.json
 SignedContributionAndProof.json

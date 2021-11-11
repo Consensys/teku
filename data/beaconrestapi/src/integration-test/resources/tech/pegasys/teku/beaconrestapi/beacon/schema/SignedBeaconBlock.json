@@ -2,7 +2,7 @@
   "type" : "object",
   "properties" : {
     "message" : {
-      "type" : "object"
+      "$ref" : "#/components/schemas/BeaconBlock"
     },
     "signature" : {
       "type" : "string",
