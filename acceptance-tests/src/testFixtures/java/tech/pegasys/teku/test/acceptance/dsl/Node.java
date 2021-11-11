@@ -40,8 +40,6 @@ import tech.pegasys.teku.infrastructure.async.Waiter;
 public abstract class Node {
 
   public static final String TEKU_DOCKER_IMAGE_NAME = "consensys/teku";
-  public static final String TEKU_DOCKER_IMAGE =
-      TEKU_DOCKER_IMAGE_NAME + ":" + DockerVersion.LOCAL_BUILD.getVersion();
 
   protected static final int REST_API_PORT = 9051;
   protected static final int METRICS_PORT = 8008;
