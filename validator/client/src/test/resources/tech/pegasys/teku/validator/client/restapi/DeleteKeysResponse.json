@@ -7,6 +7,9 @@
       "items": {
         "$ref": "#/components/schemas/DeleteKeyResult"
       }
+    },
+    "slashing_protection": {
+      "type": "string"
     }
   }
 }
