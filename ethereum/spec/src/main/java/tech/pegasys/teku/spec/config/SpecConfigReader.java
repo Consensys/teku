@@ -107,6 +107,10 @@ public class SpecConfigReader {
     return build();
   }
 
+  public Optional<String> read(final InputStream source) throws IOException {
+    return read(source, true);
+  }
+
   /**
    * Reads and processes the resource, returns any referenced "preset" to be processed if a preset
    * field is set
@@ -115,9 +119,10 @@ public class SpecConfigReader {
    * @return An optional value containing any declared preset if it is specified in this source
    * @throws IOException Thrown if an error occurs reading the source
    */
-  public Optional<String> read(final InputStream source) throws IOException {
+  public Optional<String> read(final InputStream source, final boolean ignoreUnknownConfigItems)
+      throws IOException {
     final Map<String, String> rawValues = readValues(source);
-    loadFromMap(rawValues);
+    loadFromMap(rawValues, ignoreUnknownConfigItems);
     return Optional.ofNullable(rawValues.get(PRESET_KEY)).map(this::castPresetValue);
   }
 
@@ -130,7 +135,8 @@ public class SpecConfigReader {
     return (String) preset;
   }
 
-  public void loadFromMap(final Map<String, String> rawValues) {
+  public void loadFromMap(
+      final Map<String, String> rawValues, final boolean ignoreUnknownConfigItems) {
     processSeenValues(rawValues);
     final Map<String, String> unprocessedConfig = new HashMap<>(rawValues);
     final Map<String, String> apiSpecConfig = new HashMap<>(rawValues);
@@ -187,7 +193,11 @@ public class SpecConfigReader {
 
     if (unprocessedConfig.size() > 0) {
       final String unknownKeys = String.join(",", unprocessedConfig.keySet());
-      throw new IllegalArgumentException("Detected unknown spec config entries: " + unknownKeys);
+      if (!ignoreUnknownConfigItems) {
+        throw new IllegalArgumentException("Detected unknown spec config entries: " + unknownKeys);
+      } else {
+        LOG.info("Ignoring unknown items in network configuration: {}", unknownKeys);
+      }
     }
   }
 
