@@ -24,7 +24,6 @@ import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.List;
 import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,41 +38,50 @@ public class SwaggerIntegrationTest extends AbstractDataBackedRestAPIIntegration
   @BeforeEach
   public void setup() throws IOException {
     startRestAPIAtGenesis();
-    final Response response = get();
+    final Response response = getOpanApiDoc();
     currentJsonNodes = OBJECT_MAPPER.readTree(response.body().string());
   }
 
   @Test
   void schemaObjects_shouldBeConsistent(@TempDir final Path tempDir) throws IOException {
     final JsonNode schemas = currentJsonNodes.findPath("components").findPath("schemas");
-
-    List<String> fieldNames = ImmutableList.copyOf(schemas.fieldNames());
-    for (String current : fieldNames) {
-      checkStructureIsConsistent("schema", tempDir, current, schemas.path(current));
-    }
-    checkAllExpectedFilesExist(tempDir, "schema");
+    shouldBeConsistent(tempDir, "schema", schemas);
   }
 
   @Test
   void paths_shouldBeConsistent(@TempDir final Path tempDir) throws IOException {
     final JsonNode paths = currentJsonNodes.findPath("paths");
 
-    List<String> fieldNames = ImmutableList.copyOf(paths.fieldNames());
+    shouldBeConsistent(tempDir, "paths", paths);
+  }
+
+  // This test has 2 parts
+  // 1. Go through all the objects in our swagger structure and write them to file, comparing to
+  //    expected as we go
+  //    - this will catch any changes, which if correct should be updated in the resource file
+  //    - will also catch NEW objects, and these new objects will need to be added to the
+  //      resources for the test, as well as added to the *_listings.txt, so that future removal is
+  //      protected.
+  // 2. Go through the list of resources (*_listings.txt) and make sure we've created all of those
+  //    resources
+  //    - this will catch any REMOVED items, and if they should be removed, then the resource list
+  //      would need updating and the file can be cleaned up also.
+
+  void shouldBeConsistent(final Path tempDir, final String path, final JsonNode parentNode)
+      throws IOException {
+    List<String> fieldNames = ImmutableList.copyOf(parentNode.fieldNames());
     for (String current : fieldNames) {
-      checkStructureIsConsistent("paths", tempDir, current, paths.path(current));
+      checkStructureIsConsistent(path, tempDir, current, parentNode.path(current));
     }
 
-    checkAllExpectedFilesExist(tempDir, "paths");
+    checkAllExpectedFilesExist(tempDir, path);
   }
 
   private void checkAllExpectedFilesExist(final Path tempDir, final String schema)
       throws IOException {
     final List<String> expectedFileListing =
-        Arrays.asList(
-            Resources.toString(
-                    Resources.getResource(SwaggerIntegrationTest.class, schema + "_listing.txt"),
-                    UTF_8)
-                .split("\n"));
+        Resources.readLines(
+            Resources.getResource(SwaggerIntegrationTest.class, schema + "_listing.txt"), UTF_8);
     for (String file : expectedFileListing) {
       assertThat(tempDir.resolve(file).toFile()).exists();
     }
@@ -97,7 +105,6 @@ public class SwaggerIntegrationTest extends AbstractDataBackedRestAPIIntegration
   }
 
   private String prettyJson(final JsonNode jsonNode) throws JsonProcessingException {
-    System.out.println(OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(jsonNode));
     return OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(jsonNode);
   }
 
@@ -108,7 +115,7 @@ public class SwaggerIntegrationTest extends AbstractDataBackedRestAPIIntegration
     return OBJECT_MAPPER.readTree(resource);
   }
 
-  public Response get() throws IOException {
+  public Response getOpanApiDoc() throws IOException {
     return getResponse("/swagger-docs");
   }
 }
