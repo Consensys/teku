@@ -1,0 +1,13 @@
+{
+  "type" : "object",
+  "allOf" : [ {
+    "$ref" : "#/components/schemas/SignedBeaconBlockObject"
+  }, {
+    "type" : "object",
+    "properties" : {
+      "message" : {
+        "$ref" : "#/components/schemas/BeaconBlockAltair"
+      }
+    }
+  } ]
+}

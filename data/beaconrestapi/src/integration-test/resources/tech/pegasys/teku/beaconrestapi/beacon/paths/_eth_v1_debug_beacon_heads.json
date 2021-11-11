@@ -1,0 +1,23 @@
+{
+  "get" : {
+    "tags" : [ "Debug" ],
+    "summary" : "Get fork choice leaves",
+    "description" : "Retrieves all possible chain heads (leaves of fork choice tree).",
+    "operationId" : "getEthV1DebugBeaconHeads",
+    "responses" : {
+      "200" : {
+        "description" : "OK",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetChainHeadsResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Server Error"
+      }
+    }
+  }
+}

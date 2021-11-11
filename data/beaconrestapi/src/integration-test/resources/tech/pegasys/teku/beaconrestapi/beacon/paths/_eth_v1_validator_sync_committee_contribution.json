@@ -1,0 +1,51 @@
+{
+  "get" : {
+    "tags" : [ "Validator", "Validator Required Api" ],
+    "summary" : "Produce a sync committee contribution",
+    "description" : "Returns a `SyncCommitteeContribution` that is the aggregate of `SyncCommitteeMessage` values known to this node matching the specified slot, subcommittee index and beacon block root.",
+    "operationId" : "getEthV1ValidatorSync_committee_contribution",
+    "parameters" : [ {
+      "name" : "slot",
+      "in" : "query",
+      "description" : "`uint64` The slot for which a sync committee contribution should be created.",
+      "required" : true,
+      "schema" : {
+        "type" : "string"
+      }
+    }, {
+      "name" : "subcommittee_index",
+      "in" : "query",
+      "description" : "`uint64` The subcommittee index for which to produce the contribution.",
+      "required" : true,
+      "schema" : {
+        "type" : "string"
+      }
+    }, {
+      "name" : "beacon_block_root",
+      "in" : "query",
+      "description" : "`bytes32` The block root for which to produce the contribution.",
+      "required" : true,
+      "schema" : {
+        "type" : "string"
+      }
+    } ],
+    "responses" : {
+      "200" : {
+        "description" : "OK",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetSyncCommitteeContributionResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "Invalid request syntax."
+      },
+      "500" : {
+        "description" : "Beacon node internal error."
+      }
+    }
+  }
+}

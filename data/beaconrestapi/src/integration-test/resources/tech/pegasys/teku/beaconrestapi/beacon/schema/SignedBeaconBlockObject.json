@@ -1,0 +1,13 @@
+{
+  "type" : "object",
+  "properties" : {
+    "message" : {
+      "type" : "object"
+    },
+    "signature" : {
+      "type" : "string",
+      "description" : "Bytes96 hexadecimal",
+      "format" : "byte"
+    }
+  }
+}

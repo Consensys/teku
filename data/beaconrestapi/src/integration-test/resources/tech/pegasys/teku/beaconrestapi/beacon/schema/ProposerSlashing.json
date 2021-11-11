@@ -1,0 +1,11 @@
+{
+  "type" : "object",
+  "properties" : {
+    "signed_header_1" : {
+      "$ref" : "#/components/schemas/SignedBeaconBlockHeader"
+    },
+    "signed_header_2" : {
+      "$ref" : "#/components/schemas/SignedBeaconBlockHeader"
+    }
+  }
+}

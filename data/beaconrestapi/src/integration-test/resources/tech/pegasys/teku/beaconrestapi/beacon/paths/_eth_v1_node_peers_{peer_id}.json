@@ -1,0 +1,34 @@
+{
+  "get" : {
+    "tags" : [ "Node" ],
+    "summary" : "Get node peer",
+    "description" : "Retrieves data about the given peer.",
+    "operationId" : "getEthV1NodePeersWithPeer_id",
+    "parameters" : [ {
+      "name" : "peer_id",
+      "in" : "path",
+      "required" : true,
+      "schema" : {
+        "type" : "string"
+      }
+    } ],
+    "responses" : {
+      "200" : {
+        "description" : "OK",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/PeerResponse"
+            }
+          }
+        }
+      },
+      "404" : {
+        "description" : "Peer not found"
+      },
+      "500" : {
+        "description" : "Server Error"
+      }
+    }
+  }
+}

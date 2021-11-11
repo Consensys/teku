@@ -1,0 +1,54 @@
+{
+  "type" : "object",
+  "properties" : {
+    "randao_reveal" : {
+      "type" : "string",
+      "description" : "Bytes96 hexadecimal",
+      "format" : "byte"
+    },
+    "eth1_data" : {
+      "$ref" : "#/components/schemas/Eth1Data"
+    },
+    "graffiti" : {
+      "type" : "string",
+      "description" : "Bytes32 hexadecimal",
+      "format" : "byte"
+    },
+    "proposer_slashings" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/ProposerSlashing"
+      }
+    },
+    "attester_slashings" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/AttesterSlashing"
+      }
+    },
+    "attestations" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/Attestation"
+      }
+    },
+    "deposits" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/Deposit"
+      }
+    },
+    "voluntary_exits" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/SignedVoluntaryExit"
+      }
+    },
+    "sync_aggregate" : {
+      "$ref" : "#/components/schemas/SyncAggregate"
+    },
+    "execution_payload" : {
+      "$ref" : "#/components/schemas/ExecutionPayload"
+    }
+  }
+}

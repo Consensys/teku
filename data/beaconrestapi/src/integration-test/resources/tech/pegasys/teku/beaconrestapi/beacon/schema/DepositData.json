@@ -1,0 +1,24 @@
+{
+  "type" : "object",
+  "properties" : {
+    "pubkey" : {
+      "type" : "string",
+      "description" : "Bytes48 hexadecimal",
+      "format" : "byte"
+    },
+    "withdrawal_credentials" : {
+      "type" : "string",
+      "description" : "Bytes32 hexadecimal",
+      "format" : "byte"
+    },
+    "amount" : {
+      "type" : "string",
+      "format" : "uint64"
+    },
+    "signature" : {
+      "type" : "string",
+      "description" : "Bytes96 hexadecimal",
+      "format" : "byte"
+    }
+  }
+}

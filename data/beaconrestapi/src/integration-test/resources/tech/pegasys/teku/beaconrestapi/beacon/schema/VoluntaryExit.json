@@ -1,0 +1,13 @@
+{
+  "type" : "object",
+  "properties" : {
+    "epoch" : {
+      "type" : "string",
+      "format" : "uint64"
+    },
+    "validator_index" : {
+      "type" : "string",
+      "format" : "uint64"
+    }
+  }
+}

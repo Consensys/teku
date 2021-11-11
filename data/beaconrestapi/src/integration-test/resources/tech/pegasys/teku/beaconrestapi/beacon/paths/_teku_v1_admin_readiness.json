@@ -1,0 +1,27 @@
+{
+  "get" : {
+    "tags" : [ "Teku" ],
+    "summary" : "Get node readiness",
+    "description" : "Returns 200 if the node is ready to accept traffic",
+    "operationId" : "getTekuV1AdminReadiness",
+    "parameters" : [ {
+      "name" : "target_peer_count",
+      "in" : "query",
+      "description" : "Returns 503 status code when current peer count is below than target",
+      "schema" : {
+        "type" : "string"
+      }
+    } ],
+    "responses" : {
+      "200" : {
+        "description" : "Node is ready"
+      },
+      "400" : {
+        "description" : "Cannot parse target_peer_count parameter passed in request"
+      },
+      "503" : {
+        "description" : "Node not initialized or having issues"
+      }
+    }
+  }
+}

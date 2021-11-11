@@ -1,0 +1,23 @@
+{
+  "get" : {
+    "tags" : [ "Config" ],
+    "summary" : "Get deposit contract address",
+    "description" : "Retrieve deposit contract address and genesis fork version.",
+    "operationId" : "getEthV1ConfigDeposit_contract",
+    "responses" : {
+      "200" : {
+        "description" : "OK",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetDepositContractResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Server Error"
+      }
+    }
+  }
+}
