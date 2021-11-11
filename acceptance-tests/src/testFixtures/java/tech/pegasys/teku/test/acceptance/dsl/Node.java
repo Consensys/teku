@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.time.Duration;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
@@ -32,11 +33,13 @@ import org.apache.commons.compress.utils.IOUtils;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.output.OutputFrame;
+import org.testcontainers.images.PullPolicy;
 import org.testcontainers.images.builder.ImageFromDockerfile;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 
 public abstract class Node {
-  public static final String TEKU_DOCKER_IMAGE = "consensys/teku:develop";
+
+  public static final String TEKU_DOCKER_IMAGE_NAME = "consensys/teku";
 
   protected static final int REST_API_PORT = 9051;
   protected static final int METRICS_PORT = 8008;
@@ -51,11 +54,23 @@ public abstract class Node {
 
   private static final AtomicInteger NODE_UNIQUIFIER = new AtomicInteger();
 
-  protected Node(final Network network, final String dockerImageName, final Logger log) {
+  protected Node(
+      final Network network,
+      final String dockerImageName,
+      final DockerVersion dockerImageVersion,
+      final Logger log) {
+    this(network, dockerImageName + ":" + dockerImageVersion.getVersion(), log);
+  }
+
+  protected Node(final Network network, final String dockerImage, final Logger log) {
     this.nodeAlias =
         getClass().getSimpleName().toLowerCase(Locale.US) + NODE_UNIQUIFIER.incrementAndGet();
     this.container =
-        new NodeContainer(dockerImageName)
+        new NodeContainer(dockerImage)
+            .withImagePullPolicy(
+                dockerImage.endsWith(DockerVersion.LOCAL_BUILD.getVersion())
+                    ? PullPolicy.defaultPolicy()
+                    : PullPolicy.ageBased(Duration.ofMinutes(5)))
             .withNetwork(network)
             .withNetworkAliases(nodeAlias)
             .withLogConsumer(frame -> log.debug(frame.getUtf8String().trim()));

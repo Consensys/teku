@@ -34,8 +34,9 @@ public class TekuValidatorNode extends Node {
   private boolean started = false;
   private Set<File> configFiles;
 
-  private TekuValidatorNode(final Network network, final TekuValidatorNode.Config config) {
-    super(network, TEKU_DOCKER_IMAGE, LOG);
+  private TekuValidatorNode(
+      final Network network, final DockerVersion version, final TekuValidatorNode.Config config) {
+    super(network, TEKU_DOCKER_IMAGE_NAME, version, LOG);
     this.config = config;
 
     container
@@ -44,14 +45,14 @@ public class TekuValidatorNode extends Node {
   }
 
   public static TekuValidatorNode create(
-      final Network network, Consumer<TekuValidatorNode.Config> configOptions) {
+      final Network network,
+      final DockerVersion version,
+      Consumer<TekuValidatorNode.Config> configOptions) {
 
     final TekuValidatorNode.Config config = new TekuValidatorNode.Config();
     configOptions.accept(config);
 
-    final TekuValidatorNode node = new TekuValidatorNode(network, config);
-
-    return node;
+    return new TekuValidatorNode(network, version, config);
   }
 
   public TekuValidatorNode withValidatorKeystores(ValidatorKeystores validatorKeytores)
