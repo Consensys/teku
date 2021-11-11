@@ -18,6 +18,7 @@ public class LoggingConfig {
   public static final String DEFAULT_LOG_FILE_EXTENSION = "log";
   public static final String DEFAULT_LOG_PATTERN = "%d{yyyy-MM-dd}";
   public static final String DEFAULT_LOG_DIRECTORY = ".";
+  public static final String DATA_LOG_SUBDIRECTORY = "logs";
 
   private final boolean colorEnabled;
   private final boolean includeEventsEnabled;
@@ -88,6 +89,7 @@ public class LoggingConfig {
     private String logShortFileName = DEFAULT_LOG_SHORT_FILE_NAME;
     private String logFileExtension = DEFAULT_LOG_FILE_EXTENSION;
     private String logPattern = DEFAULT_LOG_PATTERN;
+    private String dataDirectory;
     private String logDirectory;
     private String logFile;
     private String logFileNamePattern;
@@ -96,7 +98,11 @@ public class LoggingConfig {
 
     private void initMissingDefaults() {
       if (logDirectory == null) {
-        logDirectory = DEFAULT_LOG_DIRECTORY;
+        if (dataDirectory == null) {
+          logDirectory = DEFAULT_LOG_DIRECTORY;
+        } else {
+          logDirectory = dataDirectory + SEP + DATA_LOG_SUBDIRECTORY;
+        }
       }
       if (logFile == null) {
         logFile = logDirectory + SEP + logShortFileName + "." + logFileExtension;
@@ -153,10 +159,8 @@ public class LoggingConfig {
       return this;
     }
 
-    public LoggingConfigBuilder logDirectoryDefault(String logDirectory) {
-      if (this.logDirectory == null) {
-        this.logDirectory = logDirectory;
-      }
+    public LoggingConfigBuilder dataDirectory(String dataDirectory) {
+      this.dataDirectory = dataDirectory;
       return this;
     }
 

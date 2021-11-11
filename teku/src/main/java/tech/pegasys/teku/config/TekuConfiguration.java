@@ -213,8 +213,7 @@ public class TekuConfiguration {
       restApiBuilder.eth1DepositContractAddressDefault(depositContractAddress);
 
       DataConfig dataConfig = dataConfigBuilder.build();
-      loggingConfigBuilder.logDirectory(
-          dataConfig.getDataBasePath().normalize().toAbsolutePath().toString());
+      loggingConfigBuilder.dataDirectory(dataConfig.getDataBasePath().toString());
 
       // Add specs
       interopConfigBuilder.specProvider(spec);
