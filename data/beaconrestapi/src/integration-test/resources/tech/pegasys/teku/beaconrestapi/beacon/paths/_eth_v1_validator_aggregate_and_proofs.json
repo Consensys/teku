@@ -1,0 +1,31 @@
+{
+  "post" : {
+    "tags" : [ "Validator", "Validator Required Api" ],
+    "summary" : "Publish aggregate and proofs",
+    "description" : "Verifies given aggregate and proofs and publishes it on appropriate gossipsub topic.",
+    "operationId" : "postEthV1ValidatorAggregate_and_proofs",
+    "requestBody" : {
+      "content" : {
+        "application/json" : {
+          "schema" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/SignedAggregateAndProof"
+            }
+          }
+        }
+      }
+    },
+    "responses" : {
+      "200" : {
+        "description" : "Successfully published aggregate."
+      },
+      "400" : {
+        "description" : "Invalid parameter supplied."
+      },
+      "500" : {
+        "description" : "Beacon node internal error."
+      }
+    }
+  }
+}

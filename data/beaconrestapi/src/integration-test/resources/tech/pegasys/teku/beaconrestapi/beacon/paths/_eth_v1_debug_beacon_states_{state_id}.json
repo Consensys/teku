@@ -1,0 +1,47 @@
+{
+  "get" : {
+    "tags" : [ "Debug" ],
+    "summary" : "Get state",
+    "description" : "Returns full BeaconState object for given state_id.\n\nUse Accept header to select `application/octet-stream` if SSZ response type is required.\n\n__NOTE__: Only phase0 beacon state will be returned in JSON, use `/eth/v2/beacon/states/{state_id}` for altair.",
+    "operationId" : "getEthV1DebugBeaconStatesWithState_id",
+    "parameters" : [ {
+      "name" : "state_id",
+      "in" : "path",
+      "description" : "State identifier. Can be one of: \"head\" (canonical head in node's view), \"genesis\", \"finalized\", \"justified\", &lt;slot&gt;, &lt;hex encoded stateRoot with 0x prefix&gt;.",
+      "required" : true,
+      "schema" : {
+        "type" : "string"
+      }
+    } ],
+    "responses" : {
+      "200" : {
+        "description" : "OK",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetStateResponse"
+            }
+          },
+          "application/octet-stream" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/Unit"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "Bad Request"
+      },
+      "404" : {
+        "description" : "Not Found"
+      },
+      "500" : {
+        "description" : "Server Error"
+      },
+      "503" : {
+        "description" : "Beacon node is currently syncing and not serving requests"
+      }
+    },
+    "deprecated" : true
+  }
+}

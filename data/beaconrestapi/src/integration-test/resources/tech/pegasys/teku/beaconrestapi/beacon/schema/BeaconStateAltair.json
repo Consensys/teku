@@ -1,0 +1,130 @@
+{
+  "type" : "object",
+  "properties" : {
+    "genesis_time" : {
+      "type" : "string",
+      "format" : "uint64"
+    },
+    "genesis_validators_root" : {
+      "type" : "string",
+      "description" : "Bytes32 hexadecimal",
+      "format" : "byte"
+    },
+    "slot" : {
+      "type" : "string",
+      "format" : "uint64"
+    },
+    "fork" : {
+      "$ref" : "#/components/schemas/Fork"
+    },
+    "latest_block_header" : {
+      "$ref" : "#/components/schemas/BeaconBlockHeader"
+    },
+    "block_roots" : {
+      "type" : "array",
+      "items" : {
+        "type" : "string",
+        "description" : "Bytes32 hexadecimal",
+        "format" : "byte"
+      }
+    },
+    "state_roots" : {
+      "type" : "array",
+      "items" : {
+        "type" : "string",
+        "description" : "Bytes32 hexadecimal",
+        "format" : "byte"
+      }
+    },
+    "historical_roots" : {
+      "type" : "array",
+      "items" : {
+        "type" : "string",
+        "description" : "Bytes32 hexadecimal",
+        "format" : "byte"
+      }
+    },
+    "eth1_data" : {
+      "$ref" : "#/components/schemas/Eth1Data"
+    },
+    "eth1_data_votes" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/Eth1Data"
+      }
+    },
+    "eth1_deposit_index" : {
+      "type" : "string",
+      "format" : "uint64"
+    },
+    "validators" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/Validator"
+      }
+    },
+    "balances" : {
+      "type" : "array",
+      "items" : {
+        "type" : "string",
+        "format" : "uint64"
+      }
+    },
+    "randao_mixes" : {
+      "type" : "array",
+      "items" : {
+        "type" : "string",
+        "description" : "Bytes32 hexadecimal",
+        "format" : "byte"
+      }
+    },
+    "slashings" : {
+      "type" : "array",
+      "items" : {
+        "type" : "string",
+        "format" : "uint64"
+      }
+    },
+    "previous_epoch_participation" : {
+      "type" : "array",
+      "items" : {
+        "type" : "string",
+        "example" : "1"
+      }
+    },
+    "current_epoch_participation" : {
+      "type" : "array",
+      "items" : {
+        "type" : "string",
+        "example" : "1"
+      }
+    },
+    "justification_bits" : {
+      "type" : "string",
+      "description" : "SSZ hexadecimal",
+      "format" : "byte"
+    },
+    "previous_justified_checkpoint" : {
+      "$ref" : "#/components/schemas/Checkpoint"
+    },
+    "current_justified_checkpoint" : {
+      "$ref" : "#/components/schemas/Checkpoint"
+    },
+    "finalized_checkpoint" : {
+      "$ref" : "#/components/schemas/Checkpoint"
+    },
+    "inactivity_scores" : {
+      "type" : "array",
+      "items" : {
+        "type" : "string",
+        "example" : "1"
+      }
+    },
+    "current_sync_committee" : {
+      "$ref" : "#/components/schemas/SyncCommittee"
+    },
+    "next_sync_committee" : {
+      "$ref" : "#/components/schemas/SyncCommittee"
+    }
+  }
+}

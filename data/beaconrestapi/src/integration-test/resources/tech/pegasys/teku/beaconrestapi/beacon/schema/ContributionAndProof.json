@@ -1,0 +1,17 @@
+{
+  "type" : "object",
+  "properties" : {
+    "aggregator_index" : {
+      "type" : "string",
+      "format" : "uint64"
+    },
+    "selection_proof" : {
+      "type" : "string",
+      "description" : "Bytes96 hexadecimal",
+      "format" : "byte"
+    },
+    "contribution" : {
+      "$ref" : "#/components/schemas/SyncCommitteeContribution"
+    }
+  }
+}

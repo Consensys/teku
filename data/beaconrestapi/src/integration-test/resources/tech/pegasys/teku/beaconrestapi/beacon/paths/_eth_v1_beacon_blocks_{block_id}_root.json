@@ -1,0 +1,38 @@
+{
+  "get" : {
+    "tags" : [ "Beacon" ],
+    "summary" : "Get block root",
+    "description" : "Retrieves hashTreeRoot of BeaconBlock/BeaconBlockHeader",
+    "operationId" : "getEthV1BeaconBlocksWithBlock_idRoot",
+    "parameters" : [ {
+      "name" : "block_id",
+      "in" : "path",
+      "description" : "Block identifier. Can be one of: \"head\" (canonical head in node's view), \"genesis\", \"finalized\", &lt;slot&gt;, &lt;hex encoded blockRoot with 0x prefix&gt;.",
+      "required" : true,
+      "schema" : {
+        "type" : "string"
+      }
+    } ],
+    "responses" : {
+      "200" : {
+        "description" : "OK",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetBlockRootResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "Bad Request"
+      },
+      "404" : {
+        "description" : "Not Found"
+      },
+      "500" : {
+        "description" : "Server Error"
+      }
+    }
+  }
+}

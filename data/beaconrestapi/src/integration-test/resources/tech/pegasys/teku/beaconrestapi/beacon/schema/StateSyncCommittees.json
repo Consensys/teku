@@ -1,0 +1,21 @@
+{
+  "type" : "object",
+  "properties" : {
+    "validators" : {
+      "type" : "array",
+      "items" : {
+        "type" : "string",
+        "example" : "1"
+      }
+    },
+    "validator_aggregates" : {
+      "type" : "array",
+      "items" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string"
+        }
+      }
+    }
+  }
+}

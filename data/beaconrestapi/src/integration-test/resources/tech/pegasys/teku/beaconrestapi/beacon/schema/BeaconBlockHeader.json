@@ -1,0 +1,28 @@
+{
+  "type" : "object",
+  "properties" : {
+    "slot" : {
+      "type" : "string",
+      "format" : "uint64"
+    },
+    "proposer_index" : {
+      "type" : "string",
+      "format" : "uint64"
+    },
+    "parent_root" : {
+      "type" : "string",
+      "description" : "Bytes32 hexadecimal",
+      "format" : "byte"
+    },
+    "state_root" : {
+      "type" : "string",
+      "description" : "Bytes32 hexadecimal",
+      "format" : "byte"
+    },
+    "body_root" : {
+      "type" : "string",
+      "description" : "Bytes32 hexadecimal",
+      "format" : "byte"
+    }
+  }
+}

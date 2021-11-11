@@ -1,0 +1,10 @@
+{
+  "type" : "object",
+  "properties" : {
+    "version" : {
+      "type" : "string",
+      "description" : "A string which uniquely identifies the client implementation and its version; similar to [HTTP User-Agent](https://tools.ietf.org/html/rfc7231#section-5.5.3).",
+      "example" : "teku/v0.12.6-dev-994997f8/osx-x86_64/adoptopenjdk-java-11"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "put" : {
+    "tags" : [ "Teku" ],
+    "summary" : "Changes the log level without restarting.",
+    "description" : "Changes the log level without restarting. You can change the log level for all logs, or the log level for specific packages or classes.",
+    "operationId" : "putTekuV1AdminLog_level",
+    "requestBody" : {
+      "description" : "```\n{\n  \"level\": (String; acceptable values: ALL, TRACE, DEBUG, INFO, ERROR, FATAL, OFF ),\n  \"log_filter\": [(String; Optional)]\n}\n```",
+      "content" : {
+        "application/json" : {
+          "schema" : {
+            "$ref" : "#/components/schemas/LogLevel"
+          }
+        }
+      }
+    },
+    "responses" : {
+      "204" : {
+        "description" : "The LogLevel was accepted and applied"
+      },
+      "400" : {
+        "description" : "Invalid body supplied."
+      },
+      "500" : {
+        "description" : "Server Error"
+      }
+    }
+  }
+}
