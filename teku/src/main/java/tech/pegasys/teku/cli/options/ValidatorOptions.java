@@ -134,21 +134,20 @@ public class ValidatorOptions {
       }
     }
 
-    builder
-        .validator(
-            config ->
-                config
-                    .validatorKeystoreLockingEnabled(validatorKeystoreLockingEnabled)
-                    .validatorPerformanceTrackingMode(validatorPerformanceTrackingMode)
-                    .validatorExternalSignerSlashingProtectionEnabled(
-                        validatorExternalSignerSlashingProtectionEnabled)
-                    .graffitiProvider(
-                        new FileBackedGraffitiProvider(
-                            Optional.ofNullable(graffiti), Optional.ofNullable(graffitiFile)))
-                    .useDependentRoots(useDependentRoots)
-                    .generateEarlyAttestations(generateEarlyAttestations)
-                    .sendAttestationsAsBatch(sendAttestationsAsBatch)
-                    .additionalPublishUrls(additionalPublishUrls));
+    builder.validator(
+        config ->
+            config
+                .validatorKeystoreLockingEnabled(validatorKeystoreLockingEnabled)
+                .validatorPerformanceTrackingMode(validatorPerformanceTrackingMode)
+                .validatorExternalSignerSlashingProtectionEnabled(
+                    validatorExternalSignerSlashingProtectionEnabled)
+                .graffitiProvider(
+                    new FileBackedGraffitiProvider(
+                        Optional.ofNullable(graffiti), Optional.ofNullable(graffitiFile)))
+                .useDependentRoots(useDependentRoots)
+                .generateEarlyAttestations(generateEarlyAttestations)
+                .sendAttestationsAsBatch(sendAttestationsAsBatch)
+                .additionalPublishUrls(additionalPublishUrls));
     validatorKeysOptions.configure(builder);
   }
 }
