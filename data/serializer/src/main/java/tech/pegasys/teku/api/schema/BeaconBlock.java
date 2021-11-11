@@ -15,6 +15,8 @@ package tech.pegasys.teku.api.schema;
 
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
@@ -27,14 +29,14 @@ public class BeaconBlock implements UnsignedBlock {
   @Schema(type = "string", format = "uint64")
   public final UInt64 slot;
 
-  @Schema(name = "proposer_index", type = "string", format = "uint64")
-  public final UInt64 proposerIndex;
+  @Schema(type = "string", format = "uint64")
+  public final UInt64 proposer_index;
 
-  @Schema(name = "parent_root", type = "string", format = "byte", description = DESCRIPTION_BYTES32)
-  public final Bytes32 parentRoot;
+  @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
+  public final Bytes32 parent_root;
 
-  @Schema(name = "state_root", type = "string", format = "byte", description = DESCRIPTION_BYTES32)
-  public final Bytes32 stateRoot;
+  @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
+  public final Bytes32 state_root;
 
   protected final BeaconBlockBody body;
 
@@ -44,22 +46,23 @@ public class BeaconBlock implements UnsignedBlock {
 
   protected BeaconBlock(tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock message) {
     this.slot = message.getSlot();
-    this.proposerIndex = message.getProposerIndex();
-    this.parentRoot = message.getParentRoot();
-    this.stateRoot = message.getStateRoot();
+    this.proposer_index = message.getProposerIndex();
+    this.parent_root = message.getParentRoot();
+    this.state_root = message.getStateRoot();
     this.body = new BeaconBlockBody(message.getBody());
   }
 
+  @JsonCreator
   public BeaconBlock(
-      final UInt64 slot,
-      final UInt64 proposerIndex,
-      final Bytes32 parentRoot,
-      final Bytes32 stateRoot,
-      final BeaconBlockBody body) {
+      @JsonProperty("slot") final UInt64 slot,
+      @JsonProperty("proposer_index") final UInt64 proposer_index,
+      @JsonProperty("parent_root") final Bytes32 parent_root,
+      @JsonProperty("state_root") final Bytes32 state_root,
+      @JsonProperty("body") final BeaconBlockBody body) {
     this.slot = slot;
-    this.proposerIndex = proposerIndex;
-    this.parentRoot = parentRoot;
-    this.stateRoot = stateRoot;
+    this.proposer_index = proposer_index;
+    this.parent_root = parent_root;
+    this.state_root = state_root;
     this.body = body;
   }
 
@@ -71,9 +74,9 @@ public class BeaconBlock implements UnsignedBlock {
         .getBeaconBlockSchema()
         .create(
             slot,
-            proposerIndex,
-            parentRoot,
-            stateRoot,
+            proposer_index,
+            parent_root,
+            state_root,
             body.asInternalBeaconBlockBody(specVersion));
   }
 
@@ -83,14 +86,14 @@ public class BeaconBlock implements UnsignedBlock {
     if (!(o instanceof BeaconBlock)) return false;
     BeaconBlock that = (BeaconBlock) o;
     return Objects.equals(slot, that.slot)
-        && Objects.equals(proposerIndex, that.proposerIndex)
-        && Objects.equals(parentRoot, that.parentRoot)
-        && Objects.equals(stateRoot, that.stateRoot)
+        && Objects.equals(proposer_index, that.proposer_index)
+        && Objects.equals(parent_root, that.parent_root)
+        && Objects.equals(state_root, that.state_root)
         && Objects.equals(body, that.body);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(slot, proposerIndex, parentRoot, stateRoot, body);
+    return Objects.hash(slot, proposer_index, parent_root, state_root, body);
   }
 }
