@@ -17,11 +17,11 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import tech.pegasys.teku.api.schema.SignedBeaconBlock.SignedBeaconBlockAltair;
-import tech.pegasys.teku.api.schema.SignedBeaconBlock.SignedBeaconBlockMerge;
-import tech.pegasys.teku.api.schema.SignedBeaconBlock.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.api.schema.Version;
+import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
 import tech.pegasys.teku.api.schema.interfaces.State;
+import tech.pegasys.teku.api.schema.merge.SignedBeaconBlockMerge;
+import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 
 public class GetStateResponseV2 {
   public final Version version;

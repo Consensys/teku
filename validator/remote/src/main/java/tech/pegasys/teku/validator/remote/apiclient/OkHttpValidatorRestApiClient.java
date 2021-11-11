@@ -184,7 +184,7 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   }
 
   @Override
-  public SendSignedBlockResult sendSignedBlock(final SignedBeaconBlock<?> beaconBlock) {
+  public SendSignedBlockResult sendSignedBlock(final SignedBeaconBlock beaconBlock) {
     return post(SEND_SIGNED_BLOCK, beaconBlock, createHandler())
         .map(__ -> SendSignedBlockResult.success(Bytes32.ZERO))
         .orElseGet(() -> SendSignedBlockResult.notImported("UNKNOWN"));

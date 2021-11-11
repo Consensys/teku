@@ -11,32 +11,26 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.response.v1.teku;
+package tech.pegasys.teku.api.schema.phase0;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.Set;
+import tech.pegasys.teku.api.schema.BLSSignature;
+import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
-import tech.pegasys.teku.api.schema.Version;
+import tech.pegasys.teku.api.schema.interfaces.SignedBlock;
 
-public class GetAllBlocksAtSlotResponse {
-  private final Version version;
+public class SignedBeaconBlockPhase0 extends SignedBeaconBlock implements SignedBlock {
 
-  private final Set<SignedBeaconBlock> data;
-
-  public Set<SignedBeaconBlock> getData() {
-    return data;
-  }
-
-  public Version getVersion() {
-    return version;
+  public SignedBeaconBlockPhase0(
+      tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock internalBlock) {
+    super(internalBlock);
   }
 
   @JsonCreator
-  public GetAllBlocksAtSlotResponse(
-      @JsonProperty("version") final Version version,
-      @JsonProperty("data") final Set<SignedBeaconBlock> data) {
-    this.version = version;
-    this.data = data;
+  public SignedBeaconBlockPhase0(
+      @JsonProperty("message") final BeaconBlock message,
+      @JsonProperty("signature") final BLSSignature signature) {
+    super(message, signature);
   }
 }
