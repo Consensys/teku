@@ -25,6 +25,7 @@ import java.util.OptionalInt;
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 
 public class P2POptions {
 
@@ -65,7 +66,7 @@ public class P2POptions {
       description = "Enables discv5 discovery",
       fallbackValue = "true",
       arity = "0..1")
-  private boolean p2pDiscoveryEnabled = true;
+  private boolean p2pDiscoveryEnabled = DiscoveryConfig.DEFAULT_P2P_DISCOVERY_ENABLED;
 
   @Option(
       names = {"--p2p-discovery-bootnodes"},
@@ -110,14 +111,14 @@ public class P2POptions {
       paramLabel = "<INTEGER>",
       description = "Lower bound on the target number of peers",
       arity = "1")
-  private int p2pLowerBound = 64;
+  private int p2pLowerBound = DiscoveryConfig.DEFAULT_P2P_PEERS_LOWER_BOUND;
 
   @Option(
       names = {"--p2p-peer-upper-bound"},
       paramLabel = "<INTEGER>",
       description = "Upper bound on the target number of peers",
       arity = "1")
-  private int p2pUpperBound = 74;
+  private int p2pUpperBound = DiscoveryConfig.DEFAULT_P2P_PEERS_UPPER_BOUND;
 
   @Option(
       names = {"--Xp2p-target-subnet-subscriber-count"},
@@ -125,7 +126,7 @@ public class P2POptions {
       description = "Target number of peers subscribed to each attestation subnet",
       arity = "1",
       hidden = true)
-  private int p2pTargetSubnetSubscriberCount = 2;
+  private int p2pTargetSubnetSubscriberCount = DiscoveryConfig.DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT;
 
   @Option(
       names = {"--Xp2p-minimum-randomly-selected-peer-count"},
@@ -214,12 +215,6 @@ public class P2POptions {
     }
   }
 
-  private int getMinimumRandomlySelectedPeerCount() {
-    return minimumRandomlySelectedPeerCount == null
-        ? Math.max(1, getP2pLowerBound() * 2 / 10)
-        : minimumRandomlySelectedPeerCount;
-  }
-
   public void configure(final TekuConfiguration.Builder builder) {
     final OptionalInt advertisedTcpPort =
         p2pAdvertisedPort == null ? OptionalInt.empty() : OptionalInt.of(p2pAdvertisedPort);
@@ -237,16 +232,19 @@ public class P2POptions {
               if (p2pDiscoveryBootnodes != null) {
                 d.bootnodes(p2pDiscoveryBootnodes);
               }
+              if (minimumRandomlySelectedPeerCount != null) {
+                d.minRandomlySelectedPeers(minimumRandomlySelectedPeerCount);
+              }
+              if (p2pUdpPort != null) {
+                d.listenUdpPort(p2pUdpPort);
+              }
+              if (p2pAdvertisedUdpPort != null) {
+                d.advertisedUdpPort(OptionalInt.of(p2pAdvertisedUdpPort));
+              }
               d.isDiscoveryEnabled(p2pDiscoveryEnabled)
-                  .listenUdpPort(p2pUdpPort != null ? p2pUdpPort : p2pPort)
-                  .advertisedUdpPort(
-                      p2pAdvertisedUdpPort == null
-                          ? advertisedTcpPort
-                          : OptionalInt.of(p2pAdvertisedUdpPort))
                   .staticPeers(p2pStaticPeers)
                   .minPeers(getP2pLowerBound())
-                  .maxPeers(getP2pUpperBound())
-                  .minRandomlySelectedPeers(getMinimumRandomlySelectedPeerCount());
+                  .maxPeers(getP2pUpperBound());
             })
         .network(
             n -> {

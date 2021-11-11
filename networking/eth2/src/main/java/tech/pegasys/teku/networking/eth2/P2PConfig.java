@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.util.OptionalInt;
 import java.util.function.Consumer;
 import tech.pegasys.teku.networking.eth2.gossip.config.Eth2Context;
 import tech.pegasys.teku.networking.eth2.gossip.config.GossipConfigurator;
@@ -136,9 +137,12 @@ public class P2PConfig {
               .build();
       networkConfig.gossipConfig(c -> gossipConfigurator.configure(c, eth2Context));
 
+      NetworkConfig networkConfig = this.networkConfig.build();
+      discoveryConfig.advertisedUdpPortDefault(OptionalInt.of(networkConfig.getAdvertisedPort()));
+
       return new P2PConfig(
           spec,
-          networkConfig.build(),
+          networkConfig,
           discoveryConfig.build(),
           gossipConfigurator,
           gossipEncoding,
