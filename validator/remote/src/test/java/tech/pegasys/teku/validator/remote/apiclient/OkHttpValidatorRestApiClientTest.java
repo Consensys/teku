@@ -254,7 +254,7 @@ class OkHttpValidatorRestApiClientTest {
   @Test
   public void sendSignedBlock_MakesExpectedRequest() throws Exception {
     final Bytes32 blockRoot = Bytes32.fromHexStringLenient("0x1234");
-    final SignedBeaconBlock<?> signedBeaconBlock = schemaObjects.signedBeaconBlock();
+    final SignedBeaconBlock signedBeaconBlock = schemaObjects.signedBeaconBlock();
 
     // Block has been successfully broadcast, validated and imported
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(asJson(blockRoot)));
@@ -272,7 +272,7 @@ class OkHttpValidatorRestApiClientTest {
 
   @Test
   public void sendSignedBlock_WhenAccepted_DoesNotFailHandlingResponse() {
-    final SignedBeaconBlock<?> signedBeaconBlock = schemaObjects.signedBeaconBlock();
+    final SignedBeaconBlock signedBeaconBlock = schemaObjects.signedBeaconBlock();
 
     // Block has been successfully broadcast, but failed validation and has not been imported
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_ACCEPTED));
@@ -282,7 +282,7 @@ class OkHttpValidatorRestApiClientTest {
 
   @Test
   public void sendSignedBlock_WhenBadParameters_ThrowsIllegalArgumentException() {
-    final SignedBeaconBlock<?> signedBeaconBlock = schemaObjects.signedBeaconBlock();
+    final SignedBeaconBlock signedBeaconBlock = schemaObjects.signedBeaconBlock();
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
 
@@ -292,7 +292,7 @@ class OkHttpValidatorRestApiClientTest {
 
   @Test
   public void sendSignedBlock_WhenServiceUnavailable_ThrowsServiceNotAvailableResponse() {
-    final SignedBeaconBlock<?> signedBeaconBlock = schemaObjects.signedBeaconBlock();
+    final SignedBeaconBlock signedBeaconBlock = schemaObjects.signedBeaconBlock();
 
     // node is syncing
     mockWebServer.enqueue(new MockResponse().setResponseCode(503));
@@ -304,7 +304,7 @@ class OkHttpValidatorRestApiClientTest {
 
   @Test
   public void sendSignedBlock_WhenServerError_ThrowsRuntimeException() {
-    final SignedBeaconBlock<?> signedBeaconBlock = schemaObjects.signedBeaconBlock();
+    final SignedBeaconBlock signedBeaconBlock = schemaObjects.signedBeaconBlock();
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
 

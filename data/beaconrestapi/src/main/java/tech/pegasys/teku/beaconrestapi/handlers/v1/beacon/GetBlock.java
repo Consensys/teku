@@ -77,12 +77,12 @@ public class GetBlock extends AbstractHandler implements Handler {
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
     final Map<String, String> pathParams = ctx.pathParamMap();
-    final SafeFuture<Optional<SignedBeaconBlock<?>>> future =
+    final SafeFuture<Optional<SignedBeaconBlock>> future =
         chainDataProvider.getBlock(pathParams.get(PARAM_BLOCK_ID));
     handleOptionalResult(ctx, future, this::handleResult, SC_NOT_FOUND);
   }
 
-  private Optional<String> handleResult(Context ctx, final SignedBeaconBlock<?> response)
+  private Optional<String> handleResult(Context ctx, final SignedBeaconBlock response)
       throws JsonProcessingException {
     if (!chainDataProvider
         .getMilestoneAtSlot(response.getMessage().slot)
