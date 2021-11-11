@@ -136,7 +136,7 @@ dependencyManagement {
       entry 'crypto'
     }
 
-    dependency 'org.xerial.snappy:snappy-java:1.1.7.6'
+    dependency 'org.xerial.snappy:snappy-java:1.1.8.4'
 
     dependency 'io.prometheus:simpleclient:0.9.0'
 
