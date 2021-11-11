@@ -1,0 +1,24 @@
+{
+  "type" : "object",
+  "properties" : {
+    "validator_index" : {
+      "type" : "integer",
+      "format" : "int32"
+    },
+    "committee_index" : {
+      "type" : "integer",
+      "format" : "int32"
+    },
+    "committees_at_slot" : {
+      "type" : "string",
+      "format" : "uint64"
+    },
+    "slot" : {
+      "type" : "string",
+      "format" : "uint64"
+    },
+    "is_aggregator" : {
+      "type" : "boolean"
+    }
+  }
+}

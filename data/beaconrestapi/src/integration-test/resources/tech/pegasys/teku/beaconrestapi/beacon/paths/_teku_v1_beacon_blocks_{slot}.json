@@ -1,0 +1,41 @@
+{
+  "get" : {
+    "tags" : [ "Teku" ],
+    "summary" : "Get blocks at slot",
+    "description" : "Get all blocks (canonical and non-canonical) by slot.",
+    "operationId" : "getTekuV1BeaconBlocksWithSlot",
+    "parameters" : [ {
+      "name" : "slot",
+      "in" : "path",
+      "description" : "slot of the blocks to retrieve.",
+      "required" : true,
+      "schema" : {
+        "type" : "string"
+      }
+    } ],
+    "responses" : {
+      "200" : {
+        "description" : "OK",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetAllBlocksAtSlotResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "Bad Request"
+      },
+      "404" : {
+        "description" : "Not Found"
+      },
+      "500" : {
+        "description" : "Server Error"
+      },
+      "503" : {
+        "description" : "Beacon node is currently syncing and not serving requests"
+      }
+    }
+  }
+}

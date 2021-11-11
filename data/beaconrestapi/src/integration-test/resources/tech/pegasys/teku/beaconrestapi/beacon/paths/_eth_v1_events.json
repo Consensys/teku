@@ -1,0 +1,35 @@
+{
+  "get" : {
+    "tags" : [ "Events", "Validator Required Api" ],
+    "summary" : "Subscribe to node events",
+    "description" : "Provides endpoint to subscribe to beacon node Server-Sent-Events stream. Consumers should use [eventsource](https://html.spec.whatwg.org/multipage/server-sent-events.html#the-eventsource-interface) implementation to listen on those events.\n\nServers _may_ send SSE comments beginning with `:` for any purpose, including to keep the event stream connection alive in the presence of proxy servers.",
+    "operationId" : "getEthV1Events",
+    "parameters" : [ {
+      "name" : "topics",
+      "in" : "query",
+      "description" : "Event types to subscribe to. Available values include: [`head`, `finalized_checkpoint`, `chain_reorg`, `block`, `attestation`, `voluntary_exit`, `contribution_and_proof`]\n\n",
+      "required" : true,
+      "schema" : {
+        "type" : "string"
+      }
+    } ],
+    "responses" : {
+      "200" : {
+        "description" : "OK",
+        "content" : {
+          "text/event-stream" : {
+            "schema" : {
+              "type" : "string"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "Bad Request"
+      },
+      "500" : {
+        "description" : "Server Error"
+      }
+    }
+  }
+}

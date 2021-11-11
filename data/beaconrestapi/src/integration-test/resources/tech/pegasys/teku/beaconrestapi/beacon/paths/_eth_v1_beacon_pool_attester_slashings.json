@@ -1,0 +1,49 @@
+{
+  "get" : {
+    "tags" : [ "Beacon" ],
+    "summary" : "Get AttesterSlashings",
+    "description" : "Retrieves attester slashings known by the node but not necessarily incorporated into any block.",
+    "operationId" : "getEthV1BeaconPoolAttester_slashings",
+    "responses" : {
+      "200" : {
+        "description" : "OK",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetAttesterSlashingsResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Server Error"
+      }
+    }
+  },
+  "post" : {
+    "tags" : [ "Beacon" ],
+    "summary" : "Submit attester slashing object",
+    "description" : "Submits attester slashing object to node's pool and if passes validation node MUST broadcast it to network.",
+    "operationId" : "postEthV1BeaconPoolAttester_slashings",
+    "requestBody" : {
+      "content" : {
+        "application/json" : {
+          "schema" : {
+            "$ref" : "#/components/schemas/AttesterSlashing"
+          }
+        }
+      }
+    },
+    "responses" : {
+      "200" : {
+        "description" : "Attester Slashing has been successfully validated, added to the pool, and broadcast."
+      },
+      "400" : {
+        "description" : "Invalid attester slashing, it will never pass validation so it's rejected"
+      },
+      "500" : {
+        "description" : "Server Error"
+      }
+    }
+  }
+}

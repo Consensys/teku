@@ -1,0 +1,16 @@
+{
+  "type" : "object",
+  "properties" : {
+    "proof" : {
+      "type" : "array",
+      "items" : {
+        "type" : "string",
+        "description" : "Bytes32 hexadecimal",
+        "format" : "byte"
+      }
+    },
+    "data" : {
+      "$ref" : "#/components/schemas/DepositData"
+    }
+  }
+}

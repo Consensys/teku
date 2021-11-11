@@ -1,0 +1,18 @@
+{
+  "type" : "object",
+  "properties" : {
+    "aggregation_bits" : {
+      "type" : "string",
+      "description" : "SSZ hexadecimal",
+      "format" : "byte"
+    },
+    "data" : {
+      "$ref" : "#/components/schemas/AttestationData"
+    },
+    "signature" : {
+      "type" : "string",
+      "description" : "Bytes96 hexadecimal",
+      "format" : "byte"
+    }
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "get" : {
+    "tags" : [ "Beacon" ],
+    "summary" : "Get block headers",
+    "description" : "Retrieves block headers matching given query. By default it will fetch current head slot blocks.",
+    "operationId" : "getEthV1BeaconHeaders",
+    "parameters" : [ {
+      "name" : "slot",
+      "in" : "query",
+      "schema" : {
+        "type" : "string"
+      }
+    }, {
+      "name" : "parent_root",
+      "in" : "query",
+      "description" : "Not currently supported.",
+      "schema" : {
+        "type" : "string"
+      }
+    } ],
+    "responses" : {
+      "200" : {
+        "description" : "OK",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetBlockHeadersResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "Bad Request"
+      },
+      "500" : {
+        "description" : "Server Error"
+      }
+    }
+  }
+}

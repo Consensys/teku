@@ -1,0 +1,50 @@
+{
+  "post" : {
+    "tags" : [ "Validator", "Validator Required Api" ],
+    "summary" : "Get sync committee duties",
+    "description" : "Requests the beacon node to provide a set of sync committee duties",
+    "operationId" : "postEthV1ValidatorDutiesSyncWithEpoch",
+    "parameters" : [ {
+      "name" : "epoch",
+      "in" : "path",
+      "required" : true,
+      "schema" : {
+        "type" : "string"
+      }
+    } ],
+    "requestBody" : {
+      "description" : "An array of the validator indices for which to obtain the duties.\n\n```\n[\n  \"(uint64)\",\n  ...\n]\n```\n\n",
+      "content" : {
+        "application/json" : {
+          "schema" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        }
+      }
+    },
+    "responses" : {
+      "200" : {
+        "description" : "OK",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/PostSyncDutiesResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "Bad Request"
+      },
+      "500" : {
+        "description" : "Server Error"
+      },
+      "503" : {
+        "description" : "Beacon node is currently syncing and not serving requests"
+      }
+    }
+  }
+}

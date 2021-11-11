@@ -1,0 +1,19 @@
+{
+  "type" : "object",
+  "properties" : {
+    "deposit_root" : {
+      "type" : "string",
+      "description" : "Bytes32 hexadecimal",
+      "format" : "byte"
+    },
+    "deposit_count" : {
+      "type" : "string",
+      "format" : "uint64"
+    },
+    "block_hash" : {
+      "type" : "string",
+      "description" : "Bytes32 hexadecimal",
+      "format" : "byte"
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "get" : {
+    "tags" : [ "Config", "Validator Required Api" ],
+    "summary" : "Get spec params",
+    "description" : "Retrieve specification configuration used on this node.",
+    "operationId" : "getEthV1ConfigSpec",
+    "responses" : {
+      "200" : {
+        "description" : "OK",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetSpecResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Server Error"
+      }
+    }
+  }
+}
