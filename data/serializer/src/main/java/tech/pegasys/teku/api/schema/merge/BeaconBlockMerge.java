@@ -41,9 +41,9 @@ public class BeaconBlockMerge extends BeaconBlockAltair {
         .getBeaconBlockSchema()
         .create(
             slot,
-            proposerIndex,
-            parentRoot,
-            stateRoot,
+            proposer_index,
+            parent_root,
+            state_root,
             body.asInternalBeaconBlockBody(specVersion));
   }
 
