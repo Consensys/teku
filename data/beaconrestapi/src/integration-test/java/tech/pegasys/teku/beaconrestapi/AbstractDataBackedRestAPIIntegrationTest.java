@@ -77,11 +77,8 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(16);
 
-  protected Spec spec = TestSpecFactory.createMinimalPhase0();
-  protected SpecConfig specConfig = spec.getGenesisSpecConfig();
-
-  protected final ActiveValidatorChannel activeValidatorChannel =
-      new ActiveValidatorCache(spec, 10);
+  protected Spec spec;
+  protected SpecConfig specConfig;
 
   private static final okhttp3.MediaType JSON =
       okhttp3.MediaType.parse("application/json; charset=utf-8");
@@ -96,11 +93,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
           .eth1DepositContractAddress(Eth1Address.ZERO)
           .build();
 
-  protected static final UInt64 SIX = UInt64.valueOf(6);
-  protected static final UInt64 SEVEN = UInt64.valueOf(7);
-  protected static final UInt64 EIGHT = UInt64.valueOf(8);
-  protected static final UInt64 NINE = UInt64.valueOf(9);
-  protected static final UInt64 TEN = UInt64.valueOf(10);
+  protected ActiveValidatorChannel activeValidatorChannel;
 
   // Mocks
   protected final Eth2P2PNetwork eth2P2PNetwork = mock(Eth2P2PNetwork.class);
@@ -141,17 +134,11 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
       final StateStorageMode storageMode,
       final boolean useMockForkChoice,
       final SpecMilestone specMilestone) {
-    setupStorage(
-        InMemoryStorageSystemBuilder.buildDefault(storageMode), useMockForkChoice, specMilestone);
-  }
-
-  private void setupStorage(
-      final StorageSystem storageSystem,
-      final boolean useMockForkChoice,
-      final SpecMilestone specMilestone) {
     this.spec = TestSpecFactory.createMinimal(specMilestone);
     this.specConfig = spec.getGenesisSpecConfig();
-    this.storageSystem = storageSystem;
+    this.storageSystem =
+        InMemoryStorageSystemBuilder.create().specProvider(spec).storageMode(storageMode).build();
+    activeValidatorChannel = new ActiveValidatorCache(spec, 10);
     recentChainData = storageSystem.recentChainData();
     chainBuilder = ChainBuilder.create(spec, VALIDATOR_KEYS);
     chainUpdater = new ChainUpdater(recentChainData, chainBuilder, spec);
@@ -191,23 +178,6 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
 
   private void setupAndStartRestAPI() {
     setupAndStartRestAPI(CONFIG);
-  }
-
-  protected void startPreForkChoiceRestAPI() {
-    // Initialize genesis
-    setupStorage(StateStorageMode.ARCHIVE, true, SpecMilestone.PHASE0);
-    chainUpdater.initializeGenesis();
-    // Restart storage system without running fork choice
-    storageSystem = storageSystem.restarted(StateStorageMode.ARCHIVE);
-    setupStorage(storageSystem, true, SpecMilestone.PHASE0);
-    // Start API
-    setupAndStartRestAPI();
-  }
-
-  protected void startPreGenesisRestAPI() {
-    setupStorage(StateStorageMode.ARCHIVE, false, SpecMilestone.PHASE0);
-    // Start API
-    setupAndStartRestAPI();
   }
 
   protected void startPreGenesisRestAPIWithConfig(BeaconRestApiConfig config) {
@@ -269,13 +239,13 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     return results;
   }
 
-  public List<SignedBeaconBlock<?>> createBlocksAtSlotsAndMapToApiResult(long... slots) {
+  public List<SignedBeaconBlock> createBlocksAtSlotsAndMapToApiResult(long... slots) {
     final UInt64[] unsignedSlots =
         Arrays.stream(slots).mapToObj(UInt64::valueOf).toArray(UInt64[]::new);
     return createBlocksAtSlotsAndMapToApiResult(unsignedSlots);
   }
 
-  public List<SignedBeaconBlock<?>> createBlocksAtSlotsAndMapToApiResult(UInt64... slots) {
+  public List<SignedBeaconBlock> createBlocksAtSlotsAndMapToApiResult(UInt64... slots) {
     return createBlocksAtSlots(slots).stream()
         .map(SignedBlockAndState::getBlock)
         .map(SignedBeaconBlock::create)
