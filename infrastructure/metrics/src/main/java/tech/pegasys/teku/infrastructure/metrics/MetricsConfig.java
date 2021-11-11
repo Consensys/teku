@@ -16,7 +16,6 @@ package tech.pegasys.teku.infrastructure.metrics;
 import com.google.common.collect.ImmutableSet;
 import java.util.Arrays;
 import java.util.EnumSet;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.hyperledger.besu.metrics.StandardMetricCategory;
@@ -31,8 +30,8 @@ public class MetricsConfig {
           .build();
   public static final int DEFAULT_METRICS_PORT = 8008;
   public static final String DEFAULT_METRICS_INTERFACE = "127.0.0.1";
-  public static final List<String> DEFAULT_METRICS_HOST_ALLOWLIST = Arrays
-      .asList("127.0.0.1", "localhost");
+  public static final List<String> DEFAULT_METRICS_HOST_ALLOWLIST =
+      Arrays.asList("127.0.0.1", "localhost");
   public static final int DEFAULT_IDLE_TIMEOUT_SECONDS = 60;
   public static final int DEFAULT_METRICS_PUBLICATION_INTERVAL = 60;
 

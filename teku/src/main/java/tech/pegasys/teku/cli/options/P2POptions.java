@@ -32,7 +32,6 @@ import tech.pegasys.teku.sync.SyncConfig;
 
 public class P2POptions {
 
-
   @Option(
       names = {"--p2p-enabled"},
       paramLabel = "<BOOLEAN>",
@@ -181,7 +180,8 @@ public class P2POptions {
       description = "If true, turn on batch verification for gossiped attestation signatures",
       hidden = true,
       arity = "0..1")
-  private boolean batchVerifyAttestationSignatures = P2PConfig.DEFAULT_BATCH_VERIFY_ATTESTATION_SIGNATURES;
+  private boolean batchVerifyAttestationSignatures =
+      P2PConfig.DEFAULT_BATCH_VERIFY_ATTESTATION_SIGNATURES;
 
   @Option(
       names = {"--Xpeer-rate-limit"},

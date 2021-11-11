@@ -135,8 +135,7 @@ public class LoggingOptions {
   }
 
   public TekuConfiguration.Builder configure(
-      final TekuConfiguration.Builder builder,
-      final String defaultLogFilePrefix) {
+      final TekuConfiguration.Builder builder, final String defaultLogFilePrefix) {
 
     return builder
         .logging(

@@ -25,7 +25,8 @@ public class StoreOptions {
       description =
           "How frequently to persist hot states in epochs.  A value less than or equal to zero disables hot state persistence.",
       arity = "1")
-  private int hotStatePersistenceFrequencyInEpochs = StoreConfig.DEFAULT_HOT_STATE_PERSISTENCE_FREQUENCY_IN_EPOCHS;
+  private int hotStatePersistenceFrequencyInEpochs =
+      StoreConfig.DEFAULT_HOT_STATE_PERSISTENCE_FREQUENCY_IN_EPOCHS;
 
   public void configure(final TekuConfiguration.Builder builder) {
     builder.store(

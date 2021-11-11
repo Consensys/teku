@@ -119,8 +119,7 @@ public class LoggingConfig {
           logPathFile = logDirectory + SEP + logFileName;
         }
         if (logPathFilePattern == null) {
-          logPathFilePattern =
-              logDirectory + SEP + logFileNamePattern;
+          logPathFilePattern = logDirectory + SEP + logFileNamePattern;
         }
       }
     }

@@ -23,7 +23,6 @@ import tech.pegasys.teku.infrastructure.metrics.MetricsConfig;
 
 public class MetricsOptions {
 
-
   @Option(
       names = {"--metrics-enabled"},
       paramLabel = "<BOOLEAN>",
