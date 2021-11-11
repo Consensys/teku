@@ -35,7 +35,7 @@ class RemoteSpecLoader {
     try {
       return apiClient
           .getConfigSpec()
-          .map(response -> SpecConfigLoader.loadConfig(response.data))
+          .map(response -> SpecConfigLoader.loadRemoteConfig(response.data))
           .map(SpecFactory::create)
           .orElseThrow();
     } catch (Exception e) {

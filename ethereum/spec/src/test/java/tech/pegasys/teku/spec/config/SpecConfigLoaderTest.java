@@ -42,7 +42,7 @@ public class SpecConfigLoaderTest {
   @MethodSource("knownNetworks")
   public void shouldLoadAllKnownNetworks(final String name, final Class<?> configType)
       throws Exception {
-    final SpecConfig config = SpecConfigLoader.loadConfig(name);
+    final SpecConfig config = SpecConfigLoader.loadConfigStrict(name);
     assertAllFieldsSet(config, configType);
   }
 
@@ -123,13 +123,8 @@ public class SpecConfigLoaderTest {
   }
 
   static Stream<Arguments> knownNetworks() {
-    return Stream.of(
-        Arguments.of(Eth2Network.MAINNET.configName(), SpecConfigMerge.class),
-        Arguments.of(Eth2Network.PYRMONT.configName(), SpecConfigMerge.class),
-        Arguments.of(Eth2Network.PRATER.configName(), SpecConfigMerge.class),
-        Arguments.of(Eth2Network.MINIMAL.configName(), SpecConfigMerge.class),
-        Arguments.of(Eth2Network.SWIFT.configName(), SpecConfigMerge.class),
-        Arguments.of(Eth2Network.LESS_SWIFT.configName(), SpecConfigMerge.class));
+    return Stream.of(Eth2Network.values())
+        .map(network -> Arguments.of(network.configName(), SpecConfigMerge.class));
   }
 
   private void writeStreamToFile(final InputStream inputStream, final Path filePath)
