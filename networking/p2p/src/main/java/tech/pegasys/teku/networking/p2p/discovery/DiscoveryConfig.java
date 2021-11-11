@@ -14,7 +14,7 @@
 package tech.pegasys.teku.networking.p2p.discovery;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.Builder.DEFAULT_P2P_PORT;
+import static tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.DEFAULT_P2P_PORT;
 
 import java.util.Collections;
 import java.util.List;
@@ -25,7 +25,6 @@ public class DiscoveryConfig {
   public static final boolean DEFAULT_P2P_DISCOVERY_ENABLED = true;
   public static final int DEFAULT_P2P_PEERS_LOWER_BOUND = 64;
   public static final int DEFAULT_P2P_PEERS_UPPER_BOUND = 74;
-  public static final int DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT = 2;
 
   private final boolean isDiscoveryEnabled;
   private final int listenUdpPort;

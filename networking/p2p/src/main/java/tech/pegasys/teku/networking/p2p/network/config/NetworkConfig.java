@@ -27,7 +27,11 @@ import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
 
 public class NetworkConfig {
+
   private static final Logger LOG = LogManager.getLogger();
+
+  public static final String DEFAULT_P2P_INTERFACE = "0.0.0.0";
+  public static final int DEFAULT_P2P_PORT = 9000;
 
   private final GossipConfig gossipConfig;
   private final WireLogsConfig wireLogsConfig;
@@ -122,14 +126,13 @@ public class NetworkConfig {
   }
 
   public static class Builder {
-    public static final int DEFAULT_P2P_PORT = 9000;
 
     private final GossipConfig.Builder gossipConfigBuilder = GossipConfig.builder();
     private final WireLogsConfig.Builder wireLogsConfig = WireLogsConfig.builder();
 
     private Boolean isEnabled = true;
     private Optional<String> privateKeyFile = Optional.empty();
-    private String networkInterface = "0.0.0.0";
+    private String networkInterface = DEFAULT_P2P_INTERFACE;
     private Optional<String> advertisedIp = Optional.empty();
     private int listenPort = DEFAULT_P2P_PORT;
     private OptionalInt advertisedPort = OptionalInt.empty();

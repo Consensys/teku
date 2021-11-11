@@ -14,9 +14,9 @@
 package tech.pegasys.teku.cli.options;
 
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
-import static tech.pegasys.teku.networking.eth2.P2PConfig.Builder.DEFAULT_PEER_RATE_LIMIT;
-import static tech.pegasys.teku.networking.eth2.P2PConfig.Builder.DEFAULT_PEER_REQUEST_LIMIT;
-import static tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.Builder.DEFAULT_P2P_PORT;
+import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_PEER_RATE_LIMIT;
+import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_PEER_REQUEST_LIMIT;
+import static tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.DEFAULT_P2P_PORT;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,9 +25,13 @@ import java.util.OptionalInt;
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
+import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
+import tech.pegasys.teku.sync.SyncConfig;
 
 public class P2POptions {
+
 
   @Option(
       names = {"--p2p-enabled"},
@@ -43,7 +47,7 @@ public class P2POptions {
       paramLabel = "<NETWORK>",
       description = "P2P network interface",
       arity = "1")
-  private String p2pInterface = "0.0.0.0";
+  private String p2pInterface = NetworkConfig.DEFAULT_P2P_INTERFACE;
 
   @Option(
       names = {"--p2p-port"},
@@ -126,7 +130,7 @@ public class P2POptions {
       description = "Target number of peers subscribed to each attestation subnet",
       arity = "1",
       hidden = true)
-  private int p2pTargetSubnetSubscriberCount = DiscoveryConfig.DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT;
+  private int p2pTargetSubnetSubscriberCount = P2PConfig.DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT;
 
   @Option(
       names = {"--Xp2p-minimum-randomly-selected-peer-count"},
@@ -151,7 +155,7 @@ public class P2POptions {
       description = "Enables experimental multipeer sync",
       hidden = true,
       arity = "1")
-  private boolean multiPeerSyncEnabled = true;
+  private boolean multiPeerSyncEnabled = SyncConfig.DEFAULT_MULTI_PEER_SYNC_ENABLED;
 
   @Option(
       names = {"--p2p-subscribe-all-subnets-enabled"},
@@ -160,7 +164,7 @@ public class P2POptions {
       description = "",
       arity = "0..1",
       fallbackValue = "true")
-  private boolean subscribeAllSubnetsEnabled = false;
+  private boolean subscribeAllSubnetsEnabled = P2PConfig.DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED;
 
   @Option(
       names = {"--Xp2p-gossip-scoring-enabled"},
@@ -169,7 +173,7 @@ public class P2POptions {
       hidden = true,
       arity = "0..1",
       fallbackValue = "true")
-  private boolean gossipScoringEnabled = false;
+  private boolean gossipScoringEnabled = P2PConfig.DEFAULT_GOSSIP_SCORING_ENABLED;
 
   @Option(
       names = {"--Xp2p-batch-verify-attestation-signatures-enabled"},
@@ -177,7 +181,7 @@ public class P2POptions {
       description = "If true, turn on batch verification for gossiped attestation signatures",
       hidden = true,
       arity = "0..1")
-  private boolean batchVerifyAttestationSignatures = true;
+  private boolean batchVerifyAttestationSignatures = P2PConfig.DEFAULT_BATCH_VERIFY_ATTESTATION_SIGNATURES;
 
   @Option(
       names = {"--Xpeer-rate-limit"},
@@ -216,8 +220,6 @@ public class P2POptions {
   }
 
   public void configure(final TekuConfiguration.Builder builder) {
-    final OptionalInt advertisedTcpPort =
-        p2pAdvertisedPort == null ? OptionalInt.empty() : OptionalInt.of(p2pAdvertisedPort);
     builder
         .p2p(
             b ->
@@ -251,11 +253,13 @@ public class P2POptions {
               if (p2pPrivateKeyFile != null) {
                 n.privateKeyFile(p2pPrivateKeyFile);
               }
+              if (p2pAdvertisedPort != null) {
+                n.advertisedPort(OptionalInt.of(p2pAdvertisedPort));
+              }
               n.networkInterface(p2pInterface)
                   .isEnabled(p2pEnabled)
                   .listenPort(p2pPort)
-                  .advertisedIp(Optional.ofNullable(p2pAdvertisedIp))
-                  .advertisedPort(advertisedTcpPort);
+                  .advertisedIp(Optional.ofNullable(p2pAdvertisedIp));
             })
         .sync(s -> s.isSyncEnabled(p2pEnabled).isMultiPeerSyncEnabled(multiPeerSyncEnabled));
   }

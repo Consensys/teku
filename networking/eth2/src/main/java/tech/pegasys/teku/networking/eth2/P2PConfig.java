@@ -26,6 +26,13 @@ import tech.pegasys.teku.spec.Spec;
 
 public class P2PConfig {
 
+  public static final int DEFAULT_PEER_RATE_LIMIT = 500;
+  public static final int DEFAULT_PEER_REQUEST_LIMIT = 50;
+  public static final int DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT = 2;
+  public static final boolean DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED = false;
+  public static final boolean DEFAULT_GOSSIP_SCORING_ENABLED = false;
+  public static final boolean DEFAULT_BATCH_VERIFY_ATTESTATION_SIGNATURES = true;
+
   private final Spec spec;
   private final NetworkConfig networkConfig;
   private final DiscoveryConfig discoveryConfig;
@@ -106,20 +113,17 @@ public class P2PConfig {
   }
 
   public static class Builder {
-    public static final int DEFAULT_PEER_RATE_LIMIT = 500;
-    public static final int DEFAULT_PEER_REQUEST_LIMIT = 50;
-
     private final NetworkConfig.Builder networkConfig = NetworkConfig.builder();
     private final DiscoveryConfig.Builder discoveryConfig = DiscoveryConfig.builder();
 
     private Spec spec;
-    private Boolean isGossipScoringEnabled = false;
+    private Boolean isGossipScoringEnabled = DEFAULT_GOSSIP_SCORING_ENABLED;
     private GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
-    private Integer targetSubnetSubscriberCount = 2;
-    private Boolean subscribeAllSubnetsEnabled = false;
+    private Integer targetSubnetSubscriberCount = DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT;
+    private Boolean subscribeAllSubnetsEnabled = DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED;
     private Integer peerRateLimit = DEFAULT_PEER_RATE_LIMIT;
     private Integer peerRequestLimit = DEFAULT_PEER_REQUEST_LIMIT;
-    private Boolean batchVerifyAttestationSignatures = false;
+    private Boolean batchVerifyAttestationSignatures = DEFAULT_BATCH_VERIFY_ATTESTATION_SIGNATURES;
 
     private Builder() {}
 
