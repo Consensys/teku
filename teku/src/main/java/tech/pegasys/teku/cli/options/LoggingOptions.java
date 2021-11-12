@@ -15,11 +15,9 @@ package tech.pegasys.teku.cli.options;
 
 import static tech.pegasys.teku.infrastructure.logging.LoggingDestination.DEFAULT_BOTH;
 
-import java.nio.file.Path;
 import java.util.Optional;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Visibility;
-import tech.pegasys.teku.cli.util.LoggingPathBuilder;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 
@@ -132,37 +130,39 @@ public class LoggingOptions {
     return Optional.ofNullable(logFileNamePattern);
   }
 
+  private boolean hasPath(String file) {
+    return file.contains("/") || file.contains("\\");
+  }
+
   public TekuConfiguration.Builder configure(
-      final TekuConfiguration.Builder builder,
-      final Path dataBasePath,
-      final String defaultLogFile,
-      final String defaultLogFileNamePattern) {
-
-    final String logFile =
-        new LoggingPathBuilder()
-            .defaultBasename(defaultLogFile)
-            .dataPath(dataBasePath)
-            .maybeFromCommandLine(getMaybeLogFile())
-            .build();
-
-    final String logFileNamePattern =
-        new LoggingPathBuilder()
-            .defaultBasename(defaultLogFileNamePattern)
-            .dataPath(dataBasePath)
-            .maybeFromCommandLine(getMaybeLogPattern())
-            .build();
+      final TekuConfiguration.Builder builder, final String defaultLogFilePrefix) {
 
     return builder
         .logging(
-            loggingBuilder ->
-                loggingBuilder
-                    .colorEnabled(logColorEnabled)
-                    .includeEventsEnabled(logIncludeEventsEnabled)
-                    .includeValidatorDutiesEnabled(logIncludeValidatorDutiesEnabled)
-                    .includeP2pWarningsEnabled(logIncludeP2pWarningsEnabled)
-                    .destination(logDestination)
-                    .logFile(logFile)
-                    .logFileNamePattern(logFileNamePattern))
+            loggingBuilder -> {
+              loggingBuilder.logFilePrefix(defaultLogFilePrefix);
+
+              if (logFile != null) {
+                if (hasPath(logFile)) {
+                  loggingBuilder.logPathFile(logFile);
+                } else {
+                  loggingBuilder.logFileName(logFile);
+                }
+              }
+              if (logFileNamePattern != null) {
+                if (hasPath(logFileNamePattern)) {
+                  loggingBuilder.logPathFilePattern(logFileNamePattern);
+                } else {
+                  loggingBuilder.logFileNamePattern(logFileNamePattern);
+                }
+              }
+              loggingBuilder
+                  .colorEnabled(logColorEnabled)
+                  .includeEventsEnabled(logIncludeEventsEnabled)
+                  .includeValidatorDutiesEnabled(logIncludeValidatorDutiesEnabled)
+                  .includeP2pWarningsEnabled(logIncludeP2pWarningsEnabled)
+                  .destination(logDestination);
+            })
         .wireLogs(
             b ->
                 b.logWireCipher(logWireCipherEnabled)

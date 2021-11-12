@@ -14,6 +14,12 @@
 package tech.pegasys.teku.infrastructure.logging;
 
 public class LoggingConfig {
+  public static final String DEFAULT_LOG_FILE_NAME_PREFIX = "teku-node";
+  public static final String DEFAULT_LOG_FILE_NAME_SUFFIX = ".log";
+  public static final String DEFAULT_LOG_FILE_NAME_PATTERN_SUFFIX = "_%d{yyyy-MM-dd}.log";
+
+  public static final String DEFAULT_LOG_DIRECTORY = ".";
+  public static final String DATA_LOG_SUBDIRECTORY = "logs";
 
   private final boolean colorEnabled;
   private final boolean includeEventsEnabled;
@@ -73,16 +79,50 @@ public class LoggingConfig {
   }
 
   public static final class LoggingConfigBuilder {
+    public static final String SEP = System.getProperty("file.separator");
 
-    private boolean colorEnabled;
-    private boolean includeEventsEnabled;
-    private boolean includeValidatorDutiesEnabled;
-    private boolean includeP2pWarningsEnabled;
-    private LoggingDestination destination;
-    private String logFile;
+    private boolean colorEnabled = true;
+    private boolean includeEventsEnabled = true;
+    private boolean includeValidatorDutiesEnabled = true;
+    private boolean includeP2pWarningsEnabled = false;
+    private LoggingDestination destination = LoggingDestination.DEFAULT_BOTH;
+
+    private String logFileNamePrefix = DEFAULT_LOG_FILE_NAME_PREFIX;
+    private String logFileName;
     private String logFileNamePattern;
 
+    private String dataDirectory;
+    private String logDirectory;
+    private String logPathFile;
+    private String logPathFilePattern;
+
     private LoggingConfigBuilder() {}
+
+    private void initMissingDefaults() {
+      if (logPathFile == null || logPathFilePattern == null) {
+        if (logFileName == null) {
+          logFileName = logFileNamePrefix + DEFAULT_LOG_FILE_NAME_SUFFIX;
+        }
+        if (logFileNamePattern == null) {
+          logFileNamePattern = logFileNamePrefix + DEFAULT_LOG_FILE_NAME_PATTERN_SUFFIX;
+        }
+
+        if (logDirectory == null) {
+          if (dataDirectory == null) {
+            logDirectory = DEFAULT_LOG_DIRECTORY;
+          } else {
+            logDirectory = dataDirectory + SEP + DATA_LOG_SUBDIRECTORY;
+          }
+        }
+
+        if (logPathFile == null) {
+          logPathFile = logDirectory + SEP + logFileName;
+        }
+        if (logPathFilePattern == null) {
+          logPathFilePattern = logDirectory + SEP + logFileNamePattern;
+        }
+      }
+    }
 
     public LoggingConfigBuilder colorEnabled(boolean colorEnabled) {
       this.colorEnabled = colorEnabled;
@@ -110,8 +150,23 @@ public class LoggingConfig {
       return this;
     }
 
-    public LoggingConfigBuilder logFile(String logFile) {
-      this.logFile = logFile;
+    public LoggingConfigBuilder dataDirectory(String dataDirectory) {
+      this.dataDirectory = dataDirectory;
+      return this;
+    }
+
+    public LoggingConfigBuilder logDirectory(String logDirectory) {
+      this.logDirectory = logDirectory;
+      return this;
+    }
+
+    public LoggingConfigBuilder logFilePrefix(String logShortFileName) {
+      this.logFileNamePrefix = logShortFileName;
+      return this;
+    }
+
+    public LoggingConfigBuilder logFileName(String logFileName) {
+      this.logFileName = logFileName;
       return this;
     }
 
@@ -120,15 +175,26 @@ public class LoggingConfig {
       return this;
     }
 
+    public LoggingConfigBuilder logPathFile(String logPathFile) {
+      this.logPathFile = logPathFile;
+      return this;
+    }
+
+    public LoggingConfigBuilder logPathFilePattern(String logPathFilePattern) {
+      this.logPathFilePattern = logPathFilePattern;
+      return this;
+    }
+
     public LoggingConfig build() {
+      initMissingDefaults();
       return new LoggingConfig(
           colorEnabled,
           includeEventsEnabled,
           includeValidatorDutiesEnabled,
           includeP2pWarningsEnabled,
           destination,
-          logFile,
-          logFileNamePattern);
+          logPathFile,
+          logPathFilePattern);
     }
   }
 }
