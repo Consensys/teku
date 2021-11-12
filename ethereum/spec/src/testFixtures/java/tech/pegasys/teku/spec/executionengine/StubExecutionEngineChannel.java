@@ -87,7 +87,7 @@ public class StubExecutionEngineChannel implements ExecutionEngineChannel {
   }
 
   @Override
-  public SafeFuture<ExecutionPayload> getPayload(final Bytes8 payloadId) {
+  public SafeFuture<ExecutionPayload> getPayload(final Bytes8 payloadId, final UInt64 slot) {
     if (executionPayloadSchema.isEmpty()) {
       return SafeFuture.failedFuture(
           new UnsupportedOperationException("getPayload not supported for non-Merge milestones"));

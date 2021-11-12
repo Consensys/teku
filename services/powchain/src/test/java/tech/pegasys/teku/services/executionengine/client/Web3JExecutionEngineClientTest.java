@@ -244,7 +244,7 @@ public class Web3JExecutionEngineClientTest {
   }
 
   @TestTemplate
-  void shouldThrowDeserializingInvalidExecutionPayloadResult() throws IOException {
+  void shouldThrowDeserializingInvalidExecutionPayloadResult() {
     assertThrows(
         InvalidFormatException.class,
         () -> {
@@ -309,7 +309,7 @@ public class Web3JExecutionEngineClientTest {
   }
 
   @TestTemplate
-  void shouldThrowDeserializingInvalidForkChoiceUpdatedResult() throws IOException {
+  void shouldThrowDeserializingInvalidForkChoiceUpdatedResult() {
     assertThrows(
         InvalidFormatException.class,
         () -> {

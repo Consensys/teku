@@ -16,27 +16,27 @@ package tech.pegasys.teku.services.executionengine.client.schema;
 public class Response<T> {
 
   private final T payload;
-  private final String reason;
+  private final String errorMessage;
 
-  private Response(T payload, String reason) {
+  private Response(T payload, String errorMessage) {
     this.payload = payload;
-    this.reason = reason;
+    this.errorMessage = errorMessage;
   }
 
-  public Response(String reason) {
-    this(null, reason);
+  public Response(String errorMessage) {
+    this(null, errorMessage);
   }
 
   public Response(T payload) {
     this.payload = payload;
-    this.reason = null;
+    this.errorMessage = null;
   }
 
   public T getPayload() {
     return payload;
   }
 
-  public String getReason() {
-    return reason;
+  public String getErrorMessage() {
+    return errorMessage;
   }
 }

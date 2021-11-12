@@ -21,6 +21,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.services.executionengine.client.ExecutionEngineClient;
 import tech.pegasys.teku.services.executionengine.client.Web3JExecutionEngineClient;
 import tech.pegasys.teku.services.executionengine.client.schema.ExecutionPayloadV1;
@@ -29,21 +30,20 @@ import tech.pegasys.teku.services.executionengine.client.schema.ForkChoiceUpdate
 import tech.pegasys.teku.services.executionengine.client.schema.PayloadAttributesV1;
 import tech.pegasys.teku.services.executionengine.client.schema.Response;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.executionengine.ExecutePayloadResult;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
 import tech.pegasys.teku.spec.executionengine.PayloadAttributes;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
 import tech.pegasys.teku.ssz.type.Bytes8;
 
 public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
   private static final Logger LOG = LogManager.getLogger();
 
   private final ExecutionEngineClient executionEngineClient;
-  private final ExecutionPayloadSchema executionPayloadSchema;
+  private final Spec spec;
 
   public static ExecutionEngineChannelImpl create(String eeEndpoint, Spec spec) {
     checkNotNull(eeEndpoint);
@@ -51,64 +51,47 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
   }
 
   public ExecutionEngineChannelImpl(ExecutionEngineClient executionEngineClient, Spec spec) {
-    this.executionPayloadSchema =
-        spec.forMilestone(SpecMilestone.MERGE)
-            .getSchemaDefinitions()
-            .toVersionMerge()
-            .orElseThrow()
-            .getExecutionPayloadSchema();
+    this.spec = spec;
     this.executionEngineClient = executionEngineClient;
   }
 
   private static <K> K unwrapResponseOrThrow(Response<K> response) {
     checkArgument(
-        response.getReason() == null, "Invalid remote response: %s", response.getReason());
+        response.getErrorMessage() == null,
+        "Invalid remote response: %s",
+        response.getErrorMessage());
     return response.getPayload();
   }
 
   @Override
-  public SafeFuture<Optional<PowBlock>> getPowBlock(Bytes32 blockHash) {
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("calling getPowBlock(blockHash={})", blockHash.toHexString());
-    }
+  public SafeFuture<Optional<PowBlock>> getPowBlock(final Bytes32 blockHash) {
+    LOG.trace("calling getPowBlock(blockHash={})", blockHash);
+
     return executionEngineClient
         .getPowBlock(blockHash)
-        .thenPeek(
-            powBlock -> {
-              if (LOG.isDebugEnabled()) {
-                LOG.debug(
-                    "getPowBlock(blockHash={}) -> {}",
-                    blockHash.toHexString(),
-                    powBlock.toString());
-              }
-            });
+        .thenPeek(powBlock -> LOG.trace("getPowBlock(blockHash={}) -> {}", blockHash, powBlock));
   }
 
   @Override
   public SafeFuture<PowBlock> getPowChainHead() {
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("calling getPowChainHead()");
-    }
+    LOG.trace("calling getPowChainHead()");
+
     return executionEngineClient
         .getPowChainHead()
-        .thenPeek(
-            powBlock -> {
-              if (LOG.isDebugEnabled()) {
-                LOG.debug("getPowChainHead() -> {}", powBlock.toString());
-              }
-            });
+        .thenPeek(powBlock -> LOG.trace("getPowChainHead() -> {}", powBlock));
   }
 
   @Override
   public SafeFuture<tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult>
       forkChoiceUpdated(
-          ForkChoiceState forkChoiceState, Optional<PayloadAttributes> payloadAttributes) {
-    if (LOG.isDebugEnabled()) {
-      LOG.debug(
-          "calling forkChoiceUpdated(forkChoiceState={}, payloadAttributes={})",
-          forkChoiceState.toString(),
-          payloadAttributes.toString());
-    }
+          final ForkChoiceState forkChoiceState,
+          final Optional<PayloadAttributes> payloadAttributes) {
+
+    LOG.trace(
+        "calling forkChoiceUpdated(forkChoiceState={}, payloadAttributes={})",
+        forkChoiceState,
+        payloadAttributes);
+
     return executionEngineClient
         .forkChoiceUpdated(
             ForkChoiceStateV1.fromInternalForkChoiceState(forkChoiceState),
@@ -116,44 +99,38 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
         .thenApply(ExecutionEngineChannelImpl::unwrapResponseOrThrow)
         .thenApply(ForkChoiceUpdatedResult::asInternalExecutionPayload)
         .thenPeek(
-            forkChoiceUpdatedResult -> {
-              if (LOG.isDebugEnabled()) {
-                LOG.debug(
+            forkChoiceUpdatedResult ->
+                LOG.trace(
                     "forkChoiceUpdated(forkChoiceState={}, payloadAttributes={}) -> {}",
-                    forkChoiceState.toString(),
-                    payloadAttributes.toString(),
-                    forkChoiceUpdatedResult.toString());
-              }
-            });
+                    forkChoiceState,
+                    payloadAttributes,
+                    forkChoiceUpdatedResult));
   }
 
   @Override
-  public SafeFuture<ExecutionPayload> getPayload(Bytes8 payloadId) {
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("calling getPayload(payloadId={})", payloadId.toString());
-    }
+  public SafeFuture<ExecutionPayload> getPayload(final Bytes8 payloadId, final UInt64 slot) {
+    LOG.trace("calling getPayload(payloadId={}, slot={})", payloadId, slot);
+
     return executionEngineClient
         .getPayload(payloadId)
         .thenApply(ExecutionEngineChannelImpl::unwrapResponseOrThrow)
-        .thenApply(
-            executionPayloadV1 ->
-                executionPayloadV1.asInternalExecutionPayload(executionPayloadSchema))
+        .thenCombine(
+            SafeFuture.of(
+                () ->
+                    SchemaDefinitionsMerge.required(spec.atSlot(slot).getSchemaDefinitions())
+                        .getExecutionPayloadSchema()),
+            ExecutionPayloadV1::asInternalExecutionPayload)
         .thenPeek(
             executionPayload -> {
-              if (LOG.isDebugEnabled()) {
-                LOG.debug(
-                    "getPayload(payloadId={}) -> {}",
-                    payloadId.toString(),
-                    executionPayload.toString());
-              }
+              LOG.trace(
+                  "getPayload(payloadId={}, slot={}) -> {}", payloadId, slot, executionPayload);
             });
   }
 
   @Override
-  public SafeFuture<ExecutePayloadResult> executePayload(ExecutionPayload executionPayload) {
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("calling executePayload(executionPayload={})", executionPayload.toString());
-    }
+  public SafeFuture<ExecutePayloadResult> executePayload(final ExecutionPayload executionPayload) {
+    LOG.trace("calling executePayload(executionPayload={})", executionPayload);
+
     return executionEngineClient
         .executePayload(ExecutionPayloadV1.fromInternalExecutionPayload(executionPayload))
         .thenApply(ExecutionEngineChannelImpl::unwrapResponseOrThrow)
@@ -161,13 +138,10 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
             tech.pegasys.teku.services.executionengine.client.schema.ExecutePayloadResult
                 ::asInternalExecutionPayload)
         .thenPeek(
-            executePayloadResult -> {
-              if (LOG.isDebugEnabled()) {
-                LOG.debug(
+            executePayloadResult ->
+                LOG.trace(
                     "executePayload(executionPayload={}) -> {}",
-                    executionPayload.toString(),
-                    executePayloadResult.toString());
-              }
-            });
+                    executionPayload,
+                    executePayloadResult));
   }
 }
