@@ -14,22 +14,25 @@
 package tech.pegasys.teku.infrastructure.restapi;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import io.javalin.Javalin;
 import java.net.BindException;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
 class RestApiTest {
   private final Javalin app = mock(Javalin.class);
 
-  private final RestApi restApi = new RestApi(app);
+  private final RestApi restApi = new RestApi(app, Optional.empty());
 
   @Test
   void start_shouldThrowInvalidConfigurationExceptionWhenPortInUse() {
     when(app.start()).thenThrow(new RuntimeException("Oh no", new BindException("Port in use")));
     assertThatThrownBy(restApi::start).isInstanceOf(InvalidConfigurationException.class);
+    assertThat(restApi.getRestApiDocs()).isEmpty();
   }
 }

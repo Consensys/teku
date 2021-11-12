@@ -15,16 +15,21 @@ package tech.pegasys.teku.validator.client.restapi;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
+import static tech.pegasys.teku.infrastructure.restapi.json.JsonUtil.parse;
+import static tech.pegasys.teku.infrastructure.restapi.json.JsonUtil.serialize;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.restapi.JsonTestUtil;
 import tech.pegasys.teku.infrastructure.restapi.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.restapi.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.types.SerializableTypeDefinition;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysRequest;
 
 class ValidatorTypesTest {
   private final DataStructureUtil dataStructureUtil =
@@ -73,6 +78,25 @@ class ValidatorTypesTest {
     assertOpenApi(ValidatorTypes.DELETE_KEY_RESULT, "DeleteKeyResult.json");
   }
 
+  @Test
+  void deleteKeysRequest_shouldDeserializeData() throws Exception {
+    final List<BLSPublicKey> keys =
+        List.of(dataStructureUtil.randomPublicKey(), dataStructureUtil.randomPublicKey());
+    DeleteKeysRequest request = new DeleteKeysRequest();
+    request.setPublicKeys(keys);
+    assertRoundTrip(request, ValidatorTypes.DELETE_KEYS_REQUEST);
+  }
+
+  @Test
+  void deleteKeysRequest_shouldDeserializeEmptyList() throws Exception {
+    assertRoundTrip(new DeleteKeysRequest(), ValidatorTypes.DELETE_KEYS_REQUEST);
+  }
+
+  @Test
+  void deleteKeysRequest_shouldSerializeOpenApi() throws Exception {
+    assertOpenApi(ValidatorTypes.DELETE_KEYS_REQUEST, "DeleteKeysRequest.json");
+  }
+
   private void assertOpenApi(final SerializableTypeDefinition<?> type, final String resourceName)
       throws Exception {
     final Map<String, Object> expectedParsed = parseJsonResource(resourceName);
@@ -83,5 +107,11 @@ class ValidatorTypesTest {
 
   private Map<String, Object> parseJsonResource(final String resourceName) throws Exception {
     return JsonTestUtil.parseJsonResource(ValidatorTypesTest.class, resourceName);
+  }
+
+  private <T> void assertRoundTrip(final T value, final DeserializableTypeDefinition<T> type)
+      throws JsonProcessingException {
+    final T result = parse(serialize(value, type), type);
+    assertThat(result).isEqualTo(value);
   }
 }
