@@ -18,20 +18,18 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import tech.pegasys.teku.bls.BLSKeyPair;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.restapi.JsonTestUtil;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.validator.client.KeyManager;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.ActiveValidator;
 
 class GetKeysTest {
   final KeyManager keyManager = Mockito.mock(KeyManager.class);
@@ -50,31 +48,33 @@ class GetKeysTest {
 
   @Test
   void shouldListValidatorKeys() throws Exception {
-    final Set<BLSPublicKey> validatorKeys = getList();
-    when(keyManager.getValidatorKeys()).thenReturn(validatorKeys);
+    final List<ActiveValidator> activeValidatorList = getValidatorList();
+    when(keyManager.getActiveValidatorKeys()).thenReturn(activeValidatorList);
     final GetKeys endpoint = new GetKeys(keyManager);
     final RestApiRequest request = mock(RestApiRequest.class);
     endpoint.handle(request);
 
-    verify(request).respondOk(List.copyOf(validatorKeys));
+    verify(request).respondOk(activeValidatorList);
   }
 
   @Test
   void shouldListEmpytValidatorKeys() throws Exception {
-    final List<BLSPublicKey> validatorKeys = Collections.emptyList();
+    final List<ActiveValidator> activeValidatorList = Collections.emptyList();
+    when(keyManager.getActiveValidatorKeys()).thenReturn(activeValidatorList);
     final GetKeys endpoint = new GetKeys(keyManager);
     final RestApiRequest request = mock(RestApiRequest.class);
     endpoint.handle(request);
 
-    verify(request).respondOk(List.copyOf(validatorKeys));
+    verify(request).respondOk(activeValidatorList);
   }
 
-  private Set<BLSPublicKey> getList() {
+  private List<ActiveValidator> getValidatorList() {
+    List<ActiveValidator> validatorList = new ArrayList<>();
     BLSKeyPair keyPair1 = BLSTestUtil.randomKeyPair(1);
     BLSKeyPair keyPair2 = BLSTestUtil.randomKeyPair(2);
-    BLSKeyPair keyPair3 = BLSTestUtil.randomKeyPair(3);
+    validatorList.add(new ActiveValidator(keyPair1.getPublicKey(), true));
+    validatorList.add(new ActiveValidator(keyPair2.getPublicKey(), false));
 
-    return new HashSet<>(
-        Arrays.asList(keyPair1.getPublicKey(), keyPair2.getPublicKey(), keyPair3.getPublicKey()));
+    return validatorList;
   }
 }
