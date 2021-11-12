@@ -138,6 +138,11 @@ public class ValidatorClientCommand implements Callable<Integer> {
   }
 
   private void configureEth2Network(TekuConfiguration.Builder builder) {
+    if (parentCommand.isOptionSpecified("--network")) {
+      throw new InvalidConfigurationException(
+          "--network option should not be specified before the validator-client command");
+    }
+
     if (isAutoDetectNetworkOption(networkOption)) {
       builder.eth2NetworkConfig(this::configureWithSpecFromBeaconNode);
     } else {
