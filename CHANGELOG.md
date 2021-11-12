@@ -8,7 +8,8 @@
 - The commandline option `--validators-performance-tracking-enabled` has been deprecated in favour of `--validators-performance-tracking-mode`
 - The commandline option `--network` of the `validator-client` subcommand introduces a new option value `auto`, which automatically 
 fetches network configuration information from the configured beacon node endpoint. Other `--network` option values for an external validator client 
- are now deprecated in favour of this option value (usage: `teku validator-client --network=auto`)
+ are now deprecated in favour of this option value (usage: `teku validator-client --network=auto`). 
+- The default value for the `--network` commandline option of the `validatotr-client` command will change from `mainnet` to `auto`.
  
 ## Current Releases
 For information on changes in released versions of Teku, see the [releases page](https://github.com/ConsenSys/teku/releases).
