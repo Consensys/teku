@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.services.powchain.PowchainConfiguration;
 
 public class DepositOptions {
 
@@ -34,7 +35,7 @@ public class DepositOptions {
       description =
           "Maximum number of blocks to request deposit contract event logs for in a single request.",
       arity = "1")
-  private int eth1LogsMaxBlockRange = 10_000;
+  private int eth1LogsMaxBlockRange = PowchainConfiguration.DEFAULT_ETH1_LOGS_MAX_BLOCK_RANGE;
 
   @Option(
       names = {"--Xeth1-time-based-head-tracking-enabled"},
@@ -43,7 +44,8 @@ public class DepositOptions {
       hidden = true,
       arity = "0..1",
       fallbackValue = "true")
-  private boolean useTimeBasedHeadTracking = true;
+  private boolean useTimeBasedHeadTracking =
+      PowchainConfiguration.DEFAULT_USE_TIME_BASED_HEAD_TRACKING;
 
   public void configure(final TekuConfiguration.Builder builder) {
     builder.powchain(
