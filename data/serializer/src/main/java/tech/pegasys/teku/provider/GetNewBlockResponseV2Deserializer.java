@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import java.util.Locale;
 import tech.pegasys.teku.api.response.v2.validator.GetNewBlockResponseV2;
 import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.Version;
@@ -37,7 +38,8 @@ public class GetNewBlockResponseV2Deserializer extends JsonDeserializer<GetNewBl
   public GetNewBlockResponseV2 deserialize(final JsonParser jp, final DeserializationContext ctxt)
       throws IOException {
     JsonNode node = jp.getCodec().readTree(jp);
-    final Version version = Version.valueOf(node.findValue("version").asText());
+    final Version version =
+        Version.valueOf(node.findValue("version").asText().toLowerCase(Locale.ROOT));
     final BeaconBlock block;
     switch (version) {
       case merge:
