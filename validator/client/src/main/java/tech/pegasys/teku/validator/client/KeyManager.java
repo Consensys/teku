@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import org.apache.commons.lang3.NotImplementedException;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
@@ -47,7 +46,7 @@ public class KeyManager {
     List<String> existingKeysOnKeystore = listSlashProtectionKeysOnKeystore();
     for (BLSPublicKey blsPublicKey : blsPublicKeySet) {
       if (existingKeysOnKeystore.contains(
-              blsPublicKey.toBytesCompressed().toUnprefixedHexString().toLowerCase())) {
+          blsPublicKey.toBytesCompressed().toUnprefixedHexString().toLowerCase())) {
         activeValidatorList.add(new ActiveValidator(blsPublicKey, false));
       } else {
         activeValidatorList.add(new ActiveValidator(blsPublicKey, true));
@@ -132,11 +131,11 @@ public class KeyManager {
       Path directoryKeys = getKeystorePathFor(ValidatorKeystoreDirectories.KEYSTORES);
       try (Stream<Path> paths = Files.walk(directoryKeys)) {
         return paths
-                .filter(Files::isRegularFile)
-                .map(Path::getFileName)
-                .map(Path::toString)
-                .map(name -> name.substring(0, name.length() - ".yml".length()))
-                .collect(Collectors.toList());
+            .filter(Files::isRegularFile)
+            .map(Path::getFileName)
+            .map(Path::toString)
+            .map(name -> name.substring(0, name.length() - ".yml".length()))
+            .collect(Collectors.toList());
       }
     } catch (IOException e) {
       return Collections.emptyList();
