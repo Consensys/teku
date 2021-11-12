@@ -112,6 +112,16 @@ class ValidatorTypesTest {
   }
 
   @Test
+  void PostKeysResponse_shouldSerializeOpenApi() throws Exception {
+    assertOpenApi(ValidatorTypes.POST_KEYS_RESPONSE, "PostKeysResponse.json");
+  }
+
+  @Test
+  void PostKeyResult_shouldSerializeOpenApi() throws Exception {
+    assertOpenApi(ValidatorTypes.POST_KEY_RESULT, "PostKeyResult.json");
+  }
+
+  @Test
   void deleteKeyResult_shouldSerializeOpenApi() throws Exception {
     assertOpenApi(ValidatorTypes.DELETE_KEY_RESULT, "DeleteKeyResult.json");
   }
@@ -133,6 +143,11 @@ class ValidatorTypesTest {
   @Test
   void deleteKeysRequest_shouldSerializeOpenApi() throws Exception {
     assertOpenApi(ValidatorTypes.DELETE_KEYS_REQUEST, "DeleteKeysRequest.json");
+  }
+
+  @Test
+  void postKeysRequest_shouldSerializeOpenApi() throws Exception {
+    assertOpenApi(ValidatorTypes.POST_KEYS_REQUEST, "PostKeysRequest.json");
   }
 
   private void assertOpenApi(final SerializableTypeDefinition<?> type, final String resourceName)

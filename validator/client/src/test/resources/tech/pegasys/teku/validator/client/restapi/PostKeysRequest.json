@@ -1,0 +1,22 @@
+{
+  "title": "PostKeysRequest",
+  "type": "object",
+  "properties": {
+    "keystores": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "passwords": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "slashing_protection":{
+      "type": "string",
+      "description": "JSON serialized representation of the slash protection data in format defined in EIP-3076: Slashing Protection Interchange Format."
+    }
+  }
+}

@@ -34,7 +34,7 @@ public class ValidatorTypes {
 
   static SerializableTypeDefinition<PostKeyResult> POST_KEY_RESULT =
       SerializableTypeDefinition.<PostKeyResult>object()
-          .name("ImportResult")
+          .name("PostKeyResult")
           .withField(
               "status",
               DeserializableTypeDefinition.enumOf(ImportStatus.class),
