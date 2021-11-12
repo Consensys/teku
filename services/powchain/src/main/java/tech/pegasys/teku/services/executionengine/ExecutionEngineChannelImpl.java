@@ -121,8 +121,9 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
                         .getExecutionPayloadSchema()),
             ExecutionPayloadV1::asInternalExecutionPayload)
         .thenPeek(
-            executionPayload -> LOG.trace(
-                "getPayload(payloadId={}, slot={}) -> {}", payloadId, slot, executionPayload));
+            executionPayload ->
+                LOG.trace(
+                    "getPayload(payloadId={}, slot={}) -> {}", payloadId, slot, executionPayload));
   }
 
   @Override
