@@ -21,6 +21,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class CoreTypes {
   public static final DeserializableTypeDefinition<String> STRING_TYPE = stringBuilder().build();
 
+  public static final SerializableTypeDefinition<Boolean> BOOLEAN_TYPE =
+      new BooleanTypeDefinition();
+
   public static final DeserializableTypeDefinition<UInt64> UINT64_TYPE =
       DeserializableTypeDefinition.string(UInt64.class)
           .formatter(UInt64::toString)
