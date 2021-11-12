@@ -531,6 +531,7 @@ workflows:
             - docker
             - extractAPISpec
             - spotless
+            - windowsBuild
           context:
             - cloudsmith-protocols
       - publishDocker:
@@ -549,6 +550,7 @@ workflows:
             - docker
             - extractAPISpec
             - spotless
+            - windowsBuild
           context:
             - dockerhub-quorumengineering-rw
       - publishAPISpec:
@@ -567,6 +569,7 @@ workflows:
             - docker
             - extractAPISpec
             - spotless
+            - windowsBuild
   nightly:
     triggers:
       - schedule:
