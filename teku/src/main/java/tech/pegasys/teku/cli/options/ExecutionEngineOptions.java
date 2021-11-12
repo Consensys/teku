@@ -26,7 +26,8 @@ public class ExecutionEngineOptions {
       paramLabel = "<NETWORK>",
       description = "URLs for Execution Engine nodes.",
       split = ",",
-      arity = "0..*")
+      arity = "0..*",
+      hidden = true)
   private List<String> eeEndpoints = new ArrayList<>();
 
   @Option(
@@ -34,7 +35,8 @@ public class ExecutionEngineOptions {
       paramLabel = "<ADDRESS>",
       description =
           "Suggested fee recipient sent to the execution engine, which could use it as coinbase when producing a new execution block.",
-      arity = "0..1")
+      arity = "0..1",
+      hidden = true)
   private String feeRecipient = null;
 
   public void configure(final Builder builder) {
