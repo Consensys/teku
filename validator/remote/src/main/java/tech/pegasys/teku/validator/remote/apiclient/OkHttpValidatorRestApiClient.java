@@ -24,7 +24,6 @@ import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GE
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_PROPOSER_DUTIES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_SYNC_COMMITTEE_CONTRIBUTION;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_SYNC_COMMITTEE_DUTIES;
-import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_UNSIGNED_BLOCK;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_UNSIGNED_BLOCK_V2;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_VALIDATORS;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_CONTRIBUTION_AND_PROOF;
@@ -67,7 +66,6 @@ import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.config.GetSpecResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAttestationDataResponse;
-import tech.pegasys.teku.api.response.v1.validator.GetNewBlockResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetSyncCommitteeContributionResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
@@ -101,17 +99,10 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   private final JsonProvider jsonProvider = new JsonProvider();
   private final OkHttpClient httpClient;
   private final HttpUrl baseEndpoint;
-  private final boolean useV2CreateBlock;
 
   public OkHttpValidatorRestApiClient(final HttpUrl baseEndpoint, final OkHttpClient okHttpClient) {
-    this(baseEndpoint, okHttpClient, false);
-  }
-
-  public OkHttpValidatorRestApiClient(
-      final HttpUrl baseEndpoint, final OkHttpClient okHttpClient, final boolean useV2CreateBlock) {
     this.baseEndpoint = baseEndpoint;
     this.httpClient = okHttpClient;
-    this.useV2CreateBlock = useV2CreateBlock;
   }
 
   public Optional<GetSpecResponse> getConfigSpec() {
@@ -170,16 +161,11 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
     queryParams.put("randao_reveal", encodeQueryParam(randaoReveal));
     graffiti.ifPresent(bytes32 -> queryParams.put("graffiti", encodeQueryParam(bytes32)));
 
-    if (useV2CreateBlock) {
-      return get(
-              GET_UNSIGNED_BLOCK_V2,
-              pathParams,
-              queryParams,
-              createHandler(GetNewBlockResponseV2.class))
-          .map(response -> (BeaconBlock) response.data);
-    }
     return get(
-            GET_UNSIGNED_BLOCK, pathParams, queryParams, createHandler(GetNewBlockResponse.class))
+            GET_UNSIGNED_BLOCK_V2,
+            pathParams,
+            queryParams,
+            createHandler(GetNewBlockResponseV2.class))
         .map(response -> (BeaconBlock) response.data);
   }
 
