@@ -57,10 +57,10 @@ import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetBlockRootResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateFinalityCheckpointsResponse;
-import tech.pegasys.teku.api.response.v1.debug.GetStateResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
 import tech.pegasys.teku.api.response.v1.validator.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.response.v2.beacon.GetBlockResponseV2;
+import tech.pegasys.teku.api.response.v2.debug.GetStateResponseV2;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
@@ -389,11 +389,14 @@ public class TekuNode extends Node {
   }
 
   private Optional<BeaconState> fetchHeadState() throws IOException {
-    final String result = httpClient.get(getRestApiUrl(), "/eth/v1/debug/beacon/states/head");
+    final String result = httpClient.get(getRestApiUrl(), "/eth/v2/debug/beacon/states/head");
     if (result.isEmpty()) {
       return Optional.empty();
     } else {
-      return Optional.of(jsonProvider.jsonToObject(result, GetStateResponse.class).data);
+      final GetStateResponseV2 response =
+          jsonProvider.jsonToObject(result, GetStateResponseV2.class);
+
+      return Optional.of((BeaconState) response.data);
     }
   }
 
