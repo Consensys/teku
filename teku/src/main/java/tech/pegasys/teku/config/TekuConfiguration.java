@@ -13,12 +13,14 @@
 
 package tech.pegasys.teku.config;
 
+import java.util.Optional;
 import java.util.function.Consumer;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApiConfig;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfig.LoggingConfigBuilder;
 import tech.pegasys.teku.infrastructure.metrics.MetricsConfig;
 import tech.pegasys.teku.infrastructure.metrics.MetricsConfig.MetricsConfigBuilder;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.nat.NatConfiguration;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
@@ -204,10 +206,11 @@ public class TekuConfiguration {
       final Spec spec = eth2NetworkConfiguration.getSpec();
 
       Eth1Address depositContractAddress = eth2NetworkConfiguration.getEth1DepositContractAddress();
+      Optional<UInt64> depositContractDeployBlock =
+          eth2NetworkConfiguration.getEth1DepositContractDeployBlock();
       storageConfigurationBuilder.eth1DepositContractDefault(depositContractAddress);
       powchainConfigBuilder.depositContractDefault(depositContractAddress);
-      powchainConfigBuilder.depositContractDeployBlock(
-          eth2NetworkConfiguration.getEth1DepositContractDeployBlock());
+      powchainConfigBuilder.depositContractDeployBlockDefault(depositContractDeployBlock);
       p2pConfigBuilder.discovery(
           b -> b.bootnodesDefault(eth2NetworkConfiguration.getDiscoveryBootnodes()));
       restApiBuilder.eth1DepositContractAddressDefault(depositContractAddress);
