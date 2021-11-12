@@ -13,62 +13,56 @@
 
 package tech.pegasys.teku.validator.client.restapi.apis.schema;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import java.util.Optional;
 
-public class DeleteKeyResult {
-  private final DeletionStatus status;
+public class PostKeyResult {
+  private final ImportStatus importStatus;
   private final Optional<String> message;
 
-  @VisibleForTesting
-  DeleteKeyResult(final DeletionStatus status, final Optional<String> message) {
-    this.status = status;
+  private PostKeyResult(final ImportStatus importStatus, final Optional<String> message) {
+    this.importStatus = importStatus;
     this.message = message;
   }
 
-  public static DeleteKeyResult success() {
-    return new DeleteKeyResult(DeletionStatus.DELETED, Optional.empty());
-  }
-
-  public static DeleteKeyResult notFound() {
-    return new DeleteKeyResult(DeletionStatus.NOT_FOUND, Optional.empty());
-  }
-
-  public static DeleteKeyResult notActive() {
-    return new DeleteKeyResult(DeletionStatus.NOT_ACTIVE, Optional.empty());
-  }
-
-  public static DeleteKeyResult error(final String message) {
-    return new DeleteKeyResult(DeletionStatus.ERROR, Optional.of(message));
-  }
-
-  public DeletionStatus getStatus() {
-    return status;
+  public ImportStatus getImportStatus() {
+    return importStatus;
   }
 
   public Optional<String> getMessage() {
     return message;
   }
 
+  public static PostKeyResult success() {
+    return new PostKeyResult(ImportStatus.IMPORTED, Optional.empty());
+  }
+
+  public static PostKeyResult duplicate() {
+    return new PostKeyResult(ImportStatus.DUPLICATE, Optional.empty());
+  }
+
+  public static PostKeyResult error(final String message) {
+    return new PostKeyResult(ImportStatus.IMPORTED, Optional.of(message));
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    final DeleteKeyResult that = (DeleteKeyResult) o;
-    return status == that.status && Objects.equals(message, that.message);
+    final PostKeyResult that = (PostKeyResult) o;
+    return importStatus == that.importStatus && Objects.equals(message, that.message);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(status, message);
+    return Objects.hash(importStatus, message);
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("status", status)
+        .add("importStatus", importStatus)
         .add("message", message)
         .toString();
   }

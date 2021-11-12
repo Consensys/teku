@@ -101,6 +101,15 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  void helpShouldNotShowUnsupportedOptions() {
+    final String[] args = {"--help"};
+
+    beaconNodeCommand.parse(args);
+    String str = getCommandLineOutput();
+    assertThat(str).doesNotContain("--X");
+  }
+
+  @Test
   public void helpShouldShowDefaultsForBooleanOptions() {
     final Pattern optPattern = Pattern.compile("(?i)--\\S+=<boolean>");
     final Pattern optDefValPattern = Pattern.compile("(?i)Default: (?:true|false)");

@@ -18,7 +18,6 @@ import static tech.pegasys.teku.spec.SpecMilestone.ALTAIR;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 
 import java.util.Arrays;
-import java.util.Set;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -34,8 +33,6 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class SpecFactoryTest {
 
-  private static final Set<String> ALTAIR_NETWORKS = Set.of("pyrmont", "prater", "mainnet");
-
   @Test
   public void defaultFactoryShouldScheduleAltairForMainNet() {
     final Spec spec = SpecFactory.create("mainnet");
@@ -44,12 +41,12 @@ public class SpecFactoryTest {
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("getKnownConfigNames")
-  public void defaultFactoryShouldNotEnableAltairUnlessForkEpochIsSet(final String configName) {
+  public void defaultFactoryShouldNotEnableMergeUnlessForkEpochIsSet(final String configName) {
     final Spec spec = SpecFactory.create(configName);
-    if (ALTAIR_NETWORKS.contains(configName)) {
-      assertThat(spec.getForkSchedule().getSupportedMilestones()).containsExactly(PHASE0, ALTAIR);
-    } else {
+    if (configName.equals("minimal")) { // Minimal doesn't have altair scheduled
       assertThat(spec.getForkSchedule().getSupportedMilestones()).containsExactly(PHASE0);
+    } else {
+      assertThat(spec.getForkSchedule().getSupportedMilestones()).containsExactly(PHASE0, ALTAIR);
     }
   }
 

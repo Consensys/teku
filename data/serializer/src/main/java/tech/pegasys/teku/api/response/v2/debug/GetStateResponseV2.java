@@ -18,10 +18,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import tech.pegasys.teku.api.schema.Version;
-import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
+import tech.pegasys.teku.api.schema.altair.BeaconStateAltair;
 import tech.pegasys.teku.api.schema.interfaces.State;
-import tech.pegasys.teku.api.schema.merge.SignedBeaconBlockMerge;
-import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
+import tech.pegasys.teku.api.schema.merge.BeaconStateMerge;
+import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 
 public class GetStateResponseV2 {
   public final Version version;
@@ -31,9 +31,9 @@ public class GetStateResponseV2 {
       include = JsonTypeInfo.As.EXTERNAL_PROPERTY,
       property = "version")
   @JsonSubTypes({
-    @JsonSubTypes.Type(value = SignedBeaconBlockPhase0.class, name = "phase0"),
-    @JsonSubTypes.Type(value = SignedBeaconBlockAltair.class, name = "altair"),
-    @JsonSubTypes.Type(value = SignedBeaconBlockMerge.class, name = "merge")
+    @JsonSubTypes.Type(value = BeaconStatePhase0.class, name = "phase0"),
+    @JsonSubTypes.Type(value = BeaconStateAltair.class, name = "altair"),
+    @JsonSubTypes.Type(value = BeaconStateMerge.class, name = "merge")
   })
   public final State data;
 

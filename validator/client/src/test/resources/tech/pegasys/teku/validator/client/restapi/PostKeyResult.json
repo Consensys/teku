@@ -1,12 +1,11 @@
 {
-  "title": "DeleteKeyResult",
+  "title": "PostKeyResult",
   "type": "object",
   "properties": {
     "status": {
       "enum": [
-        "deleted",
-        "not_active",
-        "not_found",
+        "imported",
+        "duplicate",
         "error"
       ],
       "type": "string"
