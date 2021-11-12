@@ -73,6 +73,18 @@ public class TestSpecFactory {
     return create(config, SpecMilestone.ALTAIR);
   }
 
+  /**
+   * Create a spec that forks to merge at the provided slot (altair genesis)
+   *
+   * @param mergeForkEpoch The merge fork epoch
+   * @return A spec with altair and merge enabled, forking to merge at the given epoch
+   */
+  public static Spec createMinimalWithMergeForkEpoch(final UInt64 mergeForkEpoch) {
+    final SpecConfigMerge config =
+        getMergeSpecConfig(Eth2Network.MINIMAL, UInt64.ZERO, mergeForkEpoch);
+    return create(config, SpecMilestone.MERGE);
+  }
+
   public static Spec createMinimalPhase0() {
     final SpecConfig specConfig = SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName());
     return create(specConfig, SpecMilestone.PHASE0);
