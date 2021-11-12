@@ -13,9 +13,6 @@
 
 package tech.pegasys.teku.cli.options;
 
-import static tech.pegasys.teku.networking.eth2.P2PConfig.Builder.DEFAULT_PEER_RATE_LIMIT;
-import static tech.pegasys.teku.networking.eth2.P2PConfig.Builder.DEFAULT_PEER_REQUEST_LIMIT;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -112,24 +109,6 @@ public class Eth2NetworkOptions {
   private Integer startupTimeoutSeconds;
 
   @Option(
-      names = {"--Xpeer-rate-limit"},
-      paramLabel = "<NUMBER>",
-      description =
-          "The number of requested objects per peer to allow per minute before disconnecting the peer.",
-      arity = "1",
-      hidden = true)
-  private Integer peerRateLimit = DEFAULT_PEER_RATE_LIMIT;
-
-  @Option(
-      names = {"--Xpeer-request-limit"},
-      paramLabel = "<NUMBER>",
-      description =
-          "The number of requests per peer to allow per minute before disconnecting the peer.",
-      arity = "1",
-      hidden = true)
-  private Integer peerRequestLimit = DEFAULT_PEER_REQUEST_LIMIT;
-
-  @Option(
       names = {"--Xfork-choice-balance-attack-mitigation-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "Whether to enable the HF1 fork choice balance attack mitigation.",
@@ -143,21 +122,7 @@ public class Eth2NetworkOptions {
   }
 
   public void configure(final TekuConfiguration.Builder builder) {
-    // Create a config instance so we can inspect the values in the other builders
-    final Eth2NetworkConfiguration eth2Config = createEth2NetworkConfig();
-
-    builder
-        .eth2NetworkConfig(this::configureEth2Network)
-        .powchain(
-            b -> {
-              b.depositContract(eth2Config.getEth1DepositContractAddress());
-              b.depositContractDeployBlock(eth2Config.getEth1DepositContractDeployBlock());
-            })
-        .storageConfiguration(
-            b -> b.eth1DepositContract(eth2Config.getEth1DepositContractAddress()))
-        .p2p(b -> b.peerRateLimit(peerRateLimit).peerRequestLimit(peerRequestLimit))
-        .discovery(b -> b.bootnodes(eth2Config.getDiscoveryBootnodes()))
-        .restApi(b -> b.eth1DepositContractAddress(eth2Config.getEth1DepositContractAddress()));
+    builder.eth2NetworkConfig(this::configureEth2Network);
   }
 
   private Eth2NetworkConfiguration createEth2NetworkConfig() {

@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.cli.options;
 
-import static tech.pegasys.teku.networking.eth2.P2PConfig.Builder.DEFAULT_PEER_RATE_LIMIT;
-import static tech.pegasys.teku.networking.eth2.P2PConfig.Builder.DEFAULT_PEER_REQUEST_LIMIT;
+import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_PEER_RATE_LIMIT;
+import static tech.pegasys.teku.networking.eth2.P2PConfig.DEFAULT_PEER_REQUEST_LIMIT;
 
 import org.apache.commons.lang3.StringUtils;
 import picocli.CommandLine.Option;

@@ -1,0 +1,17 @@
+{
+  "title": "PostKeyResult",
+  "type": "object",
+  "properties": {
+    "status": {
+      "enum": [
+        "imported",
+        "duplicate",
+        "error"
+      ],
+      "type": "string"
+    },
+    "message": {
+      "type": "string"
+    }
+  }
+}

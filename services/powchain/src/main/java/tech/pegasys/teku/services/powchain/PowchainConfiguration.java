@@ -24,6 +24,8 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class PowchainConfiguration {
+  public static final int DEFAULT_ETH1_LOGS_MAX_BLOCK_RANGE = 10_000;
+  public static final boolean DEFAULT_USE_TIME_BASED_HEAD_TRACKING = true;
 
   private final Spec spec;
   private final List<String> eth1Endpoints;
@@ -84,8 +86,8 @@ public class PowchainConfiguration {
     private List<String> eth1Endpoints = new ArrayList<>();
     private Eth1Address depositContract;
     private Optional<UInt64> depositContractDeployBlock = Optional.empty();
-    private int eth1LogsMaxBlockRange;
-    private boolean useTimeBasedHeadTracking = false;
+    private int eth1LogsMaxBlockRange = DEFAULT_ETH1_LOGS_MAX_BLOCK_RANGE;
+    private boolean useTimeBasedHeadTracking = DEFAULT_USE_TIME_BASED_HEAD_TRACKING;
 
     private Builder() {}
 
@@ -122,6 +124,13 @@ public class PowchainConfiguration {
       return this;
     }
 
+    public Builder depositContractDefault(final Eth1Address depositContract) {
+      if (this.depositContract == null) {
+        this.depositContract = depositContract;
+      }
+      return this;
+    }
+
     public Builder depositContractDeployBlock(final UInt64 depositContractDeployBlock) {
       checkNotNull(depositContractDeployBlock);
       this.depositContractDeployBlock = Optional.of(depositContractDeployBlock);
@@ -131,6 +140,15 @@ public class PowchainConfiguration {
     public Builder depositContractDeployBlock(final Optional<UInt64> depositContractDeployBlock) {
       checkNotNull(depositContractDeployBlock);
       this.depositContractDeployBlock = depositContractDeployBlock;
+      return this;
+    }
+
+    public Builder depositContractDeployBlockDefault(
+        final Optional<UInt64> depositContractDeployBlock) {
+      checkNotNull(depositContractDeployBlock);
+      if (this.depositContractDeployBlock.isEmpty()) {
+        this.depositContractDeployBlock = depositContractDeployBlock;
+      }
       return this;
     }
 

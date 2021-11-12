@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.util.OptionalInt;
 import java.util.function.Consumer;
 import tech.pegasys.teku.networking.eth2.gossip.config.Eth2Context;
 import tech.pegasys.teku.networking.eth2.gossip.config.GossipConfigurator;
@@ -24,6 +25,13 @@ import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.spec.Spec;
 
 public class P2PConfig {
+
+  public static final int DEFAULT_PEER_RATE_LIMIT = 500;
+  public static final int DEFAULT_PEER_REQUEST_LIMIT = 50;
+  public static final int DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT = 2;
+  public static final boolean DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED = false;
+  public static final boolean DEFAULT_GOSSIP_SCORING_ENABLED = false;
+  public static final boolean DEFAULT_BATCH_VERIFY_ATTESTATION_SIGNATURES = true;
 
   private final Spec spec;
   private final NetworkConfig networkConfig;
@@ -105,20 +113,17 @@ public class P2PConfig {
   }
 
   public static class Builder {
-    public static final int DEFAULT_PEER_RATE_LIMIT = 500;
-    public static final int DEFAULT_PEER_REQUEST_LIMIT = 50;
-
     private final NetworkConfig.Builder networkConfig = NetworkConfig.builder();
     private final DiscoveryConfig.Builder discoveryConfig = DiscoveryConfig.builder();
 
     private Spec spec;
-    private Boolean isGossipScoringEnabled = false;
+    private Boolean isGossipScoringEnabled = DEFAULT_GOSSIP_SCORING_ENABLED;
     private GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
-    private Integer targetSubnetSubscriberCount = 2;
-    private Boolean subscribeAllSubnetsEnabled = false;
+    private Integer targetSubnetSubscriberCount = DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT;
+    private Boolean subscribeAllSubnetsEnabled = DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED;
     private Integer peerRateLimit = DEFAULT_PEER_RATE_LIMIT;
     private Integer peerRequestLimit = DEFAULT_PEER_REQUEST_LIMIT;
-    private Boolean batchVerifyAttestationSignatures = false;
+    private Boolean batchVerifyAttestationSignatures = DEFAULT_BATCH_VERIFY_ATTESTATION_SIGNATURES;
 
     private Builder() {}
 
@@ -136,9 +141,13 @@ public class P2PConfig {
               .build();
       networkConfig.gossipConfig(c -> gossipConfigurator.configure(c, eth2Context));
 
+      NetworkConfig networkConfig = this.networkConfig.build();
+      discoveryConfig.listenUdpPortDefault(networkConfig.getListenPort());
+      discoveryConfig.advertisedUdpPortDefault(OptionalInt.of(networkConfig.getAdvertisedPort()));
+
       return new P2PConfig(
           spec,
-          networkConfig.build(),
+          networkConfig,
           discoveryConfig.build(),
           gossipConfigurator,
           gossipEncoding,
