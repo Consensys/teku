@@ -15,13 +15,16 @@ package tech.pegasys.teku.cli.options;
 
 import static tech.pegasys.teku.infrastructure.logging.LoggingDestination.DEFAULT_BOTH;
 
-import java.util.Optional;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Visibility;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 
 public class LoggingOptions {
+
+  private static final String WINDOWS_SEP = "\\";
+  private static final String LINUX_SEP = "/";
+
   @CommandLine.Option(
       names = {"--log-color-enabled"},
       paramLabel = "<BOOLEAN>",
@@ -122,36 +125,28 @@ public class LoggingOptions {
       arity = "0..1")
   private boolean logWireGossipEnabled = false;
 
-  public Optional<String> getMaybeLogFile() {
-    return Optional.ofNullable(logFile);
-  }
-
-  public Optional<String> getMaybeLogPattern() {
-    return Optional.ofNullable(logFileNamePattern);
-  }
-
-  private boolean hasPath(String file) {
-    return file.contains("/") || file.contains("\\");
+  private boolean containsPath(String file) {
+    return file.contains(LINUX_SEP) || file.contains(WINDOWS_SEP);
   }
 
   public TekuConfiguration.Builder configure(
-      final TekuConfiguration.Builder builder, final String defaultLogFilePrefix) {
+      final TekuConfiguration.Builder builder, final String defaultLogFileNamePrefix) {
 
     return builder
         .logging(
             loggingBuilder -> {
-              loggingBuilder.logFilePrefix(defaultLogFilePrefix);
+              loggingBuilder.logFileNamePrefix(defaultLogFileNamePrefix);
 
               if (logFile != null) {
-                if (hasPath(logFile)) {
-                  loggingBuilder.logPathFile(logFile);
+                if (containsPath(logFile)) {
+                  loggingBuilder.logPath(logFile);
                 } else {
                   loggingBuilder.logFileName(logFile);
                 }
               }
               if (logFileNamePattern != null) {
-                if (hasPath(logFileNamePattern)) {
-                  loggingBuilder.logPathFilePattern(logFileNamePattern);
+                if (containsPath(logFileNamePattern)) {
+                  loggingBuilder.logPathPattern(logFileNamePattern);
                 } else {
                   loggingBuilder.logFileNamePattern(logFileNamePattern);
                 }

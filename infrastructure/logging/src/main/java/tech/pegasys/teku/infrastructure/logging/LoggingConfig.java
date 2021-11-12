@@ -93,13 +93,13 @@ public class LoggingConfig {
 
     private String dataDirectory;
     private String logDirectory;
-    private String logPathFile;
-    private String logPathFilePattern;
+    private String logPath;
+    private String logPathPattern;
 
     private LoggingConfigBuilder() {}
 
     private void initMissingDefaults() {
-      if (logPathFile == null || logPathFilePattern == null) {
+      if (logPath == null || logPathPattern == null) {
         if (logFileName == null) {
           logFileName = logFileNamePrefix + DEFAULT_LOG_FILE_NAME_SUFFIX;
         }
@@ -115,11 +115,11 @@ public class LoggingConfig {
           }
         }
 
-        if (logPathFile == null) {
-          logPathFile = logDirectory + SEP + logFileName;
+        if (logPath == null) {
+          logPath = logDirectory + SEP + logFileName;
         }
-        if (logPathFilePattern == null) {
-          logPathFilePattern = logDirectory + SEP + logFileNamePattern;
+        if (logPathPattern == null) {
+          logPathPattern = logDirectory + SEP + logFileNamePattern;
         }
       }
     }
@@ -160,8 +160,8 @@ public class LoggingConfig {
       return this;
     }
 
-    public LoggingConfigBuilder logFilePrefix(String logShortFileName) {
-      this.logFileNamePrefix = logShortFileName;
+    public LoggingConfigBuilder logFileNamePrefix(String logFileNamePrefix) {
+      this.logFileNamePrefix = logFileNamePrefix;
       return this;
     }
 
@@ -175,13 +175,13 @@ public class LoggingConfig {
       return this;
     }
 
-    public LoggingConfigBuilder logPathFile(String logPathFile) {
-      this.logPathFile = logPathFile;
+    public LoggingConfigBuilder logPath(String logPath) {
+      this.logPath = logPath;
       return this;
     }
 
-    public LoggingConfigBuilder logPathFilePattern(String logPathFilePattern) {
-      this.logPathFilePattern = logPathFilePattern;
+    public LoggingConfigBuilder logPathPattern(String logPathPattern) {
+      this.logPathPattern = logPathPattern;
       return this;
     }
 
@@ -193,8 +193,8 @@ public class LoggingConfig {
           includeValidatorDutiesEnabled,
           includeP2pWarningsEnabled,
           destination,
-          logPathFile,
-          logPathFilePattern);
+          logPath,
+          logPathPattern);
     }
   }
 }

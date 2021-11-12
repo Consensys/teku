@@ -458,8 +458,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .logging(
             b ->
                 b.destination(DEFAULT_BOTH)
-                    .logPathFile(StringUtils.joinWith(SLASH, dataPath.toString(), "logs", LOG_FILE))
-                    .logPathFilePattern(
+                    .logPath(StringUtils.joinWith(SLASH, dataPath.toString(), "logs", LOG_FILE))
+                    .logPathPattern(
                         StringUtils.joinWith(SLASH, dataPath.toString(), "logs", LOG_PATTERN)))
         .metrics(
             b -> b.metricsCategories(DEFAULT_METRICS_CATEGORIES).metricsPublicationInterval(60))
@@ -488,8 +488,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .logging(
             b ->
                 b.destination(BOTH)
-                    .logPathFile(StringUtils.joinWith(SLASH, dataPath.toString(), "logs", LOG_FILE))
-                    .logPathFilePattern(
+                    .logPath(StringUtils.joinWith(SLASH, dataPath.toString(), "logs", LOG_FILE))
+                    .logPathPattern(
                         StringUtils.joinWith(SLASH, dataPath.toString(), "logs", LOG_PATTERN)));
   }
 
@@ -570,8 +570,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
             b ->
                 b.colorEnabled(true)
                     .destination(DEFAULT_BOTH)
-                    .logPathFile(StringUtils.joinWith(SLASH, dataPath.toString(), "logs", LOG_FILE))
-                    .logPathFilePattern(
+                    .logPath(StringUtils.joinWith(SLASH, dataPath.toString(), "logs", LOG_FILE))
+                    .logPathPattern(
                         StringUtils.joinWith(SLASH, dataPath.toString(), "logs", LOG_PATTERN))
                     .includeEventsEnabled(true)
                     .includeValidatorDutiesEnabled(true))
