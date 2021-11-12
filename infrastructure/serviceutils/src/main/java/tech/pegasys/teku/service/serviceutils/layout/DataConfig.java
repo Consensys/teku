@@ -16,8 +16,14 @@ package tech.pegasys.teku.service.serviceutils.layout;
 import java.nio.file.Path;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.version.VersionProvider;
 
 public class DataConfig {
+
+  public static Path defaultDataPath() {
+    return Path.of(VersionProvider.defaultStoragePath());
+  }
+
   private final Path dataBasePath;
   private final Optional<Path> beaconDataPath;
   private final Optional<Path> validatorDataPath;
@@ -49,7 +55,7 @@ public class DataConfig {
 
   public static final class Builder {
 
-    private Path dataBasePath;
+    private Path dataBasePath = defaultDataPath();
     private Optional<Path> beaconDataPath = Optional.empty();
     private Optional<Path> validatorDataPath = Optional.empty();
 
