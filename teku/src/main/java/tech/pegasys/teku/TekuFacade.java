@@ -23,8 +23,12 @@ import tech.pegasys.teku.config.TekuConfiguration;
  */
 public interface TekuFacade {
 
-  static TekuFacade getInstance() {
-    return Teku.INSTANCE;
+  static TekuFacade create() {
+    return TekuFacade.create(true);
+  }
+
+  static TekuFacade create(boolean withNodesShutdownHook) {
+    return new Teku(withNodesShutdownHook);
   }
 
   NodeFacade startFromCLIArgs(String[] cliArgs);

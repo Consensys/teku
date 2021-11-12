@@ -25,10 +25,14 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public final class Teku implements TekuFacade {
 
-  static final Teku INSTANCE = new Teku();
+  static {
+    Security.addProvider(new BouncyCastleProvider());
+  }
 
   public static void main(String[] args) {
-    Teku teku = INSTANCE;
+    Thread.setDefaultUncaughtExceptionHandler(new TekuDefaultExceptionHandler());
+
+    Teku teku = new Teku(true);
     int result = teku.start(teku::start, args);
     if (result != 0) {
       System.exit(result);
@@ -39,10 +43,10 @@ public final class Teku implements TekuFacade {
       new PrintWriter(System.out, true, Charset.defaultCharset());
   private final PrintWriter errorWriter =
       new PrintWriter(System.err, true, Charset.defaultCharset());
+  private final boolean withNodeShutdownHook;
 
-  private Teku() {
-    Thread.setDefaultUncaughtExceptionHandler(new TekuDefaultExceptionHandler());
-    Security.addProvider(new BouncyCastleProvider());
+  Teku(boolean withNodesShutdownHook) {
+    withNodeShutdownHook = withNodesShutdownHook;
   }
 
   private int start(StartAction startAction, final String... args) {
@@ -63,14 +67,17 @@ public final class Teku implements TekuFacade {
     }
 
     node.start();
-    // Detect SIGTERM
-    Runtime.getRuntime()
-        .addShutdownHook(
-            new Thread(
-                () -> {
-                  System.out.println("Teku is shutting down");
-                  node.stop();
-                }));
+
+    if (withNodeShutdownHook) {
+      // Detect SIGTERM
+      Runtime.getRuntime()
+          .addShutdownHook(
+              new Thread(
+                  () -> {
+                    System.out.println("Teku is shutting down");
+                    node.stop();
+                  }));
+    }
     return node;
   }
 
