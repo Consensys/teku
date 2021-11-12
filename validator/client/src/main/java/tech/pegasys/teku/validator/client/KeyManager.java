@@ -48,11 +48,9 @@ public class KeyManager {
     for (BLSPublicKey blsPublicKey : blsPublicKeySet) {
       if (existingKeysOnKeystore.contains(
               blsPublicKey.toBytesCompressed().toUnprefixedHexString().toLowerCase())) {
-        ActiveValidator validator = new ActiveValidator(blsPublicKey, false);
-        activeValidatorList.add(validator);
+        activeValidatorList.add(new ActiveValidator(blsPublicKey, false));
       } else {
-        ActiveValidator validator = new ActiveValidator(blsPublicKey, true);
-        activeValidatorList.add(validator);
+        activeValidatorList.add(new ActiveValidator(blsPublicKey, true));
       }
     }
     return activeValidatorList;
