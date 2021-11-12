@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URL;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -29,11 +30,14 @@ public class SimpleHttpClient {
       okhttp3.MediaType.parse("application/json; charset=utf-8");
 
   public String get(final URI baseUrl, final String path) throws IOException {
+    final URL url = baseUrl.resolve(path).toURL();
     final Response response =
-        httpClient
-            .newCall(new Request.Builder().url(baseUrl.resolve(path).toURL()).get().build())
-            .execute();
-    assertThat(response.isSuccessful()).isTrue();
+        httpClient.newCall(new Request.Builder().url(url).get().build()).execute();
+    assertThat(response.isSuccessful())
+        .describedAs(
+            "Received unsuccessful response from %s: %s %s",
+            url, response.code(), response.message())
+        .isTrue();
     final ResponseBody body = response.body();
     assertThat(body).isNotNull();
     return body.string();
