@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -45,6 +46,7 @@ public class BlockImporter {
   private final RecentChainData recentChainData;
   private final ForkChoice forkChoice;
   private final WeakSubjectivityValidator weakSubjectivityValidator;
+  private final ExecutionEngineChannel executionEngine;
 
   private final Subscribers<VerifiedBlockAttestationListener> attestationSubscribers =
       Subscribers.create(true);
@@ -62,11 +64,13 @@ public class BlockImporter {
       final BlockImportNotifications blockImportNotifications,
       final RecentChainData recentChainData,
       final ForkChoice forkChoice,
-      final WeakSubjectivityValidator weakSubjectivityValidator) {
+      final WeakSubjectivityValidator weakSubjectivityValidator,
+      final ExecutionEngineChannel executionEngine) {
     this.blockImportNotifications = blockImportNotifications;
     this.recentChainData = recentChainData;
     this.forkChoice = forkChoice;
     this.weakSubjectivityValidator = weakSubjectivityValidator;
+    this.executionEngine = executionEngine;
   }
 
   @CheckReturnValue
@@ -84,7 +88,7 @@ public class BlockImporter {
     }
 
     return validateWeakSubjectivityPeriod()
-        .thenCompose(__ -> forkChoice.onBlock(block))
+        .thenCompose(__ -> forkChoice.onBlock(block, executionEngine))
         .thenApply(
             result -> {
               if (!result.isSuccessful()) {

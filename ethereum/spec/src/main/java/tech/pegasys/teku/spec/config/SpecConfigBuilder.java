@@ -17,11 +17,14 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static tech.pegasys.teku.spec.config.SpecConfigFormatter.camelToSnakeCase;
 
+import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
@@ -160,7 +163,8 @@ public class SpecConfigBuilder {
       final SpecConfigAltair altairConfig = altairBuilder.get().build(config);
       config = altairConfig;
       if (mergeBuilder.isPresent()) {
-        config = mergeBuilder.get().build(altairConfig);
+        final SpecConfigMerge mergeConfig = mergeBuilder.get().build(altairConfig);
+        config = mergeBuilder.get().build(mergeConfig);
       }
     }
     return config;
@@ -218,6 +222,7 @@ public class SpecConfigBuilder {
     validateConstant("depositContractAddress", depositContractAddress);
 
     altairBuilder.ifPresent(AltairBuilder::validate);
+    mergeBuilder.ifPresent(MergeBuilder::validate);
   }
 
   private void validateConstant(final String name, final Object value) {
@@ -674,16 +679,62 @@ public class SpecConfigBuilder {
     // Fork
     private Bytes4 mergeForkVersion;
     private UInt64 mergeForkEpoch;
+    private UInt64 inactivityPenaltyQuotientMerge;
+    private Integer minSlashingPenaltyQuotientMerge;
+    private Integer proportionalSlashingMultiplierMerge;
+    private Integer maxBytesPerTransaction;
+    private Integer maxTransactionsPerPayload;
+    private Integer bytesPerLogsBloom;
+    private Integer maxExtraDataBytes;
+
+    // Transition
+    private UInt256 terminalTotalDifficulty;
+    private Bytes32 terminalBlockHash;
+    private UInt64 terminalBlockHashActivationEpoch;
 
     private MergeBuilder() {}
 
     SpecConfigMerge build(final SpecConfigAltair specConfig) {
-      return new SpecConfigMerge(specConfig, mergeForkVersion, mergeForkEpoch);
+      return new SpecConfigMerge(
+          specConfig,
+          mergeForkVersion,
+          mergeForkEpoch,
+          inactivityPenaltyQuotientMerge,
+          minSlashingPenaltyQuotientMerge,
+          proportionalSlashingMultiplierMerge,
+          maxBytesPerTransaction,
+          maxTransactionsPerPayload,
+          bytesPerLogsBloom,
+          maxExtraDataBytes,
+          terminalTotalDifficulty,
+          terminalBlockHash,
+          terminalBlockHashActivationEpoch);
     }
 
     void validate() {
       validateConstant("mergeForkVersion", mergeForkVersion);
       validateConstant("mergeForkEpoch", mergeForkEpoch);
+      validateConstant("inactivityPenaltyQuotientMerge", inactivityPenaltyQuotientMerge);
+      validateConstant("minSlashingPenaltyQuotientMerge", minSlashingPenaltyQuotientMerge);
+      validateConstant("proportionalSlashingMultiplierMerge", proportionalSlashingMultiplierMerge);
+      validateConstant("maxBytesPerTransaction", maxBytesPerTransaction);
+      validateConstant("maxTransactionsPerPayload", maxTransactionsPerPayload);
+      validateConstant("bytesPerLogsBloom", bytesPerLogsBloom);
+      validateConstant("maxExtraDataBytes", maxExtraDataBytes);
+
+      // temporary, provide default values for backward compatibility
+      if (terminalTotalDifficulty == null) {
+        terminalTotalDifficulty =
+            UInt256.valueOf(
+                new BigInteger(
+                    "115792089237316195423570985008687907853269984665640564039457584007913129638912"));
+      }
+      if (terminalBlockHash == null) {
+        terminalBlockHash = Bytes32.fromHexStringLenient("0x00");
+      }
+      if (terminalBlockHashActivationEpoch == null) {
+        terminalBlockHashActivationEpoch = UInt64.valueOf("18446744073709551615");
+      }
     }
 
     public MergeBuilder mergeForkVersion(final Bytes4 mergeForkVersion) {
@@ -695,6 +746,60 @@ public class SpecConfigBuilder {
     public MergeBuilder mergeForkEpoch(final UInt64 mergeForkEpoch) {
       checkNotNull(mergeForkEpoch);
       this.mergeForkEpoch = mergeForkEpoch;
+      return this;
+    }
+
+    public MergeBuilder inactivityPenaltyQuotientMerge(
+        final UInt64 inactivityPenaltyQuotientMerge) {
+      this.inactivityPenaltyQuotientMerge = inactivityPenaltyQuotientMerge;
+      return this;
+    }
+
+    public MergeBuilder minSlashingPenaltyQuotientMerge(
+        final Integer minSlashingPenaltyQuotientMerge) {
+      this.minSlashingPenaltyQuotientMerge = minSlashingPenaltyQuotientMerge;
+      return this;
+    }
+
+    public MergeBuilder proportionalSlashingMultiplierMerge(
+        final Integer proportionalSlashingMultiplierMerge) {
+      this.proportionalSlashingMultiplierMerge = proportionalSlashingMultiplierMerge;
+      return this;
+    }
+
+    public MergeBuilder maxBytesPerTransaction(final int maxBytesPerTransaction) {
+      this.maxBytesPerTransaction = maxBytesPerTransaction;
+      return this;
+    }
+
+    public MergeBuilder maxTransactionsPerPayload(final int maxTransactionsPerPayload) {
+      this.maxTransactionsPerPayload = maxTransactionsPerPayload;
+      return this;
+    }
+
+    public MergeBuilder bytesPerLogsBloom(final int bytesPerLogsBloom) {
+      this.bytesPerLogsBloom = bytesPerLogsBloom;
+      return this;
+    }
+
+    public MergeBuilder terminalTotalDifficulty(final UInt256 terminalTotalDifficulty) {
+      this.terminalTotalDifficulty = terminalTotalDifficulty;
+      return this;
+    }
+
+    public MergeBuilder terminalBlockHash(final Bytes32 terminalBlockHash) {
+      this.terminalBlockHash = terminalBlockHash;
+      return this;
+    }
+
+    public MergeBuilder terminalBlockHashActivationEpoch(
+        final UInt64 terminalBlockHashActivationEpoch) {
+      this.terminalBlockHashActivationEpoch = terminalBlockHashActivationEpoch;
+      return this;
+    }
+
+    public MergeBuilder maxExtraDataBytes(final int maxExtraDataBytes) {
+      this.maxExtraDataBytes = maxExtraDataBytes;
       return this;
     }
   }

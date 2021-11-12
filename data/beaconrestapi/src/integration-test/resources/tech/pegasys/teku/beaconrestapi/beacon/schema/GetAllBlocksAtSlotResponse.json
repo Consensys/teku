@@ -1,0 +1,16 @@
+{
+  "type" : "object",
+  "properties" : {
+    "version" : {
+      "type" : "string",
+      "enum" : [ "phase0", "altair", "merge" ]
+    },
+    "data" : {
+      "uniqueItems" : true,
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/SignedBeaconBlock"
+      }
+    }
+  }
+}

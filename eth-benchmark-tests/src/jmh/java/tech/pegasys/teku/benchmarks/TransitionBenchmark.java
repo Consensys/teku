@@ -36,6 +36,7 @@ import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
@@ -91,7 +92,12 @@ public abstract class TransitionBenchmark {
     localChain.initializeStorage();
 
     blockImporter =
-        new BlockImporter(blockImportNotifications, recentChainData, forkChoice, wsValidator);
+        new BlockImporter(
+            blockImportNotifications,
+            recentChainData,
+            forkChoice,
+            wsValidator,
+            ExecutionEngineChannel.NOOP);
     blockIterator = BlockIO.createResourceReader(spec, blocksFile).iterator();
     System.out.println("Importing blocks from " + blocksFile);
   }

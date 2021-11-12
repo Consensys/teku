@@ -16,14 +16,20 @@ package tech.pegasys.teku.validator.coordinator.performance;
 import static tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker.getPercentage;
 
 import com.google.common.base.Objects;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class BlockPerformance {
+  final UInt64 epoch;
   final int numberOfExpectedBlocks;
   final int numberOfIncludedBlocks;
   final int numberOfProducedBlocks;
 
   public BlockPerformance(
-      int numberOfExpectedBlocks, int numberOfIncludedBlocks, int numberOfProducedBlocks) {
+      UInt64 epoch,
+      int numberOfExpectedBlocks,
+      int numberOfIncludedBlocks,
+      int numberOfProducedBlocks) {
+    this.epoch = epoch;
     this.numberOfExpectedBlocks = numberOfExpectedBlocks;
     this.numberOfIncludedBlocks = numberOfIncludedBlocks;
     this.numberOfProducedBlocks = numberOfProducedBlocks;
@@ -36,18 +42,21 @@ public class BlockPerformance {
     BlockPerformance that = (BlockPerformance) o;
     return numberOfExpectedBlocks == that.numberOfExpectedBlocks
         && numberOfIncludedBlocks == that.numberOfIncludedBlocks
-        && numberOfProducedBlocks == that.numberOfProducedBlocks;
+        && numberOfProducedBlocks == that.numberOfProducedBlocks
+        && epoch.equals(that.epoch);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(numberOfExpectedBlocks, numberOfIncludedBlocks, numberOfProducedBlocks);
+    return Objects.hashCode(
+        epoch, numberOfExpectedBlocks, numberOfIncludedBlocks, numberOfProducedBlocks);
   }
 
   @Override
   public String toString() {
     return String.format(
-        "Block performance: expected %d, produced %d, included %d (%d%%)",
+        "Block performance: epoch %s, expected %s, produced %s, included %s (%s%%)",
+        epoch,
         numberOfExpectedBlocks,
         numberOfProducedBlocks,
         numberOfIncludedBlocks,

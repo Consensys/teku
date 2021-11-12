@@ -1,0 +1,10 @@
+{
+  "type" : "object",
+  "oneOf" : [ {
+    "$ref" : "#/components/schemas/BeaconStatePhase0"
+  }, {
+    "$ref" : "#/components/schemas/BeaconStateAltair"
+  }, {
+    "$ref" : "#/components/schemas/BeaconStateMerge"
+  } ]
+}

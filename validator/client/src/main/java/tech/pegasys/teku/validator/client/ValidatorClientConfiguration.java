@@ -16,7 +16,7 @@ package tech.pegasys.teku.validator.client;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
-import tech.pegasys.teku.validator.restapi.ValidatorRestApiConfig;
+import tech.pegasys.teku.validator.client.restapi.ValidatorRestApiConfig;
 
 public class ValidatorClientConfiguration {
   private final ValidatorConfig validatorConfig;

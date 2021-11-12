@@ -35,7 +35,7 @@ public class TestDataUtils {
     return loadSsz(testDefinition, fileName, type::sszDeserialize);
   }
 
-  public static <T extends SszData> T loadSsz(
+  public static <T> T loadSsz(
       final TestDefinition testDefinition,
       final String fileName,
       final Function<Bytes, T> deserializer) {

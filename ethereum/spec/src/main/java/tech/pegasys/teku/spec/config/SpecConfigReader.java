@@ -26,6 +26,7 @@ import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.math.BigInteger;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -40,6 +41,8 @@ import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.type.Bytes4;
 
@@ -84,9 +87,11 @@ public class SpecConfigReader {
           .put(Long.TYPE, this::parseLong)
           .put(Long.class, this::parseLong)
           .put(UInt64.class, fromString(UInt64::valueOf))
+          .put(UInt256.class, fromString(str -> UInt256.valueOf(new BigInteger(str))))
           .put(String.class, Function.identity())
           .put(Bytes.class, fromString(Bytes::fromHexString))
           .put(Bytes4.class, fromString(Bytes4::fromHexString))
+          .put(Bytes32.class, fromString(Bytes32::fromHexStringStrict))
           .put(boolean.class, fromString(Boolean::valueOf))
           .build();
 
@@ -102,6 +107,10 @@ public class SpecConfigReader {
     return build();
   }
 
+  public Optional<String> read(final InputStream source) throws IOException {
+    return read(source, true);
+  }
+
   /**
    * Reads and processes the resource, returns any referenced "preset" to be processed if a preset
    * field is set
@@ -110,9 +119,10 @@ public class SpecConfigReader {
    * @return An optional value containing any declared preset if it is specified in this source
    * @throws IOException Thrown if an error occurs reading the source
    */
-  public Optional<String> read(final InputStream source) throws IOException {
+  public Optional<String> read(final InputStream source, final boolean ignoreUnknownConfigItems)
+      throws IOException {
     final Map<String, String> rawValues = readValues(source);
-    loadFromMap(rawValues);
+    loadFromMap(rawValues, ignoreUnknownConfigItems);
     return Optional.ofNullable(rawValues.get(PRESET_KEY)).map(this::castPresetValue);
   }
 
@@ -125,7 +135,8 @@ public class SpecConfigReader {
     return (String) preset;
   }
 
-  public void loadFromMap(final Map<String, String> rawValues) {
+  public void loadFromMap(
+      final Map<String, String> rawValues, final boolean ignoreUnknownConfigItems) {
     processSeenValues(rawValues);
     final Map<String, String> unprocessedConfig = new HashMap<>(rawValues);
     final Map<String, String> apiSpecConfig = new HashMap<>(rawValues);
@@ -182,7 +193,11 @@ public class SpecConfigReader {
 
     if (unprocessedConfig.size() > 0) {
       final String unknownKeys = String.join(",", unprocessedConfig.keySet());
-      throw new IllegalArgumentException("Detected unknown spec config entries: " + unknownKeys);
+      if (!ignoreUnknownConfigItems) {
+        throw new IllegalArgumentException("Detected unknown spec config entries: " + unknownKeys);
+      } else {
+        LOG.info("Ignoring unknown items in network configuration: {}", unknownKeys);
+      }
     }
   }
 

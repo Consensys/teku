@@ -1,0 +1,18 @@
+{
+  "title": "DeleteKeyResult",
+  "type": "object",
+  "properties": {
+    "status": {
+      "enum": [
+        "deleted",
+        "not_active",
+        "not_found",
+        "error"
+      ],
+      "type": "string"
+    },
+    "message": {
+      "type": "string"
+    }
+  }
+}

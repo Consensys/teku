@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionengine.StubExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 
 public class TransitionTestExecutor implements TestExecutor {
@@ -76,7 +77,8 @@ public class TransitionTestExecutor implements TestExecutor {
 
         final BLSSignatureVerifier signatureVerifier =
             metadata.blsSetting == 2 ? BLSSignatureVerifier.NO_OP : BLSSignatureVerifier.SIMPLE;
-        result = spec.processBlock(result, block, signatureVerifier);
+        result =
+            spec.processBlock(result, block, signatureVerifier, new StubExecutionEngineChannel());
       } catch (final StateTransitionException e) {
         Assertions.fail(
             "Failed to process block " + i + " at slot " + block.getSlot() + ": " + e.getMessage(),

@@ -1,0 +1,10 @@
+{
+  "type" : "object",
+  "oneOf" : [ {
+    "$ref" : "#/components/schemas/BeaconBlockPhase0"
+  }, {
+    "$ref" : "#/components/schemas/BeaconBlockAltair"
+  }, {
+    "$ref" : "#/components/schemas/BeaconBlockMerge"
+  } ]
+}

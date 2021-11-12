@@ -18,16 +18,31 @@ import java.io.IOException;
 import java.util.List;
 import tech.pegasys.teku.infrastructure.restapi.types.StringBasedPrimitiveTypeDefinition.StringTypeBuilder;
 
-public interface DeserializableTypeDefinition<T> extends SerializableTypeDefinition<T> {
+public interface DeserializableTypeDefinition<TObject> extends SerializableTypeDefinition<TObject> {
 
-  T deserialize(JsonParser parser) throws IOException;
+  TObject deserialize(JsonParser parser) throws IOException;
 
-  static <T> StringTypeBuilder<T> string(@SuppressWarnings("unused") final Class<T> clazz) {
+  static <TObject> StringTypeBuilder<TObject> string(
+      @SuppressWarnings("unused") final Class<TObject> clazz) {
     return new StringTypeBuilder<>();
   }
 
-  static <T> DeserializableTypeDefinition<List<T>> listOf(
-      final DeserializableTypeDefinition<T> itemType) {
+  static <TObject> DeserializableTypeDefinition<List<TObject>> listOf(
+      final DeserializableTypeDefinition<TObject> itemType) {
     return new DeserializableArrayTypeDefinition<>(itemType);
+  }
+
+  static <TObject extends Enum<TObject>> DeserializableTypeDefinition<TObject> enumOf(
+      final Class<TObject> itemType) {
+    return new EnumTypeDefinition<>(itemType);
+  }
+
+  static <TObject> DeserializableObjectTypeDefinitionBuilder<TObject> object(
+      @SuppressWarnings("unused") final Class<TObject> type) {
+    return object();
+  }
+
+  static <TObject> DeserializableObjectTypeDefinitionBuilder<TObject> object() {
+    return new DeserializableObjectTypeDefinitionBuilder<>();
   }
 }

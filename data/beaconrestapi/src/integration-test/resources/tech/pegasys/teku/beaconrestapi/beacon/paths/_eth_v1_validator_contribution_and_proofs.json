@@ -1,0 +1,31 @@
+{
+  "post" : {
+    "tags" : [ "Validator", "Validator Required Api" ],
+    "summary" : "Publish contribution and proofs",
+    "description" : "Verifies given sync committee contribution and proofs and publishes on appropriate gossipsub topics.",
+    "operationId" : "postEthV1ValidatorContribution_and_proofs",
+    "requestBody" : {
+      "content" : {
+        "application/json" : {
+          "schema" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/SignedContributionAndProof"
+            }
+          }
+        }
+      }
+    },
+    "responses" : {
+      "200" : {
+        "description" : "Successfully published contribution and proofs."
+      },
+      "400" : {
+        "description" : "Invalid parameter supplied."
+      },
+      "500" : {
+        "description" : "Beacon node internal error."
+      }
+    }
+  }
+}

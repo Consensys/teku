@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.interop.InteropStartupUtil;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -92,7 +93,12 @@ public class ProfilingRun {
       BeaconChainUtil localChain =
           BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);
       BlockImporter blockImporter =
-          new BlockImporter(blockImportNotifications, recentChainData, forkChoice, wsValidator);
+          new BlockImporter(
+              blockImportNotifications,
+              recentChainData,
+              forkChoice,
+              wsValidator,
+              ExecutionEngineChannel.NOOP);
 
       System.out.println("Start blocks import from " + blocksFile);
       int blockCount = 0;
@@ -165,7 +171,12 @@ public class ProfilingRun {
       initialState = null;
       ForkChoice forkChoice = ForkChoice.create(spec, new InlineEventThread(), recentChainData);
       BlockImporter blockImporter =
-          new BlockImporter(blockImportNotifications, recentChainData, forkChoice, wsValidator);
+          new BlockImporter(
+              blockImportNotifications,
+              recentChainData,
+              forkChoice,
+              wsValidator,
+              ExecutionEngineChannel.NOOP);
 
       System.out.println("Start blocks import from " + blocksFile);
       int counter = 1;

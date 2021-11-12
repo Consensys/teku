@@ -17,6 +17,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllAltairFieldsSet;
 import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllFieldsSet;
+import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllMergeFieldsSet;
 
 import java.io.InputStream;
 import java.net.URL;
@@ -41,7 +42,7 @@ public class SpecConfigLoaderTest {
   @MethodSource("knownNetworks")
   public void shouldLoadAllKnownNetworks(final String name, final Class<?> configType)
       throws Exception {
-    final SpecConfig config = SpecConfigLoader.loadConfig(name);
+    final SpecConfig config = SpecConfigLoader.loadConfigStrict(name);
     assertAllFieldsSet(config, configType);
   }
 
@@ -63,7 +64,7 @@ public class SpecConfigLoaderTest {
   @Test
   public void shouldLoadMainnet() throws Exception {
     final SpecConfig config = SpecConfigLoader.loadConfig("mainnet");
-    assertAllAltairFieldsSet(config);
+    assertAllMergeFieldsSet(config);
   }
 
   @Test
@@ -122,13 +123,8 @@ public class SpecConfigLoaderTest {
   }
 
   static Stream<Arguments> knownNetworks() {
-    return Stream.of(
-        Arguments.of(Eth2Network.MAINNET.configName(), SpecConfigAltair.class),
-        Arguments.of(Eth2Network.PYRMONT.configName(), SpecConfigAltair.class),
-        Arguments.of(Eth2Network.PRATER.configName(), SpecConfigAltair.class),
-        Arguments.of(Eth2Network.MINIMAL.configName(), SpecConfigAltair.class),
-        Arguments.of(Eth2Network.SWIFT.configName(), SpecConfigAltair.class),
-        Arguments.of(Eth2Network.LESS_SWIFT.configName(), SpecConfigAltair.class));
+    return Stream.of(Eth2Network.values())
+        .map(network -> Arguments.of(network.configName(), SpecConfigMerge.class));
   }
 
   private void writeStreamToFile(final InputStream inputStream, final Path filePath)

@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.networks.Eth2Presets;
@@ -31,20 +32,31 @@ public class SpecConfigLoader {
   private static final String CONFIG_PATH = "configs/";
   private static final String PRESET_PATH = "presets/";
 
+  public static SpecConfig loadConfigStrict(final String configName) {
+    return loadConfig(configName, false, __ -> {});
+  }
+
   public static SpecConfig loadConfig(final String configName) {
     return loadConfig(configName, __ -> {});
   }
 
   public static SpecConfig loadConfig(
       final String configName, final Consumer<SpecConfigBuilder> modifier) {
+    return loadConfig(configName, true, modifier);
+  }
+
+  public static SpecConfig loadConfig(
+      final String configName,
+      final boolean ignoreUnknownConfigItems,
+      final Consumer<SpecConfigBuilder> modifier) {
     final SpecConfigReader reader = new SpecConfigReader();
-    processConfig(configName, reader::read);
+    processConfig(configName, source -> reader.read(source, ignoreUnknownConfigItems));
     return reader.build(modifier);
   }
 
-  public static SpecConfig loadConfig(final Map<String, String> config) {
+  public static SpecConfig loadRemoteConfig(final Map<String, String> config) {
     final SpecConfigReader reader = new SpecConfigReader();
-    reader.loadFromMap(config);
+    reader.loadFromMap(config, true);
     return reader.build();
   }
 
@@ -134,8 +146,12 @@ public class SpecConfigLoader {
   private static List<String> enumerateAvailablePresetResources() {
     return Arrays.stream(Eth2Presets.values())
         .map(Eth2Presets::presetName)
-        .map(s -> List.of(PRESET_PATH + s + "/phase0.yaml", PRESET_PATH + s + "/altair.yaml"))
-        .flatMap(List::stream)
+        .flatMap(
+            s ->
+                Stream.of(
+                    PRESET_PATH + s + "/phase0.yaml",
+                    PRESET_PATH + s + "/altair.yaml",
+                    PRESET_PATH + s + "/merge.yaml"))
         .collect(Collectors.toList());
   }
 

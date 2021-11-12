@@ -13,9 +13,6 @@
 
 package tech.pegasys.teku.spec.datastructures.execution;
 
-import static tech.pegasys.teku.spec.config.SpecConfig.BYTES_PER_LOGS_BLOOM;
-import static tech.pegasys.teku.spec.config.SpecConfig.MAX_EXTRA_DATA_BYTES;
-
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -27,9 +24,6 @@ import tech.pegasys.teku.ssz.containers.ContainerSchema14;
 import tech.pegasys.teku.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.ssz.primitive.SszUInt64;
-import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.schema.collections.SszByteListSchema;
-import tech.pegasys.teku.ssz.schema.collections.SszByteVectorSchema;
 import tech.pegasys.teku.ssz.tree.TreeNode;
 import tech.pegasys.teku.ssz.type.Bytes20;
 
@@ -51,56 +45,7 @@ public class ExecutionPayloadHeader
         SszBytes32,
         SszBytes32> {
 
-  public static class ExecutionPayloadHeaderSchema
-      extends ContainerSchema14<
-          ExecutionPayloadHeader,
-          SszBytes32,
-          SszByteVector,
-          SszBytes32,
-          SszBytes32,
-          SszByteVector,
-          SszBytes32,
-          SszUInt64,
-          SszUInt64,
-          SszUInt64,
-          SszUInt64,
-          SszByteList,
-          SszUInt256,
-          SszBytes32,
-          SszBytes32> {
-
-    public ExecutionPayloadHeaderSchema() {
-      super(
-          "ExecutionPayloadHeader",
-          namedSchema("parent_hash", SszPrimitiveSchemas.BYTES32_SCHEMA),
-          namedSchema("coinbase", SszByteVectorSchema.create(Bytes20.SIZE)),
-          namedSchema("state_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
-          namedSchema("receipt_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
-          namedSchema("logs_bloom", SszByteVectorSchema.create(BYTES_PER_LOGS_BLOOM)),
-          namedSchema("random", SszPrimitiveSchemas.BYTES32_SCHEMA),
-          namedSchema("block_number", SszPrimitiveSchemas.UINT64_SCHEMA),
-          namedSchema("gas_limit", SszPrimitiveSchemas.UINT64_SCHEMA),
-          namedSchema("gas_used", SszPrimitiveSchemas.UINT64_SCHEMA),
-          namedSchema("timestamp", SszPrimitiveSchemas.UINT64_SCHEMA),
-          namedSchema("extra_data", SszByteListSchema.create(MAX_EXTRA_DATA_BYTES)),
-          namedSchema("base_fee_per_gas", SszPrimitiveSchemas.UINT256_SCHEMA),
-          namedSchema("block_hash", SszPrimitiveSchemas.BYTES32_SCHEMA),
-          namedSchema("transactions_root", SszPrimitiveSchemas.BYTES32_SCHEMA));
-    }
-
-    public SszByteListSchema<?> getExtraDataSchema() {
-      return (SszByteListSchema<?>) getFieldSchema10();
-    }
-
-    @Override
-    public ExecutionPayloadHeader createFromBackingNode(TreeNode node) {
-      return new ExecutionPayloadHeader(this, node);
-    }
-  }
-
-  public static final ExecutionPayloadHeaderSchema SSZ_SCHEMA = new ExecutionPayloadHeaderSchema();
-
-  private ExecutionPayloadHeader(
+  ExecutionPayloadHeader(
       ContainerSchema14<
               ExecutionPayloadHeader,
               SszBytes32,
@@ -122,46 +67,43 @@ public class ExecutionPayloadHeader
     super(type, backingNode);
   }
 
-  public ExecutionPayloadHeader(
-      Bytes32 parentHash,
-      Bytes20 coinbase,
-      Bytes32 stateRoot,
-      Bytes32 receiptRoot,
-      Bytes logsBloom,
-      Bytes32 random,
-      UInt64 blockNumber,
-      UInt64 gasLimit,
-      UInt64 gasUsed,
-      UInt64 timestamp,
-      Bytes extraData,
-      UInt256 baseFeePerGas,
-      Bytes32 blockHash,
-      Bytes32 transactionsRoot) {
+  ExecutionPayloadHeader(
+      ExecutionPayloadHeaderSchema schema,
+      SszBytes32 parentHash,
+      SszByteVector coinbase,
+      SszBytes32 stateRoot,
+      SszBytes32 receiptRoot,
+      SszByteVector logsBloom,
+      SszBytes32 random,
+      SszUInt64 blockNumber,
+      SszUInt64 gasLimit,
+      SszUInt64 gasUsed,
+      SszUInt64 timestamp,
+      SszByteList extraData,
+      SszUInt256 baseFeePerGas,
+      SszBytes32 blockHash,
+      SszBytes32 transactionsRoot) {
     super(
-        SSZ_SCHEMA,
-        SszBytes32.of(parentHash),
-        SszByteVector.fromBytes(coinbase.getWrappedBytes()),
-        SszBytes32.of(stateRoot),
-        SszBytes32.of(receiptRoot),
-        SszByteVector.fromBytes(logsBloom),
-        SszBytes32.of(random),
-        SszUInt64.of(blockNumber),
-        SszUInt64.of(gasLimit),
-        SszUInt64.of(gasUsed),
-        SszUInt64.of(timestamp),
-        SSZ_SCHEMA.getExtraDataSchema().fromBytes(extraData),
-        SszUInt256.of(baseFeePerGas),
-        SszBytes32.of(blockHash),
-        SszBytes32.of(transactionsRoot));
-  }
-
-  public ExecutionPayloadHeader() {
-    super(SSZ_SCHEMA);
+        schema,
+        parentHash,
+        coinbase,
+        stateRoot,
+        receiptRoot,
+        logsBloom,
+        random,
+        blockNumber,
+        gasLimit,
+        gasUsed,
+        timestamp,
+        extraData,
+        baseFeePerGas,
+        blockHash,
+        transactionsRoot);
   }
 
   @Override
   public ExecutionPayloadHeaderSchema getSchema() {
-    return SSZ_SCHEMA;
+    return (ExecutionPayloadHeaderSchema) super.getSchema();
   }
 
   public Bytes32 getParentHash() {

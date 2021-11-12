@@ -132,19 +132,16 @@ public class BeaconStateAltair extends BeaconState implements State {
                   beaconStateAltair
                       .getPreviousEpochParticipation()
                       .getSchema()
-                      .sszDeserialize(Bytes.wrap(previous_epoch_participation));
+                      .sszDeserialize(Bytes.wrap(this.previous_epoch_participation));
               final SszList<SszByte> currentEpochParticipation =
                   beaconStateAltair
                       .getCurrentEpochParticipation()
                       .getSchema()
-                      .sszDeserialize(Bytes.wrap(current_epoch_participation));
+                      .sszDeserialize(Bytes.wrap(this.current_epoch_participation));
 
               beaconStateAltair.setPreviousEpochParticipation(previousEpochParticipation);
               beaconStateAltair.setCurrentEpochParticipation(currentEpochParticipation);
-              beaconStateAltair
-                  .getInactivityScores()
-                  .createWritableCopy()
-                  .setAllElements(inactivity_scores);
+              beaconStateAltair.getInactivityScores().setAllElements(inactivity_scores);
 
               beaconStateAltair.setCurrentSyncCommittee(
                   current_sync_committee.asInternalSyncCommittee(syncCommitteeSchema));
@@ -157,6 +154,7 @@ public class BeaconStateAltair extends BeaconState implements State {
   public boolean equals(final Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
+    if (!super.equals(o)) return false;
     final BeaconStateAltair that = (BeaconStateAltair) o;
     return Arrays.equals(previous_epoch_participation, that.previous_epoch_participation)
         && Arrays.equals(current_epoch_participation, that.current_epoch_participation)
@@ -167,7 +165,9 @@ public class BeaconStateAltair extends BeaconState implements State {
 
   @Override
   public int hashCode() {
-    int result = Objects.hash(inactivity_scores, current_sync_committee, next_sync_committee);
+    int result =
+        Objects.hash(
+            super.hashCode(), inactivity_scores, current_sync_committee, next_sync_committee);
     result = 31 * result + Arrays.hashCode(previous_epoch_participation);
     result = 31 * result + Arrays.hashCode(current_epoch_participation);
     return result;

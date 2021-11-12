@@ -12,6 +12,7 @@ dependencies {
     testFixturesImplementation testFixtures(project(':bls'))
     testFixturesImplementation project(':infrastructure:io')
     testFixturesImplementation 'org.apache.tuweni:tuweni-units'
+    testFixturesImplementation 'org.junit.jupiter:junit-jupiter-api'
 
     testFixturesApi project(':ethereum:pow:api')
     testFixturesApi 'com.google.guava:guava'
@@ -33,6 +34,7 @@ dependencies {
     implementation project(':infrastructure:async')
     implementation project(':infrastructure:crypto')
     api project(':infrastructure:collections')
+    implementation project(':infrastructure:events')
     implementation project(':infrastructure:io')
     implementation project(':infrastructure:logging')
     implementation project(':ethereum:pow:api')
@@ -60,4 +62,5 @@ dependencies {
     testFixturesImplementation testFixtures(project(':bls'))
     testFixturesImplementation project(':util')
     testFixturesImplementation project(':infrastructure:async')
+    testFixturesImplementation project(':infrastructure:events')
 }

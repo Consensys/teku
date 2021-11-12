@@ -1,0 +1,23 @@
+{
+  "get" : {
+    "tags" : [ "Node" ],
+    "summary" : "Get peer count",
+    "description" : "Retrieves number of known peers.",
+    "operationId" : "getEthV1NodePeer_count",
+    "responses" : {
+      "200" : {
+        "description" : "OK",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetPeerCountResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Server Error"
+      }
+    }
+  }
+}

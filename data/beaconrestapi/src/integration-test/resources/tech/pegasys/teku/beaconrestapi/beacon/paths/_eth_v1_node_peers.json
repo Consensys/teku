@@ -1,0 +1,23 @@
+{
+  "get" : {
+    "tags" : [ "Node" ],
+    "summary" : "Get node peers",
+    "description" : "Retrieves data about the node's network peers.",
+    "operationId" : "getEthV1NodePeers",
+    "responses" : {
+      "200" : {
+        "description" : "OK",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/PeersResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Server Error"
+      }
+    }
+  }
+}

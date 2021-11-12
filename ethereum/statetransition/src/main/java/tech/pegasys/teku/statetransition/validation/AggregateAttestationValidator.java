@@ -23,6 +23,7 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 import static tech.pegasys.teku.util.config.Constants.VALID_AGGREGATE_SET_SIZE;
 
 import it.unimi.dsi.fastutil.ints.IntList;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -35,6 +36,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -45,25 +47,30 @@ import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BatchSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
+import tech.pegasys.teku.spec.logic.common.util.AsyncBatchBLSSignatureVerifier;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class AggregateAttestationValidator {
   private static final Logger LOG = LogManager.getLogger();
+  private final Map<Bytes32, SafeFuture<InternalValidationResult>> aggregateAttestationResultCache =
+      LimitedMap.create(VALID_AGGREGATE_SET_SIZE);
   private final Set<AggregatorIndexAndEpoch> receivedAggregatorIndexAndEpochs =
       LimitedSet.create(VALID_AGGREGATE_SET_SIZE);
   private final AttestationValidator attestationValidator;
   private final RecentChainData recentChainData;
   private final Spec spec;
+  private final AsyncBLSSignatureVerifier signatureVerifier;
 
   public AggregateAttestationValidator(
+      final Spec spec,
       final RecentChainData recentChainData,
       final AttestationValidator attestationValidator,
-      final Spec spec) {
+      final AsyncBLSSignatureVerifier signatureVerifier) {
     this.recentChainData = recentChainData;
     this.attestationValidator = attestationValidator;
     this.spec = spec;
+    this.signatureVerifier = signatureVerifier;
   }
 
   public SafeFuture<InternalValidationResult> validate(final ValidateableAttestation attestation) {
@@ -80,7 +87,8 @@ public class AggregateAttestationValidator {
       return completedFuture(ignore("Ignoring duplicate aggregate"));
     }
 
-    final BatchSignatureVerifier signatureVerifier = new BatchSignatureVerifier();
+    final AsyncBatchBLSSignatureVerifier signatureVerifier =
+        new AsyncBatchBLSSignatureVerifier(this.signatureVerifier);
     return singleOrAggregateAttestationChecks(signatureVerifier, attestation, OptionalInt.empty())
         .thenCompose(
             aggregateInternalValidationResult -> {
@@ -97,10 +105,11 @@ public class AggregateAttestationValidator {
                               ? completedFuture(Optional.empty())
                               : attestationValidator.resolveStateForAttestation(
                                   aggregate, maybeState.get()))
-                  .thenApply(
+                  .thenCompose(
                       maybeState -> {
                         if (maybeState.isEmpty()) {
-                          return InternalValidationResult.SAVE_FOR_FUTURE;
+                          return SafeFuture.completedFuture(
+                              InternalValidationResult.SAVE_FOR_FUTURE);
                         }
 
                         final BeaconState state = maybeState.get();
@@ -108,7 +117,8 @@ public class AggregateAttestationValidator {
                         final Optional<BLSPublicKey> aggregatorPublicKey =
                             spec.getValidatorPubKey(state, aggregateAndProof.getIndex());
                         if (aggregatorPublicKey.isEmpty()) {
-                          return reject("Rejecting aggregate with invalid index");
+                          return SafeFuture.completedFuture(
+                              reject("Rejecting aggregate with invalid index"));
                         }
 
                         if (!isSelectionProofValid(
@@ -117,7 +127,8 @@ public class AggregateAttestationValidator {
                             state,
                             aggregatorPublicKey.get(),
                             aggregateAndProof.getSelection_proof())) {
-                          return reject("Rejecting aggregate with incorrect selection proof");
+                          return SafeFuture.completedFuture(
+                              reject("Rejecting aggregate with incorrect selection proof"));
                         }
 
                         final IntList beaconCommittee =
@@ -132,36 +143,46 @@ public class AggregateAttestationValidator {
                             .getValidatorsUtil()
                             .isAggregator(
                                 aggregateAndProof.getSelection_proof(), aggregatorModulo)) {
-                          return reject(
-                              "Rejecting aggregate because selection proof does not select validator as aggregator");
+                          return SafeFuture.completedFuture(
+                              reject(
+                                  "Rejecting aggregate because selection proof does not select validator as aggregator"));
                         }
                         if (!beaconCommittee.contains(
                             toIntExact(aggregateAndProof.getIndex().longValue()))) {
-                          return reject(
-                              "Rejecting aggregate because attester is not in committee. Should have been one of %s",
-                              beaconCommittee);
+                          return SafeFuture.completedFuture(
+                              reject(
+                                  "Rejecting aggregate because attester is not in committee. Should have been one of %s",
+                                  beaconCommittee));
                         }
 
                         if (!validateSignature(
                             signatureVerifier, signedAggregate, state, aggregatorPublicKey.get())) {
-                          return reject("Rejecting aggregate with invalid signature");
+                          return SafeFuture.completedFuture(
+                              reject("Rejecting aggregate with invalid signature"));
                         }
 
-                        if (!signatureVerifier.batchVerify()) {
-                          return reject("Rejecting aggregate with invalid batch signature");
-                        }
+                        return signatureVerifier
+                            .batchVerify()
+                            .thenApply(
+                                signatureValid -> {
+                                  if (!signatureValid) {
+                                    return reject(
+                                        "Rejecting aggregate with invalid batch signature");
+                                  }
 
-                        if (!receivedAggregatorIndexAndEpochs.add(aggregatorIndexAndEpoch)) {
-                          return ignore("Ignoring duplicate aggregate");
-                        }
+                                  if (!receivedAggregatorIndexAndEpochs.add(
+                                      aggregatorIndexAndEpoch)) {
+                                    return ignore("Ignoring duplicate aggregate");
+                                  }
 
-                        return aggregateInternalValidationResult;
+                                  return aggregateInternalValidationResult;
+                                });
                       });
             });
   }
 
   private boolean validateSignature(
-      final BLSSignatureVerifier signatureVerifier,
+      final AsyncBatchBLSSignatureVerifier signatureVerifier,
       final SignedAggregateAndProof signedAggregate,
       final BeaconState state,
       final BLSPublicKey aggregatorPublicKey) {
@@ -194,13 +215,18 @@ public class AggregateAttestationValidator {
   }
 
   SafeFuture<InternalValidationResult> singleOrAggregateAttestationChecks(
-      final BLSSignatureVerifier signatureVerifier,
+      final AsyncBatchBLSSignatureVerifier signatureVerifier,
       final ValidateableAttestation validateableAttestation,
       final OptionalInt receivedOnSubnetId) {
-    return attestationValidator.singleOrAggregateAttestationChecks(
-        AsyncBLSSignatureVerifier.wrap(signatureVerifier),
-        validateableAttestation,
-        receivedOnSubnetId);
+    // We get a lot of aggregate attestations with the same Attestation but different aggregator
+    // These have to be individually processed but we can skip re-validating the Attestation
+    return aggregateAttestationResultCache.computeIfAbsent(
+        validateableAttestation.hash_tree_root(),
+        __ ->
+            attestationValidator.singleOrAggregateAttestationChecks(
+                signatureVerifier.asAsyncBSLSSignatureVerifier(),
+                validateableAttestation,
+                receivedOnSubnetId));
   }
 
   private static class AggregatorIndexAndEpoch {

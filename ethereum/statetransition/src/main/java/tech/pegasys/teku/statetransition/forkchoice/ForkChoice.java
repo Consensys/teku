@@ -43,6 +43,7 @@ import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -159,10 +160,11 @@ public class ForkChoice {
   }
 
   /** Import a block to the store. */
-  public SafeFuture<BlockImportResult> onBlock(final SignedBeaconBlock block) {
+  public SafeFuture<BlockImportResult> onBlock(
+      final SignedBeaconBlock block, final ExecutionEngineChannel executionEngine) {
     return recentChainData
         .retrieveStateAtSlot(new SlotAndBlockRoot(block.getSlot(), block.getParentRoot()))
-        .thenCompose(blockSlotState -> onBlock(block, blockSlotState));
+        .thenCompose(blockSlotState -> onBlock(block, blockSlotState, executionEngine));
   }
 
   /**
@@ -170,7 +172,9 @@ public class ForkChoice {
    * processed to the same slot as the block.
    */
   private SafeFuture<BlockImportResult> onBlock(
-      final SignedBeaconBlock block, Optional<BeaconState> blockSlotState) {
+      final SignedBeaconBlock block,
+      final Optional<BeaconState> blockSlotState,
+      final ExecutionEngineChannel executionEngine) {
     if (blockSlotState.isEmpty()) {
       return SafeFuture.completedFuture(BlockImportResult.FAILED_UNKNOWN_PARENT);
     }
@@ -189,7 +193,12 @@ public class ForkChoice {
           addParentStateRoots(blockSlotState.get(), transaction);
 
           final BlockImportResult result =
-              spec.onBlock(transaction, block, blockSlotState.get(), indexedAttestationCache);
+              spec.onBlock(
+                  transaction,
+                  block,
+                  blockSlotState.get(),
+                  indexedAttestationCache,
+                  executionEngine);
 
           if (!result.isSuccessful()) {
             if (result.getFailureReason() != FailureReason.BLOCK_IS_FROM_FUTURE) {

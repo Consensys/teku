@@ -22,6 +22,15 @@ import tech.pegasys.teku.api.schema.interfaces.UnsignedBlock;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class BeaconBlockPhase0 extends BeaconBlock implements UnsignedBlock {
+  public BeaconBlockPhase0(tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock message) {
+    super(
+        message.getSlot(),
+        message.getProposerIndex(),
+        message.getParentRoot(),
+        message.getStateRoot(),
+        new BeaconBlockBody(message.getBody()));
+  }
+
   @JsonCreator
   public BeaconBlockPhase0(
       @JsonProperty("slot") final UInt64 slot,

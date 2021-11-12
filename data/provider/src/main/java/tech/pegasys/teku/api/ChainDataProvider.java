@@ -117,7 +117,7 @@ public class ChainDataProvider {
     return defaultBlockSelectorFactory
         .defaultBlockSelector(slotParameter)
         .getSingleBlock()
-        .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::new));
+        .thenApply(maybeBlock -> maybeBlock.map(schemaObjectProvider::getSignedBeaconBlock));
   }
 
   public SafeFuture<Optional<SignedBeaconBlock>> getBlockV2(final String slotParameter) {
@@ -211,7 +211,9 @@ public class ChainDataProvider {
           .getBlock()
           .thenApply(
               blockList ->
-                  blockList.stream().map(SignedBeaconBlock::new).collect(Collectors.toSet()));
+                  blockList.stream()
+                      .map(schemaObjectProvider::getSignedBeaconBlock)
+                      .collect(Collectors.toSet()));
     }
   }
 

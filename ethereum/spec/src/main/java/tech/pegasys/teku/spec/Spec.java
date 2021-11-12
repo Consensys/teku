@@ -40,6 +40,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -55,6 +56,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateInvariants;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.genesis.GenesisGenerator;
 import tech.pegasys.teku.spec.logic.StateTransition;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
@@ -229,9 +231,13 @@ public class Spec {
   }
   // Genesis
   public BeaconState initializeBeaconStateFromEth1(
-      Bytes32 eth1BlockHash, UInt64 eth1Timestamp, List<? extends Deposit> deposits) {
+      Bytes32 eth1BlockHash,
+      UInt64 eth1Timestamp,
+      List<? extends Deposit> deposits,
+      Optional<ExecutionPayloadHeader> payloadHeader) {
     final GenesisGenerator genesisGenerator = createGenesisGenerator();
     genesisGenerator.updateCandidateState(eth1BlockHash, eth1Timestamp, deposits);
+    payloadHeader.ifPresent(genesisGenerator::updateExecutionPayloadHeader);
     return genesisGenerator.getGenesisState();
   }
 
@@ -456,10 +462,11 @@ public class Spec {
       final MutableStore store,
       final SignedBeaconBlock signedBlock,
       final BeaconState blockSlotState,
-      final IndexedAttestationCache indexedAttestationCache) {
+      final IndexedAttestationCache indexedAttestationCache,
+      final ExecutionEngineChannel executionEngine) {
     return atBlock(signedBlock)
         .getForkChoiceUtil()
-        .onBlock(store, signedBlock, blockSlotState, indexedAttestationCache);
+        .onBlock(store, signedBlock, blockSlotState, indexedAttestationCache, executionEngine);
   }
 
   public boolean blockDescendsFromLatestFinalizedBlock(
@@ -499,13 +506,18 @@ public class Spec {
   public BeaconState processBlock(
       final BeaconState preState,
       final SignedBeaconBlock block,
-      final BLSSignatureVerifier signatureVerifier)
+      final BLSSignatureVerifier signatureVerifier,
+      final ExecutionEngineChannel executionEngine)
       throws StateTransitionException {
     try {
       final BeaconState blockSlotState = stateTransition.processSlots(preState, block.getSlot());
       return getBlockProcessor(block.getSlot())
           .processAndValidateBlock(
-              block, blockSlotState, IndexedAttestationCache.NOOP, signatureVerifier);
+              block,
+              blockSlotState,
+              IndexedAttestationCache.NOOP,
+              signatureVerifier,
+              executionEngine);
     } catch (SlotProcessingException | EpochProcessingException e) {
       throw new StateTransitionException(e);
     }
@@ -520,7 +532,8 @@ public class Spec {
               blockSlotState,
               block.getMessage(),
               IndexedAttestationCache.NOOP,
-              BLSSignatureVerifier.NO_OP);
+              BLSSignatureVerifier.NO_OP,
+              ExecutionEngineChannel.NOOP);
     } catch (SlotProcessingException | EpochProcessingException | BlockProcessingException e) {
       throw new StateTransitionException(e);
     }

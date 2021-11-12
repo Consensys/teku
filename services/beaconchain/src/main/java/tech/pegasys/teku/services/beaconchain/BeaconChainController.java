@@ -73,6 +73,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.statetransition.EpochCachePrimer;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.OperationsReOrgManager;
@@ -559,7 +560,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     AttestationValidator attestationValidator =
         new AttestationValidator(spec, recentChainData, signatureVerificationService);
     AggregateAttestationValidator aggregateValidator =
-        new AggregateAttestationValidator(recentChainData, attestationValidator, spec);
+        new AggregateAttestationValidator(
+            spec, recentChainData, attestationValidator, signatureVerificationService);
     attestationManager =
         AttestationManager.create(
             pendingAttestations,
@@ -584,7 +586,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         new SyncCommitteeContributionPool(
             spec,
             new SignedContributionAndProofValidator(
-                spec, recentChainData, syncCommitteeStateUtils, timeProvider));
+                spec,
+                recentChainData,
+                syncCommitteeStateUtils,
+                timeProvider,
+                signatureVerificationService));
 
     syncCommitteeMessagePool =
         new SyncCommitteeMessagePool(
@@ -761,7 +767,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             eventChannels.getPublisher(BlockImportNotifications.class),
             recentChainData,
             forkChoice,
-            weakSubjectivityValidator);
+            weakSubjectivityValidator,
+            ExecutionEngineChannel.NOOP);
   }
 
   public void initBlockManager() {

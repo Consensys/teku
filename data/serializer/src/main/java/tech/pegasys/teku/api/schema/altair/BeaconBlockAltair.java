@@ -24,11 +24,14 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 
 public class BeaconBlockAltair extends BeaconBlock implements UnsignedBlock {
-  private final BeaconBlockBodyAltair body;
 
   public BeaconBlockAltair(tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock message) {
-    super(message);
-    this.body = new BeaconBlockBodyAltair(message.getBody().toVersionAltair().orElseThrow());
+    super(
+        message.getSlot(),
+        message.getProposerIndex(),
+        message.getParentRoot(),
+        message.getStateRoot(),
+        new BeaconBlockBodyAltair(message.getBody().toVersionAltair().orElseThrow()));
   }
 
   @Override
@@ -47,8 +50,8 @@ public class BeaconBlockAltair extends BeaconBlock implements UnsignedBlock {
 
   @JsonProperty("body")
   @Override
-  public final BeaconBlockBodyAltair getBody() {
-    return body;
+  public BeaconBlockBodyAltair getBody() {
+    return (BeaconBlockBodyAltair) body;
   }
 
   @JsonCreator
@@ -59,6 +62,5 @@ public class BeaconBlockAltair extends BeaconBlock implements UnsignedBlock {
       @JsonProperty("state_root") final Bytes32 state_root,
       @JsonProperty("body") final BeaconBlockBodyAltair body) {
     super(slot, proposer_index, parent_root, state_root, body);
-    this.body = body;
   }
 }

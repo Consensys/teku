@@ -20,8 +20,6 @@ import java.util.List;
 import okhttp3.Response;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v1.beacon.GetBlockResponse;
-import tech.pegasys.teku.api.schema.BLSSignature;
-import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlock;
@@ -40,11 +38,7 @@ public class GetBlockIntegrationTest extends AbstractDataBackedRestAPIIntegratio
         jsonProvider.jsonToObject(response.body().string(), GetBlockResponse.class);
     final SignedBeaconBlock data = body.data;
     final SignedBlockAndState block = created.get(0);
-    assertThat(data)
-        .isEqualTo(
-            new SignedBeaconBlock(
-                new BeaconBlock(block.getBlock().getMessage()),
-                new BLSSignature(block.getBlock().getSignature())));
+    assertThat(data).isEqualTo(SignedBeaconBlock.create(block.getBlock()));
   }
 
   @Test

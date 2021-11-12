@@ -31,12 +31,14 @@ import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
@@ -92,12 +94,13 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
       final MutableBeaconState genericState,
       final BeaconBlock block,
       final IndexedAttestationCache indexedAttestationCache,
-      final BLSSignatureVerifier signatureVerifier)
+      final BLSSignatureVerifier signatureVerifier,
+      final ExecutionEngineChannel executionEngine)
       throws BlockProcessingException {
     final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(genericState);
     final BeaconBlockBodyAltair blockBody = BeaconBlockBodyAltair.required(block.getBody());
 
-    super.processBlock(state, block, indexedAttestationCache, signatureVerifier);
+    super.processBlock(state, block, indexedAttestationCache, signatureVerifier, executionEngine);
     processSyncAggregate(state, blockBody.getSyncAggregate(), signatureVerifier);
   }
 
@@ -240,6 +243,15 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
         .forEach(
             participantIndex ->
                 beaconStateMutators.decreaseBalance(state, participantIndex, participantReward));
+  }
+
+  @Override
+  public void processExecutionPayload(
+      final MutableBeaconState state,
+      final ExecutionPayload executionPayload,
+      final ExecutionEngineChannel executionEngine)
+      throws BlockProcessingException {
+    throw new UnsupportedOperationException("No ExecutionPayload in Altair");
   }
 
   public static boolean eth2FastAggregateVerify(

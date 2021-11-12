@@ -110,6 +110,19 @@ public class TestSpecFactory {
     return create(config, SpecMilestone.MERGE);
   }
 
+  public static Spec create(final SpecMilestone specMilestone, final Eth2Network network) {
+    switch (specMilestone) {
+      case PHASE0:
+        return create(SpecConfigLoader.loadConfig(network.configName()), specMilestone);
+      case ALTAIR:
+        return create(getAltairSpecConfig(network), specMilestone);
+      case MERGE:
+        return create(getMergeSpecConfig(network), specMilestone);
+      default:
+        throw new IllegalStateException("unsupported milestone");
+    }
+  }
+
   private static Spec create(
       final SpecConfig config, final SpecMilestone highestSupportedMilestone) {
     return Spec.create(config, highestSupportedMilestone);

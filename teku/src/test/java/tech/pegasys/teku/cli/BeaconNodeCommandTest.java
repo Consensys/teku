@@ -101,6 +101,15 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  void helpShouldNotShowUnsupportedOptions() {
+    final String[] args = {"--help"};
+
+    beaconNodeCommand.parse(args);
+    String str = getCommandLineOutput();
+    assertThat(str).doesNotContain("--X");
+  }
+
+  @Test
   public void helpShouldShowDefaultsForBooleanOptions() {
     final Pattern optPattern = Pattern.compile("(?i)--\\S+=<boolean>");
     final Pattern optDefValPattern = Pattern.compile("(?i)Default: (?:true|false)");
@@ -393,6 +402,10 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
       "0x77f7bED277449F51505a4C54550B074030d989bC",
       "--eth1-endpoint",
       "http://localhost:8545",
+      "--Xee-endpoint",
+      "http://localhost:8550",
+      "--Xee-fee-recipient-address",
+      "0x00220204f295DbB79fbBe619dd1B94463800F9D9",
       "--metrics-enabled",
       "false",
       "--metrics-port",
@@ -428,6 +441,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
     return expectedConfigurationBuilder()
         .eth2NetworkConfig(b -> b.applyNetworkDefaults("mainnet"))
+        .executionEngine(b -> b.feeRecipient((String) null).endpoints(new ArrayList<String>()))
         .powchain(
             b -> {
               b.depositContract(networkConfig.getEth1DepositContractAddress());
@@ -477,6 +491,10 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   private TekuConfiguration.Builder expectedConfigurationBuilder() {
     return TekuConfiguration.builder()
         .eth2NetworkConfig(b -> b.applyMinimalNetworkDefaults().eth1DepositContractAddress(address))
+        .executionEngine(
+            b ->
+                b.feeRecipient("0x00220204f295DbB79fbBe619dd1B94463800F9D9")
+                    .endpoints(List.of("http://localhost:8550")))
         .powchain(
             b ->
                 b.eth1Endpoints(List.of("http://localhost:8545"))

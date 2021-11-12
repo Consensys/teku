@@ -20,9 +20,11 @@ import tech.pegasys.teku.spec.config.SpecConfigMerge;
 import tech.pegasys.teku.spec.logic.DelegatingSpecLogic;
 import tech.pegasys.teku.spec.logic.SpecLogic;
 import tech.pegasys.teku.spec.logic.versions.altair.SpecLogicAltair;
+import tech.pegasys.teku.spec.logic.versions.merge.SpecLogicMerge;
 import tech.pegasys.teku.spec.logic.versions.phase0.SpecLogicPhase0;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsPhase0;
 
 public class SpecVersion extends DelegatingSpecLogic {
@@ -67,8 +69,8 @@ public class SpecVersion extends DelegatingSpecLogic {
   }
 
   static SpecVersion createMerge(final SpecConfigMerge specConfig) {
-    final SchemaDefinitionsAltair schemaDefinitions = new SchemaDefinitionsAltair(specConfig);
-    final SpecLogic specLogic = SpecLogicAltair.create(specConfig, schemaDefinitions);
+    final SchemaDefinitionsMerge schemaDefinitions = new SchemaDefinitionsMerge(specConfig);
+    final SpecLogic specLogic = SpecLogicMerge.create(specConfig, schemaDefinitions);
     return new SpecVersion(SpecMilestone.MERGE, specConfig, schemaDefinitions, specLogic);
   }
 

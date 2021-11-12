@@ -20,7 +20,10 @@ import java.util.List;
 import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.ssz.SSZ;
+import org.apache.tuweni.units.bigints.UInt256;
 import org.opentest4j.TestAbortedException;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
@@ -33,10 +36,12 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionengine.StubExecutionEngineChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -51,9 +56,10 @@ public class ForkChoiceTestExecutor implements TestExecutor {
           .put(
               "fork_choice/on_block",
               new ForkChoiceTestExecutor("new_finalized_slot_is_justified_checkpoint_ancestor"))
+          .put("fork_choice/on_merge_block", new ForkChoiceTestExecutor())
           .build();
 
-  private List<?> testsToSkip;
+  private final List<?> testsToSkip;
 
   public ForkChoiceTestExecutor(String... testsToSkip) {
     this.testsToSkip = List.of(testsToSkip);
@@ -83,8 +89,9 @@ public class ForkChoiceTestExecutor implements TestExecutor {
 
     final ForkChoice forkChoice =
         ForkChoice.create(spec, new InlineEventThread(), recentChainData, false);
+    final StubExecutionEngineChannel executionEngine = new StubExecutionEngineChannel();
 
-    runSteps(testDefinition, spec, recentChainData, forkChoice);
+    runSteps(testDefinition, spec, recentChainData, forkChoice, executionEngine);
   }
 
   /**
@@ -107,7 +114,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       final TestDefinition testDefinition,
       final Spec spec,
       final RecentChainData recentChainData,
-      final ForkChoice forkChoice)
+      final ForkChoice forkChoice,
+      final StubExecutionEngineChannel executionEngine)
       throws java.io.IOException {
     final List<Map<String, Object>> steps = loadSteps(testDefinition);
     for (Map<String, Object> step : steps) {
@@ -119,15 +127,40 @@ public class ForkChoiceTestExecutor implements TestExecutor {
         forkChoice.onTick(getUInt64(step, "tick"));
 
       } else if (step.containsKey("block")) {
-        applyBlock(testDefinition, spec, forkChoice, step);
+        applyBlock(testDefinition, spec, forkChoice, step, executionEngine);
 
       } else if (step.containsKey("attestation")) {
         applyAttestation(testDefinition, forkChoice, step);
+
+      } else if (step.containsKey("pow_block")) {
+        applyPowBlock(testDefinition, step, executionEngine);
 
       } else {
         throw new UnsupportedOperationException("Unsupported step: " + step);
       }
     }
+  }
+
+  private void applyPowBlock(
+      final TestDefinition testDefinition,
+      final Map<String, Object> step,
+      final StubExecutionEngineChannel executionEngine) {
+    final String filename = (String) step.get("pow_block");
+    final PowBlock block =
+        TestDataUtils.loadSsz(testDefinition, filename + ".ssz_snappy", this::parsePowBlock);
+    executionEngine.addPowBlock(block);
+  }
+
+  private PowBlock parsePowBlock(final Bytes data) {
+    return SSZ.decode(
+        data,
+        reader -> {
+          final Bytes32 blockHash = Bytes32.wrap(reader.readFixedBytes(Bytes32.SIZE));
+          final Bytes32 parentHash = Bytes32.wrap(reader.readFixedBytes(Bytes32.SIZE));
+          final UInt256 totalDifficulty = UInt256.fromBytes(reader.readFixedBytes(Bytes32.SIZE));
+          final UInt256 difficulty = UInt256.fromBytes(reader.readFixedBytes(Bytes32.SIZE));
+          return new PowBlock(blockHash, parentHash, totalDifficulty, difficulty);
+        });
   }
 
   private void applyAttestation(
@@ -147,13 +180,14 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       final TestDefinition testDefinition,
       final Spec spec,
       final ForkChoice forkChoice,
-      final Map<String, Object> step) {
+      final Map<String, Object> step,
+      final StubExecutionEngineChannel executionEngine) {
     final String blockName = get(step, "block");
     final SignedBeaconBlock block =
         TestDataUtils.loadSsz(
             testDefinition, blockName + ".ssz_snappy", spec::deserializeSignedBeaconBlock);
     LOG.info("Importing block {} at slot {}", block.getRoot(), block.getSlot());
-    assertThat(forkChoice.onBlock(block)).isCompleted();
+    assertThat(forkChoice.onBlock(block, executionEngine)).isCompleted();
   }
 
   @SuppressWarnings("unchecked")

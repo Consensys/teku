@@ -30,7 +30,7 @@ class ConfigProviderTest {
   @Test
   void shouldParseResultOfConfig() {
     final GetSpecResponse response = configProvider.getConfig();
-    final SpecConfig specConfig = SpecConfigLoader.loadConfig(response.data);
+    final SpecConfig specConfig = SpecConfigLoader.loadRemoteConfig(response.data);
     final SpecConfig expectedConfig = spec.getGenesisSpecConfig();
     assertThat(specConfig).isEqualToComparingFieldByField(expectedConfig);
   }

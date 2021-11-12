@@ -1,7 +1,6 @@
 # Changelog
 
 ## Upcoming Breaking Changes
-- Docker images will default to the JDK 17 variant in a future release.
 - The `/teku/v1/beacon/states/:state_id` endpoint has been deprecated in favor of the standard API `/eth/v1/debug/beacon/states/:state_id` which now returns the state as SSZ when the `Accept: application/octet-stream` header is specified on the request.
 - The `/eth/v1/debug/beacon/states/:state_id` endpoint has been deprecated in favor of the v2 Altair endpoint `/eth/v2/debug/beacon/states/:state_id`
 - The `/eth/v1/beacon/blocks/:block_id` endpoint has been deprecated in favor of the v2 Altair endpoint `/eth/v2/beacon/blocks/:block_id`
@@ -15,19 +14,10 @@ fetches network configuration information from the configured beacon node endpoi
 For information on changes in released versions of Teku, see the [releases page](https://github.com/ConsenSys/teku/releases).
 
 ## Unreleased Changes
-
-
 ### Additions and Improvements
-- Support v.2.1.0 of the standard rest api. it should be noted that the 'version' has been changed to lower case to comply with the api specification.
-- Attestations are now sent to the beacon node in batches by default when using the validator-client.
-- Updated to Javalin 4 for the rest api.
-- Added relevant epoch to attestation and sync committee performance log message.
-- Removed ignore rule for aggregate attestation gossip where the attestation root has previously been seen.
-- Added support for Apple Silicon (M1 chips).
-- Added LevelDB support for Linux/arm64.
-- New console message when Teku switches forks. 
+- Introduces a new database format for archive nodes that significantly improves response times for queries that require historic state data.
+    Existing databases and nodes using the default PRUNE storage mode are unchanged. Archive nodes wishing to take advantage of this will need to perform a full resync.
+- The default docker image now uses JDK 17 instead of 16. The JDK 16 image is still available with the version suffix `-jdk16`
+
 
 ### Bug Fixes
-- Fixed issue where discovery did not correctly abort handshake attempts when a request timed out.
-- Downgrade to jbslt 0.3.5 to resolve incompatibility with Windows 10.
-- Fixed issue where `Syncing Completed` message was printing multiple times.
