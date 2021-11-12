@@ -25,6 +25,7 @@ import picocli.CommandLine.Option;
 import tech.pegasys.teku.cli.converter.GraffitiConverter;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
+import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.api.ValidatorPerformanceTrackingMode;
 
 public class ValidatorOptions {
@@ -39,7 +40,7 @@ public class ValidatorOptions {
       description =
           "Graffiti value to include during block creation. Value gets converted to bytes and padded to Bytes32.",
       arity = "1")
-  private Bytes32 graffiti;
+  private Bytes32 graffiti = ValidatorConfig.DEFAULT_GRAFFITI.orElse(null);
 
   @Option(
       names = {"--validators-graffiti-file"},
@@ -67,7 +68,7 @@ public class ValidatorOptions {
               + "Valid values: ${COMPLETION-CANDIDATES}",
       arity = "1")
   private ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode =
-      ValidatorPerformanceTrackingMode.ALL;
+      ValidatorPerformanceTrackingMode.DEFAULT_MODE;
 
   @Option(
       names = {"--validators-keystore-locking-enabled"},
@@ -75,7 +76,7 @@ public class ValidatorOptions {
       showDefaultValue = Visibility.ALWAYS,
       description = "Enable locking validator keystore files",
       arity = "1")
-  private boolean validatorKeystoreLockingEnabled = true;
+  private boolean validatorKeystoreLockingEnabled = ValidatorConfig.DEFAULT_VALIDATOR_KEYSTORE_LOCKING_ENABLED;
 
   @Option(
       names = {"--validators-external-signer-slashing-protection-enabled"},
@@ -84,7 +85,7 @@ public class ValidatorOptions {
       description = "Enable internal slashing protection for external signers",
       fallbackValue = "true",
       arity = "0..1")
-  private boolean validatorExternalSignerSlashingProtectionEnabled = true;
+  private boolean validatorExternalSignerSlashingProtectionEnabled = ValidatorConfig.DEFAULT_VALIDATOR_EXTERNAL_SIGNER_SLASHING_PROTECTION_ENABLED;
 
   @Option(
       names = {"--Xvalidators-dependent-root-enabled"},
@@ -94,7 +95,7 @@ public class ValidatorOptions {
       hidden = true,
       fallbackValue = "true",
       arity = "0..1")
-  private boolean useDependentRoots = true;
+  private boolean useDependentRoots = ValidatorConfig.DEFAULT_USE_DEPENDENT_ROOTS;
 
   @Option(
       names = {"--validators-early-attestations-enabled"},
@@ -104,7 +105,7 @@ public class ValidatorOptions {
           "Generate attestations as soon as a block is known, rather than delaying until the attestation is due",
       fallbackValue = "true",
       arity = "0..1")
-  private boolean generateEarlyAttestations = true;
+  private boolean generateEarlyAttestations = ValidatorConfig.DEFAULT_GENERATE_EARLY_ATTESTATIONS;
 
   @Option(
       names = {"--Xvalidators-batch-attestations-enabled"},
@@ -114,7 +115,7 @@ public class ValidatorOptions {
       fallbackValue = "true",
       hidden = true,
       arity = "0..1")
-  private boolean sendAttestationsAsBatch = true;
+  private boolean sendAttestationsAsBatch = ValidatorConfig.DEFAULT_SEND_ATTESTATIONS_AS_BATCH;
 
   @Option(
       names = {"--Xvalidators-publish-to-additional-nodes"},
@@ -134,23 +135,20 @@ public class ValidatorOptions {
       }
     }
 
-    builder
-        .validator(
-            config ->
-                config
-                    .validatorKeystoreLockingEnabled(validatorKeystoreLockingEnabled)
-                    .validatorPerformanceTrackingMode(validatorPerformanceTrackingMode)
-                    .validatorExternalSignerSlashingProtectionEnabled(
-                        validatorExternalSignerSlashingProtectionEnabled)
-                    .graffitiProvider(
-                        new FileBackedGraffitiProvider(
-                            Optional.ofNullable(graffiti), Optional.ofNullable(graffitiFile)))
-                    .useDependentRoots(useDependentRoots)
-                    .generateEarlyAttestations(generateEarlyAttestations)
-                    .sendAttestationsAsBatch(sendAttestationsAsBatch)
-                    .additionalPublishUrls(additionalPublishUrls))
-        // We don't need to update head for empty slots when using dependent roots
-        .store(b -> b.updateHeadForEmptySlots(!useDependentRoots));
+    builder.validator(
+        config ->
+            config
+                .validatorKeystoreLockingEnabled(validatorKeystoreLockingEnabled)
+                .validatorPerformanceTrackingMode(validatorPerformanceTrackingMode)
+                .validatorExternalSignerSlashingProtectionEnabled(
+                    validatorExternalSignerSlashingProtectionEnabled)
+                .graffitiProvider(
+                    new FileBackedGraffitiProvider(
+                        Optional.ofNullable(graffiti), Optional.ofNullable(graffitiFile)))
+                .useDependentRoots(useDependentRoots)
+                .generateEarlyAttestations(generateEarlyAttestations)
+                .sendAttestationsAsBatch(sendAttestationsAsBatch)
+                .additionalPublishUrls(additionalPublishUrls));
     validatorKeysOptions.configure(builder);
   }
 }

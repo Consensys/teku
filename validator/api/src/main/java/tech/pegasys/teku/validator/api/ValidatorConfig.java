@@ -22,9 +22,21 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
 public class ValidatorConfig {
+
+  private static final int DEFAULT_REST_API_PORT = 5051;
+  public static final String DEFAULT_BEACON_NODE_API_ENDPOINT = "http://127.0.0.1:" + DEFAULT_REST_API_PORT;
+  public static final Duration DEFAULT_VALIDATOR_EXTERNAL_SIGNER_TIMEOUT = Duration.ofSeconds(5);
+  public static final int DEFAULT_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT = 32;
+  public static final boolean DEFAULT_VALIDATOR_KEYSTORE_LOCKING_ENABLED = true;
+  public static final boolean DEFAULT_VALIDATOR_EXTERNAL_SIGNER_SLASHING_PROTECTION_ENABLED = true;
+  public static final boolean DEFAULT_USE_DEPENDENT_ROOTS = true;
+  public static final boolean DEFAULT_GENERATE_EARLY_ATTESTATIONS = true;
+  public static final boolean DEFAULT_SEND_ATTESTATIONS_AS_BATCH = true;
+  public static final Optional<Bytes32> DEFAULT_GRAFFITI = Optional.empty();
 
   private final List<String> validatorKeys;
   private final List<String> validatorExternalSignerPublicKeySources;
@@ -170,22 +182,26 @@ public class ValidatorConfig {
     private List<URI> additionalPublishUrls = new ArrayList<>();
     private List<String> validatorExternalSignerPublicKeySources = new ArrayList<>();
     private URL validatorExternalSignerUrl;
-    private int validatorExternalSignerConcurrentRequestLimit;
-    private Duration validatorExternalSignerTimeout = Duration.ofSeconds(5);
+    private int validatorExternalSignerConcurrentRequestLimit = DEFAULT_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT;
+    private Duration validatorExternalSignerTimeout = DEFAULT_VALIDATOR_EXTERNAL_SIGNER_TIMEOUT;
     private Path validatorExternalSignerKeystore;
     private Path validatorExternalSignerKeystorePasswordFile;
     private Path validatorExternalSignerTruststore;
     private Path validatorExternalSignerTruststorePasswordFile;
-    private GraffitiProvider graffitiProvider;
-    private ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode;
-    private boolean validatorKeystoreLockingEnabled;
-    private Optional<URI> beaconNodeApiEndpoint = Optional.empty();
-    private boolean validatorExternalSignerSlashingProtectionEnabled = true;
-    private boolean useDependentRoots = false;
-    private boolean generateEarlyAttestations = true;
-    private boolean sendAttestationsAsBatch = true;
+    private GraffitiProvider graffitiProvider = new FileBackedGraffitiProvider(DEFAULT_GRAFFITI,
+        Optional.empty());
+    private ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode =
+        ValidatorPerformanceTrackingMode.DEFAULT_MODE;
+    private boolean validatorKeystoreLockingEnabled = DEFAULT_VALIDATOR_KEYSTORE_LOCKING_ENABLED;
+    private String beaconNodeApiEndpoint = DEFAULT_BEACON_NODE_API_ENDPOINT;
+    private boolean validatorExternalSignerSlashingProtectionEnabled = DEFAULT_VALIDATOR_EXTERNAL_SIGNER_SLASHING_PROTECTION_ENABLED;
+    private boolean useDependentRoots = DEFAULT_USE_DEPENDENT_ROOTS;
+    private boolean generateEarlyAttestations = DEFAULT_GENERATE_EARLY_ATTESTATIONS;
+    private boolean sendAttestationsAsBatch = DEFAULT_SEND_ATTESTATIONS_AS_BATCH;
 
-    private Builder() {}
+    private Builder() {
+
+    }
 
     public Builder validatorKeys(List<String> validatorKeys) {
       this.validatorKeys = validatorKeys;
@@ -247,7 +263,7 @@ public class ValidatorConfig {
     }
 
     public Builder beaconNodeApiEndpoint(final URI beaconNodeApiEndpoint) {
-      this.beaconNodeApiEndpoint = Optional.of(beaconNodeApiEndpoint);
+      this.beaconNodeApiEndpoint = beaconNodeApiEndpoint.toASCIIString();
       return this;
     }
 
@@ -301,7 +317,7 @@ public class ValidatorConfig {
           validatorExternalSignerKeystorePasswordFile,
           validatorExternalSignerTruststore,
           validatorExternalSignerTruststorePasswordFile,
-          beaconNodeApiEndpoint,
+          Optional.of(URI.create(beaconNodeApiEndpoint)),
           graffitiProvider,
           validatorPerformanceTrackingMode,
           validatorKeystoreLockingEnabled,
