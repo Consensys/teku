@@ -1,0 +1,34 @@
+{
+  "post" : {
+    "tags" : [ "Validator", "Validator Required Api" ],
+    "summary" : "Subscribe to a committee subnet",
+    "description" : "After Beacon node receives this request, search using discv5 for peers related to this subnet and replace current peers with those ones if necessary If validator is_aggregator, beacon node must:\n- announce subnet topic subscription on gossipsub\n- aggregate attestations received on that subnet\n",
+    "operationId" : "postEthV1ValidatorBeacon_committee_subscriptions",
+    "requestBody" : {
+      "content" : {
+        "application/json" : {
+          "schema" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/BeaconCommitteeSubscriptionRequest"
+            }
+          }
+        }
+      }
+    },
+    "responses" : {
+      "200" : {
+        "description" : "Slot signature is valid and beacon node has prepared the attestation subnet. Note that, there is no guarantee the node will find peers for the subnet"
+      },
+      "400" : {
+        "description" : "Invalid request syntax."
+      },
+      "500" : {
+        "description" : "Beacon node internal error."
+      },
+      "503" : {
+        "description" : "Beacon node is currently syncing and not serving requests"
+      }
+    }
+  }
+}

@@ -27,7 +27,7 @@ class SignedBeaconBlockTest {
 
     final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock internalBlock =
         ctx.getDataStructureUtil().randomSignedBeaconBlock(1);
-    final SignedBeaconBlock<?> apiBlock = SignedBeaconBlock.create(internalBlock);
+    final SignedBeaconBlock apiBlock = SignedBeaconBlock.create(internalBlock);
     assertThatSszData(apiBlock.asInternalSignedBeaconBlock(ctx.getSpec()))
         .isEqualByAllMeansTo(internalBlock);
   }

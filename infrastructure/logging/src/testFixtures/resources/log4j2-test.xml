@@ -8,6 +8,7 @@
     </Appenders>
     <Loggers>
         <Logger name="io.netty" level="INFO"/>
+        <Logger name="com.github.dockerjava.zerodep.shaded.org.apache.hc.client5.http" level="INFO"/>
         <Root level="DEBUG">
             <AppenderRef ref="Console"/>
         </Root>

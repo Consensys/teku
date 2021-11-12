@@ -13,25 +13,15 @@
 
 package tech.pegasys.teku.cli.options;
 
-import com.google.common.collect.ImmutableSet;
-import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
-import org.hyperledger.besu.metrics.StandardMetricCategory;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
-import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.metrics.MetricsConfig;
 
 public class MetricsOptions {
-
-  public static final ImmutableSet<MetricCategory> DEFAULT_METRICS_CATEGORIES =
-      ImmutableSet.<MetricCategory>builder()
-          .addAll(EnumSet.allOf(StandardMetricCategory.class))
-          .addAll(EnumSet.allOf(TekuMetricCategory.class))
-          .build();
 
   @Option(
       names = {"--metrics-enabled"},
@@ -47,14 +37,14 @@ public class MetricsOptions {
       paramLabel = "<INTEGER>",
       description = "Metrics port to expose metrics for Prometheus",
       arity = "1")
-  private int metricsPort = 8008;
+  private int metricsPort = MetricsConfig.DEFAULT_METRICS_PORT;
 
   @Option(
       names = {"--metrics-interface"},
       paramLabel = "<NETWORK>",
       description = "Metrics network interface to expose metrics for Prometheus",
       arity = "1")
-  private String metricsInterface = "127.0.0.1";
+  private String metricsInterface = MetricsConfig.DEFAULT_METRICS_INTERFACE;
 
   @Option(
       names = {"--metrics-categories"},
@@ -62,7 +52,7 @@ public class MetricsOptions {
       description = "Metric categories to enable",
       split = ",",
       arity = "0..*")
-  private Set<MetricCategory> metricsCategories = DEFAULT_METRICS_CATEGORIES;
+  private Set<MetricCategory> metricsCategories = MetricsConfig.DEFAULT_METRICS_CATEGORIES;
 
   @Option(
       names = {"--metrics-host-allowlist"},
@@ -70,7 +60,7 @@ public class MetricsOptions {
       description = "Comma-separated list of hostnames to allow, or * to allow any host",
       split = ",",
       arity = "0..*")
-  private final List<String> metricsHostAllowlist = Arrays.asList("127.0.0.1", "localhost");
+  private final List<String> metricsHostAllowlist = MetricsConfig.DEFAULT_METRICS_HOST_ALLOWLIST;
 
   @Option(
       names = {"--Xmetrics-idle-timeout"},
@@ -78,7 +68,7 @@ public class MetricsOptions {
       description = "Idle timeout for metrics connections in seconds",
       arity = "1",
       hidden = true)
-  private int idleTimeoutSeconds = 60;
+  private int idleTimeoutSeconds = MetricsConfig.DEFAULT_IDLE_TIMEOUT_SECONDS;
 
   @Option(
       names = {"--Xmetrics-endpoint"},
@@ -95,7 +85,7 @@ public class MetricsOptions {
       description =
           "Interval between metric publications to the external endpoint service (measured in seconds)",
       arity = "1")
-  private int metricsPublicationInterval = 60;
+  private int metricsPublicationInterval = MetricsConfig.DEFAULT_METRICS_PUBLICATION_INTERVAL;
 
   public void configure(TekuConfiguration.Builder builder) {
     builder.metrics(

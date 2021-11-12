@@ -19,35 +19,28 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 public class DeleteKeyResultTest {
-  final String slashingString = "{\"data\": \"here\"}";
 
   @Test
   void shouldProduceSuccessResult() {
-    assertThat(DeleteKeyResult.success(slashingString))
-        .isEqualTo(
-            new DeleteKeyResult(
-                DeletionStatus.DELETED, Optional.empty(), Optional.of(slashingString)));
+    assertThat(DeleteKeyResult.success())
+        .isEqualTo(new DeleteKeyResult(DeletionStatus.DELETED, Optional.empty()));
   }
 
   @Test
   void shouldProduceNotFoundResult() {
     assertThat(DeleteKeyResult.notFound())
-        .isEqualTo(
-            new DeleteKeyResult(DeletionStatus.NOT_FOUND, Optional.empty(), Optional.empty()));
+        .isEqualTo(new DeleteKeyResult(DeletionStatus.NOT_FOUND, Optional.empty()));
   }
 
   @Test
   void shouldProduceNotActiveResult() {
-    assertThat(DeleteKeyResult.notActive(slashingString))
-        .isEqualTo(
-            new DeleteKeyResult(
-                DeletionStatus.NOT_ACTIVE, Optional.empty(), Optional.of(slashingString)));
+    assertThat(DeleteKeyResult.notActive())
+        .isEqualTo(new DeleteKeyResult(DeletionStatus.NOT_ACTIVE, Optional.empty()));
   }
 
   @Test
   void shouldProduceErrorResult() {
     assertThat(DeleteKeyResult.error("message"))
-        .isEqualTo(
-            new DeleteKeyResult(DeletionStatus.ERROR, Optional.of("message"), Optional.empty()));
+        .isEqualTo(new DeleteKeyResult(DeletionStatus.ERROR, Optional.of("message")));
   }
 }

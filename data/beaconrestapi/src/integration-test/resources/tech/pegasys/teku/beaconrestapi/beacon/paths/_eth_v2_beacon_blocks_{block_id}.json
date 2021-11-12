@@ -1,0 +1,43 @@
+{
+  "get" : {
+    "tags" : [ "Beacon" ],
+    "summary" : "Get block",
+    "description" : "Retrieves block details for given block id.",
+    "operationId" : "getEthV2BeaconBlocksWithBlock_id",
+    "parameters" : [ {
+      "name" : "block_id",
+      "in" : "path",
+      "description" : "Block identifier. Can be one of: \"head\" (canonical head in node's view), \"genesis\", \"finalized\", &lt;slot&gt;, &lt;hex encoded blockRoot with 0x prefix&gt;.",
+      "required" : true,
+      "schema" : {
+        "type" : "string"
+      }
+    } ],
+    "responses" : {
+      "200" : {
+        "description" : "OK",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetBlockResponseV2"
+            }
+          },
+          "application/octet-stream" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/Unit"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "Bad Request"
+      },
+      "404" : {
+        "description" : "Not Found"
+      },
+      "500" : {
+        "description" : "Server Error"
+      }
+    }
+  }
+}

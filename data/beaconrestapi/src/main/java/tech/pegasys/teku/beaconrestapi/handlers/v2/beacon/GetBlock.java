@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v2.beacon;
 
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_ACCEPT;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_ACCEPT_JSON;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_ACCEPT_OCTET;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_BLOCK_ID;
@@ -72,7 +73,7 @@ public class GetBlock extends AbstractHandler implements Handler {
         @OpenApiResponse(
             status = RES_OK,
             content = {
-              @OpenApiContent(from = GetBlockResponseV2.class),
+              @OpenApiContent(type = HEADER_ACCEPT_JSON, from = GetBlockResponseV2.class),
               @OpenApiContent(type = HEADER_ACCEPT_OCTET)
             }),
         @OpenApiResponse(status = RES_BAD_REQUEST),
@@ -91,13 +92,13 @@ public class GetBlock extends AbstractHandler implements Handler {
           ctx, future, this::handleSszResult, this::resultFilename, SC_NOT_FOUND);
 
     } else {
-      final SafeFuture<Optional<SignedBeaconBlock<?>>> future =
+      final SafeFuture<Optional<SignedBeaconBlock>> future =
           chainDataProvider.getBlockV2(blockIdentifier);
       handleOptionalResult(ctx, future, this::handleJsonResult, SC_NOT_FOUND);
     }
   }
 
-  private Optional<String> handleJsonResult(Context ctx, final SignedBeaconBlock<?> response)
+  private Optional<String> handleJsonResult(Context ctx, final SignedBeaconBlock response)
       throws JsonProcessingException {
     final Version version = chainDataProvider.getVersionAtSlot(response.getMessage().slot);
     ctx.header(HEADER_CONSENSUS_VERSION, version.name());

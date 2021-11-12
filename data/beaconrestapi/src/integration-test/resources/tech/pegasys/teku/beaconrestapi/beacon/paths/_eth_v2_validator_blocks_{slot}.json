@@ -1,0 +1,53 @@
+{
+  "get" : {
+    "tags" : [ "Validator", "Validator Required Api" ],
+    "summary" : "Produce unsigned block",
+    "description" : "Requests a beacon node to produce a valid block, which can then be signed by a validator.",
+    "operationId" : "getEthV2ValidatorBlocksWithSlot",
+    "parameters" : [ {
+      "name" : "slot",
+      "in" : "path",
+      "description" : "The slot for which the block should be proposed.",
+      "required" : true,
+      "schema" : {
+        "type" : "string"
+      }
+    }, {
+      "name" : "randao_reveal",
+      "in" : "query",
+      "description" : "`BLSSignature Hex` BLS12-381 signature for the current epoch.",
+      "required" : true,
+      "schema" : {
+        "type" : "string"
+      }
+    }, {
+      "name" : "graffiti",
+      "in" : "query",
+      "description" : "`Bytes32 Hex` Graffiti.",
+      "schema" : {
+        "type" : "string"
+      }
+    } ],
+    "responses" : {
+      "200" : {
+        "description" : "OK",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetNewBlockResponseV2"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "Invalid parameter supplied"
+      },
+      "500" : {
+        "description" : "Server Error"
+      },
+      "503" : {
+        "description" : "Beacon node is currently syncing and not serving requests"
+      }
+    }
+  }
+}

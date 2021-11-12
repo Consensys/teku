@@ -1,0 +1,23 @@
+{
+  "get" : {
+    "tags" : [ "Node", "Validator Required Api" ],
+    "summary" : "Get node syncing status",
+    "description" : "Requests the beacon node to describe if it's currently syncing or not, and if it is, what block it is up to.",
+    "operationId" : "getEthV1NodeSyncing",
+    "responses" : {
+      "200" : {
+        "description" : "OK",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/SyncingResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Server Error"
+      }
+    }
+  }
+}

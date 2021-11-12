@@ -1,0 +1,38 @@
+{
+  "post" : {
+    "tags" : [ "Experimental" ],
+    "summary" : "Get Validator Liveness",
+    "description" : "Requests the beacon node to indicate if a validator has been    observed to be live in a given epoch. The beacon node might detect liveness by    observing messages from the validator on the network, in the beacon chain,    from its API or from any other source. It is important to note that the    values returned by the beacon node are not canonical; they are best-effort    and based upon a subjective view of the network.",
+    "operationId" : "postEthV1ValidatorLiveness",
+    "requestBody" : {
+      "content" : {
+        "application/json" : {
+          "schema" : {
+            "$ref" : "#/components/schemas/ValidatorLivenessRequest"
+          }
+        }
+      }
+    },
+    "responses" : {
+      "200" : {
+        "description" : "OK",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/PostValidatorLivenessResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "Invalid parameter supplied"
+      },
+      "500" : {
+        "description" : "Server Error"
+      },
+      "503" : {
+        "description" : "Beacon node is currently syncing and not serving requests"
+      }
+    }
+  }
+}

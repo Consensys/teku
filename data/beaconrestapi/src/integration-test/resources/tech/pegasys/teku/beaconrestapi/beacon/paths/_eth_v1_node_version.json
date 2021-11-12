@@ -1,0 +1,20 @@
+{
+  "get" : {
+    "tags" : [ "Node" ],
+    "summary" : "Get node version",
+    "description" : "similar to [HTTP User-Agent](https://tools.ietf.org/html/rfc7231#section-5.5.3).",
+    "operationId" : "getEthV1NodeVersion",
+    "responses" : {
+      "200" : {
+        "description" : "OK",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/VersionResponse"
+            }
+          }
+        }
+      }
+    }
+  }
+}

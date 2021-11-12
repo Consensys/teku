@@ -1,0 +1,26 @@
+{
+  "get" : {
+    "tags" : [ "Beacon", "Validator Required Api" ],
+    "summary" : "Get chain genesis details",
+    "description" : "Retrieve details of the chain's genesis which can be used to identify chain.",
+    "operationId" : "getEthV1BeaconGenesis",
+    "responses" : {
+      "200" : {
+        "description" : "OK",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetGenesisResponse"
+            }
+          }
+        }
+      },
+      "404" : {
+        "description" : "Chain genesis info is not yet known"
+      },
+      "500" : {
+        "description" : "Server Error"
+      }
+    }
+  }
+}

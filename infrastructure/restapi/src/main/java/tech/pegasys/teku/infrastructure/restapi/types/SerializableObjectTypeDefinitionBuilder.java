@@ -13,18 +13,14 @@
 
 package tech.pegasys.teku.infrastructure.restapi.types;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import java.io.IOException;
-import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-import tech.pegasys.teku.infrastructure.restapi.types.SerializableObjectTypeDefinition.FieldDefinition;
 
 public class SerializableObjectTypeDefinitionBuilder<TObject> {
 
-  private final Map<String, FieldDefinition<TObject>> fields = new LinkedHashMap<>();
+  private final Map<String, SerializableFieldDefinition<TObject>> fields = new LinkedHashMap<>();
   private Optional<String> name = Optional.empty();
 
   SerializableObjectTypeDefinitionBuilder() {}
@@ -38,7 +34,7 @@ public class SerializableObjectTypeDefinitionBuilder<TObject> {
       final String name,
       final SerializableTypeDefinition<TField> type,
       final Function<TObject, TField> getter) {
-    this.fields.put(name, new RequiredFieldDefinition<>(name, getter, type));
+    this.fields.put(name, new RequiredSerializableFieldDefinition<>(name, getter, type));
     return this;
   }
 
@@ -46,80 +42,11 @@ public class SerializableObjectTypeDefinitionBuilder<TObject> {
       final String name,
       final SerializableTypeDefinition<TField> type,
       final Function<TObject, Optional<TField>> getter) {
-    this.fields.put(name, new OptionalFieldDefinition<>(name, getter, type));
+    this.fields.put(name, new OptionalSerializableFieldDefinition<>(name, getter, type));
     return this;
   }
 
   public SerializableTypeDefinition<TObject> build() {
     return new SerializableObjectTypeDefinition<>(name, fields);
-  }
-
-  private static class RequiredFieldDefinition<TObject, TField>
-      implements FieldDefinition<TObject> {
-    private final String name;
-    private final Function<TObject, TField> getter;
-    private final SerializableTypeDefinition<TField> type;
-
-    private RequiredFieldDefinition(
-        final String name,
-        final Function<TObject, TField> getter,
-        final SerializableTypeDefinition<TField> type) {
-      this.name = name;
-      this.getter = getter;
-      this.type = type;
-    }
-
-    @Override
-    public void writeField(final TObject source, final JsonGenerator gen) throws IOException {
-      gen.writeFieldName(name);
-      type.serialize(getter.apply(source), gen);
-    }
-
-    @Override
-    public void writeOpenApiField(final JsonGenerator gen) throws IOException {
-      gen.writeFieldName(name);
-      type.serializeOpenApiTypeOrReference(gen);
-    }
-
-    @Override
-    public Collection<OpenApiTypeDefinition> getReferencedTypeDefinitions() {
-      return type.getSelfAndReferencedTypeDefinitions();
-    }
-  }
-
-  private static class OptionalFieldDefinition<TObject, TField>
-      implements FieldDefinition<TObject> {
-    private final String name;
-    private final Function<TObject, Optional<TField>> getter;
-    private final SerializableTypeDefinition<TField> type;
-
-    private OptionalFieldDefinition(
-        final String name,
-        final Function<TObject, Optional<TField>> getter,
-        final SerializableTypeDefinition<TField> type) {
-      this.name = name;
-      this.getter = getter;
-      this.type = type;
-    }
-
-    @Override
-    public void writeField(final TObject source, final JsonGenerator gen) throws IOException {
-      final Optional<TField> maybeValue = getter.apply(source);
-      if (maybeValue.isPresent()) {
-        gen.writeFieldName(name);
-        type.serialize(maybeValue.get(), gen);
-      }
-    }
-
-    @Override
-    public void writeOpenApiField(final JsonGenerator gen) throws IOException {
-      gen.writeFieldName(name);
-      type.serializeOpenApiTypeOrReference(gen);
-    }
-
-    @Override
-    public Collection<OpenApiTypeDefinition> getReferencedTypeDefinitions() {
-      return type.getSelfAndReferencedTypeDefinitions();
-    }
   }
 }

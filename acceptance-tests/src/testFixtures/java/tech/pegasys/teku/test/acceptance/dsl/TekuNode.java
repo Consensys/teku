@@ -57,13 +57,13 @@ import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetBlockRootResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateFinalityCheckpointsResponse;
-import tech.pegasys.teku.api.response.v1.debug.GetStateResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
 import tech.pegasys.teku.api.response.v1.validator.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.response.v2.beacon.GetBlockResponseV2;
+import tech.pegasys.teku.api.response.v2.debug.GetStateResponseV2;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
-import tech.pegasys.teku.api.schema.SignedBeaconBlock.SignedBeaconBlockAltair;
+import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
 import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
 import tech.pegasys.teku.api.schema.interfaces.SignedBlock;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -88,8 +88,12 @@ public class TekuNode extends Node {
   private boolean started = false;
   private Set<File> configFiles;
 
-  private TekuNode(final SimpleHttpClient httpClient, final Network network, final Config config) {
-    super(network, TEKU_DOCKER_IMAGE, LOG);
+  private TekuNode(
+      final SimpleHttpClient httpClient,
+      final Network network,
+      final DockerVersion version,
+      final Config config) {
+    super(network, TEKU_DOCKER_IMAGE_NAME, version, LOG);
     this.httpClient = httpClient;
     this.config = config;
     this.spec = SpecFactory.create(config.getNetworkName());
@@ -108,14 +112,15 @@ public class TekuNode extends Node {
   public static TekuNode create(
       final SimpleHttpClient httpClient,
       final Network network,
-      Consumer<Config> configOptions,
+      final DockerVersion version,
+      final Consumer<Config> configOptions,
       final GenesisStateGenerator genesisStateGenerator)
       throws TimeoutException, IOException {
 
     final Config config = new Config();
     configOptions.accept(config);
 
-    final TekuNode node = new TekuNode(httpClient, network, config);
+    final TekuNode node = new TekuNode(httpClient, network, version, config);
 
     if (config.getGenesisStateConfig().isPresent()) {
       final GenesisStateConfig genesisConfig = config.getGenesisStateConfig().get();
@@ -384,11 +389,14 @@ public class TekuNode extends Node {
   }
 
   private Optional<BeaconState> fetchHeadState() throws IOException {
-    final String result = httpClient.get(getRestApiUrl(), "/eth/v1/debug/beacon/states/head");
+    final String result = httpClient.get(getRestApiUrl(), "/eth/v2/debug/beacon/states/head");
     if (result.isEmpty()) {
       return Optional.empty();
     } else {
-      return Optional.of(jsonProvider.jsonToObject(result, GetStateResponse.class).data);
+      final GetStateResponseV2 response =
+          jsonProvider.jsonToObject(result, GetStateResponseV2.class);
+
+      return Optional.of((BeaconState) response.data);
     }
   }
 
@@ -417,16 +425,16 @@ public class TekuNode extends Node {
           final Optional<BeaconState> maybeState = fetchHeadState();
           assertThat(maybeBlock).isPresent();
           assertThat(maybeState).isPresent();
-          SignedBeaconBlock<?> block = (SignedBeaconBlock<?>) maybeBlock.get();
+          SignedBeaconBlock block = (SignedBeaconBlock) maybeBlock.get();
           BeaconState state = maybeState.get();
 
           // Check that the fetched block and state are in sync
           assertThat(state.latest_block_header.parent_root)
-              .isEqualTo(block.getMessage().parentRoot);
+              .isEqualTo(block.getMessage().parent_root);
 
           tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState internalBeaconState =
               state.asInternalBeaconState(spec);
-          UInt64 proposerIndex = block.getMessage().proposerIndex;
+          UInt64 proposerIndex = block.getMessage().proposer_index;
 
           Set<UInt64> attesterIndicesInAttestations =
               block.getMessage().getBody().attestations.stream()

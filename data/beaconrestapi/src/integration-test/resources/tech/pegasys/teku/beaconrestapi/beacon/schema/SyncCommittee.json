@@ -1,0 +1,18 @@
+{
+  "type" : "object",
+  "properties" : {
+    "pubkeys" : {
+      "type" : "array",
+      "items" : {
+        "type" : "string",
+        "description" : "Bytes48 hexadecimal",
+        "format" : "byte"
+      }
+    },
+    "aggregate_pubkey" : {
+      "type" : "string",
+      "description" : "Bytes48 hexadecimal",
+      "format" : "byte"
+    }
+  }
+}

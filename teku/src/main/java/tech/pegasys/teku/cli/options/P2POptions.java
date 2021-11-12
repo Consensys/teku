@@ -14,7 +14,6 @@
 package tech.pegasys.teku.cli.options;
 
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
-import static tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.Builder.DEFAULT_P2P_PORT;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +22,10 @@ import java.util.OptionalInt;
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.networking.eth2.P2PConfig;
+import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
+import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
+import tech.pegasys.teku.sync.SyncConfig;
 
 public class P2POptions {
 
@@ -40,14 +43,14 @@ public class P2POptions {
       paramLabel = "<NETWORK>",
       description = "P2P network interface",
       arity = "1")
-  private String p2pInterface = "0.0.0.0";
+  private String p2pInterface = NetworkConfig.DEFAULT_P2P_INTERFACE;
 
   @Option(
       names = {"--p2p-port"},
       paramLabel = "<INTEGER>",
       description = "P2P port",
       arity = "1")
-  private int p2pPort = DEFAULT_P2P_PORT;
+  private int p2pPort = NetworkConfig.DEFAULT_P2P_PORT;
 
   @Option(
       names = {"--p2p-udp-port"},
@@ -63,7 +66,7 @@ public class P2POptions {
       description = "Enables discv5 discovery",
       fallbackValue = "true",
       arity = "0..1")
-  private boolean p2pDiscoveryEnabled = true;
+  private boolean p2pDiscoveryEnabled = DiscoveryConfig.DEFAULT_P2P_DISCOVERY_ENABLED;
 
   @Option(
       names = {"--p2p-discovery-bootnodes"},
@@ -108,14 +111,14 @@ public class P2POptions {
       paramLabel = "<INTEGER>",
       description = "Lower bound on the target number of peers",
       arity = "1")
-  private int p2pLowerBound = 64;
+  private int p2pLowerBound = DiscoveryConfig.DEFAULT_P2P_PEERS_LOWER_BOUND;
 
   @Option(
       names = {"--p2p-peer-upper-bound"},
       paramLabel = "<INTEGER>",
       description = "Upper bound on the target number of peers",
       arity = "1")
-  private int p2pUpperBound = 74;
+  private int p2pUpperBound = DiscoveryConfig.DEFAULT_P2P_PEERS_UPPER_BOUND;
 
   @Option(
       names = {"--Xp2p-target-subnet-subscriber-count"},
@@ -123,7 +126,7 @@ public class P2POptions {
       description = "Target number of peers subscribed to each attestation subnet",
       arity = "1",
       hidden = true)
-  private int p2pTargetSubnetSubscriberCount = 2;
+  private int p2pTargetSubnetSubscriberCount = P2PConfig.DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT;
 
   @Option(
       names = {"--Xp2p-minimum-randomly-selected-peer-count"},
@@ -148,7 +151,7 @@ public class P2POptions {
       description = "Enables experimental multipeer sync",
       hidden = true,
       arity = "1")
-  private boolean multiPeerSyncEnabled = true;
+  private boolean multiPeerSyncEnabled = SyncConfig.DEFAULT_MULTI_PEER_SYNC_ENABLED;
 
   @Option(
       names = {"--p2p-subscribe-all-subnets-enabled"},
@@ -157,7 +160,7 @@ public class P2POptions {
       description = "",
       arity = "0..1",
       fallbackValue = "true")
-  private boolean subscribeAllSubnetsEnabled = false;
+  private boolean subscribeAllSubnetsEnabled = P2PConfig.DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED;
 
   @Option(
       names = {"--Xp2p-gossip-scoring-enabled"},
@@ -166,7 +169,7 @@ public class P2POptions {
       hidden = true,
       arity = "0..1",
       fallbackValue = "true")
-  private boolean gossipScoringEnabled = false;
+  private boolean gossipScoringEnabled = P2PConfig.DEFAULT_GOSSIP_SCORING_ENABLED;
 
   @Option(
       names = {"--Xp2p-batch-verify-attestation-signatures-enabled"},
@@ -174,7 +177,26 @@ public class P2POptions {
       description = "If true, turn on batch verification for gossiped attestation signatures",
       hidden = true,
       arity = "0..1")
-  private boolean batchVerifyAttestationSignatures = true;
+  private boolean batchVerifyAttestationSignatures =
+      P2PConfig.DEFAULT_BATCH_VERIFY_ATTESTATION_SIGNATURES;
+
+  @Option(
+      names = {"--Xpeer-rate-limit"},
+      paramLabel = "<NUMBER>",
+      description =
+          "The number of requested objects per peer to allow per minute before disconnecting the peer.",
+      arity = "1",
+      hidden = true)
+  private Integer peerRateLimit = P2PConfig.DEFAULT_PEER_RATE_LIMIT;
+
+  @Option(
+      names = {"--Xpeer-request-limit"},
+      paramLabel = "<NUMBER>",
+      description =
+          "The number of requests per peer to allow per minute before disconnecting the peer.",
+      arity = "1",
+      hidden = true)
+  private Integer peerRequestLimit = P2PConfig.DEFAULT_PEER_REQUEST_LIMIT;
 
   private int getP2pLowerBound() {
     if (p2pLowerBound > p2pUpperBound) {
@@ -194,48 +216,47 @@ public class P2POptions {
     }
   }
 
-  private int getMinimumRandomlySelectedPeerCount() {
-    return minimumRandomlySelectedPeerCount == null
-        ? Math.max(1, getP2pLowerBound() * 2 / 10)
-        : minimumRandomlySelectedPeerCount;
-  }
-
   public void configure(final TekuConfiguration.Builder builder) {
-    final OptionalInt advertisedTcpPort =
-        p2pAdvertisedPort == null ? OptionalInt.empty() : OptionalInt.of(p2pAdvertisedPort);
     builder
         .p2p(
             b ->
                 b.subscribeAllSubnetsEnabled(subscribeAllSubnetsEnabled)
                     .batchVerifyAttestationSignatures(batchVerifyAttestationSignatures)
                     .targetSubnetSubscriberCount(p2pTargetSubnetSubscriberCount)
-                    .isGossipScoringEnabled(gossipScoringEnabled))
+                    .isGossipScoringEnabled(gossipScoringEnabled)
+                    .peerRateLimit(peerRateLimit)
+                    .peerRequestLimit(peerRequestLimit))
         .discovery(
             d -> {
               if (p2pDiscoveryBootnodes != null) {
                 d.bootnodes(p2pDiscoveryBootnodes);
               }
+              if (minimumRandomlySelectedPeerCount != null) {
+                d.minRandomlySelectedPeers(minimumRandomlySelectedPeerCount);
+              }
+              if (p2pUdpPort != null) {
+                d.listenUdpPort(p2pUdpPort);
+              }
+              if (p2pAdvertisedUdpPort != null) {
+                d.advertisedUdpPort(OptionalInt.of(p2pAdvertisedUdpPort));
+              }
               d.isDiscoveryEnabled(p2pDiscoveryEnabled)
-                  .listenUdpPort(p2pUdpPort != null ? p2pUdpPort : p2pPort)
-                  .advertisedUdpPort(
-                      p2pAdvertisedUdpPort == null
-                          ? advertisedTcpPort
-                          : OptionalInt.of(p2pAdvertisedUdpPort))
                   .staticPeers(p2pStaticPeers)
                   .minPeers(getP2pLowerBound())
-                  .maxPeers(getP2pUpperBound())
-                  .minRandomlySelectedPeers(getMinimumRandomlySelectedPeerCount());
+                  .maxPeers(getP2pUpperBound());
             })
         .network(
             n -> {
               if (p2pPrivateKeyFile != null) {
                 n.privateKeyFile(p2pPrivateKeyFile);
               }
+              if (p2pAdvertisedPort != null) {
+                n.advertisedPort(OptionalInt.of(p2pAdvertisedPort));
+              }
               n.networkInterface(p2pInterface)
                   .isEnabled(p2pEnabled)
                   .listenPort(p2pPort)
-                  .advertisedIp(Optional.ofNullable(p2pAdvertisedIp))
-                  .advertisedPort(advertisedTcpPort);
+                  .advertisedIp(Optional.ofNullable(p2pAdvertisedIp));
             })
         .sync(s -> s.isSyncEnabled(p2pEnabled).isMultiPeerSyncEnabled(multiPeerSyncEnabled));
   }

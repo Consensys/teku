@@ -21,9 +21,9 @@ import static tech.pegasys.teku.cli.BeaconNodeCommand.CONFIG_FILE_OPTION_NAME;
 import static tech.pegasys.teku.cli.BeaconNodeCommand.LOG_FILE;
 import static tech.pegasys.teku.cli.BeaconNodeCommand.LOG_PATTERN;
 import static tech.pegasys.teku.cli.OSUtils.SLASH;
-import static tech.pegasys.teku.cli.options.MetricsOptions.DEFAULT_METRICS_CATEGORIES;
 import static tech.pegasys.teku.infrastructure.logging.LoggingDestination.BOTH;
 import static tech.pegasys.teku.infrastructure.logging.LoggingDestination.DEFAULT_BOTH;
+import static tech.pegasys.teku.infrastructure.metrics.MetricsConfig.DEFAULT_METRICS_CATEGORIES;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.BEACON;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.EVENTBUS;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.LIBP2P;
@@ -48,7 +48,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import picocli.CommandLine;
-import tech.pegasys.teku.cli.options.BeaconRestApiOptions;
+import tech.pegasys.teku.beaconrestapi.BeaconRestApiConfig;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.networking.nat.NatMethod;
@@ -98,6 +98,15 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     assertThat(str).contains("Description:");
     assertThat(str).contains("Default");
     assertThat(str).doesNotContain("To display full help:");
+  }
+
+  @Test
+  void helpShouldNotShowUnsupportedOptions() {
+    final String[] args = {"--help"};
+
+    beaconNodeCommand.parse(args);
+    String str = getCommandLineOutput();
+    assertThat(str).doesNotContain("--X");
   }
 
   @Test
@@ -534,7 +543,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .restApiCorsAllowedOrigins(new ArrayList<>())
                     .eth1DepositContractAddress(address)
                     .maxUrlLength(65535)
-                    .maxPendingEvents(BeaconRestApiOptions.DEFAULT_MAX_EVENT_QUEUE_SIZE)
+                    .maxPendingEvents(BeaconRestApiConfig.DEFAULT_MAX_EVENT_QUEUE_SIZE)
                     .validatorThreads(1))
         .validatorApi(
             b ->
