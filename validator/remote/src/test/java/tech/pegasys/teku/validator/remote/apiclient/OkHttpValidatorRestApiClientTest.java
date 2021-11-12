@@ -49,7 +49,6 @@ import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAttestationDataResponse;
-import tech.pegasys.teku.api.response.v1.validator.GetNewBlockResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetSyncCommitteeContributionResponse;
 import tech.pegasys.teku.api.response.v2.validator.GetNewBlockResponseV2;
 import tech.pegasys.teku.api.schema.Attestation;
@@ -184,7 +183,7 @@ class OkHttpValidatorRestApiClientTest {
 
     assertThat(request.getMethod()).isEqualTo("GET");
     assertThat(request.getPath())
-        .contains(ValidatorApiMethod.GET_UNSIGNED_BLOCK.getPath(Map.of("slot", "1")));
+        .contains(ValidatorApiMethod.GET_UNSIGNED_BLOCK_V2.getPath(Map.of("slot", "1")));
     assertThat(request.getRequestUrl().queryParameter("randao_reveal"))
         .isEqualTo(blsSignature.toHexString());
     assertThat(request.getRequestUrl().queryParameter("graffiti"))
@@ -224,7 +223,7 @@ class OkHttpValidatorRestApiClientTest {
     mockWebServer.enqueue(
         new MockResponse()
             .setResponseCode(SC_OK)
-            .setBody(asJson(new GetNewBlockResponse(expectedBeaconBlock))));
+            .setBody(asJson(new GetNewBlockResponseV2(SpecMilestone.PHASE0, expectedBeaconBlock))));
 
     Optional<BeaconBlock> beaconBlock = apiClient.createUnsignedBlock(slot, blsSignature, graffiti);
 
@@ -234,7 +233,6 @@ class OkHttpValidatorRestApiClientTest {
 
   @Test
   public void createUnsignedBlock_Altair_ReturnsBeaconBlock() {
-    apiClient = new OkHttpValidatorRestApiClient(mockWebServer.url("/"), okHttpClient, true);
     final UInt64 slot = UInt64.ONE;
     final BLSSignature blsSignature = schemaObjects.BLSSignature();
     final Optional<Bytes32> graffiti = Optional.of(Bytes32.random());

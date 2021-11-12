@@ -1,7 +1,6 @@
 # Changelog
 
 ## Upcoming Breaking Changes
-- Docker images will default to the JDK 17 variant in a future release.
 - The `/teku/v1/beacon/states/:state_id` endpoint has been deprecated in favor of the standard API `/eth/v1/debug/beacon/states/:state_id` which now returns the state as SSZ when the `Accept: application/octet-stream` header is specified on the request.
 - The `/eth/v1/debug/beacon/states/:state_id` endpoint has been deprecated in favor of the v2 Altair endpoint `/eth/v2/debug/beacon/states/:state_id`
 - The `/eth/v1/beacon/blocks/:block_id` endpoint has been deprecated in favor of the v2 Altair endpoint `/eth/v2/beacon/blocks/:block_id`
@@ -18,6 +17,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Additions and Improvements
 - Introduces a new database format for archive nodes that significantly improves response times for queries that require historic state data.
     Existing databases and nodes using the default PRUNE storage mode are unchanged. Archive nodes wishing to take advantage of this will need to perform a full resync.
+- The default docker image now uses JDK 17 instead of 16. The JDK 16 image is still available with the version suffix `-jdk16`
 
 
 ### Bug Fixes
