@@ -13,12 +13,27 @@
 
 package tech.pegasys.teku.infrastructure.metrics;
 
-import java.util.HashSet;
+import com.google.common.collect.ImmutableSet;
+import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
+import org.hyperledger.besu.metrics.StandardMetricCategory;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 
 public class MetricsConfig {
+
+  public static final ImmutableSet<MetricCategory> DEFAULT_METRICS_CATEGORIES =
+      ImmutableSet.<MetricCategory>builder()
+          .addAll(EnumSet.allOf(StandardMetricCategory.class))
+          .addAll(EnumSet.allOf(TekuMetricCategory.class))
+          .build();
+  public static final int DEFAULT_METRICS_PORT = 8008;
+  public static final String DEFAULT_METRICS_INTERFACE = "127.0.0.1";
+  public static final List<String> DEFAULT_METRICS_HOST_ALLOWLIST =
+      Arrays.asList("127.0.0.1", "localhost");
+  public static final int DEFAULT_IDLE_TIMEOUT_SECONDS = 60;
+  public static final int DEFAULT_METRICS_PUBLICATION_INTERVAL = 60;
 
   private final boolean metricsEnabled;
   private final int metricsPort;
@@ -86,14 +101,14 @@ public class MetricsConfig {
 
   public static final class MetricsConfigBuilder {
 
-    private boolean metricsEnabled;
-    private int metricsPort;
-    private String metricsInterface;
-    private Set<MetricCategory> metricsCategories = new HashSet<>();
-    private List<String> metricsHostAllowlist;
-    private String metricsEndpoint;
-    private int metricsPublicationInterval;
-    private int idleTimeoutSeconds;
+    private boolean metricsEnabled = false;
+    private int metricsPort = DEFAULT_METRICS_PORT;
+    private String metricsInterface = DEFAULT_METRICS_INTERFACE;
+    private Set<MetricCategory> metricsCategories = DEFAULT_METRICS_CATEGORIES;
+    private List<String> metricsHostAllowlist = DEFAULT_METRICS_HOST_ALLOWLIST;
+    private String metricsEndpoint = null;
+    private int metricsPublicationInterval = DEFAULT_METRICS_PUBLICATION_INTERVAL;
+    private int idleTimeoutSeconds = DEFAULT_IDLE_TIMEOUT_SECONDS;
 
     private MetricsConfigBuilder() {}
 

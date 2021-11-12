@@ -13,27 +13,24 @@
 
 package tech.pegasys.teku.cli.options;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
+import tech.pegasys.teku.beaconrestapi.BeaconRestApiConfig;
 import tech.pegasys.teku.config.TekuConfiguration;
 
 public class BeaconRestApiOptions {
   @CommandLine.Spec CommandLine.Model.CommandSpec cliSpec;
 
-  public static final int DEFAULT_REST_API_PORT = 5051;
-  public static final int DEFAULT_MAX_EVENT_QUEUE_SIZE = 250;
-  private int maxUrlLength = 65535;
+  private int maxUrlLength = BeaconRestApiConfig.DEFAULT_MAX_URL_LENGTH;
 
   @Option(
       names = {"--rest-api-port"},
       paramLabel = "<INTEGER>",
       description = "Port number of Beacon Rest API",
       arity = "1")
-  private int restApiPort = DEFAULT_REST_API_PORT;
+  private int restApiPort = BeaconRestApiConfig.DEFAULT_REST_API_PORT;
 
   @Option(
       names = {"--rest-api-docs-enabled"},
@@ -58,7 +55,7 @@ public class BeaconRestApiOptions {
       paramLabel = "<NETWORK>",
       description = "Interface of Beacon Rest API",
       arity = "1")
-  private String restApiInterface = "127.0.0.1";
+  private String restApiInterface = BeaconRestApiConfig.DEFAULT_REST_API_INTERFACE;
 
   @Option(
       names = {"--rest-api-host-allowlist"},
@@ -66,7 +63,8 @@ public class BeaconRestApiOptions {
       description = "Comma-separated list of hostnames to allow, or * to allow any host",
       split = ",",
       arity = "0..*")
-  private final List<String> restApiHostAllowlist = Arrays.asList("127.0.0.1", "localhost");
+  private final List<String> restApiHostAllowlist =
+      BeaconRestApiConfig.DEFAULT_REST_API_HOST_ALLOWLIST;
 
   @Option(
       names = {"--rest-api-cors-origins"},
@@ -74,13 +72,14 @@ public class BeaconRestApiOptions {
       description = "Comma separated list of origins to allow, or * to allow any origin",
       split = ",",
       arity = "0..*")
-  private final List<String> restApiCorsAllowedOrigins = new ArrayList<>();
+  private final List<String> restApiCorsAllowedOrigins =
+      BeaconRestApiConfig.DEFAULT_REST_API_CORS_ALLOWED_ORIGINS;
 
   @Option(
       names = {"--Xrest-api-max-pending-events"},
       paramLabel = "<INTEGER>",
       hidden = true)
-  private int maxPendingEvents = DEFAULT_MAX_EVENT_QUEUE_SIZE;
+  private int maxPendingEvents = BeaconRestApiConfig.DEFAULT_MAX_EVENT_QUEUE_SIZE;
 
   @Option(
       names = {"--Xrest-api-max-url-length"},
@@ -109,14 +108,15 @@ public class BeaconRestApiOptions {
       arity = "0..1",
       fallbackValue = "true",
       hidden = true)
-  private Boolean beaconLivenessTrackingEnabled = false;
+  private Boolean beaconLivenessTrackingEnabled =
+      BeaconRestApiConfig.DEFAULT_BEACON_LIVENESS_TRACKING_ENABLED;
 
   @Option(
       names = {"--Xrest-api-validator-threads"},
       description = "Set the number of threads used to handle validator api requests",
       paramLabel = "<INTEGER>",
       hidden = true)
-  private int validatorThreads = 1;
+  private int validatorThreads = BeaconRestApiConfig.DEFAULT_SUBSCRIBE_THREADS_COUNT;
 
   public void configure(final TekuConfiguration.Builder builder) {
     builder.restApi(

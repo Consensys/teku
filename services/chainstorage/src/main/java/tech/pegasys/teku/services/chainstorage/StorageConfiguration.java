@@ -17,8 +17,13 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StateStorageMode;
+import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 
 public class StorageConfiguration {
+
+  public static final boolean DEFAULT_STORE_NON_CANONICAL_BLOCKS_ENABLED = false;
+  public static final int DEFAULT_MAX_KNOWN_NODE_CACHE_SIZE = 100_000;
+
   private final Eth1Address eth1DepositContract;
 
   private final StateStorageMode dataStorageMode;
@@ -80,17 +85,24 @@ public class StorageConfiguration {
   public static final class Builder {
 
     private Eth1Address eth1DepositContract;
-    private StateStorageMode dataStorageMode;
-    private long dataStorageFrequency;
-    private DatabaseVersion dataStorageCreateDbVersion;
+    private StateStorageMode dataStorageMode = StateStorageMode.DEFAULT_MODE;
+    private long dataStorageFrequency = VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY;
+    private DatabaseVersion dataStorageCreateDbVersion = DatabaseVersion.DEFAULT_VERSION;
     private Spec spec;
-    private boolean storeNonCanonicalBlocks;
-    private int maxKnownNodeCacheSize;
+    private boolean storeNonCanonicalBlocks = DEFAULT_STORE_NON_CANONICAL_BLOCKS_ENABLED;
+    private int maxKnownNodeCacheSize = DEFAULT_MAX_KNOWN_NODE_CACHE_SIZE;
 
     private Builder() {}
 
     public Builder eth1DepositContract(Eth1Address eth1DepositContract) {
       this.eth1DepositContract = eth1DepositContract;
+      return this;
+    }
+
+    public Builder eth1DepositContractDefault(Eth1Address eth1DepositContract) {
+      if (this.eth1DepositContract == null) {
+        this.eth1DepositContract = eth1DepositContract;
+      }
       return this;
     }
 
