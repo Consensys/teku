@@ -22,8 +22,8 @@ public class ValidatorRestApiConfig {
   public static final int DEFAULT_REST_API_PORT = 5052;
   public static final int MAX_URL_LENGTH = 65535;
   public static final String DEFAULT_REST_API_INTERFACE = "127.0.0.1";
-  public static final List<String> DEFAULT_REST_API_HOST_ALLOWLIST = Arrays
-      .asList("127.0.0.1", "localhost");
+  public static final List<String> DEFAULT_REST_API_HOST_ALLOWLIST =
+      Arrays.asList("127.0.0.1", "localhost");
 
   private final int restApiPort;
   private final boolean restApiDocsEnabled;

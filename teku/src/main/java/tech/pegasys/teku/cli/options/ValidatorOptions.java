@@ -76,7 +76,8 @@ public class ValidatorOptions {
       showDefaultValue = Visibility.ALWAYS,
       description = "Enable locking validator keystore files",
       arity = "1")
-  private boolean validatorKeystoreLockingEnabled = ValidatorConfig.DEFAULT_VALIDATOR_KEYSTORE_LOCKING_ENABLED;
+  private boolean validatorKeystoreLockingEnabled =
+      ValidatorConfig.DEFAULT_VALIDATOR_KEYSTORE_LOCKING_ENABLED;
 
   @Option(
       names = {"--validators-external-signer-slashing-protection-enabled"},
@@ -85,7 +86,8 @@ public class ValidatorOptions {
       description = "Enable internal slashing protection for external signers",
       fallbackValue = "true",
       arity = "0..1")
-  private boolean validatorExternalSignerSlashingProtectionEnabled = ValidatorConfig.DEFAULT_VALIDATOR_EXTERNAL_SIGNER_SLASHING_PROTECTION_ENABLED;
+  private boolean validatorExternalSignerSlashingProtectionEnabled =
+      ValidatorConfig.DEFAULT_VALIDATOR_EXTERNAL_SIGNER_SLASHING_PROTECTION_ENABLED;
 
   @Option(
       names = {"--Xvalidators-dependent-root-enabled"},

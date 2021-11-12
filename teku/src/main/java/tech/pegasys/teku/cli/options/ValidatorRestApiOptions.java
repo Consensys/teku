@@ -65,7 +65,8 @@ public class ValidatorRestApiOptions {
       hidden = true,
       split = ",",
       arity = "0..*")
-  private final List<String> restApiHostAllowlist = ValidatorRestApiConfig.DEFAULT_REST_API_HOST_ALLOWLIST;
+  private final List<String> restApiHostAllowlist =
+      ValidatorRestApiConfig.DEFAULT_REST_API_HOST_ALLOWLIST;
 
   @CommandLine.Option(
       names = {"--Xvalidator-api-cors-origins"},
