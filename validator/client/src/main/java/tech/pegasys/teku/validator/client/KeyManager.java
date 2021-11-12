@@ -13,8 +13,16 @@
 
 package tech.pegasys.teku.validator.client;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.apache.commons.lang3.NotImplementedException;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
@@ -24,13 +32,30 @@ import tech.pegasys.teku.validator.client.restapi.apis.schema.ImportStatus;
 
 public class KeyManager {
 
+  public enum ValidatorKeystoreDirectories {
+    KEYSTORES,
+    KEYSTORE_PASSWORDS
+  }
   /**
    * Get a listing of active validator keys
    *
    * @return a list of active validators
    */
-  List<ActiveValidator> getActiveValidatorKeys() {
-    throw new NotImplementedException("getActiveValidatorKeys not implemented yet");
+  public List<ActiveValidator> getActiveValidatorKeys() {
+    List<ActiveValidator> activeValidatorList = new ArrayList<>();
+    Set<BLSPublicKey> blsPublicKeySet = validatorLoader.getOwnedValidators().getPublicKeys();
+    List<String> existingKeysOnKeystore = listSlashProtectionKeysOnKeystore();
+    for (BLSPublicKey blsPublicKey : blsPublicKeySet) {
+      if (existingKeysOnKeystore.contains(
+              blsPublicKey.toBytesCompressed().toUnprefixedHexString().toLowerCase())) {
+        ActiveValidator validator = new ActiveValidator(blsPublicKey, false);
+        activeValidatorList.add(validator);
+      } else {
+        ActiveValidator validator = new ActiveValidator(blsPublicKey, true);
+        activeValidatorList.add(validator);
+      }
+    }
+    return activeValidatorList;
   }
 
   /**
@@ -85,12 +110,38 @@ public class KeyManager {
   }
 
   private final ValidatorLoader validatorLoader;
+  private final Path validatorDataDirectory;
 
-  public KeyManager(final ValidatorLoader validatorLoader) {
+  public KeyManager(final ValidatorLoader validatorLoader, final Path validatorDataDirectory) {
     this.validatorLoader = validatorLoader;
+    this.validatorDataDirectory = validatorDataDirectory;
   }
 
   public Set<BLSPublicKey> getValidatorKeys() {
     return validatorLoader.getOwnedValidators().getPublicKeys();
+  }
+
+  Path getKeystorePathFor(final ValidatorKeystoreDirectories directory) throws IOException {
+    Path keystorePath = validatorDataDirectory.resolve(directory.toString().toLowerCase());
+    if (!keystorePath.toFile().exists()) {
+      Files.createDirectory(keystorePath);
+    }
+    return keystorePath;
+  }
+
+  private List<String> listSlashProtectionKeysOnKeystore() {
+    try {
+      Path directoryKeys = getKeystorePathFor(ValidatorKeystoreDirectories.KEYSTORES);
+      try (Stream<Path> paths = Files.walk(directoryKeys)) {
+        return paths
+                .filter(Files::isRegularFile)
+                .map(Path::getFileName)
+                .map(Path::toString)
+                .map(name -> name.substring(0, name.length() - ".yml".length()))
+                .collect(Collectors.toList());
+      }
+    } catch (IOException e) {
+      return Collections.emptyList();
+    }
   }
 }

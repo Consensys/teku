@@ -16,25 +16,32 @@ package tech.pegasys.teku.validator.client;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.ActiveValidator;
 
 class KeyManagerTest {
 
   final ValidatorLoader validatorLoader = Mockito.mock(ValidatorLoader.class);
   final OwnedValidators ownedValidators = Mockito.mock(OwnedValidators.class);
-  final KeyManager keyManager = new KeyManager(validatorLoader);
 
   @Test
-  void shouldReturnKeyList() {
+  void shouldReturnKeyList(@TempDir Path tempDir) {
+    final KeyManager keyManager = new KeyManager(validatorLoader, tempDir);
     Set<BLSPublicKey> keySet = getList();
     when(ownedValidators.getPublicKeys()).thenReturn(keySet);
     when(validatorLoader.getOwnedValidators()).thenReturn(ownedValidators);
@@ -44,7 +51,8 @@ class KeyManagerTest {
   }
 
   @Test
-  void shouldReturnEmptyKeyList() {
+  void shouldReturnEmptyKeyList(@TempDir Path tempDir) {
+    final KeyManager keyManager = new KeyManager(validatorLoader, tempDir);
     Set<BLSPublicKey> keySet = Collections.emptySet();
     when(ownedValidators.getPublicKeys()).thenReturn(keySet);
     when(validatorLoader.getOwnedValidators()).thenReturn(ownedValidators);
@@ -52,6 +60,97 @@ class KeyManagerTest {
 
     assertThat(receivedKeySet).isEmpty();
   }
+
+  @Test
+  void shouldCheckExistingPathStructure(@TempDir Path tempDir) throws IOException {
+    Path createdPath = Files.createDirectory(tempDir.resolve("keystores"));
+    final KeyManager keyManager = new KeyManager(validatorLoader, tempDir);
+    Path keystorePath =
+            keyManager.getKeystorePathFor(KeyManager.ValidatorKeystoreDirectories.KEYSTORES);
+    assertThat(keystorePath).isEqualTo(createdPath);
+  }
+
+  @Test
+  void shouldCreatePathStructure(@TempDir Path tempDir) throws IOException {
+    final KeyManager keyManager = new KeyManager(validatorLoader, tempDir);
+    Path keystorePath =
+            keyManager.getKeystorePathFor(KeyManager.ValidatorKeystoreDirectories.KEYSTORE_PASSWORDS);
+    assertThat(keystorePath).exists();
+  }
+
+  @Test
+  void shouldListValidatorsFromExistingKeysAndSlashingProtectionFiles(@TempDir Path tempDir)
+          throws IOException {
+    final KeyManager keyManager = new KeyManager(validatorLoader, tempDir);
+    Set<BLSPublicKey> keySet = getList();
+    when(ownedValidators.getPublicKeys()).thenReturn(keySet);
+    when(validatorLoader.getOwnedValidators()).thenReturn(ownedValidators);
+    Path keystorePath =
+            keyManager.getKeystorePathFor(KeyManager.ValidatorKeystoreDirectories.KEYSTORES);
+
+    int index = 0;
+    for (BLSPublicKey key : keySet) {
+      Path recordFile =
+              keystorePath.resolve(
+                      key.toBytesCompressed().toUnprefixedHexString().toLowerCase() + ".yml");
+      Files.write(recordFile, "test".getBytes(StandardCharsets.UTF_8));
+      // write on disk only two files
+      if (index == 1) {
+        break;
+      }
+      index++;
+    }
+
+    List<ActiveValidator> validators = keyManager.getActiveValidatorKeys();
+    assertThat(validators.size()).isEqualTo(3);
+    assertThat(validators.get(0).isReadonly()).isFalse();
+    assertThat(validators.get(1).isReadonly()).isFalse();
+    assertThat(validators.get(2).isReadonly()).isTrue();
+
+    assertThat(keySet.contains(validators.get(0).getPublicKey())).isTrue();
+    assertThat(keySet.contains(validators.get(1).getPublicKey())).isTrue();
+    assertThat(keySet.contains(validators.get(2).getPublicKey())).isTrue();
+  }
+
+  @Test
+  void shouldNotListValidatorsEvenWithFilesInSlashProtectionDirectory(@TempDir Path tempDir)
+          throws IOException {
+    final KeyManager keyManager = new KeyManager(validatorLoader, tempDir);
+    Set<BLSPublicKey> keySet = getList();
+    when(ownedValidators.getPublicKeys()).thenReturn(Collections.emptySet());
+    when(validatorLoader.getOwnedValidators()).thenReturn(ownedValidators);
+    Path keystorePath =
+            keyManager.getKeystorePathFor(KeyManager.ValidatorKeystoreDirectories.KEYSTORES);
+
+    for (BLSPublicKey key : keySet) {
+      Path recordFile =
+              keystorePath.resolve(
+                      key.toBytesCompressed().toUnprefixedHexString().toLowerCase() + ".yml");
+      Files.write(recordFile, "test".getBytes(StandardCharsets.UTF_8));
+    }
+
+    List<ActiveValidator> validators = keyManager.getActiveValidatorKeys();
+    assertThat(validators).isEmpty();
+  }
+
+  @Test
+  void shouldListValidatorsWithoutSlashprotectionFilesAsReadOnly(@TempDir Path tempDir) {
+    final KeyManager keyManager = new KeyManager(validatorLoader, tempDir);
+    Set<BLSPublicKey> keySet = getList();
+    when(ownedValidators.getPublicKeys()).thenReturn(keySet);
+    when(validatorLoader.getOwnedValidators()).thenReturn(ownedValidators);
+
+    List<ActiveValidator> validators = keyManager.getActiveValidatorKeys();
+    assertThat(validators.size()).isEqualTo(3);
+    assertThat(validators.get(0).isReadonly()).isTrue();
+    assertThat(validators.get(1).isReadonly()).isTrue();
+    assertThat(validators.get(2).isReadonly()).isTrue();
+
+    assertThat(keySet.contains(validators.get(0).getPublicKey())).isTrue();
+    assertThat(keySet.contains(validators.get(1).getPublicKey())).isTrue();
+    assertThat(keySet.contains(validators.get(2).getPublicKey())).isTrue();
+  }
+
 
   private Set<BLSPublicKey> getList() {
     BLSKeyPair keyPair1 = BLSTestUtil.randomKeyPair(1);
