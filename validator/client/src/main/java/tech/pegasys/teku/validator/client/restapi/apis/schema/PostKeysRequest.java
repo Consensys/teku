@@ -14,46 +14,67 @@
 package tech.pegasys.teku.validator.client.restapi.apis.schema;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.base.Preconditions;
 import java.util.List;
 import java.util.Objects;
 
-public class DeleteKeysResponse {
-  private final List<DeleteKeyResult> data;
-  private final String slashingProtection;
+public class PostKeysRequest {
+  private List<String> keystores;
+  private List<String> passwords;
+  private String slashingProtection;
 
-  public DeleteKeysResponse(final List<DeleteKeyResult> data, final String slashingProtection) {
-    Preconditions.checkNotNull(data);
-    this.data = data;
+  public PostKeysRequest() {}
+
+  public PostKeysRequest(
+      final List<String> keystores, final List<String> passwords, final String slashingProtection) {
+    this.keystores = keystores;
+    this.passwords = passwords;
     this.slashingProtection = slashingProtection;
   }
 
-  public List<DeleteKeyResult> getData() {
-    return data;
+  public List<String> getKeystores() {
+    return keystores;
+  }
+
+  public void setKeystores(final List<String> keystores) {
+    this.keystores = keystores;
+  }
+
+  public List<String> getPasswords() {
+    return passwords;
+  }
+
+  public void setPasswords(final List<String> passwords) {
+    this.passwords = passwords;
   }
 
   public String getSlashingProtection() {
     return slashingProtection;
   }
 
+  public void setSlashingProtection(final String slashingProtection) {
+    this.slashingProtection = slashingProtection;
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    final DeleteKeysResponse that = (DeleteKeysResponse) o;
-    return Objects.equals(data, that.data)
+    final PostKeysRequest that = (PostKeysRequest) o;
+    return Objects.equals(keystores, that.keystores)
+        && Objects.equals(passwords, that.passwords)
         && Objects.equals(slashingProtection, that.slashingProtection);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(data, slashingProtection);
+    return Objects.hash(keystores, passwords, slashingProtection);
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("data", data)
+        .add("keystores", keystores)
+        .add("passwords", passwords)
         .add("slashingProtection", slashingProtection)
         .toString();
   }
