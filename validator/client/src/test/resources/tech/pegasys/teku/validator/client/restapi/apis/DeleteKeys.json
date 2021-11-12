@@ -7,10 +7,7 @@
       "content": {
         "application/json": {
           "schema": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PubKey"
-            }
+              "$ref": "#/components/schemas/DeleteKeysRequest"
           }
         }
       }
