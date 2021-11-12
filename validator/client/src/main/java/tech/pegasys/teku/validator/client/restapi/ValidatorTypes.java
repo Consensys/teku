@@ -13,6 +13,11 @@
 
 package tech.pegasys.teku.validator.client.restapi;
 
+import static tech.pegasys.teku.infrastructure.restapi.types.CoreTypes.BOOLEAN_TYPE;
+import static tech.pegasys.teku.infrastructure.restapi.types.CoreTypes.STRING_TYPE;
+import static tech.pegasys.teku.infrastructure.restapi.types.DeserializableTypeDefinition.enumOf;
+import static tech.pegasys.teku.infrastructure.restapi.types.SerializableTypeDefinition.listOf;
+
 import java.util.List;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes48;
@@ -35,18 +40,14 @@ public class ValidatorTypes {
   static SerializableTypeDefinition<PostKeyResult> POST_KEY_RESULT =
       SerializableTypeDefinition.<PostKeyResult>object()
           .name("PostKeyResult")
-          .withField(
-              "status",
-              DeserializableTypeDefinition.enumOf(ImportStatus.class),
-              PostKeyResult::getImportStatus)
-          .withOptionalField("message", CoreTypes.STRING_TYPE, PostKeyResult::getMessage)
+          .withField("status", enumOf(ImportStatus.class), PostKeyResult::getImportStatus)
+          .withOptionalField("message", STRING_TYPE, PostKeyResult::getMessage)
           .build();
 
   public static final SerializableTypeDefinition<List<PostKeyResult>> POST_KEYS_RESPONSE =
       SerializableTypeDefinition.<List<PostKeyResult>>object()
           .name("PostKeysResponse")
-          .withField(
-              "data", SerializableTypeDefinition.listOf(POST_KEY_RESULT), Function.identity())
+          .withField("data", listOf(POST_KEY_RESULT), Function.identity())
           .build();
 
   public static final DeserializableTypeDefinition<PostKeysRequest> POST_KEYS_REQUEST =
@@ -55,12 +56,12 @@ public class ValidatorTypes {
           .initializer(PostKeysRequest::new)
           .withField(
               "keystores",
-              DeserializableTypeDefinition.listOf(CoreTypes.STRING_TYPE),
+              DeserializableTypeDefinition.listOf(STRING_TYPE),
               PostKeysRequest::getKeystores,
               PostKeysRequest::setKeystores)
           .withField(
               "passwords",
-              DeserializableTypeDefinition.listOf(CoreTypes.STRING_TYPE),
+              DeserializableTypeDefinition.listOf(STRING_TYPE),
               PostKeysRequest::getPasswords,
               PostKeysRequest::setPasswords)
           .withField(
@@ -97,35 +98,27 @@ public class ValidatorTypes {
               "derivation_path",
               CoreTypes.string("The derivation path (if present in the imported keystore)."),
               __ -> null)
-          .withField("readonly", CoreTypes.BOOLEAN_TYPE, ActiveValidator::isReadonly)
+          .withField("readonly", BOOLEAN_TYPE, ActiveValidator::isReadonly)
           .build();
 
   public static SerializableTypeDefinition<List<ActiveValidator>> LIST_KEYS_RESPONSE_TYPE =
       SerializableTypeDefinition.<List<ActiveValidator>>object()
           .name("ListKeysResponse")
-          .withField(
-              "data", SerializableTypeDefinition.listOf(ACTIVE_VALIDATOR), Function.identity())
+          .withField("data", listOf(ACTIVE_VALIDATOR), Function.identity())
           .build();
 
   static SerializableTypeDefinition<DeleteKeyResult> DELETE_KEY_RESULT =
       SerializableTypeDefinition.object(DeleteKeyResult.class)
           .name("DeleteKeyResult")
-          .withField(
-              "status", DeserializableTypeDefinition.enumOf(DeletionStatus.class), __ -> null)
-          .withOptionalField("message", CoreTypes.STRING_TYPE, DeleteKeyResult::getMessage)
+          .withField("status", enumOf(DeletionStatus.class), __ -> null)
+          .withOptionalField("message", STRING_TYPE, DeleteKeyResult::getMessage)
           .build();
 
   public static SerializableTypeDefinition<DeleteKeysResponse> DELETE_KEYS_RESPONSE_TYPE =
       SerializableTypeDefinition.object(DeleteKeysResponse.class)
           .name("DeleteKeysResponse")
-          .withField(
-              "data",
-              SerializableTypeDefinition.listOf(DELETE_KEY_RESULT),
-              DeleteKeysResponse::getData)
-          .withField(
-              "slashing_protection",
-              CoreTypes.STRING_TYPE,
-              DeleteKeysResponse::getSlashingProtection)
+          .withField("data", listOf(DELETE_KEY_RESULT), DeleteKeysResponse::getData)
+          .withField("slashing_protection", STRING_TYPE, DeleteKeysResponse::getSlashingProtection)
           .build();
 
   public static DeserializableTypeDefinition<DeleteKeysRequest> DELETE_KEYS_REQUEST =
@@ -134,7 +127,7 @@ public class ValidatorTypes {
           .initializer(DeleteKeysRequest::new)
           .withField(
               "pubkeys",
-              DeserializableTypeDefinition.listOf(ValidatorTypes.PUBKEY_TYPE),
+              DeserializableTypeDefinition.listOf(PUBKEY_TYPE),
               DeleteKeysRequest::getPublicKeys,
               DeleteKeysRequest::setPublicKeys)
           .build();

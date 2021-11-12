@@ -41,23 +41,6 @@ public class PostKeys extends RestApiEndpoint {
 
   @Override
   public void handle(final RestApiRequest request) throws JsonProcessingException {
-    //    final PostKeysRequest body = request.getRequestBody();
-    //    if (body.getKeystores() == null || body.getPasswords() == null) {
-    //      request.respondError(SC_BAD_REQUEST, "keystores or passwords list was not receieved.");
-    //      return;
-    //    }
-    //    if (body.getKeystores().isEmpty() && body.getPasswords().isEmpty()) {
-    //      request.respondOk(List.of());
-    //    } else if (body.getKeystores().size() != body.getPasswords().size()) {
-    //      request.respondError(
-    //          SC_BAD_REQUEST, "Different number of passwords and keystores supplied, cannot
-    // process.");
-    //      return;
-    //    }
-
-    // TODO call keyManager.importValidators(body.getKeystores(), body.getPasswords(),
-    // body.getSlashingProtection());
-    // and set request.respondOk if it doesnt fail  - it shouldn't fail...
     request.respondError(SC_INTERNAL_SERVER_ERROR, "Not implemented");
   }
 }

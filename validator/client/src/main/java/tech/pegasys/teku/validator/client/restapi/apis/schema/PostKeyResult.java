@@ -21,7 +21,7 @@ public class PostKeyResult {
   private final ImportStatus importStatus;
   private final Optional<String> message;
 
-  PostKeyResult(final ImportStatus importStatus, final Optional<String> message) {
+  private PostKeyResult(final ImportStatus importStatus, final Optional<String> message) {
     this.importStatus = importStatus;
     this.message = message;
   }

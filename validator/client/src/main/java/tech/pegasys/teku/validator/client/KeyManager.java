@@ -66,9 +66,13 @@ public class KeyManager {
   }
 
   /**
-   * import a collection of validators The result needs to be symmetric with the input order Must *
-   * supply a message in case of error. Super important that an individual error doesn't fail the *
-   * whole process, each should be its own process that can error out.
+   * Import a collection of validators.
+   *
+   * <p>The result needs to be symmetric with the input order Must supply a message in case of
+   * error.
+   *
+   * <p>Super important that an individual error doesn't fail the whole process, each should be its
+   * own process that can error out.
    *
    * @param keystores strings of keystore files
    * @param passwords strings of passwords
