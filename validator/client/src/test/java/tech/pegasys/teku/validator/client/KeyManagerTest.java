@@ -66,7 +66,7 @@ class KeyManagerTest {
     Path createdPath = Files.createDirectory(tempDir.resolve("keystores"));
     final KeyManager keyManager = new KeyManager(validatorLoader, tempDir);
     Path keystorePath =
-            keyManager.getKeystorePathFor(KeyManager.ValidatorKeystoreDirectories.KEYSTORES);
+        keyManager.getKeystorePathFor(KeyManager.ValidatorKeystoreDirectories.KEYSTORES);
     assertThat(keystorePath).isEqualTo(createdPath);
   }
 
@@ -74,25 +74,25 @@ class KeyManagerTest {
   void shouldCreatePathStructure(@TempDir Path tempDir) throws IOException {
     final KeyManager keyManager = new KeyManager(validatorLoader, tempDir);
     Path keystorePath =
-            keyManager.getKeystorePathFor(KeyManager.ValidatorKeystoreDirectories.KEYSTORE_PASSWORDS);
+        keyManager.getKeystorePathFor(KeyManager.ValidatorKeystoreDirectories.KEYSTORE_PASSWORDS);
     assertThat(keystorePath).exists();
   }
 
   @Test
   void shouldListValidatorsFromExistingKeysAndSlashingProtectionFiles(@TempDir Path tempDir)
-          throws IOException {
+      throws IOException {
     final KeyManager keyManager = new KeyManager(validatorLoader, tempDir);
     Set<BLSPublicKey> keySet = getList();
     when(ownedValidators.getPublicKeys()).thenReturn(keySet);
     when(validatorLoader.getOwnedValidators()).thenReturn(ownedValidators);
     Path keystorePath =
-            keyManager.getKeystorePathFor(KeyManager.ValidatorKeystoreDirectories.KEYSTORES);
+        keyManager.getKeystorePathFor(KeyManager.ValidatorKeystoreDirectories.KEYSTORES);
 
     int index = 0;
     for (BLSPublicKey key : keySet) {
       Path recordFile =
-              keystorePath.resolve(
-                      key.toBytesCompressed().toUnprefixedHexString().toLowerCase() + ".yml");
+          keystorePath.resolve(
+              key.toBytesCompressed().toUnprefixedHexString().toLowerCase() + ".yml");
       Files.write(recordFile, "test".getBytes(StandardCharsets.UTF_8));
       // write on disk only two files
       if (index == 1) {
@@ -114,18 +114,18 @@ class KeyManagerTest {
 
   @Test
   void shouldNotListValidatorsEvenWithFilesInSlashProtectionDirectory(@TempDir Path tempDir)
-          throws IOException {
+      throws IOException {
     final KeyManager keyManager = new KeyManager(validatorLoader, tempDir);
     Set<BLSPublicKey> keySet = getList();
     when(ownedValidators.getPublicKeys()).thenReturn(Collections.emptySet());
     when(validatorLoader.getOwnedValidators()).thenReturn(ownedValidators);
     Path keystorePath =
-            keyManager.getKeystorePathFor(KeyManager.ValidatorKeystoreDirectories.KEYSTORES);
+        keyManager.getKeystorePathFor(KeyManager.ValidatorKeystoreDirectories.KEYSTORES);
 
     for (BLSPublicKey key : keySet) {
       Path recordFile =
-              keystorePath.resolve(
-                      key.toBytesCompressed().toUnprefixedHexString().toLowerCase() + ".yml");
+          keystorePath.resolve(
+              key.toBytesCompressed().toUnprefixedHexString().toLowerCase() + ".yml");
       Files.write(recordFile, "test".getBytes(StandardCharsets.UTF_8));
     }
 
@@ -150,7 +150,6 @@ class KeyManagerTest {
     assertThat(keySet.contains(validators.get(1).getPublicKey())).isTrue();
     assertThat(keySet.contains(validators.get(2).getPublicKey())).isTrue();
   }
-
 
   private Set<BLSPublicKey> getList() {
     BLSKeyPair keyPair1 = BLSTestUtil.randomKeyPair(1);
