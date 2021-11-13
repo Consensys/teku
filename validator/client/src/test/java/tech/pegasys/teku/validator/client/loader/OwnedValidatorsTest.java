@@ -17,12 +17,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.core.signatures.NoOpSigner.NO_OP_SIGNER;
 
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.client.Validator;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.ActiveValidator;
 
 class OwnedValidatorsTest {
   private final DataStructureUtil dataStructureUtil =
@@ -52,5 +54,19 @@ class OwnedValidatorsTest {
     assertThatThrownBy(() -> validators.addValidator(validator2))
         .isInstanceOf(IllegalStateException.class);
     assertThat(validators.getValidator(publicKey)).contains(validator);
+  }
+
+  @Test
+  void shouldListActiveValidatorsAsReadOnly() {
+    final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
+    final Validator validator = new Validator(publicKey, NO_OP_SIGNER, Optional::empty);
+
+    assertThat(validators.getActiveValidators()).isEmpty();
+    validators.addValidator(validator);
+    List<ActiveValidator> activeValidatorList = validators.getActiveValidators();
+
+    assertThat(activeValidatorList).isNotEmpty();
+    assertThat(activeValidatorList.get(0).isReadonly()).isTrue();
+    assertThat(activeValidatorList.get(0).getPublicKey()).isEqualTo(publicKey);
   }
 }
