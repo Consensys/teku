@@ -91,6 +91,6 @@ public abstract class AbstractBeaconNodeCommandTest {
 
   protected TekuConfiguration.Builder createConfigBuilder() {
     return TekuConfiguration.builder()
-        .logging(b -> b.logFilePrefix(BeaconNodeCommand.LOG_FILE_PREFIX));
+        .logging(b -> b.logFileNamePrefix(BeaconNodeCommand.LOG_FILE_PREFIX));
   }
 }
