@@ -430,6 +430,7 @@ task distDocker  {
       def images = ""
       for (def platform in dockerPlatforms) {
         def image = "${dockerImageName}:${dockerBuildVersion}-${platform}-${variant}"
+        println("Building ${image}")
         images += "${image} "
         exec {
           workingDir dockerBuildDir
