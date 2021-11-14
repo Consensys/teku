@@ -354,6 +354,12 @@ jobs:
           at: ~/project
       - setup_remote_docker:
           docker_layer_caching: false
+          version: 18.09.3
+      - run: apk add make curl
+      - run: mkdir -vp ~/.docker/cli-plugins/
+      - run: curl --silent -L --output ~/.docker/cli-plugins/docker-buildx https://github.com/docker/buildx/releases/download/v0.7.0/buildx-v0.7.0.linux-amd64
+      - run: chmod a+x ~/.docker/cli-plugins/docker-buildx
+      - run: docker buildx version
       - run:
           name: Docker
           command: |
