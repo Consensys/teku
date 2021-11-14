@@ -16,12 +16,12 @@ package tech.pegasys.teku.validator.client.loader;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Collections.unmodifiableSet;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.ActiveValidator;
@@ -62,16 +62,9 @@ public class OwnedValidators {
   }
 
   public List<ActiveValidator> getActiveValidators() {
-    List<ActiveValidator> activeValidatorList = new ArrayList<>();
-    Set<BLSPublicKey> validatorKeySet = validators.keySet();
-    for (BLSPublicKey blsPublicKey : validatorKeySet) {
-      getValidator(blsPublicKey)
-          .ifPresent(
-              validator ->
-                  activeValidatorList.add(
-                      new ActiveValidator(blsPublicKey, validator.isReadOnly())));
-    }
-    return activeValidatorList;
+    return validators.values().stream()
+        .map(validator -> new ActiveValidator(validator.getPublicKey(), validator.isReadOnly()))
+        .collect(Collectors.toList());
   }
 
   public boolean hasValidator(final BLSPublicKey publicKey) {
