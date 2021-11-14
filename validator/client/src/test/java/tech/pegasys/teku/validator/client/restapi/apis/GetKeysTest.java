@@ -17,11 +17,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.core.signatures.NoOpSigner.NO_OP_SIGNER;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import tech.pegasys.teku.bls.BLSKeyPair;
@@ -29,7 +31,7 @@ import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.restapi.JsonTestUtil;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.validator.client.KeyManager;
-import tech.pegasys.teku.validator.client.restapi.apis.schema.ActiveValidator;
+import tech.pegasys.teku.validator.client.Validator;
 
 class GetKeysTest {
   final KeyManager keyManager = Mockito.mock(KeyManager.class);
@@ -48,7 +50,7 @@ class GetKeysTest {
 
   @Test
   void shouldListValidatorKeys() throws Exception {
-    final List<ActiveValidator> activeValidatorList = getValidatorList();
+    final List<Validator> activeValidatorList = getValidatorList();
     when(keyManager.getActiveValidatorKeys()).thenReturn(activeValidatorList);
     final GetKeys endpoint = new GetKeys(keyManager);
     final RestApiRequest request = mock(RestApiRequest.class);
@@ -59,7 +61,7 @@ class GetKeysTest {
 
   @Test
   void shouldListEmpytValidatorKeys() throws Exception {
-    final List<ActiveValidator> activeValidatorList = Collections.emptyList();
+    final List<Validator> activeValidatorList = Collections.emptyList();
     when(keyManager.getActiveValidatorKeys()).thenReturn(activeValidatorList);
     final GetKeys endpoint = new GetKeys(keyManager);
     final RestApiRequest request = mock(RestApiRequest.class);
@@ -68,13 +70,13 @@ class GetKeysTest {
     verify(request).respondOk(activeValidatorList);
   }
 
-  private List<ActiveValidator> getValidatorList() {
-    List<ActiveValidator> validatorList = new ArrayList<>();
+  private List<Validator> getValidatorList() {
     BLSKeyPair keyPair1 = BLSTestUtil.randomKeyPair(1);
     BLSKeyPair keyPair2 = BLSTestUtil.randomKeyPair(2);
-    validatorList.add(new ActiveValidator(keyPair1.getPublicKey(), true));
-    validatorList.add(new ActiveValidator(keyPair2.getPublicKey(), false));
-
-    return validatorList;
+    Validator validator1 =
+        new Validator(keyPair1.getPublicKey(), NO_OP_SIGNER, Optional::empty, true);
+    Validator validator2 =
+        new Validator(keyPair2.getPublicKey(), NO_OP_SIGNER, Optional::empty, false);
+    return Arrays.asList(validator1, validator2);
   }
 }

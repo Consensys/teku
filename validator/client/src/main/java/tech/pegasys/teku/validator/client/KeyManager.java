@@ -17,7 +17,6 @@ import java.util.List;
 import org.apache.commons.lang3.NotImplementedException;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
-import tech.pegasys.teku.validator.client.restapi.apis.schema.ActiveValidator;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysResponse;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.ImportStatus;
 
@@ -28,7 +27,7 @@ public class KeyManager {
    *
    * @return a list of active validators
    */
-  public List<ActiveValidator> getActiveValidatorKeys() {
+  public List<Validator> getActiveValidatorKeys() {
     return validatorLoader.getOwnedValidators().getActiveValidators();
   }
 

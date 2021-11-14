@@ -24,7 +24,6 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.client.Validator;
-import tech.pegasys.teku.validator.client.restapi.apis.schema.ActiveValidator;
 
 class OwnedValidatorsTest {
   private final DataStructureUtil dataStructureUtil =
@@ -63,10 +62,8 @@ class OwnedValidatorsTest {
 
     assertThat(validators.getActiveValidators()).isEmpty();
     validators.addValidator(validator);
-    List<ActiveValidator> activeValidatorList = validators.getActiveValidators();
+    List<Validator> activeValidatorList = validators.getActiveValidators();
 
-    assertThat(activeValidatorList).isNotEmpty();
-    assertThat(activeValidatorList.get(0).isReadonly()).isTrue();
-    assertThat(activeValidatorList.get(0).getPublicKey()).isEqualTo(publicKey);
+    assertThat(activeValidatorList).contains(validator);
   }
 }

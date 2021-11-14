@@ -15,17 +15,18 @@ package tech.pegasys.teku.validator.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.core.signatures.NoOpSigner.NO_OP_SIGNER;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
-import tech.pegasys.teku.validator.client.restapi.apis.schema.ActiveValidator;
 
 class KeyManagerTest {
 
@@ -35,10 +36,10 @@ class KeyManagerTest {
   @Test
   void shouldReturnActiveValidatorsList() {
     final KeyManager keyManager = new KeyManager(validatorLoader);
-    List<ActiveValidator> validatorsList = generateActiveValidatosList();
+    List<Validator> validatorsList = generateActiveValidatosList();
     when(ownedValidators.getActiveValidators()).thenReturn(validatorsList);
     when(validatorLoader.getOwnedValidators()).thenReturn(ownedValidators);
-    List<ActiveValidator> activeValidatorList = keyManager.getActiveValidatorKeys();
+    List<Validator> activeValidatorList = keyManager.getActiveValidatorKeys();
 
     assertThat(activeValidatorList).isEqualTo(validatorsList);
   }
@@ -46,20 +47,21 @@ class KeyManagerTest {
   @Test
   void shouldReturnEmptyKeyList() {
     final KeyManager keyManager = new KeyManager(validatorLoader);
-    List<ActiveValidator> validatorsList = Collections.emptyList();
+    List<Validator> validatorsList = Collections.emptyList();
     when(ownedValidators.getActiveValidators()).thenReturn(validatorsList);
     when(validatorLoader.getOwnedValidators()).thenReturn(ownedValidators);
-    List<ActiveValidator> activeValidatorList = keyManager.getActiveValidatorKeys();
+    List<Validator> activeValidatorList = keyManager.getActiveValidatorKeys();
 
     assertThat(activeValidatorList).isEmpty();
   }
 
-  private List<ActiveValidator> generateActiveValidatosList() {
+  private List<Validator> generateActiveValidatosList() {
     BLSKeyPair keyPair1 = BLSTestUtil.randomKeyPair(1);
     BLSKeyPair keyPair2 = BLSTestUtil.randomKeyPair(2);
-    List<ActiveValidator> activeValidatorList = new ArrayList<>();
-    activeValidatorList.add(new ActiveValidator(keyPair1.getPublicKey(), true));
-    activeValidatorList.add(new ActiveValidator(keyPair2.getPublicKey(), true));
-    return activeValidatorList;
+    Validator validator1 =
+        new Validator(keyPair1.getPublicKey(), NO_OP_SIGNER, Optional::empty, true);
+    Validator validator2 =
+        new Validator(keyPair2.getPublicKey(), NO_OP_SIGNER, Optional::empty, false);
+    return Arrays.asList(validator1, validator2);
   }
 }
