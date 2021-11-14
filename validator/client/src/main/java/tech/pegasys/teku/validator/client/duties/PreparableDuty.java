@@ -16,10 +16,11 @@ package tech.pegasys.teku.validator.client.duties;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
-public interface Duty {
-  SafeFuture<DutyResult> performDuty();
+public interface PreparableDuty extends Duty {
+  SafeFuture<DutyResult> prepareDuty();
 
+  @Override
   default Optional<PreparableDuty> toPreparableDuty() {
-    return Optional.empty();
+    return Optional.of(this);
   }
 }

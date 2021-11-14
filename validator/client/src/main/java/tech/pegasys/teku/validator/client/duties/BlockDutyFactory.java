@@ -46,6 +46,11 @@ public class BlockDutyFactory implements DutyFactory<BlockProductionDuty, Duty> 
   }
 
   @Override
+  public String getPreparationType() {
+    return "execution_payload_preparation";
+  }
+
+  @Override
   public String getProductionType() {
     return "block";
   }

@@ -44,6 +44,23 @@ public class BlockDutyScheduler extends AbstractDutyScheduler {
   }
 
   @Override
+  public void onExecutionPayloadPreparationDue(UInt64 slot) {
+    ensureDutiesCalculationAndRunPreparation(slot);
+  }
+
+  @Override
+  public void onChainReorg(UInt64 newSlot, UInt64 commonAncestorSlot) {
+    super.onChainReorg(newSlot, commonAncestorSlot);
+    ensureDutiesCalculationAndRunPreparation(newSlot);
+  }
+
+  private void ensureDutiesCalculationAndRunPreparation(UInt64 slot) {
+    final UInt64 preparationDueSlot = slot.plus(1);
+    calculateDuties(spec.computeEpochAtSlot(preparationDueSlot));
+    notifyEpochDuties(PendingDuties::onProductionPreparationDue, preparationDueSlot);
+  }
+
+  @Override
   protected Bytes32 getExpectedDependentRoot(
       final Bytes32 headBlockRoot,
       final Bytes32 previousTargetRoot,

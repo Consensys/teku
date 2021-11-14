@@ -171,6 +171,9 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
   @Override
   public void onBlockProductionDue(final UInt64 slot) {}
 
+  @Override
+  public void onExecutionPayloadPreparationDue(UInt64 slot) {}
+
   private class SyncCommitteePeriod {
     private Optional<PendingDuties> duties = Optional.empty();
     private final UInt64 periodStartEpoch;

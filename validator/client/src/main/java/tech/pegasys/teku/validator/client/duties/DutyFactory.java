@@ -22,6 +22,8 @@ public interface DutyFactory<P extends Duty, A extends Duty> {
 
   A createAggregationDuty(UInt64 slot, Validator validator);
 
+  String getPreparationType();
+
   String getProductionType();
 
   String getAggregationType();

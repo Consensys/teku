@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -29,7 +30,7 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
 
-public class BlockProductionDuty implements Duty {
+public class BlockProductionDuty implements PreparableDuty {
   private static final Logger LOG = LogManager.getLogger();
   private final Validator validator;
   private final UInt64 slot;
@@ -48,6 +49,22 @@ public class BlockProductionDuty implements Duty {
     this.forkProvider = forkProvider;
     this.validatorApiChannel = validatorApiChannel;
     this.spec = spec;
+  }
+
+  @Override
+  public SafeFuture<DutyResult> prepareDuty() {
+
+    if (spec.atSlot(slot).getExecutionPayloadUtil().isEmpty()) {
+      LOG.trace(
+          "Merge is not active at slot {}. Skipping block preparation for validator {}",
+          slot,
+          validator.getPublicKey());
+      return SafeFuture.completedFuture(DutyResult.NO_OP);
+    }
+
+    LOG.trace("Preparing block for validator {} at slot {}", validator.getPublicKey(), slot);
+
+    return SafeFuture.completedFuture(DutyResult.success(Bytes32.ZERO));
   }
 
   @Override

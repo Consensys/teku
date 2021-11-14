@@ -21,6 +21,10 @@ public interface ScheduledDuties {
 
   boolean requiresRecalculation(Bytes32 newHeadDependentRoot);
 
+  SafeFuture<DutyResult> performProductionDutyPreparation(UInt64 slot);
+
+  String getPreparationType();
+
   SafeFuture<DutyResult> performProductionDuty(UInt64 slot);
 
   String getProductionType();

@@ -54,6 +54,9 @@ public class ChainHeadTracker implements ValidatorTimingChannel {
   public void onBlockProductionDue(final UInt64 slot) {}
 
   @Override
+  public void onExecutionPayloadPreparationDue(UInt64 slot) {}
+
+  @Override
   public void onAttestationCreationDue(final UInt64 slot) {}
 
   @Override

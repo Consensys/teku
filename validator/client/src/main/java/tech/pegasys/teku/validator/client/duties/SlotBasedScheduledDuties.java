@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client.duties;
 
 import java.util.NavigableMap;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -61,8 +62,28 @@ public class SlotBasedScheduledDuties<P extends Duty, A extends Duty> implements
   }
 
   @Override
+  public SafeFuture<DutyResult> performProductionDutyPreparation(UInt64 slot) {
+    final Duty duty = productionDuties.get(slot);
+    if (duty == null) {
+      return SafeFuture.completedFuture(DutyResult.NO_OP);
+    }
+
+    final Optional<PreparableDuty> maybePreparableDuty = duty.toPreparableDuty();
+    if (maybePreparableDuty.isEmpty()) {
+      return SafeFuture.completedFuture(DutyResult.NO_OP);
+    }
+
+    return maybePreparableDuty.get().prepareDuty();
+  }
+
+  @Override
   public synchronized SafeFuture<DutyResult> performProductionDuty(final UInt64 slot) {
     return performDutyForSlot(productionDuties, slot);
+  }
+
+  @Override
+  public String getPreparationType() {
+    return dutyFactory.getPreparationType();
   }
 
   @Override

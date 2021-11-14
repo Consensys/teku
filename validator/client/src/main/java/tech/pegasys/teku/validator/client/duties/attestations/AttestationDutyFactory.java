@@ -62,6 +62,12 @@ public class AttestationDutyFactory
   }
 
   @Override
+  public String getPreparationType() {
+    // Preparation is never used but getters should be safe to call so return a placeholder
+    return "";
+  }
+
+  @Override
   public String getProductionType() {
     return "attestation";
   }

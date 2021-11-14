@@ -76,6 +76,11 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
   }
 
   @Override
+  public SafeFuture<DutyResult> performProductionDutyPreparation(UInt64 slot) {
+    return SafeFuture.completedFuture(DutyResult.NO_OP);
+  }
+
+  @Override
   public SafeFuture<DutyResult> performProductionDuty(final UInt64 slot) {
     LOG.trace(
         "Performing sync committee duties at slot {}, {} assignments", slot, assignments.size());
@@ -101,6 +106,12 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
     return assignments.stream()
         .map(assignment -> assignment.getValidator().getPublicKey())
         .collect(Collectors.toSet());
+  }
+
+  @Override
+  public String getPreparationType() {
+    // Preparation is never used but getters should be safe to call so return a placeholder
+    return "";
   }
 
   @Override

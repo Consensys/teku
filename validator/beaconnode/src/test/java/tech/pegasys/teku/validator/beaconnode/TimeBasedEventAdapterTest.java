@@ -21,40 +21,47 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.*;
+import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
+@TestSpecContext(milestone = {SpecMilestone.PHASE0, SpecMilestone.MERGE})
 class TimeBasedEventAdapterTest {
-
-  private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final GenesisDataProvider genesisDataProvider = mock(GenesisDataProvider.class);
   private final ValidatorTimingChannel validatorTimingChannel = mock(ValidatorTimingChannel.class);
 
-  final int secondsPerSlot = spec.getSecondsPerSlot(SpecConfig.GENESIS_SLOT);
+  int secondsPerSlot;
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(100);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
   private final RepeatingTaskScheduler repeatingTaskScheduler =
       new RepeatingTaskScheduler(asyncRunner, timeProvider);
 
-  private final TimeBasedEventAdapter eventAdapter =
-      new TimeBasedEventAdapter(
-          genesisDataProvider,
-          repeatingTaskScheduler,
-          timeProvider,
-          validatorTimingChannel,
-          true,
-          spec);
+  private TimeBasedEventAdapter eventAdapter;
 
-  @Test
-  void shouldScheduleEventsOnceGenesisIsKnown() {
+  @BeforeEach
+  void setUp(SpecContext specContext) {
+    secondsPerSlot = specContext.getSpec().getSecondsPerSlot(SpecConfig.GENESIS_SLOT);
+    eventAdapter =
+        new TimeBasedEventAdapter(
+            genesisDataProvider,
+            repeatingTaskScheduler,
+            timeProvider,
+            validatorTimingChannel,
+            true,
+            specContext.getSpec());
+  }
+
+  @TestTemplate
+  void shouldScheduleEventsOnceGenesisIsKnown(SpecContext specContext) {
+    TestSpecInvocationContextProvider.SpecContextExecutionHelper.onlyPhase0(specContext);
     final SafeFuture<UInt64> genesisTimeFuture = new SafeFuture<>();
     when(genesisDataProvider.getGenesisTime()).thenReturn(genesisTimeFuture);
 
@@ -69,8 +76,9 @@ class TimeBasedEventAdapterTest {
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
   }
 
-  @Test
-  void shouldScheduleSlotStartEventsStartingFromNextSlot() {
+  @TestTemplate
+  void shouldScheduleSlotStartEventsStartingFromNextSlot(SpecContext specContext) {
+    TestSpecInvocationContextProvider.SpecContextExecutionHelper.onlyPhase0(specContext);
     final UInt64 genesisTime = timeProvider.getTimeInSeconds();
     when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(genesisTime));
     final long nextSlot = 26;
@@ -92,8 +100,8 @@ class TimeBasedEventAdapterTest {
     verifyNoMoreInteractions(validatorTimingChannel);
   }
 
-  @Test
-  void shouldScheduleAttestationEventsStartingFromNextSlot() {
+  @TestTemplate
+  void shouldScheduleAttestationEventsStartingFromNextSlot(SpecContext specContext) {
     final UInt64 genesisTime = timeProvider.getTimeInSeconds();
     when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(genesisTime));
     final long nextSlot = 25;
@@ -112,15 +120,25 @@ class TimeBasedEventAdapterTest {
     timeProvider.advanceTimeBySeconds(timeUntilNextSlot);
     asyncRunner.executeDueActionsRepeatedly();
     verify(validatorTimingChannel, never()).onAttestationCreationDue(UInt64.valueOf(nextSlot));
+    verify(validatorTimingChannel, never())
+        .onExecutionPayloadPreparationDue(UInt64.valueOf(nextSlot));
 
     // But does fire 1/3rds through the slot
     timeProvider.advanceTimeBySeconds(secondsPerSlot / 3);
     asyncRunner.executeDueActionsRepeatedly();
     verify(validatorTimingChannel, times(1)).onAttestationCreationDue(UInt64.valueOf(nextSlot));
+    if (specContext.getSpecMilestone().isGreaterThanOrEqualTo(SpecMilestone.MERGE)) {
+      verify(validatorTimingChannel, times(1))
+          .onExecutionPayloadPreparationDue(UInt64.valueOf(nextSlot));
+    } else {
+      verify(validatorTimingChannel, never())
+          .onExecutionPayloadPreparationDue(UInt64.valueOf(nextSlot));
+    }
   }
 
-  @Test
-  void shouldScheduleAggregateEventsStartingFromNextSlot() {
+  @TestTemplate
+  void shouldScheduleAggregateEventsStartingFromNextSlot(SpecContext specContext) {
+    TestSpecInvocationContextProvider.SpecContextExecutionHelper.onlyPhase0(specContext);
     final UInt64 genesisTime = timeProvider.getTimeInSeconds();
     when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(genesisTime));
     final long nextSlot = 25;

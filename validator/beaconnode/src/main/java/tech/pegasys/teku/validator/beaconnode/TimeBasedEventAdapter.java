@@ -20,6 +20,7 @@ import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
 public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
@@ -66,6 +67,12 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
           secondsPerSlot,
           this::onAttestationCreationDue);
     }
+    if (spec.isMilestoneSupported(SpecMilestone.MERGE)) {
+      taskScheduler.scheduleRepeatingEvent(
+          nextSlotStartTime.plus(oneThirdSlotSeconds),
+          secondsPerSlot,
+          this::onExecutionPayloadPreparationDue);
+    }
     taskScheduler.scheduleRepeatingEvent(
         nextSlotStartTime.plus(twoThirdSlotSeconds), secondsPerSlot, this::onAggregationDue);
   }
@@ -79,6 +86,18 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
     }
     validatorTimingChannel.onSlot(slot);
     validatorTimingChannel.onBlockProductionDue(slot);
+  }
+
+  private void onExecutionPayloadPreparationDue(
+      final UInt64 scheduledTime, final UInt64 actualTime) {
+    final UInt64 slot = spec.getCurrentSlot(scheduledTime, genesisTime);
+    if (isTooLate(scheduledTime, actualTime)) {
+      LOG.warn(
+          "Skipping execution payload preparation for slot {} due to unexpected delay in slot processing",
+          slot);
+      return;
+    }
+    validatorTimingChannel.onExecutionPayloadPreparationDue(slot);
   }
 
   private void onAttestationCreationDue(final UInt64 scheduledTime, final UInt64 actualTime) {
