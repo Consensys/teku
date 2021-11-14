@@ -272,6 +272,10 @@ jobs:
       - prepare
       - attach_workspace:
           at: ~/project
+      - install_docker_buildx
+      - run:
+          name: Configure Buildx
+          command: docker buildx install
       - run:
           name: AcceptanceTests
           command: |
@@ -355,25 +359,6 @@ jobs:
             ./gradlew --no-daemon --parallel -x generateReferenceTestClasses -x processReferenceTestResources -x cleanReferenceTestClasses referenceTest $GRADLE_ARGS
       - notify
       - capture_test_results
-
-  docker:
-    executor: medium_executor
-    steps:
-      - prepare
-      - attach_workspace:
-          at: ~/project
-      - setup_remote_docker:
-          docker_layer_caching: false
-          version: 20.10.7
-      - install_docker_buildx
-      - run:
-          name: Configure Buildx
-          command: docker buildx install
-      - run:
-          name: Docker
-          command: |
-            ./gradlew --no-daemon --parallel distDocker
-      - notify
 
   publish-cloudsmith:
     executor: small_executor
@@ -522,12 +507,6 @@ workflows:
           filters:
             tags:
               <<: *filters-release-tags
-      - docker:
-          requires:
-            - assemble
-          filters:
-            tags:
-              <<: *filters-release-tags
       - extractAPISpec:
           requires:
             - assemble
@@ -547,7 +526,6 @@ workflows:
             - integrationTests
             - acceptanceTests
             - referenceTests
-            - docker
             - extractAPISpec
             - spotless
             - windowsBuild
@@ -566,7 +544,6 @@ workflows:
             - integrationTests
             - acceptanceTests
             - referenceTests
-            - docker
             - extractAPISpec
             - spotless
             - windowsBuild
@@ -585,7 +562,6 @@ workflows:
             - integrationTests
             - acceptanceTests
             - referenceTests
-            - docker
             - extractAPISpec
             - spotless
             - windowsBuild
