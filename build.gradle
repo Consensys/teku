@@ -27,7 +27,6 @@ plugins {
 rootProject.version = calculatePublishVersion()
 def specificVersion = calculateVersion()
 def isDevelopBuild = rootProject.version.contains('develop')
-def dockerImageName = "consensys/teku"
 
 apply plugin: 'application'
 
@@ -406,11 +405,11 @@ tasks.register("dockerDistUntar") {
   }
 }
 
+def dockerImageName = "consensys/teku"
 def dockerVariants = [
   "jdk17",
   "jdk16",
 ]
-
 def dockerPlatforms = "linux/amd64,linux/arm64"
 def dockerBuildDir = "build/docker-teku/"
 
