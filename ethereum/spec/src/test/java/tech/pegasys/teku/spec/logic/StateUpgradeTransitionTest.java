@@ -20,57 +20,90 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartDepositGenerator;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.BeaconStateMerge;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 
-public class StateTransitionTest {
+@TestSpecContext(
+    milestone = {SpecMilestone.ALTAIR, SpecMilestone.MERGE},
+    doNotGenerateSpec = true)
+public class StateUpgradeTransitionTest {
   private static final List<BLSKeyPair> VALIDATOR_KEYS =
       Collections.unmodifiableList(new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 3));
 
-  private final UInt64 altairTransitionEpoch = UInt64.ONE;
-  private final Spec spec = TestSpecFactory.createMinimalWithAltairForkEpoch(altairTransitionEpoch);
-  private final UInt64 altairTransitionSlot = spec.computeStartSlotAtEpoch(altairTransitionEpoch);
+  private final UInt64 milestoneTransitionEpoch = UInt64.ONE;
+  private UInt64 milestoneTransitionSlot;
 
-  private final BeaconState genesis = createGenesis(spec);
-  private final StateTransition stateTransition = new StateTransition(spec::atSlot);
+  private BeaconState genesis;
+  private StateTransition stateTransition;
 
-  @Test
+  private Class<? extends BeaconState> beforeBeaconStateClass;
+  private Class<? extends BeaconState> afterBeaconStateClass;
+
+  @BeforeEach
+  public void setup(SpecContext specContext) {
+    Spec spec;
+    switch (specContext.getSpecMilestone()) {
+      case ALTAIR:
+        spec = TestSpecFactory.createMinimalWithAltairForkEpoch(milestoneTransitionEpoch);
+        beforeBeaconStateClass = BeaconStatePhase0.class;
+        afterBeaconStateClass = BeaconStateAltair.class;
+        break;
+      case MERGE:
+        spec = TestSpecFactory.createMinimalWithMergeForkEpoch(milestoneTransitionEpoch);
+        beforeBeaconStateClass = BeaconStateAltair.class;
+        afterBeaconStateClass = BeaconStateMerge.class;
+        break;
+      default:
+        throw new IllegalArgumentException("unsupported milestone");
+    }
+
+    genesis = createGenesis(spec);
+    stateTransition = new StateTransition(spec::atSlot);
+    milestoneTransitionSlot = spec.computeStartSlotAtEpoch(milestoneTransitionEpoch);
+  }
+
+  @TestTemplate
   public void processSlots_acrossAltairFork_slotBySlot() throws Exception {
     BeaconState currentState = genesis;
-    for (int i = 1; i <= altairTransitionSlot.intValue(); i++) {
+    for (int i = 1; i <= milestoneTransitionSlot.intValue(); i++) {
       currentState = stateTransition.processSlots(currentState, UInt64.valueOf(i));
       assertThat(currentState.getSlot()).isEqualTo(UInt64.valueOf(i));
-      if (i == altairTransitionSlot.intValue()) {
-        assertThat(currentState).isInstanceOf(BeaconStateAltair.class);
+      if (i == milestoneTransitionSlot.intValue()) {
+        assertThat(currentState).isInstanceOf(afterBeaconStateClass);
       } else {
-        assertThat(currentState).isInstanceOf(BeaconStatePhase0.class);
+        assertThat(currentState).isInstanceOf(beforeBeaconStateClass);
       }
     }
   }
 
-  @Test
+  @TestTemplate
   public void processSlots_acrossAltairFork_acrossManySlots() throws Exception {
-    final BeaconState result = stateTransition.processSlots(genesis, altairTransitionSlot);
-    assertThat(result).isInstanceOf(BeaconStateAltair.class);
-    assertThat(result.getSlot()).isEqualTo(altairTransitionSlot);
+    final BeaconState result = stateTransition.processSlots(genesis, milestoneTransitionSlot);
+    assertThat(result).isInstanceOf(afterBeaconStateClass);
+    assertThat(result.getSlot()).isEqualTo(milestoneTransitionSlot);
   }
 
-  @Test
+  @TestTemplate
   public void processSlots_pastAltairFork() throws Exception {
-    final UInt64 targetSlot = altairTransitionSlot.plus(9);
+    final UInt64 targetSlot = milestoneTransitionSlot.plus(9);
     final BeaconState result = stateTransition.processSlots(genesis, targetSlot);
-    assertThat(result).isInstanceOf(BeaconStateAltair.class);
+    assertThat(result).isInstanceOf(afterBeaconStateClass);
     assertThat(result.getSlot()).isEqualTo(targetSlot);
   }
 
