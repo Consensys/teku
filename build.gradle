@@ -743,22 +743,22 @@ task dockerUpload {
   dependsOn([distDocker])
   def dockerBuildVersion = "${rootProject.version}".replace('+', '-')
 
-  def additionalTags = [dockerBuildVersion]
+  def versionPrefixes = [dockerBuildVersion]
   if (project.hasProperty('branch') && project.property('branch') == 'master') {
-    additionalTags.add('develop')
+    versionPrefixes.add('develop')
   }
 
   if (!isDevelopBuild) {
-    additionalTags.add('latest')
-    additionalTags.add(dockerBuildVersion.split(/\./)[0..1].join('.'))
+    versionPrefixes.add('latest')
+    versionPrefixes.add(dockerBuildVersion.split(/\./)[0..1].join('.'))
   }
 
   doLast {
     for (def variant in dockerVariants) {
       def tags = ""
-      additionalTags.forEach { tag -> tags += "-t ${dockerImageName}:${tag.trim()}-${variant} "}
+      versionPrefixes.forEach { prefix -> tags += "-t ${dockerImageName}:${prefix.trim()}-${variant} "}
       if (variant == dockerVariants[0]) {
-        additionalTags.forEach { tag -> tags += "-t ${dockerImageName}:${tag.trim()} "}
+        versionPrefixes.forEach { prefix -> tags += "-t ${dockerImageName}:${prefix.trim()} "}
       }
 
       exec {

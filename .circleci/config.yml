@@ -114,6 +114,16 @@ commands:
       - store_artifacts:
           path: build/test-artifacts
 
+  install_docker_buildx:
+    description: "Install Docker buildx plugin"
+    steps:
+      - run:
+          name: "Install Docker buildx plugin"
+          command: |
+            mkdir -vp ~/.docker/cli-plugins/
+            curl --silent -L --output ~/.docker/cli-plugins/docker-buildx https://github.com/docker/buildx/releases/download/v0.7.0/buildx-v0.7.0.linux-amd64
+            chmod a+x ~/.docker/cli-plugins/docker-buildx
+
   notify:
     description: "Notify Slack"
     steps:
@@ -355,13 +365,10 @@ jobs:
       - setup_remote_docker:
           docker_layer_caching: false
           version: 20.10.7
+      - install_docker_buildx
       - run:
           name: Configure Buildx
-          command: |
-            mkdir -vp ~/.docker/cli-plugins/
-            curl --silent -L --output ~/.docker/cli-plugins/docker-buildx https://github.com/docker/buildx/releases/download/v0.7.0/buildx-v0.7.0.linux-amd64
-            chmod a+x ~/.docker/cli-plugins/docker-buildx
-            docker buildx install
+          command: docker buildx install
       - run:
           name: Docker
           command: |
@@ -391,15 +398,12 @@ jobs:
       - prepare
       - attach_workspace:
           at: ~/project
+      - install_docker_buildx
       - run:
-          name: Setup Buildx
+          name: Configure Buildx for Multi-Arch
           command: |
-            mkdir -vp ~/.docker/cli-plugins/
-            curl --silent -L --output ~/.docker/cli-plugins/docker-buildx https://github.com/docker/buildx/releases/download/v0.7.0/buildx-v0.7.0.linux-amd64
-            chmod a+x ~/.docker/cli-plugins/docker-buildx
             docker run --rm --privileged tonistiigi/binfmt:latest --install "linux/amd64,linux/arm64"
             docker buildx create --use --driver docker-container
-            docker buildx inspect
       - run:
           name: Publish Docker
           command: |
