@@ -50,7 +50,9 @@ public class ValidatorClientCommandTest {
 
   private final StartAction startAction = mock(StartAction.class);
 
-  private String[] argsNetworkOptDefault, argsNetworkOptAuto, argsNetworkOptAutoInConfig;
+  private String[] argsNetworkOptDefault;
+  private String[] argsNetworkOptAuto;
+  private String[] argsNetworkOptAutoInConfig;
 
   private ClientAndServer mockBeaconServer;
 
