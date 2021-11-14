@@ -358,8 +358,12 @@ jobs:
       - run: mkdir -vp ~/.docker/cli-plugins/
       - run: curl --silent -L --output ~/.docker/cli-plugins/docker-buildx https://github.com/docker/buildx/releases/download/v0.7.0/buildx-v0.7.0.linux-amd64
       - run: chmod a+x ~/.docker/cli-plugins/docker-buildx
-      - run: docker buildx inspect
-      - run: docker buildx create --use --driver docker-container
+      - run: |
+          ssh remote-docker \<<EOF
+            sudo bash -c 'echo "{\"experimental\": true}" > /etc/docker/daemon.json'
+            sudo systemctl restart docker
+            sudo docker info
+          EOF
       - run: docker buildx inspect
       - run:
           name: Docker
