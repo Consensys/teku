@@ -360,6 +360,8 @@ jobs:
       - run: chmod a+x ~/.docker/cli-plugins/docker-buildx
       - run: docker run --rm --privileged tonistiigi/binfmt:latest --install "linux/amd64,linux/arm64"
       - run: docker buildx inspect
+      - run: docker buildx create --use --driver docker-container
+      - run: docker buildx inspect
       - run:
           name: Docker
           command: |
