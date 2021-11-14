@@ -347,14 +347,14 @@ jobs:
       - capture_test_results
 
   docker:
-    executor: machine_executor
+    executor: medium_executor
     steps:
       - prepare
       - attach_workspace:
           at: ~/project
-#      - setup_remote_docker:
-#          docker_layer_caching: false
-#          version: 20.10.7
+      - setup_remote_docker:
+          docker_layer_caching: false
+          version: 20.10.7
       - run: mkdir -vp ~/.docker/cli-plugins/
       - run: curl --silent -L --output ~/.docker/cli-plugins/docker-buildx https://github.com/docker/buildx/releases/download/v0.7.0/buildx-v0.7.0.linux-amd64
       - run: chmod a+x ~/.docker/cli-plugins/docker-buildx
