@@ -411,10 +411,7 @@ def dockerVariants = [
   "jdk16",
 ]
 
-def dockerPlatforms = [
-    "arm64",
-    "amd64",
-]
+def dockerPlatforms = "linux/amd64,linux/arm64"
 
 task distDocker  {
   dependsOn dockerDistUntar
@@ -428,21 +425,19 @@ task distDocker  {
         into(dockerBuildDir)
       }
       def images = ""
-      for (def platform in dockerPlatforms) {
-        def image = "${dockerImageName}:${dockerBuildVersion}-${platform}-${variant}"
-        println("Building ${image}")
-        images += "${image} "
-        exec {
-          workingDir dockerBuildDir
-          executable "sh"
-          args "-c", "docker build --platform linux/${platform} --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} -t ${image} ."
-        }
+      def image = "${dockerImageName}:${dockerBuildVersion}-${variant}"
+      println("Building ${image}")
+      images += "${image} "
+      exec {
+        workingDir dockerBuildDir
+        executable "sh"
+        args "-c", "docker buildx build --platform ${dockerPlatforms} --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} -t ${image} ."
       }
     }
     // tag the "default" (which is the variant in the zero position)
     exec {
       executable "sh"
-      args "-c", "docker tag '${dockerImageName}:${dockerBuildVersion}-${dockerPlatforms[0]}-${dockerVariants[0]}' '${dockerImageName}:${dockerBuildVersion}'"
+      args "-c", "docker tag '${dockerImageName}:${dockerBuildVersion}-${dockerVariants[0]}' '${dockerImageName}:${dockerBuildVersion}'"
     }
   }
 }
