@@ -423,9 +423,7 @@ task distDocker  {
         from file("${projectDir}/docker/${variant}/Dockerfile")
         into(dockerBuildDir)
       }
-      def images = ""
       def image = "${dockerImageName}:${dockerBuildVersion}-${variant}"
-      images += "${image} "
       exec {
         workingDir dockerBuildDir
         executable "sh"
