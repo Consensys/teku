@@ -423,8 +423,8 @@ task distDocker  {
         from file("${projectDir}/docker/${variant}/Dockerfile")
         into(dockerBuildDir)
       }
-      def image = "${dockerImageName}:${dockerBuildVersion}-${variant}"
       exec {
+        def image = "${dockerImageName}:${dockerBuildVersion}-${variant}"
         workingDir dockerBuildDir
         executable "sh"
         args "-c", "docker build --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} -t ${image} ."
