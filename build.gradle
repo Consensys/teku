@@ -412,12 +412,12 @@ def dockerVariants = [
 ]
 
 def dockerPlatforms = "linux/amd64,linux/arm64"
+def dockerBuildDir = "build/docker-teku/"
 
 task distDocker  {
   dependsOn dockerDistUntar
 
   def dockerBuildVersion = 'develop'
-  def dockerBuildDir = "build/docker-teku/"
   doLast {
     for (def variant in dockerVariants) {
       copy {
@@ -426,12 +426,11 @@ task distDocker  {
       }
       def images = ""
       def image = "${dockerImageName}:${dockerBuildVersion}-${variant}"
-      println("Building ${image}")
       images += "${image} "
       exec {
         workingDir dockerBuildDir
         executable "sh"
-        args "-c", "docker buildx build --platform ${dockerPlatforms} --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} -t ${image} ."
+        args "-c", "docker build --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} -t ${image} ."
       }
     }
     // tag the "default" (which is the variant in the zero position)
@@ -743,25 +742,11 @@ task cloudsmithUpload {
   }
 }
 
-
-def createManifest(String manifestName, String includedImages) {
-  logger.info("Creating manifest ${manifestName} with images ${includedImages}")
-  exec {
-    executable "sh"
-    args "-c", "docker manifest rm ${manifestName} || true"
-  }
-  exec {
-    executable "sh"
-    args "-c", "docker manifest create ${manifestName} ${includedImages} && docker manifest push ${manifestName}"
-  }
-}
-
 task dockerUpload {
   dependsOn([distDocker])
   def dockerBuildVersion = "${rootProject.version}".replace('+', '-')
-  def image = "${dockerImageName}:${dockerBuildVersion}"
 
-  def additionalTags = []
+  def additionalTags = [dockerBuildVersion]
   if (project.hasProperty('branch') && project.property('branch') == 'master') {
     additionalTags.add('develop')
   }
@@ -773,35 +758,17 @@ task dockerUpload {
 
   doLast {
     for (def variant in dockerVariants) {
-      def manifestImages = ""
-      for (def platform in dockerPlatforms) {
-        def variantImage = "${image}-${platform}-${variant}"
-        manifestImages += "${variantImage} "
-        def variantBuildImage = "${dockerImageName}:develop-${platform}-${variant}"
-        def cmd = "docker tag '${variantBuildImage}' '${variantImage}' && docker push '${variantImage}'"
-        exec {
-          additionalTags.each { tag -> cmd += " && docker tag '${variantBuildImage}' '${dockerImageName}:${tag.trim()}-${platform}-${variant}' && docker push '${dockerImageName}:${tag.trim()}-${platform}-${variant}'" }
-          executable "sh"
-          args '-c', cmd
-        }
+      def tags = ""
+      additionalTags.forEach { tag -> tags += "-t ${dockerImageName}:${tag.trim()}-${variant} "}
+      if (variant == dockerVariants[0]) {
+        additionalTags.forEach { tag -> tags += "-t ${dockerImageName}:${tag.trim()} "}
       }
 
-      createManifest("${image}-${variant}", manifestImages)
-      additionalTags.each { tag ->
-        createManifest("${dockerImageName}:${tag.trim()}-${variant}", manifestImages)
+      exec {
+        workingDir dockerBuildDir
+        executable "sh"
+        args "-c", "docker buildx build --platform ${dockerPlatforms} --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} --push ${tags} ."
       }
-    }
-
-    // Publish default version without variant suffix
-    var defaultVariant = dockerVariants[0]
-    for (def tag in additionalTags) {
-      def manifestName = "${dockerImageName}:${tag.trim()}"
-      def imageList = ""
-      for (def platform in dockerPlatforms) {
-        imageList += "${dockerImageName}:develop-${platform}-${defaultVariant} "
-      }
-
-      createManifest(manifestName, imageList);
     }
   }
 }
