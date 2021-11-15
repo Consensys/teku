@@ -215,6 +215,9 @@ public class TekuConfiguration {
           b -> b.bootnodesDefault(eth2NetworkConfiguration.getDiscoveryBootnodes()));
       restApiBuilder.eth1DepositContractAddressDefault(depositContractAddress);
 
+      DataConfig dataConfig = dataConfigBuilder.build();
+      loggingConfigBuilder.dataDirectory(dataConfig.getDataBasePath().toString());
+
       // Add specs
       interopConfigBuilder.specProvider(spec);
       storageConfigurationBuilder.specProvider(spec);
@@ -232,7 +235,7 @@ public class TekuConfiguration {
           powchainConfigBuilder.build(),
           executionEngineConfigBuilder.build(),
           interopConfigBuilder.build(),
-          dataConfigBuilder.build(),
+          dataConfig,
           p2pConfigBuilder.build(),
           syncConfig.build(),
           restApiBuilder.build(),

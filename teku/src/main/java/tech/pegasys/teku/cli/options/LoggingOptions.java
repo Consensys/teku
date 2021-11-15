@@ -15,15 +15,16 @@ package tech.pegasys.teku.cli.options;
 
 import static tech.pegasys.teku.infrastructure.logging.LoggingDestination.DEFAULT_BOTH;
 
-import java.nio.file.Path;
-import java.util.Optional;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Visibility;
-import tech.pegasys.teku.cli.util.LoggingPathBuilder;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 
 public class LoggingOptions {
+
+  private static final String WINDOWS_SEP = "\\";
+  private static final String LINUX_SEP = "/";
+
   @CommandLine.Option(
       names = {"--log-color-enabled"},
       paramLabel = "<BOOLEAN>",
@@ -124,45 +125,39 @@ public class LoggingOptions {
       arity = "0..1")
   private boolean logWireGossipEnabled = false;
 
-  public Optional<String> getMaybeLogFile() {
-    return Optional.ofNullable(logFile);
-  }
-
-  public Optional<String> getMaybeLogPattern() {
-    return Optional.ofNullable(logFileNamePattern);
+  private boolean containsPath(String file) {
+    return file.contains(LINUX_SEP) || file.contains(WINDOWS_SEP);
   }
 
   public TekuConfiguration.Builder configure(
-      final TekuConfiguration.Builder builder,
-      final Path dataBasePath,
-      final String defaultLogFile,
-      final String defaultLogFileNamePattern) {
-
-    final String logFile =
-        new LoggingPathBuilder()
-            .defaultBasename(defaultLogFile)
-            .dataPath(dataBasePath)
-            .maybeFromCommandLine(getMaybeLogFile())
-            .build();
-
-    final String logFileNamePattern =
-        new LoggingPathBuilder()
-            .defaultBasename(defaultLogFileNamePattern)
-            .dataPath(dataBasePath)
-            .maybeFromCommandLine(getMaybeLogPattern())
-            .build();
+      final TekuConfiguration.Builder builder, final String defaultLogFileNamePrefix) {
 
     return builder
         .logging(
-            loggingBuilder ->
-                loggingBuilder
-                    .colorEnabled(logColorEnabled)
-                    .includeEventsEnabled(logIncludeEventsEnabled)
-                    .includeValidatorDutiesEnabled(logIncludeValidatorDutiesEnabled)
-                    .includeP2pWarningsEnabled(logIncludeP2pWarningsEnabled)
-                    .destination(logDestination)
-                    .logFile(logFile)
-                    .logFileNamePattern(logFileNamePattern))
+            loggingBuilder -> {
+              loggingBuilder.logFileNamePrefix(defaultLogFileNamePrefix);
+
+              if (logFile != null) {
+                if (containsPath(logFile)) {
+                  loggingBuilder.logPath(logFile);
+                } else {
+                  loggingBuilder.logFileName(logFile);
+                }
+              }
+              if (logFileNamePattern != null) {
+                if (containsPath(logFileNamePattern)) {
+                  loggingBuilder.logPathPattern(logFileNamePattern);
+                } else {
+                  loggingBuilder.logFileNamePattern(logFileNamePattern);
+                }
+              }
+              loggingBuilder
+                  .colorEnabled(logColorEnabled)
+                  .includeEventsEnabled(logIncludeEventsEnabled)
+                  .includeValidatorDutiesEnabled(logIncludeValidatorDutiesEnabled)
+                  .includeP2pWarningsEnabled(logIncludeP2pWarningsEnabled)
+                  .destination(logDestination);
+            })
         .wireLogs(
             b ->
                 b.logWireCipher(logWireCipherEnabled)

@@ -52,8 +52,7 @@ import tech.pegasys.teku.storage.server.DatabaseStorageException;
     footerHeading = "%n",
     footer = "Teku is licensed under the Apache License 2.0")
 public class ValidatorClientCommand implements Callable<Integer> {
-  public static final String LOG_FILE = "teku-validator.log";
-  public static final String LOG_PATTERN = "teku-validator_%d{yyyy-MM-dd}.log";
+  public static final String LOG_FILE_PREFIX = "teku-validator";
 
   @Mixin(name = "Validator")
   private ValidatorOptions validatorOptions;
@@ -158,7 +157,7 @@ public class ValidatorClientCommand implements Callable<Integer> {
     validatorClientOptions.configure(builder);
     dataOptions.configure(builder);
     validatorRestApiOptions.configure(builder);
-    loggingOptions.configure(builder, dataOptions.getDataBasePath(), LOG_FILE, LOG_PATTERN);
+    loggingOptions.configure(builder, LOG_FILE_PREFIX);
     interopOptions.configure(builder);
     metricsOptions.configure(builder);
     return builder.build();
