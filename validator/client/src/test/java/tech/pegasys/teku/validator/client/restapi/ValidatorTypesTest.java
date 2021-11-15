@@ -15,12 +15,14 @@ package tech.pegasys.teku.validator.client.restapi;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
+import static tech.pegasys.teku.core.signatures.NoOpSigner.NO_OP_SIGNER;
 import static tech.pegasys.teku.infrastructure.restapi.json.JsonUtil.parse;
 import static tech.pegasys.teku.infrastructure.restapi.json.JsonUtil.serialize;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.restapi.JsonTestUtil;
@@ -28,7 +30,7 @@ import tech.pegasys.teku.infrastructure.restapi.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.restapi.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.validator.client.restapi.apis.schema.ActiveValidator;
+import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysRequest;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeysRequest;
@@ -39,10 +41,11 @@ class ValidatorTypesTest {
 
   @Test
   void listKeysResponse_shouldFormatListOfPublicKeys() throws Exception {
-    final List<ActiveValidator> keys =
+    final List<Validator> keys =
         List.of(
-            new ActiveValidator(dataStructureUtil.randomPublicKey(), true),
-            new ActiveValidator(dataStructureUtil.randomPublicKey(), false));
+            new Validator(dataStructureUtil.randomPublicKey(), NO_OP_SIGNER, Optional::empty, true),
+            new Validator(
+                dataStructureUtil.randomPublicKey(), NO_OP_SIGNER, Optional::empty, false));
 
     final Map<String, Object> result =
         JsonTestUtil.parse(JsonUtil.serialize(keys, ValidatorTypes.LIST_KEYS_RESPONSE_TYPE));
@@ -56,8 +59,7 @@ class ValidatorTypesTest {
               entry(
                   "validating_pubkey",
                   keys.get(i).getPublicKey().toBytesCompressed().toHexString()),
-              entry("readonly", keys.get(i).isReadonly()),
-              entry("derivation_path", null));
+              entry("readonly", keys.get(i).isReadOnly()));
     }
   }
 

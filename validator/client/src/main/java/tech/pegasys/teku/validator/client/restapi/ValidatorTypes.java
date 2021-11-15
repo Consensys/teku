@@ -19,6 +19,7 @@ import static tech.pegasys.teku.infrastructure.restapi.types.DeserializableTypeD
 import static tech.pegasys.teku.infrastructure.restapi.types.SerializableTypeDefinition.listOf;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.api.schema.PublicKeyException;
@@ -26,7 +27,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.restapi.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.restapi.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.types.SerializableTypeDefinition;
-import tech.pegasys.teku.validator.client.restapi.apis.schema.ActiveValidator;
+import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysRequest;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysResponse;
@@ -91,18 +92,18 @@ public class ValidatorTypes {
               "The validator's BLS public key, uniquely identifying them. _48-bytes, hex encoded with 0x prefix, case insensitive._")
           .build();
 
-  public static SerializableTypeDefinition<ActiveValidator> ACTIVE_VALIDATOR =
-      SerializableTypeDefinition.object(ActiveValidator.class)
-          .withField("validating_pubkey", PUBKEY_TYPE, ActiveValidator::getPublicKey)
-          .withField(
+  public static SerializableTypeDefinition<Validator> ACTIVE_VALIDATOR =
+      SerializableTypeDefinition.object(Validator.class)
+          .withField("validating_pubkey", PUBKEY_TYPE, Validator::getPublicKey)
+          .withOptionalField(
               "derivation_path",
               CoreTypes.string("The derivation path (if present in the imported keystore)."),
-              __ -> null)
-          .withField("readonly", BOOLEAN_TYPE, ActiveValidator::isReadonly)
+              __ -> Optional.empty())
+          .withField("readonly", BOOLEAN_TYPE, Validator::isReadOnly)
           .build();
 
-  public static SerializableTypeDefinition<List<ActiveValidator>> LIST_KEYS_RESPONSE_TYPE =
-      SerializableTypeDefinition.<List<ActiveValidator>>object()
+  public static SerializableTypeDefinition<List<Validator>> LIST_KEYS_RESPONSE_TYPE =
+      SerializableTypeDefinition.<List<Validator>>object()
           .name("ListKeysResponse")
           .withField("data", listOf(ACTIVE_VALIDATOR), Function.identity())
           .build();

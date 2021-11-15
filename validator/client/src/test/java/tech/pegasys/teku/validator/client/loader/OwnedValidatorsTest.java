@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.core.signatures.NoOpSigner.NO_OP_SIGNER;
 
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -52,5 +53,17 @@ class OwnedValidatorsTest {
     assertThatThrownBy(() -> validators.addValidator(validator2))
         .isInstanceOf(IllegalStateException.class);
     assertThat(validators.getValidator(publicKey)).contains(validator);
+  }
+
+  @Test
+  void shouldListActiveValidatorsAsReadOnly() {
+    final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
+    final Validator validator = new Validator(publicKey, NO_OP_SIGNER, Optional::empty);
+
+    assertThat(validators.getActiveValidators()).isEmpty();
+    validators.addValidator(validator);
+    List<Validator> activeValidatorList = validators.getActiveValidators();
+
+    assertThat(activeValidatorList).contains(validator);
   }
 }
