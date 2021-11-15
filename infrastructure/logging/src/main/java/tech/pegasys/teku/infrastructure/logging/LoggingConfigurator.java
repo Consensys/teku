@@ -211,11 +211,13 @@ public class LoggingConfigurator {
   }
 
   private static boolean isProgrammaticLoggingDisabled() {
-    return DESTINATION == LoggingDestination.NONE;
+    return DESTINATION == LoggingDestination.CUSTOM;
   }
 
   private static boolean isProgrammaticLoggingRedundant() {
-    return DESTINATION == LoggingDestination.DEFAULT_BOTH && isCustomLog4jConfigFileProvided();
+    return (DESTINATION == LoggingDestination.DEFAULT_BOTH
+            || DESTINATION == LoggingDestination.CUSTOM)
+        && isCustomLog4jConfigFileProvided();
   }
 
   private static boolean isCustomLog4jConfigFileProvided() {
