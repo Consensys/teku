@@ -71,7 +71,7 @@ public final class TekuDefaultExceptionHandler
         ExceptionUtil.getCause(exception, FatalServiceFailureException.class);
 
     if (fatalServiceError.isPresent()) {
-      final String failedService = fatalServiceError.get().getService().getSimpleName();
+      final String failedService = fatalServiceError.get().getService();
       statusLog.fatalError(failedService, exception);
       System.exit(2);
     } else if (ExceptionUtil.getCause(exception, DatabaseStorageException.class)
