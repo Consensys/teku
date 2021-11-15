@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
@@ -118,11 +119,13 @@ public class RestApiBuilder {
 
     addExceptionHandlers(app);
 
+    Optional<String> restApiDocs = Optional.empty();
     if (openApiDocsEnabled) {
-      final String openApiJson = openApiDocBuilder.build();
-      app.get("/swagger-docs", ctx -> ctx.json(openApiJson));
+      final String apiDocs = openApiDocBuilder.build();
+      app.get("/swagger-docs", ctx -> ctx.json(apiDocs));
+      restApiDocs = Optional.of(apiDocs);
     }
-    return new RestApi(app);
+    return new RestApi(app, restApiDocs);
   }
 
   private void addExceptionHandlers(final Javalin app) {

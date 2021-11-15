@@ -1,0 +1,15 @@
+{
+  "type" : "object",
+  "properties" : {
+    "sync_committee_bits" : {
+      "type" : "string",
+      "description" : "SSZ hexadecimal",
+      "format" : "byte"
+    },
+    "sync_committee_signature" : {
+      "type" : "string",
+      "description" : "Bytes96 hexadecimal",
+      "format" : "byte"
+    }
+  }
+}

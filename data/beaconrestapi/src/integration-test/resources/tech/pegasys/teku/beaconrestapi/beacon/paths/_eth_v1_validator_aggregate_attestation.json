@@ -1,0 +1,46 @@
+{
+  "get" : {
+    "tags" : [ "Validator", "Validator Required Api" ],
+    "summary" : "Get aggregated attestations",
+    "description" : "Aggregates all attestations matching given attestation data root and slot.",
+    "operationId" : "getEthV1ValidatorAggregate_attestation",
+    "parameters" : [ {
+      "name" : "attestation_data_root",
+      "in" : "query",
+      "description" : "`String` HashTreeRoot of AttestationData that validator wants aggregated.",
+      "required" : true,
+      "schema" : {
+        "type" : "string"
+      }
+    }, {
+      "name" : "slot",
+      "in" : "query",
+      "description" : "`uint64` Non-finalized slot for which to create the aggregation.",
+      "required" : true,
+      "schema" : {
+        "type" : "string"
+      }
+    } ],
+    "responses" : {
+      "200" : {
+        "description" : "Returns aggregated `Attestation` object with same `AttestationData` root.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetAggregatedAttestationResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "Invalid parameter supplied"
+      },
+      "403" : {
+        "description" : "Beacon node was not assigned to aggregate on that subnet"
+      },
+      "500" : {
+        "description" : "Beacon node internal error."
+      }
+    }
+  }
+}

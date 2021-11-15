@@ -102,7 +102,7 @@ public class PostBlock implements Handler {
         return;
       }
 
-      final SignedBeaconBlock<?> signedBeaconBlock =
+      final SignedBeaconBlock signedBeaconBlock =
           validatorDataProvider.parseBlock(jsonProvider, ctx.body());
 
       ctx.future(

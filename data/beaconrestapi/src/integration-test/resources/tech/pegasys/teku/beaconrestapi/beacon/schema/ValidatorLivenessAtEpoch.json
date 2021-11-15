@@ -1,0 +1,16 @@
+{
+  "type" : "object",
+  "properties" : {
+    "index" : {
+      "type" : "string",
+      "format" : "uint64"
+    },
+    "epoch" : {
+      "type" : "string",
+      "format" : "uint64"
+    },
+    "is_live" : {
+      "type" : "boolean"
+    }
+  }
+}

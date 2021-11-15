@@ -1,0 +1,20 @@
+{
+  "type" : "object",
+  "properties" : {
+    "attesting_indices" : {
+      "type" : "array",
+      "items" : {
+        "type" : "string",
+        "format" : "uint64"
+      }
+    },
+    "data" : {
+      "$ref" : "#/components/schemas/AttestationData"
+    },
+    "signature" : {
+      "type" : "string",
+      "description" : "Bytes96 hexadecimal",
+      "format" : "byte"
+    }
+  }
+}

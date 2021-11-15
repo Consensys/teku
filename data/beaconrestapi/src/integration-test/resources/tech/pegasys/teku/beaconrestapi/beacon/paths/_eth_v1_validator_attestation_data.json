@@ -1,0 +1,47 @@
+{
+  "get" : {
+    "tags" : [ "Validator", "Validator Required Api" ],
+    "summary" : "Produce an AttestationData",
+    "description" : "Returns attestation data for the block at the specified non-finalized slot.\n\nThis endpoint is not protected against slashing. Signing the returned attestation data can result in a slashable offence.",
+    "operationId" : "getEthV1ValidatorAttestation_data",
+    "parameters" : [ {
+      "name" : "slot",
+      "in" : "query",
+      "description" : "`uint64` The slot for which an attestation data should be created.",
+      "required" : true,
+      "schema" : {
+        "type" : "string"
+      }
+    }, {
+      "name" : "committee_index",
+      "in" : "query",
+      "description" : "`Integer` The committee index for which an attestation data should be created.",
+      "required" : true,
+      "schema" : {
+        "type" : "integer",
+        "format" : "int32"
+      }
+    } ],
+    "responses" : {
+      "200" : {
+        "description" : "OK",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetAttestationDataResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "Invalid parameter supplied"
+      },
+      "500" : {
+        "description" : "Server Error"
+      },
+      "503" : {
+        "description" : "Beacon node is currently syncing and not serving requests"
+      }
+    }
+  }
+}

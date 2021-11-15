@@ -21,6 +21,9 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 
 public class InteropConfig {
 
+  public static final int DEFAULT_INTEROP_GENESIS_TIME = 0;
+  public static final int DEFAULT_INTEROP_NUMBER_OF_VALIDATORS = 64;
+
   private final Integer interopGenesisTime;
   private final int interopOwnedValidatorStartIndex;
   private final int interopOwnedValidatorCount;
@@ -70,11 +73,11 @@ public class InteropConfig {
 
   public static final class InteropConfigBuilder {
 
-    private Integer interopGenesisTime;
+    private Integer interopGenesisTime = DEFAULT_INTEROP_GENESIS_TIME;
     private int interopOwnedValidatorStartIndex;
     private int interopOwnedValidatorCount;
-    private int interopNumberOfValidators = 64;
-    private boolean interopEnabled;
+    private int interopNumberOfValidators = DEFAULT_INTEROP_NUMBER_OF_VALIDATORS;
+    private boolean interopEnabled = false;
     private Spec spec;
 
     private InteropConfigBuilder() {}

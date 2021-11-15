@@ -406,8 +406,8 @@ tasks.register("dockerDistUntar") {
 }
 
 def dockerVariants = [
-  "jdk16",
   "jdk17",
+  "jdk16",
 ]
 
 task distDocker  {

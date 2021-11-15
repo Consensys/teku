@@ -39,7 +39,7 @@ public class TekuDepositSender extends Node {
   private final Spec spec;
 
   public TekuDepositSender(final Network network, final Spec spec) {
-    super(network, TekuNode.TEKU_DOCKER_IMAGE, LOG);
+    super(network, TekuNode.TEKU_DOCKER_IMAGE_NAME, DockerVersion.LOCAL_BUILD, LOG);
     this.spec = spec;
   }
 

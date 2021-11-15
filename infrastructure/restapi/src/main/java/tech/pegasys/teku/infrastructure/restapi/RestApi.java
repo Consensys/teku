@@ -16,15 +16,22 @@ package tech.pegasys.teku.infrastructure.restapi;
 import com.google.common.base.Throwables;
 import io.javalin.Javalin;
 import java.net.BindException;
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.service.serviceutils.Service;
 
 public class RestApi extends Service {
   private final Javalin app;
+  private final Optional<String> restApiDocs;
 
-  public RestApi(final Javalin app) {
+  public RestApi(final Javalin app, final Optional<String> restApiDocs) {
     this.app = app;
+    this.restApiDocs = restApiDocs;
+  }
+
+  public Optional<String> getRestApiDocs() {
+    return restApiDocs;
   }
 
   @Override

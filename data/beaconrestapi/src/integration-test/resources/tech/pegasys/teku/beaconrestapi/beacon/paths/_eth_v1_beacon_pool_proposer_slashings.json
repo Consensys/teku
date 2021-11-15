@@ -1,0 +1,49 @@
+{
+  "get" : {
+    "tags" : [ "Beacon" ],
+    "summary" : "Get proposer slashings",
+    "description" : "Retrieves proposer slashings known by the node but not necessarily incorporated into any block.",
+    "operationId" : "getEthV1BeaconPoolProposer_slashings",
+    "responses" : {
+      "200" : {
+        "description" : "OK",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetProposerSlashingsResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Server Error"
+      }
+    }
+  },
+  "post" : {
+    "tags" : [ "Beacon" ],
+    "summary" : "Submit proposer slashing object",
+    "description" : "Submits proposer slashing object to node's pool and if passes validation node MUST broadcast it to network.",
+    "operationId" : "postEthV1BeaconPoolProposer_slashings",
+    "requestBody" : {
+      "content" : {
+        "application/json" : {
+          "schema" : {
+            "$ref" : "#/components/schemas/ProposerSlashing"
+          }
+        }
+      }
+    },
+    "responses" : {
+      "200" : {
+        "description" : "Proposer Slashing has been successfully validated, added to the pool, and broadcast."
+      },
+      "400" : {
+        "description" : "Invalid proposer slashing, it will never pass validation so it's rejected"
+      },
+      "500" : {
+        "description" : "Server Error"
+      }
+    }
+  }
+}

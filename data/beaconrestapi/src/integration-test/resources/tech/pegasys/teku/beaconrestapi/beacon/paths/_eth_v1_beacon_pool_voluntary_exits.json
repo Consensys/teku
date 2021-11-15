@@ -1,0 +1,49 @@
+{
+  "get" : {
+    "tags" : [ "Beacon" ],
+    "summary" : "Get signed voluntary exits",
+    "description" : "Retrieves voluntary exits known by the node but not necessarily incorporated into any block.",
+    "operationId" : "getEthV1BeaconPoolVoluntary_exits",
+    "responses" : {
+      "200" : {
+        "description" : "OK",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetVoluntaryExitsResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Server Error"
+      }
+    }
+  },
+  "post" : {
+    "tags" : [ "Beacon" ],
+    "summary" : "Submit signed voluntary exit",
+    "description" : "Submits signed voluntary exit object to node's pool and if it passes validation node MUST broadcast it to network.",
+    "operationId" : "postEthV1BeaconPoolVoluntary_exits",
+    "requestBody" : {
+      "content" : {
+        "application/json" : {
+          "schema" : {
+            "$ref" : "#/components/schemas/SignedVoluntaryExit"
+          }
+        }
+      }
+    },
+    "responses" : {
+      "200" : {
+        "description" : "Signed voluntary exit has been successfully validated, added to the pool, and broadcast."
+      },
+      "400" : {
+        "description" : "Invalid voluntary exit, it will never pass validation so it's rejected"
+      },
+      "500" : {
+        "description" : "Server Error"
+      }
+    }
+  }
+}

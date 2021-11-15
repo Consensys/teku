@@ -1,0 +1,41 @@
+{
+  "get" : {
+    "tags" : [ "Teku" ],
+    "summary" : "Get SSZ State By Block id",
+    "description" : "Download the state SSZ object for given identifier - by block root, keyword, or slot.",
+    "operationId" : "getTekuV1BeaconBlocksWithBlock_idState",
+    "parameters" : [ {
+      "name" : "block_id",
+      "in" : "path",
+      "description" : "Block identifier. Can be one of: \"head\" (canonical head in node's view), \"genesis\", \"finalized\", &lt;slot&gt;, &lt;hex encoded blockRoot with 0x prefix&gt;.",
+      "required" : true,
+      "schema" : {
+        "type" : "string"
+      }
+    } ],
+    "responses" : {
+      "200" : {
+        "description" : "OK",
+        "content" : {
+          "application/octet-stream" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/Unit"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "Bad Request"
+      },
+      "404" : {
+        "description" : "Not Found"
+      },
+      "500" : {
+        "description" : "Server Error"
+      },
+      "503" : {
+        "description" : "Beacon node is currently syncing and not serving requests"
+      }
+    }
+  }
+}

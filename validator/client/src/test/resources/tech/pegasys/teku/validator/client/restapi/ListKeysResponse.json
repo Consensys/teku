@@ -2,7 +2,7 @@
   "title": "ListKeysResponse",
   "type": "object",
   "properties": {
-    "keys": {
+    "data": {
       "type": "array",
       "items": {
         "type": "object",
@@ -13,6 +13,9 @@
           "derivation_path": {
             "type": "string",
             "description": "The derivation path (if present in the imported keystore)."
+          },
+          "readonly": {
+            "type": "boolean"
           }
         }
       }

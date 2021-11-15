@@ -25,7 +25,7 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class SpecConfigReaderTest {
-  private SpecConfigReader reader = new SpecConfigReader();
+  private final SpecConfigReader reader = new SpecConfigReader();
 
   @Test
   public void read_multiFileFormat_mismatchedDuplicateFields() {

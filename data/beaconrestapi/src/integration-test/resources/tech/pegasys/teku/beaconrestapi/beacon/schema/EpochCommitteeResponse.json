@@ -1,0 +1,22 @@
+{
+  "type" : "object",
+  "properties" : {
+    "slot" : {
+      "type" : "string",
+      "description" : "The slot at which the committee has to attest.",
+      "example" : "1"
+    },
+    "index" : {
+      "type" : "string",
+      "description" : "Index of committee",
+      "example" : "1"
+    },
+    "validators" : {
+      "type" : "array",
+      "items" : {
+        "type" : "string",
+        "example" : "1"
+      }
+    }
+  }
+}

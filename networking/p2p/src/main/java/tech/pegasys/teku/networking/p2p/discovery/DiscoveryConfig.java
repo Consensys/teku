@@ -14,13 +14,18 @@
 package tech.pegasys.teku.networking.p2p.discovery;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.Builder.DEFAULT_P2P_PORT;
+import static tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.DEFAULT_P2P_PORT;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.OptionalInt;
 
 public class DiscoveryConfig {
+
+  public static final boolean DEFAULT_P2P_DISCOVERY_ENABLED = true;
+  public static final int DEFAULT_P2P_PEERS_LOWER_BOUND = 64;
+  public static final int DEFAULT_P2P_PEERS_UPPER_BOUND = 74;
+
   private final boolean isDiscoveryEnabled;
   private final int listenUdpPort;
   private final OptionalInt advertisedUdpPort;
@@ -86,27 +91,38 @@ public class DiscoveryConfig {
   }
 
   public static class Builder {
-    private Boolean isDiscoveryEnabled = true;
+    private Boolean isDiscoveryEnabled = DEFAULT_P2P_DISCOVERY_ENABLED;
     private List<String> staticPeers = Collections.emptyList();
-    private List<String> bootnodes = Collections.emptyList();
-    private int minPeers = 64;
-    private int maxPeers = 74;
-    private int minRandomlySelectedPeers = 2;
-    private int listenUdpPort = DEFAULT_P2P_PORT;
+    private List<String> bootnodes;
+    private int minPeers = DEFAULT_P2P_PEERS_LOWER_BOUND;
+    private int maxPeers = DEFAULT_P2P_PEERS_UPPER_BOUND;
+    private OptionalInt minRandomlySelectedPeers = OptionalInt.empty();
+    private OptionalInt listenUdpPort = OptionalInt.empty();
     private OptionalInt advertisedUdpPort = OptionalInt.empty();
 
     private Builder() {}
 
     public DiscoveryConfig build() {
+      initMissingDefaults();
+
       return new DiscoveryConfig(
           isDiscoveryEnabled,
-          listenUdpPort,
+          listenUdpPort.orElseThrow(),
           advertisedUdpPort,
           staticPeers,
-          bootnodes,
+          bootnodes == null ? Collections.emptyList() : bootnodes,
           minPeers,
           maxPeers,
-          minRandomlySelectedPeers);
+          minRandomlySelectedPeers.orElseThrow());
+    }
+
+    private void initMissingDefaults() {
+      if (minRandomlySelectedPeers.isEmpty()) {
+        minRandomlySelectedPeers = OptionalInt.of(Math.max(1, minPeers * 2 / 10));
+      }
+      if (listenUdpPort.isEmpty()) {
+        listenUdpPort = OptionalInt.of(DEFAULT_P2P_PORT);
+      }
     }
 
     public Builder isDiscoveryEnabled(final Boolean discoveryEnabled) {
@@ -116,13 +132,28 @@ public class DiscoveryConfig {
     }
 
     public Builder listenUdpPort(final int listenUdpPort) {
-      this.listenUdpPort = listenUdpPort;
+      this.listenUdpPort = OptionalInt.of(listenUdpPort);
+      return this;
+    }
+
+    public Builder listenUdpPortDefault(final int listenUdpPort) {
+      if (this.listenUdpPort.isEmpty()) {
+        this.listenUdpPort = OptionalInt.of(listenUdpPort);
+      }
       return this;
     }
 
     public Builder advertisedUdpPort(final OptionalInt advertisedUdpPort) {
       checkNotNull(advertisedUdpPort);
       this.advertisedUdpPort = advertisedUdpPort;
+      return this;
+    }
+
+    public Builder advertisedUdpPortDefault(final OptionalInt advertisedUdpPort) {
+      checkNotNull(advertisedUdpPort);
+      if (this.advertisedUdpPort.isEmpty()) {
+        this.advertisedUdpPort = advertisedUdpPort;
+      }
       return this;
     }
 
@@ -135,6 +166,14 @@ public class DiscoveryConfig {
     public Builder bootnodes(final List<String> bootnodes) {
       checkNotNull(bootnodes);
       this.bootnodes = bootnodes;
+      return this;
+    }
+
+    public Builder bootnodesDefault(final List<String> bootnodes) {
+      checkNotNull(bootnodes);
+      if (this.bootnodes == null) {
+        this.bootnodes = bootnodes;
+      }
       return this;
     }
 
@@ -152,7 +191,7 @@ public class DiscoveryConfig {
 
     public Builder minRandomlySelectedPeers(final Integer minRandomlySelectedPeers) {
       checkNotNull(minRandomlySelectedPeers);
-      this.minRandomlySelectedPeers = minRandomlySelectedPeers;
+      this.minRandomlySelectedPeers = OptionalInt.of(minRandomlySelectedPeers);
       return this;
     }
   }
