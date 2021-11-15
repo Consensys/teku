@@ -189,6 +189,8 @@ public class BeaconNodeCommand implements Callable<Integer> {
   @Mixin(name = "NAT")
   private NatOptions natOptions;
 
+  @CommandLine.Spec private CommandLine.Model.CommandSpec spec;
+
   public BeaconNodeCommand(
       final PrintWriter outputWriter,
       final PrintWriter errorWriter,
@@ -282,6 +284,12 @@ public class BeaconNodeCommand implements Callable<Integer> {
     outputWriter.println();
     outputWriter.println("To display full help:");
     outputWriter.println("teku [COMMAND] --help");
+  }
+
+  public boolean isOptionSpecified(String optionLongName) {
+    var parseResult = spec.commandLine().getParseResult();
+    var option = spec.findOption(optionLongName);
+    return option != null && parseResult.hasMatchedOption(option);
   }
 
   @Override

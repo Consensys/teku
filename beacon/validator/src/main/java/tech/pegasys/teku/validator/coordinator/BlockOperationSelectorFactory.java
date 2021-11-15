@@ -28,6 +28,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -117,7 +118,13 @@ public class BlockOperationSelectorFactory {
           .syncAggregate(
               () ->
                   contributionPool.createSyncAggregateForBlock(
-                      blockSlotState.getSlot(), parentRoot));
+                      blockSlotState.getSlot(), parentRoot))
+          .executionPayload(
+              () ->
+                  SchemaDefinitionsMerge.required(
+                          spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions())
+                      .getExecutionPayloadSchema()
+                      .getDefault());
     };
   }
 }

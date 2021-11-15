@@ -16,6 +16,8 @@ package tech.pegasys.teku.validator.client.loader;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Collections.unmodifiableSet;
 
+import com.google.common.collect.ImmutableList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -56,6 +58,10 @@ public class OwnedValidators {
 
   public Optional<Validator> getValidator(final BLSPublicKey publicKey) {
     return Optional.ofNullable(validators.get(publicKey));
+  }
+
+  public List<Validator> getActiveValidators() {
+    return ImmutableList.copyOf(validators.values());
   }
 
   public boolean hasValidator(final BLSPublicKey publicKey) {
