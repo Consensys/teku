@@ -265,7 +265,7 @@ public class ForkChoiceTestExecutor {
 
   private boolean processBlock(ForkChoice fc, SignedBeaconBlock block) {
     BlockImportResult blockImportResult =
-        fc.onBlock(block, new StubExecutionEngineChannel()).join();
+        fc.onBlock(block, new StubExecutionEngineChannel(SPEC)).join();
     return blockImportResult.isSuccessful();
   }
 

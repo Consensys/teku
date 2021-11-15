@@ -116,6 +116,7 @@ import tech.pegasys.teku.ssz.schema.collections.SszPrimitiveVectorSchema;
 import tech.pegasys.teku.ssz.schema.collections.SszUInt64ListSchema;
 import tech.pegasys.teku.ssz.type.Bytes20;
 import tech.pegasys.teku.ssz.type.Bytes4;
+import tech.pegasys.teku.ssz.type.Bytes8;
 
 public final class DataStructureUtil {
   private static final Spec DEFAULT_SPEC_PROVIDER = TestSpecFactory.createMinimalPhase0();
@@ -192,6 +193,10 @@ public final class DataStructureUtil {
   public Bytes32 randomBytes32() {
     final Random random = new Random(nextSeed());
     return Bytes32.random(random);
+  }
+
+  public Bytes8 randomBytes8() {
+    return new Bytes8(randomBytes32().slice(0, 8));
   }
 
   public Bytes randomBytes(final int length) {
