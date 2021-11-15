@@ -17,6 +17,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.ssz.type.Bytes8;
@@ -25,7 +26,7 @@ public interface ExecutionEngineChannel extends ChannelInterface {
   ExecutionEngineChannel NOOP =
       new ExecutionEngineChannel() {
         @Override
-        public SafeFuture<Optional<PowBlock>> getPowBlock(Bytes32 blockHash) {
+        public SafeFuture<Optional<PowBlock>> getPowBlock(final Bytes32 blockHash) {
           return SafeFuture.completedFuture(Optional.empty());
         }
 
@@ -35,30 +36,32 @@ public interface ExecutionEngineChannel extends ChannelInterface {
         }
 
         @Override
-        public SafeFuture<Void> forkChoiceUpdated(
-            ForkChoiceState forkChoiceState, Optional<PayloadAttributes> payloadAttributes) {
-          return SafeFuture.COMPLETE;
-        }
-
-        @Override
-        public SafeFuture<ExecutionPayload> getPayload(Bytes8 payloadId) {
+        public SafeFuture<ForkChoiceUpdatedResult> forkChoiceUpdated(
+            final ForkChoiceState forkChoiceState,
+            final Optional<PayloadAttributes> payloadAttributes) {
           return SafeFuture.completedFuture(null);
         }
 
         @Override
-        public SafeFuture<ExecutePayloadResult> executePayload(ExecutionPayload executionPayload) {
+        public SafeFuture<ExecutionPayload> getPayload(final Bytes8 payloadId, final UInt64 slot) {
+          return SafeFuture.completedFuture(null);
+        }
+
+        @Override
+        public SafeFuture<ExecutePayloadResult> executePayload(
+            final ExecutionPayload executionPayload) {
           return SafeFuture.completedFuture(null);
         }
       };
 
-  SafeFuture<Optional<PowBlock>> getPowBlock(Bytes32 blockHash);
+  SafeFuture<Optional<PowBlock>> getPowBlock(final Bytes32 blockHash);
 
   SafeFuture<PowBlock> getPowChainHead();
 
-  SafeFuture<Void> forkChoiceUpdated(
-      ForkChoiceState forkChoiceState, Optional<PayloadAttributes> payloadAttributes);
+  SafeFuture<ForkChoiceUpdatedResult> forkChoiceUpdated(
+      final ForkChoiceState forkChoiceState, final Optional<PayloadAttributes> payloadAttributes);
 
-  SafeFuture<ExecutionPayload> getPayload(Bytes8 payloadId);
+  SafeFuture<ExecutionPayload> getPayload(final Bytes8 payloadId, final UInt64 slot);
 
-  SafeFuture<ExecutePayloadResult> executePayload(ExecutionPayload executionPayload);
+  SafeFuture<ExecutePayloadResult> executePayload(final ExecutionPayload executionPayload);
 }
