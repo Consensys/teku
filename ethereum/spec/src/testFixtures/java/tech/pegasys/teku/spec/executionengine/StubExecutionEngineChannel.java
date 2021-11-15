@@ -25,10 +25,9 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
 import tech.pegasys.teku.ssz.type.Bytes8;
 
 public class StubExecutionEngineChannel implements ExecutionEngineChannel {
@@ -36,21 +35,11 @@ public class StubExecutionEngineChannel implements ExecutionEngineChannel {
   private final Map<Bytes32, PowBlock> knownBlocks = new ConcurrentHashMap<>();
   private final LRUCache<Bytes8, HeadAndAttributes> payloadIdToHeadAndAttrsCache;
   private final AtomicLong payloadIdCounter = new AtomicLong(0);
-  private final Optional<ExecutionPayloadSchema> executionPayloadSchema;
+  private final Spec spec;
 
   public StubExecutionEngineChannel(Spec spec) {
     this.payloadIdToHeadAndAttrsCache = LRUCache.create(10);
-    if (spec.isMilestoneSupported(SpecMilestone.MERGE)) {
-      this.executionPayloadSchema =
-          Optional.of(
-              spec.forMilestone(SpecMilestone.MERGE)
-                  .getSchemaDefinitions()
-                  .toVersionMerge()
-                  .orElseThrow()
-                  .getExecutionPayloadSchema());
-    } else {
-      this.executionPayloadSchema = Optional.empty();
-    }
+    this.spec = spec;
   }
 
   public void addPowBlock(final PowBlock block) {
@@ -88,7 +77,10 @@ public class StubExecutionEngineChannel implements ExecutionEngineChannel {
 
   @Override
   public SafeFuture<ExecutionPayload> getPayload(final Bytes8 payloadId, final UInt64 slot) {
-    if (executionPayloadSchema.isEmpty()) {
+    Optional<SchemaDefinitionsMerge> schemaDefinitionsMerge =
+        spec.atSlot(slot).getSchemaDefinitions().toVersionMerge();
+
+    if (schemaDefinitionsMerge.isEmpty()) {
       return SafeFuture.failedFuture(
           new UnsupportedOperationException("getPayload not supported for non-Merge milestones"));
     }
@@ -103,8 +95,9 @@ public class StubExecutionEngineChannel implements ExecutionEngineChannel {
     PayloadAttributes payloadAttributes = headAndAttrs.attributes;
 
     return SafeFuture.completedFuture(
-        executionPayloadSchema
+        schemaDefinitionsMerge
             .get()
+            .getExecutionPayloadSchema()
             .create(
                 headAndAttrs.head,
                 payloadAttributes.getFeeRecipient(),
