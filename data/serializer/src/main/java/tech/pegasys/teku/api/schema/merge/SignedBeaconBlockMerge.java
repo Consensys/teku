@@ -30,7 +30,7 @@ public class SignedBeaconBlockMerge extends SignedBeaconBlock implements SignedB
   }
 
   @Override
-  public BeaconBlockAltair getMessage() {
+  public BeaconBlockMerge getMessage() {
     return message;
   }
 
