@@ -13,37 +13,26 @@
 
 package tech.pegasys.teku.infrastructure.logging;
 
-import static tech.pegasys.teku.infrastructure.logging.LoggingConfig.DEFAULT_LOG_DIRECTORY;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.logging.LoggingConfig.DEFAULT_LOG_FILE_NAME_PATTERN_SUFFIX;
 import static tech.pegasys.teku.infrastructure.logging.LoggingConfig.DEFAULT_LOG_FILE_NAME_PREFIX;
 import static tech.pegasys.teku.infrastructure.logging.LoggingConfig.DEFAULT_LOG_FILE_NAME_SUFFIX;
 
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.cli.OSUtils;
 
 public class LoggingConfigTest {
 
   private static final String FS = System.getProperty("file.separator");
 
   @Test
-  public void shouldConstructDefaultPath() {
-    LoggingConfig config = LoggingConfig.builder().build();
-
-    Assertions.assertThat(config.getLogFile())
-        .isEqualTo(
-            OSUtils.toOSPath(
-                DEFAULT_LOG_DIRECTORY
-                    + "/"
-                    + DEFAULT_LOG_FILE_NAME_PREFIX
-                    + DEFAULT_LOG_FILE_NAME_SUFFIX));
-    Assertions.assertThat(config.getLogFileNamePattern())
-        .isEqualTo(
-            OSUtils.toOSPath(
-                DEFAULT_LOG_DIRECTORY
-                    + "/"
-                    + DEFAULT_LOG_FILE_NAME_PREFIX
-                    + DEFAULT_LOG_FILE_NAME_PATTERN_SUFFIX));
+  public void shouldFailIfNoPathsSpecified() {
+    assertThatThrownBy(() -> LoggingConfig.builder().build())
+        .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> LoggingConfig.builder().logPath("./my.log").build())
+        .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> LoggingConfig.builder().logPathPattern("./my_%d.log").build())
+        .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
@@ -51,17 +40,22 @@ public class LoggingConfigTest {
     String dataDir = "." + FS + "mydata";
     LoggingConfig config = LoggingConfig.builder().dataDirectory(dataDir).build();
 
-    Assertions.assertThat(config.getLogFile())
+    assertThat(config.getLogFile())
         .isEqualTo(
-            OSUtils.toOSPath(
-                dataDir + "/logs/" + DEFAULT_LOG_FILE_NAME_PREFIX + DEFAULT_LOG_FILE_NAME_SUFFIX));
-    Assertions.assertThat(config.getLogFileNamePattern())
+            dataDir
+                + FS
+                + "logs"
+                + FS
+                + DEFAULT_LOG_FILE_NAME_PREFIX
+                + DEFAULT_LOG_FILE_NAME_SUFFIX);
+    assertThat(config.getLogFileNamePattern())
         .isEqualTo(
-            OSUtils.toOSPath(
-                dataDir
-                    + "/logs/"
-                    + DEFAULT_LOG_FILE_NAME_PREFIX
-                    + DEFAULT_LOG_FILE_NAME_PATTERN_SUFFIX));
+            dataDir
+                + FS
+                + "logs"
+                + FS
+                + DEFAULT_LOG_FILE_NAME_PREFIX
+                + DEFAULT_LOG_FILE_NAME_PATTERN_SUFFIX);
   }
 
   @Test
@@ -69,31 +63,21 @@ public class LoggingConfigTest {
     String logDir = "." + FS + "mylogs";
     LoggingConfig config = LoggingConfig.builder().logDirectory(logDir).build();
 
-    Assertions.assertThat(config.getLogFile())
+    assertThat(config.getLogFile())
+        .isEqualTo(logDir + FS + DEFAULT_LOG_FILE_NAME_PREFIX + DEFAULT_LOG_FILE_NAME_SUFFIX);
+    assertThat(config.getLogFileNamePattern())
         .isEqualTo(
-            OSUtils.toOSPath(
-                logDir + "/" + DEFAULT_LOG_FILE_NAME_PREFIX + DEFAULT_LOG_FILE_NAME_SUFFIX));
-    Assertions.assertThat(config.getLogFileNamePattern())
-        .isEqualTo(
-            OSUtils.toOSPath(
-                logDir
-                    + "/"
-                    + DEFAULT_LOG_FILE_NAME_PREFIX
-                    + DEFAULT_LOG_FILE_NAME_PATTERN_SUFFIX));
+            logDir + FS + DEFAULT_LOG_FILE_NAME_PREFIX + DEFAULT_LOG_FILE_NAME_PATTERN_SUFFIX);
   }
 
   @Test
   public void shouldConstructFromFilePrefix() {
-    LoggingConfig config = LoggingConfig.builder().logFileNamePrefix("prefix").build();
+    LoggingConfig config =
+        LoggingConfig.builder().logDirectory(".").logFileNamePrefix("prefix").build();
 
-    Assertions.assertThat(config.getLogFile())
-        .isEqualTo(
-            OSUtils.toOSPath(
-                DEFAULT_LOG_DIRECTORY + "/" + "prefix" + DEFAULT_LOG_FILE_NAME_SUFFIX));
-    Assertions.assertThat(config.getLogFileNamePattern())
-        .isEqualTo(
-            OSUtils.toOSPath(
-                DEFAULT_LOG_DIRECTORY + "/" + "prefix" + DEFAULT_LOG_FILE_NAME_PATTERN_SUFFIX));
+    assertThat(config.getLogFile()).isEqualTo("." + FS + "prefix" + DEFAULT_LOG_FILE_NAME_SUFFIX);
+    assertThat(config.getLogFileNamePattern())
+        .isEqualTo("." + FS + "prefix" + DEFAULT_LOG_FILE_NAME_PATTERN_SUFFIX);
   }
 
   @Test
@@ -104,13 +88,13 @@ public class LoggingConfigTest {
 
     LoggingConfig config =
         LoggingConfig.builder()
-            .logDirectory("should/ignore/directory/")
+            .logDirectory("ignore" + FS + "directory")
             .logFileNamePrefix("should.ignore")
             .logPath(logPath)
             .logPathPattern(logPathPattern)
             .build();
 
-    Assertions.assertThat(config.getLogFile()).isEqualTo(logPath);
-    Assertions.assertThat(config.getLogFileNamePattern()).isEqualTo(logPathPattern);
+    assertThat(config.getLogFile()).isEqualTo(logPath);
+    assertThat(config.getLogFileNamePattern()).isEqualTo(logPathPattern);
   }
 }

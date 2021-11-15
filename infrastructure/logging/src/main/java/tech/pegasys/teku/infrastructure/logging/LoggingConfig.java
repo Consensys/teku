@@ -13,12 +13,13 @@
 
 package tech.pegasys.teku.infrastructure.logging;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 public class LoggingConfig {
   public static final String DEFAULT_LOG_FILE_NAME_PREFIX = "teku-node";
   public static final String DEFAULT_LOG_FILE_NAME_SUFFIX = ".log";
   public static final String DEFAULT_LOG_FILE_NAME_PATTERN_SUFFIX = "_%d{yyyy-MM-dd}.log";
 
-  public static final String DEFAULT_LOG_DIRECTORY = ".";
   public static final String DATA_LOG_SUBDIRECTORY = "logs";
 
   private final boolean colorEnabled;
@@ -107,21 +108,26 @@ public class LoggingConfig {
           logFileNamePattern = logFileNamePrefix + DEFAULT_LOG_FILE_NAME_PATTERN_SUFFIX;
         }
 
-        if (logDirectory == null) {
-          if (dataDirectory == null) {
-            logDirectory = DEFAULT_LOG_DIRECTORY;
-          } else {
-            logDirectory = dataDirectory + SEP + DATA_LOG_SUBDIRECTORY;
-          }
+        if (logDirectory == null && dataDirectory != null) {
+          logDirectory = dataDirectory + SEP + DATA_LOG_SUBDIRECTORY;
         }
 
-        if (logPath == null) {
+        if (logPath == null && logDirectory != null) {
           logPath = logDirectory + SEP + logFileName;
         }
-        if (logPathPattern == null) {
+        if (logPathPattern == null && logDirectory != null) {
           logPathPattern = logDirectory + SEP + logFileNamePattern;
         }
       }
+    }
+
+    private void validateValues() {
+      checkArgument(
+          logPath != null,
+          "LoggingConfig error: none of logPath, dataDirectory or logDirectory values was specified");
+      checkArgument(
+          logPathPattern != null,
+          "LoggingConfig error: none of logPathPattern, dataDirectory or logDirectory values was specified");
     }
 
     public LoggingConfigBuilder colorEnabled(boolean colorEnabled) {
@@ -187,6 +193,7 @@ public class LoggingConfig {
 
     public LoggingConfig build() {
       initMissingDefaults();
+      validateValues();
       return new LoggingConfig(
           colorEnabled,
           includeEventsEnabled,
