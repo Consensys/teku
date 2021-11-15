@@ -16,14 +16,22 @@ package tech.pegasys.teku.protoarray;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static tech.pegasys.teku.protoarray.ProtoNodeValidationStatus.INVALID;
+import static tech.pegasys.teku.protoarray.ProtoNodeValidationStatus.VALID;
 
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProposerWeighting;
 
@@ -100,11 +108,8 @@ public class ProtoArray {
    * Register a block with the fork choice. It is only sane to supply a `None` parent for the
    * genesis block.
    *
-   * @param blockSlot
-   * @param blockRoot
-   * @param stateRoot
-   * @param justifiedEpoch
-   * @param finalizedEpoch
+   * <p>This version automatically marks execution payload as valid which gives the correct
+   * behaviour prior to the merge fork.
    */
   public void onBlock(
       UInt64 blockSlot,
@@ -113,6 +118,21 @@ public class ProtoArray {
       Bytes32 stateRoot,
       UInt64 justifiedEpoch,
       UInt64 finalizedEpoch) {
+    onBlock(blockSlot, blockRoot, parentRoot, stateRoot, justifiedEpoch, finalizedEpoch, VALID);
+  }
+
+  /**
+   * Register a block with the fork choice. It is only sane to supply a `None` parent for the
+   * genesis block.
+   */
+  public void onBlock(
+      UInt64 blockSlot,
+      Bytes32 blockRoot,
+      Bytes32 parentRoot,
+      Bytes32 stateRoot,
+      UInt64 justifiedEpoch,
+      UInt64 finalizedEpoch,
+      ProtoNodeValidationStatus validationStatus) {
     if (indices.contains(blockRoot)) {
       return;
     }
@@ -130,7 +150,8 @@ public class ProtoArray {
             finalizedEpoch,
             UInt64.ZERO,
             Optional.empty(),
-            Optional.empty());
+            Optional.empty(),
+            validationStatus);
 
     indices.add(blockRoot, nodeIndex);
     nodes.add(node);
@@ -139,12 +160,39 @@ public class ProtoArray {
   }
 
   /**
-   * Follows the best-descendant links to find the best-block (i.e., head-block).
+   * Follows the best-descendant links to find the best-block (i.e., head-block). This excludes any
+   * optimistic nodes.
    *
    * @param justifiedRoot the root of the justified checkpoint
    * @return the best node according to fork choice
    */
   public ProtoNode findHead(Bytes32 justifiedRoot, UInt64 justifiedEpoch, UInt64 finalizedEpoch) {
+    return findHead(justifiedRoot, justifiedEpoch, finalizedEpoch, ProtoNode::isFullyValidated)
+        .orElseThrow(fatalException("No fully validated blocks found in best chain"));
+  }
+
+  /**
+   * Follows the best-descendant links to find the best-block (i.e., head-block), including any
+   * optimistic nodes which have not yet been fully validated.
+   *
+   * @param justifiedRoot the root of the justified checkpoint
+   * @return the best node according to fork choice
+   */
+  public ProtoNode findOptimisticHead(
+      Bytes32 justifiedRoot, UInt64 justifiedEpoch, UInt64 finalizedEpoch) {
+    return findHead(justifiedRoot, justifiedEpoch, finalizedEpoch, node -> !node.isInvalid())
+        .orElseThrow(fatalException("Finalized block was found to be invalid."));
+  }
+
+  private Supplier<FatalServiceFailureException> fatalException(final String message) {
+    return () -> new FatalServiceFailureException("fork choice", message);
+  }
+
+  private Optional<ProtoNode> findHead(
+      final Bytes32 justifiedRoot,
+      final UInt64 justifiedEpoch,
+      final UInt64 finalizedEpoch,
+      final Predicate<ProtoNode> hasSuitableValidationState) {
     if (!this.justifiedEpoch.equals(justifiedEpoch)
         || !this.finalizedEpoch.equals(finalizedEpoch)) {
       this.justifiedEpoch = justifiedEpoch;
@@ -171,18 +219,73 @@ public class ProtoArray {
     // updates the parent, not all the ancestors. When applyScoreChanges runs it propagates the
     // change back up and everything works, but we run findHead to determine if the new block should
     // become the best head so need to follow down the chain.
-    while (bestNode.getBestDescendantIndex().isPresent()) {
+    while (bestNode.getBestDescendantIndex().isPresent()
+        && hasSuitableValidationState.test(bestNode)) {
       bestDescendantIndex = bestNode.getBestDescendantIndex().get();
       bestNode =
           checkNotNull(nodes.get(bestDescendantIndex), "ProtoArray: Unknown best descendant index");
+    }
+
+    // Walk backwards to find the last fully validated node in the chain
+    while (!hasSuitableValidationState.test(bestNode)) {
+      final Optional<Integer> maybeParentIndex = bestNode.getParentIndex();
+      if (maybeParentIndex.isEmpty()) {
+        // No node on this chain with sufficient validity.
+        return Optional.empty();
+      }
+      final int parentIndex = maybeParentIndex.get();
+      bestNode = checkNotNull(nodes.get(parentIndex), "ProtoArray: Unknown parent index");
     }
 
     // Perform a sanity check that the node is indeed valid to be the head.
     if (!nodeIsViableForHead(bestNode) && !bestNode.equals(justifiedNode)) {
       throw new RuntimeException("ProtoArray: Best node is not viable for head");
     }
+    return Optional.of(bestNode);
+  }
 
-    return bestNode;
+  public void markNodeValid(final Bytes32 blockRoot) {
+    final Optional<ProtoNode> maybeNode = getProtoNode(blockRoot);
+    if (maybeNode.isEmpty()) {
+      // Most likely just pruned prior to the validation result being received.
+      LOG.debug("Couldn't mark block {} valid because it was unknown", blockRoot);
+      return;
+    }
+    final ProtoNode node = maybeNode.get();
+    node.setValidationStatus(VALID);
+    Optional<Integer> parentIndex = node.getParentIndex();
+    while (parentIndex.isPresent()) {
+      final ProtoNode parentNode =
+          checkNotNull(nodes.get(parentIndex.get()), "Missing parent node %s", parentIndex.get());
+      parentNode.setValidationStatus(VALID);
+      parentIndex = parentNode.getParentIndex();
+    }
+  }
+
+  public void markNodeInvalid(final Bytes32 blockRoot) {
+    final Optional<Integer> maybeIndex = getIndexByRoot(blockRoot);
+    if (maybeIndex.isEmpty()) {
+      LOG.debug("Couldn't update status for block {} because it was unknown", blockRoot);
+      return;
+    }
+    final int index = maybeIndex.get();
+    final ProtoNode node = checkNotNull(nodes.get(index), "Missing node %s", index);
+    node.setValidationStatus(INVALID);
+    final IntSet invalidParents = new IntOpenHashSet();
+    invalidParents.add(index);
+    // Need to mark all nodes extending from this one as invalid
+    // Descendant nodes must be later in the array so can start from next index
+    for (int i = index + 1; i < nodes.size(); i++) {
+      final ProtoNode possibleDescendant = nodes.get(i);
+      if (possibleDescendant.getParentIndex().isEmpty()) {
+        continue;
+      }
+      if (invalidParents.contains((int) possibleDescendant.getParentIndex().get())) {
+        possibleDescendant.setValidationStatus(INVALID);
+        invalidParents.add(i);
+      }
+    }
+    applyDeltas(new ArrayList<>(Collections.nCopies(getTotalTrackedNodeCount(), 0L)));
   }
 
   /**
@@ -208,7 +311,11 @@ public class ProtoArray {
    * @param finalizedEpoch
    */
   public void applyScoreChanges(List<Long> deltas, UInt64 justifiedEpoch, UInt64 finalizedEpoch) {
-    checkArgument(deltas.size() == getTotalTrackedNodeCount(), "ProtoArray: Invalid delta length");
+    checkArgument(
+        deltas.size() == getTotalTrackedNodeCount(),
+        "ProtoArray: Invalid delta length expected %s but got %s",
+        getTotalTrackedNodeCount(),
+        deltas.size());
 
     if (!justifiedEpoch.equals(this.justifiedEpoch)
         || !finalizedEpoch.equals(this.finalizedEpoch)) {
@@ -484,7 +591,8 @@ public class ProtoArray {
   }
 
   private void applyDelta(final List<Long> deltas, final ProtoNode node, final int nodeIndex) {
-    long nodeDelta = deltas.get(nodeIndex);
+    // If the node is invalid, remove any existing weight.
+    long nodeDelta = node.isInvalid() ? -node.getWeight().longValue() : deltas.get(nodeIndex);
     node.adjustWeight(nodeDelta);
 
     if (node.getParentIndex().isPresent()) {
