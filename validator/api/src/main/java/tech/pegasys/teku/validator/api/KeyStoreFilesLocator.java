@@ -32,7 +32,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
-class KeyStoreFilesLocator {
+public class KeyStoreFilesLocator {
   private static final Logger LOG = LogManager.getLogger();
   private final Map<Path, Path> pathMap = new HashMap<>();
   private final List<String> colonSeparatedPairs;

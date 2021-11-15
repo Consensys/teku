@@ -44,7 +44,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.ssz.type.Bytes4;
-import tech.pegasys.teku.validator.api.ValidatorConfig;
+import tech.pegasys.teku.validator.api.KeyStoreFilesLocator;
 import tech.pegasys.teku.validator.client.loader.ValidatorSource.ValidatorProvider;
 
 class LocalValidatorSourceTest {
@@ -57,12 +57,12 @@ class LocalValidatorSourceTest {
 
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
-  private final ValidatorConfig config = mock(ValidatorConfig.class);
   private final KeystoreLocker keystoreLocker = mock(KeystoreLocker.class);
   private final SigningRootUtil signingRootUtil = new SigningRootUtil(spec);
+  private final KeyStoreFilesLocator keyStoreFilesLocator = mock(KeyStoreFilesLocator.class);
 
   private final LocalValidatorSource validatorSource =
-      new LocalValidatorSource(spec, config, keystoreLocker, asyncRunner);
+      new LocalValidatorSource(spec, true, keystoreLocker, keyStoreFilesLocator, asyncRunner);
 
   @Test
   void shouldLoadKeysFromKeyStores(@TempDir final Path tempDir) throws Exception {
@@ -78,7 +78,7 @@ class LocalValidatorSourceTest {
         List.of(
             Pair.of(scryptKeystore, tempPasswordFile), Pair.of(pbkdf2Keystore, tempPasswordFile));
 
-    when(config.getValidatorKeystorePasswordFilePairs()).thenReturn(keystorePasswordFilePairs);
+    when(keyStoreFilesLocator.getFilePairs()).thenReturn(keystorePasswordFilePairs);
 
     final List<ValidatorProvider> availableValidators = validatorSource.getAvailableValidators();
     assertThat(availableValidators).hasSize(2);
@@ -98,7 +98,7 @@ class LocalValidatorSourceTest {
     final List<Pair<Path, Path>> keystorePasswordFilePairs =
         List.of(Pair.of(scryptKeystore, tempPasswordFile));
 
-    when(config.getValidatorKeystorePasswordFilePairs()).thenReturn(keystorePasswordFilePairs);
+    when(keyStoreFilesLocator.getFilePairs()).thenReturn(keystorePasswordFilePairs);
 
     assertThatThrownBy(validatorSource::getAvailableValidators)
         .isInstanceOf(InvalidConfigurationException.class)
@@ -117,7 +117,7 @@ class LocalValidatorSourceTest {
     final List<Pair<Path, Path>> keystorePasswordFilePairs =
         List.of(Pair.of(scryptKeystore, tempPasswordFile));
 
-    when(config.getValidatorKeystorePasswordFilePairs()).thenReturn(keystorePasswordFilePairs);
+    when(keyStoreFilesLocator.getFilePairs()).thenReturn(keystorePasswordFilePairs);
 
     assertThatThrownBy(() -> validatorSource.getAvailableValidators().get(0).createSigner())
         .isInstanceOf(InvalidConfigurationException.class)
@@ -137,7 +137,7 @@ class LocalValidatorSourceTest {
     final List<Pair<Path, Path>> keystorePasswordFilePairs =
         List.of(Pair.of(scryptKeystore, tempPasswordFile));
 
-    when(config.getValidatorKeystorePasswordFilePairs()).thenReturn(keystorePasswordFilePairs);
+    when(keyStoreFilesLocator.getFilePairs()).thenReturn(keystorePasswordFilePairs);
 
     assertThatThrownBy(validatorSource::getAvailableValidators)
         .isInstanceOf(InvalidConfigurationException.class)
@@ -157,7 +157,7 @@ class LocalValidatorSourceTest {
     final List<Pair<Path, Path>> keystorePasswordFilePairs =
         List.of(Pair.of(scryptKeystore, tempPasswordFile));
 
-    when(config.getValidatorKeystorePasswordFilePairs()).thenReturn(keystorePasswordFilePairs);
+    when(keyStoreFilesLocator.getFilePairs()).thenReturn(keystorePasswordFilePairs);
 
     assertThatThrownBy(validatorSource::getAvailableValidators)
         .isInstanceOf(InvalidConfigurationException.class)

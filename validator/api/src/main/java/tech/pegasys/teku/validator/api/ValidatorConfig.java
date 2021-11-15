@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.validator.api;
 
-import java.io.File;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Path;
@@ -138,14 +137,6 @@ public class ValidatorConfig {
 
   public List<String> getValidatorKeys() {
     return validatorKeys;
-  }
-
-  public List<Pair<Path, Path>> getValidatorKeystorePasswordFilePairs() {
-    final KeyStoreFilesLocator processor =
-        new KeyStoreFilesLocator(validatorKeys, File.pathSeparator);
-    processor.parse();
-
-    return processor.getFilePairs();
   }
 
   public boolean generateEarlyAttestations() {

@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client.loader;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Suppliers;
+import java.io.File;
 import java.net.http.HttpClient;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,6 +29,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.validator.api.GraffitiProvider;
 import tech.pegasys.teku.validator.api.InteropConfig;
+import tech.pegasys.teku.validator.api.KeyStoreFilesLocator;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.client.loader.ValidatorSource.ValidatorProvider;
 
@@ -101,10 +103,18 @@ public class ValidatorLoader {
       final SlashingProtector slashingProtector,
       final AsyncRunner asyncRunner,
       final List<ValidatorSource> validatorSources) {
-    if (config.getValidatorKeystorePasswordFilePairs() != null) {
+    KeyStoreFilesLocator keyStoreFilesLocator =
+        new KeyStoreFilesLocator(config.getValidatorKeys(), File.pathSeparator);
+    keyStoreFilesLocator.parse();
+    if (keyStoreFilesLocator.getFilePairs() != null) {
       validatorSources.add(
           slashingProtected(
-              new LocalValidatorSource(spec, config, new KeystoreLocker(), asyncRunner),
+              new LocalValidatorSource(
+                  spec,
+                  config.isValidatorKeystoreLockingEnabled(),
+                  new KeystoreLocker(),
+                  keyStoreFilesLocator,
+                  asyncRunner),
               slashingProtector));
     }
   }
