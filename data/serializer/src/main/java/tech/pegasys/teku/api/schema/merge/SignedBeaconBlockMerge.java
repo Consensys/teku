@@ -17,7 +17,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
-import tech.pegasys.teku.api.schema.altair.BeaconBlockAltair;
 import tech.pegasys.teku.api.schema.interfaces.SignedBlock;
 
 public class SignedBeaconBlockMerge extends SignedBeaconBlock implements SignedBlock {
@@ -30,7 +29,7 @@ public class SignedBeaconBlockMerge extends SignedBeaconBlock implements SignedB
   }
 
   @Override
-  public BeaconBlockAltair getMessage() {
+  public BeaconBlockMerge getMessage() {
     return message;
   }
 
