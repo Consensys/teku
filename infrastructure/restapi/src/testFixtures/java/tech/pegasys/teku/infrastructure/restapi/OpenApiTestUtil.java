@@ -146,6 +146,9 @@ public class OpenApiTestUtil<TObject> {
     final List<String> expectedFileListing = IOUtils.readLines(resourcesAsStream, UTF_8);
 
     for (String file : expectedFileListing) {
+      if (!file.endsWith(".json")) {
+        continue;
+      }
       // Notes:
       //  * If a path has been deleted, just delete the reference file to make this test pass.
       //  * If this path shouldn't have been changed and the error appears, check changes.
