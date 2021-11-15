@@ -28,7 +28,6 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.restapi.JsonTestUtil;
 import tech.pegasys.teku.infrastructure.restapi.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.restapi.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.infrastructure.restapi.types.SerializableTypeDefinition;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.client.Validator;
@@ -99,36 +98,6 @@ class ValidatorTypesTest {
   }
 
   @Test
-  void listKeysResponse_shouldSerializeOpenApi() throws Exception {
-    assertOpenApi(ValidatorTypes.LIST_KEYS_RESPONSE_TYPE, "ListKeysResponse.json");
-  }
-
-  @Test
-  void pubkey_shouldSerializeOpenApi() throws Exception {
-    assertOpenApi(ValidatorTypes.PUBKEY_TYPE, "PubKey.json");
-  }
-
-  @Test
-  void deleteKeysResponse_shouldSerializeOpenApi() throws Exception {
-    assertOpenApi(ValidatorTypes.DELETE_KEYS_RESPONSE_TYPE, "DeleteKeysResponse.json");
-  }
-
-  @Test
-  void PostKeysResponse_shouldSerializeOpenApi() throws Exception {
-    assertOpenApi(ValidatorTypes.POST_KEYS_RESPONSE, "PostKeysResponse.json");
-  }
-
-  @Test
-  void PostKeyResult_shouldSerializeOpenApi() throws Exception {
-    assertOpenApi(ValidatorTypes.POST_KEY_RESULT, "PostKeyResult.json");
-  }
-
-  @Test
-  void deleteKeyResult_shouldSerializeOpenApi() throws Exception {
-    assertOpenApi(ValidatorTypes.DELETE_KEY_RESULT, "DeleteKeyResult.json");
-  }
-
-  @Test
   void deleteKeysRequest_shouldDeserializeData() throws Exception {
     final List<BLSPublicKey> keys =
         List.of(dataStructureUtil.randomPublicKey(), dataStructureUtil.randomPublicKey());
@@ -140,28 +109,6 @@ class ValidatorTypesTest {
   @Test
   void deleteKeysRequest_shouldDeserializeEmptyList() throws Exception {
     assertRoundTrip(new DeleteKeysRequest(), ValidatorTypes.DELETE_KEYS_REQUEST);
-  }
-
-  @Test
-  void deleteKeysRequest_shouldSerializeOpenApi() throws Exception {
-    assertOpenApi(ValidatorTypes.DELETE_KEYS_REQUEST, "DeleteKeysRequest.json");
-  }
-
-  @Test
-  void postKeysRequest_shouldSerializeOpenApi() throws Exception {
-    assertOpenApi(ValidatorTypes.POST_KEYS_REQUEST, "PostKeysRequest.json");
-  }
-
-  private void assertOpenApi(final SerializableTypeDefinition<?> type, final String resourceName)
-      throws Exception {
-    final Map<String, Object> expectedParsed = parseJsonResource(resourceName);
-    final String json = JsonUtil.serialize(type::serializeOpenApiType);
-    final Map<String, Object> result = JsonTestUtil.parse(json);
-    assertThat(result).isEqualTo(expectedParsed);
-  }
-
-  private Map<String, Object> parseJsonResource(final String resourceName) throws Exception {
-    return JsonTestUtil.parseJsonResource(ValidatorTypesTest.class, resourceName);
   }
 
   private <T> void assertRoundTrip(final T value, final DeserializableTypeDefinition<T> type)

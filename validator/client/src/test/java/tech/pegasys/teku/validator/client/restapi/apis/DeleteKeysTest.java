@@ -13,16 +13,13 @@
 
 package tech.pegasys.teku.validator.client.restapi.apis;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 
 import java.util.List;
-import java.util.Map;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.restapi.JsonTestUtil;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -30,18 +27,6 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 public class DeleteKeysTest {
   private final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createMinimalAltair());
-
-  @Test
-  void metadata_shouldProduceCorrectOpenApi() throws Exception {
-    final DeleteKeys endpoint = new DeleteKeys();
-    final String json = JsonTestUtil.serializeEndpointMetadata(endpoint);
-    final Map<String, Object> result = JsonTestUtil.parse(json);
-
-    final Map<String, Object> expected =
-        JsonTestUtil.parseJsonResource(PostKeysTest.class, "DeleteKeys.json");
-
-    assertThat(result).isEqualTo(expected);
-  }
 
   @Test
   void shouldBeNotImplemented() throws Exception {

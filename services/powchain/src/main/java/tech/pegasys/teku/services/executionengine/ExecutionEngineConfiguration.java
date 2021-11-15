@@ -58,7 +58,7 @@ public class ExecutionEngineConfiguration {
   public static class Builder {
     private Spec spec;
     private List<String> endpoints = new ArrayList<>();
-    private Optional<Eth1Address> feeRecipient;
+    private Optional<Eth1Address> feeRecipient = Optional.empty();
 
     private Builder() {}
 

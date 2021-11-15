@@ -21,7 +21,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigMerge;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
-import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
@@ -33,12 +32,10 @@ import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
-import tech.pegasys.teku.spec.logic.versions.altair.forktransition.AltairStateUpgrade;
-import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.attestation.AttestationWorthinessCheckerAltair;
-import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.EpochProcessorAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.ValidatorStatusFactoryAltair;
 import tech.pegasys.teku.spec.logic.versions.merge.block.BlockProcessorMerge;
+import tech.pegasys.teku.spec.logic.versions.merge.forktransition.MergeStateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.merge.helpers.BeaconStateAccessorsMerge;
 import tech.pegasys.teku.spec.logic.versions.merge.helpers.BeaconStateMutatorsMerge;
 import tech.pegasys.teku.spec.logic.versions.merge.helpers.MergeTransitionHelpers;
@@ -57,21 +54,21 @@ public class SpecLogicMerge extends AbstractSpecLogic {
   private SpecLogicMerge(
       final SpecConfigMerge specConfig,
       final Predicates predicates,
-      final MiscHelpersAltair miscHelpers,
+      final MiscHelpersMerge miscHelpers,
       final BeaconStateAccessorsMerge beaconStateAccessors,
-      final BeaconStateMutators beaconStateMutators,
+      final BeaconStateMutatorsMerge beaconStateMutators,
       final OperationSignatureVerifier operationSignatureVerifier,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
       final AttestationUtil attestationUtil,
       final OperationValidator operationValidator,
       final ValidatorStatusFactoryAltair validatorStatusFactory,
-      final EpochProcessorAltair epochProcessor,
+      final EpochProcessorMerge epochProcessor,
       final BlockProcessorMerge blockProcessor,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil,
       final SyncCommitteeUtil syncCommitteeUtil,
-      final AltairStateUpgrade stateUpgrade,
+      final MergeStateUpgrade stateUpgrade,
       final ExecutionPayloadUtil executionPayloadUtil,
       final MergeTransitionHelpers mergeTransitionHelpers) {
     super(
@@ -160,9 +157,8 @@ public class SpecLogicMerge extends AbstractSpecLogic {
             beaconStateAccessors, validatorsUtil, config, miscHelpers, schemaDefinitions);
 
     // State upgrade
-    final AltairStateUpgrade stateUpgrade =
-        new AltairStateUpgrade(
-            config, schemaDefinitions, beaconStateAccessors, attestationUtil, miscHelpers);
+    final MergeStateUpgrade stateUpgrade =
+        new MergeStateUpgrade(config, schemaDefinitions, beaconStateAccessors);
 
     final MergeTransitionHelpers mergeTransitionHelpers =
         new MergeTransitionHelpers(miscHelpers, config);

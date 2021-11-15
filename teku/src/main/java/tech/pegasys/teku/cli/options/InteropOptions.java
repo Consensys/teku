@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli.options;
 
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.validator.api.InteropConfig;
 
 public class InteropOptions {
 
@@ -24,7 +25,7 @@ public class InteropOptions {
       paramLabel = "<INTEGER>",
       description = "Time of mocked genesis",
       arity = "1")
-  private int interopGenesisTime = 0;
+  private int interopGenesisTime = InteropConfig.DEFAULT_INTEROP_GENESIS_TIME;
 
   @Option(
       hidden = true,
@@ -47,7 +48,7 @@ public class InteropOptions {
       names = {"--Xinterop-number-of-validators"},
       paramLabel = "<INTEGER>",
       description = "Represents the total number of validators in the network")
-  private int interopNumberOfValidators = 64;
+  private int interopNumberOfValidators = InteropConfig.DEFAULT_INTEROP_NUMBER_OF_VALIDATORS;
 
   @Option(
       hidden = true,

@@ -50,24 +50,41 @@ public class ValidatorClientCommandTest {
 
   private final StartAction startAction = mock(StartAction.class);
 
-  private String[] argsAutoEnabled;
+  private String[] argsNetworkOptDefault;
+  private String[] argsNetworkOptAuto;
+  private String[] argsNetworkOptAutoInConfig;
+
   private ClientAndServer mockBeaconServer;
-  private String mockBeaconServerEndpoint;
+
   private final Spec testSpec =
       SpecFactory.create(
           Resources.getResource("tech/pegasys/teku/cli/subcommand/test-spec.yaml").getPath());
 
-  private BeaconNodeCommand beaconNodeCommand =
+  private final String networkAutoConfigFile =
+      Resources.getResource("tech/pegasys/teku/cli/subcommand/networkOption_auto_config.yaml")
+          .getPath();
+
+  private final BeaconNodeCommand beaconNodeCommand =
       new BeaconNodeCommand(outputWriter, errorWriter, Collections.emptyMap(), startAction);
 
   @BeforeEach
   public void setup(ClientAndServer server) {
     this.mockBeaconServer = server;
-    mockBeaconServerEndpoint =
+    String mockBeaconServerEndpoint =
         String.format("http://127.0.0.1:%s/", mockBeaconServer.getLocalPort());
-    argsAutoEnabled =
+    argsNetworkOptDefault =
+        new String[] {"vc", "--beacon-node-api-endpoint", mockBeaconServerEndpoint};
+    argsNetworkOptAuto =
         new String[] {
           "vc", "--network", "auto", "--beacon-node-api-endpoint", mockBeaconServerEndpoint
+        };
+    argsNetworkOptAutoInConfig =
+        new String[] {
+          "vc",
+          "--config-file",
+          networkAutoConfigFile,
+          "--beacon-node-api-endpoint",
+          mockBeaconServerEndpoint
         };
   }
 
@@ -79,17 +96,29 @@ public class ValidatorClientCommandTest {
   @Test
   public void autoDetectNetwork_ShouldRetryRequest_IfFailsToFetchFromBeaconNode() {
     configureMockServer(1);
-    fetchAndVerifySpec();
+    fetchAndVerifySpec(argsNetworkOptAuto);
   }
 
   @Test
   public void autoDetectNetwork_ShouldFetchNetworkDetailsFromBeaconNode_IfEnabled() {
     configureMockServer(0);
-    fetchAndVerifySpec();
+    fetchAndVerifySpec(argsNetworkOptAuto);
   }
 
-  private void fetchAndVerifySpec() {
-    int parseResult = beaconNodeCommand.parse(argsAutoEnabled);
+  @Test
+  public void autoDetectNetwork_ShouldFetchNetworkDetailsFromBeaconNode_IfEnabledInConfigFile() {
+    configureMockServer(0);
+    fetchAndVerifySpec(argsNetworkOptAutoInConfig);
+  }
+
+  @Test
+  public void networkOption_ShouldDefaultToAuto_IfNotSpecified() {
+    configureMockServer(0);
+    fetchAndVerifySpec(argsNetworkOptDefault);
+  }
+
+  private void fetchAndVerifySpec(String[] args) {
+    int parseResult = beaconNodeCommand.parse(args);
     assertThat(parseResult).isEqualTo(0);
 
     TekuConfiguration config = getResultingTekuConfiguration();

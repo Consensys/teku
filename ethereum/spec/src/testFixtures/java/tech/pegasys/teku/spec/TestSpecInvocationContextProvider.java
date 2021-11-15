@@ -63,7 +63,10 @@ public class TestSpecInvocationContextProvider implements TestTemplateInvocation
         specMilestone -> {
           networks.forEach(
               eth2Network -> {
-                invocations.add(generateContext(new SpecContext(specMilestone, eth2Network)));
+                invocations.add(
+                    generateContext(
+                        new SpecContext(
+                            specMilestone, eth2Network, testSpecContext.doNotGenerateSpec())));
               });
         });
 
@@ -92,9 +95,14 @@ public class TestSpecInvocationContextProvider implements TestTemplateInvocation
     private final SpecMilestone specMilestone;
     private final Eth2Network network;
 
-    SpecContext(SpecMilestone specMilestone, Eth2Network network) {
-      this.spec = TestSpecFactory.create(specMilestone, network);
-      this.dataStructureUtil = new DataStructureUtil(spec);
+    SpecContext(SpecMilestone specMilestone, Eth2Network network, boolean doNotGenerateSpec) {
+      if (doNotGenerateSpec) {
+        spec = null;
+        dataStructureUtil = null;
+      } else {
+        this.spec = TestSpecFactory.create(specMilestone, network);
+        this.dataStructureUtil = new DataStructureUtil(spec);
+      }
       this.displayName = specMilestone.name() + ' ' + network.name();
 
       this.specMilestone = specMilestone;
