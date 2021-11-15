@@ -89,7 +89,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
 
     final ForkChoice forkChoice =
         ForkChoice.create(spec, new InlineEventThread(), recentChainData, false);
-    final StubExecutionEngineChannel executionEngine = new StubExecutionEngineChannel();
+    final StubExecutionEngineChannel executionEngine = new StubExecutionEngineChannel(spec);
 
     runSteps(testDefinition, spec, recentChainData, forkChoice, executionEngine);
   }

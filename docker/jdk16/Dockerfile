@@ -1,7 +1,7 @@
 FROM eclipse-temurin:16 as jre-build
 
 # Create a custom Java runtime
-RUN $JAVA_HOME/bin/jlink \
+RUN JAVA_TOOL_OPTIONS="-Djdk.lang.Process.launchMechanism=vfork" $JAVA_HOME/bin/jlink \
          --add-modules ALL-MODULE-PATH \
          --strip-debug \
          --no-man-pages \

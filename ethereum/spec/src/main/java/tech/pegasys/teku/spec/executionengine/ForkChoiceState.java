@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.executionengine;
 
+import com.google.common.base.MoreObjects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 
@@ -43,5 +44,14 @@ public class ForkChoiceState {
 
   public Bytes32 getFinalizedBlockHash() {
     return finalizedBlockHash;
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("headBlockHash", headBlockHash)
+        .add("safeBlockHash", safeBlockHash)
+        .add("finalizedBlockHash", finalizedBlockHash)
+        .toString();
   }
 }
