@@ -27,6 +27,8 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -57,8 +59,7 @@ public class PostPrepareBeaconProposer extends AbstractHandler implements Handle
       summary = "Provide beacon node with proposals for the given validators.",
       tags = {TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED},
       requestBody =
-          @OpenApiRequestBody(
-              content = {@OpenApiContent(from = BeaconPreparableProposer.class, isArray = true)}),
+          @OpenApiRequestBody(content = {@OpenApiContent(from = BeaconPreparableProposer[].class)}),
       description =
           "Prepares the beacon node for potential proposers by supplying information required when proposing blocks for the given validators. The information supplied for each validator index is considered persistent until overwritten by new information for the given validator index, or until the beacon node restarts.\n\n"
               + "Note that because the information is not persistent across beacon node restarts it is recommended that either the beacon node is monitored for restarts or this information is refreshed by resending this request periodically (for example, each epoch).\n\n"
@@ -76,7 +77,11 @@ public class PostPrepareBeaconProposer extends AbstractHandler implements Handle
       final BeaconPreparableProposer[] request =
           parseRequestBody(ctx.body(), BeaconPreparableProposer[].class);
 
-      LOG.trace("received: {}", request);
+      LOG.trace(
+          "received: {}",
+          Arrays.stream(request)
+              .map(BeaconPreparableProposer::toString)
+              .collect(Collectors.joining(",")));
 
       ctx.status(SC_OK);
     } catch (final IllegalArgumentException e) {

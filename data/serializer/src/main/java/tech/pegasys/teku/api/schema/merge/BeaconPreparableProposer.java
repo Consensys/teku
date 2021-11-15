@@ -14,18 +14,22 @@
 package tech.pegasys.teku.api.schema.merge;
 
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES20;
+import static tech.pegasys.teku.api.schema.SchemaConstants.EXAMPLE_UINT64;
 import static tech.pegasys.teku.api.schema.SchemaConstants.PATTERN_BYTES20;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
 import io.swagger.v3.oas.annotations.media.Schema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.type.Bytes20;
 
 public class BeaconPreparableProposer {
-  @Schema(type = "string", format = "uint64")
+  @JsonProperty("validator_index")
+  @Schema(type = "string", format = "uint64", example = EXAMPLE_UINT64)
   public final UInt64 validator_index;
 
+  @JsonProperty("fee_recipient")
   @Schema(
       type = "string",
       format = "byte",
@@ -39,5 +43,13 @@ public class BeaconPreparableProposer {
       @JsonProperty("fee_recipient") Bytes20 fee_recipient) {
     this.validator_index = validator_index;
     this.fee_recipient = fee_recipient;
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("validator_index", validator_index)
+        .add("fee_recipient", fee_recipient)
+        .toString();
   }
 }
