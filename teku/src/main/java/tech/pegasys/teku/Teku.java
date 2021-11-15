@@ -16,12 +16,12 @@ package tech.pegasys.teku;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.security.Security;
+import java.util.concurrent.atomic.AtomicReference;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import tech.pegasys.teku.bls.impl.blst.BlstLoader;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
 import tech.pegasys.teku.cli.BeaconNodeCommand.StartAction;
 import tech.pegasys.teku.config.TekuConfiguration;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public final class Teku implements TekuFacade {
 
@@ -83,15 +83,13 @@ public final class Teku implements TekuFacade {
 
   @Override
   public NodeFacade startFromCLIArgs(String[] cliArgs) {
-    SafeFuture<Node> nodePromise = new SafeFuture<>();
+    AtomicReference<Node> nodeRef = new AtomicReference<>();
     int result =
-        start(
-            (config, validatorClient) -> nodePromise.complete(start(config, validatorClient)),
-            cliArgs);
+        start((config, validatorClient) -> nodeRef.set(start(config, validatorClient)), cliArgs);
     if (result != 0) {
       throw new RuntimeException("Unable to start Teku. Exit code: " + result);
     }
-    return nodePromise.join();
+    return nodeRef.get();
   }
 
   @Override
