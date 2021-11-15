@@ -58,6 +58,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncComm
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.AttesterDuty;
+import tech.pegasys.teku.validator.api.BeaconPreparableProposer;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ProposerDuty;
@@ -412,6 +413,21 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
 
     sendRequest(() -> apiClient.subscribeToPersistentSubnets(schemaSubscriptions))
         .finish(error -> LOG.error("Failed to subscribe to persistent subnets", error));
+  }
+
+  @Override
+  public void prepareBeaconProposer(
+      Collection<BeaconPreparableProposer> beaconPreparableProposers) {
+    sendRequest(
+            () ->
+                apiClient.prepareBeaconProposer(
+                    beaconPreparableProposers.stream()
+                        .map(
+                            pbp ->
+                                new tech.pegasys.teku.api.schema.merge.BeaconPreparableProposer(
+                                    pbp.getValidatorIndex(), pbp.getFeeRecipient()))
+                        .collect(toList())))
+        .finish(error -> LOG.error("Failed to prepare beacon proposers", error));
   }
 
   private SafeFuture<Void> sendRequest(final ExceptionThrowingRunnable requestExecutor) {
