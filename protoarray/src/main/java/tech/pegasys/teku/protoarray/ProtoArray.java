@@ -166,9 +166,9 @@ public class ProtoArray {
    * @param justifiedRoot the root of the justified checkpoint
    * @return the best node according to fork choice
    */
-  public ProtoNode findHead(Bytes32 justifiedRoot, UInt64 justifiedEpoch, UInt64 finalizedEpoch) {
-    return findHead(justifiedRoot, justifiedEpoch, finalizedEpoch, ProtoNode::isFullyValidated)
-        .orElseThrow(fatalException("No fully validated blocks found in best chain"));
+  public Optional<ProtoNode> findHead(
+      Bytes32 justifiedRoot, UInt64 justifiedEpoch, UInt64 finalizedEpoch) {
+    return findHead(justifiedRoot, justifiedEpoch, finalizedEpoch, ProtoNode::isFullyValidated);
   }
 
   /**

@@ -26,16 +26,21 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProposerWeighting;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
 public class NoVotesTest {
+  private final Spec spec = TestSpecFactory.createDefault();
 
   @Test
   void noVotesTest() {
     VoteUpdater store = createStoreToManipulateVotes();
 
-    ForkChoiceStrategy forkChoice = createProtoArrayForkChoiceStrategy(getHash(0), ZERO, ONE, ONE);
+    ForkChoiceStrategy forkChoice =
+        createProtoArrayForkChoiceStrategy(spec, getHash(0), ZERO, ONE, ONE);
 
     List<UInt64> balances = new ArrayList<>(Collections.nCopies(16, ZERO));
     List<ProposerWeighting> proposerWeightings = Collections.emptyList();
@@ -43,7 +48,7 @@ public class NoVotesTest {
     // Check that the head is the finalized block.
     assertThat(
             forkChoice.applyPendingVotes(
-                store, unsigned(1), getHash(0), unsigned(1), balances, proposerWeightings))
+                store, proposerWeightings, checkpoint(1, 0), checkpoint(1, 0), balances))
         .isEqualTo(getHash(0));
 
     // Add block 2
@@ -60,7 +65,7 @@ public class NoVotesTest {
     //        2 <- head
     assertThat(
             forkChoice.applyPendingVotes(
-                store, unsigned(1), getHash(0), unsigned(1), balances, proposerWeightings))
+                store, proposerWeightings, checkpoint(1, 0), checkpoint(1, 0), balances))
         .isEqualTo(getHash(2));
 
     // Add block 1
@@ -77,7 +82,7 @@ public class NoVotesTest {
     // head-> 2  1
     assertThat(
             forkChoice.applyPendingVotes(
-                store, unsigned(1), getHash(0), unsigned(1), balances, proposerWeightings))
+                store, proposerWeightings, checkpoint(1, 0), checkpoint(1, 0), balances))
         .isEqualTo(getHash(2));
 
     // Add block 3
@@ -98,7 +103,7 @@ public class NoVotesTest {
     //           3
     assertThat(
             forkChoice.applyPendingVotes(
-                store, unsigned(1), getHash(0), unsigned(1), balances, proposerWeightings))
+                store, proposerWeightings, checkpoint(1, 0), checkpoint(1, 0), balances))
         .isEqualTo(getHash(2));
 
     // Add block 4
@@ -119,7 +124,7 @@ public class NoVotesTest {
     // head-> 4  3
     assertThat(
             forkChoice.applyPendingVotes(
-                store, unsigned(1), getHash(0), unsigned(1), balances, proposerWeightings))
+                store, proposerWeightings, checkpoint(1, 0), checkpoint(1, 0), balances))
         .isEqualTo(getHash(4));
 
     // Add block 5 with a justified epoch of 2
@@ -144,7 +149,7 @@ public class NoVotesTest {
     //        5
     assertThat(
             forkChoice.applyPendingVotes(
-                store, unsigned(1), getHash(0), unsigned(1), balances, proposerWeightings))
+                store, proposerWeightings, checkpoint(1, 0), checkpoint(1, 0), balances))
         .isEqualTo(getHash(4));
 
     // Ensure there is no error when starting from a block that has the wrong justified epoch.
@@ -158,7 +163,7 @@ public class NoVotesTest {
     //     5 <- starting from 5 with justified epoch 0 should return justified.
     assertThat(
             forkChoice.applyPendingVotes(
-                store, unsigned(1), getHash(5), unsigned(1), balances, proposerWeightings))
+                store, proposerWeightings, checkpoint(1, 0), checkpoint(1, 5), balances))
         .isEqualTo(getHash(5));
 
     // Set the justified epoch to 2 and the start block to 5 and ensure 5 is the head.
@@ -172,7 +177,7 @@ public class NoVotesTest {
     //     5 <- head
     assertThat(
             forkChoice.applyPendingVotes(
-                store, unsigned(2), getHash(5), unsigned(1), balances, proposerWeightings))
+                store, proposerWeightings, checkpoint(1, 0), checkpoint(2, 5), balances))
         .isEqualTo(getHash(5));
 
     // Add block 6
@@ -201,11 +206,15 @@ public class NoVotesTest {
     //     6 <- head
     assertThat(
             forkChoice.applyPendingVotes(
-                store, unsigned(2), getHash(5), unsigned(1), balances, proposerWeightings))
+                store, proposerWeightings, checkpoint(1, 0), checkpoint(2, 5), balances))
         .isEqualTo(getHash(6));
   }
 
   private UInt64 unsigned(final int i) {
     return UInt64.valueOf(i);
+  }
+
+  private Checkpoint checkpoint(final long epoch, final int root) {
+    return new Checkpoint(UInt64.valueOf(epoch), getHash(root));
   }
 }

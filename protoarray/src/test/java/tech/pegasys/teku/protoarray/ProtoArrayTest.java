@@ -101,6 +101,7 @@ class ProtoArrayTest {
                     GENESIS_CHECKPOINT.getRoot(),
                     GENESIS_CHECKPOINT.getEpoch(),
                     GENESIS_CHECKPOINT.getEpoch())
+                .orElseThrow()
                 .getBlockRoot())
         .isEqualTo(blockRootB);
 
@@ -111,6 +112,7 @@ class ProtoArrayTest {
                     GENESIS_CHECKPOINT.getRoot(),
                     GENESIS_CHECKPOINT.getEpoch(),
                     GENESIS_CHECKPOINT.getEpoch())
+                .orElseThrow()
                 .getBlockRoot())
         .isEqualTo(blockRootA);
   }
@@ -136,7 +138,7 @@ class ProtoArrayTest {
     // Justified block will have justified and finalized epoch of 0 which doesn't match the current
     // so would normally be not viable, but we should allow it anyway.
     addBlock(12, justifiedRoot, dataStructureUtil.randomBytes32());
-    final ProtoNode head = protoArray.findHead(justifiedRoot, UInt64.ONE, UInt64.ONE);
+    final ProtoNode head = protoArray.findHead(justifiedRoot, UInt64.ONE, UInt64.ONE).orElseThrow();
     assertThat(head).isEqualTo(protoArray.getProtoNode(justifiedRoot).orElseThrow());
   }
 
@@ -191,7 +193,7 @@ class ProtoArrayTest {
   }
 
   @Test
-  void findHead_shouldThrowFatalServiceFailureExceptionWhenAllBlocksAreInvalid() {
+  void findHead_shouldReturnEmptyWhenAllBlocksAreInvalid() {
     final Bytes32 block1Hash = dataStructureUtil.randomBytes32();
     final Bytes32 block2Hash = dataStructureUtil.randomBytes32();
     final Bytes32 block3Hash = dataStructureUtil.randomBytes32();
@@ -200,18 +202,17 @@ class ProtoArrayTest {
     addBlock(3, block3Hash, block2Hash, OPTIMISTIC);
     protoArray.markNodeInvalid(GENESIS_CHECKPOINT.getRoot());
 
-    assertThatThrownBy(() -> assertStrictHead(block1Hash))
-        .isInstanceOf(FatalServiceFailureException.class);
+    assertThat(protoArray.findHead(GENESIS_CHECKPOINT.getRoot(), UInt64.ZERO, UInt64.ZERO))
+        .isEmpty();
   }
 
   /**
-   * This isn't actually the right behaviour. During an optimistic sync it's quite likely that the
-   * finalized block will only be optimistically sync'd so we'll ultimately need to have a way for
-   * ProtoArray to indicate it doesn't have a strict head available and fallback to a finalized
-   * block as the strict chain head (possibly the initial anchor block).
+   * Even the finalized block is only optimistically sync'd so we can't find a strict head from
+   * within the protoarray. Something at a higher level will have to provide the highest fully
+   * validated finalized block as the chain head instead.
    */
   @Test
-  void findHead_shouldThrowFatalServiceExceptionWhenAllBlocksInChainAreOptimistic() {
+  void findHead_shouldReturnEmptyWhenAllBlocksInChainAreOptimistic() {
     final Bytes32 block1Hash = dataStructureUtil.randomBytes32();
     final Bytes32 block2Hash = dataStructureUtil.randomBytes32();
     final Bytes32 block3Hash = dataStructureUtil.randomBytes32();
@@ -223,8 +224,8 @@ class ProtoArrayTest {
     addBlock(2, block2Hash, block1Hash, OPTIMISTIC);
     addBlock(3, block3Hash, block2Hash, OPTIMISTIC);
 
-    assertThatThrownBy(() -> assertStrictHead(block1Hash))
-        .isInstanceOf(FatalServiceFailureException.class);
+    assertThat(protoArray.findHead(GENESIS_CHECKPOINT.getRoot(), UInt64.ZERO, UInt64.ZERO))
+        .isEmpty();
   }
 
   @Test
@@ -456,7 +457,7 @@ class ProtoArrayTest {
 
   private void assertStrictHead(final Bytes32 expectedBlockHash) {
     assertThat(protoArray.findHead(GENESIS_CHECKPOINT.getRoot(), UInt64.ZERO, UInt64.ZERO))
-        .isEqualTo(protoArray.getProtoNode(expectedBlockHash).orElseThrow());
+        .contains(protoArray.getProtoNode(expectedBlockHash).orElseThrow());
   }
 
   private void addBlock(final long slot, final Bytes32 blockRoot, final Bytes32 parentRoot) {
