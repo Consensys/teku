@@ -23,15 +23,15 @@ import tech.pegasys.teku.config.TekuConfiguration;
  */
 public interface TekuFacade {
 
-  static TekuFacade create() {
-    return TekuFacade.create(true);
+  static NodeFacade startFromCLIArgs(String[] cliArgs) {
+    return Teku.startFromCLIArgs(cliArgs);
   }
 
-  static TekuFacade create(boolean withNodesShutdownHook) {
-    return new Teku(withNodesShutdownHook);
+  static BeaconNodeFacade startBeaconNode(TekuConfiguration config) {
+    return Teku.startBeaconNode(config);
   }
 
-  NodeFacade startFromCLIArgs(String[] cliArgs);
-
-  BeaconNodeFacade startBeaconNode(TekuConfiguration config);
+  static ValidatorNodeFacade startValidatorNode(TekuConfiguration config) {
+    return Teku.startValidatorNode(config);
+  }
 }

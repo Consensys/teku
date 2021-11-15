@@ -23,7 +23,7 @@ import tech.pegasys.teku.cli.BeaconNodeCommand;
 import tech.pegasys.teku.cli.BeaconNodeCommand.StartAction;
 import tech.pegasys.teku.config.TekuConfiguration;
 
-public final class Teku implements TekuFacade {
+public final class Teku {
 
   static {
     Security.addProvider(new BouncyCastleProvider());
@@ -32,29 +32,30 @@ public final class Teku implements TekuFacade {
   public static void main(String[] args) {
     Thread.setDefaultUncaughtExceptionHandler(new TekuDefaultExceptionHandler());
 
-    Teku teku = new Teku(true);
-    int result = teku.start(teku::start, args);
-    if (result != 0) {
-      System.exit(result);
+    try {
+      Node node = Teku.startFromCLIArgs(args);
+
+      // Detect SIGTERM
+      Runtime.getRuntime()
+          .addShutdownHook(
+              new Thread(
+                  () -> {
+                    System.out.println("Teku is shutting down");
+                    node.stop();
+                  }));
+    } catch (CLIException e) {
+      System.exit(e.getResultCode());
     }
   }
 
-  private final PrintWriter outputWriter =
-      new PrintWriter(System.out, true, Charset.defaultCharset());
-  private final PrintWriter errorWriter =
-      new PrintWriter(System.err, true, Charset.defaultCharset());
-  private final boolean withNodeShutdownHook;
-
-  Teku(boolean withNodesShutdownHook) {
-    withNodeShutdownHook = withNodesShutdownHook;
-  }
-
-  private int start(StartAction startAction, final String... args) {
+  private static int start(StartAction startAction, final String... args) {
+    final PrintWriter outputWriter = new PrintWriter(System.out, true, Charset.defaultCharset());
+    final PrintWriter errorWriter = new PrintWriter(System.err, true, Charset.defaultCharset());
     return new BeaconNodeCommand(outputWriter, errorWriter, System.getenv(), startAction)
         .parse(args);
   }
 
-  private Node start(final TekuConfiguration config, final boolean validatorOnly) {
+  private static Node start(final TekuConfiguration config, final boolean validatorOnly) {
     final Node node;
     if (validatorOnly) {
       node = new ValidatorNode(config);
@@ -68,32 +69,37 @@ public final class Teku implements TekuFacade {
 
     node.start();
 
-    if (withNodeShutdownHook) {
-      // Detect SIGTERM
-      Runtime.getRuntime()
-          .addShutdownHook(
-              new Thread(
-                  () -> {
-                    System.out.println("Teku is shutting down");
-                    node.stop();
-                  }));
-    }
     return node;
   }
 
-  @Override
-  public NodeFacade startFromCLIArgs(String[] cliArgs) {
+  static Node startFromCLIArgs(String[] cliArgs) throws CLIException {
     AtomicReference<Node> nodeRef = new AtomicReference<>();
     int result =
         start((config, validatorClient) -> nodeRef.set(start(config, validatorClient)), cliArgs);
     if (result != 0) {
-      throw new RuntimeException("Unable to start Teku. Exit code: " + result);
+      throw new CLIException(result);
     }
     return nodeRef.get();
   }
 
-  @Override
-  public BeaconNodeFacade startBeaconNode(TekuConfiguration config) {
-    return (BeaconNodeFacade) start(config, false);
+  static BeaconNode startBeaconNode(TekuConfiguration config) {
+    return (BeaconNode) start(config, false);
+  }
+
+  static ValidatorNode startValidatorNode(TekuConfiguration config) {
+    return (ValidatorNode) start(config, true);
+  }
+
+  private static class CLIException extends RuntimeException {
+    private final int resultCode;
+
+    public CLIException(int resultCode) {
+      super("Unable to start Teku. Exit code: " + resultCode);
+      this.resultCode = resultCode;
+    }
+
+    public int getResultCode() {
+      return resultCode;
+    }
   }
 }
