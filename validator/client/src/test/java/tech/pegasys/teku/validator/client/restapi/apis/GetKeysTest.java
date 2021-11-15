@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.validator.client.restapi.apis;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -22,31 +21,17 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSTestUtil;
-import tech.pegasys.teku.infrastructure.restapi.JsonTestUtil;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.validator.client.KeyManager;
 
 class GetKeysTest {
   final KeyManager keyManager = Mockito.mock(KeyManager.class);
-
-  @Test
-  void metadata_shouldProduceCorrectOpenApi() throws Exception {
-    final GetKeys endpoint = new GetKeys(keyManager);
-    final String json = JsonTestUtil.serializeEndpointMetadata(endpoint);
-    final Map<String, Object> result = JsonTestUtil.parse(json);
-
-    final Map<String, Object> expected =
-        JsonTestUtil.parseJsonResource(GetKeysTest.class, "GetKeys.json");
-
-    assertThat(result).isEqualTo(expected);
-  }
 
   @Test
   void shouldListValidatorKeys() throws Exception {

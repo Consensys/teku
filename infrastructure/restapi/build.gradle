@@ -19,5 +19,6 @@ dependencies {
   testImplementation testFixtures(project(':infrastructure:async'))
 
   testFixturesImplementation 'com.fasterxml.jackson.core:jackson-databind'
+  testFixturesImplementation 'commons-io:commons-io'
   testFixturesImplementation 'com.google.guava:guava'
 }
