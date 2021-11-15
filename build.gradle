@@ -405,18 +405,18 @@ tasks.register("dockerDistUntar") {
   }
 }
 
+def dockerImageName = "consensys/teku"
 def dockerVariants = [
   "jdk17",
   "jdk16",
 ]
+def dockerPlatforms = "linux/amd64,linux/arm64"
+def dockerBuildDir = "build/docker-teku/"
 
 task distDocker  {
   dependsOn dockerDistUntar
 
   def dockerBuildVersion = 'develop'
-  def dockerBuildDir = "build/docker-teku/"
-  def imageName = "consensys/teku"
-  
   doLast {
     for (def variant in dockerVariants) {
       copy {
@@ -424,7 +424,7 @@ task distDocker  {
         into(dockerBuildDir)
       }
       exec {
-        def image = "${imageName}:${dockerBuildVersion}-${variant}"
+        def image = "${dockerImageName}:${dockerBuildVersion}-${variant}"
         workingDir dockerBuildDir
         executable "sh"
         args "-c", "docker build --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} -t ${image} ."
@@ -433,7 +433,7 @@ task distDocker  {
     // tag the "default" (which is the variant in the zero position)
     exec {
       executable "sh"
-      args "-c", "docker tag '${imageName}:${dockerBuildVersion}-${dockerVariants[0]}' '${imageName}:${dockerBuildVersion}'"
+      args "-c", "docker tag '${dockerImageName}:${dockerBuildVersion}-${dockerVariants[0]}' '${dockerImageName}:${dockerBuildVersion}'"
     }
   }
 }
@@ -742,37 +742,30 @@ task cloudsmithUpload {
 task dockerUpload {
   dependsOn([distDocker])
   def dockerBuildVersion = "${rootProject.version}".replace('+', '-')
-  def imageName = "consensys/teku"
-  def image = "${imageName}:${dockerBuildVersion}"
 
-  def additionalTags = []
+  def versionPrefixes = [dockerBuildVersion]
   if (project.hasProperty('branch') && project.property('branch') == 'master') {
-    additionalTags.add('develop')
+    versionPrefixes.add('develop')
   }
 
   if (!isDevelopBuild) {
-    additionalTags.add('latest')
-    additionalTags.add(dockerBuildVersion.split(/\./)[0..1].join('.'))
+    versionPrefixes.add('latest')
+    versionPrefixes.add(dockerBuildVersion.split(/\./)[0..1].join('.'))
   }
 
   doLast {
     for (def variant in dockerVariants) {
-      def variantImage = "${image}-${variant}"
-      def variantBuildImage = "${imageName}:develop-${variant}"
-      def cmd = "docker tag '${variantBuildImage}' '${variantImage}' && docker push '${variantImage}'"
-      exec {
-        additionalTags.each { tag -> cmd += " && docker tag '${variantBuildImage}' '${imageName}:${tag.trim()}-${variant}' && docker push '${imageName}:${tag.trim()}-${variant}'" }
-        executable "sh"
-        args '-c', cmd
+      def tags = ""
+      versionPrefixes.forEach { prefix -> tags += "-t ${dockerImageName}:${prefix.trim()}-${variant} "}
+      if (variant == dockerVariants[0]) {
+        versionPrefixes.forEach { prefix -> tags += "-t ${dockerImageName}:${prefix.trim()} "}
       }
-    }
 
-    // Publish default version without variant suffix
-    exec {
-      def cmd = "docker tag '${imageName}:develop' '${image}' && docker push '${image}'"
-      additionalTags.each { tag -> cmd += " && docker tag '${image}' '${imageName}:${tag.trim()}' && docker push '${imageName}:${tag.trim()}'" }
-      executable "sh"
-      args '-c', cmd
+      exec {
+        workingDir dockerBuildDir
+        executable "sh"
+        args "-c", "docker buildx build --platform ${dockerPlatforms} --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} --push ${tags} ."
+      }
     }
   }
 }
