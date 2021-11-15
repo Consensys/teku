@@ -23,12 +23,22 @@ public class Validator {
   private final BLSPublicKey publicKey;
   private final Signer signer;
   private final GraffitiProvider graffitiProvider;
+  private final boolean readOnly;
 
   public Validator(
       final BLSPublicKey publicKey, final Signer signer, final GraffitiProvider graffitiProvider) {
+    this(publicKey, signer, graffitiProvider, true);
+  }
+
+  public Validator(
+      final BLSPublicKey publicKey,
+      final Signer signer,
+      final GraffitiProvider graffitiProvider,
+      final boolean readOnly) {
     this.publicKey = publicKey;
     this.signer = signer;
     this.graffitiProvider = graffitiProvider;
+    this.readOnly = readOnly;
   }
 
   public BLSPublicKey getPublicKey() {
@@ -41,6 +51,10 @@ public class Validator {
 
   public Optional<Bytes32> getGraffiti() {
     return graffitiProvider.get();
+  }
+
+  public boolean isReadOnly() {
+    return readOnly;
   }
 
   @Override

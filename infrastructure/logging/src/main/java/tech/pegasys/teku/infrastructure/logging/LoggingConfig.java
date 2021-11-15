@@ -13,7 +13,14 @@
 
 package tech.pegasys.teku.infrastructure.logging;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 public class LoggingConfig {
+  public static final String DEFAULT_LOG_FILE_NAME_PREFIX = "teku-node";
+  public static final String DEFAULT_LOG_FILE_NAME_SUFFIX = ".log";
+  public static final String DEFAULT_LOG_FILE_NAME_PATTERN_SUFFIX = "_%d{yyyy-MM-dd}.log";
+
+  public static final String DATA_LOG_SUBDIRECTORY = "logs";
 
   private final boolean colorEnabled;
   private final boolean includeEventsEnabled;
@@ -73,16 +80,55 @@ public class LoggingConfig {
   }
 
   public static final class LoggingConfigBuilder {
+    public static final String SEP = System.getProperty("file.separator");
 
-    private boolean colorEnabled;
-    private boolean includeEventsEnabled;
-    private boolean includeValidatorDutiesEnabled;
-    private boolean includeP2pWarningsEnabled;
-    private LoggingDestination destination;
-    private String logFile;
+    private boolean colorEnabled = true;
+    private boolean includeEventsEnabled = true;
+    private boolean includeValidatorDutiesEnabled = true;
+    private boolean includeP2pWarningsEnabled = false;
+    private LoggingDestination destination = LoggingDestination.DEFAULT_BOTH;
+
+    private String logFileNamePrefix = DEFAULT_LOG_FILE_NAME_PREFIX;
+    private String logFileName;
     private String logFileNamePattern;
 
+    private String dataDirectory;
+    private String logDirectory;
+    private String logPath;
+    private String logPathPattern;
+
     private LoggingConfigBuilder() {}
+
+    private void initMissingDefaults() {
+      if (logPath == null || logPathPattern == null) {
+        if (logFileName == null) {
+          logFileName = logFileNamePrefix + DEFAULT_LOG_FILE_NAME_SUFFIX;
+        }
+        if (logFileNamePattern == null) {
+          logFileNamePattern = logFileNamePrefix + DEFAULT_LOG_FILE_NAME_PATTERN_SUFFIX;
+        }
+
+        if (logDirectory == null && dataDirectory != null) {
+          logDirectory = dataDirectory + SEP + DATA_LOG_SUBDIRECTORY;
+        }
+
+        if (logPath == null && logDirectory != null) {
+          logPath = logDirectory + SEP + logFileName;
+        }
+        if (logPathPattern == null && logDirectory != null) {
+          logPathPattern = logDirectory + SEP + logFileNamePattern;
+        }
+      }
+    }
+
+    private void validateValues() {
+      checkArgument(
+          logPath != null,
+          "LoggingConfig error: none of logPath, dataDirectory or logDirectory values was specified");
+      checkArgument(
+          logPathPattern != null,
+          "LoggingConfig error: none of logPathPattern, dataDirectory or logDirectory values was specified");
+    }
 
     public LoggingConfigBuilder colorEnabled(boolean colorEnabled) {
       this.colorEnabled = colorEnabled;
@@ -110,8 +156,23 @@ public class LoggingConfig {
       return this;
     }
 
-    public LoggingConfigBuilder logFile(String logFile) {
-      this.logFile = logFile;
+    public LoggingConfigBuilder dataDirectory(String dataDirectory) {
+      this.dataDirectory = dataDirectory;
+      return this;
+    }
+
+    public LoggingConfigBuilder logDirectory(String logDirectory) {
+      this.logDirectory = logDirectory;
+      return this;
+    }
+
+    public LoggingConfigBuilder logFileNamePrefix(String logFileNamePrefix) {
+      this.logFileNamePrefix = logFileNamePrefix;
+      return this;
+    }
+
+    public LoggingConfigBuilder logFileName(String logFileName) {
+      this.logFileName = logFileName;
       return this;
     }
 
@@ -120,15 +181,27 @@ public class LoggingConfig {
       return this;
     }
 
+    public LoggingConfigBuilder logPath(String logPath) {
+      this.logPath = logPath;
+      return this;
+    }
+
+    public LoggingConfigBuilder logPathPattern(String logPathPattern) {
+      this.logPathPattern = logPathPattern;
+      return this;
+    }
+
     public LoggingConfig build() {
+      initMissingDefaults();
+      validateValues();
       return new LoggingConfig(
           colorEnabled,
           includeEventsEnabled,
           includeValidatorDutiesEnabled,
           includeP2pWarningsEnabled,
           destination,
-          logFile,
-          logFileNamePattern);
+          logPath,
+          logPathPattern);
     }
   }
 }

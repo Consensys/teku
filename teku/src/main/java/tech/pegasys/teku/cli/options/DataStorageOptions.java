@@ -16,18 +16,20 @@ package tech.pegasys.teku.cli.options;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Visibility;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.services.chainstorage.StorageConfiguration;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 
 public class DataStorageOptions {
+
   @CommandLine.Option(
       names = {"--data-storage-mode"},
       paramLabel = "<STORAGE_MODE>",
       description =
           "Sets the strategy for handling historical chain data.  (Valid values: ${COMPLETION-CANDIDATES})",
       arity = "1")
-  private StateStorageMode dataStorageMode = StateStorageMode.PRUNE;
+  private StateStorageMode dataStorageMode = StateStorageMode.DEFAULT_MODE;
 
   @CommandLine.Option(
       names = {"--data-storage-archive-frequency"},
@@ -53,7 +55,8 @@ public class DataStorageOptions {
       description = "Store non-canonical blocks",
       fallbackValue = "true",
       arity = "0..1")
-  private boolean storeNonCanonicalBlocksEnabled = false;
+  private boolean storeNonCanonicalBlocksEnabled =
+      StorageConfiguration.DEFAULT_STORE_NON_CANONICAL_BLOCKS_ENABLED;
 
   /**
    * Default value selected based on experimentation to minimise memory usage without affecting sync
@@ -67,7 +70,7 @@ public class DataStorageOptions {
       description = "Maximum size of the in-memory known node cache for finalized states",
       arity = "1",
       hidden = true)
-  private int maxKnownNodeCacheSize = 100_000;
+  private int maxKnownNodeCacheSize = StorageConfiguration.DEFAULT_MAX_KNOWN_NODE_CACHE_SIZE;
 
   public StateStorageMode getDataStorageMode() {
     return dataStorageMode;

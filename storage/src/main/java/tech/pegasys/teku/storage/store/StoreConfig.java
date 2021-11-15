@@ -24,7 +24,7 @@ public class StoreConfig {
   // Max block size is about 20x smaller than the minimum state size
   public static final int DEFAULT_BLOCK_CACHE_SIZE = DEFAULT_STATE_CACHE_SIZE * 2;
   public static final int DEFAULT_CHECKPOINT_STATE_CACHE_SIZE = 20;
-  public static final int DEFAULT_HOT_STATE_PERSISTENCE_FREQUENCY_IN_EPOCHS = 1;
+  public static final int DEFAULT_HOT_STATE_PERSISTENCE_FREQUENCY_IN_EPOCHS = 2;
 
   private final int stateCacheSize;
   private final int blockCacheSize;
