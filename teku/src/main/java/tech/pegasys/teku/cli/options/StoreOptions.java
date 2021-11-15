@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli.options;
 
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.storage.store.StoreConfig;
 
 public class StoreOptions {
   @Option(
@@ -24,7 +25,8 @@ public class StoreOptions {
       description =
           "How frequently to persist hot states in epochs.  A value less than or equal to zero disables hot state persistence.",
       arity = "1")
-  private int hotStatePersistenceFrequencyInEpochs = 2;
+  private int hotStatePersistenceFrequencyInEpochs =
+      StoreConfig.DEFAULT_HOT_STATE_PERSISTENCE_FREQUENCY_IN_EPOCHS;
 
   public void configure(final TekuConfiguration.Builder builder) {
     builder.store(
