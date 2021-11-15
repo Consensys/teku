@@ -13,28 +13,14 @@
 
 package tech.pegasys.teku.validator.client.restapi.apis;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 
-import java.util.Map;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.restapi.JsonTestUtil;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 
 public class PostKeysTest {
-  @Test
-  void metadata_shouldProduceCorrectOpenApi() throws Exception {
-    final PostKeys endpoint = new PostKeys();
-    final String json = JsonTestUtil.serializeEndpointMetadata(endpoint);
-    final Map<String, Object> result = JsonTestUtil.parse(json);
-
-    final Map<String, Object> expected =
-        JsonTestUtil.parseJsonResource(PostKeysTest.class, "PostKeys.json");
-
-    assertThat(result).isEqualTo(expected);
-  }
 
   @Test
   void shouldBeNotImplemented() throws Exception {

@@ -237,7 +237,7 @@ public class BeaconChainUtil {
         createBlockAndStateAtSlot(slot, true, attestations, deposits, exits, eth1Data).getBlock();
     setSlot(slot);
     final BlockImportResult importResult =
-        forkChoice.onBlock(block, new StubExecutionEngineChannel()).join();
+        forkChoice.onBlock(block, new StubExecutionEngineChannel(spec)).join();
     if (!importResult.isSuccessful()) {
       throw new IllegalStateException(
           "Produced an invalid block ( reason "
