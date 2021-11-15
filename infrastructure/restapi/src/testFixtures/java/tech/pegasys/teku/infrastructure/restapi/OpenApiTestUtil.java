@@ -28,6 +28,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import org.apache.commons.io.IOUtils;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.Fail;
@@ -146,7 +147,7 @@ public class OpenApiTestUtil<TObject> {
     final List<String> expectedFileListing = IOUtils.readLines(resourcesAsStream, UTF_8);
 
     for (String file : expectedFileListing) {
-      if (!file.endsWith(".json")) {
+      if (!file.toLowerCase(Locale.ROOT).endsWith(".json")) {
         continue;
       }
       // Notes:
