@@ -19,6 +19,7 @@ import static tech.pegasys.teku.infrastructure.restapi.types.DeserializableTypeD
 import static tech.pegasys.teku.infrastructure.restapi.types.SerializableTypeDefinition.listOf;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.api.schema.PublicKeyException;
@@ -94,10 +95,10 @@ public class ValidatorTypes {
   public static SerializableTypeDefinition<Validator> ACTIVE_VALIDATOR =
       SerializableTypeDefinition.object(Validator.class)
           .withField("validating_pubkey", PUBKEY_TYPE, Validator::getPublicKey)
-          .withField(
+          .withOptionalField(
               "derivation_path",
               CoreTypes.string("The derivation path (if present in the imported keystore)."),
-              __ -> null)
+              __ -> Optional.empty())
           .withField("readonly", BOOLEAN_TYPE, Validator::isReadOnly)
           .build();
 

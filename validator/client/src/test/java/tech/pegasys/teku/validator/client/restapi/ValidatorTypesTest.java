@@ -60,8 +60,7 @@ class ValidatorTypesTest {
               entry(
                   "validating_pubkey",
                   keys.get(i).getPublicKey().toBytesCompressed().toHexString()),
-              entry("readonly", keys.get(i).isReadOnly()),
-              entry("derivation_path", null));
+              entry("readonly", keys.get(i).isReadOnly()));
     }
   }
 
