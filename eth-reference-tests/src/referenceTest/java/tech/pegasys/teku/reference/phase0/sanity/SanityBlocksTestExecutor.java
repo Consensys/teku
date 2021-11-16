@@ -95,7 +95,7 @@ public class SanityBlocksTestExecutor implements TestExecutor {
                 metaData.getBlsSetting() == IGNORED
                     ? BLSSignatureVerifier.NO_OP
                     : BLSSignatureVerifier.SIMPLE,
-                new StubExecutionEngineChannel());
+                new StubExecutionEngineChannel(spec));
       }
       return result;
     } catch (StateTransitionException e) {

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.executionengine;
 
+import com.google.common.base.MoreObjects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.type.Bytes20;
@@ -38,5 +39,14 @@ public class PayloadAttributes {
 
   public Bytes20 getFeeRecipient() {
     return feeRecipient;
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("timestamp", timestamp)
+        .add("random", random)
+        .add("feeRecipient", feeRecipient)
+        .toString();
   }
 }

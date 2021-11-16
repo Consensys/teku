@@ -194,7 +194,7 @@ class Store implements UpdatableStore {
 
     final Optional<ForkChoiceStrategy> maybeForkChoiceStrategy =
         buildProtoArray(blockInfoByRoot, initialCheckpoint, justifiedCheckpoint, finalizedAnchor)
-            .map(ForkChoiceStrategy::initialize);
+            .map(protoArray -> ForkChoiceStrategy.initialize(spec, protoArray));
 
     final BlockMetadataStore blockMetadataStore =
         maybeForkChoiceStrategy
@@ -239,7 +239,8 @@ class Store implements UpdatableStore {
             checkpointStateTaskQueue);
     if (maybeForkChoiceStrategy.isEmpty()) {
       final ForkChoiceStrategy forkChoiceStrategy =
-          ForkChoiceStrategy.initializeAndMigrateStorage(store, protoArrayStorageChannel).join();
+          ForkChoiceStrategy.initializeAndMigrateStorage(spec, store, protoArrayStorageChannel)
+              .join();
       store.blockMetadata = forkChoiceStrategy;
       store.forkChoiceStrategy = forkChoiceStrategy;
     } else {

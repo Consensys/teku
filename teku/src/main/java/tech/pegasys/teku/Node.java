@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku;
 
-public interface Node {
+public interface Node extends NodeFacade {
 
   void start();
 

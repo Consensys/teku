@@ -18,4 +18,6 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-config'
   implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.apache.tuweni:tuweni-units'
+
+  testImplementation testFixtures(project(':ethereum:spec'))
 }

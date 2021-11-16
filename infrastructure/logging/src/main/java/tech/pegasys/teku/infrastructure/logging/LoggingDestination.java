@@ -17,7 +17,8 @@ public enum LoggingDestination {
   BOTH("both"),
   CONSOLE("console"),
   DEFAULT_BOTH("default"),
-  FILE("file");
+  FILE("file"),
+  CUSTOM("custom");
 
   private final String key;
 

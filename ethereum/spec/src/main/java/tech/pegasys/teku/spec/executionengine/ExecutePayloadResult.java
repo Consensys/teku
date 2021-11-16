@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.executionengine;
 
 import com.google.common.base.MoreObjects;
+import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 
@@ -39,6 +40,21 @@ public class ExecutePayloadResult {
 
   public Optional<String> getMessage() {
     return message;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    final ExecutePayloadResult that = (ExecutePayloadResult) o;
+    return Objects.equals(status, that.status)
+        && Objects.equals(latestValidHash, that.latestValidHash)
+        && Objects.equals(message, that.message);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(status, latestValidHash, message);
   }
 
   @Override
