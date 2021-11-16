@@ -189,7 +189,7 @@ public class ForkChoice {
         blockSlotState.get().getSlot());
 
     final ForkChoiceOptimisticExecutionPayloadExecutor payloadExecutor =
-        new ForkChoiceOptimisticExecutionPayloadExecutor(block.getRoot(), executionEngine);
+        new ForkChoiceOptimisticExecutionPayloadExecutor(block, executionEngine);
 
     return onForkChoiceThread(
             () -> {
@@ -206,7 +206,6 @@ public class ForkChoice {
                       blockSlotState.get(),
                       indexedAttestationCache,
                       payloadExecutor);
-              payloadExecutor.onBlockProcessingComplete();
 
               if (!result.isSuccessful()) {
                 if (result.getFailureReason() != FailureReason.BLOCK_IS_FROM_FUTURE) {
@@ -244,55 +243,7 @@ public class ForkChoice {
               }
               return result;
             })
-        .thenCombine(
-            payloadExecutor.result,
-            (blockImportResult, payloadResult) -> {
-              if (blockImportResult.isSuccessful()
-                  && payloadResult.getStatus() == ExecutionPayloadStatus.INVALID) {
-                return BlockImportResult.failedStateTransition(
-                    new IllegalStateException(
-                        "Invalid ExecutionPayload: "
-                            + payloadResult.getMessage().orElse("No reason provided")));
-              }
-              return blockImportResult;
-            });
-  }
-
-  private class ForkChoiceOptimisticExecutionPayloadExecutor
-      implements OptimisticExecutionPayloadExecutor {
-
-    private final Bytes32 blockRoot;
-    private final ExecutionEngineChannel executionEngine;
-    private final SafeFuture<ExecutePayloadResult> result = new SafeFuture<>();
-    private boolean executionStarted = false;
-
-    private ForkChoiceOptimisticExecutionPayloadExecutor(
-        final Bytes32 blockRoot, final ExecutionEngineChannel executionEngine) {
-      this.blockRoot = blockRoot;
-      this.executionEngine = executionEngine;
-    }
-
-    @Override
-    public boolean optimisticallyExecute(final ExecutionPayload executionPayload) {
-      executionStarted = true;
-      executionEngine
-          .executePayload(executionPayload)
-          .thenApplyAsync(
-              payloadResult -> {
-                getForkChoiceStrategy()
-                    .onExecutionPayloadResult(blockRoot, payloadResult.getStatus());
-                return payloadResult;
-              },
-              forkChoiceExecutor)
-          .propagateTo(result);
-      return true;
-    }
-
-    public void onBlockProcessingComplete() {
-      if (!executionStarted) {
-        result.complete(ExecutePayloadResult.VALID);
-      }
-    }
+        .thenCompose(payloadExecutor::combine);
   }
 
   private void applyVotesFromBlock(
@@ -441,5 +392,52 @@ public class ForkChoice {
 
   private <T> SafeFuture<T> onForkChoiceThread(final ExceptionThrowingSupplier<T> task) {
     return forkChoiceExecutor.execute(task);
+  }
+
+  private class ForkChoiceOptimisticExecutionPayloadExecutor
+      implements OptimisticExecutionPayloadExecutor {
+
+    private final SignedBeaconBlock block;
+    private final ExecutionEngineChannel executionEngine;
+    private SafeFuture<ExecutePayloadResult> result;
+
+    private ForkChoiceOptimisticExecutionPayloadExecutor(
+        final SignedBeaconBlock block, final ExecutionEngineChannel executionEngine) {
+      this.block = block;
+      this.executionEngine = executionEngine;
+    }
+
+    public SafeFuture<BlockImportResult> combine(final BlockImportResult blockImportResult) {
+      if (result == null) {
+        // No execution was started so can return result unchanged
+        return SafeFuture.completedFuture(blockImportResult);
+      }
+      return result.thenApplyAsync(
+          payloadResult -> {
+            if (!blockImportResult.isSuccessful()) {
+              return blockImportResult;
+            }
+            getForkChoiceStrategy()
+                .onExecutionPayloadResult(block.getRoot(), payloadResult.getStatus());
+            if (payloadResult.getStatus() == ExecutionPayloadStatus.INVALID) {
+              return BlockImportResult.failedStateTransition(
+                  new IllegalStateException(
+                      "Invalid ExecutionPayload: "
+                          + payloadResult.getMessage().orElse("No reason provided")));
+            }
+
+            if (payloadResult.getStatus() == ExecutionPayloadStatus.VALID) {
+              updateForkChoiceForImportedBlock(block, blockImportResult, getForkChoiceStrategy());
+            }
+            return blockImportResult;
+          },
+          forkChoiceExecutor);
+    }
+
+    @Override
+    public boolean optimisticallyExecute(final ExecutionPayload executionPayload) {
+      result = executionEngine.executePayload(executionPayload);
+      return true;
+    }
   }
 }
