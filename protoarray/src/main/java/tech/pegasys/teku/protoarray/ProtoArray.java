@@ -77,7 +77,7 @@ public class ProtoArray {
   }
 
   public boolean contains(final Bytes32 root) {
-    return getProtoNode(root).filter(protoNode -> !protoNode.isInvalid()).isPresent();
+    return indices.contains(root);
   }
 
   public Optional<Integer> getIndexByRoot(final Bytes32 root) {
@@ -203,10 +203,7 @@ public class ProtoArray {
     int justifiedIndex =
         indices
             .get(justifiedRoot)
-            .orElseThrow(
-                () ->
-                    new IllegalArgumentException(
-                        "ProtoArray: Unknown justified root " + justifiedRoot.toHexString()));
+            .orElseThrow(fatalException("Invalid or unknown justified root: " + justifiedRoot));
 
     ProtoNode justifiedNode =
         checkNotNull(nodes.get(justifiedIndex), "ProtoArray: Unknown justified index");
@@ -266,19 +263,21 @@ public class ProtoArray {
   }
 
   public void markNodeInvalid(final Bytes32 blockRoot) {
-    final Optional<Integer> maybeIndex = getIndexByRoot(blockRoot);
+    final Optional<Integer> maybeIndex = indices.get(blockRoot);
     if (maybeIndex.isEmpty()) {
       LOG.debug("Couldn't update status for block {} because it was unknown", blockRoot);
       return;
     }
-    markDescendantsAsInvalid(maybeIndex.get());
+    final int index = maybeIndex.get();
+    final ProtoNode node = checkNotNull(nodes.get(index), "Missing node %s", index);
+    node.setValidationStatus(INVALID);
+    removeBlockRoot(blockRoot);
+    markDescendantsAsInvalid(index);
     // Applying zero deltas causes the newly marked INVALID nodes to have their weight set to 0
     applyDeltas(new ArrayList<>(Collections.nCopies(getTotalTrackedNodeCount(), 0L)));
   }
 
   private void markDescendantsAsInvalid(final int index) {
-    final ProtoNode node = checkNotNull(nodes.get(index), "Missing node %s", index);
-    node.setValidationStatus(INVALID);
     final IntSet invalidParents = new IntOpenHashSet();
     invalidParents.add(index);
     // Need to mark all nodes extending from this one as invalid
@@ -290,6 +289,7 @@ public class ProtoArray {
       }
       if (invalidParents.contains((int) possibleDescendant.getParentIndex().get())) {
         possibleDescendant.setValidationStatus(INVALID);
+        removeBlockRoot(possibleDescendant.getBlockRoot());
         invalidParents.add(i);
       }
     }
