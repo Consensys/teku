@@ -28,6 +28,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Arrays;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -79,9 +80,11 @@ public class PostPrepareBeaconProposer extends AbstractHandler implements Handle
 
       LOG.trace(
           "received: {}",
-          Arrays.stream(request)
-              .map(BeaconPreparableProposer::toString)
-              .collect(Collectors.joining(",")));
+          (Supplier<String>)
+              () ->
+                  Arrays.stream(request)
+                      .map(BeaconPreparableProposer::toString)
+                      .collect(Collectors.joining(",")));
 
       ctx.status(SC_OK);
     } catch (final IllegalArgumentException e) {
