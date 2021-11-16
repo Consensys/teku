@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.client;
 
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -33,13 +34,13 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
   public BeaconProposerPreparer(
       ValidatorApiChannel validatorApiChannel,
       ValidatorIndexProvider validatorIndexProvider,
-      Bytes20 feeRecipient,
+      Optional<Bytes20> feeRecipient,
       OwnedValidators validators,
       Spec spec) {
     this.validatorApiChannel = validatorApiChannel;
     this.validatorIndexProvider = validatorIndexProvider;
     this.validators = validators;
-    this.feeRecipient = feeRecipient;
+    this.feeRecipient = feeRecipient.orElse(null);
     this.spec = spec;
   }
 

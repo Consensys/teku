@@ -73,7 +73,7 @@ public class BeaconProposerPreparerTest {
         new BeaconProposerPreparer(
             validatorApiChannel,
             validatorIndexProvider,
-            feeRecipient,
+            Optional.of(feeRecipient),
             validators,
             specContext.getSpec());
 
