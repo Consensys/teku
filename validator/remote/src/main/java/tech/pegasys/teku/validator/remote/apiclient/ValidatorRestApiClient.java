@@ -36,6 +36,7 @@ import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeSubnetSubscription;
+import tech.pegasys.teku.api.schema.merge.BeaconPreparableProposer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
@@ -84,4 +85,6 @@ public interface ValidatorRestApiClient {
 
   Optional<SyncCommitteeContribution> createSyncCommitteeContribution(
       UInt64 slot, int subcommitteeIndex, Bytes32 beaconBlockRoot);
+
+  void prepareBeaconProposer(final List<BeaconPreparableProposer> beaconPreparableProposers);
 }
