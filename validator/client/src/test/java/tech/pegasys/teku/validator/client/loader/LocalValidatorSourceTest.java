@@ -78,7 +78,7 @@ class LocalValidatorSourceTest {
         List.of(
             Pair.of(scryptKeystore, tempPasswordFile), Pair.of(pbkdf2Keystore, tempPasswordFile));
 
-    when(keyStoreFilesLocator.getFilePairs()).thenReturn(keystorePasswordFilePairs);
+    when(keyStoreFilesLocator.parse()).thenReturn(keystorePasswordFilePairs);
 
     final List<ValidatorProvider> availableValidators = validatorSource.getAvailableValidators();
     assertThat(availableValidators).hasSize(2);
@@ -98,7 +98,7 @@ class LocalValidatorSourceTest {
     final List<Pair<Path, Path>> keystorePasswordFilePairs =
         List.of(Pair.of(scryptKeystore, tempPasswordFile));
 
-    when(keyStoreFilesLocator.getFilePairs()).thenReturn(keystorePasswordFilePairs);
+    when(keyStoreFilesLocator.parse()).thenReturn(keystorePasswordFilePairs);
 
     assertThatThrownBy(validatorSource::getAvailableValidators)
         .isInstanceOf(InvalidConfigurationException.class)
@@ -117,7 +117,7 @@ class LocalValidatorSourceTest {
     final List<Pair<Path, Path>> keystorePasswordFilePairs =
         List.of(Pair.of(scryptKeystore, tempPasswordFile));
 
-    when(keyStoreFilesLocator.getFilePairs()).thenReturn(keystorePasswordFilePairs);
+    when(keyStoreFilesLocator.parse()).thenReturn(keystorePasswordFilePairs);
 
     assertThatThrownBy(() -> validatorSource.getAvailableValidators().get(0).createSigner())
         .isInstanceOf(InvalidConfigurationException.class)
@@ -137,7 +137,7 @@ class LocalValidatorSourceTest {
     final List<Pair<Path, Path>> keystorePasswordFilePairs =
         List.of(Pair.of(scryptKeystore, tempPasswordFile));
 
-    when(keyStoreFilesLocator.getFilePairs()).thenReturn(keystorePasswordFilePairs);
+    when(keyStoreFilesLocator.parse()).thenReturn(keystorePasswordFilePairs);
 
     assertThatThrownBy(validatorSource::getAvailableValidators)
         .isInstanceOf(InvalidConfigurationException.class)
@@ -157,7 +157,7 @@ class LocalValidatorSourceTest {
     final List<Pair<Path, Path>> keystorePasswordFilePairs =
         List.of(Pair.of(scryptKeystore, tempPasswordFile));
 
-    when(keyStoreFilesLocator.getFilePairs()).thenReturn(keystorePasswordFilePairs);
+    when(keyStoreFilesLocator.parse()).thenReturn(keystorePasswordFilePairs);
 
     assertThatThrownBy(validatorSource::getAvailableValidators)
         .isInstanceOf(InvalidConfigurationException.class)

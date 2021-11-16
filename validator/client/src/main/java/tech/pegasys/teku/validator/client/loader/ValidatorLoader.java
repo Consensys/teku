@@ -105,8 +105,7 @@ public class ValidatorLoader {
       final List<ValidatorSource> validatorSources) {
     KeyStoreFilesLocator keyStoreFilesLocator =
         new KeyStoreFilesLocator(config.getValidatorKeys(), File.pathSeparator);
-    keyStoreFilesLocator.parse();
-    if (keyStoreFilesLocator.getFilePairs() != null) {
+    if (keyStoreFilesLocator.parse() != null) {
       validatorSources.add(
           slashingProtected(
               new LocalValidatorSource(

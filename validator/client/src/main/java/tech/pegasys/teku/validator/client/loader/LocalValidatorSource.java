@@ -66,8 +66,7 @@ public class LocalValidatorSource implements ValidatorSource {
 
   @Override
   public List<ValidatorProvider> getAvailableValidators() {
-    keyStoreFilesLocator.parse();
-    final List<Pair<Path, Path>> filePairs = keyStoreFilesLocator.getFilePairs();
+    final List<Pair<Path, Path>> filePairs = keyStoreFilesLocator.parse();
     if (filePairs == null) {
       return emptyList();
     }

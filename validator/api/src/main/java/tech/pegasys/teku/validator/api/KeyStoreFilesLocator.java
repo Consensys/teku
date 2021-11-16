@@ -55,13 +55,13 @@ public class KeyStoreFilesLocator {
       }
 
       final List<String> entry = Splitter.on(pathSeparator).limit(2).splitToList(currentEntry);
-      pathMap = parseEntry(entry.get(0), entry.get(1));
+      parseEntry(entry.get(0), entry.get(1), pathMap);
     }
     return getFilePairs(pathMap);
   }
 
-  private Map<Path, Path> parseEntry(final String keyFileName, final String passwordFileName) {
-    Map<Path, Path> pathMap = new HashMap<>();
+  private void parseEntry(
+      final String keyFileName, final String passwordFileName, Map<Path, Path> pathMap) {
     final File keyFile = new File(keyFileName);
     final File passwordFile = new File(passwordFileName);
 
@@ -70,7 +70,7 @@ public class KeyStoreFilesLocator {
           String.format("Invalid configuration. Could not find the key file (%s).", keyFileName));
     }
     if (isDepositDataFile(keyFile)) {
-      return Map.of();
+      return;
     }
     if (!passwordFile.exists()) {
       throw new InvalidConfigurationException(
@@ -89,9 +89,8 @@ public class KeyStoreFilesLocator {
     if (keyFile.isFile()) {
       pathMap.putIfAbsent(keyFile.toPath(), passwordFile.toPath());
     } else {
-      pathMap = parseDirectory(keyFile, passwordFile);
+      parseDirectory(keyFile, passwordFile, pathMap);
     }
-    return pathMap;
   }
 
   private boolean isDepositDataFile(final File keyFile) {
@@ -119,8 +118,8 @@ public class KeyStoreFilesLocator {
     }
   }
 
-  private Map<Path, Path> parseDirectory(final File keyDirectory, final File passwordDirectory) {
-    Map<Path, Path> pathMap = new HashMap<>();
+  private void parseDirectory(
+      final File keyDirectory, final File passwordDirectory, Map<Path, Path> pathMap) {
     try (Stream<Path> walk = Files.walk(keyDirectory.toPath(), FileVisitOption.FOLLOW_LINKS)) {
       walk.filter(Files::isRegularFile)
           .filter(
@@ -153,7 +152,6 @@ public class KeyStoreFilesLocator {
     } catch (IOException e) {
       LOG.fatal("Failed to load keys from keystore", e);
     }
-    return pathMap;
   }
 
   private List<Pair<Path, Path>> getFilePairs(Map<Path, Path> pathMap) {
