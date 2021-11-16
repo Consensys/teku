@@ -34,7 +34,6 @@ import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException
 
 public class KeyStoreFilesLocator {
   private static final Logger LOG = LogManager.getLogger();
-  private final Map<Path, Path> pathMap = new HashMap<>();
   private final List<String> colonSeparatedPairs;
   private final String pathSeparator;
 
@@ -43,7 +42,8 @@ public class KeyStoreFilesLocator {
     this.pathSeparator = pathSeparator;
   }
 
-  public void parse() {
+  public List<Pair<Path, Path>> parse() {
+    Map<Path, Path> pathMap = new HashMap<>();
     for (final String currentEntry : colonSeparatedPairs) {
       if (!currentEntry.contains(pathSeparator)) {
         throw new InvalidConfigurationException(
@@ -55,11 +55,13 @@ public class KeyStoreFilesLocator {
       }
 
       final List<String> entry = Splitter.on(pathSeparator).limit(2).splitToList(currentEntry);
-      parseEntry(entry.get(0), entry.get(1));
+      pathMap = parseEntry(entry.get(0), entry.get(1));
     }
+    return getFilePairs(pathMap);
   }
 
-  private void parseEntry(final String keyFileName, final String passwordFileName) {
+  private Map<Path, Path> parseEntry(final String keyFileName, final String passwordFileName) {
+    Map<Path, Path> pathMap = new HashMap<>();
     final File keyFile = new File(keyFileName);
     final File passwordFile = new File(passwordFileName);
 
@@ -68,7 +70,7 @@ public class KeyStoreFilesLocator {
           String.format("Invalid configuration. Could not find the key file (%s).", keyFileName));
     }
     if (isDepositDataFile(keyFile)) {
-      return;
+      return Map.of();
     }
     if (!passwordFile.exists()) {
       throw new InvalidConfigurationException(
@@ -87,8 +89,9 @@ public class KeyStoreFilesLocator {
     if (keyFile.isFile()) {
       pathMap.putIfAbsent(keyFile.toPath(), passwordFile.toPath());
     } else {
-      parseDirectory(keyFile, passwordFile);
+      pathMap = parseDirectory(keyFile, passwordFile);
     }
+    return pathMap;
   }
 
   private boolean isDepositDataFile(final File keyFile) {
@@ -116,7 +119,8 @@ public class KeyStoreFilesLocator {
     }
   }
 
-  void parseDirectory(final File keyDirectory, final File passwordDirectory) {
+  private Map<Path, Path> parseDirectory(final File keyDirectory, final File passwordDirectory) {
+    Map<Path, Path> pathMap = new HashMap<>();
     try (Stream<Path> walk = Files.walk(keyDirectory.toPath(), FileVisitOption.FOLLOW_LINKS)) {
       walk.filter(Files::isRegularFile)
           .filter(
@@ -149,9 +153,10 @@ public class KeyStoreFilesLocator {
     } catch (IOException e) {
       LOG.fatal("Failed to load keys from keystore", e);
     }
+    return pathMap;
   }
 
-  public List<Pair<Path, Path>> getFilePairs() {
+  private List<Pair<Path, Path>> getFilePairs(Map<Path, Path> pathMap) {
     return pathMap.entrySet().stream()
         .map(entry -> Pair.of(entry.getKey(), entry.getValue()))
         .collect(toList());
