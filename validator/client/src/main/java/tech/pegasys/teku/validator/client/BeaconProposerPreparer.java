@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.ssz.type.Bytes20;
 import tech.pegasys.teku.validator.api.BeaconPreparableProposer;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
@@ -27,15 +28,18 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
   private final ValidatorIndexProvider validatorIndexProvider;
   private final OwnedValidators validators;
   private final Spec spec;
+  private final Bytes20 feeRecipient;
 
   public BeaconProposerPreparer(
       ValidatorApiChannel validatorApiChannel,
       ValidatorIndexProvider validatorIndexProvider,
+      Bytes20 feeRecipient,
       OwnedValidators validators,
       Spec spec) {
     this.validatorApiChannel = validatorApiChannel;
     this.validatorIndexProvider = validatorIndexProvider;
     this.validators = validators;
+    this.feeRecipient = feeRecipient;
     this.spec = spec;
   }
 
@@ -48,7 +52,9 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
           .thenApply(
               integers ->
                   integers.stream()
-                      .map(index -> new BeaconPreparableProposer(UInt64.valueOf(index), null))
+                      .map(
+                          index ->
+                              new BeaconPreparableProposer(UInt64.valueOf(index), feeRecipient))
                       .collect(Collectors.toList()))
           .thenAccept(validatorApiChannel::prepareBeaconProposer)
           .reportExceptions();

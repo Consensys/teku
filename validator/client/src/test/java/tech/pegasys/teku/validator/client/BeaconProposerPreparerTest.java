@@ -33,6 +33,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
+import tech.pegasys.teku.ssz.type.Bytes20;
 import tech.pegasys.teku.validator.api.BeaconPreparableProposer;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
@@ -44,6 +45,7 @@ public class BeaconProposerPreparerTest {
   private final ValidatorIndexProvider validatorIndexProvider = mock(ValidatorIndexProvider.class);
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private BeaconProposerPreparer beaconProposerPreparer;
+  private Bytes20 feeRecipient;
 
   private long slotsPerEpoch;
 
@@ -65,9 +67,15 @@ public class BeaconProposerPreparerTest {
         new OwnedValidators(
             Map.of(validator1.getPublicKey(), validator1, validator2.getPublicKey(), validator2));
 
+    feeRecipient = specContext.getDataStructureUtil().randomBytes20();
+
     beaconProposerPreparer =
         new BeaconProposerPreparer(
-            validatorApiChannel, validatorIndexProvider, validators, specContext.getSpec());
+            validatorApiChannel,
+            validatorIndexProvider,
+            feeRecipient,
+            validators,
+            specContext.getSpec());
 
     slotsPerEpoch = specContext.getSpec().getSlotsPerEpoch(UInt64.ZERO);
 
@@ -87,8 +95,8 @@ public class BeaconProposerPreparerTest {
 
       assertThat(captor.getValue())
           .containsExactlyInAnyOrder(
-              new BeaconPreparableProposer(UInt64.valueOf(validator1Index), null),
-              new BeaconPreparableProposer(UInt64.valueOf(validator2Index), null));
+              new BeaconPreparableProposer(UInt64.valueOf(validator1Index), feeRecipient),
+              new BeaconPreparableProposer(UInt64.valueOf(validator2Index), feeRecipient));
     } else {
       verify(validatorApiChannel, never()).prepareBeaconProposer(any());
     }
