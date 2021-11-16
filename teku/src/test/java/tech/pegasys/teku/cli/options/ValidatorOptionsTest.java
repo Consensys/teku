@@ -25,6 +25,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
+import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 
 public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
@@ -98,6 +99,13 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
     final ValidatorConfig config =
         getTekuConfigurationFromArguments().validatorClient().getValidatorConfig();
     assertThat(config.sendAttestationsAsBatch()).isTrue();
+  }
+
+  @Test
+  void beaconNodeApiEndpoint_shouldBeEmptyByDefault() {
+    TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
+    assertThat(tekuConfiguration.validatorClient().getValidatorConfig().getBeaconNodeApiEndpoint())
+        .isEmpty();
   }
 
   @Test
