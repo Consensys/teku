@@ -205,6 +205,14 @@ public class TekuConfiguration {
           eth2NetworkConfigurationBuilder.build();
       final Spec spec = eth2NetworkConfiguration.getSpec();
 
+      // Add specs
+      interopConfigBuilder.specProvider(spec);
+      storageConfigurationBuilder.specProvider(spec);
+      weakSubjectivityBuilder.specProvider(spec);
+      p2pConfigBuilder.specProvider(spec);
+      powchainConfigBuilder.specProvider(spec);
+      executionEngineConfigBuilder.specProvider(spec);
+
       Eth1Address depositContractAddress = eth2NetworkConfiguration.getEth1DepositContractAddress();
       Optional<UInt64> depositContractDeployBlock =
           eth2NetworkConfiguration.getEth1DepositContractDeployBlock();
@@ -222,13 +230,8 @@ public class TekuConfiguration {
       // We don't need to update head for empty slots when using dependent roots
       storeConfigBuilder.updateHeadForEmptySlotsDefault(!validatorConfig.useDependentRoots());
 
-      // Add specs
-      interopConfigBuilder.specProvider(spec);
-      storageConfigurationBuilder.specProvider(spec);
-      weakSubjectivityBuilder.specProvider(spec);
-      p2pConfigBuilder.specProvider(spec);
-      powchainConfigBuilder.specProvider(spec);
-      executionEngineConfigBuilder.specProvider(spec);
+      P2PConfig p2PConfig = p2pConfigBuilder.build();
+      syncConfig.isSyncEnabledDefault(p2PConfig.getNetworkConfig().isEnabled());
 
       return new TekuConfiguration(
           eth2NetworkConfiguration,
@@ -240,7 +243,7 @@ public class TekuConfiguration {
           executionEngineConfigBuilder.build(),
           interopConfigBuilder.build(),
           dataConfig,
-          p2pConfigBuilder.build(),
+          p2PConfig,
           syncConfig.build(),
           restApiBuilder.build(),
           loggingConfigBuilder.build(),
