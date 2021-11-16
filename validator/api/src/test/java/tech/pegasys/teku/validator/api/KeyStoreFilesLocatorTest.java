@@ -46,7 +46,6 @@ public class KeyStoreFilesLocatorTest {
         Path.of("pass", "1", "2", "3", "b.txt"));
     final String p1 = generatePath(tempDir, PATH_SEP, "key", "pass");
     final KeyStoreFilesLocator locator = new KeyStoreFilesLocator(List.of(p1), PATH_SEP);
-    //    locator.parse();
 
     assertThat(locator.parse())
         .containsExactlyInAnyOrder(
@@ -96,7 +95,6 @@ public class KeyStoreFilesLocatorTest {
     }
     final String p1 = generatePath(tempDir, PATH_SEP, "key", "pass");
     final KeyStoreFilesLocator locator = new KeyStoreFilesLocator(List.of(p1), PATH_SEP);
-    // locator.parse();
 
     assertThat(locator.parse())
         .containsExactly(
@@ -116,7 +114,6 @@ public class KeyStoreFilesLocatorTest {
     writeDepositDataFile(tempDir.resolve(Path.of("key", "deposit_data-1620858087.json")));
 
     final KeyStoreFilesLocator locator = new KeyStoreFilesLocator(List.of(p1), PATH_SEP);
-    // locator.parse();
 
     assertThat(locator.parse())
         .containsExactly(
@@ -138,7 +135,6 @@ public class KeyStoreFilesLocatorTest {
         generatePath(tempDir, PATH_SEP, List.of("key", "a"), List.of("pass", "a.txt"));
     final String p2 = generatePath(tempDir, PATH_SEP, "keyStore", "password");
     KeyStoreFilesLocator locator = new KeyStoreFilesLocator(List.of(p1, p2), PATH_SEP);
-    //    locator.parse();
 
     assertThat(locator.parse())
         .containsExactlyInAnyOrder(
@@ -183,7 +179,6 @@ public class KeyStoreFilesLocatorTest {
   @Test
   public void shouldSucceedCallingParseOnEmptyList() {
     KeyStoreFilesLocator locator = new KeyStoreFilesLocator(List.of(), PATH_SEP);
-    //    locator.parse();
     assertThat(locator.parse()).isEmpty();
   }
 
