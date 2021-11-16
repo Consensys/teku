@@ -78,7 +78,6 @@ public class KeyStoreFilesLocatorTest {
     final String p1 =
         generatePath(tempDir, PATH_SEP, List.of("key", "a"), List.of("pass", "a.txt"));
     KeyStoreFilesLocator locator = new KeyStoreFilesLocator(List.of(p1), PATH_SEP);
-    locator.parse();
 
     assertThat(locator.parse())
         .containsExactly(
@@ -211,7 +210,6 @@ public class KeyStoreFilesLocatorTest {
 
     final String p1 = generatePath(tempDir, PATH_SEP, "key", "pass");
     final KeyStoreFilesLocator locator = new KeyStoreFilesLocator(List.of(p1), PATH_SEP);
-    locator.parse();
 
     assertThat(locator.parse())
         .containsExactlyInAnyOrder(
