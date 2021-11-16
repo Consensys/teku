@@ -26,16 +26,21 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProposerWeighting;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
 public class FFGUpdatesTest {
+  private final Spec spec = TestSpecFactory.createDefault();
 
   @Test
   void case1() {
     VoteUpdater store = createStoreToManipulateVotes();
 
-    ForkChoiceStrategy forkChoice = createProtoArrayForkChoiceStrategy(getHash(0), ZERO, ONE, ONE);
+    ForkChoiceStrategy forkChoice =
+        createProtoArrayForkChoiceStrategy(spec, getHash(0), ZERO, ONE, ONE);
 
     List<UInt64> balances = new ArrayList<>(List.of(unsigned(1), unsigned(1)));
     List<ProposerWeighting> proposerWeightings = emptyList();
@@ -43,7 +48,7 @@ public class FFGUpdatesTest {
     // Ensure that the head starts at the finalized block.
     assertThat(
             forkChoice.applyPendingVotes(
-                store, unsigned(0), getHash(0), unsigned(0), balances, proposerWeightings))
+                store, proposerWeightings, checkpoint(0, 0), checkpoint(0, 0), balances))
         .isEqualTo(getHash(0));
 
     // Build the following tree
@@ -72,7 +77,7 @@ public class FFGUpdatesTest {
     //            3 <- head
     assertThat(
             forkChoice.applyPendingVotes(
-                store, unsigned(0), getHash(0), unsigned(0), balances, proposerWeightings))
+                store, proposerWeightings, checkpoint(0, 0), checkpoint(0, 0), balances))
         .isEqualTo(getHash(3));
 
     // Ensure that with justified epoch 1 we find 2
@@ -86,7 +91,7 @@ public class FFGUpdatesTest {
     //            3 <- head
     assertThat(
             forkChoice.applyPendingVotes(
-                store, unsigned(1), getHash(2), unsigned(0), balances, proposerWeightings))
+                store, proposerWeightings, checkpoint(0, 0), checkpoint(1, 2), balances))
         .isEqualTo(getHash(2));
 
     // Ensure that with justified epoch 2 we find 3
@@ -100,7 +105,7 @@ public class FFGUpdatesTest {
     //            3 <- start + head
     assertThat(
             forkChoice.applyPendingVotes(
-                store, unsigned(2), getHash(3), unsigned(1), balances, proposerWeightings))
+                store, proposerWeightings, checkpoint(1, 0), checkpoint(2, 3), balances))
         .isEqualTo(getHash(3));
   }
 
@@ -108,7 +113,8 @@ public class FFGUpdatesTest {
   void case2() {
     VoteUpdater store = createStoreToManipulateVotes();
 
-    ForkChoiceStrategy forkChoice = createProtoArrayForkChoiceStrategy(getHash(0), ZERO, ONE, ONE);
+    ForkChoiceStrategy forkChoice =
+        createProtoArrayForkChoiceStrategy(spec, getHash(0), ZERO, ONE, ONE);
 
     List<UInt64> balances = new ArrayList<>(List.of(unsigned(1), unsigned(1)));
     List<ProposerWeighting> proposerWeightings = emptyList();
@@ -116,7 +122,7 @@ public class FFGUpdatesTest {
     // Ensure that the head starts at the finalized block.
     assertThat(
             forkChoice.applyPendingVotes(
-                store, unsigned(1), getHash(0), unsigned(1), balances, proposerWeightings))
+                store, proposerWeightings, checkpoint(1, 0), checkpoint(1, 0), balances))
         .isEqualTo(getHash(0));
 
     // Build the following tree.
@@ -172,19 +178,19 @@ public class FFGUpdatesTest {
     //         9  10 <-- head
     assertThat(
             forkChoice.applyPendingVotes(
-                store, unsigned(0), getHash(0), unsigned(0), balances, proposerWeightings))
+                store, proposerWeightings, checkpoint(0, 0), checkpoint(0, 0), balances))
         .isEqualTo(getHash(10));
 
     // Same as above, but with justified epoch 2.
     assertThat(
             forkChoice.applyPendingVotes(
-                store, unsigned(2), getHash(0), unsigned(0), balances, proposerWeightings))
+                store, proposerWeightings, checkpoint(0, 0), checkpoint(2, 0), balances))
         .isEqualTo(getHash(10));
 
     // Same as above, but with justified epoch 3 (should invalidate all nodes so return justified).
     assertThat(
             forkChoice.applyPendingVotes(
-                store, unsigned(3), getHash(0), unsigned(0), balances, proposerWeightings))
+                store, proposerWeightings, checkpoint(0, 0), checkpoint(3, 0), balances))
         .isEqualTo(getHash(0));
 
     // Add a vote to 1.
@@ -217,19 +223,19 @@ public class FFGUpdatesTest {
     // head -> 9  10
     assertThat(
             forkChoice.applyPendingVotes(
-                store, unsigned(0), getHash(0), unsigned(0), balances, proposerWeightings))
+                store, proposerWeightings, checkpoint(0, 0), checkpoint(0, 0), balances))
         .isEqualTo(getHash(9));
 
     // Same as above but justified epoch 2.
     assertThat(
             forkChoice.applyPendingVotes(
-                store, unsigned(2), getHash(0), unsigned(0), balances, proposerWeightings))
+                store, proposerWeightings, checkpoint(0, 0), checkpoint(2, 0), balances))
         .isEqualTo(getHash(9));
 
     // Same as above but justified epoch 3 (should invalidate all and return justified).
     assertThat(
             forkChoice.applyPendingVotes(
-                store, unsigned(3), getHash(0), unsigned(0), balances, proposerWeightings))
+                store, proposerWeightings, checkpoint(0, 0), checkpoint(3, 0), balances))
         .isEqualTo(getHash(0));
 
     // Add a vote to 2.
@@ -262,19 +268,19 @@ public class FFGUpdatesTest {
     //         9  10 <-- head
     assertThat(
             forkChoice.applyPendingVotes(
-                store, unsigned(0), getHash(0), unsigned(0), balances, proposerWeightings))
+                store, proposerWeightings, checkpoint(0, 0), checkpoint(0, 0), balances))
         .isEqualTo(getHash(10));
 
     // Same as above but justified epoch 2.
     assertThat(
             forkChoice.applyPendingVotes(
-                store, unsigned(2), getHash(0), unsigned(0), balances, proposerWeightings))
+                store, proposerWeightings, checkpoint(0, 0), checkpoint(2, 0), balances))
         .isEqualTo(getHash(10));
 
     // Same as above but justified epoch 3 (should invalidate all and return justified).
     assertThat(
             forkChoice.applyPendingVotes(
-                store, unsigned(3), getHash(0), unsigned(0), balances, proposerWeightings))
+                store, proposerWeightings, checkpoint(0, 0), checkpoint(3, 0), balances))
         .isEqualTo(getHash(0));
 
     // Ensure that if we start at 1 we find 9 (just: 0, fin: 0).
@@ -292,19 +298,19 @@ public class FFGUpdatesTest {
     //  head -> 9  10
     assertThat(
             forkChoice.applyPendingVotes(
-                store, unsigned(0), getHash(1), unsigned(0), balances, proposerWeightings))
+                store, proposerWeightings, checkpoint(0, 0), checkpoint(0, 1), balances))
         .isEqualTo(getHash(9));
 
     // Same as above but justified epoch 2.
     assertThat(
             forkChoice.applyPendingVotes(
-                store, unsigned(2), getHash(1), unsigned(0), balances, proposerWeightings))
+                store, proposerWeightings, checkpoint(0, 0), checkpoint(2, 1), balances))
         .isEqualTo(getHash(9));
 
     // Same as above but justified epoch 3 (should invalidate all so return justified).
     assertThat(
             forkChoice.applyPendingVotes(
-                store, unsigned(3), getHash(1), unsigned(0), balances, proposerWeightings))
+                store, proposerWeightings, checkpoint(0, 0), checkpoint(3, 1), balances))
         .isEqualTo(getHash(1));
 
     // Ensure that if we start at 2 we find 10 (just: 0, fin: 0).
@@ -322,23 +328,27 @@ public class FFGUpdatesTest {
     //          9  10 <- head
     assertThat(
             forkChoice.applyPendingVotes(
-                store, unsigned(0), getHash(2), unsigned(0), balances, proposerWeightings))
+                store, proposerWeightings, checkpoint(0, 0), checkpoint(0, 2), balances))
         .isEqualTo(getHash(10));
 
     // Same as above but justified epoch 2.
     assertThat(
             forkChoice.applyPendingVotes(
-                store, unsigned(2), getHash(2), unsigned(0), balances, proposerWeightings))
+                store, proposerWeightings, checkpoint(0, 0), checkpoint(2, 2), balances))
         .isEqualTo(getHash(10));
 
     // Same as above but justified epoch 3 (should invalidate all so return justified).
     assertThat(
             forkChoice.applyPendingVotes(
-                store, unsigned(3), getHash(2), unsigned(0), balances, proposerWeightings))
+                store, proposerWeightings, checkpoint(0, 0), checkpoint(3, 2), balances))
         .isEqualTo(getHash(2));
   }
 
   private UInt64 unsigned(final int i) {
     return UInt64.valueOf(i);
+  }
+
+  private Checkpoint checkpoint(final long epoch, final int root) {
+    return new Checkpoint(UInt64.valueOf(epoch), getHash(root));
   }
 }
