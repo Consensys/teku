@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.validator.client.restapi.apis;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
@@ -29,7 +28,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -48,9 +46,7 @@ public class DeleteKeysTest {
   private final RestApiRequest request = mock(RestApiRequest.class);
 
   @Test
-  @SuppressWarnings("unchecked")
   void shouldCallKeyManagerWithListOfKeys() throws JsonProcessingException {
-    final ArgumentCaptor<List<BLSPublicKey>> captor = ArgumentCaptor.forClass(List.class);
     final List<BLSPublicKey> keys =
         List.of(dataStructureUtil.randomPublicKey(), dataStructureUtil.randomPublicKey());
     requestData.setPublicKeys(keys);
@@ -59,10 +55,7 @@ public class DeleteKeysTest {
     when(request.getRequestBody()).thenReturn(requestData);
 
     endpoint.handle(request);
-    verify(keyManager).deleteValidators(captor.capture());
-
-    final List<BLSPublicKey> actual = captor.getValue();
-    assertThat(actual).isEqualTo(keys);
+    verify(keyManager).deleteValidators(keys);
     verify(request, never()).respondError(anyInt(), any());
     verify(request, times(1)).respondOk(any(DeleteKeysResponse.class));
   }
