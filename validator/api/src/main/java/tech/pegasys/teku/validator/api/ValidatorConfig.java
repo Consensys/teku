@@ -43,6 +43,7 @@ public class ValidatorConfig {
   private final boolean useDependentRoots;
   private final boolean generateEarlyAttestations;
   private final boolean sendAttestationsAsBatch;
+  private final boolean keyManagerRestEnabled;
 
   private ValidatorConfig(
       final List<String> validatorKeys,
@@ -62,7 +63,8 @@ public class ValidatorConfig {
       final boolean useDependentRoots,
       final boolean generateEarlyAttestations,
       final boolean sendAttestationsAsBatch,
-      final List<URI> additionalPublishUrls) {
+      final List<URI> additionalPublishUrls,
+      final boolean keyManagerRestEnabled) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
@@ -84,6 +86,7 @@ public class ValidatorConfig {
     this.generateEarlyAttestations = generateEarlyAttestations;
     this.sendAttestationsAsBatch = sendAttestationsAsBatch;
     this.additionalPublishUrls = additionalPublishUrls;
+    this.keyManagerRestEnabled = keyManagerRestEnabled;
   }
 
   public static Builder builder() {
@@ -155,6 +158,10 @@ public class ValidatorConfig {
     return additionalPublishUrls;
   }
 
+  public boolean keyManagerRestEnabled() {
+    return keyManagerRestEnabled;
+  }
+
   public static final class Builder {
 
     private List<String> validatorKeys = new ArrayList<>();
@@ -175,6 +182,7 @@ public class ValidatorConfig {
     private boolean useDependentRoots = false;
     private boolean generateEarlyAttestations = true;
     private boolean sendAttestationsAsBatch = true;
+    private boolean keyManagerRestEnabled = false;
 
     private Builder() {}
 
@@ -278,6 +286,11 @@ public class ValidatorConfig {
       return this;
     }
 
+    public Builder keyManagerRestEnabled(boolean keyManagerRestEnabled) {
+      this.keyManagerRestEnabled = keyManagerRestEnabled;
+      return this;
+    }
+
     public ValidatorConfig build() {
       validateExternalSignerUrlAndPublicKeys();
       validateExternalSignerKeystoreAndPasswordFileConfig();
@@ -301,7 +314,8 @@ public class ValidatorConfig {
           useDependentRoots,
           generateEarlyAttestations,
           sendAttestationsAsBatch,
-          additionalPublishUrls);
+          additionalPublishUrls,
+          keyManagerRestEnabled);
     }
 
     private void validateExternalSignerUrlAndPublicKeys() {
