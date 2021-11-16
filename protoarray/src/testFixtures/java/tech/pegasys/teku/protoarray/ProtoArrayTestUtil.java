@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.TestStoreFactory;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
@@ -24,7 +25,6 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
 
 public class ProtoArrayTestUtil {
-  private static final TestStoreFactory STORE_FACTORY = new TestStoreFactory();
 
   // Gives a deterministic hash for a given integer
   public static Bytes32 getHash(int i) {
@@ -32,16 +32,17 @@ public class ProtoArrayTestUtil {
   }
 
   public static ForkChoiceStrategy createProtoArrayForkChoiceStrategy(
+      Spec spec,
       Bytes32 finalizedBlockRoot,
       UInt64 finalizedBlockSlot,
       UInt64 finalizedCheckpointEpoch,
       UInt64 justifiedCheckpointEpoch) {
-    MutableStore store = STORE_FACTORY.createEmptyStore();
+    MutableStore store = new TestStoreFactory(spec).createEmptyStore();
     store.setJustifiedCheckpoint(new Checkpoint(justifiedCheckpointEpoch, Bytes32.ZERO));
     store.setFinalizedCheckpoint(new Checkpoint(finalizedCheckpointEpoch, Bytes32.ZERO));
 
     ForkChoiceStrategy forkChoice =
-        ForkChoiceStrategy.initializeAndMigrateStorage(store, ProtoArrayStorageChannel.NO_OP)
+        ForkChoiceStrategy.initializeAndMigrateStorage(spec, store, ProtoArrayStorageChannel.NO_OP)
             .join();
 
     forkChoice.processBlock(
@@ -56,7 +57,7 @@ public class ProtoArrayTestUtil {
   }
 
   public static VoteUpdater createStoreToManipulateVotes() {
-    return STORE_FACTORY.createGenesisStore();
+    return new TestStoreFactory().createGenesisStore();
   }
 
   public static void assertThatBlockInformationMatches(ProtoNode node1, ProtoNode node2) {

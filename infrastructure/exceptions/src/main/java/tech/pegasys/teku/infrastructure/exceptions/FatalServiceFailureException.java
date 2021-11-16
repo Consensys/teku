@@ -11,18 +11,23 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.service.serviceutils;
+package tech.pegasys.teku.infrastructure.exceptions;
 
 public class FatalServiceFailureException extends RuntimeException {
 
-  private final Class<?> service;
+  private final String service;
+
+  public FatalServiceFailureException(final String serviceName, final String message) {
+    super(message);
+    this.service = serviceName;
+  }
 
   public FatalServiceFailureException(final Class<?> service, final Throwable cause) {
     super(cause);
-    this.service = service;
+    this.service = service.getSimpleName();
   }
 
-  public Class<?> getService() {
+  public String getService() {
     return service;
   }
 }
