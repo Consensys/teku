@@ -252,17 +252,22 @@ public class ForkChoice {
       final SignedBeaconBlock block,
       final BlockImportResult importResult,
       final ExecutePayloadResult payloadResult) {
-    getForkChoiceStrategy().onExecutionPayloadResult(block.getRoot(), payloadResult.getStatus());
     switch (payloadResult.getStatus()) {
       case INVALID:
-        return SafeFuture.completedFuture(
-            BlockImportResult.failedStateTransition(
-                new IllegalStateException(
-                    "Invalid ExecutionPayload: "
-                        + payloadResult.getMessage().orElse("No reason provided"))));
+        return onForkChoiceThread(
+            () -> {
+              getForkChoiceStrategy()
+                  .onExecutionPayloadResult(block.getRoot(), payloadResult.getStatus());
+              return BlockImportResult.failedStateTransition(
+                  new IllegalStateException(
+                      "Invalid ExecutionPayload: "
+                          + payloadResult.getMessage().orElse("No reason provided")));
+            });
       case VALID:
         return onForkChoiceThread(
             () -> {
+              getForkChoiceStrategy()
+                  .onExecutionPayloadResult(block.getRoot(), payloadResult.getStatus());
               updateForkChoiceForImportedBlock(block, importResult, getForkChoiceStrategy());
               return importResult;
             });
