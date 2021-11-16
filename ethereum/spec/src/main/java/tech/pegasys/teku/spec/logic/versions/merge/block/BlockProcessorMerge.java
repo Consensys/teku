@@ -72,13 +72,14 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
       final MutableBeaconState genericState,
       final BeaconBlock block,
       final IndexedAttestationCache indexedAttestationCache,
-      final BLSSignatureVerifier signatureVerifier)
+      final BLSSignatureVerifier signatureVerifier,
+      final OptimisticExecutionPayloadExecutor payloadExecutor)
       throws BlockProcessingException {
     final MutableBeaconStateMerge state = MutableBeaconStateMerge.required(genericState);
     final BeaconBlockBodyMerge blockBody = BeaconBlockBodyMerge.required(block.getBody());
     processBlockHeader(state, block);
     if (miscHelpersMerge.isExecutionEnabled(genericState, block)) {
-      processExecutionPayload(state, blockBody.getExecutionPayload());
+      processExecutionPayload(state, blockBody.getExecutionPayload(), payloadExecutor);
     }
     processRandaoNoValidation(state, block.getBody());
     processEth1Data(state, block.getBody());
@@ -88,7 +89,9 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
 
   @Override
   public void processExecutionPayload(
-      final MutableBeaconState genericState, final ExecutionPayload payload)
+      final MutableBeaconState genericState,
+      final ExecutionPayload payload,
+      final OptimisticExecutionPayloadExecutor payloadExecutor)
       throws BlockProcessingException {
     final MutableBeaconStateMerge state = MutableBeaconStateMerge.required(genericState);
     if (miscHelpersMerge.isMergeComplete(state)) {
@@ -109,6 +112,11 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
         .equals(payload.getTimestamp())) {
       throw new BlockProcessingException(
           "Execution payload timestamp does not match time for state slot");
+    }
+
+    final boolean optimisticallyAccept = payloadExecutor.optimisticallyExecute(payload);
+    if (!optimisticallyAccept) {
+      throw new BlockProcessingException("Execution payload was not optimistically accepted");
     }
 
     final ExecutionPayloadHeaderSchema executionPayloadHeaderSchema =

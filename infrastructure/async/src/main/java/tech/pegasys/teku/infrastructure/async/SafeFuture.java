@@ -408,6 +408,13 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     return (SafeFuture<U>) super.thenApply(fn);
   }
 
+  @SuppressWarnings("unchecked")
+  @Override
+  public <U> SafeFuture<U> thenApplyAsync(
+      final Function<? super T, ? extends U> fn, final Executor executor) {
+    return (SafeFuture<U>) super.thenApplyAsync(fn, executor);
+  }
+
   public <U> SafeFuture<U> thenApplyChecked(final ExceptionThrowingFunction<T, U> function) {
     return thenCompose(
         value -> {

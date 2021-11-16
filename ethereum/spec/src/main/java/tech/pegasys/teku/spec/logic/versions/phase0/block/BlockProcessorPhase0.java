@@ -34,6 +34,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProce
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.logic.versions.merge.block.OptimisticExecutionPayloadExecutor;
 
 public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
 
@@ -94,7 +95,9 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
 
   @Override
   public void processExecutionPayload(
-      final MutableBeaconState state, final ExecutionPayload executionPayload)
+      final MutableBeaconState state,
+      final ExecutionPayload executionPayload,
+      final OptimisticExecutionPayloadExecutor payloadExecutor)
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No ExecutionPayload in phase0");
   }

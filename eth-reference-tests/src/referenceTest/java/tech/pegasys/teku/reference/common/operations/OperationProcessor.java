@@ -23,6 +23,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
+import tech.pegasys.teku.spec.logic.versions.merge.block.OptimisticExecutionPayloadExecutor;
 
 public interface OperationProcessor {
 
@@ -46,6 +47,9 @@ public interface OperationProcessor {
   void processSyncCommittee(MutableBeaconState state, SyncAggregate aggregate)
       throws BlockProcessingException;
 
-  void processExecutionPayload(MutableBeaconState state, ExecutionPayload executionPayload)
+  void processExecutionPayload(
+      MutableBeaconState state,
+      ExecutionPayload executionPayload,
+      OptimisticExecutionPayloadExecutor payloadExecutor)
       throws BlockProcessingException;
 }

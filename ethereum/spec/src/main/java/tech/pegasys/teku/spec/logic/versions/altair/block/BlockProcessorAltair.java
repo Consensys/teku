@@ -49,6 +49,7 @@ import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
+import tech.pegasys.teku.spec.logic.versions.merge.block.OptimisticExecutionPayloadExecutor;
 import tech.pegasys.teku.ssz.SszMutableList;
 import tech.pegasys.teku.ssz.SszVector;
 import tech.pegasys.teku.ssz.collections.SszUInt64List;
@@ -93,12 +94,13 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
       final MutableBeaconState genericState,
       final BeaconBlock block,
       final IndexedAttestationCache indexedAttestationCache,
-      final BLSSignatureVerifier signatureVerifier)
+      final BLSSignatureVerifier signatureVerifier,
+      final OptimisticExecutionPayloadExecutor payloadExecutor)
       throws BlockProcessingException {
     final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(genericState);
     final BeaconBlockBodyAltair blockBody = BeaconBlockBodyAltair.required(block.getBody());
 
-    super.processBlock(state, block, indexedAttestationCache, signatureVerifier);
+    super.processBlock(state, block, indexedAttestationCache, signatureVerifier, payloadExecutor);
     processSyncAggregate(state, blockBody.getSyncAggregate(), signatureVerifier);
   }
 
@@ -245,7 +247,9 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
 
   @Override
   public void processExecutionPayload(
-      final MutableBeaconState state, final ExecutionPayload executionPayload)
+      final MutableBeaconState state,
+      final ExecutionPayload executionPayload,
+      final OptimisticExecutionPayloadExecutor payloadExecutor)
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No ExecutionPayload in Altair");
   }

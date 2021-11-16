@@ -46,8 +46,10 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.executionengine.ExecutePayloadResult;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
+import tech.pegasys.teku.spec.logic.versions.merge.block.OptimisticExecutionPayloadExecutor;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -185,6 +187,10 @@ public class ForkChoice {
         "State must have processed slots up to the block slot. Block slot %s, state slot %s",
         block.getSlot(),
         blockSlotState.get().getSlot());
+
+    final ForkChoiceOptimisticExecutionPayloadExecutor payloadExecutor =
+        new ForkChoiceOptimisticExecutionPayloadExecutor(block.getRoot(), executionEngine);
+
     return onForkChoiceThread(
             () -> {
               final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
@@ -193,9 +199,14 @@ public class ForkChoice {
                   IndexedAttestationCache.capturing();
 
               addParentStateRoots(blockSlotState.get(), transaction);
-
               final BlockImportResult result =
-                  spec.onBlock(transaction, block, blockSlotState.get(), indexedAttestationCache);
+                  spec.onBlock(
+                      transaction,
+                      block,
+                      blockSlotState.get(),
+                      indexedAttestationCache,
+                      payloadExecutor);
+              payloadExecutor.onBlockProcessingComplete();
 
               if (!result.isSuccessful()) {
                 if (result.getFailureReason() != FailureReason.BLOCK_IS_FROM_FUTURE) {
@@ -233,48 +244,54 @@ public class ForkChoice {
               }
               return result;
             })
-        .thenCompose(
-            importResult -> {
-              final Optional<ExecutionPayload> maybePayload =
-                  block.getMessage().getBody().getOptionalExecutionPayload();
-              if (!importResult.isSuccessful() || maybePayload.isEmpty()) {
-                return SafeFuture.completedFuture(importResult);
+        .thenCombine(
+            payloadExecutor.result,
+            (blockImportResult, payloadResult) -> {
+              if (blockImportResult.isSuccessful()
+                  && payloadResult.getStatus() == ExecutionPayloadStatus.INVALID) {
+                return BlockImportResult.failedStateTransition(
+                    new IllegalStateException(
+                        "Invalid ExecutionPayload: "
+                            + payloadResult.getMessage().orElse("No reason provided")));
               }
-              return executionEngine
-                  .executePayload(maybePayload.get())
-                  .thenCompose(
-                      payloadResult ->
-                          handleExecutionPayloadResult(block, importResult, payloadResult));
+              return blockImportResult;
             });
   }
 
-  private SafeFuture<BlockImportResult> handleExecutionPayloadResult(
-      final SignedBeaconBlock block,
-      final BlockImportResult importResult,
-      final ExecutePayloadResult payloadResult) {
-    switch (payloadResult.getStatus()) {
-      case INVALID:
-        return onForkChoiceThread(
-            () -> {
-              getForkChoiceStrategy()
-                  .onExecutionPayloadResult(block.getRoot(), payloadResult.getStatus());
-              return BlockImportResult.failedStateTransition(
-                  new IllegalStateException(
-                      "Invalid ExecutionPayload: "
-                          + payloadResult.getMessage().orElse("No reason provided")));
-            });
-      case VALID:
-        return onForkChoiceThread(
-            () -> {
-              getForkChoiceStrategy()
-                  .onExecutionPayloadResult(block.getRoot(), payloadResult.getStatus());
-              updateForkChoiceForImportedBlock(block, importResult, getForkChoiceStrategy());
-              return importResult;
-            });
-      case SYNCING:
-        return SafeFuture.completedFuture(importResult);
-      default:
-        throw new IllegalArgumentException("Unknown payload result: " + payloadResult.getStatus());
+  private class ForkChoiceOptimisticExecutionPayloadExecutor
+      implements OptimisticExecutionPayloadExecutor {
+
+    private final Bytes32 blockRoot;
+    private final ExecutionEngineChannel executionEngine;
+    private final SafeFuture<ExecutePayloadResult> result = new SafeFuture<>();
+    private boolean executionStarted = false;
+
+    private ForkChoiceOptimisticExecutionPayloadExecutor(
+        final Bytes32 blockRoot, final ExecutionEngineChannel executionEngine) {
+      this.blockRoot = blockRoot;
+      this.executionEngine = executionEngine;
+    }
+
+    @Override
+    public boolean optimisticallyExecute(final ExecutionPayload executionPayload) {
+      executionStarted = true;
+      executionEngine
+          .executePayload(executionPayload)
+          .thenApplyAsync(
+              payloadResult -> {
+                getForkChoiceStrategy()
+                    .onExecutionPayloadResult(blockRoot, payloadResult.getStatus());
+                return payloadResult;
+              },
+              forkChoiceExecutor)
+          .propagateTo(result);
+      return true;
+    }
+
+    public void onBlockProcessingComplete() {
+      if (!executionStarted) {
+        result.complete(ExecutePayloadResult.VALID);
+      }
     }
   }
 

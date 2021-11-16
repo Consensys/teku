@@ -15,17 +15,13 @@ package tech.pegasys.teku.reference.common.operations;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.reference.TestDataUtils.loadSsz;
 import static tech.pegasys.teku.reference.TestDataUtils.loadStateFromSsz;
 import static tech.pegasys.teku.reference.TestDataUtils.loadYaml;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
-import java.util.Optional;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
@@ -38,9 +34,6 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.spec.executionengine.ExecutePayloadResult;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
-import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.ssz.SszData;
 
@@ -200,7 +193,6 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
         processor.processSyncCommittee(state, syncAggregate);
         break;
       case EXECUTION_PAYLOAD:
-        final ExecutionEngineChannel executionEngine = mock(ExecutionEngineChannel.class);
         final ExecutionMeta executionMeta =
             loadYaml(testDefinition, "execution.yaml", ExecutionMeta.class);
         final ExecutionPayload payload =
@@ -213,16 +205,8 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
                     .toVersionMerge()
                     .orElseThrow()
                     .getExecutionPayloadSchema());
-        when(executionEngine.executePayload(payload))
-            .thenReturn(
-                SafeFuture.completedFuture(
-                    new ExecutePayloadResult(
-                        executionMeta.executionValid
-                            ? ExecutionPayloadStatus.VALID
-                            : ExecutionPayloadStatus.INVALID,
-                        Optional.empty(),
-                        Optional.empty())));
-        processor.processExecutionPayload(state, payload);
+        processor.processExecutionPayload(
+            state, payload, payloadToExecute -> executionMeta.executionValid);
         break;
     }
   }

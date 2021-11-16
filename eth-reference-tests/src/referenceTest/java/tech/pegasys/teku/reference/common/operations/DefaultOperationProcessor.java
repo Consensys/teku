@@ -26,6 +26,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
+import tech.pegasys.teku.spec.logic.versions.merge.block.OptimisticExecutionPayloadExecutor;
 
 public class DefaultOperationProcessor implements OperationProcessor {
   private final Spec spec;
@@ -101,8 +102,11 @@ public class DefaultOperationProcessor implements OperationProcessor {
 
   @Override
   public void processExecutionPayload(
-      final MutableBeaconState state, final ExecutionPayload executionPayload)
+      final MutableBeaconState state,
+      final ExecutionPayload executionPayload,
+      final OptimisticExecutionPayloadExecutor payloadExecutor)
       throws BlockProcessingException {
-    spec.getBlockProcessor(state.getSlot()).processExecutionPayload(state, executionPayload);
+    spec.getBlockProcessor(state.getSlot())
+        .processExecutionPayload(state, executionPayload, payloadExecutor);
   }
 }

@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
+import tech.pegasys.teku.spec.logic.versions.merge.block.OptimisticExecutionPayloadExecutor;
 import tech.pegasys.teku.ssz.SszList;
 
 public interface BlockProcessor {
@@ -44,7 +45,8 @@ public interface BlockProcessor {
   BeaconState processAndValidateBlock(
       SignedBeaconBlock signedBlock,
       BeaconState blockSlotState,
-      IndexedAttestationCache indexedAttestationCache)
+      IndexedAttestationCache indexedAttestationCache,
+      final OptimisticExecutionPayloadExecutor payloadExecutor)
       throws StateTransitionException;
 
   /**
@@ -55,6 +57,7 @@ public interface BlockProcessor {
    *     already be advanced to the block's slot
    * @param indexedAttestationCache A cache of indexed attestations
    * @param signatureVerifier The signature verifier to use
+   * @param payloadExecutor the optimistic payload executor to begin execution with
    * @return The post state after processing the block on top of {@code blockSlotState}
    * @throws StateTransitionException If the block is invalid or cannot be processed
    */
@@ -62,14 +65,16 @@ public interface BlockProcessor {
       SignedBeaconBlock signedBlock,
       BeaconState blockSlotState,
       IndexedAttestationCache indexedAttestationCache,
-      BLSSignatureVerifier signatureVerifier)
+      BLSSignatureVerifier signatureVerifier,
+      OptimisticExecutionPayloadExecutor payloadExecutor)
       throws StateTransitionException;
 
   BeaconState processUnsignedBlock(
       BeaconState preState,
       BeaconBlock block,
       IndexedAttestationCache indexedAttestationCache,
-      BLSSignatureVerifier signatureVerifier)
+      BLSSignatureVerifier signatureVerifier,
+      OptimisticExecutionPayloadExecutor payloadExecutor)
       throws BlockProcessingException;
 
   void processBlockHeader(MutableBeaconState state, BeaconBlockSummary blockHeader)
@@ -113,6 +118,9 @@ public interface BlockProcessor {
       MutableBeaconState state, SyncAggregate syncAggregate, BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException;
 
-  void processExecutionPayload(MutableBeaconState state, ExecutionPayload executionPayload)
+  void processExecutionPayload(
+      MutableBeaconState state,
+      ExecutionPayload executionPayload,
+      OptimisticExecutionPayloadExecutor payloadExecutor)
       throws BlockProcessingException;
 }

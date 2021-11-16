@@ -41,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
+import tech.pegasys.teku.spec.logic.versions.merge.block.OptimisticExecutionPayloadExecutor;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.schema.SszSchema;
@@ -139,7 +140,10 @@ public class FuzzUtil {
     try {
       BeaconState postState =
           spec.processBlock(
-              structuredInput.getState(), structuredInput.getSigned_block(), signatureVerifier);
+              structuredInput.getState(),
+              structuredInput.getSigned_block(),
+              signatureVerifier,
+              OptimisticExecutionPayloadExecutor.NOOP);
       Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
     } catch (StateTransitionException e) {
