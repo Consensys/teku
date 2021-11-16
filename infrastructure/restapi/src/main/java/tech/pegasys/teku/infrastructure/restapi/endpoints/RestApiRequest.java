@@ -34,10 +34,11 @@ public class RestApiRequest {
         (DeserializableTypeDefinition<T>) metadata.getRequestBodyType();
 
     final String body = context.body();
-    if (body.equals("")) {
+    final T result = JsonUtil.parse(body, bodySchema);
+    if (result == null) {
       throw new MissingRequestBodyException();
     }
-    return JsonUtil.parse(body, bodySchema);
+    return result;
   }
 
   public RestApiRequest(final Context context, final EndpointMetadata metadata) {
