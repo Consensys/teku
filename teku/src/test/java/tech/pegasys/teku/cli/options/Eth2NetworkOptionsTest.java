@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.math.BigInteger;
-import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -47,9 +46,9 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(spec.getForkSchedule().getSpecMilestoneAtEpoch(UInt64.valueOf(64)))
         .isEqualTo(SpecMilestone.ALTAIR);
     assertThat(
-        createConfigBuilder()
-            .eth2NetworkConfig(b -> b.altairForkEpoch(UInt64.valueOf(64)))
-            .build())
+            createConfigBuilder()
+                .eth2NetworkConfig(b -> b.altairForkEpoch(UInt64.valueOf(64)))
+                .build())
         .usingRecursiveComparison()
         .isEqualTo(config);
   }
@@ -64,9 +63,9 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(spec.getForkSchedule().getSpecMilestoneAtEpoch(UInt64.valueOf(120000)))
         .isEqualTo(SpecMilestone.MERGE);
     assertThat(
-        createConfigBuilder()
-            .eth2NetworkConfig(b -> b.mergeForkEpoch(UInt64.valueOf(120000)))
-            .build())
+            createConfigBuilder()
+                .eth2NetworkConfig(b -> b.mergeForkEpoch(UInt64.valueOf(120000)))
+                .build())
         .usingRecursiveComparison()
         .isEqualTo(config);
   }
@@ -90,10 +89,12 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(config.eth2NetworkConfiguration().getMergeTotalTerminalDifficultyOverride())
         .isEqualTo(Optional.of(UInt256.valueOf(new BigInteger("123456789012345678901"))));
     assertThat(
-        createConfigBuilder()
-            .eth2NetworkConfig(b -> b.mergeTotalTerminalDifficultyOverride(
-                UInt256.valueOf(new BigInteger("123456789012345678901"))))
-            .build())
+            createConfigBuilder()
+                .eth2NetworkConfig(
+                    b ->
+                        b.mergeTotalTerminalDifficultyOverride(
+                            UInt256.valueOf(new BigInteger("123456789012345678901"))))
+                .build())
         .usingRecursiveComparison()
         .isEqualTo(config);
   }
@@ -110,10 +111,13 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
                 Bytes32.fromHexStringStrict(
                     "0x7562f205a2d14e80a3a67da9df0b769b0ba0111a8e81034606f8f27f51f4dd8e")));
     assertThat(
-        createConfigBuilder()
-            .eth2NetworkConfig(b -> b.mergeTerminalBlockHashOverride(Bytes32.fromHexStringStrict(
-                "0x7562f205a2d14e80a3a67da9df0b769b0ba0111a8e81034606f8f27f51f4dd8e")))
-            .build())
+            createConfigBuilder()
+                .eth2NetworkConfig(
+                    b ->
+                        b.mergeTerminalBlockHashOverride(
+                            Bytes32.fromHexStringStrict(
+                                "0x7562f205a2d14e80a3a67da9df0b769b0ba0111a8e81034606f8f27f51f4dd8e")))
+                .build())
         .usingRecursiveComparison()
         .isEqualTo(config);
   }
@@ -126,9 +130,10 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(config.eth2NetworkConfiguration().getMergeTerminalBlockHashEpochOverride())
         .isEqualTo(Optional.of(UInt64.valueOf(120000)));
     assertThat(
-        createConfigBuilder()
-            .eth2NetworkConfig(b -> b.mergeTerminalBlockHashEpochOverride(UInt64.valueOf(120000)))
-            .build())
+            createConfigBuilder()
+                .eth2NetworkConfig(
+                    b -> b.mergeTerminalBlockHashEpochOverride(UInt64.valueOf(120000)))
+                .build())
         .usingRecursiveComparison()
         .isEqualTo(config);
   }

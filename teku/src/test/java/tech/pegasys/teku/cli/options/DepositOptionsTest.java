@@ -37,9 +37,9 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     assertThat(config.powchain().isEnabled()).isTrue();
     assertThat(
-        createConfigBuilder()
-            .powchain(b -> b.eth1Endpoints(List.of("http://example.com:1234/path/")))
-            .build())
+            createConfigBuilder()
+                .powchain(b -> b.eth1Endpoints(List.of("http://example.com:1234/path/")))
+                .build())
         .usingRecursiveComparison()
         .isEqualTo(config);
   }
@@ -48,12 +48,7 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
   public void shouldReportEth1DisabledIfEndpointNotSpecified() {
     final TekuConfiguration config = getTekuConfigurationFromArguments();
     assertThat(config.powchain().isEnabled()).isFalse();
-    assertThat(
-        createConfigBuilder()
-
-            .build())
-        .usingRecursiveComparison()
-        .isEqualTo(config);
+    assertThat(createConfigBuilder().build()).usingRecursiveComparison().isEqualTo(config);
   }
 
   @Test
@@ -61,10 +56,7 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
     final String[] args = {"--eth1-endpoint", "   "};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     assertThat(config.powchain().isEnabled()).isFalse();
-    assertThat(
-        createConfigBuilder()
-            .powchain(b -> b.eth1Endpoints(List.of()))
-            .build())
+    assertThat(createConfigBuilder().powchain(b -> b.eth1Endpoints(List.of())).build())
         .usingRecursiveComparison()
         .isEqualTo(config);
   }
@@ -84,11 +76,15 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
             "http://example-3.com:1234/path/");
     assertThat(config.powchain().isEnabled()).isTrue();
     assertThat(
-        createConfigBuilder()
-            .powchain(b -> b.eth1Endpoints(List.of("http://example.com:1234/path/",
-                "http://example-2.com:1234/path/",
-                "http://example-3.com:1234/path/")))
-            .build())
+            createConfigBuilder()
+                .powchain(
+                    b ->
+                        b.eth1Endpoints(
+                            List.of(
+                                "http://example.com:1234/path/",
+                                "http://example-2.com:1234/path/",
+                                "http://example-3.com:1234/path/")))
+                .build())
         .usingRecursiveComparison()
         .isEqualTo(config);
   }

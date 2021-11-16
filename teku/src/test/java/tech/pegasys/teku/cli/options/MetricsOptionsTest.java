@@ -21,7 +21,6 @@ import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.LIBP2P
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.NETWORK;
 
 import java.util.Comparator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import org.hyperledger.besu.metrics.StandardMetricCategory;
@@ -31,16 +30,12 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
-import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 import tech.pegasys.teku.infrastructure.metrics.MetricsConfig;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 
 public class MetricsOptionsTest extends AbstractBeaconNodeCommandTest {
   private static final Comparator<Set<?>> SET_COMPARATOR = (o1, o2) -> o1.equals(o2) ? 0 : 1;
-  private static final String[] SET_FIELDS = new String[]{
-      "metricsConfig.metricsCategories"
-  };
-
+  private static final String[] SET_FIELDS = new String[] {"metricsConfig.metricsCategories"};
 
   @Test
   public void shouldReadFromConfigurationFile() {
@@ -56,16 +51,11 @@ public class MetricsOptionsTest extends AbstractBeaconNodeCommandTest {
   @ParameterizedTest(name = "{0}")
   @EnumSource(TekuMetricCategory.class)
   public void metricsCategories_shouldAcceptValues(MetricCategory category) {
-    TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments(
-        "--metrics-categories", category.toString());
-    final MetricsConfig config =
-        tekuConfiguration
-            .metricsConfig();
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--metrics-categories", category.toString());
+    final MetricsConfig config = tekuConfiguration.metricsConfig();
     assertThat(config.getMetricsCategories()).isEqualTo(Set.of(category));
-    assertThat(
-        createConfigBuilder()
-            .metrics(b -> b.metricsCategories(Set.of(category)))
-            .build())
+    assertThat(createConfigBuilder().metrics(b -> b.metricsCategories(Set.of(category))).build())
         .usingRecursiveComparison()
         .withComparatorForFields(SET_COMPARATOR, SET_FIELDS)
         .isEqualTo(tekuConfiguration);
@@ -74,16 +64,11 @@ public class MetricsOptionsTest extends AbstractBeaconNodeCommandTest {
   @ParameterizedTest(name = "{0}")
   @EnumSource(StandardMetricCategory.class)
   public void metricsCategories_shouldAcceptStandardMetricCategories(MetricCategory category) {
-    TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments(
-        "--metrics-categories", category.toString());
-    final MetricsConfig config =
-        tekuConfiguration
-            .metricsConfig();
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--metrics-categories", category.toString());
+    final MetricsConfig config = tekuConfiguration.metricsConfig();
     assertThat(config.getMetricsCategories()).isEqualTo(Set.of(category));
-    assertThat(
-        createConfigBuilder()
-            .metrics(b -> b.metricsCategories(Set.of(category)))
-            .build())
+    assertThat(createConfigBuilder().metrics(b -> b.metricsCategories(Set.of(category))).build())
         .usingRecursiveComparison()
         .withComparatorForFields(SET_COMPARATOR, SET_FIELDS)
         .isEqualTo(tekuConfiguration);
@@ -91,16 +76,15 @@ public class MetricsOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void metricsCategories_shouldAcceptMultipleValues() {
-    TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments(
-        "--metrics-categories", "LIBP2P,NETWORK,EVENTBUS,PROCESS");
-    final MetricsConfig config =
-        tekuConfiguration
-            .metricsConfig();
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments(
+            "--metrics-categories", "LIBP2P,NETWORK,EVENTBUS,PROCESS");
+    final MetricsConfig config = tekuConfiguration.metricsConfig();
     assertThat(config.getMetricsCategories()).isEqualTo(Set.of(LIBP2P, NETWORK, EVENTBUS, PROCESS));
     assertThat(
-        createConfigBuilder()
-            .metrics(b -> b.metricsCategories(Set.of(LIBP2P, NETWORK, EVENTBUS, PROCESS)))
-            .build())
+            createConfigBuilder()
+                .metrics(b -> b.metricsCategories(Set.of(LIBP2P, NETWORK, EVENTBUS, PROCESS)))
+                .build())
         .usingRecursiveComparison()
         .withComparatorForFields(SET_COMPARATOR, SET_FIELDS)
         .isEqualTo(tekuConfiguration);
@@ -116,61 +100,46 @@ public class MetricsOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void metricsEnabled_shouldNotRequireAValue() {
-    TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments(
-        "--metrics-enabled");
-    final MetricsConfig config =
-        tekuConfiguration.metricsConfig();
+    TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments("--metrics-enabled");
+    final MetricsConfig config = tekuConfiguration.metricsConfig();
     assertThat(config.isMetricsEnabled()).isTrue();
-    assertThat(
-        createConfigBuilder()
-            .metrics(b -> b.metricsEnabled(true))
-            .build())
+    assertThat(createConfigBuilder().metrics(b -> b.metricsEnabled(true)).build())
         .usingRecursiveComparison()
         .isEqualTo(tekuConfiguration);
   }
 
   @Test
   public void metricsHostAllowlist_shouldNotRequireAValue() {
-    TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments(
-        "--metrics-host-allowlist");
-    final MetricsConfig config =
-        tekuConfiguration.metricsConfig();
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--metrics-host-allowlist");
+    final MetricsConfig config = tekuConfiguration.metricsConfig();
     assertThat(config.getMetricsHostAllowlist()).isEmpty();
-    assertThat(
-        createConfigBuilder()
-            .metrics(b -> b.metricsHostAllowlist(List.of()))
-            .build())
+    assertThat(createConfigBuilder().metrics(b -> b.metricsHostAllowlist(List.of())).build())
         .usingRecursiveComparison()
         .isEqualTo(tekuConfiguration);
   }
 
   @Test
   public void metricsHostAllowlist_shouldSupportAllowingMultipleHosts() {
-    TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments(
-        "--metrics-host-allowlist", "my.host,their.host");
-    final MetricsConfig config =
-        tekuConfiguration
-            .metricsConfig();
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--metrics-host-allowlist", "my.host,their.host");
+    final MetricsConfig config = tekuConfiguration.metricsConfig();
     assertThat(config.getMetricsHostAllowlist()).containsOnly("my.host", "their.host");
     assertThat(
-        createConfigBuilder()
-            .metrics(b -> b.metricsHostAllowlist(List.of("my.host", "their.host")))
-            .build())
+            createConfigBuilder()
+                .metrics(b -> b.metricsHostAllowlist(List.of("my.host", "their.host")))
+                .build())
         .usingRecursiveComparison()
         .isEqualTo(tekuConfiguration);
   }
 
   @Test
   public void metricsHostAllowlist_shouldSupportAllowingAllHosts() {
-    TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments(
-        "--metrics-host-allowlist", "*");
-    final MetricsConfig config =
-        tekuConfiguration.metricsConfig();
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--metrics-host-allowlist", "*");
+    final MetricsConfig config = tekuConfiguration.metricsConfig();
     assertThat(config.getMetricsHostAllowlist()).containsOnly("*");
-    assertThat(
-        createConfigBuilder()
-            .metrics(b -> b.metricsHostAllowlist(List.of("*")))
-            .build())
+    assertThat(createConfigBuilder().metrics(b -> b.metricsHostAllowlist(List.of("*"))).build())
         .usingRecursiveComparison()
         .isEqualTo(tekuConfiguration);
   }

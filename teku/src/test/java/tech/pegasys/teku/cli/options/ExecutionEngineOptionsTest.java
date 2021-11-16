@@ -41,12 +41,11 @@ public class ExecutionEngineOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(config.executionEngine().isEnabled()).isTrue();
 
     assertThat(
-        createConfigBuilder()
-            .executionEngine(b -> b.endpoints(List.of("http://example.com:1234/path/")))
-            .build())
+            createConfigBuilder()
+                .executionEngine(b -> b.endpoints(List.of("http://example.com:1234/path/")))
+                .build())
         .usingRecursiveComparison()
         .isEqualTo(config);
-
   }
 
   @Test
@@ -77,11 +76,15 @@ public class ExecutionEngineOptionsTest extends AbstractBeaconNodeCommandTest {
             "http://example-3.com:1234/path/");
     assertThat(config.executionEngine().isEnabled()).isTrue();
     assertThat(
-        createConfigBuilder()
-            .executionEngine(b -> b.endpoints(List.of("http://example.com:1234/path/",
-                "http://example-2.com:1234/path/",
-                "http://example-3.com:1234/path/")))
-            .build())
+            createConfigBuilder()
+                .executionEngine(
+                    b ->
+                        b.endpoints(
+                            List.of(
+                                "http://example.com:1234/path/",
+                                "http://example-2.com:1234/path/",
+                                "http://example-3.com:1234/path/")))
+                .build())
         .usingRecursiveComparison()
         .isEqualTo(config);
   }
@@ -104,12 +107,16 @@ public class ExecutionEngineOptionsTest extends AbstractBeaconNodeCommandTest {
             "http://example-3.com:1234/path/");
     assertThat(config.executionEngine().isEnabled()).isTrue();
     assertThat(
-        createConfigBuilder()
-            .executionEngine(b -> b.endpoints(List.of("http://example-single.com:1234/path/",
-                "http://example.com:1234/path/",
-                "http://example-2.com:1234/path/",
-                "http://example-3.com:1234/path/")))
-            .build())
+            createConfigBuilder()
+                .executionEngine(
+                    b ->
+                        b.endpoints(
+                            List.of(
+                                "http://example-single.com:1234/path/",
+                                "http://example.com:1234/path/",
+                                "http://example-2.com:1234/path/",
+                                "http://example-3.com:1234/path/")))
+                .build())
         .usingRecursiveComparison()
         .isEqualTo(config);
   }
@@ -130,9 +137,9 @@ public class ExecutionEngineOptionsTest extends AbstractBeaconNodeCommandTest {
         .isEqualTo(
             Optional.of(Eth1Address.fromHexString("0xfe3b557e8fb62b89f4916b721be55ceb828dbd73")));
     assertThat(
-        createConfigBuilder()
-            .executionEngine(b -> b.feeRecipient("0xfe3b557e8fb62b89f4916b721be55ceb828dbd73"))
-            .build())
+            createConfigBuilder()
+                .executionEngine(b -> b.feeRecipient("0xfe3b557e8fb62b89f4916b721be55ceb828dbd73"))
+                .build())
         .usingRecursiveComparison()
         .isEqualTo(config);
   }

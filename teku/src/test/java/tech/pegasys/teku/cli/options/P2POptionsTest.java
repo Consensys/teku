@@ -54,13 +54,9 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     final TekuConfiguration config = getTekuConfigurationFromArguments("--p2p-enabled");
     assertThat(config.network().isEnabled()).isTrue();
     assertThat(config.sync().isSyncEnabled()).isTrue();
-    assertThat(
-        createConfigBuilder()
-            .network(b -> b.isEnabled(true))
-            .build())
+    assertThat(createConfigBuilder().network(b -> b.isEnabled(true)).build())
         .usingRecursiveComparison()
         .isEqualTo(config);
-
   }
 
   @Test
@@ -68,25 +64,18 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     final TekuConfiguration config = getTekuConfigurationFromArguments("--p2p-enabled=false");
     assertThat(config.network().isEnabled()).isFalse();
     assertThat(config.sync().isSyncEnabled()).isFalse();
-    assertThat(
-        createConfigBuilder()
-            .network(b -> b.isEnabled(false))
-            .build())
+    assertThat(createConfigBuilder().network(b -> b.isEnabled(false)).build())
         .usingRecursiveComparison()
         .isEqualTo(config);
   }
 
   @Test
   public void p2pDiscoveryEnabled_shouldNotRequireAValue() {
-    TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments(
-        "--p2p-discovery-enabled");
-    final DiscoveryConfig config =
-        tekuConfiguration.discovery();
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--p2p-discovery-enabled");
+    final DiscoveryConfig config = tekuConfiguration.discovery();
     assertThat(config.isDiscoveryEnabled()).isTrue();
-    assertThat(
-        createConfigBuilder()
-            .discovery(b -> b.isDiscoveryEnabled(true))
-            .build())
+    assertThat(createConfigBuilder().discovery(b -> b.isDiscoveryEnabled(true)).build())
         .usingRecursiveComparison()
         .isEqualTo(tekuConfiguration);
   }
@@ -104,10 +93,7 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(tekuConfig.discovery().getListenUdpPort())
         .isEqualTo(tekuConfig.network().getListenPort());
     assertThat(tekuConfig.discovery().getListenUdpPort()).isEqualTo(9999);
-    assertThat(
-        createConfigBuilder()
-            .network(b -> b.listenPort(9999))
-            .build())
+    assertThat(createConfigBuilder().network(b -> b.listenPort(9999)).build())
         .usingRecursiveComparison()
         .isEqualTo(tekuConfig);
   }
@@ -119,10 +105,10 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(tekuConfig.discovery().getListenUdpPort()).isEqualTo(9888);
     assertThat(tekuConfig.network().getListenPort()).isEqualTo(9999);
     assertThat(
-        createConfigBuilder()
-            .network(b -> b.listenPort(9999))
-            .discovery(b -> b.listenUdpPort(9888))
-            .build())
+            createConfigBuilder()
+                .network(b -> b.listenPort(9999))
+                .discovery(b -> b.listenUdpPort(9888))
+                .build())
         .usingRecursiveComparison()
         .isEqualTo(tekuConfig);
   }
@@ -136,17 +122,10 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void advertisedIp_shouldAcceptValue() {
     final String ip = "10.0.1.200";
-    TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments(
-        "--p2p-advertised-ip", ip);
-    assertThat(
-            tekuConfiguration
-                .network()
-                .getAdvertisedIp())
-        .contains(ip);
-    assertThat(
-        createConfigBuilder()
-            .network(b -> b.advertisedIp(Optional.of(ip)))
-            .build())
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--p2p-advertised-ip", ip);
+    assertThat(tekuConfiguration.network().getAdvertisedIp()).contains(ip);
+    assertThat(createConfigBuilder().network(b -> b.advertisedIp(Optional.of(ip))).build())
         .usingRecursiveComparison()
         .isEqualTo(tekuConfiguration);
   }
@@ -158,17 +137,10 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void advertisedPort_shouldAcceptValue() {
-    TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments(
-        "--p2p-advertised-port", "8056");
-    assertThat(
-            tekuConfiguration
-                .network()
-                .getAdvertisedPort())
-        .isEqualTo(8056);
-    assertThat(
-        createConfigBuilder()
-            .network(b -> b.advertisedPort(OptionalInt.of(8056)))
-            .build())
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--p2p-advertised-port", "8056");
+    assertThat(tekuConfiguration.network().getAdvertisedPort()).isEqualTo(8056);
+    assertThat(createConfigBuilder().network(b -> b.advertisedPort(OptionalInt.of(8056))).build())
         .usingRecursiveComparison()
         .isEqualTo(tekuConfiguration);
   }
@@ -182,15 +154,11 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   void advertisedUdpPort_shouldDefaultToTcpListenPortWhenListenPortSet() {
-    TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments(
-        "--p2p-port=8000");
+    TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments("--p2p-port=8000");
     assertThat(tekuConfiguration.discovery().getAdvertisedUdpPort()).isEqualTo(8000);
     assertThat(tekuConfiguration.discovery().getAdvertisedUdpPort())
         .isEqualTo(tekuConfiguration.network().getAdvertisedPort());
-    assertThat(
-        createConfigBuilder()
-            .network(b -> b.listenPort(8000))
-            .build())
+    assertThat(createConfigBuilder().network(b -> b.listenPort(8000)).build())
         .usingRecursiveComparison()
         .isEqualTo(tekuConfiguration);
   }
@@ -203,10 +171,10 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(tekuConfig.discovery().getAdvertisedUdpPort())
         .isEqualTo(tekuConfig.network().getAdvertisedPort());
     assertThat(
-        createConfigBuilder()
-            .network(b -> b.advertisedPort(OptionalInt.of(7000)))
-            .network(b -> b.listenPort(8000))
-            .build())
+            createConfigBuilder()
+                .network(b -> b.advertisedPort(OptionalInt.of(7000)))
+                .network(b -> b.listenPort(8000))
+                .build())
         .usingRecursiveComparison()
         .isEqualTo(tekuConfig);
   }
@@ -220,46 +188,33 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(tekuConfig.network().getAdvertisedPort()).isEqualTo(7000);
     assertThat(tekuConfig.network().getListenPort()).isEqualTo(8000);
     assertThat(
-        createConfigBuilder()
-            .discovery(b -> b.advertisedUdpPort(OptionalInt.of(6000)))
-            .network(b -> b.listenPort(8000))
-            .network(b -> b.advertisedPort(OptionalInt.of(7000)))
-            .build())
+            createConfigBuilder()
+                .discovery(b -> b.advertisedUdpPort(OptionalInt.of(6000)))
+                .network(b -> b.listenPort(8000))
+                .network(b -> b.advertisedPort(OptionalInt.of(7000)))
+                .build())
         .usingRecursiveComparison()
         .isEqualTo(tekuConfig);
   }
 
   @Test
   public void minimumRandomlySelectedPeerCount_shouldDefaultTo20PercentOfLowerBound() {
-    TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments(
-        "--p2p-peer-lower-bound", "100",
-        "--p2p-peer-upper-bound", "110");
-    assertThat(
-            tekuConfiguration
-                .discovery()
-                .getMinRandomlySelectedPeers())
-        .isEqualTo(20);
-    assertThat(
-        createConfigBuilder()
-            .discovery(b -> b.minPeers(100).maxPeers(110))
-            .build())
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments(
+            "--p2p-peer-lower-bound", "100",
+            "--p2p-peer-upper-bound", "110");
+    assertThat(tekuConfiguration.discovery().getMinRandomlySelectedPeers()).isEqualTo(20);
+    assertThat(createConfigBuilder().discovery(b -> b.minPeers(100).maxPeers(110)).build())
         .usingRecursiveComparison()
         .isEqualTo(tekuConfiguration);
   }
 
   @Test
   public void privateKeyFile_shouldBeSettable() {
-    TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments(
-        "--p2p-private-key-file", "/some/file");
-    assertThat(
-            tekuConfiguration
-                .network()
-                .getPrivateKeyFile())
-        .contains("/some/file");
-    assertThat(
-        createConfigBuilder()
-            .network(b -> b.privateKeyFile("/some/file"))
-            .build())
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--p2p-private-key-file", "/some/file");
+    assertThat(tekuConfiguration.network().getPrivateKeyFile()).contains("/some/file");
+    assertThat(createConfigBuilder().network(b -> b.privateKeyFile("/some/file")).build())
         .usingRecursiveComparison()
         .isEqualTo(tekuConfiguration);
   }
@@ -275,19 +230,16 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void minimumRandomlySelectedPeerCount_canBeOverriden() {
-    TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments(
-        "--p2p-peer-lower-bound", "100",
-        "--p2p-peer-upper-bound", "110",
-        "--Xp2p-minimum-randomly-selected-peer-count", "40");
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments(
+            "--p2p-peer-lower-bound", "100",
+            "--p2p-peer-upper-bound", "110",
+            "--Xp2p-minimum-randomly-selected-peer-count", "40");
+    assertThat(tekuConfiguration.discovery().getMinRandomlySelectedPeers()).isEqualTo(40);
     assertThat(
-            tekuConfiguration
-                .discovery()
-                .getMinRandomlySelectedPeers())
-        .isEqualTo(40);
-    assertThat(
-        createConfigBuilder()
-            .discovery(b -> b.minPeers(100).maxPeers(110).minRandomlySelectedPeers(40))
-            .build())
+            createConfigBuilder()
+                .discovery(b -> b.minPeers(100).maxPeers(110).minRandomlySelectedPeers(40))
+                .build())
         .usingRecursiveComparison()
         .isEqualTo(tekuConfiguration);
   }

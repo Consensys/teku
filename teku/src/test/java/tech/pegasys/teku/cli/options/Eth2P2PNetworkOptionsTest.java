@@ -24,7 +24,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.cli.OSUtils;
 import tech.pegasys.teku.config.TekuConfiguration;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
@@ -78,9 +77,9 @@ public class Eth2P2PNetworkOptionsTest extends AbstractBeaconNodeCommandTest {
         .isEqualTo(eth2NetworkConfig.getEth1DepositContractDeployBlock());
 
     assertThat(
-        createConfigBuilder()
-            .eth2NetworkConfig(b -> b.applyNetworkDefaults(networkName))
-            .build())
+            createConfigBuilder()
+                .eth2NetworkConfig(b -> b.applyNetworkDefaults(networkName))
+                .build())
         .usingRecursiveComparison()
         .isEqualTo(tekuConfig);
   }
@@ -96,22 +95,20 @@ public class Eth2P2PNetworkOptionsTest extends AbstractBeaconNodeCommandTest {
         });
 
     TekuConfiguration tekuConfiguration = getResultingTekuConfiguration();
-    Eth2NetworkConfiguration configuration = tekuConfiguration
-        .eth2NetworkConfiguration();
-    final Eth1Address configuredDepositContract =
-        configuration.getEth1DepositContractAddress();
+    Eth2NetworkConfiguration configuration = tekuConfiguration.eth2NetworkConfiguration();
+    final Eth1Address configuredDepositContract = configuration.getEth1DepositContractAddress();
     assertThat(configuredDepositContract)
         .isEqualTo(Eth1Address.fromHexString("0xfe3b557e8fb62b89f4916b721be55ceb828dbd73"));
     assertThat(
-        createConfigBuilder()
-            .eth2NetworkConfig(b -> {
-              b.applyNetworkDefaults(Eth2Network.MAINNET);
-              b.eth1DepositContractAddress("0xfe3b557e8fb62b89f4916b721be55ceb828dbd73");
-            })
-            .build())
+            createConfigBuilder()
+                .eth2NetworkConfig(
+                    b -> {
+                      b.applyNetworkDefaults(Eth2Network.MAINNET);
+                      b.eth1DepositContractAddress("0xfe3b557e8fb62b89f4916b721be55ceb828dbd73");
+                    })
+                .build())
         .usingRecursiveComparison()
         .isEqualTo(tekuConfiguration);
-
   }
 
   @Test
@@ -123,12 +120,13 @@ public class Eth2P2PNetworkOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(bootnodes).isEmpty();
 
     assertThat(
-        createConfigBuilder()
-            .eth2NetworkConfig(b -> {
-              b.applyNetworkDefaults(Eth2Network.PYRMONT);
-            })
-            .discovery(b -> b.bootnodes(List.of()))
-            .build())
+            createConfigBuilder()
+                .eth2NetworkConfig(
+                    b -> {
+                      b.applyNetworkDefaults(Eth2Network.PYRMONT);
+                    })
+                .discovery(b -> b.bootnodes(List.of()))
+                .build())
         .usingRecursiveComparison()
         .isEqualTo(tekuConfiguration);
   }
@@ -143,42 +141,35 @@ public class Eth2P2PNetworkOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(config.eth2NetworkConfiguration().getConstants().toLowerCase())
         .isEqualToIgnoringWhitespace(url.toString().toLowerCase());
     assertThat(
-        createConfigBuilder()
-            .eth2NetworkConfig(b -> {
-              b.applyNetworkDefaults(url.toString());
-              b.discoveryBootnodes();
-            })
-            .build())
+            createConfigBuilder()
+                .eth2NetworkConfig(
+                    b -> {
+                      b.applyNetworkDefaults(url.toString());
+                      b.discoveryBootnodes();
+                    })
+                .build())
         .usingRecursiveComparison()
         .isEqualTo(config);
   }
 
   @Test
   public void setPeerRateLimit() {
-    TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments(
-        "--Xpeer-rate-limit", "10");
-    final P2PConfig config =
-        tekuConfiguration.beaconChain().p2pConfig();
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--Xpeer-rate-limit", "10");
+    final P2PConfig config = tekuConfiguration.beaconChain().p2pConfig();
     assertThat(config.getPeerRateLimit()).isEqualTo(10);
-    assertThat(
-        createConfigBuilder()
-            .p2p(b -> b.peerRateLimit(10))
-            .build())
+    assertThat(createConfigBuilder().p2p(b -> b.peerRateLimit(10)).build())
         .usingRecursiveComparison()
         .isEqualTo(tekuConfiguration);
   }
 
   @Test
   public void setPeerRequestLimit() {
-    TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments(
-        "--Xpeer-request-limit", "10");
-    final P2PConfig config =
-        tekuConfiguration.beaconChain().p2pConfig();
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--Xpeer-request-limit", "10");
+    final P2PConfig config = tekuConfiguration.beaconChain().p2pConfig();
     assertThat(config.getPeerRequestLimit()).isEqualTo(10);
-    assertThat(
-        createConfigBuilder()
-            .p2p(b -> b.peerRequestLimit(10))
-            .build())
+    assertThat(createConfigBuilder().p2p(b -> b.peerRequestLimit(10)).build())
         .usingRecursiveComparison()
         .isEqualTo(tekuConfiguration);
   }
@@ -200,10 +191,7 @@ public class Eth2P2PNetworkOptionsTest extends AbstractBeaconNodeCommandTest {
     final String state = "state.ssz";
     final TekuConfiguration config = getTekuConfigurationFromArguments("--initial-state", state);
     assertThat(config.eth2NetworkConfiguration().getInitialState()).contains(state);
-    assertThat(
-        createConfigBuilder()
-            .eth2NetworkConfig(b -> b.customInitialState(state))
-            .build())
+    assertThat(createConfigBuilder().eth2NetworkConfig(b -> b.customInitialState(state)).build())
         .usingRecursiveComparison()
         .isEqualTo(config);
   }
@@ -234,12 +222,13 @@ public class Eth2P2PNetworkOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(config.eth2NetworkConfiguration().getInitialState()).contains(state);
     assertThat(config.eth2NetworkConfiguration().isUsingCustomInitialState()).isTrue();
     assertThat(
-        createConfigBuilder()
-            .eth2NetworkConfig(b -> {
-              b.applyNetworkDefaults(network);
-              b.customInitialState(state);
-            })
-            .build())
+            createConfigBuilder()
+                .eth2NetworkConfig(
+                    b -> {
+                      b.applyNetworkDefaults(network);
+                      b.customInitialState(state);
+                    })
+                .build())
         .usingRecursiveComparison()
         .isEqualTo(config);
   }
