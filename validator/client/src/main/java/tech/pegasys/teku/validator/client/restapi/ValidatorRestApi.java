@@ -54,7 +54,7 @@ public class ValidatorRestApi {
             BadRequestException.class,
             (throwable, url) -> new HttpErrorResponse(SC_BAD_REQUEST, throwable.getMessage()))
         .endpoint(new GetKeys(keyManager))
-        .endpoint(new DeleteKeys())
+        .endpoint(new DeleteKeys(keyManager))
         .endpoint(new PostKeys())
         .build();
   }

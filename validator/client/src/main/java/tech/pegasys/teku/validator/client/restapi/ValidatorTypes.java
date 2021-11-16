@@ -111,7 +111,7 @@ public class ValidatorTypes {
   static SerializableTypeDefinition<DeleteKeyResult> DELETE_KEY_RESULT =
       SerializableTypeDefinition.object(DeleteKeyResult.class)
           .name("DeleteKeyResult")
-          .withField("status", enumOf(DeletionStatus.class), __ -> null)
+          .withField("status", enumOf(DeletionStatus.class), DeleteKeyResult::getStatus)
           .withOptionalField("message", STRING_TYPE, DeleteKeyResult::getMessage)
           .build();
 
