@@ -76,6 +76,7 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.sync.events.SyncStateProvider;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.AttesterDuty;
+import tech.pegasys.teku.validator.api.BeaconPreparableProposer;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ProposerDuties;
@@ -589,6 +590,10 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
               }
             });
   }
+
+  @Override
+  public void prepareBeaconProposer(
+      Collection<BeaconPreparableProposer> beaconPreparableProposers) {}
 
   private Optional<SubmitDataError> fromInternalValidationResult(
       final InternalValidationResult internalValidationResult, final int resultIndex) {

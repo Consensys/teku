@@ -83,4 +83,6 @@ public interface ValidatorApiChannel extends ChannelInterface {
 
   SafeFuture<Void> sendSignedContributionAndProofs(
       Collection<SignedContributionAndProof> signedContributionAndProofs);
+
+  void prepareBeaconProposer(Collection<BeaconPreparableProposer> beaconPreparableProposers);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,18 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.service.serviceutils;
+package tech.pegasys.teku;
 
-public class FatalServiceFailureException extends RuntimeException {
-
-  private final Class<?> service;
-
-  public FatalServiceFailureException(final Class<?> service, final Throwable cause) {
-    super(cause);
-    this.service = service;
-  }
-
-  public Class<?> getService() {
-    return service;
-  }
-}
+/**
+ * CAUTION: this API is unstable and primarily intended for debugging and testing purposes this API
+ * might be changed in any version in backward incompatible way
+ */
+public interface ValidatorNodeFacade extends NodeFacade {}

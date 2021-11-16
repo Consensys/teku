@@ -31,8 +31,17 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class TestStoreFactory {
-  private final Spec spec = TestSpecFactory.createDefault();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final Spec spec;
+  private final DataStructureUtil dataStructureUtil;
+
+  public TestStoreFactory() {
+    this(TestSpecFactory.createDefault());
+  }
+
+  public TestStoreFactory(final Spec spec) {
+    this.spec = spec;
+    this.dataStructureUtil = new DataStructureUtil(spec);
+  }
 
   public TestStoreImpl createGenesisStore() {
     return getForkChoiceStore(createAnchorForGenesis());
