@@ -98,7 +98,7 @@ public class SyncingNodeManager {
             recentChainData,
             forkChoice,
             WeakSubjectivityFactory.lenientValidator(),
-            new StubExecutionEngineChannel());
+            new StubExecutionEngineChannel(spec));
 
     BlockValidator blockValidator = new BlockValidator(spec, recentChainData);
     final PendingPool<SignedBeaconBlock> pendingBlocks = PendingPool.createForBlocks(spec);
