@@ -17,7 +17,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 
-public class BeaconChainService extends Service {
+public class BeaconChainService extends Service implements BeaconChainServiceFacade {
 
   private final BeaconChainController controller;
 
@@ -34,5 +34,10 @@ public class BeaconChainService extends Service {
   @Override
   protected SafeFuture<?> doStop() {
     return this.controller.stop();
+  }
+
+  @Override
+  public BeaconChainController getBeaconChainController() {
+    return controller;
   }
 }
