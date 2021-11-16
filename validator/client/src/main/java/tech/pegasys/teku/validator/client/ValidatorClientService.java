@@ -214,6 +214,9 @@ public class ValidatorClientService extends Service {
       validatorTimingChannels.add(
           new SyncCommitteeScheduler(
               metricsSystem, spec, syncCommitteeDutyLoader, new Random()::nextInt));
+      validatorTimingChannels.add(
+          new BeaconProposerPreparer(
+              validatorApiChannel, validatorIndexProvider, validators, spec));
     }
     addValidatorCountMetric(metricsSystem, validators);
     this.validatorStatusLogger =
