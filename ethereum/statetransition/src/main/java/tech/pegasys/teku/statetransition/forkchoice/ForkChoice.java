@@ -20,6 +20,7 @@ import static tech.pegasys.teku.statetransition.forkchoice.StateRootCollector.ad
 import com.google.common.base.Throwables;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -35,7 +36,6 @@ import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProposerWeighting;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -44,12 +44,9 @@ import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
-import tech.pegasys.teku.spec.executionengine.ExecutePayloadResult;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
-import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
-import tech.pegasys.teku.spec.logic.versions.merge.block.OptimisticExecutionPayloadExecutor;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -189,7 +186,8 @@ public class ForkChoice {
         blockSlotState.get().getSlot());
 
     final ForkChoiceOptimisticExecutionPayloadExecutor payloadExecutor =
-        new ForkChoiceOptimisticExecutionPayloadExecutor(block, executionEngine);
+        new ForkChoiceOptimisticExecutionPayloadExecutor(
+            recentChainData, forkChoiceExecutor, block, executionEngine);
 
     return onForkChoiceThread(
             () -> {
@@ -217,20 +215,14 @@ public class ForkChoice {
                       result.getFailureReason().name(),
                       result.getFailureCause());
                 }
-                return result;
+                return SafeFuture.completedFuture(result);
               }
               // Note: not using thenRun here because we want to ensure each step is on the event
               // thread
               transaction.commit().join();
-              final Optional<ExecutionPayload> executionPayload =
-                  block.getMessage().getBody().getOptionalExecutionPayload();
 
               proposerWeightings.onBlockReceived(block, blockSlotState.get(), forkChoiceStrategy);
 
-              if (executionPayload.isEmpty()) {
-                // No payload means this block is fully valid and chain head can immediately update.
-                updateForkChoiceForImportedBlock(block, result, forkChoiceStrategy);
-              }
               final UInt64 currentEpoch = spec.computeEpochAtSlot(spec.getCurrentSlot(transaction));
 
               // We only need to apply attestations from the current or previous epoch
@@ -241,9 +233,13 @@ public class ForkChoice {
                   .isGreaterThanOrEqualTo(currentEpoch.minusMinZero(1))) {
                 applyVotesFromBlock(forkChoiceStrategy, currentEpoch, indexedAttestationCache);
               }
-              return result;
+
+              // Do the combine while still on the fork choice thread unless we really do have to
+              // wait for the payload execution to complete, so call this here rather than in
+              // .thenCompose below even though it means having to unwrap the SafeFuture
+              return payloadExecutor.combine(result);
             })
-        .thenCompose(payloadExecutor::combine);
+        .thenCompose(Function.identity());
   }
 
   private void applyVotesFromBlock(
@@ -266,44 +262,6 @@ public class ForkChoice {
         .getForkChoiceUtil()
         .validateOnAttestation(forkChoiceStrategy, currentEpoch, attestation.getData())
         .isSuccessful();
-  }
-
-  private void updateForkChoiceForImportedBlock(
-      final SignedBeaconBlock block,
-      final BlockImportResult result,
-      final ForkChoiceStrategy forkChoiceStrategy) {
-
-    final SlotAndBlockRoot bestHeadBlock = findNewChainHead(block, forkChoiceStrategy);
-    if (!bestHeadBlock.getBlockRoot().equals(recentChainData.getBestBlockRoot().orElseThrow())) {
-      recentChainData.updateHead(bestHeadBlock.getBlockRoot(), bestHeadBlock.getSlot());
-      if (bestHeadBlock.getBlockRoot().equals(block.getRoot())) {
-        result.markAsCanonical();
-      }
-    }
-  }
-
-  private SlotAndBlockRoot findNewChainHead(
-      final SignedBeaconBlock block, final ForkChoiceStrategy forkChoiceStrategy) {
-    // If the new block builds on our current chain head it must be the new chain head.
-    // Since fork choice works by walking down the tree selecting the child block with
-    // the greatest weight, when a block has only one child it will automatically become
-    // a better choice than the block itself.  So the first block we receive that is a
-    // child of our current chain head, must be the new chain head. If we'd had any other
-    // child of the current chain head we'd have already selected it as head.
-    if (recentChainData
-        .getChainHead()
-        .map(currentHead -> currentHead.getRoot().equals(block.getParentRoot()))
-        .orElse(false)) {
-      return new SlotAndBlockRoot(block.getSlot(), block.getRoot());
-    }
-
-    // Otherwise, use fork choice to find the new chain head as if this block is on time the
-    // proposer weighting may cause us to reorg.
-    // During sync, this may be noticeably slower than just comparing the chain head due to the way
-    // ProtoArray skips updating all ancestors when adding a new block but it's cheap when in sync.
-    final Checkpoint justifiedCheckpoint = recentChainData.getJustifiedCheckpoint().orElseThrow();
-    final Checkpoint finalizedCheckpoint = recentChainData.getFinalizedCheckpoint().orElseThrow();
-    return forkChoiceStrategy.findHead(justifiedCheckpoint, finalizedCheckpoint);
   }
 
   public SafeFuture<AttestationProcessingResult> onAttestation(
@@ -392,52 +350,5 @@ public class ForkChoice {
 
   private <T> SafeFuture<T> onForkChoiceThread(final ExceptionThrowingSupplier<T> task) {
     return forkChoiceExecutor.execute(task);
-  }
-
-  private class ForkChoiceOptimisticExecutionPayloadExecutor
-      implements OptimisticExecutionPayloadExecutor {
-
-    private final SignedBeaconBlock block;
-    private final ExecutionEngineChannel executionEngine;
-    private SafeFuture<ExecutePayloadResult> result;
-
-    private ForkChoiceOptimisticExecutionPayloadExecutor(
-        final SignedBeaconBlock block, final ExecutionEngineChannel executionEngine) {
-      this.block = block;
-      this.executionEngine = executionEngine;
-    }
-
-    public SafeFuture<BlockImportResult> combine(final BlockImportResult blockImportResult) {
-      if (result == null) {
-        // No execution was started so can return result unchanged
-        return SafeFuture.completedFuture(blockImportResult);
-      }
-      return result.thenApplyAsync(
-          payloadResult -> {
-            if (!blockImportResult.isSuccessful()) {
-              return blockImportResult;
-            }
-            getForkChoiceStrategy()
-                .onExecutionPayloadResult(block.getRoot(), payloadResult.getStatus());
-            if (payloadResult.getStatus() == ExecutionPayloadStatus.INVALID) {
-              return BlockImportResult.failedStateTransition(
-                  new IllegalStateException(
-                      "Invalid ExecutionPayload: "
-                          + payloadResult.getMessage().orElse("No reason provided")));
-            }
-
-            if (payloadResult.getStatus() == ExecutionPayloadStatus.VALID) {
-              updateForkChoiceForImportedBlock(block, blockImportResult, getForkChoiceStrategy());
-            }
-            return blockImportResult;
-          },
-          forkChoiceExecutor);
-    }
-
-    @Override
-    public boolean optimisticallyExecute(final ExecutionPayload executionPayload) {
-      result = executionEngine.executePayload(executionPayload);
-      return true;
-    }
   }
 }

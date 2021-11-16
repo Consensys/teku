@@ -48,7 +48,6 @@ public interface BeaconBlockBody extends SszContainer {
   default Optional<ExecutionPayload> getOptionalExecutionPayload() {
     return Optional.empty();
   }
-  ;
 
   @Override
   BeaconBlockBodySchema<? extends BeaconBlockBody> getSchema();
