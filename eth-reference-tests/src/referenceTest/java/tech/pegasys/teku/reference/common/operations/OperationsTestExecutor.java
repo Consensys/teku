@@ -222,7 +222,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
                             : ExecutionPayloadStatus.INVALID,
                         Optional.empty(),
                         Optional.empty())));
-        processor.processExecutionPayload(state, payload, executionEngine);
+        processor.processExecutionPayload(state, payload);
         break;
     }
   }

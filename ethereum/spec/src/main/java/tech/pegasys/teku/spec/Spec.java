@@ -56,7 +56,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateInvariants;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.genesis.GenesisGenerator;
 import tech.pegasys.teku.spec.logic.StateTransition;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
@@ -462,11 +461,10 @@ public class Spec {
       final MutableStore store,
       final SignedBeaconBlock signedBlock,
       final BeaconState blockSlotState,
-      final IndexedAttestationCache indexedAttestationCache,
-      final ExecutionEngineChannel executionEngine) {
+      final IndexedAttestationCache indexedAttestationCache) {
     return atBlock(signedBlock)
         .getForkChoiceUtil()
-        .onBlock(store, signedBlock, blockSlotState, indexedAttestationCache, executionEngine);
+        .onBlock(store, signedBlock, blockSlotState, indexedAttestationCache);
   }
 
   public boolean blockDescendsFromLatestFinalizedBlock(
@@ -506,18 +504,13 @@ public class Spec {
   public BeaconState processBlock(
       final BeaconState preState,
       final SignedBeaconBlock block,
-      final BLSSignatureVerifier signatureVerifier,
-      final ExecutionEngineChannel executionEngine)
+      final BLSSignatureVerifier signatureVerifier)
       throws StateTransitionException {
     try {
       final BeaconState blockSlotState = stateTransition.processSlots(preState, block.getSlot());
       return getBlockProcessor(block.getSlot())
           .processAndValidateBlock(
-              block,
-              blockSlotState,
-              IndexedAttestationCache.NOOP,
-              signatureVerifier,
-              executionEngine);
+              block, blockSlotState, IndexedAttestationCache.NOOP, signatureVerifier);
     } catch (SlotProcessingException | EpochProcessingException e) {
       throw new StateTransitionException(e);
     }
@@ -532,8 +525,7 @@ public class Spec {
               blockSlotState,
               block.getMessage(),
               IndexedAttestationCache.NOOP,
-              BLSSignatureVerifier.NO_OP,
-              ExecutionEngineChannel.NOOP);
+              BLSSignatureVerifier.NO_OP);
     } catch (SlotProcessingException | EpochProcessingException | BlockProcessingException e) {
       throw new StateTransitionException(e);
     }

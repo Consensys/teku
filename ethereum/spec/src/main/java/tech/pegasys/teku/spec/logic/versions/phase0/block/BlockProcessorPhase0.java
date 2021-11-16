@@ -23,7 +23,6 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.MutableBeaconStatePhase0;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
@@ -95,9 +94,7 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
 
   @Override
   public void processExecutionPayload(
-      final MutableBeaconState state,
-      final ExecutionPayload executionPayload,
-      final ExecutionEngineChannel executionEngine)
+      final MutableBeaconState state, final ExecutionPayload executionPayload)
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No ExecutionPayload in phase0");
   }

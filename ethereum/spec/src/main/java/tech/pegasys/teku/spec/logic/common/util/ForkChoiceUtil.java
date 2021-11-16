@@ -36,7 +36,6 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
@@ -316,8 +315,7 @@ public class ForkChoiceUtil {
       final MutableStore store,
       final SignedBeaconBlock signedBlock,
       final BeaconState blockSlotState,
-      final IndexedAttestationCache indexedAttestationCache,
-      final ExecutionEngineChannel executionEngine) {
+      final IndexedAttestationCache indexedAttestationCache) {
     checkArgument(
         blockSlotState.getSlot().equals(signedBlock.getSlot()),
         "State must have slots processed up to the block slot");
@@ -337,7 +335,7 @@ public class ForkChoiceUtil {
     try {
       state =
           blockProcessor.processAndValidateBlock(
-              signedBlock, blockSlotState, indexedAttestationCache, executionEngine);
+              signedBlock, blockSlotState, indexedAttestationCache);
     } catch (StateTransitionException e) {
       return BlockImportResult.failedStateTransition(e);
     }

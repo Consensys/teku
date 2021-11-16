@@ -22,9 +22,6 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.MutableBeaconStateMerge;
-import tech.pegasys.teku.spec.executionengine.ExecutePayloadResult;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
-import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
@@ -75,14 +72,13 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
       final MutableBeaconState genericState,
       final BeaconBlock block,
       final IndexedAttestationCache indexedAttestationCache,
-      final BLSSignatureVerifier signatureVerifier,
-      final ExecutionEngineChannel executionEngine)
+      final BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException {
     final MutableBeaconStateMerge state = MutableBeaconStateMerge.required(genericState);
     final BeaconBlockBodyMerge blockBody = BeaconBlockBodyMerge.required(block.getBody());
     processBlockHeader(state, block);
     if (miscHelpersMerge.isExecutionEnabled(genericState, block)) {
-      processExecutionPayload(state, blockBody.getExecutionPayload(), executionEngine);
+      processExecutionPayload(state, blockBody.getExecutionPayload());
     }
     processRandaoNoValidation(state, block.getBody());
     processEth1Data(state, block.getBody());
@@ -92,9 +88,7 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
 
   @Override
   public void processExecutionPayload(
-      final MutableBeaconState genericState,
-      final ExecutionPayload payload,
-      final ExecutionEngineChannel executionEngine)
+      final MutableBeaconState genericState, final ExecutionPayload payload)
       throws BlockProcessingException {
     final MutableBeaconStateMerge state = MutableBeaconStateMerge.required(genericState);
     if (miscHelpersMerge.isMergeComplete(state)) {
@@ -115,12 +109,6 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
         .equals(payload.getTimestamp())) {
       throw new BlockProcessingException(
           "Execution payload timestamp does not match time for state slot");
-    }
-
-    final ExecutePayloadResult payloadResult = executionEngine.executePayload(payload).join();
-    if (payloadResult.getStatus() != ExecutionPayloadStatus.VALID) {
-      throw new BlockProcessingException(
-          "Execution payload was not valid: " + payloadResult.getMessage());
     }
 
     final ExecutionPayloadHeaderSchema executionPayloadHeaderSchema =

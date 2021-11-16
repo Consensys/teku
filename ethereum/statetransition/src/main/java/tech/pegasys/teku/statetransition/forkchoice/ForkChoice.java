@@ -27,6 +27,7 @@ import tech.pegasys.teku.infrastructure.async.ExceptionThrowingRunnable;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
+import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.spec.Spec;
@@ -35,6 +36,7 @@ import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProposerWeighting;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -193,12 +195,7 @@ public class ForkChoice {
           addParentStateRoots(blockSlotState.get(), transaction);
 
           final BlockImportResult result =
-              spec.onBlock(
-                  transaction,
-                  block,
-                  blockSlotState.get(),
-                  indexedAttestationCache,
-                  executionEngine);
+              spec.onBlock(transaction, block, blockSlotState.get(), indexedAttestationCache);
 
           if (!result.isSuccessful()) {
             if (result.getFailureReason() != FailureReason.BLOCK_IS_FROM_FUTURE) {
@@ -212,13 +209,25 @@ public class ForkChoice {
             }
             return result;
           }
-          // Note: not using thenRun here because we want to ensure each step is on the event thread
+          // Note: not using thenRun here because we want to ensure each step is on the event
+          // thread
           transaction.commit().join();
-          updateForkChoiceForImportedBlock(block, blockSlotState.get(), result, forkChoiceStrategy);
+          final Optional<ExecutionPayload> executionPayload =
+              block.getMessage().getBody().getOptionalExecutionPayload();
+          if (executionPayload.isPresent()) {
+            // Execution payload is present, so we have optimistically sync'd this block and need
+            // to now actually execute the payload.  It can't be a canonical block in that case.
+            validateExecutionPayload(
+                block, executionEngine, forkChoiceStrategy, executionPayload.get());
+          } else {
+            updateForkChoiceForImportedBlock(
+                block, blockSlotState.get(), result, forkChoiceStrategy);
+          }
           final UInt64 currentEpoch = spec.computeEpochAtSlot(spec.getCurrentSlot(transaction));
 
           // We only need to apply attestations from the current or previous epoch
-          // If the block is from before that, none of the attestations will be applicable so just
+          // If the block is from before that, none of the attestations will be applicable so
+          // just
           // skip the whole step.
           if (spec.computeEpochAtSlot(block.getSlot())
               .isGreaterThanOrEqualTo(currentEpoch.minusMinZero(1))) {
@@ -226,6 +235,24 @@ public class ForkChoice {
           }
           return result;
         });
+  }
+
+  private void validateExecutionPayload(
+      final SignedBeaconBlock block,
+      final ExecutionEngineChannel executionEngine,
+      final ForkChoiceStrategy forkChoiceStrategy,
+      final ExecutionPayload executionPayload) {
+    final UInt64 blockSlot = block.getSlot();
+    final Bytes32 blockRoot = block.getRoot();
+    executionEngine
+        .executePayload(executionPayload)
+        .finish(
+            payloadResult ->
+                forkChoiceStrategy.onExecutionPayloadResult(blockRoot, payloadResult.getStatus()),
+            error ->
+                LOG.error(
+                    "Failed to execute payload for block {}",
+                    LogFormatter.formatBlock(blockSlot, blockRoot)));
   }
 
   private void applyVotesFromBlock(

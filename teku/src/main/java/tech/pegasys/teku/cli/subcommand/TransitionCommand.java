@@ -37,7 +37,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
@@ -79,9 +78,7 @@ public class TransitionCommand implements Runnable {
           if (blocks != null) {
             for (String blockPath : blocks) {
               SignedBeaconBlock block = readBlock(spec, blockPath);
-              state =
-                  spec.processBlock(
-                      state, block, BLSSignatureVerifier.SIMPLE, ExecutionEngineChannel.NOOP);
+              state = spec.processBlock(state, block, BLSSignatureVerifier.SIMPLE);
             }
           }
           return state;
