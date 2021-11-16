@@ -18,8 +18,9 @@ import java.util.Iterator;
 import java.util.List;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.service.serviceutils.Service;
+import tech.pegasys.teku.service.serviceutils.ServiceFacade;
 
-public abstract class ServiceController extends Service {
+public abstract class ServiceController extends Service implements ServiceControllerFacade {
 
   protected final List<Service> services = new ArrayList<>();
 
@@ -37,5 +38,10 @@ public abstract class ServiceController extends Service {
   @Override
   protected SafeFuture<?> doStop() {
     return SafeFuture.allOf(services.stream().map(Service::stop).toArray(SafeFuture[]::new));
+  }
+
+  @Override
+  public List<? extends ServiceFacade> getServices() {
+    return services;
   }
 }

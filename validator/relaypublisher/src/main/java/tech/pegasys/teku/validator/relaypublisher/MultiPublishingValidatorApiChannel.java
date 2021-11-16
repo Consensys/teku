@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncComm
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.validator.api.AttesterDuties;
+import tech.pegasys.teku.validator.api.BeaconPreparableProposer;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
@@ -244,6 +245,12 @@ public class MultiPublishingValidatorApiChannel implements ValidatorApiChannel {
     }
 
     return future;
+  }
+
+  @Override
+  public void prepareBeaconProposer(
+      Collection<BeaconPreparableProposer> beaconPreparableProposers) {
+    delegate.prepareBeaconProposer(beaconPreparableProposers);
   }
 
   private void logPublishError(
