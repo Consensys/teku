@@ -56,7 +56,7 @@ class ProtoArrayTest {
 
   @BeforeEach
   void setUp() {
-    addBlock(0, Bytes32.ZERO, Bytes32.ZERO);
+    addBlock(0, Bytes32.ZERO, Bytes32.ZERO, OPTIMISTIC);
   }
 
   @Test
