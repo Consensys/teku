@@ -409,8 +409,6 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
       "http://localhost:8545",
       "--Xee-endpoint",
       "http://localhost:8550",
-      "--Xee-fee-recipient-address",
-      "0x00220204f295DbB79fbBe619dd1B94463800F9D9",
       "--metrics-enabled",
       "false",
       "--metrics-port",
