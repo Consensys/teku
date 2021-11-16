@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.validator.client.restapi.apis;
 
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -53,15 +52,7 @@ public class DeleteKeys extends RestApiEndpoint {
 
   @Override
   public void handle(final RestApiRequest request) throws JsonProcessingException {
-    try {
-      DeleteKeysRequest deleteRequest = request.getRequestBody();
-      if (deleteRequest == null) {
-        request.respondError(SC_BAD_REQUEST, "Could not read request body");
-        return;
-      }
-      request.respondOk(keyManager.deleteValidators(deleteRequest.getPublicKeys()));
-    } catch (JsonProcessingException ex) {
-      request.respondError(SC_BAD_REQUEST, ex.getMessage());
-    }
+    DeleteKeysRequest deleteRequest = request.getRequestBody();
+    request.respondOk(keyManager.deleteValidators(deleteRequest.getPublicKeys()));
   }
 }

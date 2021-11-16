@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Collections.emptyMap;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_FORBIDDEN;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNAUTHORIZED;
@@ -212,6 +213,15 @@ public class EndpointMetadata {
           SC_INTERNAL_SERVER_ERROR, "Internal server error", CoreTypes.HTTP_ERROR_RESPONSE_TYPE);
     }
 
+    public EndpointMetaDataBuilder withBadRequestResponse(Optional<String> maybeMessage) {
+      response(
+          SC_BAD_REQUEST,
+          maybeMessage.orElse(
+              "The request could not be processed, check the response for more information."),
+          CoreTypes.HTTP_ERROR_RESPONSE_TYPE);
+      return this;
+    }
+
     public EndpointMetaDataBuilder response(
         final int responseCode,
         final String description,
@@ -228,6 +238,9 @@ public class EndpointMetadata {
       checkNotNull(description, "description must be specified");
       checkState(!responses.isEmpty(), "Must specify at least one response");
 
+      if (!responses.containsKey(Integer.toString(SC_BAD_REQUEST))) {
+        withBadRequestResponse(Optional.empty());
+      }
       if (!responses.containsKey(Integer.toString(SC_INTERNAL_SERVER_ERROR))) {
         // add internal error response if a custom response hasn't been defined
         withInternalErrorResponse();

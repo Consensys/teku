@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.client.restapi.apis;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
@@ -21,7 +22,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult.success;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -30,6 +30,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.restapi.exceptions.MissingRequestBodyException;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.client.KeyManager;
@@ -73,27 +74,11 @@ public class DeleteKeysTest {
 
   @Test
   void shouldReturnBadRequest() throws JsonProcessingException {
-    when(request.getRequestBody()).thenReturn(null);
+    when(request.getRequestBody()).thenThrow(new MissingRequestBodyException());
 
-    endpoint.handle(request);
+    assertThatThrownBy(() -> endpoint.handle(request))
+        .isInstanceOf(MissingRequestBodyException.class);
     verify(keyManager, never()).deleteValidators(any());
     verify(request, never()).respondOk(any());
-    verify(request, times(1)).respondError(eq(SC_BAD_REQUEST), eq("Could not read request body"));
-  }
-
-  @Test
-  void shouldFailOnJsonProcessingFailure() throws JsonProcessingException {
-    when(request.getRequestBody()).thenThrow(new MyException("computer says no"));
-
-    endpoint.handle(request);
-    verify(keyManager, never()).deleteValidators(any());
-    verify(request, never()).respondOk(any());
-    verify(request, times(1)).respondError(eq(SC_BAD_REQUEST), eq("computer says no"));
-  }
-
-  private static class MyException extends JsonProcessingException {
-    public MyException(final String msg) {
-      super(msg);
-    }
   }
 }
