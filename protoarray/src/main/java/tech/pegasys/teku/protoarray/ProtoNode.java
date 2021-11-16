@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.protoarray;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import java.util.Optional;
@@ -37,6 +39,8 @@ public class ProtoNode {
   private Optional<Integer> bestChildIndex;
   private Optional<Integer> bestDescendantIndex;
 
+  private ProtoNodeValidationStatus validationStatus;
+
   ProtoNode(
       final UInt64 blockSlot,
       final Bytes32 stateRoot,
@@ -47,7 +51,8 @@ public class ProtoNode {
       final UInt64 finalizedEpoch,
       final UInt64 weight,
       final Optional<Integer> bestChildIndex,
-      final Optional<Integer> bestDescendantIndex) {
+      final Optional<Integer> bestDescendantIndex,
+      final ProtoNodeValidationStatus validationStatus) {
     this.blockSlot = blockSlot;
     this.stateRoot = stateRoot;
     this.blockRoot = blockRoot;
@@ -58,6 +63,7 @@ public class ProtoNode {
     this.weight = weight;
     this.bestChildIndex = bestChildIndex;
     this.bestDescendantIndex = bestDescendantIndex;
+    this.validationStatus = validationStatus;
   }
 
   public void adjustWeight(long delta) {
@@ -135,6 +141,24 @@ public class ProtoNode {
   public BlockInformation createBlockInformation() {
     return new BlockInformation(
         blockSlot, blockRoot, parentRoot, stateRoot, justifiedEpoch, finalizedEpoch);
+  }
+
+  public boolean isFullyValidated() {
+    return validationStatus == ProtoNodeValidationStatus.VALID;
+  }
+
+  public boolean isInvalid() {
+    return validationStatus == ProtoNodeValidationStatus.INVALID;
+  }
+
+  public void setValidationStatus(final ProtoNodeValidationStatus validationStatus) {
+    checkState(
+        this.validationStatus == ProtoNodeValidationStatus.OPTIMISTIC
+            || this.validationStatus == validationStatus,
+        "Cannot change node validity from %s to %s",
+        this.validationStatus,
+        validationStatus);
+    this.validationStatus = validationStatus;
   }
 
   @Override

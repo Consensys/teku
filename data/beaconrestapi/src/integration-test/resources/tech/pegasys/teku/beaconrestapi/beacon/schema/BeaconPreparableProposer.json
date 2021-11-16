@@ -1,0 +1,16 @@
+{
+  "type" : "object",
+  "properties" : {
+    "validator_index" : {
+      "type" : "string",
+      "format" : "uint64",
+      "example" : "1"
+    },
+    "fee_recipient" : {
+      "pattern" : "^0x[a-fA-F0-9]{40}$",
+      "type" : "string",
+      "description" : "Bytes20 hexadecimal",
+      "format" : "byte"
+    }
+  }
+}

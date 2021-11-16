@@ -38,6 +38,7 @@ public enum ValidatorApiMethod {
   GET_SYNC_COMMITTEE_DUTIES("eth/v1/validator/duties/sync/:epoch"),
   GET_SYNC_COMMITTEE_CONTRIBUTION("eth/v1/validator/sync_committee_contribution"),
   GET_PROPOSER_DUTIES("eth/v1/validator/duties/proposer/:epoch"),
+  PREPARE_BEACON_PROPOSER("/eth/v1/validator/prepare_beacon_proposer"),
   GET_BLOCK_HEADER("eth/v1/beacon/headers/:block_id"),
   GET_CONFIG_SPEC("/eth/v1/config/spec"),
   EVENTS("eth/v1/events");

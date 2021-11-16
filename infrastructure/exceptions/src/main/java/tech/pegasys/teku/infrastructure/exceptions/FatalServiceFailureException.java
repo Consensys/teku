@@ -11,28 +11,23 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.infrastructure.logging;
+package tech.pegasys.teku.infrastructure.exceptions;
 
-public enum LoggingDestination {
-  BOTH("both"),
-  CONSOLE("console"),
-  DEFAULT_BOTH("default"),
-  FILE("file"),
-  CUSTOM("custom");
+public class FatalServiceFailureException extends RuntimeException {
 
-  private final String key;
+  private final String service;
 
-  LoggingDestination(final String key) {
-    this.key = key;
+  public FatalServiceFailureException(final String serviceName, final String message) {
+    super(message);
+    this.service = serviceName;
   }
 
-  public static LoggingDestination get(final String destination) {
-    for (final LoggingDestination candidate : LoggingDestination.values()) {
-      if (candidate.key.equalsIgnoreCase(destination)) {
-        return candidate;
-      }
-    }
+  public FatalServiceFailureException(final Class<?> service, final Throwable cause) {
+    super(cause);
+    this.service = service.getSimpleName();
+  }
 
-    return DEFAULT_BOTH;
+  public String getService() {
+    return service;
   }
 }

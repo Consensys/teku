@@ -43,7 +43,8 @@ public class ProtoArraySnapshotTest {
             UInt64.valueOf(9),
             UInt64.ZERO,
             Optional.empty(),
-            Optional.empty());
+            Optional.empty(),
+            ProtoNodeValidationStatus.VALID);
 
     protoArray1.onBlock(
         protoNode1.getBlockSlot(),
@@ -81,7 +82,8 @@ public class ProtoArraySnapshotTest {
             UInt64.valueOf(9),
             UInt64.ZERO,
             Optional.empty(),
-            Optional.empty());
+            Optional.empty(),
+            ProtoNodeValidationStatus.VALID);
 
     ProtoNode protoNode2 =
         new ProtoNode(
@@ -94,7 +96,8 @@ public class ProtoArraySnapshotTest {
             UInt64.valueOf(9),
             UInt64.ZERO,
             Optional.empty(),
-            Optional.empty());
+            Optional.empty(),
+            ProtoNodeValidationStatus.VALID);
 
     protoArray1.onBlock(
         protoNode1.getBlockSlot(),
