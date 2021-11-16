@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.protoarray;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import java.util.Optional;
@@ -150,6 +152,12 @@ public class ProtoNode {
   }
 
   public void setValidationStatus(final ProtoNodeValidationStatus validationStatus) {
+    checkState(
+        this.validationStatus == ProtoNodeValidationStatus.OPTIMISTIC
+            || this.validationStatus == validationStatus,
+        "Cannot change node validity from %s to %s",
+        this.validationStatus,
+        validationStatus);
     this.validationStatus = validationStatus;
   }
 
