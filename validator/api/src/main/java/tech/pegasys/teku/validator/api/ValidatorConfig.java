@@ -195,7 +195,7 @@ public class ValidatorConfig {
     private ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode =
         ValidatorPerformanceTrackingMode.DEFAULT_MODE;
     private boolean validatorKeystoreLockingEnabled = DEFAULT_VALIDATOR_KEYSTORE_LOCKING_ENABLED;
-    private String beaconNodeApiEndpoint = DEFAULT_BEACON_NODE_API_ENDPOINT;
+    private Optional<URI> beaconNodeApiEndpoint = Optional.empty();
     private boolean validatorExternalSignerSlashingProtectionEnabled =
         DEFAULT_VALIDATOR_EXTERNAL_SIGNER_SLASHING_PROTECTION_ENABLED;
     private boolean useDependentRoots = DEFAULT_USE_DEPENDENT_ROOTS;
@@ -264,7 +264,7 @@ public class ValidatorConfig {
     }
 
     public Builder beaconNodeApiEndpoint(final URI beaconNodeApiEndpoint) {
-      this.beaconNodeApiEndpoint = beaconNodeApiEndpoint.toASCIIString();
+      this.beaconNodeApiEndpoint = Optional.of(beaconNodeApiEndpoint);
       return this;
     }
 
@@ -318,7 +318,7 @@ public class ValidatorConfig {
           validatorExternalSignerKeystorePasswordFile,
           validatorExternalSignerTruststore,
           validatorExternalSignerTruststorePasswordFile,
-          Optional.of(URI.create(beaconNodeApiEndpoint)),
+          beaconNodeApiEndpoint,
           graffitiProvider,
           validatorPerformanceTrackingMode,
           validatorKeystoreLockingEnabled,
