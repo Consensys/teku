@@ -105,6 +105,11 @@ public class LoggingConfigurator {
       return;
     }
 
+    if (isProgrammaticLoggingDisabled()) {
+      displayLoggingConfigurationDisabled();
+      return;
+    }
+
     if (isProgrammaticLoggingRedundant()) {
       displayCustomLog4jConfigUsed();
       return;
@@ -189,6 +194,10 @@ public class LoggingConfigurator {
             "Custom logging configuration applied from: {}", getCustomLog4jConfigFile().orElse(""));
   }
 
+  private static void displayLoggingConfigurationDisabled() {
+    StatusLogger.getLogger().info("Teku logging configuration disabled.");
+  }
+
   private static void displayUnknownDestinationConfigured() {
     StatusLogger.getLogger()
         .warn(
@@ -201,8 +210,14 @@ public class LoggingConfigurator {
     return DESTINATION == null;
   }
 
+  private static boolean isProgrammaticLoggingDisabled() {
+    return DESTINATION == LoggingDestination.CUSTOM;
+  }
+
   private static boolean isProgrammaticLoggingRedundant() {
-    return DESTINATION == LoggingDestination.DEFAULT_BOTH && isCustomLog4jConfigFileProvided();
+    return (DESTINATION == LoggingDestination.DEFAULT_BOTH
+            || DESTINATION == LoggingDestination.CUSTOM)
+        && isCustomLog4jConfigFileProvided();
   }
 
   private static boolean isCustomLog4jConfigFileProvided() {

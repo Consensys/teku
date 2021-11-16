@@ -18,7 +18,7 @@ import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.services.ValidatorNodeServiceController;
 
-public class ValidatorNode extends AbstractNode {
+public class ValidatorNode extends AbstractNode implements ValidatorNodeFacade {
   private final ValidatorNodeServiceController serviceController;
 
   public ValidatorNode(final TekuConfiguration tekuConfig) {
@@ -28,7 +28,7 @@ public class ValidatorNode extends AbstractNode {
   }
 
   @Override
-  protected ValidatorNodeServiceController getServiceController() {
+  public ValidatorNodeServiceController getServiceController() {
     return serviceController;
   }
 }
