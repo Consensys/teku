@@ -257,6 +257,9 @@ public class ProtoArray {
     while (parentIndex.isPresent()) {
       final ProtoNode parentNode =
           checkNotNull(nodes.get(parentIndex.get()), "Missing parent node %s", parentIndex.get());
+      if (parentNode.isFullyValidated()) {
+        break;
+      }
       parentNode.setValidationStatus(VALID);
       parentIndex = parentNode.getParentIndex();
     }
@@ -268,7 +271,12 @@ public class ProtoArray {
       LOG.debug("Couldn't update status for block {} because it was unknown", blockRoot);
       return;
     }
-    final int index = maybeIndex.get();
+    markDescendantsAsInvalid(maybeIndex.get());
+    // Applying zero deltas causes the newly marked INVALID nodes to have their weight set to 0
+    applyDeltas(new ArrayList<>(Collections.nCopies(getTotalTrackedNodeCount(), 0L)));
+  }
+
+  private void markDescendantsAsInvalid(final int index) {
     final ProtoNode node = checkNotNull(nodes.get(index), "Missing node %s", index);
     node.setValidationStatus(INVALID);
     final IntSet invalidParents = new IntOpenHashSet();
@@ -285,7 +293,6 @@ public class ProtoArray {
         invalidParents.add(i);
       }
     }
-    applyDeltas(new ArrayList<>(Collections.nCopies(getTotalTrackedNodeCount(), 0L)));
   }
 
   /**

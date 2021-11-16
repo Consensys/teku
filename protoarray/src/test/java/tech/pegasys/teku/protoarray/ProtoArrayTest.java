@@ -40,6 +40,14 @@ class ProtoArrayTest {
       new DataStructureUtil(TestSpecFactory.createMinimalPhase0());
   private final VoteUpdater voteUpdater = new StubVoteUpdater();
 
+  private final Bytes32 block1a = dataStructureUtil.randomBytes32();
+  private final Bytes32 block1b = dataStructureUtil.randomBytes32();
+  private final Bytes32 block2a = dataStructureUtil.randomBytes32();
+  private final Bytes32 block2b = dataStructureUtil.randomBytes32();
+  private final Bytes32 block3a = dataStructureUtil.randomBytes32();
+  private final Bytes32 block3b = dataStructureUtil.randomBytes32();
+  private final Bytes32 block3c = dataStructureUtil.randomBytes32();
+
   private ProtoArray protoArray =
       new ProtoArrayBuilder()
           .justifiedCheckpoint(GENESIS_CHECKPOINT)
@@ -53,29 +61,23 @@ class ProtoArrayTest {
 
   @Test
   void applyProposerWeighting_shouldApplyAndReverseProposerWeightingToNodeAndDescendants() {
-    final Bytes32 block1A = dataStructureUtil.randomBytes32();
-    final Bytes32 block2A = dataStructureUtil.randomBytes32();
-    final Bytes32 block3A = dataStructureUtil.randomBytes32();
-    final Bytes32 block2B = dataStructureUtil.randomBytes32();
-    final Bytes32 block3B = dataStructureUtil.randomBytes32();
-    final Bytes32 block3C = dataStructureUtil.randomBytes32();
-    final ProposerWeighting proposerWeighting = new ProposerWeighting(block3A, UInt64.valueOf(500));
+    final ProposerWeighting proposerWeighting = new ProposerWeighting(block3a, UInt64.valueOf(500));
 
-    addBlock(1, block1A, Bytes32.ZERO);
-    addBlock(1, block2A, block1A);
-    addBlock(1, block2B, block1A);
-    addBlock(1, block3B, block2B);
-    addBlock(1, block3C, block2A);
-    addBlock(1, block3A, block2A);
+    addBlock(1, block1a, Bytes32.ZERO);
+    addBlock(1, block2a, block1a);
+    addBlock(1, block2b, block1a);
+    addBlock(1, block3b, block2b);
+    addBlock(1, block3c, block2a);
+    addBlock(1, block3a, block2a);
     protoArray.applyProposerWeighting(proposerWeighting);
 
-    assertThat(getNode(block3A).getWeight()).isEqualTo(proposerWeighting.getWeight());
-    assertThat(getNode(block2A).getWeight()).isEqualTo(proposerWeighting.getWeight());
-    assertThat(getNode(block1A).getWeight()).isEqualTo(proposerWeighting.getWeight());
+    assertThat(getNode(block3a).getWeight()).isEqualTo(proposerWeighting.getWeight());
+    assertThat(getNode(block2a).getWeight()).isEqualTo(proposerWeighting.getWeight());
+    assertThat(getNode(block1a).getWeight()).isEqualTo(proposerWeighting.getWeight());
 
-    assertThat(getNode(block2B).getWeight()).isEqualTo(UInt64.ZERO);
-    assertThat(getNode(block3B).getWeight()).isEqualTo(UInt64.ZERO);
-    assertThat(getNode(block3C).getWeight()).isEqualTo(UInt64.ZERO);
+    assertThat(getNode(block2b).getWeight()).isEqualTo(UInt64.ZERO);
+    assertThat(getNode(block3b).getWeight()).isEqualTo(UInt64.ZERO);
+    assertThat(getNode(block3c).getWeight()).isEqualTo(UInt64.ZERO);
 
     reverseProposerWeightings(proposerWeighting);
 
@@ -84,15 +86,12 @@ class ProtoArrayTest {
 
   @Test
   void applyProposerWeighting_shouldAffectSelectedHead() {
-    final Bytes32 blockRootA = dataStructureUtil.randomBytes32();
-    final Bytes32 blockRootB = dataStructureUtil.randomBytes32();
     final ProposerWeighting proposerWeightingA =
-        new ProposerWeighting(blockRootA, UInt64.valueOf(500));
-    final ProposerWeighting proposerWeightingB =
-        new ProposerWeighting(blockRootB, UInt64.valueOf(80));
+        new ProposerWeighting(block1a, UInt64.valueOf(500));
+    final ProposerWeighting proposerWeightingB = new ProposerWeighting(block1b, UInt64.valueOf(80));
 
-    addBlock(1, blockRootA, Bytes32.ZERO);
-    addBlock(1, blockRootB, Bytes32.ZERO);
+    addBlock(1, block1a, Bytes32.ZERO);
+    addBlock(1, block1b, Bytes32.ZERO);
 
     protoArray.applyProposerWeighting(proposerWeightingB);
     assertThat(
@@ -103,7 +102,7 @@ class ProtoArrayTest {
                     GENESIS_CHECKPOINT.getEpoch())
                 .orElseThrow()
                 .getBlockRoot())
-        .isEqualTo(blockRootB);
+        .isEqualTo(block1b);
 
     protoArray.applyProposerWeighting(proposerWeightingA);
     assertThat(
@@ -114,7 +113,7 @@ class ProtoArrayTest {
                     GENESIS_CHECKPOINT.getEpoch())
                 .orElseThrow()
                 .getBlockRoot())
-        .isEqualTo(blockRootA);
+        .isEqualTo(block1a);
   }
 
   @Test
@@ -144,62 +143,50 @@ class ProtoArrayTest {
 
   @Test
   void findHead_shouldExcludeOptimisticBlocks() {
-    final Bytes32 block1Hash = dataStructureUtil.randomBytes32();
-    final Bytes32 block2Hash = dataStructureUtil.randomBytes32();
-    addBlock(1, block1Hash, GENESIS_CHECKPOINT.getRoot(), VALID);
-    addBlock(2, block2Hash, block1Hash, OPTIMISTIC);
+    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), VALID);
+    addBlock(2, block2a, block1a, OPTIMISTIC);
 
-    assertStrictHead(block1Hash);
+    assertStrictHead(block1a);
   }
 
   @Test
   void findHead_shouldIncludeValidatedBlocks() {
-    final Bytes32 block1Hash = dataStructureUtil.randomBytes32();
-    final Bytes32 block2Hash = dataStructureUtil.randomBytes32();
-    addBlock(1, block1Hash, GENESIS_CHECKPOINT.getRoot(), VALID);
-    addBlock(2, block2Hash, block1Hash, VALID);
+    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), VALID);
+    addBlock(2, block2a, block1a, VALID);
 
-    assertStrictHead(block2Hash);
+    assertStrictHead(block2a);
   }
 
   @Test
   void findHead_shouldExcludeBlocksWithInvalidPayload() {
-    final Bytes32 block1Hash = dataStructureUtil.randomBytes32();
-    final Bytes32 block2Hash = dataStructureUtil.randomBytes32();
-    addBlock(1, block1Hash, GENESIS_CHECKPOINT.getRoot(), VALID);
-    addBlock(2, block2Hash, block1Hash, OPTIMISTIC);
+    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), VALID);
+    addBlock(2, block2a, block1a, OPTIMISTIC);
 
-    assertStrictHead(block1Hash);
+    assertStrictHead(block1a);
 
-    protoArray.markNodeInvalid(block2Hash);
+    protoArray.markNodeInvalid(block2a);
 
-    assertStrictHead(block1Hash);
+    assertStrictHead(block1a);
   }
 
   @Test
   void findHead_shouldExcludeBlocksDescendedFromAnInvalidBlock() {
-    final Bytes32 block1Hash = dataStructureUtil.randomBytes32();
-    final Bytes32 block2Hash = dataStructureUtil.randomBytes32();
-    final Bytes32 block3Hash = dataStructureUtil.randomBytes32();
-    addBlock(1, block1Hash, GENESIS_CHECKPOINT.getRoot(), VALID);
-    addBlock(2, block2Hash, block1Hash, OPTIMISTIC);
-    addBlock(3, block3Hash, block2Hash, OPTIMISTIC);
+    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), VALID);
+    addBlock(2, block2a, block1a, OPTIMISTIC);
+    addBlock(3, block3a, block2a, OPTIMISTIC);
 
-    assertStrictHead(block1Hash);
+    assertStrictHead(block1a);
 
-    protoArray.markNodeInvalid(block2Hash);
+    protoArray.markNodeInvalid(block2a);
 
-    assertStrictHead(block1Hash);
+    assertStrictHead(block1a);
   }
 
   @Test
   void findHead_shouldReturnEmptyWhenAllBlocksAreInvalid() {
-    final Bytes32 block1Hash = dataStructureUtil.randomBytes32();
-    final Bytes32 block2Hash = dataStructureUtil.randomBytes32();
-    final Bytes32 block3Hash = dataStructureUtil.randomBytes32();
-    addBlock(1, block1Hash, GENESIS_CHECKPOINT.getRoot(), OPTIMISTIC);
-    addBlock(2, block2Hash, block1Hash, OPTIMISTIC);
-    addBlock(3, block3Hash, block2Hash, OPTIMISTIC);
+    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), OPTIMISTIC);
+    addBlock(2, block2a, block1a, OPTIMISTIC);
+    addBlock(3, block3a, block2a, OPTIMISTIC);
     protoArray.markNodeInvalid(GENESIS_CHECKPOINT.getRoot());
 
     assertThat(protoArray.findHead(GENESIS_CHECKPOINT.getRoot(), UInt64.ZERO, UInt64.ZERO))
@@ -213,16 +200,13 @@ class ProtoArrayTest {
    */
   @Test
   void findHead_shouldReturnEmptyWhenAllBlocksInChainAreOptimistic() {
-    final Bytes32 block1Hash = dataStructureUtil.randomBytes32();
-    final Bytes32 block2Hash = dataStructureUtil.randomBytes32();
-    final Bytes32 block3Hash = dataStructureUtil.randomBytes32();
     protoArray
         .getProtoNode(GENESIS_CHECKPOINT.getRoot())
         .orElseThrow()
         .setValidationStatus(OPTIMISTIC);
-    addBlock(1, block1Hash, GENESIS_CHECKPOINT.getRoot(), OPTIMISTIC);
-    addBlock(2, block2Hash, block1Hash, OPTIMISTIC);
-    addBlock(3, block3Hash, block2Hash, OPTIMISTIC);
+    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), OPTIMISTIC);
+    addBlock(2, block2a, block1a, OPTIMISTIC);
+    addBlock(3, block3a, block2a, OPTIMISTIC);
 
     assertThat(protoArray.findHead(GENESIS_CHECKPOINT.getRoot(), UInt64.ZERO, UInt64.ZERO))
         .isEmpty();
@@ -230,223 +214,211 @@ class ProtoArrayTest {
 
   @Test
   void findOptimisticHead_shouldIncludeOptimisticBlocks() {
-    final Bytes32 block1Hash = dataStructureUtil.randomBytes32();
-    final Bytes32 block2Hash = dataStructureUtil.randomBytes32();
-    addBlock(1, block1Hash, GENESIS_CHECKPOINT.getRoot(), VALID);
-    addBlock(2, block2Hash, block1Hash, OPTIMISTIC);
+    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), VALID);
+    addBlock(2, block2a, block1a, OPTIMISTIC);
 
-    assertOptimisticHead(block2Hash);
+    assertOptimisticHead(block2a);
   }
 
   @Test
   void findOptimisticHead_shouldIncludeValidBlocks() {
-    final Bytes32 block1Hash = dataStructureUtil.randomBytes32();
-    final Bytes32 block2Hash = dataStructureUtil.randomBytes32();
-    addBlock(1, block1Hash, GENESIS_CHECKPOINT.getRoot(), VALID);
-    addBlock(2, block2Hash, block1Hash, VALID);
+    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), VALID);
+    addBlock(2, block2a, block1a, VALID);
 
-    final ProtoNode head =
-        protoArray.findOptimisticHead(GENESIS_CHECKPOINT.getRoot(), UInt64.ZERO, UInt64.ZERO);
-    assertThat(head).isEqualTo(protoArray.getProtoNode(block2Hash).orElseThrow());
+    assertOptimisticHead(block2a);
   }
 
   @Test
   void findOptimisticHead_shouldExcludeInvalidBlocks() {
-    final Bytes32 block1Hash = dataStructureUtil.randomBytes32();
-    final Bytes32 block2Hash = dataStructureUtil.randomBytes32();
-    addBlock(1, block1Hash, GENESIS_CHECKPOINT.getRoot(), VALID);
-    addBlock(2, block2Hash, block1Hash, OPTIMISTIC);
+    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), VALID);
+    addBlock(2, block2a, block1a, OPTIMISTIC);
 
-    assertOptimisticHead(block2Hash);
+    assertOptimisticHead(block2a);
 
-    protoArray.markNodeInvalid(block2Hash);
+    protoArray.markNodeInvalid(block2a);
 
-    assertOptimisticHead(block1Hash);
+    assertOptimisticHead(block1a);
   }
 
   @Test
   void findOptimisticHead_shouldExcludeBlocksDescendedFromAnInvalidBlock() {
-    final Bytes32 block1Hash = dataStructureUtil.randomBytes32();
-    final Bytes32 block2Hash = dataStructureUtil.randomBytes32();
-    final Bytes32 block3Hash = dataStructureUtil.randomBytes32();
-    addBlock(1, block1Hash, GENESIS_CHECKPOINT.getRoot(), VALID);
-    addBlock(2, block2Hash, block1Hash, OPTIMISTIC);
-    addBlock(3, block3Hash, block2Hash, OPTIMISTIC);
+    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), VALID);
+    addBlock(2, block2a, block1a, OPTIMISTIC);
+    addBlock(3, block3a, block2a, OPTIMISTIC);
+
+    // Apply score changes to ensure that the best descendant index is updated
     protoArray.applyScoreChanges(computeDeltas(), UInt64.ZERO, UInt64.ZERO);
 
     // Check the best descendant has been updated
-    assertThat(protoArray.getProtoNode(block1Hash).orElseThrow().getBestDescendantIndex())
-        .isEqualTo(protoArray.getIndexByRoot(block3Hash));
-    assertOptimisticHead(block3Hash);
+    assertThat(protoArray.getProtoNode(block1a).orElseThrow().getBestDescendantIndex())
+        .isEqualTo(protoArray.getIndexByRoot(block3a));
+    assertOptimisticHead(block3a);
 
-    protoArray.markNodeInvalid(block2Hash);
+    protoArray.markNodeInvalid(block2a);
 
-    assertOptimisticHead(block1Hash);
+    assertOptimisticHead(block1a);
+  }
+
+  @Test
+  void findOptimisticHead_shouldAcceptOptimisticBlocksWithInvalidAncestors() {
+    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), VALID);
+    addBlock(2, block2a, block1a, OPTIMISTIC);
+    addBlock(3, block3a, block2a, OPTIMISTIC);
+
+    // Apply score changes to ensure that the best descendant index is updated
+    protoArray.applyScoreChanges(computeDeltas(), UInt64.ZERO, UInt64.ZERO);
+
+    // Check the best descendant has been updated
+    assertThat(protoArray.getProtoNode(block1a).orElseThrow().getBestDescendantIndex())
+        .isEqualTo(protoArray.getIndexByRoot(block3a));
+    assertOptimisticHead(block3a);
+
+    protoArray.markNodeInvalid(block3a);
+
+    assertOptimisticHead(block2a);
   }
 
   @Test
   void findOptimisticHead_shouldThrowExceptionWhenAllBlocksAreInvalid() {
     // ProtoArray always contains the finalized block, if it's invalid there's a big problem.
-    final Bytes32 block1Hash = dataStructureUtil.randomBytes32();
-    final Bytes32 block2Hash = dataStructureUtil.randomBytes32();
-    final Bytes32 block3Hash = dataStructureUtil.randomBytes32();
-    addBlock(1, block1Hash, GENESIS_CHECKPOINT.getRoot(), OPTIMISTIC);
-    addBlock(2, block2Hash, block1Hash, OPTIMISTIC);
-    addBlock(3, block3Hash, block2Hash, OPTIMISTIC);
+    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), OPTIMISTIC);
+    addBlock(2, block2a, block1a, OPTIMISTIC);
+    addBlock(3, block3a, block2a, OPTIMISTIC);
 
-    assertOptimisticHead(block3Hash);
+    assertOptimisticHead(block3a);
 
     protoArray.markNodeInvalid(GENESIS_CHECKPOINT.getRoot());
 
-    assertThatThrownBy(() -> assertOptimisticHead(block1Hash))
+    assertThatThrownBy(() -> assertOptimisticHead(block1a))
         .isInstanceOf(FatalServiceFailureException.class);
   }
 
   @Test
   void shouldConsiderWeightFromVotesForValidBlocks() {
-    final Bytes32 block1aHash = dataStructureUtil.randomBytes32();
-    final Bytes32 block1bHash = dataStructureUtil.randomBytes32();
-    final Bytes32 block2aHash = dataStructureUtil.randomBytes32();
-    final Bytes32 block2bHash = dataStructureUtil.randomBytes32();
-    addBlock(1, block1aHash, GENESIS_CHECKPOINT.getRoot(), VALID);
-    addBlock(1, block1bHash, GENESIS_CHECKPOINT.getRoot(), VALID);
-    addBlock(2, block2aHash, block1aHash, VALID);
-    addBlock(2, block2bHash, block1bHash, VALID);
+    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), VALID);
+    addBlock(1, block1b, GENESIS_CHECKPOINT.getRoot(), VALID);
+    addBlock(2, block2a, block1a, VALID);
+    addBlock(2, block2b, block1b, VALID);
 
-    voteUpdater.putVote(UInt64.ZERO, new VoteTracker(Bytes32.ZERO, block1bHash, UInt64.ZERO));
-    voteUpdater.putVote(UInt64.ONE, new VoteTracker(Bytes32.ZERO, block1bHash, UInt64.ZERO));
-    voteUpdater.putVote(UInt64.valueOf(2), new VoteTracker(Bytes32.ZERO, block1bHash, UInt64.ZERO));
+    voteUpdater.putVote(UInt64.ZERO, new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
+    voteUpdater.putVote(UInt64.ONE, new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
+    voteUpdater.putVote(UInt64.valueOf(2), new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
     protoArray.applyScoreChanges(computeDeltas(), UInt64.ZERO, UInt64.ZERO);
 
-    assertOptimisticHead(block2bHash);
-    assertStrictHead(block2bHash);
+    assertOptimisticHead(block2b);
+    assertStrictHead(block2b);
 
     // Validators 0 and 1 switch forks to chain a
-    voteUpdater.putVote(UInt64.ZERO, new VoteTracker(block1bHash, block2aHash, UInt64.ONE));
-    voteUpdater.putVote(UInt64.ONE, new VoteTracker(block1bHash, block2aHash, UInt64.ONE));
+    voteUpdater.putVote(UInt64.ZERO, new VoteTracker(block1b, block2a, UInt64.ONE));
+    voteUpdater.putVote(UInt64.ONE, new VoteTracker(block1b, block2a, UInt64.ONE));
     protoArray.applyScoreChanges(computeDeltas(), UInt64.ZERO, UInt64.ZERO);
 
     // And our head should switch
-    assertOptimisticHead(block2aHash);
-    assertStrictHead(block2aHash);
+    assertOptimisticHead(block2a);
+    assertStrictHead(block2a);
   }
 
   @Test
   void shouldConsiderWeightFromVotesForOptimisticBlocks() {
-    final Bytes32 block1aHash = dataStructureUtil.randomBytes32();
-    final Bytes32 block1bHash = dataStructureUtil.randomBytes32();
-    final Bytes32 block2aHash = dataStructureUtil.randomBytes32();
-    final Bytes32 block2bHash = dataStructureUtil.randomBytes32();
-    addBlock(1, block1aHash, GENESIS_CHECKPOINT.getRoot(), VALID);
-    addBlock(1, block1bHash, GENESIS_CHECKPOINT.getRoot(), VALID);
-    addBlock(2, block2aHash, block1aHash, OPTIMISTIC);
-    addBlock(2, block2bHash, block1bHash, OPTIMISTIC);
+    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), VALID);
+    addBlock(1, block1b, GENESIS_CHECKPOINT.getRoot(), VALID);
+    addBlock(2, block2a, block1a, OPTIMISTIC);
+    addBlock(2, block2b, block1b, OPTIMISTIC);
 
-    voteUpdater.putVote(UInt64.ZERO, new VoteTracker(Bytes32.ZERO, block1bHash, UInt64.ZERO));
-    voteUpdater.putVote(UInt64.ONE, new VoteTracker(Bytes32.ZERO, block1bHash, UInt64.ZERO));
-    voteUpdater.putVote(UInt64.valueOf(2), new VoteTracker(Bytes32.ZERO, block1bHash, UInt64.ZERO));
+    voteUpdater.putVote(UInt64.ZERO, new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
+    voteUpdater.putVote(UInt64.ONE, new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
+    voteUpdater.putVote(UInt64.valueOf(2), new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
     protoArray.applyScoreChanges(computeDeltas(), UInt64.ZERO, UInt64.ZERO);
 
-    assertOptimisticHead(block2bHash);
-    assertStrictHead(block1bHash);
+    assertOptimisticHead(block2b);
+    assertStrictHead(block1b);
 
     // Validators 0 and 1 switch forks to chain a
-    voteUpdater.putVote(UInt64.ZERO, new VoteTracker(block1bHash, block2aHash, UInt64.ONE));
-    voteUpdater.putVote(UInt64.ONE, new VoteTracker(block1bHash, block2aHash, UInt64.ONE));
+    voteUpdater.putVote(UInt64.ZERO, new VoteTracker(block1b, block2a, UInt64.ONE));
+    voteUpdater.putVote(UInt64.ONE, new VoteTracker(block1b, block2a, UInt64.ONE));
     protoArray.applyScoreChanges(computeDeltas(), UInt64.ZERO, UInt64.ZERO);
 
     // And our head should switch
-    assertOptimisticHead(block2aHash);
-    assertStrictHead(block1aHash);
+    assertOptimisticHead(block2a);
+    assertStrictHead(block1a);
   }
 
   @Test
   void shouldNotConsiderWeightFromVotesForInvalidBlocks() {
-    final Bytes32 block1aHash = dataStructureUtil.randomBytes32();
-    final Bytes32 block1bHash = dataStructureUtil.randomBytes32();
-    final Bytes32 block2aHash = dataStructureUtil.randomBytes32();
-    final Bytes32 block2bHash = dataStructureUtil.randomBytes32();
-    addBlock(1, block1aHash, GENESIS_CHECKPOINT.getRoot(), VALID);
-    addBlock(1, block1bHash, GENESIS_CHECKPOINT.getRoot(), VALID);
-    addBlock(2, block2aHash, block1aHash, OPTIMISTIC);
-    addBlock(2, block2bHash, block1bHash, OPTIMISTIC);
+    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), VALID);
+    addBlock(1, block1b, GENESIS_CHECKPOINT.getRoot(), VALID);
+    addBlock(2, block2a, block1a, OPTIMISTIC);
+    addBlock(2, block2b, block1b, OPTIMISTIC);
 
-    voteUpdater.putVote(UInt64.ZERO, new VoteTracker(Bytes32.ZERO, block1bHash, UInt64.ZERO));
-    voteUpdater.putVote(UInt64.ONE, new VoteTracker(Bytes32.ZERO, block1bHash, UInt64.ZERO));
-    voteUpdater.putVote(UInt64.valueOf(2), new VoteTracker(Bytes32.ZERO, block1bHash, UInt64.ZERO));
+    voteUpdater.putVote(UInt64.ZERO, new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
+    voteUpdater.putVote(UInt64.ONE, new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
+    voteUpdater.putVote(UInt64.valueOf(2), new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
     protoArray.applyScoreChanges(computeDeltas(), UInt64.ZERO, UInt64.ZERO);
 
-    assertOptimisticHead(block2bHash);
-    assertStrictHead(block1bHash);
+    assertOptimisticHead(block2b);
+    assertStrictHead(block1b);
 
-    protoArray.markNodeInvalid(block2aHash);
+    protoArray.markNodeInvalid(block2a);
 
     // Validators 0 and 1 switch forks to chain a
-    voteUpdater.putVote(UInt64.ZERO, new VoteTracker(block1bHash, block2aHash, UInt64.ONE));
-    voteUpdater.putVote(UInt64.ONE, new VoteTracker(block1bHash, block2aHash, UInt64.ONE));
+    voteUpdater.putVote(UInt64.ZERO, new VoteTracker(block1b, block2a, UInt64.ONE));
+    voteUpdater.putVote(UInt64.ONE, new VoteTracker(block1b, block2a, UInt64.ONE));
     protoArray.applyScoreChanges(computeDeltas(), UInt64.ZERO, UInt64.ZERO);
 
     // Votes for 2a don't count because it's invalid so we stick with chain b.
-    assertOptimisticHead(block2bHash);
-    assertStrictHead(block1bHash);
+    assertOptimisticHead(block2b);
+    assertStrictHead(block1b);
   }
 
   @Test
-  void updateValidity_shouldRemoveWeightWhenBlocksMarkedAsInvalid() {
-    final Bytes32 block1aHash = dataStructureUtil.randomBytes32();
-    final Bytes32 block1bHash = dataStructureUtil.randomBytes32();
-    final Bytes32 block2aHash = dataStructureUtil.randomBytes32();
-    final Bytes32 block2bHash = dataStructureUtil.randomBytes32();
-    addBlock(1, block1aHash, GENESIS_CHECKPOINT.getRoot(), VALID);
-    addBlock(1, block1bHash, GENESIS_CHECKPOINT.getRoot(), VALID);
-    addBlock(2, block2aHash, block1aHash, OPTIMISTIC);
-    addBlock(2, block2bHash, block1bHash, OPTIMISTIC);
+  void markNodeInvalid_shouldRemoveWeightWhenBlocksMarkedAsInvalid() {
+    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), VALID);
+    addBlock(1, block1b, GENESIS_CHECKPOINT.getRoot(), VALID);
+    addBlock(2, block2a, block1a, OPTIMISTIC);
+    addBlock(2, block2b, block1b, OPTIMISTIC);
 
-    voteUpdater.putVote(UInt64.ZERO, new VoteTracker(Bytes32.ZERO, block1bHash, UInt64.ZERO));
-    voteUpdater.putVote(UInt64.ONE, new VoteTracker(Bytes32.ZERO, block1bHash, UInt64.ZERO));
-    voteUpdater.putVote(UInt64.valueOf(2), new VoteTracker(Bytes32.ZERO, block1bHash, UInt64.ZERO));
+    voteUpdater.putVote(UInt64.ZERO, new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
+    voteUpdater.putVote(UInt64.ONE, new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
+    voteUpdater.putVote(UInt64.valueOf(2), new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
     protoArray.applyScoreChanges(computeDeltas(), UInt64.ZERO, UInt64.ZERO);
 
-    assertOptimisticHead(block2bHash);
-    assertStrictHead(block1bHash);
+    assertOptimisticHead(block2b);
+    assertStrictHead(block1b);
 
     // Validators 0 and 1 switch forks to chain a
-    voteUpdater.putVote(UInt64.ZERO, new VoteTracker(block1bHash, block2aHash, UInt64.ONE));
-    voteUpdater.putVote(UInt64.ONE, new VoteTracker(block1bHash, block2aHash, UInt64.ONE));
+    voteUpdater.putVote(UInt64.ZERO, new VoteTracker(block1b, block2a, UInt64.ONE));
+    voteUpdater.putVote(UInt64.ONE, new VoteTracker(block1b, block2a, UInt64.ONE));
     protoArray.applyScoreChanges(computeDeltas(), UInt64.ZERO, UInt64.ZERO);
 
     // We switch to chain a because it has the greater weight now
-    assertOptimisticHead(block2aHash);
-    assertStrictHead(block1aHash);
+    assertOptimisticHead(block2a);
+    assertStrictHead(block1a);
 
     // But oh no! It turns out to be invalid.
-    protoArray.markNodeInvalid(block2aHash);
+    protoArray.markNodeInvalid(block2a);
 
     // So we switch back to chain b (notably without having to applyScoreChanges)
-    assertOptimisticHead(block2bHash);
-    assertStrictHead(block1bHash);
+    assertOptimisticHead(block2b);
+    assertStrictHead(block1b);
   }
 
   @Test
-  void updateValidity_shouldConsiderAllAncestorsValidWhenMarkedAsValid() {
-    final Bytes32 block1Hash = dataStructureUtil.randomBytes32();
-    final Bytes32 block2Hash = dataStructureUtil.randomBytes32();
-    final Bytes32 block3Hash = dataStructureUtil.randomBytes32();
-    addBlock(1, block1Hash, GENESIS_CHECKPOINT.getRoot(), VALID);
-    addBlock(2, block2Hash, block1Hash, OPTIMISTIC);
-    addBlock(3, block3Hash, block2Hash, OPTIMISTIC);
+  void markNodeValid_shouldConsiderAllAncestorsValidWhenMarkedAsValid() {
+    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), VALID);
+    addBlock(2, block2a, block1a, OPTIMISTIC);
+    addBlock(3, block3a, block2a, OPTIMISTIC);
     protoArray.applyScoreChanges(computeDeltas(), UInt64.ZERO, UInt64.ZERO);
 
     // Check the best descendant has been updated
-    assertThat(protoArray.getProtoNode(block1Hash).orElseThrow().getBestDescendantIndex())
-        .isEqualTo(protoArray.getIndexByRoot(block3Hash));
-    assertOptimisticHead(block3Hash);
-    assertStrictHead(block1Hash);
+    assertThat(protoArray.getProtoNode(block1a).orElseThrow().getBestDescendantIndex())
+        .isEqualTo(protoArray.getIndexByRoot(block3a));
+    assertOptimisticHead(block3a);
+    assertStrictHead(block1a);
 
-    protoArray.markNodeValid(block3Hash);
+    protoArray.markNodeValid(block3a);
 
-    assertOptimisticHead(block3Hash);
-    assertStrictHead(block3Hash);
+    assertOptimisticHead(block3a);
+    assertStrictHead(block3a);
   }
 
   private void assertOptimisticHead(final Bytes32 expectedBlockHash) {
