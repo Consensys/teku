@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,9 +13,8 @@
 
 package tech.pegasys.teku;
 
-public interface Node extends NodeFacade {
-
-  void start();
-
-  void stop();
-}
+/**
+ * CAUTION: this API is unstable and primarily intended for debugging and testing purposes this API
+ * might be changed in any version in backward incompatible way
+ */
+public interface ValidatorNodeFacade extends NodeFacade {}
