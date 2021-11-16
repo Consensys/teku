@@ -32,6 +32,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -50,18 +51,20 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   private final ReadWriteLock protoArrayLock = new ReentrantReadWriteLock();
   private final ReadWriteLock votesLock = new ReentrantReadWriteLock();
   private final ReadWriteLock balancesLock = new ReentrantReadWriteLock();
+  private final Spec spec;
   private final ProtoArray protoArray;
 
   private List<UInt64> balances;
 
-  private ForkChoiceStrategy(ProtoArray protoArray, List<UInt64> balances) {
+  private ForkChoiceStrategy(Spec spec, ProtoArray protoArray, List<UInt64> balances) {
+    this.spec = spec;
     this.protoArray = protoArray;
     this.balances = balances;
   }
 
   // Public
   public static SafeFuture<ForkChoiceStrategy> initializeAndMigrateStorage(
-      ReadOnlyStore store, ProtoArrayStorageChannel storageChannel) {
+      Spec spec, ReadOnlyStore store, ProtoArrayStorageChannel storageChannel) {
     LOG.info("Migrating protoarray storing from snapshot to block based");
     // If no initialEpoch is explicitly set, default to zero (genesis epoch)
     final UInt64 initialEpoch =
@@ -81,26 +84,32 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
         .thenCompose(protoArray -> processBlocksInStoreAtStartup(store, protoArray))
         .thenPeek(
             protoArray -> storageChannel.onProtoArrayUpdate(ProtoArraySnapshot.create(protoArray)))
-        .thenApply(ForkChoiceStrategy::initialize);
+        .thenApply(protoArray -> initialize(spec, protoArray));
   }
 
-  public static ForkChoiceStrategy initialize(final ProtoArray protoArray) {
-    return new ForkChoiceStrategy(protoArray, new ArrayList<>());
+  public static ForkChoiceStrategy initialize(final Spec spec, final ProtoArray protoArray) {
+    return new ForkChoiceStrategy(spec, protoArray, new ArrayList<>());
   }
 
   public SlotAndBlockRoot findHead(
       final Checkpoint justifiedCheckpoint, final Checkpoint finalizedCheckpoint) {
     protoArrayLock.readLock().lock();
     try {
-      final ProtoNode bestNode =
-          protoArray.findHead(
-              justifiedCheckpoint.getRoot(),
-              justifiedCheckpoint.getEpoch(),
-              finalizedCheckpoint.getEpoch());
-      return new SlotAndBlockRoot(bestNode.getBlockSlot(), bestNode.getBlockRoot());
+      return findHeadImpl(justifiedCheckpoint, finalizedCheckpoint);
     } finally {
       protoArrayLock.readLock().unlock();
     }
+  }
+
+  private SlotAndBlockRoot findHeadImpl(
+      final Checkpoint justifiedCheckpoint, final Checkpoint finalizedCheckpoint) {
+    return protoArray
+        .findHead(
+            justifiedCheckpoint.getRoot(),
+            justifiedCheckpoint.getEpoch(),
+            finalizedCheckpoint.getEpoch())
+        .map(bestNode -> new SlotAndBlockRoot(bestNode.getBlockSlot(), bestNode.getBlockRoot()))
+        .orElse(finalizedCheckpoint.toSlotAndBlockRoot(spec));
   }
 
   /**
@@ -121,13 +130,29 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       final Checkpoint finalizedCheckpoint,
       final Checkpoint justifiedCheckpoint,
       final List<UInt64> justifiedStateEffectiveBalances) {
-    return applyPendingVotes(
-        voteUpdater,
-        justifiedCheckpoint.getEpoch(),
-        justifiedCheckpoint.getRoot(),
-        finalizedCheckpoint.getEpoch(),
-        justifiedStateEffectiveBalances,
-        removedProposerWeightings);
+    protoArrayLock.writeLock().lock();
+    votesLock.writeLock().lock();
+    balancesLock.writeLock().lock();
+    try {
+      List<Long> deltas =
+          ProtoArrayScoreCalculator.computeDeltas(
+              voteUpdater,
+              getTotalTrackedNodeCount(),
+              protoArray::getIndexByRoot,
+              balances,
+              justifiedStateEffectiveBalances,
+              removedProposerWeightings);
+
+      protoArray.applyScoreChanges(
+          deltas, justifiedCheckpoint.getEpoch(), finalizedCheckpoint.getEpoch());
+      balances = justifiedStateEffectiveBalances;
+
+      return findHeadImpl(justifiedCheckpoint, finalizedCheckpoint).getBlockRoot();
+    } finally {
+      protoArrayLock.writeLock().unlock();
+      votesLock.writeLock().unlock();
+      balancesLock.writeLock().unlock();
+    }
   }
 
   public void onAttestation(final VoteUpdater voteUpdater, final IndexedAttestation attestation) {
@@ -210,37 +235,6 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     if (targetEpoch.isGreaterThan(vote.getNextEpoch()) || vote.equals(VoteTracker.DEFAULT)) {
       VoteTracker newVote = new VoteTracker(vote.getCurrentRoot(), blockRoot, targetEpoch);
       voteUpdater.putVote(validatorIndex, newVote);
-    }
-  }
-
-  Bytes32 applyPendingVotes(
-      VoteUpdater voteUpdater,
-      UInt64 justifiedEpoch,
-      Bytes32 justifiedRoot,
-      UInt64 finalizedEpoch,
-      List<UInt64> justifiedStateBalances,
-      final List<ProposerWeighting> removedProposerWeightings) {
-    protoArrayLock.writeLock().lock();
-    votesLock.writeLock().lock();
-    balancesLock.writeLock().lock();
-    try {
-      List<Long> deltas =
-          ProtoArrayScoreCalculator.computeDeltas(
-              voteUpdater,
-              getTotalTrackedNodeCount(),
-              protoArray::getIndexByRoot,
-              balances,
-              justifiedStateBalances,
-              removedProposerWeightings);
-
-      protoArray.applyScoreChanges(deltas, justifiedEpoch, finalizedEpoch);
-      balances = justifiedStateBalances;
-
-      return protoArray.findHead(justifiedRoot, justifiedEpoch, finalizedEpoch).getBlockRoot();
-    } finally {
-      protoArrayLock.writeLock().unlock();
-      votesLock.writeLock().unlock();
-      balancesLock.writeLock().unlock();
     }
   }
 
