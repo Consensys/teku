@@ -77,7 +77,7 @@ public class ProtoArray {
   }
 
   public boolean contains(final Bytes32 root) {
-    return indices.contains(root);
+    return getProtoNode(root).filter(protoNode -> !protoNode.isInvalid()).isPresent();
   }
 
   public Optional<Integer> getIndexByRoot(final Bytes32 root) {

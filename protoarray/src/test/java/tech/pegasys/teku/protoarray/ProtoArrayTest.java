@@ -15,6 +15,7 @@ package tech.pegasys.teku.protoarray;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static tech.pegasys.teku.protoarray.ProtoNodeValidationStatus.INVALID;
 import static tech.pegasys.teku.protoarray.ProtoNodeValidationStatus.OPTIMISTIC;
 import static tech.pegasys.teku.protoarray.ProtoNodeValidationStatus.VALID;
 
@@ -419,6 +420,24 @@ class ProtoArrayTest {
 
     assertOptimisticHead(block3a);
     assertStrictHead(block3a);
+  }
+
+  @Test
+  void contains_shouldContainValidBlock() {
+    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), VALID);
+    assertThat(protoArray.contains(block1a)).isTrue();
+  }
+
+  @Test
+  void contains_shouldContainOptimisticBlock() {
+    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), OPTIMISTIC);
+    assertThat(protoArray.contains(block1a)).isTrue();
+  }
+
+  @Test
+  void contains_shouldNotContainInvalidBlock() {
+    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), INVALID);
+    assertThat(protoArray.contains(block1a)).isFalse();
   }
 
   private void assertOptimisticHead(final Bytes32 expectedBlockHash) {
