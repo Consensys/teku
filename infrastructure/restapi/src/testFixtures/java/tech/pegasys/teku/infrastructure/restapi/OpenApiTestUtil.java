@@ -18,6 +18,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.collect.ImmutableList;
@@ -40,7 +41,10 @@ public class OpenApiTestUtil<TObject> {
 
   public OpenApiTestUtil(final Class<TObject> clazz) {
     this.mapper = new ObjectMapper();
-    mapper.configure(SerializationFeature.INDENT_OUTPUT, true);
+    mapper
+        .configure(SerializationFeature.INDENT_OUTPUT, true)
+        .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
+        .configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true);
     this.clazz = clazz;
     this.path = clazz.getPackageName().replaceAll("\\.", "/");
   }
@@ -135,7 +139,7 @@ public class OpenApiTestUtil<TObject> {
         .describedAs(
             String.format("Structure of %s -> (%s)", elementName, namespace + "/" + filename))
         .withFailMessage(
-            String.format("Expected: %s\nbut was: %s", prettyJson(node), prettyJson(expectedNode)))
+            String.format("Expected: %s\nbut was: %s", prettyJson(expectedNode), prettyJson(node)))
         .isEqualTo(expectedNode);
   }
 
