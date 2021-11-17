@@ -19,6 +19,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge.BeaconBlockBodyMerge;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -43,6 +44,10 @@ public interface BeaconBlockBody extends SszContainer {
   SszList<Deposit> getDeposits();
 
   SszList<SignedVoluntaryExit> getVoluntaryExits();
+
+  default Optional<ExecutionPayload> getOptionalExecutionPayload() {
+    return Optional.empty();
+  }
 
   @Override
   BeaconBlockBodySchema<? extends BeaconBlockBody> getSchema();
