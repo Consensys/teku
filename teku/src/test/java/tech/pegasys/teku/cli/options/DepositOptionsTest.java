@@ -48,7 +48,6 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
   public void shouldReportEth1DisabledIfEndpointNotSpecified() {
     final TekuConfiguration config = getTekuConfigurationFromArguments();
     assertThat(config.powchain().isEnabled()).isFalse();
-    assertThat(createConfigBuilder().build()).usingRecursiveComparison().isEqualTo(config);
   }
 
   @Test
