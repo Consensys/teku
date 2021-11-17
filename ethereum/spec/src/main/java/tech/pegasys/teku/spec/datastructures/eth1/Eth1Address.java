@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.ssz.type.Bytes20;
 
 public class Eth1Address {
   /** The number of bytes in this value - i.e. 20 */
@@ -70,5 +71,9 @@ public class Eth1Address {
 
   public Bytes toBytes() {
     return bytes;
+  }
+
+  public Bytes20 toBytes20() {
+    return new Bytes20(bytes);
   }
 }

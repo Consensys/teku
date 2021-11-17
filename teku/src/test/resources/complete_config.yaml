@@ -26,7 +26,6 @@ eth1-endpoint: "http://localhost:8545"
 
 # execution engine
 Xee-endpoint: "http://localhost:8550"
-Xee-fee-recipient-address: "0x00220204f295dbb79fbbe619dd1b94463800f9d9"
 
 # output
 #Xtransaction-record-directory: "/tmp/teku"
