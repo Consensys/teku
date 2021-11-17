@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
@@ -33,7 +34,7 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
   private final EventThread forkChoiceExecutor;
   private final SignedBeaconBlock block;
   private final ExecutionEngineChannel executionEngine;
-  private SafeFuture<ExecutePayloadResult> result;
+  private Optional<SafeFuture<ExecutePayloadResult>> result = Optional.empty();
 
   ForkChoicePayloadExecutor(
       final RecentChainData recentChainData,
@@ -51,14 +52,16 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
       // If the block import failed there's no point waiting for the payload result.
       return SafeFuture.completedFuture(blockImportResult);
     }
-    if (result == null) {
+    if (result.isEmpty()) {
       // No execution was started so can return result unchanged
       updateForkChoiceForImportedBlock(block, blockImportResult, getForkChoiceStrategy());
       return SafeFuture.completedFuture(blockImportResult);
     }
     // Otherwise we'll have to wait for the payload result
-    return result.thenApplyAsync(
-        payloadResult -> combineResults(blockImportResult, payloadResult), forkChoiceExecutor);
+    return result
+        .get()
+        .thenApplyAsync(
+            payloadResult -> combineResults(blockImportResult, payloadResult), forkChoiceExecutor);
   }
 
   private BlockImportResult combineResults(
@@ -80,7 +83,7 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
 
   @Override
   public boolean optimisticallyExecute(final ExecutionPayload executionPayload) {
-    result = executionEngine.executePayload(executionPayload);
+    result = Optional.of(executionEngine.executePayload(executionPayload));
     return true;
   }
 
