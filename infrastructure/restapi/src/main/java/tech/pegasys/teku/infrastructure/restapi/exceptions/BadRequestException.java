@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,11 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku;
+package tech.pegasys.teku.infrastructure.restapi.exceptions;
 
-public interface Node extends NodeFacade {
+import com.fasterxml.jackson.core.JsonProcessingException;
 
-  void start();
+public class BadRequestException extends JsonProcessingException {
+  public BadRequestException(String message, Throwable cause) {
+    super(message, cause);
+  }
 
-  void stop();
+  public BadRequestException(String message) {
+    super(message);
+  }
 }

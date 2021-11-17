@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,11 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku;
+package tech.pegasys.teku.services;
 
-public interface Node extends NodeFacade {
+import java.util.List;
+import tech.pegasys.teku.service.serviceutils.ServiceFacade;
 
-  void start();
+/**
+ * CAUTION: this API is unstable and primarily intended for debugging and testing purposes this API
+ * might be changed in any version in backward incompatible way
+ */
+public interface ServiceControllerFacade {
 
-  void stop();
+  List<? extends ServiceFacade> getServices();
 }

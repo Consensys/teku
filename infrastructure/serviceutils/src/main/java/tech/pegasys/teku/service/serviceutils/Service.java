@@ -18,7 +18,7 @@ import static com.google.common.base.Preconditions.checkState;
 import java.util.concurrent.atomic.AtomicReference;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
-public abstract class Service {
+public abstract class Service implements ServiceFacade {
   enum State {
     IDLE,
     RUNNING,
@@ -48,6 +48,7 @@ public abstract class Service {
 
   protected abstract SafeFuture<?> doStop();
 
+  @Override
   public boolean isRunning() {
     return state.get() == State.RUNNING;
   }

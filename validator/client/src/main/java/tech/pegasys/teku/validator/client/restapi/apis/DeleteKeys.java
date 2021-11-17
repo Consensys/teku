@@ -13,24 +13,21 @@
 
 package tech.pegasys.teku.validator.client.restapi.apis;
 
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.util.List;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.validator.client.KeyManager;
 import tech.pegasys.teku.validator.client.restapi.ValidatorTypes;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysRequest;
 
 public class DeleteKeys extends RestApiEndpoint {
-  private static final Logger LOG = LogManager.getLogger();
   public static final String ROUTE = "/eth/v1/keystores";
+  private final KeyManager keyManager;
 
-  public DeleteKeys() {
+  public DeleteKeys(final KeyManager keyManager) {
     super(
         EndpointMetadata.delete(ROUTE)
             .operationId("DeleteKeys")
@@ -49,14 +46,13 @@ public class DeleteKeys extends RestApiEndpoint {
             .response(SC_OK, "Success response", ValidatorTypes.DELETE_KEYS_RESPONSE_TYPE)
             .withAuthenticationResponses()
             .build());
+
+    this.keyManager = keyManager;
   }
 
   @Override
   public void handle(final RestApiRequest request) throws JsonProcessingException {
-    List<BLSPublicKey> keys = request.getRequestBody();
-    for (BLSPublicKey key : keys) {
-      LOG.debug("Delete key: {}", key.toBytesCompressed().toShortHexString());
-    }
-    request.respondError(SC_INTERNAL_SERVER_ERROR, "Not implemented");
+    DeleteKeysRequest deleteRequest = request.getRequestBody();
+    request.respondOk(keyManager.deleteValidators(deleteRequest.getPublicKeys()));
   }
 }

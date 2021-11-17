@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.client.restapi;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.commons.lang3.StringUtils;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
@@ -53,8 +54,11 @@ public class ValidatorRestApi {
         .exceptionHandler(
             BadRequestException.class,
             (throwable, url) -> new HttpErrorResponse(SC_BAD_REQUEST, throwable.getMessage()))
+        .exceptionHandler(
+            JsonProcessingException.class,
+            (throwable, url) -> new HttpErrorResponse(SC_BAD_REQUEST, throwable.getMessage()))
         .endpoint(new GetKeys(keyManager))
-        .endpoint(new DeleteKeys())
+        .endpoint(new DeleteKeys(keyManager))
         .endpoint(new PostKeys())
         .build();
   }
