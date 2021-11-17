@@ -27,9 +27,7 @@ import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 
 public interface Signer {
 
-  default void disable() {
-    throw new UnsupportedOperationException("Disabling signer not supported.");
-  }
+  void delete();
 
   SafeFuture<BLSSignature> createRandaoReveal(UInt64 epoch, ForkInfo forkInfo);
 

@@ -15,6 +15,7 @@ package tech.pegasys.teku.core.signatures;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
@@ -129,5 +130,11 @@ class SlashingProtectedSignerTest {
 
     assertThatSafeFuture(signer.signVoluntaryExit(voluntaryExit, forkInfo))
         .isCompletedWithValue(signature);
+  }
+
+  @Test
+  void delete_shouldCallDeleteOnDelegate() {
+    signer.delete();
+    verify(delegate).delete();
   }
 }

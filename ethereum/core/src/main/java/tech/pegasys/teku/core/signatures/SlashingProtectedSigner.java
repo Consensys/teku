@@ -143,4 +143,9 @@ public class SlashingProtectedSigner implements Signer {
   public boolean isLocal() {
     return delegate.isLocal();
   }
+
+  @Override
+  public void delete() {
+    delegate.delete();
+  }
 }

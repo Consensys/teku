@@ -16,9 +16,9 @@ package tech.pegasys.teku.core.signatures;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.async.ExceptionThrowingFutureSupplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -40,10 +40,11 @@ public class DeletableSigner implements Signer {
   }
 
   @Override
-  public void disable() {
+  public void delete() {
     lock.writeLock().lock();
     try {
       deleted = true;
+      delegate.delete();
     } finally {
       lock.writeLock().unlock();
     }
@@ -102,13 +103,13 @@ public class DeletableSigner implements Signer {
 
   @Override
   public boolean isLocal() {
-    return true;
+    return delegate.isLocal();
   }
 
-  private SafeFuture<BLSSignature> sign(Supplier<SafeFuture<BLSSignature>> supplier) {
+  private SafeFuture<BLSSignature> sign(ExceptionThrowingFutureSupplier<BLSSignature> supplier) {
     readLock.lock();
     final SafeFuture<BLSSignature> future =
-        deleted ? SafeFuture.failedFuture(new SignerNotActiveException()) : supplier.get();
+        deleted ? SafeFuture.failedFuture(new SignerNotActiveException()) : SafeFuture.of(supplier);
 
     return future.alwaysRun(readLock::unlock);
   }

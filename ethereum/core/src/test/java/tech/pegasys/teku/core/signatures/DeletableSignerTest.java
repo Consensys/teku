@@ -20,7 +20,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 import org.apache.tuweni.bytes.Bytes32;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -59,7 +62,7 @@ public class DeletableSignerTest {
   @Test
   void signBlock_shouldNotSignWhenDisabled() {
     final BeaconBlock block = dataStructureUtil.randomBeaconBlock(6);
-    signer.disable();
+    signer.delete();
     assertThatSafeFuture(signer.signBlock(block, forkInfo))
         .isCompletedExceptionallyWith(SignerNotActiveException.class);
     verify(delegate, never()).signBlock(block, forkInfo);
@@ -74,7 +77,7 @@ public class DeletableSignerTest {
 
   @Test
   void createRandaoReveal_shouldNotCreateWhenDisabled() {
-    signer.disable();
+    signer.delete();
     assertThatSafeFuture(signer.createRandaoReveal(UInt64.ONE, forkInfo))
         .isCompletedExceptionallyWith(SignerNotActiveException.class);
     verify(delegate, never()).createRandaoReveal(UInt64.ONE, forkInfo);
@@ -91,7 +94,7 @@ public class DeletableSignerTest {
   @Test
   void signAttestationData_shouldNotSignWhenDisabled() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
-    signer.disable();
+    signer.delete();
     assertThatSafeFuture(signer.signAttestationData(attestationData, forkInfo))
         .isCompletedExceptionallyWith(SignerNotActiveException.class);
     verify(delegate, never()).signAttestationData(attestationData, forkInfo);
@@ -106,7 +109,7 @@ public class DeletableSignerTest {
 
   @Test
   void signAggregationSlot_shouldNotSignWhenDisabled() {
-    signer.disable();
+    signer.delete();
     assertThatSafeFuture(signer.signAggregationSlot(UInt64.ONE, forkInfo))
         .isCompletedExceptionallyWith(SignerNotActiveException.class);
     verify(delegate, never()).signAggregationSlot(UInt64.ONE, forkInfo);
@@ -123,7 +126,7 @@ public class DeletableSignerTest {
   @Test
   void signAggregateAndProof_shouldNotSignWhenDisabled() {
     final AggregateAndProof aggregateAndProof = dataStructureUtil.randomAggregateAndProof();
-    signer.disable();
+    signer.delete();
     assertThatSafeFuture(signer.signAggregateAndProof(aggregateAndProof, forkInfo))
         .isCompletedExceptionallyWith(SignerNotActiveException.class);
     verify(delegate, never()).signAggregateAndProof(aggregateAndProof, forkInfo);
@@ -140,7 +143,7 @@ public class DeletableSignerTest {
   @Test
   void signVoluntaryExit_shouldNotSignWhenDisabled() {
     final VoluntaryExit aggregateAndProof = dataStructureUtil.randomVoluntaryExit();
-    signer.disable();
+    signer.delete();
     assertThatSafeFuture(signer.signVoluntaryExit(aggregateAndProof, forkInfo))
         .isCompletedExceptionallyWith(SignerNotActiveException.class);
     verify(delegate, never()).signVoluntaryExit(aggregateAndProof, forkInfo);
@@ -157,14 +160,14 @@ public class DeletableSignerTest {
   @Test
   void signSyncCommitteeMessage_shouldNotSignWhenDisabled() {
     final Bytes32 root = dataStructureUtil.randomBytes32();
-    signer.disable();
+    signer.delete();
     assertThatSafeFuture(signer.signSyncCommitteeMessage(UInt64.ONE, root, forkInfo))
         .isCompletedExceptionallyWith(SignerNotActiveException.class);
     verify(delegate, never()).signSyncCommitteeMessage(UInt64.ONE, root, forkInfo);
   }
 
   @Test
-  void signSyncCommitteeSelectionProof_shouldAlwaysSign() {
+  void signSyncCommitteeSelectionProof_shouldSignWhenActive() {
     final SyncAggregatorSelectionData syncAggregatorSelectionData =
         syncCommitteeUtil.createSyncAggregatorSelectionData(UInt64.ONE, UInt64.valueOf(1));
     when(delegate.signSyncCommitteeSelectionProof(syncAggregatorSelectionData, forkInfo))
@@ -187,9 +190,8 @@ public class DeletableSignerTest {
         .isCompletedWithValue(signature);
   }
 
-  // signContributionAndProof
   @Test
-  void signContributionAndProof_shouldAlwaysSign() {
+  void signContributionAndProof_shouldSignWhenActive() {
 
     final ContributionAndProof contributionAndProof =
         dataStructureUtil.randomSignedContributionAndProof(6L).getMessage();
@@ -198,6 +200,12 @@ public class DeletableSignerTest {
 
     assertThatSafeFuture(signer.signContributionAndProof(contributionAndProof, forkInfo))
         .isCompletedWithValue(signature);
+  }
+
+  @Test
+  void delete_shouldCallDeleteOnDelegate() {
+    signer.delete();
+    verify(delegate).delete();
   }
 
   @Test
@@ -212,19 +220,72 @@ public class DeletableSignerTest {
   }
 
   @Test
-  void shouldNotMarkDeletedWhileSigning() {
+  void signerSucceeds_shouldNotMarkDeletedUntilSignerComplete() {
     SafeFuture<BLSSignature> future = new SafeFuture<>();
     final BeaconBlock block = dataStructureUtil.randomBeaconBlock(6);
     when(delegate.signBlock(block, forkInfo)).thenReturn(future);
 
     final SafeFuture<BLSSignature> future2 = signer.signBlock(block, forkInfo);
     assertThatSafeFuture(future2).isNotCompleted();
-    final SafeFuture<Void> disabledSigner =
-        SafeFuture.of(SafeFuture.runAsync(() -> signer.disable()));
+    final SafeFuture<Void> disablingComplete = new SafeFuture<>();
+    final Thread disableThread =
+        new Thread(
+            () -> {
+              signer.delete();
+              disablingComplete.complete(null);
+            });
+    disableThread.start();
 
-    assertThatSafeFuture(disabledSigner).isNotCompleted();
+    // Wait for the signer.disable() call to be waiting for the write lock
+    waitForThreadState(disableThread, Thread.State.WAITING);
+
+    assertThatSafeFuture(disablingComplete).isNotCompleted();
     future.complete(dataStructureUtil.randomSignature());
     assertThatSafeFuture(future2).isCompleted();
-    assertThat(disabledSigner).isCompleted();
+
+    // Confirm the delete can complete once signing has completed.
+    waitForThreadState(disableThread, Thread.State.TERMINATED);
+    assertThat(disablingComplete).isCompleted();
+    verify(delegate).delete();
+  }
+
+  @Test
+  void signerFails_shouldNotMarkDeletedUntilSignerComplete() {
+    SafeFuture<BLSSignature> future = new SafeFuture<>();
+    final BeaconBlock block = dataStructureUtil.randomBeaconBlock(6);
+    when(delegate.signBlock(block, forkInfo)).thenReturn(future);
+
+    final SafeFuture<BLSSignature> future2 = signer.signBlock(block, forkInfo);
+    assertThatSafeFuture(future2).isNotCompleted();
+    final SafeFuture<Void> disablingComplete = new SafeFuture<>();
+    final Thread disableThread =
+        new Thread(
+            () -> {
+              signer.delete();
+              disablingComplete.complete(null);
+            });
+    disableThread.start();
+
+    // Wait for the signer.disable() call to be waiting for the write lock
+    waitForThreadState(disableThread, Thread.State.WAITING);
+
+    assertThatSafeFuture(disablingComplete).isNotCompleted();
+    future.completeExceptionally(new RuntimeException("computer says no"));
+    assertThatSafeFuture(future2).isCompletedExceptionallyWith(RuntimeException.class);
+
+    // Confirm the delete can complete once signing has completed.
+    waitForThreadState(disableThread, Thread.State.TERMINATED);
+    assertThat(disablingComplete).isCompleted();
+    verify(delegate).delete();
+  }
+
+  private void waitForThreadState(final Thread thread, final Thread.State state) {
+    final long startTime = System.currentTimeMillis();
+    while (thread.getState() != state) {
+      if (System.currentTimeMillis() - startTime > 5000) {
+        Assertions.fail("Thread did not reach state " + state + " in a reasonable time");
+      }
+      LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(500));
+    }
   }
 }

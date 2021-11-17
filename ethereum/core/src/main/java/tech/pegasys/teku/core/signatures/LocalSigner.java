@@ -47,6 +47,11 @@ public class LocalSigner implements Signer {
   }
 
   @Override
+  public void delete() {
+    keypair.getSecretKey().destroy();
+  }
+
+  @Override
   public SafeFuture<BLSSignature> createRandaoReveal(final UInt64 epoch, final ForkInfo forkInfo) {
     return sign(signingRootUtil.signingRootForRandaoReveal(epoch, forkInfo));
   }
