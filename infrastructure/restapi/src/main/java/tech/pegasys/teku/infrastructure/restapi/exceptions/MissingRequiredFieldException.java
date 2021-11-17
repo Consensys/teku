@@ -11,22 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.infrastructure.restapi.types;
+package tech.pegasys.teku.infrastructure.restapi.exceptions;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import java.io.IOException;
-import java.util.Collection;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
-public interface SerializableFieldDefinition<TObject> {
-  void writeField(final TObject source, JsonGenerator gen) throws IOException;
-
-  void writeOpenApiField(JsonGenerator gen) throws IOException;
-
-  Collection<OpenApiTypeDefinition> getReferencedTypeDefinitions();
-
-  String getName();
-
-  default boolean isRequired() {
-    return false;
+public class MissingRequiredFieldException extends JsonProcessingException {
+  public MissingRequiredFieldException(final String msg) {
+    super(msg);
   }
 }
