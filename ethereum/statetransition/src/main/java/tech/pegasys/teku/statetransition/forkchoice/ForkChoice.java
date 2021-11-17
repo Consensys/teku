@@ -21,6 +21,7 @@ import com.google.common.base.Throwables;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -189,56 +190,55 @@ public class ForkChoice {
         new ForkChoicePayloadExecutor(recentChainData, forkChoiceExecutor, block, executionEngine);
 
     return onForkChoiceThread(
-            () -> {
-              final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
-              final StoreTransaction transaction = recentChainData.startStoreTransaction();
-              final CapturingIndexedAttestationCache indexedAttestationCache =
-                  IndexedAttestationCache.capturing();
+        () -> {
+          final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
+          final StoreTransaction transaction = recentChainData.startStoreTransaction();
+          final CapturingIndexedAttestationCache indexedAttestationCache =
+              IndexedAttestationCache.capturing();
 
-              addParentStateRoots(blockSlotState.get(), transaction);
-              final BlockImportResult result =
-                  spec.onBlock(
-                      transaction,
-                      block,
-                      blockSlotState.get(),
-                      indexedAttestationCache,
-                      payloadExecutor);
+          addParentStateRoots(blockSlotState.get(), transaction);
+          final BlockImportResult result =
+              spec.onBlock(
+                  transaction,
+                  block,
+                  blockSlotState.get(),
+                  indexedAttestationCache,
+                  payloadExecutor);
 
-              if (!result.isSuccessful()) {
-                if (result.getFailureReason() != FailureReason.BLOCK_IS_FROM_FUTURE) {
-                  // Blocks from the future are not invalid, just not ready for processing yet
-                  P2P_LOG.onInvalidBlock(
-                      block.getSlot(),
-                      block.getRoot(),
-                      block.sszSerialize(),
-                      result.getFailureReason().name(),
-                      result.getFailureCause());
-                }
-                return SafeFuture.completedFuture(result);
-              }
-              // Note: not using thenRun here because we want to ensure each step is on the event
-              // thread
-              transaction.commit().join();
+          if (!result.isSuccessful()) {
+            if (result.getFailureReason() != FailureReason.BLOCK_IS_FROM_FUTURE) {
+              // Blocks from the future are not invalid, just not ready for processing yet
+              P2P_LOG.onInvalidBlock(
+                  block.getSlot(),
+                  block.getRoot(),
+                  block.sszSerialize(),
+                  result.getFailureReason().name(),
+                  result.getFailureCause());
+            }
+            return SafeFuture.completedFuture(result);
+          }
+          // Note: not using thenRun here because we want to ensure each step is on the event
+          // thread
+          transaction.commit().join();
 
-              proposerWeightings.onBlockReceived(block, blockSlotState.get(), forkChoiceStrategy);
+          proposerWeightings.onBlockReceived(block, blockSlotState.get(), forkChoiceStrategy);
 
-              final UInt64 currentEpoch = spec.computeEpochAtSlot(spec.getCurrentSlot(transaction));
+          final UInt64 currentEpoch = spec.computeEpochAtSlot(spec.getCurrentSlot(transaction));
 
-              // We only need to apply attestations from the current or previous epoch
-              // If the block is from before that, none of the attestations will be applicable so
-              // just
-              // skip the whole step.
-              if (spec.computeEpochAtSlot(block.getSlot())
-                  .isGreaterThanOrEqualTo(currentEpoch.minusMinZero(1))) {
-                applyVotesFromBlock(forkChoiceStrategy, currentEpoch, indexedAttestationCache);
-              }
+          // We only need to apply attestations from the current or previous epoch
+          // If the block is from before that, none of the attestations will be applicable so
+          // just
+          // skip the whole step.
+          if (spec.computeEpochAtSlot(block.getSlot())
+              .isGreaterThanOrEqualTo(currentEpoch.minusMinZero(1))) {
+            applyVotesFromBlock(forkChoiceStrategy, currentEpoch, indexedAttestationCache);
+          }
 
-              // Do the combine while still on the fork choice thread unless we really do have to
-              // wait for the payload execution to complete, so call this here rather than in
-              // .thenCompose below even though it means having to unwrap the SafeFuture
-              return payloadExecutor.combine(result);
-            })
-        .thenCompose(Function.identity());
+          // Do the combine while still on the fork choice thread unless we really do have to
+          // wait for the payload execution to complete, so call this here rather than in
+          // .thenCompose below even though it means having to unwrap the SafeFuture
+          return payloadExecutor.combine(result);
+        });
   }
 
   private void applyVotesFromBlock(
@@ -341,13 +341,22 @@ public class ForkChoice {
 
   private SafeFuture<Void> onForkChoiceThread(final ExceptionThrowingRunnable task) {
     return onForkChoiceThread(
-        () -> {
-          task.run();
-          return null;
-        });
+        (ExceptionThrowingSupplier<Void>)
+            () -> {
+              task.run();
+              return null;
+            });
   }
 
   private <T> SafeFuture<T> onForkChoiceThread(final ExceptionThrowingSupplier<T> task) {
     return forkChoiceExecutor.execute(task);
+  }
+
+  // Errorprone thinks we're ignoring return values because the execute() call winds up returning a
+  // nested SafeFuture<SafeFuture<?>> but we are unwrapping it so if either future fails we'll
+  // still handle the result
+  @SuppressWarnings("FutureReturnValueIgnored")
+  private <T> SafeFuture<T> onForkChoiceThread(final Supplier<SafeFuture<T>> task) {
+    return forkChoiceExecutor.execute(task::get).thenCompose(Function.identity());
   }
 }
