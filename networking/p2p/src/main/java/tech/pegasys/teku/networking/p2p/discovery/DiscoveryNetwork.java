@@ -193,4 +193,8 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   public Optional<DiscoveryNetwork<?>> getDiscoveryNetwork() {
     return Optional.of(this);
   }
+
+  public DiscoveryService getDiscoveryService() {
+    return discoveryService;
+  }
 }
