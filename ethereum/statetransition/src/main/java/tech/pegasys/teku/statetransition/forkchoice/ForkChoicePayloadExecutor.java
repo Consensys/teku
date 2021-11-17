@@ -27,7 +27,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.spec.logic.versions.merge.block.OptimisticExecutionPayloadExecutor;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-class ForkChoiceOptimisticExecutionPayloadExecutor implements OptimisticExecutionPayloadExecutor {
+class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
 
   private final RecentChainData recentChainData;
   private final EventThread forkChoiceExecutor;
@@ -35,7 +35,7 @@ class ForkChoiceOptimisticExecutionPayloadExecutor implements OptimisticExecutio
   private final ExecutionEngineChannel executionEngine;
   private SafeFuture<ExecutePayloadResult> result;
 
-  ForkChoiceOptimisticExecutionPayloadExecutor(
+  ForkChoicePayloadExecutor(
       final RecentChainData recentChainData,
       final EventThread forkChoiceExecutor,
       final SignedBeaconBlock block,
