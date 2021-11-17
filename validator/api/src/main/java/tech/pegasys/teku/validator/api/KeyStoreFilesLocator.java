@@ -32,9 +32,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
-class KeyStoreFilesLocator {
+public class KeyStoreFilesLocator {
   private static final Logger LOG = LogManager.getLogger();
-  private final Map<Path, Path> pathMap = new HashMap<>();
   private final List<String> colonSeparatedPairs;
   private final String pathSeparator;
 
@@ -43,7 +42,8 @@ class KeyStoreFilesLocator {
     this.pathSeparator = pathSeparator;
   }
 
-  public void parse() {
+  public List<Pair<Path, Path>> parse() {
+    Map<Path, Path> pathMap = new HashMap<>();
     for (final String currentEntry : colonSeparatedPairs) {
       if (!currentEntry.contains(pathSeparator)) {
         throw new InvalidConfigurationException(
@@ -55,11 +55,13 @@ class KeyStoreFilesLocator {
       }
 
       final List<String> entry = Splitter.on(pathSeparator).limit(2).splitToList(currentEntry);
-      parseEntry(entry.get(0), entry.get(1));
+      parseEntry(entry.get(0), entry.get(1), pathMap);
     }
+    return getFilePairs(pathMap);
   }
 
-  private void parseEntry(final String keyFileName, final String passwordFileName) {
+  private void parseEntry(
+      final String keyFileName, final String passwordFileName, Map<Path, Path> pathMap) {
     final File keyFile = new File(keyFileName);
     final File passwordFile = new File(passwordFileName);
 
@@ -87,7 +89,7 @@ class KeyStoreFilesLocator {
     if (keyFile.isFile()) {
       pathMap.putIfAbsent(keyFile.toPath(), passwordFile.toPath());
     } else {
-      parseDirectory(keyFile, passwordFile);
+      parseDirectory(keyFile, passwordFile, pathMap);
     }
   }
 
@@ -116,7 +118,8 @@ class KeyStoreFilesLocator {
     }
   }
 
-  void parseDirectory(final File keyDirectory, final File passwordDirectory) {
+  private void parseDirectory(
+      final File keyDirectory, final File passwordDirectory, Map<Path, Path> pathMap) {
     try (Stream<Path> walk = Files.walk(keyDirectory.toPath(), FileVisitOption.FOLLOW_LINKS)) {
       walk.filter(Files::isRegularFile)
           .filter(
@@ -151,7 +154,7 @@ class KeyStoreFilesLocator {
     }
   }
 
-  public List<Pair<Path, Path>> getFilePairs() {
+  private List<Pair<Path, Path>> getFilePairs(Map<Path, Path> pathMap) {
     return pathMap.entrySet().stream()
         .map(entry -> Pair.of(entry.getKey(), entry.getValue()))
         .collect(toList());

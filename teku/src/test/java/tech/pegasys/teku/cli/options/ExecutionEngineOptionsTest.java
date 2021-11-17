@@ -15,11 +15,9 @@ package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
-import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class ExecutionEngineOptionsTest extends AbstractBeaconNodeCommandTest {
 
@@ -86,22 +84,5 @@ public class ExecutionEngineOptionsTest extends AbstractBeaconNodeCommandTest {
             "http://example-2.com:1234/path/",
             "http://example-3.com:1234/path/");
     assertThat(config.executionEngine().isEnabled()).isTrue();
-  }
-
-  @Test
-  public void ShouldReportEmptyIfFeeRecipientNotSpecified() {
-    final TekuConfiguration config = getTekuConfigurationFromArguments();
-    assertThat(config.executionEngine().getFeeRecipient()).isEmpty();
-  }
-
-  @Test
-  public void ShouldReportAddressIfFeeRecipientSpecified() {
-    final String[] args = {
-      "--Xee-fee-recipient-address", "0xfe3b557e8fb62b89f4916b721be55ceb828dbd73"
-    };
-    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
-    assertThat(config.executionEngine().getFeeRecipient())
-        .isEqualTo(
-            Optional.of(Eth1Address.fromHexString("0xfe3b557e8fb62b89f4916b721be55ceb828dbd73")));
   }
 }

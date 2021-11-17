@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku;
 
+import java.util.Optional;
 import tech.pegasys.teku.config.TekuConfiguration;
 
 /**
@@ -23,7 +24,14 @@ import tech.pegasys.teku.config.TekuConfiguration;
  */
 public interface TekuFacade {
 
-  static NodeFacade startFromCLIArgs(String[] cliArgs) {
+  /**
+   * Starts Teku node from CLI args
+   *
+   * @return Either {@link NodeFacade} or {@link Optional#empty()} if arguments are not supposed to
+   *     start a Node (e.g. <code>--help</code> command)
+   * @throws RuntimeException if invalid args supplied or an internal error while starting a Node
+   */
+  static Optional<? extends NodeFacade> startFromCLIArgs(String[] cliArgs) {
     return Teku.startFromCLIArgs(cliArgs);
   }
 
