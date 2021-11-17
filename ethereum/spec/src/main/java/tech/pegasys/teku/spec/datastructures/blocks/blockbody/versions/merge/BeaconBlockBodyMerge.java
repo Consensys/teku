@@ -34,6 +34,11 @@ public interface BeaconBlockBodyMerge extends BeaconBlockBodyAltair {
   ExecutionPayload getExecutionPayload();
 
   @Override
+  default Optional<ExecutionPayload> getOptionalExecutionPayload() {
+    return Optional.of(getExecutionPayload());
+  }
+
+  @Override
   BeaconBlockBodySchemaMerge<?> getSchema();
 
   @Override

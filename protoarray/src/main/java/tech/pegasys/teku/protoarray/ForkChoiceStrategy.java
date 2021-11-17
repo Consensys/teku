@@ -45,6 +45,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
 
 public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoiceStrategy {
   private static final Logger LOG = LogManager.getLogger();
@@ -435,5 +436,27 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
 
   private Optional<ProtoNode> getProtoNode(Bytes32 blockRoot) {
     return protoArray.getProtoNode(blockRoot);
+  }
+
+  public void onExecutionPayloadResult(
+      final Bytes32 blockRoot, final ExecutionPayloadStatus status) {
+    if (status == ExecutionPayloadStatus.SYNCING) {
+      return;
+    }
+    protoArrayLock.writeLock().lock();
+    try {
+      switch (status) {
+        case VALID:
+          protoArray.markNodeValid(blockRoot);
+          break;
+        case INVALID:
+          protoArray.markNodeInvalid(blockRoot);
+          break;
+        default:
+          throw new IllegalArgumentException("Unknown payload status: " + status);
+      }
+    } finally {
+      protoArrayLock.writeLock().unlock();
+    }
   }
 }

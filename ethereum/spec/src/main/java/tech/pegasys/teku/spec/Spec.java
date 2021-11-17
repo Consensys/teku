@@ -56,7 +56,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateInvariants;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.genesis.GenesisGenerator;
 import tech.pegasys.teku.spec.logic.StateTransition;
 import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
@@ -70,6 +69,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
+import tech.pegasys.teku.spec.logic.versions.merge.block.OptimisticExecutionPayloadExecutor;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.ssz.collections.SszBitlist;
 import tech.pegasys.teku.ssz.type.Bytes4;
@@ -463,10 +463,10 @@ public class Spec {
       final SignedBeaconBlock signedBlock,
       final BeaconState blockSlotState,
       final IndexedAttestationCache indexedAttestationCache,
-      final ExecutionEngineChannel executionEngine) {
+      final OptimisticExecutionPayloadExecutor payloadExecutor) {
     return atBlock(signedBlock)
         .getForkChoiceUtil()
-        .onBlock(store, signedBlock, blockSlotState, indexedAttestationCache, executionEngine);
+        .onBlock(store, signedBlock, blockSlotState, indexedAttestationCache, payloadExecutor);
   }
 
   public boolean blockDescendsFromLatestFinalizedBlock(
@@ -507,7 +507,7 @@ public class Spec {
       final BeaconState preState,
       final SignedBeaconBlock block,
       final BLSSignatureVerifier signatureVerifier,
-      final ExecutionEngineChannel executionEngine)
+      final OptimisticExecutionPayloadExecutor payloadExecutor)
       throws StateTransitionException {
     try {
       final BeaconState blockSlotState = stateTransition.processSlots(preState, block.getSlot());
@@ -517,7 +517,7 @@ public class Spec {
               blockSlotState,
               IndexedAttestationCache.NOOP,
               signatureVerifier,
-              executionEngine);
+              payloadExecutor);
     } catch (SlotProcessingException | EpochProcessingException e) {
       throw new StateTransitionException(e);
     }
@@ -533,7 +533,7 @@ public class Spec {
               block.getMessage(),
               IndexedAttestationCache.NOOP,
               BLSSignatureVerifier.NO_OP,
-              ExecutionEngineChannel.NOOP);
+              OptimisticExecutionPayloadExecutor.NOOP);
     } catch (SlotProcessingException | EpochProcessingException | BlockProcessingException e) {
       throw new StateTransitionException(e);
     }
