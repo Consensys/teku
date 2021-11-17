@@ -31,7 +31,9 @@ import tech.pegasys.teku.infrastructure.restapi.types.DeserializableTypeDefiniti
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.client.Validator;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysRequest;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysResponse;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeysRequest;
 
@@ -104,6 +106,35 @@ class ValidatorTypesTest {
     DeleteKeysRequest request = new DeleteKeysRequest();
     request.setPublicKeys(keys);
     assertRoundTrip(request, ValidatorTypes.DELETE_KEYS_REQUEST);
+  }
+
+  @Test
+  void deleteKeysResponse_shouldSerialize() throws Exception {
+    final String slashString = "\"{}\"";
+    final List<DeleteKeyResult> original =
+        List.of(
+            DeleteKeyResult.success(),
+            DeleteKeyResult.error("ERR"),
+            DeleteKeyResult.notActive(),
+            DeleteKeyResult.notFound());
+    final Map<String, Object> result =
+        JsonTestUtil.parse(
+            JsonUtil.serialize(
+                new DeleteKeysResponse(original, slashString),
+                ValidatorTypes.DELETE_KEYS_RESPONSE_TYPE));
+    final List<Map<String, Object>> keysList = JsonTestUtil.getList(result, "data");
+    for (int i = 0; i < original.size(); i++) {
+      if (original.get(i).getMessage().isPresent()) {
+        assertThat(keysList.get(i))
+            .containsOnly(
+                entry("status", original.get(i).getStatus().toString()),
+                entry("message", original.get(i).getMessage().orElseThrow()));
+      } else {
+        assertThat(keysList.get(i))
+            .containsOnly(entry("status", original.get(i).getStatus().toString()));
+      }
+    }
+    assertThat(result.get("slashing_protection")).isEqualTo(slashString);
   }
 
   @Test
