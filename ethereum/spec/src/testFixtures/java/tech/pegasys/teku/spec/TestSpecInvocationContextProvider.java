@@ -172,5 +172,20 @@ public class TestSpecInvocationContextProvider implements TestTemplateInvocation
       Assumptions.assumeTrue(
           List.of(networks).contains(specContext.getNetwork()), "Network skipped");
     }
+
+    public static void onlyPhase0(SpecContext specContext) {
+      Assumptions.assumeTrue(
+          specContext.getSpecMilestone().equals(SpecMilestone.PHASE0), "Milestone skipped");
+    }
+
+    public static void onlyAltair(SpecContext specContext) {
+      Assumptions.assumeTrue(
+          specContext.getSpecMilestone().equals(SpecMilestone.ALTAIR), "Milestone skipped");
+    }
+
+    public static void onlyMerge(SpecContext specContext) {
+      Assumptions.assumeTrue(
+          specContext.getSpecMilestone().equals(SpecMilestone.MERGE), "Milestone skipped");
+    }
   }
 }

@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes48;
-import tech.pegasys.teku.api.schema.PublicKeyException;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.restapi.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.restapi.types.DeserializableTypeDefinition;
@@ -76,15 +75,7 @@ public class ValidatorTypes {
       DeserializableTypeDefinition.string(BLSPublicKey.class)
           .name("PubKey")
           .formatter(BLSPublicKey::toString)
-          .parser(
-              value -> {
-                try {
-                  return BLSPublicKey.fromBytesCompressedValidate(Bytes48.fromHexString(value));
-                } catch (final IllegalArgumentException e) {
-                  throw new PublicKeyException(
-                      "Public key " + value + " is invalid: " + e.getMessage(), e);
-                }
-              })
+          .parser(value -> BLSPublicKey.fromBytesCompressedValidate(Bytes48.fromHexString(value)))
           .pattern("^0x[a-fA-F0-9]{96}$")
           .example(
               "0x93247f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74a")
@@ -111,7 +102,7 @@ public class ValidatorTypes {
   static SerializableTypeDefinition<DeleteKeyResult> DELETE_KEY_RESULT =
       SerializableTypeDefinition.object(DeleteKeyResult.class)
           .name("DeleteKeyResult")
-          .withField("status", enumOf(DeletionStatus.class), __ -> null)
+          .withField("status", enumOf(DeletionStatus.class), DeleteKeyResult::getStatus)
           .withOptionalField("message", STRING_TYPE, DeleteKeyResult::getMessage)
           .build();
 

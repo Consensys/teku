@@ -183,14 +183,15 @@ class ProtoArrayTest {
   }
 
   @Test
-  void findHead_shouldReturnEmptyWhenAllBlocksAreInvalid() {
+  void findHead_shouldThrowFatalServiceExceptionWhenAllBlocksAreInvalid() {
     addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), OPTIMISTIC);
     addBlock(2, block2a, block1a, OPTIMISTIC);
     addBlock(3, block3a, block2a, OPTIMISTIC);
     protoArray.markNodeInvalid(GENESIS_CHECKPOINT.getRoot());
 
-    assertThat(protoArray.findHead(GENESIS_CHECKPOINT.getRoot(), UInt64.ZERO, UInt64.ZERO))
-        .isEmpty();
+    assertThatThrownBy(
+            () -> protoArray.findHead(GENESIS_CHECKPOINT.getRoot(), UInt64.ZERO, UInt64.ZERO))
+        .isInstanceOf(FatalServiceFailureException.class);
   }
 
   /**
@@ -289,7 +290,10 @@ class ProtoArrayTest {
 
     protoArray.markNodeInvalid(GENESIS_CHECKPOINT.getRoot());
 
-    assertThatThrownBy(() -> assertOptimisticHead(block1a))
+    assertThatThrownBy(
+            () ->
+                protoArray.findOptimisticHead(
+                    GENESIS_CHECKPOINT.getRoot(), UInt64.ZERO, UInt64.ZERO))
         .isInstanceOf(FatalServiceFailureException.class);
   }
 
@@ -419,6 +423,34 @@ class ProtoArrayTest {
 
     assertOptimisticHead(block3a);
     assertStrictHead(block3a);
+  }
+
+  @Test
+  void contains_shouldContainValidBlock() {
+    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), VALID);
+    assertThat(protoArray.contains(block1a)).isTrue();
+  }
+
+  @Test
+  void contains_shouldContainOptimisticBlock() {
+    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), OPTIMISTIC);
+    assertThat(protoArray.contains(block1a)).isTrue();
+  }
+
+  @Test
+  void contains_shouldNotContainInvalidBlock() {
+    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), OPTIMISTIC);
+    protoArray.markNodeInvalid(block1a);
+    assertThat(protoArray.contains(block1a)).isFalse();
+  }
+
+  @Test
+  void contains_shouldNotContainDescendantsOfInvalidBlock() {
+    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), OPTIMISTIC);
+    addBlock(1, block2a, block1a, OPTIMISTIC);
+    protoArray.markNodeInvalid(block1a);
+    assertThat(protoArray.contains(block1a)).isFalse();
+    assertThat(protoArray.contains(block2a)).isFalse();
   }
 
   private void assertOptimisticHead(final Bytes32 expectedBlockHash) {
