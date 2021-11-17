@@ -41,29 +41,32 @@ import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.validator.api.ValidatorConfig;
+import tech.pegasys.teku.validator.api.KeyStoreFilesLocator;
 
 public class LocalValidatorSource implements ValidatorSource {
 
   private final Spec spec;
-  private final ValidatorConfig config;
+  private final boolean validatorKeystoreLockingEnabled;
   private final KeystoreLocker keystoreLocker;
   private final AsyncRunner asyncRunner;
+  private final KeyStoreFilesLocator keyStoreFilesLocator;
 
   public LocalValidatorSource(
       final Spec spec,
-      final ValidatorConfig config,
+      final boolean validatorKeystoreLockingEnabled,
       final KeystoreLocker keystoreLocker,
+      final KeyStoreFilesLocator keyStoreFilesLocator,
       final AsyncRunner asyncRunner) {
     this.spec = spec;
-    this.config = config;
+    this.validatorKeystoreLockingEnabled = validatorKeystoreLockingEnabled;
     this.keystoreLocker = keystoreLocker;
     this.asyncRunner = asyncRunner;
+    this.keyStoreFilesLocator = keyStoreFilesLocator;
   }
 
   @Override
   public List<ValidatorProvider> getAvailableValidators() {
-    final List<Pair<Path, Path>> filePairs = config.getValidatorKeystorePasswordFilePairs();
+    final List<Pair<Path, Path>> filePairs = keyStoreFilesLocator.parse();
     if (filePairs == null) {
       return emptyList();
     }
@@ -149,7 +152,7 @@ public class LocalValidatorSource implements ValidatorSource {
 
     private Bytes32 loadBLSPrivateKey() {
       try {
-        if (config.isValidatorKeystoreLockingEnabled()) {
+        if (validatorKeystoreLockingEnabled) {
           keystoreLocker.lockKeystore(keystoreFile);
         }
         return Bytes32.wrap(KeyStore.decrypt(password, keyStoreData));

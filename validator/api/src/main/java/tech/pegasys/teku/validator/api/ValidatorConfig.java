@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.validator.api;
 
-import java.io.File;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Path;
@@ -23,6 +22,7 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.commons.lang3.tuple.Pair;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class ValidatorConfig {
 
@@ -44,6 +44,7 @@ public class ValidatorConfig {
   private final boolean useDependentRoots;
   private final boolean generateEarlyAttestations;
   private final boolean sendAttestationsAsBatch;
+  private final Optional<Eth1Address> feeRecipient;
 
   private ValidatorConfig(
       final List<String> validatorKeys,
@@ -63,7 +64,8 @@ public class ValidatorConfig {
       final boolean useDependentRoots,
       final boolean generateEarlyAttestations,
       final boolean sendAttestationsAsBatch,
-      final List<URI> additionalPublishUrls) {
+      final List<URI> additionalPublishUrls,
+      final Optional<Eth1Address> feeRecipient) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
@@ -85,6 +87,7 @@ public class ValidatorConfig {
     this.generateEarlyAttestations = generateEarlyAttestations;
     this.sendAttestationsAsBatch = sendAttestationsAsBatch;
     this.additionalPublishUrls = additionalPublishUrls;
+    this.feeRecipient = feeRecipient;
   }
 
   public static Builder builder() {
@@ -140,14 +143,6 @@ public class ValidatorConfig {
     return validatorKeys;
   }
 
-  public List<Pair<Path, Path>> getValidatorKeystorePasswordFilePairs() {
-    final KeyStoreFilesLocator processor =
-        new KeyStoreFilesLocator(validatorKeys, File.pathSeparator);
-    processor.parse();
-
-    return processor.getFilePairs();
-  }
-
   public boolean generateEarlyAttestations() {
     return generateEarlyAttestations;
   }
@@ -162,6 +157,10 @@ public class ValidatorConfig {
 
   public List<URI> getAdditionalPublishUrls() {
     return additionalPublishUrls;
+  }
+
+  public Optional<Eth1Address> getFeeRecipient() {
+    return feeRecipient;
   }
 
   public static final class Builder {
@@ -184,6 +183,7 @@ public class ValidatorConfig {
     private boolean useDependentRoots = false;
     private boolean generateEarlyAttestations = true;
     private boolean sendAttestationsAsBatch = true;
+    private Optional<Eth1Address> feeRecipient = Optional.empty();
 
     private Builder() {}
 
@@ -287,6 +287,20 @@ public class ValidatorConfig {
       return this;
     }
 
+    public Builder feeRecipient(final Eth1Address feeRecipient) {
+      this.feeRecipient = Optional.ofNullable(feeRecipient);
+      return this;
+    }
+
+    public Builder feeRecipient(final String feeRecipient) {
+      if (feeRecipient == null) {
+        this.feeRecipient = Optional.empty();
+      } else {
+        this.feeRecipient = Optional.of(Eth1Address.fromHexString(feeRecipient));
+      }
+      return this;
+    }
+
     public ValidatorConfig build() {
       validateExternalSignerUrlAndPublicKeys();
       validateExternalSignerKeystoreAndPasswordFileConfig();
@@ -310,7 +324,8 @@ public class ValidatorConfig {
           useDependentRoots,
           generateEarlyAttestations,
           sendAttestationsAsBatch,
-          additionalPublishUrls);
+          additionalPublishUrls,
+          feeRecipient);
     }
 
     private void validateExternalSignerUrlAndPublicKeys() {

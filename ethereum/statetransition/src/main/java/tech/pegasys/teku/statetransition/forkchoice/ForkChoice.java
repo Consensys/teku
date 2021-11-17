@@ -20,6 +20,8 @@ import static tech.pegasys.teku.statetransition.forkchoice.StateRootCollector.ad
 import com.google.common.base.Throwables;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -183,6 +185,10 @@ public class ForkChoice {
         "State must have processed slots up to the block slot. Block slot %s, state slot %s",
         block.getSlot(),
         blockSlotState.get().getSlot());
+
+    final ForkChoicePayloadExecutor payloadExecutor =
+        new ForkChoicePayloadExecutor(recentChainData, forkChoiceExecutor, block, executionEngine);
+
     return onForkChoiceThread(
         () -> {
           final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
@@ -191,14 +197,13 @@ public class ForkChoice {
               IndexedAttestationCache.capturing();
 
           addParentStateRoots(blockSlotState.get(), transaction);
-
           final BlockImportResult result =
               spec.onBlock(
                   transaction,
                   block,
                   blockSlotState.get(),
                   indexedAttestationCache,
-                  executionEngine);
+                  payloadExecutor);
 
           if (!result.isSuccessful()) {
             if (result.getFailureReason() != FailureReason.BLOCK_IS_FROM_FUTURE) {
@@ -210,21 +215,29 @@ public class ForkChoice {
                   result.getFailureReason().name(),
                   result.getFailureCause());
             }
-            return result;
+            return SafeFuture.completedFuture(result);
           }
-          // Note: not using thenRun here because we want to ensure each step is on the event thread
+          // Note: not using thenRun here because we want to ensure each step is on the event
+          // thread
           transaction.commit().join();
-          updateForkChoiceForImportedBlock(block, blockSlotState.get(), result, forkChoiceStrategy);
+
+          proposerWeightings.onBlockReceived(block, blockSlotState.get(), forkChoiceStrategy);
+
           final UInt64 currentEpoch = spec.computeEpochAtSlot(spec.getCurrentSlot(transaction));
 
           // We only need to apply attestations from the current or previous epoch
-          // If the block is from before that, none of the attestations will be applicable so just
+          // If the block is from before that, none of the attestations will be applicable so
+          // just
           // skip the whole step.
           if (spec.computeEpochAtSlot(block.getSlot())
               .isGreaterThanOrEqualTo(currentEpoch.minusMinZero(1))) {
             applyVotesFromBlock(forkChoiceStrategy, currentEpoch, indexedAttestationCache);
           }
-          return result;
+
+          // Do the combine while still on the fork choice thread unless we really do have to
+          // wait for the payload execution to complete, so call this here rather than in
+          // .thenCompose below even though it means having to unwrap the SafeFuture
+          return payloadExecutor.combine(result);
         });
   }
 
@@ -248,48 +261,6 @@ public class ForkChoice {
         .getForkChoiceUtil()
         .validateOnAttestation(forkChoiceStrategy, currentEpoch, attestation.getData())
         .isSuccessful();
-  }
-
-  private void updateForkChoiceForImportedBlock(
-      final SignedBeaconBlock block,
-      final BeaconState blockSlotState,
-      final BlockImportResult result,
-      final ForkChoiceStrategy forkChoiceStrategy) {
-    if (result.isSuccessful()) {
-      proposerWeightings.onBlockReceived(block, blockSlotState, forkChoiceStrategy);
-
-      final SlotAndBlockRoot bestHeadBlock = findNewChainHead(block, forkChoiceStrategy);
-      if (!bestHeadBlock.getBlockRoot().equals(recentChainData.getBestBlockRoot().orElseThrow())) {
-        recentChainData.updateHead(bestHeadBlock.getBlockRoot(), bestHeadBlock.getSlot());
-        if (bestHeadBlock.getBlockRoot().equals(block.getRoot())) {
-          result.markAsCanonical();
-        }
-      }
-    }
-  }
-
-  private SlotAndBlockRoot findNewChainHead(
-      final SignedBeaconBlock block, final ForkChoiceStrategy forkChoiceStrategy) {
-    // If the new block builds on our current chain head it must be the new chain head.
-    // Since fork choice works by walking down the tree selecting the child block with
-    // the greatest weight, when a block has only one child it will automatically become
-    // a better choice than the block itself.  So the first block we receive that is a
-    // child of our current chain head, must be the new chain head. If we'd had any other
-    // child of the current chain head we'd have already selected it as head.
-    if (recentChainData
-        .getChainHead()
-        .map(currentHead -> currentHead.getRoot().equals(block.getParentRoot()))
-        .orElse(false)) {
-      return new SlotAndBlockRoot(block.getSlot(), block.getRoot());
-    }
-
-    // Otherwise, use fork choice to find the new chain head as if this block is on time the
-    // proposer weighting may cause us to reorg.
-    // During sync, this may be noticeably slower than just comparing the chain head due to the way
-    // ProtoArray skips updating all ancestors when adding a new block but it's cheap when in sync.
-    final Checkpoint justifiedCheckpoint = recentChainData.getJustifiedCheckpoint().orElseThrow();
-    final Checkpoint finalizedCheckpoint = recentChainData.getFinalizedCheckpoint().orElseThrow();
-    return forkChoiceStrategy.findHead(justifiedCheckpoint, finalizedCheckpoint);
   }
 
   public SafeFuture<AttestationProcessingResult> onAttestation(
@@ -370,13 +341,22 @@ public class ForkChoice {
 
   private SafeFuture<Void> onForkChoiceThread(final ExceptionThrowingRunnable task) {
     return onForkChoiceThread(
-        () -> {
-          task.run();
-          return null;
-        });
+        (ExceptionThrowingSupplier<Void>)
+            () -> {
+              task.run();
+              return null;
+            });
   }
 
   private <T> SafeFuture<T> onForkChoiceThread(final ExceptionThrowingSupplier<T> task) {
     return forkChoiceExecutor.execute(task);
+  }
+
+  // Errorprone thinks we're ignoring return values because the execute() call winds up returning a
+  // nested SafeFuture<SafeFuture<?>> but we are unwrapping it so if either future fails we'll
+  // still handle the result
+  @SuppressWarnings("FutureReturnValueIgnored")
+  private <T> SafeFuture<T> onForkChoiceThread(final Supplier<SafeFuture<T>> task) {
+    return forkChoiceExecutor.execute(task::get).thenCompose(Function.identity());
   }
 }
