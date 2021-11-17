@@ -13,8 +13,12 @@
 
 package tech.pegasys.teku.validator.client;
 
+import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
+
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -25,6 +29,8 @@ import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
 public class BeaconProposerPreparer implements ValidatorTimingChannel {
+  private static final Logger LOG = LogManager.getLogger();
+
   private final ValidatorApiChannel validatorApiChannel;
   private final ValidatorIndexProvider validatorIndexProvider;
   private final OwnedValidators validators;
@@ -46,8 +52,7 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
 
   @Override
   public void onSlot(UInt64 slot) {
-    if (spec.atSlot(slot).getExecutionPayloadUtil().isPresent()
-        && slot.mod(spec.getSlotsPerEpoch(slot)).isZero()) {
+    if (slot.mod(spec.getSlotsPerEpoch(slot)).isZero()) {
       validatorIndexProvider
           .getValidatorIndices(validators.getPublicKeys())
           .thenApply(
@@ -58,7 +63,7 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
                               new BeaconPreparableProposer(UInt64.valueOf(index), feeRecipient))
                       .collect(Collectors.toList()))
           .thenAccept(validatorApiChannel::prepareBeaconProposer)
-          .reportExceptions();
+          .finish(VALIDATOR_LOGGER::beaconProposerPreparationFailed);
     }
   }
 

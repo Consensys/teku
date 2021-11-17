@@ -15,8 +15,10 @@ package tech.pegasys.teku.validator.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -38,7 +40,7 @@ import tech.pegasys.teku.validator.api.BeaconPreparableProposer;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
-@TestSpecContext(allMilestones = true)
+@TestSpecContext(milestone = SpecMilestone.MERGE)
 public class BeaconProposerPreparerTest {
   private final int validator1Index = 19;
   private final int validator2Index = 23;
@@ -87,24 +89,28 @@ public class BeaconProposerPreparerTest {
   void should_callPrepareBeaconProposerAtBeginningOfEpoch(SpecContext specContext) {
     beaconProposerPreparer.onSlot(UInt64.valueOf(slotsPerEpoch * 2));
 
-    if (specContext.getSpecMilestone().isGreaterThanOrEqualTo(SpecMilestone.MERGE)) {
-      @SuppressWarnings("unchecked")
-      final ArgumentCaptor<Collection<BeaconPreparableProposer>> captor =
-          ArgumentCaptor.forClass(Collection.class);
-      verify(validatorApiChannel).prepareBeaconProposer(captor.capture());
+    @SuppressWarnings("unchecked")
+    final ArgumentCaptor<Collection<BeaconPreparableProposer>> captor =
+        ArgumentCaptor.forClass(Collection.class);
+    verify(validatorApiChannel).prepareBeaconProposer(captor.capture());
 
-      assertThat(captor.getValue())
-          .containsExactlyInAnyOrder(
-              new BeaconPreparableProposer(UInt64.valueOf(validator1Index), feeRecipient),
-              new BeaconPreparableProposer(UInt64.valueOf(validator2Index), feeRecipient));
-    } else {
-      verify(validatorApiChannel, never()).prepareBeaconProposer(any());
-    }
+    assertThat(captor.getValue())
+        .containsExactlyInAnyOrder(
+            new BeaconPreparableProposer(UInt64.valueOf(validator1Index), feeRecipient),
+            new BeaconPreparableProposer(UInt64.valueOf(validator2Index), feeRecipient));
   }
 
   @TestTemplate
   void should_notCallPrepareBeaconProposerAfterFirstSlotOfEpoch() {
     beaconProposerPreparer.onSlot(UInt64.ONE);
     verify(validatorApiChannel, never()).prepareBeaconProposer(any());
+  }
+
+  @TestTemplate
+  void should_catchApiExceptions() {
+    doThrow(new RuntimeException("error")).when(validatorApiChannel).prepareBeaconProposer(any());
+
+    beaconProposerPreparer.onSlot(UInt64.ZERO);
+    verify(validatorApiChannel, times(1)).prepareBeaconProposer(any());
   }
 }

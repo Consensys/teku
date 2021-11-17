@@ -144,4 +144,9 @@ public class ValidatorLogger {
         ColorConsolePrinter.print(
             PREFIX + "Produced invalid aggregate for slot " + slot + ": " + reason, Color.RED));
   }
+
+  public void beaconProposerPreparationFailed(final Throwable error) {
+    final String errorString = String.format("%sFailed to send proposers to Beacon Node", PREFIX);
+    log.error(ColorConsolePrinter.print(errorString, Color.RED), error);
+  }
 }
