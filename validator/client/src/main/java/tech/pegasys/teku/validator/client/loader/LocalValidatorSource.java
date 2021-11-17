@@ -50,18 +50,21 @@ public class LocalValidatorSource implements ValidatorSource {
   private final KeystoreLocker keystoreLocker;
   private final AsyncRunner asyncRunner;
   private final KeyStoreFilesLocator keyStoreFilesLocator;
+  private final boolean readOnly;
 
   public LocalValidatorSource(
       final Spec spec,
       final boolean validatorKeystoreLockingEnabled,
       final KeystoreLocker keystoreLocker,
       final KeyStoreFilesLocator keyStoreFilesLocator,
-      final AsyncRunner asyncRunner) {
+      final AsyncRunner asyncRunner,
+      final boolean readOnly) {
     this.spec = spec;
     this.validatorKeystoreLockingEnabled = validatorKeystoreLockingEnabled;
     this.keystoreLocker = keystoreLocker;
     this.asyncRunner = asyncRunner;
     this.keyStoreFilesLocator = keyStoreFilesLocator;
+    this.readOnly = readOnly;
   }
 
   @Override
@@ -82,7 +85,8 @@ public class LocalValidatorSource implements ValidatorSource {
       final BLSPublicKey publicKey =
           BLSPublicKey.fromBytesCompressedValidate(Bytes48.wrap(keyStoreData.getPubkey()));
       final String password = loadPassword(passwordPath);
-      return new LocalValidatorProvider(spec, keyStoreData, keystorePath, publicKey, password);
+      return new LocalValidatorProvider(
+          spec, keyStoreData, keystorePath, publicKey, password, readOnly);
     } catch (final KeyStoreValidationException e) {
       if (Throwables.getRootCause(e) instanceof FileNotFoundException) {
         throw new InvalidConfigurationException(e.getMessage(), e);
@@ -119,23 +123,31 @@ public class LocalValidatorSource implements ValidatorSource {
     private final Path keystoreFile;
     private final BLSPublicKey publicKey;
     private final String password;
+    private final boolean readOnly;
 
     private LocalValidatorProvider(
         final Spec spec,
         final KeyStoreData keyStoreData,
         final Path keystoreFile,
         final BLSPublicKey publicKey,
-        final String password) {
+        final String password,
+        final boolean readOnly) {
       this.spec = spec;
       this.keyStoreData = keyStoreData;
       this.keystoreFile = keystoreFile;
       this.publicKey = publicKey;
       this.password = password;
+      this.readOnly = readOnly;
     }
 
     @Override
     public BLSPublicKey getPublicKey() {
       return publicKey;
+    }
+
+    @Override
+    public boolean isReadOnly() {
+      return readOnly;
     }
 
     @Override

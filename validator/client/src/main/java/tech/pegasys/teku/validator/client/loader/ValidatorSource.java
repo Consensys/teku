@@ -24,5 +24,7 @@ public interface ValidatorSource {
     BLSPublicKey getPublicKey();
 
     Signer createSigner();
+
+    boolean isReadOnly();
   }
 }

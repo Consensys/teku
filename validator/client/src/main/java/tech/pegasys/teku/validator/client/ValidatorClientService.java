@@ -152,7 +152,10 @@ public class ValidatorClientService extends Service {
         slashingProtector,
         new PublicKeyLoader(),
         asyncRunner,
-        services.getMetricsSystem());
+        services.getMetricsSystem(),
+        config.getValidatorRestApiConfig().isRestApiEnabled()
+            ? Optional.of(services.getDataDirLayout().getValidatorDataDirectory())
+            : Optional.empty());
   }
 
   private void initializeValidators(

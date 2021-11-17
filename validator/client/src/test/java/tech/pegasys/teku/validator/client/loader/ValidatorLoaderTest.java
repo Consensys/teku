@@ -31,6 +31,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -119,7 +120,8 @@ class ValidatorLoaderTest {
             slashingProtector,
             publicKeyLoader,
             asyncRunner,
-            metricsSystem);
+            metricsSystem,
+            Optional.empty());
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -155,7 +157,8 @@ class ValidatorLoaderTest {
             slashingProtector,
             publicKeyLoader,
             asyncRunner,
-            metricsSystem);
+            metricsSystem,
+            Optional.empty());
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -196,7 +199,8 @@ class ValidatorLoaderTest {
             slashingProtector,
             publicKeyLoader,
             asyncRunner,
-            metricsSystem);
+            metricsSystem,
+            Optional.empty());
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -243,7 +247,8 @@ class ValidatorLoaderTest {
             slashingProtector,
             publicKeyLoader,
             asyncRunner,
-            metricsSystem);
+            metricsSystem,
+            Optional.empty());
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -259,6 +264,53 @@ class ValidatorLoaderTest {
     assertThat(validator2).isNotNull();
     assertThat(validator2.getPublicKey()).isEqualTo(PUBLIC_KEY2);
     assertThat(validator2.getSigner().isLocal()).isFalse();
+  }
+
+  @Test
+  void initializeValidatorsWithBothLocalAndMutable(
+      @TempDir Path tempDir, @TempDir Path tempDirMutable) throws Exception {
+    final BLSPublicKey mutableValidatorPubKey =
+        BLSPublicKey.fromSSZBytes(
+            Bytes.fromHexString(
+                "0xa057816155ad77931185101128655c0191bd0214c201ca48ed887f6c4c6adf334070efcd75140eada5ac83a92506dd7a"));
+
+    tempDirMutable = tempDirMutable.resolve("validator");
+    writeKeystore(tempDir);
+    writeMutableKeystore(tempDirMutable);
+    final ValidatorConfig config =
+        ValidatorConfig.builder()
+            .validatorKeys(
+                List.of(
+                    tempDir.toAbsolutePath().toString()
+                        + File.pathSeparator
+                        + tempDir.toAbsolutePath().toString()))
+            .build();
+    final ValidatorLoader validatorLoader =
+        ValidatorLoader.create(
+            spec,
+            config,
+            disabledInteropConfig,
+            httpClientFactory,
+            slashingProtector,
+            publicKeyLoader,
+            asyncRunner,
+            metricsSystem,
+            Optional.of(tempDirMutable));
+
+    validatorLoader.loadValidators();
+    final OwnedValidators validators = validatorLoader.getOwnedValidators();
+
+    assertThat(validators.getValidatorCount()).isEqualTo(2);
+
+    final Validator validator1 = validators.getValidator(PUBLIC_KEY1).orElseThrow();
+    assertThat(validator1).isNotNull();
+    assertThat(validator1.getPublicKey()).isEqualTo(PUBLIC_KEY1);
+    assertThat(validator1.isReadOnly()).isTrue();
+
+    final Validator validator2 = validators.getValidator(mutableValidatorPubKey).orElseThrow();
+    assertThat(validator2).isNotNull();
+    assertThat(validator2.getPublicKey()).isEqualTo(mutableValidatorPubKey);
+    assertThat(validator2.isReadOnly()).isFalse();
   }
 
   @Test
@@ -285,7 +337,8 @@ class ValidatorLoaderTest {
             slashingProtector,
             publicKeyLoader,
             asyncRunner,
-            metricsSystem);
+            metricsSystem,
+            Optional.empty());
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -321,7 +374,8 @@ class ValidatorLoaderTest {
             slashingProtector,
             publicKeyLoader,
             asyncRunner,
-            metricsSystem);
+            metricsSystem,
+            Optional.empty());
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -360,7 +414,8 @@ class ValidatorLoaderTest {
             slashingProtector,
             publicKeyLoader,
             asyncRunner,
-            metricsSystem);
+            metricsSystem,
+            Optional.empty());
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -395,7 +450,8 @@ class ValidatorLoaderTest {
             slashingProtector,
             publicKeyLoader,
             asyncRunner,
-            metricsSystem);
+            metricsSystem,
+            Optional.empty());
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -428,7 +484,8 @@ class ValidatorLoaderTest {
             slashingProtector,
             publicKeyLoader,
             asyncRunner,
-            metricsSystem);
+            metricsSystem,
+            Optional.empty());
 
     // No validators initially
     validatorLoader.loadValidators();
@@ -446,6 +503,17 @@ class ValidatorLoaderTest {
     final URL resource = Resources.getResource("pbkdf2TestVector.json");
     Files.copy(Path.of(resource.toURI()), tempDir.resolve("key.json"));
     Files.writeString(tempDir.resolve("key.txt"), "testpassword");
+  }
+
+  private void writeMutableKeystore(final Path tempDir) throws Exception {
+    final URL resource = Resources.getResource("testKeystore.json");
+    Path keystore = tempDir.resolve("keystores");
+    Path keystorePassword = tempDir.resolve("keystore-passwords");
+    Files.createDirectory(tempDir);
+    Files.createDirectory(keystore);
+    Files.createDirectory(keystorePassword);
+    Files.copy(Path.of(resource.toURI()), keystore.resolve("key.json"));
+    Files.writeString(keystorePassword.resolve("key.txt"), "testpassword");
   }
 
   @Test
@@ -467,7 +535,8 @@ class ValidatorLoaderTest {
             slashingProtector,
             publicKeyLoader,
             asyncRunner,
-            metricsSystem);
+            metricsSystem,
+            Optional.empty());
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
 
@@ -493,7 +562,8 @@ class ValidatorLoaderTest {
             slashingProtector,
             publicKeyLoader,
             asyncRunner,
-            metricsSystem);
+            metricsSystem,
+            Optional.empty());
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
 

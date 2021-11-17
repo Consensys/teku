@@ -16,11 +16,15 @@ package tech.pegasys.teku.validator.client.loader;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Suppliers;
 import java.io.File;
+import java.io.IOException;
 import java.net.http.HttpClient;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -52,7 +56,8 @@ public class ValidatorLoader {
       final SlashingProtector slashingProtector,
       final PublicKeyLoader publicKeyLoader,
       final AsyncRunner asyncRunner,
-      final MetricsSystem metricsSystem) {
+      final MetricsSystem metricsSystem,
+      final Optional<Path> validatorPath) {
     final Supplier<HttpClient> externalSignerHttpClientFactory =
         Suppliers.memoize(new HttpClientExternalSignerFactory(config)::get);
     return create(
@@ -63,7 +68,8 @@ public class ValidatorLoader {
         slashingProtector,
         publicKeyLoader,
         asyncRunner,
-        metricsSystem);
+        metricsSystem,
+        validatorPath);
   }
 
   @VisibleForTesting
@@ -75,7 +81,8 @@ public class ValidatorLoader {
       final SlashingProtector slashingProtector,
       final PublicKeyLoader publicKeyLoader,
       final AsyncRunner asyncRunner,
-      final MetricsSystem metricsSystem) {
+      final MetricsSystem metricsSystem,
+      final Optional<Path> validatorPath) {
     final List<ValidatorSource> validatorSources = new ArrayList<>();
     if (interopConfig.isInteropEnabled()) {
       validatorSources.add(
@@ -92,9 +99,57 @@ public class ValidatorLoader {
           metricsSystem,
           validatorSources);
       addLocalValidatorSource(spec, config, slashingProtector, asyncRunner, validatorSources);
+      if (validatorPath.isPresent()) {
+        addMutableValidatorSource(
+            spec, config, slashingProtector, asyncRunner, validatorSources, validatorPath);
+      }
     }
 
     return new ValidatorLoader(validatorSources, config.getGraffitiProvider());
+  }
+
+  private static void addMutableValidatorSource(
+      final Spec spec,
+      final ValidatorConfig config,
+      final SlashingProtector slashingProtector,
+      final AsyncRunner asyncRunner,
+      final List<ValidatorSource> validatorSources,
+      final Optional<Path> validatorPath) {
+    Path validatorBasePath = validatorPath.get();
+
+    // as this is a system manage directory structure, is it ok for us to
+    // create the structure if doesnt exists when we're initalizing the app, right?
+    if (!validatorBasePath.resolve("keystores").toFile().exists()) {
+      try {
+        Files.createDirectory(validatorBasePath.resolve("keystores"));
+      } catch (IOException e) {
+        System.out.println("impossible create keystore folder: " + e);
+      }
+    }
+    if (!validatorBasePath.resolve("keystore-passwords").toFile().exists()) {
+      try {
+        Files.createDirectory(validatorBasePath.resolve("keystore-passwords"));
+      } catch (IOException e) {
+        System.out.println("impossible create password folder: " + e);
+      }
+    }
+
+    KeyStoreFilesLocator keyStoreFilesLocator =
+        new KeyStoreFilesLocator(
+            List.of(validatorBasePath + "/keystores:" + validatorBasePath + "/keystore-passwords"),
+            File.pathSeparator);
+    if (keyStoreFilesLocator.parse() != null) {
+      validatorSources.add(
+          slashingProtected(
+              new LocalValidatorSource(
+                  spec,
+                  config.isValidatorKeystoreLockingEnabled(),
+                  new KeystoreLocker(),
+                  keyStoreFilesLocator,
+                  asyncRunner,
+                  false),
+              slashingProtector));
+    }
   }
 
   private static void addLocalValidatorSource(
@@ -113,7 +168,8 @@ public class ValidatorLoader {
                   config.isValidatorKeystoreLockingEnabled(),
                   new KeystoreLocker(),
                   keyStoreFilesLocator,
-                  asyncRunner),
+                  asyncRunner,
+                  true),
               slashingProtector));
     }
   }

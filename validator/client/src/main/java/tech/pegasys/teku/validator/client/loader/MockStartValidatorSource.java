@@ -65,6 +65,11 @@ public class MockStartValidatorSource implements ValidatorSource {
     }
 
     @Override
+    public boolean isReadOnly() {
+      return true;
+    }
+
+    @Override
     public Signer createSigner() {
       return new LocalSigner(spec, keyPair, asyncRunner);
     }
