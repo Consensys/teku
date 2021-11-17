@@ -15,6 +15,7 @@ package tech.pegasys.teku.core.signatures;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
@@ -23,6 +24,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -31,7 +33,8 @@ import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class SlashingProtectedSignerTest {
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final DataStructureUtil dataStructureUtil =
+      new DataStructureUtil(TestSpecFactory.createMinimalAltair());
 
   private final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
   private final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
@@ -127,5 +130,11 @@ class SlashingProtectedSignerTest {
 
     assertThatSafeFuture(signer.signVoluntaryExit(voluntaryExit, forkInfo))
         .isCompletedWithValue(signature);
+  }
+
+  @Test
+  void delete_shouldCallDeleteOnDelegate() {
+    signer.delete();
+    verify(delegate).delete();
   }
 }

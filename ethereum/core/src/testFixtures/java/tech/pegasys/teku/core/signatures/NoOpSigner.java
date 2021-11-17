@@ -31,6 +31,9 @@ public class NoOpSigner implements Signer {
   private NoOpSigner() {}
 
   @Override
+  public void delete() {}
+
+  @Override
   public SafeFuture<BLSSignature> createRandaoReveal(final UInt64 epoch, final ForkInfo forkInfo) {
     return new SafeFuture<>();
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,16 +13,14 @@
 
 package tech.pegasys.teku.core.signatures;
 
-import java.util.function.Function;
-import org.apache.tuweni.bytes.Bytes;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.BLS;
-import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.ExceptionThrowingFutureSupplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -30,101 +28,89 @@ import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionData;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
-import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 
-public class LocalSigner implements Signer {
+public class DeletableSigner implements Signer {
+  private final Signer delegate;
+  private boolean deleted = false;
+  private final ReadWriteLock lock = new ReentrantReadWriteLock();
+  private final Lock readLock = lock.readLock();
 
-  private final Spec spec;
-  private final BLSKeyPair keypair;
-  private final AsyncRunner asyncRunner;
-  private final SigningRootUtil signingRootUtil;
-
-  public LocalSigner(final Spec spec, final BLSKeyPair keypair, final AsyncRunner asyncRunner) {
-    this.spec = spec;
-    this.keypair = keypair;
-    this.asyncRunner = asyncRunner;
-    this.signingRootUtil = new SigningRootUtil(spec);
+  public DeletableSigner(final Signer delegate) {
+    this.delegate = delegate;
   }
 
   @Override
   public void delete() {
-    keypair.getSecretKey().destroy();
+    lock.writeLock().lock();
+    try {
+      deleted = true;
+      delegate.delete();
+    } finally {
+      lock.writeLock().unlock();
+    }
   }
 
   @Override
   public SafeFuture<BLSSignature> createRandaoReveal(final UInt64 epoch, final ForkInfo forkInfo) {
-    return sign(signingRootUtil.signingRootForRandaoReveal(epoch, forkInfo));
+    return sign(() -> delegate.createRandaoReveal(epoch, forkInfo));
   }
 
   @Override
   public SafeFuture<BLSSignature> signBlock(final BeaconBlock block, final ForkInfo forkInfo) {
-    return sign(signingRootUtil.signingRootForSignBlock(block, forkInfo));
+    return sign(() -> delegate.signBlock(block, forkInfo));
   }
 
   @Override
   public SafeFuture<BLSSignature> signAttestationData(
       final AttestationData attestationData, final ForkInfo forkInfo) {
-    return sign(signingRootUtil.signingRootForSignAttestationData(attestationData, forkInfo));
+    return sign(() -> delegate.signAttestationData(attestationData, forkInfo));
   }
 
   @Override
   public SafeFuture<BLSSignature> signAggregationSlot(final UInt64 slot, final ForkInfo forkInfo) {
-    return sign(signingRootUtil.signingRootForSignAggregationSlot(slot, forkInfo));
+    return sign(() -> delegate.signAggregationSlot(slot, forkInfo));
   }
 
   @Override
   public SafeFuture<BLSSignature> signAggregateAndProof(
       final AggregateAndProof aggregateAndProof, final ForkInfo forkInfo) {
-    return sign(signingRootUtil.signingRootForSignAggregateAndProof(aggregateAndProof, forkInfo));
+    return sign(() -> delegate.signAggregateAndProof(aggregateAndProof, forkInfo));
   }
 
   @Override
   public SafeFuture<BLSSignature> signVoluntaryExit(
       final VoluntaryExit voluntaryExit, final ForkInfo forkInfo) {
-    return sign(signingRootUtil.signingRootForSignVoluntaryExit(voluntaryExit, forkInfo));
+    return sign(() -> delegate.signVoluntaryExit(voluntaryExit, forkInfo));
   }
 
   @Override
   public SafeFuture<BLSSignature> signSyncCommitteeMessage(
       final UInt64 slot, final Bytes32 beaconBlockRoot, final ForkInfo forkInfo) {
-    return signingRootFromSyncCommitteeUtils(
-            slot,
-            utils ->
-                utils.getSyncCommitteeMessageSigningRoot(
-                    beaconBlockRoot, spec.computeEpochAtSlot(slot), forkInfo))
-        .thenCompose(this::sign);
+    return sign(() -> delegate.signSyncCommitteeMessage(slot, beaconBlockRoot, forkInfo));
   }
 
   @Override
   public SafeFuture<BLSSignature> signSyncCommitteeSelectionProof(
       final SyncAggregatorSelectionData selectionData, final ForkInfo forkInfo) {
-    return signingRootFromSyncCommitteeUtils(
-            selectionData.getSlot(),
-            utils -> utils.getSyncAggregatorSelectionDataSigningRoot(selectionData, forkInfo))
-        .thenCompose(this::sign);
+    return sign(() -> delegate.signSyncCommitteeSelectionProof(selectionData, forkInfo));
   }
 
   @Override
   public SafeFuture<BLSSignature> signContributionAndProof(
       final ContributionAndProof contributionAndProof, final ForkInfo forkInfo) {
-    return signingRootFromSyncCommitteeUtils(
-            contributionAndProof.getContribution().getSlot(),
-            utils -> utils.getContributionAndProofSigningRoot(contributionAndProof, forkInfo))
-        .thenCompose(this::sign);
-  }
-
-  private SafeFuture<Bytes> signingRootFromSyncCommitteeUtils(
-      final UInt64 slot, final Function<SyncCommitteeUtil, Bytes> createSigningRoot) {
-    return SafeFuture.of(() -> createSigningRoot.apply(spec.getSyncCommitteeUtilRequired(slot)));
+    return sign(() -> delegate.signContributionAndProof(contributionAndProof, forkInfo));
   }
 
   @Override
   public boolean isLocal() {
-    return true;
+    return delegate.isLocal();
   }
 
-  private SafeFuture<BLSSignature> sign(final Bytes signing_root) {
-    return asyncRunner.runAsync(
-        () -> SafeFuture.completedFuture(BLS.sign(keypair.getSecretKey(), signing_root)));
+  private SafeFuture<BLSSignature> sign(ExceptionThrowingFutureSupplier<BLSSignature> supplier) {
+    readLock.lock();
+    final SafeFuture<BLSSignature> future =
+        deleted ? SafeFuture.failedFuture(new SignerNotActiveException()) : SafeFuture.of(supplier);
+
+    return future.alwaysRun(readLock::unlock);
   }
 }
