@@ -33,14 +33,6 @@ public class MergeTransitionHelpers {
     this.specConfig = specConfig;
   }
 
-  public boolean isValidTerminalPowBlock(PowBlock powBlock, PowBlock parentPowBlock) {
-    boolean isTotalDifficultyReached =
-        powBlock.getTotalDifficulty().compareTo(specConfig.getTerminalTotalDifficulty()) >= 0;
-    boolean isParentTotalDifficultyValid =
-        parentPowBlock.getTotalDifficulty().compareTo(specConfig.getTerminalTotalDifficulty()) < 0;
-    return isTotalDifficultyReached && isParentTotalDifficultyValid;
-  }
-
   public SafeFuture<ExecutePayloadResult> validateMergeBlock(
       final ExecutionEngineChannel executionEngine, final ExecutionPayload executionPayload) {
     return executionEngine
