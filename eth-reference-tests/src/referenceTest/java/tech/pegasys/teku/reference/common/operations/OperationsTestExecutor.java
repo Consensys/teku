@@ -208,8 +208,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
         processor.processExecutionPayload(
             state,
             payload,
-            (config, latestExecutionPayloadHeader, payloadToExecute) ->
-                executionMeta.executionValid);
+            (latestExecutionPayloadHeader, payloadToExecute) -> executionMeta.executionValid);
         break;
     }
   }

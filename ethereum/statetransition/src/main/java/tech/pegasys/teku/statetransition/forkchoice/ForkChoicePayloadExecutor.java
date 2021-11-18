@@ -13,13 +13,11 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
-import static tech.pegasys.teku.spec.logic.versions.merge.helpers.ForkChoiceHelpersMerge.validateMergeBlock;
-
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
-import tech.pegasys.teku.spec.config.SpecConfigMerge;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -30,10 +28,12 @@ import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.versions.merge.block.OptimisticExecutionPayloadExecutor;
+import tech.pegasys.teku.spec.logic.versions.merge.helpers.MergeTransitionHelpers;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
 
+  private final Spec spec;
   private final RecentChainData recentChainData;
   private final EventThread forkChoiceExecutor;
   private final SignedBeaconBlock block;
@@ -41,10 +41,12 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
   private Optional<SafeFuture<ExecutePayloadResult>> result = Optional.empty();
 
   ForkChoicePayloadExecutor(
+      final Spec spec,
       final RecentChainData recentChainData,
       final EventThread forkChoiceExecutor,
       final SignedBeaconBlock block,
       final ExecutionEngineChannel executionEngine) {
+    this.spec = spec;
     this.recentChainData = recentChainData;
     this.forkChoiceExecutor = forkChoiceExecutor;
     this.block = block;
@@ -87,7 +89,6 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
 
   @Override
   public boolean optimisticallyExecute(
-      final SpecConfigMerge specConfig,
       final ExecutionPayloadHeader latestExecutionPayloadHeader,
       final ExecutionPayload executionPayload) {
     if (executionPayload.isDefault()) {
@@ -96,13 +97,18 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
       // because it check the parentRoot matches
       return true;
     }
+    final MergeTransitionHelpers mergeTransitionHelpers =
+        spec.atSlot(block.getSlot())
+            .getMergeTransitionHelpers()
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "Attempting to validate a merge block when spec does not have merge transition helpers"));
 
     if (latestExecutionPayloadHeader.isDefault()) {
       // This is the first filled payload, so need to check it's a valid merge block
       result =
-          Optional.of(
-              validateMergeBlock(
-                  specConfig.getTerminalTotalDifficulty(), executionEngine, executionPayload));
+          Optional.of(mergeTransitionHelpers.validateMergeBlock(executionEngine, executionPayload));
     } else {
       result = Optional.of(executionEngine.executePayload(executionPayload));
     }

@@ -64,7 +64,7 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
         attestationUtil,
         validatorsUtil,
         operationValidator);
-    specConfigMerge = specConfig;
+    this.specConfigMerge = specConfig;
     this.miscHelpersMerge = miscHelpers;
     this.schemaDefinitions = schemaDefinitions;
   }
@@ -117,8 +117,7 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
     }
 
     final boolean optimisticallyAccept =
-        payloadExecutor.optimisticallyExecute(
-            specConfigMerge, state.getLatestExecutionPayloadHeader(), payload);
+        payloadExecutor.optimisticallyExecute(state.getLatestExecutionPayloadHeader(), payload);
     if (!optimisticallyAccept) {
       throw new BlockProcessingException("Execution payload was not optimistically accepted");
     }

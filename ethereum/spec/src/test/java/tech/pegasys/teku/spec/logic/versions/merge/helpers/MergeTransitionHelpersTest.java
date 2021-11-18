@@ -35,7 +35,8 @@ import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-class ForkChoiceHelpersMergeTest {
+class MergeTransitionHelpersTest {
+
   private final Spec spec = TestSpecFactory.createMinimalMerge();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final ExecutionEngineChannel executionEngine = mock(ExecutionEngineChannel.class);
@@ -104,7 +105,10 @@ class ForkChoiceHelpersMergeTest {
   }
 
   private SafeFuture<ExecutePayloadResult> validateMergeBlock() {
-    return ForkChoiceHelpersMerge.validateMergeBlock(terminalDifficulty, executionEngine, payload);
+    return spec.getGenesisSpec()
+        .getMergeTransitionHelpers()
+        .orElseThrow()
+        .validateMergeBlock(executionEngine, payload);
   }
 
   private void assertPayloadResultStatus(

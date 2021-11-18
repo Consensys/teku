@@ -13,27 +13,24 @@
 
 package tech.pegasys.teku.spec.logic.versions.merge.helpers;
 
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
+
+import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.config.SpecConfigMerge;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionengine.ExecutePayloadResult;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
 
 public class MergeTransitionHelpers {
 
-  private final MiscHelpersMerge miscHelpers;
   private final SpecConfigMerge specConfig;
 
-  public MergeTransitionHelpers(MiscHelpersMerge miscHelpers, SpecConfigMerge specConfig) {
-    this.miscHelpers = miscHelpers;
+  public MergeTransitionHelpers(SpecConfigMerge specConfig) {
     this.specConfig = specConfig;
-  }
-
-  public boolean isMergeComplete(BeaconState state) {
-    return miscHelpers.isMergeComplete(state);
-  }
-
-  public boolean isMergeBlock(BeaconState state, BeaconBlock block) {
-    return miscHelpers.isMergeBlock(state, block);
   }
 
   public boolean isValidTerminalPowBlock(PowBlock powBlock, PowBlock parentPowBlock) {
@@ -42,5 +39,56 @@ public class MergeTransitionHelpers {
     boolean isParentTotalDifficultyValid =
         parentPowBlock.getTotalDifficulty().compareTo(specConfig.getTerminalTotalDifficulty()) < 0;
     return isTotalDifficultyReached && isParentTotalDifficultyValid;
+  }
+
+  public SafeFuture<ExecutePayloadResult> validateMergeBlock(
+      final ExecutionEngineChannel executionEngine, final ExecutionPayload executionPayload) {
+    return executionEngine
+        .getPowBlock(executionPayload.getParentHash())
+        .thenCompose(
+            maybePowBlock -> validatePowBlock(executionEngine, executionPayload, maybePowBlock));
+  }
+
+  private SafeFuture<ExecutePayloadResult> validatePowBlock(
+      final ExecutionEngineChannel executionEngine,
+      final ExecutionPayload executionPayload,
+      final Optional<PowBlock> maybePowBlock) {
+    if (maybePowBlock.isEmpty()) {
+      return completedFuture(ExecutePayloadResult.SYNCING);
+    }
+    final PowBlock powBlock = maybePowBlock.get();
+    if (isBelowTotalDifficulty(powBlock)) {
+      return invalid("PowBlock has not reached terminal total difficulty");
+    }
+    return validateParentPowBlock(executionEngine, executionPayload, powBlock.getParentHash());
+  }
+
+  private static SafeFuture<ExecutePayloadResult> invalid(final String message) {
+    return completedFuture(
+        new ExecutePayloadResult(
+            ExecutionPayloadStatus.INVALID, Optional.empty(), Optional.of(message)));
+  }
+
+  private SafeFuture<ExecutePayloadResult> validateParentPowBlock(
+      final ExecutionEngineChannel executionEngine,
+      final ExecutionPayload executionPayload,
+      final Bytes32 parentBlockHash) {
+    return executionEngine
+        .getPowBlock(parentBlockHash)
+        .thenCompose(
+            maybeParentPowBlock -> {
+              if (maybeParentPowBlock.isEmpty()) {
+                return completedFuture(ExecutePayloadResult.SYNCING);
+              }
+              final PowBlock parentPowBlock = maybeParentPowBlock.get();
+              if (!isBelowTotalDifficulty(parentPowBlock)) {
+                return invalid("Parent PowBlock exceeds terminal total difficulty");
+              }
+              return executionEngine.executePayload(executionPayload);
+            });
+  }
+
+  private boolean isBelowTotalDifficulty(final PowBlock powBlock) {
+    return powBlock.getTotalDifficulty().compareTo(specConfig.getTerminalTotalDifficulty()) < 0;
   }
 }

@@ -29,7 +29,6 @@ import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.SpecConfigMerge;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -45,7 +44,6 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 class ForkChoicePayloadExecutorTest {
 
   private final Spec spec = TestSpecFactory.createMinimalMerge();
-  private final SpecConfigMerge specConfig = SpecConfigMerge.required(spec.getGenesisSpecConfig());
   private final SchemaDefinitionsMerge schemaDefinitionsMerge =
       spec.getGenesisSchemaDefinitions().toVersionMerge().orElseThrow();
   private final ExecutionPayload defaultPayload =
@@ -84,8 +82,7 @@ class ForkChoicePayloadExecutorTest {
   @Test
   void optimisticallyExecute_shouldSendToExecutionEngineAndReturnTrue() {
     final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
-    final boolean result =
-        payloadExecutor.optimisticallyExecute(specConfig, payloadHeader, payload);
+    final boolean result = payloadExecutor.optimisticallyExecute(payloadHeader, payload);
     verify(executionEngine).executePayload(payload);
     assertThat(result).isTrue();
   }
@@ -93,8 +90,7 @@ class ForkChoicePayloadExecutorTest {
   @Test
   void optimisticallyExecute_shouldNotExecuteDefaultPayload() {
     final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
-    final boolean result =
-        payloadExecutor.optimisticallyExecute(specConfig, payloadHeader, defaultPayload);
+    final boolean result = payloadExecutor.optimisticallyExecute(payloadHeader, defaultPayload);
     verify(executionEngine, never()).executePayload(any());
     assertThat(result).isTrue();
   }
@@ -103,8 +99,7 @@ class ForkChoicePayloadExecutorTest {
   void optimisticallyExecute_shouldValidateMergeBlockWhenThisIsTheMergeBlock() {
     when(executionEngine.getPowBlock(payload.getParentHash())).thenReturn(new SafeFuture<>());
     final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
-    final boolean result =
-        payloadExecutor.optimisticallyExecute(specConfig, defaultPayloadHeader, payload);
+    final boolean result = payloadExecutor.optimisticallyExecute(defaultPayloadHeader, payload);
 
     // Should defer execution until it has checked the terminal difficulty so we expect getPoWBlock
     verify(executionEngine).getPowBlock(payload.getParentHash());
@@ -116,7 +111,7 @@ class ForkChoicePayloadExecutorTest {
   void shouldReturnBlockImportResultImmediatelyWhenNotSuccessful() {
     forkChoiceExecutor = mock(EventThread.class);
     final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
-    payloadExecutor.optimisticallyExecute(specConfig, payloadHeader, payload);
+    payloadExecutor.optimisticallyExecute(payloadHeader, payload);
 
     final BlockImportResult blockImportResult =
         BlockImportResult.failedStateTransition(new RuntimeException("Bad block"));
@@ -138,7 +133,7 @@ class ForkChoicePayloadExecutorTest {
   @Test
   void shouldCombineWithValidPayloadExecution() {
     final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
-    payloadExecutor.optimisticallyExecute(specConfig, payloadHeader, payload);
+    payloadExecutor.optimisticallyExecute(payloadHeader, payload);
 
     final BlockImportResult blockImportResult = BlockImportResult.successful(block);
     final SafeFuture<BlockImportResult> result = payloadExecutor.combine(blockImportResult);
@@ -157,7 +152,7 @@ class ForkChoicePayloadExecutorTest {
   @Test
   void shouldCombineWithInvalidPayloadExecution() {
     final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
-    payloadExecutor.optimisticallyExecute(specConfig, payloadHeader, payload);
+    payloadExecutor.optimisticallyExecute(payloadHeader, payload);
 
     final BlockImportResult blockImportResult = BlockImportResult.successful(block);
     final SafeFuture<BlockImportResult> result = payloadExecutor.combine(blockImportResult);
@@ -179,7 +174,7 @@ class ForkChoicePayloadExecutorTest {
   @Test
   void shouldCombineWithSyncingPayloadExecution() {
     final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
-    payloadExecutor.optimisticallyExecute(specConfig, payloadHeader, payload);
+    payloadExecutor.optimisticallyExecute(payloadHeader, payload);
 
     final BlockImportResult blockImportResult = BlockImportResult.successful(block);
     final SafeFuture<BlockImportResult> result = payloadExecutor.combine(blockImportResult);
@@ -208,6 +203,6 @@ class ForkChoicePayloadExecutorTest {
 
   private ForkChoicePayloadExecutor createPayloadExecutor() {
     return new ForkChoicePayloadExecutor(
-        recentChainData, forkChoiceExecutor, block, executionEngine);
+        spec, recentChainData, forkChoiceExecutor, block, executionEngine);
   }
 }
