@@ -14,7 +14,6 @@
 package tech.pegasys.teku.validator.client.loader;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 
@@ -70,9 +69,6 @@ public class LocalValidatorSource implements ValidatorSource {
   @Override
   public List<ValidatorProvider> getAvailableValidators() {
     final List<Pair<Path, Path>> filePairs = keyStoreFilesLocator.parse();
-    if (filePairs == null) {
-      return emptyList();
-    }
     return filePairs.stream().map(this::createValidatorProvider).collect(toList());
   }
 
