@@ -158,8 +158,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
           final Bytes32 blockHash = Bytes32.wrap(reader.readFixedBytes(Bytes32.SIZE));
           final Bytes32 parentHash = Bytes32.wrap(reader.readFixedBytes(Bytes32.SIZE));
           final UInt256 totalDifficulty = UInt256.fromBytes(reader.readFixedBytes(Bytes32.SIZE));
-          final UInt256 difficulty = UInt256.fromBytes(reader.readFixedBytes(Bytes32.SIZE));
-          return new PowBlock(blockHash, parentHash, totalDifficulty, difficulty);
+          reader.readFixedBytes(Bytes32.SIZE); // Read difficulty even though we don't use it.
+          return new PowBlock(blockHash, parentHash, totalDifficulty);
         });
   }
 

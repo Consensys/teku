@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
 
 public class BlockProcessorMerge extends BlockProcessorAltair {
 
+  private final SpecConfigMerge specConfigMerge;
   private final MiscHelpersMerge miscHelpersMerge;
   private final SchemaDefinitionsMerge schemaDefinitions;
 
@@ -63,6 +64,7 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
         attestationUtil,
         validatorsUtil,
         operationValidator);
+    specConfigMerge = specConfig;
     this.miscHelpersMerge = miscHelpers;
     this.schemaDefinitions = schemaDefinitions;
   }
@@ -114,7 +116,9 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
           "Execution payload timestamp does not match time for state slot");
     }
 
-    final boolean optimisticallyAccept = payloadExecutor.optimisticallyExecute(payload);
+    final boolean optimisticallyAccept =
+        payloadExecutor.optimisticallyExecute(
+            specConfigMerge, state.getLatestExecutionPayloadHeader(), payload);
     if (!optimisticallyAccept) {
       throw new BlockProcessingException("Execution payload was not optimistically accepted");
     }

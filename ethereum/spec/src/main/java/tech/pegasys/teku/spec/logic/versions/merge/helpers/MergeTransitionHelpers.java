@@ -13,13 +13,10 @@
 
 package tech.pegasys.teku.spec.logic.versions.merge.helpers;
 
-import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.spec.config.SpecConfigMerge;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 
 public class MergeTransitionHelpers {
 
@@ -43,18 +40,7 @@ public class MergeTransitionHelpers {
     boolean isTotalDifficultyReached =
         powBlock.getTotalDifficulty().compareTo(specConfig.getTerminalTotalDifficulty()) >= 0;
     boolean isParentTotalDifficultyValid =
-        parentPowBlock.getDifficulty().compareTo(specConfig.getTerminalTotalDifficulty()) < 0;
+        parentPowBlock.getTotalDifficulty().compareTo(specConfig.getTerminalTotalDifficulty()) < 0;
     return isTotalDifficultyReached && isParentTotalDifficultyValid;
-  }
-
-  public PowBlock getPowBlock(ExecutionEngineChannel executionEngineChannel, Bytes32 blockHash) {
-    return executionEngineChannel
-        .getPowBlock(blockHash)
-        .join()
-        .orElse(new PowBlock(blockHash, Bytes32.ZERO, UInt256.ZERO, UInt256.ZERO));
-  }
-
-  public PowBlock getPowChainHead(ExecutionEngineChannel executionEngineChannel) {
-    return executionEngineChannel.getPowChainHead().join();
   }
 }

@@ -13,13 +13,17 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
+import static tech.pegasys.teku.spec.logic.versions.merge.helpers.ForkChoiceHelpersMerge.validateMergeBlock;
+
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
+import tech.pegasys.teku.spec.config.SpecConfigMerge;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.executionengine.ExecutePayloadResult;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
@@ -82,8 +86,26 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
   }
 
   @Override
-  public boolean optimisticallyExecute(final ExecutionPayload executionPayload) {
-    result = Optional.of(executionEngine.executePayload(executionPayload));
+  public boolean optimisticallyExecute(
+      final SpecConfigMerge specConfig,
+      final ExecutionPayloadHeader latestExecutionPayloadHeader,
+      final ExecutionPayload executionPayload) {
+    if (executionPayload.isDefault()) {
+      // We're still pre-merge so no payload to execute
+      // Note that the BlockProcessor will have already failed if this is default and shouldn't be
+      // because it check the parentRoot matches
+      return true;
+    }
+
+    if (latestExecutionPayloadHeader.isDefault()) {
+      // This is the first filled payload, so need to check it's a valid merge block
+      result =
+          Optional.of(
+              validateMergeBlock(
+                  specConfig.getTerminalTotalDifficulty(), executionEngine, executionPayload));
+    } else {
+      result = Optional.of(executionEngine.executePayload(executionPayload));
+    }
     return true;
   }
 

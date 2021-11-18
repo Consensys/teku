@@ -13,20 +13,27 @@
 
 package tech.pegasys.teku.spec.logic.versions.merge.block;
 
+import tech.pegasys.teku.spec.config.SpecConfigMerge;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 
 public interface OptimisticExecutionPayloadExecutor {
 
-  OptimisticExecutionPayloadExecutor NOOP = payload -> true;
+  OptimisticExecutionPayloadExecutor NOOP = (config, latestPayload, payload) -> true;
 
   /**
    * At least begins execution of the specified payload, which may complete asynchronously. Note
    * that a {@code true} value does NOT indicate the payload is valid only that it is not
    * immediately found to be invalid and can be optimistically accepted.
    *
+   * @param specConfig the spec config that applies for the block executionPayload comes from
+   * @param latestExecutionPayloadHeader the latest execution payload header from the pre-state
    * @param executionPayload the payload to execute
    * @return true if the payload should be optimistically accepted or false to * immediately
    *     invalidate the payload
    */
-  boolean optimisticallyExecute(final ExecutionPayload executionPayload);
+  boolean optimisticallyExecute(
+      SpecConfigMerge specConfig,
+      ExecutionPayloadHeader latestExecutionPayloadHeader,
+      ExecutionPayload executionPayload);
 }
