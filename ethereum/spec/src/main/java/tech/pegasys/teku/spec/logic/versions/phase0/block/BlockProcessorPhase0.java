@@ -101,4 +101,9 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No ExecutionPayload in phase0");
   }
+
+  @Override
+  public boolean isOptimistic() {
+    return false;
+  }
 }

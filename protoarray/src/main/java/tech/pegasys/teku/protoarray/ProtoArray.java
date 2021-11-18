@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.protoarray.ProtoNodeValidationStatus.INVALID;
+import static tech.pegasys.teku.protoarray.ProtoNodeValidationStatus.OPTIMISTIC;
 import static tech.pegasys.teku.protoarray.ProtoNodeValidationStatus.VALID;
 
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
@@ -107,23 +108,6 @@ public class ProtoArray {
   /**
    * Register a block with the fork choice. It is only sane to supply a `None` parent for the
    * genesis block.
-   *
-   * <p>This version automatically marks execution payload as valid which gives the correct
-   * behaviour prior to the merge fork.
-   */
-  public void onBlock(
-      UInt64 blockSlot,
-      Bytes32 blockRoot,
-      Bytes32 parentRoot,
-      Bytes32 stateRoot,
-      UInt64 justifiedEpoch,
-      UInt64 finalizedEpoch) {
-    onBlock(blockSlot, blockRoot, parentRoot, stateRoot, justifiedEpoch, finalizedEpoch, VALID);
-  }
-
-  /**
-   * Register a block with the fork choice. It is only sane to supply a `None` parent for the
-   * genesis block.
    */
   public void onBlock(
       UInt64 blockSlot,
@@ -132,7 +116,7 @@ public class ProtoArray {
       Bytes32 stateRoot,
       UInt64 justifiedEpoch,
       UInt64 finalizedEpoch,
-      ProtoNodeValidationStatus validationStatus) {
+      boolean optimisticallyProcessed) {
     if (indices.contains(blockRoot)) {
       return;
     }
@@ -151,7 +135,7 @@ public class ProtoArray {
             UInt64.ZERO,
             Optional.empty(),
             Optional.empty(),
-            validationStatus);
+            optimisticallyProcessed ? OPTIMISTIC : VALID);
 
     indices.add(blockRoot, nodeIndex);
     nodes.add(node);

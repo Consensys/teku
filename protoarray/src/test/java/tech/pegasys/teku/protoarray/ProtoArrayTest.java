@@ -16,7 +16,6 @@ package tech.pegasys.teku.protoarray;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.protoarray.ProtoNodeValidationStatus.OPTIMISTIC;
-import static tech.pegasys.teku.protoarray.ProtoNodeValidationStatus.VALID;
 
 import java.util.Collections;
 import java.util.List;
@@ -56,19 +55,19 @@ class ProtoArrayTest {
 
   @BeforeEach
   void setUp() {
-    addBlock(0, Bytes32.ZERO, Bytes32.ZERO, OPTIMISTIC);
+    addOptimisticBlock(0, Bytes32.ZERO, Bytes32.ZERO);
   }
 
   @Test
   void applyProposerWeighting_shouldApplyAndReverseProposerWeightingToNodeAndDescendants() {
     final ProposerWeighting proposerWeighting = new ProposerWeighting(block3a, UInt64.valueOf(500));
 
-    addBlock(1, block1a, Bytes32.ZERO);
-    addBlock(1, block2a, block1a);
-    addBlock(1, block2b, block1a);
-    addBlock(1, block3b, block2b);
-    addBlock(1, block3c, block2a);
-    addBlock(1, block3a, block2a);
+    addValidBlock(1, block1a, Bytes32.ZERO);
+    addValidBlock(1, block2a, block1a);
+    addValidBlock(1, block2b, block1a);
+    addValidBlock(1, block3b, block2b);
+    addValidBlock(1, block3c, block2a);
+    addValidBlock(1, block3a, block2a);
     protoArray.applyProposerWeighting(proposerWeighting);
 
     assertThat(getNode(block3a).getWeight()).isEqualTo(proposerWeighting.getWeight());
@@ -90,8 +89,8 @@ class ProtoArrayTest {
         new ProposerWeighting(block1a, UInt64.valueOf(500));
     final ProposerWeighting proposerWeightingB = new ProposerWeighting(block1b, UInt64.valueOf(80));
 
-    addBlock(1, block1a, Bytes32.ZERO);
-    addBlock(1, block1b, Bytes32.ZERO);
+    addValidBlock(1, block1a, Bytes32.ZERO);
+    addValidBlock(1, block1b, Bytes32.ZERO);
 
     protoArray.applyProposerWeighting(proposerWeightingB);
     assertThat(
@@ -136,31 +135,31 @@ class ProtoArrayTest {
             .build();
     // Justified block will have justified and finalized epoch of 0 which doesn't match the current
     // so would normally be not viable, but we should allow it anyway.
-    addBlock(12, justifiedRoot, dataStructureUtil.randomBytes32());
+    addValidBlock(12, justifiedRoot, dataStructureUtil.randomBytes32());
     final ProtoNode head = protoArray.findHead(justifiedRoot, UInt64.ONE, UInt64.ONE).orElseThrow();
     assertThat(head).isEqualTo(protoArray.getProtoNode(justifiedRoot).orElseThrow());
   }
 
   @Test
   void findHead_shouldExcludeOptimisticBlocks() {
-    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), VALID);
-    addBlock(2, block2a, block1a, OPTIMISTIC);
+    addValidBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
+    addOptimisticBlock(2, block2a, block1a);
 
     assertStrictHead(block1a);
   }
 
   @Test
   void findHead_shouldIncludeValidatedBlocks() {
-    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), VALID);
-    addBlock(2, block2a, block1a, VALID);
+    addValidBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
+    addValidBlock(2, block2a, block1a);
 
     assertStrictHead(block2a);
   }
 
   @Test
   void findHead_shouldExcludeBlocksWithInvalidPayload() {
-    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), VALID);
-    addBlock(2, block2a, block1a, OPTIMISTIC);
+    addValidBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
+    addOptimisticBlock(2, block2a, block1a);
 
     assertStrictHead(block1a);
 
@@ -171,9 +170,9 @@ class ProtoArrayTest {
 
   @Test
   void findHead_shouldExcludeBlocksDescendedFromAnInvalidBlock() {
-    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), VALID);
-    addBlock(2, block2a, block1a, OPTIMISTIC);
-    addBlock(3, block3a, block2a, OPTIMISTIC);
+    addValidBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
+    addOptimisticBlock(2, block2a, block1a);
+    addOptimisticBlock(3, block3a, block2a);
 
     assertStrictHead(block1a);
 
@@ -184,9 +183,9 @@ class ProtoArrayTest {
 
   @Test
   void findHead_shouldThrowFatalServiceExceptionWhenAllBlocksAreInvalid() {
-    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), OPTIMISTIC);
-    addBlock(2, block2a, block1a, OPTIMISTIC);
-    addBlock(3, block3a, block2a, OPTIMISTIC);
+    addOptimisticBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
+    addOptimisticBlock(2, block2a, block1a);
+    addOptimisticBlock(3, block3a, block2a);
     protoArray.markNodeInvalid(GENESIS_CHECKPOINT.getRoot());
 
     assertThatThrownBy(
@@ -205,9 +204,9 @@ class ProtoArrayTest {
         .getProtoNode(GENESIS_CHECKPOINT.getRoot())
         .orElseThrow()
         .setValidationStatus(OPTIMISTIC);
-    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), OPTIMISTIC);
-    addBlock(2, block2a, block1a, OPTIMISTIC);
-    addBlock(3, block3a, block2a, OPTIMISTIC);
+    addOptimisticBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
+    addOptimisticBlock(2, block2a, block1a);
+    addOptimisticBlock(3, block3a, block2a);
 
     assertThat(protoArray.findHead(GENESIS_CHECKPOINT.getRoot(), UInt64.ZERO, UInt64.ZERO))
         .isEmpty();
@@ -215,24 +214,24 @@ class ProtoArrayTest {
 
   @Test
   void findOptimisticHead_shouldIncludeOptimisticBlocks() {
-    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), VALID);
-    addBlock(2, block2a, block1a, OPTIMISTIC);
+    addValidBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
+    addOptimisticBlock(2, block2a, block1a);
 
     assertOptimisticHead(block2a);
   }
 
   @Test
   void findOptimisticHead_shouldIncludeValidBlocks() {
-    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), VALID);
-    addBlock(2, block2a, block1a, VALID);
+    addValidBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
+    addValidBlock(2, block2a, block1a);
 
     assertOptimisticHead(block2a);
   }
 
   @Test
   void findOptimisticHead_shouldExcludeInvalidBlocks() {
-    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), VALID);
-    addBlock(2, block2a, block1a, OPTIMISTIC);
+    addValidBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
+    addOptimisticBlock(2, block2a, block1a);
 
     assertOptimisticHead(block2a);
 
@@ -243,9 +242,9 @@ class ProtoArrayTest {
 
   @Test
   void findOptimisticHead_shouldExcludeBlocksDescendedFromAnInvalidBlock() {
-    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), VALID);
-    addBlock(2, block2a, block1a, OPTIMISTIC);
-    addBlock(3, block3a, block2a, OPTIMISTIC);
+    addValidBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
+    addOptimisticBlock(2, block2a, block1a);
+    addOptimisticBlock(3, block3a, block2a);
 
     // Apply score changes to ensure that the best descendant index is updated
     protoArray.applyScoreChanges(computeDeltas(), UInt64.ZERO, UInt64.ZERO);
@@ -262,9 +261,9 @@ class ProtoArrayTest {
 
   @Test
   void findOptimisticHead_shouldAcceptOptimisticBlocksWithInvalidAncestors() {
-    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), VALID);
-    addBlock(2, block2a, block1a, OPTIMISTIC);
-    addBlock(3, block3a, block2a, OPTIMISTIC);
+    addValidBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
+    addOptimisticBlock(2, block2a, block1a);
+    addOptimisticBlock(3, block3a, block2a);
 
     // Apply score changes to ensure that the best descendant index is updated
     protoArray.applyScoreChanges(computeDeltas(), UInt64.ZERO, UInt64.ZERO);
@@ -282,9 +281,9 @@ class ProtoArrayTest {
   @Test
   void findOptimisticHead_shouldThrowExceptionWhenAllBlocksAreInvalid() {
     // ProtoArray always contains the finalized block, if it's invalid there's a big problem.
-    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), OPTIMISTIC);
-    addBlock(2, block2a, block1a, OPTIMISTIC);
-    addBlock(3, block3a, block2a, OPTIMISTIC);
+    addOptimisticBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
+    addOptimisticBlock(2, block2a, block1a);
+    addOptimisticBlock(3, block3a, block2a);
 
     assertOptimisticHead(block3a);
 
@@ -299,10 +298,10 @@ class ProtoArrayTest {
 
   @Test
   void shouldConsiderWeightFromVotesForValidBlocks() {
-    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), VALID);
-    addBlock(1, block1b, GENESIS_CHECKPOINT.getRoot(), VALID);
-    addBlock(2, block2a, block1a, VALID);
-    addBlock(2, block2b, block1b, VALID);
+    addValidBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
+    addValidBlock(1, block1b, GENESIS_CHECKPOINT.getRoot());
+    addValidBlock(2, block2a, block1a);
+    addValidBlock(2, block2b, block1b);
 
     voteUpdater.putVote(UInt64.ZERO, new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
     voteUpdater.putVote(UInt64.ONE, new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
@@ -324,10 +323,10 @@ class ProtoArrayTest {
 
   @Test
   void shouldConsiderWeightFromVotesForOptimisticBlocks() {
-    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), VALID);
-    addBlock(1, block1b, GENESIS_CHECKPOINT.getRoot(), VALID);
-    addBlock(2, block2a, block1a, OPTIMISTIC);
-    addBlock(2, block2b, block1b, OPTIMISTIC);
+    addValidBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
+    addValidBlock(1, block1b, GENESIS_CHECKPOINT.getRoot());
+    addOptimisticBlock(2, block2a, block1a);
+    addOptimisticBlock(2, block2b, block1b);
 
     voteUpdater.putVote(UInt64.ZERO, new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
     voteUpdater.putVote(UInt64.ONE, new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
@@ -349,10 +348,10 @@ class ProtoArrayTest {
 
   @Test
   void shouldNotConsiderWeightFromVotesForInvalidBlocks() {
-    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), VALID);
-    addBlock(1, block1b, GENESIS_CHECKPOINT.getRoot(), VALID);
-    addBlock(2, block2a, block1a, OPTIMISTIC);
-    addBlock(2, block2b, block1b, OPTIMISTIC);
+    addValidBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
+    addValidBlock(1, block1b, GENESIS_CHECKPOINT.getRoot());
+    addOptimisticBlock(2, block2a, block1a);
+    addOptimisticBlock(2, block2b, block1b);
 
     voteUpdater.putVote(UInt64.ZERO, new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
     voteUpdater.putVote(UInt64.ONE, new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
@@ -376,10 +375,10 @@ class ProtoArrayTest {
 
   @Test
   void markNodeInvalid_shouldRemoveWeightWhenBlocksMarkedAsInvalid() {
-    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), VALID);
-    addBlock(1, block1b, GENESIS_CHECKPOINT.getRoot(), VALID);
-    addBlock(2, block2a, block1a, OPTIMISTIC);
-    addBlock(2, block2b, block1b, OPTIMISTIC);
+    addValidBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
+    addValidBlock(1, block1b, GENESIS_CHECKPOINT.getRoot());
+    addOptimisticBlock(2, block2a, block1a);
+    addOptimisticBlock(2, block2b, block1b);
 
     voteUpdater.putVote(UInt64.ZERO, new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
     voteUpdater.putVote(UInt64.ONE, new VoteTracker(Bytes32.ZERO, block1b, UInt64.ZERO));
@@ -408,9 +407,9 @@ class ProtoArrayTest {
 
   @Test
   void markNodeValid_shouldConsiderAllAncestorsValidWhenMarkedAsValid() {
-    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), VALID);
-    addBlock(2, block2a, block1a, OPTIMISTIC);
-    addBlock(3, block3a, block2a, OPTIMISTIC);
+    addValidBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
+    addOptimisticBlock(2, block2a, block1a);
+    addOptimisticBlock(3, block3a, block2a);
     protoArray.applyScoreChanges(computeDeltas(), UInt64.ZERO, UInt64.ZERO);
 
     // Check the best descendant has been updated
@@ -427,27 +426,27 @@ class ProtoArrayTest {
 
   @Test
   void contains_shouldContainValidBlock() {
-    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), VALID);
+    addValidBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
     assertThat(protoArray.contains(block1a)).isTrue();
   }
 
   @Test
   void contains_shouldContainOptimisticBlock() {
-    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), OPTIMISTIC);
+    addOptimisticBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
     assertThat(protoArray.contains(block1a)).isTrue();
   }
 
   @Test
   void contains_shouldNotContainInvalidBlock() {
-    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), OPTIMISTIC);
+    addOptimisticBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
     protoArray.markNodeInvalid(block1a);
     assertThat(protoArray.contains(block1a)).isFalse();
   }
 
   @Test
   void contains_shouldNotContainDescendantsOfInvalidBlock() {
-    addBlock(1, block1a, GENESIS_CHECKPOINT.getRoot(), OPTIMISTIC);
-    addBlock(1, block2a, block1a, OPTIMISTIC);
+    addOptimisticBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
+    addOptimisticBlock(1, block2a, block1a);
     protoArray.markNodeInvalid(block1a);
     assertThat(protoArray.contains(block1a)).isFalse();
     assertThat(protoArray.contains(block2a)).isFalse();
@@ -464,15 +463,20 @@ class ProtoArrayTest {
         .contains(protoArray.getProtoNode(expectedBlockHash).orElseThrow());
   }
 
-  private void addBlock(final long slot, final Bytes32 blockRoot, final Bytes32 parentRoot) {
-    addBlock(slot, blockRoot, parentRoot, VALID);
+  private void addValidBlock(final long slot, final Bytes32 blockRoot, final Bytes32 parentRoot) {
+    addBlock(slot, blockRoot, parentRoot, false);
+  }
+
+  private void addOptimisticBlock(
+      final long slot, final Bytes32 blockRoot, final Bytes32 parentRoot) {
+    addBlock(slot, blockRoot, parentRoot, true);
   }
 
   private void addBlock(
       final long slot,
       final Bytes32 blockRoot,
       final Bytes32 parentRoot,
-      final ProtoNodeValidationStatus validationStatus) {
+      final boolean optimisticallyProcessed) {
     protoArray.onBlock(
         UInt64.valueOf(slot),
         blockRoot,
@@ -480,7 +484,7 @@ class ProtoArrayTest {
         dataStructureUtil.randomBytes32(),
         GENESIS_CHECKPOINT.getEpoch(),
         GENESIS_CHECKPOINT.getEpoch(),
-        validationStatus);
+        optimisticallyProcessed);
   }
 
   private void reverseProposerWeightings(final ProposerWeighting... weightings) {

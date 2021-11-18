@@ -193,7 +193,8 @@ class Store implements UpdatableStore {
             asyncRunner, metricsSystem, "memory_states", config.getStateCacheSize());
 
     final Optional<ForkChoiceStrategy> maybeForkChoiceStrategy =
-        buildProtoArray(blockInfoByRoot, initialCheckpoint, justifiedCheckpoint, finalizedAnchor)
+        buildProtoArray(
+                spec, blockInfoByRoot, initialCheckpoint, justifiedCheckpoint, finalizedAnchor)
             .map(protoArray -> ForkChoiceStrategy.initialize(spec, protoArray));
 
     final BlockMetadataStore blockMetadataStore =
@@ -250,6 +251,7 @@ class Store implements UpdatableStore {
   }
 
   private static Optional<ProtoArray> buildProtoArray(
+      final Spec spec,
       final Map<Bytes32, StoredBlockMetadata> blockInfoByRoot,
       final Optional<Checkpoint> initialCheckpoint,
       final Checkpoint justifiedCheckpoint,
@@ -273,7 +275,8 @@ class Store implements UpdatableStore {
           block.getParentRoot(),
           block.getStateRoot(),
           block.getCheckpointEpochs().get().getJustifiedEpoch(),
-          block.getCheckpointEpochs().get().getFinalizedEpoch());
+          block.getCheckpointEpochs().get().getFinalizedEpoch(),
+          spec.isBlockProcessorOptimistic(block.getBlockSlot()));
     }
     return Optional.of(protoArray);
   }

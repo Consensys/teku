@@ -16,6 +16,7 @@ package tech.pegasys.teku.reference.phase0.forkchoice;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.ImmutableMap;
+import java.nio.ByteOrder;
 import java.util.List;
 import java.util.Map;
 import org.apache.logging.log4j.LogManager;
@@ -24,9 +25,11 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import org.apache.tuweni.units.bigints.UInt256;
+import org.assertj.core.api.Condition;
 import org.opentest4j.TestAbortedException;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.reference.TestDataUtils;
@@ -42,6 +45,7 @@ import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionengine.StubExecutionEngineChannel;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -157,7 +161,11 @@ public class ForkChoiceTestExecutor implements TestExecutor {
         reader -> {
           final Bytes32 blockHash = Bytes32.wrap(reader.readFixedBytes(Bytes32.SIZE));
           final Bytes32 parentHash = Bytes32.wrap(reader.readFixedBytes(Bytes32.SIZE));
-          final UInt256 totalDifficulty = UInt256.fromBytes(reader.readFixedBytes(Bytes32.SIZE));
+          final UInt256 totalDifficulty =
+              UInt256.valueOf(
+                  reader
+                      .readFixedBytes(Bytes32.SIZE)
+                      .toUnsignedBigInteger(ByteOrder.LITTLE_ENDIAN));
           reader.readFixedBytes(Bytes32.SIZE); // Read difficulty even though we don't use it.
           return new PowBlock(blockHash, parentHash, totalDifficulty);
         });
@@ -183,11 +191,17 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       final Map<String, Object> step,
       final StubExecutionEngineChannel executionEngine) {
     final String blockName = get(step, "block");
+    final boolean valid = !step.containsKey("valid") || (boolean) step.get("valid");
     final SignedBeaconBlock block =
         TestDataUtils.loadSsz(
             testDefinition, blockName + ".ssz_snappy", spec::deserializeSignedBeaconBlock);
     LOG.info("Importing block {} at slot {}", block.getRoot(), block.getSlot());
-    assertThat(forkChoice.onBlock(block, executionEngine)).isCompleted();
+    final SafeFuture<BlockImportResult> result = forkChoice.onBlock(block, executionEngine);
+    assertThat(result).isCompleted();
+    final BlockImportResult importResult = result.join();
+    assertThat(importResult)
+        .describedAs("Incorrect block import result for block %s", block)
+        .has(new Condition<>(r -> r.isSuccessful() == valid, "isSuccessful matching " + valid));
   }
 
   @SuppressWarnings("unchecked")
