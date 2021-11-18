@@ -116,11 +116,11 @@ public class ValidatorLoader {
       final AsyncRunner asyncRunner,
       final List<ValidatorSource> validatorSources,
       final DataDirLayout dataDirLayout) {
-    Path keystorePath = ValidatorClientService.getAlterableKeystorePath(dataDirLayout);
-    Path keystorePasswordPath =
+    final Path keystorePath = ValidatorClientService.getAlterableKeystorePath(dataDirLayout);
+    final Path keystorePasswordPath =
         ValidatorClientService.getAlterableKeystorePasswordPath(dataDirLayout);
     if (Files.exists(keystorePath) && Files.exists(keystorePasswordPath)) {
-      KeyStoreFilesLocator keyStoreFilesLocator =
+      final KeyStoreFilesLocator keyStoreFilesLocator =
           new KeyStoreFilesLocator(
               List.of(keystorePath + File.pathSeparator + keystorePasswordPath),
               File.pathSeparator);

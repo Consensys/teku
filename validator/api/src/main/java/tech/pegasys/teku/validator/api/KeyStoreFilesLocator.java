@@ -59,7 +59,7 @@ public class KeyStoreFilesLocator {
       parseEntry(entry.get(0), entry.get(1), pathMap);
     }
 
-    List<Pair<Path, Path>> filePairs = getFilePairs(pathMap);
+    final List<Pair<Path, Path>> filePairs = getFilePairs(pathMap);
     return filePairs != null ? filePairs : Collections.emptyList();
   }
 
