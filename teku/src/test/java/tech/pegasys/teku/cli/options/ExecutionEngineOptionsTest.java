@@ -15,7 +15,6 @@ package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.List;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
@@ -28,8 +27,7 @@ public class ExecutionEngineOptionsTest extends AbstractBeaconNodeCommandTest {
         getTekuConfigurationFromFile("executionEngineOptions_config.yaml");
 
     assertThat(config.executionEngine().isEnabled()).isTrue();
-    assertThat(config.executionEngine().getEndpoints())
-        .containsExactly("http://example.com:1234/path/", "http://example2.com:1234/path/");
+    assertThat(config.executionEngine().getEndpoint()).isEqualTo("http://example.com:1234/path/");
   }
 
   @Test
@@ -40,7 +38,7 @@ public class ExecutionEngineOptionsTest extends AbstractBeaconNodeCommandTest {
 
     assertThat(
             createConfigBuilder()
-                .executionEngine(b -> b.endpoints(List.of("http://example.com:1234/path/")))
+                .executionEngine(b -> b.endpoint("http://example.com:1234/path/"))
                 .build())
         .usingRecursiveComparison()
         .isEqualTo(config);
@@ -50,72 +48,5 @@ public class ExecutionEngineOptionsTest extends AbstractBeaconNodeCommandTest {
   public void shouldReportEEDisabledIfEndpointNotSpecified() {
     final TekuConfiguration config = getTekuConfigurationFromArguments();
     assertThat(config.executionEngine().isEnabled()).isFalse();
-  }
-
-  @Test
-  public void shouldReportEEDisabledIfEndpointIsEmpty() {
-    final String[] args = {"--Xee-endpoint", "   "};
-    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
-    assertThat(config.executionEngine().isEnabled()).isFalse();
-  }
-
-  @Test
-  public void multiple_eeEndpoints_areSupported() {
-    final String[] args = {
-      "--Xee-endpoints",
-      "http://example.com:1234/path/,http://example-2.com:1234/path/",
-      "http://example-3.com:1234/path/"
-    };
-    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
-    assertThat(config.executionEngine().getEndpoints())
-        .containsExactlyInAnyOrder(
-            "http://example.com:1234/path/",
-            "http://example-2.com:1234/path/",
-            "http://example-3.com:1234/path/");
-    assertThat(config.executionEngine().isEnabled()).isTrue();
-    assertThat(
-            createConfigBuilder()
-                .executionEngine(
-                    b ->
-                        b.endpoints(
-                            List.of(
-                                "http://example.com:1234/path/",
-                                "http://example-2.com:1234/path/",
-                                "http://example-3.com:1234/path/")))
-                .build())
-        .usingRecursiveComparison()
-        .isEqualTo(config);
-  }
-
-  @Test
-  public void multiple_eeEndpoints_areSupported_mixedParams() {
-    final String[] args = {
-      "--Xee-endpoint",
-      "http://example-single.com:1234/path/",
-      "--Xee-endpoints",
-      "http://example.com:1234/path/,http://example-2.com:1234/path/",
-      "http://example-3.com:1234/path/"
-    };
-    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
-    assertThat(config.executionEngine().getEndpoints())
-        .containsExactlyInAnyOrder(
-            "http://example-single.com:1234/path/",
-            "http://example.com:1234/path/",
-            "http://example-2.com:1234/path/",
-            "http://example-3.com:1234/path/");
-    assertThat(config.executionEngine().isEnabled()).isTrue();
-    assertThat(
-            createConfigBuilder()
-                .executionEngine(
-                    b ->
-                        b.endpoints(
-                            List.of(
-                                "http://example-single.com:1234/path/",
-                                "http://example.com:1234/path/",
-                                "http://example-2.com:1234/path/",
-                                "http://example-3.com:1234/path/")))
-                .build())
-        .usingRecursiveComparison()
-        .isEqualTo(config);
   }
 }

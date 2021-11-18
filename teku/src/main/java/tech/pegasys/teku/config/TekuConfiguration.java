@@ -93,8 +93,6 @@ public class TekuConfiguration {
             syncConfig,
             beaconRestApiConfig,
             powchainConfiguration,
-            executionEngineConfiguration,
-            loggingConfig,
             storeConfig,
             spec);
     this.validatorClientConfig =

@@ -11,23 +11,32 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.cli.options;
+package tech.pegasys.teku.ethereum.executionlayer.client.schema;
 
-import static tech.pegasys.teku.config.TekuConfiguration.Builder;
+public class Response<T> {
 
-import picocli.CommandLine.Option;
+  private final T payload;
+  private final String errorMessage;
 
-public class ExecutionEngineOptions {
+  private Response(T payload, String errorMessage) {
+    this.payload = payload;
+    this.errorMessage = errorMessage;
+  }
 
-  @Option(
-      names = {"--Xee-endpoint"},
-      paramLabel = "<NETWORK>",
-      description = "URL for Execution Engine node.",
-      arity = "1",
-      hidden = true)
-  private String eeEndpoint = null;
+  public Response(String errorMessage) {
+    this(null, errorMessage);
+  }
 
-  public void configure(final Builder builder) {
-    builder.executionEngine(b -> b.endpoint(eeEndpoint));
+  public Response(T payload) {
+    this.payload = payload;
+    this.errorMessage = null;
+  }
+
+  public T getPayload() {
+    return payload;
+  }
+
+  public String getErrorMessage() {
+    return errorMessage;
   }
 }
