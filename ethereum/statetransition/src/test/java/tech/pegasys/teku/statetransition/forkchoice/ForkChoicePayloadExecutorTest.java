@@ -21,6 +21,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -95,6 +96,16 @@ class ForkChoicePayloadExecutorTest {
     assertThat(result).isTrue();
   }
 
+  /**
+   * The details of how we validate the merge block are all handled by {@link
+   * tech.pegasys.teku.spec.logic.versions.merge.helpers.MergeTransitionHelpers} so we don't want to
+   * retest all that here. Instead, we check that those extra checks started (the call to {@link
+   * ExecutionEngineChannel#getPowBlock(Bytes32)}) and check that we didn't execute the payload as
+   * MergeTransitionHelpers will take care of that after the TTD validations are done.
+   *
+   * <p>Since the future we return from getPowBlock is never completed we never complete the
+   * validations which saves us a bunch of mocking.
+   */
   @Test
   void optimisticallyExecute_shouldValidateMergeBlockWhenThisIsTheMergeBlock() {
     when(executionEngine.getPowBlock(payload.getParentHash())).thenReturn(new SafeFuture<>());
