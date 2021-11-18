@@ -14,13 +14,21 @@
 package tech.pegasys.teku.validator.client;
 
 import java.util.List;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.NotImplementedException;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysResponse;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.ImportStatus;
 
 public class KeyManager {
+
+  private final ValidatorLoader validatorLoader;
+
+  public KeyManager(final ValidatorLoader validatorLoader) {
+    this.validatorLoader = validatorLoader;
+  }
 
   /**
    * Get a listing of active validator keys
@@ -60,7 +68,14 @@ public class KeyManager {
    * @return The result of each deletion, and slashing protection data
    */
   public DeleteKeysResponse deleteValidators(final List<BLSPublicKey> validators) {
-    throw new NotImplementedException("deleteValidators not implemented yet");
+    final List<DeleteKeyResult> deletionResults =
+        validators.stream()
+            .map(
+                key ->
+                    DeleteKeyResult.error(
+                        String.format("error: key %s not deleted", key.toAbbreviatedString())))
+            .collect(Collectors.toList());
+    return new DeleteKeysResponse(deletionResults, "");
   }
 
   /**
@@ -80,11 +95,5 @@ public class KeyManager {
   public List<ImportStatus> importValidators(
       final List<String> keystores, final List<String> passwords, final String slashingProtection) {
     throw new NotImplementedException("importValidators not implemented yet");
-  }
-
-  private final ValidatorLoader validatorLoader;
-
-  public KeyManager(final ValidatorLoader validatorLoader) {
-    this.validatorLoader = validatorLoader;
   }
 }

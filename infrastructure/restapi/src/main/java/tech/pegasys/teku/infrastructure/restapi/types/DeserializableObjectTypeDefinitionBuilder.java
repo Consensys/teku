@@ -49,6 +49,15 @@ public class DeserializableObjectTypeDefinitionBuilder<TObject> {
     return this;
   }
 
+  public <TField> DeserializableObjectTypeDefinitionBuilder<TObject> withOptionalField(
+      final String name,
+      final DeserializableTypeDefinition<TField> type,
+      final Function<TObject, Optional<TField>> getter,
+      final BiConsumer<TObject, Optional<TField>> setter) {
+    this.fields.put(name, new OptionalDeserializableFieldDefinition<>(name, getter, setter, type));
+    return this;
+  }
+
   public DeserializableTypeDefinition<TObject> build() {
     checkNotNull(initializer, "Must specify an initializer");
     return new DeserializableObjectTypeDefinition<>(name, initializer, fields);

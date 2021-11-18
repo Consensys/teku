@@ -16,6 +16,7 @@ package tech.pegasys.teku;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.security.Security;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import tech.pegasys.teku.bls.impl.blst.BlstLoader;
@@ -33,16 +34,18 @@ public final class Teku {
     Thread.setDefaultUncaughtExceptionHandler(new TekuDefaultExceptionHandler());
 
     try {
-      Node node = Teku.startFromCLIArgs(args);
+      Optional<Node> maybeNode = Teku.startFromCLIArgs(args);
 
-      // Detect SIGTERM
-      Runtime.getRuntime()
-          .addShutdownHook(
-              new Thread(
-                  () -> {
-                    System.out.println("Teku is shutting down");
-                    node.stop();
-                  }));
+      maybeNode.ifPresent(
+          node ->
+              // Detect SIGTERM
+              Runtime.getRuntime()
+                  .addShutdownHook(
+                      new Thread(
+                          () -> {
+                            System.out.println("Teku is shutting down");
+                            node.stop();
+                          })));
     } catch (CLIException e) {
       System.exit(e.getResultCode());
     }
@@ -72,14 +75,14 @@ public final class Teku {
     return node;
   }
 
-  static Node startFromCLIArgs(String[] cliArgs) throws CLIException {
+  static Optional<Node> startFromCLIArgs(String[] cliArgs) throws CLIException {
     AtomicReference<Node> nodeRef = new AtomicReference<>();
     int result =
         start((config, validatorClient) -> nodeRef.set(start(config, validatorClient)), cliArgs);
     if (result != 0) {
       throw new CLIException(result);
     }
-    return nodeRef.get();
+    return Optional.ofNullable(nodeRef.get());
   }
 
   static BeaconNode startBeaconNode(TekuConfiguration config) {

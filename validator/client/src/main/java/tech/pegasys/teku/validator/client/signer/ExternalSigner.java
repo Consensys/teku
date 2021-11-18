@@ -100,6 +100,9 @@ public class ExternalSigner implements Signer {
   }
 
   @Override
+  public void delete() {}
+
+  @Override
   public SafeFuture<BLSSignature> createRandaoReveal(final UInt64 epoch, final ForkInfo forkInfo) {
     return sign(
         signingRootUtil.signingRootForRandaoReveal(epoch, forkInfo),

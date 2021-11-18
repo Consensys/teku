@@ -143,9 +143,9 @@ public class ValidatorLoader {
       final SlashingProtector slashingProtector,
       final AsyncRunner asyncRunner,
       final List<ValidatorSource> validatorSources) {
-    KeyStoreFilesLocator keyStoreFilesLocator =
-        new KeyStoreFilesLocator(config.getValidatorKeys(), File.pathSeparator);
-    if (keyStoreFilesLocator.parse() != null) {
+    if (config.getValidatorKeys() != null) {
+      KeyStoreFilesLocator keyStoreFilesLocator =
+          new KeyStoreFilesLocator(config.getValidatorKeys(), File.pathSeparator);
       validatorSources.add(
           slashingProtected(
               new LocalValidatorSource(
