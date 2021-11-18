@@ -140,56 +140,56 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 public class BeaconChainController extends Service implements TimeTickChannel {
   private static final Logger LOG = LogManager.getLogger();
 
-  private static final String KEY_VALUE_STORE_SUBDIRECTORY = "kvstore";
+  protected static final String KEY_VALUE_STORE_SUBDIRECTORY = "kvstore";
 
-  private final BeaconChainConfiguration beaconConfig;
-  private final Spec spec;
-  private final Function<UInt64, BeaconBlockBodySchema<?>> beaconBlockSchemaSupplier;
-  private final EventChannels eventChannels;
-  private final MetricsSystem metricsSystem;
-  private final AsyncRunner beaconAsyncRunner;
-  private final TimeProvider timeProvider;
-  private final SlotEventsChannel slotEventsChannelPublisher;
-  private final AsyncRunner networkAsyncRunner;
-  private final AsyncRunnerFactory asyncRunnerFactory;
-  private final AsyncRunner eventAsyncRunner;
-  private final Path beaconDataDirectory;
-  private final WeakSubjectivityInitializer wsInitializer = new WeakSubjectivityInitializer();
-  private final AsyncRunnerEventThread forkChoiceExecutor;
+  protected final BeaconChainConfiguration beaconConfig;
+  protected final Spec spec;
+  protected final Function<UInt64, BeaconBlockBodySchema<?>> beaconBlockSchemaSupplier;
+  protected final EventChannels eventChannels;
+  protected final MetricsSystem metricsSystem;
+  protected final AsyncRunner beaconAsyncRunner;
+  protected final TimeProvider timeProvider;
+  protected final SlotEventsChannel slotEventsChannelPublisher;
+  protected final AsyncRunner networkAsyncRunner;
+  protected final AsyncRunnerFactory asyncRunnerFactory;
+  protected final AsyncRunner eventAsyncRunner;
+  protected final Path beaconDataDirectory;
+  protected final WeakSubjectivityInitializer wsInitializer = new WeakSubjectivityInitializer();
+  protected final AsyncRunnerEventThread forkChoiceExecutor;
 
-  private volatile ForkChoice forkChoice;
-  private volatile ForkChoiceTrigger forkChoiceTrigger;
-  private volatile BlockImporter blockImporter;
-  private volatile RecentChainData recentChainData;
-  private volatile Eth2P2PNetwork p2pNetwork;
-  private volatile Optional<BeaconRestApi> beaconRestAPI = Optional.empty();
-  private volatile AggregatingAttestationPool attestationPool;
-  private volatile DepositProvider depositProvider;
-  private volatile SyncService syncService;
-  private volatile AttestationManager attestationManager;
-  private volatile SignatureVerificationService signatureVerificationService;
-  private volatile CombinedChainDataClient combinedChainDataClient;
-  private volatile Eth1DataCache eth1DataCache;
-  private volatile SlotProcessor slotProcessor;
-  private volatile OperationPool<AttesterSlashing> attesterSlashingPool;
-  private volatile OperationPool<ProposerSlashing> proposerSlashingPool;
-  private volatile OperationPool<SignedVoluntaryExit> voluntaryExitPool;
-  private volatile SyncCommitteeContributionPool syncCommitteeContributionPool;
-  private volatile SyncCommitteeMessagePool syncCommitteeMessagePool;
-  private volatile OperationsReOrgManager operationsReOrgManager;
-  private volatile WeakSubjectivityValidator weakSubjectivityValidator;
-  private volatile PerformanceTracker performanceTracker;
-  private volatile PendingPool<SignedBeaconBlock> pendingBlocks;
-  private volatile CoalescingChainHeadChannel coalescingChainHeadChannel;
-  private volatile ActiveValidatorTracker activeValidatorTracker;
-  private volatile AttestationTopicSubscriber attestationTopicSubscriber;
-  private volatile SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager;
-  private volatile ForkChoiceNotifier forkChoiceNotifier;
-  private volatile ExecutionEngineChannel executionEngine;
-  private volatile Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor = Optional.empty();
+  protected volatile ForkChoice forkChoice;
+  protected volatile ForkChoiceTrigger forkChoiceTrigger;
+  protected volatile BlockImporter blockImporter;
+  protected volatile RecentChainData recentChainData;
+  protected volatile Eth2P2PNetwork p2pNetwork;
+  protected volatile Optional<BeaconRestApi> beaconRestAPI = Optional.empty();
+  protected volatile AggregatingAttestationPool attestationPool;
+  protected volatile DepositProvider depositProvider;
+  protected volatile SyncService syncService;
+  protected volatile AttestationManager attestationManager;
+  protected volatile SignatureVerificationService signatureVerificationService;
+  protected volatile CombinedChainDataClient combinedChainDataClient;
+  protected volatile Eth1DataCache eth1DataCache;
+  protected volatile SlotProcessor slotProcessor;
+  protected volatile OperationPool<AttesterSlashing> attesterSlashingPool;
+  protected volatile OperationPool<ProposerSlashing> proposerSlashingPool;
+  protected volatile OperationPool<SignedVoluntaryExit> voluntaryExitPool;
+  protected volatile SyncCommitteeContributionPool syncCommitteeContributionPool;
+  protected volatile SyncCommitteeMessagePool syncCommitteeMessagePool;
+  protected volatile OperationsReOrgManager operationsReOrgManager;
+  protected volatile WeakSubjectivityValidator weakSubjectivityValidator;
+  protected volatile PerformanceTracker performanceTracker;
+  protected volatile PendingPool<SignedBeaconBlock> pendingBlocks;
+  protected volatile CoalescingChainHeadChannel coalescingChainHeadChannel;
+  protected volatile ActiveValidatorTracker activeValidatorTracker;
+  protected volatile AttestationTopicSubscriber attestationTopicSubscriber;
+  protected volatile SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager;
+  protected volatile ForkChoiceNotifier forkChoiceNotifier;
+  protected volatile ExecutionEngineChannel executionEngine;
+  protected volatile Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor = Optional.empty();
 
-  private UInt64 genesisTimeTracker = ZERO;
-  private BlockManager blockManager;
+  protected UInt64 genesisTimeTracker = ZERO;
+  protected BlockManager blockManager;
 
   public BeaconChainController(
       final ServiceConfig serviceConfig, final BeaconChainConfiguration beaconConfig) {
@@ -218,7 +218,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             (__) -> SafeFuture.fromRunnable(() -> beaconRestAPI.ifPresent(BeaconRestApi::start)));
   }
 
-  private void startServices() {
+  protected void startServices() {
     syncService
         .getRecentBlockFetcher()
         .subscribeBlockFetched(
@@ -265,7 +265,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         .thenRun(forkChoiceExecutor::stop);
   }
 
-  private SafeFuture<?> initialize() {
+  protected SafeFuture<?> initialize() {
     final StoreConfig storeConfig = beaconConfig.storeConfig();
     coalescingChainHeadChannel =
         new CoalescingChainHeadChannel(
@@ -342,11 +342,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     initOperationsReOrgManager();
   }
 
-  private void initExecutionEngine() {
+  protected void initExecutionEngine() {
     executionEngine = eventChannels.getPublisher(ExecutionEngineChannel.class, beaconAsyncRunner);
   }
 
-  private void initTerminalPowBlockMonitor() {
+  protected void initTerminalPowBlockMonitor() {
     if (spec.isMilestoneSupported(SpecMilestone.MERGE)) {
       terminalPowBlockMonitor =
           Optional.of(
@@ -355,13 +355,13 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     }
   }
 
-  private void initPendingBlocks() {
+  protected void initPendingBlocks() {
     LOG.debug("BeaconChainController.initPendingBlocks()");
     pendingBlocks = PendingPool.createForBlocks(spec);
     eventChannels.subscribe(FinalizedCheckpointChannel.class, pendingBlocks);
   }
 
-  private void initPerformanceTracker() {
+  protected void initPerformanceTracker() {
     LOG.debug("BeaconChainController.initPerformanceTracker()");
     ValidatorPerformanceTrackingMode mode =
         beaconConfig.validatorConfig().getValidatorPerformanceTrackingMode();
@@ -381,7 +381,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     }
   }
 
-  private void initAttesterSlashingPool() {
+  protected void initAttesterSlashingPool() {
     LOG.debug("BeaconChainController.initAttesterSlashingPool()");
     attesterSlashingPool =
         new OperationPool<>(
@@ -396,7 +396,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     blockImporter.subscribeToVerifiedBlockAttesterSlashings(attesterSlashingPool::removeAll);
   }
 
-  private void initProposerSlashingPool() {
+  protected void initProposerSlashingPool() {
     LOG.debug("BeaconChainController.initProposerSlashingPool()");
     ProposerSlashingValidator validator = new ProposerSlashingValidator(spec, recentChainData);
     proposerSlashingPool =
@@ -408,7 +408,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     blockImporter.subscribeToVerifiedBlockProposerSlashings(proposerSlashingPool::removeAll);
   }
 
-  private void initVoluntaryExitPool() {
+  protected void initVoluntaryExitPool() {
     LOG.debug("BeaconChainController.initVoluntaryExitPool()");
     VoluntaryExitValidator validator = new VoluntaryExitValidator(spec, recentChainData);
     voluntaryExitPool =
@@ -420,7 +420,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     blockImporter.subscribeToVerifiedBlockVoluntaryExits(voluntaryExitPool::removeAll);
   }
 
-  private void initCombinedChainDataClient() {
+  protected void initCombinedChainDataClient() {
     LOG.debug("BeaconChainController.initCombinedChainDataClient()");
     combinedChainDataClient =
         new CombinedChainDataClient(
@@ -429,8 +429,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             spec);
   }
 
-  @VisibleForTesting
-  SafeFuture<Void> initWeakSubjectivity(
+  protected SafeFuture<Void> initWeakSubjectivity(
       final StorageQueryChannel queryChannel, final StorageUpdateChannel updateChannel) {
     return wsInitializer
         .finalizeAndStoreConfig(beaconConfig.weakSubjectivity(), queryChannel, updateChannel)
@@ -440,7 +439,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             });
   }
 
-  private void initForkChoice() {
+  protected void initForkChoice() {
     LOG.debug("BeaconChainController.initForkChoice()");
     final boolean balanceAttackMitigationEnabled =
         beaconConfig.eth2NetworkConfig().isBalanceAttackMitigationEnabled();
@@ -480,17 +479,17 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         .subscribe(FinalizedCheckpointChannel.class, depositProvider);
   }
 
-  private void initEth1DataCache() {
+  protected void initEth1DataCache() {
     LOG.debug("BeaconChainController.initEth1DataCache");
     eth1DataCache = new Eth1DataCache(metricsSystem, new Eth1VotingPeriod(spec));
   }
 
-  private void initAttestationTopicSubscriber() {
+  protected void initAttestationTopicSubscriber() {
     LOG.debug("BeaconChainController.initAttestationTopicSubscriber");
     this.attestationTopicSubscriber = new AttestationTopicSubscriber(spec, p2pNetwork);
   }
 
-  private void initActiveValidatorTracker() {
+  protected void initActiveValidatorTracker() {
     LOG.debug("BeaconChainController.initActiveValidatorTracker");
     final StableSubnetSubscriber stableSubnetSubscriber =
         beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()
@@ -561,7 +560,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     }
   }
 
-  private void initGenesisHandler() {
+  protected void initGenesisHandler() {
     if (!recentChainData.isPreGenesis()) {
       // We already have a genesis block - no need for a genesis handler
       return;
@@ -574,7 +573,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         Eth1EventsChannel.class, new GenesisHandler(recentChainData, timeProvider, spec));
   }
 
-  private void initSignatureVerificationService() {
+  protected void initSignatureVerificationService() {
     signatureVerificationService =
         beaconConfig.p2pConfig().batchVerifyAttestationSignatures()
             ? SignatureVerificationService.createAggregatingService(
@@ -582,7 +581,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             : SignatureVerificationService.createSimple();
   }
 
-  private void initAttestationManager() {
+  protected void initAttestationManager() {
     final PendingPool<ValidateableAttestation> pendingAttestations =
         PendingPool.createForAttestations(spec);
     final FutureItems<ValidateableAttestation> futureAttestations =
@@ -616,7 +615,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         .subscribe(BlockImportNotifications.class, attestationManager);
   }
 
-  private void initSyncCommitteePools() {
+  protected void initSyncCommitteePools() {
     final SyncCommitteeStateUtils syncCommitteeStateUtils =
         new SyncCommitteeStateUtils(spec, recentChainData);
     syncCommitteeContributionPool =
@@ -643,7 +642,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         .subscribe(SlotEventsChannel.class, syncCommitteeMessagePool);
   }
 
-  public void initP2PNetwork() {
+  protected void initP2PNetwork() {
     LOG.debug("BeaconChainController.initP2PNetwork()");
     if (!beaconConfig.p2pConfig().getNetworkConfig().isEnabled()) {
       this.p2pNetwork = new NoOpEth2P2PNetwork(spec);
@@ -733,7 +732,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             .build();
   }
 
-  private void initSlotProcessor() {
+  protected void initSlotProcessor() {
     slotProcessor =
         new SlotProcessor(
             spec,
@@ -849,7 +848,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     forkChoiceNotifier.onSyncingStatusChanged(syncService.getCurrentSyncState().isInSync());
   }
 
-  private void initOperationsReOrgManager() {
+  protected void initOperationsReOrgManager() {
     LOG.debug("BeaconChainController.initOperationsReOrgManager()");
     operationsReOrgManager =
         new OperationsReOrgManager(
@@ -862,13 +861,13 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     eventChannels.subscribe(ChainHeadChannel.class, operationsReOrgManager);
   }
 
-  private void initForkChoiceNotifier() {
+  protected void initForkChoiceNotifier() {
     LOG.debug("BeaconChainController.initForkChoiceNotifier()");
     forkChoiceNotifier =
         ForkChoiceNotifier.create(asyncRunnerFactory, spec, executionEngine, recentChainData);
   }
 
-  private void setupInitialState(final RecentChainData client) {
+  protected void setupInitialState(final RecentChainData client) {
     final Optional<AnchorPoint> initialAnchor =
         wsInitializer.loadInitialAnchorPoint(
             spec, beaconConfig.eth2NetworkConfig().getInitialState());
@@ -896,7 +895,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     }
   }
 
-  private void setupInteropState() {
+  protected void setupInteropState() {
     final InteropConfig config = beaconConfig.interopConfig();
     STATUS_LOG.generatingMockStartGenesis(
         config.getInteropGenesisTime(), config.getInteropNumberOfValidators());
@@ -912,7 +911,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         genesisState.getGenesis_time());
   }
 
-  private void onStoreInitialized() {
+  protected void onStoreInitialized() {
     UInt64 genesisTime = recentChainData.getGenesisTime();
     UInt64 currentTime = timeProvider.getTimeInSeconds();
     final UInt64 currentSlot = getCurrentSlot(genesisTime, currentTime);
@@ -928,11 +927,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     performanceTracker.start(currentSlot);
   }
 
-  private UInt64 getCurrentSlot(final UInt64 genesisTime) {
+  protected UInt64 getCurrentSlot(final UInt64 genesisTime) {
     return getCurrentSlot(genesisTime, timeProvider.getTimeInSeconds());
   }
 
-  private UInt64 getCurrentSlot(final UInt64 genesisTime, final UInt64 currentTime) {
+  protected UInt64 getCurrentSlot(final UInt64 genesisTime, final UInt64 currentTime) {
     final UInt64 currentSlot;
     if (currentTime.compareTo(genesisTime) >= 0) {
       UInt64 deltaTime = currentTime.minus(genesisTime);
@@ -943,7 +942,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     return currentSlot;
   }
 
-  private void validateChain(final UInt64 currentSlot) {
+  protected void validateChain(final UInt64 currentSlot) {
     weakSubjectivityValidator
         .validateChainIsConsistentWithWSCheckpoint(combinedChainDataClient)
         .thenCompose(
