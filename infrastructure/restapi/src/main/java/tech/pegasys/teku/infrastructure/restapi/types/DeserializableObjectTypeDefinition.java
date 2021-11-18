@@ -19,11 +19,16 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.infrastructure.restapi.exceptions.MissingRequiredFieldException;
 
 class DeserializableObjectTypeDefinition<TObject> extends SerializableObjectTypeDefinition<TObject>
     implements DeserializableTypeDefinition<TObject> {
@@ -50,6 +55,7 @@ class DeserializableObjectTypeDefinition<TObject> extends SerializableObjectType
     if (t == JsonToken.START_OBJECT) {
       t = p.nextToken();
     }
+    final Set<String> presentFields = new HashSet<>();
     for (; t == JsonToken.FIELD_NAME; t = p.nextToken()) {
       String fieldName = p.getCurrentName();
       p.nextToken();
@@ -57,9 +63,22 @@ class DeserializableObjectTypeDefinition<TObject> extends SerializableObjectType
           deserializableFields.get(fieldName);
       if (objectField != null) {
         objectField.readField(result, p);
+        presentFields.add(fieldName);
       } else {
         LOG.debug("Unknown field: {}", fieldName);
       }
+    }
+
+    final List<String> missingRequiredFields =
+        deserializableFields.keySet().stream()
+            .filter(
+                key -> !presentFields.contains(key) && deserializableFields.get(key).isRequired())
+            .collect(Collectors.toList());
+    if (!missingRequiredFields.isEmpty()) {
+      throw new MissingRequiredFieldException(
+          "required fields: ("
+              + missingRequiredFields.stream().collect(Collectors.joining(", "))
+              + ") were not set");
     }
 
     return result;
