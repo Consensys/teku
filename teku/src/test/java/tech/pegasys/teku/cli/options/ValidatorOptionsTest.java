@@ -103,6 +103,13 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  void beaconNodeApiEndpoint_shouldBeEmptyByDefault() {
+    TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
+    assertThat(tekuConfiguration.validatorClient().getValidatorConfig().getBeaconNodeApiEndpoint())
+        .isEmpty();
+  }
+
+  @Test
   void shouldEnableSendAttestationsAsBatch() {
     final ValidatorConfig config =
         getTekuConfigurationFromArguments("--Xvalidators-batch-attestations-enabled")

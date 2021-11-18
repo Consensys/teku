@@ -13,9 +13,18 @@
 
 package tech.pegasys.teku.validator.client.restapi;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class ValidatorRestApiConfig {
+
+  public static final int DEFAULT_REST_API_PORT = 5052;
+  public static final int MAX_URL_LENGTH = 65535;
+  public static final String DEFAULT_REST_API_INTERFACE = "127.0.0.1";
+  public static final List<String> DEFAULT_REST_API_HOST_ALLOWLIST =
+      Arrays.asList("127.0.0.1", "localhost");
+
   private final int restApiPort;
   private final boolean restApiDocsEnabled;
   private final boolean restApiEnabled;
@@ -75,13 +84,13 @@ public class ValidatorRestApiConfig {
 
   public static final class ValidatorRestApiConfigBuilder {
     // Validator rest api
-    private int restApiPort;
-    private boolean restApiDocsEnabled;
-    private boolean restApiEnabled;
-    private String restApiInterface;
-    private List<String> restApiHostAllowlist;
-    private List<String> restApiCorsAllowedOrigins;
-    private int maxUrlLength;
+    private int restApiPort = DEFAULT_REST_API_PORT;
+    private boolean restApiDocsEnabled = false;
+    private boolean restApiEnabled = false;
+    private String restApiInterface = DEFAULT_REST_API_INTERFACE;
+    private List<String> restApiHostAllowlist = DEFAULT_REST_API_HOST_ALLOWLIST;
+    private List<String> restApiCorsAllowedOrigins = Collections.emptyList();
+    private int maxUrlLength = MAX_URL_LENGTH;
 
     public ValidatorRestApiConfigBuilder restApiPort(final int restApiPort) {
       this.restApiPort = restApiPort;

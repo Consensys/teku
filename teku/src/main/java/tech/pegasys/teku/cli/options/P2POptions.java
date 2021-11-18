@@ -258,6 +258,6 @@ public class P2POptions {
                   .listenPort(p2pPort)
                   .advertisedIp(Optional.ofNullable(p2pAdvertisedIp));
             })
-        .sync(s -> s.isSyncEnabled(p2pEnabled).isMultiPeerSyncEnabled(multiPeerSyncEnabled));
+        .sync(s -> s.isMultiPeerSyncEnabled(multiPeerSyncEnabled));
   }
 }

@@ -15,6 +15,8 @@ package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Collections;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApiConfig;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
@@ -43,80 +45,134 @@ public class BeaconRestApiOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void restApiDocsEnabled_shouldNotRequireAValue() {
-    final BeaconRestApiConfig config =
-        getConfig(getTekuConfigurationFromArguments("--rest-api-docs-enabled"));
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--rest-api-docs-enabled");
+    final BeaconRestApiConfig config = getConfig(tekuConfiguration);
     assertThat(config.isRestApiDocsEnabled()).isTrue();
+    assertThat(createConfigBuilder().restApi(b -> b.restApiDocsEnabled(true)).build())
+        .usingRecursiveComparison()
+        .isEqualTo(tekuConfiguration);
   }
 
   @Test
   public void restApiEnabled_shouldNotRequireAValue() {
-    final BeaconRestApiConfig config =
-        getConfig(getTekuConfigurationFromArguments("--rest-api-enabled"));
+    TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments("--rest-api-enabled");
+    final BeaconRestApiConfig config = getConfig(tekuConfiguration);
     assertThat(config.isRestApiEnabled()).isTrue();
+    assertThat(createConfigBuilder().restApi(b -> b.restApiEnabled(true)).build())
+        .usingRecursiveComparison()
+        .isEqualTo(tekuConfiguration);
   }
 
   @Test
   public void restApiHostAllowlist_shouldNotRequireAValue() {
-    final BeaconRestApiConfig config =
-        getConfig(getTekuConfigurationFromArguments("--rest-api-host-allowlist"));
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--rest-api-host-allowlist");
+    final BeaconRestApiConfig config = getConfig(tekuConfiguration);
     assertThat(config.getRestApiHostAllowlist()).isEmpty();
+    assertThat(
+            createConfigBuilder()
+                .restApi(b -> b.restApiHostAllowlist(Collections.emptyList()))
+                .build())
+        .usingRecursiveComparison()
+        .isEqualTo(tekuConfiguration);
   }
 
   @Test
   public void restApiHostAllowlist_shouldSupportAllowingMultipleHosts() {
-    final BeaconRestApiConfig config =
-        getConfig(
-            getTekuConfigurationFromArguments("--rest-api-host-allowlist", "my.host,their.host"));
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--rest-api-host-allowlist", "my.host,their.host");
+    final BeaconRestApiConfig config = getConfig(tekuConfiguration);
     assertThat(config.getRestApiHostAllowlist()).containsOnly("my.host", "their.host");
+    assertThat(
+            createConfigBuilder()
+                .restApi(b -> b.restApiHostAllowlist(List.of("my.host", "their.host")))
+                .build())
+        .usingRecursiveComparison()
+        .isEqualTo(tekuConfiguration);
   }
 
   @Test
   public void restApiHostAllowlist_shouldSupportAllowingAllHosts() {
-    final BeaconRestApiConfig config =
-        getConfig(getTekuConfigurationFromArguments("--rest-api-host-allowlist", "*"));
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--rest-api-host-allowlist", "*");
+    final BeaconRestApiConfig config = getConfig(tekuConfiguration);
     assertThat(config.getRestApiHostAllowlist()).containsOnly("*");
+    assertThat(createConfigBuilder().restApi(b -> b.restApiHostAllowlist(List.of("*"))).build())
+        .usingRecursiveComparison()
+        .isEqualTo(tekuConfiguration);
   }
 
   @Test
   public void restApiHostAllowlist_shouldDefaultToLocalhost() {
-    final BeaconRestApiConfig config = getConfig(getTekuConfigurationFromArguments());
+    TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
+    final BeaconRestApiConfig config = getConfig(tekuConfiguration);
     assertThat(config.getRestApiHostAllowlist()).containsOnly("localhost", "127.0.0.1");
+    assertThat(createConfigBuilder().build())
+        .usingRecursiveComparison()
+        .isEqualTo(tekuConfiguration);
   }
 
   @Test
   public void restApiCorsAllowedOrigins_shouldNotRequireAValue() {
-    final BeaconRestApiConfig config =
-        getConfig(getTekuConfigurationFromArguments("--rest-api-cors-origins"));
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--rest-api-cors-origins");
+    final BeaconRestApiConfig config = getConfig(tekuConfiguration);
     assertThat(config.getRestApiCorsAllowedOrigins()).isEmpty();
+    assertThat(
+            createConfigBuilder()
+                .restApi(b -> b.restApiCorsAllowedOrigins(Collections.emptyList()))
+                .build())
+        .usingRecursiveComparison()
+        .isEqualTo(tekuConfiguration);
   }
 
   @Test
   public void restApiCorsAllowedOrigins_shouldSupportAllowingMultipleHosts() {
-    final BeaconRestApiConfig config =
-        getConfig(
-            getTekuConfigurationFromArguments("--rest-api-cors-origins", "my.host,their.host"));
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--rest-api-cors-origins", "my.host,their.host");
+    final BeaconRestApiConfig config = getConfig(tekuConfiguration);
     assertThat(config.getRestApiCorsAllowedOrigins()).containsOnly("my.host", "their.host");
+    assertThat(
+            createConfigBuilder()
+                .restApi(b -> b.restApiCorsAllowedOrigins(List.of("my.host", "their.host")))
+                .build())
+        .usingRecursiveComparison()
+        .isEqualTo(tekuConfiguration);
   }
 
   @Test
   public void restApiCorsAllowedOrigins_shouldSupportAllowingAllHosts() {
-    final BeaconRestApiConfig config =
-        getConfig(getTekuConfigurationFromArguments("--rest-api-cors-origins", "*"));
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--rest-api-cors-origins", "*");
+    final BeaconRestApiConfig config = getConfig(tekuConfiguration);
     assertThat(config.getRestApiCorsAllowedOrigins()).containsOnly("*");
+    assertThat(
+            createConfigBuilder().restApi(b -> b.restApiCorsAllowedOrigins(List.of("*"))).build())
+        .usingRecursiveComparison()
+        .isEqualTo(tekuConfiguration);
   }
 
   @Test
   public void maxUrlLength_shouldAcceptLowerBound() {
-    final BeaconRestApiConfig config =
-        getConfig(getTekuConfigurationFromArguments("--Xrest-api-max-url-length", "4096"));
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--Xrest-api-max-url-length", "4096");
+    final BeaconRestApiConfig config = getConfig(tekuConfiguration);
     assertThat(config.getMaxUrlLength()).isEqualTo(4096);
+    assertThat(createConfigBuilder().restApi(b -> b.maxUrlLength(4096)).build())
+        .usingRecursiveComparison()
+        .isEqualTo(tekuConfiguration);
   }
 
   @Test
   public void maxUrlLength_shouldAcceptUpperBound() {
-    final BeaconRestApiConfig config =
-        getConfig(getTekuConfigurationFromArguments("--Xrest-api-max-url-length", "1052672"));
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--Xrest-api-max-url-length", "1052672");
+    final BeaconRestApiConfig config = getConfig(tekuConfiguration);
     assertThat(config.getMaxUrlLength()).isEqualTo(1052672);
+    assertThat(createConfigBuilder().restApi(b -> b.maxUrlLength(1052672)).build())
+        .usingRecursiveComparison()
+        .isEqualTo(tekuConfiguration);
   }
 
   @Test
@@ -152,9 +208,12 @@ public class BeaconRestApiOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   void validatorThreads_shouldBeAbleToOverride() {
-    final int validatorThreads =
-        getConfig(getTekuConfigurationFromArguments("--Xrest-api-validator-threads=15"))
-            .getValidatorThreads();
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--Xrest-api-validator-threads=15");
+    final int validatorThreads = getConfig(tekuConfiguration).getValidatorThreads();
     assertThat(validatorThreads).isEqualTo(15);
+    assertThat(createConfigBuilder().restApi(b -> b.validatorThreads(15)).build())
+        .usingRecursiveComparison()
+        .isEqualTo(tekuConfiguration);
   }
 }
