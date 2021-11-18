@@ -139,4 +139,9 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
             payload.getBlockHash(),
             payload.getTransactions().hashTreeRoot()));
   }
+
+  @Override
+  public boolean isOptimistic() {
+    return true;
+  }
 }

@@ -78,7 +78,8 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
                     blockAndState.getParentRoot(),
                     blockAndState.getStateRoot(),
                     blockAndState.getState().getCurrent_justified_checkpoint().getEpoch(),
-                    blockAndState.getState().getFinalized_checkpoint().getEpoch()));
+                    blockAndState.getState().getFinalized_checkpoint().getEpoch(),
+                    spec.isBlockProcessorOptimistic(blockAndState.getSlot())));
     return ForkChoiceStrategy.initialize(spec, protoArray);
   }
 
