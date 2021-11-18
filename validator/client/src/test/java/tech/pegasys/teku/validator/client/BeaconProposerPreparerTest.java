@@ -35,8 +35,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
+import tech.pegasys.teku.spec.datastructures.operations.versions.merge.BeaconPreparableProposer;
 import tech.pegasys.teku.ssz.type.Bytes20;
-import tech.pegasys.teku.validator.api.BeaconPreparableProposer;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 

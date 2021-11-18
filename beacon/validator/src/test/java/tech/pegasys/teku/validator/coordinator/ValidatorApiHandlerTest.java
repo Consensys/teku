@@ -50,6 +50,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
+import tech.pegasys.teku.services.executionengine.ForkChoiceNotifier;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -119,6 +120,7 @@ class ValidatorApiHandlerTest {
   private final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
   private final DutyMetrics dutyMetrics = mock(DutyMetrics.class);
   private final ForkChoiceTrigger forkChoiceTrigger = mock(ForkChoiceTrigger.class);
+  private final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
   private final SyncCommitteeMessagePool syncCommitteeMessagePool =
       mock(SyncCommitteeMessagePool.class);
   private final SyncCommitteeContributionPool syncCommitteeContributionPool =
@@ -142,6 +144,7 @@ class ValidatorApiHandlerTest {
           performanceTracker,
           spec,
           forkChoiceTrigger,
+          forkChoiceNotifier,
           syncCommitteeMessagePool,
           syncCommitteeContributionPool,
           syncCommitteeSubscriptionManager);
@@ -387,6 +390,7 @@ class ValidatorApiHandlerTest {
             performanceTracker,
             spec,
             forkChoiceTrigger,
+            forkChoiceNotifier,
             syncCommitteeMessagePool,
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager);

@@ -50,7 +50,7 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
     return new ExecutionEngineChannelImpl(new Web3JExecutionEngineClient(eeEndpoint), spec);
   }
 
-  public ExecutionEngineChannelImpl(ExecutionEngineClient executionEngineClient, Spec spec) {
+  private ExecutionEngineChannelImpl(ExecutionEngineClient executionEngineClient, Spec spec) {
     this.spec = spec;
     this.executionEngineClient = executionEngineClient;
   }

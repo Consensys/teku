@@ -21,6 +21,7 @@ import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
+import tech.pegasys.teku.services.executionengine.ForkChoiceNotifier;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.NodeSlot;
 import tech.pegasys.teku.statetransition.EpochCachePrimer;
@@ -34,6 +35,7 @@ public class SlotProcessor {
   private final RecentChainData recentChainData;
   private final ForwardSync syncService;
   private final ForkChoiceTrigger forkChoiceTrigger;
+  private final ForkChoiceNotifier forkChoiceNotifier;
   private final Eth2P2PNetwork p2pNetwork;
   private final SlotEventsChannel slotEventsChannelPublisher;
   private final NodeSlot nodeSlot = new NodeSlot(ZERO);
@@ -50,6 +52,7 @@ public class SlotProcessor {
       final RecentChainData recentChainData,
       final ForwardSync syncService,
       final ForkChoiceTrigger forkChoiceTrigger,
+      final ForkChoiceNotifier forkChoiceNotifier,
       final Eth2P2PNetwork p2pNetwork,
       final SlotEventsChannel slotEventsChannelPublisher,
       final EpochCachePrimer epochCachePrimer,
@@ -58,6 +61,7 @@ public class SlotProcessor {
     this.recentChainData = recentChainData;
     this.syncService = syncService;
     this.forkChoiceTrigger = forkChoiceTrigger;
+    this.forkChoiceNotifier = forkChoiceNotifier;
     this.p2pNetwork = p2pNetwork;
     this.slotEventsChannelPublisher = slotEventsChannelPublisher;
     this.epochCachePrimer = epochCachePrimer;
@@ -69,6 +73,7 @@ public class SlotProcessor {
       final RecentChainData recentChainData,
       final ForwardSync syncService,
       final ForkChoiceTrigger forkChoiceTrigger,
+      final ForkChoiceNotifier forkChoiceNotifier,
       final Eth2P2PNetwork p2pNetwork,
       final SlotEventsChannel slotEventsChannelPublisher,
       final EpochCachePrimer epochCachePrimer) {
@@ -77,6 +82,7 @@ public class SlotProcessor {
         recentChainData,
         syncService,
         forkChoiceTrigger,
+        forkChoiceNotifier,
         p2pNetwork,
         slotEventsChannelPublisher,
         epochCachePrimer,
@@ -117,6 +123,7 @@ public class SlotProcessor {
     }
     if (isSlotAttestationDue(calculatedSlot, currentTime, nodeSlotStartTime)) {
       processSlotAttestation(epoch);
+      forkChoiceNotifier.onOneThirdOfSlot(nodeSlot.getValue());
       nodeSlot.inc();
     }
 

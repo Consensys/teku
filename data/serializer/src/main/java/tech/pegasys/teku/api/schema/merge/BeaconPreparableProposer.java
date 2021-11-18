@@ -19,7 +19,6 @@ import static tech.pegasys.teku.api.schema.SchemaConstants.PATTERN_BYTES20;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.base.MoreObjects;
 import io.swagger.v3.oas.annotations.media.Schema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.type.Bytes20;
@@ -45,11 +44,11 @@ public class BeaconPreparableProposer {
     this.fee_recipient = fee_recipient;
   }
 
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("validator_index", validator_index)
-        .add("fee_recipient", fee_recipient)
-        .toString();
+  public static tech.pegasys.teku.spec.datastructures.operations.versions.merge
+          .BeaconPreparableProposer
+      asInternalBeaconPreparableProposer(BeaconPreparableProposer beaconPreparableProposer) {
+    return new tech.pegasys.teku.spec.datastructures.operations.versions.merge
+        .BeaconPreparableProposer(
+        beaconPreparableProposer.validator_index, beaconPreparableProposer.fee_recipient);
   }
 }

@@ -46,6 +46,7 @@ import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
 import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeSubnetSubscription;
+import tech.pegasys.teku.api.schema.merge.BeaconPreparableProposer;
 import tech.pegasys.teku.api.schema.merge.SignedBeaconBlockMerge;
 import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -366,6 +367,17 @@ public class ValidatorDataProvider {
         contributionAndProofs.stream()
             .map(this::asInternalContributionAndProofs)
             .collect(toList()));
+  }
+
+  public void prepareBeaconProposer(
+      Collection<BeaconPreparableProposer> beaconPreparableProposers) {
+    List<tech.pegasys.teku.spec.datastructures.operations.versions.merge.BeaconPreparableProposer>
+        internalBeaconPreparableProposer =
+            beaconPreparableProposers.stream()
+                .map(BeaconPreparableProposer::asInternalBeaconPreparableProposer)
+                .collect(Collectors.toUnmodifiableList());
+
+    validatorApiChannel.prepareBeaconProposer(internalBeaconPreparableProposer);
   }
 
   public boolean isPhase0Slot(final UInt64 slot) {

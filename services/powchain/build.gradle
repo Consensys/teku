@@ -9,6 +9,7 @@ dependencies {
   implementation project(':infrastructure:metrics')
   implementation project(':infrastructure:version')
   implementation project(':pow')
+  implementation project(':storage')
   implementation project(':storage:api')
   implementation project(':infrastructure:serviceutils')
   implementation project(':util')

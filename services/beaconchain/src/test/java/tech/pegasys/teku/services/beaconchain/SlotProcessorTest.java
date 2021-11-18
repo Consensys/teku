@@ -35,6 +35,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
+import tech.pegasys.teku.services.executionengine.ForkChoiceNotifier;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -62,6 +63,7 @@ public class SlotProcessorTest {
 
   private final ForwardSync syncService = mock(ForwardSync.class);
   private final ForkChoiceTrigger forkChoiceTrigger = mock(ForkChoiceTrigger.class);
+  private final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
   private final Eth2P2PNetwork p2pNetwork = mock(Eth2P2PNetwork.class);
   private final SlotEventsChannel slotEventsChannel = mock(SlotEventsChannel.class);
   private final EpochCachePrimer epochCachePrimer = mock(EpochCachePrimer.class);
@@ -71,6 +73,7 @@ public class SlotProcessorTest {
           recentChainData,
           syncService,
           forkChoiceTrigger,
+          forkChoiceNotifier,
           p2pNetwork,
           slotEventsChannel,
           epochCachePrimer,
@@ -287,6 +290,7 @@ public class SlotProcessorTest {
             recentChainData,
             syncService,
             forkChoiceTrigger,
+            forkChoiceNotifier,
             p2pNetwork,
             slotEventsChannel,
             epochCachePrimer,

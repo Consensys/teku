@@ -29,6 +29,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
+import tech.pegasys.teku.services.executionengine.ForkChoiceNotifier;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -73,6 +74,7 @@ public class ValidatorApiHandlerIntegrationTest {
   private final BlockGossipChannel blockGossipChannel = mock(BlockGossipChannel.class);
   private final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
   private final ForkChoiceTrigger forkChoiceTrigger = mock(ForkChoiceTrigger.class);
+  private final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
 
   private final ChainUpdater chainUpdater = storageSystem.chainUpdater();
   private final SyncCommitteeMessagePool syncCommitteeMessagePool =
@@ -97,6 +99,7 @@ public class ValidatorApiHandlerIntegrationTest {
           performanceTracker,
           spec,
           forkChoiceTrigger,
+          forkChoiceNotifier,
           syncCommitteeMessagePool,
           syncCommitteeContributionPool,
           syncCommitteeSubscriptionManager);
