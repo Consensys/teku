@@ -587,8 +587,8 @@ class ValidatorLoaderTest {
 
   private void writeMutableKeystore(final DataDirLayout tempDir) throws Exception {
     final URL resource = Resources.getResource("testKeystore.json");
-    Path keystore = ValidatorClientService.getKeystoreValidatorPath(tempDir);
-    Path keystorePassword = ValidatorClientService.getKeystorePasswordValidatorPath(tempDir);
+    Path keystore = ValidatorClientService.getAlterableKeystorePath(tempDir);
+    Path keystorePassword = ValidatorClientService.getAlterableKeystorePasswordPath(tempDir);
     Files.createDirectory(tempDir.getValidatorDataDirectory());
     Files.createDirectory(keystore);
     Files.createDirectory(keystorePassword);
