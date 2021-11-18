@@ -123,7 +123,7 @@ public class ValidatorLoader {
     if (Files.exists(keystorePath) && Files.exists(keystorePasswordPath)) {
       KeyStoreFilesLocator keyStoreFilesLocator =
           new KeyStoreFilesLocator(
-              List.of(keystorePath + ":" + keystorePasswordPath), File.pathSeparator);
+              List.of(keystorePath + File.pathSeparator + keystorePasswordPath), File.pathSeparator);
       validatorSources.add(
           slashingProtected(
               new LocalValidatorSource(
