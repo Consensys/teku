@@ -37,7 +37,6 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
 
 public class BlockProcessorMerge extends BlockProcessorAltair {
 
-  private final SpecConfigMerge specConfigMerge;
   private final MiscHelpersMerge miscHelpersMerge;
   private final SchemaDefinitionsMerge schemaDefinitions;
 
@@ -64,7 +63,6 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
         attestationUtil,
         validatorsUtil,
         operationValidator);
-    this.specConfigMerge = specConfig;
     this.miscHelpersMerge = miscHelpers;
     this.schemaDefinitions = schemaDefinitions;
   }
