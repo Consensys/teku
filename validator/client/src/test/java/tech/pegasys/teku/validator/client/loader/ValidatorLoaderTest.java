@@ -270,7 +270,7 @@ class ValidatorLoaderTest {
   }
 
   @Test
-  void initializeValidatorsWithBothLocalAndMutable(
+  void shouldInitializeLocalAndMutableValidators(
       @TempDir Path tempDir, @TempDir Path tempDirMutable) throws Exception {
     final BLSPublicKey mutableValidatorPubKey =
         BLSPublicKey.fromSSZBytes(
@@ -318,7 +318,7 @@ class ValidatorLoaderTest {
   }
 
   @Test
-  void initializeValidatorsLocalAndNotMutableWhenRestDisabled(
+  void shouldInitializeOnlyLocalValidatorsWhenRestDisabled(
       @TempDir Path tempDir, @TempDir Path tempDirMutable) throws Exception {
     DataDirLayout dataDirLayout =
         new SeparateServiceDataDirLayout(tempDirMutable, Optional.empty(), Optional.empty());
@@ -356,7 +356,7 @@ class ValidatorLoaderTest {
   }
 
   @Test
-  void shouldNotInitializeMutableValidatorsWithoutPath(
+  void shouldNotInitializeMutableValidatorsWithoutDirectoryStructure(
       @TempDir Path tempDir, @TempDir Path tempDirMutable) throws Exception {
     DataDirLayout dataDirLayout =
         new SeparateServiceDataDirLayout(tempDirMutable, Optional.empty(), Optional.empty());
