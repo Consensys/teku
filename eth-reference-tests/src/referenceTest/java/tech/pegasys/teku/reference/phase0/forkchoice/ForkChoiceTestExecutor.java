@@ -56,7 +56,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
           .put(
               "fork_choice/on_block",
               new ForkChoiceTestExecutor("new_finalized_slot_is_justified_checkpoint_ancestor"))
-          .put("fork_choice/on_merge_block", new ForkChoiceTestExecutor())
+          .put("fork_choice/on_merge_block", IGNORE_TESTS)
           .build();
 
   private final List<?> testsToSkip;
