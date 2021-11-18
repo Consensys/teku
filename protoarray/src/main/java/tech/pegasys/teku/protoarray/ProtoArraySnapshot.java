@@ -64,7 +64,10 @@ public class ProtoArraySnapshot {
                 blockInformation.getParentRoot(),
                 blockInformation.getStateRoot(),
                 blockInformation.getJustifiedEpoch(),
-                blockInformation.getFinalizedEpoch()));
+                blockInformation.getFinalizedEpoch(),
+                // Can't be optimistically processed because we stopped writing ProtoArraySnapshot
+                // before the merge was implemented.
+                false));
     return protoArray;
   }
 
