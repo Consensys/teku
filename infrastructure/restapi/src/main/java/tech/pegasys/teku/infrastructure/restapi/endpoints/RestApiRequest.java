@@ -19,6 +19,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
+import tech.pegasys.teku.infrastructure.restapi.exceptions.MissingRequestBodyException;
 import tech.pegasys.teku.infrastructure.restapi.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.restapi.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.types.SerializableTypeDefinition;
@@ -31,7 +32,13 @@ public class RestApiRequest {
   public <T> T getRequestBody() throws JsonProcessingException {
     DeserializableTypeDefinition<T> bodySchema =
         (DeserializableTypeDefinition<T>) metadata.getRequestBodyType();
-    return JsonUtil.parse(context.body(), bodySchema);
+
+    final String body = context.body();
+    final T result = JsonUtil.parse(body, bodySchema);
+    if (result == null) {
+      throw new MissingRequestBodyException();
+    }
+    return result;
   }
 
   public RestApiRequest(final Context context, final EndpointMetadata metadata) {

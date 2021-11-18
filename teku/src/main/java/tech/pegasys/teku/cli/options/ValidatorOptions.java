@@ -128,6 +128,15 @@ public class ValidatorOptions {
       arity = "1..*")
   private List<URI> additionalPublishUrls = new ArrayList<>();
 
+  @Option(
+      names = {"--Xvalidators-fee-recipient-address"},
+      paramLabel = "<ADDRESS>",
+      description =
+          "Suggested fee recipient sent to the execution engine, which could use it as coinbase when producing a new execution block.",
+      arity = "0..1",
+      hidden = true)
+  private String feeRecipient = null;
+
   public void configure(TekuConfiguration.Builder builder) {
     if (validatorPerformanceTrackingEnabled != null) {
       if (validatorPerformanceTrackingEnabled) {
@@ -150,7 +159,8 @@ public class ValidatorOptions {
                 .useDependentRoots(useDependentRoots)
                 .generateEarlyAttestations(generateEarlyAttestations)
                 .sendAttestationsAsBatch(sendAttestationsAsBatch)
-                .additionalPublishUrls(additionalPublishUrls));
+                .additionalPublishUrls(additionalPublishUrls)
+                .feeRecipient(feeRecipient));
     validatorKeysOptions.configure(builder);
   }
 }

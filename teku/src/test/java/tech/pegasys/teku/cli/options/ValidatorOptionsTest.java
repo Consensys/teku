@@ -26,6 +26,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 
 public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
@@ -144,5 +145,22 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
                 getTekuConfigurationFromArguments(
                     "--Xvalidators-publish-to-additional-nodes=invalid-{url}"))
         .hasMessageContaining("cannot convert 'invalid-{url}' to URI");
+  }
+
+  @Test
+  public void ShouldReportEmptyIfFeeRecipientNotSpecified() {
+    final TekuConfiguration config = getTekuConfigurationFromArguments();
+    assertThat(config.validatorClient().getValidatorConfig().getFeeRecipient()).isEmpty();
+  }
+
+  @Test
+  public void ShouldReportAddressIfFeeRecipientSpecified() {
+    final String[] args = {
+      "--Xvalidators-fee-recipient-address", "0xfe3b557e8fb62b89f4916b721be55ceb828dbd73"
+    };
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+    assertThat(config.validatorClient().getValidatorConfig().getFeeRecipient())
+        .isEqualTo(
+            Optional.of(Eth1Address.fromHexString("0xfe3b557e8fb62b89f4916b721be55ceb828dbd73")));
   }
 }

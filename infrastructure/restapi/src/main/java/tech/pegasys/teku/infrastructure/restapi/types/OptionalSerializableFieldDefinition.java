@@ -53,4 +53,9 @@ class OptionalSerializableFieldDefinition<TObject, TField>
   public Collection<OpenApiTypeDefinition> getReferencedTypeDefinitions() {
     return type.getSelfAndReferencedTypeDefinitions();
   }
+
+  @Override
+  public String getName() {
+    return name;
+  }
 }
