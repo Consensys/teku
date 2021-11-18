@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,7 +58,9 @@ public class KeyStoreFilesLocator {
       final List<String> entry = Splitter.on(pathSeparator).limit(2).splitToList(currentEntry);
       parseEntry(entry.get(0), entry.get(1), pathMap);
     }
-    return getFilePairs(pathMap);
+
+    List<Pair<Path, Path>> filePairs = getFilePairs(pathMap);
+    return filePairs != null ? filePairs : Collections.emptyList();
   }
 
   private void parseEntry(
