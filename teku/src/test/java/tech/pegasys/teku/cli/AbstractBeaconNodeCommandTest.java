@@ -88,4 +88,9 @@ public abstract class AbstractBeaconNodeCommandTest {
     verifyNoInteractions(startAction);
     return new String(stringWriter.getBuffer());
   }
+
+  protected TekuConfiguration.Builder createConfigBuilder() {
+    return TekuConfiguration.builder()
+        .logging(b -> b.logFileNamePrefix(BeaconNodeCommand.LOG_FILE_PREFIX));
+  }
 }

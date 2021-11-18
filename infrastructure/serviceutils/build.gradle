@@ -6,6 +6,7 @@ dependencies {
   implementation project(':infrastructure:exceptions')
   implementation project(':infrastructure:async')
   implementation project(':infrastructure:logging')
+  implementation project(':infrastructure:version')
 
   implementation 'io.vertx:vertx-core'
   implementation 'io.vertx:vertx-web'

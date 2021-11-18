@@ -258,6 +258,12 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     assertThat(config.isInteropEnabled()).isTrue();
   }
 
+  @Test
+  public void checkThatNoCLIArgumentsYieldsDefaultConfig() {
+    beaconNodeCommand.parse(new String[0]);
+    assertTekuConfiguration(createConfigBuilder().build());
+  }
+
   @ParameterizedTest(name = "{0}")
   @ValueSource(
       strings = {
