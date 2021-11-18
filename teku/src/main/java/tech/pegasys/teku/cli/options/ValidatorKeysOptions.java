@@ -23,6 +23,7 @@ import java.util.List;
 import picocli.CommandLine;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.validator.api.ValidatorConfig;
 
 public class ValidatorKeysOptions {
 
@@ -58,7 +59,8 @@ public class ValidatorKeysOptions {
       paramLabel = "<INTEGER>",
       description = "Timeout (in milliseconds) for the external signing service",
       arity = "1")
-  private long validatorExternalSignerTimeout = 5000;
+  private long validatorExternalSignerTimeout =
+      ValidatorConfig.DEFAULT_VALIDATOR_EXTERNAL_SIGNER_TIMEOUT.toMillis();
 
   @CommandLine.Option(
       names = {"--validators-external-signer-keystore"},
@@ -97,7 +99,8 @@ public class ValidatorKeysOptions {
       description = "The maximum number of concurrent background requests to make to the signer.",
       hidden = true,
       arity = "1")
-  private int validatorExternalSignerConcurrentRequestLimit = 32;
+  private int validatorExternalSignerConcurrentRequestLimit =
+      ValidatorConfig.DEFAULT_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT;
 
   public void configure(TekuConfiguration.Builder builder) {
     builder.validator(
