@@ -56,7 +56,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
           .put(
               "fork_choice/on_block",
               new ForkChoiceTestExecutor("new_finalized_slot_is_justified_checkpoint_ancestor"))
-          .put("fork_choice/on_merge_block", new ForkChoiceTestExecutor())
+          .put("fork_choice/on_merge_block", IGNORE_TESTS)
           .build();
 
   private final List<?> testsToSkip;
@@ -158,8 +158,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
           final Bytes32 blockHash = Bytes32.wrap(reader.readFixedBytes(Bytes32.SIZE));
           final Bytes32 parentHash = Bytes32.wrap(reader.readFixedBytes(Bytes32.SIZE));
           final UInt256 totalDifficulty = UInt256.fromBytes(reader.readFixedBytes(Bytes32.SIZE));
-          final UInt256 difficulty = UInt256.fromBytes(reader.readFixedBytes(Bytes32.SIZE));
-          return new PowBlock(blockHash, parentHash, totalDifficulty, difficulty);
+          reader.readFixedBytes(Bytes32.SIZE); // Read difficulty even though we don't use it.
+          return new PowBlock(blockHash, parentHash, totalDifficulty);
         });
   }
 

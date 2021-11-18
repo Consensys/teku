@@ -81,8 +81,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
         : new PowBlock(
             Bytes32.fromHexStringStrict(eth1Block.getHash()),
             Bytes32.fromHexStringStrict(eth1Block.getParentHash()),
-            UInt256.valueOf(eth1Block.getTotalDifficulty()),
-            UInt256.valueOf(eth1Block.getDifficulty()));
+            UInt256.valueOf(eth1Block.getTotalDifficulty()));
   }
 
   @Override
