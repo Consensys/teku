@@ -154,7 +154,7 @@ public class ValidatorClientService extends Service {
         asyncRunner,
         services.getMetricsSystem(),
         config.getValidatorRestApiConfig().isRestApiEnabled()
-            ? Optional.of(services.getDataDirLayout().getValidatorDataDirectory())
+            ? Optional.of(services.getDataDirLayout())
             : Optional.empty());
   }
 
@@ -226,6 +226,14 @@ public class ValidatorClientService extends Service {
 
   public static Path getSlashingProtectionPath(final DataDirLayout dataDirLayout) {
     return dataDirLayout.getValidatorDataDirectory().resolve("slashprotection");
+  }
+
+  public static Path getKeystoreValidatorPath(final DataDirLayout dataDirLayout) {
+    return dataDirLayout.getValidatorDataDirectory().resolve("keystores");
+  }
+
+  public static Path getKeystorePasswordValidatorPath(final DataDirLayout dataDirLayout) {
+    return dataDirLayout.getValidatorDataDirectory().resolve("keystore-passwords");
   }
 
   private static void addValidatorCountMetric(

@@ -16,7 +16,6 @@ package tech.pegasys.teku.validator.client.loader;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Suppliers;
 import java.io.File;
-import java.io.IOException;
 import java.net.http.HttpClient;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,11 +29,13 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.validator.api.GraffitiProvider;
 import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.KeyStoreFilesLocator;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
+import tech.pegasys.teku.validator.client.ValidatorClientService;
 import tech.pegasys.teku.validator.client.loader.ValidatorSource.ValidatorProvider;
 
 public class ValidatorLoader {
@@ -57,7 +58,7 @@ public class ValidatorLoader {
       final PublicKeyLoader publicKeyLoader,
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
-      final Optional<Path> validatorPath) {
+      final Optional<DataDirLayout> validatorPath) {
     final Supplier<HttpClient> externalSignerHttpClientFactory =
         Suppliers.memoize(new HttpClientExternalSignerFactory(config)::get);
     return create(
@@ -82,7 +83,7 @@ public class ValidatorLoader {
       final PublicKeyLoader publicKeyLoader,
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
-      final Optional<Path> validatorPath) {
+      final Optional<DataDirLayout> validatorPath) {
     final List<ValidatorSource> validatorSources = new ArrayList<>();
     if (interopConfig.isInteropEnabled()) {
       validatorSources.add(
@@ -114,31 +115,15 @@ public class ValidatorLoader {
       final SlashingProtector slashingProtector,
       final AsyncRunner asyncRunner,
       final List<ValidatorSource> validatorSources,
-      final Optional<Path> validatorPath) {
-    Path validatorBasePath = validatorPath.get();
-
-    // as this is a system manage directory structure, is it ok for us to
-    // create the structure if doesnt exists when we're initalizing the app, right?
-    if (!validatorBasePath.resolve("keystores").toFile().exists()) {
-      try {
-        Files.createDirectory(validatorBasePath.resolve("keystores"));
-      } catch (IOException e) {
-        System.out.println("impossible create keystore folder: " + e);
-      }
-    }
-    if (!validatorBasePath.resolve("keystore-passwords").toFile().exists()) {
-      try {
-        Files.createDirectory(validatorBasePath.resolve("keystore-passwords"));
-      } catch (IOException e) {
-        System.out.println("impossible create password folder: " + e);
-      }
-    }
-
-    KeyStoreFilesLocator keyStoreFilesLocator =
-        new KeyStoreFilesLocator(
-            List.of(validatorBasePath + "/keystores:" + validatorBasePath + "/keystore-passwords"),
-            File.pathSeparator);
-    if (keyStoreFilesLocator.parse() != null) {
+      final Optional<DataDirLayout> validatorPath) {
+    DataDirLayout validatorDir = validatorPath.get();
+    Path keystorePath = ValidatorClientService.getKeystoreValidatorPath(validatorDir);
+    Path keystorePasswordPath =
+        ValidatorClientService.getKeystorePasswordValidatorPath(validatorDir);
+    if (Files.exists(keystorePath) && Files.exists(keystorePasswordPath)) {
+      KeyStoreFilesLocator keyStoreFilesLocator =
+          new KeyStoreFilesLocator(
+              List.of(keystorePath + ":" + keystorePasswordPath), File.pathSeparator);
       validatorSources.add(
           slashingProtected(
               new LocalValidatorSource(

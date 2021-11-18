@@ -45,6 +45,8 @@ import tech.pegasys.teku.core.signatures.SlashingProtector;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
+import tech.pegasys.teku.service.serviceutils.layout.SeparateServiceDataDirLayout;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -53,6 +55,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.client.Validator;
+import tech.pegasys.teku.validator.client.ValidatorClientService;
 
 class ValidatorLoaderTest {
 
@@ -274,9 +277,10 @@ class ValidatorLoaderTest {
             Bytes.fromHexString(
                 "0xa057816155ad77931185101128655c0191bd0214c201ca48ed887f6c4c6adf334070efcd75140eada5ac83a92506dd7a"));
 
-    tempDirMutable = tempDirMutable.resolve("validator");
+    DataDirLayout dataDirLayout =
+        new SeparateServiceDataDirLayout(tempDirMutable, Optional.empty(), Optional.empty());
     writeKeystore(tempDir);
-    writeMutableKeystore(tempDirMutable);
+    writeMutableKeystore(dataDirLayout);
     final ValidatorConfig config =
         ValidatorConfig.builder()
             .validatorKeys(
@@ -295,7 +299,7 @@ class ValidatorLoaderTest {
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
-            Optional.of(tempDirMutable));
+            Optional.of(dataDirLayout));
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -311,6 +315,82 @@ class ValidatorLoaderTest {
     assertThat(validator2).isNotNull();
     assertThat(validator2.getPublicKey()).isEqualTo(mutableValidatorPubKey);
     assertThat(validator2.isReadOnly()).isFalse();
+  }
+
+  @Test
+  void initializeValidatorsLocalAndNotMutableWhenRestDisabled(
+      @TempDir Path tempDir, @TempDir Path tempDirMutable) throws Exception {
+    DataDirLayout dataDirLayout =
+        new SeparateServiceDataDirLayout(tempDirMutable, Optional.empty(), Optional.empty());
+    writeKeystore(tempDir);
+    writeMutableKeystore(dataDirLayout);
+    final ValidatorConfig config =
+        ValidatorConfig.builder()
+            .validatorKeys(
+                List.of(
+                    tempDir.toAbsolutePath().toString()
+                        + File.pathSeparator
+                        + tempDir.toAbsolutePath().toString()))
+            .build();
+    final ValidatorLoader validatorLoader =
+        ValidatorLoader.create(
+            spec,
+            config,
+            disabledInteropConfig,
+            httpClientFactory,
+            slashingProtector,
+            publicKeyLoader,
+            asyncRunner,
+            metricsSystem,
+            Optional.empty());
+
+    validatorLoader.loadValidators();
+    final OwnedValidators validators = validatorLoader.getOwnedValidators();
+
+    assertThat(validators.getValidatorCount()).isEqualTo(1);
+
+    final Validator validator1 = validators.getValidator(PUBLIC_KEY1).orElseThrow();
+    assertThat(validator1).isNotNull();
+    assertThat(validator1.getPublicKey()).isEqualTo(PUBLIC_KEY1);
+    assertThat(validator1.isReadOnly()).isTrue();
+  }
+
+  @Test
+  void shouldNotInitializeMutableValidatorsWithoutPath(
+      @TempDir Path tempDir, @TempDir Path tempDirMutable) throws Exception {
+    DataDirLayout dataDirLayout =
+        new SeparateServiceDataDirLayout(tempDirMutable, Optional.empty(), Optional.empty());
+    writeKeystore(tempDir);
+
+    final ValidatorConfig config =
+        ValidatorConfig.builder()
+            .validatorKeys(
+                List.of(
+                    tempDir.toAbsolutePath().toString()
+                        + File.pathSeparator
+                        + tempDir.toAbsolutePath().toString()))
+            .build();
+    final ValidatorLoader validatorLoader =
+        ValidatorLoader.create(
+            spec,
+            config,
+            disabledInteropConfig,
+            httpClientFactory,
+            slashingProtector,
+            publicKeyLoader,
+            asyncRunner,
+            metricsSystem,
+            Optional.of(dataDirLayout));
+
+    validatorLoader.loadValidators();
+    final OwnedValidators validators = validatorLoader.getOwnedValidators();
+
+    assertThat(validators.getValidatorCount()).isEqualTo(1);
+
+    final Validator validator1 = validators.getValidator(PUBLIC_KEY1).orElseThrow();
+    assertThat(validator1).isNotNull();
+    assertThat(validator1.getPublicKey()).isEqualTo(PUBLIC_KEY1);
+    assertThat(validator1.isReadOnly()).isTrue();
   }
 
   @Test
@@ -505,11 +585,11 @@ class ValidatorLoaderTest {
     Files.writeString(tempDir.resolve("key.txt"), "testpassword");
   }
 
-  private void writeMutableKeystore(final Path tempDir) throws Exception {
+  private void writeMutableKeystore(final DataDirLayout tempDir) throws Exception {
     final URL resource = Resources.getResource("testKeystore.json");
-    Path keystore = tempDir.resolve("keystores");
-    Path keystorePassword = tempDir.resolve("keystore-passwords");
-    Files.createDirectory(tempDir);
+    Path keystore = ValidatorClientService.getKeystoreValidatorPath(tempDir);
+    Path keystorePassword = ValidatorClientService.getKeystorePasswordValidatorPath(tempDir);
+    Files.createDirectory(tempDir.getValidatorDataDirectory());
     Files.createDirectory(keystore);
     Files.createDirectory(keystorePassword);
     Files.copy(Path.of(resource.toURI()), keystore.resolve("key.json"));

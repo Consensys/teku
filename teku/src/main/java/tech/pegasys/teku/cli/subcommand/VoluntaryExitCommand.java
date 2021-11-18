@@ -228,10 +228,7 @@ public class VoluntaryExitCommand implements Runnable {
             new PublicKeyLoader(),
             asyncRunner,
             metricsSystem,
-            config.validatorRestApiConfig().isRestApiEnabled()
-                ? Optional.of(Path.of("/"))
-                : // FIXME: where can we get the path?
-                Optional.empty());
+            Optional.empty());
 
     try {
       validatorLoader.loadValidators();
