@@ -43,7 +43,6 @@ import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 import tech.pegasys.teku.protoarray.StoredBlockMetadata;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -69,7 +68,6 @@ import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreFinalizedDao;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreFinalizedDao.FinalizedUpdater;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreHotDao;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreHotDao.HotUpdater;
-import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreProtoArrayDao;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedKvStoreDao;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedStateSnapshotStorageLogic;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedStateStorageLogic;
@@ -96,7 +94,6 @@ public class KvStoreDatabase implements Database {
   final KvStoreHotDao hotDao;
   final KvStoreFinalizedDao finalizedDao;
   final KvStoreEth1Dao eth1Dao;
-  private final KvStoreProtoArrayDao protoArrayDao;
 
   private final Spec spec;
   private final boolean storeNonCanonicalBlocks;
@@ -182,14 +179,7 @@ public class KvStoreDatabase implements Database {
     final KvStoreFinalizedDao finalizedDbDao =
         new V4FinalizedKvStoreDao<>(finalizedDb, schemaFinalized, finalizedStateStorageLogic);
     return new KvStoreDatabase(
-        metricsSystem,
-        dao,
-        finalizedDbDao,
-        dao,
-        dao,
-        stateStorageMode,
-        storeNonCanonicalBlocks,
-        spec);
+        metricsSystem, dao, finalizedDbDao, dao, stateStorageMode, storeNonCanonicalBlocks, spec);
   }
 
   private KvStoreDatabase(
@@ -197,7 +187,6 @@ public class KvStoreDatabase implements Database {
       final KvStoreHotDao hotDao,
       final KvStoreFinalizedDao finalizedDao,
       final KvStoreEth1Dao eth1Dao,
-      final KvStoreProtoArrayDao protoArrayDao,
       final StateStorageMode stateStorageMode,
       final boolean storeNonCanonicalBlocks,
       final Spec spec) {
@@ -205,7 +194,6 @@ public class KvStoreDatabase implements Database {
     this.metricsSystem = metricsSystem;
     this.finalizedDao = finalizedDao;
     this.eth1Dao = eth1Dao;
-    this.protoArrayDao = protoArrayDao;
     this.stateStorageMode = stateStorageMode;
     this.hotDao = hotDao;
     this.storeNonCanonicalBlocks = storeNonCanonicalBlocks;
@@ -512,11 +500,6 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public Optional<ProtoArraySnapshot> getProtoArraySnapshot() {
-    return protoArrayDao.getProtoArraySnapshot();
-  }
-
-  @Override
   public void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {
     try (final Eth1Updater updater = eth1Dao.eth1Updater()) {
       updater.addMinGenesisTimeBlock(event);
@@ -528,24 +511,6 @@ public class KvStoreDatabase implements Database {
   public void addDepositsFromBlockEvent(final DepositsFromBlockEvent event) {
     try (final Eth1Updater updater = eth1Dao.eth1Updater()) {
       updater.addDepositsFromBlockEvent(event);
-      updater.commit();
-    }
-  }
-
-  @Override
-  public void putProtoArraySnapshot(final ProtoArraySnapshot protoArraySnapshot) {
-    try (final KvStoreHotDao.HotUpdater hotUpdater = hotDao.hotUpdater()) {
-      protoArraySnapshot
-          .getBlockInformationList()
-          .forEach(
-              block ->
-                  hotUpdater.addHotBlockCheckpointEpochs(
-                      block.getBlockRoot(),
-                      new CheckpointEpochs(block.getJustifiedEpoch(), block.getFinalizedEpoch())));
-      hotUpdater.commit();
-    }
-    try (final KvStoreProtoArrayDao.ProtoArrayUpdater updater = protoArrayDao.protoArrayUpdater()) {
-      updater.deleteProtoArraySnapshot();
       updater.commit();
     }
   }

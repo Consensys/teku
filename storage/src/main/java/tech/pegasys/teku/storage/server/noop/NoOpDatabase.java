@@ -25,7 +25,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
@@ -160,18 +159,10 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
-  public Optional<ProtoArraySnapshot> getProtoArraySnapshot() {
-    return Optional.empty();
-  }
-
-  @Override
   public void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {}
 
   @Override
   public void addDepositsFromBlockEvent(final DepositsFromBlockEvent event) {}
-
-  @Override
-  public void putProtoArraySnapshot(final ProtoArraySnapshot protoArray) {}
 
   @Override
   public void storeVotes(final Map<UInt64, VoteTracker> votes) {}

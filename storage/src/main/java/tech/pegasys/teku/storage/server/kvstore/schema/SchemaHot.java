@@ -19,7 +19,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -72,8 +71,6 @@ public interface SchemaHot extends Schema {
 
   KvStoreVariable<MinGenesisTimeBlockEvent> getVariableMinGenesisTimeBlock();
 
-  KvStoreVariable<ProtoArraySnapshot> getVariableProtoArraySnapshot();
-
   KvStoreVariable<Checkpoint> getVariableWeakSubjectivityCheckpoint();
 
   KvStoreVariable<Checkpoint> getVariableAnchorCheckpoint();
@@ -91,7 +88,6 @@ public interface SchemaHot extends Schema {
         "FINALIZED_CHECKPOINT", getVariableFinalizedCheckpoint(),
         "LATEST_FINALIZED_STATE", getVariableLatestFinalizedState(),
         "MIN_GENESIS_TIME_BLOCK", getVariableMinGenesisTimeBlock(),
-        "PROTO_ARRAY_SNAPSHOT", getVariableProtoArraySnapshot(),
         "WEAK_SUBJECTIVITY_CHECKPOINT", getVariableWeakSubjectivityCheckpoint(),
         "ANCHOR_CHECKPOINT", getVariableAnchorCheckpoint());
   }

@@ -18,7 +18,6 @@ import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.pow.api.TrackingEth1EventsChannel;
-import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StubFinalizedCheckpointChannel;
@@ -30,7 +29,6 @@ import tech.pegasys.teku.storage.client.StorageBackedRecentChainData;
 import tech.pegasys.teku.storage.server.ChainStorage;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DepositStorage;
-import tech.pegasys.teku.storage.server.ProtoArrayStorage;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.store.StoreConfig;
 
@@ -96,7 +94,6 @@ public class StorageSystem implements AutoCloseable {
             chainStorageServer,
             chainStorageServer,
             chainStorageServer,
-            ProtoArrayStorageChannel.NO_OP,
             finalizedCheckpointChannel,
             reorgEventChannel,
             spec);
@@ -137,10 +134,6 @@ public class StorageSystem implements AutoCloseable {
 
   public DepositStorage createDepositStorage() {
     return DepositStorage.create(eth1EventsChannel, database);
-  }
-
-  public ProtoArrayStorage createProtoArrayStorage() {
-    return new ProtoArrayStorage(database);
   }
 
   public Database database() {

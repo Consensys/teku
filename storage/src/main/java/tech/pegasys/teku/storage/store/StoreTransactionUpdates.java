@@ -100,9 +100,8 @@ class StoreTransactionUpdates {
               slotAndBlockRoot -> slotAndBlockRoot.getBlockRoot().equals(root));
         });
 
-    store.blockMetadata =
-        store.blockMetadata.applyUpdate(
-            hotBlocks.values(), prunedHotBlockRoots, store.getFinalizedCheckpoint());
+    store.forkChoiceStrategy.applyUpdate(
+        hotBlocks.values(), prunedHotBlockRoots, store.getFinalizedCheckpoint());
   }
 
   private StateAndBlockSummary blockAndStateAsSummary(final SignedBlockAndState blockAndState) {
