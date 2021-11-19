@@ -14,10 +14,8 @@
 package tech.pegasys.teku.services.beaconchain;
 
 import tech.pegasys.teku.beaconrestapi.BeaconRestApiConfig;
-import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
-import tech.pegasys.teku.services.executionengine.ExecutionEngineConfiguration;
 import tech.pegasys.teku.services.powchain.PowchainConfiguration;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.store.StoreConfig;
@@ -34,10 +32,8 @@ public class BeaconChainConfiguration {
   private final P2PConfig p2pConfig;
   private final SyncConfig syncConfig;
   private final BeaconRestApiConfig beaconRestApiConfig;
-  private final LoggingConfig loggingConfig;
   private final StoreConfig storeConfig;
   private final PowchainConfiguration powchainConfiguration;
-  private final ExecutionEngineConfiguration executionEngineConfiguration;
   private final Spec spec;
 
   public BeaconChainConfiguration(
@@ -49,8 +45,6 @@ public class BeaconChainConfiguration {
       final SyncConfig syncConfig,
       final BeaconRestApiConfig beaconRestApiConfig,
       final PowchainConfiguration powchainConfiguration,
-      final ExecutionEngineConfiguration executionEngineConfiguration,
-      final LoggingConfig loggingConfig,
       final StoreConfig storeConfig,
       final Spec spec) {
     this.eth2NetworkConfiguration = eth2NetworkConfiguration;
@@ -61,8 +55,6 @@ public class BeaconChainConfiguration {
     this.syncConfig = syncConfig;
     this.beaconRestApiConfig = beaconRestApiConfig;
     this.powchainConfiguration = powchainConfiguration;
-    this.executionEngineConfiguration = executionEngineConfiguration;
-    this.loggingConfig = loggingConfig;
     this.storeConfig = storeConfig;
     this.spec = spec;
   }
@@ -101,14 +93,6 @@ public class BeaconChainConfiguration {
 
   public PowchainConfiguration powchainConfig() {
     return powchainConfiguration;
-  }
-
-  public ExecutionEngineConfiguration executionEngineConfiguration() {
-    return executionEngineConfiguration;
-  }
-
-  public LoggingConfig loggingConfig() {
-    return loggingConfig;
   }
 
   public StoreConfig storeConfig() {
