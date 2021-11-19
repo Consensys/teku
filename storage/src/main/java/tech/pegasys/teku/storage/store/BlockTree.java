@@ -144,6 +144,11 @@ public class BlockTree implements BlockMetadataStore {
     return Optional.ofNullable(blockRootToSlot.get(blockRoot));
   }
 
+  @Override
+  public Optional<Bytes32> executionBlockHash(final Bytes32 beaconBlockRoot) {
+    return Optional.empty();
+  }
+
   public UInt64 getSlot(Bytes32 blockRoot) {
     assertBlockIsInTree(blockRoot);
     return blockRootToSlot.get(blockRoot);

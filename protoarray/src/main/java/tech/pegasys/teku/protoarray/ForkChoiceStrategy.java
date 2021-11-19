@@ -281,6 +281,16 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   }
 
   @Override
+  public Optional<Bytes32> executionBlockHash(final Bytes32 beaconBlockRoot) {
+    protoArrayLock.readLock().lock();
+    try {
+      return getProtoNode(beaconBlockRoot).map(ProtoNode::getExecutionBlockHash);
+    } finally {
+      protoArrayLock.readLock().unlock();
+    }
+  }
+
+  @Override
   public Optional<Bytes32> blockParentRoot(Bytes32 blockRoot) {
     protoArrayLock.readLock().lock();
     try {

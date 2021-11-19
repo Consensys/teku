@@ -448,10 +448,6 @@ public final class DataStructureUtil {
             randomExecutionPayloadTransactions());
   }
 
-  public ExecutionPayload emptyExecutionPayloadIfRequiredByState(BeaconState state) {
-    return state.toVersionAltair().map(__ -> emptyExecutionPayload()).orElse(null);
-  }
-
   public ExecutionPayload emptyExecutionPayload() {
     return getMergeSchemaDefinitions(UInt64.ZERO)
         .getExecutionPayloadSchema()
