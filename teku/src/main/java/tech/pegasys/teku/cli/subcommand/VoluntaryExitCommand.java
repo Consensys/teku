@@ -227,7 +227,8 @@ public class VoluntaryExitCommand implements Runnable {
             new RejectingSlashingProtector(),
             new PublicKeyLoader(),
             asyncRunner,
-            metricsSystem);
+            metricsSystem,
+            Optional.empty());
 
     try {
       validatorLoader.loadValidators();
