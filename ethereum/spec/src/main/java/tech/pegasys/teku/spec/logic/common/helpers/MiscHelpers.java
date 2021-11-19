@@ -103,6 +103,11 @@ public class MiscHelpers {
     return epoch.times(specConfig.getSlotsPerEpoch());
   }
 
+  public UInt64 computeTimeAtSlot(BeaconState state, UInt64 slot) {
+    UInt64 slotsSinceGenesis = slot.minus(SpecConfig.GENESIS_SLOT);
+    return state.getGenesis_time().plus(slotsSinceGenesis.times(specConfig.getSecondsPerSlot()));
+  }
+
   public boolean isSlotAtNthEpochBoundary(
       final UInt64 blockSlot, final UInt64 parentSlot, final int n) {
     checkArgument(n > 0, "Parameter n must be greater than 0");

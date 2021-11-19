@@ -292,6 +292,10 @@ public class Spec {
     return atSlot(slot).miscHelpers().computeEpochAtSlot(slot);
   }
 
+  public UInt64 computeTimeAtSlot(BeaconState state, UInt64 slot) {
+    return atSlot(slot).miscHelpers().computeTimeAtSlot(state, slot);
+  }
+
   public Bytes computeSigningRoot(BeaconBlock block, Bytes32 domain) {
     return atBlock(block).miscHelpers().computeSigningRoot(block, domain);
   }
