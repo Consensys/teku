@@ -13,18 +13,26 @@
 
 package tech.pegasys.teku.validator.client;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.NotImplementedException;
+import tech.pegasys.signers.bls.keystore.KeyStore;
+import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysResponse;
-import tech.pegasys.teku.validator.client.restapi.apis.schema.ImportStatus;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 
 public class KeyManager {
 
   private final ValidatorLoader validatorLoader;
+  private final ObjectMapper jsonMapper = new JsonProvider().getObjectMapper();
 
   public KeyManager(final ValidatorLoader validatorLoader) {
     this.validatorLoader = validatorLoader;
@@ -92,8 +100,42 @@ public class KeyManager {
    * @param slashingProtection a combined slashing protection payload
    * @return a list of 1 status per keystore that was attempted to be imported
    */
-  public List<ImportStatus> importValidators(
+  public List<PostKeyResult> importValidators(
       final List<String> keystores, final List<String> passwords, final String slashingProtection) {
-    throw new NotImplementedException("importValidators not implemented yet");
+
+    List<PostKeyResult> postKeyResults = new ArrayList<>();
+
+    if (keystores.size() == passwords.size()) {
+      final Iterator<String> keystoreIterator = keystores.iterator();
+      final Iterator<String> passwordIterator = passwords.iterator();
+      while (keystoreIterator.hasNext() && passwordIterator.hasNext()) {
+        try {
+          final String password = passwordIterator.next();
+          final KeyStoreData keystore = getKeystoreDataObject(keystoreIterator.next());
+          if (KeyStore.validatePassword(password, keystore)) {
+            postKeyResults.add(executeImport());
+          } else {
+            postKeyResults.add(PostKeyResult.error("Invalid password."));
+          }
+        } catch (JsonProcessingException e) {
+          postKeyResults.add(PostKeyResult.error("Invalid keystore."));
+        }
+      }
+    } else {
+      postKeyResults.add(
+          PostKeyResult.error("Quantity of keystores and passwords must be the same."));
+    }
+    return postKeyResults;
+  }
+
+  private PostKeyResult executeImport() {
+    throw new NotImplementedException("executeImport not implemented yet.");
+  }
+
+  private KeyStoreData getKeystoreDataObject(final String keystore) throws JsonProcessingException {
+    final KeyStoreData keyStoreData;
+    keyStoreData = jsonMapper.readValue(keystore, KeyStoreData.class);
+    keyStoreData.validate();
+    return keyStoreData;
   }
 }
