@@ -277,7 +277,7 @@ class ValidatorLoaderTest {
             Bytes.fromHexString(
                 "0xa057816155ad77931185101128655c0191bd0214c201ca48ed887f6c4c6adf334070efcd75140eada5ac83a92506dd7a"));
 
-    DataDirLayout dataDirLayout =
+    final DataDirLayout dataDirLayout =
         new SeparateServiceDataDirLayout(tempDirMutable, Optional.empty(), Optional.empty());
     writeKeystore(tempDir);
     writeMutableKeystore(dataDirLayout);
@@ -320,7 +320,7 @@ class ValidatorLoaderTest {
   @Test
   void shouldInitializeOnlyLocalValidatorsWhenRestDisabled(
       @TempDir Path tempDir, @TempDir Path tempDirMutable) throws Exception {
-    DataDirLayout dataDirLayout =
+    final DataDirLayout dataDirLayout =
         new SeparateServiceDataDirLayout(tempDirMutable, Optional.empty(), Optional.empty());
     writeKeystore(tempDir);
     writeMutableKeystore(dataDirLayout);
@@ -358,7 +358,7 @@ class ValidatorLoaderTest {
   @Test
   void shouldNotInitializeMutableValidatorsWithoutDirectoryStructure(
       @TempDir Path tempDir, @TempDir Path tempDirMutable) throws Exception {
-    DataDirLayout dataDirLayout =
+    final DataDirLayout dataDirLayout =
         new SeparateServiceDataDirLayout(tempDirMutable, Optional.empty(), Optional.empty());
     writeKeystore(tempDir);
 
@@ -587,8 +587,8 @@ class ValidatorLoaderTest {
 
   private void writeMutableKeystore(final DataDirLayout tempDir) throws Exception {
     final URL resource = Resources.getResource("testKeystore.json");
-    Path keystore = ValidatorClientService.getKeystoreValidatorPath(tempDir);
-    Path keystorePassword = ValidatorClientService.getKeystorePasswordValidatorPath(tempDir);
+    final Path keystore = ValidatorClientService.getAlterableKeystorePath(tempDir);
+    final Path keystorePassword = ValidatorClientService.getAlterableKeystorePasswordPath(tempDir);
     Files.createDirectory(tempDir.getValidatorDataDirectory());
     Files.createDirectory(keystore);
     Files.createDirectory(keystorePassword);

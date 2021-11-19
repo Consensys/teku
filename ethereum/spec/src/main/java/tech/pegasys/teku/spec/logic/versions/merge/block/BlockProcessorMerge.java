@@ -114,7 +114,8 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
           "Execution payload timestamp does not match time for state slot");
     }
 
-    final boolean optimisticallyAccept = payloadExecutor.optimisticallyExecute(payload);
+    final boolean optimisticallyAccept =
+        payloadExecutor.optimisticallyExecute(state.getLatestExecutionPayloadHeader(), payload);
     if (!optimisticallyAccept) {
       throw new BlockProcessingException("Execution payload was not optimistically accepted");
     }
@@ -137,5 +138,10 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
             payload.getBaseFeePerGas(),
             payload.getBlockHash(),
             payload.getTransactions().hashTreeRoot()));
+  }
+
+  @Override
+  public boolean isOptimistic() {
+    return true;
   }
 }

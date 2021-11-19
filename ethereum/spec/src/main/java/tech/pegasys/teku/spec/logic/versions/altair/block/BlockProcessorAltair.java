@@ -254,6 +254,11 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
     throw new UnsupportedOperationException("No ExecutionPayload in Altair");
   }
 
+  @Override
+  public boolean isOptimistic() {
+    return false;
+  }
+
   public static boolean eth2FastAggregateVerify(
       final BLSSignatureVerifier signatureVerifier,
       List<BLSPublicKey> pubkeys,

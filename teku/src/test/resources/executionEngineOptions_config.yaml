@@ -1,4 +1,2 @@
 # execution engine
-Xee-endpoint:
-  - "http://example.com:1234/path/"
-  - "http://example2.com:1234/path/"
+Xee-endpoint: "http://example.com:1234/path/"

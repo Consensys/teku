@@ -16,9 +16,9 @@ package tech.pegasys.teku.cli.options;
 import java.net.URI;
 import java.net.URISyntaxException;
 import picocli.CommandLine.Option;
-import tech.pegasys.teku.beaconrestapi.BeaconRestApiConfig;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.validator.api.ValidatorConfig;
 
 public class ValidatorClientOptions {
 
@@ -27,8 +27,7 @@ public class ValidatorClientOptions {
       paramLabel = "<ENDPOINT>",
       description = "Endpoint of the Beacon Node REST API",
       arity = "1")
-  private String beaconNodeApiEndpoint =
-      "http://127.0.0.1:" + BeaconRestApiConfig.DEFAULT_REST_API_PORT;
+  private String beaconNodeApiEndpoint = ValidatorConfig.DEFAULT_BEACON_NODE_API_ENDPOINT;
 
   public void configure(TekuConfiguration.Builder builder) {
     builder.validator(config -> config.beaconNodeApiEndpoint(parseApiEndpoint()));

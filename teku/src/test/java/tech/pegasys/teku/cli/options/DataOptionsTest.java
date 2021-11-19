@@ -40,16 +40,24 @@ public class DataOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void dataStorageMode_shouldAcceptPrune() {
-    final StorageConfiguration config =
-        getTekuConfigurationFromArguments("--data-storage-mode", "prune").storageConfiguration();
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--data-storage-mode", "prune");
+    final StorageConfiguration config = tekuConfiguration.storageConfiguration();
     assertThat(config.getDataStorageMode()).isEqualTo(PRUNE);
+    assertThat(createConfigBuilder().storageConfiguration(b -> b.dataStorageMode(PRUNE)).build())
+        .usingRecursiveComparison()
+        .isEqualTo(tekuConfiguration);
   }
 
   @Test
   public void dataStorageMode_shouldAcceptArchive() {
-    final StorageConfiguration config =
-        getTekuConfigurationFromArguments("--data-storage-mode", "archive").storageConfiguration();
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--data-storage-mode", "archive");
+    final StorageConfiguration config = tekuConfiguration.storageConfiguration();
     assertThat(config.getDataStorageMode()).isEqualTo(ARCHIVE);
+    assertThat(createConfigBuilder().storageConfiguration(b -> b.dataStorageMode(ARCHIVE)).build())
+        .usingRecursiveComparison()
+        .isEqualTo(tekuConfiguration);
   }
 
   @Test
@@ -57,6 +65,9 @@ public class DataOptionsTest extends AbstractBeaconNodeCommandTest {
     final TekuConfiguration config =
         getTekuConfigurationFromArguments("--data-path", TEST_PATH.toString());
     assertThat(config.dataConfig().getDataBasePath()).isEqualTo(TEST_PATH);
+    assertThat(createConfigBuilder().data(b -> b.dataBasePath(TEST_PATH)).build())
+        .usingRecursiveComparison()
+        .isEqualTo(config);
   }
 
   @Test
@@ -67,10 +78,16 @@ public class DataOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void dataStorageFrequency_shouldAcceptNonDefaultValues() {
-    final StorageConfiguration config =
-        getTekuConfigurationFromArguments("--data-storage-archive-frequency", "1024000")
-            .storageConfiguration();
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--data-storage-archive-frequency", "1024000");
+    final StorageConfiguration config = tekuConfiguration.storageConfiguration();
     assertThat(config.getDataStorageFrequency()).isEqualTo(1024000L);
+    assertThat(
+            createConfigBuilder()
+                .storageConfiguration(b -> b.dataStorageFrequency(1024000L))
+                .build())
+        .usingRecursiveComparison()
+        .isEqualTo(tekuConfiguration);
   }
 
   @Test
@@ -83,9 +100,15 @@ public class DataOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void dataStorageCreateDbVersion_shouldAcceptNonDefaultValues() {
-    final StorageConfiguration config =
-        getTekuConfigurationFromArguments("--Xdata-storage-create-db-version", "noop")
-            .storageConfiguration();
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--Xdata-storage-create-db-version", "noop");
+    final StorageConfiguration config = tekuConfiguration.storageConfiguration();
     assertThat(config.getDataStorageCreateDbVersion()).isEqualTo(DatabaseVersion.NOOP);
+    assertThat(
+            createConfigBuilder()
+                .storageConfiguration(b -> b.dataStorageCreateDbVersion(DatabaseVersion.NOOP))
+                .build())
+        .usingRecursiveComparison()
+        .isEqualTo(tekuConfiguration);
   }
 }

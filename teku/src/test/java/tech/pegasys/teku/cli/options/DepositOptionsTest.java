@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
@@ -35,6 +36,12 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
     final String[] args = {"--eth1-endpoint", "http://example.com:1234/path/"};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     assertThat(config.powchain().isEnabled()).isTrue();
+    assertThat(
+            createConfigBuilder()
+                .powchain(b -> b.eth1Endpoints(List.of("http://example.com:1234/path/")))
+                .build())
+        .usingRecursiveComparison()
+        .isEqualTo(config);
   }
 
   @Test
@@ -48,6 +55,9 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
     final String[] args = {"--eth1-endpoint", "   "};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     assertThat(config.powchain().isEnabled()).isFalse();
+    assertThat(createConfigBuilder().powchain(b -> b.eth1Endpoints(List.of())).build())
+        .usingRecursiveComparison()
+        .isEqualTo(config);
   }
 
   @Test
@@ -64,6 +74,18 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
             "http://example-2.com:1234/path/",
             "http://example-3.com:1234/path/");
     assertThat(config.powchain().isEnabled()).isTrue();
+    assertThat(
+            createConfigBuilder()
+                .powchain(
+                    b ->
+                        b.eth1Endpoints(
+                            List.of(
+                                "http://example.com:1234/path/",
+                                "http://example-2.com:1234/path/",
+                                "http://example-3.com:1234/path/")))
+                .build())
+        .usingRecursiveComparison()
+        .isEqualTo(config);
   }
 
   @Test

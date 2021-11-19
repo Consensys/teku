@@ -58,7 +58,7 @@ public class ValidatorLoader {
       final PublicKeyLoader publicKeyLoader,
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
-      final Optional<DataDirLayout> validatorPath) {
+      final Optional<DataDirLayout> maybeDataDir) {
     final Supplier<HttpClient> externalSignerHttpClientFactory =
         Suppliers.memoize(new HttpClientExternalSignerFactory(config)::get);
     return create(
@@ -70,7 +70,7 @@ public class ValidatorLoader {
         publicKeyLoader,
         asyncRunner,
         metricsSystem,
-        validatorPath);
+        maybeDataDir);
   }
 
   @VisibleForTesting
@@ -83,7 +83,7 @@ public class ValidatorLoader {
       final PublicKeyLoader publicKeyLoader,
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
-      final Optional<DataDirLayout> validatorPath) {
+      final Optional<DataDirLayout> maybeDataDir) {
     final List<ValidatorSource> validatorSources = new ArrayList<>();
     if (interopConfig.isInteropEnabled()) {
       validatorSources.add(
@@ -100,9 +100,9 @@ public class ValidatorLoader {
           metricsSystem,
           validatorSources);
       addLocalValidatorSource(spec, config, slashingProtector, asyncRunner, validatorSources);
-      if (validatorPath.isPresent()) {
+      if (maybeDataDir.isPresent()) {
         addMutableValidatorSource(
-            spec, config, slashingProtector, asyncRunner, validatorSources, validatorPath);
+            spec, config, slashingProtector, asyncRunner, validatorSources, maybeDataDir.get());
       }
     }
 
@@ -115,13 +115,12 @@ public class ValidatorLoader {
       final SlashingProtector slashingProtector,
       final AsyncRunner asyncRunner,
       final List<ValidatorSource> validatorSources,
-      final Optional<DataDirLayout> validatorPath) {
-    DataDirLayout validatorDir = validatorPath.get();
-    Path keystorePath = ValidatorClientService.getKeystoreValidatorPath(validatorDir);
-    Path keystorePasswordPath =
-        ValidatorClientService.getKeystorePasswordValidatorPath(validatorDir);
+      final DataDirLayout dataDirLayout) {
+    final Path keystorePath = ValidatorClientService.getAlterableKeystorePath(dataDirLayout);
+    final Path keystorePasswordPath =
+        ValidatorClientService.getAlterableKeystorePasswordPath(dataDirLayout);
     if (Files.exists(keystorePath) && Files.exists(keystorePasswordPath)) {
-      KeyStoreFilesLocator keyStoreFilesLocator =
+      final KeyStoreFilesLocator keyStoreFilesLocator =
           new KeyStoreFilesLocator(
               List.of(keystorePath + File.pathSeparator + keystorePasswordPath),
               File.pathSeparator);

@@ -1,0 +1,22 @@
+dependencies {
+  implementation project(':data')
+  implementation project(':infrastructure:events')
+  implementation project(':ethereum:executionlayer')
+  implementation project(':ethereum:networks')
+  implementation project(':ethereum:spec')
+  implementation project(':infrastructure:async')
+  implementation project(':infrastructure:logging')
+  implementation project(':infrastructure:metrics')
+  implementation project(':infrastructure:version')
+  implementation project(':pow')
+  implementation project(':infrastructure:serviceutils')
+  implementation project(':util')
+  implementation project(':validator:client')
+
+  implementation 'com.google.code.gson:gson'
+  implementation 'org.apache.tuweni:tuweni-config'
+  implementation 'org.apache.tuweni:tuweni-crypto'
+  implementation 'org.apache.tuweni:tuweni-units'
+
+  testImplementation testFixtures(project(':ethereum:spec'))
+}

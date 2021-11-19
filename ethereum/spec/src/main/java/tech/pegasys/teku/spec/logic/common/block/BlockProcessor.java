@@ -123,4 +123,6 @@ public interface BlockProcessor {
       ExecutionPayload executionPayload,
       OptimisticExecutionPayloadExecutor payloadExecutor)
       throws BlockProcessingException;
+
+  boolean isOptimistic();
 }

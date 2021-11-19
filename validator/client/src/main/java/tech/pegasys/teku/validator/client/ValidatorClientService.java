@@ -239,12 +239,12 @@ public class ValidatorClientService extends Service {
     return dataDirLayout.getValidatorDataDirectory().resolve("slashprotection");
   }
 
-  public static Path getKeystoreValidatorPath(final DataDirLayout dataDirLayout) {
-    return dataDirLayout.getValidatorDataDirectory().resolve("keystores");
+  public static Path getAlterableKeystorePath(final DataDirLayout dataDirLayout) {
+    return dataDirLayout.getValidatorDataDirectory().resolve("alterable-keystores");
   }
 
-  public static Path getKeystorePasswordValidatorPath(final DataDirLayout dataDirLayout) {
-    return dataDirLayout.getValidatorDataDirectory().resolve("keystore-passwords");
+  public static Path getAlterableKeystorePasswordPath(final DataDirLayout dataDirLayout) {
+    return dataDirLayout.getValidatorDataDirectory().resolve("alterable-passwords");
   }
 
   private static void addValidatorCountMetric(
