@@ -56,7 +56,8 @@ public class NoVotesTest {
     //         0
     //        /
     //        2
-    forkChoice.processBlock(ZERO, getHash(2), getHash(0), Bytes32.ZERO, unsigned(1), unsigned(1));
+    forkChoice.processBlock(
+        ZERO, getHash(2), getHash(0), Bytes32.ZERO, unsigned(1), unsigned(1), Bytes32.ZERO);
 
     // Ensure the head is 2
     //
@@ -73,7 +74,8 @@ public class NoVotesTest {
     //         0
     //        / \
     //        2  1
-    forkChoice.processBlock(ZERO, getHash(0), getHash(1), Bytes32.ZERO, unsigned(1), unsigned(1));
+    forkChoice.processBlock(
+        ZERO, getHash(0), getHash(1), Bytes32.ZERO, unsigned(1), unsigned(1), Bytes32.ZERO);
 
     // Ensure the head is still 2
     //
@@ -92,7 +94,8 @@ public class NoVotesTest {
     //        2  1
     //           |
     //           3
-    forkChoice.processBlock(ZERO, getHash(3), getHash(1), Bytes32.ZERO, unsigned(1), unsigned(1));
+    forkChoice.processBlock(
+        ZERO, getHash(3), getHash(1), Bytes32.ZERO, unsigned(1), unsigned(1), Bytes32.ZERO);
 
     // Ensure 2 is still the head
     //
@@ -113,7 +116,8 @@ public class NoVotesTest {
     //        2  1
     //        |  |
     //        4  3
-    forkChoice.processBlock(ZERO, getHash(4), getHash(2), Bytes32.ZERO, unsigned(1), unsigned(1));
+    forkChoice.processBlock(
+        ZERO, getHash(4), getHash(2), Bytes32.ZERO, unsigned(1), unsigned(1), Bytes32.ZERO);
 
     // Ensure the head is 4.
     //
@@ -136,7 +140,8 @@ public class NoVotesTest {
     //        4  3
     //        |
     //        5 <- justified epoch = 2
-    forkChoice.processBlock(ZERO, getHash(5), getHash(4), Bytes32.ZERO, unsigned(2), unsigned(1));
+    forkChoice.processBlock(
+        ZERO, getHash(5), getHash(4), Bytes32.ZERO, unsigned(2), unsigned(1), Bytes32.ZERO);
 
     // Ensure the head is still 4 whilst the justified epoch is 0.
     //
@@ -191,7 +196,8 @@ public class NoVotesTest {
     //     5
     //     |
     //     6
-    forkChoice.processBlock(ZERO, getHash(6), getHash(5), Bytes32.ZERO, unsigned(2), unsigned(1));
+    forkChoice.processBlock(
+        ZERO, getHash(6), getHash(5), Bytes32.ZERO, unsigned(2), unsigned(1), Bytes32.ZERO);
 
     // Ensure 6 is the head
     //

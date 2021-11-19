@@ -41,6 +41,7 @@ public class ProtoArraySnapshotTest {
             Optional.empty(),
             UInt64.valueOf(10),
             UInt64.valueOf(9),
+            Bytes32.ZERO,
             UInt64.ZERO,
             Optional.empty(),
             Optional.empty(),
@@ -53,6 +54,7 @@ public class ProtoArraySnapshotTest {
         protoNode1.getStateRoot(),
         protoNode1.getJustifiedEpoch(),
         protoNode1.getFinalizedEpoch(),
+        protoNode1.getExecutionBlockHash(),
         false);
 
     // sanity check
@@ -81,6 +83,7 @@ public class ProtoArraySnapshotTest {
             Optional.empty(),
             UInt64.valueOf(10),
             UInt64.valueOf(9),
+            Bytes32.ZERO,
             UInt64.ZERO,
             Optional.empty(),
             Optional.empty(),
@@ -95,6 +98,7 @@ public class ProtoArraySnapshotTest {
             Optional.empty(),
             UInt64.valueOf(10),
             UInt64.valueOf(9),
+            Bytes32.ZERO,
             UInt64.ZERO,
             Optional.empty(),
             Optional.empty(),
@@ -107,6 +111,7 @@ public class ProtoArraySnapshotTest {
         protoNode1.getStateRoot(),
         protoNode1.getJustifiedEpoch(),
         protoNode1.getFinalizedEpoch(),
+        protoNode1.getExecutionBlockHash(),
         false);
 
     protoArray1.onBlock(
@@ -116,6 +121,7 @@ public class ProtoArraySnapshotTest {
         protoNode1.getStateRoot(),
         protoNode1.getJustifiedEpoch(),
         protoNode1.getFinalizedEpoch(),
+        protoNode1.getExecutionBlockHash(),
         false);
 
     // sanity check

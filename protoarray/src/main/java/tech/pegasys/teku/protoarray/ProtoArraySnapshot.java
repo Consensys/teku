@@ -16,6 +16,7 @@ package tech.pegasys.teku.protoarray;
 import com.google.common.base.Objects;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ProtoArraySnapshot {
@@ -65,8 +66,9 @@ public class ProtoArraySnapshot {
                 blockInformation.getStateRoot(),
                 blockInformation.getJustifiedEpoch(),
                 blockInformation.getFinalizedEpoch(),
-                // Can't be optimistically processed because we stopped writing ProtoArraySnapshot
-                // before the merge was implemented.
+
+                // Default values because we stopped writing ProtoArraySnapshot before the merge
+                Bytes32.ZERO,
                 false));
     return protoArray;
   }

@@ -25,6 +25,7 @@ public class StoredBlockMetadata {
   private final Bytes32 blockRoot;
   private final Bytes32 parentRoot;
   private final Bytes32 stateRoot;
+  private final Optional<Bytes32> executionBlockHash;
   private final Optional<CheckpointEpochs> checkpointEpochs;
 
   public StoredBlockMetadata(
@@ -32,11 +33,13 @@ public class StoredBlockMetadata {
       final Bytes32 blockRoot,
       final Bytes32 parentRoot,
       final Bytes32 stateRoot,
+      final Optional<Bytes32> executionBlockHash,
       final Optional<CheckpointEpochs> checkpointEpochs) {
     this.blockSlot = blockSlot;
     this.blockRoot = blockRoot;
     this.parentRoot = parentRoot;
     this.stateRoot = stateRoot;
+    this.executionBlockHash = executionBlockHash;
     this.checkpointEpochs = checkpointEpochs;
   }
 
@@ -47,6 +50,7 @@ public class StoredBlockMetadata {
         blockAndState.getRoot(),
         blockAndState.getParentRoot(),
         blockAndState.getStateRoot(),
+        blockAndState.getExecutionBlockHash(),
         Optional.of(epochs));
   }
 
@@ -64,6 +68,10 @@ public class StoredBlockMetadata {
 
   public Bytes32 getStateRoot() {
     return stateRoot;
+  }
+
+  public Optional<Bytes32> getExecutionBlockHash() {
+    return executionBlockHash;
   }
 
   public Optional<CheckpointEpochs> getCheckpointEpochs() {
