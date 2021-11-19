@@ -124,7 +124,7 @@ public class BlockProposalTestUtil {
         Bytes20.ZERO,
         dataStructureUtil.randomBytes32(),
         dataStructureUtil.randomBytes32(),
-        dataStructureUtil.randomBytes(256),
+        dataStructureUtil.randomBytes256(),
         specVersion.beaconStateAccessors().getRandaoMix(state, newEpoch),
         newSlot,
         UInt64.valueOf(30_000_000L),

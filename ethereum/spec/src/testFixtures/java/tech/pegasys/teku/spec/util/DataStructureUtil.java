@@ -190,6 +190,10 @@ public final class DataStructureUtil {
     return new Bytes20(randomBytes32().slice(0, 20));
   }
 
+  public Bytes randomBytes256() {
+    return randomBytes(256);
+  }
+
   public Bytes32 randomBytes32() {
     final Random random = new Random(nextSeed());
     return Bytes32.random(random);
