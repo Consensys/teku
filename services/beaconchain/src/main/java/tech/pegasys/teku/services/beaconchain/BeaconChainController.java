@@ -60,11 +60,8 @@ import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
-import tech.pegasys.teku.services.executionengine.ExecutionEngineChannelImpl;
-import tech.pegasys.teku.services.executionengine.ForkChoiceNotifier;
 import tech.pegasys.teku.services.timer.TimeTickChannel;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
@@ -87,6 +84,7 @@ import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
 import tech.pegasys.teku.statetransition.synccommittee.SignedContributionAndProofValidator;
@@ -186,6 +184,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile AttestationTopicSubscriber attestationTopicSubscriber;
   private volatile SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager;
   private volatile ForkChoiceNotifier forkChoiceNotifier;
+  private volatile ExecutionEngineChannel executionEngine;
 
   private UInt64 genesisTimeTracker = ZERO;
   private BlockManager blockManager;
@@ -308,6 +307,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   public void initAll() {
+    initExecutionEngine();
     initForkChoice();
     initBlockImporter();
     initCombinedChainDataClient();
@@ -334,6 +334,10 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     initValidatorApiHandler();
     initRestAPI();
     initOperationsReOrgManager();
+  }
+
+  private void initExecutionEngine() {
+    executionEngine = eventChannels.getPublisher(ExecutionEngineChannel.class, beaconAsyncRunner);
   }
 
   private void initPendingBlocks() {
@@ -775,7 +779,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             recentChainData,
             forkChoice,
             weakSubjectivityValidator,
-            ExecutionEngineChannel.NOOP);
+            executionEngine);
   }
 
   public void initBlockManager() {
@@ -830,21 +834,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private void initForkChoiceNotifier() {
     LOG.debug("BeaconChainController.initForkChoiceNotifier()");
-    ExecutionEngineChannel executionEngineChannelHandler = ExecutionEngineChannel.NOOP;
-    ;
-
-    if (spec.isMilestoneSupported(SpecMilestone.MERGE)) {
-      if (beaconConfig.executionEngineConfiguration().isEnabled()) {
-        executionEngineChannelHandler =
-            ExecutionEngineChannelImpl.create(
-                beaconConfig.executionEngineConfiguration().getEndpoints().get(0), spec);
-      } else {
-        LOG.warn("Execution engine endpoint should be specified");
-      }
-    }
-
-    forkChoiceNotifier =
-        ForkChoiceNotifier.create(recentChainData, executionEngineChannelHandler, spec);
+    forkChoiceNotifier = new ForkChoiceNotifier(recentChainData, executionEngine, spec);
   }
 
   private void setupInitialState(final RecentChainData client) {

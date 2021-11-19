@@ -15,7 +15,6 @@ dependencies {
   implementation project(':util')
   implementation project(':infrastructure:logging')
   implementation project(':pow')
-  implementation project(':services:powchain')
   implementation project(':ssz')
   implementation project(':sync')
   implementation project(':data:serializer')

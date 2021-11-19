@@ -21,10 +21,10 @@ import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
-import tech.pegasys.teku.services.executionengine.ForkChoiceNotifier;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.NodeSlot;
 import tech.pegasys.teku.statetransition.EpochCachePrimer;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.forward.ForwardSync;
@@ -123,7 +123,6 @@ public class SlotProcessor {
     }
     if (isSlotAttestationDue(calculatedSlot, currentTime, nodeSlotStartTime)) {
       processSlotAttestation(epoch);
-      forkChoiceNotifier.onOneThirdOfSlot(nodeSlot.getValue());
       nodeSlot.inc();
     }
 
@@ -215,6 +214,7 @@ public class SlotProcessor {
   private void processSlotAttestation(final UInt64 nodeEpoch) {
     onTickSlotAttestation = nodeSlot.getValue();
     forkChoiceTrigger.onAttestationsDueForSlot(onTickSlotAttestation);
+    forkChoiceNotifier.onAttestationsDue(onTickSlotAttestation);
     recentChainData
         .getChainHead()
         .ifPresent(
