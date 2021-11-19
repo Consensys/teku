@@ -45,6 +45,12 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
         .isEqualTo(SpecMilestone.PHASE0);
     assertThat(spec.getForkSchedule().getSpecMilestoneAtEpoch(UInt64.valueOf(64)))
         .isEqualTo(SpecMilestone.ALTAIR);
+    assertThat(
+            createConfigBuilder()
+                .eth2NetworkConfig(b -> b.altairForkEpoch(UInt64.valueOf(64)))
+                .build())
+        .usingRecursiveComparison()
+        .isEqualTo(config);
   }
 
   @Test
@@ -56,6 +62,12 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
         .isEqualTo(SpecMilestone.ALTAIR);
     assertThat(spec.getForkSchedule().getSpecMilestoneAtEpoch(UInt64.valueOf(120000)))
         .isEqualTo(SpecMilestone.MERGE);
+    assertThat(
+            createConfigBuilder()
+                .eth2NetworkConfig(b -> b.mergeForkEpoch(UInt64.valueOf(120000)))
+                .build())
+        .usingRecursiveComparison()
+        .isEqualTo(config);
   }
 
   @Test
@@ -76,6 +88,15 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
             "--Xnetwork-merge-total-terminal-difficulty-override", "123456789012345678901");
     assertThat(config.eth2NetworkConfiguration().getMergeTotalTerminalDifficultyOverride())
         .isEqualTo(Optional.of(UInt256.valueOf(new BigInteger("123456789012345678901"))));
+    assertThat(
+            createConfigBuilder()
+                .eth2NetworkConfig(
+                    b ->
+                        b.mergeTotalTerminalDifficultyOverride(
+                            UInt256.valueOf(new BigInteger("123456789012345678901"))))
+                .build())
+        .usingRecursiveComparison()
+        .isEqualTo(config);
   }
 
   @Test
@@ -89,6 +110,16 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
             Optional.of(
                 Bytes32.fromHexStringStrict(
                     "0x7562f205a2d14e80a3a67da9df0b769b0ba0111a8e81034606f8f27f51f4dd8e")));
+    assertThat(
+            createConfigBuilder()
+                .eth2NetworkConfig(
+                    b ->
+                        b.mergeTerminalBlockHashOverride(
+                            Bytes32.fromHexStringStrict(
+                                "0x7562f205a2d14e80a3a67da9df0b769b0ba0111a8e81034606f8f27f51f4dd8e")))
+                .build())
+        .usingRecursiveComparison()
+        .isEqualTo(config);
   }
 
   @Test
@@ -98,6 +129,13 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
             "--Xnetwork-merge-terminal-block-hash-epoch-override", "120000");
     assertThat(config.eth2NetworkConfiguration().getMergeTerminalBlockHashEpochOverride())
         .isEqualTo(Optional.of(UInt64.valueOf(120000)));
+    assertThat(
+            createConfigBuilder()
+                .eth2NetworkConfig(
+                    b -> b.mergeTerminalBlockHashEpochOverride(UInt64.valueOf(120000)))
+                .build())
+        .usingRecursiveComparison()
+        .isEqualTo(config);
   }
 
   @Test

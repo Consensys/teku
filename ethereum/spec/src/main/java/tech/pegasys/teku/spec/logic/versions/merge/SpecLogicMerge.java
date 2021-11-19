@@ -160,8 +160,7 @@ public class SpecLogicMerge extends AbstractSpecLogic {
     final MergeStateUpgrade stateUpgrade =
         new MergeStateUpgrade(config, schemaDefinitions, beaconStateAccessors);
 
-    final MergeTransitionHelpers mergeTransitionHelpers =
-        new MergeTransitionHelpers(miscHelpers, config);
+    final MergeTransitionHelpers mergeTransitionHelpers = new MergeTransitionHelpers(config);
 
     final ExecutionPayloadUtil executionPayloadUtil = new ExecutionPayloadUtil();
 

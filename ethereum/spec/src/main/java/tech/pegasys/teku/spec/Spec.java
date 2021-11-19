@@ -469,6 +469,10 @@ public class Spec {
         .onBlock(store, signedBlock, blockSlotState, indexedAttestationCache, payloadExecutor);
   }
 
+  public boolean isBlockProcessorOptimistic(final UInt64 slot) {
+    return atSlot(slot).getBlockProcessor().isOptimistic();
+  }
+
   public boolean blockDescendsFromLatestFinalizedBlock(
       final BeaconBlock block,
       final ReadOnlyStore store,

@@ -93,8 +93,6 @@ public class TekuConfiguration {
             syncConfig,
             beaconRestApiConfig,
             powchainConfiguration,
-            executionEngineConfiguration,
-            loggingConfig,
             storeConfig,
             spec);
     this.validatorClientConfig =
@@ -205,6 +203,14 @@ public class TekuConfiguration {
           eth2NetworkConfigurationBuilder.build();
       final Spec spec = eth2NetworkConfiguration.getSpec();
 
+      // Add specs
+      interopConfigBuilder.specProvider(spec);
+      storageConfigurationBuilder.specProvider(spec);
+      weakSubjectivityBuilder.specProvider(spec);
+      p2pConfigBuilder.specProvider(spec);
+      powchainConfigBuilder.specProvider(spec);
+      executionEngineConfigBuilder.specProvider(spec);
+
       Eth1Address depositContractAddress = eth2NetworkConfiguration.getEth1DepositContractAddress();
       Optional<UInt64> depositContractDeployBlock =
           eth2NetworkConfiguration.getEth1DepositContractDeployBlock();
@@ -218,25 +224,24 @@ public class TekuConfiguration {
       DataConfig dataConfig = dataConfigBuilder.build();
       loggingConfigBuilder.dataDirectory(dataConfig.getDataBasePath().toString());
 
-      // Add specs
-      interopConfigBuilder.specProvider(spec);
-      storageConfigurationBuilder.specProvider(spec);
-      weakSubjectivityBuilder.specProvider(spec);
-      p2pConfigBuilder.specProvider(spec);
-      powchainConfigBuilder.specProvider(spec);
-      executionEngineConfigBuilder.specProvider(spec);
+      ValidatorConfig validatorConfig = validatorConfigBuilder.build();
+      // We don't need to update head for empty slots when using dependent roots
+      storeConfigBuilder.updateHeadForEmptySlotsDefault(!validatorConfig.useDependentRoots());
+
+      P2PConfig p2PConfig = p2pConfigBuilder.build();
+      syncConfig.isSyncEnabledDefault(p2PConfig.getNetworkConfig().isEnabled());
 
       return new TekuConfiguration(
           eth2NetworkConfiguration,
           spec,
           storageConfigurationBuilder.build(),
           weakSubjectivityBuilder.build(),
-          validatorConfigBuilder.build(),
+          validatorConfig,
           powchainConfigBuilder.build(),
           executionEngineConfigBuilder.build(),
           interopConfigBuilder.build(),
           dataConfig,
-          p2pConfigBuilder.build(),
+          p2PConfig,
           syncConfig.build(),
           restApiBuilder.build(),
           loggingConfigBuilder.build(),

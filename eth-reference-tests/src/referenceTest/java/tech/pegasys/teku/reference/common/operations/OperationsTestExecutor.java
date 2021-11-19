@@ -206,7 +206,9 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
                     .orElseThrow()
                     .getExecutionPayloadSchema());
         processor.processExecutionPayload(
-            state, payload, payloadToExecute -> executionMeta.executionValid);
+            state,
+            payload,
+            (latestExecutionPayloadHeader, payloadToExecute) -> executionMeta.executionValid);
         break;
     }
   }

@@ -59,29 +59,46 @@ public class LoggingOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void logDestination_shouldAcceptFileAsDestination() {
-    final LoggingConfig config =
-        getTekuConfigurationFromArguments("--log-destination", "file").loggingConfig();
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--log-destination", "file");
+    final LoggingConfig config = tekuConfiguration.loggingConfig();
     assertThat(config.getDestination()).isEqualTo(LoggingDestination.FILE);
+    assertThat(createConfigBuilder().logging(b -> b.destination(LoggingDestination.FILE)).build())
+        .usingRecursiveComparison()
+        .isEqualTo(tekuConfiguration);
   }
 
   @Test
   public void includeEvents_shouldNotRequireAValue() {
-    final LoggingConfig config =
-        getTekuConfigurationFromArguments("--log-include-events-enabled").loggingConfig();
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--log-include-events-enabled");
+    final LoggingConfig config = tekuConfiguration.loggingConfig();
     assertThat(config.isIncludeEventsEnabled()).isTrue();
+    assertThat(createConfigBuilder().logging(b -> b.includeEventsEnabled(true)).build())
+        .usingRecursiveComparison()
+        .isEqualTo(tekuConfiguration);
   }
 
   @Test
   public void logDestination_shouldAcceptConsoleAsDestination() {
-    final LoggingConfig config =
-        getTekuConfigurationFromArguments("--log-destination", "console").loggingConfig();
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--log-destination", "console");
+    final LoggingConfig config = tekuConfiguration.loggingConfig();
     assertThat(config.getDestination()).isEqualTo(LoggingDestination.CONSOLE);
+    assertThat(
+            createConfigBuilder().logging(b -> b.destination(LoggingDestination.CONSOLE)).build())
+        .usingRecursiveComparison()
+        .isEqualTo(tekuConfiguration);
   }
 
   @Test
   public void logDestination_shouldAcceptBothAsDestination() {
-    final LoggingConfig config =
-        getTekuConfigurationFromArguments("--log-destination", "both").loggingConfig();
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--log-destination", "both");
+    final LoggingConfig config = tekuConfiguration.loggingConfig();
     assertThat(config.getDestination()).isEqualTo(LoggingDestination.BOTH);
+    assertThat(createConfigBuilder().logging(b -> b.destination(LoggingDestination.BOTH)).build())
+        .usingRecursiveComparison()
+        .isEqualTo(tekuConfiguration);
   }
 }

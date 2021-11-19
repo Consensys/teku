@@ -187,7 +187,8 @@ public class ForkChoice {
         blockSlotState.get().getSlot());
 
     final ForkChoicePayloadExecutor payloadExecutor =
-        new ForkChoicePayloadExecutor(recentChainData, forkChoiceExecutor, block, executionEngine);
+        new ForkChoicePayloadExecutor(
+            spec, recentChainData, forkChoiceExecutor, block, executionEngine);
 
     return onForkChoiceThread(
         () -> {

@@ -14,17 +14,13 @@
 package tech.pegasys.teku.cli.options;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import picocli.CommandLine;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.validator.client.restapi.ValidatorRestApiConfig;
 
 public class ValidatorRestApiOptions {
   @CommandLine.Spec CommandLine.Model.CommandSpec cliSpec;
-
-  public static final int DEFAULT_REST_API_PORT = 5052;
-  // hard coded
-  private int maxUrlLength = 65535;
 
   @CommandLine.Option(
       names = {"--Xvalidator-api-port"},
@@ -32,7 +28,7 @@ public class ValidatorRestApiOptions {
       description = "Port number of Rest API",
       hidden = true,
       arity = "1")
-  private int restApiPort = DEFAULT_REST_API_PORT;
+  private int restApiPort = ValidatorRestApiConfig.DEFAULT_REST_API_PORT;
 
   @CommandLine.Option(
       names = {"--Xvalidator-api-docs-enabled"},
@@ -60,7 +56,7 @@ public class ValidatorRestApiOptions {
       description = "Interface of Validator Rest API",
       hidden = true,
       arity = "1")
-  private String restApiInterface = "127.0.0.1";
+  private String restApiInterface = ValidatorRestApiConfig.DEFAULT_REST_API_INTERFACE;
 
   @CommandLine.Option(
       names = {"--Xvalidator-api-host-allowlist"},
@@ -69,7 +65,8 @@ public class ValidatorRestApiOptions {
       hidden = true,
       split = ",",
       arity = "0..*")
-  private final List<String> restApiHostAllowlist = Arrays.asList("127.0.0.1", "localhost");
+  private final List<String> restApiHostAllowlist =
+      ValidatorRestApiConfig.DEFAULT_REST_API_HOST_ALLOWLIST;
 
   @CommandLine.Option(
       names = {"--Xvalidator-api-cors-origins"},
@@ -89,7 +86,6 @@ public class ValidatorRestApiOptions {
                 .restApiPort(restApiPort)
                 .restApiInterface(restApiInterface)
                 .restApiCorsAllowedOrigins(restApiCorsAllowedOrigins)
-                .restApiHostAllowlist(restApiHostAllowlist)
-                .maxUrlLength(maxUrlLength));
+                .restApiHostAllowlist(restApiHostAllowlist));
   }
 }

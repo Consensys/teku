@@ -22,14 +22,11 @@ public class PowBlock {
   private final Bytes32 blockHash;
   private final Bytes32 parentHash;
   private final UInt256 totalDifficulty;
-  private final UInt256 difficulty;
 
-  public PowBlock(
-      Bytes32 blockHash, Bytes32 parentHash, UInt256 totalDifficulty, UInt256 difficulty) {
+  public PowBlock(Bytes32 blockHash, Bytes32 parentHash, UInt256 totalDifficulty) {
     this.blockHash = blockHash;
     this.parentHash = parentHash;
     this.totalDifficulty = totalDifficulty;
-    this.difficulty = difficulty;
   }
 
   public Bytes32 getBlockHash() {
@@ -44,17 +41,12 @@ public class PowBlock {
     return totalDifficulty;
   }
 
-  public UInt256 getDifficulty() {
-    return difficulty;
-  }
-
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("blockHash", blockHash)
         .add("parentHash", parentHash)
         .add("totalDifficulty", totalDifficulty)
-        .add("difficulty", difficulty)
         .toString();
   }
 }

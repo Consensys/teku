@@ -1,0 +1,12 @@
+dependencies {
+  implementation project(':ethereum:spec')
+  implementation project(':infrastructure:async')
+  implementation project(':infrastructure:events')
+
+  api 'org.web3j:core'
+
+  implementation 'com.google.code.gson:gson'
+  implementation 'org.apache.tuweni:tuweni-units'
+
+  testImplementation testFixtures(project(':ethereum:spec'))
+}

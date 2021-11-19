@@ -82,7 +82,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
                             .finalizedCheckpoint(store.getFinalizedCheckpoint())
                             .initialEpoch(initialEpoch)
                             .build()))
-        .thenCompose(protoArray -> processBlocksInStoreAtStartup(store, protoArray))
+        .thenCompose(protoArray -> processBlocksInStoreAtStartup(spec, store, protoArray))
         .thenPeek(
             protoArray -> storageChannel.onProtoArrayUpdate(ProtoArraySnapshot.create(protoArray)))
         .thenApply(protoArray -> initialize(spec, protoArray));
@@ -196,7 +196,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
 
   // Internal
   private static SafeFuture<ProtoArray> processBlocksInStoreAtStartup(
-      ReadOnlyStore store, ProtoArray protoArray) {
+      final Spec spec, ReadOnlyStore store, ProtoArray protoArray) {
     List<Bytes32> alreadyIncludedBlockRoots =
         protoArray.getNodes().stream().map(ProtoNode::getBlockRoot).collect(Collectors.toList());
 
@@ -212,13 +212,14 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
                       .retrieveStateAndBlockSummary(blockRoot)
                       .thenAccept(
                           blockAndState ->
-                              processBlockAtStartup(protoArray, blockAndState.orElseThrow())));
+                              processBlockAtStartup(
+                                  spec, protoArray, blockAndState.orElseThrow())));
     }
     return future.thenApply(__ -> protoArray);
   }
 
   private static void processBlockAtStartup(
-      final ProtoArray protoArray, final StateAndBlockSummary blockAndState) {
+      final Spec spec, final ProtoArray protoArray, final StateAndBlockSummary blockAndState) {
     final BeaconState state = blockAndState.getState();
     protoArray.onBlock(
         blockAndState.getSlot(),
@@ -226,7 +227,8 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
         blockAndState.getParentRoot(),
         blockAndState.getStateRoot(),
         state.getCurrent_justified_checkpoint().getEpoch(),
-        state.getFinalized_checkpoint().getEpoch());
+        state.getFinalized_checkpoint().getEpoch(),
+        spec.isBlockProcessorOptimistic(blockAndState.getSlot()));
   }
 
   void processAttestation(
@@ -431,7 +433,14 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       Bytes32 stateRoot,
       UInt64 justifiedEpoch,
       UInt64 finalizedEpoch) {
-    protoArray.onBlock(blockSlot, blockRoot, parentRoot, stateRoot, justifiedEpoch, finalizedEpoch);
+    protoArray.onBlock(
+        blockSlot,
+        blockRoot,
+        parentRoot,
+        stateRoot,
+        justifiedEpoch,
+        finalizedEpoch,
+        spec.isBlockProcessorOptimistic(blockSlot));
   }
 
   private Optional<ProtoNode> getProtoNode(Bytes32 blockRoot) {

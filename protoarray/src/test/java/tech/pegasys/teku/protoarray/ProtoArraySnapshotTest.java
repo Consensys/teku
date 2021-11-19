@@ -52,7 +52,8 @@ public class ProtoArraySnapshotTest {
         protoNode1.getParentRoot(),
         protoNode1.getStateRoot(),
         protoNode1.getJustifiedEpoch(),
-        protoNode1.getFinalizedEpoch());
+        protoNode1.getFinalizedEpoch(),
+        false);
 
     // sanity check
     assertThat(protoArray1.getNodes().get(0)).isEqualTo(protoNode1);
@@ -105,7 +106,8 @@ public class ProtoArraySnapshotTest {
         protoNode1.getParentRoot(),
         protoNode1.getStateRoot(),
         protoNode1.getJustifiedEpoch(),
-        protoNode1.getFinalizedEpoch());
+        protoNode1.getFinalizedEpoch(),
+        false);
 
     protoArray1.onBlock(
         protoNode1.getBlockSlot(),
@@ -113,7 +115,8 @@ public class ProtoArraySnapshotTest {
         protoNode1.getParentRoot(),
         protoNode1.getStateRoot(),
         protoNode1.getJustifiedEpoch(),
-        protoNode1.getFinalizedEpoch());
+        protoNode1.getFinalizedEpoch(),
+        false);
 
     // sanity check
     assertThat(protoArray1.getNodes().get(0)).isEqualTo(protoNode1);
