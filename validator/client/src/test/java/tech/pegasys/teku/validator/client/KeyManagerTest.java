@@ -120,13 +120,12 @@ class KeyManagerTest {
   }
 
   private List<String> getKeystorePasswordList() {
-    return Arrays.asList("testpassword", "testpassword");
+    return new ArrayList<>(Arrays.asList("testpassword", "testpassword"));
   }
 
   private List<String> getKeystoresList() {
     return new ArrayList<>(
         Arrays.asList(
-            // return Arrays.asList(
             "{\n"
                 + "  \"crypto\" : {\n"
                 + "    \"kdf\" : {\n"
