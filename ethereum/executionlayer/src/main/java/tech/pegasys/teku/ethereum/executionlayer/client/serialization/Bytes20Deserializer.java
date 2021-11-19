@@ -11,23 +11,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.cli.options;
+package tech.pegasys.teku.ethereum.executionlayer.client.serialization;
 
-import static tech.pegasys.teku.config.TekuConfiguration.Builder;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import java.io.IOException;
+import tech.pegasys.teku.ssz.type.Bytes20;
 
-import picocli.CommandLine.Option;
+public class Bytes20Deserializer extends JsonDeserializer<Bytes20> {
 
-public class ExecutionEngineOptions {
-
-  @Option(
-      names = {"--Xee-endpoint"},
-      paramLabel = "<NETWORK>",
-      description = "URL for Execution Engine node.",
-      arity = "1",
-      hidden = true)
-  private String executionEngineEndpoint = null;
-
-  public void configure(final Builder builder) {
-    builder.executionEngine(b -> b.endpoint(executionEngineEndpoint));
+  @Override
+  public Bytes20 deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+    return Bytes20.fromHexString(p.getValueAsString());
   }
 }
