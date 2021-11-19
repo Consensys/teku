@@ -51,6 +51,11 @@ public class SlashingProtectedValidatorSource implements ValidatorSource {
     }
 
     @Override
+    public boolean isReadOnly() {
+      return delegate.isReadOnly();
+    }
+
+    @Override
     public Signer createSigner() {
       // TODO: Consider caching these to guarantee we can't possible use different
       // `SlashingProtectedSigner` instances with the same key
