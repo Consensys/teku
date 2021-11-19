@@ -25,9 +25,9 @@ public class ExecutionEngineOptions {
       description = "URL for Execution Engine node.",
       arity = "1",
       hidden = true)
-  private String eeEndpoint = null;
+  private String executionEngineEndpoint = null;
 
   public void configure(final Builder builder) {
-    builder.executionEngine(b -> b.endpoint(eeEndpoint));
+    builder.executionEngine(b -> b.endpoint(executionEngineEndpoint));
   }
 }
