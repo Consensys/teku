@@ -16,6 +16,8 @@ package tech.pegasys.teku.statetransition.forkchoice;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -47,6 +49,7 @@ import tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedStatus;
 import tech.pegasys.teku.spec.executionengine.PayloadAttributes;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.ssz.type.Bytes20;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.server.StateStorageMode;
@@ -70,23 +73,26 @@ public class ForkChoiceNotifierTest {
   RecentChainData recentChainData;
   ForkChoiceNotifier forkChoiceNotifier;
   DataStructureUtil dataStructureUtil;
+  ForkChoiceState forkChoiceState;
+  Bytes32 root;
+  Spec spec;
 
   ExecutionEngineChannel executionEngineChannel = mock(ExecutionEngineChannel.class);
 
   @BeforeAll
-  public static void init() {
+  public static void initSession() {
     AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = false;
   }
 
   @AfterAll
-  public static void reset() {
+  public static void resetSession() {
     AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = true;
   }
 
   @BeforeEach
   void setUp(TestSpecInvocationContextProvider.SpecContext specContext) {
     dataStructureUtil = specContext.getDataStructureUtil();
-    Spec spec = specContext.getSpec();
+    spec = specContext.getSpec();
     chainBuilder = ChainBuilder.create(spec, VALIDATOR_KEYS);
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.ARCHIVE);
     recentChainData = storageSystem.recentChainData();
@@ -95,33 +101,107 @@ public class ForkChoiceNotifierTest {
 
     forkChoiceNotifier = new ForkChoiceNotifier(recentChainData, executionEngineChannel, spec);
 
-    when(executionEngineChannel.forkChoiceUpdated(any(), any()))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                new ForkChoiceUpdatedResult(ForkChoiceUpdatedStatus.SUCCESS, Optional.empty())));
+    resetExecutionEngineChannelMock();
   }
 
   @TestTemplate
-  void shouldCallForkChoiceWithAttributes() {
+  void onForkChoiceShouldCallForkChoiceUpdatedWithAttributesWhenProposerIsPrepared() {
     prepareAllValidators();
 
-    SignedBlockAndState signedBlockAndState = chainBuilder.getLatestBlockAndState();
-
-    Bytes32 root = signedBlockAndState.getRoot();
-    Bytes32 executionHeadRoot = dataStructureUtil.randomBytes32();
-    ForkChoiceState forkChoiceState =
-        new ForkChoiceState(
-            executionHeadRoot,
-            dataStructureUtil.randomBytes32(),
-            dataStructureUtil.randomBytes32());
+    setRootAndForkChoiceState();
 
     forkChoiceNotifier.onForkChoiceUpdated(root, forkChoiceState);
 
-    verify(executionEngineChannel)
-        .forkChoiceUpdated(forkChoiceStateCaptor.capture(), payloadAttributesCaptor.capture());
+    validateForkChoiceUpdatedWithPayloadAttributes(chainBuilder.getLatestSlot().plus(1));
+  }
 
-    assertThat(forkChoiceStateCaptor.getValue()).isEqualToComparingFieldByField(forkChoiceState);
-    assertThat(payloadAttributesCaptor.getValue()).isNotEmpty();
+  @TestTemplate
+  void onForkChoiceShouldCallForkChoiceUpdatedWithoutAttributesWhenProposerIsNotPrepared() {
+    setRootAndForkChoiceState();
+
+    forkChoiceNotifier.onForkChoiceUpdated(root, forkChoiceState);
+
+    validateForkChoiceUpdatedWithoutPayloadAttributes(chainBuilder.getLatestSlot().plus(1));
+  }
+
+  @TestTemplate
+  void onUpdatePreparableProposersShouldNotCallForkChoiceUpdatedWithNotForkChoiceState() {
+    prepareAllValidators();
+
+    validateForkChoiceUpdatedHasNotBeenCalled();
+  }
+
+  @TestTemplate
+  void onUpdatePreparableProposersShouldNotCallForkChoiceUpdatedWhenNotPreparingProposer() {
+    setRootAndForkChoiceState();
+
+    forkChoiceNotifier.onForkChoiceUpdated(root, forkChoiceState);
+
+    resetExecutionEngineChannelMock();
+
+    prepareWithNonProposingValidators();
+
+    validateForkChoiceUpdatedHasNotBeenCalled();
+  }
+
+  @TestTemplate
+  void onUpdatePreparableProposersShouldCallForkChoiceUpdatedOnCurrentSlotWhenPreparingProposer() {
+    setRootAndForkChoiceState();
+
+    forkChoiceNotifier.onForkChoiceUpdated(root, forkChoiceState);
+
+    resetExecutionEngineChannelMock();
+
+    prepareAllValidators();
+
+    validateForkChoiceUpdatedWithPayloadAttributes(chainBuilder.getLatestSlot());
+  }
+
+  @TestTemplate
+  void
+      onUpdatePreparableProposersShouldCallForkChoiceUpdatedOnNextSlotWhenPreparingProposerAfterAttestationDue() {
+    setRootAndForkChoiceState();
+
+    forkChoiceNotifier.onForkChoiceUpdated(root, forkChoiceState);
+    forkChoiceNotifier.onAttestationsDue(chainBuilder.getLatestSlot());
+
+    resetExecutionEngineChannelMock();
+
+    prepareAllValidators();
+
+    validateForkChoiceUpdatedWithPayloadAttributes(chainBuilder.getLatestSlot().plus(1));
+  }
+
+  @TestTemplate
+  void complexScenario1() {
+    setRootAndForkChoiceState();
+
+    // we begin with no proposers
+    forkChoiceNotifier.onForkChoiceUpdated(root, forkChoiceState);
+
+    validateForkChoiceUpdatedWithoutPayloadAttributes(chainBuilder.getLatestSlot().plus(1));
+
+    resetExecutionEngineChannelMock();
+
+    // then, before attestationDue, we prepare validator
+    prepareAllValidators();
+
+    validateForkChoiceUpdatedWithPayloadAttributes(chainBuilder.getLatestSlot());
+
+    resetExecutionEngineChannelMock();
+
+    // then forkchoice state changes before attestationDue
+    forkChoiceNotifier.onForkChoiceUpdated(root, forkChoiceState);
+
+    validateForkChoiceUpdatedWithPayloadAttributes(chainBuilder.getLatestSlot().plus(1));
+
+    resetExecutionEngineChannelMock();
+
+    // attestationDue arrives
+
+    forkChoiceNotifier.onAttestationsDue(chainBuilder.getLatestSlot());
+
+    validateForkChoiceUpdatedHasNotBeenCalled();
   }
 
   private void prepareAllValidators() {
@@ -134,5 +214,77 @@ public class ForkChoiceNotifierTest {
             .collect(Collectors.toList());
 
     forkChoiceNotifier.onUpdatePreparableProposers(proposers);
+  }
+
+  private void prepareWithNonProposingValidators() {
+    Collection<BeaconPreparableProposer> proposers =
+        IntStream.range(VALIDATOR_KEYS.size() + 1, VALIDATOR_KEYS.size() + 5)
+            .mapToObj(
+                index ->
+                    new BeaconPreparableProposer(
+                        UInt64.valueOf(index), dataStructureUtil.randomBytes20()))
+            .collect(Collectors.toList());
+
+    forkChoiceNotifier.onUpdatePreparableProposers(proposers);
+  }
+
+  private void validateForkChoiceUpdatedHasNotBeenCalled() {
+    verify(executionEngineChannel, never())
+        .forkChoiceUpdated(forkChoiceStateCaptor.capture(), payloadAttributesCaptor.capture());
+  }
+
+  private void validateForkChoiceUpdatedWithPayloadAttributes(UInt64 targetSlot) {
+    verify(executionEngineChannel)
+        .forkChoiceUpdated(forkChoiceStateCaptor.capture(), payloadAttributesCaptor.capture());
+
+    assertThat(forkChoiceStateCaptor.getValue()).isEqualToComparingFieldByField(forkChoiceState);
+
+    SignedBlockAndState signedBlockAndState = chainBuilder.getLatestBlockAndState();
+    UInt64 expectedProposerIndex =
+        UInt64.valueOf(spec.getBeaconProposerIndex(signedBlockAndState.getState(), targetSlot));
+    Bytes20 proposerLastSeenSlotAndFeeRecipient =
+        forkChoiceNotifier.getProposerIndexFeeRecipient(expectedProposerIndex);
+    assertThat(proposerLastSeenSlotAndFeeRecipient).isNotNull();
+
+    Optional<PayloadAttributes> payloadAttributes = payloadAttributesCaptor.getValue();
+    assertThat(payloadAttributes).isNotEmpty();
+    assertThat(payloadAttributes.get().getFeeRecipient())
+        .isEqualTo(proposerLastSeenSlotAndFeeRecipient);
+  }
+
+  private void validateForkChoiceUpdatedWithoutPayloadAttributes(UInt64 targetSlot) {
+    verify(executionEngineChannel)
+        .forkChoiceUpdated(forkChoiceStateCaptor.capture(), payloadAttributesCaptor.capture());
+
+    assertThat(forkChoiceStateCaptor.getValue()).isEqualToComparingFieldByField(forkChoiceState);
+
+    SignedBlockAndState signedBlockAndState = chainBuilder.getLatestBlockAndState();
+    UInt64 expectedProposerIndex =
+        UInt64.valueOf(spec.getBeaconProposerIndex(signedBlockAndState.getState(), targetSlot));
+    Bytes20 proposerLastSeenSlotAndFeeRecipient =
+        forkChoiceNotifier.getProposerIndexFeeRecipient(expectedProposerIndex);
+    assertThat(proposerLastSeenSlotAndFeeRecipient).isNull();
+
+    Optional<PayloadAttributes> payloadAttributes = payloadAttributesCaptor.getValue();
+    assertThat(payloadAttributes).isEmpty();
+  }
+
+  private void resetExecutionEngineChannelMock() {
+    reset(executionEngineChannel);
+    when(executionEngineChannel.forkChoiceUpdated(any(), any()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                new ForkChoiceUpdatedResult(ForkChoiceUpdatedStatus.SUCCESS, Optional.empty())));
+  }
+
+  private void setRootAndForkChoiceState() {
+    SignedBlockAndState signedBlockAndState = chainBuilder.getLatestBlockAndState();
+    root = signedBlockAndState.getRoot();
+    Bytes32 executionHeadRoot = dataStructureUtil.randomBytes32();
+    forkChoiceState =
+        new ForkChoiceState(
+            executionHeadRoot,
+            dataStructureUtil.randomBytes32(),
+            dataStructureUtil.randomBytes32());
   }
 }

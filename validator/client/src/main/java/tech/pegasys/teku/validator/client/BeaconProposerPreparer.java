@@ -32,6 +32,7 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
   private final OwnedValidators validators;
   private final Spec spec;
   private final Bytes20 feeRecipient;
+  private boolean firstCallDone = false;
 
   public BeaconProposerPreparer(
       ValidatorApiChannel validatorApiChannel,
@@ -48,7 +49,8 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
 
   @Override
   public void onSlot(UInt64 slot) {
-    if (slot.mod(spec.getSlotsPerEpoch(slot)).isZero()) {
+    if (slot.mod(spec.getSlotsPerEpoch(slot)).isZero() || !firstCallDone) {
+      firstCallDone = true;
       validatorIndexProvider
           .getValidatorIndices(validators.getPublicKeys())
           .thenApply(
