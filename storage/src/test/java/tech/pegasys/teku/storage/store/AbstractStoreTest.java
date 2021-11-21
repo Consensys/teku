@@ -153,6 +153,7 @@ public abstract class AbstractStoreTest {
                     genesis.getRoot(),
                     genesis.getParentRoot(),
                     genesis.getStateRoot(),
+                    genesis.getExecutionBlockHash(),
                     Optional.of(new CheckpointEpochs(UInt64.ZERO, UInt64.ZERO)))))
         .storeConfig(pruningOptions)
         .votes(emptyMap())

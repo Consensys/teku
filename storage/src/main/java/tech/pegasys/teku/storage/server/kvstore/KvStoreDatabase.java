@@ -52,6 +52,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
@@ -330,6 +331,10 @@ public class KvStoreDatabase implements Database {
                     b.getRoot(),
                     b.getParentRoot(),
                     b.getStateRoot(),
+                    b.getMessage()
+                        .getBody()
+                        .getOptionalExecutionPayload()
+                        .map(ExecutionPayload::getBlockHash),
                     checkpointEpochs));
           });
     }

@@ -27,7 +27,10 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.ChainBuilder;
+import tech.pegasys.teku.core.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -64,6 +67,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
                     blockAndState.getStateRoot(),
                     blockAndState.getState().getCurrent_justified_checkpoint().getEpoch(),
                     blockAndState.getState().getFinalized_checkpoint().getEpoch(),
+                    blockAndState.getExecutionBlockHash().orElse(Bytes32.ZERO),
                     spec.isBlockProcessorOptimistic(blockAndState.getSlot())));
     return ForkChoiceStrategy.initialize(spec, protoArray);
   }
@@ -94,6 +98,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
         anchor.getStateRoot(),
         anchor.getEpoch(),
         anchor.getEpoch(),
+        Bytes32.ZERO,
         false);
     final ForkChoiceStrategy forkChoiceStrategy = ForkChoiceStrategy.initialize(spec, protoArray);
     TestStoreImpl store = new TestStoreFactory().createAnchorStore(anchor);
@@ -308,7 +313,43 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     assertThat(bestHead).isEqualTo(block4.getRoot());
   }
 
+  @Test
+  void executionBlockHash_shouldBeEmptyForUnknownBlock() {
+    final StorageSystem storageSystem = initStorageSystem(TestSpecFactory.createMinimalMerge());
+    final ForkChoiceStrategy strategy = createProtoArray(storageSystem);
+    assertThat(strategy.executionBlockHash(Bytes32.ZERO)).isEmpty();
+  }
+
+  @Test
+  void executionBlockHash_shouldGetExecutionRootForKnownBlock() {
+    final StorageSystem storageSystem = initStorageSystem(TestSpecFactory.createMinimalMerge());
+    final SignedBlockAndState block1 =
+        storageSystem
+            .chainBuilder()
+            .generateBlockAtSlot(1, BlockOptions.create().setTransactions());
+    storageSystem.chainUpdater().saveBlock(block1);
+    assertThat(block1.getExecutionBlockHash()).isNotEmpty();
+
+    final ForkChoiceStrategy strategy =
+        storageSystem.recentChainData().getForkChoiceStrategy().orElseThrow();
+    assertThat(strategy.executionBlockHash(block1.getRoot()))
+        .isEqualTo(block1.getExecutionBlockHash());
+
+    storageSystem.restarted();
+    assertThat(
+            storageSystem
+                .recentChainData()
+                .getForkChoiceStrategy()
+                .orElseThrow()
+                .executionBlockHash(block1.getRoot()))
+        .isEqualTo(block1.getExecutionBlockHash());
+  }
+
   private StorageSystem initStorageSystem() {
+    return initStorageSystem(spec);
+  }
+
+  private StorageSystem initStorageSystem(final Spec spec) {
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     storageSystem.chainUpdater().initializeGenesis();
     return storageSystem;

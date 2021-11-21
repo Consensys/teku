@@ -60,11 +60,12 @@ public class FFGUpdatesTest {
     //            2 <- just: 1, fin: 0
     //            |
     //            3 <- just: 2, fin: 1
-    forkChoice.processBlock(ONE, getHash(1), getHash(0), Bytes32.ZERO, unsigned(0), unsigned(0));
     forkChoice.processBlock(
-        unsigned(2), getHash(2), getHash(1), Bytes32.ZERO, unsigned(1), unsigned(0));
+        ONE, getHash(1), getHash(0), Bytes32.ZERO, unsigned(0), unsigned(0), Bytes32.ZERO);
     forkChoice.processBlock(
-        unsigned(3), getHash(3), getHash(2), Bytes32.ZERO, unsigned(2), unsigned(1));
+        unsigned(2), getHash(2), getHash(1), Bytes32.ZERO, unsigned(1), unsigned(0), Bytes32.ZERO);
+    forkChoice.processBlock(
+        unsigned(3), getHash(3), getHash(2), Bytes32.ZERO, unsigned(2), unsigned(1), Bytes32.ZERO);
 
     // Ensure that with justified epoch 0 we find 3
     //
@@ -141,27 +142,27 @@ public class FFGUpdatesTest {
 
     //  Left branch
     forkChoice.processBlock(
-        unsigned(1), getHash(1), getHash(0), Bytes32.ZERO, unsigned(0), unsigned(0));
+        unsigned(1), getHash(1), getHash(0), Bytes32.ZERO, unsigned(0), unsigned(0), Bytes32.ZERO);
     forkChoice.processBlock(
-        unsigned(2), getHash(3), getHash(1), Bytes32.ZERO, unsigned(1), unsigned(0));
+        unsigned(2), getHash(3), getHash(1), Bytes32.ZERO, unsigned(1), unsigned(0), Bytes32.ZERO);
     forkChoice.processBlock(
-        unsigned(3), getHash(5), getHash(3), Bytes32.ZERO, unsigned(1), unsigned(0));
+        unsigned(3), getHash(5), getHash(3), Bytes32.ZERO, unsigned(1), unsigned(0), Bytes32.ZERO);
     forkChoice.processBlock(
-        unsigned(4), getHash(7), getHash(5), Bytes32.ZERO, unsigned(1), unsigned(0));
+        unsigned(4), getHash(7), getHash(5), Bytes32.ZERO, unsigned(1), unsigned(0), Bytes32.ZERO);
     forkChoice.processBlock(
-        unsigned(4), getHash(9), getHash(7), Bytes32.ZERO, unsigned(2), unsigned(0));
+        unsigned(4), getHash(9), getHash(7), Bytes32.ZERO, unsigned(2), unsigned(0), Bytes32.ZERO);
 
     //  Right branch
     forkChoice.processBlock(
-        unsigned(1), getHash(2), getHash(0), Bytes32.ZERO, unsigned(0), unsigned(0));
+        unsigned(1), getHash(2), getHash(0), Bytes32.ZERO, unsigned(0), unsigned(0), Bytes32.ZERO);
     forkChoice.processBlock(
-        unsigned(2), getHash(4), getHash(2), Bytes32.ZERO, unsigned(0), unsigned(0));
+        unsigned(2), getHash(4), getHash(2), Bytes32.ZERO, unsigned(0), unsigned(0), Bytes32.ZERO);
     forkChoice.processBlock(
-        unsigned(3), getHash(6), getHash(4), Bytes32.ZERO, unsigned(0), unsigned(0));
+        unsigned(3), getHash(6), getHash(4), Bytes32.ZERO, unsigned(0), unsigned(0), Bytes32.ZERO);
     forkChoice.processBlock(
-        unsigned(4), getHash(8), getHash(6), Bytes32.ZERO, unsigned(1), unsigned(0));
+        unsigned(4), getHash(8), getHash(6), Bytes32.ZERO, unsigned(1), unsigned(0), Bytes32.ZERO);
     forkChoice.processBlock(
-        unsigned(4), getHash(10), getHash(8), Bytes32.ZERO, unsigned(2), unsigned(0));
+        unsigned(4), getHash(10), getHash(8), Bytes32.ZERO, unsigned(2), unsigned(0), Bytes32.ZERO);
 
     // Ensure that if we start at 0 we find 10 (just: 0, fin: 0).
     //

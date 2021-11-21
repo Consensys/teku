@@ -62,7 +62,7 @@ public class VotesTest {
     //          0
     //         /
     //        2
-    forkChoice.processBlock(ZERO, getHash(2), getHash(0), Bytes32.ZERO, ONE, ONE);
+    forkChoice.processBlock(ZERO, getHash(2), getHash(0), Bytes32.ZERO, ONE, ONE, Bytes32.ZERO);
 
     // Ensure that the head is 2
     //
@@ -84,7 +84,7 @@ public class VotesTest {
     //          0
     //         / \
     //        2   1
-    forkChoice.processBlock(ZERO, getHash(1), getHash(0), Bytes32.ZERO, ONE, ONE);
+    forkChoice.processBlock(ZERO, getHash(1), getHash(0), Bytes32.ZERO, ONE, ONE, Bytes32.ZERO);
 
     // Ensure that the head is still 2
     //
@@ -149,7 +149,7 @@ public class VotesTest {
     //        2   1
     //            |
     //            3
-    forkChoice.processBlock(ZERO, getHash(3), getHash(1), Bytes32.ZERO, ONE, ONE);
+    forkChoice.processBlock(ZERO, getHash(3), getHash(1), Bytes32.ZERO, ONE, ONE, Bytes32.ZERO);
 
     // Ensure that the head is still 2
     //
@@ -227,7 +227,7 @@ public class VotesTest {
     //            3
     //            |
     //            4
-    forkChoice.processBlock(ZERO, getHash(4), getHash(3), Bytes32.ZERO, ONE, ONE);
+    forkChoice.processBlock(ZERO, getHash(4), getHash(3), Bytes32.ZERO, ONE, ONE, Bytes32.ZERO);
 
     // Ensure that the head is now 4
     //
@@ -258,7 +258,8 @@ public class VotesTest {
     //            4
     //           /
     //          5 <- justified epoch = 2
-    forkChoice.processBlock(ZERO, getHash(5), getHash(4), Bytes32.ZERO, unsigned(2), unsigned(2));
+    forkChoice.processBlock(
+        ZERO, getHash(5), getHash(4), Bytes32.ZERO, unsigned(2), unsigned(2), Bytes32.ZERO);
 
     // Ensure that 5 is filtered out and the head stays at 4.
     //
@@ -291,7 +292,8 @@ public class VotesTest {
     //            4
     //           / \
     //          5   6 <- justified epoch = 0
-    forkChoice.processBlock(ZERO, getHash(6), getHash(4), Bytes32.ZERO, unsigned(1), unsigned(1));
+    forkChoice.processBlock(
+        ZERO, getHash(6), getHash(4), Bytes32.ZERO, unsigned(1), unsigned(1), Bytes32.ZERO);
 
     // Move both votes to 5.
     //
@@ -325,9 +327,12 @@ public class VotesTest {
     //          8
     //         /
     //         9
-    forkChoice.processBlock(ZERO, getHash(7), getHash(5), Bytes32.ZERO, unsigned(2), unsigned(2));
-    forkChoice.processBlock(ZERO, getHash(8), getHash(7), Bytes32.ZERO, unsigned(2), unsigned(2));
-    forkChoice.processBlock(ZERO, getHash(9), getHash(8), Bytes32.ZERO, unsigned(2), unsigned(2));
+    forkChoice.processBlock(
+        ZERO, getHash(7), getHash(5), Bytes32.ZERO, unsigned(2), unsigned(2), Bytes32.ZERO);
+    forkChoice.processBlock(
+        ZERO, getHash(8), getHash(7), Bytes32.ZERO, unsigned(2), unsigned(2), Bytes32.ZERO);
+    forkChoice.processBlock(
+        ZERO, getHash(9), getHash(8), Bytes32.ZERO, unsigned(2), unsigned(2), Bytes32.ZERO);
 
     // Ensure that 6 is the head, even though 5 has all the votes. This is testing to ensure
     // that 5 is filtered out due to a differing justified epoch.
@@ -417,7 +422,8 @@ public class VotesTest {
     //          8
     //         / \
     //        9  10
-    forkChoice.processBlock(ZERO, getHash(10), getHash(8), Bytes32.ZERO, unsigned(2), unsigned(2));
+    forkChoice.processBlock(
+        ZERO, getHash(10), getHash(8), Bytes32.ZERO, unsigned(2), unsigned(2), Bytes32.ZERO);
 
     // Double-check the head is still 9
     assertThat(
@@ -573,7 +579,8 @@ public class VotesTest {
     //        9  10
     //        |
     //        11
-    forkChoice.processBlock(ZERO, getHash(11), getHash(9), Bytes32.ZERO, unsigned(2), unsigned(2));
+    forkChoice.processBlock(
+        ZERO, getHash(11), getHash(9), Bytes32.ZERO, unsigned(2), unsigned(2), Bytes32.ZERO);
 
     // Ensure the head is now 11
     //
