@@ -31,6 +31,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -44,6 +45,8 @@ import tech.pegasys.teku.core.signatures.SlashingProtector;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
+import tech.pegasys.teku.service.serviceutils.layout.SeparateServiceDataDirLayout;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -52,6 +55,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.client.Validator;
+import tech.pegasys.teku.validator.client.ValidatorClientService;
 
 class ValidatorLoaderTest {
 
@@ -119,7 +123,8 @@ class ValidatorLoaderTest {
             slashingProtector,
             publicKeyLoader,
             asyncRunner,
-            metricsSystem);
+            metricsSystem,
+            Optional.empty());
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -155,7 +160,8 @@ class ValidatorLoaderTest {
             slashingProtector,
             publicKeyLoader,
             asyncRunner,
-            metricsSystem);
+            metricsSystem,
+            Optional.empty());
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -196,7 +202,8 @@ class ValidatorLoaderTest {
             slashingProtector,
             publicKeyLoader,
             asyncRunner,
-            metricsSystem);
+            metricsSystem,
+            Optional.empty());
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -243,7 +250,8 @@ class ValidatorLoaderTest {
             slashingProtector,
             publicKeyLoader,
             asyncRunner,
-            metricsSystem);
+            metricsSystem,
+            Optional.empty());
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -259,6 +267,130 @@ class ValidatorLoaderTest {
     assertThat(validator2).isNotNull();
     assertThat(validator2.getPublicKey()).isEqualTo(PUBLIC_KEY2);
     assertThat(validator2.getSigner().isLocal()).isFalse();
+  }
+
+  @Test
+  void shouldInitializeLocalAndMutableValidators(
+      @TempDir Path tempDir, @TempDir Path tempDirMutable) throws Exception {
+    final BLSPublicKey mutableValidatorPubKey =
+        BLSPublicKey.fromSSZBytes(
+            Bytes.fromHexString(
+                "0xa057816155ad77931185101128655c0191bd0214c201ca48ed887f6c4c6adf334070efcd75140eada5ac83a92506dd7a"));
+
+    final DataDirLayout dataDirLayout =
+        new SeparateServiceDataDirLayout(tempDirMutable, Optional.empty(), Optional.empty());
+    writeKeystore(tempDir);
+    writeMutableKeystore(dataDirLayout);
+    final ValidatorConfig config =
+        ValidatorConfig.builder()
+            .validatorKeys(
+                List.of(
+                    tempDir.toAbsolutePath().toString()
+                        + File.pathSeparator
+                        + tempDir.toAbsolutePath().toString()))
+            .build();
+    final ValidatorLoader validatorLoader =
+        ValidatorLoader.create(
+            spec,
+            config,
+            disabledInteropConfig,
+            httpClientFactory,
+            slashingProtector,
+            publicKeyLoader,
+            asyncRunner,
+            metricsSystem,
+            Optional.of(dataDirLayout));
+
+    validatorLoader.loadValidators();
+    final OwnedValidators validators = validatorLoader.getOwnedValidators();
+
+    assertThat(validators.getValidatorCount()).isEqualTo(2);
+
+    final Validator validator1 = validators.getValidator(PUBLIC_KEY1).orElseThrow();
+    assertThat(validator1).isNotNull();
+    assertThat(validator1.getPublicKey()).isEqualTo(PUBLIC_KEY1);
+    assertThat(validator1.isReadOnly()).isTrue();
+
+    final Validator validator2 = validators.getValidator(mutableValidatorPubKey).orElseThrow();
+    assertThat(validator2).isNotNull();
+    assertThat(validator2.getPublicKey()).isEqualTo(mutableValidatorPubKey);
+    assertThat(validator2.isReadOnly()).isFalse();
+  }
+
+  @Test
+  void shouldInitializeOnlyLocalValidatorsWhenRestDisabled(
+      @TempDir Path tempDir, @TempDir Path tempDirMutable) throws Exception {
+    final DataDirLayout dataDirLayout =
+        new SeparateServiceDataDirLayout(tempDirMutable, Optional.empty(), Optional.empty());
+    writeKeystore(tempDir);
+    writeMutableKeystore(dataDirLayout);
+    final ValidatorConfig config =
+        ValidatorConfig.builder()
+            .validatorKeys(
+                List.of(
+                    tempDir.toAbsolutePath().toString()
+                        + File.pathSeparator
+                        + tempDir.toAbsolutePath().toString()))
+            .build();
+    final ValidatorLoader validatorLoader =
+        ValidatorLoader.create(
+            spec,
+            config,
+            disabledInteropConfig,
+            httpClientFactory,
+            slashingProtector,
+            publicKeyLoader,
+            asyncRunner,
+            metricsSystem,
+            Optional.empty());
+
+    validatorLoader.loadValidators();
+    final OwnedValidators validators = validatorLoader.getOwnedValidators();
+
+    assertThat(validators.getValidatorCount()).isEqualTo(1);
+
+    final Validator validator1 = validators.getValidator(PUBLIC_KEY1).orElseThrow();
+    assertThat(validator1).isNotNull();
+    assertThat(validator1.getPublicKey()).isEqualTo(PUBLIC_KEY1);
+    assertThat(validator1.isReadOnly()).isTrue();
+  }
+
+  @Test
+  void shouldNotInitializeMutableValidatorsWithoutDirectoryStructure(
+      @TempDir Path tempDir, @TempDir Path tempDirMutable) throws Exception {
+    final DataDirLayout dataDirLayout =
+        new SeparateServiceDataDirLayout(tempDirMutable, Optional.empty(), Optional.empty());
+    writeKeystore(tempDir);
+
+    final ValidatorConfig config =
+        ValidatorConfig.builder()
+            .validatorKeys(
+                List.of(
+                    tempDir.toAbsolutePath().toString()
+                        + File.pathSeparator
+                        + tempDir.toAbsolutePath().toString()))
+            .build();
+    final ValidatorLoader validatorLoader =
+        ValidatorLoader.create(
+            spec,
+            config,
+            disabledInteropConfig,
+            httpClientFactory,
+            slashingProtector,
+            publicKeyLoader,
+            asyncRunner,
+            metricsSystem,
+            Optional.of(dataDirLayout));
+
+    validatorLoader.loadValidators();
+    final OwnedValidators validators = validatorLoader.getOwnedValidators();
+
+    assertThat(validators.getValidatorCount()).isEqualTo(1);
+
+    final Validator validator1 = validators.getValidator(PUBLIC_KEY1).orElseThrow();
+    assertThat(validator1).isNotNull();
+    assertThat(validator1.getPublicKey()).isEqualTo(PUBLIC_KEY1);
+    assertThat(validator1.isReadOnly()).isTrue();
   }
 
   @Test
@@ -285,7 +417,8 @@ class ValidatorLoaderTest {
             slashingProtector,
             publicKeyLoader,
             asyncRunner,
-            metricsSystem);
+            metricsSystem,
+            Optional.empty());
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -321,7 +454,8 @@ class ValidatorLoaderTest {
             slashingProtector,
             publicKeyLoader,
             asyncRunner,
-            metricsSystem);
+            metricsSystem,
+            Optional.empty());
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -360,7 +494,8 @@ class ValidatorLoaderTest {
             slashingProtector,
             publicKeyLoader,
             asyncRunner,
-            metricsSystem);
+            metricsSystem,
+            Optional.empty());
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -395,7 +530,8 @@ class ValidatorLoaderTest {
             slashingProtector,
             publicKeyLoader,
             asyncRunner,
-            metricsSystem);
+            metricsSystem,
+            Optional.empty());
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -428,7 +564,8 @@ class ValidatorLoaderTest {
             slashingProtector,
             publicKeyLoader,
             asyncRunner,
-            metricsSystem);
+            metricsSystem,
+            Optional.empty());
 
     // No validators initially
     validatorLoader.loadValidators();
@@ -446,6 +583,17 @@ class ValidatorLoaderTest {
     final URL resource = Resources.getResource("pbkdf2TestVector.json");
     Files.copy(Path.of(resource.toURI()), tempDir.resolve("key.json"));
     Files.writeString(tempDir.resolve("key.txt"), "testpassword");
+  }
+
+  private void writeMutableKeystore(final DataDirLayout tempDir) throws Exception {
+    final URL resource = Resources.getResource("testKeystore.json");
+    final Path keystore = ValidatorClientService.getAlterableKeystorePath(tempDir);
+    final Path keystorePassword = ValidatorClientService.getAlterableKeystorePasswordPath(tempDir);
+    Files.createDirectory(tempDir.getValidatorDataDirectory());
+    Files.createDirectory(keystore);
+    Files.createDirectory(keystorePassword);
+    Files.copy(Path.of(resource.toURI()), keystore.resolve("key.json"));
+    Files.writeString(keystorePassword.resolve("key.txt"), "testpassword");
   }
 
   @Test
@@ -467,7 +615,8 @@ class ValidatorLoaderTest {
             slashingProtector,
             publicKeyLoader,
             asyncRunner,
-            metricsSystem);
+            metricsSystem,
+            Optional.empty());
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
 
@@ -493,7 +642,8 @@ class ValidatorLoaderTest {
             slashingProtector,
             publicKeyLoader,
             asyncRunner,
-            metricsSystem);
+            metricsSystem,
+            Optional.empty());
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
 
