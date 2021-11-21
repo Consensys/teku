@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.signers.bls.keystore.KeyStore;
 import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
 import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
@@ -35,6 +37,7 @@ import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 
 public class KeyManager {
 
+  private static final Logger LOG = LogManager.getLogger();
   private final ValidatorLoader validatorLoader;
   private final DataDirLayout dataDir;
   private final ObjectMapper jsonMapper = new JsonProvider().getObjectMapper();
@@ -122,13 +125,16 @@ public class KeyManager {
             postKeyResults.add(executeImport(keystore, password));
           } else {
             postKeyResults.add(PostKeyResult.error("Invalid password."));
+            LOG.warn("Failed to import keystore: Invalid password");
           }
         } catch (JsonProcessingException e) {
           postKeyResults.add(PostKeyResult.error("Invalid keystore."));
+          LOG.warn("Failed to import keystore: Invalid keystore");
         }
       }
     } else {
       postKeyResults.add(PostKeyResult.error("Keystores and passwords quantity must be the same."));
+      LOG.warn("Failed to import keystore: Keystores and passwords quantity must be the same.");
     }
     return postKeyResults;
   }
@@ -153,9 +159,11 @@ public class KeyManager {
         Files.writeString(passwordPath.resolve(validatorFileName + ".txt"), password);
         return PostKeyResult.success();
       } else {
+        LOG.warn("Failed to import keystore: Duplicated keystore.");
         return PostKeyResult.duplicate();
       }
     } catch (IOException e) {
+      LOG.error("Failed to import keystore: Failed to save keystore file.");
       return PostKeyResult.error("Failed to save keystore file.");
     }
   }
