@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.core.signatures.NoOpSigner.NO_OP_SIGNER;
 
+import com.google.common.io.Resources;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -28,8 +29,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-
-import com.google.common.io.Resources;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import tech.pegasys.teku.bls.BLSKeyPair;
@@ -47,10 +46,10 @@ class KeyManagerTest {
   @Test
   void shouldReturnActiveValidatorsList() {
     final KeyManager keyManager = new KeyManager(validatorLoader);
-    List<Validator> validatorsList = generateActiveValidatosList();
+    final List<Validator> validatorsList = generateActiveValidatorsList();
     when(ownedValidators.getActiveValidators()).thenReturn(validatorsList);
     when(validatorLoader.getOwnedValidators()).thenReturn(ownedValidators);
-    List<Validator> activeValidatorList = keyManager.getActiveValidatorKeys();
+    final List<Validator> activeValidatorList = keyManager.getActiveValidatorKeys();
 
     assertThat(activeValidatorList).isEqualTo(validatorsList);
   }
@@ -58,10 +57,10 @@ class KeyManagerTest {
   @Test
   void shouldReturnEmptyKeyList() {
     final KeyManager keyManager = new KeyManager(validatorLoader);
-    List<Validator> validatorsList = Collections.emptyList();
+    final List<Validator> validatorsList = Collections.emptyList();
     when(ownedValidators.getActiveValidators()).thenReturn(validatorsList);
     when(validatorLoader.getOwnedValidators()).thenReturn(ownedValidators);
-    List<Validator> activeValidatorList = keyManager.getActiveValidatorKeys();
+    final List<Validator> activeValidatorList = keyManager.getActiveValidatorKeys();
 
     assertThat(activeValidatorList).isEmpty();
   }
@@ -69,7 +68,7 @@ class KeyManagerTest {
   @Test
   void shouldNotImportValidatorsWithWrongPass() throws URISyntaxException, IOException {
     final List<String> keystoreList = getKeystoresList();
-    List<String> passwordList = getKeystorePasswordList();
+    final List<String> passwordList = getKeystorePasswordList();
     passwordList.set(0, "invalidPass");
     passwordList.set(1, "invalidPass");
 
@@ -86,7 +85,7 @@ class KeyManagerTest {
 
   @Test
   void shouldNotImportValidatorsWithInvalidJson() throws URISyntaxException, IOException {
-    List<String> keystoreList = getKeystoresList();
+    final List<String> keystoreList = getKeystoresList();
     final List<String> passwordList = getKeystorePasswordList();
     keystoreList.set(0, "{invalid:1, fake:\"msg\"}");
     keystoreList.set(1, "{invalid:2, fake:\"msg\"}");
@@ -104,7 +103,7 @@ class KeyManagerTest {
 
   @Test
   void shouldNotImportValidatorsWhenListDoesntMatch() throws URISyntaxException, IOException {
-    List<String> keystoreList = getKeystoresList();
+    final List<String> keystoreList = getKeystoresList();
     final List<String> passwordList = getKeystorePasswordList();
     keystoreList.remove(1);
 
@@ -114,15 +113,15 @@ class KeyManagerTest {
     assertThat(retList.size()).isEqualTo(1);
     assertThat(retList.get(0).getImportStatus()).isEqualTo(ImportStatus.ERROR);
     assertThat(retList.get(0).getMessage().get())
-        .isEqualTo("Quantity of keystores and passwords must be the same.");
+        .isEqualTo("Keystores and passwords quantity must be the same.");
   }
 
-  private List<Validator> generateActiveValidatosList() {
-    BLSKeyPair keyPair1 = BLSTestUtil.randomKeyPair(1);
-    BLSKeyPair keyPair2 = BLSTestUtil.randomKeyPair(2);
-    Validator validator1 =
+  private List<Validator> generateActiveValidatorsList() {
+    final BLSKeyPair keyPair1 = BLSTestUtil.randomKeyPair(1);
+    final BLSKeyPair keyPair2 = BLSTestUtil.randomKeyPair(2);
+    final Validator validator1 =
         new Validator(keyPair1.getPublicKey(), NO_OP_SIGNER, Optional::empty, true);
-    Validator validator2 =
+    final Validator validator2 =
         new Validator(keyPair2.getPublicKey(), NO_OP_SIGNER, Optional::empty, false);
     return Arrays.asList(validator1, validator2);
   }
@@ -135,9 +134,9 @@ class KeyManagerTest {
     final URL resource1 = Resources.getResource("testKeystore.json");
     final URL resource2 = Resources.getResource("pbkdf2TestVector.json");
     String keystore1 =
-            new String(Files.readAllBytes(Path.of(resource1.toURI())), Charset.defaultCharset());
+        new String(Files.readAllBytes(Path.of(resource1.toURI())), Charset.defaultCharset());
     String keystore2 =
-            new String(Files.readAllBytes(Path.of(resource2.toURI())), Charset.defaultCharset());
+        new String(Files.readAllBytes(Path.of(resource2.toURI())), Charset.defaultCharset());
     return new ArrayList<>(Arrays.asList(keystore1, keystore2));
   }
 }

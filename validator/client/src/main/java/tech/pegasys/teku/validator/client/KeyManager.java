@@ -122,8 +122,7 @@ public class KeyManager {
         }
       }
     } else {
-      postKeyResults.add(
-          PostKeyResult.error("Quantity of keystores and passwords must be the same."));
+      postKeyResults.add(PostKeyResult.error("Keystores and passwords quantity must be the same."));
     }
     return postKeyResults;
   }
