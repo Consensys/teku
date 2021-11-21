@@ -20,9 +20,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.signers.bls.keystore.KeyStore;
+import tech.pegasys.signers.bls.keystore.KeyStoreValidationException;
 import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
+import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSSecretKey;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
@@ -103,7 +107,7 @@ public class KeyManager {
   public List<PostKeyResult> importValidators(
       final List<String> keystores, final List<String> passwords, final String slashingProtection) {
 
-    List<PostKeyResult> postKeyResults = new ArrayList<>();
+    final List<PostKeyResult> postKeyResults = new ArrayList<>();
 
     if (keystores.size() == passwords.size()) {
       final Iterator<String> keystoreIterator = keystores.iterator();
@@ -112,13 +116,18 @@ public class KeyManager {
         try {
           final String password = passwordIterator.next();
           final KeyStoreData keystore = getKeystoreDataObject(keystoreIterator.next());
-          if (KeyStore.validatePassword(password, keystore)) {
+          final BLSKeyPair keyPair =
+              new BLSKeyPair(
+                  BLSSecretKey.fromBytes(Bytes32.wrap(KeyStore.decrypt(password, keystore))));
+          if (keystore.getPubkey().equals(keyPair.getPublicKey().toSSZBytes())) {
             postKeyResults.add(executeImport());
           } else {
-            postKeyResults.add(PostKeyResult.error("Invalid password."));
+            postKeyResults.add(PostKeyResult.error("Incorrect public key."));
           }
         } catch (JsonProcessingException e) {
           postKeyResults.add(PostKeyResult.error("Invalid keystore."));
+        } catch (KeyStoreValidationException e) {
+          postKeyResults.add(PostKeyResult.error("Invalid password."));
         }
       }
     } else {
