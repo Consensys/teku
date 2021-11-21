@@ -26,7 +26,6 @@ import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -52,7 +51,6 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel,
       final VoteUpdateChannel voteUpdateChannel,
-      final ProtoArrayStorageChannel protoArrayStorageChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
       final Spec spec) {
@@ -64,7 +62,6 @@ public class StorageBackedRecentChainData extends RecentChainData {
         storageQueryChannel::getHotStateAndBlockSummaryByBlockRoot,
         storageUpdateChannel,
         voteUpdateChannel,
-        protoArrayStorageChannel,
         finalizedCheckpointChannel,
         chainHeadChannel,
         spec);
@@ -81,7 +78,6 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel,
       final VoteUpdateChannel voteUpdateChannel,
-      final ProtoArrayStorageChannel protoArrayStorageChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
       final Spec spec) {
@@ -93,7 +89,6 @@ public class StorageBackedRecentChainData extends RecentChainData {
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,
-            protoArrayStorageChannel,
             finalizedCheckpointChannel,
             chainHeadChannel,
             spec);
@@ -109,7 +104,6 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel,
       final VoteUpdateChannel voteUpdateChannel,
-      final ProtoArrayStorageChannel protoArrayStorageChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
       final Spec spec) {
@@ -121,7 +115,6 @@ public class StorageBackedRecentChainData extends RecentChainData {
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,
-            protoArrayStorageChannel,
             finalizedCheckpointChannel,
             chainHeadChannel,
             spec);
@@ -156,7 +149,6 @@ public class StorageBackedRecentChainData extends RecentChainData {
                   .blockProvider(blockProvider)
                   .stateProvider(stateProvider)
                   .storeConfig(storeConfig)
-                  .protoArrayStorageChannel(protoArrayStorageChannel)
                   .build();
           setStore(store);
           STATUS_LOG.finishInitializingChainData();

@@ -25,7 +25,6 @@ import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.protoarray.StoredBlockMetadata;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
@@ -49,7 +48,6 @@ public class StoreBuilder {
   private Checkpoint justifiedCheckpoint;
   private Checkpoint bestJustifiedCheckpoint;
   private Map<UInt64, VoteTracker> votes;
-  private ProtoArrayStorageChannel protoArrayStorageChannel = ProtoArrayStorageChannel.NO_OP;
 
   private StoreBuilder() {}
 
@@ -114,8 +112,7 @@ public class StoreBuilder {
         bestJustifiedCheckpoint,
         blockInfoByRoot,
         votes,
-        storeConfig,
-        protoArrayStorageChannel);
+        storeConfig);
   }
 
   private void assertValid() {
@@ -217,12 +214,6 @@ public class StoreBuilder {
   public StoreBuilder votes(final Map<UInt64, VoteTracker> votes) {
     checkNotNull(votes);
     this.votes = votes;
-    return this;
-  }
-
-  public StoreBuilder protoArrayStorageChannel(
-      final ProtoArrayStorageChannel protoArrayStorageChannel) {
-    this.protoArrayStorageChannel = protoArrayStorageChannel;
     return this;
   }
 }

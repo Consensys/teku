@@ -21,7 +21,6 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
-import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
@@ -41,7 +40,6 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
       final StoreConfig storeConfig,
       final StorageUpdateChannel storageUpdateChannel,
       final VoteUpdateChannel voteUpdateChannel,
-      final ProtoArrayStorageChannel protoArrayStorageChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
       final Spec spec) {
@@ -53,7 +51,6 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
         StateAndBlockSummaryProvider.NOOP,
         storageUpdateChannel,
         voteUpdateChannel,
-        protoArrayStorageChannel,
         finalizedCheckpointChannel,
         chainHeadChannel,
         spec);
@@ -90,7 +87,6 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
           storeConfig,
           storageUpdateChannel,
           votes -> {},
-          ProtoArrayStorageChannel.NO_OP,
           finalizedCheckpointChannel,
           chainHeadChannel,
           spec);

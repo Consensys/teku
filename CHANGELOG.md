@@ -18,6 +18,10 @@
 For information on changes in released versions of Teku, see the [releases page](https://github.com/ConsenSys/teku/releases).
 
 ## Unreleased Changes
+### Breaking Changes
+- Removed migration code from the old `ProtoArraySnapshot` based storage to the new format.
+   Any node correctly following the Altair chain has already gone through this migration so no users should be affected by this.
+
 ### Additions and Improvements
 - Introduces a new database format for archive nodes that significantly improves response times for queries that require historic state data.
     Existing databases and nodes using the default PRUNE storage mode are unchanged. Archive nodes wishing to take advantage of this will need to perform a full resync.

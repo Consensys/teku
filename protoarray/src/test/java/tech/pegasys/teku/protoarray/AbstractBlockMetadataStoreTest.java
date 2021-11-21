@@ -62,18 +62,16 @@ abstract class AbstractBlockMetadataStoreTest {
     final BlockAndCheckpointEpochs block3 =
         BlockAndCheckpointEpochs.fromBlockAndState(chainBuilder.generateBlockAtSlot(3));
 
-    final BlockMetadataStore updatedStore =
-        store.applyUpdate(
-            List.of(block1, block2, block3), Collections.emptySet(), genesisCheckpoint);
+    store.applyUpdate(List.of(block1, block2, block3), Collections.emptySet(), genesisCheckpoint);
 
     chainBuilder
         .streamBlocksAndStates()
-        .forEach(block -> assertThat(updatedStore.contains(block.getRoot())).isTrue());
+        .forEach(block -> assertThat(store.contains(block.getRoot())).isTrue());
   }
 
   @Test
   void contains_shouldNotContainRemovedBlocks() {
-    BlockMetadataStore store = createBlockMetadataStore(chainBuilder);
+    final BlockMetadataStore store = createBlockMetadataStore(chainBuilder);
     final BlockAndCheckpointEpochs block1 =
         BlockAndCheckpointEpochs.fromBlockAndState(chainBuilder.generateBlockAtSlot(1));
     final BlockAndCheckpointEpochs block2 =
@@ -81,11 +79,10 @@ abstract class AbstractBlockMetadataStoreTest {
     final BlockAndCheckpointEpochs block3 =
         BlockAndCheckpointEpochs.fromBlockAndState(chainBuilder.generateBlockAtSlot(3));
 
-    store =
-        store.applyUpdate(
-            List.of(block1, block2, block3),
-            Set.of(genesis.getRoot(), block1.getRoot()),
-            new Checkpoint(UInt64.ONE, block2.getRoot()));
+    store.applyUpdate(
+        List.of(block1, block2, block3),
+        Set.of(genesis.getRoot(), block1.getRoot()),
+        new Checkpoint(UInt64.ONE, block2.getRoot()));
 
     assertThat(store.contains(genesis.getRoot())).isFalse();
     assertThat(store.contains(block1.getRoot())).isFalse();
@@ -120,15 +117,14 @@ abstract class AbstractBlockMetadataStoreTest {
     chainBuilder.generateBlocksUpToSlot(10);
     forkBuilder.generateBlockAtSlot(7);
     forkBuilder.generateBlocksUpToSlot(10);
-    final BlockMetadataStore store =
-        createBlockMetadataStore(chainBuilder)
-            .applyUpdate(
-                forkBuilder
-                    .streamBlocksAndStates()
-                    .map(BlockAndCheckpointEpochs::fromBlockAndState)
-                    .collect(toList()),
-                Collections.emptySet(),
-                genesisCheckpoint);
+    final BlockMetadataStore store = createBlockMetadataStore(chainBuilder);
+    store.applyUpdate(
+        forkBuilder
+            .streamBlocksAndStates()
+            .map(BlockAndCheckpointEpochs::fromBlockAndState)
+            .collect(toList()),
+        Collections.emptySet(),
+        genesisCheckpoint);
 
     final Set<Bytes32> seenBlocks = new HashSet<>();
 
@@ -169,15 +165,14 @@ abstract class AbstractBlockMetadataStoreTest {
     chainBuilder.generateBlocksUpToSlot(10);
     forkBuilder.generateBlockAtSlot(7);
     forkBuilder.generateBlocksUpToSlot(10);
-    final BlockMetadataStore store =
-        createBlockMetadataStore(chainBuilder)
-            .applyUpdate(
-                forkBuilder
-                    .streamBlocksAndStates()
-                    .map(BlockAndCheckpointEpochs::fromBlockAndState)
-                    .collect(toList()),
-                Collections.emptySet(),
-                genesisCheckpoint);
+    final BlockMetadataStore store = createBlockMetadataStore(chainBuilder);
+    store.applyUpdate(
+        forkBuilder
+            .streamBlocksAndStates()
+            .map(BlockAndCheckpointEpochs::fromBlockAndState)
+            .collect(toList()),
+        Collections.emptySet(),
+        genesisCheckpoint);
 
     verifyHashesInChain(
         store,
