@@ -124,6 +124,11 @@ public class ExternalValidatorSource implements ValidatorSource {
     }
 
     @Override
+    public boolean isReadOnly() {
+      return true;
+    }
+
+    @Override
     public Signer createSigner() {
       return new ExternalSigner(
           spec,

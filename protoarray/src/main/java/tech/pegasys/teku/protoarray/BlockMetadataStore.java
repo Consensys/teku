@@ -35,7 +35,7 @@ public interface BlockMetadataStore {
 
   Optional<Bytes32> executionBlockHash(Bytes32 beaconBlockRoot);
 
-  BlockMetadataStore applyUpdate(
+  void applyUpdate(
       Collection<BlockAndCheckpointEpochs> addedBlocks,
       Set<Bytes32> removedBlocks,
       Checkpoint finalizedCheckpoint);

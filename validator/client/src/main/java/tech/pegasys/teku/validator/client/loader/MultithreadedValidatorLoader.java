@@ -61,7 +61,8 @@ public class MultithreadedValidatorLoader {
                                 new Validator(
                                     provider.getPublicKey(),
                                     provider.createSigner(),
-                                    graffitiProvider);
+                                    graffitiProvider,
+                                    provider.isReadOnly());
                             int loadedValidatorCount = numberOfLoadedKeys.incrementAndGet();
                             if (loadedValidatorCount % 10 == 0) {
                               STATUS_LOG.atLoadedValidatorNumber(

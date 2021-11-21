@@ -62,7 +62,7 @@ class LocalValidatorSourceTest {
   private final KeyStoreFilesLocator keyStoreFilesLocator = mock(KeyStoreFilesLocator.class);
 
   private final LocalValidatorSource validatorSource =
-      new LocalValidatorSource(spec, true, keystoreLocker, keyStoreFilesLocator, asyncRunner);
+      new LocalValidatorSource(spec, true, keystoreLocker, keyStoreFilesLocator, asyncRunner, true);
 
   @Test
   void shouldLoadKeysFromKeyStores(@TempDir final Path tempDir) throws Exception {

@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.storage.client;
 
-import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
@@ -22,7 +21,6 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
@@ -34,8 +32,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
-import tech.pegasys.teku.protoarray.StoredBlockMetadata;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -85,7 +81,6 @@ public class StorageBackedRecentChainDataTest {
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,
-            ProtoArrayStorageChannel.NO_OP,
             finalizedCheckpointChannel,
             chainHeadChannel,
             spec);
@@ -115,80 +110,6 @@ public class StorageBackedRecentChainDataTest {
   }
 
   @Test
-  void storageBackedClient_storeInitializeFromProtoArraySnapshot() throws Exception {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-    final SignedBlockAndState blockAndState =
-        dataStructureUtil.randomSignedBlockAndState(UInt64.ONE);
-    final SignedBeaconBlock block = blockAndState.getBlock();
-    SafeFuture<Optional<StoreBuilder>> storeRequestFuture = new SafeFuture<>();
-    when(storageQueryChannel.onStoreRequest()).thenReturn(storeRequestFuture);
-
-    final StoreConfig storeConfig =
-        StoreConfig.builder().hotStatePersistenceFrequencyInEpochs(5).build();
-    final ProtoArrayStorageChannel protoArrayStorageChannel = mock(ProtoArrayStorageChannel.class);
-    when(protoArrayStorageChannel.getProtoArraySnapshot())
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-
-    final SafeFuture<RecentChainData> client =
-        StorageBackedRecentChainData.create(
-            new StubMetricsSystem(),
-            storeConfig,
-            asyncRunner,
-            storageQueryChannel,
-            storageUpdateChannel,
-            voteUpdateChannel,
-            protoArrayStorageChannel,
-            finalizedCheckpointChannel,
-            chainHeadChannel,
-            spec);
-
-    // We should have posted a request to get the store from storage
-    verify(storageQueryChannel).onStoreRequest();
-
-    // Client shouldn't be initialized yet
-    assertThat(client).isNotDone();
-
-    // Post a store response to complete initialization
-    final AnchorPoint anchorPoint = AnchorPoint.fromInitialBlockAndState(spec, blockAndState);
-
-    final StoreBuilder storeBuilder =
-        StoreBuilder.create()
-            .specProvider(spec)
-            .latestFinalized(anchorPoint)
-            .justifiedCheckpoint(anchorPoint.getCheckpoint())
-            .bestJustifiedCheckpoint(anchorPoint.getCheckpoint())
-            .genesisTime(UInt64.ZERO)
-            .time(UInt64.ZERO)
-            .metricsSystem(new StubMetricsSystem())
-            .votes(emptyMap())
-            .blockInformation(
-                Map.of(
-                    block.getRoot(),
-                    new StoredBlockMetadata(
-                        block.getSlot(),
-                        block.getRoot(),
-                        block.getParentRoot(),
-                        block.getStateRoot(),
-                        block
-                            .getMessage()
-                            .getBody()
-                            .getOptionalExecutionPayload()
-                            .map(ExecutionPayload::getBlockHash),
-                        Optional.empty())));
-    storeRequestFuture.complete(Optional.of(storeBuilder));
-
-    // Block info didn't contain enough information to create protoarray so we need to load via the
-    // snapshot and trigger the migration
-    assertThat(client).isCompleted();
-    verify(protoArrayStorageChannel).getProtoArraySnapshot();
-
-    assertStoreInitialized(client.get());
-    assertStoreIsSet(client.get());
-    final UpdatableStore expectedStore = storeBuilder.storeConfig(storeConfig).build();
-    StoreAssertions.assertStoresMatch(client.get().getStore(), expectedStore);
-  }
-
-  @Test
   public void storageBackedClient_storeInitializeViaNewGenesisState()
       throws ExecutionException, InterruptedException {
     SafeFuture<Optional<StoreBuilder>> storeRequestFuture = new SafeFuture<>();
@@ -204,7 +125,6 @@ public class StorageBackedRecentChainDataTest {
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,
-            ProtoArrayStorageChannel.NO_OP,
             finalizedCheckpointChannel,
             chainHeadChannel,
             spec);
@@ -254,7 +174,6 @@ public class StorageBackedRecentChainDataTest {
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,
-            ProtoArrayStorageChannel.NO_OP,
             finalizedCheckpointChannel,
             chainHeadChannel,
             spec);
@@ -299,7 +218,6 @@ public class StorageBackedRecentChainDataTest {
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,
-            ProtoArrayStorageChannel.NO_OP,
             finalizedCheckpointChannel,
             chainHeadChannel,
             spec);

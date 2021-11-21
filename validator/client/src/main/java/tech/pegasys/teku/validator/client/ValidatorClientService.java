@@ -153,7 +153,10 @@ public class ValidatorClientService extends Service {
         slashingProtector,
         new PublicKeyLoader(),
         asyncRunner,
-        services.getMetricsSystem());
+        services.getMetricsSystem(),
+        config.getValidatorRestApiConfig().isRestApiEnabled()
+            ? Optional.of(services.getDataDirLayout())
+            : Optional.empty());
   }
 
   private void initializeValidators(
@@ -234,6 +237,14 @@ public class ValidatorClientService extends Service {
 
   public static Path getSlashingProtectionPath(final DataDirLayout dataDirLayout) {
     return dataDirLayout.getValidatorDataDirectory().resolve("slashprotection");
+  }
+
+  public static Path getAlterableKeystorePath(final DataDirLayout dataDirLayout) {
+    return dataDirLayout.getValidatorDataDirectory().resolve("alterable-keystores");
+  }
+
+  public static Path getAlterableKeystorePasswordPath(final DataDirLayout dataDirLayout) {
+    return dataDirLayout.getValidatorDataDirectory().resolve("alterable-passwords");
   }
 
   private static void addValidatorCountMetric(

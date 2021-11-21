@@ -33,7 +33,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
-import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -73,7 +72,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   protected final FinalizedCheckpointChannel finalizedCheckpointChannel;
   protected final StorageUpdateChannel storageUpdateChannel;
   protected final VoteUpdateChannel voteUpdateChannel;
-  protected final ProtoArrayStorageChannel protoArrayStorageChannel;
   protected final AsyncRunner asyncRunner;
   protected final MetricsSystem metricsSystem;
   private final ChainHeadChannel chainHeadChannel;
@@ -101,7 +99,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       final StateAndBlockSummaryProvider stateProvider,
       final StorageUpdateChannel storageUpdateChannel,
       final VoteUpdateChannel voteUpdateChannel,
-      final ProtoArrayStorageChannel protoArrayStorageChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
       final Spec spec) {
@@ -113,7 +110,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     this.voteUpdateChannel = voteUpdateChannel;
     this.chainHeadChannel = chainHeadChannel;
     this.storageUpdateChannel = storageUpdateChannel;
-    this.protoArrayStorageChannel = protoArrayStorageChannel;
     this.finalizedCheckpointChannel = finalizedCheckpointChannel;
     this.updateHeadForEmptySlots = storeConfig.updateHeadForEmptySlots();
     reorgCounter =

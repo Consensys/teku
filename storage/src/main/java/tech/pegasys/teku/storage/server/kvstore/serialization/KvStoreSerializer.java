@@ -19,7 +19,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -39,8 +38,6 @@ public interface KvStoreSerializer<T> {
       new DepositsFromBlockEventSerializer();
   KvStoreSerializer<MinGenesisTimeBlockEvent> MIN_GENESIS_TIME_BLOCK_EVENT_SERIALIZER =
       new MinGenesisTimeBlockEventSerializer();
-  KvStoreSerializer<ProtoArraySnapshot> PROTO_ARRAY_SNAPSHOT_SERIALIZER =
-      new ProtoArraySnapshotSerializer();
   KvStoreSerializer<SlotAndBlockRoot> SLOT_AND_BLOCK_ROOT_SERIALIZER =
       new SlotAndBlockRootSerializer();
   KvStoreSerializer<CheckpointEpochs> CHECKPOINT_EPOCHS_SERIALIZER =

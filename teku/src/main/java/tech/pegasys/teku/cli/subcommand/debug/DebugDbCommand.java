@@ -14,10 +14,8 @@
 package tech.pegasys.teku.cli.subcommand.debug;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Map;
 import java.util.Optional;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import picocli.CommandLine;
@@ -34,11 +32,9 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
 import tech.pegasys.teku.infrastructure.async.ScheduledExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.server.Database;
@@ -179,43 +175,6 @@ public class DebugDbCommand implements Runnable {
       return result;
     } finally {
       asyncRunner.shutdown();
-    }
-  }
-
-  @Command(
-      name = "get-forkchoice-snapshot",
-      description = "Get the stored fork choice data",
-      mixinStandardHelpOptions = true,
-      showDefaultValues = true,
-      abbreviateSynopsis = true,
-      versionProvider = PicoCliVersionProvider.class,
-      synopsisHeading = "%n",
-      descriptionHeading = "%nDescription:%n%n",
-      optionListHeading = "%nOptions:%n",
-      footerHeading = "%n",
-      footer = "Teku is licensed under the Apache License 2.0")
-  public int getForkChoiceSnapshot(
-      @Mixin final BeaconNodeDataOptions dataOptions,
-      @Mixin final DataStorageOptions dataStorageOptions,
-      @Mixin final Eth2NetworkOptions eth2NetworkOptions,
-      @Option(
-              names = {"--output", "-o"},
-              description = "File to write output to")
-          final Path outputFile)
-      throws Exception {
-    setConstants(eth2NetworkOptions);
-    try (final Database database =
-        createDatabase(dataOptions, dataStorageOptions, eth2NetworkOptions)) {
-      final Optional<ProtoArraySnapshot> snapshot = database.getProtoArraySnapshot();
-
-      final Map<UInt64, VoteTracker> votes = database.getVotes();
-      final String report = ForkChoiceDataWriter.writeForkChoiceData(snapshot, votes);
-      if (outputFile != null) {
-        Files.writeString(outputFile, report, StandardCharsets.UTF_8);
-      } else {
-        System.out.println(report);
-      }
-      return 0;
     }
   }
 
