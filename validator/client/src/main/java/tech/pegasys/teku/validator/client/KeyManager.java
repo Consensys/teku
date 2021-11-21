@@ -15,15 +15,19 @@ package tech.pegasys.teku.validator.client;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.NotImplementedException;
 import tech.pegasys.signers.bls.keystore.KeyStore;
+import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
 import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysResponse;
@@ -32,10 +36,12 @@ import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 public class KeyManager {
 
   private final ValidatorLoader validatorLoader;
+  private final DataDirLayout dataDir;
   private final ObjectMapper jsonMapper = new JsonProvider().getObjectMapper();
 
-  public KeyManager(final ValidatorLoader validatorLoader) {
+  public KeyManager(final ValidatorLoader validatorLoader, final DataDirLayout dataDir) {
     this.validatorLoader = validatorLoader;
+    this.dataDir = dataDir;
   }
 
   /**
@@ -113,7 +119,7 @@ public class KeyManager {
           final String password = passwordIterator.next();
           final KeyStoreData keystore = getKeystoreDataObject(keystoreIterator.next());
           if (KeyStore.validatePassword(password, keystore)) {
-            postKeyResults.add(executeImport());
+            postKeyResults.add(executeImport(keystore, password));
           } else {
             postKeyResults.add(PostKeyResult.error("Invalid password."));
           }
@@ -122,14 +128,36 @@ public class KeyManager {
         }
       }
     } else {
-      postKeyResults.add(
-          PostKeyResult.error("Quantity of keystores and passwords must be the same."));
+      postKeyResults.add(PostKeyResult.error("Keystores and passwords quantity must be the same."));
     }
     return postKeyResults;
   }
 
-  private PostKeyResult executeImport() {
-    throw new NotImplementedException("executeImport not implemented yet.");
+  private PostKeyResult executeImport(final KeyStoreData keyStoreData, final String password) {
+    final Path keystorePath = ValidatorClientService.getAlterableKeystorePath(dataDir);
+    final Path passwordPath = ValidatorClientService.getAlterableKeystorePasswordPath(dataDir);
+    try {
+      if (!keystorePath.toFile().exists()) {
+        Files.createDirectories(keystorePath);
+      }
+      if (!passwordPath.toFile().exists()) {
+        Files.createDirectories(passwordPath);
+      }
+      final BLSPublicKey validatorPublicKey = BLSPublicKey.fromSSZBytes(keyStoreData.getPubkey());
+      final String validatorFileName =
+          validatorPublicKey.toSSZBytes().toUnprefixedHexString().toLowerCase();
+      if (!validatorLoader.getOwnedValidators().hasValidator(validatorPublicKey)
+          && !keystorePath.resolve(validatorFileName + ".json").toFile().exists()
+          && !passwordPath.resolve(validatorFileName + ".txt").toFile().exists()) {
+        KeyStoreLoader.saveToFile(keystorePath.resolve(validatorFileName + ".json"), keyStoreData);
+        Files.writeString(passwordPath.resolve(validatorFileName + ".txt"), password);
+        return PostKeyResult.success();
+      } else {
+        return PostKeyResult.duplicate();
+      }
+    } catch (IOException e) {
+      return PostKeyResult.error("Failed to save keystore file.");
+    }
   }
 
   private KeyStoreData getKeystoreDataObject(final String keystore) throws JsonProcessingException {
