@@ -25,7 +25,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSecretKey;
-import tech.pegasys.teku.infrastructure.crypto.MessageDigestFactory;
+import tech.pegasys.teku.infrastructure.crypto.BouncyCastleMessageDigestFactory;
 
 public class MockStartValidatorKeyPairFactory {
   private static final BigInteger CURVE_ORDER =
@@ -54,7 +54,7 @@ public class MockStartValidatorKeyPairFactory {
 
   private MessageDigest getSha256Digest() {
     try {
-      return MessageDigestFactory.create("SHA-256");
+      return BouncyCastleMessageDigestFactory.create("SHA-256");
     } catch (NoSuchAlgorithmException e) {
       throw new RuntimeException(e);
     }
