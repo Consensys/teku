@@ -112,7 +112,7 @@ public class KeyManager {
   public List<PostKeyResult> importValidators(
       final List<String> keystores, final List<String> passwords, final String slashingProtection) {
 
-    List<PostKeyResult> postKeyResults = new ArrayList<>();
+    final List<PostKeyResult> postKeyResults = new ArrayList<>();
 
     if (keystores.size() == passwords.size()) {
       final Iterator<String> keystoreIterator = keystores.iterator();

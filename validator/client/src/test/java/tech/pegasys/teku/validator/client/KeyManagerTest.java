@@ -72,16 +72,17 @@ class KeyManagerTest {
     final DataDirLayout dataDir =
         new SeparateServiceDataDirLayout(tempDir, Optional.empty(), Optional.empty());
     final KeyManager keyManager = new KeyManager(validatorLoader, dataDir);
-    List<Validator> validatorsList = Collections.emptyList();
+    final List<Validator> validatorsList = Collections.emptyList();
     when(ownedValidators.getActiveValidators()).thenReturn(validatorsList);
     when(validatorLoader.getOwnedValidators()).thenReturn(ownedValidators);
-    List<Validator> activeValidatorList = keyManager.getActiveValidatorKeys();
+    final List<Validator> activeValidatorList = keyManager.getActiveValidatorKeys();
 
     assertThat(activeValidatorList).isEmpty();
   }
 
   @Test
-  void shouldCreateKeystoreFiles(@TempDir Path tempDir) throws URISyntaxException, IOException {
+  void shouldCreateKeystoreFilesAndImportValidator(@TempDir Path tempDir)
+      throws URISyntaxException, IOException {
     when(validatorLoader.getOwnedValidators()).thenReturn(ownedValidators);
     when(ownedValidators.hasValidator(any())).thenReturn(false);
     final DataDirLayout dataDir =
@@ -101,12 +102,13 @@ class KeyManagerTest {
     assertThat(ValidatorClientService.getAlterableKeystorePath(dataDir)).exists();
     assertThat(ValidatorClientService.getAlterableKeystorePasswordPath(dataDir)).exists();
 
-    final BLSPublicKey validator1 =
+    final BLSPublicKey validatorPublicKey =
         BLSPublicKey.fromSSZBytes(
             Bytes.fromHexString(
                 "0xa057816155ad77931185101128655c0191bd0214c201ca48ed887f6c4c6adf334070efcd75140eada5ac83a92506dd7a"));
 
-    final String validatorFileName = validator1.toSSZBytes().toUnprefixedHexString().toLowerCase();
+    final String validatorFileName =
+        validatorPublicKey.toSSZBytes().toUnprefixedHexString().toLowerCase();
     final Path validatorPath =
         ValidatorClientService.getAlterableKeystorePath(dataDir)
             .resolve(validatorFileName + ".json");
@@ -211,12 +213,13 @@ class KeyManagerTest {
   @Test
   void shouldNotImportValidatorsWithInvalidJson(@TempDir Path tempDir)
       throws URISyntaxException, IOException {
+    when(validatorLoader.getOwnedValidators()).thenReturn(ownedValidators);
+    when(ownedValidators.hasValidator(any())).thenReturn(false);
     final DataDirLayout dataDir =
         new SeparateServiceDataDirLayout(tempDir, Optional.empty(), Optional.empty());
     final List<String> keystoreList = getKeystoresList();
     final List<String> passwordList = getKeystorePasswordList();
     keystoreList.set(0, "{invalid:1, fake:\"msg\"}");
-    keystoreList.set(1, "{invalid:2, fake:\"msg\"}");
 
     final KeyManager keyManager = new KeyManager(validatorLoader, dataDir);
     final List<PostKeyResult> importResult =
@@ -226,8 +229,9 @@ class KeyManagerTest {
     assertThat(importResult.get(0).getImportStatus()).isEqualTo(ImportStatus.ERROR);
     assertThat(importResult.get(0).getMessage().get()).isEqualTo("Invalid keystore.");
 
-    assertThat(importResult.get(1).getImportStatus()).isEqualTo(ImportStatus.ERROR);
-    assertThat(importResult.get(1).getMessage().get()).isEqualTo("Invalid keystore.");
+    assertThat(importResult.get(1).getImportStatus()).isEqualTo(ImportStatus.IMPORTED);
+
+    verify(validatorLoader, times(1)).loadValidators();
   }
 
   @Test
