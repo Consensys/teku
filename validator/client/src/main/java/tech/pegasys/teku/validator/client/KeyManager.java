@@ -157,6 +157,7 @@ public class KeyManager {
           && !passwordPath.resolve(validatorFileName + ".txt").toFile().exists()) {
         KeyStoreLoader.saveToFile(keystorePath.resolve(validatorFileName + ".json"), keyStoreData);
         Files.writeString(passwordPath.resolve(validatorFileName + ".txt"), password);
+        validatorLoader.loadValidators();
         return PostKeyResult.success();
       } else {
         LOG.warn("Failed to import keystore: Duplicated keystore.");

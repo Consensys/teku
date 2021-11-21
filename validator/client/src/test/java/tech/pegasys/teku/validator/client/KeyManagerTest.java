@@ -15,6 +15,8 @@ package tech.pegasys.teku.validator.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.core.signatures.NoOpSigner.NO_OP_SIGNER;
 
@@ -123,6 +125,8 @@ class KeyManagerTest {
     assertThat(postKeyResults.size()).isEqualTo(1);
     assertThat(postKeyResults.get(0).getImportStatus()).isEqualTo(ImportStatus.IMPORTED);
     assertThat(postKeyResults.get(0).getMessage()).isEmpty();
+
+    verify(validatorLoader, times(1)).loadValidators();
   }
 
   @Test
@@ -176,6 +180,8 @@ class KeyManagerTest {
 
     assertThat(postKeyResults.size()).isEqualTo(1);
     assertThat(postKeyResults.get(0).getImportStatus()).isEqualTo(ImportStatus.DUPLICATE);
+
+    verify(validatorLoader, times(1)).loadValidators();
   }
 
   @Test
@@ -198,6 +204,8 @@ class KeyManagerTest {
     assertThat(importResult.get(0).getMessage().get()).isEqualTo("Invalid password.");
 
     assertThat(importResult.get(1).getImportStatus()).isEqualTo(ImportStatus.IMPORTED);
+
+    verify(validatorLoader, times(1)).loadValidators();
   }
 
   @Test
