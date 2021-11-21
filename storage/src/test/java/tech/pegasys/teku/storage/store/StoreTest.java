@@ -15,7 +15,6 @@ package tech.pegasys.teku.storage.store;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.mock;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
 
@@ -29,7 +28,6 @@ import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -66,8 +64,7 @@ class StoreTest extends AbstractStoreTest {
                     genesisCheckpoint,
                     Collections.emptyMap(),
                     Collections.emptyMap(),
-                    StoreConfig.createDefault(),
-                    mock(ProtoArrayStorageChannel.class)))
+                    StoreConfig.createDefault()))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Time must be greater than or equal to genesisTime");
   }

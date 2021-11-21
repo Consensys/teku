@@ -126,7 +126,7 @@ class StoreTransactionUpdatesFactory {
   private Optional<UInt64> blockSlot(final Bytes32 root) {
     return Optional.ofNullable(hotBlockAndStates.get(root))
         .map(SignedBlockAndState::getSlot)
-        .or(() -> baseStore.blockMetadata.blockSlot(root));
+        .or(() -> baseStore.forkChoiceStrategy.blockSlot(root));
   }
 
   private Map<Bytes32, Bytes32> collectFinalizedRoots(
@@ -142,8 +142,8 @@ class StoreTransactionUpdatesFactory {
     }
 
     // Add existing hot blocks that are now finalized
-    if (baseStore.blockMetadata.contains(finalizedChainHeadRoot)) {
-      baseStore.blockMetadata.processHashesInChain(
+    if (baseStore.forkChoiceStrategy.contains(finalizedChainHeadRoot)) {
+      baseStore.forkChoiceStrategy.processHashesInChain(
           finalizedChainHeadRoot,
           (blockRoot, slot, parentRoot) -> childToParent.put(blockRoot, parentRoot));
     }
@@ -180,7 +180,7 @@ class StoreTransactionUpdatesFactory {
 
   private void calculatePrunedHotBlockRoots() {
     final BeaconBlockSummary finalizedBlock = tx.getLatestFinalized().getBlockSummary();
-    baseStore.blockMetadata.processAllInOrder(
+    baseStore.forkChoiceStrategy.processAllInOrder(
         (blockRoot, slot, parentRoot) -> {
           if (shouldPrune(finalizedBlock, blockRoot, slot, parentRoot)) {
             prunedHotBlockRoots.add(blockRoot);

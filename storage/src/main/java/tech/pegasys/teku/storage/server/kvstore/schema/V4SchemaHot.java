@@ -18,7 +18,6 @@ import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSeri
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.CHECKPOINT_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.DEPOSITS_FROM_BLOCK_EVENT_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.MIN_GENESIS_TIME_BLOCK_EVENT_SERIALIZER;
-import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.PROTO_ARRAY_SNAPSHOT_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.SLOT_AND_BLOCK_ROOT_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.UINT64_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.VOTES_SERIALIZER;
@@ -27,7 +26,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -64,8 +62,7 @@ public class V4SchemaHot implements SchemaHot {
   private final KvStoreVariable<BeaconState> latestFinalizedState;
   private static final KvStoreVariable<MinGenesisTimeBlockEvent> MIN_GENESIS_TIME_BLOCK =
       KvStoreVariable.create(6, MIN_GENESIS_TIME_BLOCK_EVENT_SERIALIZER);
-  private static final KvStoreVariable<ProtoArraySnapshot> PROTO_ARRAY_SNAPSHOT =
-      KvStoreVariable.create(7, PROTO_ARRAY_SNAPSHOT_SERIALIZER);
+  // 7 was the protoarray snapshot variable but is no longer used.
   private static final KvStoreVariable<Checkpoint> WEAK_SUBJECTIVITY_CHECKPOINT =
       KvStoreVariable.create(8, CHECKPOINT_SERIALIZER);
   private static final KvStoreVariable<Checkpoint> ANCHOR_CHECKPOINT =
@@ -146,11 +143,6 @@ public class V4SchemaHot implements SchemaHot {
   @Override
   public KvStoreVariable<MinGenesisTimeBlockEvent> getVariableMinGenesisTimeBlock() {
     return MIN_GENESIS_TIME_BLOCK;
-  }
-
-  @Override
-  public KvStoreVariable<ProtoArraySnapshot> getVariableProtoArraySnapshot() {
-    return PROTO_ARRAY_SNAPSHOT;
   }
 
   @Override
