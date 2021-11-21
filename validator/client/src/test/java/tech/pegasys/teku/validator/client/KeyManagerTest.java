@@ -73,14 +73,15 @@ class KeyManagerTest {
     passwordList.set(1, "invalidPass");
 
     final KeyManager keyManager = new KeyManager(validatorLoader);
-    final List<PostKeyResult> retList = keyManager.importValidators(keystoreList, passwordList, "");
+    final List<PostKeyResult> importResult =
+        keyManager.importValidators(keystoreList, passwordList, "");
 
-    assertThat(retList.size()).isEqualTo(2);
-    assertThat(retList.get(0).getImportStatus()).isEqualTo(ImportStatus.ERROR);
-    assertThat(retList.get(0).getMessage().get()).isEqualTo("Invalid password.");
+    assertThat(importResult.size()).isEqualTo(2);
+    assertThat(importResult.get(0).getImportStatus()).isEqualTo(ImportStatus.ERROR);
+    assertThat(importResult.get(0).getMessage().get()).isEqualTo("Invalid password.");
 
-    assertThat(retList.get(1).getImportStatus()).isEqualTo(ImportStatus.ERROR);
-    assertThat(retList.get(1).getMessage().get()).isEqualTo("Invalid password.");
+    assertThat(importResult.get(1).getImportStatus()).isEqualTo(ImportStatus.ERROR);
+    assertThat(importResult.get(1).getMessage().get()).isEqualTo("Invalid password.");
   }
 
   @Test
@@ -91,14 +92,15 @@ class KeyManagerTest {
     keystoreList.set(1, "{invalid:2, fake:\"msg\"}");
 
     final KeyManager keyManager = new KeyManager(validatorLoader);
-    final List<PostKeyResult> retList = keyManager.importValidators(keystoreList, passwordList, "");
+    final List<PostKeyResult> importResult =
+        keyManager.importValidators(keystoreList, passwordList, "");
 
-    assertThat(retList.size()).isEqualTo(2);
-    assertThat(retList.get(0).getImportStatus()).isEqualTo(ImportStatus.ERROR);
-    assertThat(retList.get(0).getMessage().get()).isEqualTo("Invalid keystore.");
+    assertThat(importResult.size()).isEqualTo(2);
+    assertThat(importResult.get(0).getImportStatus()).isEqualTo(ImportStatus.ERROR);
+    assertThat(importResult.get(0).getMessage().get()).isEqualTo("Invalid keystore.");
 
-    assertThat(retList.get(1).getImportStatus()).isEqualTo(ImportStatus.ERROR);
-    assertThat(retList.get(1).getMessage().get()).isEqualTo("Invalid keystore.");
+    assertThat(importResult.get(1).getImportStatus()).isEqualTo(ImportStatus.ERROR);
+    assertThat(importResult.get(1).getMessage().get()).isEqualTo("Invalid keystore.");
   }
 
   @Test
@@ -108,11 +110,12 @@ class KeyManagerTest {
     keystoreList.remove(1);
 
     final KeyManager keyManager = new KeyManager(validatorLoader);
-    final List<PostKeyResult> retList = keyManager.importValidators(keystoreList, passwordList, "");
+    final List<PostKeyResult> importResult =
+        keyManager.importValidators(keystoreList, passwordList, "");
 
-    assertThat(retList.size()).isEqualTo(1);
-    assertThat(retList.get(0).getImportStatus()).isEqualTo(ImportStatus.ERROR);
-    assertThat(retList.get(0).getMessage().get())
+    assertThat(importResult.size()).isEqualTo(1);
+    assertThat(importResult.get(0).getImportStatus()).isEqualTo(ImportStatus.ERROR);
+    assertThat(importResult.get(0).getMessage().get())
         .isEqualTo("Keystores and passwords quantity must be the same.");
   }
 
