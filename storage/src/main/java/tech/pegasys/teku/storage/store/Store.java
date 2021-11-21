@@ -137,10 +137,7 @@ class Store implements UpdatableStore {
         votes.keySet().stream().max(Comparator.naturalOrder()).orElse(UInt64.ZERO);
     this.votes =
         new VoteTracker[this.highestVotedValidatorIndex.intValue() + VOTE_TRACKER_SPARE_CAPACITY];
-    votes.forEach(
-        (key, value) -> {
-          this.votes[key.intValue()] = value;
-        });
+    votes.forEach((key, value) -> this.votes[key.intValue()] = value);
 
     // Track latest finalized block
     this.finalizedAnchor = finalizedAnchor;
@@ -238,6 +235,7 @@ class Store implements UpdatableStore {
           block.getStateRoot(),
           block.getCheckpointEpochs().get().getJustifiedEpoch(),
           block.getCheckpointEpochs().get().getFinalizedEpoch(),
+          block.getExecutionBlockHash().orElse(Bytes32.ZERO),
           spec.isBlockProcessorOptimistic(block.getBlockSlot()));
     }
     return protoArray;

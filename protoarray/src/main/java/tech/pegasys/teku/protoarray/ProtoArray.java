@@ -116,6 +116,7 @@ public class ProtoArray {
       Bytes32 stateRoot,
       UInt64 justifiedEpoch,
       UInt64 finalizedEpoch,
+      Bytes32 executionBlockHash,
       boolean optimisticallyProcessed) {
     if (indices.contains(blockRoot)) {
       return;
@@ -132,6 +133,7 @@ public class ProtoArray {
             indices.get(parentRoot),
             justifiedEpoch,
             finalizedEpoch,
+            executionBlockHash,
             UInt64.ZERO,
             Optional.empty(),
             Optional.empty(),

@@ -18,6 +18,7 @@ import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 
 public class BlockAndCheckpointEpochs implements BeaconBlockSummary {
   private final SignedBeaconBlock block;
@@ -81,6 +82,14 @@ public class BlockAndCheckpointEpochs implements BeaconBlockSummary {
   @Override
   public Optional<SignedBeaconBlock> getSignedBeaconBlock() {
     return Optional.of(block);
+  }
+
+  public Optional<Bytes32> getExecutionBlockHash() {
+    return block
+        .getMessage()
+        .getBody()
+        .getOptionalExecutionPayload()
+        .map(ExecutionPayload::getBlockHash);
   }
 
   @Override
