@@ -33,7 +33,9 @@ public interface BlockMetadataStore {
 
   Optional<UInt64> blockSlot(Bytes32 blockRoot);
 
-  BlockMetadataStore applyUpdate(
+  Optional<Bytes32> executionBlockHash(Bytes32 beaconBlockRoot);
+
+  void applyUpdate(
       Collection<BlockAndCheckpointEpochs> addedBlocks,
       Set<Bytes32> removedBlocks,
       Checkpoint finalizedCheckpoint);

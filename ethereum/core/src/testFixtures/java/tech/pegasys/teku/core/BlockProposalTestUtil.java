@@ -13,31 +13,41 @@
 
 package tech.pegasys.teku.core;
 
+import java.util.List;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import org.apache.tuweni.ssz.SSZ;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.BeaconStateMerge;
 import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
+import tech.pegasys.teku.spec.logic.versions.merge.helpers.MiscHelpersMerge;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.ssz.type.Bytes20;
 
 public class BlockProposalTestUtil {
   private final Spec spec;
@@ -59,7 +69,8 @@ public class BlockProposalTestUtil {
       final SszList<Attestation> attestations,
       final SszList<ProposerSlashing> slashings,
       final SszList<Deposit> deposits,
-      final SszList<SignedVoluntaryExit> exits)
+      final SszList<SignedVoluntaryExit> exits,
+      final Optional<List<Bytes>> transactions)
       throws StateTransitionException, EpochProcessingException, SlotProcessingException {
 
     final UInt64 newEpoch = spec.computeEpochAtSlot(newSlot);
@@ -86,9 +97,7 @@ public class BlockProposalTestUtil {
                     .syncAggregate(
                         () -> dataStructureUtil.emptySyncAggregateIfRequiredByState(blockSlotState))
                     .executionPayload(
-                        () ->
-                            dataStructureUtil.emptyExecutionPayloadIfRequiredByState(
-                                blockSlotState)));
+                        () -> createExecutionPayload(newSlot, state, newEpoch, transactions)));
 
     // Sign block and set block signature
     final BeaconBlock block = newBlockAndState.getBlock();
@@ -96,6 +105,35 @@ public class BlockProposalTestUtil {
 
     final SignedBeaconBlock signedBlock = SignedBeaconBlock.create(spec, block, blockSignature);
     return new SignedBlockAndState(signedBlock, newBlockAndState.getState());
+  }
+
+  private ExecutionPayload createExecutionPayload(
+      final UInt64 newSlot,
+      final BeaconState state,
+      final UInt64 newEpoch,
+      final Optional<List<Bytes>> transactions) {
+    final SpecVersion specVersion = spec.atSlot(newSlot);
+    final ExecutionPayloadSchema schema =
+        SchemaDefinitionsMerge.required(specVersion.getSchemaDefinitions())
+            .getExecutionPayloadSchema();
+    if (transactions.isEmpty()) {
+      return schema.getDefault();
+    }
+    return schema.create(
+        BeaconStateMerge.required(state).getLatestExecutionPayloadHeader().getBlockHash(),
+        Bytes20.ZERO,
+        dataStructureUtil.randomBytes32(),
+        dataStructureUtil.randomBytes32(),
+        dataStructureUtil.randomBytes256(),
+        specVersion.beaconStateAccessors().getRandaoMix(state, newEpoch),
+        newSlot,
+        UInt64.valueOf(30_000_000L),
+        UInt64.valueOf(30_000_000L),
+        ((MiscHelpersMerge) specVersion.miscHelpers()).computeTimestampAtSlot(state, newSlot),
+        dataStructureUtil.randomBytes32(),
+        UInt256.ONE,
+        dataStructureUtil.randomBytes32(),
+        transactions.get());
   }
 
   public SignedBlockAndState createBlock(
@@ -106,7 +144,8 @@ public class BlockProposalTestUtil {
       final Optional<SszList<Attestation>> attestations,
       final Optional<SszList<Deposit>> deposits,
       final Optional<SszList<SignedVoluntaryExit>> exits,
-      final Optional<Eth1Data> eth1Data)
+      final Optional<Eth1Data> eth1Data,
+      final Optional<List<Bytes>> transactions)
       throws StateTransitionException, EpochProcessingException, SlotProcessingException {
     final UInt64 newEpoch = spec.computeEpochAtSlot(newSlot);
     return createNewBlock(
@@ -118,7 +157,8 @@ public class BlockProposalTestUtil {
         attestations.orElse(blockBodyLists.createAttestations()),
         blockBodyLists.createProposerSlashings(),
         deposits.orElse(blockBodyLists.createDeposits()),
-        exits.orElse(blockBodyLists.createVoluntaryExits()));
+        exits.orElse(blockBodyLists.createVoluntaryExits()),
+        transactions);
   }
 
   private Eth1Data get_eth1_data_stub(BeaconState state, UInt64 current_epoch) {

@@ -54,7 +54,7 @@ public class MockStartValidatorKeyPairFactory {
 
   private MessageDigest getSha256Digest() {
     try {
-      return BouncyCastleMessageDigestFactory.create("sha256");
+      return BouncyCastleMessageDigestFactory.create("SHA-256");
     } catch (NoSuchAlgorithmException e) {
       throw new RuntimeException(e);
     }

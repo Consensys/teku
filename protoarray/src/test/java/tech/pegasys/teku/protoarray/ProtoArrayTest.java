@@ -484,6 +484,7 @@ class ProtoArrayTest {
         dataStructureUtil.randomBytes32(),
         GENESIS_CHECKPOINT.getEpoch(),
         GENESIS_CHECKPOINT.getEpoch(),
+        Bytes32.ZERO,
         optimisticallyProcessed);
   }
 

@@ -88,6 +88,12 @@ public class StateAndBlockSummary implements BeaconBlockSummary {
     return blockSummary.getRoot();
   }
 
+  public Optional<Bytes32> getExecutionBlockHash() {
+    return state
+        .toVersionMerge()
+        .map(state -> state.getLatestExecutionPayloadHeader().getBlockHash());
+  }
+
   @Override
   public Optional<BeaconBlock> getBeaconBlock() {
     return blockSummary.getBeaconBlock();
