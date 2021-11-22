@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -132,14 +133,19 @@ public class BlockOperationSelectorFactory {
                 return forkChoiceNotifier
                     .getPayloadId(parentRoot, currentSlot)
                     .thenApply(
-                        maybePayloadId ->
-                            maybePayloadId.orElseThrow(
-                                () ->
-                                    new IllegalStateException(
-                                        "A payloadId was expected. Cannot build block.")))
-                    .thenApply(
-                        payloadId ->
-                            executionEngineChannel.getPayload(payloadId, currentSlot).join())
+                        maybePayloadId -> {
+                          if (maybePayloadId.isEmpty()) {
+                            // TTD not reached
+                            return SchemaDefinitionsMerge.required(
+                                    spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions())
+                                .getExecutionPayloadSchema()
+                                .getDefault();
+                          } else {
+                            return executionEngineChannel
+                                .getPayload(maybePayloadId.get(), currentSlot)
+                                .join();
+                          }
+                        })
                     .join();
               });
     };
