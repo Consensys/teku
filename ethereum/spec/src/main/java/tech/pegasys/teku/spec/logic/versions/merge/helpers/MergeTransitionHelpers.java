@@ -17,6 +17,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.config.SpecConfigMerge;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -96,5 +97,33 @@ public class MergeTransitionHelpers {
 
   private boolean isBelowTotalDifficulty(final PowBlock powBlock) {
     return powBlock.getTotalDifficulty().compareTo(specConfig.getTerminalTotalDifficulty()) < 0;
+  }
+
+  /* block proposal helpers */
+
+  public SafeFuture<Optional<PowBlock>> getTerminalPowBlock(
+      final ExecutionEngineChannel executionEngine) {
+    if (!specConfig.getTerminalBlockHash().isZero()) {
+      return executionEngine.getPowBlock(specConfig.getTerminalBlockHash());
+    } else {
+      return SafeFuture.completedFuture(
+          getPowBlockAtTerminalTotalDifficulty(
+              executionEngine.getPowChainHead().join(),
+              specConfig.getTerminalTotalDifficulty(),
+              executionEngine));
+    }
+  }
+
+  private Optional<PowBlock> getPowBlockAtTerminalTotalDifficulty(
+      final PowBlock head,
+      final UInt256 totalDifficulty,
+      final ExecutionEngineChannel executionEngine) {
+    PowBlock block = head;
+    Optional<PowBlock> parent = Optional.empty();
+    while (block.getTotalDifficulty().compareTo(totalDifficulty) >= 0) {
+      parent = Optional.of(block);
+      block = executionEngine.getPowBlock(block.getParentHash()).join().orElseThrow();
+    }
+    return parent;
   }
 }

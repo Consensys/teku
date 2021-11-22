@@ -27,14 +27,18 @@ import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigMerge;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.operations.versions.merge.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.spec.executionengine.PayloadAttributes;
+import tech.pegasys.teku.spec.logic.versions.merge.helpers.MergeTransitionHelpers;
+import tech.pegasys.teku.spec.logic.versions.merge.helpers.MiscHelpersMerge;
 import tech.pegasys.teku.ssz.type.Bytes20;
 import tech.pegasys.teku.ssz.type.Bytes8;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -269,6 +273,7 @@ public class ForkChoiceNotifier {
   private SafeFuture<Optional<PayloadAttributes>> calculatePayloadAttributes(
       final UInt64 blockSlot) {
     eventThread.checkOnEventThread();
+
     if (forkChoiceState.isEmpty()) {
       // No known fork choice state so no point calculating payload attributes
       return SafeFuture.completedFuture(Optional.empty());
@@ -280,6 +285,36 @@ public class ForkChoiceNotifier {
     return getStateInEpoch(epoch)
         .thenApplyAsync(
             maybeState -> calculatePayloadAttributes(blockSlot, epoch, maybeState), eventThread);
+  }
+
+  private Optional<Bytes32> getExecutionPayloadHeadFromPow(UInt64 slot) {
+    MiscHelpersMerge miscHelpers = ((MiscHelpersMerge) spec.atSlot(slot).miscHelpers());
+
+    return recentChainData
+        .getBestState()
+        .flatMap(
+            state -> {
+              SpecConfigMerge specConfig =
+                  SpecConfigMerge.required(spec.getSpecConfig(spec.getCurrentEpoch(state)));
+
+              if (!miscHelpers.isMergeComplete(state)) {
+                MergeTransitionHelpers mergeTransitionHelpers =
+                    spec.atSlot(slot).getMergeTransitionHelpers().orElseThrow();
+                final boolean isTerminalBlockHashSet = !specConfig.getTerminalBlockHash().isZero();
+                final boolean isActivationEpochReached =
+                    miscHelpers
+                        .computeEpochAtSlot(slot)
+                        .isGreaterThanOrEqualTo(specConfig.getTerminalBlockHashActivationEpoch());
+                if (isTerminalBlockHashSet && !isActivationEpochReached) return Optional.empty();
+
+                Optional<PowBlock> terminalPowBlock =
+                    mergeTransitionHelpers.getTerminalPowBlock(executionEngineChannel).join();
+
+                return terminalPowBlock.map(PowBlock::getBlockHash);
+              } else {
+                return Optional.empty();
+              }
+            });
   }
 
   private Optional<PayloadAttributes> calculatePayloadAttributes(
