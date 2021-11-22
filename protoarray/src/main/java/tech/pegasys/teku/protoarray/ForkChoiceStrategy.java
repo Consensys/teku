@@ -41,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
+import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
 
 public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoiceStrategy {
   private static final Logger LOG = LogManager.getLogger();
@@ -159,6 +160,28 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     } catch (Throwable t) {
       LOG.trace("Failed to get chain heads", t);
       return Collections.emptyMap();
+    } finally {
+      protoArrayLock.readLock().unlock();
+    }
+  }
+
+  public ForkChoiceState getForkChoiceState(
+      final Checkpoint justifiedCheckpoint, final Checkpoint finalizedCheckpoint) {
+    protoArrayLock.readLock().lock();
+    try {
+      final ProtoNode headNode =
+          protoArray.findOptimisticHead(
+              justifiedCheckpoint.getRoot(),
+              justifiedCheckpoint.getEpoch(),
+              finalizedCheckpoint.getEpoch());
+      final Bytes32 headExecutionBlockHash = headNode.getExecutionBlockHash();
+      final Bytes32 finalizedExecutionHash =
+          protoArray
+              .getProtoNode(finalizedCheckpoint.getRoot())
+              .map(ProtoNode::getExecutionBlockHash)
+              .orElse(Bytes32.ZERO);
+      return new ForkChoiceState(
+          headExecutionBlockHash, headExecutionBlockHash, finalizedExecutionHash);
     } finally {
       protoArrayLock.readLock().unlock();
     }

@@ -15,6 +15,8 @@ package tech.pegasys.teku.statetransition.forkchoice;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
@@ -31,6 +33,7 @@ import tech.pegasys.teku.core.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
@@ -41,7 +44,8 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
-import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
+import tech.pegasys.teku.spec.executionengine.StubExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel.ReorgEvent;
@@ -52,7 +56,7 @@ import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 class ForkChoiceTest {
-  private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private final Spec spec = TestSpecFactory.createMinimalMerge();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final StorageSystem storageSystem =
       InMemoryStorageSystemBuilder.create()
@@ -64,7 +68,10 @@ class ForkChoiceTest {
   private final SignedBlockAndState genesis = chainBuilder.generateGenesis();
   private final RecentChainData recentChainData = storageSystem.recentChainData();
 
-  private ForkChoice forkChoice = ForkChoice.create(spec, new InlineEventThread(), recentChainData);
+  private final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
+  private final StubExecutionEngineChannel executionEngine = new StubExecutionEngineChannel(spec);
+  private ForkChoice forkChoice =
+      ForkChoice.create(spec, new InlineEventThread(), recentChainData, forkChoiceNotifier, false);
 
   @BeforeEach
   public void setup() {
@@ -79,10 +86,12 @@ class ForkChoiceTest {
   void shouldTriggerReorgWhenEmptyHeadSlotFilled() {
     // Run fork choice with an empty slot 1
     processHead(ONE);
+    assertThat(recentChainData.getBestBlockRoot()).contains(genesis.getRoot());
 
     // Then rerun with a filled slot 1
     final SignedBlockAndState slot1Block = storageSystem.chainUpdater().advanceChain(ONE);
     processHead(ONE);
+    assertThat(recentChainData.getBestBlockRoot()).contains(slot1Block.getRoot());
 
     final List<ReorgEvent> reorgEvents = storageSystem.reorgEventChannel().getReorgEvents();
     assertThat(reorgEvents).hasSize(1);
@@ -94,7 +103,7 @@ class ForkChoiceTest {
   void onBlock_shouldImmediatelyMakeChildOfCurrentHeadTheNewHead() {
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
     final SafeFuture<BlockImportResult> importResult =
-        forkChoice.onBlock(blockAndState.getBlock(), ExecutionEngineChannel.NOOP);
+        forkChoice.onBlock(blockAndState.getBlock(), executionEngine);
     assertBlockImportedSuccessfully(importResult);
 
     assertThat(recentChainData.getHeadBlock()).contains(blockAndState.getBlock());
@@ -109,7 +118,7 @@ class ForkChoiceTest {
 
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
     final SafeFuture<BlockImportResult> importResult =
-        forkChoice.onBlock(blockAndState.getBlock(), ExecutionEngineChannel.NOOP);
+        forkChoice.onBlock(blockAndState.getBlock(), executionEngine);
     assertBlockImportedSuccessfully(importResult);
 
     assertThat(recentChainData.getHeadBlock()).contains(blockAndState.getBlock());
@@ -127,7 +136,8 @@ class ForkChoiceTest {
 
   @Test
   void onBlock_shouldReorgWhenProposerWeightingMakesForkBestChain() {
-    forkChoice = ForkChoice.create(spec, new InlineEventThread(), recentChainData, true);
+    forkChoice =
+        ForkChoice.create(spec, new InlineEventThread(), recentChainData, forkChoiceNotifier, true);
 
     final ChainBuilder chainB = chainBuilder.fork();
     final SignedBlockAndState chainBBlock1 =
@@ -308,6 +318,39 @@ class ForkChoiceTest {
     assertThat(recentChainData.getBestBlockRoot()).contains(epoch4Block.getRoot());
   }
 
+  @Test
+  void onBlock_shouldSendForkChoiceUpdatedNotification() {
+    final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
+    final SafeFuture<BlockImportResult> importResult =
+        forkChoice.onBlock(blockAndState.getBlock(), executionEngine);
+    assertBlockImportedSuccessfully(importResult);
+
+    assertForkChoiceUpdateNotification(blockAndState);
+  }
+
+  @Test
+  void applyHead_shouldSendForkChoiceUpdatedNotification() {
+    final SignedBlockAndState blockAndState = storageSystem.chainUpdater().advanceChainUntil(1);
+
+    processHead(ONE);
+
+    assertForkChoiceUpdateNotification(blockAndState);
+  }
+
+  private void assertForkChoiceUpdateNotification(final SignedBlockAndState blockAndState) {
+    final ForkChoiceStrategy forkChoiceStrategy =
+        recentChainData.getForkChoiceStrategy().orElseThrow();
+    final Bytes32 headExecutionHash =
+        forkChoiceStrategy.executionBlockHash(blockAndState.getRoot()).orElseThrow();
+    final Bytes32 finalizedExecutionHash =
+        forkChoiceStrategy
+            .executionBlockHash(recentChainData.getFinalizedCheckpoint().orElseThrow().getRoot())
+            .orElseThrow();
+    verify(forkChoiceNotifier)
+        .onForkChoiceUpdated(
+            new ForkChoiceState(headExecutionHash, headExecutionHash, finalizedExecutionHash));
+  }
+
   private void justifyEpoch(final ChainUpdater chainUpdater, final long epoch) {
     final UInt64 nextEpochStartSlot = spec.computeStartSlotAtEpoch(UInt64.valueOf(epoch + 1));
     // Advance chain to an epoch we can actually justify
@@ -408,7 +451,7 @@ class ForkChoiceTest {
 
   private void importBlock(final SignedBlockAndState block) {
     final SafeFuture<BlockImportResult> result =
-        forkChoice.onBlock(block.getBlock(), ExecutionEngineChannel.NOOP);
+        forkChoice.onBlock(block.getBlock(), executionEngine);
     assertBlockImportedSuccessfully(result);
   }
 

@@ -27,11 +27,7 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.Arrays;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
@@ -43,15 +39,17 @@ import tech.pegasys.teku.provider.JsonProvider;
 
 public class PostPrepareBeaconProposer extends AbstractHandler implements Handler {
   public static final String ROUTE = "/eth/v1/validator/prepare_beacon_proposer";
-  private static final Logger LOG = LogManager.getLogger();
+
+  private final ValidatorDataProvider validatorDataProvider;
 
   public PostPrepareBeaconProposer(final DataProvider provider, final JsonProvider jsonProvider) {
     this(provider.getValidatorDataProvider(), jsonProvider);
   }
 
   public PostPrepareBeaconProposer(
-      final ValidatorDataProvider provider, final JsonProvider jsonProvider) {
+      final ValidatorDataProvider validatorDataProvider, final JsonProvider jsonProvider) {
     super(jsonProvider);
+    this.validatorDataProvider = validatorDataProvider;
   }
 
   @OpenApi(
@@ -78,13 +76,7 @@ public class PostPrepareBeaconProposer extends AbstractHandler implements Handle
       final BeaconPreparableProposer[] request =
           parseRequestBody(ctx.body(), BeaconPreparableProposer[].class);
 
-      LOG.trace(
-          "received: {}",
-          (Supplier<String>)
-              () ->
-                  Arrays.stream(request)
-                      .map(BeaconPreparableProposer::toString)
-                      .collect(Collectors.joining(",")));
+      validatorDataProvider.prepareBeaconProposer(List.of(request));
 
       ctx.status(SC_OK);
     } catch (final IllegalArgumentException e) {

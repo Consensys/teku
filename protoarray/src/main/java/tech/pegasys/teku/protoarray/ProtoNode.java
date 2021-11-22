@@ -189,7 +189,8 @@ public class ProtoNode {
         && Objects.equal(getWeight(), protoNode.getWeight())
         && Objects.equal(getParentIndex(), protoNode.getParentIndex())
         && Objects.equal(getBestChildIndex(), protoNode.getBestChildIndex())
-        && Objects.equal(getBestDescendantIndex(), protoNode.getBestDescendantIndex());
+        && Objects.equal(getBestDescendantIndex(), protoNode.getBestDescendantIndex())
+        && validationStatus == protoNode.validationStatus;
   }
 
   @Override
@@ -204,7 +205,8 @@ public class ProtoNode {
         getWeight(),
         getParentIndex(),
         getBestChildIndex(),
-        getBestDescendantIndex());
+        getBestDescendantIndex(),
+        validationStatus);
   }
 
   @Override
@@ -220,6 +222,7 @@ public class ProtoNode {
         .add("parentIndex", parentIndex)
         .add("bestChildIndex", bestChildIndex)
         .add("bestDescendantIndex", bestDescendantIndex)
+        .add("validationStatus", validationStatus)
         .toString();
   }
 }

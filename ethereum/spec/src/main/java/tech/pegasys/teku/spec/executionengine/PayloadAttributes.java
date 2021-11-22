@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.executionengine;
 
 import com.google.common.base.MoreObjects;
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.type.Bytes20;
@@ -39,6 +40,25 @@ public class PayloadAttributes {
 
   public Bytes20 getFeeRecipient() {
     return feeRecipient;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final PayloadAttributes that = (PayloadAttributes) o;
+    return Objects.equals(timestamp, that.timestamp)
+        && Objects.equals(random, that.random)
+        && Objects.equals(feeRecipient, that.feeRecipient);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(timestamp, random, feeRecipient);
   }
 
   @Override

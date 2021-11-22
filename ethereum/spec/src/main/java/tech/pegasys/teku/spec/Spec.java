@@ -292,6 +292,10 @@ public class Spec {
     return atSlot(slot).miscHelpers().computeEpochAtSlot(slot);
   }
 
+  public UInt64 computeTimeAtSlot(BeaconState state, UInt64 slot) {
+    return atSlot(slot).miscHelpers().computeTimeAtSlot(state, slot);
+  }
+
   public Bytes computeSigningRoot(BeaconBlock block, Bytes32 domain) {
     return atBlock(block).miscHelpers().computeSigningRoot(block, domain);
   }
@@ -326,6 +330,10 @@ public class Spec {
     return atEpoch(epoch)
         .beaconStateAccessors()
         .getDomain(domainType, epoch, fork, genesisValidatorsRoot);
+  }
+
+  public Bytes32 getRandaoMix(final BeaconState state, final UInt64 epoch) {
+    return atEpoch(epoch).beaconStateAccessors().getRandaoMix(state, epoch);
   }
 
   public boolean verifyProposerSlashingSignature(

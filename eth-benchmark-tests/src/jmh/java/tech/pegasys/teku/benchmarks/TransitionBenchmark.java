@@ -43,6 +43,7 @@ import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
@@ -87,7 +88,9 @@ public abstract class TransitionBenchmark {
     spec = TestSpecFactory.createMainnetPhase0();
     wsValidator = WeakSubjectivityFactory.lenientValidator();
     recentChainData = MemoryOnlyRecentChainData.create(spec);
-    ForkChoice forkChoice = ForkChoice.create(spec, new InlineEventThread(), recentChainData);
+    ForkChoice forkChoice =
+        ForkChoice.create(
+            spec, new InlineEventThread(), recentChainData, mock(ForkChoiceNotifier.class));
     localChain = BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);
     localChain.initializeStorage();
 
