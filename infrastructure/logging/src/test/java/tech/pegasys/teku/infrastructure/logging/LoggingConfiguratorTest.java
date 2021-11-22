@@ -28,7 +28,7 @@ public class LoggingConfiguratorTest {
   public static final String ENDL = System.lineSeparator();
 
   public static final String CTRL_STRING = "a\u0001b\u001fc\u007fd";
-  public static final String STRIPPED_COLOR_STRING = "a[30mb[31mc[37md\n";
+  public static final String STRIPPED_COLOR_STRING = "a[30mb[31mc[37md" + ENDL;
   private WriterAppender appender;
   private final CharArrayWriter outContent = new CharArrayWriter();
 
