@@ -56,6 +56,8 @@ public class ForkChoiceNotifier {
   private Optional<ForkChoiceState> lastSentForkChoiceState = Optional.empty();
   private Optional<PayloadAttributes> lastSentPayloadAttributes = Optional.empty();
   private Optional<Bytes8> lastPayloadId = Optional.empty();
+  private Optional<Bytes32> lastPayloadIdBeaconBlockRoot = Optional.empty();
+  private Optional<UInt64> lastPayloadIdSlot = Optional.empty();
 
   ForkChoiceNotifier(
       final EventThread eventThread,
@@ -75,6 +77,7 @@ public class ForkChoiceNotifier {
       final RecentChainData recentChainData) {
     final AsyncRunnerEventThread eventThread =
         new AsyncRunnerEventThread("forkChoiceNotifier", asyncRunnerFactory);
+    eventThread.start();
     return new ForkChoiceNotifier(eventThread, spec, executionEngineChannel, recentChainData);
   }
 
@@ -90,8 +93,31 @@ public class ForkChoiceNotifier {
     eventThread.execute(() -> internalAttestationsDue(slot));
   }
 
-  public SafeFuture<Optional<Bytes8>> getPayloadId() {
-    return eventThread.execute(() -> lastPayloadId);
+  public SafeFuture<Optional<Bytes8>> getPayloadId(Bytes32 beaconBlockRoot, UInt64 slot) {
+    return eventThread.execute(
+        () -> {
+          if (lastPayloadId.isPresent()) {
+            if (lastPayloadIdBeaconBlockRoot
+                    .map(fcsBeaconRoot -> fcsBeaconRoot.equals(beaconBlockRoot))
+                    .orElse(false)
+                && lastPayloadIdSlot.map(fcsSlot -> fcsSlot.compareTo(slot) == 0).orElse(false)) {
+              return lastPayloadId;
+            } else {
+              LOG.error(
+                  "Cannot provide payloadId {}. It doesn't belong to requested Beacon Block Root {} and Slot {}",
+                  lastPayloadId.get(),
+                  beaconBlockRoot,
+                  slot);
+              return Optional.empty();
+            }
+          } else {
+            LOG.error(
+                "PayloadId not available for requested Beacon Block Root {} and Slot {}",
+                beaconBlockRoot,
+                slot);
+            return Optional.empty();
+          }
+        });
   }
 
   private void internalUpdatePreparableProposers(
@@ -185,6 +211,8 @@ public class ForkChoiceNotifier {
           currentSlot);
       return;
     }
+    this.lastPayloadIdBeaconBlockRoot = recentChainData.getBestBlockRoot();
+    this.lastPayloadIdSlot = Optional.of(blockSlot);
     payloadAttributes = newPayloadAttributes;
     sendForkChoiceUpdated();
   }

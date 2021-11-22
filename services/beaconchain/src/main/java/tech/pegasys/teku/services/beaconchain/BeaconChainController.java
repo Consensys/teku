@@ -497,7 +497,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                 syncCommitteeContributionPool,
                 depositProvider,
                 eth1DataCache,
-                VersionProvider.getDefaultGraffiti()));
+                VersionProvider.getDefaultGraffiti(),
+                forkChoiceNotifier,
+                executionEngine));
     syncCommitteeSubscriptionManager =
         beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()
             ? new AllSyncCommitteeSubscriptions(p2pNetwork, spec)
