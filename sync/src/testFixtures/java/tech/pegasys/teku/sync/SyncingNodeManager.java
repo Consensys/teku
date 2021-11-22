@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.sync;
 
+import static org.mockito.Mockito.mock;
 import static tech.pegasys.teku.infrastructure.events.TestExceptionHandler.TEST_EXCEPTION_HANDLER;
 
 import java.util.List;
@@ -41,6 +42,7 @@ import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
@@ -91,7 +93,9 @@ public class SyncingNodeManager {
     final BeaconChainUtil chainUtil = BeaconChainUtil.create(spec, recentChainData, validatorKeys);
     chainUtil.initializeStorage();
 
-    ForkChoice forkChoice = ForkChoice.create(spec, new InlineEventThread(), recentChainData);
+    ForkChoice forkChoice =
+        ForkChoice.create(
+            spec, new InlineEventThread(), recentChainData, mock(ForkChoiceNotifier.class));
     BlockImporter blockImporter =
         new BlockImporter(
             eventChannels.getPublisher(BlockImportNotifications.class),

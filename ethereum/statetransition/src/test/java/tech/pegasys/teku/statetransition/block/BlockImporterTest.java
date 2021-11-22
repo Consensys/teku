@@ -54,6 +54,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -72,8 +73,9 @@ public class BlockImporterTest {
       MemoryOnlyRecentChainData.builder().specProvider(spec).build();
   private final WeakSubjectivityValidator weakSubjectivityValidator =
       mock(WeakSubjectivityValidator.class);
+  private final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
   private final ForkChoice forkChoice =
-      ForkChoice.create(spec, new InlineEventThread(), recentChainData);
+      ForkChoice.create(spec, new InlineEventThread(), recentChainData, forkChoiceNotifier);
   private final BeaconChainUtil localChain =
       BeaconChainUtil.create(spec, recentChainData, validatorKeys, forkChoice, false);
 
@@ -407,7 +409,8 @@ public class BlockImporterTest {
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
     final SignedBlockAndState genesis = storageSystem.chainUpdater().initializeGenesis();
     final ForkChoice forkChoice =
-        ForkChoice.create(spec, new InlineEventThread(), storageSystem.recentChainData());
+        ForkChoice.create(
+            spec, new InlineEventThread(), storageSystem.recentChainData(), forkChoiceNotifier);
     final BlockImporter blockImporter =
         new BlockImporter(
             blockImportNotifications,
@@ -444,7 +447,8 @@ public class BlockImporterTest {
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
     final SignedBlockAndState genesis = storageSystem.chainUpdater().initializeGenesis();
     final ForkChoice forkChoice =
-        ForkChoice.create(spec, new InlineEventThread(), storageSystem.recentChainData());
+        ForkChoice.create(
+            spec, new InlineEventThread(), storageSystem.recentChainData(), forkChoiceNotifier);
     final BlockImporter blockImporter =
         new BlockImporter(
             blockImportNotifications,
@@ -489,7 +493,8 @@ public class BlockImporterTest {
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
     storageSystem.chainUpdater().initializeGenesis();
     final ForkChoice forkChoice =
-        ForkChoice.create(spec, new InlineEventThread(), storageSystem.recentChainData());
+        ForkChoice.create(
+            spec, new InlineEventThread(), storageSystem.recentChainData(), forkChoiceNotifier);
     final BlockImporter blockImporter =
         new BlockImporter(
             blockImportNotifications,
@@ -526,7 +531,8 @@ public class BlockImporterTest {
   public void getLatestCheckpointState_initialCall() {
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
     final ForkChoice forkChoice =
-        ForkChoice.create(spec, new InlineEventThread(), storageSystem.recentChainData());
+        ForkChoice.create(
+            spec, new InlineEventThread(), storageSystem.recentChainData(), forkChoiceNotifier);
     final BlockImporter blockImporter =
         new BlockImporter(
             blockImportNotifications,
@@ -551,7 +557,8 @@ public class BlockImporterTest {
   public void getLatestCheckpointState_shouldPullUpdatedFinalizedCheckpoint() {
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
     final ForkChoice forkChoice =
-        ForkChoice.create(spec, new InlineEventThread(), storageSystem.recentChainData());
+        ForkChoice.create(
+            spec, new InlineEventThread(), storageSystem.recentChainData(), forkChoiceNotifier);
     final BlockImporter blockImporter =
         new BlockImporter(
             blockImportNotifications,

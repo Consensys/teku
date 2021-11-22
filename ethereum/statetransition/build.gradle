@@ -40,6 +40,7 @@ dependencies {
   testFixturesApi testFixtures(project(':bls'))
   testFixturesApi testFixtures(project(':storage'))
 
+  testFixturesImplementation 'org.mockito:mockito-core'
   testFixturesImplementation project(':ethereum:core')
   testFixturesImplementation project(':infrastructure:async')
   testFixturesImplementation testFixtures(project(':infrastructure:async'))

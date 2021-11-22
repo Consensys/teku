@@ -36,6 +36,7 @@ import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.ssz.collections.SszBitlist;
 import tech.pegasys.teku.ssz.type.Bytes4;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidator;
@@ -61,7 +62,8 @@ class AttestationManagerIntegrationTest {
   private final AggregatingAttestationPool attestationPool =
       new AggregatingAttestationPool(spec, new NoOpMetricsSystem());
   private final ForkChoice forkChoice =
-      ForkChoice.create(spec, new InlineEventThread(), recentChainData);
+      ForkChoice.create(
+          spec, new InlineEventThread(), recentChainData, mock(ForkChoiceNotifier.class));
 
   private final PendingPool<ValidateableAttestation> pendingAttestations =
       PendingPool.createForAttestations(spec);

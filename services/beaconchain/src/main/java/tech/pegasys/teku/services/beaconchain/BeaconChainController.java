@@ -306,6 +306,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   public void initAll() {
     initExecutionEngine();
+    initForkChoiceNotifier();
     initForkChoice();
     initBlockImporter();
     initCombinedChainDataClient();
@@ -323,7 +324,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     initSyncCommitteePools();
     initP2PNetwork();
     initSyncService();
-    initForkChoiceNotifier();
     initSlotProcessor();
     initMetrics();
     initAttestationTopicSubscriber();
@@ -429,7 +429,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         beaconConfig.eth2NetworkConfig().isBalanceAttackMitigationEnabled();
     forkChoice =
         ForkChoice.create(
-            spec, forkChoiceExecutor, recentChainData, balanceAttackMitigationEnabled);
+            spec,
+            forkChoiceExecutor,
+            recentChainData,
+            forkChoiceNotifier,
+            balanceAttackMitigationEnabled);
     forkChoiceTrigger = ForkChoiceTrigger.create(forkChoice, balanceAttackMitigationEnabled);
   }
 
