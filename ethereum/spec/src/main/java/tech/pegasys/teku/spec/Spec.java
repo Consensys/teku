@@ -332,6 +332,10 @@ public class Spec {
         .getDomain(domainType, epoch, fork, genesisValidatorsRoot);
   }
 
+  public Bytes32 getRandaoMix(final BeaconState state, final UInt64 epoch) {
+    return atEpoch(epoch).beaconStateAccessors().getRandaoMix(state, epoch);
+  }
+
   public boolean verifyProposerSlashingSignature(
       BeaconState state,
       ProposerSlashing proposerSlashing,

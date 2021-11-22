@@ -832,7 +832,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private void initForkChoiceNotifier() {
     LOG.debug("BeaconChainController.initForkChoiceNotifier()");
-    forkChoiceNotifier = new ForkChoiceNotifier(recentChainData, executionEngine, spec);
+    forkChoiceNotifier =
+        ForkChoiceNotifier.create(asyncRunnerFactory, spec, executionEngine, recentChainData);
   }
 
   private void setupInitialState(final RecentChainData client) {
