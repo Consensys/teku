@@ -60,6 +60,8 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
     }
     if (result.isEmpty()) {
       // No execution was started so can return result unchanged
+      getForkChoiceStrategy()
+          .onExecutionPayloadResult(block.getRoot(), ExecutionPayloadStatus.VALID);
       updateForkChoiceForImportedBlock(block, blockImportResult, getForkChoiceStrategy());
       return SafeFuture.completedFuture(blockImportResult);
     }
