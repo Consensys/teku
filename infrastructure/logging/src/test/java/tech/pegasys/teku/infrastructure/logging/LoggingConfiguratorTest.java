@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 
 public class LoggingConfiguratorTest {
   public static final String COLOR_STRING = "a\u001b[30mb\u001b[31mc\u001b[37md";
+  public static final String ENDL = System.lineSeparator();
 
   public static final String CTRL_STRING = "a\u0001b\u001fc\u007fd";
   public static final String STRIPPED_COLOR_STRING = "a[30mb[31mc[37md\n";
@@ -37,7 +38,7 @@ public class LoggingConfiguratorTest {
     try {
       LoggingConfigurator.setColorEnabled(true);
       fileAppenderLog(COLOR_STRING);
-      assertThat(outContent.toString()).endsWith(COLOR_STRING + "\n");
+      assertThat(outContent.toString()).endsWith(COLOR_STRING + ENDL);
     } finally {
       LoggingConfigurator.setColorEnabled(color);
     }
@@ -46,13 +47,13 @@ public class LoggingConfiguratorTest {
   @Test
   void toFile_shouldIgnoreNonPrintables() {
     fileAppenderLog(CTRL_STRING);
-    assertThat(outContent.toString()).endsWith("abcd\n");
+    assertThat(outContent.toString()).endsWith("abcd" + ENDL);
   }
 
   @Test
   void toConsole_shouldIgnoreNonPrintables() {
     consoleAppenderLog(CTRL_STRING);
-    assertThat(outContent.toString()).endsWith("abcd\n");
+    assertThat(outContent.toString()).endsWith("abcd" + ENDL);
   }
 
   @Test
@@ -61,7 +62,7 @@ public class LoggingConfiguratorTest {
     try {
       LoggingConfigurator.setColorEnabled(true);
       consoleAppenderLog(COLOR_STRING);
-      assertThat(outContent.toString()).endsWith(COLOR_STRING + "\n");
+      assertThat(outContent.toString()).endsWith(COLOR_STRING + ENDL);
     } finally {
       LoggingConfigurator.setColorEnabled(color);
     }
@@ -96,25 +97,25 @@ public class LoggingConfiguratorTest {
   @Test
   void toFile_shouldNotStripEndLine() {
     fileAppenderLog("a\r\nb");
-    assertThat(outContent.toString()).endsWith("a\r\nb\n");
+    assertThat(outContent.toString()).endsWith("a\r\nb" + ENDL);
   }
 
   @Test
   void toConsole_shouldNotStripEndLine() {
     consoleAppenderLog("a\r\nb");
-    assertThat(outContent.toString()).endsWith("a\r\nb\n");
+    assertThat(outContent.toString()).endsWith("a\r\nb" + ENDL);
   }
 
   @Test
   void toFile_MessageShouldHaveEndLine() {
     fileAppenderLog("ab");
-    assertThat(outContent.toString()).endsWith("ab\n");
+    assertThat(outContent.toString()).endsWith("ab" + ENDL);
   }
 
   @Test
   void toConsole_MessageShouldHaveEndLine() {
     consoleAppenderLog("ab");
-    assertThat(outContent.toString()).endsWith("ab\n");
+    assertThat(outContent.toString()).endsWith("ab" + ENDL);
   }
 
   @Test
