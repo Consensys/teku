@@ -207,6 +207,7 @@ class ForkChoiceNotifierTest {
     final Bytes8 payloadId = dataStructureUtil.randomBytes8();
     final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
     final BeaconState headState = recentChainData.getBestState().orElseThrow();
+    final Bytes32 blockRoot = recentChainData.getBestBlockRoot().orElseThrow();
     final UInt64 blockSlot = UInt64.ONE;
     final PayloadAttributes payloadAttributes = withProposerForSlot(headState, blockSlot);
 
@@ -217,12 +218,42 @@ class ForkChoiceNotifierTest {
     notifier.onForkChoiceUpdated(forkChoiceState);
 
     // Initially has no payload ID.
-    assertThatSafeFuture(notifier.getPayloadId()).isCompletedWithEmptyOptional();
+    assertThatSafeFuture(notifier.getPayloadId(blockRoot, blockSlot))
+        .isCompletedWithEmptyOptional();
 
     // But becomes available once we receive the response
     responseFuture.complete(
         new ForkChoiceUpdatedResult(ForkChoiceUpdatedStatus.SUCCESS, Optional.of(payloadId)));
-    assertThatSafeFuture(notifier.getPayloadId()).isCompletedWithOptionalContaining(payloadId);
+    assertThatSafeFuture(notifier.getPayloadId(blockRoot, blockSlot))
+        .isCompletedWithOptionalContaining(payloadId);
+  }
+
+  @Test
+  void getPayloadId_shouldNotReturnLatestPayloadIdOnWrongRootOrSlot() {
+    final Bytes8 payloadId = dataStructureUtil.randomBytes8();
+    final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
+    final BeaconState headState = recentChainData.getBestState().orElseThrow();
+    final Bytes32 blockRoot = recentChainData.getBestBlockRoot().orElseThrow();
+    final UInt64 blockSlot = UInt64.ONE;
+
+    final UInt64 wrongBlockSlot = UInt64.ZERO;
+    final Bytes32 wrongBlockRoot = dataStructureUtil.randomBytes32();
+
+    final PayloadAttributes payloadAttributes = withProposerForSlot(headState, blockSlot);
+
+    final SafeFuture<ForkChoiceUpdatedResult> responseFuture = new SafeFuture<>();
+    when(executionEngineChannel.forkChoiceUpdated(forkChoiceState, Optional.of(payloadAttributes)))
+        .thenReturn(responseFuture);
+
+    notifier.onForkChoiceUpdated(forkChoiceState);
+
+    responseFuture.complete(
+        new ForkChoiceUpdatedResult(ForkChoiceUpdatedStatus.SUCCESS, Optional.of(payloadId)));
+
+    assertThatSafeFuture(notifier.getPayloadId(wrongBlockRoot, blockSlot))
+        .isCompletedWithEmptyOptional();
+    assertThatSafeFuture(notifier.getPayloadId(blockRoot, wrongBlockSlot))
+        .isCompletedWithEmptyOptional();
   }
 
   private PayloadAttributes withProposerForSlot(final UInt64 blockSlot) {
