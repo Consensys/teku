@@ -119,7 +119,7 @@ class BlockOperationSelectorFactoryTest {
   private final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
   private final ExecutionEngineChannel executionEngine = mock(ExecutionEngineChannel.class);
 
-  private final ExecutionPayload executionPayload =
+  private final ExecutionPayload defaultExecutionPayload =
       SchemaDefinitionsMerge.required(spec.getGenesisSpec().getSchemaDefinitions())
           .getExecutionPayloadSchema()
           .getDefault();
@@ -150,9 +150,7 @@ class BlockOperationSelectorFactoryTest {
     when(proposerSlashingValidator.validateFully(any())).thenReturn(ACCEPT);
     when(voluntaryExitValidator.validateFully(any())).thenReturn(ACCEPT);
     when(forkChoiceNotifier.getPayloadId(any(), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(Bytes8.fromHexStringLenient("0x0"))));
-    when(executionEngine.getPayload(any(), any()))
-        .thenReturn(SafeFuture.completedFuture(executionPayload));
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
   }
 
   @Test
@@ -199,7 +197,6 @@ class BlockOperationSelectorFactoryTest {
         .isEqualTo(
             spec.getSyncCommitteeUtilRequired(slot)
                 .createSyncAggregate(List.of(contribution.getMessage().getContribution())));
-    assertThat(bodyBuilder.executionPayload).isEqualTo(executionPayload);
   }
 
   private <T extends SszData> void addToPool(final OperationPool<T> pool, final T operation) {
@@ -261,6 +258,38 @@ class BlockOperationSelectorFactoryTest {
         .isEqualTo(
             spec.getSyncCommitteeUtilRequired(slot)
                 .createSyncAggregate(List.of(contribution.getMessage().getContribution())));
+  }
+
+  @Test
+  void shouldIncludeDefaultExecutionPayload() {
+    final UInt64 slot = UInt64.ONE;
+    final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(slot);
+    factory
+        .createSelector(
+            parentRoot, blockSlotState, dataStructureUtil.randomSignature(), Optional.empty())
+        .accept(bodyBuilder);
+    assertThat(bodyBuilder.executionPayload).isEqualTo(defaultExecutionPayload);
+  }
+
+  @Test
+  void shouldIncludeNonDefaultExecutionPayload() {
+    final UInt64 slot = UInt64.ONE;
+    final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(slot);
+
+    final Bytes8 payloadId = dataStructureUtil.randomBytes8();
+    final ExecutionPayload randomExecutionPayload = dataStructureUtil.randomExecutionPayload();
+
+    when(forkChoiceNotifier.getPayloadId(any(), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(payloadId)));
+    when(executionEngine.getPayload(payloadId, slot))
+        .thenReturn(SafeFuture.completedFuture(randomExecutionPayload));
+
+    factory
+        .createSelector(
+            parentRoot, blockSlotState, dataStructureUtil.randomSignature(), Optional.empty())
+        .accept(bodyBuilder);
+
+    assertThat(bodyBuilder.executionPayload).isEqualTo(randomExecutionPayload);
   }
 
   private static class CapturingBeaconBlockBodyBuilder implements BeaconBlockBodyBuilder {
