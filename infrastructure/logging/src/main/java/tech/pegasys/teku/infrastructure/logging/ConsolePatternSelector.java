@@ -21,6 +21,9 @@ import org.apache.logging.log4j.core.pattern.PatternFormatter;
 import org.apache.logging.log4j.core.pattern.PatternParser;
 
 public class ConsolePatternSelector implements PatternSelector {
+  private static final String DATE_CONSOLE_FORMAT = "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level - %msg%n";
+  private static final String DATE_CONSOLE_EXCEPTION_FORMAT =
+      "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level - %msg %throwable{1} (See log file for full stack trace)%n";
   private static final String CONSOLE_FORMAT = "%d{HH:mm:ss.SSS} %-5level - %msg%n";
   private static final String CONSOLE_EXCEPTION_FORMAT =
       "%d{HH:mm:ss.SSS} %-5level - %msg %throwable{1} (See log file for full stack trace)%n";
@@ -30,14 +33,23 @@ public class ConsolePatternSelector implements PatternSelector {
   private final PatternFormatter[] defaultFormat;
 
   public ConsolePatternSelector(
-      final AbstractConfiguration configuration, final boolean omitStackTraces) {
+      final AbstractConfiguration configuration,
+      final boolean omitStackTraces,
+      final boolean prependDateFormat) {
     this.omitStackTraces = omitStackTraces;
 
     final PatternParser patternParser = PatternLayout.createPatternParser(configuration);
     omitStackTraceFormat =
-        patternParser.parse(CONSOLE_EXCEPTION_FORMAT, false, true).toArray(PatternFormatter[]::new);
+        patternParser
+            .parse(
+                prependDateFormat ? DATE_CONSOLE_EXCEPTION_FORMAT : CONSOLE_EXCEPTION_FORMAT,
+                false,
+                true)
+            .toArray(PatternFormatter[]::new);
     defaultFormat =
-        patternParser.parse(CONSOLE_FORMAT, true, true).toArray(PatternFormatter[]::new);
+        patternParser
+            .parse(prependDateFormat ? DATE_CONSOLE_FORMAT : CONSOLE_FORMAT, true, true)
+            .toArray(PatternFormatter[]::new);
   }
 
   @Override
