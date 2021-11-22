@@ -35,8 +35,8 @@ import org.apache.logging.log4j.status.StatusLogger;
 
 public class LoggingConfigurator {
 
-  static final String COLOR_LOG_REGEX = "([\\p{Cntrl}&&[^\r\n\u001b]])";
-  static final String NO_COLOR_LOG_REGEX = "([\\p{Cntrl}&&[^\r\n]])";
+  static final String COLOR_LOG_REGEX = "[\\p{Cntrl}&&[^\r\n\u001b]]";
+  static final String NO_COLOR_LOG_REGEX = "[\\p{Cntrl}&&[^\r\n]]";
 
   static final String EVENT_LOGGER_NAME = "teku-event-log";
   static final String STATUS_LOGGER_NAME = "teku-status-log";
