@@ -144,9 +144,6 @@ public class ForkChoiceNotifier {
     }
     forkChoiceState.ifPresentOrElse(
         forkChoiceState -> {
-          if (forkChoiceState.getHeadBlockHash().isZero()) {
-            return;
-          }
           lastSentForkChoiceState = this.forkChoiceState;
           lastSentPayloadAttributes = payloadAttributes;
           // Previous payload is no longer useful as we've moved on to prepping the next block
