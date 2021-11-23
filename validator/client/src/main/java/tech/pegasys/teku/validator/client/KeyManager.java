@@ -16,7 +16,6 @@ package tech.pegasys.teku.validator.client;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.NotImplementedException;
@@ -109,29 +108,26 @@ public class KeyManager {
 
     final List<PostKeyResult> postKeyResults = new ArrayList<>();
 
-    if (keystores.size() == passwords.size()) {
-      final Iterator<String> keystoreIterator = keystores.iterator();
-      final Iterator<String> passwordIterator = passwords.iterator();
-      while (keystoreIterator.hasNext() && passwordIterator.hasNext()) {
-        try {
-          final String password = passwordIterator.next();
-          final KeyStoreData keystore = getKeystoreDataObject(keystoreIterator.next());
-          final BLSKeyPair keyPair =
-              new BLSKeyPair(
-                  BLSSecretKey.fromBytes(Bytes32.wrap(KeyStore.decrypt(password, keystore))));
-          if (keystore.getPubkey().equals(keyPair.getPublicKey().toSSZBytes())) {
-            postKeyResults.add(executeImport());
-          } else {
-            postKeyResults.add(PostKeyResult.error("Incorrect public key."));
-          }
-        } catch (JsonProcessingException e) {
-          postKeyResults.add(PostKeyResult.error("Invalid keystore."));
-        } catch (KeyStoreValidationException e) {
-          postKeyResults.add(PostKeyResult.error("Invalid password."));
+    if (keystores.size() != passwords.size()) {
+      throw new IllegalArgumentException("Keystores and passwords quantity must be the same.");
+    }
+    for (int i = 0; i < keystores.size(); i++) {
+      try {
+        final String password = passwords.get(i);
+        final KeyStoreData keystore = getKeystoreDataObject(keystores.get(i));
+        final BLSKeyPair keyPair =
+            new BLSKeyPair(
+                BLSSecretKey.fromBytes(Bytes32.wrap(KeyStore.decrypt(password, keystore))));
+        if (keystore.getPubkey().equals(keyPair.getPublicKey().toSSZBytes())) {
+          postKeyResults.add(executeImport());
+        } else {
+          postKeyResults.add(PostKeyResult.error("Incorrect public key."));
         }
+      } catch (JsonProcessingException e) {
+        postKeyResults.add(PostKeyResult.error("Invalid keystore."));
+      } catch (KeyStoreValidationException e) {
+        postKeyResults.add(PostKeyResult.error("Invalid password."));
       }
-    } else {
-      postKeyResults.add(PostKeyResult.error("Keystores and passwords quantity must be the same."));
     }
     return postKeyResults;
   }

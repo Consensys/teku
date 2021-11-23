@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.core.signatures.NoOpSigner.NO_OP_SIGNER;
 
@@ -110,13 +111,10 @@ class KeyManagerTest {
     keystoreList.remove(1);
 
     final KeyManager keyManager = new KeyManager(validatorLoader);
-    final List<PostKeyResult> importResult =
-        keyManager.importValidators(keystoreList, passwordList, "");
 
-    assertThat(importResult.size()).isEqualTo(1);
-    assertThat(importResult.get(0).getImportStatus()).isEqualTo(ImportStatus.ERROR);
-    assertThat(importResult.get(0).getMessage().get())
-        .isEqualTo("Keystores and passwords quantity must be the same.");
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> keyManager.importValidators(keystoreList, passwordList, ""));
   }
 
   private List<Validator> generateActiveValidatorsList() {
