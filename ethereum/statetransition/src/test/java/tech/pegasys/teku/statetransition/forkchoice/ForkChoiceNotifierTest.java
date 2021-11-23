@@ -221,7 +221,7 @@ class ForkChoiceNotifierTest {
   }
 
   @Test
-  void getPayloadId_shouldNotReturnLatestPayloadIdOnWrongRootOrSlot() {
+  void getPayloadId_shouldReturnExceptionallyLatestPayloadIdOnWrongRootOrSlot() {
     final Bytes8 payloadId = dataStructureUtil.randomBytes8();
     final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
     final BeaconState headState = recentChainData.getBestState().orElseThrow();
@@ -243,9 +243,28 @@ class ForkChoiceNotifierTest {
         new ForkChoiceUpdatedResult(ForkChoiceUpdatedStatus.SUCCESS, Optional.of(payloadId)));
 
     assertThatSafeFuture(notifier.getPayloadId(wrongBlockRoot, blockSlot))
-        .isCompletedWithEmptyOptional();
+        .isCompletedExceptionally();
     assertThatSafeFuture(notifier.getPayloadId(blockRoot, wrongBlockSlot))
+        .isCompletedExceptionally();
+  }
+
+  @Test
+  void getPayloadId_shouldReturnEmptyWithNoForkChoiceAndNoTTDReached() {
+    final Bytes32 blockRoot = recentChainData.getBestBlockRoot().orElseThrow();
+    final UInt64 blockSlot = UInt64.ONE;
+
+    assertThatSafeFuture(notifier.getPayloadId(blockRoot, blockSlot))
         .isCompletedWithEmptyOptional();
+  }
+
+  @Test
+  void getPayloadId_shouldReturnExceptionallyWithNoForkChoiceAndTTDReached() {
+    final Bytes32 blockRoot = recentChainData.getBestBlockRoot().orElseThrow();
+    final UInt64 blockSlot = UInt64.ONE;
+
+    notifier.onTTDReached(dataStructureUtil.randomBytes32());
+
+    assertThatSafeFuture(notifier.getPayloadId(blockRoot, blockSlot)).isCompletedExceptionally();
   }
 
   private PayloadAttributes withProposerForSlot(final UInt64 blockSlot) {
