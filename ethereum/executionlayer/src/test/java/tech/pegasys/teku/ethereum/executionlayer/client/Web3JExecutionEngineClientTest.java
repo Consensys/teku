@@ -35,7 +35,6 @@ import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutePayloadResult;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceStateV1;
-import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceUpdatedRequest;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.Bytes20Deserializer;
@@ -333,22 +332,28 @@ public class Web3JExecutionEngineClientTest {
   }
 
   @TestTemplate
-  void shouldSerializeForkChoiceUpdatedRequest() throws IOException {
+  void shouldSerializeForkChoiceState() throws IOException {
+    final ForkChoiceStateV1 forkChoiceState =
+        new ForkChoiceStateV1(
+            dataStructureUtil.randomBytes32(),
+            dataStructureUtil.randomBytes32(),
+            dataStructureUtil.randomBytes32());
 
-    ForkChoiceUpdatedRequest forkChoiceUpdatedRequest =
-        new ForkChoiceUpdatedRequest(
-            new ForkChoiceStateV1(
-                dataStructureUtil.randomBytes32(),
-                dataStructureUtil.randomBytes32(),
-                dataStructureUtil.randomBytes32()),
-            new PayloadAttributesV1(
-                dataStructureUtil.randomUInt64(),
-                dataStructureUtil.randomBytes32(),
-                dataStructureUtil.randomBytes20()));
+    String serialized = objectMapper.writeValueAsString(forkChoiceState);
 
-    String forkChoiceUpdatedRequestSerialized =
-        objectMapper.writeValueAsString(forkChoiceUpdatedRequest);
+    assertThat(serialized).isNotEmpty();
+  }
 
-    assertThat(forkChoiceUpdatedRequestSerialized).isNotEmpty();
+  @TestTemplate
+  void shouldSerializePayloadAttributes() throws IOException {
+    final PayloadAttributesV1 payloadAttributes =
+        new PayloadAttributesV1(
+            dataStructureUtil.randomUInt64(),
+            dataStructureUtil.randomBytes32(),
+            dataStructureUtil.randomBytes20());
+
+    String serialized = objectMapper.writeValueAsString(payloadAttributes);
+
+    assertThat(serialized).isNotEmpty();
   }
 }
