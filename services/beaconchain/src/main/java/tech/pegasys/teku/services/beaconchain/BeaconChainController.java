@@ -35,6 +35,7 @@ import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApi;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
+import tech.pegasys.teku.ethereum.pow.api.TerminalPowBlockMonitorChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -61,6 +62,7 @@ import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.services.timer.TimeTickChannel;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
@@ -184,6 +186,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager;
   private volatile ForkChoiceNotifier forkChoiceNotifier;
   private volatile ExecutionEngineChannel executionEngine;
+  private volatile Optional<TerminalPowBlockMonitorService> terminalBlockMonitorService =
+      Optional.empty();
 
   private UInt64 genesisTimeTracker = ZERO;
   private BlockManager blockManager;
@@ -229,7 +233,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             attestationManager.start(),
             p2pNetwork.start(),
             blockManager.start(),
-            syncService.start())
+            syncService.start(),
+            SafeFuture.fromRunnable(
+                () -> terminalBlockMonitorService.ifPresent(TerminalPowBlockMonitorService::start)))
         .finish(
             error -> {
               Throwable rootCause = Throwables.getRootCause(error);
@@ -254,7 +260,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             syncService.stop(),
             blockManager.stop(),
             attestationManager.stop(),
-            p2pNetwork.stop())
+            p2pNetwork.stop(),
+            SafeFuture.fromRunnable(
+                () -> terminalBlockMonitorService.ifPresent(TerminalPowBlockMonitorService::stop)))
         .thenRun(forkChoiceExecutor::stop);
   }
 
@@ -306,6 +314,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   public void initAll() {
     initExecutionEngine();
+    initTTDMonitorService();
     initForkChoiceNotifier();
     initForkChoice();
     initBlockImporter();
@@ -334,7 +343,20 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     initOperationsReOrgManager();
   }
 
+  private void initTTDMonitorService() {
+    LOG.debug("BeaconChainController.initTTDMonitorService()");
+    if (spec.isMilestoneSupported(SpecMilestone.MERGE)) {
+      TerminalPowBlockMonitorChannel channel =
+          eventChannels.getPublisher(TerminalPowBlockMonitorChannel.class, beaconAsyncRunner);
+      TerminalPowBlockMonitorService service =
+          new TerminalPowBlockMonitorService(
+              executionEngine, channel, spec, recentChainData, beaconAsyncRunner);
+      terminalBlockMonitorService = Optional.of(service);
+    }
+  }
+
   private void initExecutionEngine() {
+    LOG.debug("BeaconChainController.initExecutionEngine()");
     executionEngine = eventChannels.getPublisher(ExecutionEngineChannel.class, beaconAsyncRunner);
   }
 
@@ -840,6 +862,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     LOG.debug("BeaconChainController.initForkChoiceNotifier()");
     forkChoiceNotifier =
         ForkChoiceNotifier.create(asyncRunnerFactory, spec, executionEngine, recentChainData);
+    eventChannels.subscribe(TerminalPowBlockMonitorChannel.class, forkChoiceNotifier);
   }
 
   private void setupInitialState(final RecentChainData client) {

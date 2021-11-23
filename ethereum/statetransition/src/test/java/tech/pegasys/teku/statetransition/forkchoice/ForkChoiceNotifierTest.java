@@ -262,7 +262,7 @@ class ForkChoiceNotifierTest {
     final Bytes32 blockRoot = recentChainData.getBestBlockRoot().orElseThrow();
     final UInt64 blockSlot = UInt64.ONE;
 
-    notifier.onTTDReached(dataStructureUtil.randomBytes32());
+    notifier.onTerminalPowBlockReached(dataStructureUtil.randomBytes32());
 
     assertThatSafeFuture(notifier.getPayloadId(blockRoot, blockSlot)).isCompletedExceptionally();
   }
