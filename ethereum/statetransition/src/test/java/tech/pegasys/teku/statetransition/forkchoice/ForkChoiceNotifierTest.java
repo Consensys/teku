@@ -153,23 +153,30 @@ class ForkChoiceNotifierTest {
   }
 
   @Test
-  void onAttestationsDue_shouldSendUpdateIfWeAreDueToProposeNext() {
+  void onAttestationsDue_shouldSendUpdateEvenWithAMissedBlockIfWeAreDueToProposeNextTwo() {
     final BeaconState headState = recentChainData.getBestState().orElseThrow();
-    final UInt64 blockSlot = headState.getSlot().plus(2);
-    final PayloadAttributes payloadAttributes = withProposerForSlot(headState, blockSlot);
+    final UInt64 blockSlot1 = headState.getSlot().plus(2);
+    final UInt64 blockSlot2 = headState.getSlot().plus(3);
+    final List<PayloadAttributes> payloadAttributes =
+        withProposerForTwoSlots(headState, blockSlot1, blockSlot2);
 
     final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
     notifier.onForkChoiceUpdated(forkChoiceState);
-    // Not proposing block 1 so no payload attributes
+    // Not proposing block +1 so no payload attributes
     verify(executionEngineChannel).forkChoiceUpdated(forkChoiceState, Optional.empty());
 
     notifier.onAttestationsDue(headState.getSlot());
     verifyNoMoreInteractions(executionEngineChannel);
 
-    // Slot 1 is now assumed empty so prepare to propose in slot 2
+    // Slot +1 is now assumed empty so prepare to propose in slot +2
     notifier.onAttestationsDue(headState.getSlot().plus(1));
     verify(executionEngineChannel)
-        .forkChoiceUpdated(forkChoiceState, Optional.of(payloadAttributes));
+        .forkChoiceUpdated(forkChoiceState, Optional.of(payloadAttributes.get(0)));
+
+    // Slot +2 is now assumed empty so prepare to propose in slot +3
+    notifier.onAttestationsDue(headState.getSlot().plus(2));
+    verify(executionEngineChannel)
+        .forkChoiceUpdated(forkChoiceState, Optional.of(payloadAttributes.get(1)));
   }
 
   @Test
@@ -349,6 +356,32 @@ class ForkChoiceNotifierTest {
             new BeaconPreparableProposer(
                 UInt64.valueOf(block2Proposer), payloadAttributes.getFeeRecipient())));
     return payloadAttributes;
+  }
+
+  private List<PayloadAttributes> withProposerForTwoSlots(
+      final BeaconState headState, final UInt64 blockSlot1, UInt64 blockSlot2) {
+    final int block2Proposer1 = spec.getBeaconProposerIndex(headState, blockSlot1);
+    final int block2Proposer2 = spec.getBeaconProposerIndex(headState, blockSlot2);
+    final PayloadAttributes payloadAttributes1 =
+        getExpectedPayloadAttributes(headState, blockSlot1);
+    final PayloadAttributes payloadAttributes2 =
+        getExpectedPayloadAttributes(headState, blockSlot2);
+
+    if (block2Proposer1 != block2Proposer2) {
+      notifier.onUpdatePreparableProposers(
+          List.of(
+              new BeaconPreparableProposer(
+                  UInt64.valueOf(block2Proposer1), payloadAttributes1.getFeeRecipient()),
+              new BeaconPreparableProposer(
+                  UInt64.valueOf(block2Proposer2), payloadAttributes2.getFeeRecipient())));
+      return List.of(payloadAttributes1, payloadAttributes2);
+    } else {
+      notifier.onUpdatePreparableProposers(
+          List.of(
+              new BeaconPreparableProposer(
+                  UInt64.valueOf(block2Proposer1), payloadAttributes1.getFeeRecipient())));
+      return List.of(payloadAttributes1, payloadAttributes1);
+    }
   }
 
   private PayloadAttributes getExpectedPayloadAttributes(

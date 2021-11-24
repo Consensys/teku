@@ -57,7 +57,6 @@ public class ForkChoiceNotifier {
   private Optional<ForkChoiceState> lastSentForkChoiceState = Optional.empty();
   private Optional<PayloadAttributes> lastSentPayloadAttributes = Optional.empty();
   private Optional<Bytes8> lastPayloadId = Optional.empty();
-  private Optional<UInt64> lastPayloadIdSlot = Optional.empty();
 
   private Optional<Bytes32> executionPayloadTerminalBlockHash = Optional.empty();
 
@@ -107,6 +106,10 @@ public class ForkChoiceNotifier {
     eventThread.checkOnEventThread();
     executionPayloadTerminalBlockHash = Optional.of(executionBlockHash);
 
+    // since forkChoice will never call onForkChoiceUpdated on pre-merge blocks
+    // this forkChoiceSate will remain available until merge happens.
+    // So, if we are proposer of the merge block, the corresponding payloadId should remain
+    // available
     internalForkChoiceUpdated(
         new ForkChoiceState(executionBlockHash, executionBlockHash, Bytes32.ZERO));
   }
@@ -308,7 +311,6 @@ public class ForkChoiceNotifier {
           currentSlot);
       return;
     }
-    this.lastPayloadIdSlot = Optional.of(blockSlot);
     payloadAttributes = newPayloadAttributes;
     sendForkChoiceUpdated();
   }
