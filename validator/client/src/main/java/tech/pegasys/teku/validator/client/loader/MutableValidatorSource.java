@@ -44,7 +44,7 @@ public class MutableValidatorSource implements ValidatorSource {
   private final KeystoreLocker keystoreLocker;
   private final AsyncRunner asyncRunner;
   private final DataDirLayout dataDir;
-  private LocalValidatorSource delegate;
+  private final LocalValidatorSource delegate;
 
   MutableValidatorSource(
       final Spec spec,

@@ -592,7 +592,7 @@ class ValidatorLoaderTest {
     final Path keystore = ValidatorClientService.getAlterableKeystorePath(dataDirLayout);
     final Path keystorePassword =
         ValidatorClientService.getAlterableKeystorePasswordPath(dataDirLayout);
-    createMutableDirectoryStructure(dataDirLayout, keystore, keystorePassword);
+    createMutableDirectoryStructure(dataDirLayout);
 
     final KeyStoreData keyStoreData = generateKeystore();
     final String validatorFileName = keyStoreData.getPubkey().toUnprefixedHexString().toLowerCase();
@@ -688,16 +688,15 @@ class ValidatorLoaderTest {
     final URL resource = Resources.getResource("testKeystore.json");
     final Path keystore = ValidatorClientService.getAlterableKeystorePath(tempDir);
     final Path keystorePassword = ValidatorClientService.getAlterableKeystorePasswordPath(tempDir);
-    createMutableDirectoryStructure(tempDir, keystore, keystorePassword);
+    createMutableDirectoryStructure(tempDir);
     Files.copy(Path.of(resource.toURI()), keystore.resolve("key.json"));
     Files.writeString(keystorePassword.resolve("key.txt"), "testpassword");
   }
 
-  private void createMutableDirectoryStructure(
-      DataDirLayout tempDir, Path keystore, Path keystorePassword) throws IOException {
+  private void createMutableDirectoryStructure(DataDirLayout tempDir) throws IOException {
     Files.createDirectory(tempDir.getValidatorDataDirectory());
-    Files.createDirectory(keystore);
-    Files.createDirectory(keystorePassword);
+    Files.createDirectory(ValidatorClientService.getAlterableKeystorePath(tempDir));
+    Files.createDirectory(ValidatorClientService.getAlterableKeystorePasswordPath(tempDir));
   }
 
   @Test

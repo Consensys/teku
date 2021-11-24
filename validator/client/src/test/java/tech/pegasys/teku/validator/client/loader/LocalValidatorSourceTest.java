@@ -18,7 +18,6 @@ import static java.nio.file.Files.writeString;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -169,7 +168,7 @@ class LocalValidatorSourceTest {
   @Test
   void shouldThrowExceptionWhenAddValidator() {
     assertThrows(
-        UnsupportedOperationException.class, () -> validatorSource.addValidator(any(), any()));
+        UnsupportedOperationException.class, () -> validatorSource.addValidator(null, "pass"));
   }
 
   private void assertProviderMatchesKey(

@@ -197,15 +197,15 @@ public class ValidatorLoader {
   }
 
   public PostKeyResult addValidatorInMemory(KeyStoreData keystore, String password) {
-    BLSPublicKey publicKey = BLSPublicKey.fromSSZBytes(keystore.getPubkey());
+    final BLSPublicKey publicKey = BLSPublicKey.fromSSZBytes(keystore.getPubkey());
     if (ownedValidators.hasValidator(publicKey)) {
       return PostKeyResult.duplicate();
     }
     for (ValidatorSource validatorSource : validatorSources) {
       if (validatorSource.canAddValidator()) {
-        Map<PostKeyResult, Optional<Signer>> resultValidator =
+        final Map<PostKeyResult, Optional<Signer>> resultValidator =
             validatorSource.addValidator(keystore, password);
-        Optional<Signer> maybeSigner = resultValidator.values().stream().findFirst().get();
+        final Optional<Signer> maybeSigner = resultValidator.values().stream().findFirst().get();
         if (maybeSigner.isPresent()) {
           final Validator validator =
               new Validator(publicKey, maybeSigner.get(), graffitiProvider, false);
