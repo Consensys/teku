@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.core;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
@@ -116,7 +117,7 @@ public class BlockProposalTestUtil {
     final ExecutionPayloadSchema schema =
         SchemaDefinitionsMerge.required(specVersion.getSchemaDefinitions())
             .getExecutionPayloadSchema();
-    if (transactions.isEmpty()) {
+    if (transactions.isEmpty() && !isMergeComplete(state)) {
       return schema.getDefault();
     }
     return schema.create(
@@ -133,7 +134,11 @@ public class BlockProposalTestUtil {
         dataStructureUtil.randomBytes32(),
         UInt256.ONE,
         dataStructureUtil.randomBytes32(),
-        transactions.get());
+        transactions.orElse(Collections.emptyList()));
+  }
+
+  private Boolean isMergeComplete(final BeaconState state) {
+    return spec.atSlot(state.getSlot()).miscHelpers().isMergeComplete(state);
   }
 
   public SignedBlockAndState createBlock(

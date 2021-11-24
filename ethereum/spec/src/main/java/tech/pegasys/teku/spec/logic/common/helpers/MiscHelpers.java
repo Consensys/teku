@@ -240,4 +240,8 @@ public class MiscHelpers {
   private Bytes32 computeForkDataRoot(Bytes4 currentVersion, Bytes32 genesisValidatorsRoot) {
     return new ForkData(currentVersion, genesisValidatorsRoot).hashTreeRoot();
   }
+
+  public boolean isMergeComplete(final BeaconState state) {
+    return false;
+  }
 }
