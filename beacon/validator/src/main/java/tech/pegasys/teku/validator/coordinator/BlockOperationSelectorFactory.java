@@ -128,26 +128,24 @@ public class BlockOperationSelectorFactory {
                   contributionPool.createSyncAggregateForBlock(
                       blockSlotState.getSlot(), parentRoot))
           .executionPayload(
-              () -> {
-                UInt64 currentSlot = blockSlotState.getSlot();
-                return forkChoiceNotifier
-                    .getPayloadId(parentRoot, currentSlot)
-                    .thenApply(
-                        maybePayloadId -> {
-                          if (maybePayloadId.isEmpty()) {
-                            // TTD not reached
-                            return SchemaDefinitionsMerge.required(
-                                    spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions())
-                                .getExecutionPayloadSchema()
-                                .getDefault();
-                          } else {
-                            return executionEngineChannel
-                                .getPayload(maybePayloadId.get(), currentSlot)
-                                .join();
-                          }
-                        })
-                    .join();
-              });
+              () ->
+                  forkChoiceNotifier
+                      .getPayloadId(parentRoot)
+                      .thenApply(
+                          maybePayloadId -> {
+                            if (maybePayloadId.isEmpty()) {
+                              // TTD not reached
+                              return SchemaDefinitionsMerge.required(
+                                      spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions())
+                                  .getExecutionPayloadSchema()
+                                  .getDefault();
+                            } else {
+                              return executionEngineChannel
+                                  .getPayload(maybePayloadId.get(), blockSlotState.getSlot())
+                                  .join();
+                            }
+                          })
+                      .join());
     };
   }
 }

@@ -311,6 +311,7 @@ public class BeaconChainUtil {
         deposits,
         exits,
         eth1Data,
+        Optional.empty(),
         Optional.empty());
   }
 

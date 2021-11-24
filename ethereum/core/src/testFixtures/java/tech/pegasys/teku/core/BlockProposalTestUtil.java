@@ -71,7 +71,8 @@ public class BlockProposalTestUtil {
       final SszList<ProposerSlashing> slashings,
       final SszList<Deposit> deposits,
       final SszList<SignedVoluntaryExit> exits,
-      final Optional<List<Bytes>> transactions)
+      final Optional<List<Bytes>> transactions,
+      final Optional<Bytes32> terminalBlock)
       throws StateTransitionException, EpochProcessingException, SlotProcessingException {
 
     final UInt64 newEpoch = spec.computeEpochAtSlot(newSlot);
@@ -98,7 +99,9 @@ public class BlockProposalTestUtil {
                     .syncAggregate(
                         () -> dataStructureUtil.emptySyncAggregateIfRequiredByState(blockSlotState))
                     .executionPayload(
-                        () -> createExecutionPayload(newSlot, state, newEpoch, transactions)));
+                        () ->
+                            createExecutionPayload(
+                                newSlot, state, newEpoch, transactions, terminalBlock)));
 
     // Sign block and set block signature
     final BeaconBlock block = newBlockAndState.getBlock();
@@ -112,7 +115,8 @@ public class BlockProposalTestUtil {
       final UInt64 newSlot,
       final BeaconState state,
       final UInt64 newEpoch,
-      final Optional<List<Bytes>> transactions) {
+      final Optional<List<Bytes>> transactions,
+      final Optional<Bytes32> terminalBlock) {
     final SpecVersion specVersion = spec.atSlot(newSlot);
     final ExecutionPayloadSchema schema =
         SchemaDefinitionsMerge.required(specVersion.getSchemaDefinitions())
@@ -120,8 +124,16 @@ public class BlockProposalTestUtil {
     if (transactions.isEmpty() && !isMergeComplete(state)) {
       return schema.getDefault();
     }
+
+    Bytes32 currentExecutionPayloadBlockHash =
+        BeaconStateMerge.required(state).getLatestExecutionPayloadHeader().getBlockHash();
+    if (!currentExecutionPayloadBlockHash.isZero() && terminalBlock.isPresent()) {
+      throw new IllegalArgumentException("Merge already happened, cannot set terminal block hash");
+    }
+    Bytes32 parentHash = terminalBlock.orElse(currentExecutionPayloadBlockHash);
+
     return schema.create(
-        BeaconStateMerge.required(state).getLatestExecutionPayloadHeader().getBlockHash(),
+        parentHash,
         Bytes20.ZERO,
         dataStructureUtil.randomBytes32(),
         dataStructureUtil.randomBytes32(),
@@ -150,7 +162,8 @@ public class BlockProposalTestUtil {
       final Optional<SszList<Deposit>> deposits,
       final Optional<SszList<SignedVoluntaryExit>> exits,
       final Optional<Eth1Data> eth1Data,
-      final Optional<List<Bytes>> transactions)
+      final Optional<List<Bytes>> transactions,
+      final Optional<Bytes32> terminalBlock)
       throws StateTransitionException, EpochProcessingException, SlotProcessingException {
     final UInt64 newEpoch = spec.computeEpochAtSlot(newSlot);
     return createNewBlock(
@@ -163,7 +176,8 @@ public class BlockProposalTestUtil {
         blockBodyLists.createProposerSlashings(),
         deposits.orElse(blockBodyLists.createDeposits()),
         exits.orElse(blockBodyLists.createVoluntaryExits()),
-        transactions);
+        transactions,
+        terminalBlock);
   }
 
   private Eth1Data get_eth1_data_stub(BeaconState state, UInt64 current_epoch) {
