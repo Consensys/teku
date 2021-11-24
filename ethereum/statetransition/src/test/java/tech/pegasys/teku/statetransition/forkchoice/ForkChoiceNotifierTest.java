@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
@@ -80,7 +81,7 @@ class ForkChoiceNotifierTest {
 
   @BeforeEach
   void setUp() {
-    storageSystem.chainUpdater().initializeGenesis(false);
+    storageSystem.chainUpdater().initializeGenesisWithPayload(false);
     forkChoiceStrategy = recentChainData.getForkChoiceStrategy().orElseThrow();
     when(executionEngineChannel.executePayload(any()))
         .thenReturn(
@@ -125,6 +126,13 @@ class ForkChoiceNotifierTest {
 
     notifier.onForkChoiceUpdated(forkChoiceState);
     verify(executionEngineChannel).forkChoiceUpdated(forkChoiceState, Optional.empty());
+  }
+
+  @Test
+  void onForkChoiceUpdated_shouldNotSendNotificationWhenHeadBlockHashIsZero() {
+    notifier.onForkChoiceUpdated(new ForkChoiceState(Bytes32.ZERO, Bytes32.ZERO, Bytes32.ZERO));
+
+    verifyNoInteractions(executionEngineChannel);
   }
 
   @Test

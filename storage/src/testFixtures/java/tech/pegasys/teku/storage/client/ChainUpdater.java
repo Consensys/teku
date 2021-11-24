@@ -16,13 +16,20 @@ package tech.pegasys.teku.storage.client;
 import static com.google.common.base.Preconditions.checkState;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
+import tech.pegasys.teku.ssz.type.Bytes20;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 public class ChainUpdater {
@@ -72,13 +79,40 @@ public class ChainUpdater {
   }
 
   public SignedBlockAndState initializeGenesis(final boolean signDeposits) {
-    return initializeGenesis(signDeposits, spec.getGenesisSpecConfig().getMaxEffectiveBalance());
+    return initializeGenesis(
+        signDeposits, spec.getGenesisSpecConfig().getMaxEffectiveBalance(), Optional.empty());
+  }
+
+  public SignedBlockAndState initializeGenesisWithPayload(final boolean signDeposits) {
+    return initializeGenesis(
+        signDeposits,
+        spec.getGenesisSpecConfig().getMaxEffectiveBalance(),
+        Optional.of(
+            SchemaDefinitionsMerge.required(spec.getGenesisSchemaDefinitions())
+                .getExecutionPayloadHeaderSchema()
+                .create(
+                    Bytes32.random(),
+                    Bytes20.ZERO,
+                    Bytes32.ZERO,
+                    Bytes32.ZERO,
+                    Bytes.random(256),
+                    Bytes32.ZERO,
+                    UInt64.ZERO,
+                    UInt64.ZERO,
+                    UInt64.ZERO,
+                    UInt64.ZERO,
+                    Bytes32.ZERO,
+                    UInt256.ONE,
+                    Bytes32.random(),
+                    Bytes32.ZERO)));
   }
 
   public SignedBlockAndState initializeGenesis(
-      final boolean signDeposits, final UInt64 depositAmount) {
+      final boolean signDeposits,
+      final UInt64 depositAmount,
+      final Optional<ExecutionPayloadHeader> payloadHeader) {
     final SignedBlockAndState genesis =
-        chainBuilder.generateGenesis(UInt64.ZERO, signDeposits, depositAmount);
+        chainBuilder.generateGenesis(UInt64.ZERO, signDeposits, depositAmount, payloadHeader);
     recentChainData.initializeFromGenesis(genesis.getState(), UInt64.ZERO);
     return genesis;
   }
