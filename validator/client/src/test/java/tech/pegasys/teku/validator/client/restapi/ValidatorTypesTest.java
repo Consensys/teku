@@ -68,7 +68,7 @@ class ValidatorTypesTest {
   @Test
   void postKeysRequest_shouldFormatPostKeysRequest() throws Exception {
     final PostKeysRequest request =
-        new PostKeysRequest(List.of("key"), List.of("pass"), "slashingprotection");
+        new PostKeysRequest(List.of("key"), List.of("pass"), Optional.of("slashingprotection"));
     final Map<String, Object> result =
         JsonTestUtil.parse(JsonUtil.serialize(request, ValidatorTypes.POST_KEYS_REQUEST));
     assertThat(result)
@@ -76,6 +76,16 @@ class ValidatorTypesTest {
             entry("keystores", List.of("key")),
             entry("passwords", List.of("pass")),
             entry("slashing_protection", "slashingprotection"));
+  }
+
+  @Test
+  void postKeysRequest_shouldFormatPostKeysRequestWithoutSlashingProtection() throws Exception {
+    final PostKeysRequest request =
+        new PostKeysRequest(List.of("key"), List.of("pass"), Optional.empty());
+    final Map<String, Object> result =
+        JsonTestUtil.parse(JsonUtil.serialize(request, ValidatorTypes.POST_KEYS_REQUEST));
+    assertThat(result)
+        .containsOnly(entry("keystores", List.of("key")), entry("passwords", List.of("pass")));
   }
 
   @Test
