@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -49,12 +50,15 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
+import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetworkBuilder;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessageFactory;
-import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetwork;
+import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetworkBuilder;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PPrivateKeyLoader;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.GossipTopicFilter;
+import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerHandler;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
+import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.spec.Spec;
@@ -110,6 +114,11 @@ public class Eth2P2PNetworkBuilder {
   protected OperationProcessor<ValidateableSyncCommitteeMessage>
       gossipedSyncCommitteeMessageProcessor;
   protected GossipPublisher<ValidateableSyncCommitteeMessage> syncCommitteeMessageGossipPublisher;
+
+  protected Supplier<DiscoveryNetworkBuilder> discoveryNetworkBuilderSupplier =
+      DiscoveryNetworkBuilder::create;
+  protected Supplier<LibP2PNetworkBuilder> libP2PNetworkBuilderSupplier =
+      LibP2PNetworkBuilder::create;
 
   protected Eth2P2PNetworkBuilder() {}
 
@@ -266,17 +275,20 @@ public class Eth2P2PNetworkBuilder {
         new Eth2GossipTopicFilter(recentChainData, gossipEncoding, spec);
     final NetworkConfig networkConfig = config.getNetworkConfig();
     final DiscoveryConfig discoConfig = config.getDiscoveryConfig();
-    final LibP2PNetwork p2pNetwork =
-        new LibP2PNetwork(
-            asyncRunner,
-            networkConfig,
-            new LibP2PPrivateKeyLoader(keyValueStore, networkConfig.getPrivateKeyFile()),
-            reputationManager,
-            metricsSystem,
-            rpcMethods,
-            peerHandlers,
-            defaultMessageFactory,
-            gossipTopicsFilter);
+
+    final P2PNetwork<Peer> p2pNetwork = libP2PNetworkBuilderSupplier.get()
+        .asyncRunner(asyncRunner)
+        .metricsSystem(metricsSystem)
+        .config(networkConfig)
+        .privateKeyProvider(
+            new LibP2PPrivateKeyLoader(keyValueStore, networkConfig.getPrivateKeyFile()))
+        .reputationManager(reputationManager)
+        .rpcMethods(rpcMethods)
+        .peerHandlers(peerHandlers)
+        .preparedGossipMessageFactory(defaultMessageFactory)
+        .gossipTopicFilter(gossipTopicsFilter)
+        .build();
+
     final AttestationSubnetTopicProvider attestationSubnetTopicProvider =
         new AttestationSubnetTopicProvider(recentChainData, gossipEncoding);
     final SyncCommitteeSubnetTopicProvider syncCommitteeSubnetTopicProvider =
@@ -289,27 +301,29 @@ public class Eth2P2PNetworkBuilder {
             discoConfig.getMinRandomlySelectedPeers());
     final SchemaDefinitionsSupplier currentSchemaDefinitions =
         () -> recentChainData.getCurrentSpec().getSchemaDefinitions();
-    return DiscoveryNetwork.create(
-        metricsSystem,
-        asyncRunner,
-        keyValueStore,
-        p2pNetwork,
-        new Eth2PeerSelectionStrategy(
-            targetPeerRange,
-            network ->
-                PeerSubnetSubscriptions.create(
-                    currentSchemaDefinitions,
-                    network,
-                    attestationSubnetTopicProvider,
-                    syncCommitteeSubnetTopicProvider,
-                    syncCommitteeSubnetService,
-                    config.getTargetSubnetSubscriberCount()),
-            reputationManager,
-            Collections::shuffle),
-        discoConfig,
-        networkConfig,
-        config.getSpec(),
-        currentSchemaDefinitions);
+    return discoveryNetworkBuilderSupplier.get()
+        .metricsSystem(metricsSystem)
+        .asyncRunner(asyncRunner)
+        .kvStore(keyValueStore)
+        .p2pNetwork(p2pNetwork)
+        .peerSelectionStrategy(
+            new Eth2PeerSelectionStrategy(
+                targetPeerRange,
+                network ->
+                    PeerSubnetSubscriptions.create(
+                        currentSchemaDefinitions,
+                        network,
+                        attestationSubnetTopicProvider,
+                        syncCommitteeSubnetTopicProvider,
+                        syncCommitteeSubnetService,
+                        config.getTargetSubnetSubscriberCount()),
+                reputationManager,
+                Collections::shuffle))
+        .discoveryConfig(discoConfig)
+        .p2pConfig(networkConfig)
+        .spec(config.getSpec())
+        .currentSchemaDefinitionsSupplier(currentSchemaDefinitions)
+        .build();
   }
 
   private void validate() {
@@ -519,6 +533,19 @@ public class Eth2P2PNetworkBuilder {
   public Eth2P2PNetworkBuilder specProvider(final Spec spec) {
     checkNotNull(spec);
     this.spec = spec;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder discoveryNetworkBuilderSupplier(
+      Supplier<DiscoveryNetworkBuilder> discoveryNetworkBuilderSupplier) {
+    checkNotNull(discoveryNetworkBuilderSupplier);
+    this.discoveryNetworkBuilderSupplier = discoveryNetworkBuilderSupplier;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder libP2PNetworkBuilderSupplier(
+      Supplier<LibP2PNetworkBuilder> libP2PNetworkBuilderSupplier) {
+    this.libP2PNetworkBuilderSupplier = libP2PNetworkBuilderSupplier;
     return this;
   }
 }
