@@ -117,7 +117,7 @@ public class BlockProposalTestUtil {
     final ExecutionPayloadSchema schema =
         SchemaDefinitionsMerge.required(specVersion.getSchemaDefinitions())
             .getExecutionPayloadSchema();
-    if (transactions.isEmpty() && isMergePending(state)) {
+    if (transactions.isEmpty() && !isMergeComplete(state)) {
       return schema.getDefault();
     }
     return schema.create(
@@ -137,11 +137,8 @@ public class BlockProposalTestUtil {
         transactions.orElse(Collections.emptyList()));
   }
 
-  private Boolean isMergePending(final BeaconState state) {
-    return state
-        .toVersionMerge()
-        .map(s -> s.getLatestExecutionPayloadHeader().isDefault())
-        .orElse(false);
+  private Boolean isMergeComplete(final BeaconState state) {
+    return spec.atSlot(state.getSlot()).miscHelpers().isMergeComplete(state);
   }
 
   public SignedBlockAndState createBlock(
