@@ -57,6 +57,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
+import tech.pegasys.teku.spec.datastructures.operations.versions.merge.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
@@ -68,6 +69,7 @@ import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
@@ -76,7 +78,6 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.sync.events.SyncStateProvider;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.AttesterDuty;
-import tech.pegasys.teku.validator.api.BeaconPreparableProposer;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ProposerDuties;
@@ -116,6 +117,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final SyncCommitteeMessagePool syncCommitteeMessagePool;
   private final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager;
   private final SyncCommitteeContributionPool syncCommitteeContributionPool;
+  private final ForkChoiceNotifier forkChoiceNotifier;
 
   public ValidatorApiHandler(
       final ChainDataProvider chainDataProvider,
@@ -132,6 +134,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final PerformanceTracker performanceTracker,
       final Spec spec,
       final ForkChoiceTrigger forkChoiceTrigger,
+      final ForkChoiceNotifier forkChoiceNotifier,
       final SyncCommitteeMessagePool syncCommitteeMessagePool,
       final SyncCommitteeContributionPool syncCommitteeContributionPool,
       final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager) {
@@ -152,6 +155,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     this.syncCommitteeMessagePool = syncCommitteeMessagePool;
     this.syncCommitteeContributionPool = syncCommitteeContributionPool;
     this.syncCommitteeSubscriptionManager = syncCommitteeSubscriptionManager;
+    this.forkChoiceNotifier = forkChoiceNotifier;
   }
 
   @Override
@@ -593,7 +597,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public void prepareBeaconProposer(
-      Collection<BeaconPreparableProposer> beaconPreparableProposers) {}
+      Collection<BeaconPreparableProposer> beaconPreparableProposers) {
+    forkChoiceNotifier.onUpdatePreparableProposers(beaconPreparableProposers);
+  }
 
   private Optional<SubmitDataError> fromInternalValidationResult(
       final InternalValidationResult internalValidationResult, final int resultIndex) {

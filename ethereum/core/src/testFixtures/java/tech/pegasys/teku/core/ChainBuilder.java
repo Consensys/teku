@@ -29,6 +29,7 @@ import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -400,7 +401,8 @@ public class ChainBuilder {
               Optional.of(attestations),
               Optional.empty(),
               Optional.empty(),
-              options.getEth1Data());
+              options.getEth1Data(),
+              options.getTransactions());
       trackBlock(nextBlockAndState);
       return nextBlockAndState;
     } catch (StateTransitionException | EpochProcessingException | SlotProcessingException e) {
@@ -509,6 +511,7 @@ public class ChainBuilder {
 
     private final List<Attestation> attestations = new ArrayList<>();
     private Optional<Eth1Data> eth1Data = Optional.empty();
+    private Optional<List<Bytes>> transactions = Optional.empty();
 
     private BlockOptions() {}
 
@@ -526,12 +529,21 @@ public class ChainBuilder {
       return this;
     }
 
+    public BlockOptions setTransactions(final Bytes... transactions) {
+      this.transactions = Optional.of(List.of(transactions));
+      return this;
+    }
+
     private List<Attestation> getAttestations() {
       return attestations;
     }
 
     public Optional<Eth1Data> getEth1Data() {
       return eth1Data;
+    }
+
+    public Optional<List<Bytes>> getTransactions() {
+      return transactions;
     }
   }
 }

@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static org.mockito.Mockito.mock;
 import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
 import static tech.pegasys.teku.util.config.Constants.MIN_ATTESTATION_INCLUSION_DELAY;
 
@@ -46,6 +47,7 @@ import tech.pegasys.teku.spec.executionengine.StubExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.config.Constants;
@@ -109,7 +111,8 @@ public class BeaconChainUtil {
         spec,
         storageClient,
         validatorKeys,
-        ForkChoice.create(spec, new InlineEventThread(), storageClient),
+        ForkChoice.create(
+            spec, new InlineEventThread(), storageClient, mock(ForkChoiceNotifier.class)),
         true);
   }
 
@@ -130,7 +133,8 @@ public class BeaconChainUtil {
         spec,
         validatorKeys,
         storageClient,
-        ForkChoice.create(spec, new InlineEventThread(), storageClient),
+        ForkChoice.create(
+            spec, new InlineEventThread(), storageClient, mock(ForkChoiceNotifier.class)),
         signDeposits);
   }
 
@@ -299,7 +303,15 @@ public class BeaconChainUtil {
 
     final Signer signer = getSigner(proposerIndex);
     return blockCreator.createBlock(
-        signer, slot, preState, bestBlockRoot, attestations, deposits, exits, eth1Data);
+        signer,
+        slot,
+        preState,
+        bestBlockRoot,
+        attestations,
+        deposits,
+        exits,
+        eth1Data,
+        Optional.empty());
   }
 
   public void finalizeChainAtEpoch(final UInt64 epoch) throws Exception {
@@ -353,7 +365,9 @@ public class BeaconChainUtil {
       validate();
       if (forkChoice == null) {
         final InlineEventThread forkChoiceExecutor = new InlineEventThread();
-        forkChoice = ForkChoice.create(spec, forkChoiceExecutor, recentChainData);
+        forkChoice =
+            ForkChoice.create(
+                spec, forkChoiceExecutor, recentChainData, mock(ForkChoiceNotifier.class));
       }
       if (validatorKeys == null) {
         new MockStartValidatorKeyPairFactory().generateKeyPairs(0, validatorCount);

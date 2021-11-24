@@ -20,8 +20,8 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.operations.versions.merge.BeaconPreparableProposer;
 import tech.pegasys.teku.ssz.type.Bytes20;
-import tech.pegasys.teku.validator.api.BeaconPreparableProposer;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
@@ -32,6 +32,7 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
   private final OwnedValidators validators;
   private final Spec spec;
   private final Bytes20 feeRecipient;
+  private boolean firstCallDone = false;
 
   public BeaconProposerPreparer(
       ValidatorApiChannel validatorApiChannel,
@@ -48,7 +49,8 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
 
   @Override
   public void onSlot(UInt64 slot) {
-    if (slot.mod(spec.getSlotsPerEpoch(slot)).isZero()) {
+    if (slot.mod(spec.getSlotsPerEpoch(slot)).isZero() || !firstCallDone) {
+      firstCallDone = true;
       validatorIndexProvider
           .getValidatorIndices(validators.getPublicKeys())
           .thenApply(

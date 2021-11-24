@@ -46,6 +46,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -59,16 +60,19 @@ public class ForkChoice {
   private final EventThread forkChoiceExecutor;
   private final RecentChainData recentChainData;
   private final ProposerWeightings proposerWeightings;
+  private final ForkChoiceNotifier forkChoiceNotifier;
 
   private ForkChoice(
       final Spec spec,
       final EventThread forkChoiceExecutor,
       final RecentChainData recentChainData,
+      final ForkChoiceNotifier forkChoiceNotifier,
       final ProposerWeightings proposerWeightings) {
     this.spec = spec;
     this.forkChoiceExecutor = forkChoiceExecutor;
     this.recentChainData = recentChainData;
     this.proposerWeightings = proposerWeightings;
+    this.forkChoiceNotifier = forkChoiceNotifier;
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
   }
 
@@ -76,12 +80,14 @@ public class ForkChoice {
       final Spec spec,
       final EventThread forkChoiceExecutor,
       final RecentChainData recentChainData,
+      final ForkChoiceNotifier forkChoiceNotifier,
       final boolean balanceAttackMitigationEnabled) {
     final ProposerWeightings proposerWeightings =
         balanceAttackMitigationEnabled
             ? new ActiveProposerWeightings(forkChoiceExecutor, spec)
             : new InactiveProposerWeightings();
-    return new ForkChoice(spec, forkChoiceExecutor, recentChainData, proposerWeightings);
+    return new ForkChoice(
+        spec, forkChoiceExecutor, recentChainData, forkChoiceNotifier, proposerWeightings);
   }
 
   /**
@@ -92,8 +98,9 @@ public class ForkChoice {
   public static ForkChoice create(
       final Spec spec,
       final EventThread forkChoiceExecutor,
-      final RecentChainData recentChainData) {
-    return create(spec, forkChoiceExecutor, recentChainData, false);
+      final RecentChainData recentChainData,
+      final ForkChoiceNotifier forkChoiceNotifier) {
+    return create(spec, forkChoiceExecutor, recentChainData, forkChoiceNotifier, false);
   }
 
   private void initializeProtoArrayForkChoice() {
@@ -156,7 +163,9 @@ public class ForkChoice {
                                           new IllegalStateException(
                                               "Unable to retrieve the slot of fork choice head: "
                                                   + headBlockRoot))));
+
                       transaction.commit();
+                      notifyForkChoiceUpdated();
                       return true;
                     }));
   }
@@ -191,55 +200,72 @@ public class ForkChoice {
             spec, recentChainData, forkChoiceExecutor, block, executionEngine);
 
     return onForkChoiceThread(
-        () -> {
-          final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
-          final StoreTransaction transaction = recentChainData.startStoreTransaction();
-          final CapturingIndexedAttestationCache indexedAttestationCache =
-              IndexedAttestationCache.capturing();
+            () -> {
+              final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
+              final StoreTransaction transaction = recentChainData.startStoreTransaction();
+              final CapturingIndexedAttestationCache indexedAttestationCache =
+                  IndexedAttestationCache.capturing();
 
-          addParentStateRoots(blockSlotState.get(), transaction);
-          final BlockImportResult result =
-              spec.onBlock(
-                  transaction,
-                  block,
-                  blockSlotState.get(),
-                  indexedAttestationCache,
-                  payloadExecutor);
+              addParentStateRoots(blockSlotState.get(), transaction);
+              final BlockImportResult result =
+                  spec.onBlock(
+                      transaction,
+                      block,
+                      blockSlotState.get(),
+                      indexedAttestationCache,
+                      payloadExecutor);
 
-          if (!result.isSuccessful()) {
-            if (result.getFailureReason() != FailureReason.BLOCK_IS_FROM_FUTURE) {
-              // Blocks from the future are not invalid, just not ready for processing yet
-              P2P_LOG.onInvalidBlock(
-                  block.getSlot(),
-                  block.getRoot(),
-                  block.sszSerialize(),
-                  result.getFailureReason().name(),
-                  result.getFailureCause());
-            }
-            return SafeFuture.completedFuture(result);
-          }
-          // Note: not using thenRun here because we want to ensure each step is on the event
-          // thread
-          transaction.commit().join();
+              if (!result.isSuccessful()) {
+                if (result.getFailureReason() != FailureReason.BLOCK_IS_FROM_FUTURE) {
+                  // Blocks from the future are not invalid, just not ready for processing yet
+                  P2P_LOG.onInvalidBlock(
+                      block.getSlot(),
+                      block.getRoot(),
+                      block.sszSerialize(),
+                      result.getFailureReason().name(),
+                      result.getFailureCause());
+                }
+                return SafeFuture.completedFuture(result);
+              }
+              // Note: not using thenRun here because we want to ensure each step is on the event
+              // thread
+              transaction.commit().join();
 
-          proposerWeightings.onBlockReceived(block, blockSlotState.get(), forkChoiceStrategy);
+              proposerWeightings.onBlockReceived(block, blockSlotState.get(), forkChoiceStrategy);
 
-          final UInt64 currentEpoch = spec.computeEpochAtSlot(spec.getCurrentSlot(transaction));
+              final UInt64 currentEpoch = spec.computeEpochAtSlot(spec.getCurrentSlot(transaction));
 
-          // We only need to apply attestations from the current or previous epoch
-          // If the block is from before that, none of the attestations will be applicable so
-          // just
-          // skip the whole step.
-          if (spec.computeEpochAtSlot(block.getSlot())
-              .isGreaterThanOrEqualTo(currentEpoch.minusMinZero(1))) {
-            applyVotesFromBlock(forkChoiceStrategy, currentEpoch, indexedAttestationCache);
-          }
+              // We only need to apply attestations from the current or previous epoch
+              // If the block is from before that, none of the attestations will be applicable so
+              // just
+              // skip the whole step.
+              if (spec.computeEpochAtSlot(block.getSlot())
+                  .isGreaterThanOrEqualTo(currentEpoch.minusMinZero(1))) {
+                applyVotesFromBlock(forkChoiceStrategy, currentEpoch, indexedAttestationCache);
+              }
 
-          // Do the combine while still on the fork choice thread unless we really do have to
-          // wait for the payload execution to complete, so call this here rather than in
-          // .thenCompose below even though it means having to unwrap the SafeFuture
-          return payloadExecutor.combine(result);
-        });
+              // Do the combine while still on the fork choice thread unless we really do have to
+              // wait for the payload execution to complete, so call this here rather than in
+              // .thenCompose below even though it means having to unwrap the SafeFuture
+              return payloadExecutor.combine(result);
+            })
+        .thenApplyAsync(
+            result -> {
+              if (result.isSuccessful()) {
+                notifyForkChoiceUpdated();
+              }
+              return result;
+            },
+            forkChoiceExecutor);
+  }
+
+  private void notifyForkChoiceUpdated() {
+    final ForkChoiceState forkChoiceState =
+        getForkChoiceStrategy()
+            .getForkChoiceState(
+                recentChainData.getJustifiedCheckpoint().orElseThrow(),
+                recentChainData.getFinalizedCheckpoint().orElseThrow());
+    forkChoiceNotifier.onForkChoiceUpdated(forkChoiceState);
   }
 
   private void applyVotesFromBlock(

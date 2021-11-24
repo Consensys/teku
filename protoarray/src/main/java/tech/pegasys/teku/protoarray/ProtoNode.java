@@ -34,6 +34,14 @@ public class ProtoNode {
   private final UInt64 justifiedEpoch;
   private final UInt64 finalizedEpoch;
 
+  /**
+   * The block hash from the execution payload.
+   *
+   * <p>{@link Bytes32#ZERO} if the block does not have an execution payload or uses the default
+   * payload.
+   */
+  private final Bytes32 executionBlockHash;
+
   private UInt64 weight;
   private Optional<Integer> parentIndex;
   private Optional<Integer> bestChildIndex;
@@ -49,6 +57,7 @@ public class ProtoNode {
       final Optional<Integer> parentIndex,
       final UInt64 justifiedEpoch,
       final UInt64 finalizedEpoch,
+      final Bytes32 executionBlockHash,
       final UInt64 weight,
       final Optional<Integer> bestChildIndex,
       final Optional<Integer> bestDescendantIndex,
@@ -60,6 +69,7 @@ public class ProtoNode {
     this.parentIndex = parentIndex;
     this.justifiedEpoch = justifiedEpoch;
     this.finalizedEpoch = finalizedEpoch;
+    this.executionBlockHash = executionBlockHash;
     this.weight = weight;
     this.bestChildIndex = bestChildIndex;
     this.bestDescendantIndex = bestDescendantIndex;
@@ -116,6 +126,10 @@ public class ProtoNode {
 
   public UInt64 getFinalizedEpoch() {
     return finalizedEpoch;
+  }
+
+  public Bytes32 getExecutionBlockHash() {
+    return executionBlockHash;
   }
 
   public void setParentIndex(Optional<Integer> parentIndex) {
@@ -175,7 +189,8 @@ public class ProtoNode {
         && Objects.equal(getWeight(), protoNode.getWeight())
         && Objects.equal(getParentIndex(), protoNode.getParentIndex())
         && Objects.equal(getBestChildIndex(), protoNode.getBestChildIndex())
-        && Objects.equal(getBestDescendantIndex(), protoNode.getBestDescendantIndex());
+        && Objects.equal(getBestDescendantIndex(), protoNode.getBestDescendantIndex())
+        && validationStatus == protoNode.validationStatus;
   }
 
   @Override
@@ -190,7 +205,8 @@ public class ProtoNode {
         getWeight(),
         getParentIndex(),
         getBestChildIndex(),
-        getBestDescendantIndex());
+        getBestDescendantIndex(),
+        validationStatus);
   }
 
   @Override
@@ -206,6 +222,7 @@ public class ProtoNode {
         .add("parentIndex", parentIndex)
         .add("bestChildIndex", bestChildIndex)
         .add("bestDescendantIndex", bestDescendantIndex)
+        .add("validationStatus", validationStatus)
         .toString();
   }
 }

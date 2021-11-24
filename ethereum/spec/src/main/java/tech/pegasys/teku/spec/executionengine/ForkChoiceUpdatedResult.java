@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.executionengine;
 
+import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.ssz.type.Bytes8;
@@ -45,5 +46,13 @@ public class ForkChoiceUpdatedResult {
   @Override
   public int hashCode() {
     return Objects.hash(status, payloadId);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("status", status)
+        .add("payloadId", payloadId)
+        .toString();
   }
 }

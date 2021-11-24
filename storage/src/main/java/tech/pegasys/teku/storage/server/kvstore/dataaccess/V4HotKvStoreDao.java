@@ -26,7 +26,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
 import tech.pegasys.teku.spec.datastructures.blocks.CheckpointEpochs;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -41,7 +40,7 @@ import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn;
 import tech.pegasys.teku.storage.server.kvstore.schema.KvStoreVariable;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaHot;
 
-public class V4HotKvStoreDao implements KvStoreHotDao, KvStoreEth1Dao, KvStoreProtoArrayDao {
+public class V4HotKvStoreDao implements KvStoreHotDao, KvStoreEth1Dao {
   // Persistent data
   private final KvStoreAccessor db;
   private final SchemaHot schema;
@@ -140,11 +139,6 @@ public class V4HotKvStoreDao implements KvStoreHotDao, KvStoreEth1Dao, KvStorePr
   }
 
   @Override
-  public Optional<ProtoArraySnapshot> getProtoArraySnapshot() {
-    return db.get(schema.getVariableProtoArraySnapshot());
-  }
-
-  @Override
   @MustBeClosed
   public HotUpdater hotUpdater() {
     return new V4HotUpdater(db, schema);
@@ -205,17 +199,11 @@ public class V4HotKvStoreDao implements KvStoreHotDao, KvStoreEth1Dao, KvStorePr
   }
 
   @Override
-  @MustBeClosed
-  public ProtoArrayUpdater protoArrayUpdater() {
-    return new V4HotUpdater(db, schema);
-  }
-
-  @Override
   public void close() throws Exception {
     db.close();
   }
 
-  static class V4HotUpdater implements HotUpdater, Eth1Updater, ProtoArrayUpdater {
+  static class V4HotUpdater implements HotUpdater, Eth1Updater {
 
     private final KvStoreTransaction transaction;
     private final SchemaHot schema;
@@ -329,11 +317,6 @@ public class V4HotKvStoreDao implements KvStoreHotDao, KvStoreEth1Dao, KvStorePr
     @Override
     public void addDepositsFromBlockEvent(final DepositsFromBlockEvent event) {
       transaction.put(schema.getColumnDepositsFromBlockEvents(), event.getBlockNumber(), event);
-    }
-
-    @Override
-    public void deleteProtoArraySnapshot() {
-      transaction.delete(schema.getVariableProtoArraySnapshot());
     }
 
     @Override

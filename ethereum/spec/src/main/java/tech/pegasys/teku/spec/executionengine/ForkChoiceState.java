@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.executionengine;
 
 import com.google.common.base.MoreObjects;
+import com.google.common.base.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 
@@ -53,5 +54,20 @@ public class ForkChoiceState {
         .add("safeBlockHash", safeBlockHash)
         .add("finalizedBlockHash", finalizedBlockHash)
         .toString();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof ForkChoiceState)) return false;
+    ForkChoiceState that = (ForkChoiceState) o;
+    return headBlockHash == that.headBlockHash
+        && safeBlockHash == that.safeBlockHash
+        && finalizedBlockHash == that.finalizedBlockHash;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(headBlockHash, safeBlockHash, finalizedBlockHash);
   }
 }

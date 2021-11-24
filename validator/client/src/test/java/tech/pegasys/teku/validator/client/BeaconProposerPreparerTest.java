@@ -17,9 +17,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.Collection;
@@ -35,8 +35,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
+import tech.pegasys.teku.spec.datastructures.operations.versions.merge.BeaconPreparableProposer;
 import tech.pegasys.teku.ssz.type.Bytes20;
-import tech.pegasys.teku.validator.api.BeaconPreparableProposer;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
@@ -102,8 +102,11 @@ public class BeaconProposerPreparerTest {
 
   @TestTemplate
   void should_notCallPrepareBeaconProposerAfterFirstSlotOfEpoch() {
+    beaconProposerPreparer.onSlot(UInt64.ZERO);
+    verify(validatorApiChannel).prepareBeaconProposer(any());
+
     beaconProposerPreparer.onSlot(UInt64.ONE);
-    verify(validatorApiChannel, never()).prepareBeaconProposer(any());
+    verifyNoMoreInteractions(validatorApiChannel);
   }
 
   @TestTemplate

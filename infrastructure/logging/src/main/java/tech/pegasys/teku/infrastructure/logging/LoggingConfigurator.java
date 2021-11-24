@@ -13,8 +13,10 @@
 
 package tech.pegasys.teku.infrastructure.logging;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Pattern;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Appender;
@@ -28,9 +30,13 @@ import org.apache.logging.log4j.core.config.AbstractConfiguration;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.apache.logging.log4j.core.layout.PatternLayout;
+import org.apache.logging.log4j.core.pattern.RegexReplacement;
 import org.apache.logging.log4j.status.StatusLogger;
 
 public class LoggingConfigurator {
+
+  static final String COLOR_LOG_REGEX = "[\\p{Cntrl}&&[^\r\n\u001b]]";
+  static final String NO_COLOR_LOG_REGEX = "[\\p{Cntrl}&&[^\r\n]]";
 
   static final String EVENT_LOGGER_NAME = "teku-event-log";
   static final String STATUS_LOGGER_NAME = "teku-status-log";
@@ -210,6 +216,14 @@ public class LoggingConfigurator {
     return DESTINATION == null;
   }
 
+  @VisibleForTesting
+  // returns the original destination
+  static LoggingDestination setDestination(final LoggingDestination destination) {
+    final LoggingDestination original = DESTINATION;
+    DESTINATION = destination;
+    return original;
+  }
+
   private static boolean isProgrammaticLoggingDisabled() {
     return DESTINATION == LoggingDestination.CUSTOM;
   }
@@ -260,17 +274,28 @@ public class LoggingConfigurator {
     return logger;
   }
 
+  @VisibleForTesting
+  static PatternLayout consoleAppenderLayout(
+      AbstractConfiguration configuration, final boolean omitStackTraces) {
+    final Pattern logReplacement =
+        Pattern.compile(isColorEnabled() ? COLOR_LOG_REGEX : NO_COLOR_LOG_REGEX);
+    return PatternLayout.newBuilder()
+        .withRegexReplacement(RegexReplacement.createRegexReplacement(logReplacement, ""))
+        .withAlwaysWriteExceptions(!omitStackTraces)
+        .withNoConsoleNoAnsi(true)
+        .withConfiguration(configuration)
+        .withPatternSelector(
+            new ConsolePatternSelector(
+                configuration, omitStackTraces, LoggingDestination.CONSOLE.equals(DESTINATION)))
+        .build();
+  }
+
   private static Appender consoleAppender(
       final AbstractConfiguration configuration, final boolean omitStackTraces) {
     configuration.removeAppender(CONSOLE_APPENDER_NAME);
 
-    final Layout<?> layout =
-        PatternLayout.newBuilder()
-            .withAlwaysWriteExceptions(!omitStackTraces)
-            .withNoConsoleNoAnsi(true)
-            .withConfiguration(configuration)
-            .withPatternSelector(new ConsolePatternSelector(configuration, omitStackTraces))
-            .build();
+    final Layout<?> layout = consoleAppenderLayout(configuration, omitStackTraces);
+
     final Appender consoleAppender =
         ConsoleAppender.newBuilder().setName(CONSOLE_APPENDER_NAME).setLayout(layout).build();
     consoleAppender.start();
@@ -278,14 +303,20 @@ public class LoggingConfigurator {
     return consoleAppender;
   }
 
+  @VisibleForTesting
+  static PatternLayout fileAppenderLayout(AbstractConfiguration configuration) {
+    final Pattern logReplacement =
+        Pattern.compile(isColorEnabled() ? COLOR_LOG_REGEX : NO_COLOR_LOG_REGEX);
+    return PatternLayout.newBuilder()
+        .withRegexReplacement(RegexReplacement.createRegexReplacement(logReplacement, ""))
+        .withPattern(FILE_MESSAGE_FORMAT)
+        .withConfiguration(configuration)
+        .build();
+  }
+
   private static Appender fileAppender(final AbstractConfiguration configuration) {
     configuration.removeAppender(FILE_APPENDER_NAME);
-
-    final Layout<?> layout =
-        PatternLayout.newBuilder()
-            .withConfiguration(configuration)
-            .withPattern(FILE_MESSAGE_FORMAT)
-            .build();
+    final Layout<?> layout = fileAppenderLayout(configuration);
 
     final Appender fileAppender =
         RollingFileAppender.newBuilder()

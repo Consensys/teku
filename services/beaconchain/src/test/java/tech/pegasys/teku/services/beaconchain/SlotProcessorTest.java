@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.EpochCachePrimer;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.server.StateStorageMode;
@@ -62,6 +63,7 @@ public class SlotProcessorTest {
 
   private final ForwardSync syncService = mock(ForwardSync.class);
   private final ForkChoiceTrigger forkChoiceTrigger = mock(ForkChoiceTrigger.class);
+  private final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
   private final Eth2P2PNetwork p2pNetwork = mock(Eth2P2PNetwork.class);
   private final SlotEventsChannel slotEventsChannel = mock(SlotEventsChannel.class);
   private final EpochCachePrimer epochCachePrimer = mock(EpochCachePrimer.class);
@@ -71,6 +73,7 @@ public class SlotProcessorTest {
           recentChainData,
           syncService,
           forkChoiceTrigger,
+          forkChoiceNotifier,
           p2pNetwork,
           slotEventsChannel,
           epochCachePrimer,
@@ -287,6 +290,7 @@ public class SlotProcessorTest {
             recentChainData,
             syncService,
             forkChoiceTrigger,
+            forkChoiceNotifier,
             p2pNetwork,
             slotEventsChannel,
             epochCachePrimer,

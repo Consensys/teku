@@ -13,7 +13,9 @@
 
 package tech.pegasys.teku.ethereum.executionlayer.client;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import okhttp3.OkHttpClient;
@@ -30,7 +32,6 @@ import org.web3j.protocol.http.HttpService;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutePayloadResult;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceStateV1;
-import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceUpdatedRequest;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.Response;
@@ -113,8 +114,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
     Request<?, ForkChoiceUpdatedWeb3jResponse> web3jRequest =
         new Request<>(
             "engine_forkchoiceUpdatedV1",
-            Collections.singletonList(
-                new ForkChoiceUpdatedRequest(forkChoiceState, payloadAttributes.orElse(null))),
+            list(forkChoiceState, payloadAttributes.orElse(null)),
             eeWeb3jService,
             ForkChoiceUpdatedWeb3jResponse.class);
     return doRequest(web3jRequest);
@@ -147,4 +147,18 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 
   static class ForkChoiceUpdatedWeb3jResponse
       extends org.web3j.protocol.core.Response<ForkChoiceUpdatedResult> {}
+
+  /**
+   * Returns a list that supports null items.
+   *
+   * @param items the items to put in a list
+   * @return the list
+   */
+  private List<Object> list(final Object... items) {
+    final List<Object> list = new ArrayList<>();
+    for (Object item : items) {
+      list.add(item);
+    }
+    return list;
+  }
 }

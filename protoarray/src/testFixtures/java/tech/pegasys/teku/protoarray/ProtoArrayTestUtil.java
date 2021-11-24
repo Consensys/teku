@@ -18,7 +18,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.TestStoreFactory;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -37,13 +36,14 @@ public class ProtoArrayTestUtil {
       UInt64 finalizedBlockSlot,
       UInt64 finalizedCheckpointEpoch,
       UInt64 justifiedCheckpointEpoch) {
-    MutableStore store = new TestStoreFactory(spec).createEmptyStore();
-    store.setJustifiedCheckpoint(new Checkpoint(justifiedCheckpointEpoch, Bytes32.ZERO));
-    store.setFinalizedCheckpoint(new Checkpoint(finalizedCheckpointEpoch, Bytes32.ZERO));
 
-    ForkChoiceStrategy forkChoice =
-        ForkChoiceStrategy.initializeAndMigrateStorage(spec, store, ProtoArrayStorageChannel.NO_OP)
-            .join();
+    final ProtoArray protoArray =
+        ProtoArray.builder()
+            .justifiedCheckpoint(new Checkpoint(justifiedCheckpointEpoch, Bytes32.ZERO))
+            .finalizedCheckpoint(new Checkpoint(finalizedCheckpointEpoch, Bytes32.ZERO))
+            .build();
+
+    ForkChoiceStrategy forkChoice = ForkChoiceStrategy.initialize(spec, protoArray);
 
     forkChoice.processBlock(
         finalizedBlockSlot,
@@ -51,7 +51,8 @@ public class ProtoArrayTestUtil {
         Bytes32.ZERO,
         Bytes32.ZERO,
         justifiedCheckpointEpoch,
-        finalizedCheckpointEpoch);
+        finalizedCheckpointEpoch,
+        Bytes32.ZERO);
 
     return forkChoice;
   }
