@@ -102,4 +102,8 @@ public class BeaconChainConfiguration {
   public StoreConfig storeConfig() {
     return storeConfig;
   }
+
+  public BeaconChainControllerFactory getBeaconChainControllerFactory() {
+    return beaconChainControllerFactory;
+  }
 }
