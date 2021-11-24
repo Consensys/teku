@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.interop;
 
 import java.util.List;
+import java.util.Optional;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -44,6 +45,7 @@ public final class InteropStartupUtil {
         new MockStartDepositGenerator(new DepositGenerator(spec, signDeposits))
             .createDeposits(validatorKeys);
     return new MockStartBeaconStateGenerator(spec)
-        .createInitialBeaconState(UInt64.valueOf(genesisTime), initialDepositData);
+        .createInitialBeaconState(
+            UInt64.valueOf(genesisTime), initialDepositData, Optional.empty());
   }
 }

@@ -20,6 +20,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -40,7 +41,9 @@ public class MockStartBeaconStateGenerator {
   }
 
   public BeaconState createInitialBeaconState(
-      final UInt64 genesisTime, final List<DepositData> initialDepositData) {
+      final UInt64 genesisTime,
+      final List<DepositData> initialDepositData,
+      final Optional<ExecutionPayloadHeader> payloadHeader) {
     final List<DepositWithIndex> deposits = new ArrayList<>();
     for (int index = 0; index < initialDepositData.size(); index++) {
       final DepositData data = initialDepositData.get(index);
@@ -48,7 +51,7 @@ public class MockStartBeaconStateGenerator {
       deposits.add(deposit);
     }
     final BeaconState initialState =
-        spec.initializeBeaconStateFromEth1(BLOCK_HASH, genesisTime, deposits, Optional.empty());
+        spec.initializeBeaconStateFromEth1(BLOCK_HASH, genesisTime, deposits, payloadHeader);
     return initialState.updated(state -> state.setGenesis_time(genesisTime));
   }
 }

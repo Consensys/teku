@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.datastructures.util;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyPair;
@@ -45,7 +46,8 @@ class MockStartBeaconStateGeneratorTest {
         new MockStartDepositGenerator(spec).createDeposits(validatorKeyPairs);
 
     final BeaconState initialBeaconState =
-        new MockStartBeaconStateGenerator(spec).createInitialBeaconState(genesisTime, deposits);
+        new MockStartBeaconStateGenerator(spec)
+            .createInitialBeaconState(genesisTime, deposits, Optional.empty());
 
     assertEquals(validatorCount, initialBeaconState.getValidators().size());
     assertEquals(validatorCount, initialBeaconState.getEth1_data().getDeposit_count().longValue());
