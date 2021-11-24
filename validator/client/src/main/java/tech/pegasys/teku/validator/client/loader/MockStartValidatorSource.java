@@ -16,9 +16,12 @@ package tech.pegasys.teku.validator.client.loader;
 import static java.util.stream.Collectors.toList;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.LocalSigner;
@@ -27,6 +30,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.validator.api.InteropConfig;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 
 public class MockStartValidatorSource implements ValidatorSource {
   private static final Logger LOG = LogManager.getLogger();
@@ -50,6 +54,17 @@ public class MockStartValidatorSource implements ValidatorSource {
         .generateKeyPairs(startIndex, endIndex).stream()
             .map(MockStartValidatorProvider::new)
             .collect(toList());
+  }
+
+  @Override
+  public Map<PostKeyResult, Optional<Signer>> addValidator(
+      KeyStoreData keyStoreData, String password) {
+    throw new UnsupportedOperationException("This object doesnt implement this operation.");
+  }
+
+  @Override
+  public boolean canAddValidator() {
+    return false;
   }
 
   private class MockStartValidatorProvider implements ValidatorProvider {

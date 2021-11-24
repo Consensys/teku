@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.core.signatures.NoOpSigner.NO_OP_SIGNER;
 
@@ -68,6 +69,8 @@ class KeyManagerTest {
 
   @Test
   void shouldNotImportValidatorsWithWrongPass() throws URISyntaxException, IOException {
+    when(validatorLoader.addValidatorInMemory(any(), any()))
+        .thenReturn(PostKeyResult.error("Invalid password."));
     final List<String> keystoreList = getKeystoresList();
     final List<String> passwordList = getKeystorePasswordList();
     passwordList.set(0, "invalidPass");

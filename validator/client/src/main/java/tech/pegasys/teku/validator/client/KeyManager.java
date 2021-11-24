@@ -18,14 +18,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.NotImplementedException;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.signers.bls.keystore.KeyStore;
-import tech.pegasys.signers.bls.keystore.KeyStoreValidationException;
 import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
-import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.bls.BLSSecretKey;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
@@ -115,25 +109,12 @@ public class KeyManager {
       try {
         final String password = passwords.get(i);
         final KeyStoreData keystore = getKeystoreDataObject(keystores.get(i));
-        final BLSKeyPair keyPair =
-            new BLSKeyPair(
-                BLSSecretKey.fromBytes(Bytes32.wrap(KeyStore.decrypt(password, keystore))));
-        if (keystore.getPubkey().equals(keyPair.getPublicKey().toSSZBytes())) {
-          postKeyResults.add(executeImport());
-        } else {
-          postKeyResults.add(PostKeyResult.error("Incorrect public key."));
-        }
+        postKeyResults.add(validatorLoader.addValidatorInMemory(keystore, password));
       } catch (JsonProcessingException e) {
         postKeyResults.add(PostKeyResult.error("Invalid keystore."));
-      } catch (KeyStoreValidationException e) {
-        postKeyResults.add(PostKeyResult.error("Invalid password."));
       }
     }
     return postKeyResults;
-  }
-
-  private PostKeyResult executeImport() {
-    throw new NotImplementedException("executeImport not implemented yet.");
   }
 
   private KeyStoreData getKeystoreDataObject(final String keystore) throws JsonProcessingException {

@@ -26,7 +26,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
@@ -35,8 +37,10 @@ import tech.pegasys.teku.validator.api.GraffitiProvider;
 import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.KeyStoreFilesLocator;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
+import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
 import tech.pegasys.teku.validator.client.loader.ValidatorSource.ValidatorProvider;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 
 public class ValidatorLoader {
 
@@ -126,13 +130,13 @@ public class ValidatorLoader {
               File.pathSeparator);
       validatorSources.add(
           slashingProtected(
-              new LocalValidatorSource(
+              MutableValidatorSource.create(
                   spec,
                   config.isValidatorKeystoreLockingEnabled(),
                   new KeystoreLocker(),
                   keyStoreFilesLocator,
                   asyncRunner,
-                  false),
+                  dataDirLayout),
               slashingProtector));
     }
   }
@@ -190,6 +194,27 @@ public class ValidatorLoader {
     validatorSources.forEach(source -> addValidatorsFromSource(validatorProviders, source));
     MultithreadedValidatorLoader.loadValidators(
         ownedValidators, validatorProviders, graffitiProvider);
+  }
+
+  public PostKeyResult addValidatorInMemory(KeyStoreData keystore, String password) {
+    BLSPublicKey publicKey = BLSPublicKey.fromSSZBytes(keystore.getPubkey());
+    if (ownedValidators.hasValidator(publicKey)) {
+      return PostKeyResult.duplicate();
+    }
+    for (ValidatorSource validatorSource : validatorSources) {
+      if (validatorSource.canAddValidator()) {
+        Map<PostKeyResult, Optional<Signer>> resultValidator =
+            validatorSource.addValidator(keystore, password);
+        Optional<Signer> maybeSigner = resultValidator.values().stream().findFirst().get();
+        if (maybeSigner.isPresent()) {
+          final Validator validator =
+              new Validator(publicKey, maybeSigner.get(), graffitiProvider, false);
+          ownedValidators.addValidator(validator);
+        }
+        return resultValidator.keySet().stream().findFirst().get();
+      }
+    }
+    return PostKeyResult.error("No suitable validator source available.");
   }
 
   public OwnedValidators getOwnedValidators() {

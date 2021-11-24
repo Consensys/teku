@@ -18,8 +18,11 @@ import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import java.net.http.HttpClient;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -27,6 +30,7 @@ import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 import tech.pegasys.teku.validator.client.signer.ExternalSigner;
 import tech.pegasys.teku.validator.client.signer.ExternalSignerStatusLogger;
 import tech.pegasys.teku.validator.client.signer.ExternalSignerUpcheck;
@@ -85,6 +89,17 @@ public class ExternalValidatorSource implements ValidatorSource {
     return publicKeys.stream()
         .map(key -> new ExternalValidatorProvider(spec, key))
         .collect(toList());
+  }
+
+  @Override
+  public Map<PostKeyResult, Optional<Signer>> addValidator(
+      KeyStoreData keyStoreData, String password) {
+    throw new UnsupportedOperationException("This object doesnt implement this operation.");
+  }
+
+  @Override
+  public boolean canAddValidator() {
+    return false;
   }
 
   private static void setupExternalSignerStatusLogging(

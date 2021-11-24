@@ -24,6 +24,7 @@ import com.google.common.io.Resources;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpResponse;
@@ -39,6 +40,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentMatchers;
+import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
+import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
@@ -56,6 +59,8 @@ import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.ImportStatus;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 
 class ValidatorLoaderTest {
 
@@ -579,6 +584,100 @@ class ValidatorLoaderTest {
     assertThat(validators.getPublicKeys()).containsExactlyInAnyOrder(PUBLIC_KEY1);
   }
 
+  @Test
+  void shouldAddValidatorInMemory(final @TempDir Path tempDir, final @TempDir Path tempDirMutable)
+      throws URISyntaxException, IOException {
+    final DataDirLayout dataDirLayout =
+        new SeparateServiceDataDirLayout(tempDirMutable, Optional.empty(), Optional.empty());
+    final Path keystore = ValidatorClientService.getAlterableKeystorePath(dataDirLayout);
+    final Path keystorePassword =
+        ValidatorClientService.getAlterableKeystorePasswordPath(dataDirLayout);
+    createMutableDirectoryStructure(dataDirLayout, keystore, keystorePassword);
+
+    final KeyStoreData keyStoreData = generateKeystore();
+    final String validatorFileName = keyStoreData.getPubkey().toUnprefixedHexString().toLowerCase();
+    final Path validatorPath = keystore.resolve(validatorFileName + ".json");
+    final Path validatorLockedFilePath = keystore.resolve(validatorFileName + ".json.lock");
+    final Path validatorPasswordPath = keystorePassword.resolve(validatorFileName + ".txt");
+
+    final ValidatorConfig config =
+        ValidatorConfig.builder()
+            .validatorKeys(
+                List.of(
+                    tempDir.toAbsolutePath().toString()
+                        + File.pathSeparator
+                        + tempDir.toAbsolutePath().toString()))
+            .build();
+
+    final ValidatorLoader validatorLoader =
+        ValidatorLoader.create(
+            spec,
+            config,
+            disabledInteropConfig,
+            httpClientFactory,
+            slashingProtector,
+            publicKeyLoader,
+            asyncRunner,
+            metricsSystem,
+            Optional.of(dataDirLayout));
+
+    final OwnedValidators validators = validatorLoader.getOwnedValidators();
+    assertThat(validators.getPublicKeys()).isEmpty();
+
+    PostKeyResult result = validatorLoader.addValidatorInMemory(keyStoreData, "testpassword");
+
+    assertThat(result.getImportStatus()).isEqualTo(ImportStatus.IMPORTED);
+    assertThat(validators.getPublicKeys()).hasSize(1);
+
+    assertThat(Files.exists(validatorPath)).isTrue();
+    assertThat(Files.exists(validatorLockedFilePath)).isTrue();
+    assertThat(Files.exists(validatorPasswordPath)).isTrue();
+  }
+
+  @Test
+  void shouldNotAddDuplicatedValidator(
+      final @TempDir Path tempDir, final @TempDir Path tempDirMutable) throws Exception {
+    final DataDirLayout dataDirLayout =
+        new SeparateServiceDataDirLayout(tempDirMutable, Optional.empty(), Optional.empty());
+    writeMutableKeystore(dataDirLayout);
+
+    final ValidatorConfig config =
+        ValidatorConfig.builder()
+            .validatorKeys(
+                List.of(
+                    tempDir.toAbsolutePath().toString()
+                        + File.pathSeparator
+                        + tempDir.toAbsolutePath().toString()))
+            .build();
+
+    final ValidatorLoader validatorLoader =
+        ValidatorLoader.create(
+            spec,
+            config,
+            disabledInteropConfig,
+            httpClientFactory,
+            slashingProtector,
+            publicKeyLoader,
+            asyncRunner,
+            metricsSystem,
+            Optional.of(dataDirLayout));
+    validatorLoader.loadValidators();
+    final OwnedValidators validators = validatorLoader.getOwnedValidators();
+    assertThat(validators.getPublicKeys()).hasSize(1);
+
+    final KeyStoreData keyStoreData = generateKeystore();
+    PostKeyResult result = validatorLoader.addValidatorInMemory(keyStoreData, "testpassword");
+
+    assertThat(result.getImportStatus()).isEqualTo(ImportStatus.DUPLICATE);
+    assertThat(validators.getPublicKeys()).hasSize(1);
+  }
+
+  private KeyStoreData generateKeystore() throws URISyntaxException, IOException {
+    final URL resource = Resources.getResource("testKeystore.json");
+    KeyStoreData keyStoreData = KeyStoreLoader.loadFromFile(Path.of(resource.toURI()));
+    return keyStoreData;
+  }
+
   private void writeKeystore(final Path tempDir) throws Exception {
     final URL resource = Resources.getResource("pbkdf2TestVector.json");
     Files.copy(Path.of(resource.toURI()), tempDir.resolve("key.json"));
@@ -589,11 +688,16 @@ class ValidatorLoaderTest {
     final URL resource = Resources.getResource("testKeystore.json");
     final Path keystore = ValidatorClientService.getAlterableKeystorePath(tempDir);
     final Path keystorePassword = ValidatorClientService.getAlterableKeystorePasswordPath(tempDir);
+    createMutableDirectoryStructure(tempDir, keystore, keystorePassword);
+    Files.copy(Path.of(resource.toURI()), keystore.resolve("key.json"));
+    Files.writeString(keystorePassword.resolve("key.txt"), "testpassword");
+  }
+
+  private void createMutableDirectoryStructure(
+      DataDirLayout tempDir, Path keystore, Path keystorePassword) throws IOException {
     Files.createDirectory(tempDir.getValidatorDataDirectory());
     Files.createDirectory(keystore);
     Files.createDirectory(keystorePassword);
-    Files.copy(Path.of(resource.toURI()), keystore.resolve("key.json"));
-    Files.writeString(keystorePassword.resolve("key.txt"), "testpassword");
   }
 
   @Test

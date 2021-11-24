@@ -25,6 +25,8 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
@@ -41,6 +43,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.validator.api.KeyStoreFilesLocator;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 
 public class LocalValidatorSource implements ValidatorSource {
 
@@ -70,6 +73,17 @@ public class LocalValidatorSource implements ValidatorSource {
   public List<ValidatorProvider> getAvailableValidators() {
     final List<Pair<Path, Path>> filePairs = keyStoreFilesLocator.parse();
     return filePairs.stream().map(this::createValidatorProvider).collect(toList());
+  }
+
+  @Override
+  public Map<PostKeyResult, Optional<Signer>> addValidator(
+      KeyStoreData keyStoreData, String password) {
+    throw new UnsupportedOperationException("This object doesnt implement this operation.");
+  }
+
+  @Override
+  public boolean canAddValidator() {
+    return false;
   }
 
   private ValidatorProvider createValidatorProvider(
