@@ -29,7 +29,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -325,19 +324,5 @@ class ForkChoiceNotifierTest {
         forkChoiceStrategy.executionBlockHash(finalizedRoot).orElseThrow();
 
     return new ForkChoiceState(headExecutionHash, headExecutionHash, finalizedExecutionHash);
-  }
-
-  private void doMerge(Bytes32 terminalBlockHash) {
-    SignedBlockAndState newBlockWithExecutionPayloadAtopTerminalBlock =
-        storageSystem
-            .chainUpdater()
-            .chainBuilder
-            .generateBlockAtSlot(
-                recentChainData.getHeadSlot().plus(1),
-                ChainBuilder.BlockOptions.create()
-                    .setTransactions(dataStructureUtil.randomBytes(40))
-                    .setTerminalBlockHash(terminalBlockHash));
-
-    storageSystem.chainUpdater().updateBestBlock(newBlockWithExecutionPayloadAtopTerminalBlock);
   }
 }
