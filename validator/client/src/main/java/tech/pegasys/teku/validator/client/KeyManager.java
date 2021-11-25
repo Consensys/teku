@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.NotImplementedException;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -89,11 +90,20 @@ public class KeyManager {
    *
    * @param keystores strings of keystore files
    * @param passwords strings of passwords
-   * @param slashingProtection a combined slashing protection payload
    * @return a list of 1 status per keystore that was attempted to be imported
    */
   public List<ImportStatus> importValidators(
-      final List<String> keystores, final List<String> passwords, final String slashingProtection) {
+      final List<String> keystores, final List<String> passwords) {
     throw new NotImplementedException("importValidators not implemented yet");
+  }
+
+  /**
+   * Import slashing protection data
+   *
+   * @param slashingProtection slashing protection data in interchange format
+   * @return Error message on failure, otherwise Optional.empty() on success.
+   */
+  public Optional<String> importSlashingProtection(final String slashingProtection) {
+    return Optional.of("Import slashing protection is not yet implemented.");
   }
 }

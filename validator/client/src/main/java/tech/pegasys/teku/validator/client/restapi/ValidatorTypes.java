@@ -64,7 +64,7 @@ public class ValidatorTypes {
               DeserializableTypeDefinition.listOf(STRING_TYPE),
               PostKeysRequest::getPasswords,
               PostKeysRequest::setPasswords)
-          .withField(
+          .withOptionalField(
               "slashing_protection",
               CoreTypes.string(
                   "JSON serialized representation of the slash protection data in format defined in EIP-3076: Slashing Protection Interchange Format."),

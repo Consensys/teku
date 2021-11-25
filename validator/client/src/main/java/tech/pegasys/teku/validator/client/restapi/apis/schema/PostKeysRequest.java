@@ -14,18 +14,22 @@
 package tech.pegasys.teku.validator.client.restapi.apis.schema;
 
 import com.google.common.base.MoreObjects;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 public class PostKeysRequest {
-  private List<String> keystores;
-  private List<String> passwords;
-  private String slashingProtection;
+  private List<String> keystores = new ArrayList<>();
+  private List<String> passwords = new ArrayList<>();
+  private Optional<String> slashingProtection = Optional.empty();
 
   public PostKeysRequest() {}
 
   public PostKeysRequest(
-      final List<String> keystores, final List<String> passwords, final String slashingProtection) {
+      final List<String> keystores,
+      final List<String> passwords,
+      final Optional<String> slashingProtection) {
     this.keystores = keystores;
     this.passwords = passwords;
     this.slashingProtection = slashingProtection;
@@ -47,11 +51,11 @@ public class PostKeysRequest {
     this.passwords = passwords;
   }
 
-  public String getSlashingProtection() {
+  public Optional<String> getSlashingProtection() {
     return slashingProtection;
   }
 
-  public void setSlashingProtection(final String slashingProtection) {
+  public void setSlashingProtection(final Optional<String> slashingProtection) {
     this.slashingProtection = slashingProtection;
   }
 
