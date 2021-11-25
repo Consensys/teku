@@ -28,11 +28,13 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationForkChecker;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 
 public class BlockOperationSelectorFactory {
@@ -46,6 +48,8 @@ public class BlockOperationSelectorFactory {
   private final DepositProvider depositProvider;
   private final Eth1DataCache eth1DataCache;
   private final Bytes32 graffiti;
+  private final ForkChoiceNotifier forkChoiceNotifier;
+  private final ExecutionEngineChannel executionEngineChannel;
 
   public BlockOperationSelectorFactory(
       final Spec spec,
@@ -56,7 +60,9 @@ public class BlockOperationSelectorFactory {
       final SyncCommitteeContributionPool contributionPool,
       final DepositProvider depositProvider,
       final Eth1DataCache eth1DataCache,
-      final Bytes32 graffiti) {
+      final Bytes32 graffiti,
+      ForkChoiceNotifier forkChoiceNotifier,
+      ExecutionEngineChannel executionEngineChannel) {
     this.spec = spec;
     this.attestationPool = attestationPool;
     this.attesterSlashingPool = attesterSlashingPool;
@@ -66,6 +72,8 @@ public class BlockOperationSelectorFactory {
     this.depositProvider = depositProvider;
     this.eth1DataCache = eth1DataCache;
     this.graffiti = graffiti;
+    this.forkChoiceNotifier = forkChoiceNotifier;
+    this.executionEngineChannel = executionEngineChannel;
   }
 
   public Consumer<BeaconBlockBodyBuilder> createSelector(
@@ -121,10 +129,23 @@ public class BlockOperationSelectorFactory {
                       blockSlotState.getSlot(), parentRoot))
           .executionPayload(
               () ->
-                  SchemaDefinitionsMerge.required(
-                          spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions())
-                      .getExecutionPayloadSchema()
-                      .getDefault());
+                  forkChoiceNotifier
+                      .getPayloadId(parentRoot)
+                      .thenApply(
+                          maybePayloadId -> {
+                            if (maybePayloadId.isEmpty()) {
+                              // TTD not reached
+                              return SchemaDefinitionsMerge.required(
+                                      spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions())
+                                  .getExecutionPayloadSchema()
+                                  .getDefault();
+                            } else {
+                              return executionEngineChannel
+                                  .getPayload(maybePayloadId.get(), blockSlotState.getSlot())
+                                  .join();
+                            }
+                          })
+                      .join());
     };
   }
 }

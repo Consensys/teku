@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -57,6 +58,8 @@ public class ForkChoiceNotifier {
   private Optional<PayloadAttributes> lastSentPayloadAttributes = Optional.empty();
   private Optional<Bytes8> lastPayloadId = Optional.empty();
 
+  private Optional<Bytes32> executionPayloadTerminalBlockHash = Optional.empty();
+
   ForkChoiceNotifier(
       final EventThread eventThread,
       final Spec spec,
@@ -75,6 +78,7 @@ public class ForkChoiceNotifier {
       final RecentChainData recentChainData) {
     final AsyncRunnerEventThread eventThread =
         new AsyncRunnerEventThread("forkChoiceNotifier", asyncRunnerFactory);
+    eventThread.start();
     return new ForkChoiceNotifier(eventThread, spec, executionEngineChannel, recentChainData);
   }
 
@@ -90,8 +94,70 @@ public class ForkChoiceNotifier {
     eventThread.execute(() -> internalAttestationsDue(slot));
   }
 
-  public SafeFuture<Optional<Bytes8>> getPayloadId() {
-    return eventThread.execute(() -> lastPayloadId);
+  public SafeFuture<Optional<Bytes8>> getPayloadId(Bytes32 beaconBlockRoot) {
+    return eventThread.execute(() -> internalGetPayloadId(beaconBlockRoot));
+  }
+
+  public void onTerminalBlockReached(Bytes32 executionBlockHash) {
+    eventThread.execute(() -> internalTerminalBlockReached(executionBlockHash));
+  }
+
+  private void internalTerminalBlockReached(Bytes32 executionBlockHash) {
+    eventThread.checkOnEventThread();
+    executionPayloadTerminalBlockHash = Optional.of(executionBlockHash);
+  }
+
+  /**
+   * must return:
+   *
+   * <p>Optional.empty() only when is safe to produce a block with an empty execution payload (after
+   * the merge fork and before Terminal Block arrival)
+   *
+   * <p>Optional.of(payloadId) when one of the following:
+   *
+   * <p>1. builds on top of execution head of parentBeaconBlockRoot
+   *
+   * <p>2. builds on top of the terminal block
+   *
+   * <p>in all other cases it must Throw to avoid block production
+   */
+  private Optional<Bytes8> internalGetPayloadId(Bytes32 parentBeaconBlockRoot) {
+    eventThread.checkOnEventThread();
+
+    Bytes32 parentExecutionHash =
+        recentChainData
+            .getExecutionBlockHashForBlockRoot(parentBeaconBlockRoot)
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "Failed to retrieve execution payload hash from beacon block root"));
+
+    final Bytes32 lastSentForkChoiceHead =
+        lastSentForkChoiceState.map(ForkChoiceState::getHeadBlockHash).orElse(Bytes32.ZERO);
+
+    if (lastSentForkChoiceHead.equals(parentExecutionHash)) {
+      // Payload ID builds on the correct execution block
+      if (lastPayloadId.isPresent() || parentExecutionHash.isZero()) {
+        return lastPayloadId;
+      }
+      throw new IllegalStateException(
+          String.format("PayloadId not available for Beacon Block Root %s", parentBeaconBlockRoot));
+    }
+    if (parentExecutionHash.isZero()) {
+      // Haven't reached the merge block yet, parent has default payload
+      if (executionPayloadTerminalBlockHash.isPresent()
+          && lastSentForkChoiceHead.equals(executionPayloadTerminalBlockHash.get())) {
+        // Creating the merge block - payload ID is building on the terminal PoW block
+        return lastPayloadId;
+      }
+      // Can still use a default payload
+      return Optional.empty();
+    } else {
+      // Merge is complete so we must have a real payload, but we don't have one that matches
+      // TODO: try to obtain a payloadId on the fly?
+      throw new IllegalStateException(
+          "Payload ID required but not available for parent block root " + parentBeaconBlockRoot);
+    }
   }
 
   private void internalUpdatePreparableProposers(
@@ -266,5 +332,10 @@ public class ForkChoiceNotifier {
     public boolean hasExpired(final UInt64 currentSlot) {
       return currentSlot.isGreaterThanOrEqualTo(expirySlot);
     }
+  }
+
+  @VisibleForTesting
+  Optional<ForkChoiceState> getForkChoiceState() {
+    return forkChoiceState;
   }
 }

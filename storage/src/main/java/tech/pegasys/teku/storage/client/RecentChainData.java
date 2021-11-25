@@ -459,6 +459,10 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return getForkChoiceStrategy().flatMap(forkChoice -> forkChoice.blockSlot(root));
   }
 
+  public Optional<Bytes32> getExecutionBlockHashForBlockRoot(final Bytes32 root) {
+    return getForkChoiceStrategy().flatMap(forkChoice -> forkChoice.executionBlockHash(root));
+  }
+
   public SafeFuture<Optional<BeaconBlock>> retrieveBlockByRoot(final Bytes32 root) {
     if (store == null) {
       return EmptyStoreResults.EMPTY_BLOCK_FUTURE;

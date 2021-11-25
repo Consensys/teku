@@ -82,6 +82,7 @@ class ForkChoiceNotifierTest {
   @BeforeEach
   void setUp() {
     storageSystem.chainUpdater().initializeGenesisWithPayload(false);
+    storageSystem.chainUpdater().updateBestBlock(storageSystem.chainUpdater().advanceChain());
     forkChoiceStrategy = recentChainData.getForkChoiceStrategy().orElseThrow();
     when(executionEngineChannel.executePayload(any()))
         .thenReturn(
@@ -105,7 +106,7 @@ class ForkChoiceNotifierTest {
   void onForkChoiceUpdated_shouldSendNotificationWithPayloadAttributesForNextProposer() {
     final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
     final BeaconState headState = recentChainData.getBestState().orElseThrow();
-    final UInt64 blockSlot = UInt64.ONE;
+    final UInt64 blockSlot = headState.getSlot().plus(1);
     final PayloadAttributes payloadAttributes = withProposerForSlot(headState, blockSlot);
 
     notifier.onForkChoiceUpdated(forkChoiceState);
@@ -117,7 +118,8 @@ class ForkChoiceNotifierTest {
   void onForkChoiceUpdated_shouldSendNotificationWithoutPayloadAttributesWhenNotProposingNext() {
     final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
     final BeaconState headState = recentChainData.getBestState().orElseThrow();
-    final UInt64 blockSlot = UInt64.ONE;
+    final UInt64 blockSlot = headState.getSlot().plus(1);
+
     final int notTheNextProposer = spec.getBeaconProposerIndex(headState, blockSlot) + 1;
     notifier.onUpdatePreparableProposers(
         List.of(
@@ -137,35 +139,43 @@ class ForkChoiceNotifierTest {
 
   @Test
   void onAttestationsDue_shouldNotSendUpdateIfNotChanged() {
+    final BeaconState headState = recentChainData.getBestState().orElseThrow();
     final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
     notifier.onForkChoiceUpdated(forkChoiceState);
     verify(executionEngineChannel).forkChoiceUpdated(forkChoiceState, Optional.empty());
 
-    notifier.onAttestationsDue(UInt64.ZERO);
+    notifier.onAttestationsDue(headState.getSlot());
     verifyNoMoreInteractions(executionEngineChannel);
 
-    notifier.onAttestationsDue(UInt64.ONE);
+    notifier.onAttestationsDue(headState.getSlot().plus(1));
     verifyNoMoreInteractions(executionEngineChannel);
   }
 
   @Test
-  void onAttestationsDue_shouldSendUpdateIfWeAreDueToProposeNext() {
+  void onAttestationsDue_shouldSendUpdateEvenWithAMissedBlockIfWeAreDueToProposeNextTwo() {
     final BeaconState headState = recentChainData.getBestState().orElseThrow();
-    final UInt64 blockSlot = UInt64.valueOf(2);
-    final PayloadAttributes payloadAttributes = withProposerForSlot(headState, blockSlot);
+    final UInt64 blockSlot1 = headState.getSlot().plus(2);
+    final UInt64 blockSlot2 = headState.getSlot().plus(3);
+    final List<PayloadAttributes> payloadAttributes =
+        withProposerForTwoSlots(headState, blockSlot1, blockSlot2);
 
     final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
     notifier.onForkChoiceUpdated(forkChoiceState);
-    // Not proposing block 1 so no payload attributes
+    // Not proposing block +1 so no payload attributes
     verify(executionEngineChannel).forkChoiceUpdated(forkChoiceState, Optional.empty());
 
-    notifier.onAttestationsDue(UInt64.ZERO);
+    notifier.onAttestationsDue(headState.getSlot());
     verifyNoMoreInteractions(executionEngineChannel);
 
-    // Slot 1 is now assumed empty so prepare to propose in slot 2
-    notifier.onAttestationsDue(UInt64.ONE);
+    // Slot +1 is now assumed empty so prepare to propose in slot +2
+    notifier.onAttestationsDue(headState.getSlot().plus(1));
     verify(executionEngineChannel)
-        .forkChoiceUpdated(forkChoiceState, Optional.of(payloadAttributes));
+        .forkChoiceUpdated(forkChoiceState, Optional.of(payloadAttributes.get(0)));
+
+    // Slot +2 is now assumed empty so prepare to propose in slot +3
+    notifier.onAttestationsDue(headState.getSlot().plus(2));
+    verify(executionEngineChannel)
+        .forkChoiceUpdated(forkChoiceState, Optional.of(payloadAttributes.get(1)));
   }
 
   @Test
@@ -192,7 +202,7 @@ class ForkChoiceNotifierTest {
   void onUpdatePreparableProposers_shouldSendNewNotificationWhenProposerAdded() {
     final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
     final BeaconState headState = recentChainData.getBestState().orElseThrow();
-    final UInt64 blockSlot = UInt64.ONE;
+    final UInt64 blockSlot = headState.getSlot().plus(1);
 
     notifier.onForkChoiceUpdated(forkChoiceState);
     verify(executionEngineChannel).forkChoiceUpdated(forkChoiceState, Optional.empty());
@@ -207,7 +217,8 @@ class ForkChoiceNotifierTest {
     final Bytes8 payloadId = dataStructureUtil.randomBytes8();
     final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
     final BeaconState headState = recentChainData.getBestState().orElseThrow();
-    final UInt64 blockSlot = UInt64.ONE;
+    final Bytes32 blockRoot = recentChainData.getBestBlockRoot().orElseThrow();
+    final UInt64 blockSlot = headState.getSlot().plus(1);
     final PayloadAttributes payloadAttributes = withProposerForSlot(headState, blockSlot);
 
     final SafeFuture<ForkChoiceUpdatedResult> responseFuture = new SafeFuture<>();
@@ -217,12 +228,36 @@ class ForkChoiceNotifierTest {
     notifier.onForkChoiceUpdated(forkChoiceState);
 
     // Initially has no payload ID.
-    assertThatSafeFuture(notifier.getPayloadId()).isCompletedWithEmptyOptional();
+    assertThatSafeFuture(notifier.getPayloadId(blockRoot)).isCompletedExceptionally();
 
     // But becomes available once we receive the response
     responseFuture.complete(
         new ForkChoiceUpdatedResult(ForkChoiceUpdatedStatus.SUCCESS, Optional.of(payloadId)));
-    assertThatSafeFuture(notifier.getPayloadId()).isCompletedWithOptionalContaining(payloadId);
+    assertThatSafeFuture(notifier.getPayloadId(blockRoot))
+        .isCompletedWithOptionalContaining(payloadId);
+  }
+
+  @Test
+  void getPayloadId_shouldReturnExceptionallyLatestPayloadIdOnWrongRoot() {
+    final Bytes8 payloadId = dataStructureUtil.randomBytes8();
+    final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
+    final BeaconState headState = recentChainData.getBestState().orElseThrow();
+    final UInt64 blockSlot = headState.getSlot().plus(1);
+
+    final Bytes32 wrongBlockRoot = dataStructureUtil.randomBytes32();
+
+    final PayloadAttributes payloadAttributes = withProposerForSlot(headState, blockSlot);
+
+    final SafeFuture<ForkChoiceUpdatedResult> responseFuture = new SafeFuture<>();
+    when(executionEngineChannel.forkChoiceUpdated(forkChoiceState, Optional.of(payloadAttributes)))
+        .thenReturn(responseFuture);
+
+    notifier.onForkChoiceUpdated(forkChoiceState);
+
+    responseFuture.complete(
+        new ForkChoiceUpdatedResult(ForkChoiceUpdatedStatus.SUCCESS, Optional.of(payloadId)));
+
+    assertThatSafeFuture(notifier.getPayloadId(wrongBlockRoot)).isCompletedExceptionally();
   }
 
   private PayloadAttributes withProposerForSlot(final UInt64 blockSlot) {
@@ -244,6 +279,32 @@ class ForkChoiceNotifierTest {
             new BeaconPreparableProposer(
                 UInt64.valueOf(block2Proposer), payloadAttributes.getFeeRecipient())));
     return payloadAttributes;
+  }
+
+  private List<PayloadAttributes> withProposerForTwoSlots(
+      final BeaconState headState, final UInt64 blockSlot1, UInt64 blockSlot2) {
+    final int block2Proposer1 = spec.getBeaconProposerIndex(headState, blockSlot1);
+    final int block2Proposer2 = spec.getBeaconProposerIndex(headState, blockSlot2);
+    final PayloadAttributes payloadAttributes1 =
+        getExpectedPayloadAttributes(headState, blockSlot1);
+    final PayloadAttributes payloadAttributes2 =
+        getExpectedPayloadAttributes(headState, blockSlot2);
+
+    if (block2Proposer1 != block2Proposer2) {
+      notifier.onUpdatePreparableProposers(
+          List.of(
+              new BeaconPreparableProposer(
+                  UInt64.valueOf(block2Proposer1), payloadAttributes1.getFeeRecipient()),
+              new BeaconPreparableProposer(
+                  UInt64.valueOf(block2Proposer2), payloadAttributes2.getFeeRecipient())));
+      return List.of(payloadAttributes1, payloadAttributes2);
+    } else {
+      notifier.onUpdatePreparableProposers(
+          List.of(
+              new BeaconPreparableProposer(
+                  UInt64.valueOf(block2Proposer1), payloadAttributes1.getFeeRecipient())));
+      return List.of(payloadAttributes1, payloadAttributes1);
+    }
   }
 
   private PayloadAttributes getExpectedPayloadAttributes(
