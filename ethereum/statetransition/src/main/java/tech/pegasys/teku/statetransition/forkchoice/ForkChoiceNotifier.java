@@ -94,7 +94,7 @@ public class ForkChoiceNotifier {
   }
 
   public SafeFuture<Optional<Bytes8>> getPayloadId(Bytes32 beaconBlockRoot) {
-    return eventThread.executeFuture(() -> internalGetPayloadId(beaconBlockRoot));
+    return eventThread.executeFuture(() -> internalGetPayloadId(beaconBlockRoot, true));
   }
 
   public void onTerminalBlockReached(Bytes32 executionBlockHash) {
@@ -107,20 +107,17 @@ public class ForkChoiceNotifier {
   }
 
   /**
-   * must return a Future resolving to:
-   *
-   * <p>Optional.empty() only when is safe to produce a block with an empty execution payload (after
-   * the merge fork and before Terminal Block arrival)
-   *
-   * <p>Optional.of(payloadId) when one of the following:
-   *
-   * <p>1. builds on top of execution head of parentBeaconBlockRoot
-   *
-   * <p>2. builds on top of the terminal block
-   *
-   * <p>in all other cases it must Throw to avoid block production
+   * @param parentBeaconBlockRoot
+   * @param allowPayloadIdOnTheFlyRetrieval safely control recursive calls
+   * @return must return a Future resolving to:
+   *     <p>Optional.empty() only when is safe to produce a block with an empty execution payload
+   *     (after the merge fork and before Terminal Block arrival)
+   *     <p>Optional.of(payloadId) when one of the following: 1. builds on top of execution head of
+   *     parentBeaconBlockRoot 2. builds on top of the terminal block
+   *     <p>in all other cases it must Throw to avoid block production
    */
-  private SafeFuture<Optional<Bytes8>> internalGetPayloadId(Bytes32 parentBeaconBlockRoot) {
+  private SafeFuture<Optional<Bytes8>> internalGetPayloadId(
+      Bytes32 parentBeaconBlockRoot, boolean allowPayloadIdOnTheFlyRetrieval) {
     eventThread.checkOnEventThread();
 
     Bytes32 parentExecutionHash =
@@ -131,47 +128,71 @@ public class ForkChoiceNotifier {
                     new IllegalStateException(
                         "Failed to retrieve execution payload hash from beacon block root"));
 
-    final Bytes32 lastSentForkChoiceHead =
-        lastSentForkChoiceState.map(ForkChoiceState::getHeadBlockHash).orElse(Bytes32.ZERO);
+    final boolean lastForkChoiceStateCorrectlyBuildsOnTop =
+        lastSentForkChoiceState
+            .map(ForkChoiceState::getHeadBlockHash)
+            .map(
+                fcsHead -> {
+                  if (fcsHead.equals(parentExecutionHash)) {
+                    return true;
+                  }
+                  return executionPayloadTerminalBlockHash.isPresent()
+                      && fcsHead.equals(executionPayloadTerminalBlockHash.get());
+                })
+            .orElse(false);
 
-    if (lastSentForkChoiceHead.equals(parentExecutionHash)) {
-      // Payload ID builds on the correct execution block
-      if (lastFuturePayloadId.isPresent()) {
-        return lastFuturePayloadId
-            .get()
-            .thenApply(
-                payloadId -> {
-                  if (payloadId.isPresent() || parentExecutionHash.isZero()) return payloadId;
-                  throw new IllegalStateException(
-                      String.format(
-                          "PayloadId not available for Beacon Block Root %s",
-                          parentBeaconBlockRoot));
-                });
+    if (lastForkChoiceStateCorrectlyBuildsOnTop) {
+      // current Future Payload ID builds on the correct block
+
+      if (lastFuturePayloadId.isEmpty()) {
+        // consistency check
+        throw new IllegalStateException(
+            "we cannot have lastSentForkChoiceState without lastFuturePayloadId");
       }
 
-      if (parentExecutionHash.isZero()) {
+      return lastFuturePayloadId
+          .get()
+          .thenApply(
+              payloadId -> {
+
+                // we accept empty payload only in pre-merge
+                if (payloadId.isPresent() || parentExecutionHash.isZero()) return payloadId;
+
+                throw new IllegalStateException(
+                    String.format(
+                        "PayloadId not available for Beacon Block Root %s", parentBeaconBlockRoot));
+              });
+    }
+
+    // we have no SentForkChoiceState or doesn't build on top of the right block
+    if (parentExecutionHash.isZero()) {
+      // pre-merge
+
+      if (executionPayloadTerminalBlockHash.isEmpty()) {
+        // we are in pre-merge and terminal block is not reached, we can build a block with empty
+        // payload
         return SafeFuture.completedFuture(Optional.empty());
       }
 
-      throw new IllegalStateException(
-          String.format("PayloadId not available for Beacon Block Root %s", parentBeaconBlockRoot));
-    }
-    if (parentExecutionHash.isZero()) {
-      // Haven't reached the merge block yet, parent has default payload
-      if (executionPayloadTerminalBlockHash.isPresent()
-          && lastSentForkChoiceHead.equals(executionPayloadTerminalBlockHash.get())
-          && lastFuturePayloadId.isPresent()) {
-        // Creating the merge block - payload ID is building on the terminal PoW block
-        return lastFuturePayloadId.get();
+      if (allowPayloadIdOnTheFlyRetrieval) {
+        // we are in pre-merge and terminal block is reached
+        // try to obtain a payloadId now
+        final Bytes32 terminalBlockHash = executionPayloadTerminalBlockHash.get();
+        final ForkChoiceState terminalForkChoiceState =
+            new ForkChoiceState(terminalBlockHash, terminalBlockHash, Bytes32.ZERO);
+        internalForkChoiceUpdated(terminalForkChoiceState);
+        if (!lastSentForkChoiceState.equals(forkChoiceState) || lastFuturePayloadId.isEmpty()) {
+          throw new IllegalStateException();
+        }
+        return internalGetPayloadId(parentBeaconBlockRoot, false);
       }
-      // Can still use a default payload
-      return SafeFuture.completedFuture(Optional.empty());
-    } else {
-      // Merge is complete so we must have a real payload, but we don't have one that matches
-      // TODO: try to obtain a payloadId on the fly?
-      throw new IllegalStateException(
-          "Payload ID required but not available for parent block root " + parentBeaconBlockRoot);
     }
+
+    // Merge is complete so we must have a real payload, but we don't have one that matches
+    // TODO: try to obtain a payloadId on the fly?
+
+    throw new IllegalStateException(
+        String.format("PayloadId not available for Beacon Block Root %s", parentBeaconBlockRoot));
   }
 
   private void internalUpdatePreparableProposers(
