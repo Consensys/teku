@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.async.eventthread;
 
 import java.util.concurrent.Executor;
+import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
@@ -37,4 +38,6 @@ public interface EventThread extends Executor {
   void executeLater(final Runnable task);
 
   <T> SafeFuture<T> execute(final ExceptionThrowingSupplier<T> callable);
+
+  <T> SafeFuture<T> executeFuture(final Supplier<SafeFuture<T>> callable);
 }

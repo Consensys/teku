@@ -241,7 +241,7 @@ class ForkChoiceNotifierTest {
     notifier.onForkChoiceUpdated(forkChoiceState);
 
     // Initially has no payload ID.
-    assertThatSafeFuture(notifier.getPayloadId(blockRoot)).isCompletedExceptionally();
+    assertThatSafeFuture(notifier.getPayloadId(blockRoot)).isNotCompleted();
 
     // But becomes available once we receive the response
     responseFuture.complete(
