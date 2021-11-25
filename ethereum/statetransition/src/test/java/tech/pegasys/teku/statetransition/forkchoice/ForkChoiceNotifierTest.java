@@ -60,14 +60,13 @@ class ForkChoiceNotifierTest {
   private final Spec spec = TestSpecFactory.createMinimalMerge();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
-  private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
-  private final RecentChainData recentChainData = storageSystem.recentChainData();
+  private StorageSystem storageSystem;
+  private RecentChainData recentChainData;
   private ForkChoiceStrategy forkChoiceStrategy;
 
   private final ExecutionEngineChannel executionEngineChannel = mock(ExecutionEngineChannel.class);
 
-  private final ForkChoiceNotifier notifier =
-      new ForkChoiceNotifier(eventThread, spec, executionEngineChannel, recentChainData);
+  private ForkChoiceNotifier notifier;
 
   @BeforeAll
   public static void initSession() {
@@ -81,9 +80,14 @@ class ForkChoiceNotifierTest {
 
   @BeforeEach
   void setUp() {
+    // initialize post-merge by default
+    storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
+    recentChainData = storageSystem.recentChainData();
+    notifier = new ForkChoiceNotifier(eventThread, spec, executionEngineChannel, recentChainData);
     storageSystem.chainUpdater().initializeGenesisWithPayload(false);
     storageSystem.chainUpdater().updateBestBlock(storageSystem.chainUpdater().advanceChain());
     forkChoiceStrategy = recentChainData.getForkChoiceStrategy().orElseThrow();
+
     when(executionEngineChannel.executePayload(any()))
         .thenReturn(
             SafeFuture.completedFuture(
@@ -93,6 +97,15 @@ class ForkChoiceNotifierTest {
         .thenReturn(
             SafeFuture.completedFuture(
                 new ForkChoiceUpdatedResult(ForkChoiceUpdatedStatus.SUCCESS, Optional.empty())));
+  }
+
+  void reInitializePreMerge() {
+    storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
+    recentChainData = storageSystem.recentChainData();
+    notifier = new ForkChoiceNotifier(eventThread, spec, executionEngineChannel, recentChainData);
+    storageSystem.chainUpdater().initializeGenesis(false);
+    storageSystem.chainUpdater().updateBestBlock(storageSystem.chainUpdater().advanceChain());
+    forkChoiceStrategy = recentChainData.getForkChoiceStrategy().orElseThrow();
   }
 
   @Test
@@ -258,6 +271,14 @@ class ForkChoiceNotifierTest {
         new ForkChoiceUpdatedResult(ForkChoiceUpdatedStatus.SUCCESS, Optional.of(payloadId)));
 
     assertThatSafeFuture(notifier.getPayloadId(wrongBlockRoot)).isCompletedExceptionally();
+  }
+
+  @Test
+  void getPayloadId_shouldReturnEmptyWithNoForkChoiceAndNoTerminalBlock() {
+    reInitializePreMerge();
+    final Bytes32 blockRoot = recentChainData.getBestBlockRoot().orElseThrow();
+
+    assertThatSafeFuture(notifier.getPayloadId(blockRoot)).isCompletedWithEmptyOptional();
   }
 
   private PayloadAttributes withProposerForSlot(final UInt64 blockSlot) {
