@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
@@ -132,15 +133,17 @@ class BlockFactoryTest {
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final StateAndBlockSummary bestBlockAndState = recentChainData.getChainHead().orElseThrow();
     final Bytes32 bestBlockRoot = bestBlockAndState.getRoot();
-    final BeaconState previousState =
-        recentChainData.retrieveBlockState(bestBlockRoot).join().orElseThrow();
+    final BeaconState blockSlotState =
+        recentChainData
+            .retrieveStateAtSlot(new SlotAndBlockRoot(UInt64.valueOf(blockSlot), bestBlockRoot))
+            .join()
+            .orElseThrow();
 
     when(syncCommitteeContributionPool.createSyncAggregateForBlock(newSlot, bestBlockRoot))
         .thenAnswer(invocation -> createEmptySyncAggregate(spec));
 
     final BeaconBlock block =
-        blockFactory.createUnsignedBlock(
-            previousState, Optional.empty(), newSlot, randaoReveal, Optional.empty());
+        blockFactory.createUnsignedBlock(blockSlotState, newSlot, randaoReveal, Optional.empty());
 
     assertThat(block).isNotNull();
     assertThat(block.getSlot()).isEqualTo(newSlot);

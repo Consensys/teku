@@ -425,19 +425,16 @@ class ValidatorApiHandlerTest {
   public void createUnsignedBlock_shouldCreateBlock() throws Exception {
     final UInt64 newSlot = UInt64.valueOf(25);
     final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
-    final BeaconState previousState = dataStructureUtil.randomBeaconState(newSlot.minus(1));
     final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(newSlot);
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BeaconBlock createdBlock = dataStructureUtil.randomBeaconBlock(newSlot.longValue());
 
     when(chainDataClient.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
     when(chainDataClient.getHeadSlot()).thenReturn(UInt64.valueOf(24));
-    when(chainDataClient.getStateAtSlotExact(newSlot.minus(ONE)))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(previousState)));
     when(chainDataClient.getStateAtSlotExact(newSlot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockSlotState)));
     when(blockFactory.createUnsignedBlock(
-            previousState, Optional.of(blockSlotState), newSlot, randaoReveal, Optional.empty()))
+            blockSlotState, newSlot, randaoReveal, Optional.empty()))
         .thenReturn(createdBlock);
 
     final SafeFuture<Optional<BeaconBlock>> result =
@@ -445,7 +442,7 @@ class ValidatorApiHandlerTest {
 
     verify(blockFactory)
         .createUnsignedBlock(
-            previousState, Optional.of(blockSlotState), newSlot, randaoReveal, Optional.empty());
+            blockSlotState, newSlot, randaoReveal, Optional.empty());
     assertThat(result).isCompletedWithValue(Optional.of(createdBlock));
   }
 

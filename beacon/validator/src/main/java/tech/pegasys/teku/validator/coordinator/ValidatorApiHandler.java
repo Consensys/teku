@@ -277,15 +277,10 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         .prepareForBlockProduction(slot)
         .thenCompose(
             __ -> {
-              final SafeFuture<Optional<BeaconState>> preStateFuture =
-                  combinedChainDataClient.getStateAtSlotExact(slot.decrement());
               final SafeFuture<Optional<BeaconState>> blockSlotStateFuture =
                   combinedChainDataClient.getStateAtSlotExact(slot);
-              return preStateFuture.thenCompose(
-                  preState ->
-                      blockSlotStateFuture.thenApplyChecked(
-                          blockSlotState ->
-                              createBlock(slot, randaoReveal, graffiti, preState, blockSlotState)));
+              return blockSlotStateFuture.thenApplyChecked(
+                  blockSlotState -> createBlock(slot, randaoReveal, graffiti, blockSlotState));
             });
   }
 
@@ -293,17 +288,13 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final UInt64 slot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
-      final Optional<BeaconState> maybePreState,
-      final Optional<BeaconState> maybeBlockSlotState)
+      final Optional<BeaconState> blockSlotState)
       throws EpochProcessingException, SlotProcessingException, StateTransitionException {
-    if (maybePreState.isEmpty()) {
+    if (blockSlotState.isEmpty()) {
       return Optional.empty();
     }
-    LOG.trace(
-        "Delegating to block factory. Has block slot state? {}", maybeBlockSlotState.isPresent());
     return Optional.of(
-        blockFactory.createUnsignedBlock(
-            maybePreState.get(), maybeBlockSlotState, slot, randaoReveal, graffiti));
+        blockFactory.createUnsignedBlock(blockSlotState.get(), slot, randaoReveal, graffiti));
   }
 
   @Override
