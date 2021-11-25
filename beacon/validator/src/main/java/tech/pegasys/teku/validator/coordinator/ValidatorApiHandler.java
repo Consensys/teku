@@ -341,13 +341,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                           final SignedBlockAndState blockAndState = maybeBlockAndState.get();
                           final BeaconBlock block = blockAndState.getBlock().getMessage();
 
-                          // The head block and justified checkpoint must be fully validated
-                          if (!combinedChainDataClient.isFullyValidatedHotBlock(block.getRoot())
-                              || !combinedChainDataClient.isFullyValidatedHotBlock(
-                                  blockAndState
-                                      .getState()
-                                      .getCurrent_justified_checkpoint()
-                                      .getRoot())) {
+                          // The head block must not be optimistically synced.
+                          if (!combinedChainDataClient.isFullyValidatedHotBlock(block.getRoot())) {
                             return NodeSyncingException.failedFuture();
                           }
                           if (blockAndState.getSlot().compareTo(minQuerySlot) < 0) {
