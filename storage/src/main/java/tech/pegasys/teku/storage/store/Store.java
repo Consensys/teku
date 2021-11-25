@@ -82,10 +82,10 @@ class Store implements UpdatableStore {
 
   private final Optional<Checkpoint> initialCheckpoint;
   UInt64 time;
-  UInt64 genesis_time;
+  UInt64 genesisTime;
   AnchorPoint finalizedAnchor;
-  Checkpoint justified_checkpoint;
-  Checkpoint best_justified_checkpoint;
+  Checkpoint justifiedCheckpoint;
+  Checkpoint bestJustifiedCheckpoint;
   final CachingTaskQueue<Bytes32, StateAndBlockSummary> states;
   final Map<Bytes32, SignedBeaconBlock> blocks;
   final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates;
@@ -102,16 +102,16 @@ class Store implements UpdatableStore {
       final CachingTaskQueue<Bytes32, StateAndBlockSummary> states,
       final Optional<Checkpoint> initialCheckpoint,
       final UInt64 time,
-      final UInt64 genesis_time,
+      final UInt64 genesisTime,
       final AnchorPoint finalizedAnchor,
-      final Checkpoint justified_checkpoint,
-      final Checkpoint best_justified_checkpoint,
+      final Checkpoint justifiedCheckpoint,
+      final Checkpoint bestJustifiedCheckpoint,
       final ForkChoiceStrategy forkChoiceStrategy,
       final Map<UInt64, VoteTracker> votes,
       final Map<Bytes32, SignedBeaconBlock> blocks,
       final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates) {
     checkArgument(
-        time.isGreaterThanOrEqualTo(genesis_time),
+        time.isGreaterThanOrEqualTo(genesisTime),
         "Time must be greater than or equal to genesisTime");
     this.forkChoiceStrategy = forkChoiceStrategy;
     this.stateProvider = stateProvider;
@@ -129,9 +129,9 @@ class Store implements UpdatableStore {
     this.initialCheckpoint = initialCheckpoint;
     this.hotStatePersistenceFrequencyInEpochs = hotStatePersistenceFrequencyInEpochs;
     this.time = time;
-    this.genesis_time = genesis_time;
-    this.justified_checkpoint = justified_checkpoint;
-    this.best_justified_checkpoint = best_justified_checkpoint;
+    this.genesisTime = genesisTime;
+    this.justifiedCheckpoint = justifiedCheckpoint;
+    this.bestJustifiedCheckpoint = bestJustifiedCheckpoint;
     this.blocks = blocks;
     this.highestVotedValidatorIndex =
         votes.keySet().stream().max(Comparator.naturalOrder()).orElse(UInt64.ZERO);
@@ -301,7 +301,7 @@ class Store implements UpdatableStore {
   public UInt64 getGenesisTime() {
     readLock.lock();
     try {
-      return genesis_time;
+      return genesisTime;
     } finally {
       readLock.unlock();
     }
@@ -316,7 +316,7 @@ class Store implements UpdatableStore {
   public Checkpoint getJustifiedCheckpoint() {
     readLock.lock();
     try {
-      return justified_checkpoint;
+      return justifiedCheckpoint;
     } finally {
       readLock.unlock();
     }
@@ -356,7 +356,7 @@ class Store implements UpdatableStore {
   public Checkpoint getBestJustifiedCheckpoint() {
     readLock.lock();
     try {
-      return best_justified_checkpoint;
+      return bestJustifiedCheckpoint;
     } finally {
       readLock.unlock();
     }

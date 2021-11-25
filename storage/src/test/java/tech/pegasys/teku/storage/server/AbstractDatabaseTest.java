@@ -350,7 +350,7 @@ public abstract class AbstractDatabaseTest {
     addBlocks(allBlocks);
 
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
-    transaction.setGenesis_time(UInt64.valueOf(3));
+    transaction.setGenesisTime(UInt64.valueOf(3));
     transaction.setFinalizedCheckpoint(checkpoint1);
     transaction.setJustifiedCheckpoint(checkpoint2);
     transaction.setBestJustifiedCheckpoint(checkpoint3);
@@ -373,7 +373,7 @@ public abstract class AbstractDatabaseTest {
     assertThat(store.getGenesisTime()).isNotEqualTo(newGenesisTime);
 
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
-    transaction.setGenesis_time(newGenesisTime);
+    transaction.setGenesisTime(newGenesisTime);
     commit(transaction);
 
     final UpdatableStore result = recreateStore();

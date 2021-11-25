@@ -268,7 +268,7 @@ class StoreTest extends AbstractStoreTest {
     tx.setBestJustifiedCheckpoint(checkpoint3);
     // Update time
     tx.setTime(initialTime.plus(UInt64.ONE));
-    tx.setGenesis_time(genesisTime.plus(UInt64.ONE));
+    tx.setGenesisTime(genesisTime.plus(UInt64.ONE));
 
     // Check that store is not yet updated
     // Check blocks

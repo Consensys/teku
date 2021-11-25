@@ -66,10 +66,10 @@ class StoreTransactionUpdates {
 
   public StorageUpdate createStorageUpdate() {
     return new StorageUpdate(
-        tx.genesis_time,
+        tx.genesisTime,
         finalizedChainData,
-        tx.justified_checkpoint,
-        tx.best_justified_checkpoint,
+        tx.justifiedCheckpoint,
+        tx.bestJustifiedCheckpoint,
         hotBlocks,
         hotStatesToPersist,
         prunedHotBlockRoots,
@@ -79,9 +79,9 @@ class StoreTransactionUpdates {
   public void applyToStore(final Store store) {
     // Add new data
     tx.time.filter(t -> t.isGreaterThan(store.getTime())).ifPresent(value -> store.time = value);
-    tx.genesis_time.ifPresent(value -> store.genesis_time = value);
-    tx.justified_checkpoint.ifPresent(value -> store.justified_checkpoint = value);
-    tx.best_justified_checkpoint.ifPresent(value -> store.best_justified_checkpoint = value);
+    tx.genesisTime.ifPresent(value -> store.genesisTime = value);
+    tx.justifiedCheckpoint.ifPresent(value -> store.justifiedCheckpoint = value);
+    tx.bestJustifiedCheckpoint.ifPresent(value -> store.bestJustifiedCheckpoint = value);
     hotBlocks.forEach((root, value) -> store.blocks.put(root, value.getBlock()));
     store.states.cacheAll(Maps.transformValues(hotBlockAndStates, this::blockAndStateAsSummary));
 

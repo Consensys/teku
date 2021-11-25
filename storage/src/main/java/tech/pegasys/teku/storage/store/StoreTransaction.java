@@ -52,10 +52,10 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   private final StorageUpdateChannel storageUpdateChannel;
 
   Optional<UInt64> time = Optional.empty();
-  Optional<UInt64> genesis_time = Optional.empty();
-  Optional<Checkpoint> justified_checkpoint = Optional.empty();
-  Optional<Checkpoint> finalized_checkpoint = Optional.empty();
-  Optional<Checkpoint> best_justified_checkpoint = Optional.empty();
+  Optional<UInt64> genesisTime = Optional.empty();
+  Optional<Checkpoint> justifiedCheckpoint = Optional.empty();
+  Optional<Checkpoint> finalizedCheckpoint = Optional.empty();
+  Optional<Checkpoint> bestJustifiedCheckpoint = Optional.empty();
   Map<Bytes32, SlotAndBlockRoot> stateRoots = new HashMap<>();
   Map<Bytes32, SignedBlockAndState> blockAndStates = new HashMap<>();
   private final UpdatableStore.StoreUpdateHandler updateHandler;
@@ -103,23 +103,23 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
-  public void setGenesis_time(UInt64 genesis_time) {
-    this.genesis_time = Optional.of(genesis_time);
+  public void setGenesisTime(UInt64 genesisTime) {
+    this.genesisTime = Optional.of(genesisTime);
   }
 
   @Override
   public void setJustifiedCheckpoint(Checkpoint justified_checkpoint) {
-    this.justified_checkpoint = Optional.of(justified_checkpoint);
+    this.justifiedCheckpoint = Optional.of(justified_checkpoint);
   }
 
   @Override
   public void setFinalizedCheckpoint(Checkpoint finalized_checkpoint) {
-    this.finalized_checkpoint = Optional.of(finalized_checkpoint);
+    this.finalizedCheckpoint = Optional.of(finalized_checkpoint);
   }
 
   @Override
   public void setBestJustifiedCheckpoint(Checkpoint best_justified_checkpoint) {
-    this.best_justified_checkpoint = Optional.of(best_justified_checkpoint);
+    this.bestJustifiedCheckpoint = Optional.of(best_justified_checkpoint);
   }
 
   @CheckReturnValue
@@ -152,7 +152,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
                         }
 
                         // Signal back changes to the handler
-                        finalized_checkpoint.ifPresent(updateHandler::onNewFinalizedCheckpoint);
+                        finalizedCheckpoint.ifPresent(updateHandler::onNewFinalizedCheckpoint);
                       });
             });
   }
@@ -169,7 +169,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
 
   @Override
   public UInt64 getGenesisTime() {
-    return genesis_time.orElseGet(store::getGenesisTime);
+    return genesisTime.orElseGet(store::getGenesisTime);
   }
 
   @Override
@@ -179,30 +179,30 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
 
   @Override
   public Checkpoint getJustifiedCheckpoint() {
-    return justified_checkpoint.orElseGet(store::getJustifiedCheckpoint);
+    return justifiedCheckpoint.orElseGet(store::getJustifiedCheckpoint);
   }
 
   @Override
   public Checkpoint getFinalizedCheckpoint() {
-    return finalized_checkpoint.orElseGet(store::getFinalizedCheckpoint);
+    return finalizedCheckpoint.orElseGet(store::getFinalizedCheckpoint);
   }
 
   @Override
   public AnchorPoint getLatestFinalized() {
-    if (finalized_checkpoint.isPresent()) {
+    if (finalizedCheckpoint.isPresent()) {
       // Ideally we wouldn't join here - but seems not worth making this API async since we're
       // unlikely to call this on tx objects
       final SignedBlockAndState finalizedBlockAndState =
-          retrieveBlockAndState(finalized_checkpoint.get().getRoot()).join().orElseThrow();
-      return AnchorPoint.create(spec, finalized_checkpoint.get(), finalizedBlockAndState);
+          retrieveBlockAndState(finalizedCheckpoint.get().getRoot()).join().orElseThrow();
+      return AnchorPoint.create(spec, finalizedCheckpoint.get(), finalizedBlockAndState);
     }
     return store.getLatestFinalized();
   }
 
   private SafeFuture<AnchorPoint> retrieveLatestFinalized() {
-    if (finalized_checkpoint.isPresent()) {
-      final Checkpoint finalizedCheckpoint = finalized_checkpoint.get();
-      return retrieveBlockAndState(finalized_checkpoint.get().getRoot())
+    if (finalizedCheckpoint.isPresent()) {
+      final Checkpoint finalizedCheckpoint = this.finalizedCheckpoint.get();
+      return retrieveBlockAndState(this.finalizedCheckpoint.get().getRoot())
           .thenApply(
               blockAndState ->
                   AnchorPoint.create(
@@ -223,7 +223,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
 
   @Override
   public Checkpoint getBestJustifiedCheckpoint() {
-    return best_justified_checkpoint.orElseGet(store::getBestJustifiedCheckpoint);
+    return bestJustifiedCheckpoint.orElseGet(store::getBestJustifiedCheckpoint);
   }
 
   @Override
@@ -333,7 +333,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
 
   @Override
   public SafeFuture<CheckpointState> retrieveFinalizedCheckpointAndState() {
-    if (this.finalized_checkpoint.isEmpty()) {
+    if (this.finalizedCheckpoint.isEmpty()) {
       return store.retrieveFinalizedCheckpointAndState();
     }
 
