@@ -153,6 +153,7 @@ class ValidatorApiHandlerTest {
   public void setUp() {
     when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(forkChoiceTrigger.prepareForBlockProduction(any())).thenReturn(SafeFuture.COMPLETE);
+    when(chainDataClient.isFullyValidatedHotBlock(any())).thenReturn(true);
   }
 
   @Test
@@ -422,15 +423,30 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
+  public void createUnsignedBlock_shouldFailWhenParentBlockIsOptimistic() {
+    final UInt64 newSlot = UInt64.valueOf(25);
+    final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(newSlot);
+    when(chainDataClient.getStateAtSlotExact(newSlot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(blockSlotState)));
+    final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, newSlot.minus(1));
+    when(chainDataClient.isFullyValidatedHotBlock(parentRoot)).thenReturn(false);
+
+    final SafeFuture<Optional<BeaconBlock>> result =
+        validatorApiHandler.createUnsignedBlock(
+            newSlot, dataStructureUtil.randomSignature(), Optional.empty());
+
+    assertThat(result).isCompletedExceptionally();
+    assertThatThrownBy(result::get).hasRootCauseInstanceOf(NodeSyncingException.class);
+    verifyNoInteractions(blockFactory);
+  }
+
+  @Test
   public void createUnsignedBlock_shouldCreateBlock() throws Exception {
     final UInt64 newSlot = UInt64.valueOf(25);
-    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
     final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(newSlot);
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BeaconBlock createdBlock = dataStructureUtil.randomBeaconBlock(newSlot.longValue());
 
-    when(chainDataClient.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
-    when(chainDataClient.getHeadSlot()).thenReturn(UInt64.valueOf(24));
     when(chainDataClient.getStateAtSlotExact(newSlot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockSlotState)));
     when(blockFactory.createUnsignedBlock(blockSlotState, newSlot, randaoReveal, Optional.empty()))
@@ -449,6 +465,32 @@ class ValidatorApiHandlerTest {
     nodeIsSyncing();
     final SafeFuture<Optional<AttestationData>> result =
         validatorApiHandler.createAttestationData(ONE, 1);
+
+    assertThat(result).isCompletedExceptionally();
+    assertThatThrownBy(result::get).hasRootCauseInstanceOf(NodeSyncingException.class);
+  }
+
+  @Test
+  public void createAttestationData_shouldFailWhenHeadIsOptimistic() {
+    final UInt64 slot = spec.computeStartSlotAtEpoch(EPOCH).plus(ONE);
+    when(chainDataClient.getCurrentSlot()).thenReturn(slot);
+
+    final BeaconState state = createStateWithActiveValidators(EPOCH_START_SLOT);
+    final SignedBeaconBlock block =
+        dataStructureUtil.randomSignedBeaconBlock(state.getSlot(), state);
+    final SignedBlockAndState blockAndState = new SignedBlockAndState(block, state);
+
+    final SafeFuture<Optional<SignedBlockAndState>> blockAndStateResult =
+        completedFuture(Optional.of(blockAndState));
+    when(chainDataClient.getSignedBlockAndStateInEffectAtSlot(slot))
+        .thenReturn(blockAndStateResult);
+    when(forkChoiceTrigger.prepareForAttestationProduction(slot)).thenReturn(SafeFuture.COMPLETE);
+
+    when(chainDataClient.isFullyValidatedHotBlock(blockAndState.getRoot())).thenReturn(false);
+
+    final int committeeIndex = 0;
+    final SafeFuture<Optional<AttestationData>> result =
+        validatorApiHandler.createAttestationData(slot, committeeIndex);
 
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(NodeSyncingException.class);
