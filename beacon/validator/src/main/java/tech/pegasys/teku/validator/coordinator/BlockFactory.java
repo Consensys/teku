@@ -22,8 +22,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
-import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 
 public class BlockFactory {
@@ -36,34 +34,19 @@ public class BlockFactory {
   }
 
   public BeaconBlock createUnsignedBlock(
-      final BeaconState previousState,
-      final Optional<BeaconState> maybeBlockSlotState,
+      final BeaconState blockSlotState,
       final UInt64 newSlot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> optionalGraffiti)
-      throws EpochProcessingException, SlotProcessingException, StateTransitionException {
+      throws StateTransitionException {
     checkArgument(
-        maybeBlockSlotState.isEmpty() || maybeBlockSlotState.get().getSlot().equals(newSlot),
+        blockSlotState.getSlot().equals(newSlot),
         "Block slot state for slot %s but should be for slot %s",
-        maybeBlockSlotState.map(BeaconState::getSlot).orElse(null),
+        blockSlotState.getSlot(),
         newSlot);
 
     // Process empty slots up to the one before the new block slot
     final UInt64 slotBeforeBlock = newSlot.minus(UInt64.ONE);
-
-    // If needed, process the slot transition into the slot for the block
-    final BeaconState blockSlotState;
-    if (maybeBlockSlotState.isPresent()) {
-      blockSlotState = maybeBlockSlotState.get();
-    } else {
-      BeaconState blockPreState;
-      if (previousState.getSlot().equals(slotBeforeBlock)) {
-        blockPreState = previousState;
-      } else {
-        blockPreState = spec.processSlots(previousState, slotBeforeBlock);
-      }
-      blockSlotState = spec.processSlots(blockPreState, newSlot);
-    }
 
     final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, slotBeforeBlock);
 
