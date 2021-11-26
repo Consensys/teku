@@ -84,6 +84,7 @@ class ForkChoiceNotifierTest {
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     recentChainData = storageSystem.recentChainData();
     notifier = new ForkChoiceNotifier(eventThread, spec, executionEngineChannel, recentChainData);
+    notifier.onSyncingStatusChanged(true); // Start in sync to make testing easier
     storageSystem.chainUpdater().initializeGenesisWithPayload(false);
     storageSystem.chainUpdater().updateBestBlock(storageSystem.chainUpdater().advanceChain());
     forkChoiceStrategy = recentChainData.getForkChoiceStrategy().orElseThrow();
@@ -103,6 +104,7 @@ class ForkChoiceNotifierTest {
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     recentChainData = storageSystem.recentChainData();
     notifier = new ForkChoiceNotifier(eventThread, spec, executionEngineChannel, recentChainData);
+    notifier.onSyncingStatusChanged(true);
     storageSystem.chainUpdater().initializeGenesis(false);
     storageSystem.chainUpdater().updateBestBlock(storageSystem.chainUpdater().advanceChain());
     forkChoiceStrategy = recentChainData.getForkChoiceStrategy().orElseThrow();
@@ -209,6 +211,31 @@ class ForkChoiceNotifierTest {
 
     verify(executionEngineChannel)
         .forkChoiceUpdated(getCurrentForkChoiceState(), Optional.of(payloadAttributes));
+  }
+
+  @Test
+  void onForkChoiceUpdated_shouldNotIncludePayloadAttributesWhileSyncing() {
+    withProposerForSlot(recentChainData.getHeadSlot().plus(1));
+    final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
+    notifier.onSyncingStatusChanged(false);
+
+    notifier.onForkChoiceUpdated(forkChoiceState);
+
+    // We're syncing so don't include payload attributes
+    verify(executionEngineChannel).forkChoiceUpdated(forkChoiceState, Optional.empty());
+  }
+
+  @Test
+  void onUpdatePreparableProposers_shouldNotIncludePayloadAttributesWhileSyncing() {
+    final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
+    notifier.onForkChoiceUpdated(forkChoiceState);
+    verify(executionEngineChannel).forkChoiceUpdated(forkChoiceState, Optional.empty());
+
+    notifier.onSyncingStatusChanged(false);
+    withProposerForSlot(recentChainData.getHeadSlot().plus(1));
+
+    // Shouldn't resend with added payload attributes
+    verifyNoMoreInteractions(executionEngineChannel);
   }
 
   @Test

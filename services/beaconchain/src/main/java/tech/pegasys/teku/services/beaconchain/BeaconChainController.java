@@ -821,6 +821,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             spec);
 
     syncService.getForwardSync().subscribeToSyncChanges(coalescingChainHeadChannel);
+    syncService.subscribeToSyncStateChanges(
+        syncState -> forkChoiceNotifier.onSyncingStatusChanged(syncState.isInSync()));
+    forkChoiceNotifier.onSyncingStatusChanged(syncService.getCurrentSyncState().isInSync());
   }
 
   private void initOperationsReOrgManager() {
