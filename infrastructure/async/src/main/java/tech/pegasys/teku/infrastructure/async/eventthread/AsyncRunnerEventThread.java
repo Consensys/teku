@@ -16,6 +16,8 @@ package tech.pegasys.teku.infrastructure.async.eventthread;
 import static com.google.common.base.Preconditions.checkState;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
@@ -74,6 +76,17 @@ public class AsyncRunnerEventThread implements EventThread {
       return SafeFuture.failedFuture(new IllegalStateException("EventThread not started"));
     }
     return doExecute(callable);
+  }
+
+  @Override
+  @SuppressWarnings("FutureReturnValueIgnored")
+  public <T> SafeFuture<T> executeFuture(Supplier<SafeFuture<T>> task) {
+    // Note: started is only set to true after thread has been initialized so if it is true, thread
+    // must be initialized.
+    if (!started.get()) {
+      return SafeFuture.failedFuture(new IllegalStateException("EventThread not started"));
+    }
+    return doExecute(task::get).thenCompose(Function.identity());
   }
 
   @Override
