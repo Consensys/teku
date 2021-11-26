@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.storage.storageSystem;
 
+import static tech.pegasys.teku.storage.storageSystem.SupportedDatabaseVersionArgumentsProvider.supportedDatabaseVersions;
+
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
@@ -26,6 +28,7 @@ import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 
 public class StorageSystemArgumentsProvider implements ArgumentsProvider {
+
   private final List<Long> stateStorageFrequencyOptions =
       List.of(VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY);
 
@@ -34,83 +37,24 @@ public class StorageSystemArgumentsProvider implements ArgumentsProvider {
     final Map<String, StorageSystemSupplier> storageSystems = new HashMap<>();
     for (StateStorageMode mode : StateStorageMode.values()) {
       for (Long storageFrequency : stateStorageFrequencyOptions) {
-        storageSystems.put(
-            describeStorage("v4 (in-memory)", storageFrequency),
-            (dataPath) ->
-                InMemoryStorageSystemBuilder.create()
-                    .version(DatabaseVersion.V4)
-                    .storageMode(mode)
-                    .stateStorageFrequency(storageFrequency)
-                    .build());
-        storageSystems.put(
-            describeStorage("v5 (in-memory)", storageFrequency),
-            (dataPath) ->
-                InMemoryStorageSystemBuilder.create()
-                    .version(DatabaseVersion.V5)
-                    .storageMode(mode)
-                    .stateStorageFrequency(storageFrequency)
-                    .build());
-        storageSystems.put(
-            describeStorage("v6 (in-memory)", storageFrequency),
-            (dataPath) ->
-                InMemoryStorageSystemBuilder.create()
-                    .version(DatabaseVersion.V6)
-                    .storageMode(mode)
-                    .stateStorageFrequency(storageFrequency)
-                    .build());
-        storageSystems.put(
-            describeStorage("v4 (file-backed)", storageFrequency),
-            (dataPath) ->
-                FileBackedStorageSystemBuilder.create()
-                    .version(DatabaseVersion.V4)
-                    .dataDir(dataPath)
-                    .storageMode(mode)
-                    .stateStorageFrequency(storageFrequency)
-                    .build());
-        storageSystems.put(
-            describeStorage("v5 (file-backed)", storageFrequency),
-            (dataPath) ->
-                FileBackedStorageSystemBuilder.create()
-                    .version(DatabaseVersion.V5)
-                    .dataDir(dataPath)
-                    .storageMode(mode)
-                    .stateStorageFrequency(storageFrequency)
-                    .build());
-        storageSystems.put(
-            describeStorage("v6 (file-backed)", storageFrequency),
-            (dataPath) ->
-                FileBackedStorageSystemBuilder.create()
-                    .version(DatabaseVersion.V6)
-                    .dataDir(dataPath)
-                    .storageMode(mode)
-                    .stateStorageFrequency(storageFrequency)
-                    .build());
-        if (DatabaseVersion.isLevelDbSupported()) {
+        for (DatabaseVersion databaseVersion : supportedDatabaseVersions()) {
           storageSystems.put(
-              describeStorage("leveldb1 (file-backed)", storageFrequency),
+              describeStorage(databaseVersion.name() + " (in-memory)", storageFrequency),
               (dataPath) ->
-                  FileBackedStorageSystemBuilder.create()
-                      .version(DatabaseVersion.LEVELDB1)
-                      .dataDir(dataPath)
+                  InMemoryStorageSystemBuilder.create()
+                      .version(databaseVersion)
                       .storageMode(mode)
                       .stateStorageFrequency(storageFrequency)
                       .build());
+
           storageSystems.put(
-              describeStorage("leveldb2 (file-backed)", storageFrequency),
+              describeStorage(databaseVersion.name() + " (file-backed)", storageFrequency),
               (dataPath) ->
                   FileBackedStorageSystemBuilder.create()
-                      .version(DatabaseVersion.LEVELDB2)
+                      .version(databaseVersion)
                       .dataDir(dataPath)
                       .storageMode(mode)
                       .stateStorageFrequency(storageFrequency)
-                      .build());
-          storageSystems.put(
-              describeStorage("leveldb-tree (file-backed)", storageFrequency),
-              (dataPath) ->
-                  FileBackedStorageSystemBuilder.create()
-                      .version(DatabaseVersion.LEVELDB_TREE)
-                      .dataDir(dataPath)
-                      .storageMode(mode)
                       .build());
         }
       }
@@ -125,6 +69,7 @@ public class StorageSystemArgumentsProvider implements ArgumentsProvider {
 
   @FunctionalInterface
   public interface StorageSystemSupplier {
+
     StorageSystem get(final Path dataDirectory);
   }
 }

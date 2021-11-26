@@ -24,10 +24,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
+import tech.pegasys.teku.storage.storageSystem.SupportedDatabaseVersionArgumentsProvider;
 
 public class VersionedDatabaseFactoryTest {
 
@@ -52,8 +55,13 @@ public class VersionedDatabaseFactoryTest {
 
   @Test
   public void createDatabase_fromExistingDataDir() throws Exception {
+    final DatabaseVersion nonDefaultDatabaseVersion =
+        SupportedDatabaseVersionArgumentsProvider.supportedDatabaseVersions().stream()
+            .filter(version -> version != DatabaseVersion.DEFAULT_VERSION)
+            .findAny()
+            .orElseThrow();
     createDbDirectory(dataDir);
-    createVersionFile(dataDir, DatabaseVersion.V4);
+    createVersionFile(dataDir, nonDefaultDatabaseVersion);
 
     final VersionedDatabaseFactory dbFactory =
         new VersionedDatabaseFactory(
@@ -61,80 +69,7 @@ public class VersionedDatabaseFactoryTest {
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
     }
-    assertThat(dbFactory.getDatabaseVersion()).isEqualTo(DatabaseVersion.V4);
-  }
-
-  @Test
-  public void createDatabase_asV4Database() throws Exception {
-    final DatabaseFactory dbFactory =
-        new VersionedDatabaseFactory(
-            new StubMetricsSystem(),
-            dataDir,
-            DATA_STORAGE_MODE,
-            DatabaseVersion.V4,
-            1L,
-            eth1Address,
-            false,
-            MAX_KNOWN_NODE_CACHE_SIZE,
-            spec);
-    try (final Database db = dbFactory.createDatabase()) {
-      assertThat(db).isNotNull();
-      assertDbVersionSaved(dataDir, DatabaseVersion.V4);
-    }
-    final File dbDirectory = new File(dataDir.toFile(), VersionedDatabaseFactory.DB_PATH);
-    final File archiveDirectory = new File(dataDir.toFile(), VersionedDatabaseFactory.ARCHIVE_PATH);
-    assertThat(dbDirectory).exists();
-    assertThat(archiveDirectory).exists();
-  }
-
-  @Test
-  public void createDatabase_asV5Database() throws Exception {
-    final DatabaseFactory dbFactory =
-        new VersionedDatabaseFactory(
-            new StubMetricsSystem(),
-            dataDir,
-            DATA_STORAGE_MODE,
-            DatabaseVersion.V5,
-            1L,
-            eth1Address,
-            false,
-            MAX_KNOWN_NODE_CACHE_SIZE,
-            spec);
-    try (final Database db = dbFactory.createDatabase()) {
-      assertThat(db).isNotNull();
-      assertDbVersionSaved(dataDir, DatabaseVersion.V5);
-    }
-    final File dbDirectory = new File(dataDir.toFile(), VersionedDatabaseFactory.DB_PATH);
-    final File archiveDirectory = new File(dataDir.toFile(), VersionedDatabaseFactory.ARCHIVE_PATH);
-    final File metadataFile =
-        new File(dataDir.toFile(), VersionedDatabaseFactory.METADATA_FILENAME);
-    assertThat(dbDirectory).exists();
-    assertThat(archiveDirectory).exists();
-    assertThat(metadataFile).exists();
-  }
-
-  @Test
-  public void createDatabase_asV6DatabaseSingle() throws Exception {
-    final DatabaseFactory dbFactory =
-        new VersionedDatabaseFactory(
-            new StubMetricsSystem(),
-            dataDir,
-            DATA_STORAGE_MODE,
-            DatabaseVersion.V6,
-            1L,
-            eth1Address,
-            false,
-            MAX_KNOWN_NODE_CACHE_SIZE,
-            spec);
-    try (final Database db = dbFactory.createDatabase()) {
-      assertThat(db).isNotNull();
-      assertDbVersionSaved(dataDir, DatabaseVersion.V6);
-    }
-    final File dbDirectory = new File(dataDir.toFile(), VersionedDatabaseFactory.DB_PATH);
-    final File metadataFile =
-        new File(dataDir.toFile(), VersionedDatabaseFactory.METADATA_FILENAME);
-    assertThat(dbDirectory).exists();
-    assertThat(metadataFile).exists();
+    assertThat(dbFactory.getDatabaseVersion()).isEqualTo(nonDefaultDatabaseVersion);
   }
 
   @Test
@@ -162,38 +97,22 @@ public class VersionedDatabaseFactoryTest {
         .hasMessageContaining("No database version file was found");
   }
 
-  @Test
-  public void createDatabase_shouldAllowV4Database() {
+  @ParameterizedTest
+  @ArgumentsSource(SupportedDatabaseVersionArgumentsProvider.class)
+  public void createDatabase_shouldAllowAllSupportedDatabases(final DatabaseVersion version) {
     createDbDirectory(dataDir);
     final VersionedDatabaseFactory dbFactory =
         new VersionedDatabaseFactory(
             new StubMetricsSystem(),
             dataDir,
             DATA_STORAGE_MODE,
-            DatabaseVersion.V4,
+            version,
             1L,
             eth1Address,
             false,
             MAX_KNOWN_NODE_CACHE_SIZE,
             spec);
-    assertThat(dbFactory.getDatabaseVersion()).isEqualTo(DatabaseVersion.V4);
-  }
-
-  @Test
-  public void createDatabase_shouldAllowV5Database() {
-    createDbDirectory(dataDir);
-    final VersionedDatabaseFactory dbFactory =
-        new VersionedDatabaseFactory(
-            new StubMetricsSystem(),
-            dataDir,
-            DATA_STORAGE_MODE,
-            DatabaseVersion.V5,
-            1L,
-            eth1Address,
-            false,
-            MAX_KNOWN_NODE_CACHE_SIZE,
-            spec);
-    assertThat(dbFactory.getDatabaseVersion()).isEqualTo(DatabaseVersion.V5);
+    assertThat(dbFactory.getDatabaseVersion()).isEqualTo(version);
   }
 
   private void createDbDirectory(final Path dataPath) {
