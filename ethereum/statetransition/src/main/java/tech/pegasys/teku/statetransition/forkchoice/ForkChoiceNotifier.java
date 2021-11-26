@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -55,7 +57,8 @@ public class ForkChoiceNotifier {
 
   private Optional<ForkChoiceState> lastSentForkChoiceState = Optional.empty();
   private Optional<PayloadAttributes> lastSentPayloadAttributes = Optional.empty();
-  private Optional<SafeFuture<Optional<Bytes8>>> lastFuturePayloadId = Optional.empty();
+  private SafeFuture<Optional<Bytes8>> lastFuturePayloadId =
+      SafeFuture.completedFuture(Optional.empty());
 
   private Optional<Bytes32> executionPayloadTerminalBlockHash = Optional.empty();
 
@@ -107,7 +110,7 @@ public class ForkChoiceNotifier {
   }
 
   /**
-   * @param parentBeaconBlockRoot
+   * @param parentBeaconBlockRoot root of the beacon block the new block will be built on
    * @param allowPayloadIdOnTheFlyRetrieval safely control recursive calls
    * @return must return a Future resolving to:
    *     <p>Optional.empty() only when is safe to produce a block with an empty execution payload
@@ -144,24 +147,18 @@ public class ForkChoiceNotifier {
     if (lastForkChoiceStateCorrectlyBuildsOnTop) {
       // current Future Payload ID builds on the correct block
 
-      if (lastFuturePayloadId.isEmpty()) {
-        // consistency check
-        throw new IllegalStateException(
-            "we cannot have lastSentForkChoiceState without lastFuturePayloadId");
-      }
+      return lastFuturePayloadId.thenApply(
+          payloadId -> {
 
-      return lastFuturePayloadId
-          .get()
-          .thenApply(
-              payloadId -> {
+            // Only accept empty payload pre-merge
+            if (payloadId.isPresent() || parentExecutionHash.isZero()) {
+              return payloadId;
+            }
 
-                // we accept empty payload only in pre-merge
-                if (payloadId.isPresent() || parentExecutionHash.isZero()) return payloadId;
-
-                throw new IllegalStateException(
-                    String.format(
-                        "PayloadId not available for Beacon Block Root %s", parentBeaconBlockRoot));
-              });
+            throw new IllegalStateException(
+                String.format(
+                    "PayloadId not available for Beacon Block Root %s", parentBeaconBlockRoot));
+          });
     }
 
     // we have no SentForkChoiceState or doesn't build on top of the right block
@@ -181,9 +178,9 @@ public class ForkChoiceNotifier {
         final ForkChoiceState terminalForkChoiceState =
             new ForkChoiceState(terminalBlockHash, terminalBlockHash, Bytes32.ZERO);
         internalForkChoiceUpdated(terminalForkChoiceState);
-        if (!lastSentForkChoiceState.equals(forkChoiceState) || lastFuturePayloadId.isEmpty()) {
-          throw new IllegalStateException();
-        }
+        checkState(
+            lastSentForkChoiceState.equals(forkChoiceState),
+            "Required fork choice state was not sent");
         return internalGetPayloadId(parentBeaconBlockRoot, false);
       }
     }
@@ -252,11 +249,10 @@ public class ForkChoiceNotifier {
           lastSentPayloadAttributes = payloadAttributes;
           // Previous payload is no longer useful as we've moved on to prepping the next block
           lastFuturePayloadId =
-              Optional.of(
-                  executionEngineChannel
-                      .forkChoiceUpdated(forkChoiceState, payloadAttributes)
-                      .thenApplyAsync(
-                          result -> handleForkChoiceResult(forkChoiceState, result), eventThread));
+              executionEngineChannel
+                  .forkChoiceUpdated(forkChoiceState, payloadAttributes)
+                  .thenApplyAsync(
+                      result -> handleForkChoiceResult(forkChoiceState, result), eventThread);
         },
         () ->
             LOG.warn(
