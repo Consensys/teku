@@ -16,6 +16,7 @@ package tech.pegasys.teku.infrastructure.async.eventthread;
 import com.google.common.base.Preconditions;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
@@ -57,6 +58,17 @@ public class InlineEventThread implements EventThread {
   public <T> SafeFuture<T> execute(final ExceptionThrowingSupplier<T> callable) {
     final SafeFuture<T> result = new SafeFuture<>();
     withEventThreadMarkerSet(() -> SafeFuture.of(callable).propagateTo(result));
+
+    // Execute any tasks run with executeLater before returning.
+    executePendingTasks();
+
+    return result;
+  }
+
+  @Override
+  public <T> SafeFuture<T> executeFuture(final Supplier<SafeFuture<T>> callable) {
+    final SafeFuture<T> result = new SafeFuture<>();
+    withEventThreadMarkerSet(() -> SafeFuture.of(callable::get).propagateTo(result));
 
     // Execute any tasks run with executeLater before returning.
     executePendingTasks();

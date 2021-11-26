@@ -241,7 +241,7 @@ class ForkChoiceNotifierTest {
     notifier.onForkChoiceUpdated(forkChoiceState);
 
     // Initially has no payload ID.
-    assertThatSafeFuture(notifier.getPayloadId(blockRoot)).isCompletedExceptionally();
+    assertThatSafeFuture(notifier.getPayloadId(blockRoot)).isNotCompleted();
 
     // But becomes available once we receive the response
     responseFuture.complete(
@@ -279,6 +279,36 @@ class ForkChoiceNotifierTest {
     final Bytes32 blockRoot = recentChainData.getBestBlockRoot().orElseThrow();
 
     assertThatSafeFuture(notifier.getPayloadId(blockRoot)).isCompletedWithEmptyOptional();
+  }
+
+  @Test
+  void getPayloadId_shouldObtainAPayloadIdOnMergeBlock() {
+    reInitializePreMerge();
+    Bytes32 terminalBlockHash = dataStructureUtil.randomBytes32();
+    final Bytes8 payloadId = dataStructureUtil.randomBytes8();
+
+    final ForkChoiceState forkChoiceState =
+        new ForkChoiceState(terminalBlockHash, terminalBlockHash, Bytes32.ZERO);
+
+    final BeaconState headState = recentChainData.getBestState().orElseThrow();
+    final UInt64 blockSlot = headState.getSlot().plus(1);
+    final Bytes32 blockRoot = recentChainData.getBestBlockRoot().orElseThrow();
+    final PayloadAttributes payloadAttributes = withProposerForSlot(headState, blockSlot);
+
+    notifier.onTerminalBlockReached(terminalBlockHash);
+
+    final SafeFuture<ForkChoiceUpdatedResult> responseFuture = new SafeFuture<>();
+    when(executionEngineChannel.forkChoiceUpdated(forkChoiceState, Optional.of(payloadAttributes)))
+        .thenReturn(responseFuture);
+
+    // Initially has no payload ID.
+    assertThatSafeFuture(notifier.getPayloadId(blockRoot)).isNotCompleted();
+
+    responseFuture.complete(
+        new ForkChoiceUpdatedResult(ForkChoiceUpdatedStatus.SUCCESS, Optional.of(payloadId)));
+
+    assertThatSafeFuture(notifier.getPayloadId(blockRoot))
+        .isCompletedWithOptionalContaining(payloadId);
   }
 
   private PayloadAttributes withProposerForSlot(final UInt64 blockSlot) {
