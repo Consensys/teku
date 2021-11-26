@@ -521,6 +521,11 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return store == null ? Optional.empty() : Optional.of(store.getJustifiedCheckpoint());
   }
 
+  public boolean isJustifiedCheckpointFullyValidated() {
+    return store != null
+        && store.getForkChoiceStrategy().isFullyValidated(store.getJustifiedCheckpoint().getRoot());
+  }
+
   @Override
   public void onNewFinalizedCheckpoint(Checkpoint finalizedCheckpoint) {
     finalizedCheckpointChannel.onNewFinalizedCheckpoint(finalizedCheckpoint);
