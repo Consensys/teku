@@ -286,13 +286,21 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final UInt64 slot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
-      final Optional<BeaconState> blockSlotState)
+      final Optional<BeaconState> maybeBlockSlotState)
       throws StateTransitionException {
-    if (blockSlotState.isEmpty()) {
+    if (maybeBlockSlotState.isEmpty()) {
       return Optional.empty();
     }
+    final BeaconState blockSlotState = maybeBlockSlotState.get();
+    final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, slot.minus(1));
+    if (!combinedChainDataClient.isFullyValidatedHotBlock(parentRoot)) {
+      LOG.warn(
+          "Unable to produce block at slot {} because parent has optimistically validated payload",
+          slot);
+      throw new NodeSyncingException();
+    }
     return Optional.of(
-        blockFactory.createUnsignedBlock(blockSlotState.get(), slot, randaoReveal, graffiti));
+        blockFactory.createUnsignedBlock(blockSlotState, slot, randaoReveal, graffiti));
   }
 
   @Override
@@ -332,6 +340,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                           }
                           final SignedBlockAndState blockAndState = maybeBlockAndState.get();
                           final BeaconBlock block = blockAndState.getBlock().getMessage();
+
+                          // The head block must not be optimistically synced.
+                          if (!combinedChainDataClient.isFullyValidatedHotBlock(block.getRoot())) {
+                            return NodeSyncingException.failedFuture();
+                          }
                           if (blockAndState.getSlot().compareTo(minQuerySlot) < 0) {
                             // The current effective block is too far in the past - so roll the
                             // state forward to the current epoch. Ensures we have the latest

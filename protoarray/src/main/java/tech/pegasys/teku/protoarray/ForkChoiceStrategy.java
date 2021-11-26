@@ -81,7 +81,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
             justifiedCheckpoint.getEpoch(),
             finalizedCheckpoint.getEpoch())
         .map(bestNode -> new SlotAndBlockRoot(bestNode.getBlockSlot(), bestNode.getBlockRoot()))
-        .orElse(finalizedCheckpoint.toSlotAndBlockRoot(spec));
+        .orElse(justifiedCheckpoint.toSlotAndBlockRoot(spec));
   }
 
   /**
@@ -250,6 +250,15 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     protoArrayLock.readLock().lock();
     try {
       return getProtoNode(blockRoot).map(ProtoNode::getParentRoot);
+    } finally {
+      protoArrayLock.readLock().unlock();
+    }
+  }
+
+  public boolean isFullyValidated(final Bytes32 blockRoot) {
+    protoArrayLock.readLock().lock();
+    try {
+      return getProtoNode(blockRoot).map(ProtoNode::isFullyValidated).orElse(false);
     } finally {
       protoArrayLock.readLock().unlock();
     }
@@ -427,6 +436,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
           protoArray.markNodeValid(blockRoot);
           break;
         case INVALID:
+          LOG.warn("Payload for block root {} was invalid", blockRoot);
           protoArray.markNodeInvalid(blockRoot);
           break;
         default:

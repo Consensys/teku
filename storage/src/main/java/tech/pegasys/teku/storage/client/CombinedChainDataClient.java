@@ -511,9 +511,14 @@ public class CombinedChainDataClient {
       final Set<SignedBeaconBlock> signedBeaconBlocks,
       final Optional<SignedBeaconBlock> canonicalBlock) {
     verifyNotNull(signedBeaconBlocks, "Expected empty set but got null");
-    if (canonicalBlock.isPresent()) {
-      signedBeaconBlocks.add(canonicalBlock.get());
-    }
+    canonicalBlock.ifPresent(signedBeaconBlocks::add);
     return signedBeaconBlocks;
+  }
+
+  public boolean isFullyValidatedHotBlock(final Bytes32 blockRoot) {
+    return recentChainData
+        .getForkChoiceStrategy()
+        .map(forkChoice -> forkChoice.isFullyValidated(blockRoot))
+        .orElse(false);
   }
 }
