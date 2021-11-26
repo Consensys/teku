@@ -259,9 +259,9 @@ class ForkChoiceTest {
                             + forkBlock.getRoot()
                             + " validators: "
                             + chainBuilder.getValidatorKeys().stream()
-                            .map(BLSKeyPair::getPublicKey)
-                            .map(BLSPublicKey::toString)
-                            .collect(Collectors.joining(", "))));
+                                .map(BLSKeyPair::getPublicKey)
+                                .map(BLSPublicKey::toString)
+                                .collect(Collectors.joining(", "))));
     options.addAttestation(attestation);
     final SignedBlockAndState blockWithAttestations =
         chainBuilder.generateBlockAtSlot(UInt64.valueOf(4), options);
