@@ -153,7 +153,13 @@ dependencyManagement {
       entry "junit-jupiter"
     }
 
-    dependency 'tech.pegasys.discovery:discovery:21.10.0'
+    // discovery includes tuweni libraries under a different name so version resolution doesn't work
+    // exclude them here and leave them to be included on the classpath by the version we use
+    dependency('tech.pegasys.discovery:discovery:21.10.0') {
+      exclude 'org.apache.tuweni:bytes'
+      exclude 'org.apache.tuweni:crypto'
+      exclude 'org.apache.tuweni:units'
+    }
 
     dependency 'tech.pegasys.signers.internal:bls-keystore:1.0.15'
 
