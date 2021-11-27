@@ -51,6 +51,8 @@ public class TerminalPowBlockMonitor {
   private Optional<Bytes32> maybeBlockHashTracking = Optional.empty();
   private Duration pollingPeriod;
 
+  private Optional<Bytes32> foundTerminalBlockHash = Optional.empty();
+
   public TerminalPowBlockMonitor(
       ExecutionEngineChannel executionEngine,
       Spec spec,
@@ -206,7 +208,10 @@ public class TerminalPowBlockMonitor {
   }
 
   private void onTerminalPowBlockFound(Bytes32 blockHash) {
-    forkChoiceNotifier.onTerminalBlockReached(blockHash);
-    EVENT_LOG.terminalPowBlockDetected(blockHash);
+    if (foundTerminalBlockHash.map(blockHash::equals).orElse(true)) {
+      foundTerminalBlockHash = Optional.of(blockHash);
+      forkChoiceNotifier.onTerminalBlockReached(blockHash);
+      EVENT_LOG.terminalPowBlockDetected(blockHash);
+    }
   }
 }

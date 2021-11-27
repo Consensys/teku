@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 
@@ -168,6 +169,24 @@ public class TerminalPowBlockMonitorTest {
     verify(executionEngine, times(2)).getPowChainHead();
     verify(forkChoiceNotifier, times(1)).onTerminalBlockReached(headBlockHash);
 
+    // do not send the same Terminal Block
+    asyncRunner.executeQueuedActions();
+
+    verify(executionEngine, times(3)).getPowChainHead();
+    verifyNoMoreInteractions(executionEngine);
+
+    // new different terminal block
+    headBlockHash = dataStructureUtil.randomBytes32();
+    when(executionEngine.getPowChainHead())
+        .thenReturn(
+            completedFuture(
+                new PowBlock(headBlockHash, dataStructureUtil.randomBytes32(), TTD.add(10))));
+
+    asyncRunner.executeQueuedActions();
+
+    verify(executionEngine, times(4)).getPowChainHead();
+    verify(forkChoiceNotifier, times(0)).onTerminalBlockReached(headBlockHash);
+
     // MERGE Completed
     doMerge(headBlockHash);
 
@@ -176,7 +195,7 @@ public class TerminalPowBlockMonitorTest {
     assertThat(terminalPowBlockMonitor.isRunning()).isFalse();
 
     // final check
-    verify(executionEngine, times(0)).getPowBlock(any());
+    verifyNoMoreInteractions(executionEngine);
   }
 
   @Test
@@ -233,7 +252,7 @@ public class TerminalPowBlockMonitorTest {
     assertThat(terminalPowBlockMonitor.isRunning()).isFalse();
 
     // final check
-    verify(executionEngine, times(0)).getPowChainHead();
+    verifyNoMoreInteractions(executionEngine);
   }
 
   @Test
