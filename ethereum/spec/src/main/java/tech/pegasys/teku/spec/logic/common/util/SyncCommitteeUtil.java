@@ -26,10 +26,10 @@ import java.util.Map;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.constants.Domain;
@@ -182,7 +182,7 @@ public class SyncCommitteeUtil {
             specConfig.getSyncCommitteeSize()
                 / SYNC_COMMITTEE_SUBNET_COUNT
                 / ValidatorConstants.TARGET_AGGREGATORS_PER_SYNC_SUBCOMMITTEE);
-    return bytesToUInt64(Hash.sha2_256(signature.toSSZBytes()).slice(0, 8)).mod(modulo).isZero();
+    return bytesToUInt64(Hash.sha256(signature.toSSZBytes()).slice(0, 8)).mod(modulo).isZero();
   }
 
   public Set<Integer> getCommitteeIndices(

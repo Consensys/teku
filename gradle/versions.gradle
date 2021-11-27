@@ -82,7 +82,6 @@ dependencyManagement {
     dependencySet(group: 'org.apache.tuweni', version: '2.0.0') {
       entry 'tuweni-bytes'
       entry 'tuweni-config'
-      entry 'tuweni-crypto'
       entry 'tuweni-junit'
       entry 'tuweni-kv'
       entry 'tuweni-plumtree'

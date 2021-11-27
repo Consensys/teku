@@ -20,10 +20,10 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.crypto.Hash;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.ssz.primitive.SszNone;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.schema.SszSchema;
@@ -74,6 +74,6 @@ public class SszUnionTest implements SszDataTestBase {
     SszUnion union = schema.createFromValue(0, SszNone.INSTANCE);
 
     assertThat(union.hashTreeRoot())
-        .isEqualTo(Hash.sha2_256(Bytes.concatenate(Bytes32.ZERO, Bytes32.ZERO)));
+        .isEqualTo(Hash.sha256(Bytes.concatenate(Bytes32.ZERO, Bytes32.ZERO)));
   }
 }

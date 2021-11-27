@@ -18,11 +18,11 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.crypto.Hash;
 import org.apache.tuweni.ssz.SSZ;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.Signer;
+import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -185,9 +185,9 @@ public class BlockProposalTestUtil {
     final int epochsPerPeriod = specConfig.getEpochsPerEth1VotingPeriod();
     UInt64 votingPeriod = current_epoch.dividedBy(epochsPerPeriod);
     return new Eth1Data(
-        Hash.sha2_256(SSZ.encodeUInt64(epochsPerPeriod)),
+        Hash.sha256(SSZ.encodeUInt64(epochsPerPeriod)),
         state.getEth1_deposit_index(),
-        Hash.sha2_256(Hash.sha2_256(SSZ.encodeUInt64(votingPeriod.longValue()))));
+        Hash.sha256(Hash.sha256(SSZ.encodeUInt64(votingPeriod.longValue()))));
   }
 
   public int getProposerIndexForSlot(final BeaconState preState, final UInt64 slot) {

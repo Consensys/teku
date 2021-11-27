@@ -22,8 +22,8 @@ import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.MutableBytes;
-import org.apache.tuweni.crypto.Hash;
 import org.jetbrains.annotations.NotNull;
+import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.ssz.tree.GIndexUtil.NodeRelation;
 import tech.pegasys.teku.ssz.tree.SszNodeTemplate.Location;
 
@@ -85,7 +85,7 @@ public class SszSuperNode implements TreeNode, LeafDataNode {
         return DEFAULT_NODE.hashTreeRoot();
       }
     } else {
-      return Hash.sha2_256(
+      return Hash.sha256(
           Bytes.wrap(
               hashTreeRoot(curDepth + 1, offset),
               hashTreeRoot(

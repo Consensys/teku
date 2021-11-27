@@ -18,9 +18,9 @@ import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.bytesToUIn
 
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Optional;
-import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.ValidatorConstants;
@@ -120,9 +120,7 @@ public class ValidatorsUtil {
   }
 
   public boolean isAggregator(final BLSSignature slot_signature, final int modulo) {
-    return bytesToUInt64(Hash.sha2_256(slot_signature.toSSZBytes()).slice(0, 8))
-        .mod(modulo)
-        .isZero();
+    return bytesToUInt64(Hash.sha256(slot_signature.toSSZBytes()).slice(0, 8)).mod(modulo).isZero();
   }
 
   public int getAggregatorModulo(final int committeeSize) {

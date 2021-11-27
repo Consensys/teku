@@ -23,6 +23,7 @@ dependencies {
 
   implementation 'org.apache.tuweni:tuweni-bytes'
 
+  jmh project(':infrastructure:crypto')
   jmh 'org.openjdk.jmh:jmh-core'
   jmh 'org.openjdk.jmh:jmh-generator-annprocess'
   jmh 'org.apache.tuweni:tuweni-ssz'

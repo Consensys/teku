@@ -14,12 +14,10 @@
 package tech.pegasys.teku;
 
 import java.io.PrintWriter;
-import java.lang.reflect.Field;
 import java.nio.charset.Charset;
 import java.security.Security;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
-import org.apache.tuweni.crypto.Hash;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import tech.pegasys.teku.bls.impl.blst.BlstLoader;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
@@ -30,13 +28,6 @@ public final class Teku {
 
   static {
     Security.addProvider(new BouncyCastleProvider());
-    try {
-      final Field useSodium = Hash.class.getDeclaredField("USE_SODIUM");
-      useSodium.setAccessible(true);
-      useSodium.set(null, false);
-    } catch (final NoSuchFieldException | IllegalAccessException e) {
-      throw new RuntimeException("Can't disable libsodium", e);
-    }
   }
 
   public static void main(String[] args) {

@@ -29,7 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.MutableBytes;
-import org.apache.tuweni.crypto.Hash;
+import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.ssz.schema.SszSchema;
 
 /**
@@ -170,7 +170,7 @@ public class SszNodeTemplate {
           @Override
           public Bytes32 visitBranch(
               long gIndex, TreeNode node, Bytes32 leftVisitResult, Bytes32 rightVisitResult) {
-            return Hash.sha2_256(Bytes.wrap(leftVisitResult, rightVisitResult));
+            return Hash.sha256(Bytes.wrap(leftVisitResult, rightVisitResult));
           }
         });
   }

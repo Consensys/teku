@@ -17,13 +17,13 @@ import java.util.concurrent.TimeUnit;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.MutableBytes;
-import org.apache.tuweni.crypto.Hash;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
+import tech.pegasys.teku.infrastructure.crypto.Hash;
 
 @State(Scope.Thread)
 public class Sha256Benchmark {
@@ -38,7 +38,7 @@ public class Sha256Benchmark {
   public void sha256of33bytes(Blackhole bh) {
     int idx = cnt++ % data.size();
     data.set(idx, (byte) (data.get(idx) + 1));
-    Bytes32 hash = Hash.sha2_256(data);
+    Bytes32 hash = Hash.sha256(data);
     bh.consume(hash);
   }
 
@@ -48,7 +48,7 @@ public class Sha256Benchmark {
   public void sha256of33byteArray(Blackhole bh) {
     int idx = cnt++ % data.size();
     dataArray[idx]++;
-    byte[] hash = Hash.sha2_256(dataArray);
+    byte[] hash = Hash.sha256(dataArray).toArrayUnsafe();
     bh.consume(hash);
   }
 }
