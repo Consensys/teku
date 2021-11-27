@@ -22,6 +22,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 
 import java.util.Optional;
+import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.AfterAll;
@@ -33,6 +34,7 @@ import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfigBuilder;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
@@ -71,24 +73,20 @@ public class TerminalPowBlockMonitorTest {
   }
 
   private void setUpTerminalBlockHashConfig() {
-    spec =
-        TestSpecFactory.createMerge(
-            SpecConfigLoader.loadConfig(
-                "minimal",
-                phase0Builder ->
-                    phase0Builder
-                        .altairBuilder(altairBuilder -> altairBuilder.altairForkEpoch(UInt64.ZERO))
-                        .mergeBuilder(
-                            mergeBuilder ->
-                                mergeBuilder
-                                    .mergeForkEpoch(MERGE_FORK_EPOCH)
-                                    .terminalBlockHash(TERMINAL_BLOCK_HASH)
-                                    .terminalBlockHashActivationEpoch(TERMINAL_BLOCK_EPOCH))));
-
-    setUpCommon();
+    setUpCommon(
+        mergeBuilder ->
+            mergeBuilder
+                .mergeForkEpoch(MERGE_FORK_EPOCH)
+                .terminalBlockHash(TERMINAL_BLOCK_HASH)
+                .terminalBlockHashActivationEpoch(TERMINAL_BLOCK_EPOCH));
   }
 
   private void setUpTTDConfig() {
+    setUpCommon(
+        mergeBuilder -> mergeBuilder.mergeForkEpoch(MERGE_FORK_EPOCH).terminalTotalDifficulty(TTD));
+  }
+
+  private void setUpCommon(Consumer<SpecConfigBuilder.MergeBuilder> mergeBuilder) {
     spec =
         TestSpecFactory.createMerge(
             SpecConfigLoader.loadConfig(
@@ -96,16 +94,7 @@ public class TerminalPowBlockMonitorTest {
                 phase0Builder ->
                     phase0Builder
                         .altairBuilder(altairBuilder -> altairBuilder.altairForkEpoch(UInt64.ZERO))
-                        .mergeBuilder(
-                            mergeBuilder ->
-                                mergeBuilder
-                                    .mergeForkEpoch(MERGE_FORK_EPOCH)
-                                    .terminalTotalDifficulty(TTD))));
-
-    setUpCommon();
-  }
-
-  private void setUpCommon() {
+                        .mergeBuilder(mergeBuilder)));
     dataStructureUtil = new DataStructureUtil(spec);
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     storageSystem.chainUpdater().initializeGenesis(false);
