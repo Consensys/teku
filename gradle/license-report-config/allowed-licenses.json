@@ -66,6 +66,9 @@
     },
     {
       "moduleName": "io.libp2p:jvm-libp2p-minimal"
+    },
+    {
+      "moduleName": "org.jetbrains.kotlinx:kotlinx-coroutines-core"
     }
   ],
   "overrideLicenses" : [
@@ -140,6 +143,10 @@
     },
     {
       "moduleName": "org.codehaus.woodstox:stax2-api",
+      "moduleLicense": "Apache License, Version 2.0"
+    },
+    {
+      "moduleName": "org.jetbrains.kotlinx:kotlinx-coroutines-core",
       "moduleLicense": "Apache License, Version 2.0"
     }
   ]

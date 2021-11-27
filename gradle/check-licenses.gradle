@@ -192,6 +192,7 @@ downloadLicenses {
       (group('tech.pegasys')): apache,
       'org.codehaus.woodstox:stax2-api:4.0.0': bsd2Clause,
       'org.java-websocket:Java-WebSocket:1.5.2': mit,
+      'org.jetbrains.kotlinx:kotlinx-coroutines-core': apache,
   ]
 }
 
