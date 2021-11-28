@@ -28,7 +28,6 @@ import tech.pegasys.teku.data.publisher.MetricsPublisherManager;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
-import tech.pegasys.teku.infrastructure.crypto.MessageDigestFactory;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.infrastructure.metrics.MetricsEndpoint;
@@ -56,7 +55,6 @@ public abstract class AbstractNode implements Node {
 
   protected AbstractNode(final TekuConfiguration tekuConfig) {
     LoggingConfigurator.update(tekuConfig.loggingConfig());
-    LOG.info("Crypto provider: " + MessageDigestFactory.getProviderSelectionInfo());
 
     STATUS_LOG.onStartup(VersionProvider.VERSION);
     reportOverrides(tekuConfig);

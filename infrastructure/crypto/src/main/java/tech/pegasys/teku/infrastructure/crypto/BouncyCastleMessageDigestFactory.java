@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 ConsenSys AG.
+ * Copyright 2019 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,20 +13,16 @@
 
 package tech.pegasys.teku.infrastructure.crypto;
 
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
-public class Hash {
-  public static Bytes32 sha256(final Bytes input) {
-    return sha256(input.toArrayUnsafe());
-  }
+public class BouncyCastleMessageDigestFactory {
 
-  public static Bytes32 sha256(final byte[] input) {
-    try {
-      return Bytes32.wrap(BouncyCastleMessageDigestFactory.create("SHA-256").digest(input));
-    } catch (final NoSuchAlgorithmException e) {
-      throw new IllegalStateException("SHA-256 algorithm not available");
-    }
+  private static final BouncyCastleProvider securityProvider = new BouncyCastleProvider();
+
+  @SuppressWarnings("DoNotInvokeMessageDigestDirectly")
+  public static MessageDigest create(String algorithm) throws NoSuchAlgorithmException {
+    return MessageDigest.getInstance(algorithm, securityProvider);
   }
 }
