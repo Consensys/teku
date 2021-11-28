@@ -23,7 +23,7 @@ import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.infrastructure.crypto.BouncyCastleMessageDigestFactory;
+import tech.pegasys.teku.infrastructure.crypto.MessageDigestFactory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -77,7 +77,7 @@ public class DepositGenerator {
 
   private MessageDigest getSha256Digest() {
     try {
-      return BouncyCastleMessageDigestFactory.create("SHA-256");
+      return MessageDigestFactory.create("SHA-256");
     } catch (NoSuchAlgorithmException e) {
       throw new RuntimeException(e);
     }

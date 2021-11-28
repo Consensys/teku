@@ -24,7 +24,7 @@ public class Hash {
 
   public static Bytes32 sha256(final byte[] input) {
     try {
-      return Bytes32.wrap(BouncyCastleMessageDigestFactory.create("SHA-256").digest(input));
+      return Bytes32.wrap(MessageDigestFactory.create("SHA-256").digest(input));
     } catch (final NoSuchAlgorithmException e) {
       throw new IllegalStateException("SHA-256 algorithm not available");
     }
