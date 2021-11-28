@@ -119,20 +119,21 @@ public class TerminalPowBlockMonitorTest {
             .chainBuilder
             .generateBlockAtSlot(
                 recentChainData.getHeadSlot().plus(1),
-                ChainBuilder.BlockOptions.create()
-                    .setTransactions(dataStructureUtil.randomBytes(40))
-                    .setTerminalBlockHash(terminalBlockHash));
+                ChainBuilder.BlockOptions.create().setTerminalBlockHash(terminalBlockHash));
 
     storageSystem.chainUpdater().updateBestBlock(newBlockWithExecutionPayloadAtopTerminalBlock);
   }
 
   @Test
   public void shouldPerformTerminalBlockDetectionByTTD() {
+    Bytes32 headBlockHash;
+    Bytes32 headBlockParentHash;
+
     setUpTTDConfig();
 
     terminalPowBlockMonitor.start();
 
-    // NOT YET MERGE FORK
+    // NOT YET MERGE FORK - should not notify
     goToSlot(UInt64.ONE);
 
     assertThat(terminalPowBlockMonitor.isRunning()).isTrue();
@@ -143,8 +144,8 @@ public class TerminalPowBlockMonitorTest {
     verify(executionEngine, times(0)).getPowChainHead();
     verify(forkChoiceNotifier, times(0)).onTerminalBlockReached(any());
 
-    // AT MERGE FORK, TTD not reached
-    Bytes32 headBlockHash = dataStructureUtil.randomBytes32();
+    // AT MERGE FORK, TTD not reached - should not send
+    headBlockHash = dataStructureUtil.randomBytes32();
 
     goToSlot(MERGE_FORK_EPOCH.times(spec.getGenesisSpecConfig().getSlotsPerEpoch()));
 
@@ -158,36 +159,70 @@ public class TerminalPowBlockMonitorTest {
     verify(executionEngine, times(1)).getPowChainHead();
     verify(forkChoiceNotifier, times(0)).onTerminalBlockReached(any());
 
-    // AT MERGE FORK, TTD reached
+    // AT MERGE FORK, TTD reached - should notify
     headBlockHash = dataStructureUtil.randomBytes32();
+    headBlockParentHash = dataStructureUtil.randomBytes32();
     when(executionEngine.getPowChainHead())
+        .thenReturn(completedFuture(new PowBlock(headBlockHash, headBlockParentHash, TTD)));
+    when(executionEngine.getPowBlock(headBlockParentHash))
         .thenReturn(
-            completedFuture(new PowBlock(headBlockHash, dataStructureUtil.randomBytes32(), TTD)));
+            completedFuture(
+                Optional.of(
+                    new PowBlock(
+                        headBlockParentHash,
+                        dataStructureUtil.randomBytes32(),
+                        TTD.subtract(10)))));
 
     asyncRunner.executeQueuedActions();
 
+    verify(executionEngine, times(1)).getPowBlock(headBlockParentHash);
     verify(executionEngine, times(2)).getPowChainHead();
     verify(forkChoiceNotifier, times(1)).onTerminalBlockReached(headBlockHash);
 
-    // do not send the same Terminal Block
+    // Terminal Block - should not notify
     asyncRunner.executeQueuedActions();
 
     verify(executionEngine, times(3)).getPowChainHead();
     verifyNoMoreInteractions(executionEngine);
 
-    // new different terminal block
+    // new different Terminal Block with wrong parent TTD - should not notify
     headBlockHash = dataStructureUtil.randomBytes32();
+    headBlockParentHash = dataStructureUtil.randomBytes32();
     when(executionEngine.getPowChainHead())
+        .thenReturn(completedFuture(new PowBlock(headBlockHash, headBlockParentHash, TTD.add(10))));
+    when(executionEngine.getPowBlock(headBlockParentHash))
         .thenReturn(
             completedFuture(
-                new PowBlock(headBlockHash, dataStructureUtil.randomBytes32(), TTD.add(10))));
+                Optional.of(
+                    new PowBlock(headBlockParentHash, dataStructureUtil.randomBytes32(), TTD))));
 
     asyncRunner.executeQueuedActions();
 
+    verify(executionEngine, times(1)).getPowBlock(headBlockParentHash);
     verify(executionEngine, times(4)).getPowChainHead();
     verify(forkChoiceNotifier, times(0)).onTerminalBlockReached(headBlockHash);
 
-    // MERGE Completed
+    // new different Terminal Block with correct parent TTD - should notify
+    headBlockHash = dataStructureUtil.randomBytes32();
+    headBlockParentHash = dataStructureUtil.randomBytes32();
+    when(executionEngine.getPowChainHead())
+        .thenReturn(completedFuture(new PowBlock(headBlockHash, headBlockParentHash, TTD.add(10))));
+    when(executionEngine.getPowBlock(headBlockParentHash))
+        .thenReturn(
+            completedFuture(
+                Optional.of(
+                    new PowBlock(
+                        headBlockParentHash,
+                        dataStructureUtil.randomBytes32(),
+                        TTD.subtract(10)))));
+
+    asyncRunner.executeQueuedActions();
+
+    verify(executionEngine, times(1)).getPowBlock(headBlockParentHash);
+    verify(executionEngine, times(5)).getPowChainHead();
+    verify(forkChoiceNotifier, times(1)).onTerminalBlockReached(headBlockHash);
+
+    // MERGE Completed - should stop
     doMerge(headBlockHash);
 
     asyncRunner.executeQueuedActions();
@@ -204,7 +239,7 @@ public class TerminalPowBlockMonitorTest {
 
     terminalPowBlockMonitor.start();
 
-    // NOT YET MERGE FORK
+    // NOT YET MERGE FORK - should not notify
     goToSlot(UInt64.ONE);
 
     assertThat(terminalPowBlockMonitor.isRunning()).isTrue();
@@ -212,10 +247,10 @@ public class TerminalPowBlockMonitorTest {
 
     asyncRunner.executeQueuedActions();
 
-    verify(executionEngine, times(0)).getPowChainHead();
+    verify(executionEngine, times(0)).getPowBlock(any());
     verify(forkChoiceNotifier, times(0)).onTerminalBlockReached(any());
 
-    // AT MERGE FORK, Terminal Bloch Epoch not reached
+    // AT MERGE FORK, Terminal Bloch Epoch not reached - should not notify
     goToSlot(MERGE_FORK_EPOCH.times(spec.getGenesisSpecConfig().getSlotsPerEpoch()));
 
     asyncRunner.executeQueuedActions();
@@ -223,7 +258,7 @@ public class TerminalPowBlockMonitorTest {
     verify(executionEngine, times(0)).getPowBlock(any());
     verify(forkChoiceNotifier, times(0)).onTerminalBlockReached(any());
 
-    // AT Terminal Bloch Epoch, Terminal Block Hash not found
+    // AT Terminal Bloch Epoch, Terminal Block Hash not found - should not notify
     goToSlot(TERMINAL_BLOCK_EPOCH.times(spec.getGenesisSpecConfig().getSlotsPerEpoch()));
     when(executionEngine.getPowBlock(TERMINAL_BLOCK_HASH))
         .thenReturn(completedFuture(Optional.empty()));
@@ -233,7 +268,7 @@ public class TerminalPowBlockMonitorTest {
     verify(executionEngine, times(1)).getPowBlock(TERMINAL_BLOCK_HASH);
     verify(forkChoiceNotifier, times(0)).onTerminalBlockReached(any());
 
-    // AT Terminal Bloch Epoch, Terminal Block Hash found
+    // AT Terminal Bloch Epoch, Terminal Block Hash found - should notify
     when(executionEngine.getPowBlock(TERMINAL_BLOCK_HASH))
         .thenReturn(
             completedFuture(
@@ -246,7 +281,7 @@ public class TerminalPowBlockMonitorTest {
     verify(executionEngine, times(2)).getPowBlock(TERMINAL_BLOCK_HASH);
     verify(forkChoiceNotifier, times(1)).onTerminalBlockReached(TERMINAL_BLOCK_HASH);
 
-    // MERGE Completed
+    // MERGE Completed - should stop
     doMerge(TERMINAL_BLOCK_HASH);
     asyncRunner.executeQueuedActions();
     assertThat(terminalPowBlockMonitor.isRunning()).isFalse();

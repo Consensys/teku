@@ -24,6 +24,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfigMerge;
@@ -179,11 +180,14 @@ public class TerminalPowBlockMonitor {
                       .map(blockHashTracking::equals)
                       .ifPresent(
                           found -> {
-                            if (found) {
+                            if (!found) {
+                              LOG.trace("checkTerminalBlockByBlockHash: Terminal Block not found.");
+                              return;
+                            }
+
+                            if (notYetFound(blockHashTracking)) {
                               LOG.trace("checkTerminalBlockByBlockHash: Terminal Block found!");
                               onTerminalPowBlockFound(blockHashTracking);
-                            } else {
-                              LOG.trace("checkTerminalBlockByBlockHash: Terminal Block not found.");
                             }
                           }))
           .finish(
@@ -194,24 +198,56 @@ public class TerminalPowBlockMonitor {
   private void checkTerminalBlockByTTD() {
     executionEngine
         .getPowChainHead()
-        .thenAccept(
+        .thenCompose(
             powBlock -> {
-              UInt256 difficulty = powBlock.getTotalDifficulty();
-              if (difficulty.compareTo(specConfigMerge.getTerminalTotalDifficulty()) >= 0) {
-                LOG.trace("checkTerminalBlockByTTD: Terminal Block found!");
-                onTerminalPowBlockFound(powBlock.getBlockHash());
-              } else {
-                LOG.trace("checkTerminalBlockByTTD: Terminal Block not found.");
+              UInt256 totalDifficulty = powBlock.getTotalDifficulty();
+              if (totalDifficulty.compareTo(specConfigMerge.getTerminalTotalDifficulty()) < 0) {
+                LOG.trace("checkTerminalBlockByTTD: Total Terminal Difficulty not reached.");
+                return SafeFuture.COMPLETE;
               }
+
+              // TTD is reached
+              if (notYetFound(powBlock.getBlockHash())) {
+                LOG.trace("checkTerminalBlockByTTD: Terminal Block found!");
+                return validateTerminalBlockParentByTTD(powBlock)
+                    .thenAccept(
+                        valid -> {
+                          if (valid) {
+                            LOG.trace(
+                                "Total Difficulty of Terminal Block parent has been validated.");
+                            onTerminalPowBlockFound(powBlock.getBlockHash());
+                          } else {
+                            LOG.error(
+                                "Total Difficulty of Terminal Block parent is invalid! Must be lower than TTD!");
+                          }
+                        });
+              }
+              return SafeFuture.COMPLETE;
             })
         .finish(error -> LOG.error("Unexpected error while checking TTD", error));
   }
 
+  private SafeFuture<Boolean> validateTerminalBlockParentByTTD(PowBlock terminalBlock) {
+    return executionEngine
+        .getPowBlock(terminalBlock.getParentHash())
+        .thenApply(
+            powBlock -> {
+              UInt256 totalDifficulty =
+                  powBlock
+                      .orElseThrow(
+                          () -> new IllegalStateException("Terminal Block Parent not found!"))
+                      .getTotalDifficulty();
+              return totalDifficulty.compareTo(specConfigMerge.getTerminalTotalDifficulty()) < 0;
+            });
+  }
+
   private void onTerminalPowBlockFound(Bytes32 blockHash) {
-    if (foundTerminalBlockHash.map(blockHash::equals).orElse(true)) {
-      foundTerminalBlockHash = Optional.of(blockHash);
-      forkChoiceNotifier.onTerminalBlockReached(blockHash);
-      EVENT_LOG.terminalPowBlockDetected(blockHash);
-    }
+    foundTerminalBlockHash = Optional.of(blockHash);
+    forkChoiceNotifier.onTerminalBlockReached(blockHash);
+    EVENT_LOG.terminalPowBlockDetected(blockHash);
+  }
+
+  private boolean notYetFound(Bytes32 blockHash) {
+    return !foundTerminalBlockHash.map(blockHash::equals).orElse(false);
   }
 }

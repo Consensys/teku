@@ -121,7 +121,7 @@ public class BlockProposalTestUtil {
     final ExecutionPayloadSchema schema =
         SchemaDefinitionsMerge.required(specVersion.getSchemaDefinitions())
             .getExecutionPayloadSchema();
-    if (transactions.isEmpty() && !isMergeComplete(state)) {
+    if (terminalBlock.isEmpty() && !isMergeComplete(state)) {
       return schema.getDefault();
     }
 
