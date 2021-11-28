@@ -118,9 +118,7 @@ class ForkChoiceNotifierTest {
             .chainBuilder
             .generateBlockAtSlot(
                 recentChainData.getHeadSlot().plus(1),
-                ChainBuilder.BlockOptions.create()
-                    .setTransactions(dataStructureUtil.randomBytes(40))
-                    .setTerminalBlockHash(terminalBlockHash));
+                ChainBuilder.BlockOptions.create().setTerminalBlockHash(terminalBlockHash));
 
     storageSystem.chainUpdater().updateBestBlock(newBlockWithExecutionPayloadAtopTerminalBlock);
   }
