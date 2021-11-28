@@ -147,6 +147,10 @@ public class EventLogger {
         Color.GREEN);
   }
 
+  public void terminalPowBlockDetected(final Bytes32 terminalBlockHash) {
+    info(String.format("Merge   *** Terminal Block detected: %s", terminalBlockHash), Color.GREEN);
+  }
+
   private void info(final String message, final Color color) {
     log.info(print(message, color));
   }
