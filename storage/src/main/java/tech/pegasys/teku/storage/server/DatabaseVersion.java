@@ -16,6 +16,7 @@ package tech.pegasys.teku.storage.server;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.rocksdb.RocksDB;
 import tech.pegasys.leveldbjni.LevelDbJniLoader;
 
 public enum DatabaseVersion {
@@ -49,6 +50,18 @@ public enum DatabaseVersion {
       return false;
     } catch (final Throwable e) {
       LOG.error("Failed to check LevelDB support. Defaulting to RocksDB.", e);
+      return false;
+    }
+  }
+
+  public static boolean isRocksDbSupported() {
+    try {
+      RocksDB.loadLibrary();
+      return true;
+    } catch (final UnsatisfiedLinkError e) {
+      return false;
+    } catch (final Throwable t) {
+      LOG.error("Failed to check RocksDB support.", t);
       return false;
     }
   }
