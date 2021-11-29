@@ -61,6 +61,7 @@ import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.services.timer.TimeTickChannel;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
@@ -85,6 +86,7 @@ import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
+import tech.pegasys.teku.statetransition.forkchoice.TerminalPowBlockMonitor;
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
 import tech.pegasys.teku.statetransition.synccommittee.SignedContributionAndProofValidator;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
@@ -184,6 +186,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager;
   private volatile ForkChoiceNotifier forkChoiceNotifier;
   private volatile ExecutionEngineChannel executionEngine;
+  private volatile Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor = Optional.empty();
 
   private UInt64 genesisTimeTracker = ZERO;
   private BlockManager blockManager;
@@ -229,7 +232,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             attestationManager.start(),
             p2pNetwork.start(),
             blockManager.start(),
-            syncService.start())
+            syncService.start(),
+            SafeFuture.fromRunnable(
+                () -> terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::start)))
         .finish(
             error -> {
               Throwable rootCause = Throwables.getRootCause(error);
@@ -254,7 +259,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             syncService.stop(),
             blockManager.stop(),
             attestationManager.stop(),
-            p2pNetwork.stop())
+            p2pNetwork.stop(),
+            SafeFuture.fromRunnable(
+                () -> terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::stop)))
         .thenRun(forkChoiceExecutor::stop);
   }
 
@@ -307,6 +314,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   public void initAll() {
     initExecutionEngine();
     initForkChoiceNotifier();
+    initTerminalPowBlockMonitor();
     initForkChoice();
     initBlockImporter();
     initCombinedChainDataClient();
@@ -336,6 +344,15 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private void initExecutionEngine() {
     executionEngine = eventChannels.getPublisher(ExecutionEngineChannel.class, beaconAsyncRunner);
+  }
+
+  private void initTerminalPowBlockMonitor() {
+    if (spec.isMilestoneSupported(SpecMilestone.MERGE)) {
+      terminalPowBlockMonitor =
+          Optional.of(
+              new TerminalPowBlockMonitor(
+                  executionEngine, spec, recentChainData, forkChoiceNotifier, beaconAsyncRunner));
+    }
   }
 
   private void initPendingBlocks() {
@@ -821,6 +838,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             spec);
 
     syncService.getForwardSync().subscribeToSyncChanges(coalescingChainHeadChannel);
+    syncService.subscribeToSyncStateChanges(
+        syncState -> forkChoiceNotifier.onSyncingStatusChanged(syncState.isInSync()));
+    forkChoiceNotifier.onSyncingStatusChanged(syncService.getCurrentSyncState().isInSync());
   }
 
   private void initOperationsReOrgManager() {
