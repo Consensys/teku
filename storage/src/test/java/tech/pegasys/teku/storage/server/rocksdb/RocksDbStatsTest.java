@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.server.rocksdb;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -24,11 +25,20 @@ import java.util.stream.Collectors;
 import org.hyperledger.besu.metrics.ObservableMetricsSystem;
 import org.hyperledger.besu.metrics.Observation;
 import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.rocksdb.RocksDB;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.storage.server.DatabaseVersion;
 
 class RocksDbStatsTest {
+
+  @BeforeAll
+  static void setUp() {
+    assumeThat(DatabaseVersion.isRocksDbSupported())
+        .describedAs("RocksDB support required")
+        .isTrue();
+  }
 
   private final RocksDB database = mock(RocksDB.class);
 
