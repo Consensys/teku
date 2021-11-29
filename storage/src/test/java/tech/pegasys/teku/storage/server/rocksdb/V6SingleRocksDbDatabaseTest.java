@@ -13,7 +13,10 @@
 
 package tech.pegasys.teku.storage.server.rocksdb;
 
+import static org.assertj.core.api.Assumptions.assumeThat;
+
 import java.io.File;
+import org.junit.jupiter.api.BeforeAll;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.kvstore.AbstractKvStoreDatabaseWithHotStatesTest;
@@ -22,6 +25,13 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.StoreConfig;
 
 public class V6SingleRocksDbDatabaseTest extends AbstractKvStoreDatabaseWithHotStatesTest {
+
+  @BeforeAll
+  static void setUp() {
+    assumeThat(DatabaseVersion.isRocksDbSupported())
+        .describedAs("RocksDB support required")
+        .isTrue();
+  }
 
   @Override
   protected StorageSystem createStorageSystem(

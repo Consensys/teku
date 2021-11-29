@@ -41,6 +41,7 @@ import tech.pegasys.teku.storage.server.kvstore.TestKvStoreDatabase;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreHotDao;
 
 public class DatabaseMigraterTest {
+
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final SubCommandLogger subCommandLogger = mock(SubCommandLogger.class);
   private final Consumer<String> logger = subCommandLogger::display;
@@ -50,6 +51,10 @@ public class DatabaseMigraterTest {
   void setUp() {
     assumeThat(DatabaseVersion.isLevelDbSupported())
         .describedAs("LevelDB support required")
+        .isTrue();
+
+    assumeThat(DatabaseVersion.isRocksDbSupported())
+        .describedAs("RocksDB support required")
         .isTrue();
   }
 
