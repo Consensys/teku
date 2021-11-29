@@ -60,6 +60,8 @@ public class ForkChoiceNotifier {
   private SafeFuture<Optional<Bytes8>> lastFuturePayloadId =
       SafeFuture.completedFuture(Optional.empty());
 
+  private boolean inSync = false; // Assume we are not in sync at startup.
+
   private Optional<Bytes32> executionPayloadTerminalBlockHash = Optional.empty();
 
   ForkChoiceNotifier(
@@ -96,8 +98,15 @@ public class ForkChoiceNotifier {
     eventThread.execute(() -> internalAttestationsDue(slot));
   }
 
-  public SafeFuture<Optional<Bytes8>> getPayloadId(Bytes32 beaconBlockRoot) {
-    return eventThread.executeFuture(() -> internalGetPayloadId(beaconBlockRoot, true));
+  public void onSyncingStatusChanged(final boolean inSync) {
+    eventThread.execute(
+        () -> {
+          this.inSync = inSync;
+        });
+  }
+
+  public SafeFuture<Optional<Bytes8>> getPayloadId(Bytes32 parentBeaconBlockRoot) {
+    return eventThread.executeFuture(() -> internalGetPayloadId(parentBeaconBlockRoot, true));
   }
 
   public void onTerminalBlockReached(Bytes32 executionBlockHash) {
@@ -120,10 +129,10 @@ public class ForkChoiceNotifier {
    *     <p>in all other cases it must Throw to avoid block production
    */
   private SafeFuture<Optional<Bytes8>> internalGetPayloadId(
-      Bytes32 parentBeaconBlockRoot, boolean allowPayloadIdOnTheFlyRetrieval) {
+      final Bytes32 parentBeaconBlockRoot, final boolean allowPayloadIdOnTheFlyRetrieval) {
     eventThread.checkOnEventThread();
 
-    Bytes32 parentExecutionHash =
+    final Bytes32 parentExecutionHash =
         recentChainData
             .getExecutionBlockHashForBlockRoot(parentBeaconBlockRoot)
             .orElseThrow(
@@ -179,7 +188,8 @@ public class ForkChoiceNotifier {
             new ForkChoiceState(terminalBlockHash, terminalBlockHash, Bytes32.ZERO);
         internalForkChoiceUpdated(terminalForkChoiceState);
         checkState(
-            lastSentForkChoiceState.equals(forkChoiceState),
+            lastSentForkChoiceState.isPresent()
+                && lastSentForkChoiceState.get().equals(terminalForkChoiceState),
             "Required fork choice state was not sent");
         return internalGetPayloadId(parentBeaconBlockRoot, false);
       }
@@ -304,14 +314,20 @@ public class ForkChoiceNotifier {
   private SafeFuture<Optional<PayloadAttributes>> calculatePayloadAttributes(
       final UInt64 blockSlot) {
     eventThread.checkOnEventThread();
-    if (forkChoiceState.isEmpty()) {
-      // No known fork choice state so no point calculating payload attributes
+    if (!inSync) {
+      // We don't produce blocks while syncing so don't bother preparing the payload
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+    if (forkChoiceState.isEmpty() || forkChoiceState.get().getHeadBlockHash().isZero()) {
+      // No forkChoiceUpdated message will be sent so no point calculating payload attributes
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+    if (!recentChainData.isJustifiedCheckpointFullyValidated()) {
+      // If we've optimistically synced far enough that our justified checkpoint is optimistic,
+      // stop producing blocks because the majority of validators see the optimistic chain as valid.
       return SafeFuture.completedFuture(Optional.empty());
     }
     final UInt64 epoch = spec.computeEpochAtSlot(blockSlot);
-    // TODO: Return empty if chain head is not same as optimistic chain head
-    // TODO: Alternatively just limit how many epochs of empty slots we'll process to avoid burning
-    // CPU pointlessly during optimistic sync
     return getStateInEpoch(epoch)
         .thenApplyAsync(
             maybeState -> calculatePayloadAttributes(blockSlot, epoch, maybeState), eventThread);
@@ -344,8 +360,6 @@ public class ForkChoiceNotifier {
     if (spec.computeEpochAtSlot(head.getSlot()).equals(requiredEpoch)) {
       return SafeFuture.completedFuture(Optional.of(head.getState()));
     } else {
-      // TODO: Chain head is from a prior epoch, we want to avoid processing a lot of empty slots if
-      // we're using optimistic sync as that would just waste CPU.
       return recentChainData.retrieveStateAtSlot(
           new SlotAndBlockRoot(spec.computeStartSlotAtEpoch(requiredEpoch), head.getRoot()));
     }

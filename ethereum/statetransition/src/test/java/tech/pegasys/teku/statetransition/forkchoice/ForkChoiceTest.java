@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition.forkchoice;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
@@ -56,6 +57,7 @@ import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 class ForkChoiceTest {
+
   private final Spec spec = TestSpecFactory.createMinimalMerge();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final StorageSystem storageSystem =
@@ -76,6 +78,7 @@ class ForkChoiceTest {
   @BeforeEach
   public void setup() {
     recentChainData.initializeFromGenesis(genesis.getState(), UInt64.ZERO);
+    reset(forkChoiceNotifier); // Clear any notifications from setting genesis
 
     storageSystem
         .chainUpdater()
