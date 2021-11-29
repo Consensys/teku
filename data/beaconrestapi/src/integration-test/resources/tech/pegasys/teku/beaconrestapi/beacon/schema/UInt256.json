@@ -3,9 +3,6 @@
   "properties" : {
     "zero" : {
       "type" : "boolean"
-    },
-    "empty" : {
-      "type" : "boolean"
     }
   }
 }
