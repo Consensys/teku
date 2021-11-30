@@ -26,6 +26,8 @@ import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.ssz.type.Bytes8;
 
 public interface ExecutionEngineClient {
+  long MESSAGE_ORDER_RESET_ID = 0;
+
   SafeFuture<Optional<PowBlock>> getPowBlock(Bytes32 blockHash);
 
   SafeFuture<PowBlock> getPowChainHead();
