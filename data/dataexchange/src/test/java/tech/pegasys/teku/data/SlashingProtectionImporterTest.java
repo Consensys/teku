@@ -15,7 +15,6 @@ package tech.pegasys.teku.data;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -27,43 +26,62 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.Map;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.mockito.ArgumentCaptor;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.data.signingrecord.ValidatorSigningRecord;
 import tech.pegasys.teku.data.slashinginterchange.Metadata;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SlashingProtectionImporterTest {
-  private final ArgumentCaptor<String> stringArgs = ArgumentCaptor.forClass(String.class);
   private final String pubkey =
       "b845089a1457f811bfc000588fbb4e713669be8ce060ea6be3c6ece09afc3794106c91ca73acda5e5457122d58723bed";
+  private final BLSPublicKey publicKey =
+      BLSPublicKey.fromBytesCompressed(Bytes48.wrap(Bytes.fromHexString(pubkey)));
 
   @Test
-  public void shouldFailWithParseError() throws URISyntaxException, IOException {
-    final String errorString = loadAndGetErrorText("minimal_invalidKey.json");
-    assertThat(errorString).startsWith("Failed to load data from");
+  public void shouldFailWithParseError(@TempDir final Path tempDir)
+      throws URISyntaxException, IOException {
+    final String errorString = loadAndGetErrorText("minimal_invalidKey.json", tempDir);
+    assertThat(errorString).startsWith("Failed to load data");
   }
 
   @Test
-  public void shouldFailWithInvalidJson() throws URISyntaxException, IOException {
-    final String errorString = loadAndGetErrorText("invalid_json.json");
-    assertThat(errorString).startsWith("Json does not appear valid in file");
+  public void shouldFailWithInvalidJson(@TempDir final Path tempDir)
+      throws URISyntaxException, IOException {
+    final String errorString = loadAndGetErrorText("invalid_json.json", tempDir);
+    assertThat(errorString).startsWith("Json does not appear valid");
   }
 
   @Test
-  public void shouldFailWithVersionCheckFailure() throws URISyntaxException, IOException {
-    final String errorString = loadAndGetErrorText("oldMetadata.json");
+  public void shouldFailWithVersionCheckFailure(@TempDir final Path tempDir)
+      throws URISyntaxException, IOException {
+    final String errorString = loadAndGetErrorText("oldMetadata.json", tempDir);
     assertThat(errorString)
         .contains("Required version is " + Metadata.INTERCHANGE_VERSION.toString());
   }
 
   @Test
-  public void shouldFailIfMetadataNotPresent() throws IOException, URISyntaxException {
-    final String errorString = loadAndGetErrorText("signedBlock.json");
+  public void shouldFailIfMetadataNotPresent(@TempDir final Path tempDir)
+      throws IOException, URISyntaxException {
+    final String errorString = loadAndGetErrorText("signedBlock.json", tempDir);
     assertThat(errorString).contains("does not appear to have metadata");
+  }
+
+  @Test
+  public void shouldImportSingleRecord(@TempDir Path tempDir)
+      throws URISyntaxException, IOException {
+    final File ruleFile = usingResourceFile("slashProtection.yml", tempDir);
+    final SlashingProtectionImporter importer = new SlashingProtectionImporter(tempDir);
+    importer.initialise(ruleFile);
+    final Optional<String> maybeError = importer.updateSigningRecord(publicKey, (__) -> {});
+    assertThat(maybeError).isEmpty();
+    assertThat(tempDir.resolve(pubkey + ".yml").toFile()).exists();
   }
 
   @Test
@@ -85,10 +103,10 @@ public class SlashingProtectionImporterTest {
     assertThat(Files.exists(exportedFile)).isTrue();
     assertThat(Files.exists(ruleFile.toPath())).isFalse();
 
-    SlashingProtectionImporter importer =
-        new SlashingProtectionImporter(logger, exportedFile.toString());
+    SlashingProtectionImporter importer = new SlashingProtectionImporter(tempDir);
     importer.initialise(new File(exportedFile.toString()));
-    importer.updateLocalRecords(tempDir);
+    final Map<BLSPublicKey, String> errors = importer.updateLocalRecords((__) -> {});
+    assertThat(errors).isEmpty();
     assertThat(Files.exists(ruleFile.toPath())).isTrue();
 
     assertThat(originalFileContent).isEqualTo(Files.readString(ruleFile.toPath()));
@@ -126,11 +144,11 @@ public class SlashingProtectionImporterTest {
     verify(logger, never()).error(any(), any());
     assertThat(Files.readString(repairedRuleFile.toPath())).isNotEqualTo(originalFileContent);
 
-    SlashingProtectionImporter importer =
-        new SlashingProtectionImporter(logger, exportedFile.toString());
+    SlashingProtectionImporter importer = new SlashingProtectionImporter(repairedRecords);
     importer.initialise(exportedFile.toFile());
-    importer.updateLocalRecords(repairedRecords);
+    final Map<BLSPublicKey, String> errors = importer.updateLocalRecords((__) -> {});
 
+    assertThat(errors).isEmpty();
     // Should wind up with a file that contains the slot and epochs from the repair, combined with
     // the genesis root from the initial file
     final ValidatorSigningRecord initialRecord = loadSigningRecord(initialRuleFile);
@@ -149,15 +167,14 @@ public class SlashingProtectionImporterTest {
         Bytes.wrap(Files.readAllBytes(repairedRuleFile.toPath())));
   }
 
-  private String loadAndGetErrorText(final String resourceFile)
+  private String loadAndGetErrorText(final String resourceFile, final Path tempDir)
       throws URISyntaxException, IOException {
-    final SubCommandLogger logger = mock(SubCommandLogger.class);
-    SlashingProtectionImporter importer = new SlashingProtectionImporter(logger, resourceFile);
+    SlashingProtectionImporter importer = new SlashingProtectionImporter(tempDir);
 
-    importer.initialise(new File(Resources.getResource(resourceFile).toURI()));
+    final Optional<String> errorString =
+        importer.initialise(new File(Resources.getResource(resourceFile).toURI()));
 
-    verify(logger).exit(eq(1), stringArgs.capture());
-    return stringArgs.getValue();
+    return errorString.orElse("");
   }
 
   private File usingResourceFile(final String resourceFileName, final Path tempDir)
