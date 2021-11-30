@@ -194,6 +194,10 @@ public class ProtoArray {
     ProtoNode justifiedNode =
         checkNotNull(nodes.get(justifiedIndex), "ProtoArray: Unknown justified index");
 
+    if (!hasSuitableValidationState.test(justifiedNode)) {
+      return Optional.empty();
+    }
+
     int bestDescendantIndex = justifiedNode.getBestDescendantIndex().orElse(justifiedIndex);
     ProtoNode bestNode =
         checkNotNull(nodes.get(bestDescendantIndex), "ProtoArray: Unknown best descendant index");
