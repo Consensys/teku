@@ -30,6 +30,10 @@ public class BeaconNodeServiceController extends ServiceController {
       TekuConfiguration tekuConfig, final ServiceConfig serviceConfig) {
     // Note services will be started in the order they are added here.
     services.add(new StorageService(serviceConfig, tekuConfig.storageConfiguration()));
+    if (tekuConfig.executionEngine().isEnabled()) {
+      // Need to make sure the execution engine is listening before starting the beacon chain
+      services.add(new ExecutionEngineService(serviceConfig, tekuConfig.executionEngine()));
+    }
     services.add(new BeaconChainService(serviceConfig, tekuConfig.beaconChain()));
     services.add(ValidatorClientService.create(serviceConfig, tekuConfig.validatorClient()));
     services.add(new TimerService(serviceConfig));
@@ -38,9 +42,6 @@ public class BeaconNodeServiceController extends ServiceController {
             tekuConfig.natConfiguration(),
             tekuConfig.network().getListenPort(),
             tekuConfig.discovery().isDiscoveryEnabled()));
-    if (tekuConfig.executionEngine().isEnabled()) {
-      services.add(new ExecutionEngineService(serviceConfig, tekuConfig.executionEngine()));
-    }
     powchainService(tekuConfig, serviceConfig).ifPresent(services::add);
   }
 
