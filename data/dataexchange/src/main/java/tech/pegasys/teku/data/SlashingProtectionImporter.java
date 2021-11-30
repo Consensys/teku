@@ -20,22 +20,27 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import tech.pegasys.teku.api.schema.BLSPubKey;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.data.signingrecord.ValidatorSigningRecord;
 import tech.pegasys.teku.data.slashinginterchange.Metadata;
 import tech.pegasys.teku.data.slashinginterchange.SignedAttestation;
 import tech.pegasys.teku.data.slashinginterchange.SignedBlock;
 import tech.pegasys.teku.data.slashinginterchange.SigningHistory;
 import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
-import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 
@@ -44,39 +49,33 @@ public class SlashingProtectionImporter {
   private Path slashingProtectionPath;
   private List<SigningHistory> data = new ArrayList<>();
   private Metadata metadata;
-  private final SubCommandLogger log;
   private final SyncDataAccessor syncDataAccessor;
+  private final Map<BLSPublicKey, String> validatorImportErrors = new HashMap<>();
 
-  public SlashingProtectionImporter(final SubCommandLogger log, final String path) {
-    this.log = log;
-    syncDataAccessor = SyncDataAccessor.create(Paths.get(path));
+  public SlashingProtectionImporter(final Path slashingProtectionPath) {
+    syncDataAccessor = SyncDataAccessor.create(slashingProtectionPath);
   }
 
-  public void initialise(final File inputFile) throws IOException {
+  public Optional<String> initialise(final File inputFile) throws IOException {
+    return initialise(new FileInputStream(inputFile));
+  }
+
+  public Optional<String> initialise(final InputStream inputStream) throws IOException {
     final ObjectMapper jsonMapper = jsonProvider.getObjectMapper();
     try {
-      final JsonNode jsonNode = jsonMapper.readTree(inputFile);
+      final JsonNode jsonNode = jsonMapper.readTree(inputStream);
 
       metadata = jsonMapper.treeToValue(jsonNode.get("metadata"), Metadata.class);
       if (metadata == null) {
-        log.exit(
-            1,
-            "Import file "
-                + inputFile.toString()
-                + " does not appear to have metadata information, and cannot be loaded.");
-        return; // Testing mocks log.exit
+        return Optional.of(
+            "Import data does not appear to have metadata information, and cannot be loaded.");
       }
       if (!INTERCHANGE_VERSION.equals(UInt64.valueOf(4))
           && !INTERCHANGE_VERSION.equals(metadata.interchangeFormatVersion)) {
-        log.exit(
-            1,
-            "Import file "
-                + inputFile.toString()
-                + " has unsupported format version "
-                + metadata.interchangeFormatVersion
-                + ". Required version is "
-                + INTERCHANGE_VERSION);
-        return; // Testing mocks log.exit
+        return Optional.of(
+            String.format(
+                "Import data has unsupported format version  %s. Required version is %s",
+                metadata.interchangeFormatVersion, INTERCHANGE_VERSION));
       }
 
       data =
@@ -85,11 +84,12 @@ public class SlashingProtectionImporter {
 
     } catch (JsonMappingException e) {
       String cause = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
-      log.exit(1, "Failed to load data from " + inputFile.getName() + ". " + cause);
+      return Optional.of(String.format("Failed to load data. %s", cause));
     } catch (JsonParseException e) {
       String cause = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
-      log.exit(1, "Json does not appear valid in file " + inputFile.getName() + ". " + cause);
+      return Optional.of(String.format("Json does not appear valid. %s", cause));
     }
+    return Optional.empty();
   }
 
   private List<SigningHistory> summariseCompleteInterchangeFormat(
@@ -129,23 +129,41 @@ public class SlashingProtectionImporter {
     }
   }
 
-  public void updateLocalRecords(final Path slashingProtectionPath) {
+  public void updateLocalRecords(
+      final Path slashingProtectionPath, final Consumer<String> statusConsumer) {
     this.slashingProtectionPath = slashingProtectionPath;
-    data.forEach(this::updateLocalRecord);
-    log.display("Updated " + data.size() + " validator slashing protection records");
+    data.forEach(record -> updateLocalRecord(record, statusConsumer));
+    statusConsumer.accept("Updated " + data.size() + " validator slashing protection records");
   }
 
-  private void updateLocalRecord(final SigningHistory signingHistory) {
-    String validatorString = signingHistory.pubkey.toBytes().toUnprefixedHexString().toLowerCase();
+  public Optional<String> updateSigningRecord(final BLSPublicKey publicKey) {
+    final BLSPubKey key = new BLSPubKey(publicKey);
+    data.stream()
+        .filter(signingHistory -> signingHistory.pubkey.equals(key))
+        .collect(Collectors.toList())
+        .forEach(record -> updateLocalRecord(record, (__) -> {}));
+    if (validatorImportErrors.containsKey(publicKey)) {
+      return Optional.of(validatorImportErrors.get(publicKey));
+    }
+    return Optional.empty();
+  }
 
-    log.display("Importing " + validatorString);
+  private void updateLocalRecord(
+      final SigningHistory signingHistory, final Consumer<String> statusConsumer) {
+    String validatorString = signingHistory.pubkey.toBytes().toUnprefixedHexString().toLowerCase();
+    final String hexValidatorPubkey = signingHistory.pubkey.toHexString();
+
+    statusConsumer.accept("Importing " + validatorString);
     Path outputFile = slashingProtectionPath.resolve(validatorString + ".yml");
     Optional<ValidatorSigningRecord> existingRecord = Optional.empty();
     if (outputFile.toFile().exists()) {
       try {
         existingRecord = syncDataAccessor.read(outputFile).map(ValidatorSigningRecord::fromBytes);
       } catch (IOException e) {
-        log.exit(1, "Failed to read existing file: " + outputFile);
+        validatorImportErrors.put(
+            signingHistory.pubkey.asBLSPublicKey(), "unable to load existing record.");
+        statusConsumer.accept("Failed to read existing file: " + outputFile);
+        return;
       }
     }
     if (existingRecord.isPresent()
@@ -153,11 +171,14 @@ public class SlashingProtectionImporter {
         && metadata.genesisValidatorsRoot != null
         && metadata.genesisValidatorsRoot.compareTo(existingRecord.get().getGenesisValidatorsRoot())
             != 0) {
-      log.exit(
-          1,
+      validatorImportErrors.put(
+          signingHistory.pubkey.asBLSPublicKey(),
+          "Genesis validators root did not match what was expected.");
+      statusConsumer.accept(
           "Validator "
-              + signingHistory.pubkey.toHexString()
+              + hexValidatorPubkey
               + " has a different validators signing root to the data being imported");
+      return;
     }
 
     try {
@@ -167,7 +188,13 @@ public class SlashingProtectionImporter {
               .toValidatorSigningRecord(existingRecord, metadata.genesisValidatorsRoot)
               .toBytes());
     } catch (IOException e) {
-      log.exit(1, "Validator " + signingHistory.pubkey.toHexString() + " was not updated.");
+      validatorImportErrors.put(
+          signingHistory.pubkey.asBLSPublicKey(), "Failed to update slashing protection record");
+      statusConsumer.accept("Validator " + hexValidatorPubkey + " was not updated.");
     }
+  }
+
+  public Map<BLSPublicKey, String> getValidatorImportErrors() {
+    return validatorImportErrors;
   }
 }
