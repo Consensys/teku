@@ -149,6 +149,16 @@ class ProtoArrayTest {
   }
 
   @Test
+  void findHead_shouldNotHaveHeadWhenJustifiedBlockIsOptimistic() {
+    // Finalized root is fully validated, but head must descend from the justified checkpoint
+    protoArray.markNodeValid(GENESIS_CHECKPOINT.getRoot());
+    final Bytes32 justifiedRoot = dataStructureUtil.randomBytes32();
+    addOptimisticBlock(12, justifiedRoot, GENESIS_CHECKPOINT.getRoot());
+
+    assertThat(protoArray.findHead(justifiedRoot, UInt64.ONE, UInt64.ZERO)).isEmpty();
+  }
+
+  @Test
   void findHead_shouldIncludeValidatedBlocks() {
     addValidBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
     addValidBlock(2, block2a, block1a);
@@ -464,19 +474,12 @@ class ProtoArrayTest {
   }
 
   private void addValidBlock(final long slot, final Bytes32 blockRoot, final Bytes32 parentRoot) {
-    addBlock(slot, blockRoot, parentRoot, false);
+    addOptimisticBlock(slot, blockRoot, parentRoot);
+    protoArray.markNodeValid(blockRoot);
   }
 
   private void addOptimisticBlock(
       final long slot, final Bytes32 blockRoot, final Bytes32 parentRoot) {
-    addBlock(slot, blockRoot, parentRoot, true);
-  }
-
-  private void addBlock(
-      final long slot,
-      final Bytes32 blockRoot,
-      final Bytes32 parentRoot,
-      final boolean optimisticallyProcessed) {
     protoArray.onBlock(
         UInt64.valueOf(slot),
         blockRoot,
@@ -485,7 +488,7 @@ class ProtoArrayTest {
         GENESIS_CHECKPOINT.getEpoch(),
         GENESIS_CHECKPOINT.getEpoch(),
         Bytes32.ZERO,
-        optimisticallyProcessed);
+        true);
   }
 
   private void reverseProposerWeightings(final ProposerWeighting... weightings) {
