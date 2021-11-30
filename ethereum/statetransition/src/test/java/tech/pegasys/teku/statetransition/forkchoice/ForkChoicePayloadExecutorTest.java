@@ -19,7 +19,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus.SYNCING;
 
+import java.io.IOException;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
@@ -86,6 +88,21 @@ class ForkChoicePayloadExecutorTest {
     final boolean result = payloadExecutor.optimisticallyExecute(payloadHeader, payload);
     verify(executionEngine).executePayload(payload);
     assertThat(result).isTrue();
+  }
+
+  @Test
+  void optimisticallyExecute_shouldTreatErrorFromExecutionEngineAsSyncing() {
+    when(executionEngine.executePayload(any()))
+        .thenReturn(SafeFuture.failedFuture(new IOException("Boom")));
+    final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
+    final boolean result = payloadExecutor.optimisticallyExecute(payloadHeader, payload);
+    verify(executionEngine).executePayload(payload);
+    assertThat(result).isTrue();
+
+    final BlockImportResult blockImportResult = BlockImportResult.successful(block);
+    final SafeFuture<BlockImportResult> combinedResult = payloadExecutor.combine(blockImportResult);
+    assertThat(combinedResult).isCompletedWithValue(blockImportResult);
+    verify(forkChoiceStrategy).onExecutionPayloadResult(block.getRoot(), SYNCING);
   }
 
   @Test
@@ -192,13 +209,10 @@ class ForkChoicePayloadExecutorTest {
     assertThat(result).isNotCompleted();
     verifyChainHeadNotUpdated(blockImportResult);
 
-    executionResult.complete(
-        new ExecutePayloadResult(
-            ExecutionPayloadStatus.SYNCING, Optional.empty(), Optional.empty()));
+    executionResult.complete(new ExecutePayloadResult(SYNCING, Optional.empty(), Optional.empty()));
 
     assertThat(result).isCompletedWithValue(blockImportResult);
-    verify(forkChoiceStrategy)
-        .onExecutionPayloadResult(block.getRoot(), ExecutionPayloadStatus.SYNCING);
+    verify(forkChoiceStrategy).onExecutionPayloadResult(block.getRoot(), SYNCING);
     verifyChainHeadNotUpdated(blockImportResult);
   }
 

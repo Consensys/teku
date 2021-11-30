@@ -14,8 +14,7 @@
 package tech.pegasys.teku.spec.executionengine;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.base.Objects;
-import java.util.Optional;
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 
 public class ForkChoiceState {
@@ -23,13 +22,8 @@ public class ForkChoiceState {
   private final Bytes32 safeBlockHash;
   private final Bytes32 finalizedBlockHash;
 
-  public static Optional<ForkChoiceState> fromHeadAndFinalized(
-      Optional<Bytes32> maybeHeadBlock, Bytes32 finalizedBlock) {
-    return maybeHeadBlock.map(
-        headBlock -> new ForkChoiceState(headBlock, headBlock, finalizedBlock));
-  }
-
-  public ForkChoiceState(Bytes32 headBlockHash, Bytes32 safeBlockHash, Bytes32 finalizedBlockHash) {
+  public ForkChoiceState(
+      final Bytes32 headBlockHash, final Bytes32 safeBlockHash, final Bytes32 finalizedBlockHash) {
     this.headBlockHash = headBlockHash;
     this.safeBlockHash = safeBlockHash;
     this.finalizedBlockHash = finalizedBlockHash;
@@ -57,17 +51,21 @@ public class ForkChoiceState {
   }
 
   @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof ForkChoiceState)) return false;
-    ForkChoiceState that = (ForkChoiceState) o;
-    return headBlockHash == that.headBlockHash
-        && safeBlockHash == that.safeBlockHash
-        && finalizedBlockHash == that.finalizedBlockHash;
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final ForkChoiceState that = (ForkChoiceState) o;
+    return Objects.equals(headBlockHash, that.headBlockHash)
+        && Objects.equals(safeBlockHash, that.safeBlockHash)
+        && Objects.equals(finalizedBlockHash, that.finalizedBlockHash);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(headBlockHash, safeBlockHash, finalizedBlockHash);
+    return Objects.hash(headBlockHash, safeBlockHash, finalizedBlockHash);
   }
 }

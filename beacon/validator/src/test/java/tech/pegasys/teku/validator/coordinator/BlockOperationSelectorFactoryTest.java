@@ -46,20 +46,24 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttesterSlashingValidator.AttesterSlashingInvalidReason;
 import tech.pegasys.teku.spec.logic.common.operations.validation.ProposerSlashingValidator.ProposerSlashingInvalidReason;
 import tech.pegasys.teku.spec.logic.common.operations.validation.VoluntaryExitValidator.ExitInvalidReason;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.ssz.type.Bytes8;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.synccommittee.SignedContributionAndProofValidator;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.validation.OperationValidator;
 
 class BlockOperationSelectorFactoryTest {
-  private final Spec spec = TestSpecFactory.createMinimalAltair();
+  private final Spec spec = TestSpecFactory.createMinimalMerge();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private final Function<UInt64, BeaconBlockBodySchema<?>> beaconBlockSchemaSupplier =
@@ -112,6 +116,14 @@ class BlockOperationSelectorFactoryTest {
   private final Bytes32 parentRoot = dataStructureUtil.randomBytes32();
   private final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
 
+  private final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
+  private final ExecutionEngineChannel executionEngine = mock(ExecutionEngineChannel.class);
+
+  private final ExecutionPayload defaultExecutionPayload =
+      SchemaDefinitionsMerge.required(spec.getGenesisSpec().getSchemaDefinitions())
+          .getExecutionPayloadSchema()
+          .getDefault();
+
   private final CapturingBeaconBlockBodyBuilder bodyBuilder = new CapturingBeaconBlockBodyBuilder();
 
   private final BlockOperationSelectorFactory factory =
@@ -124,7 +136,9 @@ class BlockOperationSelectorFactoryTest {
           contributionPool,
           depositProvider,
           eth1DataCache,
-          defaultGraffiti);
+          defaultGraffiti,
+          forkChoiceNotifier,
+          executionEngine);
 
   @BeforeEach
   void setUp() {
@@ -135,6 +149,8 @@ class BlockOperationSelectorFactoryTest {
     when(attesterSlashingValidator.validateFully(any())).thenReturn(ACCEPT);
     when(proposerSlashingValidator.validateFully(any())).thenReturn(ACCEPT);
     when(voluntaryExitValidator.validateFully(any())).thenReturn(ACCEPT);
+    when(forkChoiceNotifier.getPayloadId(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
   }
 
   @Test
@@ -244,14 +260,47 @@ class BlockOperationSelectorFactoryTest {
                 .createSyncAggregate(List.of(contribution.getMessage().getContribution())));
   }
 
+  @Test
+  void shouldIncludeDefaultExecutionPayload() {
+    final UInt64 slot = UInt64.ONE;
+    final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(slot);
+    factory
+        .createSelector(
+            parentRoot, blockSlotState, dataStructureUtil.randomSignature(), Optional.empty())
+        .accept(bodyBuilder);
+    assertThat(bodyBuilder.executionPayload).isEqualTo(defaultExecutionPayload);
+  }
+
+  @Test
+  void shouldIncludeNonDefaultExecutionPayload() {
+    final UInt64 slot = UInt64.ONE;
+    final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(slot);
+
+    final Bytes8 payloadId = dataStructureUtil.randomBytes8();
+    final ExecutionPayload randomExecutionPayload = dataStructureUtil.randomExecutionPayload();
+
+    when(forkChoiceNotifier.getPayloadId(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(payloadId)));
+    when(executionEngine.getPayload(payloadId, slot))
+        .thenReturn(SafeFuture.completedFuture(randomExecutionPayload));
+
+    factory
+        .createSelector(
+            parentRoot, blockSlotState, dataStructureUtil.randomSignature(), Optional.empty())
+        .accept(bodyBuilder);
+
+    assertThat(bodyBuilder.executionPayload).isEqualTo(randomExecutionPayload);
+  }
+
   private static class CapturingBeaconBlockBodyBuilder implements BeaconBlockBodyBuilder {
 
-    private BLSSignature randaoReveal;
-    private Bytes32 graffiti;
-    private SszList<ProposerSlashing> proposerSlashings;
-    private SszList<AttesterSlashing> attesterSlashings;
-    private SszList<SignedVoluntaryExit> voluntaryExits;
-    private SyncAggregate syncAggregate;
+    protected BLSSignature randaoReveal;
+    protected Bytes32 graffiti;
+    protected SszList<ProposerSlashing> proposerSlashings;
+    protected SszList<AttesterSlashing> attesterSlashings;
+    protected SszList<SignedVoluntaryExit> voluntaryExits;
+    protected SyncAggregate syncAggregate;
+    protected ExecutionPayload executionPayload;
 
     @Override
     public BeaconBlockBodyBuilder randaoReveal(final BLSSignature randaoReveal) {
@@ -311,6 +360,7 @@ class BlockOperationSelectorFactoryTest {
     @Override
     public BeaconBlockBodyBuilder executionPayload(
         Supplier<ExecutionPayload> executionPayloadSupplier) {
+      this.executionPayload = executionPayloadSupplier.get();
       return this;
     }
 

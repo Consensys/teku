@@ -17,10 +17,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.crypto.Hash;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.ssz.tree.TreeUtil;
 
@@ -41,7 +41,7 @@ public interface SszListTestBase extends SszCollectionTestBase {
 
     assertThat(data.hashTreeRoot())
         .isEqualTo(
-            Hash.sha2_256(
+            Hash.sha256(
                 Bytes.concatenate(
                     TreeUtil.ZERO_TREES[data.getSchema().treeDepth()].hashTreeRoot(),
                     Bytes32.ZERO)));

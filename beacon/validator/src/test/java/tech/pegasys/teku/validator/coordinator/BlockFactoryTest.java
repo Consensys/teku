@@ -24,15 +24,20 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge.BeaconBlockBodyMerge;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -40,14 +45,18 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
+import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.ssz.type.Bytes8;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -60,10 +69,13 @@ class BlockFactoryTest {
   final OperationPool<AttesterSlashing> attesterSlashingPool = mock(OperationPool.class);
   final OperationPool<ProposerSlashing> proposerSlashingPool = mock(OperationPool.class);
   final OperationPool<SignedVoluntaryExit> voluntaryExitPool = mock(OperationPool.class);
+  final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
+  final ExecutionEngineChannel executionEngine = mock(ExecutionEngineChannel.class);
   final SyncCommitteeContributionPool syncCommitteeContributionPool =
       mock(SyncCommitteeContributionPool.class);
   final DepositProvider depositProvider = mock(DepositProvider.class);
   final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
+  ExecutionPayload executionPayload;
 
   @Test
   public void shouldCreateBlockAfterNormalSlot() throws Exception {
@@ -89,8 +101,19 @@ class BlockFactoryTest {
         .createSyncAggregateForBlock(UInt64.ONE, block.getParentRoot());
   }
 
+  @Test
+  void shouldIncludeExecutionPayloadWhenMergeIsActive() throws Exception {
+    final BeaconBlock block = assertBlockCreated(1, TestSpecFactory.createMinimalMerge());
+    final ExecutionPayload result = getExecutionPayload(block);
+    assertThat(result).isEqualTo(executionPayload);
+  }
+
   private SyncAggregate getSyncAggregate(final BeaconBlock block) {
     return BeaconBlockBodyAltair.required(block.getBody()).getSyncAggregate();
+  }
+
+  private ExecutionPayload getExecutionPayload(final BeaconBlock block) {
+    return BeaconBlockBodyMerge.required(block.getBody()).getExecutionPayload();
   }
 
   private BeaconBlock assertBlockCreated(final int blockSlot, final Spec spec)
@@ -106,6 +129,15 @@ class BlockFactoryTest {
     final SszList<ProposerSlashing> proposerSlashings = blockBodyLists.createProposerSlashings();
     final SszList<SignedVoluntaryExit> voluntaryExits = blockBodyLists.createVoluntaryExits();
 
+    if (spec.getGenesisSpec().getMilestone().isGreaterThanOrEqualTo(SpecMilestone.MERGE)) {
+      executionPayload =
+          SchemaDefinitionsMerge.required(spec.getGenesisSpec().getSchemaDefinitions())
+              .getExecutionPayloadSchema()
+              .getDefault();
+    } else {
+      executionPayload = null;
+    }
+
     final Bytes32 graffiti = dataStructureUtil.randomBytes32();
     final BlockFactory blockFactory =
         new BlockFactory(
@@ -119,7 +151,9 @@ class BlockFactoryTest {
                 syncCommitteeContributionPool,
                 depositProvider,
                 eth1DataCache,
-                graffiti));
+                graffiti,
+                forkChoiceNotifier,
+                executionEngine));
 
     when(depositProvider.getDeposits(any(), any())).thenReturn(deposits);
     when(attestationsPool.getAttestationsForBlock(any(), any(), any())).thenReturn(attestations);
@@ -127,20 +161,26 @@ class BlockFactoryTest {
     when(proposerSlashingPool.getItemsForBlock(any(), any(), any())).thenReturn(proposerSlashings);
     when(voluntaryExitPool.getItemsForBlock(any(), any(), any())).thenReturn(voluntaryExits);
     when(eth1DataCache.getEth1Vote(any())).thenReturn(ETH1_DATA);
+    when(forkChoiceNotifier.getPayloadId(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(Bytes8.fromHexStringLenient("0x0"))));
+    when(executionEngine.getPayload(any(), any()))
+        .thenReturn(SafeFuture.completedFuture(executionPayload));
     beaconChainUtil.initializeStorage();
 
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final StateAndBlockSummary bestBlockAndState = recentChainData.getChainHead().orElseThrow();
     final Bytes32 bestBlockRoot = bestBlockAndState.getRoot();
-    final BeaconState previousState =
-        recentChainData.retrieveBlockState(bestBlockRoot).join().orElseThrow();
+    final BeaconState blockSlotState =
+        recentChainData
+            .retrieveStateAtSlot(new SlotAndBlockRoot(UInt64.valueOf(blockSlot), bestBlockRoot))
+            .join()
+            .orElseThrow();
 
     when(syncCommitteeContributionPool.createSyncAggregateForBlock(newSlot, bestBlockRoot))
         .thenAnswer(invocation -> createEmptySyncAggregate(spec));
 
     final BeaconBlock block =
-        blockFactory.createUnsignedBlock(
-            previousState, Optional.empty(), newSlot, randaoReveal, Optional.empty());
+        blockFactory.createUnsignedBlock(blockSlotState, newSlot, randaoReveal, Optional.empty());
 
     assertThat(block).isNotNull();
     assertThat(block.getSlot()).isEqualTo(newSlot);

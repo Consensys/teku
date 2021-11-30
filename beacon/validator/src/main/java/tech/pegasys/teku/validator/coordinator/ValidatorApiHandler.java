@@ -61,8 +61,6 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.merge.BeaconPre
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
-import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
-import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
@@ -277,15 +275,10 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         .prepareForBlockProduction(slot)
         .thenCompose(
             __ -> {
-              final SafeFuture<Optional<BeaconState>> preStateFuture =
-                  combinedChainDataClient.getStateAtSlotExact(slot.decrement());
               final SafeFuture<Optional<BeaconState>> blockSlotStateFuture =
                   combinedChainDataClient.getStateAtSlotExact(slot);
-              return preStateFuture.thenCompose(
-                  preState ->
-                      blockSlotStateFuture.thenApplyChecked(
-                          blockSlotState ->
-                              createBlock(slot, randaoReveal, graffiti, preState, blockSlotState)));
+              return blockSlotStateFuture.thenApplyChecked(
+                  blockSlotState -> createBlock(slot, randaoReveal, graffiti, blockSlotState));
             });
   }
 
@@ -293,17 +286,21 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final UInt64 slot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
-      final Optional<BeaconState> maybePreState,
       final Optional<BeaconState> maybeBlockSlotState)
-      throws EpochProcessingException, SlotProcessingException, StateTransitionException {
-    if (maybePreState.isEmpty()) {
+      throws StateTransitionException {
+    if (maybeBlockSlotState.isEmpty()) {
       return Optional.empty();
     }
-    LOG.trace(
-        "Delegating to block factory. Has block slot state? {}", maybeBlockSlotState.isPresent());
+    final BeaconState blockSlotState = maybeBlockSlotState.get();
+    final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, slot.minus(1));
+    if (!combinedChainDataClient.isFullyValidatedHotBlock(parentRoot)) {
+      LOG.warn(
+          "Unable to produce block at slot {} because parent has optimistically validated payload",
+          slot);
+      throw new NodeSyncingException();
+    }
     return Optional.of(
-        blockFactory.createUnsignedBlock(
-            maybePreState.get(), maybeBlockSlotState, slot, randaoReveal, graffiti));
+        blockFactory.createUnsignedBlock(blockSlotState, slot, randaoReveal, graffiti));
   }
 
   @Override
@@ -343,6 +340,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                           }
                           final SignedBlockAndState blockAndState = maybeBlockAndState.get();
                           final BeaconBlock block = blockAndState.getBlock().getMessage();
+
+                          // The head block must not be optimistically synced.
+                          if (!combinedChainDataClient.isFullyValidatedHotBlock(block.getRoot())) {
+                            return NodeSyncingException.failedFuture();
+                          }
                           if (blockAndState.getSlot().compareTo(minQuerySlot) < 0) {
                             // The current effective block is too far in the past - so roll the
                             // state forward to the current epoch. Ensures we have the latest

@@ -459,6 +459,10 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return getForkChoiceStrategy().flatMap(forkChoice -> forkChoice.blockSlot(root));
   }
 
+  public Optional<Bytes32> getExecutionBlockHashForBlockRoot(final Bytes32 root) {
+    return getForkChoiceStrategy().flatMap(forkChoice -> forkChoice.executionBlockHash(root));
+  }
+
   public SafeFuture<Optional<BeaconBlock>> retrieveBlockByRoot(final Bytes32 root) {
     if (store == null) {
       return EmptyStoreResults.EMPTY_BLOCK_FUTURE;
@@ -515,6 +519,11 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
   public Optional<Checkpoint> getJustifiedCheckpoint() {
     return store == null ? Optional.empty() : Optional.of(store.getJustifiedCheckpoint());
+  }
+
+  public boolean isJustifiedCheckpointFullyValidated() {
+    return store != null
+        && store.getForkChoiceStrategy().isFullyValidated(store.getJustifiedCheckpoint().getRoot());
   }
 
   @Override

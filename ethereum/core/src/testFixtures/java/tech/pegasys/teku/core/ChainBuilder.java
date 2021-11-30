@@ -409,7 +409,8 @@ public class ChainBuilder {
               Optional.empty(),
               Optional.empty(),
               options.getEth1Data(),
-              options.getTransactions());
+              options.getTransactions(),
+              options.getTerminalBlockHash());
       trackBlock(nextBlockAndState);
       return nextBlockAndState;
     } catch (StateTransitionException | EpochProcessingException | SlotProcessingException e) {
@@ -519,6 +520,7 @@ public class ChainBuilder {
     private final List<Attestation> attestations = new ArrayList<>();
     private Optional<Eth1Data> eth1Data = Optional.empty();
     private Optional<List<Bytes>> transactions = Optional.empty();
+    private Optional<Bytes32> terminalBlockHash = Optional.empty();
 
     private BlockOptions() {}
 
@@ -541,6 +543,11 @@ public class ChainBuilder {
       return this;
     }
 
+    public BlockOptions setTerminalBlockHash(Bytes32 blockHash) {
+      this.terminalBlockHash = Optional.of(blockHash);
+      return this;
+    }
+
     private List<Attestation> getAttestations() {
       return attestations;
     }
@@ -551,6 +558,10 @@ public class ChainBuilder {
 
     public Optional<List<Bytes>> getTransactions() {
       return transactions;
+    }
+
+    public Optional<Bytes32> getTerminalBlockHash() {
+      return terminalBlockHash;
     }
   }
 }

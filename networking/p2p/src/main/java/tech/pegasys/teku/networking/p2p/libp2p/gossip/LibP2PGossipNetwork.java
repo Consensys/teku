@@ -49,10 +49,10 @@ import kotlin.jvm.functions.Function0;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.crypto.Hash;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessageFactory;
@@ -112,9 +112,7 @@ public class LibP2PGossipNetwork implements GossipNetwork {
           final SeenCache<Optional<ValidationResult>> seenCache =
               new TTLSeenCache<>(
                   new FastIdSeenCache<>(
-                      msg ->
-                          Bytes.wrap(
-                              Hash.sha2_256(msg.getProtobufMessage().getData().toByteArray()))),
+                      msg -> Hash.sha256(msg.getProtobufMessage().getData().toByteArray())),
                   gossipParams.getSeenTTL(),
                   getCurTimeMillis());
 

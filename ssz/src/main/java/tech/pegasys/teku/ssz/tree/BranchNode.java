@@ -19,8 +19,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.crypto.Hash;
 import org.jetbrains.annotations.NotNull;
+import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.ssz.tree.GIndexUtil.NodeRelation;
 
 /**
@@ -63,7 +63,7 @@ public interface BranchNode extends TreeNode {
 
   @Override
   default Bytes32 hashTreeRoot() {
-    return Hash.sha2_256(Bytes.concatenate(left().hashTreeRoot(), right().hashTreeRoot()));
+    return Hash.sha256(Bytes.concatenate(left().hashTreeRoot(), right().hashTreeRoot()));
   }
 
   @NotNull

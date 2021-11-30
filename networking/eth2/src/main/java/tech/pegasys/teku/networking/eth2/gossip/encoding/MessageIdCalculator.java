@@ -14,7 +14,7 @@
 package tech.pegasys.teku.networking.eth2.gossip.encoding;
 
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.crypto.Hash;
+import tech.pegasys.teku.infrastructure.crypto.Hash;
 
 abstract class MessageIdCalculator {
   // 4-byte domain for gossip message-id isolation of *invalid* snappy messages
@@ -27,7 +27,7 @@ abstract class MessageIdCalculator {
   protected abstract Bytes invalidMessageIdData();
 
   protected Bytes hashMessageIdData(final Bytes idData) {
-    return Hash.sha2_256(idData).slice(0, 20);
+    return Hash.sha256(idData).slice(0, 20);
   }
 
   public Bytes getValidMessageId(final Bytes uncompressedData) {

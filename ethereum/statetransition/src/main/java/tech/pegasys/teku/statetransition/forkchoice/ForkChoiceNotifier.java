@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -55,7 +57,12 @@ public class ForkChoiceNotifier {
 
   private Optional<ForkChoiceState> lastSentForkChoiceState = Optional.empty();
   private Optional<PayloadAttributes> lastSentPayloadAttributes = Optional.empty();
-  private Optional<Bytes8> lastPayloadId = Optional.empty();
+  private SafeFuture<Optional<Bytes8>> lastFuturePayloadId =
+      SafeFuture.completedFuture(Optional.empty());
+
+  private boolean inSync = false; // Assume we are not in sync at startup.
+
+  private Optional<Bytes32> executionPayloadTerminalBlockHash = Optional.empty();
 
   ForkChoiceNotifier(
       final EventThread eventThread,
@@ -75,6 +82,7 @@ public class ForkChoiceNotifier {
       final RecentChainData recentChainData) {
     final AsyncRunnerEventThread eventThread =
         new AsyncRunnerEventThread("forkChoiceNotifier", asyncRunnerFactory);
+    eventThread.start();
     return new ForkChoiceNotifier(eventThread, spec, executionEngineChannel, recentChainData);
   }
 
@@ -90,8 +98,108 @@ public class ForkChoiceNotifier {
     eventThread.execute(() -> internalAttestationsDue(slot));
   }
 
-  public SafeFuture<Optional<Bytes8>> getPayloadId() {
-    return eventThread.execute(() -> lastPayloadId);
+  public void onSyncingStatusChanged(final boolean inSync) {
+    eventThread.execute(
+        () -> {
+          this.inSync = inSync;
+        });
+  }
+
+  public SafeFuture<Optional<Bytes8>> getPayloadId(Bytes32 parentBeaconBlockRoot) {
+    return eventThread.executeFuture(() -> internalGetPayloadId(parentBeaconBlockRoot, true));
+  }
+
+  public void onTerminalBlockReached(Bytes32 executionBlockHash) {
+    eventThread.execute(() -> internalTerminalBlockReached(executionBlockHash));
+  }
+
+  private void internalTerminalBlockReached(Bytes32 executionBlockHash) {
+    eventThread.checkOnEventThread();
+    executionPayloadTerminalBlockHash = Optional.of(executionBlockHash);
+  }
+
+  /**
+   * @param parentBeaconBlockRoot root of the beacon block the new block will be built on
+   * @param allowPayloadIdOnTheFlyRetrieval safely control recursive calls
+   * @return must return a Future resolving to:
+   *     <p>Optional.empty() only when is safe to produce a block with an empty execution payload
+   *     (after the merge fork and before Terminal Block arrival)
+   *     <p>Optional.of(payloadId) when one of the following: 1. builds on top of execution head of
+   *     parentBeaconBlockRoot 2. builds on top of the terminal block
+   *     <p>in all other cases it must Throw to avoid block production
+   */
+  private SafeFuture<Optional<Bytes8>> internalGetPayloadId(
+      final Bytes32 parentBeaconBlockRoot, final boolean allowPayloadIdOnTheFlyRetrieval) {
+    eventThread.checkOnEventThread();
+
+    final Bytes32 parentExecutionHash =
+        recentChainData
+            .getExecutionBlockHashForBlockRoot(parentBeaconBlockRoot)
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "Failed to retrieve execution payload hash from beacon block root"));
+
+    final boolean lastForkChoiceStateCorrectlyBuildsOnTop =
+        lastSentForkChoiceState
+            .map(ForkChoiceState::getHeadBlockHash)
+            .map(
+                fcsHead -> {
+                  if (fcsHead.equals(parentExecutionHash)) {
+                    return true;
+                  }
+                  return executionPayloadTerminalBlockHash.isPresent()
+                      && fcsHead.equals(executionPayloadTerminalBlockHash.get());
+                })
+            .orElse(false);
+
+    if (lastForkChoiceStateCorrectlyBuildsOnTop) {
+      // current Future Payload ID builds on the correct block
+
+      return lastFuturePayloadId.thenApply(
+          payloadId -> {
+
+            // Only accept empty payload pre-merge
+            if (payloadId.isPresent() || parentExecutionHash.isZero()) {
+              return payloadId;
+            }
+
+            throw new IllegalStateException(
+                String.format(
+                    "PayloadId not available for Beacon Block Root %s", parentBeaconBlockRoot));
+          });
+    }
+
+    // we have no SentForkChoiceState or doesn't build on top of the right block
+    if (parentExecutionHash.isZero()) {
+      // pre-merge
+
+      if (executionPayloadTerminalBlockHash.isEmpty()) {
+        // we are in pre-merge and terminal block is not reached, we can build a block with empty
+        // payload
+        return SafeFuture.completedFuture(Optional.empty());
+      }
+
+      if (allowPayloadIdOnTheFlyRetrieval) {
+        // we are in pre-merge and terminal block is reached
+        // try to obtain a payloadId now
+        final Bytes32 terminalBlockHash = executionPayloadTerminalBlockHash.get();
+        final ForkChoiceState terminalForkChoiceState =
+            new ForkChoiceState(terminalBlockHash, terminalBlockHash, Bytes32.ZERO);
+        internalForkChoiceUpdated(terminalForkChoiceState);
+        checkState(
+            lastSentForkChoiceState.isPresent()
+                && lastSentForkChoiceState.get().equals(terminalForkChoiceState),
+            "Required fork choice state was not sent");
+        return internalGetPayloadId(parentBeaconBlockRoot, false);
+      }
+    }
+
+    // Merge is complete so we must have a real payload, but we don't have one that matches
+    // TODO: try to obtain a payloadId on the fly?
+
+    throw new IllegalStateException(
+        String.format("PayloadId not available for Beacon Block Root %s", parentBeaconBlockRoot));
   }
 
   private void internalUpdatePreparableProposers(
@@ -150,12 +258,11 @@ public class ForkChoiceNotifier {
           lastSentForkChoiceState = this.forkChoiceState;
           lastSentPayloadAttributes = payloadAttributes;
           // Previous payload is no longer useful as we've moved on to prepping the next block
-          lastPayloadId = Optional.empty();
-          executionEngineChannel
-              .forkChoiceUpdated(forkChoiceState, payloadAttributes)
-              .thenAcceptAsync(
-                  result -> handleForkChoiceResult(forkChoiceState, result), eventThread)
-              .finish(error -> LOG.error("Failed to notify EL of fork choice update", error));
+          lastFuturePayloadId =
+              executionEngineChannel
+                  .forkChoiceUpdated(forkChoiceState, payloadAttributes)
+                  .thenApplyAsync(
+                      result -> handleForkChoiceResult(forkChoiceState, result), eventThread);
         },
         () ->
             LOG.warn(
@@ -192,29 +299,35 @@ public class ForkChoiceNotifier {
     sendForkChoiceUpdated();
   }
 
-  private void handleForkChoiceResult(
+  private Optional<Bytes8> handleForkChoiceResult(
       final ForkChoiceState forkChoiceState, final ForkChoiceUpdatedResult result) {
     eventThread.checkOnEventThread();
     if (lastSentForkChoiceState.isEmpty()
         || !lastSentForkChoiceState.get().equals(forkChoiceState)) {
       // Debug level because this is quite likely to happen when syncing
       LOG.debug("Execution engine did not return payload ID in time, discarding");
-      return;
+      return Optional.empty();
     }
-    lastPayloadId = result.getPayloadId();
+    return result.getPayloadId();
   }
 
   private SafeFuture<Optional<PayloadAttributes>> calculatePayloadAttributes(
       final UInt64 blockSlot) {
     eventThread.checkOnEventThread();
-    if (forkChoiceState.isEmpty()) {
-      // No known fork choice state so no point calculating payload attributes
+    if (!inSync) {
+      // We don't produce blocks while syncing so don't bother preparing the payload
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+    if (forkChoiceState.isEmpty() || forkChoiceState.get().getHeadBlockHash().isZero()) {
+      // No forkChoiceUpdated message will be sent so no point calculating payload attributes
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+    if (!recentChainData.isJustifiedCheckpointFullyValidated()) {
+      // If we've optimistically synced far enough that our justified checkpoint is optimistic,
+      // stop producing blocks because the majority of validators see the optimistic chain as valid.
       return SafeFuture.completedFuture(Optional.empty());
     }
     final UInt64 epoch = spec.computeEpochAtSlot(blockSlot);
-    // TODO: Return empty if chain head is not same as optimistic chain head
-    // TODO: Alternatively just limit how many epochs of empty slots we'll process to avoid burning
-    // CPU pointlessly during optimistic sync
     return getStateInEpoch(epoch)
         .thenApplyAsync(
             maybeState -> calculatePayloadAttributes(blockSlot, epoch, maybeState), eventThread);
@@ -247,8 +360,6 @@ public class ForkChoiceNotifier {
     if (spec.computeEpochAtSlot(head.getSlot()).equals(requiredEpoch)) {
       return SafeFuture.completedFuture(Optional.of(head.getState()));
     } else {
-      // TODO: Chain head is from a prior epoch, we want to avoid processing a lot of empty slots if
-      // we're using optimistic sync as that would just waste CPU.
       return recentChainData.retrieveStateAtSlot(
           new SlotAndBlockRoot(spec.computeStartSlotAtEpoch(requiredEpoch), head.getRoot()));
     }

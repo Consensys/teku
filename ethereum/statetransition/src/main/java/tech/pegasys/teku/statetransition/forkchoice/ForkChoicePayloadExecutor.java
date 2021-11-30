@@ -14,6 +14,8 @@
 package tech.pegasys.teku.statetransition.forkchoice;
 
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
@@ -32,6 +34,7 @@ import tech.pegasys.teku.spec.logic.versions.merge.helpers.MergeTransitionHelper
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
+  private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
   private final RecentChainData recentChainData;
@@ -112,7 +115,15 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
       result =
           Optional.of(mergeTransitionHelpers.validateMergeBlock(executionEngine, executionPayload));
     } else {
-      result = Optional.of(executionEngine.executePayload(executionPayload));
+      result =
+          Optional.of(
+              executionEngine
+                  .executePayload(executionPayload)
+                  .exceptionally(
+                      error -> {
+                        LOG.error("Error while executing payload", error);
+                        return ExecutePayloadResult.SYNCING;
+                      }));
     }
     return true;
   }

@@ -240,8 +240,8 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
-  public void setGenesis_time(final UInt64 genesis_time) {
-    this.genesis_time = genesis_time;
+  public void setGenesisTime(final UInt64 genesisTime) {
+    this.genesis_time = genesisTime;
   }
 
   @Override

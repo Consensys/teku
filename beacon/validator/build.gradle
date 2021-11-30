@@ -24,8 +24,6 @@ dependencies {
 
   implementation 'org.apache.tuweni:tuweni-kv'
   implementation 'org.apache.tuweni:tuweni-bytes'
-  implementation 'org.apache.tuweni:tuweni-crypto'
-  implementation 'org.apache.tuweni:tuweni-config'
   implementation 'org.apache.tuweni:tuweni-ssz'
 
   testImplementation project(':data')
