@@ -30,10 +30,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.CapturingIndexedAttestationCache;
@@ -360,7 +360,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
           Bytes32 mix =
               beaconStateAccessors
                   .getRandaoMix(state, epoch)
-                  .xor(Hash.sha2_256(body.getRandaoReveal().toSSZBytes()));
+                  .xor(Hash.sha256(body.getRandaoReveal().toSSZBytes()));
           int index = epoch.mod(specConfig.getEpochsPerHistoricalVector()).intValue();
           state.getRandao_mixes().setElement(index, mix);
         });

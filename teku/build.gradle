@@ -51,7 +51,6 @@ dependencies {
   implementation 'io.libp2p:jvm-libp2p-minimal'
   implementation 'io.vertx:vertx-core'
   implementation 'io.vertx:vertx-web'
-  implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.apache.logging.log4j:log4j-slf4j-impl'
   implementation 'org.apache.tuweni:tuweni-plumtree'
   implementation 'org.apache.tuweni:tuweni-ssz'

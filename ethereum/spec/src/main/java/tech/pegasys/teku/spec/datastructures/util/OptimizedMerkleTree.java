@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.crypto.Hash;
+import tech.pegasys.teku.infrastructure.crypto.Hash;
 
 public class OptimizedMerkleTree extends MerkleTree {
 
@@ -47,7 +47,7 @@ public class OptimizedMerkleTree extends MerkleTree {
         List<Bytes32> previousStage = tree.get(h - 1);
         int previousStageSize = previousStage.size();
         stage.add(
-            Hash.sha2_256(
+            Hash.sha256(
                 Bytes.concatenate(
                     previousStage.get(previousStageSize - 2),
                     previousStage.get(previousStageSize - 1))));

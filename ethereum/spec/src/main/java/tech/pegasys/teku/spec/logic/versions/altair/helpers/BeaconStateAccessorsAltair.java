@@ -23,8 +23,8 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.unsigned.ByteUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
@@ -105,8 +105,7 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
           miscHelpers.computeShuffledIndex(i % activeValidatorCount, activeValidatorCount, seed);
       final int candidateIndex = activeValidatorIndices.getInt(shuffledIndex);
       final int randomByte =
-          ByteUtil.toUnsignedInt(
-              Hash.sha2_256(Bytes.wrap(seed, uint64ToBytes(i / 32))).get(i % 32));
+          ByteUtil.toUnsignedInt(Hash.sha256(Bytes.wrap(seed, uint64ToBytes(i / 32))).get(i % 32));
       final UInt64 effectiveBalance = validators.get(candidateIndex).getEffective_balance();
       if (effectiveBalance
           .times(MAX_RANDOM_BYTE)

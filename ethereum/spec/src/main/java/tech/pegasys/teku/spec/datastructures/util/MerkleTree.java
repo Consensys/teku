@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.crypto.Hash;
+import tech.pegasys.teku.infrastructure.crypto.Hash;
 
 public abstract class MerkleTree {
   protected final List<List<Bytes32>> tree;
@@ -46,7 +46,7 @@ public abstract class MerkleTree {
     zeroHashes.add(Bytes32.ZERO);
     for (int i = 1; i < height; i++) {
       zeroHashes.add(
-          i, Hash.sha2_256(Bytes.concatenate(zeroHashes.get(i - 1), zeroHashes.get(i - 1))));
+          i, Hash.sha256(Bytes.concatenate(zeroHashes.get(i - 1), zeroHashes.get(i - 1))));
     }
     return zeroHashes;
   }
@@ -93,11 +93,11 @@ public abstract class MerkleTree {
     // Check if given the viewLimit at the leaf layer, is root in left or right subtree
     if ((viewLimit & (1 << depth)) != 0) {
       // For the right subtree
-      return Hash.sha2_256(
+      return Hash.sha256(
           Bytes.concatenate(tree.get(depth).get((viewLimit >> depth) - 1), deeperRoot));
     } else {
       // For the left subtree
-      return Hash.sha2_256(Bytes.concatenate(deeperRoot, zeroHashes.get(depth)));
+      return Hash.sha256(Bytes.concatenate(deeperRoot, zeroHashes.get(depth)));
     }
   }
 
@@ -158,7 +158,7 @@ public abstract class MerkleTree {
   }
 
   public Bytes32 getRoot() {
-    return Hash.sha2_256(Bytes.concatenate(tree.get(treeDepth).get(0), calcMixInValue()));
+    return Hash.sha256(Bytes.concatenate(tree.get(treeDepth).get(0), calcMixInValue()));
   }
 
   @Override

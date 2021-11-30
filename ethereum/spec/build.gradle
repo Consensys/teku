@@ -41,7 +41,6 @@ dependencies {
 
     implementation 'com.google.code.gson:gson'
     implementation 'org.apache.tuweni:tuweni-bytes'
-    implementation 'org.apache.tuweni:tuweni-crypto'
     implementation 'org.apache.tuweni:tuweni-units'
     implementation 'org.apache.tuweni:tuweni-ssz'
 

@@ -15,8 +15,8 @@ package tech.pegasys.teku.ssz;
 
 import static org.apache.tuweni.bytes.Bytes.concatenate;
 import static org.apache.tuweni.bytes.Bytes32.ZERO;
-import static org.apache.tuweni.crypto.Hash.sha2_256;
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.infrastructure.crypto.Hash.sha256;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -165,57 +165,57 @@ public class SszCompositeListTest {
 
     assertThat(n0.hashTreeRoot())
         .isEqualTo(
-            sha2_256(
+            sha256(
                 concatenate(
-                    sha2_256(
+                    sha256(
                         concatenate(
-                            sha2_256(concatenate(ZERO, ZERO)), sha2_256(concatenate(ZERO, ZERO)))),
+                            sha256(concatenate(ZERO, ZERO)), sha256(concatenate(ZERO, ZERO)))),
                     ZERO)));
 
     assertThat(n1.hashTreeRoot())
         .isEqualTo(
-            sha2_256(
+            sha256(
                 concatenate(
-                    sha2_256(
+                    sha256(
                         concatenate(
-                            sha2_256(
+                            sha256(
                                 concatenate(
                                     Bytes32.fromHexString(
                                         "0x0000000000000000000000000000000000000000000000000000000000000111"),
                                     ZERO)),
-                            sha2_256(concatenate(ZERO, ZERO)))),
+                            sha256(concatenate(ZERO, ZERO)))),
                     Bytes32.fromHexString(
                         "0x0100000000000000000000000000000000000000000000000000000000000000"))));
 
     assertThat(n2.hashTreeRoot())
         .isEqualTo(
-            sha2_256(
+            sha256(
                 concatenate(
-                    sha2_256(
+                    sha256(
                         concatenate(
-                            sha2_256(
+                            sha256(
                                 concatenate(
                                     Bytes32.fromHexString(
                                         "0x0000000000000000000000000000000000000000000000000000000000000111"),
                                     Bytes32.fromHexString(
                                         "0x0000000000000000000000000000000000000000000000000000000000000222"))),
-                            sha2_256(concatenate(ZERO, ZERO)))),
+                            sha256(concatenate(ZERO, ZERO)))),
                     Bytes32.fromHexString(
                         "0x0200000000000000000000000000000000000000000000000000000000000000"))));
 
     assertThat(n3.hashTreeRoot())
         .isEqualTo(
-            sha2_256(
+            sha256(
                 concatenate(
-                    sha2_256(
+                    sha256(
                         concatenate(
-                            sha2_256(
+                            sha256(
                                 concatenate(
                                     Bytes32.fromHexString(
                                         "0x0000000000000000000000000000000000000000000000000000000000000111"),
                                     Bytes32.fromHexString(
                                         "0x0000000000000000000000000000000000000000000000000000000000000222"))),
-                            sha2_256(
+                            sha256(
                                 concatenate(
                                     Bytes32.fromHexString(
                                         "0x0000000000000000000000000000000000000000000000000000000000000333"),

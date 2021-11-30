@@ -22,13 +22,13 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.crypto.Hash;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.ssz.SszList;
 import tech.pegasys.teku.ssz.SszTestUtils;
 import tech.pegasys.teku.ssz.impl.AbstractSszPrimitive;
@@ -280,13 +280,13 @@ public class SszBitlistTest implements SszPrimitiveListTestBase {
   @Test
   void testEmptyHashTreeRoot() {
     assertThat(emptySchema.empty().hashTreeRoot())
-        .isEqualTo(Hash.sha2_256(Bytes.concatenate(Bytes32.ZERO, Bytes32.ZERO)));
+        .isEqualTo(Hash.sha256(Bytes.concatenate(Bytes32.ZERO, Bytes32.ZERO)));
     assertThat(schema.empty().hashTreeRoot())
         .isEqualTo(
-            Hash.sha2_256(Bytes.concatenate(TreeUtil.ZERO_TREES[1].hashTreeRoot(), Bytes32.ZERO)));
+            Hash.sha256(Bytes.concatenate(TreeUtil.ZERO_TREES[1].hashTreeRoot(), Bytes32.ZERO)));
     assertThat(hugeSchema.empty().hashTreeRoot())
         .isEqualTo(
-            Hash.sha2_256(
+            Hash.sha256(
                 Bytes.concatenate(TreeUtil.ZERO_TREES[62 - 8].hashTreeRoot(), Bytes32.ZERO)));
   }
 
