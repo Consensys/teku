@@ -73,7 +73,7 @@ public class ImportCommand implements Runnable {
     }
 
     SUB_COMMAND_LOG.display("Writing slashing protection data to: " + slashProtectionPath);
-    importer.updateLocalRecords(slashProtectionPath, SUB_COMMAND_LOG::display);
+    importer.updateLocalRecords(SUB_COMMAND_LOG::display);
   }
 
   private void verifyImportFileExists(final File importFile) {

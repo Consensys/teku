@@ -26,10 +26,13 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.data.signingrecord.ValidatorSigningRecord;
 import tech.pegasys.teku.data.slashinginterchange.Metadata;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
@@ -38,6 +41,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class SlashingProtectionImporterTest {
   private final String pubkey =
       "b845089a1457f811bfc000588fbb4e713669be8ce060ea6be3c6ece09afc3794106c91ca73acda5e5457122d58723bed";
+  private final BLSPublicKey publicKey =
+      BLSPublicKey.fromBytesCompressed(Bytes48.wrap(Bytes.fromHexString(pubkey)));
 
   @Test
   public void shouldFailWithParseError(@TempDir final Path tempDir)
@@ -69,6 +74,17 @@ public class SlashingProtectionImporterTest {
   }
 
   @Test
+  public void shouldImportSingleRecord(@TempDir Path tempDir)
+      throws URISyntaxException, IOException {
+    final File ruleFile = usingResourceFile("slashProtection.yml", tempDir);
+    final SlashingProtectionImporter importer = new SlashingProtectionImporter(tempDir);
+    importer.initialise(ruleFile);
+    final Optional<String> maybeError = importer.updateSigningRecord(publicKey, (__) -> {});
+    assertThat(maybeError).isEmpty();
+    assertThat(tempDir.resolve(pubkey + ".yml").toFile()).exists();
+  }
+
+  @Test
   public void shouldExportAndImportFile(@TempDir Path tempDir)
       throws IOException, URISyntaxException {
     final SubCommandLogger logger = mock(SubCommandLogger.class);
@@ -87,10 +103,10 @@ public class SlashingProtectionImporterTest {
     assertThat(Files.exists(exportedFile)).isTrue();
     assertThat(Files.exists(ruleFile.toPath())).isFalse();
 
-    SlashingProtectionImporter importer = new SlashingProtectionImporter(exportedFile.getParent());
+    SlashingProtectionImporter importer = new SlashingProtectionImporter(tempDir);
     importer.initialise(new File(exportedFile.toString()));
-    importer.updateLocalRecords(tempDir, (__) -> {});
-    assertThat(importer.getValidatorImportErrors()).isEmpty();
+    final Map<BLSPublicKey, String> errors = importer.updateLocalRecords((__) -> {});
+    assertThat(errors).isEmpty();
     assertThat(Files.exists(ruleFile.toPath())).isTrue();
 
     assertThat(originalFileContent).isEqualTo(Files.readString(ruleFile.toPath()));
@@ -130,9 +146,9 @@ public class SlashingProtectionImporterTest {
 
     SlashingProtectionImporter importer = new SlashingProtectionImporter(repairedRecords);
     importer.initialise(exportedFile.toFile());
-    importer.updateLocalRecords(repairedRecords, (__) -> {});
+    final Map<BLSPublicKey, String> errors = importer.updateLocalRecords((__) -> {});
 
-    assertThat(importer.getValidatorImportErrors()).isEmpty();
+    assertThat(errors).isEmpty();
     // Should wind up with a file that contains the slot and epochs from the repair, combined with
     // the genesis root from the initial file
     final ValidatorSigningRecord initialRecord = loadSigningRecord(initialRuleFile);
