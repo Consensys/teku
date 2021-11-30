@@ -193,23 +193,17 @@ public class ForkChoiceNotifier {
       }
     }
 
-    // Merge is complete, so we must have a real payload, but we don't have one that matches
+    // Merge is complete, so we must have a real payloadId, but we don't have one that matches
 
     if (allowPayloadIdOnTheFlyRetrieval) {
       // try to obtain a payloadId now
       Bytes32 finalizedExecutionBlockHash;
-      try {
-        finalizedExecutionBlockHash =
-            lastSentForkChoiceState
-                .map(ForkChoiceState::getFinalizedBlockHash)
-                .orElseGet(this::retrieveFinalizedExecutionBlockHash);
-      } catch (Exception e) {
-        throw new IllegalStateException(
-            String.format(
-                "Error while trying to retrieve current finalized Execution Block Hash for Beacon Block Root %s",
-                parentBeaconBlockRoot),
-            e);
-      }
+
+      finalizedExecutionBlockHash =
+          lastSentForkChoiceState
+              .map(ForkChoiceState::getFinalizedBlockHash)
+              .orElseGet(this::retrieveFinalizedExecutionBlockHash);
+
       return requestPayloadId(
           parentExecutionHash, finalizedExecutionBlockHash, parentBeaconBlockRoot);
     }
@@ -238,8 +232,17 @@ public class ForkChoiceNotifier {
 
   private Bytes32 retrieveFinalizedExecutionBlockHash() {
     ForkChoiceStrategy forkChoiceStrategy = recentChainData.getForkChoiceStrategy().orElseThrow();
-    final Bytes32 finalizedRoot = recentChainData.getFinalizedCheckpoint().orElseThrow().getRoot();
-    return forkChoiceStrategy.executionBlockHash(finalizedRoot).orElseThrow();
+    final Bytes32 finalizedRoot =
+        recentChainData
+            .getFinalizedCheckpoint()
+            .orElseThrow(() -> new IllegalStateException("Unable to obtain finalized checkpoint"))
+            .getRoot();
+    return forkChoiceStrategy
+        .executionBlockHash(finalizedRoot)
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "Unable to get finalized execution Payload hash from finalized checkpoint"));
   }
 
   private void internalUpdatePreparableProposers(
