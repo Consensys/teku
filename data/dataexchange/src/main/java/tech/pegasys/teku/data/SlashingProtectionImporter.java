@@ -161,8 +161,8 @@ public class SlashingProtectionImporter {
     final BLSPubKey key = new BLSPubKey(publicKey);
     return data.stream()
         .filter(signingHistory -> signingHistory.pubkey.equals(key))
-        .findFirst()
-        .flatMap(record -> updateLocalRecord(record, statusConsumer));
+        .flatMap(record -> updateLocalRecord(record, statusConsumer))
+        .findFirst();
   }
 
   private Optional<String> updateLocalRecord(
