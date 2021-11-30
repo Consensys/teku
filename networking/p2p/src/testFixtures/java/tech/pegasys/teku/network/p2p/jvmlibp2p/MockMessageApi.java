@@ -22,9 +22,9 @@ import io.netty.buffer.Unpooled;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.crypto.Hash;
 import org.jetbrains.annotations.NotNull;
 import pubsub.pb.Rpc.Message;
+import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.PreparedPubsubMessage;
 
@@ -75,7 +75,7 @@ public class MockMessageApi implements MessageApi {
         new PreparedGossipMessage() {
           @Override
           public Bytes getMessageId() {
-            return Bytes.wrap(Hash.sha2_256(protoMessage.getData().toByteArray()));
+            return Bytes.wrap(Hash.sha256(protoMessage.getData().toByteArray()));
           }
 
           @Override

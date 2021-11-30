@@ -12,6 +12,5 @@ dependencies {
   implementation project(':infrastructure:events')
   implementation project(':protoarray')
 
-  implementation 'org.apache.tuweni:tuweni-config'
   implementation 'org.hyperledger.besu:plugin-api'
  }

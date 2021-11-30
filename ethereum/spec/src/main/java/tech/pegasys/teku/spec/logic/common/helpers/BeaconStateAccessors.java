@@ -23,9 +23,9 @@ import java.util.Optional;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.collections.TekuPair;
+import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.Domain;
@@ -149,7 +149,7 @@ public abstract class BeaconStateAccessors {
         epoch.plus(config.getEpochsPerHistoricalVector() - config.getMinSeedLookahead() - 1);
     Bytes32 mix = getRandaoMix(state, randaoIndex);
     Bytes epochBytes = uint64ToBytes(epoch);
-    return Hash.sha2_256(Bytes.concatenate(domain_type.getWrappedBytes(), epochBytes, mix));
+    return Hash.sha256(Bytes.concatenate(domain_type.getWrappedBytes(), epochBytes, mix));
   }
 
   /**
@@ -193,7 +193,7 @@ public abstract class BeaconStateAccessors {
             slot -> {
               UInt64 epoch = miscHelpers.computeEpochAtSlot(slot);
               Bytes32 seed =
-                  Hash.sha2_256(
+                  Hash.sha256(
                       Bytes.concatenate(
                           getSeed(state, epoch, Domain.BEACON_PROPOSER), uint64ToBytes(slot)));
               IntList indices = getActiveValidatorIndices(state, epoch);

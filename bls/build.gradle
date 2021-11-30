@@ -4,7 +4,6 @@ dependencies {
   api 'org.bouncycastle:bcprov-jdk15on'
 
   implementation 'org.apache.tuweni:tuweni-bytes'
-  implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.apache.tuweni:tuweni-ssz'
   implementation 'tech.pegasys:jblst'
   implementation project(':infrastructure:crypto')

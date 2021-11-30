@@ -18,7 +18,7 @@ import java.util.function.Supplier;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.crypto.Hash;
+import tech.pegasys.teku.infrastructure.crypto.Hash;
 
 public class LazyBranchNode implements BranchNode {
   private final Supplier<Bytes32> hashTreeRoot;
@@ -48,7 +48,7 @@ public class LazyBranchNode implements BranchNode {
       final Supplier<TreeNode> leftLoader,
       final Supplier<TreeNode> rightLoader) {
     this.hashTreeRoot =
-        Suppliers.memoize(() -> Hash.sha2_256(Bytes.concatenate(leftRoot, rightRoot)));
+        Suppliers.memoize(() -> Hash.sha256(Bytes.concatenate(leftRoot, rightRoot)));
     this.leftRoot = leftRoot;
     this.rightRoot = rightRoot;
     this.leftLoader = leftLoader;

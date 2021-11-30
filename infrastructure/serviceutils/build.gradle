@@ -10,8 +10,6 @@ dependencies {
 
   implementation 'io.vertx:vertx-core'
   implementation 'io.vertx:vertx-web'
-  implementation 'org.apache.tuweni:tuweni-config'
-  implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.hyperledger.besu:plugin-api'
 
   testImplementation testFixtures(project(':infrastructure:async'))
