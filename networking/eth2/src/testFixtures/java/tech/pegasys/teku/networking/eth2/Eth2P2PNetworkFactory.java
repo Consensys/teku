@@ -128,7 +128,7 @@ public class Eth2P2PNetworkFactory {
     protected Function<RpcMethod<?, ?, ?>, Stream<RpcMethod<?, ?, ?>>> rpcMethodsModifier =
         Stream::of;
     protected List<PeerHandler> peerHandlers = new ArrayList<>();
-    protected RpcEncoding rpcEncoding = RpcEncoding.SSZ_SNAPPY;
+    protected RpcEncoding rpcEncoding = RpcEncoding.createRpcEncoding();
     protected GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
     private Optional<Checkpoint> requiredCheckpoint = Optional.empty();
     protected Duration eth2RpcPingInterval;

@@ -36,7 +36,8 @@ public class RpcRequestEncoderTest {
               "0x30A903798306695D21D1FAA76363A0070677130835E503760B0E84479B7819E6"),
           UInt64.ZERO);
 
-  private final RpcRequestEncoder requestEncoder = new RpcRequestEncoder(RpcEncoding.SSZ_SNAPPY);
+  private final RpcRequestEncoder requestEncoder =
+      new RpcRequestEncoder(RpcEncoding.createRpcEncoding());
 
   @Test
   public void shouldEncodeStatusRequest() {

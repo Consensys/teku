@@ -55,10 +55,12 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class BeaconBlocksByRootMessageHandlerTest {
+  private static final RpcEncoding rpcEncoding = RpcEncoding.createRpcEncoding();
+
   private static final String V1_PROTOCOL_ID =
-      BeaconChainMethodIds.getBlocksByRootMethodId(1, RpcEncoding.SSZ_SNAPPY);
+      BeaconChainMethodIds.getBlocksByRootMethodId(1, rpcEncoding);
   private static final String V2_PROTOCOL_ID =
-      BeaconChainMethodIds.getBlocksByRootMethodId(2, RpcEncoding.SSZ_SNAPPY);
+      BeaconChainMethodIds.getBlocksByRootMethodId(2, rpcEncoding);
 
   private final UInt64 altairForkEpoch = UInt64.ONE;
   private final Spec spec = TestSpecFactory.createMinimalWithAltairForkEpoch(altairForkEpoch);

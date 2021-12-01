@@ -40,4 +40,6 @@ public interface GossipForkSubscriptions {
   void subscribeToSyncCommitteeSubnet(int subnetId);
 
   void unsubscribeFromSyncCommitteeSubnet(int subnetId);
+
+  int getMessageMaxSize();
 }

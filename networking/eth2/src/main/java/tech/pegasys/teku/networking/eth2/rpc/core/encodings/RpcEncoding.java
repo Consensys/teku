@@ -13,16 +13,25 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.core.encodings;
 
+import static tech.pegasys.teku.util.config.Constants.MAX_CHUNK_SIZE;
+
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.snappy.SnappyFramedCompressor;
 import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.schema.SszSchema;
 
 public interface RpcEncoding {
+  static RpcEncoding createRpcEncoding(int maxChunkSize) {
+    return new LengthPrefixedEncoding(
+        "ssz_snappy",
+        RpcPayloadEncoders.createSszEncoders(),
+        new SnappyFramedCompressor(),
+        maxChunkSize);
+  }
 
-  RpcEncoding SSZ_SNAPPY =
-      new LengthPrefixedEncoding(
-          "ssz_snappy", RpcPayloadEncoders.createSszEncoders(), new SnappyFramedCompressor());
+  static RpcEncoding createRpcEncoding() {
+    return createRpcEncoding(MAX_CHUNK_SIZE);
+  }
 
   /**
    * Encodes a payload with its encoding-dependent header

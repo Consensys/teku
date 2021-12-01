@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.util.config.Constants.GOSSIP_MAX_SIZE;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
@@ -67,7 +68,8 @@ public class AttestationGossipManagerTest {
           gossipEncoding,
           recentChainData,
           gossipedAttestationProcessor,
-          forkInfo);
+          forkInfo,
+          GOSSIP_MAX_SIZE);
 
   @BeforeEach
   public void setup() {

@@ -47,22 +47,24 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
   private final String topicName;
   private final SszSchema<MessageT> messageType;
   private final Eth2PreparedGossipMessageFactory preparedGossipMessageFactory;
+  private final int maxMessageSize;
 
   public Eth2TopicHandler(
       final RecentChainData recentChainData,
-      AsyncRunner asyncRunner,
-      OperationProcessor<MessageT> processor,
-      GossipEncoding gossipEncoding,
-      Bytes4 forkDigest,
-      String topicName,
-      SszSchema<MessageT> messageType) {
+      final AsyncRunner asyncRunner,
+      final OperationProcessor<MessageT> processor,
+      final GossipEncoding gossipEncoding,
+      final Bytes4 forkDigest,
+      final String topicName,
+      final SszSchema<MessageT> messageType,
+      final int maxMessageSize) {
     this.asyncRunner = asyncRunner;
     this.processor = processor;
     this.gossipEncoding = gossipEncoding;
     this.forkDigest = forkDigest;
     this.topicName = topicName;
     this.messageType = messageType;
-
+    this.maxMessageSize = maxMessageSize;
     this.preparedGossipMessageFactory =
         gossipEncoding.createPreparedGossipMessageFactory(
             recentChainData::getMilestoneByForkDigest);
@@ -70,12 +72,13 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
 
   public Eth2TopicHandler(
       final RecentChainData recentChainData,
-      AsyncRunner asyncRunner,
-      OperationProcessor<MessageT> processor,
-      GossipEncoding gossipEncoding,
-      Bytes4 forkDigest,
-      GossipTopicName topicName,
-      SszSchema<MessageT> messageType) {
+      final AsyncRunner asyncRunner,
+      final OperationProcessor<MessageT> processor,
+      final GossipEncoding gossipEncoding,
+      final Bytes4 forkDigest,
+      final GossipTopicName topicName,
+      final SszSchema<MessageT> messageType,
+      final int maxMessageSize) {
     this(
         recentChainData,
         asyncRunner,
@@ -83,7 +86,8 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
         gossipEncoding,
         forkDigest,
         topicName.toString(),
-        messageType);
+        messageType,
+        maxMessageSize);
   }
 
   @Override
@@ -157,6 +161,11 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
   @Override
   public PreparedGossipMessage prepareMessage(Bytes payload) {
     return preparedGossipMessageFactory.create(getTopic(), payload, getMessageType());
+  }
+
+  @Override
+  public int getMaxMessageSize() {
+    return maxMessageSize;
   }
 
   protected MessageT deserialize(PreparedGossipMessage message) throws DecodingException {

@@ -62,7 +62,7 @@ public class Eth2PeerManagerTest {
 
   private final Map<Peer, Eth2Peer> eth2Peers = new HashMap<>();
 
-  private final RpcEncoding rpcEncoding = RpcEncoding.SSZ_SNAPPY;
+  private final RpcEncoding rpcEncoding = RpcEncoding.createRpcEncoding();
   private final Eth2PeerManager peerManager =
       new Eth2PeerManager(
           spec,

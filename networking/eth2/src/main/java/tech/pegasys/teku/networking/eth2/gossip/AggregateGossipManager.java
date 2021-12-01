@@ -40,12 +40,18 @@ public class AggregateGossipManager implements GossipManager {
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final OperationProcessor<ValidateableAttestation> processor) {
+      final OperationProcessor<ValidateableAttestation> processor,
+      final int maxMessageSize) {
     final Spec spec = recentChainData.getSpec();
     this.gossipEncoding = gossipEncoding;
     final Eth2TopicHandler<?> aggregateAttestationTopicHandler =
         AggregateAttestationTopicHandler.createHandler(
-            recentChainData, asyncRunner, processor, gossipEncoding, forkInfo.getForkDigest(spec));
+            recentChainData,
+            asyncRunner,
+            processor,
+            gossipEncoding,
+            forkInfo.getForkDigest(spec),
+            maxMessageSize);
     this.channel =
         gossipNetwork.subscribe(
             aggregateAttestationTopicHandler.getTopic(), aggregateAttestationTopicHandler);

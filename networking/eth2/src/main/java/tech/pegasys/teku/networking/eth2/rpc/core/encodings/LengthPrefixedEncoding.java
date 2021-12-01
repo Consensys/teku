@@ -43,6 +43,7 @@ public class LengthPrefixedEncoding implements RpcEncoding {
   private final String name;
   private final RpcPayloadEncoders payloadEncoders;
   private final Compressor compressor;
+  private final int maxChunkSize;
 
   @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
   private static <T> RpcByteBufDecoder<T> getEmptyMessageDecoder() {
@@ -50,10 +51,14 @@ public class LengthPrefixedEncoding implements RpcEncoding {
   }
 
   LengthPrefixedEncoding(
-      final String name, final RpcPayloadEncoders payloadEncoders, final Compressor compressor) {
+      final String name,
+      final RpcPayloadEncoders payloadEncoders,
+      final Compressor compressor,
+      final int maxChunkSize) {
     this.name = name;
     this.payloadEncoders = payloadEncoders;
     this.compressor = compressor;
+    this.maxChunkSize = maxChunkSize;
   }
 
   @Override
@@ -77,7 +82,7 @@ public class LengthPrefixedEncoding implements RpcEncoding {
       return getEmptyMessageDecoder();
     } else {
       return new LengthPrefixedPayloadDecoder<>(
-          payloadEncoders.getEncoder(payloadType), compressor);
+          payloadEncoders.getEncoder(payloadType), compressor, maxChunkSize);
     }
   }
 

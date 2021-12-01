@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.networking.p2p.libp2p.gossip;
 
-import static tech.pegasys.teku.util.config.Constants.GOSSIP_MAX_SIZE;
-
 import io.libp2p.core.pubsub.MessageApi;
 import io.libp2p.core.pubsub.PubsubPublisherApi;
 import io.libp2p.core.pubsub.Topic;
@@ -72,11 +70,12 @@ public class GossipHandler implements Function<MessageApi, CompletableFuture<Val
   public SafeFuture<ValidationResult> apply(final MessageApi message) {
     messageCounter.inc();
     final int messageSize = message.getData().readableBytes();
-    if (messageSize > GOSSIP_MAX_SIZE) {
+    final int maxMessageSize = handler.getMaxMessageSize();
+    if (messageSize > maxMessageSize) {
       LOG.trace(
           "Rejecting gossip message of length {} which exceeds maximum size of {}",
           messageSize,
-          GOSSIP_MAX_SIZE);
+          maxMessageSize);
       return VALIDATION_FAILED;
     }
     byte[] arr = new byte[message.getData().readableBytes()];

@@ -58,7 +58,7 @@ class StatusMessageHandlerTest {
   private final Eth2Peer peer = mock(Eth2Peer.class);
 
   private final String protocolId =
-      BeaconChainMethodIds.getStatusMethodId(1, RpcEncoding.SSZ_SNAPPY);
+      BeaconChainMethodIds.getStatusMethodId(1, RpcEncoding.createRpcEncoding());
   private final StatusMessageHandler handler = new StatusMessageHandler(statusMessageFactory);
 
   @BeforeEach

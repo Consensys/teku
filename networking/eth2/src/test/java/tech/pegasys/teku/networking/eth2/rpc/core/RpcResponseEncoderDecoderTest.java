@@ -27,10 +27,11 @@ public class RpcResponseEncoderDecoderTest extends RpcDecoderTestBase {
   private static final Bytes ERROR_CODE = Bytes.of(1);
   private final RpcContextCodec<?, RpcErrorMessage> contextCodec =
       RpcContextCodec.noop(RpcErrorMessage.SSZ_SCHEMA);
+  private final RpcEncoding rpcEncoding = RpcEncoding.createRpcEncoding();
   private final RpcResponseEncoder<RpcErrorMessage, ?> responseEncoder =
-      new RpcResponseEncoder<>(RpcEncoding.SSZ_SNAPPY, contextCodec);
+      new RpcResponseEncoder<>(rpcEncoding, contextCodec);
   private final RpcResponseDecoder<RpcErrorMessage, ?> responseDecoder =
-      RpcResponseDecoder.create(RpcEncoding.SSZ_SNAPPY, contextCodec);
+      RpcResponseDecoder.create(rpcEncoding, contextCodec);
 
   @Test
   public void shouldEncodeErrorResponse() {

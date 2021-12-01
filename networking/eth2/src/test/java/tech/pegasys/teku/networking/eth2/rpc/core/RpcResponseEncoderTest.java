@@ -41,7 +41,7 @@ final class RpcResponseEncoderTest {
   private final RpcContextCodec<?, StatusMessage> contextCodec =
       RpcContextCodec.noop(StatusMessage.SSZ_SCHEMA);
   private final RpcResponseEncoder<StatusMessage, ?> responseEncoder =
-      new RpcResponseEncoder<>(RpcEncoding.SSZ_SNAPPY, contextCodec);
+      new RpcResponseEncoder<>(RpcEncoding.createRpcEncoding(), contextCodec);
 
   @Test
   public void shouldEncodeSuccessfulResponse() {

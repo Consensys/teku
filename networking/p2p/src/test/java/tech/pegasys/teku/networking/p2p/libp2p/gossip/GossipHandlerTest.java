@@ -45,6 +45,7 @@ public class GossipHandlerTest {
   public void setup() {
     when(topicHandler.handleMessage(any()))
         .thenReturn(SafeFuture.completedFuture(ValidationResult.Valid));
+    when(topicHandler.getMaxMessageSize()).thenReturn(GOSSIP_MAX_SIZE);
     when(publisher.publish(any(), any())).thenReturn(SafeFuture.completedFuture(null));
   }
 

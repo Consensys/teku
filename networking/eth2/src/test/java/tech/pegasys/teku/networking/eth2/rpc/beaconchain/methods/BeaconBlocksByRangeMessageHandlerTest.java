@@ -55,11 +55,12 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 class BeaconBlocksByRangeMessageHandlerTest {
+  private static final RpcEncoding rpcEncoding = RpcEncoding.createRpcEncoding();
 
   private static final String V1_PROTOCOL_ID =
-      BeaconChainMethodIds.getBlocksByRangeMethodId(1, RpcEncoding.SSZ_SNAPPY);
+      BeaconChainMethodIds.getBlocksByRangeMethodId(1, rpcEncoding);
   private static final String V2_PROTOCOL_ID =
-      BeaconChainMethodIds.getBlocksByRangeMethodId(2, RpcEncoding.SSZ_SNAPPY);
+      BeaconChainMethodIds.getBlocksByRangeMethodId(2, rpcEncoding);
 
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
@@ -82,8 +83,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
 
-  private final String protocolId =
-      BeaconChainMethodIds.getBlocksByRangeMethodId(1, RpcEncoding.SSZ_SNAPPY);
+  private final String protocolId = BeaconChainMethodIds.getBlocksByRangeMethodId(1, rpcEncoding);
   private final BeaconBlocksByRangeMessageHandler handler =
       new BeaconBlocksByRangeMessageHandler(spec, combinedChainDataClient, maxRequestSize);
 

@@ -38,7 +38,7 @@ public class RpcDecoderTestBase {
 
   // Message long enough to require a three byte length prefix.
   protected static final BeaconBlocksByRootRequestMessage MESSAGE = createRequestMessage(600);
-  protected static final RpcEncoding ENCODING = RpcEncoding.SSZ_SNAPPY;
+  protected static final RpcEncoding ENCODING = RpcEncoding.createRpcEncoding();
   protected static final Compressor COMPRESSOR = new SnappyFramedCompressor();
   protected static final Bytes MESSAGE_PLAIN_DATA = MESSAGE.sszSerialize();
   protected static final Bytes MESSAGE_DATA = COMPRESSOR.compress(MESSAGE_PLAIN_DATA);

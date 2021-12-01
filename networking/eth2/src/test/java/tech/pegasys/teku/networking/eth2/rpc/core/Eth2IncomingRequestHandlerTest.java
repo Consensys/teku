@@ -115,6 +115,6 @@ public class Eth2IncomingRequestHandlerTest
 
   @Override
   protected RpcEncoding getRpcEncoding() {
-    return RpcEncoding.SSZ_SNAPPY;
+    return RpcEncoding.createRpcEncoding();
   }
 }

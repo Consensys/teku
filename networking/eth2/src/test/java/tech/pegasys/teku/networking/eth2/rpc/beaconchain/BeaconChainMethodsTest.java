@@ -137,6 +137,6 @@ public class BeaconChainMethodsTest {
         metricsSystem,
         statusMessageFactory,
         metadataMessagesFactory,
-        RpcEncoding.SSZ_SNAPPY);
+        RpcEncoding.createRpcEncoding());
   }
 }
