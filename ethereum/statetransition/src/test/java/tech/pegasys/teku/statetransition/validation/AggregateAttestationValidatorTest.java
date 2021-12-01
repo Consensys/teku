@@ -32,6 +32,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.core.AggregateGenerator;
 import tech.pegasys.teku.core.AttestationGenerator;
@@ -46,6 +47,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
+import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
@@ -280,11 +282,9 @@ class AggregateAttestationValidatorTest {
     final Attestation attestation = aggregateAndProof1.getMessage().getAggregate();
 
     final SignedAggregateAndProof aggregateAndProof2 =
-        generator
-            .generator()
-            .aggregate(attestation)
-            .generateWithOtherValidAggregator(
-                chainHead, aggregateAndProof1.getMessage().getIndex());
+        new SignedAggregateAndProof(
+            new AggregateAndProof(UInt64.valueOf(2), attestation, BLSSignature.empty()),
+            BLSSignature.empty());
 
     whenAttestationIsValid(aggregateAndProof1);
     whenAttestationIsValid(aggregateAndProof2);
@@ -304,7 +304,37 @@ class AggregateAttestationValidatorTest {
     assertThat(validator.validate(attestation1))
         .isCompletedWithValue(InternalValidationResult.ACCEPT);
     assertThat(validator.validate(attestation2))
-        .isCompletedWithValue(InternalValidationResult.ACCEPT);
+        .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
+  }
+
+  @Test
+  public void shouldOnlyAcceptFirstAggregateWithSameHashTreeRootWhenPassedSeenAggregates() {
+    final StateAndBlockSummary chainHead = recentChainData.getChainHead().orElseThrow();
+    final SignedAggregateAndProof aggregateAndProof1 = generator.validAggregateAndProof(chainHead);
+    final Attestation attestation = aggregateAndProof1.getMessage().getAggregate();
+    final SignedAggregateAndProof aggregateAndProof2 =
+        new SignedAggregateAndProof(
+            new AggregateAndProof(UInt64.valueOf(2), attestation, BLSSignature.empty()),
+            BLSSignature.empty());
+
+    whenAttestationIsValid(aggregateAndProof1);
+    whenAttestationIsValid(aggregateAndProof2);
+
+    // Sanity check
+    assertThat(aggregateAndProof1.getMessage().getAggregate()).isNotEqualTo(aggregateAndProof2);
+    assertThat(aggregateAndProof1).isNotEqualTo(aggregateAndProof2);
+
+    ValidateableAttestation attestation1 =
+        ValidateableAttestation.aggregateFromValidator(spec, aggregateAndProof1);
+    ValidateableAttestation attestation2 =
+        ValidateableAttestation.aggregateFromValidator(spec, aggregateAndProof2);
+
+    // Sanity check
+    assertThat(attestation1.hash_tree_root()).isEqualTo(attestation2.hash_tree_root());
+
+    validator.addSeenAggregate(attestation1);
+    assertThat(validator.validate(attestation2))
+        .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
   }
 
   @Test

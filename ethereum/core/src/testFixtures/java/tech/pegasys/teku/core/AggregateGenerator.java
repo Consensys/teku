@@ -134,24 +134,6 @@ public class AggregateGenerator {
       throw new NoSuchElementException("No valid aggregate possible");
     }
 
-    public SignedAggregateAndProof generateWithOtherValidAggregator(
-        final StateAndBlockSummary chainHead, final UInt64 index) {
-      this.stateAtSlot = generateHeadState(chainHead.getState(), chainHead.getSlot());
-      final Attestation aggregateValue = this.aggregate.orElseGet(() -> createAttestation(slot));
-      final List<Integer> beaconCommittee =
-          spec.getBeaconCommittee(
-              stateAtSlot, aggregateValue.getData().getSlot(), aggregateValue.getData().getIndex());
-      for (int validatorIndex : beaconCommittee) {
-        final Optional<BLSSignature> maybeSelectionProof =
-            createValidSelectionProof(validatorIndex, stateAtSlot, aggregateValue);
-        if (maybeSelectionProof.isPresent() && !UInt64.valueOf(validatorIndex).equals(index)) {
-          return generate(
-              aggregateValue, UInt64.valueOf(validatorIndex), maybeSelectionProof.get());
-        }
-      }
-      throw new NoSuchElementException("No valid aggregate possible");
-    }
-
     private SignedAggregateAndProof generateWithFixedAggregatorIndex(
         final UInt64 slot, final Attestation aggregate, final UInt64 aggregatorIndex) {
       final BLSSignature validSelectionProof =
