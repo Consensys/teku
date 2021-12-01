@@ -160,7 +160,7 @@ dependencyManagement {
       exclude 'org.apache.tuweni:units'
     }
 
-    dependency 'tech.pegasys.signers.internal:bls-keystore:1.0.15'
+    dependency 'tech.pegasys.signers.internal:bls-keystore:1.0.21'
 
     dependency 'org.jupnp:org.jupnp.support:2.5.2'
     dependency 'org.jupnp:org.jupnp:2.5.2'
