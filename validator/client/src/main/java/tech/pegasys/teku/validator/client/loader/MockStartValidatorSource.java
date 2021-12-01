@@ -19,6 +19,7 @@ import java.util.List;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.LocalSigner;
@@ -50,6 +51,17 @@ public class MockStartValidatorSource implements ValidatorSource {
         .generateKeyPairs(startIndex, endIndex).stream()
             .map(MockStartValidatorProvider::new)
             .collect(toList());
+  }
+
+  @Override
+  public boolean canAddValidator() {
+    return false;
+  }
+
+  @Override
+  public MutableValidatorAddResult addValidator(
+      final KeyStoreData keyStoreData, final String password) {
+    throw new UnsupportedOperationException();
   }
 
   private class MockStartValidatorProvider implements ValidatorProvider {

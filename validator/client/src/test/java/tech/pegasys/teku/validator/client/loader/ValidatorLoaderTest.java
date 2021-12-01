@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client.loader;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -33,6 +34,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,6 +58,7 @@ import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 
 class ValidatorLoaderTest {
 
@@ -624,6 +627,47 @@ class ValidatorLoaderTest {
   }
 
   @Test
+  void shouldNotLoadMutableValidatorIfNotEnabled() {
+    final ValidatorConfig config = ValidatorConfig.builder().build();
+    final ValidatorLoader validatorLoader =
+        ValidatorLoader.create(
+            spec,
+            config,
+            disabledInteropConfig,
+            httpClientFactory,
+            slashingProtector,
+            publicKeyLoader,
+            asyncRunner,
+            metricsSystem,
+            Optional.empty());
+    validatorLoader.loadValidators();
+    final MutableValidatorAddResult result = validatorLoader.loadMutableValidator(null, "");
+    assertThat(result.getResult()).isEqualTo(PostKeyResult.error("Not able to add validator"));
+  }
+
+  @Test
+  void shouldLoadMutableValidatorIfEnabled(@TempDir final Path tempDir) {
+    tempDir.resolve("alterable-passwords").toFile().mkdir();
+    tempDir.resolve("alterable-keystores").toFile().mkdir();
+    final ValidatorConfig config = ValidatorConfig.builder().build();
+    final ValidatorLoader validatorLoader =
+        ValidatorLoader.create(
+            spec,
+            config,
+            disabledInteropConfig,
+            httpClientFactory,
+            slashingProtector,
+            publicKeyLoader,
+            asyncRunner,
+            metricsSystem,
+            Optional.of(getDataDirLayout(tempDir)));
+    validatorLoader.loadValidators();
+
+    assertThatThrownBy(() -> validatorLoader.loadMutableValidator(null, ""))
+        .isInstanceOf(NotImplementedException.class);
+  }
+
+  @Test
   void doNotInitializeInteropValidatorsWhenInteropIsDisabled() {
     final int ownedValidatorCount = 10;
     final InteropConfig interopConfig =
@@ -648,5 +692,19 @@ class ValidatorLoaderTest {
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
 
     assertThat(validators.hasNoValidators()).isTrue();
+  }
+
+  private DataDirLayout getDataDirLayout(final Path tempDir) {
+    return new DataDirLayout() {
+      @Override
+      public Path getBeaconDataDirectory() {
+        return tempDir;
+      }
+
+      @Override
+      public Path getValidatorDataDirectory() {
+        return tempDir;
+      }
+    };
   }
 }

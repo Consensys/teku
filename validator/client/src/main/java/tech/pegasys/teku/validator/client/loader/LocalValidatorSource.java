@@ -72,6 +72,17 @@ public class LocalValidatorSource implements ValidatorSource {
     return filePairs.stream().map(this::createValidatorProvider).collect(toList());
   }
 
+  @Override
+  public boolean canAddValidator() {
+    return false;
+  }
+
+  @Override
+  public MutableValidatorAddResult addValidator(
+      final KeyStoreData keyStoreData, final String password) {
+    throw new UnsupportedOperationException();
+  }
+
   private ValidatorProvider createValidatorProvider(
       final Pair<Path, Path> keystorePasswordFilePair) {
     final Path keystorePath = keystorePasswordFilePair.getLeft();
