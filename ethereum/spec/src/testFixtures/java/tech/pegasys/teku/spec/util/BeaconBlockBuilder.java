@@ -18,6 +18,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 
 public class BeaconBlockBuilder {
 
@@ -25,6 +26,7 @@ public class BeaconBlockBuilder {
   private final DataStructureUtil dataStructureUtil;
 
   private SyncAggregate syncAggregate;
+  private ExecutionPayload executionPayload;
 
   public BeaconBlockBuilder(final SpecVersion spec, final DataStructureUtil dataStructureUtil) {
     this.spec = spec;
@@ -37,9 +39,25 @@ public class BeaconBlockBuilder {
     return this;
   }
 
+  public BeaconBlockBuilder executionPayload(final ExecutionPayload executionPayload) {
+    this.executionPayload = executionPayload;
+    return this;
+  }
+
   public BeaconBlock build() {
     final BeaconBlockBodySchema<?> bodySchema =
         spec.getSchemaDefinitions().getBeaconBlockBodySchema();
+
+    if (syncAggregate == null) {
+      syncAggregate = dataStructureUtil.randomSyncAggregate();
+    }
+    if (executionPayload == null) {
+      executionPayload =
+          spec.getSchemaDefinitions()
+              .toVersionMerge()
+              .map(definitions -> definitions.getExecutionPayloadSchema().getDefault())
+              .orElse(null);
+    }
     final BeaconBlockBody blockBody =
         bodySchema.createBlockBody(
             builder ->
@@ -52,7 +70,8 @@ public class BeaconBlockBuilder {
                     .attesterSlashings(bodySchema.getAttesterSlashingsSchema().getDefault())
                     .deposits(bodySchema.getDepositsSchema().getDefault())
                     .voluntaryExits(bodySchema.getVoluntaryExitsSchema().getDefault())
-                    .syncAggregate(() -> syncAggregate));
+                    .syncAggregate(() -> syncAggregate)
+                    .executionPayload(() -> executionPayload));
     return spec.getSchemaDefinitions()
         .getBeaconBlockSchema()
         .create(
