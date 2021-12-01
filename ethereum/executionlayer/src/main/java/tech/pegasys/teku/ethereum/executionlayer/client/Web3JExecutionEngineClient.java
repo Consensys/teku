@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicLong;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import org.apache.logging.log4j.LogManager;
@@ -44,6 +45,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 
   private final Web3j eth1Web3j;
   private final HttpService eeWeb3jService;
+  private final AtomicLong nextId = new AtomicLong(MESSAGE_ORDER_RESET_ID);
 
   public Web3JExecutionEngineClient(String eeEndpoint) {
     this.eeWeb3jService = new HttpService(eeEndpoint, createOkHttpClient());
@@ -122,6 +124,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 
   private <T> SafeFuture<Response<T>> doRequest(
       Request<?, ? extends org.web3j.protocol.core.Response<T>> web3jRequest) {
+    web3jRequest.setId(nextId.getAndIncrement());
     CompletableFuture<Response<T>> responseFuture =
         web3jRequest
             .sendAsync()
