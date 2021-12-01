@@ -29,6 +29,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -108,6 +109,18 @@ class ForkChoiceNotifierTest {
     storageSystem.chainUpdater().initializeGenesis(false);
     storageSystem.chainUpdater().updateBestBlock(storageSystem.chainUpdater().advanceChain());
     forkChoiceStrategy = recentChainData.getForkChoiceStrategy().orElseThrow();
+  }
+
+  private void doMerge(Bytes32 terminalBlockHash) {
+    SignedBlockAndState newBlockWithExecutionPayloadAtopTerminalBlock =
+        storageSystem
+            .chainUpdater()
+            .chainBuilder
+            .generateBlockAtSlot(
+                recentChainData.getHeadSlot().plus(1),
+                ChainBuilder.BlockOptions.create().setTerminalBlockHash(terminalBlockHash));
+
+    storageSystem.chainUpdater().updateBestBlock(newBlockWithExecutionPayloadAtopTerminalBlock);
   }
 
   @Test
@@ -324,6 +337,50 @@ class ForkChoiceNotifierTest {
 
     notifier.onTerminalBlockReached(terminalBlockHash);
 
+    validateGetPayloadIOnTheFlyRetrieval(blockRoot, forkChoiceState, payloadId, payloadAttributes);
+  }
+
+  @Test
+  void getPayloadId_shouldObtainAPayloadIdOnPostMergeBlockNonFinalized() {
+    reInitializePreMerge();
+    Bytes32 terminalBlockHash = dataStructureUtil.randomBytes32();
+    doMerge(terminalBlockHash);
+
+    ForkChoiceState nonFinalizedForkChoiceState = getCurrentForkChoiceState();
+    assertThat(nonFinalizedForkChoiceState.getFinalizedBlockHash()).isEqualTo(Bytes32.ZERO);
+
+    final Bytes8 payloadId = dataStructureUtil.randomBytes8();
+
+    final BeaconState headState = recentChainData.getBestState().orElseThrow();
+    final UInt64 blockSlot = headState.getSlot().plus(1);
+    final Bytes32 blockRoot = recentChainData.getBestBlockRoot().orElseThrow();
+    final PayloadAttributes payloadAttributes = withProposerForSlot(headState, blockSlot);
+
+    validateGetPayloadIOnTheFlyRetrieval(
+        blockRoot, nonFinalizedForkChoiceState, payloadId, payloadAttributes);
+  }
+
+  @Test
+  void getPayloadId_shouldObtainAPayloadIdOnPostMergeBlockFinalized() {
+    final Bytes8 payloadId = dataStructureUtil.randomBytes8();
+
+    ForkChoiceState finalizedForkChoiceState = getCurrentForkChoiceState();
+    assertThat(finalizedForkChoiceState.getFinalizedBlockHash()).isNotEqualTo(Bytes32.ZERO);
+
+    final BeaconState headState = recentChainData.getBestState().orElseThrow();
+    final UInt64 blockSlot = headState.getSlot().plus(1);
+    final Bytes32 blockRoot = recentChainData.getBestBlockRoot().orElseThrow();
+    final PayloadAttributes payloadAttributes = withProposerForSlot(headState, blockSlot);
+
+    validateGetPayloadIOnTheFlyRetrieval(
+        blockRoot, finalizedForkChoiceState, payloadId, payloadAttributes);
+  }
+
+  private void validateGetPayloadIOnTheFlyRetrieval(
+      final Bytes32 blockRoot,
+      final ForkChoiceState forkChoiceState,
+      final Bytes8 payloadId,
+      final PayloadAttributes payloadAttributes) {
     final SafeFuture<ForkChoiceUpdatedResult> responseFuture = new SafeFuture<>();
     when(executionEngineChannel.forkChoiceUpdated(forkChoiceState, Optional.of(payloadAttributes)))
         .thenReturn(responseFuture);

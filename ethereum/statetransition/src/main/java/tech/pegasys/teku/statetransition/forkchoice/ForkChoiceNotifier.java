@@ -27,6 +27,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -145,10 +146,14 @@ public class ForkChoiceNotifier {
             .map(ForkChoiceState::getHeadBlockHash)
             .map(
                 fcsHead -> {
-                  if (fcsHead.equals(parentExecutionHash)) {
+                  // post-merge block
+                  if (!parentExecutionHash.isZero() && fcsHead.equals(parentExecutionHash)) {
                     return true;
                   }
-                  return executionPayloadTerminalBlockHash.isPresent()
+
+                  // merge block
+                  return parentExecutionHash.isZero()
+                      && executionPayloadTerminalBlockHash.isPresent()
                       && fcsHead.equals(executionPayloadTerminalBlockHash.get());
                 })
             .orElse(false);
@@ -159,8 +164,8 @@ public class ForkChoiceNotifier {
       return lastFuturePayloadId.thenApply(
           payloadId -> {
 
-            // Only accept empty payload pre-merge
-            if (payloadId.isPresent() || parentExecutionHash.isZero()) {
+            // at this stage we expect payloadId to be present
+            if (payloadId.isPresent()) {
               return payloadId;
             }
 
@@ -184,22 +189,60 @@ public class ForkChoiceNotifier {
         // we are in pre-merge and terminal block is reached
         // try to obtain a payloadId now
         final Bytes32 terminalBlockHash = executionPayloadTerminalBlockHash.get();
-        final ForkChoiceState terminalForkChoiceState =
-            new ForkChoiceState(terminalBlockHash, terminalBlockHash, Bytes32.ZERO);
-        internalForkChoiceUpdated(terminalForkChoiceState);
-        checkState(
-            lastSentForkChoiceState.isPresent()
-                && lastSentForkChoiceState.get().equals(terminalForkChoiceState),
-            "Required fork choice state was not sent");
-        return internalGetPayloadId(parentBeaconBlockRoot, false);
+        return requestPayloadId(terminalBlockHash, Bytes32.ZERO, parentBeaconBlockRoot);
       }
     }
 
-    // Merge is complete so we must have a real payload, but we don't have one that matches
-    // TODO: try to obtain a payloadId on the fly?
+    // Merge is complete, so we must have a real payloadId, but we don't have one that matches
+
+    if (allowPayloadIdOnTheFlyRetrieval) {
+      // try to obtain a payloadId now
+      Bytes32 finalizedExecutionBlockHash;
+
+      finalizedExecutionBlockHash =
+          lastSentForkChoiceState
+              .map(ForkChoiceState::getFinalizedBlockHash)
+              .orElseGet(this::retrieveFinalizedExecutionBlockHash);
+
+      return requestPayloadId(
+          parentExecutionHash, finalizedExecutionBlockHash, parentBeaconBlockRoot);
+    }
 
     throw new IllegalStateException(
         String.format("PayloadId not available for Beacon Block Root %s", parentBeaconBlockRoot));
+  }
+
+  private SafeFuture<Optional<Bytes8>> requestPayloadId(
+      Bytes32 parentExecutionBlockHash,
+      Bytes32 finalizedExecutionBlockHash,
+      Bytes32 parentBeaconBlockRoot) {
+
+    final ForkChoiceState newForkChoiceState =
+        new ForkChoiceState(
+            parentExecutionBlockHash, parentExecutionBlockHash, finalizedExecutionBlockHash);
+
+    internalForkChoiceUpdated(newForkChoiceState);
+    checkState(
+        lastSentForkChoiceState
+            .map(lsfcState -> lsfcState.equals(newForkChoiceState))
+            .orElse(false),
+        "Required fork choice state was not sent");
+    return internalGetPayloadId(parentBeaconBlockRoot, false);
+  }
+
+  private Bytes32 retrieveFinalizedExecutionBlockHash() {
+    ForkChoiceStrategy forkChoiceStrategy = recentChainData.getForkChoiceStrategy().orElseThrow();
+    final Bytes32 finalizedRoot =
+        recentChainData
+            .getFinalizedCheckpoint()
+            .orElseThrow(() -> new IllegalStateException("Unable to obtain finalized checkpoint"))
+            .getRoot();
+    return forkChoiceStrategy
+        .executionBlockHash(finalizedRoot)
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "Unable to get finalized execution Payload hash from finalized checkpoint"));
   }
 
   private void internalUpdatePreparableProposers(
