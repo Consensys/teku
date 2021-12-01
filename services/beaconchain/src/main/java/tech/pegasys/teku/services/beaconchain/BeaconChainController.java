@@ -261,7 +261,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             p2pNetwork.stop(),
             SafeFuture.fromRunnable(
                 () -> terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::stop)),
-            SafeFuture.fromRunnable(() -> optimisticHeadValidator.ifPresent(Service::stop)))
+            optimisticHeadValidator.map(Service::stop).orElse(SafeFuture.completedFuture(null)))
         .thenRun(forkChoiceExecutor::stop);
   }
 
