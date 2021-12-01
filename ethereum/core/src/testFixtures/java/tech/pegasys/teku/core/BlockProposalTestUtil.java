@@ -46,7 +46,6 @@ import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
-import tech.pegasys.teku.spec.logic.versions.merge.helpers.MiscHelpersMerge;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -142,7 +141,7 @@ public class BlockProposalTestUtil {
         newSlot,
         UInt64.valueOf(30_000_000L),
         UInt64.valueOf(30_000_000L),
-        ((MiscHelpersMerge) specVersion.miscHelpers()).computeTimestampAtSlot(state, newSlot),
+        specVersion.miscHelpers().computeTimeAtSlot(state, newSlot),
         dataStructureUtil.randomBytes32(),
         UInt256.ONE,
         dataStructureUtil.randomBytes32(),

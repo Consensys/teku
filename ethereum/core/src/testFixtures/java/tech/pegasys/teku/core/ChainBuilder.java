@@ -46,6 +46,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartBeaconStateGenerator;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartDepositGenerator;
@@ -511,7 +512,7 @@ public class ChainBuilder {
     return result.join();
   }
 
-  private Signer getSigner(final int validatorId) {
+  public Signer getSigner(final int validatorId) {
     return new LocalSigner(spec, validatorKeys.get(validatorId), SYNC_RUNNER);
   }
 
@@ -521,6 +522,7 @@ public class ChainBuilder {
     private Optional<Eth1Data> eth1Data = Optional.empty();
     private Optional<List<Bytes>> transactions = Optional.empty();
     private Optional<Bytes32> terminalBlockHash = Optional.empty();
+    private Optional<ExecutionPayload> executionPayload = Optional.empty();
 
     private BlockOptions() {}
 
@@ -548,6 +550,11 @@ public class ChainBuilder {
       return this;
     }
 
+    public BlockOptions setExecutionPayload(ExecutionPayload executionPayload) {
+      this.executionPayload = Optional.of(executionPayload);
+      return this;
+    }
+
     private List<Attestation> getAttestations() {
       return attestations;
     }
@@ -562,6 +569,10 @@ public class ChainBuilder {
 
     public Optional<Bytes32> getTerminalBlockHash() {
       return terminalBlockHash;
+    }
+
+    public Optional<ExecutionPayload> getExecutionPayload() {
+      return executionPayload;
     }
   }
 }

@@ -108,7 +108,7 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
     }
 
     if (!miscHelpersMerge
-        .computeTimestampAtSlot(state, state.getSlot())
+        .computeTimeAtSlot(state, state.getSlot())
         .equals(payload.getTimestamp())) {
       throw new BlockProcessingException(
           "Execution payload timestamp does not match time for state slot");

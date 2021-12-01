@@ -19,6 +19,7 @@ import static tech.pegasys.teku.util.config.Constants.MAXIMUM_GOSSIP_CLOCK_DISPA
 import static tech.pegasys.teku.util.config.Constants.VALID_BLOCK_SET_SIZE;
 
 import com.google.common.base.Objects;
+import java.util.Optional;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -33,6 +34,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -77,6 +79,25 @@ public class BlockValidator {
 
     if (!currentFinalizedCheckpointIsAncestorOfBlock(block)) {
       return completedFuture(reject("Block does not descend from finalized checkpoint"));
+    }
+
+    Optional<ExecutionPayload> maybeExecutionPayload =
+        block.getMessage().getBody().getOptionalExecutionPayload();
+    Optional<BeaconState> maybeState = recentChainData.getBestState();
+    if (maybeExecutionPayload.isPresent() && !maybeExecutionPayload.get().isDefault()) {
+      if (maybeState.isEmpty()) {
+        LOG.trace(
+            "No state is available to compute timestamp block slot. Block will be saved for future processing");
+        return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
+      }
+      if (maybeExecutionPayload
+              .get()
+              .getTimestamp()
+              .compareTo(spec.computeTimeAtSlot(maybeState.get(), block.getSlot()))
+          != 0) {
+        return completedFuture(
+            reject("Execution Payload timestamp is not consistence with and block slot time"));
+      }
     }
 
     return recentChainData
