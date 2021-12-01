@@ -522,7 +522,6 @@ public class ChainBuilder {
     private Optional<Eth1Data> eth1Data = Optional.empty();
     private Optional<List<Bytes>> transactions = Optional.empty();
     private Optional<Bytes32> terminalBlockHash = Optional.empty();
-    private Optional<ExecutionPayload> executionPayload = Optional.empty();
 
     private BlockOptions() {}
 
@@ -550,11 +549,6 @@ public class ChainBuilder {
       return this;
     }
 
-    public BlockOptions setExecutionPayload(ExecutionPayload executionPayload) {
-      this.executionPayload = Optional.of(executionPayload);
-      return this;
-    }
-
     private List<Attestation> getAttestations() {
       return attestations;
     }
@@ -569,10 +563,6 @@ public class ChainBuilder {
 
     public Optional<Bytes32> getTerminalBlockHash() {
       return terminalBlockHash;
-    }
-
-    public Optional<ExecutionPayload> getExecutionPayload() {
-      return executionPayload;
     }
   }
 }
