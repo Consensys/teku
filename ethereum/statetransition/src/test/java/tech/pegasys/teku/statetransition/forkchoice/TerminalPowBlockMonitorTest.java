@@ -125,6 +125,35 @@ public class TerminalPowBlockMonitorTest {
   }
 
   @Test
+  void shouldNotFailWhenCurrentSlotInMergeMilestoneButHeadStateIsFromEarlierMilestone() {
+    setUpTTDConfig();
+
+    // Current epoch is in merge, but state is still genesis from phase0.
+    storageSystem
+        .chainUpdater()
+        .setCurrentSlot(spec.computeStartSlotAtEpoch(MERGE_FORK_EPOCH).plus(1));
+
+    // Terminal block has been reached
+    final Bytes32 headBlockHash = dataStructureUtil.randomBytes32();
+    final Bytes32 headBlockParentHash = dataStructureUtil.randomBytes32();
+    when(executionEngine.getPowChainHead())
+        .thenReturn(completedFuture(new PowBlock(headBlockHash, headBlockParentHash, TTD)));
+    when(executionEngine.getPowBlock(headBlockParentHash))
+        .thenReturn(
+            completedFuture(
+                Optional.of(
+                    new PowBlock(
+                        headBlockParentHash,
+                        dataStructureUtil.randomBytes32(),
+                        TTD.subtract(10)))));
+
+    terminalPowBlockMonitor.start();
+
+    asyncRunner.executeQueuedActions();
+    verify(forkChoiceNotifier).onTerminalBlockReached(headBlockHash);
+  }
+
+  @Test
   public void shouldPerformTerminalBlockDetectionByTTD() {
     Bytes32 headBlockHash;
     Bytes32 headBlockParentHash;

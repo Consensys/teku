@@ -27,11 +27,11 @@ import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigMerge;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
-import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class TerminalPowBlockMonitor {
@@ -46,11 +46,7 @@ public class TerminalPowBlockMonitor {
 
   private final AtomicBoolean isMerge = new AtomicBoolean(false);
 
-  private MiscHelpers miscHelpers;
-  private SpecConfigMerge specConfigMerge;
-
   private Optional<Bytes32> maybeBlockHashTracking = Optional.empty();
-  private Duration pollingPeriod;
 
   private Optional<Bytes32> foundTerminalBlockHash = Optional.empty();
 
@@ -71,7 +67,7 @@ public class TerminalPowBlockMonitor {
     if (timer.isPresent()) {
       return;
     }
-    pollingPeriod =
+    final Duration pollingPeriod =
         Duration.ofSeconds(spec.getGenesisSpec().getConfig().getSecondsPerEth1Block().longValue());
     timer =
         Optional.of(
@@ -107,7 +103,7 @@ public class TerminalPowBlockMonitor {
     // beaconState must be available at this stage
     BeaconState beaconState = recentChainData.getBestState().orElseThrow();
 
-    if (miscHelpers.isMergeComplete(beaconState)) {
+    if (spec.atSlot(beaconState.getSlot()).miscHelpers().isMergeComplete(beaconState)) {
       LOG.info("MERGE is completed. Stopping.");
       stop();
       return;
@@ -130,8 +126,7 @@ public class TerminalPowBlockMonitor {
       return;
     }
 
-    specConfigMerge = maybeMergeSpecConfig.get();
-    miscHelpers = spec.atSlot(maybeSlot.get()).miscHelpers();
+    SpecConfigMerge specConfigMerge = maybeMergeSpecConfig.get();
 
     Optional<BeaconState> beaconState = recentChainData.getBestState();
     if (beaconState.isEmpty()) {
@@ -139,7 +134,7 @@ public class TerminalPowBlockMonitor {
       return;
     }
 
-    if (miscHelpers.isMergeComplete(beaconState.get())) {
+    if (spec.atSlot(beaconState.get().getSlot()).miscHelpers().isMergeComplete(beaconState.get())) {
       LOG.info("MERGE is completed. Stopping.");
       stop();
       return;
@@ -164,9 +159,16 @@ public class TerminalPowBlockMonitor {
 
   private void checkTerminalBlockByBlockHash(Bytes32 blockHashTracking) {
     UInt64 slot = recentChainData.getCurrentSlot().orElseThrow();
+    final SpecVersion specVersion = spec.atSlot(slot);
+    final Optional<SpecConfigMerge> maybeSpecConfigMerge = specVersion.getConfig().toVersionMerge();
+    if (maybeSpecConfigMerge.isEmpty()) {
+      return;
+    }
+    final SpecConfigMerge specConfigMerge = maybeSpecConfigMerge.get();
 
     final boolean isActivationEpochReached =
-        miscHelpers
+        specVersion
+            .miscHelpers()
             .computeEpochAtSlot(slot)
             .isGreaterThanOrEqualTo(specConfigMerge.getTerminalBlockHashActivationEpoch());
 
@@ -200,6 +202,14 @@ public class TerminalPowBlockMonitor {
         .getPowChainHead()
         .thenCompose(
             powBlock -> {
+              final Optional<SpecConfigMerge> maybeSpecConfigMerge =
+                  recentChainData
+                      .getCurrentEpoch()
+                      .flatMap(epoch -> spec.atEpoch(epoch).getConfig().toVersionMerge());
+              if (maybeSpecConfigMerge.isEmpty()) {
+                return SafeFuture.COMPLETE;
+              }
+              final SpecConfigMerge specConfigMerge = maybeSpecConfigMerge.get();
               UInt256 totalDifficulty = powBlock.getTotalDifficulty();
               if (totalDifficulty.compareTo(specConfigMerge.getTerminalTotalDifficulty()) < 0) {
                 LOG.trace("checkTerminalBlockByTTD: Total Terminal Difficulty not reached.");
@@ -209,7 +219,7 @@ public class TerminalPowBlockMonitor {
               // TTD is reached
               if (notYetFound(powBlock.getBlockHash())) {
                 LOG.trace("checkTerminalBlockByTTD: Terminal Block found!");
-                return validateTerminalBlockParentByTTD(powBlock)
+                return validateTerminalBlockParentByTTD(specConfigMerge, powBlock)
                     .thenAccept(
                         valid -> {
                           if (valid) {
@@ -227,7 +237,8 @@ public class TerminalPowBlockMonitor {
         .finish(error -> LOG.error("Unexpected error while checking TTD", error));
   }
 
-  private SafeFuture<Boolean> validateTerminalBlockParentByTTD(PowBlock terminalBlock) {
+  private SafeFuture<Boolean> validateTerminalBlockParentByTTD(
+      final SpecConfigMerge specConfigMerge, final PowBlock terminalBlock) {
     return executionEngine
         .getPowBlock(terminalBlock.getParentHash())
         .thenApply(
