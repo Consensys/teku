@@ -120,7 +120,7 @@ public class ValidatorLoader {
     final List<ValidatorSource> validatorSourceList = validatorSources.createValidatorSources();
     return new ValidatorLoader(
         validatorSourceList,
-        validatorSources.getMutableValidatorSource(),
+        validatorSources.getMutableLocalValidatorSource(),
         config.getGraffitiProvider());
   }
 

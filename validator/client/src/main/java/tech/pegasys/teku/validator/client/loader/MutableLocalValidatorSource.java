@@ -25,8 +25,8 @@ import tech.pegasys.teku.core.signatures.SlashingProtector;
 
 public class MutableLocalValidatorSource extends SlashingProtectedValidatorSource {
 
-  public MutableLocalValidatorSource(
-      final ValidatorSource delegate, final SlashingProtector slashingProtector) {
+  MutableLocalValidatorSource(
+      final LocalValidatorSource delegate, final SlashingProtector slashingProtector) {
     super(delegate, slashingProtector);
   }
 

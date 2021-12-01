@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
 
 class MutableLocalValidatorSourceTest {
-  private final ValidatorSource delegate = mock(ValidatorSource.class);
+  private final LocalValidatorSource delegate = mock(LocalValidatorSource.class);
   private final SlashingProtector slashingProtector = mock(SlashingProtector.class);
   final MutableLocalValidatorSource validatorSource =
       new MutableLocalValidatorSource(delegate, slashingProtector);

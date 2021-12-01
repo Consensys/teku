@@ -41,7 +41,7 @@ public class ValidatorSourceFactory {
   private final AsyncRunner asyncRunner;
   private final MetricsSystem metricsSystem;
   private final Optional<DataDirLayout> maybeDataDir;
-  private Optional<ValidatorSource> mutableValidatorSource = Optional.empty();
+  private Optional<ValidatorSource> mutableLocalValidatorSource = Optional.empty();
 
   public ValidatorSourceFactory(
       final Spec spec,
@@ -77,8 +77,8 @@ public class ValidatorSourceFactory {
     return validatorSources;
   }
 
-  public Optional<ValidatorSource> getMutableValidatorSource() {
-    return mutableValidatorSource;
+  public Optional<ValidatorSource> getMutableLocalValidatorSource() {
+    return mutableLocalValidatorSource;
   }
 
   private Optional<ValidatorSource> addMutableValidatorSource() {
@@ -97,17 +97,17 @@ public class ValidatorSourceFactory {
         new KeyStoreFilesLocator(
             List.of(keystorePath + File.pathSeparator + keystorePasswordPath), File.pathSeparator);
 
-    mutableValidatorSource =
-        Optional.of(
-            mutableSlashingProtected(
-                new LocalValidatorSource(
-                    spec,
-                    config.isValidatorKeystoreLockingEnabled(),
-                    new KeystoreLocker(),
-                    keyStoreFilesLocator,
-                    asyncRunner,
-                    false)));
-    return mutableValidatorSource;
+    final LocalValidatorSource localValidatorSource =
+        new LocalValidatorSource(
+            spec,
+            config.isValidatorKeystoreLockingEnabled(),
+            new KeystoreLocker(),
+            keyStoreFilesLocator,
+            asyncRunner,
+            false);
+    mutableLocalValidatorSource =
+        Optional.of(new MutableLocalValidatorSource(localValidatorSource, slashingProtector));
+    return mutableLocalValidatorSource;
   }
 
   private Optional<ValidatorSource> addLocalValidatorSource() {
@@ -147,9 +147,5 @@ public class ValidatorSourceFactory {
 
   private ValidatorSource slashingProtected(final ValidatorSource validatorSource) {
     return new SlashingProtectedValidatorSource(validatorSource, slashingProtector);
-  }
-
-  private ValidatorSource mutableSlashingProtected(final ValidatorSource validatorSource) {
-    return new MutableLocalValidatorSource(validatorSource, slashingProtector);
   }
 }
