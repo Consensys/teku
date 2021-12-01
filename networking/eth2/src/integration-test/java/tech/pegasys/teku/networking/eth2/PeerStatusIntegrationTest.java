@@ -41,6 +41,7 @@ public class PeerStatusIntegrationTest {
   private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(1);
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final Eth2P2PNetworkFactory networkFactory = new Eth2P2PNetworkFactory();
+  private final RpcEncoding rpcEncoding = RpcEncoding.createRpcEncoding();
   private final RecentChainData recentChainData1 = MemoryOnlyRecentChainData.create(spec);
   private final BeaconChainUtil beaconChainUtil1 =
       BeaconChainUtil.create(spec, recentChainData1, VALIDATOR_KEYS);
@@ -57,7 +58,6 @@ public class PeerStatusIntegrationTest {
 
   @Test
   public void shouldExchangeStatusMessagesOnConnection() throws Exception {
-    final RpcEncoding encoding = RpcEncoding.SSZ_SNAPPY;
     final RecentChainData recentChainData2 = MemoryOnlyRecentChainData.create();
     BeaconChainUtil.create(recentChainData2, VALIDATOR_KEYS).initializeStorage();
 
@@ -65,14 +65,14 @@ public class PeerStatusIntegrationTest {
         networkFactory
             .builder()
             .spec(spec)
-            .rpcEncoding(encoding)
+            .rpcEncoding(rpcEncoding)
             .recentChainData(recentChainData1)
             .startNetwork();
     final Eth2P2PNetwork network2 =
         networkFactory
             .builder()
             .spec(spec)
-            .rpcEncoding(encoding)
+            .rpcEncoding(rpcEncoding)
             .recentChainData(recentChainData2)
             .startNetwork();
 
@@ -93,12 +93,11 @@ public class PeerStatusIntegrationTest {
 
   @Test
   public void shouldUpdatePeerStatus() throws Exception {
-    final RpcEncoding encoding = RpcEncoding.SSZ_SNAPPY;
     final Eth2P2PNetwork network1 =
         networkFactory
             .builder()
             .spec(spec)
-            .rpcEncoding(encoding)
+            .rpcEncoding(rpcEncoding)
             .recentChainData(recentChainData1)
             .startNetwork();
 
@@ -108,7 +107,7 @@ public class PeerStatusIntegrationTest {
         networkFactory
             .builder()
             .spec(spec)
-            .rpcEncoding(encoding)
+            .rpcEncoding(rpcEncoding)
             .recentChainData(recentChainData2)
             .peer(network1)
             .startNetwork();
@@ -127,13 +126,12 @@ public class PeerStatusIntegrationTest {
 
   @Test
   public void shouldUpdatePeerStatusPeriodically() throws Exception {
-    final RpcEncoding encoding = RpcEncoding.SSZ_SNAPPY;
     Duration statusUpdateInterval = Duration.ofSeconds(2);
     final Eth2P2PNetwork network1 =
         networkFactory
             .builder()
             .spec(spec)
-            .rpcEncoding(encoding)
+            .rpcEncoding(rpcEncoding)
             .eth2StatusUpdateInterval(statusUpdateInterval)
             .recentChainData(recentChainData1)
             .startNetwork();
@@ -144,7 +142,7 @@ public class PeerStatusIntegrationTest {
         networkFactory
             .builder()
             .spec(spec)
-            .rpcEncoding(encoding)
+            .rpcEncoding(rpcEncoding)
             .eth2StatusUpdateInterval(statusUpdateInterval)
             .recentChainData(recentChainData2)
             .peer(network1)

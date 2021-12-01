@@ -37,6 +37,7 @@ public class BlockPropagationIntegrationTest {
   private final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(3);
   private final Eth2P2PNetworkFactory networkFactory = new Eth2P2PNetworkFactory();
+  private final RpcEncoding rpcEncoding = RpcEncoding.createRpcEncoding();
 
   @AfterEach
   public void tearDown() throws Exception {
@@ -45,7 +46,6 @@ public class BlockPropagationIntegrationTest {
 
   @Test
   public void shouldFetchUnknownAncestorsOfPropagatedBlock() throws Exception {
-    final RpcEncoding encoding = RpcEncoding.SSZ_SNAPPY;
     final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
     UInt64 currentSlot = SpecConfig.GENESIS_SLOT;
 
@@ -55,7 +55,7 @@ public class BlockPropagationIntegrationTest {
             asyncRunner,
             networkFactory,
             validatorKeys,
-            c -> c.rpcEncoding(encoding).gossipEncoding(gossipEncoding));
+            c -> c.rpcEncoding(rpcEncoding).gossipEncoding(gossipEncoding));
     node1.chainUtil().setSlot(currentSlot);
 
     // Add some blocks to node1, which node 2 will need to fetch
@@ -72,7 +72,7 @@ public class BlockPropagationIntegrationTest {
             asyncRunner,
             networkFactory,
             validatorKeys,
-            c -> c.rpcEncoding(encoding).gossipEncoding(gossipEncoding));
+            c -> c.rpcEncoding(rpcEncoding).gossipEncoding(gossipEncoding));
 
     // Connect networks
     Waiter.waitFor(node1.connect(node2));

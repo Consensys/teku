@@ -31,6 +31,7 @@ public abstract class AbstractRpcMethodIntegrationTest {
       TestSpecFactory.createMinimalWithAltairForkEpoch(altairEpoch);
   protected final UInt64 altairSlot = altairEnabledSpec.computeStartSlotAtEpoch(altairEpoch);
   private final Eth2P2PNetworkFactory networkFactory = new Eth2P2PNetworkFactory();
+  private final RpcEncoding rpcEncoding = RpcEncoding.createRpcEncoding();
 
   @AfterEach
   public void tearDown() throws Exception {
@@ -91,7 +92,7 @@ public abstract class AbstractRpcMethodIntegrationTest {
       final Eth2P2PNetwork remotePeerNetwork =
           networkFactory
               .builder()
-              .rpcEncoding(RpcEncoding.SSZ_SNAPPY)
+              .rpcEncoding(rpcEncoding)
               .recentChainData(peerStorage.recentChainData())
               .historicalChainData(peerStorage.chainStorage())
               .spec(remoteSpec)
@@ -100,7 +101,7 @@ public abstract class AbstractRpcMethodIntegrationTest {
       final Eth2P2PNetwork localNetwork =
           networkFactory
               .builder()
-              .rpcEncoding(RpcEncoding.SSZ_SNAPPY)
+              .rpcEncoding(rpcEncoding)
               .peer(remotePeerNetwork)
               .recentChainData(localStorage.recentChainData())
               .historicalChainData(localStorage.chainStorage())
