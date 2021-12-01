@@ -20,6 +20,7 @@ import java.net.http.HttpClient;
 import java.util.List;
 import java.util.function.Supplier;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -85,6 +86,17 @@ public class ExternalValidatorSource implements ValidatorSource {
     return publicKeys.stream()
         .map(key -> new ExternalValidatorProvider(spec, key))
         .collect(toList());
+  }
+
+  @Override
+  public boolean canAddValidator() {
+    return false;
+  }
+
+  @Override
+  public MutableValidatorAddResult addValidator(
+      final KeyStoreData keyStoreData, final String password) {
+    throw new UnsupportedOperationException();
   }
 
   private static void setupExternalSignerStatusLogging(

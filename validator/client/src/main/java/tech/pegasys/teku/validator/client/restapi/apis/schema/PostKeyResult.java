@@ -43,7 +43,7 @@ public class PostKeyResult {
   }
 
   public static PostKeyResult error(final String message) {
-    return new PostKeyResult(ImportStatus.IMPORTED, Optional.of(message));
+    return new PostKeyResult(ImportStatus.ERROR, Optional.of(message));
   }
 
   @Override
