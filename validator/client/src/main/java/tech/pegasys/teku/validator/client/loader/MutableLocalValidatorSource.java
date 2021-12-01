@@ -16,44 +16,42 @@ package tech.pegasys.teku.validator.client.loader;
 import static java.util.stream.Collectors.toList;
 
 import java.util.List;
+import org.apache.commons.lang3.NotImplementedException;
 import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.core.signatures.DeletableSigner;
 import tech.pegasys.teku.core.signatures.Signer;
-import tech.pegasys.teku.core.signatures.SlashingProtectedSigner;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
 
-public class SlashingProtectedValidatorSource implements ValidatorSource {
-  private final ValidatorSource delegate;
-  private final SlashingProtector slashingProtector;
+public class MutableLocalValidatorSource extends SlashingProtectedValidatorSource {
 
-  public SlashingProtectedValidatorSource(
+  public MutableLocalValidatorSource(
       final ValidatorSource delegate, final SlashingProtector slashingProtector) {
-    this.delegate = delegate;
-    this.slashingProtector = slashingProtector;
-  }
-
-  @Override
-  public List<ValidatorProvider> getAvailableValidators() {
-    return delegate.getAvailableValidators().stream()
-        .map(SlashingProtectedValidatorProvider::new)
-        .collect(toList());
+    super(delegate, slashingProtector);
   }
 
   @Override
   public boolean canAddValidator() {
-    return delegate.canAddValidator();
+    return true;
   }
 
   @Override
   public MutableValidatorAddResult addValidator(
       final KeyStoreData keyStoreData, final String password) {
-    return delegate.addValidator(keyStoreData, password);
+    throw new NotImplementedException();
   }
 
-  private class SlashingProtectedValidatorProvider implements ValidatorProvider {
+  @Override
+  public List<ValidatorProvider> getAvailableValidators() {
+    return super.getAvailableValidators().stream()
+        .map(MutableLocalValidatorProvider::new)
+        .collect(toList());
+  }
+
+  private static class MutableLocalValidatorProvider implements ValidatorProvider {
     private final ValidatorProvider delegate;
 
-    private SlashingProtectedValidatorProvider(final ValidatorProvider delegate) {
+    private MutableLocalValidatorProvider(final ValidatorProvider delegate) {
       this.delegate = delegate;
     }
 
@@ -69,10 +67,7 @@ public class SlashingProtectedValidatorSource implements ValidatorSource {
 
     @Override
     public Signer createSigner() {
-      // TODO: Consider caching these to guarantee we can't possible use different
-      // `SlashingProtectedSigner` instances with the same key
-      return new SlashingProtectedSigner(
-          getPublicKey(), slashingProtector, delegate.createSigner());
+      return new DeletableSigner(delegate.createSigner());
     }
   }
 }
