@@ -57,6 +57,8 @@ public class AggregateAttestationValidator {
       LimitedMap.create(VALID_AGGREGATE_SET_SIZE);
   private final Set<AggregatorIndexAndEpoch> receivedAggregatorIndexAndEpochs =
       LimitedSet.create(VALID_AGGREGATE_SET_SIZE);
+  private final Set<Bytes32> receivedValidAggregations =
+      LimitedSet.create(VALID_AGGREGATE_SET_SIZE);
   private final AttestationValidator attestationValidator;
   private final RecentChainData recentChainData;
   private final Spec spec;
@@ -73,6 +75,10 @@ public class AggregateAttestationValidator {
     this.signatureVerifier = signatureVerifier;
   }
 
+  public void addSeenAggregate(final ValidateableAttestation attestation) {
+    receivedValidAggregations.add(attestation.hash_tree_root());
+  }
+
   public SafeFuture<InternalValidationResult> validate(final ValidateableAttestation attestation) {
     final SignedAggregateAndProof signedAggregate = attestation.getSignedAggregateAndProof();
     final AggregateAndProof aggregateAndProof = signedAggregate.getMessage();
@@ -85,6 +91,9 @@ public class AggregateAttestationValidator {
             aggregateAndProof.getIndex(), compute_epoch_at_slot(aggregateSlot));
     if (receivedAggregatorIndexAndEpochs.contains(aggregatorIndexAndEpoch)) {
       return completedFuture(ignore("Ignoring duplicate aggregate"));
+    }
+    if (receivedValidAggregations.contains(attestation.hash_tree_root())) {
+      return completedFuture(ignore("Ignoring duplicate aggregate based on hash tree root"));
     }
 
     final AsyncBatchBLSSignatureVerifier signatureVerifier =
@@ -174,7 +183,11 @@ public class AggregateAttestationValidator {
                                       aggregatorIndexAndEpoch)) {
                                     return ignore("Ignoring duplicate aggregate");
                                   }
-
+                                  if (!receivedValidAggregations.add(
+                                      attestation.hash_tree_root())) {
+                                    return ignore(
+                                        "Ignoring duplicate aggregate based on hash tree root");
+                                  }
                                   return aggregateInternalValidationResult;
                                 });
                       });

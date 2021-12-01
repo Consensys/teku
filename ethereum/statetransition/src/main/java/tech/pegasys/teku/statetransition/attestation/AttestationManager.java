@@ -248,6 +248,9 @@ public class AttestationManager extends Service
     if (!attestation.isProducedLocally()) {
       return;
     }
+    if (attestation.isAggregate()) {
+      aggregateValidator.addSeenAggregate(attestation);
+    }
 
     notifyAttestationsToSendSubscribers(attestation);
     notifyAllValidAttestationsSubscribers(attestation);
