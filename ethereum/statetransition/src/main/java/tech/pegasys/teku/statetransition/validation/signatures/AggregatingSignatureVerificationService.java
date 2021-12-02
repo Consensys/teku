@@ -34,6 +34,7 @@ import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.service.serviceutils.ServiceCapacityExceededException;
 
@@ -51,6 +52,7 @@ public class AggregatingSignatureVerificationService extends SignatureVerificati
   private final AsyncRunner asyncRunner;
   private final Counter batchCounter;
   private final Counter taskCounter;
+  private final MetricsHistogram batchSizeHistogram;
 
   @VisibleForTesting
   AggregatingSignatureVerificationService(
@@ -81,6 +83,14 @@ public class AggregatingSignatureVerificationService extends SignatureVerificati
             TekuMetricCategory.EXECUTOR,
             "signature_verifications_task_count",
             "Reports the number of individual verification tasks processed");
+    batchSizeHistogram =
+        MetricsHistogram.create(
+            TekuMetricCategory.EXECUTOR,
+            metricsSystem,
+            "signature_verifications_batch_size",
+            "Histogram of signature verification batch sizes",
+            3,
+            maxBatchSize);
   }
 
   public AggregatingSignatureVerificationService(
@@ -167,6 +177,7 @@ public class AggregatingSignatureVerificationService extends SignatureVerificati
   void batchVerifySignatures(final List<SignatureTask> tasks) {
     batchCounter.inc();
     taskCounter.inc(tasks.size());
+    batchSizeHistogram.recordValue(tasks.size());
     final List<List<BLSPublicKey>> allKeys = new ArrayList<>();
     final List<Bytes> allMessages = new ArrayList<>();
     final List<BLSSignature> allSignatures = new ArrayList<>();
