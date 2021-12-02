@@ -188,7 +188,7 @@ public class AggregatingSignatureVerificationService extends SignatureVerificati
       allSignatures.addAll(task.signatures);
     }
 
-    final boolean batchIsValid = BLS.batchVerify(allKeys, allMessages, allSignatures);
+    final boolean batchIsValid = BLS.batchVerify(allKeys, allMessages, allSignatures, true, false);
     if (batchIsValid) {
       for (SignatureTask task : tasks) {
         task.result.complete(true);
