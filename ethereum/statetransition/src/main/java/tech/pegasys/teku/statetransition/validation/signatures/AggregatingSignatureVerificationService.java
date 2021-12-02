@@ -37,13 +37,11 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.service.serviceutils.ServiceCapacityExceededException;
 
-class AggregatingSignatureVerificationService extends SignatureVerificationService {
+public class AggregatingSignatureVerificationService extends SignatureVerificationService {
   private static final Logger LOG = LogManager.getLogger();
 
   static final int DEFAULT_QUEUE_CAPACITY = 5_000;
-  static final int DEFAULT_MAX_BATCH_SIZE = 250;
   static final int DEFAULT_MIN_BATCH_SIZE_TO_SPLIT = 25;
-  static final int DEFAULT_THREAD_COUNT = 2;
 
   private final int numThreads;
   private final int maxBatchSize;
@@ -85,14 +83,17 @@ class AggregatingSignatureVerificationService extends SignatureVerificationServi
             "Reports the number of individual verification tasks processed");
   }
 
-  AggregatingSignatureVerificationService(
-      final MetricsSystem metricsSystem, final AsyncRunnerFactory asyncRunnerFactory) {
+  public AggregatingSignatureVerificationService(
+      final MetricsSystem metricsSystem,
+      final AsyncRunnerFactory asyncRunnerFactory,
+      final int maxThreads,
+      final int maxBatchSize) {
     this(
         metricsSystem,
         asyncRunnerFactory,
-        DEFAULT_THREAD_COUNT,
+        maxThreads,
         DEFAULT_QUEUE_CAPACITY,
-        DEFAULT_MAX_BATCH_SIZE,
+        maxBatchSize,
         DEFAULT_MIN_BATCH_SIZE_TO_SPLIT);
   }
 

@@ -198,6 +198,22 @@ public class P2POptions {
       hidden = true)
   private Integer peerRequestLimit = P2PConfig.DEFAULT_PEER_REQUEST_LIMIT;
 
+  @Option(
+      names = {"--Xp2p-batch-verify-signatures-max-threads"},
+      paramLabel = "<NUMBER>",
+      description = "Maximum number of threads to use for aggregated signature verification",
+      arity = "1",
+      hidden = true)
+  private int batchVerifyMaxThreads = P2PConfig.DEFAULT_BATCH_VERIFY_MAX_THREADS;
+
+  @Option(
+      names = {"--Xp2p-batch-verify-signatures-max-batch-size"},
+      paramLabel = "<NUMBER>",
+      description = "Maximum number of verification tasks to include in a single batch",
+      arity = "1",
+      hidden = true)
+  private int batchVerifyMaxBatchSize = P2PConfig.DEFAULT_BATCH_VERIFY_MAX_BATCH_SIZE;
+
   private int getP2pLowerBound() {
     if (p2pLowerBound > p2pUpperBound) {
       STATUS_LOG.adjustingP2pLowerBoundToUpperBound(p2pUpperBound);
@@ -222,6 +238,8 @@ public class P2POptions {
             b ->
                 b.subscribeAllSubnetsEnabled(subscribeAllSubnetsEnabled)
                     .batchVerifyAttestationSignatures(batchVerifyAttestationSignatures)
+                    .batchVerifyMaxThreads(batchVerifyMaxThreads)
+                    .batchVerifyMaxBatchSize(batchVerifyMaxBatchSize)
                     .targetSubnetSubscriberCount(p2pTargetSubnetSubscriberCount)
                     .isGossipScoringEnabled(gossipScoringEnabled)
                     .peerRateLimit(peerRateLimit)

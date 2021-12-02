@@ -32,6 +32,8 @@ public class P2PConfig {
   public static final boolean DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED = false;
   public static final boolean DEFAULT_GOSSIP_SCORING_ENABLED = false;
   public static final boolean DEFAULT_BATCH_VERIFY_ATTESTATION_SIGNATURES = true;
+  public static final int DEFAULT_BATCH_VERIFY_MAX_THREADS = 2;
+  public static final int DEFAULT_BATCH_VERIFY_MAX_BATCH_SIZE = 250;
 
   private final Spec spec;
   private final NetworkConfig networkConfig;
@@ -44,6 +46,8 @@ public class P2PConfig {
   private final int peerRateLimit;
   private final int peerRequestLimit;
   private final boolean batchVerifyAttestationSignatures;
+  private final int batchVerifyMaxThreads;
+  private final int batchVerifyMaxBatchSize;
 
   private P2PConfig(
       final Spec spec,
@@ -55,7 +59,9 @@ public class P2PConfig {
       final boolean subscribeAllSubnetsEnabled,
       final int peerRateLimit,
       final int peerRequestLimit,
-      final boolean batchVerifyAttestationSignatures) {
+      final boolean batchVerifyAttestationSignatures,
+      final int batchVerifyMaxThreads,
+      final int batchVerifyMaxBatchSize) {
     this.spec = spec;
     this.networkConfig = networkConfig;
     this.discoveryConfig = discoveryConfig;
@@ -66,6 +72,8 @@ public class P2PConfig {
     this.peerRateLimit = peerRateLimit;
     this.peerRequestLimit = peerRequestLimit;
     this.batchVerifyAttestationSignatures = batchVerifyAttestationSignatures;
+    this.batchVerifyMaxThreads = batchVerifyMaxThreads;
+    this.batchVerifyMaxBatchSize = batchVerifyMaxBatchSize;
   }
 
   public static Builder builder() {
@@ -112,6 +120,14 @@ public class P2PConfig {
     return batchVerifyAttestationSignatures;
   }
 
+  public int getBatchVerifyMaxThreads() {
+    return batchVerifyMaxThreads;
+  }
+
+  public int getBatchVerifyMaxBatchSize() {
+    return batchVerifyMaxBatchSize;
+  }
+
   public static class Builder {
     private final NetworkConfig.Builder networkConfig = NetworkConfig.builder();
     private final DiscoveryConfig.Builder discoveryConfig = DiscoveryConfig.builder();
@@ -124,6 +140,8 @@ public class P2PConfig {
     private Integer peerRateLimit = DEFAULT_PEER_RATE_LIMIT;
     private Integer peerRequestLimit = DEFAULT_PEER_REQUEST_LIMIT;
     private Boolean batchVerifyAttestationSignatures = DEFAULT_BATCH_VERIFY_ATTESTATION_SIGNATURES;
+    private int batchVerifyMaxThreads = DEFAULT_BATCH_VERIFY_MAX_THREADS;
+    private int batchVerifyMaxBatchSize = DEFAULT_BATCH_VERIFY_MAX_BATCH_SIZE;
 
     private Builder() {}
 
@@ -155,7 +173,9 @@ public class P2PConfig {
           subscribeAllSubnetsEnabled,
           peerRateLimit,
           peerRequestLimit,
-          batchVerifyAttestationSignatures);
+          batchVerifyAttestationSignatures,
+          batchVerifyMaxThreads,
+          batchVerifyMaxBatchSize);
     }
 
     private void validate() {
@@ -212,6 +232,16 @@ public class P2PConfig {
         final Boolean batchVerifyAttestationSignatures) {
       checkNotNull(batchVerifyAttestationSignatures);
       this.batchVerifyAttestationSignatures = batchVerifyAttestationSignatures;
+      return this;
+    }
+
+    public Builder batchVerifyMaxThreads(final int batchVerifyMaxThreads) {
+      this.batchVerifyMaxThreads = batchVerifyMaxThreads;
+      return this;
+    }
+
+    public Builder batchVerifyMaxBatchSize(final int batchVerifyMaxBatchSize) {
+      this.batchVerifyMaxBatchSize = batchVerifyMaxBatchSize;
       return this;
     }
   }

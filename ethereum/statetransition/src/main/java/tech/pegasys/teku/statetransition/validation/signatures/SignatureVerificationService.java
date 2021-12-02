@@ -13,17 +13,11 @@
 
 package tech.pegasys.teku.statetransition.validation.signatures;
 
-import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 
 public abstract class SignatureVerificationService extends Service
     implements AsyncBLSSignatureVerifier {
-  public static SignatureVerificationService createAggregatingService(
-      final MetricsSystem metrics, final AsyncRunnerFactory asyncRunnerFactory) {
-    return new AggregatingSignatureVerificationService(metrics, asyncRunnerFactory);
-  }
 
   public static SignatureVerificationService createSimple() {
     return new SimpleSignatureVerificationService();

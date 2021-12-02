@@ -102,6 +102,7 @@ import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.statetransition.validation.ProposerSlashingValidator;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.statetransition.validation.VoluntaryExitValidator;
+import tech.pegasys.teku.statetransition.validation.signatures.AggregatingSignatureVerificationService;
 import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorCache;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
@@ -577,8 +578,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private void initSignatureVerificationService() {
     signatureVerificationService =
         beaconConfig.p2pConfig().batchVerifyAttestationSignatures()
-            ? SignatureVerificationService.createAggregatingService(
-                metricsSystem, asyncRunnerFactory)
+            ? new AggregatingSignatureVerificationService(
+                metricsSystem,
+                asyncRunnerFactory,
+                beaconConfig.p2pConfig().getBatchVerifyMaxThreads(),
+                beaconConfig.p2pConfig().getBatchVerifyMaxBatchSize())
             : SignatureVerificationService.createSimple();
   }
 
