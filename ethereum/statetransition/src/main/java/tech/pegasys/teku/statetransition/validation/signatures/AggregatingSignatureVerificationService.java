@@ -41,7 +41,7 @@ import tech.pegasys.teku.service.serviceutils.ServiceCapacityExceededException;
 public class AggregatingSignatureVerificationService extends SignatureVerificationService {
   private static final Logger LOG = LogManager.getLogger();
 
-  static final int DEFAULT_QUEUE_CAPACITY = 5_000;
+  static final int DEFAULT_QUEUE_CAPACITY = 15_000;
   static final int DEFAULT_MIN_BATCH_SIZE_TO_SPLIT = 25;
 
   private final int numThreads;
