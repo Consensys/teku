@@ -28,5 +28,6 @@ For information on changes in released versions of Teku, see the [releases page]
 - Docker images are now published with multi-arch support including Linux/amd64 and Linux/arm64 
 - The default docker image now uses JDK 17 instead of 16. The JDK 16 image is still available with the version suffix `-jdk16`
 - Include the date in output to console, when log files are not being written.
+- Reinstated the ignore rule for aggregate attestation gossip where the attestation root has been previously seen.
 
 ### Bug Fixes

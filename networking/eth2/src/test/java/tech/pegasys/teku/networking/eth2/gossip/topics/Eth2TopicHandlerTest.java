@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import static tech.pegasys.teku.util.config.Constants.GOSSIP_MAX_SIZE;
 
 import io.libp2p.core.pubsub.ValidationResult;
 import java.util.concurrent.CompletionException;
@@ -263,7 +264,8 @@ public class Eth2TopicHandlerTest {
           gossipEncoding,
           recentChainData.getForkDigestByMilestone(SpecMilestone.PHASE0).orElseThrow(),
           "test",
-          spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema());
+          spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema(),
+          GOSSIP_MAX_SIZE);
       this.forkDigest =
           recentChainData.getForkDigestByMilestone(SpecMilestone.PHASE0).orElseThrow();
       deserializer =

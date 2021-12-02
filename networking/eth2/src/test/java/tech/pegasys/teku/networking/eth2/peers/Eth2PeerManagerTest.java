@@ -20,6 +20,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.util.config.Constants.MAX_CHUNK_SIZE;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -62,7 +63,7 @@ public class Eth2PeerManagerTest {
 
   private final Map<Peer, Eth2Peer> eth2Peers = new HashMap<>();
 
-  private final RpcEncoding rpcEncoding = RpcEncoding.SSZ_SNAPPY;
+  private final RpcEncoding rpcEncoding = RpcEncoding.createSszSnappyEncoding(MAX_CHUNK_SIZE);
   private final Eth2PeerManager peerManager =
       new Eth2PeerManager(
           spec,

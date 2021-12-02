@@ -23,7 +23,6 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 import static tech.pegasys.teku.util.config.Constants.VALID_AGGREGATE_SET_SIZE;
 
 import it.unimi.dsi.fastutil.ints.IntList;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -36,7 +35,6 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -53,9 +51,9 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class AggregateAttestationValidator {
   private static final Logger LOG = LogManager.getLogger();
-  private final Map<Bytes32, SafeFuture<InternalValidationResult>> aggregateAttestationResultCache =
-      LimitedMap.create(VALID_AGGREGATE_SET_SIZE);
   private final Set<AggregatorIndexAndEpoch> receivedAggregatorIndexAndEpochs =
+      LimitedSet.create(VALID_AGGREGATE_SET_SIZE);
+  private final Set<Bytes32> receivedValidAggregations =
       LimitedSet.create(VALID_AGGREGATE_SET_SIZE);
   private final AttestationValidator attestationValidator;
   private final RecentChainData recentChainData;
@@ -73,6 +71,10 @@ public class AggregateAttestationValidator {
     this.signatureVerifier = signatureVerifier;
   }
 
+  public void addSeenAggregate(final ValidateableAttestation attestation) {
+    receivedValidAggregations.add(attestation.hash_tree_root());
+  }
+
   public SafeFuture<InternalValidationResult> validate(final ValidateableAttestation attestation) {
     final SignedAggregateAndProof signedAggregate = attestation.getSignedAggregateAndProof();
     final AggregateAndProof aggregateAndProof = signedAggregate.getMessage();
@@ -85,6 +87,9 @@ public class AggregateAttestationValidator {
             aggregateAndProof.getIndex(), compute_epoch_at_slot(aggregateSlot));
     if (receivedAggregatorIndexAndEpochs.contains(aggregatorIndexAndEpoch)) {
       return completedFuture(ignore("Ignoring duplicate aggregate"));
+    }
+    if (receivedValidAggregations.contains(attestation.hash_tree_root())) {
+      return completedFuture(ignore("Ignoring duplicate aggregate based on hash tree root"));
     }
 
     final AsyncBatchBLSSignatureVerifier signatureVerifier =
@@ -174,7 +179,11 @@ public class AggregateAttestationValidator {
                                       aggregatorIndexAndEpoch)) {
                                     return ignore("Ignoring duplicate aggregate");
                                   }
-
+                                  if (!receivedValidAggregations.add(
+                                      attestation.hash_tree_root())) {
+                                    return ignore(
+                                        "Ignoring duplicate aggregate based on hash tree root");
+                                  }
                                   return aggregateInternalValidationResult;
                                 });
                       });
@@ -218,15 +227,10 @@ public class AggregateAttestationValidator {
       final AsyncBatchBLSSignatureVerifier signatureVerifier,
       final ValidateableAttestation validateableAttestation,
       final OptionalInt receivedOnSubnetId) {
-    // We get a lot of aggregate attestations with the same Attestation but different aggregator
-    // These have to be individually processed but we can skip re-validating the Attestation
-    return aggregateAttestationResultCache.computeIfAbsent(
-        validateableAttestation.hash_tree_root(),
-        __ ->
-            attestationValidator.singleOrAggregateAttestationChecks(
-                signatureVerifier.asAsyncBSLSSignatureVerifier(),
-                validateableAttestation,
-                receivedOnSubnetId));
+    return attestationValidator.singleOrAggregateAttestationChecks(
+        AsyncBLSSignatureVerifier.wrap(signatureVerifier),
+        validateableAttestation,
+        receivedOnSubnetId);
   }
 
   private static class AggregatorIndexAndEpoch {

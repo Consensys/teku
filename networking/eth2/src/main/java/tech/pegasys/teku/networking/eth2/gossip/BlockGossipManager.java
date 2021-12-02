@@ -42,7 +42,8 @@ public class BlockGossipManager implements GossipManager {
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final OperationProcessor<SignedBeaconBlock> processor) {
+      final OperationProcessor<SignedBeaconBlock> processor,
+      final int maxMessageSize) {
     this.gossipEncoding = gossipEncoding;
 
     // Gossip topics are specific to a fork so use the schema for the current fork.
@@ -58,7 +59,8 @@ public class BlockGossipManager implements GossipManager {
             gossipEncoding,
             forkInfo.getForkDigest(spec),
             GossipTopicName.BEACON_BLOCK,
-            signedBeaconBlockSchema);
+            signedBeaconBlockSchema,
+            maxMessageSize);
     this.channel = gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
   }
 

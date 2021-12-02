@@ -601,6 +601,12 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     AggregateAttestationValidator aggregateValidator =
         new AggregateAttestationValidator(
             spec, recentChainData, attestationValidator, signatureVerificationService);
+    blockImporter.subscribeToVerifiedBlockAttestations(
+        (slot, attestations) ->
+            attestations.forEach(
+                attestation ->
+                    aggregateValidator.addSeenAggregate(
+                        ValidateableAttestation.from(spec, attestation))));
     attestationManager =
         AttestationManager.create(
             pendingAttestations,

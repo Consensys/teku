@@ -14,11 +14,16 @@
 package tech.pegasys.teku.validator.client.loader;
 
 import java.util.List;
+import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.Signer;
 
 public interface ValidatorSource {
   List<ValidatorProvider> getAvailableValidators();
+
+  boolean canAddValidator();
+
+  MutableValidatorAddResult addValidator(KeyStoreData keyStoreData, String password);
 
   interface ValidatorProvider {
     BLSPublicKey getPublicKey();

@@ -179,4 +179,15 @@ class LocalValidatorSourceTest {
     final BLSSignature signature = signingFuture.getNow(null);
     assertThat(BLS.verify(expectedKeyPair.getPublicKey(), signingRoot, signature)).isTrue();
   }
+
+  @Test
+  void shouldThrowExceptionWhenAddValidator() {
+    assertThatThrownBy(() -> validatorSource.addValidator(null, "pass"))
+        .isInstanceOf(UnsupportedOperationException.class);
+  }
+
+  @Test
+  void shouldSayFalseToAddValidators() {
+    assertThat(validatorSource.canAddValidator()).isFalse();
+  }
 }
