@@ -198,7 +198,8 @@ public class TekuConfiguration {
     private final NatConfiguration.Builder natConfigBuilder = NatConfiguration.builder();
     private final StoreConfig.Builder storeConfigBuilder = StoreConfig.builder();
 
-    private BeaconChainControllerFactory beaconChainControllerFactory = BeaconChainControllerFactory.DEFAULT;
+    private BeaconChainControllerFactory beaconChainControllerFactory =
+        BeaconChainControllerFactory.DEFAULT;
 
     private Builder() {}
 
