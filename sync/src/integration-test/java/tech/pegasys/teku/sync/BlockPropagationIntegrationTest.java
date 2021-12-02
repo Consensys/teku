@@ -15,6 +15,7 @@ package tech.pegasys.teku.sync;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import static tech.pegasys.teku.util.config.Constants.MAX_CHUNK_SIZE;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,7 +38,7 @@ public class BlockPropagationIntegrationTest {
   private final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(3);
   private final Eth2P2PNetworkFactory networkFactory = new Eth2P2PNetworkFactory();
-  private final RpcEncoding rpcEncoding = RpcEncoding.createRpcEncoding();
+  private final RpcEncoding rpcEncoding = RpcEncoding.createSszSnappyEncoding(MAX_CHUNK_SIZE);
 
   @AfterEach
   public void tearDown() throws Exception {

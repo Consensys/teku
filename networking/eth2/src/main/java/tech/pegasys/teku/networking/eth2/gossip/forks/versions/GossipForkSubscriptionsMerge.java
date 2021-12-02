@@ -79,7 +79,7 @@ public class GossipForkSubscriptionsMerge extends GossipForkSubscriptionsAltair 
   }
 
   @Override
-  public int getMessageMaxSize() {
+  protected int getMessageMaxSize() {
     return GOSSIP_MAX_SIZE_MERGE;
   }
 }

@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.async.Waiter.waitFor;
+import static tech.pegasys.teku.util.config.Constants.MAX_CHUNK_SIZE;
 
 import java.time.Duration;
 import java.util.List;
@@ -41,7 +42,7 @@ public class PeerStatusIntegrationTest {
   private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(1);
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final Eth2P2PNetworkFactory networkFactory = new Eth2P2PNetworkFactory();
-  private final RpcEncoding rpcEncoding = RpcEncoding.createRpcEncoding();
+  private final RpcEncoding rpcEncoding = RpcEncoding.createSszSnappyEncoding(MAX_CHUNK_SIZE);
   private final RecentChainData recentChainData1 = MemoryOnlyRecentChainData.create(spec);
   private final BeaconChainUtil beaconChainUtil1 =
       BeaconChainUtil.create(spec, recentChainData1, VALIDATOR_KEYS);

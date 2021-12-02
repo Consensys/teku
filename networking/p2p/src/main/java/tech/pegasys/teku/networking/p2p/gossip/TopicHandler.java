@@ -35,7 +35,7 @@ public interface TopicHandler {
   SafeFuture<ValidationResult> handleMessage(PreparedGossipMessage message);
 
   /**
-   * expected maximum message size
+   * Expected maximum message size
    *
    * @return max message size in bytes
    */

@@ -14,12 +14,13 @@
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static tech.pegasys.teku.util.config.Constants.MAX_CHUNK_SIZE;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 
 public class BeaconChainMethodIdsTest {
-  protected final RpcEncoding rpcEncoding = RpcEncoding.createRpcEncoding();
+  protected final RpcEncoding rpcEncoding = RpcEncoding.createSszSnappyEncoding(MAX_CHUNK_SIZE);
 
   @Test
   public void getProtocolId() {

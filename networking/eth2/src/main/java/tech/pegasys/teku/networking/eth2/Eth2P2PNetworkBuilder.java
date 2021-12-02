@@ -124,7 +124,7 @@ public class Eth2P2PNetworkBuilder {
     final SubnetSubscriptionService attestationSubnetService = new SubnetSubscriptionService();
     final SubnetSubscriptionService syncCommitteeSubnetService = new SubnetSubscriptionService();
     final RpcEncoding rpcEncoding =
-        RpcEncoding.createRpcEncoding(
+        RpcEncoding.createSszSnappyEncoding(
             spec.isMilestoneSupported(SpecMilestone.MERGE) ? MAX_CHUNK_SIZE_MERGE : MAX_CHUNK_SIZE);
     final Eth2PeerManager eth2PeerManager =
         Eth2PeerManager.create(

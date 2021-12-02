@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.networking.eth2;
 
+import static tech.pegasys.teku.util.config.Constants.MAX_CHUNK_SIZE;
+
 import java.util.concurrent.ExecutionException;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -36,7 +38,7 @@ import tech.pegasys.teku.ssz.type.Bytes4;
 public class ErrorConditionsIntegrationTest {
 
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
-  private final RpcEncoding rpcEncoding = RpcEncoding.createRpcEncoding();
+  private final RpcEncoding rpcEncoding = RpcEncoding.createSszSnappyEncoding(MAX_CHUNK_SIZE);
   private final Eth2P2PNetworkFactory networkFactory = new Eth2P2PNetworkFactory();
 
   @AfterEach

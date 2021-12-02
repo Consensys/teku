@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.rpc.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.util.config.Constants.MAX_CHUNK_SIZE;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -37,7 +38,7 @@ public class RpcRequestEncoderTest {
           UInt64.ZERO);
 
   private final RpcRequestEncoder requestEncoder =
-      new RpcRequestEncoder(RpcEncoding.createRpcEncoding());
+      new RpcRequestEncoder(RpcEncoding.createSszSnappyEncoding(MAX_CHUNK_SIZE));
 
   @Test
   public void shouldEncodeStatusRequest() {

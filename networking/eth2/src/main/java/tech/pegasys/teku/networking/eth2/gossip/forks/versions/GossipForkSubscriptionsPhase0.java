@@ -234,8 +234,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
     // Does not apply to this fork.
   }
 
-  @Override
-  public int getMessageMaxSize() {
+  protected int getMessageMaxSize() {
     return GOSSIP_MAX_SIZE;
   }
 }

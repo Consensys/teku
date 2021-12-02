@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.util.config.Constants.MAX_CHUNK_SIZE;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -24,7 +25,7 @@ import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 
 public class GoodbyeIntegrationTest {
   private final Eth2P2PNetworkFactory networkFactory = new Eth2P2PNetworkFactory();
-  private final RpcEncoding rpcEncoding = RpcEncoding.createRpcEncoding();
+  private final RpcEncoding rpcEncoding = RpcEncoding.createSszSnappyEncoding(MAX_CHUNK_SIZE);
   private Eth2Peer peer1;
   private Eth2Peer peer2;
 

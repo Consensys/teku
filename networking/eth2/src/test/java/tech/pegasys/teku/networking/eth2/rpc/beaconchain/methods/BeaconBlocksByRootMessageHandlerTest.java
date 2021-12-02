@@ -22,6 +22,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.util.config.Constants.MAX_CHUNK_SIZE;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,7 +56,8 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class BeaconBlocksByRootMessageHandlerTest {
-  private static final RpcEncoding rpcEncoding = RpcEncoding.createRpcEncoding();
+  private static final RpcEncoding rpcEncoding =
+      RpcEncoding.createSszSnappyEncoding(MAX_CHUNK_SIZE);
 
   private static final String V1_PROTOCOL_ID =
       BeaconChainMethodIds.getBlocksByRootMethodId(1, rpcEncoding);
