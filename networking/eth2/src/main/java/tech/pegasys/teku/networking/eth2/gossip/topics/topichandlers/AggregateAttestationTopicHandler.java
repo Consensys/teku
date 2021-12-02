@@ -29,7 +29,8 @@ public class AggregateAttestationTopicHandler {
       final AsyncRunner asyncRunner,
       final OperationProcessor<ValidateableAttestation> operationProcessor,
       final GossipEncoding gossipEncoding,
-      final Bytes4 forkDigest) {
+      final Bytes4 forkDigest,
+      final int maxMessageSize) {
 
     OperationProcessor<SignedAggregateAndProof> convertingProcessor =
         proofMessage ->
@@ -44,6 +45,7 @@ public class AggregateAttestationTopicHandler {
         gossipEncoding,
         forkDigest,
         GossipTopicName.BEACON_AGGREGATE_AND_PROOF,
-        SignedAggregateAndProof.SSZ_SCHEMA);
+        SignedAggregateAndProof.SSZ_SCHEMA,
+        maxMessageSize);
   }
 }

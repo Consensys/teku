@@ -30,7 +30,8 @@ public class SingleAttestationTopicHandler {
       final GossipEncoding gossipEncoding,
       final Bytes4 forkDigest,
       final String topicName,
-      final int subnetId) {
+      final int subnetId,
+      final int maxMessageSize) {
 
     OperationProcessor<Attestation> convertingProcessor =
         attMessage ->
@@ -45,6 +46,7 @@ public class SingleAttestationTopicHandler {
         gossipEncoding,
         forkDigest,
         topicName,
-        Attestation.SSZ_SCHEMA);
+        Attestation.SSZ_SCHEMA,
+        maxMessageSize);
   }
 }

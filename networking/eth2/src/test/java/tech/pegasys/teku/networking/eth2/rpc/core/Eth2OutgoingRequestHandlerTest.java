@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static tech.pegasys.teku.util.config.Constants.MAX_CHUNK_SIZE;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -106,7 +107,7 @@ public class Eth2OutgoingRequestHandlerTest
 
   @Override
   protected RpcEncoding getRpcEncoding() {
-    return RpcEncoding.SSZ_SNAPPY;
+    return RpcEncoding.createSszSnappyEncoding(MAX_CHUNK_SIZE);
   }
 
   @Test

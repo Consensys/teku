@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.util.config.Constants.MAX_CHUNK_SIZE;
 
 import java.net.BindException;
 import java.time.Duration;
@@ -128,7 +129,7 @@ public class Eth2P2PNetworkFactory {
     protected Function<RpcMethod<?, ?, ?>, Stream<RpcMethod<?, ?, ?>>> rpcMethodsModifier =
         Stream::of;
     protected List<PeerHandler> peerHandlers = new ArrayList<>();
-    protected RpcEncoding rpcEncoding = RpcEncoding.SSZ_SNAPPY;
+    protected RpcEncoding rpcEncoding = RpcEncoding.createSszSnappyEncoding(MAX_CHUNK_SIZE);
     protected GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
     private Optional<Checkpoint> requiredCheckpoint = Optional.empty();
     protected Duration eth2RpcPingInterval;

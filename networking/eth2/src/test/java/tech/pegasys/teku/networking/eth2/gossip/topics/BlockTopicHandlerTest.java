@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.util.config.Constants.GOSSIP_MAX_SIZE;
 
 import io.libp2p.core.pubsub.ValidationResult;
 import org.apache.tuweni.bytes.Bytes;
@@ -37,7 +38,8 @@ public class BlockTopicHandlerTest extends AbstractTopicHandlerTest<SignedBeacon
         gossipEncoding,
         forkDigest,
         GossipTopicName.BEACON_BLOCK,
-        spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema());
+        spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema(),
+        GOSSIP_MAX_SIZE);
   }
 
   @Test
@@ -118,7 +120,8 @@ public class BlockTopicHandlerTest extends AbstractTopicHandlerTest<SignedBeacon
             gossipEncoding,
             forkDigest,
             GossipTopicName.BEACON_BLOCK,
-            spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema());
+            spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema(),
+            GOSSIP_MAX_SIZE);
     assertThat(topicHandler.getTopic()).isEqualTo("/eth2/11223344/beacon_block/ssz_snappy");
   }
 }

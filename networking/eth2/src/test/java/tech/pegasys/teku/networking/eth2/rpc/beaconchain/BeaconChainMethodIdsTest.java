@@ -14,17 +14,20 @@
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static tech.pegasys.teku.util.config.Constants.MAX_CHUNK_SIZE;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 
 public class BeaconChainMethodIdsTest {
+  protected final RpcEncoding rpcEncoding = RpcEncoding.createSszSnappyEncoding(MAX_CHUNK_SIZE);
 
   @Test
   public void getProtocolId() {
+
     final String protocolId =
         BeaconChainMethodIds.getMethodId(
-            BeaconChainMethodIds.BEACON_BLOCKS_BY_RANGE, 2, RpcEncoding.SSZ_SNAPPY);
+            BeaconChainMethodIds.BEACON_BLOCKS_BY_RANGE, 2, rpcEncoding);
     final String expected = "/eth2/beacon_chain/req/beacon_blocks_by_range/2/ssz_snappy";
     assertThat(protocolId).isEqualTo(expected);
   }
@@ -32,22 +35,19 @@ public class BeaconChainMethodIdsTest {
   @Test
   public void extractVersion() {
     String protocolId =
-        BeaconChainMethodIds.getMethodId(BeaconChainMethodIds.STATUS, 1, RpcEncoding.SSZ_SNAPPY);
+        BeaconChainMethodIds.getMethodId(BeaconChainMethodIds.STATUS, 1, rpcEncoding);
     assertThat(BeaconChainMethodIds.extractVersion(protocolId, BeaconChainMethodIds.STATUS))
         .isEqualTo(1);
 
-    protocolId =
-        BeaconChainMethodIds.getMethodId(BeaconChainMethodIds.STATUS, 2, RpcEncoding.SSZ_SNAPPY);
+    protocolId = BeaconChainMethodIds.getMethodId(BeaconChainMethodIds.STATUS, 2, rpcEncoding);
     assertThat(BeaconChainMethodIds.extractVersion(protocolId, BeaconChainMethodIds.STATUS))
         .isEqualTo(2);
 
-    protocolId =
-        BeaconChainMethodIds.getMethodId(BeaconChainMethodIds.STATUS, 10, RpcEncoding.SSZ_SNAPPY);
+    protocolId = BeaconChainMethodIds.getMethodId(BeaconChainMethodIds.STATUS, 10, rpcEncoding);
     assertThat(BeaconChainMethodIds.extractVersion(protocolId, BeaconChainMethodIds.STATUS))
         .isEqualTo(10);
 
-    protocolId =
-        BeaconChainMethodIds.getMethodId(BeaconChainMethodIds.STATUS, 11, RpcEncoding.SSZ_SNAPPY);
+    protocolId = BeaconChainMethodIds.getMethodId(BeaconChainMethodIds.STATUS, 11, rpcEncoding);
     assertThat(BeaconChainMethodIds.extractVersion(protocolId, BeaconChainMethodIds.STATUS))
         .isEqualTo(11);
   }

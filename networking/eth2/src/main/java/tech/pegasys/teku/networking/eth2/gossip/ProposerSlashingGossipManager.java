@@ -31,7 +31,8 @@ public class ProposerSlashingGossipManager extends AbstractGossipManager<Propose
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
       final OperationProcessor<ProposerSlashing> processor,
-      final GossipPublisher<ProposerSlashing> publisher) {
+      final GossipPublisher<ProposerSlashing> publisher,
+      final int maxMessageSize) {
     super(
         recentChainData,
         GossipTopicName.PROPOSER_SLASHING,
@@ -41,6 +42,7 @@ public class ProposerSlashingGossipManager extends AbstractGossipManager<Propose
         forkInfo,
         processor,
         publisher,
-        ProposerSlashing.SSZ_SCHEMA);
+        ProposerSlashing.SSZ_SCHEMA,
+        maxMessageSize);
   }
 }

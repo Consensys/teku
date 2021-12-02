@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.util.config.Constants.GOSSIP_MAX_SIZE;
 
 import io.libp2p.core.pubsub.ValidationResult;
 import org.junit.jupiter.api.Test;
@@ -30,7 +31,7 @@ public class AggregateTopicHandlerTest extends AbstractTopicHandlerTest<Validate
   @Override
   protected Eth2TopicHandler<?> createHandler(final Bytes4 forkDigest) {
     return AggregateAttestationTopicHandler.createHandler(
-        recentChainData, asyncRunner, processor, gossipEncoding, forkDigest);
+        recentChainData, asyncRunner, processor, gossipEncoding, forkDigest, GOSSIP_MAX_SIZE);
   }
 
   @Test
@@ -102,7 +103,7 @@ public class AggregateTopicHandlerTest extends AbstractTopicHandlerTest<Validate
     final Bytes4 forkDigest = Bytes4.fromHexString("0x11223344");
     Eth2TopicHandler<?> topicHandler =
         AggregateAttestationTopicHandler.createHandler(
-            recentChainData, asyncRunner, processor, gossipEncoding, forkDigest);
+            recentChainData, asyncRunner, processor, gossipEncoding, forkDigest, GOSSIP_MAX_SIZE);
     assertThat(topicHandler.getTopic())
         .isEqualTo("/eth2/11223344/beacon_aggregate_and_proof/ssz_snappy");
   }
