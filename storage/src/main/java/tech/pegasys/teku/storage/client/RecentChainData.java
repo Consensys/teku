@@ -545,6 +545,12 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         .orElse(Collections.emptyMap());
   }
 
+  public Map<Bytes32, UInt64> getOptimisticChainHeads() {
+    return getForkChoiceStrategy()
+        .map(ReadOnlyForkChoiceStrategy::getOptimisticChainHeads)
+        .orElse(Collections.emptyMap());
+  }
+
   public Set<Bytes32> getAllBlockRootsAtSlot(final UInt64 slot) {
     return getForkChoiceStrategy()
         .map(forkChoiceStrategy -> forkChoiceStrategy.getBlockRootsAtSlot(slot))
