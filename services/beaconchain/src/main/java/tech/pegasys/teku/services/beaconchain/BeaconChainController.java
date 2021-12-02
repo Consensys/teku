@@ -142,20 +142,20 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   protected static final String KEY_VALUE_STORE_SUBDIRECTORY = "kvstore";
 
-  protected final BeaconChainConfiguration beaconConfig;
-  protected final Spec spec;
-  protected final Function<UInt64, BeaconBlockBodySchema<?>> beaconBlockSchemaSupplier;
-  protected final EventChannels eventChannels;
-  protected final MetricsSystem metricsSystem;
-  protected final AsyncRunner beaconAsyncRunner;
-  protected final TimeProvider timeProvider;
-  protected final SlotEventsChannel slotEventsChannelPublisher;
-  protected final AsyncRunner networkAsyncRunner;
-  protected final AsyncRunnerFactory asyncRunnerFactory;
-  protected final AsyncRunner eventAsyncRunner;
-  protected final Path beaconDataDirectory;
-  protected final WeakSubjectivityInitializer wsInitializer = new WeakSubjectivityInitializer();
-  protected final AsyncRunnerEventThread forkChoiceExecutor;
+  protected volatile BeaconChainConfiguration beaconConfig;
+  protected volatile Spec spec;
+  protected volatile Function<UInt64, BeaconBlockBodySchema<?>> beaconBlockSchemaSupplier;
+  protected volatile EventChannels eventChannels;
+  protected volatile MetricsSystem metricsSystem;
+  protected volatile AsyncRunner beaconAsyncRunner;
+  protected volatile TimeProvider timeProvider;
+  protected volatile SlotEventsChannel slotEventsChannelPublisher;
+  protected volatile AsyncRunner networkAsyncRunner;
+  protected volatile AsyncRunnerFactory asyncRunnerFactory;
+  protected volatile AsyncRunner eventAsyncRunner;
+  protected volatile Path beaconDataDirectory;
+  protected volatile WeakSubjectivityInitializer wsInitializer = new WeakSubjectivityInitializer();
+  protected volatile AsyncRunnerEventThread forkChoiceExecutor;
 
   protected volatile ForkChoice forkChoice;
   protected volatile ForkChoiceTrigger forkChoiceTrigger;
@@ -190,6 +190,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   protected UInt64 genesisTimeTracker = ZERO;
   protected BlockManager blockManager;
+
+  protected BeaconChainController() {}
 
   public BeaconChainController(
       final ServiceConfig serviceConfig, final BeaconChainConfiguration beaconConfig) {
