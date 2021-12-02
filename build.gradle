@@ -327,7 +327,6 @@ application {
   mainClassName = "tech.pegasys.teku.Teku"
   applicationDefaultJvmArgs = [
       "-Dvertx.disableFileCPResolving=true",
-      "-Dteku.home=TEKU_HOME",
       // We shutdown log4j ourselves, as otherwise his shutdown hook runs before our own and whatever
       // happens during shutdown is not logged.
       "-Dlog4j.shutdownHookEnabled=false",
@@ -366,15 +365,13 @@ distZip {
 }
 
 startScripts {
+  unixStartScriptGenerator.template = resources.text.fromFile('gradle/unixStartScript.txt')
 
   def shortenWindowsClasspath = { line ->
     line = line.replaceAll(/^set CLASSPATH=.*$/, "set CLASSPATH=%APP_HOME%/lib/*")
   }
 
   doLast {
-    unixScript.text = unixScript.text.replace('TEKU_HOME', '\$APP_HOME')
-    windowsScript.text = windowsScript.text.replace('TEKU_HOME', '%~dp0..')
-
     // Prevent the error originating from the 8191 chars limit on Windows
     windowsScript.text =
         windowsScript

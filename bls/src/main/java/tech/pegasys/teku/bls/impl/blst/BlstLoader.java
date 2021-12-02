@@ -35,6 +35,21 @@ public class BlstLoader {
 
   private static Optional<BLS12381> loadBlst() {
     try {
+      final String blstVersion = System.getProperty("teku.blst", "portable");
+      if ("optimised".equals(blstVersion)) {
+        LOG.info("Using optimised BLST");
+
+        final String osName = System.getProperty("os.name").replaceFirst(" .*", "");
+        final String resource =
+            osName
+                + "/optimised/"
+                + System.getProperty("os.arch")
+                + "/"
+                + System.mapLibraryName("blst");
+        System.setProperty("supranational.blst.jniResource", resource);
+      } else {
+        LOG.info("Using portable BLST");
+      }
       // Trigger loading of native library
       Class.forName("supranational.blst.blstJNI");
 
