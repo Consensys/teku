@@ -36,17 +36,15 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.service.serviceutils.ServiceCapacityExceededException;
 
-class AggregatingSignatureVerificationService extends SignatureVerificationService {
+public class AggregatingSignatureVerificationService extends SignatureVerificationService {
   private static final Logger LOG = LogManager.getLogger();
 
-  static final int DEFAULT_QUEUE_CAPACITY = 5_000;
-  static final int DEFAULT_MAX_BATCH_SIZE = 250;
   static final int DEFAULT_MIN_BATCH_SIZE_TO_SPLIT = 25;
-  static final int DEFAULT_THREAD_COUNT = 2;
 
   private final int numThreads;
   private final int maxBatchSize;
   private final int minBatchSizeToSplit;
+  private final boolean strictThreadLimitEnabled;
 
   @VisibleForTesting final BlockingQueue<SignatureTask> batchSignatureTasks;
   private final AsyncRunner asyncRunner;
@@ -58,13 +56,15 @@ class AggregatingSignatureVerificationService extends SignatureVerificationServi
       final int numThreads,
       final int queueCapacity,
       final int maxBatchSize,
-      final int minBatchSizeToSplit) {
+      final int minBatchSizeToSplit,
+      final boolean strictThreadLimitEnabled) {
     this.numThreads = Math.min(numThreads, Runtime.getRuntime().availableProcessors());
     this.asyncRunner = asyncRunnerFactory.create(this.getClass().getSimpleName(), this.numThreads);
     this.maxBatchSize = maxBatchSize;
 
     this.batchSignatureTasks = new ArrayBlockingQueue<>(queueCapacity);
     this.minBatchSizeToSplit = minBatchSizeToSplit;
+    this.strictThreadLimitEnabled = strictThreadLimitEnabled;
     metricsSystem.createGauge(
         TekuMetricCategory.EXECUTOR,
         "signature_verifications_queue_size",
@@ -72,15 +72,21 @@ class AggregatingSignatureVerificationService extends SignatureVerificationServi
         this::getQueueSize);
   }
 
-  AggregatingSignatureVerificationService(
-      final MetricsSystem metricsSystem, final AsyncRunnerFactory asyncRunnerFactory) {
+  public AggregatingSignatureVerificationService(
+      final MetricsSystem metricsSystem,
+      final AsyncRunnerFactory asyncRunnerFactory,
+      final int maxThreads,
+      final int queueCapacity,
+      final int maxBatchSize,
+      final boolean strictThreadLimitEnabled) {
     this(
         metricsSystem,
         asyncRunnerFactory,
-        DEFAULT_THREAD_COUNT,
-        DEFAULT_QUEUE_CAPACITY,
-        DEFAULT_MAX_BATCH_SIZE,
-        DEFAULT_MIN_BATCH_SIZE_TO_SPLIT);
+        maxThreads,
+        queueCapacity,
+        maxBatchSize,
+        DEFAULT_MIN_BATCH_SIZE_TO_SPLIT,
+        strictThreadLimitEnabled);
   }
 
   @Override
@@ -161,7 +167,10 @@ class AggregatingSignatureVerificationService extends SignatureVerificationServi
       allSignatures.addAll(task.signatures);
     }
 
-    final boolean batchIsValid = BLS.batchVerify(allKeys, allMessages, allSignatures);
+    final boolean batchIsValid =
+        strictThreadLimitEnabled
+            ? BLS.batchVerify(allKeys, allMessages, allSignatures, allKeys.size() > 1, false)
+            : BLS.batchVerify(allKeys, allMessages, allSignatures);
     if (batchIsValid) {
       for (SignatureTask task : tasks) {
         task.result.complete(true);

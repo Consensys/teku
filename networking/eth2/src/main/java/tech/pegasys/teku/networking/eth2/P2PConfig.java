@@ -32,6 +32,10 @@ public class P2PConfig {
   public static final boolean DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED = false;
   public static final boolean DEFAULT_GOSSIP_SCORING_ENABLED = false;
   public static final boolean DEFAULT_BATCH_VERIFY_ATTESTATION_SIGNATURES = true;
+  public static final int DEFAULT_BATCH_VERIFY_MAX_THREADS = 2;
+  public static final int DEFAULT_BATCH_VERIFY_QUEUE_CAPACITY = 15_000;
+  public static final int DEFAULT_BATCH_VERIFY_MAX_BATCH_SIZE = 250;
+  public static final boolean DEFAULT_BATCH_VERIFY_STRICT_THREAD_LIMIT_ENABLED = false;
 
   private final Spec spec;
   private final NetworkConfig networkConfig;
@@ -44,6 +48,10 @@ public class P2PConfig {
   private final int peerRateLimit;
   private final int peerRequestLimit;
   private final boolean batchVerifyAttestationSignatures;
+  private final int batchVerifyMaxThreads;
+  private final int batchVerifyQueueCapacity;
+  private final int batchVerifyMaxBatchSize;
+  private final boolean batchVerifyStrictThreadLimitEnabled;
 
   private P2PConfig(
       final Spec spec,
@@ -55,7 +63,11 @@ public class P2PConfig {
       final boolean subscribeAllSubnetsEnabled,
       final int peerRateLimit,
       final int peerRequestLimit,
-      final boolean batchVerifyAttestationSignatures) {
+      final boolean batchVerifyAttestationSignatures,
+      final int batchVerifyMaxThreads,
+      final int batchVerifyQueueCapacity,
+      final int batchVerifyMaxBatchSize,
+      final boolean batchVerifyStrictThreadLimitEnabled) {
     this.spec = spec;
     this.networkConfig = networkConfig;
     this.discoveryConfig = discoveryConfig;
@@ -66,6 +78,10 @@ public class P2PConfig {
     this.peerRateLimit = peerRateLimit;
     this.peerRequestLimit = peerRequestLimit;
     this.batchVerifyAttestationSignatures = batchVerifyAttestationSignatures;
+    this.batchVerifyMaxThreads = batchVerifyMaxThreads;
+    this.batchVerifyQueueCapacity = batchVerifyQueueCapacity;
+    this.batchVerifyMaxBatchSize = batchVerifyMaxBatchSize;
+    this.batchVerifyStrictThreadLimitEnabled = batchVerifyStrictThreadLimitEnabled;
   }
 
   public static Builder builder() {
@@ -112,6 +128,22 @@ public class P2PConfig {
     return batchVerifyAttestationSignatures;
   }
 
+  public int getBatchVerifyMaxThreads() {
+    return batchVerifyMaxThreads;
+  }
+
+  public int getBatchVerifyMaxBatchSize() {
+    return batchVerifyMaxBatchSize;
+  }
+
+  public int getBatchVerifyQueueCapacity() {
+    return batchVerifyQueueCapacity;
+  }
+
+  public boolean isBatchVerifyStrictThreadLimitEnabled() {
+    return batchVerifyStrictThreadLimitEnabled;
+  }
+
   public static class Builder {
     private final NetworkConfig.Builder networkConfig = NetworkConfig.builder();
     private final DiscoveryConfig.Builder discoveryConfig = DiscoveryConfig.builder();
@@ -124,6 +156,11 @@ public class P2PConfig {
     private Integer peerRateLimit = DEFAULT_PEER_RATE_LIMIT;
     private Integer peerRequestLimit = DEFAULT_PEER_REQUEST_LIMIT;
     private Boolean batchVerifyAttestationSignatures = DEFAULT_BATCH_VERIFY_ATTESTATION_SIGNATURES;
+    private int batchVerifyMaxThreads = DEFAULT_BATCH_VERIFY_MAX_THREADS;
+    private int batchVerifyQueueCapacity = DEFAULT_BATCH_VERIFY_QUEUE_CAPACITY;
+    private int batchVerifyMaxBatchSize = DEFAULT_BATCH_VERIFY_MAX_BATCH_SIZE;
+    private boolean batchVerifyStrictThreadLimitEnabled =
+        DEFAULT_BATCH_VERIFY_STRICT_THREAD_LIMIT_ENABLED;
 
     private Builder() {}
 
@@ -155,7 +192,11 @@ public class P2PConfig {
           subscribeAllSubnetsEnabled,
           peerRateLimit,
           peerRequestLimit,
-          batchVerifyAttestationSignatures);
+          batchVerifyAttestationSignatures,
+          batchVerifyMaxThreads,
+          batchVerifyQueueCapacity,
+          batchVerifyMaxBatchSize,
+          batchVerifyStrictThreadLimitEnabled);
     }
 
     private void validate() {
@@ -212,6 +253,27 @@ public class P2PConfig {
         final Boolean batchVerifyAttestationSignatures) {
       checkNotNull(batchVerifyAttestationSignatures);
       this.batchVerifyAttestationSignatures = batchVerifyAttestationSignatures;
+      return this;
+    }
+
+    public Builder batchVerifyMaxThreads(final int batchVerifyMaxThreads) {
+      this.batchVerifyMaxThreads = batchVerifyMaxThreads;
+      return this;
+    }
+
+    public Builder batchVerifyQueueCapacity(final int batchVerifyQueueCapacity) {
+      this.batchVerifyQueueCapacity = batchVerifyQueueCapacity;
+      return this;
+    }
+
+    public Builder batchVerifyMaxBatchSize(final int batchVerifyMaxBatchSize) {
+      this.batchVerifyMaxBatchSize = batchVerifyMaxBatchSize;
+      return this;
+    }
+
+    public Builder batchVerifyStrictThreadLimitEnabled(
+        final boolean batchVerifyStrictThreadLimitEnabled) {
+      this.batchVerifyStrictThreadLimitEnabled = batchVerifyStrictThreadLimitEnabled;
       return this;
     }
   }

@@ -47,6 +47,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkBuilder;
+import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSubnetsSubscriber;
@@ -102,6 +103,7 @@ import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.statetransition.validation.ProposerSlashingValidator;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.statetransition.validation.VoluntaryExitValidator;
+import tech.pegasys.teku.statetransition.validation.signatures.AggregatingSignatureVerificationService;
 import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorCache;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
@@ -575,10 +577,16 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   private void initSignatureVerificationService() {
+    final P2PConfig p2PConfig = beaconConfig.p2pConfig();
     signatureVerificationService =
-        beaconConfig.p2pConfig().batchVerifyAttestationSignatures()
-            ? SignatureVerificationService.createAggregatingService(
-                metricsSystem, asyncRunnerFactory)
+        p2PConfig.batchVerifyAttestationSignatures()
+            ? new AggregatingSignatureVerificationService(
+                metricsSystem,
+                asyncRunnerFactory,
+                p2PConfig.getBatchVerifyMaxThreads(),
+                p2PConfig.getBatchVerifyQueueCapacity(),
+                p2PConfig.getBatchVerifyMaxBatchSize(),
+                p2PConfig.isBatchVerifyStrictThreadLimitEnabled())
             : SignatureVerificationService.createSimple();
   }
 

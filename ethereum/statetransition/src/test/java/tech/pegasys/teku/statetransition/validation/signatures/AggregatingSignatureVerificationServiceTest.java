@@ -47,6 +47,7 @@ public class AggregatingSignatureVerificationServiceTest {
   private final int batchSize = 25;
   private final int minBatchSizeToSplit = 5;
   private final int numThreads = 2;
+  private final boolean strictThreadLimitEnabled = true;
 
   private final StubAsyncRunnerFactory asyncRunnerFactory = new StubAsyncRunnerFactory();
   private AggregatingSignatureVerificationService service =
@@ -56,7 +57,8 @@ public class AggregatingSignatureVerificationServiceTest {
           numThreads,
           queueCapacity,
           batchSize,
-          minBatchSizeToSplit);
+          minBatchSizeToSplit,
+          strictThreadLimitEnabled);
 
   @Test
   public void start_shouldQueueTasks() {
@@ -238,7 +240,13 @@ public class AggregatingSignatureVerificationServiceTest {
         AsyncRunnerFactory.createDefault(new MetricTrackingExecutorFactory(metrics));
     service =
         new AggregatingSignatureVerificationService(
-            metrics, realRunnerFactory, 1, queueCapacity, batchSize, minBatchSizeToSplit);
+            metrics,
+            realRunnerFactory,
+            1,
+            queueCapacity,
+            batchSize,
+            minBatchSizeToSplit,
+            strictThreadLimitEnabled);
     startService();
 
     final Random random = new Random(1);
