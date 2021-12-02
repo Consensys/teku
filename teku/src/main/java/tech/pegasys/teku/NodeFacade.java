@@ -22,4 +22,6 @@ import tech.pegasys.teku.services.ServiceControllerFacade;
 public interface NodeFacade {
 
   ServiceControllerFacade getServiceController();
+
+  void stop();
 }
