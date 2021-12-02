@@ -18,6 +18,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageHandler.NODE_NOT_READY;
+import static tech.pegasys.teku.util.config.Constants.MAX_CHUNK_SIZE;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
@@ -58,7 +59,8 @@ class StatusMessageHandlerTest {
   private final Eth2Peer peer = mock(Eth2Peer.class);
 
   private final String protocolId =
-      BeaconChainMethodIds.getStatusMethodId(1, RpcEncoding.SSZ_SNAPPY);
+      BeaconChainMethodIds.getStatusMethodId(
+          1, RpcEncoding.createSszSnappyEncoding(MAX_CHUNK_SIZE));
   private final StatusMessageHandler handler = new StatusMessageHandler(statusMessageFactory);
 
   @BeforeEach

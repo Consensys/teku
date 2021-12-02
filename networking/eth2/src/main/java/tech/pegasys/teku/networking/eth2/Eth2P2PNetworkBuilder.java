@@ -16,6 +16,8 @@ package tech.pegasys.teku.networking.eth2;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static tech.pegasys.teku.util.config.Constants.MAX_CHUNK_SIZE;
+import static tech.pegasys.teku.util.config.Constants.MAX_CHUNK_SIZE_MERGE;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -33,6 +35,7 @@ import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkManager;
 import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsAltair;
+import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsMerge;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsPhase0;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
@@ -55,6 +58,7 @@ import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -119,7 +123,9 @@ public class Eth2P2PNetworkBuilder {
     // Setup eth2 handlers
     final SubnetSubscriptionService attestationSubnetService = new SubnetSubscriptionService();
     final SubnetSubscriptionService syncCommitteeSubnetService = new SubnetSubscriptionService();
-    final RpcEncoding rpcEncoding = RpcEncoding.SSZ_SNAPPY;
+    final RpcEncoding rpcEncoding =
+        RpcEncoding.createSszSnappyEncoding(
+            spec.isMilestoneSupported(SpecMilestone.MERGE) ? MAX_CHUNK_SIZE_MERGE : MAX_CHUNK_SIZE);
     final Eth2PeerManager eth2PeerManager =
         Eth2PeerManager.create(
             asyncRunner,
@@ -198,9 +204,30 @@ public class Eth2P2PNetworkBuilder {
             proposerSlashingGossipPublisher,
             gossipedVoluntaryExitConsumer,
             voluntaryExitGossipPublisher);
-      case MERGE:
       case ALTAIR:
         return new GossipForkSubscriptionsAltair(
+            forkAndSpecMilestone.getFork(),
+            spec,
+            asyncRunner,
+            metricsSystem,
+            network,
+            recentChainData,
+            gossipEncoding,
+            gossipedBlockProcessor,
+            gossipedAttestationConsumer,
+            gossipedAggregateProcessor,
+            gossipedAttesterSlashingConsumer,
+            attesterSlashingGossipPublisher,
+            gossipedProposerSlashingConsumer,
+            proposerSlashingGossipPublisher,
+            gossipedVoluntaryExitConsumer,
+            voluntaryExitGossipPublisher,
+            gossipedSignedContributionAndProofProcessor,
+            signedContributionAndProofGossipPublisher,
+            gossipedSyncCommitteeMessageProcessor,
+            syncCommitteeMessageGossipPublisher);
+      case MERGE:
+        return new GossipForkSubscriptionsMerge(
             forkAndSpecMilestone.getFork(),
             spec,
             asyncRunner,

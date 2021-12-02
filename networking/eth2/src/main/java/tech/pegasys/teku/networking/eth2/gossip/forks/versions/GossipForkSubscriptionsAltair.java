@@ -109,7 +109,8 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
             gossipEncoding,
             forkInfo,
             signedContributionAndProofOperationProcessor,
-            signedContributionAndProofGossipPublisher));
+            signedContributionAndProofGossipPublisher,
+            getMessageMaxSize()));
 
     final SyncCommitteeSubnetSubscriptions syncCommitteeSubnetSubscriptions =
         new SyncCommitteeSubnetSubscriptions(
@@ -119,7 +120,8 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
             schemaDefinitions,
             asyncRunner,
             syncCommitteeMessageOperationProcessor,
-            forkInfo);
+            forkInfo,
+            getMessageMaxSize());
     syncCommitteeMessageGossipManager =
         new SyncCommitteeMessageGossipManager(
             metricsSystem,

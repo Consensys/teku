@@ -47,7 +47,7 @@ class LengthPrefixedEncodingTest {
       ProtobufEncoder.encodeVarInt(MAX_CHUNK_SIZE + 1);
 
   private final Spec spec = TestSpecFactory.createDefault();
-  private final RpcEncoding encoding = RpcEncoding.SSZ_SNAPPY;
+  private final RpcEncoding encoding = RpcEncoding.createSszSnappyEncoding(MAX_CHUNK_SIZE);
 
   @Test
   public void decodePayload_shouldReturnErrorWhenLengthPrefixIsTooLong() {

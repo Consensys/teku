@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.rpc.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static tech.pegasys.teku.util.config.Constants.MAX_CHUNK_SIZE;
 
 import io.netty.buffer.ByteBuf;
 import org.apache.tuweni.bytes.Bytes;
@@ -27,10 +28,11 @@ public class RpcResponseEncoderDecoderTest extends RpcDecoderTestBase {
   private static final Bytes ERROR_CODE = Bytes.of(1);
   private final RpcContextCodec<?, RpcErrorMessage> contextCodec =
       RpcContextCodec.noop(RpcErrorMessage.SSZ_SCHEMA);
+  private final RpcEncoding rpcEncoding = RpcEncoding.createSszSnappyEncoding(MAX_CHUNK_SIZE);
   private final RpcResponseEncoder<RpcErrorMessage, ?> responseEncoder =
-      new RpcResponseEncoder<>(RpcEncoding.SSZ_SNAPPY, contextCodec);
+      new RpcResponseEncoder<>(rpcEncoding, contextCodec);
   private final RpcResponseDecoder<RpcErrorMessage, ?> responseDecoder =
-      RpcResponseDecoder.create(RpcEncoding.SSZ_SNAPPY, contextCodec);
+      RpcResponseDecoder.create(rpcEncoding, contextCodec);
 
   @Test
   public void shouldEncodeErrorResponse() {

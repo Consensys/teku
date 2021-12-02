@@ -14,23 +14,26 @@
 package tech.pegasys.teku.networking.eth2;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding.SSZ_SNAPPY;
+import static tech.pegasys.teku.util.config.Constants.MAX_CHUNK_SIZE;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 
 public class GoodbyeIntegrationTest {
   private final Eth2P2PNetworkFactory networkFactory = new Eth2P2PNetworkFactory();
+  private final RpcEncoding rpcEncoding = RpcEncoding.createSszSnappyEncoding(MAX_CHUNK_SIZE);
   private Eth2Peer peer1;
   private Eth2Peer peer2;
 
   private void setUp() throws Exception {
-    final Eth2P2PNetwork network1 = networkFactory.builder().rpcEncoding(SSZ_SNAPPY).startNetwork();
+    final Eth2P2PNetwork network1 =
+        networkFactory.builder().rpcEncoding(rpcEncoding).startNetwork();
     final Eth2P2PNetwork network2 =
-        networkFactory.builder().rpcEncoding(SSZ_SNAPPY).peer(network1).startNetwork();
+        networkFactory.builder().rpcEncoding(rpcEncoding).peer(network1).startNetwork();
     peer1 = network2.getPeer(network1.getNodeId()).orElseThrow();
     peer2 = network1.getPeer(network2.getNodeId()).orElseThrow();
   }

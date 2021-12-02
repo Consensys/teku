@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 
+import static tech.pegasys.teku.util.config.Constants.GOSSIP_MAX_SIZE;
+
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
@@ -123,7 +125,8 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             gossipEncoding,
             recentChainData,
             attestationProcessor,
-            forkInfo);
+            forkInfo,
+            getMessageMaxSize());
 
     blockGossipManager =
         new BlockGossipManager(
@@ -133,7 +136,8 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             discoveryNetwork,
             gossipEncoding,
             forkInfo,
-            blockProcessor);
+            blockProcessor,
+            getMessageMaxSize());
     addGossipManager(blockGossipManager);
 
     attestationGossipManager =
@@ -147,7 +151,8 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             discoveryNetwork,
             gossipEncoding,
             forkInfo,
-            aggregateProcessor);
+            aggregateProcessor,
+            getMessageMaxSize());
     addGossipManager(aggregateGossipManager);
 
     addGossipManager(
@@ -158,7 +163,8 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             gossipEncoding,
             forkInfo,
             voluntaryExitProcessor,
-            voluntaryExitGossipPublisher));
+            voluntaryExitGossipPublisher,
+            getMessageMaxSize()));
 
     addGossipManager(
         new ProposerSlashingGossipManager(
@@ -168,7 +174,8 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             gossipEncoding,
             forkInfo,
             proposerSlashingProcessor,
-            proposerSlashingGossipPublisher));
+            proposerSlashingGossipPublisher,
+            getMessageMaxSize()));
 
     addGossipManager(
         new AttesterSlashingGossipManager(
@@ -178,7 +185,8 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             gossipEncoding,
             forkInfo,
             attesterSlashingProcessor,
-            attesterSlashingGossipPublisher));
+            attesterSlashingGossipPublisher,
+            getMessageMaxSize()));
   }
 
   protected void addGossipManager(final GossipManager gossipManager) {
@@ -224,5 +232,9 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
   @Override
   public void unsubscribeFromSyncCommitteeSubnet(final int subnetId) {
     // Does not apply to this fork.
+  }
+
+  protected int getMessageMaxSize() {
+    return GOSSIP_MAX_SIZE;
   }
 }

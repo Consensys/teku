@@ -33,6 +33,7 @@ public class SyncCommitteeSubnetSubscriptions extends CommitteeSubnetSubscriptio
   private final AsyncRunner asyncRunner;
   private final OperationProcessor<ValidateableSyncCommitteeMessage> processor;
   private final ForkInfo forkInfo;
+  private final int maxMessageSize;
 
   public SyncCommitteeSubnetSubscriptions(
       final RecentChainData recentChainData,
@@ -41,12 +42,14 @@ public class SyncCommitteeSubnetSubscriptions extends CommitteeSubnetSubscriptio
       final SchemaDefinitionsAltair schemaDefinitions,
       final AsyncRunner asyncRunner,
       final OperationProcessor<ValidateableSyncCommitteeMessage> processor,
-      final ForkInfo forkInfo) {
+      final ForkInfo forkInfo,
+      final int maxMessageSize) {
     super(recentChainData, gossipNetwork, gossipEncoding);
     this.schemaDefinitions = schemaDefinitions;
     this.asyncRunner = asyncRunner;
     this.processor = processor;
     this.forkInfo = forkInfo;
+    this.maxMessageSize = maxMessageSize;
   }
 
   public SafeFuture<?> gossip(final SyncCommitteeMessage message, final int subnetId) {
@@ -68,6 +71,7 @@ public class SyncCommitteeSubnetSubscriptions extends CommitteeSubnetSubscriptio
         gossipEncoding,
         forkInfo.getForkDigest(spec),
         GossipTopicName.getSyncCommitteeSubnetTopicName(subnetId),
-        schemaDefinitions.getSyncCommitteeMessageSchema());
+        schemaDefinitions.getSyncCommitteeMessageSchema(),
+        maxMessageSize);
   }
 }

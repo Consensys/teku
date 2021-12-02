@@ -21,6 +21,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.util.config.Constants.MAX_CHUNK_SIZE;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
@@ -115,6 +116,6 @@ public class Eth2IncomingRequestHandlerTest
 
   @Override
   protected RpcEncoding getRpcEncoding() {
-    return RpcEncoding.SSZ_SNAPPY;
+    return RpcEncoding.createSszSnappyEncoding(MAX_CHUNK_SIZE);
   }
 }

@@ -19,10 +19,13 @@ import tech.pegasys.teku.ssz.SszData;
 import tech.pegasys.teku.ssz.schema.SszSchema;
 
 public interface RpcEncoding {
-
-  RpcEncoding SSZ_SNAPPY =
-      new LengthPrefixedEncoding(
-          "ssz_snappy", RpcPayloadEncoders.createSszEncoders(), new SnappyFramedCompressor());
+  static RpcEncoding createSszSnappyEncoding(int maxChunkSize) {
+    return new LengthPrefixedEncoding(
+        "ssz_snappy",
+        RpcPayloadEncoders.createSszEncoders(),
+        new SnappyFramedCompressor(),
+        maxChunkSize);
+  }
 
   /**
    * Encodes a payload with its encoding-dependent header
