@@ -125,7 +125,7 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
     state.setLatestExecutionPayloadHeader(
         executionPayloadHeaderSchema.create(
             payload.getParentHash(),
-            payload.getCoinbase(),
+            payload.getFeeRecipient(),
             payload.getStateRoot(),
             payload.getReceiptRoot(),
             payload.getLogsBloom(),

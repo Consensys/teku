@@ -48,7 +48,7 @@ public class ExecutionPayloadV1 {
 
   @JsonSerialize(using = Bytes20Serializer.class)
   @JsonDeserialize(using = Bytes20Deserializer.class)
-  public final Bytes20 coinbase;
+  public final Bytes20 feeRecipient;
 
   @JsonSerialize(using = BytesSerializer.class)
   @JsonDeserialize(using = Bytes32Deserializer.class)
@@ -56,7 +56,7 @@ public class ExecutionPayloadV1 {
 
   @JsonSerialize(using = BytesSerializer.class)
   @JsonDeserialize(using = Bytes32Deserializer.class)
-  public final Bytes32 receiptRoot;
+  public final Bytes32 receiptsRoot;
 
   @JsonSerialize(using = BytesSerializer.class)
   @JsonDeserialize(using = BytesDeserializer.class)
@@ -100,9 +100,9 @@ public class ExecutionPayloadV1 {
 
   public ExecutionPayloadV1(
       @JsonProperty("parentHash") Bytes32 parentHash,
-      @JsonProperty("coinbase") Bytes20 coinbase,
+      @JsonProperty("feeRecipient") Bytes20 feeRecipient,
       @JsonProperty("stateRoot") Bytes32 stateRoot,
-      @JsonProperty("receiptRoot") Bytes32 receiptRoot,
+      @JsonProperty("receiptsRoot") Bytes32 receiptsRoot,
       @JsonProperty("logsBloom") Bytes logsBloom,
       @JsonProperty("random") Bytes32 random,
       @JsonProperty("blockNumber") UInt64 blockNumber,
@@ -114,9 +114,9 @@ public class ExecutionPayloadV1 {
       @JsonProperty("blockHash") Bytes32 blockHash,
       @JsonProperty("transactions") List<Bytes> transactions) {
     checkNotNull(parentHash, "parentHash");
-    checkNotNull(coinbase, "coinbase");
+    checkNotNull(feeRecipient, "feeRecipient");
     checkNotNull(stateRoot, "stateRoot");
-    checkNotNull(receiptRoot, "receiptRoot");
+    checkNotNull(receiptsRoot, "receiptsRoot");
     checkNotNull(logsBloom, "logsBloom");
     checkNotNull(random, "random");
     checkNotNull(blockNumber, "blockNumber");
@@ -127,9 +127,9 @@ public class ExecutionPayloadV1 {
     checkNotNull(baseFeePerGas, "baseFeePerGas");
     checkNotNull(blockHash, "blockHash");
     this.parentHash = parentHash;
-    this.coinbase = coinbase;
+    this.feeRecipient = feeRecipient;
     this.stateRoot = stateRoot;
-    this.receiptRoot = receiptRoot;
+    this.receiptsRoot = receiptsRoot;
     this.logsBloom = logsBloom;
     this.random = random;
     this.blockNumber = blockNumber;
@@ -146,9 +146,9 @@ public class ExecutionPayloadV1 {
       ExecutionPayloadSchema executionPayloadSchema) {
     return executionPayloadSchema.create(
         parentHash,
-        coinbase,
+        feeRecipient,
         stateRoot,
-        receiptRoot,
+        receiptsRoot,
         logsBloom,
         random,
         blockNumber,
@@ -164,7 +164,7 @@ public class ExecutionPayloadV1 {
   public static ExecutionPayloadV1 fromInternalExecutionPayload(ExecutionPayload executionPayload) {
     return new ExecutionPayloadV1(
         executionPayload.getParentHash(),
-        executionPayload.getCoinbase(),
+        executionPayload.getFeeRecipient(),
         executionPayload.getStateRoot(),
         executionPayload.getReceiptRoot(),
         executionPayload.getLogsBloom(),
@@ -191,9 +191,9 @@ public class ExecutionPayloadV1 {
     }
     final ExecutionPayloadV1 that = (ExecutionPayloadV1) o;
     return Objects.equals(parentHash, that.parentHash)
-        && Objects.equals(coinbase, that.coinbase)
+        && Objects.equals(feeRecipient, that.feeRecipient)
         && Objects.equals(stateRoot, that.stateRoot)
-        && Objects.equals(receiptRoot, that.receiptRoot)
+        && Objects.equals(receiptsRoot, that.receiptsRoot)
         && Objects.equals(logsBloom, that.logsBloom)
         && Objects.equals(random, that.random)
         && Objects.equals(blockNumber, that.blockNumber)
@@ -210,9 +210,9 @@ public class ExecutionPayloadV1 {
   public int hashCode() {
     return Objects.hash(
         parentHash,
-        coinbase,
+        feeRecipient,
         stateRoot,
-        receiptRoot,
+        receiptsRoot,
         logsBloom,
         random,
         blockNumber,
@@ -229,9 +229,9 @@ public class ExecutionPayloadV1 {
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("parentHash", parentHash)
-        .add("coinbase", coinbase)
+        .add("feeRecipient", feeRecipient)
         .add("stateRoot", stateRoot)
-        .add("receiptRoot", receiptRoot)
+        .add("receiptsRoot", receiptsRoot)
         .add("logsBloom", logsBloom)
         .add("random", random)
         .add("blockNumber", blockNumber)

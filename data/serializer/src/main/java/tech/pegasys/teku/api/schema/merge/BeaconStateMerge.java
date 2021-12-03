@@ -131,7 +131,7 @@ public class BeaconStateMerge extends BeaconStateAltair {
               beaconStateMerge.setLatestExecutionPayloadHeader(
                   executionPayloadHeaderSchema.create(
                       latestExecutionPayloadHeader.parentHash,
-                      latestExecutionPayloadHeader.coinbase,
+                      latestExecutionPayloadHeader.feeRecipient,
                       latestExecutionPayloadHeader.stateRoot,
                       latestExecutionPayloadHeader.receiptRoot,
                       latestExecutionPayloadHeader.logsBloom,

@@ -41,7 +41,7 @@ public class ExecutionPayloadHeader extends ExecutionPayloadCommon {
   @JsonCreator
   public ExecutionPayloadHeader(
       @JsonProperty("parent_hash") Bytes32 parentHash,
-      @JsonProperty("coinbase") Bytes20 coinbase,
+      @JsonProperty("fee_recipient") Bytes20 feeRecipient,
       @JsonProperty("state_root") Bytes32 stateRoot,
       @JsonProperty("receipt_root") Bytes32 receiptRoot,
       @JsonProperty("logs_bloom") Bytes logsBloom,
@@ -56,7 +56,7 @@ public class ExecutionPayloadHeader extends ExecutionPayloadCommon {
       @JsonProperty("transactions_root") Bytes32 transactionsRoot) {
     super(
         parentHash,
-        coinbase,
+        feeRecipient,
         stateRoot,
         receiptRoot,
         logsBloom,
@@ -76,7 +76,7 @@ public class ExecutionPayloadHeader extends ExecutionPayloadCommon {
           executionPayloadHeader) {
     super(
         executionPayloadHeader.getParentHash(),
-        executionPayloadHeader.getCoinbase(),
+        executionPayloadHeader.getFeeRecipient(),
         executionPayloadHeader.getStateRoot(),
         executionPayloadHeader.getReceiptRoot(),
         executionPayloadHeader.getLogsBloom(),
@@ -109,7 +109,7 @@ public class ExecutionPayloadHeader extends ExecutionPayloadCommon {
                 .getExecutionPayloadHeaderSchema()
                 .create(
                     parentHash,
-                    coinbase,
+                    feeRecipient,
                     stateRoot,
                     receiptRoot,
                     logsBloom,
@@ -148,7 +148,7 @@ public class ExecutionPayloadHeader extends ExecutionPayloadCommon {
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("parentHash", parentHash)
-        .add("coinbase", coinbase)
+        .add("feeRecipient", feeRecipient)
         .add("stateRoot", stateRoot)
         .add("receiptRoot", receiptRoot)
         .add("logsBloom", logsBloom)

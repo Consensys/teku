@@ -39,11 +39,12 @@ public abstract class ExecutionPayloadCommon {
   public final Bytes32 parentHash;
 
   @Schema(
+      name = "fee_recipient",
       type = "string",
       format = "byte",
       pattern = PATTERN_BYTES20,
       description = DESCRIPTION_BYTES20)
-  public final Bytes20 coinbase;
+  public final Bytes20 feeRecipient;
 
   @Schema(
       name = "state_root",
@@ -99,7 +100,7 @@ public abstract class ExecutionPayloadCommon {
 
   public ExecutionPayloadCommon(
       @JsonProperty("parent_hash") Bytes32 parentHash,
-      @JsonProperty("coinbase") Bytes20 coinbase,
+      @JsonProperty("fee_recipient") Bytes20 feeRecipient,
       @JsonProperty("state_root") Bytes32 stateRoot,
       @JsonProperty("receipt_root") Bytes32 receiptRoot,
       @JsonProperty("logs_bloom") Bytes logsBloom,
@@ -112,7 +113,7 @@ public abstract class ExecutionPayloadCommon {
       @JsonProperty("base_fee_per_gas") UInt256 baseFeePerGas,
       @JsonProperty("block_hash") Bytes32 blockHash) {
     this.parentHash = parentHash;
-    this.coinbase = coinbase;
+    this.feeRecipient = feeRecipient;
     this.stateRoot = stateRoot;
     this.receiptRoot = receiptRoot;
     this.logsBloom = logsBloom;
@@ -129,7 +130,7 @@ public abstract class ExecutionPayloadCommon {
   public ExecutionPayloadCommon(
       tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload executionPayload) {
     this.parentHash = executionPayload.getParentHash();
-    this.coinbase = executionPayload.getCoinbase();
+    this.feeRecipient = executionPayload.getFeeRecipient();
     this.stateRoot = executionPayload.getStateRoot();
     this.receiptRoot = executionPayload.getReceiptRoot();
     this.logsBloom = executionPayload.getLogsBloom();
@@ -153,7 +154,7 @@ public abstract class ExecutionPayloadCommon {
     }
     final ExecutionPayload that = (ExecutionPayload) o;
     return Objects.equals(parentHash, that.parentHash)
-        && Objects.equals(coinbase, that.coinbase)
+        && Objects.equals(feeRecipient, that.feeRecipient)
         && Objects.equals(stateRoot, that.stateRoot)
         && Objects.equals(receiptRoot, that.receiptRoot)
         && Objects.equals(logsBloom, that.logsBloom)
@@ -171,7 +172,7 @@ public abstract class ExecutionPayloadCommon {
   public int hashCode() {
     return Objects.hash(
         parentHash,
-        coinbase,
+        feeRecipient,
         stateRoot,
         receiptRoot,
         logsBloom,
@@ -189,7 +190,7 @@ public abstract class ExecutionPayloadCommon {
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("parentHash", parentHash)
-        .add("coinbase", coinbase)
+        .add("feeRecipient", feeRecipient)
         .add("stateRoot", stateRoot)
         .add("receiptRoot", receiptRoot)
         .add("logsBloom", logsBloom)

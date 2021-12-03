@@ -85,7 +85,7 @@ public class BeaconBlockBodyMerge extends BeaconBlockBodyAltair {
                 () ->
                     executionPayloadSchema.create(
                         executionPayload.parentHash,
-                        executionPayload.coinbase,
+                        executionPayload.feeRecipient,
                         executionPayload.stateRoot,
                         executionPayload.receiptRoot,
                         executionPayload.logsBloom,
