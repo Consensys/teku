@@ -138,6 +138,13 @@ import tech.pegasys.teku.validator.coordinator.performance.SyncCommitteePerforma
 import tech.pegasys.teku.validator.coordinator.performance.ValidatorPerformanceMetrics;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
+/**
+ * The central class which assembles together and initializes Beacon Chain components
+ *
+ * <p>CAUTION: This class can be overridden by custom implementation to tweak creation and
+ * initialization behavior (see {@link BeaconChainControllerFactory}} however this class may change
+ * in a backward incompatible manner and either break compilation or runtime behavior
+ */
 public class BeaconChainController extends Service implements TimeTickChannel {
   private static final Logger LOG = LogManager.getLogger();
 

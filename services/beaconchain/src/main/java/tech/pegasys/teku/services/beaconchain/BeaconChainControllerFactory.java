@@ -15,6 +15,10 @@ package tech.pegasys.teku.services.beaconchain;
 
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 
+/**
+ * CAUTION: this API is unstable and primarily intended for debugging and testing purposes this API
+ * might be changed in any version in backward incompatible way
+ */
 public interface BeaconChainControllerFactory {
 
   BeaconChainControllerFactory DEFAULT = BeaconChainController::new;
