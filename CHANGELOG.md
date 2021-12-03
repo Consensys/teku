@@ -29,5 +29,8 @@ For information on changes in released versions of Teku, see the [releases page]
 - The default docker image now uses JDK 17 instead of 16. The JDK 16 image is still available with the version suffix `-jdk16`
 - Include the date in output to console, when log files are not being written.
 - Reinstated the ignore rule for aggregate attestation gossip where the attestation root has been previously seen.
+- Added new metrics `executor_signature_verifications_queue_size`, `executor_signature_verifications_task_count`, 
+    `executor_signature_verifications_batch_count` and `executor_signature_verifications_batch_size` to give visibility 
+    into the remaining capacity of the signature verification process.
 
 ### Bug Fixes

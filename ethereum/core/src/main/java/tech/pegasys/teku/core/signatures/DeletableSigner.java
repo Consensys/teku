@@ -15,7 +15,7 @@ package tech.pegasys.teku.core.signatures;
 
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.StampedLock;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingFutureSupplier;
@@ -32,7 +32,7 @@ import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 public class DeletableSigner implements Signer {
   private final Signer delegate;
   private boolean deleted = false;
-  private final ReadWriteLock lock = new ReentrantReadWriteLock();
+  private final ReadWriteLock lock = new StampedLock().asReadWriteLock();
   private final Lock readLock = lock.readLock();
 
   public DeletableSigner(final Signer delegate) {

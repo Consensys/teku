@@ -148,6 +148,7 @@ public class P2POptions {
   @Option(
       names = {"--Xp2p-multipeer-sync-enabled"},
       paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
       description = "Enables experimental multipeer sync",
       hidden = true,
       arity = "1")
@@ -165,6 +166,7 @@ public class P2POptions {
   @Option(
       names = {"--Xp2p-gossip-scoring-enabled"},
       paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
       description = "Enables experimental gossip scoring",
       hidden = true,
       arity = "0..1",
@@ -174,6 +176,7 @@ public class P2POptions {
   @Option(
       names = {"--Xp2p-batch-verify-attestation-signatures-enabled"},
       paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
       description = "If true, turn on batch verification for gossiped attestation signatures",
       hidden = true,
       arity = "0..1")
@@ -197,6 +200,42 @@ public class P2POptions {
       arity = "1",
       hidden = true)
   private Integer peerRequestLimit = P2PConfig.DEFAULT_PEER_REQUEST_LIMIT;
+
+  @Option(
+      names = {"--Xp2p-batch-verify-signatures-max-threads"},
+      paramLabel = "<NUMBER>",
+      description = "Maximum number of threads to use for aggregated signature verification",
+      arity = "1",
+      hidden = true)
+  private int batchVerifyMaxThreads = P2PConfig.DEFAULT_BATCH_VERIFY_MAX_THREADS;
+
+  @Option(
+      names = {"--Xp2p-batch-verify-signatures-queue-capacity"},
+      paramLabel = "<NUMBER>",
+      description = "Maximum queue size for pending aggregated signature verification",
+      arity = "1",
+      hidden = true)
+  private int batchVerifyQueueCapacity = P2PConfig.DEFAULT_BATCH_VERIFY_QUEUE_CAPACITY;
+
+  @Option(
+      names = {"--Xp2p-batch-verify-signatures-max-batch-size"},
+      paramLabel = "<NUMBER>",
+      description = "Maximum number of verification tasks to include in a single batch",
+      arity = "1",
+      hidden = true)
+  private int batchVerifyMaxBatchSize = P2PConfig.DEFAULT_BATCH_VERIFY_MAX_BATCH_SIZE;
+
+  @Option(
+      names = {"--Xp2p-batch-verify-signatures-strict-thread-limit-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description =
+          "When enabled, signature verification is entirely constrained to the max threads with no use of shared executor pools",
+      arity = "1",
+      hidden = true,
+      fallbackValue = "true")
+  private boolean batchVerifyStrictThreadLimitEnabled =
+      P2PConfig.DEFAULT_BATCH_VERIFY_STRICT_THREAD_LIMIT_ENABLED;
 
   private int getP2pLowerBound() {
     if (p2pLowerBound > p2pUpperBound) {
@@ -222,6 +261,10 @@ public class P2POptions {
             b ->
                 b.subscribeAllSubnetsEnabled(subscribeAllSubnetsEnabled)
                     .batchVerifyAttestationSignatures(batchVerifyAttestationSignatures)
+                    .batchVerifyMaxThreads(batchVerifyMaxThreads)
+                    .batchVerifyQueueCapacity(batchVerifyQueueCapacity)
+                    .batchVerifyMaxBatchSize(batchVerifyMaxBatchSize)
+                    .batchVerifyStrictThreadLimitEnabled(batchVerifyStrictThreadLimitEnabled)
                     .targetSubnetSubscriberCount(p2pTargetSubnetSubscriberCount)
                     .isGossipScoringEnabled(gossipScoringEnabled)
                     .peerRateLimit(peerRateLimit)

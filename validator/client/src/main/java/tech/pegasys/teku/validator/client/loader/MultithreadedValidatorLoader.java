@@ -25,6 +25,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.core.signatures.DeletableSigner;
 import tech.pegasys.teku.validator.api.GraffitiProvider;
 import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.loader.ValidatorSource.ValidatorProvider;
@@ -60,7 +61,7 @@ public class MultithreadedValidatorLoader {
                             final Validator validator =
                                 new Validator(
                                     provider.getPublicKey(),
-                                    provider.createSigner(),
+                                    new DeletableSigner(provider.createSigner()),
                                     graffitiProvider,
                                     provider.isReadOnly());
                             int loadedValidatorCount = numberOfLoadedKeys.incrementAndGet();
