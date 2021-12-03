@@ -26,6 +26,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -33,6 +34,7 @@ import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.service.serviceutils.ServiceCapacityExceededException;
 
@@ -50,6 +52,9 @@ class AggregatingSignatureVerificationService extends SignatureVerificationServi
 
   @VisibleForTesting final BlockingQueue<SignatureTask> batchSignatureTasks;
   private final AsyncRunner asyncRunner;
+  private final Counter batchCounter;
+  private final Counter taskCounter;
+  private final MetricsHistogram batchSizeHistogram;
 
   @VisibleForTesting
   AggregatingSignatureVerificationService(
@@ -70,6 +75,23 @@ class AggregatingSignatureVerificationService extends SignatureVerificationServi
         "signature_verifications_queue_size",
         "Tracks number of signatures waiting to be batch verified",
         this::getQueueSize);
+    batchCounter =
+        metricsSystem.createCounter(
+            TekuMetricCategory.EXECUTOR,
+            "signature_verifications_batch_count",
+            "Reports the number of verification batches processed");
+    taskCounter =
+        metricsSystem.createCounter(
+            TekuMetricCategory.EXECUTOR,
+            "signature_verifications_task_count",
+            "Reports the number of individual verification tasks processed");
+    batchSizeHistogram =
+        MetricsHistogram.create(
+            TekuMetricCategory.EXECUTOR,
+            metricsSystem,
+            "signature_verifications_batch_size",
+            "Histogram of signature verification batch sizes",
+            3);
   }
 
   AggregatingSignatureVerificationService(
@@ -151,6 +173,9 @@ class AggregatingSignatureVerificationService extends SignatureVerificationServi
 
   @VisibleForTesting
   void batchVerifySignatures(final List<SignatureTask> tasks) {
+    batchCounter.inc();
+    taskCounter.inc(tasks.size());
+    batchSizeHistogram.recordValue(tasks.size());
     final List<List<BLSPublicKey>> allKeys = new ArrayList<>();
     final List<Bytes> allMessages = new ArrayList<>();
     final List<BLSSignature> allSignatures = new ArrayList<>();
