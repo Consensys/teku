@@ -14,7 +14,6 @@
 package tech.pegasys.teku.validator.client.loader;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -28,19 +27,20 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentMatchers;
+import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
@@ -58,6 +58,7 @@ import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.ImportStatus;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 
 class ValidatorLoaderTest {
@@ -239,10 +240,7 @@ class ValidatorLoaderTest {
             .validatorExternalSignerPublicKeySources(
                 Collections.singletonList(PUBLIC_KEY2.toString()))
             .validatorKeys(
-                List.of(
-                    tempDir.toAbsolutePath().toString()
-                        + File.pathSeparator
-                        + tempDir.toAbsolutePath().toString()))
+                List.of(tempDir.toAbsolutePath() + File.pathSeparator + tempDir.toAbsolutePath()))
             .build();
     final ValidatorLoader validatorLoader =
         ValidatorLoader.create(
@@ -287,10 +285,7 @@ class ValidatorLoaderTest {
     final ValidatorConfig config =
         ValidatorConfig.builder()
             .validatorKeys(
-                List.of(
-                    tempDir.toAbsolutePath().toString()
-                        + File.pathSeparator
-                        + tempDir.toAbsolutePath().toString()))
+                List.of(tempDir.toAbsolutePath() + File.pathSeparator + tempDir.toAbsolutePath()))
             .build();
     final ValidatorLoader validatorLoader =
         ValidatorLoader.create(
@@ -330,10 +325,7 @@ class ValidatorLoaderTest {
     final ValidatorConfig config =
         ValidatorConfig.builder()
             .validatorKeys(
-                List.of(
-                    tempDir.toAbsolutePath().toString()
-                        + File.pathSeparator
-                        + tempDir.toAbsolutePath().toString()))
+                List.of(tempDir.toAbsolutePath() + File.pathSeparator + tempDir.toAbsolutePath()))
             .build();
     final ValidatorLoader validatorLoader =
         ValidatorLoader.create(
@@ -368,10 +360,7 @@ class ValidatorLoaderTest {
     final ValidatorConfig config =
         ValidatorConfig.builder()
             .validatorKeys(
-                List.of(
-                    tempDir.toAbsolutePath().toString()
-                        + File.pathSeparator
-                        + tempDir.toAbsolutePath().toString()))
+                List.of(tempDir.toAbsolutePath() + File.pathSeparator + tempDir.toAbsolutePath()))
             .build();
     final ValidatorLoader validatorLoader =
         ValidatorLoader.create(
@@ -406,10 +395,7 @@ class ValidatorLoaderTest {
             .validatorExternalSignerPublicKeySources(
                 Collections.singletonList(PUBLIC_KEY1.toString()))
             .validatorKeys(
-                List.of(
-                    tempDir.toAbsolutePath().toString()
-                        + File.pathSeparator
-                        + tempDir.toAbsolutePath().toString()))
+                List.of(tempDir.toAbsolutePath() + File.pathSeparator + tempDir.toAbsolutePath()))
             .build();
     final ValidatorLoader validatorLoader =
         ValidatorLoader.create(
@@ -443,10 +429,7 @@ class ValidatorLoaderTest {
     final ValidatorConfig config =
         ValidatorConfig.builder()
             .validatorKeys(
-                List.of(
-                    tempDir.toAbsolutePath().toString()
-                        + File.pathSeparator
-                        + tempDir.toAbsolutePath().toString()))
+                List.of(tempDir.toAbsolutePath() + File.pathSeparator + tempDir.toAbsolutePath()))
             .build();
     final ValidatorLoader validatorLoader =
         ValidatorLoader.create(
@@ -552,10 +535,7 @@ class ValidatorLoaderTest {
     final ValidatorConfig config =
         ValidatorConfig.builder()
             .validatorKeys(
-                List.of(
-                    tempDir.toAbsolutePath().toString()
-                        + File.pathSeparator
-                        + tempDir.toAbsolutePath().toString()))
+                List.of(tempDir.toAbsolutePath() + File.pathSeparator + tempDir.toAbsolutePath()))
             .build();
 
     final ValidatorLoader validatorLoader =
@@ -580,23 +560,6 @@ class ValidatorLoaderTest {
     validatorLoader.loadValidators();
 
     assertThat(validators.getPublicKeys()).containsExactlyInAnyOrder(PUBLIC_KEY1);
-  }
-
-  private void writeKeystore(final Path tempDir) throws Exception {
-    final URL resource = Resources.getResource("pbkdf2TestVector.json");
-    Files.copy(Path.of(resource.toURI()), tempDir.resolve("key.json"));
-    Files.writeString(tempDir.resolve("key.txt"), "testpassword");
-  }
-
-  private void writeMutableKeystore(final DataDirLayout tempDir) throws Exception {
-    final URL resource = Resources.getResource("testKeystore.json");
-    final Path keystore = ValidatorClientService.getAlterableKeystorePath(tempDir);
-    final Path keystorePassword = ValidatorClientService.getAlterableKeystorePasswordPath(tempDir);
-    Files.createDirectory(tempDir.getValidatorDataDirectory());
-    Files.createDirectory(keystore);
-    Files.createDirectory(keystorePassword);
-    Files.copy(Path.of(resource.toURI()), keystore.resolve("key.json"));
-    Files.writeString(keystorePassword.resolve("key.txt"), "testpassword");
   }
 
   @Test
@@ -641,14 +604,12 @@ class ValidatorLoaderTest {
             metricsSystem,
             Optional.empty());
     validatorLoader.loadValidators();
-    final MutableValidatorAddResult result = validatorLoader.loadMutableValidator(null, "");
-    assertThat(result.getResult()).isEqualTo(PostKeyResult.error("Not able to add validator"));
+    final PostKeyResult result = validatorLoader.loadMutableValidator(null, "");
+    assertThat(result).isEqualTo(PostKeyResult.error("Not able to add validator"));
   }
 
   @Test
-  void shouldLoadMutableValidatorIfEnabled(@TempDir final Path tempDir) {
-    tempDir.resolve("alterable-passwords").toFile().mkdir();
-    tempDir.resolve("alterable-keystores").toFile().mkdir();
+  void shouldLoadMutableValidatorIfEnabled(@TempDir final Path tempDir) throws Exception {
     final ValidatorConfig config = ValidatorConfig.builder().build();
     final ValidatorLoader validatorLoader =
         ValidatorLoader.create(
@@ -663,8 +624,12 @@ class ValidatorLoaderTest {
             Optional.of(getDataDirLayout(tempDir)));
     validatorLoader.loadValidators();
 
-    assertThatThrownBy(() -> validatorLoader.loadMutableValidator(null, ""))
-        .isInstanceOf(NotImplementedException.class);
+    final String keystoreString =
+        Resources.toString(Resources.getResource("pbkdf2TestVector.json"), StandardCharsets.UTF_8);
+    PostKeyResult result =
+        validatorLoader.loadMutableValidator(
+            KeyStoreLoader.loadFromString(keystoreString), "testpassword");
+    assertThat(result.getImportStatus()).isEqualTo(ImportStatus.IMPORTED);
   }
 
   @Test
@@ -692,6 +657,23 @@ class ValidatorLoaderTest {
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
 
     assertThat(validators.hasNoValidators()).isTrue();
+  }
+
+  private void writeKeystore(final Path tempDir) throws Exception {
+    final URL resource = Resources.getResource("pbkdf2TestVector.json");
+    Files.copy(Path.of(resource.toURI()), tempDir.resolve("key.json"));
+    Files.writeString(tempDir.resolve("key.txt"), "testpassword");
+  }
+
+  private void writeMutableKeystore(final DataDirLayout tempDir) throws Exception {
+    final URL resource = Resources.getResource("testKeystore.json");
+    final Path keystore = ValidatorClientService.getAlterableKeystorePath(tempDir);
+    final Path keystorePassword = ValidatorClientService.getAlterableKeystorePasswordPath(tempDir);
+    Files.createDirectory(tempDir.getValidatorDataDirectory());
+    Files.createDirectory(keystore);
+    Files.createDirectory(keystorePassword);
+    Files.copy(Path.of(resource.toURI()), keystore.resolve("key.json"));
+    Files.writeString(keystorePassword.resolve("key.txt"), "testpassword");
   }
 
   private DataDirLayout getDataDirLayout(final Path tempDir) {

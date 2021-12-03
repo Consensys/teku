@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.core.signatures.NoOpSigner.NO_OP_SIGNER;
 
@@ -22,20 +23,21 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSTestUtil;
+import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
 
 class KeyManagerTest {
 
-  final ValidatorLoader validatorLoader = Mockito.mock(ValidatorLoader.class);
-  final OwnedValidators ownedValidators = Mockito.mock(OwnedValidators.class);
+  final ValidatorLoader validatorLoader = mock(ValidatorLoader.class);
+  final OwnedValidators ownedValidators = mock(OwnedValidators.class);
+  private final DataDirLayout dataDirLayout = mock(DataDirLayout.class);
 
   @Test
   void shouldReturnActiveValidatorsList() {
-    final KeyManager keyManager = new KeyManager(validatorLoader);
+    final KeyManager keyManager = new KeyManager(validatorLoader, dataDirLayout);
     List<Validator> validatorsList = generateActiveValidatosList();
     when(ownedValidators.getActiveValidators()).thenReturn(validatorsList);
     when(validatorLoader.getOwnedValidators()).thenReturn(ownedValidators);
@@ -46,7 +48,7 @@ class KeyManagerTest {
 
   @Test
   void shouldReturnEmptyKeyList() {
-    final KeyManager keyManager = new KeyManager(validatorLoader);
+    final KeyManager keyManager = new KeyManager(validatorLoader, dataDirLayout);
     List<Validator> validatorsList = Collections.emptyList();
     when(ownedValidators.getActiveValidators()).thenReturn(validatorsList);
     when(validatorLoader.getOwnedValidators()).thenReturn(ownedValidators);

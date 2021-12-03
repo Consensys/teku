@@ -25,7 +25,10 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.signers.bls.keystore.KeyStore;
@@ -39,17 +42,22 @@ import tech.pegasys.teku.core.signatures.LocalSigner;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.validator.api.KeyStoreFilesLocator;
+import tech.pegasys.teku.validator.client.ValidatorClientService;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 
 public class LocalValidatorSource implements ValidatorSource {
 
+  private static final Logger LOG = LogManager.getLogger();
   private final Spec spec;
   private final boolean validatorKeystoreLockingEnabled;
   private final KeystoreLocker keystoreLocker;
   private final AsyncRunner asyncRunner;
   private final KeyStoreFilesLocator keyStoreFilesLocator;
   private final boolean readOnly;
+  private final Optional<DataDirLayout> maybeDataDirLayout;
 
   public LocalValidatorSource(
       final Spec spec,
@@ -57,13 +65,15 @@ public class LocalValidatorSource implements ValidatorSource {
       final KeystoreLocker keystoreLocker,
       final KeyStoreFilesLocator keyStoreFilesLocator,
       final AsyncRunner asyncRunner,
-      final boolean readOnly) {
+      final boolean readOnly,
+      final Optional<DataDirLayout> maybeDataDirLayout) {
     this.spec = spec;
     this.validatorKeystoreLockingEnabled = validatorKeystoreLockingEnabled;
     this.keystoreLocker = keystoreLocker;
     this.asyncRunner = asyncRunner;
     this.keyStoreFilesLocator = keyStoreFilesLocator;
     this.readOnly = readOnly;
+    this.maybeDataDirLayout = maybeDataDirLayout;
   }
 
   @Override
@@ -74,13 +84,59 @@ public class LocalValidatorSource implements ValidatorSource {
 
   @Override
   public boolean canAddValidator() {
-    return false;
+    return !readOnly;
   }
 
   @Override
-  public MutableValidatorAddResult addValidator(
+  public AddLocalValidatorResult addValidator(
       final KeyStoreData keyStoreData, final String password) {
-    throw new UnsupportedOperationException();
+    if (readOnly || maybeDataDirLayout.isEmpty()) {
+      return new AddLocalValidatorResult(
+          PostKeyResult.error("Cannot add validator to a read only source."), Optional.empty());
+    }
+
+    final DataDirLayout dataDirLayout = maybeDataDirLayout.get();
+    final BLSPublicKey publicKey =
+        BLSPublicKey.fromBytesCompressed(Bytes48.wrap(keyStoreData.getPubkey()));
+    final String fileName = publicKey.toBytesCompressed().toUnprefixedHexString();
+    final Path passwordPath =
+        ValidatorClientService.getAlterableKeystorePasswordPath(dataDirLayout)
+            .resolve(fileName + ".txt");
+    final Path keystorePath =
+        ValidatorClientService.getAlterableKeystorePath(dataDirLayout).resolve(fileName + ".json");
+    try {
+      ensureDirectoryExists(ValidatorClientService.getAlterableKeystorePasswordPath(dataDirLayout));
+      ensureDirectoryExists(ValidatorClientService.getAlterableKeystorePath(dataDirLayout));
+
+      if (passwordPath.toFile().exists() || keystorePath.toFile().exists()) {
+        return new AddLocalValidatorResult(PostKeyResult.duplicate(), Optional.empty());
+      }
+      Files.write(passwordPath, password.getBytes(UTF_8));
+      KeyStoreLoader.saveToFile(keystorePath, keyStoreData);
+      final ValidatorProvider provider =
+          new LocalValidatorProvider(
+              spec, keyStoreData, keystorePath, publicKey, password, readOnly);
+      return new AddLocalValidatorResult(
+          PostKeyResult.success(), Optional.of(provider.createSigner()));
+    } catch (InvalidConfigurationException | IOException ex) {
+      cleanupIncompleteSave(keystorePath);
+      cleanupIncompleteSave(passwordPath);
+      keystoreLocker.unlockKeystore(keystorePath);
+      return new AddLocalValidatorResult(PostKeyResult.error(ex.getMessage()), Optional.empty());
+    }
+  }
+
+  private void ensureDirectoryExists(final Path path) throws IOException {
+    if (!path.toFile().exists() && !path.toFile().mkdirs()) {
+      throw new IOException("Unable to create required path: " + path);
+    }
+  }
+
+  private void cleanupIncompleteSave(final Path path) {
+    LOG.debug("Cleanup " + path.toString());
+    if (path.toFile().exists() && path.toFile().isFile() && !path.toFile().delete()) {
+      LOG.warn("Failed to remove " + path);
+    }
   }
 
   private ValidatorProvider createValidatorProvider(
@@ -176,6 +232,7 @@ public class LocalValidatorSource implements ValidatorSource {
         }
         return Bytes32.wrap(KeyStore.decrypt(password, keyStoreData));
       } catch (final KeyStoreValidationException e) {
+        keystoreLocker.unlockKeystore(keystoreFile);
         throw new InvalidConfigurationException(
             "Failed to decrypt keystore " + keystoreFile + ". Check the password is correct.", e);
       }

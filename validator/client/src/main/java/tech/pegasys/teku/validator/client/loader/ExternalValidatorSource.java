@@ -94,7 +94,7 @@ public class ExternalValidatorSource implements ValidatorSource {
   }
 
   @Override
-  public MutableValidatorAddResult addValidator(
+  public AddLocalValidatorResult addValidator(
       final KeyStoreData keyStoreData, final String password) {
     throw new UnsupportedOperationException();
   }

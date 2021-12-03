@@ -23,7 +23,7 @@ import tech.pegasys.teku.core.signatures.SlashingProtectedSigner;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
 
 public class SlashingProtectedValidatorSource implements ValidatorSource {
-  private final ValidatorSource delegate;
+  protected final ValidatorSource delegate;
   private final SlashingProtector slashingProtector;
 
   public SlashingProtectedValidatorSource(
@@ -45,7 +45,7 @@ public class SlashingProtectedValidatorSource implements ValidatorSource {
   }
 
   @Override
-  public MutableValidatorAddResult addValidator(
+  public AddLocalValidatorResult addValidator(
       final KeyStoreData keyStoreData, final String password) {
     return delegate.addValidator(keyStoreData, password);
   }
