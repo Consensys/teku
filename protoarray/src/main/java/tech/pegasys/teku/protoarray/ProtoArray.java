@@ -91,7 +91,7 @@ public class ProtoArray {
         .flatMap(
             blockIndex -> {
               if (blockIndex < getTotalTrackedNodeCount()) {
-                return Optional.of(nodes.get(blockIndex));
+                return Optional.of(getNodeByIndex(blockIndex));
               }
               return Optional.empty();
             });
@@ -191,16 +191,15 @@ public class ProtoArray {
             .get(justifiedRoot)
             .orElseThrow(fatalException("Invalid or unknown justified root: " + justifiedRoot));
 
-    ProtoNode justifiedNode =
-        checkNotNull(nodes.get(justifiedIndex), "ProtoArray: Unknown justified index");
+    ProtoNode justifiedNode = getNodeByIndex(justifiedIndex);
 
     if (!hasSuitableValidationState.test(justifiedNode)) {
       return Optional.empty();
     }
 
     int bestDescendantIndex = justifiedNode.getBestDescendantIndex().orElse(justifiedIndex);
-    ProtoNode bestNode =
-        checkNotNull(nodes.get(bestDescendantIndex), "ProtoArray: Unknown best descendant index");
+    ProtoNode bestNode = getNodeByIndex(bestDescendantIndex);
+    ;
 
     // Normally the best descendant index would point straight to chain head, but onBlock only
     // updates the parent, not all the ancestors. When applyScoreChanges runs it propagates the
@@ -209,8 +208,7 @@ public class ProtoArray {
     while (bestNode.getBestDescendantIndex().isPresent()
         && hasSuitableValidationState.test(bestNode)) {
       bestDescendantIndex = bestNode.getBestDescendantIndex().get();
-      bestNode =
-          checkNotNull(nodes.get(bestDescendantIndex), "ProtoArray: Unknown best descendant index");
+      bestNode = getNodeByIndex(bestDescendantIndex);
     }
 
     // Walk backwards to find the last fully validated node in the chain
@@ -221,7 +219,7 @@ public class ProtoArray {
         return Optional.empty();
       }
       final int parentIndex = maybeParentIndex.get();
-      bestNode = checkNotNull(nodes.get(parentIndex), "ProtoArray: Unknown parent index");
+      bestNode = getNodeByIndex(parentIndex);
     }
 
     // Perform a sanity check that the node is indeed valid to be the head.
@@ -242,8 +240,7 @@ public class ProtoArray {
     node.setValidationStatus(VALID);
     Optional<Integer> parentIndex = node.getParentIndex();
     while (parentIndex.isPresent()) {
-      final ProtoNode parentNode =
-          checkNotNull(nodes.get(parentIndex.get()), "Missing parent node %s", parentIndex.get());
+      final ProtoNode parentNode = getNodeByIndex(parentIndex.get());
       if (parentNode.isFullyValidated()) {
         break;
       }
@@ -259,7 +256,7 @@ public class ProtoArray {
       return;
     }
     final int index = maybeIndex.get();
-    final ProtoNode node = checkNotNull(nodes.get(index), "Missing node %s", index);
+    final ProtoNode node = getNodeByIndex(index);
     node.setValidationStatus(INVALID);
     removeBlockRoot(blockRoot);
     markDescendantsAsInvalid(index);
@@ -273,7 +270,7 @@ public class ProtoArray {
     // Need to mark all nodes extending from this one as invalid
     // Descendant nodes must be later in the array so can start from next index
     for (int i = index + 1; i < nodes.size(); i++) {
-      final ProtoNode possibleDescendant = nodes.get(i);
+      final ProtoNode possibleDescendant = getNodeByIndex(i);
       if (possibleDescendant.getParentIndex().isEmpty()) {
         continue;
       }
@@ -354,8 +351,7 @@ public class ProtoArray {
 
     // Remove the `indices` key/values for all the to-be-deleted nodes.
     for (int nodeIndex = 0; nodeIndex < finalizedIndex; nodeIndex++) {
-      Bytes32 root =
-          checkNotNull(nodes.get(nodeIndex), "ProtoArray: Invalid node index").getBlockRoot();
+      Bytes32 root = getNodeByIndex(nodeIndex).getBlockRoot();
       indices.remove(root);
     }
 
@@ -421,8 +417,8 @@ public class ProtoArray {
    */
   @SuppressWarnings("StatementWithEmptyBody")
   private void maybeUpdateBestChildAndDescendant(int parentIndex, int childIndex) {
-    ProtoNode child = nodes.get(childIndex);
-    ProtoNode parent = nodes.get(parentIndex);
+    ProtoNode child = getNodeByIndex(childIndex);
+    ProtoNode parent = getNodeByIndex(parentIndex);
 
     boolean childLeadsToViableHead = nodeLeadsToViableHead(child);
 
@@ -439,7 +435,7 @@ public class ProtoArray {
                 // best-descendant of the parent is updated.
                 changeToChild(parent, childIndex);
               } else {
-                ProtoNode bestChild = nodes.get(bestChildIndex);
+                ProtoNode bestChild = getNodeByIndex(bestChildIndex);
 
                 boolean bestChildLeadsToViableHead = nodeLeadsToViableHead(bestChild);
 
@@ -488,7 +484,7 @@ public class ProtoArray {
    * @param childIndex
    */
   private void changeToChild(ProtoNode parent, int childIndex) {
-    ProtoNode child = nodes.get(childIndex);
+    ProtoNode child = getNodeByIndex(childIndex);
     parent.setBestChildIndex(Optional.of(childIndex));
     parent.setBestDescendantIndex(Optional.of(child.getBestDescendantIndex().orElse(childIndex)));
   }
@@ -512,7 +508,10 @@ public class ProtoArray {
    */
   private boolean nodeLeadsToViableHead(ProtoNode node) {
     boolean bestDescendantIsViableForHead =
-        node.getBestDescendantIndex().map(nodes::get).map(this::nodeIsViableForHead).orElse(false);
+        node.getBestDescendantIndex()
+            .map(this::getNodeByIndex)
+            .map(this::nodeIsViableForHead)
+            .orElse(false);
 
     return bestDescendantIsViableForHead || nodeIsViableForHead(node);
   }
@@ -564,7 +563,7 @@ public class ProtoArray {
       return;
     }
     while (nodeIndex.isPresent()) {
-      final ProtoNode protoNode = nodes.get(nodeIndex.get());
+      final ProtoNode protoNode = getNodeByIndex(nodeIndex.get());
 
       // Genesis block is fixed so we don't apply scores to it
       if (protoNode.getBlockRoot().equals(Bytes32.ZERO)) {
@@ -600,7 +599,7 @@ public class ProtoArray {
 
   private void applyToNodes(final NodeVisitor action) {
     for (int nodeIndex = getTotalTrackedNodeCount() - 1; nodeIndex >= 0; nodeIndex--) {
-      final ProtoNode node = nodes.get(nodeIndex);
+      final ProtoNode node = getNodeByIndex(nodeIndex);
 
       // No point processing the genesis block.
       if (node.getBlockRoot().equals(Bytes32.ZERO)) {
@@ -612,6 +611,10 @@ public class ProtoArray {
 
   public Map<Bytes32, Integer> getRootIndices() {
     return indices.getRootIndices();
+  }
+
+  private ProtoNode getNodeByIndex(final int index) {
+    return checkNotNull(nodes.get(index), "Missing node %s", index);
   }
 
   private interface NodeVisitor {

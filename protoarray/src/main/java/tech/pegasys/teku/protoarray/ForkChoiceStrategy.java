@@ -14,7 +14,6 @@
 package tech.pegasys.teku.protoarray;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -26,6 +25,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -147,6 +147,15 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
 
   @Override
   public Map<Bytes32, UInt64> getChainHeads() {
+    return getChainHeads(node -> true);
+  }
+
+  @Override
+  public Map<Bytes32, UInt64> getOptimisticChainHeads() {
+    return getChainHeads(ProtoNode::isOptimistic);
+  }
+
+  private Map<Bytes32, UInt64> getChainHeads(final Predicate<ProtoNode> filter) {
     protoArrayLock.readLock().lock();
     try {
       final Map<Bytes32, UInt64> chainHeads = new HashMap<>();
@@ -154,12 +163,10 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
           .filter(
               protoNode ->
                   protoNode.getBestChildIndex().isEmpty()
+                      && filter.test(protoNode)
                       && protoArray.nodeIsViableForHead(protoNode))
           .forEach(protoNode -> chainHeads.put(protoNode.getBlockRoot(), protoNode.getBlockSlot()));
-      return ImmutableMap.copyOf(chainHeads);
-    } catch (Throwable t) {
-      LOG.trace("Failed to get chain heads", t);
-      return Collections.emptyMap();
+      return Collections.unmodifiableMap(chainHeads);
     } finally {
       protoArrayLock.readLock().unlock();
     }

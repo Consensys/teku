@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static tech.pegasys.teku.util.config.Constants.GOSSIP_MAX_SIZE;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
@@ -69,7 +70,8 @@ public class AggregateGossipManagerTest {
             gossipNetwork,
             gossipEncoding,
             forkInfo,
-            processor);
+            processor,
+            GOSSIP_MAX_SIZE);
   }
 
   @Test

@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.core.encodings;
 
-import static tech.pegasys.teku.util.config.Constants.MAX_CHUNK_SIZE;
-
 import io.libp2p.etc.types.ByteBufExtKt;
 import io.netty.buffer.ByteBuf;
 import java.util.Optional;
@@ -40,11 +38,15 @@ class LengthPrefixedPayloadDecoder<T> implements RpcByteBufDecoder<T> {
   private Optional<VarIntDecoder> varIntDecoder = Optional.empty();
   private boolean decoded = false;
   private boolean disposed = false;
+  private final int maxChunkSize;
 
   public LengthPrefixedPayloadDecoder(
-      final RpcPayloadEncoder<T> payloadEncoder, final Compressor compressor) {
+      final RpcPayloadEncoder<T> payloadEncoder,
+      final Compressor compressor,
+      final int maxChunkSize) {
     this.payloadEncoder = payloadEncoder;
     this.compressor = compressor;
+    this.maxChunkSize = maxChunkSize;
   }
 
   @Override
@@ -154,7 +156,7 @@ class LengthPrefixedPayloadDecoder<T> implements RpcByteBufDecoder<T> {
     varIntDecoder = Optional.empty();
 
     long length = lengthMaybe.get();
-    if (length > MAX_CHUNK_SIZE) {
+    if (length > maxChunkSize) {
       throw new ChunkTooLongException();
     }
     return Optional.of((int) length);

@@ -45,7 +45,8 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
       final ForkInfo forkInfo,
       final OperationProcessor<T> processor,
       final GossipPublisher<T> publisher,
-      final SszSchema<T> gossipType) {
+      final SszSchema<T> gossipType,
+      final int maxMessageSize) {
     final Eth2TopicHandler<?> topicHandler =
         new Eth2TopicHandler<>(
             recentChainData,
@@ -54,7 +55,8 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
             gossipEncoding,
             forkInfo.getForkDigest(recentChainData.getSpec()),
             topicName,
-            gossipType);
+            gossipType,
+            maxMessageSize);
     this.channel = gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
     this.gossipEncoding = gossipEncoding;
     this.publisher = publisher;
@@ -71,7 +73,8 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
       final ForkInfo forkInfo,
       final OperationProcessor<T> processor,
       final GossipPublisher<T> publisher,
-      final SszSchema<T> gossipType) {
+      final SszSchema<T> gossipType,
+      final int maxMessageSize) {
     this(
         recentChainData,
         topicName.toString(),
@@ -81,7 +84,8 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
         forkInfo,
         processor,
         publisher,
-        gossipType);
+        gossipType,
+        maxMessageSize);
   }
 
   protected void publishMessage(T message) {
