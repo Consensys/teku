@@ -158,6 +158,24 @@ public class DeletableSignerTest {
   }
 
   @Test
+  void shouldReleaseLockAfterSigning_Threaded() {
+    final Bytes32 root = dataStructureUtil.randomBytes32();
+    final SafeFuture<BLSSignature> signatureSafeFuture = new SafeFuture<>();
+    when(delegate.signSyncCommitteeMessage(UInt64.ONE, root, forkInfo))
+        .thenReturn(signatureSafeFuture);
+
+    final SafeFuture<BLSSignature> future =
+        signer.signSyncCommitteeMessage(UInt64.ONE, root, forkInfo);
+    final Thread thread =
+        new Thread(() -> signatureSafeFuture.complete(dataStructureUtil.randomSignature()));
+    assertThat(future).isNotCompleted();
+    thread.start();
+    waitForThreadState(thread, Thread.State.TERMINATED);
+
+    assertThat(future).isCompleted();
+  }
+
+  @Test
   void signSyncCommitteeMessage_shouldNotSignWhenDisabled() {
     final Bytes32 root = dataStructureUtil.randomBytes32();
     signer.delete();
