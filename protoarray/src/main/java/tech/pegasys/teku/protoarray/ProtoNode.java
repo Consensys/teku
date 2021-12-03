@@ -165,6 +165,10 @@ public class ProtoNode {
     return validationStatus == ProtoNodeValidationStatus.INVALID;
   }
 
+  public boolean isOptimistic() {
+    return validationStatus == ProtoNodeValidationStatus.OPTIMISTIC;
+  }
+
   public void setValidationStatus(final ProtoNodeValidationStatus validationStatus) {
     checkState(
         this.validationStatus == ProtoNodeValidationStatus.OPTIMISTIC
