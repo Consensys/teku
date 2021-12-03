@@ -79,6 +79,11 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
   }
 
   @Override
+  public Map<Bytes32, UInt64> getOptimisticChainHeads() {
+    return Collections.emptyMap();
+  }
+
+  @Override
   public boolean contains(final Bytes32 blockRoot) {
     return getBlock(blockRoot).isPresent();
   }

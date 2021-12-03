@@ -16,10 +16,8 @@ package tech.pegasys.teku.services.beaconchain;
 import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Function;
 import com.google.common.base.Throwables;
 import java.net.BindException;
 import java.nio.file.Path;
@@ -27,6 +25,7 @@ import java.time.Duration;
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.Random;
+import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -86,6 +85,7 @@ import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
+import tech.pegasys.teku.statetransition.forkchoice.OptimisticHeadValidator;
 import tech.pegasys.teku.statetransition.forkchoice.TerminalPowBlockMonitor;
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
 import tech.pegasys.teku.statetransition.synccommittee.SignedContributionAndProofValidator;
@@ -176,17 +176,16 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile OperationPool<SignedVoluntaryExit> voluntaryExitPool;
   private volatile SyncCommitteeContributionPool syncCommitteeContributionPool;
   private volatile SyncCommitteeMessagePool syncCommitteeMessagePool;
-  private volatile OperationsReOrgManager operationsReOrgManager;
   private volatile WeakSubjectivityValidator weakSubjectivityValidator;
   private volatile PerformanceTracker performanceTracker;
   private volatile PendingPool<SignedBeaconBlock> pendingBlocks;
   private volatile CoalescingChainHeadChannel coalescingChainHeadChannel;
   private volatile ActiveValidatorTracker activeValidatorTracker;
   private volatile AttestationTopicSubscriber attestationTopicSubscriber;
-  private volatile SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager;
   private volatile ForkChoiceNotifier forkChoiceNotifier;
   private volatile ExecutionEngineChannel executionEngine;
   private volatile Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor = Optional.empty();
+  private volatile Optional<OptimisticHeadValidator> optimisticHeadValidator = Optional.empty();
 
   private UInt64 genesisTimeTracker = ZERO;
   private BlockManager blockManager;
@@ -261,7 +260,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             attestationManager.stop(),
             p2pNetwork.stop(),
             SafeFuture.fromRunnable(
-                () -> terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::stop)))
+                () -> terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::stop)),
+            optimisticHeadValidator.map(Service::stop).orElse(SafeFuture.completedFuture(null)))
         .thenRun(forkChoiceExecutor::stop);
   }
 
@@ -315,6 +315,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     initExecutionEngine();
     initForkChoiceNotifier();
     initTerminalPowBlockMonitor();
+    initOptimisticHeadValidator();
     initForkChoice();
     initBlockImporter();
     initCombinedChainDataClient();
@@ -352,6 +353,14 @@ public class BeaconChainController extends Service implements TimeTickChannel {
           Optional.of(
               new TerminalPowBlockMonitor(
                   executionEngine, spec, recentChainData, forkChoiceNotifier, beaconAsyncRunner));
+    }
+  }
+
+  private void initOptimisticHeadValidator() {
+    if (spec.isMilestoneSupported(SpecMilestone.MERGE)) {
+      optimisticHeadValidator =
+          Optional.of(
+              new OptimisticHeadValidator(beaconAsyncRunner, recentChainData, executionEngine));
     }
   }
 
@@ -435,9 +444,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     return wsInitializer
         .finalizeAndStoreConfig(beaconConfig.weakSubjectivity(), queryChannel, updateChannel)
         .thenAccept(
-            finalConfig -> {
-              this.weakSubjectivityValidator = WeakSubjectivityValidator.moderate(finalConfig);
-            });
+            finalConfig ->
+                this.weakSubjectivityValidator = WeakSubjectivityValidator.moderate(finalConfig));
   }
 
   private void initForkChoice() {
@@ -517,7 +525,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                 VersionProvider.getDefaultGraffiti(),
                 forkChoiceNotifier,
                 executionEngine));
-    syncCommitteeSubscriptionManager =
+    SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager =
         beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()
             ? new AllSyncCommitteeSubscriptions(p2pNetwork, spec)
             : new SyncCommitteeSubscriptionManager(p2pNetwork);
@@ -851,7 +859,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private void initOperationsReOrgManager() {
     LOG.debug("BeaconChainController.initOperationsReOrgManager()");
-    operationsReOrgManager =
+    OperationsReOrgManager operationsReOrgManager =
         new OperationsReOrgManager(
             proposerSlashingPool,
             attesterSlashingPool,
@@ -926,6 +934,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     }
     slotProcessor.setCurrentSlot(currentSlot);
     performanceTracker.start(currentSlot);
+    optimisticHeadValidator.ifPresent(validator -> validator.start().reportExceptions());
   }
 
   private UInt64 getCurrentSlot(final UInt64 genesisTime) {
@@ -933,14 +942,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   private UInt64 getCurrentSlot(final UInt64 genesisTime, final UInt64 currentTime) {
-    final UInt64 currentSlot;
-    if (currentTime.compareTo(genesisTime) >= 0) {
-      UInt64 deltaTime = currentTime.minus(genesisTime);
-      currentSlot = deltaTime.dividedBy(SECONDS_PER_SLOT);
-    } else {
-      currentSlot = ZERO;
-    }
-    return currentSlot;
+    return spec.getCurrentSlot(currentTime, genesisTime);
   }
 
   private void validateChain(final UInt64 currentSlot) {

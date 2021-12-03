@@ -181,6 +181,16 @@ public class ChainUpdater {
     saveBlockTime(block);
   }
 
+  public void saveOptimisticBlock(final SignedBlockAndState block) {
+    assertThat(spec.isBlockProcessorOptimistic(block.getSlot()))
+        .withFailMessage("can't save optimistic block if block processor is not optimistic")
+        .isTrue();
+    final StoreTransaction tx = recentChainData.startStoreTransaction();
+    tx.putBlockAndState(block.getBlock(), block.getState());
+    assertThat(tx.commit()).isCompleted();
+    saveBlockTime(block);
+  }
+
   public void saveBlockTime(final SignedBlockAndState block) {
     // Make sure time is consistent with block
     final UInt64 blockTime = getSlotTime(block.getSlot());
