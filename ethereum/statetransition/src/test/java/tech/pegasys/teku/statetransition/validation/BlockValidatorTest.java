@@ -15,13 +15,9 @@ package tech.pegasys.teku.statetransition.validation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.spy;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
-import static tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContextExecutionHelper.onlyMerge;
 
 import java.util.List;
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -32,6 +28,7 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.core.ChainBuilder;
+import tech.pegasys.teku.core.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -41,7 +38,6 @@ import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -246,7 +242,7 @@ public class BlockValidatorTest {
 
   @TestTemplate
   void shouldReturnAcceptOnCorrectExecutionPayloadTimestamp(SpecContext specContext) {
-    onlyMerge(specContext);
+    specContext.assumeMergeActive();
 
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     storageSystem.chainUpdater().initializeGenesisWithPayload(false);
@@ -264,7 +260,7 @@ public class BlockValidatorTest {
 
   @TestTemplate
   void shouldReturnInvalidOnWrongExecutionPayloadTimestamp(SpecContext specContext) {
-    onlyMerge(specContext);
+    specContext.assumeMergeActive();
 
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     storageSystem.chainUpdater().initializeGenesisWithPayload(false);
@@ -275,19 +271,17 @@ public class BlockValidatorTest {
     storageSystem.chainUpdater().setCurrentSlot(nextSlot);
 
     final SignedBlockAndState signedBlockAndState =
-        storageSystem.chainBuilder().generateBlockAtSlot(nextSlot);
+        storageSystem
+            .chainBuilder()
+            .generateBlockAtSlot(
+                nextSlot,
+                BlockOptions.create()
+                    .setSkipStateTransition(true)
+                    .setExecutionPayload(
+                        specContext.getDataStructureUtil().randomExecutionPayload()));
 
-    SignedBeaconBlock block = spy(signedBlockAndState.getBlock());
-    BeaconBlock beaconBlock = spy(block.getMessage());
-    BeaconBlockBody beaconBlockBody = spy(beaconBlock.getBody());
-    doReturn(beaconBlock).when(block).getMessage();
-    doReturn(beaconBlockBody).when(beaconBlock).getBody();
-
-    doReturn(Optional.of(specContext.getDataStructureUtil().randomExecutionPayload()))
-        .when(beaconBlockBody)
-        .getOptionalExecutionPayload();
-
-    InternalValidationResult result = blockValidator.validate(block).join();
+    InternalValidationResult result =
+        blockValidator.validate(signedBlockAndState.getBlock()).join();
     assertTrue(result.isReject());
   }
 }

@@ -46,6 +46,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartBeaconStateGenerator;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartDepositGenerator;
@@ -410,7 +411,9 @@ public class ChainBuilder {
               Optional.empty(),
               options.getEth1Data(),
               options.getTransactions(),
-              options.getTerminalBlockHash());
+              options.getTerminalBlockHash(),
+              options.getExecutionPayload(),
+              options.getSkipStateTransition());
       trackBlock(nextBlockAndState);
       return nextBlockAndState;
     } catch (StateTransitionException | EpochProcessingException | SlotProcessingException e) {
@@ -521,6 +524,8 @@ public class ChainBuilder {
     private Optional<Eth1Data> eth1Data = Optional.empty();
     private Optional<List<Bytes>> transactions = Optional.empty();
     private Optional<Bytes32> terminalBlockHash = Optional.empty();
+    private Optional<ExecutionPayload> executionPayload = Optional.empty();
+    private boolean skipStateTransition = false;
 
     private BlockOptions() {}
 
@@ -548,6 +553,16 @@ public class ChainBuilder {
       return this;
     }
 
+    public BlockOptions setExecutionPayload(ExecutionPayload executionPayload) {
+      this.executionPayload = Optional.of(executionPayload);
+      return this;
+    }
+
+    public BlockOptions setSkipStateTransition(boolean skipStateTransition) {
+      this.skipStateTransition = skipStateTransition;
+      return this;
+    }
+
     private List<Attestation> getAttestations() {
       return attestations;
     }
@@ -562,6 +577,14 @@ public class ChainBuilder {
 
     public Optional<Bytes32> getTerminalBlockHash() {
       return terminalBlockHash;
+    }
+
+    public Optional<ExecutionPayload> getExecutionPayload() {
+      return executionPayload;
+    }
+
+    public boolean getSkipStateTransition() {
+      return skipStateTransition;
     }
   }
 }

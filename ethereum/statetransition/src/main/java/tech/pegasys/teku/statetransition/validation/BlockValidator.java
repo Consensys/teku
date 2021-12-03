@@ -19,7 +19,6 @@ import static tech.pegasys.teku.util.config.Constants.MAXIMUM_GOSSIP_CLOCK_DISPA
 import static tech.pegasys.teku.util.config.Constants.VALID_BLOCK_SET_SIZE;
 
 import com.google.common.base.Objects;
-import java.util.Optional;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -81,25 +80,6 @@ public class BlockValidator {
       return completedFuture(reject("Block does not descend from finalized checkpoint"));
     }
 
-    Optional<ExecutionPayload> maybeExecutionPayload =
-        block.getMessage().getBody().getOptionalExecutionPayload();
-    Optional<BeaconState> maybeState = recentChainData.getBestState();
-    if (maybeExecutionPayload.isPresent() && !maybeExecutionPayload.get().isDefault()) {
-      if (maybeState.isEmpty()) {
-        LOG.trace(
-            "No state is available to compute timestamp block slot. Block will be saved for future processing");
-        return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
-      }
-      if (maybeExecutionPayload
-              .get()
-              .getTimestamp()
-              .compareTo(spec.computeTimeAtSlot(maybeState.get(), block.getSlot()))
-          != 0) {
-        return completedFuture(
-            reject("Execution Payload timestamp is not consistence with and block slot time"));
-      }
-    }
-
     return recentChainData
         .retrieveBlockByRoot(block.getMessage().getParentRoot())
         .thenCompose(
@@ -122,19 +102,36 @@ public class BlockValidator {
                           parentBlock.get().getSlot().max(firstSlotInBlockEpoch),
                           block.getParentRoot()))
                   .thenApply(
-                      postState -> {
-                        if (postState.isEmpty()) {
+                      maybePostState -> {
+                        if (maybePostState.isEmpty()) {
                           LOG.trace(
                               "Block was available but state wasn't. Must have been pruned by finalized.");
                           return InternalValidationResult.IGNORE;
                         }
-                        if (!blockIsProposedByTheExpectedProposer(block, postState.get())) {
+                        final BeaconState postState = maybePostState.get();
+
+                        if (!blockIsProposedByTheExpectedProposer(block, postState)) {
                           return reject(
                               "Block proposed by incorrect proposer (%s)",
                               block.getProposerIndex());
                         }
-                        if (!blockSignatureIsValidWithRespectToProposerIndex(
-                            block, postState.get())) {
+                        if (spec.atSlot(block.getSlot()).miscHelpers().isMergeComplete(postState)) {
+                          ExecutionPayload executionPayload =
+                              block
+                                  .getMessage()
+                                  .getBody()
+                                  .getOptionalExecutionPayload()
+                                  .orElseThrow();
+
+                          if (executionPayload
+                                  .getTimestamp()
+                                  .compareTo(spec.computeTimeAtSlot(postState, block.getSlot()))
+                              != 0) {
+                            return reject(
+                                "Execution Payload timestamp is not consistence with and block slot time");
+                          }
+                        }
+                        if (!blockSignatureIsValidWithRespectToProposerIndex(block, postState)) {
                           return reject("Block signature is invalid");
                         }
                         return InternalValidationResult.ACCEPT;
