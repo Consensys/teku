@@ -216,6 +216,7 @@ public class TekuConfiguration {
       p2pConfigBuilder.specProvider(spec);
       powchainConfigBuilder.specProvider(spec);
       executionEngineConfigBuilder.specProvider(spec);
+      validatorConfigBuilder.specProvider(spec);
 
       Eth1Address depositContractAddress = eth2NetworkConfiguration.getEth1DepositContractAddress();
       Optional<UInt64> depositContractDeployBlock =

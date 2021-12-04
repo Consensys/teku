@@ -228,7 +228,7 @@ public class ValidatorClientService extends Service {
           new BeaconProposerPreparer(
               validatorApiChannel,
               validatorIndexProvider,
-              config.getValidatorConfig().getFeeRecipient().map(Eth1Address::toBytes20),
+              config.getValidatorConfig().getSuggestedFeeRecipient().map(Eth1Address::toBytes20),
               validators,
               spec));
     }
