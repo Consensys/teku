@@ -48,11 +48,7 @@ public class InteropConfig {
   }
 
   public Integer getInteropGenesisTime() {
-    if (interopGenesisTime == 0) {
-      return Math.toIntExact((System.currentTimeMillis() / 1000) + 5);
-    } else {
-      return interopGenesisTime;
-    }
+    return interopGenesisTime;
   }
 
   public int getInteropOwnedValidatorStartIndex() {
@@ -114,6 +110,7 @@ public class InteropConfig {
     }
 
     public InteropConfig build() {
+      initMissingDefaults();
       validate();
       return new InteropConfig(
           interopGenesisTime,
@@ -121,6 +118,12 @@ public class InteropConfig {
           interopOwnedValidatorCount,
           interopNumberOfValidators,
           interopEnabled);
+    }
+
+    private void initMissingDefaults() {
+      if (interopEnabled && interopGenesisTime == 0) {
+        interopGenesisTime = Math.toIntExact((System.currentTimeMillis() / 1000) + 5);
+      }
     }
 
     private void validate() throws IllegalArgumentException {
