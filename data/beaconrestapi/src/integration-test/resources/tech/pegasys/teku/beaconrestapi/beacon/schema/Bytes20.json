@@ -1,0 +1,8 @@
+{
+  "type" : "object",
+  "properties" : {
+    "wrappedBytes" : {
+      "$ref" : "#/components/schemas/Bytes"
+    }
+  }
+}
