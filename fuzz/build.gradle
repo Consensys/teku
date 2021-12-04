@@ -4,7 +4,7 @@ dependencies {
     implementation project(':ethereum:networks')
     implementation project(':ethereum:spec')
     implementation testFixtures(project(':ethereum:spec'))
-    implementation project(':ssz')
+    implementation project(':infrastructure:ssz')
     implementation project(':util')
 
     implementation 'org.apache.tuweni:tuweni-bytes'

@@ -37,7 +37,7 @@ public class ContainersGenerator {
   }
 
   /**
-   * Available generation from Gradle with {@code :ssz:generator:generateAndFormatContainers} task
+   * Available generation from Gradle with {@code :infrastructure:ssz:generator:generateAndFormatContainers} task
    */
   public static void main(String[] args) {
     final Path templateSourcePath;

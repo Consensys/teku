@@ -1,5 +1,5 @@
 dependencies {
-  implementation project(':ssz')
+  implementation project(':infrastructure:ssz')
 }
 
 task generateContainers(type: JavaExec) {
@@ -11,10 +11,10 @@ task generateContainers(type: JavaExec) {
     classpath sourceSets.main.runtimeClasspath
 }
 
-tasks.getByPath(':ssz:spotlessApply').mustRunAfter(generateContainers)
+tasks.getByPath(':infrastructure:ssz:spotlessApply').mustRunAfter(generateContainers)
 
 task generateAndFormatContainers {
-    dependsOn generateContainers, ':ssz:spotlessApply'
+    dependsOn generateContainers, ':infrastructure:ssz:spotlessApply'
 }
 
 tasks.withType(Test) {
