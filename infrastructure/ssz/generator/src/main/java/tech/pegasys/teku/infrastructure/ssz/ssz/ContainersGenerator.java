@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ssz;
+package tech.pegasys.teku.infrastructure.ssz.ssz;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -26,8 +26,8 @@ public class ContainersGenerator {
   private final int maxFields = 16;
   private final Path templateSrcPath;
   private final Path targetSrcPath;
-  private final String typePackagePath = "tech/pegasys/teku/ssz/containers/";
-  private final String viewPackagePath = "tech/pegasys/teku/ssz/containers/";
+  private final String typePackagePath = "tech/pegasys/teku/infrastructure/ssz/containers/";
+  private final String viewPackagePath = "tech/pegasys/teku/infrastructure/ssz/containers/";
   private final String containerTypeTemplateFile = "ContainerSchemaTemplate.java";
   private final String containerViewTemplateFile = "ContainerTemplate.java";
 

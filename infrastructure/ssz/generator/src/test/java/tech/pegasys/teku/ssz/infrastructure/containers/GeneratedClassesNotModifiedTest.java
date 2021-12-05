@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ssz.containers;
+package tech.pegasys.teku.ssz.infrastructure.containers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -26,7 +26,7 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.api.io.TempDir;
-import tech.pegasys.teku.ssz.ContainersGenerator;
+import tech.pegasys.teku.infrastructure.ssz.ssz.ContainersGenerator;
 
 public class GeneratedClassesNotModifiedTest {
 
