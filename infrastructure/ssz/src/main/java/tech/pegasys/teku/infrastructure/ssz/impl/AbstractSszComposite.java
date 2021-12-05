@@ -15,12 +15,12 @@ package tech.pegasys.teku.infrastructure.ssz.impl;
 
 import java.util.Optional;
 import java.util.function.Supplier;
+import tech.pegasys.teku.infrastructure.ssz.SszComposite;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.cache.ArrayIntCache;
 import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszCompositeSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.infrastructure.ssz.SszComposite;
-import tech.pegasys.teku.infrastructure.ssz.SszData;
 
 /**
  * Base backing class for immutable composite ssz structures (lists, vectors, containers)

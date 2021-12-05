@@ -24,11 +24,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszUnionSchemaTest;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszNone;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszUnionSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszUnionSchemaTest;
 
 public class SszUnionTest implements SszDataTestBase {
 

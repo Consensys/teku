@@ -18,11 +18,11 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SszBasicListTest {
 

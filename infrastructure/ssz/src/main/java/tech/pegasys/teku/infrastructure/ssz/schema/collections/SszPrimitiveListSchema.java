@@ -13,13 +13,13 @@
 
 package tech.pegasys.teku.infrastructure.ssz.schema.collections;
 
-import tech.pegasys.teku.infrastructure.ssz.schema.collections.impl.SszPrimitiveListSchemaImpl;
 import tech.pegasys.teku.infrastructure.ssz.SszPrimitive;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszPrimitiveList;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchemaHints;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.impl.SszPrimitiveListSchemaImpl;
 
 public interface SszPrimitiveListSchema<
         ElementT,

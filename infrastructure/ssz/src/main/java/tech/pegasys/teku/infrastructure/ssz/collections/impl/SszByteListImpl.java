@@ -16,11 +16,11 @@ package tech.pegasys.teku.infrastructure.ssz.collections.impl;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.MutableBytes;
-import tech.pegasys.teku.infrastructure.ssz.schema.collections.impl.SszByteListSchemaImpl;
 import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.impl.SszByteListSchemaImpl;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class SszByteListImpl extends SszPrimitiveListImpl<Byte, SszByte> implements SszByteList {

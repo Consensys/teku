@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.infrastructure.ssz.schema;
 
-import tech.pegasys.teku.infrastructure.ssz.schema.impl.StoringUtil;
 import tech.pegasys.teku.infrastructure.ssz.SszComposite;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.StoringUtil;
 import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeStore;

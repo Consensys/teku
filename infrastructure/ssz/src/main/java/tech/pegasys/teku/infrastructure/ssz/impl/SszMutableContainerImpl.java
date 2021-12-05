@@ -13,14 +13,14 @@
 
 package tech.pegasys.teku.infrastructure.ssz.impl;
 
-import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
-import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema;
-import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableContainer;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableData;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableRefContainer;
+import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class SszMutableContainerImpl extends AbstractSszMutableComposite<SszData, SszMutableData>
     implements SszMutableRefContainer {

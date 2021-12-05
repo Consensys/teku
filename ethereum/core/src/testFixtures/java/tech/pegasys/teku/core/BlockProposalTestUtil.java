@@ -23,6 +23,8 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -47,8 +49,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTrans
 import tech.pegasys.teku.spec.logic.versions.merge.helpers.MiscHelpersMerge;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
 
 public class BlockProposalTestUtil {
   private final Spec spec;

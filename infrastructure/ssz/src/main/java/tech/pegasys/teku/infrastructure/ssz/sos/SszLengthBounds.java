@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.infrastructure.ssz.sos;
 
-import static tech.pegasys.teku.infrastructure.ssz.tree.TreeUtil.bitsCeilToBytes;
-
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeUtil;

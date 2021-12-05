@@ -17,16 +17,16 @@ import com.google.common.collect.Streams;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.SszCollection;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableVector;
 import tech.pegasys.teku.infrastructure.ssz.SszVector;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszReader;
 
 /** Handy view tool methods */

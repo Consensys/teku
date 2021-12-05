@@ -16,11 +16,11 @@ package tech.pegasys.teku.infrastructure.ssz.impl;
 import com.google.common.base.Objects;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.ssz.SszUnion;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.SszUnionSchemaImpl;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.infrastructure.ssz.SszData;
-import tech.pegasys.teku.infrastructure.ssz.SszUnion;
 
 public class SszUnionImpl implements SszUnion {
 

@@ -16,11 +16,6 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
-import tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSchema;
-import tech.pegasys.teku.spec.datastructures.state.Validator;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
@@ -31,6 +26,11 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBytes32VectorS
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSchema;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSchema;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 
 public interface BeaconStateSchema<T extends BeaconState, TMutable extends MutableBeaconState>
     extends SszContainerSchema<T> {

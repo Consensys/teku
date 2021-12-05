@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.infrastructure.ssz.schema.collections;
 
-import tech.pegasys.teku.infrastructure.ssz.schema.collections.impl.SszBitlistSchemaImpl;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBit;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.impl.SszBitlistSchemaImpl;
 
 public interface SszBitlistSchema<SszBitlistT extends SszBitlist>
     extends SszPrimitiveListSchema<Boolean, SszBit, SszBitlistT> {

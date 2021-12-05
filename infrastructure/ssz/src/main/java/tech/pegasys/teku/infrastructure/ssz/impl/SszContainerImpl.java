@@ -15,15 +15,15 @@ package tech.pegasys.teku.infrastructure.ssz.impl;
 
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import tech.pegasys.teku.infrastructure.ssz.SszContainer;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.ssz.SszMutableContainer;
 import tech.pegasys.teku.infrastructure.ssz.cache.ArrayIntCache;
 import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszCompositeSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.infrastructure.ssz.SszContainer;
-import tech.pegasys.teku.infrastructure.ssz.SszData;
-import tech.pegasys.teku.infrastructure.ssz.SszMutableContainer;
 
 public class SszContainerImpl extends AbstractSszComposite<SszData> implements SszContainer {
 

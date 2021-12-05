@@ -37,6 +37,9 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.network.p2p.peer.SimplePeerSelectionStrategy;
 import tech.pegasys.teku.networking.p2p.connection.ConnectionManager;
@@ -54,9 +57,6 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
-import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
 import tech.pegasys.teku.storage.store.MemKeyValueStore;
 
 class DiscoveryNetworkTest {

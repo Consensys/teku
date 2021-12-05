@@ -23,9 +23,9 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.ssz.TestContainers.TestSubContainer;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszListSchemaTestBase;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 
 public class SszListTest implements SszListTestBase, SszMutableRefCompositeTestBase {
 

@@ -13,13 +13,13 @@
 
 package tech.pegasys.teku.infrastructure.ssz.impl;
 
-import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszVectorSchema;
-import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableRefVector;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableVector;
 import tech.pegasys.teku.infrastructure.ssz.SszVector;
+import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszVectorSchema;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class SszMutableVectorImpl<
         SszElementT extends SszData, SszMutableElementT extends SszElementT>

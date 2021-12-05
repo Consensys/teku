@@ -28,9 +28,9 @@ import tech.pegasys.teku.ethereum.executionlayer.client.serialization.Bytes32Des
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.BytesSerializer;
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.UInt64AsHexDeserializer;
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.UInt64AsHexSerializer;
+import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.executionengine.PayloadAttributes;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
 
 public class PayloadAttributesV1 {
   @JsonSerialize(using = UInt64AsHexSerializer.class)

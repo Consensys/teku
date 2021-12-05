@@ -14,12 +14,12 @@
 package tech.pegasys.teku.infrastructure.ssz.collections.impl;
 
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.infrastructure.ssz.schema.collections.impl.SszByteVectorSchemaImpl;
 import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszMutablePrimitiveVector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteVectorSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.impl.SszByteVectorSchemaImpl;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class SszByteVectorImpl extends SszPrimitiveVectorImpl<Byte, SszByte>

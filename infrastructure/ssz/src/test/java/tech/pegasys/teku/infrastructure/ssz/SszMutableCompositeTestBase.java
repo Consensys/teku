@@ -159,7 +159,8 @@ public interface SszMutableCompositeTestBase extends SszCompositeTestBase {
     for (int i = 0; i < data.size(); i++) {
       int idx = updateIndexes.indexOf(i);
       if (idx < 0) {
-        SszDataAssert.assertThatSszData((SszData) data2.get(i)).isEqualByAllMeansTo(origData.get(i));
+        SszDataAssert.assertThatSszData((SszData) data2.get(i))
+            .isEqualByAllMeansTo(origData.get(i));
       } else {
         SszData updateValue = newChildrenValues.get(idx);
         SszDataAssert.assertThatSszData((SszData) data2.get(i)).isEqualByAllMeansTo(updateValue);

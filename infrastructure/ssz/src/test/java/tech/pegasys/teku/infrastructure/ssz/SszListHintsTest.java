@@ -29,7 +29,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.infrastructure.ssz.TestContainers.TestByteVectorContainer;
 import tech.pegasys.teku.infrastructure.ssz.TestContainers.TestContainer;
 import tech.pegasys.teku.infrastructure.ssz.TestContainers.TestDoubleSuperContainer;
@@ -39,6 +38,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchemaHints;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszReader;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SszListHintsTest {
 

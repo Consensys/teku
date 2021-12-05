@@ -17,12 +17,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
-import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.SpecConfigAltair;
-import tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSchema;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
@@ -30,6 +24,12 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveListS
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSchema;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszField;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigAltair;
+import tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSchema;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 
 public class BeaconStateSchemaAltair
     extends AbstractBeaconStateSchema<BeaconStateAltair, MutableBeaconStateAltair> {

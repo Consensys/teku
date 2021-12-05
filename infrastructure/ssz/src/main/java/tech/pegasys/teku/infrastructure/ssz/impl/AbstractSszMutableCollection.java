@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.infrastructure.ssz.impl;
 
-import tech.pegasys.teku.infrastructure.ssz.schema.SszCollectionSchema;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.InvalidValueSchemaException;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszCollectionSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 
 public abstract class AbstractSszMutableCollection<
         SszElementT extends SszData, SszMutableElementT extends SszElementT>

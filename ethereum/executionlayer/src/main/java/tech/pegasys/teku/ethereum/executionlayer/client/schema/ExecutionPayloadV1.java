@@ -34,11 +34,11 @@ import tech.pegasys.teku.ethereum.executionlayer.client.serialization.UInt256AsH
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.UInt256AsHexSerializer;
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.UInt64AsHexDeserializer;
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.UInt64AsHexSerializer;
+import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszByteListImpl;
+import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
-import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszByteListImpl;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
 
 public class ExecutionPayloadV1 {
 

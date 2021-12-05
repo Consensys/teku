@@ -14,8 +14,8 @@
 package tech.pegasys.teku.infrastructure.ssz.collections;
 
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
 
 public interface SszByteList extends SszPrimitiveList<Byte, SszByte> {
 

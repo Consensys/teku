@@ -15,10 +15,10 @@ package tech.pegasys.teku.infrastructure.ssz.schema;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveVectorSchema;
-import tech.pegasys.teku.infrastructure.ssz.schema.impl.SszVectorSchemaImpl;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszVector;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveVectorSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.SszVectorSchemaImpl;
 import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 
 public interface SszVectorSchema<

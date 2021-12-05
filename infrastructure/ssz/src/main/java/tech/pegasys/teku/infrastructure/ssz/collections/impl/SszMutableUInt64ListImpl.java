@@ -13,13 +13,13 @@
 
 package tech.pegasys.teku.infrastructure.ssz.collections.impl;
 
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszMutableUInt64List;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SszMutableUInt64ListImpl extends SszMutablePrimitiveListImpl<UInt64, SszUInt64>
     implements SszMutableUInt64List {

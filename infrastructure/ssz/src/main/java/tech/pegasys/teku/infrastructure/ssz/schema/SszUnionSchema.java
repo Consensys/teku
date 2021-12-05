@@ -15,9 +15,9 @@ package tech.pegasys.teku.infrastructure.ssz.schema;
 
 import java.util.Arrays;
 import java.util.List;
-import tech.pegasys.teku.infrastructure.ssz.schema.impl.SszUnionSchemaImpl;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszUnion;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.SszUnionSchemaImpl;
 
 public interface SszUnionSchema<SszUnionT extends SszUnion> extends SszSchema<SszUnionT> {
   int SELECTOR_SIZE_BYTES = 1;

@@ -19,16 +19,16 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
-import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszCompositeSchema;
-import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.infrastructure.ssz.tree.TreeUpdates;
 import tech.pegasys.teku.infrastructure.ssz.InvalidValueSchemaException;
 import tech.pegasys.teku.infrastructure.ssz.SszComposite;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableComposite;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableData;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableRefComposite;
+import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszCompositeSchema;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeUpdates;
 
 /**
  * Base backing {@link SszMutableData} class for mutable composite ssz structures (lists, vectors,

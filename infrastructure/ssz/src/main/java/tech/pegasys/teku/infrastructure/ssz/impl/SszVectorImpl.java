@@ -15,14 +15,14 @@ package tech.pegasys.teku.infrastructure.ssz.impl;
 
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.ssz.SszMutableVector;
+import tech.pegasys.teku.infrastructure.ssz.SszVector;
 import tech.pegasys.teku.infrastructure.ssz.cache.ArrayIntCache;
 import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszCompositeSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.infrastructure.ssz.SszData;
-import tech.pegasys.teku.infrastructure.ssz.SszMutableVector;
-import tech.pegasys.teku.infrastructure.ssz.SszVector;
 
 public class SszVectorImpl<SszElementT extends SszData> extends AbstractSszCollection<SszElementT>
     implements SszVector<SszElementT> {

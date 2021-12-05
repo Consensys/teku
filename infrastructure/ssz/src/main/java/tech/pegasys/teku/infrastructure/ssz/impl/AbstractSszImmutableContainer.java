@@ -18,13 +18,13 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.google.common.base.Preconditions;
 import java.util.Arrays;
 import java.util.Objects;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.ssz.SszMutableContainer;
 import tech.pegasys.teku.infrastructure.ssz.cache.ArrayIntCache;
 import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.infrastructure.ssz.SszData;
-import tech.pegasys.teku.infrastructure.ssz.SszMutableContainer;
 
 /** Handy base class for immutable containers */
 public abstract class AbstractSszImmutableContainer extends SszContainerImpl {

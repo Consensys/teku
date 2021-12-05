@@ -24,10 +24,10 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
 
 public class ExecutionPayloadHeader extends ExecutionPayloadCommon {
 

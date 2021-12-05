@@ -26,13 +26,13 @@ import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.Validator;
 import tech.pegasys.teku.api.schema.altair.BeaconStateAltair;
 import tech.pegasys.teku.api.schema.altair.SyncCommittee;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.BeaconStateSchemaMerge;
-import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 
 public class BeaconStateMerge extends BeaconStateAltair {
   @JsonProperty("latest_execution_payload_header")

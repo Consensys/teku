@@ -14,9 +14,9 @@
 package tech.pegasys.teku.infrastructure.ssz.impl;
 
 import java.util.Objects;
+import tech.pegasys.teku.infrastructure.ssz.SszPrimitive;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszPrimitiveSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.infrastructure.ssz.SszPrimitive;
 
 public abstract class AbstractSszPrimitive<C, V extends AbstractSszPrimitive<C, V>>
     implements SszPrimitive<C, V> {

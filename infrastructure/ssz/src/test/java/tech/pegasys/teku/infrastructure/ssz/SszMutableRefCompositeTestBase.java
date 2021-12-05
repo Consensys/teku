@@ -73,13 +73,15 @@ public interface SszMutableRefCompositeTestBase extends SszMutableCompositeTestB
     SszComposite<SszData> updatedData = data.commitChanges();
 
     SszDataAssert.assertThatSszData(updatedData).isNotEqualByAllMeansTo(data);
-    SszDataAssert.assertThatSszData(updatedData.get(updateChildIndex)).isEqualByAllMeansTo(newChildValue);
+    SszDataAssert.assertThatSszData(updatedData.get(updateChildIndex))
+        .isEqualByAllMeansTo(newChildValue);
     IntStream.range(0, data.size())
         .limit(32)
         .forEach(
             i -> {
               if (i != updateChildIndex) {
-                SszDataAssert.assertThatSszData(updatedData.get(i)).isEqualByAllMeansTo(origData.get(i));
+                SszDataAssert.assertThatSszData(updatedData.get(i))
+                    .isEqualByAllMeansTo(origData.get(i));
               }
             });
   }
@@ -111,7 +113,8 @@ public interface SszMutableRefCompositeTestBase extends SszMutableCompositeTestB
     SszMutableData byRef = data.getByRef(updateChildIndex);
     SszData newChildValueByRef = updateSomething(byRef);
 
-    SszDataAssert.assertThatSszData(data.get(updateChildIndex)).isEqualByGettersTo(newChildValueByRef);
+    SszDataAssert.assertThatSszData(data.get(updateChildIndex))
+        .isEqualByGettersTo(newChildValueByRef);
     SszDataAssert.assertThatSszData(data.commitChanges().get(updateChildIndex))
         .isEqualByAllMeansTo(newChildValueByRef);
   }
@@ -132,7 +135,8 @@ public interface SszMutableRefCompositeTestBase extends SszMutableCompositeTestB
 
     SszDataAssert.assertThatSszData((SszData) data.getByRef(updateChildIndex))
         .isEqualByGettersTo(sszMutableChildUpdated1);
-    SszDataAssert.assertThatSszData(data.get(updateChildIndex)).isEqualByGettersTo(sszMutableChildUpdated1);
+    SszDataAssert.assertThatSszData(data.get(updateChildIndex))
+        .isEqualByGettersTo(sszMutableChildUpdated1);
     SszDataAssert.assertThatSszData(data.commitChanges().get(updateChildIndex))
         .isEqualByAllMeansTo(sszMutableChildUpdated1);
     SszDataAssert.assertThatSszData(data.commitChanges().get(updateChildIndex))
@@ -142,11 +146,14 @@ public interface SszMutableRefCompositeTestBase extends SszMutableCompositeTestB
     SszMutableData childByRef = data.getByRef(updateChildIndex);
     SszData sszMutableChildUpdated3 = updateSomething(childByRef);
 
-    SszDataAssert.assertThatSszData((SszData) mutableChild).isEqualByGettersTo(sszMutableChildUpdated2);
-    SszDataAssert.assertThatSszData(mutableChild.commitChanges()).isEqualByAllMeansTo(sszMutableChildUpdated2);
+    SszDataAssert.assertThatSszData((SszData) mutableChild)
+        .isEqualByGettersTo(sszMutableChildUpdated2);
+    SszDataAssert.assertThatSszData(mutableChild.commitChanges())
+        .isEqualByAllMeansTo(sszMutableChildUpdated2);
     SszDataAssert.assertThatSszData((SszData) data.getByRef(updateChildIndex))
         .isEqualByGettersTo(sszMutableChildUpdated3);
-    SszDataAssert.assertThatSszData(data.get(updateChildIndex)).isEqualByGettersTo(sszMutableChildUpdated3);
+    SszDataAssert.assertThatSszData(data.get(updateChildIndex))
+        .isEqualByGettersTo(sszMutableChildUpdated3);
     SszDataAssert.assertThatSszData(data.commitChanges().get(updateChildIndex))
         .isEqualByAllMeansTo(sszMutableChildUpdated3);
   }
@@ -159,7 +166,8 @@ public interface SszMutableRefCompositeTestBase extends SszMutableCompositeTestB
 
     SszMutableData byRef = data.getByRef(updateChildIndex);
     SszData newChildValueByRef = updateSomething(byRef);
-    SszDataAssert.assertThatSszData(data.get(updateChildIndex)).isEqualByGettersTo(newChildValueByRef);
+    SszDataAssert.assertThatSszData(data.get(updateChildIndex))
+        .isEqualByGettersTo(newChildValueByRef);
 
     SszData newChildValue = generator.randomData(childSchema);
     data.set(updateChildIndex, newChildValue);

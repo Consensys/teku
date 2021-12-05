@@ -14,14 +14,14 @@
 package tech.pegasys.teku.infrastructure.ssz.impl;
 
 import java.util.function.Supplier;
+import tech.pegasys.teku.infrastructure.ssz.SszCollection;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszCollectionSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszCompositeSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.infrastructure.ssz.SszCollection;
-import tech.pegasys.teku.infrastructure.ssz.SszData;
 
 public abstract class AbstractSszCollection<SszElementT extends SszData>
     extends AbstractSszComposite<SszElementT> implements SszCollection<SszElementT> {

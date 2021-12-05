@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.infrastructure.ssz.collections;
 
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface SszUInt64List extends SszPrimitiveList<UInt64, SszUInt64> {
 

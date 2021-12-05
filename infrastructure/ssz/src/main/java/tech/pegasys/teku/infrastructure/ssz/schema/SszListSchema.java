@@ -15,10 +15,10 @@ package tech.pegasys.teku.infrastructure.ssz.schema;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveListSchema;
-import tech.pegasys.teku.infrastructure.ssz.schema.impl.SszListSchemaImpl;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveListSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.impl.SszListSchemaImpl;
 import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 
 public interface SszListSchema<ElementDataT extends SszData, SszListT extends SszList<ElementDataT>>

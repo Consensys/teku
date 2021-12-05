@@ -13,6 +13,10 @@
 
 package tech.pegasys.teku.infrastructure.ssz.impl;
 
+import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
+import tech.pegasys.teku.infrastructure.ssz.SszMutableRefList;
 import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
@@ -20,10 +24,6 @@ import tech.pegasys.teku.infrastructure.ssz.tree.BranchNode;
 import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.infrastructure.ssz.SszData;
-import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
-import tech.pegasys.teku.infrastructure.ssz.SszMutableRefList;
 
 public class SszMutableListImpl<SszElementT extends SszData, SszMutableElementT extends SszElementT>
     extends AbstractSszMutableCollection<SszElementT, SszMutableElementT>

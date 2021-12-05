@@ -18,10 +18,10 @@ import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.versions.merge.BeaconPreparableProposer;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
