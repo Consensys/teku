@@ -3,6 +3,7 @@ dependencies {
 
   implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.apache.tuweni:tuweni-ssz'
+  implementation 'commons-io:commons-io'
   implementation 'tech.pegasys:jblst'
   implementation project(':infrastructure:crypto')
   implementation project(':infrastructure:logging')

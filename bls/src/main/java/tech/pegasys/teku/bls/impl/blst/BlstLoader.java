@@ -18,6 +18,7 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.impl.BLS12381;
+import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 
 /**
  * The BLST JNI classes use a static block to automatically load the native library. That means that
@@ -31,10 +32,19 @@ import tech.pegasys.teku.bls.impl.BLS12381;
 public class BlstLoader {
   private static final Logger LOG = LogManager.getLogger();
 
+  private static final String LIBRARY_NAME = System.mapLibraryName("blst");
+  private static final String OS_NAME = System.getProperty("os.name").replaceFirst(" .*", "");
+
   public static Optional<BLS12381> INSTANCE = loadBlst();
 
   private static Optional<BLS12381> loadBlst() {
     try {
+      if (optimisedLibraryIsSupported()) {
+        StatusLogger.STATUS_LOG.reportOptimisedBlst();
+        useOptimisedBlstLibrary();
+      } else {
+        StatusLogger.STATUS_LOG.warnPortableBlst();
+      }
       // Trigger loading of native library
       Class.forName("supranational.blst.blstJNI");
 
@@ -50,5 +60,32 @@ public class BlstLoader {
       LOG.error("Couldn't load native BLS library", e);
       return Optional.empty();
     }
+  }
+
+  private static boolean optimisedLibraryIsSupported() {
+    final String forcedPortableBlst = System.getProperty("teku.portableBlst");
+    if (forcedPortableBlst != null) {
+      LOG.info("BLST portable version was explicitly set to {}", forcedPortableBlst);
+      return !Boolean.parseBoolean(forcedPortableBlst);
+    }
+    try {
+      switch (OS_NAME) {
+        case "Linux":
+          return LinuxCpuInfo.supportsOptimisedBlst();
+        case "Mac":
+          return MacCpuInfo.supportsOptimisedBlst();
+        default:
+          return false;
+      }
+    } catch (final Throwable t) {
+      LOG.warn("Unable to check if optimised BLST is supported", t);
+      return false;
+    }
+  }
+
+  private static void useOptimisedBlstLibrary() {
+    final String optimisedResource =
+        OS_NAME + "/optimised" + "/" + System.getProperty("os.arch") + "/" + LIBRARY_NAME;
+    System.setProperty("supranational.blst.jniResource", optimisedResource);
   }
 }
