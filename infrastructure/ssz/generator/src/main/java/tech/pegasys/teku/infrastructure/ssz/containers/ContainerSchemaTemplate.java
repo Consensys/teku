@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.infrastructure.ssz.ssz.containers;
+package tech.pegasys.teku.infrastructure.ssz.containers;
 
 import java.util.List;
 import java.util.function.BiFunction;

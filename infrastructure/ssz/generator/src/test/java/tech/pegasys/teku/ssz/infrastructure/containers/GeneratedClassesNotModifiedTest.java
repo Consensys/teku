@@ -26,7 +26,7 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.api.io.TempDir;
-import tech.pegasys.teku.infrastructure.ssz.ssz.ContainersGenerator;
+import tech.pegasys.teku.infrastructure.ssz.ContainersGenerator;
 
 public class GeneratedClassesNotModifiedTest {
 
