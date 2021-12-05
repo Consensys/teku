@@ -15,9 +15,9 @@ package tech.pegasys.teku.benchmarks.ssz;
 
 import org.apache.tuweni.bytes.Bytes32;
 import org.openjdk.jmh.infra.Blackhole;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
-import tech.pegasys.teku.ssz.schema.SszSchema;
 
 public class SszCheckpointBenchmark extends SszAbstractContainerBenchmark<Checkpoint> {
 

@@ -8,7 +8,7 @@ dependencies {
   implementation project(':infrastructure:metrics')
   implementation project(':data:signingrecord')
   implementation project(':infrastructure:async')
-  implementation project(':ssz')
+  implementation project(':infrastructure:ssz')
 
   implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
@@ -35,5 +35,5 @@ dependencies {
   testFixturesImplementation project(':infrastructure:async')
   testFixturesImplementation testFixtures(project(':infrastructure:async'))
   testFixturesImplementation project(':infrastructure:crypto')
-  testFixturesImplementation project(':ssz')
+  testFixturesImplementation project(':infrastructure:ssz')
 }

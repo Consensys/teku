@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks;
 
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
-import tech.pegasys.teku.ssz.containers.ContainerSchema2;
-import tech.pegasys.teku.ssz.tree.TreeNode;
 
 public class SignedBeaconBlockSchema
     extends ContainerSchema2<SignedBeaconBlock, BeaconBlock, SszSignature> {

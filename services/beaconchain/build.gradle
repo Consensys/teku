@@ -23,7 +23,7 @@ dependencies {
   implementation project(':infrastructure:serviceutils')
   implementation project(':services:powchain')
   implementation project(':services:timer')
-  implementation project(':ssz')
+  implementation project(':infrastructure:ssz')
   implementation project(':storage')
   implementation project(':storage:api')
   implementation project(':sync')

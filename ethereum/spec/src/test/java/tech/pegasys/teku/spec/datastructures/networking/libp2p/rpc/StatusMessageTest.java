@@ -13,13 +13,13 @@
 
 package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc;
 
-import static tech.pegasys.teku.ssz.SszDataAssert.assertThatSszData;
+import static tech.pegasys.teku.infrastructure.ssz.SszDataAssert.assertThatSszData;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.type.Bytes4;
 
 class StatusMessageTest {
   @Test

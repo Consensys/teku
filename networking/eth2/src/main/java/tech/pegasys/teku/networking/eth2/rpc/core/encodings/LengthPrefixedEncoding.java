@@ -16,10 +16,10 @@ package tech.pegasys.teku.networking.eth2.rpc.core.encodings;
 import io.netty.buffer.ByteBuf;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.Compressor;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EmptyMessage;
-import tech.pegasys.teku.ssz.SszData;
-import tech.pegasys.teku.ssz.schema.SszSchema;
 
 /**
  * Represents an rpc payload encoding where the header consists of a single protobuf varint holding

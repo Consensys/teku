@@ -1,0 +1,22 @@
+dependencies {
+  implementation project(':infrastructure:ssz')
+}
+
+task generateContainers(type: JavaExec) {
+    dependsOn compileJava
+
+    main = 'tech.pegasys.teku.ssz.backing.ContainersGenerator'
+    args project.sourceSets.main.java.srcDirs.join(" "),
+            project.parent.sourceSets.main.java.srcDirs.join(" ")
+    classpath sourceSets.main.runtimeClasspath
+}
+
+tasks.getByPath(':infrastructure:ssz:spotlessApply').mustRunAfter(generateContainers)
+
+task generateAndFormatContainers {
+    dependsOn generateContainers, ':infrastructure:ssz:spotlessApply'
+}
+
+tasks.withType(Test) {
+    systemProperty 'ssz.project.source.path', project.parent.projectDir
+}

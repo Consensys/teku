@@ -2,7 +2,7 @@ dependencies {
     api 'it.unimi.dsi:fastutil'
     api 'org.apache.tuweni:tuweni-bytes'
 
-    implementation project(':ssz')
+    implementation project(':infrastructure:ssz')
 
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
@@ -27,7 +27,7 @@ dependencies {
 
     // From datastructures - TODO(#3356) clean up these imports
     api project(':bls')
-    api project(':ssz')
+    api project(':infrastructure:ssz')
     api project(':util')
 
     implementation project(':bls')
@@ -45,12 +45,12 @@ dependencies {
     implementation 'org.apache.tuweni:tuweni-ssz'
 
     testImplementation testFixtures(project(':bls'))
-    testImplementation testFixtures(project(':ssz'))
+    testImplementation testFixtures(project(':infrastructure:ssz'))
 
     testImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
 
     testFixturesApi project(':ethereum:pow:api')
-    testFixturesApi project(':ssz')
+    testFixturesApi project(':infrastructure:ssz')
     testFixturesApi project(':storage:api')
 
     testFixturesApi 'org.apache.tuweni:tuweni-bytes'

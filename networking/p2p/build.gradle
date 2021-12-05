@@ -16,7 +16,7 @@ dependencies {
   implementation project(':infrastructure:serviceutils')
   implementation project(':storage')
   implementation project(':util')
-  implementation project(':ssz')
+  implementation project(':infrastructure:ssz')
 
   implementation 'io.libp2p:jvm-libp2p-minimal'
   implementation 'io.projectreactor:reactor-core'

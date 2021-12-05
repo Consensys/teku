@@ -19,10 +19,10 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.ssz.tree.LeafDataNode;
-import tech.pegasys.teku.ssz.tree.TreeNode;
-import tech.pegasys.teku.ssz.tree.TreeNodeSource.CompressedBranchInfo;
-import tech.pegasys.teku.ssz.tree.TreeNodeStore;
+import tech.pegasys.teku.infrastructure.ssz.tree.LeafDataNode;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeSource.CompressedBranchInfo;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeStore;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransaction;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedTreeState;
 

@@ -28,9 +28,9 @@ import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.PendingAttestation;
 import tech.pegasys.teku.api.schema.Validator;
 import tech.pegasys.teku.api.schema.interfaces.State;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.ssz.collections.SszBitvector;
 
 public class BeaconStatePhase0 extends BeaconState implements State {
   public final List<PendingAttestation> previous_epoch_attestations;
