@@ -28,6 +28,7 @@ import tech.pegasys.teku.ethereum.executionlayer.client.schema.ForkChoiceUpdated
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.type.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -37,7 +38,6 @@ import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
 import tech.pegasys.teku.spec.executionengine.PayloadAttributes;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
-import tech.pegasys.teku.ssz.type.Bytes8;
 
 public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
   private static final Logger LOG = LogManager.getLogger();

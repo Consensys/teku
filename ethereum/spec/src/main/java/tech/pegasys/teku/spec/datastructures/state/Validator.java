@@ -16,18 +16,18 @@ package tech.pegasys.teku.spec.datastructures.state;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container8;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema8;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszBit;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKeySchema;
-import tech.pegasys.teku.ssz.containers.Container8;
-import tech.pegasys.teku.ssz.containers.ContainerSchema8;
-import tech.pegasys.teku.ssz.primitive.SszBit;
-import tech.pegasys.teku.ssz.primitive.SszBytes32;
-import tech.pegasys.teku.ssz.primitive.SszUInt64;
-import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.tree.TreeNode;
 
 public class Validator
     extends Container8<

@@ -15,9 +15,9 @@ package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import java.util.HashSet;
 import java.util.Set;
+import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
-import tech.pegasys.teku.ssz.type.Bytes4;
 import tech.pegasys.teku.util.config.Constants;
 
 /**

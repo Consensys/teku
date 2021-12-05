@@ -18,6 +18,12 @@ import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.Bea
 import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateInvariants.SLOT_FIELD;
 
 import java.util.List;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchemaHints;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszVectorSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.infrastructure.ssz.sos.SszField;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
@@ -26,12 +32,6 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.ssz.schema.SszListSchema;
-import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.schema.SszSchemaHints;
-import tech.pegasys.teku.ssz.schema.SszVectorSchema;
-import tech.pegasys.teku.ssz.schema.collections.SszBitvectorSchema;
-import tech.pegasys.teku.ssz.sos.SszField;
 
 public enum BeaconStateFields {
   GENESIS_TIME,

@@ -16,8 +16,8 @@ package tech.pegasys.teku.networking.eth2.peers;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.lang3.tuple.Pair;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
-import tech.pegasys.teku.ssz.collections.SszBitvector;
 
 public class StubPeerScorer implements PeerScorer {
   private final Map<NodeId, Integer> peerScores = new HashMap<>();

@@ -21,10 +21,10 @@ import io.libp2p.core.pubsub.ValidationResult;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.ssz.type.Bytes4;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class BlockTopicHandlerTest extends AbstractTopicHandlerTest<SignedBeaconBlock> {

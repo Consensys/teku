@@ -13,11 +13,11 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks;
 
-import static tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas.UINT64_SCHEMA;
+import static tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas.UINT64_SCHEMA;
 
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszType;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.schema.SszType;
 
 public class BeaconBlockInvariants {
 

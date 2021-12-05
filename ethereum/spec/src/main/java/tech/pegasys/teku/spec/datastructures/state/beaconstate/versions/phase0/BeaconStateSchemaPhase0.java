@@ -15,13 +15,13 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
+import tech.pegasys.teku.infrastructure.ssz.sos.SszField;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
-import tech.pegasys.teku.ssz.schema.SszListSchema;
-import tech.pegasys.teku.ssz.sos.SszField;
-import tech.pegasys.teku.ssz.tree.TreeNode;
 
 public class BeaconStateSchemaPhase0
     extends AbstractBeaconStateSchema<BeaconStatePhase0, MutableBeaconStatePhase0> {

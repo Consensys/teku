@@ -23,12 +23,12 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SszList;
-import tech.pegasys.teku.ssz.SszMutableList;
-import tech.pegasys.teku.ssz.primitive.SszUInt64;
-import tech.pegasys.teku.ssz.schema.SszListSchema;
-import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
 
 @State(Scope.Thread)
 public class ListBenchmark {

@@ -3,7 +3,7 @@ dependencies {
   implementation project(':ethereum:pow:api')
   implementation project(':ethereum:spec')
   implementation project(':infrastructure:async')
-  implementation project(':ssz')
+  implementation project(':infrastructure:ssz')
   implementation project(':util')
   implementation project(':infrastructure:events')
   implementation project(':infrastructure:exceptions')

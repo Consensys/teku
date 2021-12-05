@@ -14,12 +14,12 @@
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair;
 
 import com.google.common.base.MoreObjects.ToStringHelper;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractMutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
-import tech.pegasys.teku.ssz.SszData;
-import tech.pegasys.teku.ssz.cache.IntCache;
-import tech.pegasys.teku.ssz.tree.TreeNode;
 
 class MutableBeaconStateAltairImpl extends AbstractMutableBeaconState<BeaconStateAltairImpl>
     implements MutableBeaconStateAltair, BeaconStateCache, ValidatorStatsAltair {

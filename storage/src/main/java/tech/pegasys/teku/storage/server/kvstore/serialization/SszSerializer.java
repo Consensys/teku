@@ -14,8 +14,8 @@
 package tech.pegasys.teku.storage.server.kvstore.serialization;
 
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.ssz.SszData;
-import tech.pegasys.teku.ssz.schema.SszSchema;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 
 class SszSerializer<T extends SszData> implements KvStoreSerializer<T> {
 

@@ -16,10 +16,10 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
-import tech.pegasys.teku.ssz.SszList;
-import tech.pegasys.teku.ssz.collections.SszBitlist;
 
 interface ValidatorStatsPhase0 extends BeaconStatePhase0 {
   @Override

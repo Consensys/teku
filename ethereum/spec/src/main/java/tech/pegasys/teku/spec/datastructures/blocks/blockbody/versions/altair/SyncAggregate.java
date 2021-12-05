@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair;
 
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
-import tech.pegasys.teku.ssz.collections.SszBitvector;
-import tech.pegasys.teku.ssz.containers.Container2;
-import tech.pegasys.teku.ssz.tree.TreeNode;
 
 public class SyncAggregate extends Container2<SyncAggregate, SszBitvector, SszSignature> {
 
