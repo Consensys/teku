@@ -34,3 +34,4 @@ For information on changes in released versions of Teku, see the [releases page]
     into the remaining capacity of the signature verification process.
 
 ### Bug Fixes
+ - Generated head events will now send the slot of the latest block rather than the calculated head slot.
