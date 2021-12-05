@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.ssz;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.infrastructure.ssz.SszDataTestBase.passWhenEmpty;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
