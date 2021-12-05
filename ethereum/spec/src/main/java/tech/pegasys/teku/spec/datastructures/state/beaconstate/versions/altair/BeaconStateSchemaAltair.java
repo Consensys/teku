@@ -23,13 +23,13 @@ import tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSc
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
-import tech.pegasys.teku.ssz.primitive.SszByte;
-import tech.pegasys.teku.ssz.schema.SszListSchema;
-import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.schema.collections.SszPrimitiveListSchema;
-import tech.pegasys.teku.ssz.schema.collections.SszUInt64ListSchema;
-import tech.pegasys.teku.ssz.sos.SszField;
-import tech.pegasys.teku.ssz.tree.TreeNode;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveListSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSchema;
+import tech.pegasys.teku.infrastructure.ssz.sos.SszField;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class BeaconStateSchemaAltair
     extends AbstractBeaconStateSchema<BeaconStateAltair, MutableBeaconStateAltair> {

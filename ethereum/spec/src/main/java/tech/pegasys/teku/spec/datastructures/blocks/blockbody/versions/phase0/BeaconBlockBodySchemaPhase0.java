@@ -27,12 +27,12 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
-import tech.pegasys.teku.ssz.SszList;
-import tech.pegasys.teku.ssz.containers.ContainerSchema8;
-import tech.pegasys.teku.ssz.primitive.SszBytes32;
-import tech.pegasys.teku.ssz.schema.SszListSchema;
-import tech.pegasys.teku.ssz.schema.SszPrimitiveSchemas;
-import tech.pegasys.teku.ssz.tree.TreeNode;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema8;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class BeaconBlockBodySchemaPhase0
     extends ContainerSchema8<

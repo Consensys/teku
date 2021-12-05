@@ -37,7 +37,7 @@ import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
 import tech.pegasys.teku.spec.executionengine.PayloadAttributes;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
-import tech.pegasys.teku.ssz.type.Bytes8;
+import tech.pegasys.teku.infrastructure.ssz.type.Bytes8;
 
 public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
   private static final Logger LOG = LogManager.getLogger();

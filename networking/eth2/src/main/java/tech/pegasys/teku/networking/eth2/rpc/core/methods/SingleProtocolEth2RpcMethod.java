@@ -28,8 +28,8 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseEncoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.context.RpcContextCodec;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
-import tech.pegasys.teku.ssz.SszData;
-import tech.pegasys.teku.ssz.schema.SszSchema;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 
 public class SingleProtocolEth2RpcMethod<
         TRequest extends RpcRequest & SszData, TResponse extends SszData>

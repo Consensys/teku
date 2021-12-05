@@ -18,7 +18,7 @@ import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.SUCCE
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.context.RpcContextCodec;
-import tech.pegasys.teku.ssz.SszData;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
 
 public final class RpcResponseEncoder<TPayload extends SszData, TContext> {
   private final RpcEncoding encoding;

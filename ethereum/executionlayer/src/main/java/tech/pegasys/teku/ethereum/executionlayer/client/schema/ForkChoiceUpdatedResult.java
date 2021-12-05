@@ -22,7 +22,7 @@ import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.Bytes8Deserializer;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedStatus;
-import tech.pegasys.teku.ssz.type.Bytes8;
+import tech.pegasys.teku.infrastructure.ssz.type.Bytes8;
 
 public class ForkChoiceUpdatedResult {
   private final ForkChoiceUpdatedStatus status;

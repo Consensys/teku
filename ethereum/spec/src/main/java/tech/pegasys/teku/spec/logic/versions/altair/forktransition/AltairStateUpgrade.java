@@ -30,10 +30,10 @@ import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
-import tech.pegasys.teku.ssz.SszList;
-import tech.pegasys.teku.ssz.SszMutableList;
-import tech.pegasys.teku.ssz.primitive.SszByte;
-import tech.pegasys.teku.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 
 public class AltairStateUpgrade implements StateUpgrade<BeaconStateAltair> {
   final SpecConfigAltair specConfig;

@@ -35,7 +35,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
-import tech.pegasys.teku.ssz.SszData;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
 
 public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
 

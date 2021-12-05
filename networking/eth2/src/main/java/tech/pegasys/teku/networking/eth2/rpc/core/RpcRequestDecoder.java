@@ -21,8 +21,8 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.PayloadTruncatedE
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcByteBufDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
-import tech.pegasys.teku.ssz.SszData;
-import tech.pegasys.teku.ssz.schema.SszSchema;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 
 /**
  * A decoder responsible for handling a single rpc request

@@ -35,7 +35,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.B
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 
 class SyncCommitteeUtilTest {
   private final Spec spec = TestSpecFactory.createMinimalAltair();

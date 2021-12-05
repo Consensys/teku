@@ -26,7 +26,7 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
-import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 
 public abstract class AbstractValidatorStatusFactory implements ValidatorStatusFactory {
   protected final SpecConfig specConfig;

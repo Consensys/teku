@@ -38,7 +38,7 @@ import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadAttributes
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
-import tech.pegasys.teku.ssz.type.Bytes8;
+import tech.pegasys.teku.infrastructure.ssz.type.Bytes8;
 
 public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   private static final Logger LOG = LogManager.getLogger();

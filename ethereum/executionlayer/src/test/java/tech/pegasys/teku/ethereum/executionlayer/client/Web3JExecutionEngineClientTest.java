@@ -54,8 +54,8 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedStatus;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.type.Bytes20;
-import tech.pegasys.teku.ssz.type.Bytes8;
+import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
+import tech.pegasys.teku.infrastructure.ssz.type.Bytes8;
 
 @TestSpecContext(milestone = SpecMilestone.MERGE)
 public class Web3JExecutionEngineClientTest {

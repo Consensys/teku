@@ -30,7 +30,7 @@ import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
-import tech.pegasys.teku.ssz.type.Bytes4;
+import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
 
 public class ForkSchedule {
   private final NavigableMap<UInt64, SpecMilestone> epochToMilestone;

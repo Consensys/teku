@@ -18,7 +18,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
-import tech.pegasys.teku.ssz.collections.SszBytes32Vector;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 
 public class Predicates {
 

@@ -38,8 +38,8 @@ import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.spec.executionengine.PayloadAttributes;
-import tech.pegasys.teku.ssz.type.Bytes20;
-import tech.pegasys.teku.ssz.type.Bytes8;
+import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
+import tech.pegasys.teku.infrastructure.ssz.type.Bytes8;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class ForkChoiceNotifier {

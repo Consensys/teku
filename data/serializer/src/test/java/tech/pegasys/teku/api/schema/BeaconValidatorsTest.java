@@ -27,7 +27,7 @@ import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 
 @TestSpecContext(allMilestones = true)
 class BeaconValidatorsTest {

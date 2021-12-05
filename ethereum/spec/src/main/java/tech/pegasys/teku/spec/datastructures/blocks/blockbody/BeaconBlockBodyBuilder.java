@@ -24,7 +24,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 
 public interface BeaconBlockBodyBuilder {
 

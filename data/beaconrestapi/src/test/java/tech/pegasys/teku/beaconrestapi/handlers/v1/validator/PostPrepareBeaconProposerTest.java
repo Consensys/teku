@@ -26,7 +26,7 @@ import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.schema.merge.BeaconPreparableProposer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.ssz.type.Bytes20;
+import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
 
 class PostPrepareBeaconProposerTest {
 

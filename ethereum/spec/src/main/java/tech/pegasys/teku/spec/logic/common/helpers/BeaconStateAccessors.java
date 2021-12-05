@@ -34,8 +34,8 @@ import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
-import tech.pegasys.teku.ssz.SszList;
-import tech.pegasys.teku.ssz.type.Bytes4;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
 
 public abstract class BeaconStateAccessors {
   protected final SpecConfig config;

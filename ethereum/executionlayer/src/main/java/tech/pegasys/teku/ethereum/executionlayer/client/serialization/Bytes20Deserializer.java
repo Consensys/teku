@@ -17,7 +17,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import java.io.IOException;
-import tech.pegasys.teku.ssz.type.Bytes20;
+import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
 
 public class Bytes20Deserializer extends JsonDeserializer<Bytes20> {
 

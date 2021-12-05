@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.execution;
 
-import tech.pegasys.teku.ssz.collections.impl.SszByteListImpl;
-import tech.pegasys.teku.ssz.tree.TreeNode;
+import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszByteListImpl;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class Transaction extends SszByteListImpl {
 

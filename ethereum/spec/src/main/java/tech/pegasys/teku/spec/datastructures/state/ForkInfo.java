@@ -17,7 +17,7 @@ import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.ssz.type.Bytes4;
+import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
 
 public class ForkInfo {
   private final Fork fork;

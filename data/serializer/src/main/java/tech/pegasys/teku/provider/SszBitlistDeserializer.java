@@ -18,8 +18,8 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import java.io.IOException;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.ssz.collections.SszBitlist;
-import tech.pegasys.teku.ssz.schema.collections.SszBitlistSchema;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.util.config.Constants;
 
 public class SszBitlistDeserializer extends JsonDeserializer<SszBitlist> {

@@ -34,11 +34,11 @@ import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.Validato
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
-import tech.pegasys.teku.ssz.SszList;
-import tech.pegasys.teku.ssz.SszMutableList;
-import tech.pegasys.teku.ssz.collections.SszBitvector;
-import tech.pegasys.teku.ssz.collections.SszMutableUInt64List;
-import tech.pegasys.teku.ssz.collections.SszUInt64List;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszMutableUInt64List;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 
 public abstract class AbstractEpochProcessor implements EpochProcessor {
   protected final SpecConfig specConfig;

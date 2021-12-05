@@ -31,8 +31,8 @@ import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
-import tech.pegasys.teku.ssz.collections.SszMutableUInt64List;
-import tech.pegasys.teku.ssz.primitive.SszByte;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszMutableUInt64List;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 
 public class EpochProcessorAltair extends AbstractEpochProcessor {
 

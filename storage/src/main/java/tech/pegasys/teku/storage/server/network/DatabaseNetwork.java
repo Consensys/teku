@@ -25,7 +25,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Objects;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
-import tech.pegasys.teku.ssz.type.Bytes4;
+import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
 
 @JsonIgnoreProperties(ignoreUnknown = true)

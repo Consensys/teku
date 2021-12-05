@@ -29,7 +29,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUE
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
-import static tech.pegasys.teku.ssz.SszDataAssert.assertThatSszData;
+import static tech.pegasys.teku.infrastructure.ssz.SszDataAssert.assertThatSszData;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;

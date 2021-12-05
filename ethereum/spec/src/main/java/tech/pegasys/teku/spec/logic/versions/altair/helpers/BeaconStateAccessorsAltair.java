@@ -39,7 +39,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
-import tech.pegasys.teku.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 
 public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
 

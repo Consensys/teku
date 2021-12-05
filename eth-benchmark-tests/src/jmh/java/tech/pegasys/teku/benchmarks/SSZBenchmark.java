@@ -18,7 +18,7 @@ import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Warmup;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.SimpleOffsetSerializable;
+import tech.pegasys.teku.infrastructure.ssz.SimpleOffsetSerializable;
 
 public class SSZBenchmark {
 

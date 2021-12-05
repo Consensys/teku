@@ -25,8 +25,8 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.util.MerkleTree;
 import tech.pegasys.teku.spec.datastructures.util.OptimizedMerkleTree;
-import tech.pegasys.teku.ssz.collections.SszBytes32Vector;
-import tech.pegasys.teku.ssz.schema.collections.SszBytes32VectorSchema;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBytes32VectorSchema;
 
 public class MerkleTreeTest {
 

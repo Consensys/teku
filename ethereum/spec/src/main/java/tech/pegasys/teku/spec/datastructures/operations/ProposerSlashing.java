@@ -14,9 +14,9 @@
 package tech.pegasys.teku.spec.datastructures.operations;
 
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
-import tech.pegasys.teku.ssz.containers.Container2;
-import tech.pegasys.teku.ssz.containers.ContainerSchema2;
-import tech.pegasys.teku.ssz.tree.TreeNode;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class ProposerSlashing
     extends Container2<ProposerSlashing, SignedBeaconBlockHeader, SignedBeaconBlockHeader> {

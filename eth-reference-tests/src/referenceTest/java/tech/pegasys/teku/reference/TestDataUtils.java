@@ -25,8 +25,8 @@ import org.apache.tuweni.bytes.Bytes;
 import org.xerial.snappy.Snappy;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.ssz.SszData;
-import tech.pegasys.teku.ssz.schema.SszSchema;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 
 public class TestDataUtils {
 

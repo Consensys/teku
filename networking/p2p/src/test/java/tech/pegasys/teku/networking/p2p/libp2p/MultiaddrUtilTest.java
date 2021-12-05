@@ -29,7 +29,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
-import tech.pegasys.teku.ssz.collections.SszBitvector;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 
 class MultiaddrUtilTest {
   private static final Spec SPEC = TestSpecFactory.createMinimalAltair();

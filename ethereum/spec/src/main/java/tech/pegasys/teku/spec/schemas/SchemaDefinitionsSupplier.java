@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.spec.schemas;
 
-import tech.pegasys.teku.ssz.collections.SszBitvector;
-import tech.pegasys.teku.ssz.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 
 @FunctionalInterface
 public interface SchemaDefinitionsSupplier {

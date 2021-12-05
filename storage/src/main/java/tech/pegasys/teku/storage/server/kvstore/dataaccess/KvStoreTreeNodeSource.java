@@ -15,7 +15,7 @@ package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.ssz.tree.TreeNodeSource;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeSource;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.schema.SchemaFinalizedTreeState;
 
