@@ -32,6 +32,10 @@ For information on changes in released versions of Teku, see the [releases page]
 - Added new metrics `executor_signature_verifications_queue_size`, `executor_signature_verifications_task_count`, 
     `executor_signature_verifications_batch_count` and `executor_signature_verifications_batch_size` to give visibility 
     into the remaining capacity of the signature verification process.
+- Added support for using the optimized BLST which is more efficient but does not support some older CPUs. 
+    On Linux and Mac Teku will attempt to detect if the CPU is compatible and automatically use the optimized version.
+    On Windows or if auto-detection fails the portable version continues to be used.
+    The version of BLST to use can be explicitly set by setting the `teku.portableBlst` system property. e.g `JAVA_OPTS="-Dteku.portableBlst=true" teku`
 
 ### Bug Fixes
  - Generated head events will now send the slot of the latest block rather than the calculated head slot.
