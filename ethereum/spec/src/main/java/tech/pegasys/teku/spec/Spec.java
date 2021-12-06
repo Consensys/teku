@@ -67,7 +67,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProce
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
-import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
@@ -464,17 +463,6 @@ public class Spec {
     return atEpoch(epoch)
         .getOperationValidator()
         .validateVoluntaryExit(fork(epoch), state, signedExit);
-  }
-
-  public BlockImportResult onBlock(
-      final MutableStore store,
-      final SignedBeaconBlock signedBlock,
-      final BeaconState blockSlotState,
-      final IndexedAttestationCache indexedAttestationCache,
-      final OptimisticExecutionPayloadExecutor payloadExecutor) {
-    return atBlock(signedBlock)
-        .getForkChoiceUtil()
-        .onBlock(store, signedBlock, blockSlotState, indexedAttestationCache, payloadExecutor);
   }
 
   public boolean isBlockProcessorOptimistic(final UInt64 slot) {
