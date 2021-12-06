@@ -19,65 +19,85 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.core.ChainBuilder;
+import tech.pegasys.teku.core.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.TestSpecContext;
+import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.statetransition.BeaconChainUtil;
+import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.storage.client.ChainUpdater;
-import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
+@TestSpecContext(milestone = {SpecMilestone.ALTAIR, SpecMilestone.MERGE})
 public class BlockValidatorTest {
-  private final Spec spec = TestSpecFactory.createMinimalPhase0();
-  private final RecentChainData recentChainData =
-      MemoryOnlyRecentChainData.builder().specProvider(spec).build();
-  private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(spec, 10, recentChainData);
+  private Spec spec;
+  private RecentChainData recentChainData;
+  private StorageSystem storageSystem;
 
   private BlockValidator blockValidator;
 
+  @BeforeAll
+  public static void initSession() {
+    AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = false;
+  }
+
+  @AfterAll
+  public static void resetSession() {
+    AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = true;
+  }
+
   @BeforeEach
-  void setUp() {
-    beaconChainUtil.initializeStorage();
+  void setUp(SpecContext specContext) {
+    spec = specContext.getSpec();
+    storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
+    storageSystem.chainUpdater().initializeGenesis(false);
+    recentChainData = storageSystem.recentChainData();
     blockValidator = new BlockValidator(spec, recentChainData);
   }
 
-  @Test
-  void shouldReturnValidForValidBlock() throws Exception {
+  @TestTemplate
+  void shouldReturnValidForValidBlock() {
     final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
-    beaconChainUtil.setSlot(nextSlot);
-    final SignedBeaconBlock block = beaconChainUtil.createBlockAtSlot(nextSlot);
+    final SignedBlockAndState signedBlockAndState =
+        storageSystem.chainBuilder().generateBlockAtSlot(nextSlot);
+    final SignedBeaconBlock block = signedBlockAndState.getBlock();
+    storageSystem.chainUpdater().setCurrentSlot(nextSlot);
 
     InternalValidationResult result = blockValidator.validate(block).join();
     assertTrue(result.isAccept());
   }
 
-  @Test
-  void shouldIgnoreAlreadyImportedBlock() throws Exception {
-    final SignedBeaconBlock block =
-        beaconChainUtil.createAndImportBlockAtSlot(recentChainData.getHeadSlot().plus(ONE));
+  @TestTemplate
+  void shouldIgnoreAlreadyImportedBlock() {
+    final SignedBeaconBlock block = storageSystem.chainUpdater().advanceChain().getBlock();
 
     InternalValidationResult result = blockValidator.validate(block).join();
     assertTrue(result.isIgnore());
   }
 
-  @Test
-  void shouldReturnInvalidForSecondValidBlockForSlotAndProposer() throws Exception {
+  @TestTemplate
+  void shouldReturnInvalidForSecondValidBlockForSlotAndProposer() {
     final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
-    beaconChainUtil.setSlot(nextSlot);
-    final SignedBeaconBlock block = beaconChainUtil.createBlockAtSlot(nextSlot);
+    final SignedBlockAndState signedBlockAndState =
+        storageSystem.chainBuilder().generateBlockAtSlot(nextSlot);
+    final SignedBeaconBlock block = signedBlockAndState.getBlock();
+    storageSystem.chainUpdater().setCurrentSlot(nextSlot);
 
     InternalValidationResult result1 = blockValidator.validate(block).join();
     assertTrue(result1.isAccept());
@@ -86,21 +106,23 @@ public class BlockValidatorTest {
     assertTrue(result2.isIgnore());
   }
 
-  @Test
-  void shouldReturnSavedForFutureForBlockFromFuture() throws Exception {
+  @TestTemplate
+  void shouldReturnSavedForFutureForBlockFromFuture() {
     final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
-    final SignedBeaconBlock block = beaconChainUtil.createBlockAtSlot(nextSlot);
+    final SignedBeaconBlock block =
+        storageSystem.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
 
     InternalValidationResult result = blockValidator.validate(block).join();
     assertTrue(result.isSaveForFuture());
   }
 
-  @Test
-  void shouldReturnSavedForFutureForBlockWithParentUnavailable() throws Exception {
+  @TestTemplate
+  void shouldReturnSavedForFutureForBlockWithParentUnavailable() {
     final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
-    beaconChainUtil.setSlot(nextSlot);
+    storageSystem.chainUpdater().setCurrentSlot(nextSlot);
 
-    final SignedBeaconBlock signedBlock = beaconChainUtil.createBlockAtSlot(nextSlot);
+    final SignedBeaconBlock signedBlock =
+        storageSystem.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
     final UInt64 proposerIndex = signedBlock.getMessage().getProposerIndex();
     final BeaconBlock block =
         new BeaconBlock(
@@ -112,7 +134,8 @@ public class BlockValidatorTest {
             signedBlock.getMessage().getBody());
 
     BLSSignature blockSignature =
-        beaconChainUtil
+        storageSystem
+            .chainBuilder()
             .getSigner(proposerIndex.intValue())
             .signBlock(block, recentChainData.getBestState().orElseThrow().getForkInfo())
             .join();
@@ -123,26 +146,31 @@ public class BlockValidatorTest {
     assertTrue(result.isSaveForFuture());
   }
 
-  @Test
-  void shouldReturnInvalidForBlockOlderThanFinalizedSlot() throws Exception {
+  @TestTemplate
+  void shouldReturnInvalidForBlockOlderThanFinalizedSlot() {
     UInt64 finalizedEpoch = UInt64.valueOf(10);
     UInt64 finalizedSlot = spec.computeStartSlotAtEpoch(finalizedEpoch);
-    final SignedBeaconBlock block = beaconChainUtil.createBlockAtSlot(finalizedSlot.minus(ONE));
-    beaconChainUtil.finalizeChainAtEpoch(finalizedEpoch);
-    beaconChainUtil.setSlot(recentChainData.getHeadSlot());
+    storageSystem.chainUpdater().advanceChain(finalizedSlot);
+    storageSystem.chainUpdater().finalizeEpoch(finalizedEpoch);
+
+    StorageSystem storageSystem2 = InMemoryStorageSystemBuilder.buildDefault(spec);
+    storageSystem2.chainUpdater().initializeGenesis(false);
+    final SignedBeaconBlock block =
+        storageSystem2.chainBuilder().generateBlockAtSlot(finalizedSlot.minus(ONE)).getBlock();
 
     InternalValidationResult result = blockValidator.validate(block).join();
     assertTrue(result.isIgnore());
   }
 
-  @Test
-  void shouldReturnInvalidForBlockWithWrongProposerIndex() throws Exception {
+  @TestTemplate
+  void shouldReturnInvalidForBlockWithWrongProposerIndex() {
     final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
-    beaconChainUtil.setSlot(nextSlot);
+    storageSystem.chainUpdater().setCurrentSlot(nextSlot);
 
-    final SignedBeaconBlock signedBlock = beaconChainUtil.createBlockAtSlot(nextSlot);
+    final SignedBeaconBlock signedBlock =
+        storageSystem.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
 
-    UInt64 invalidProposerIndex = signedBlock.getMessage().getProposerIndex().minus(ONE);
+    UInt64 invalidProposerIndex = signedBlock.getMessage().getProposerIndex().plus(ONE);
 
     final BeaconBlock block =
         new BeaconBlock(
@@ -154,7 +182,8 @@ public class BlockValidatorTest {
             signedBlock.getMessage().getBody());
 
     BLSSignature blockSignature =
-        beaconChainUtil
+        storageSystem
+            .chainBuilder()
             .getSigner(invalidProposerIndex.intValue())
             .signBlock(block, recentChainData.getBestState().orElseThrow().getForkInfo())
             .join();
@@ -165,22 +194,22 @@ public class BlockValidatorTest {
     assertTrue(result.isReject());
   }
 
-  @Test
-  void shouldReturnInvalidForBlockWithWrongSignature() throws Exception {
+  @TestTemplate
+  void shouldReturnInvalidForBlockWithWrongSignature() {
     final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
-    beaconChainUtil.setSlot(nextSlot);
+    storageSystem.chainUpdater().setCurrentSlot(nextSlot);
 
     final SignedBeaconBlock block =
         SignedBeaconBlock.create(
             spec,
-            beaconChainUtil.createBlockAtSlot(nextSlot).getMessage(),
+            storageSystem.chainBuilder().generateBlockAtSlot(nextSlot).getBlock().getMessage(),
             BLSTestUtil.randomSignature(0));
 
     InternalValidationResult result = blockValidator.validate(block).join();
     assertTrue(result.isReject());
   }
 
-  @Test
+  @TestTemplate
   void shouldReturnInvalidForBlockThatDoesNotDescendFromFinalizedCheckpoint() {
     List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(4);
 
@@ -209,5 +238,50 @@ public class BlockValidatorTest {
     final SafeFuture<InternalValidationResult> result =
         blockValidator.validate(blockAndState.getBlock());
     assertThat(result).isCompletedWithValueMatching(InternalValidationResult::isReject);
+  }
+
+  @TestTemplate
+  void shouldReturnAcceptOnCorrectExecutionPayloadTimestamp(SpecContext specContext) {
+    specContext.assumeMergeActive();
+
+    storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
+    storageSystem.chainUpdater().initializeGenesisWithPayload(false);
+    recentChainData = storageSystem.recentChainData();
+    blockValidator = new BlockValidator(spec, recentChainData);
+
+    final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
+    storageSystem.chainUpdater().setCurrentSlot(nextSlot);
+
+    SignedBeaconBlock block = storageSystem.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
+
+    InternalValidationResult result = blockValidator.validate(block).join();
+    assertTrue(result.isAccept());
+  }
+
+  @TestTemplate
+  void shouldReturnInvalidOnWrongExecutionPayloadTimestamp(SpecContext specContext) {
+    specContext.assumeMergeActive();
+
+    storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
+    storageSystem.chainUpdater().initializeGenesisWithPayload(false);
+    recentChainData = storageSystem.recentChainData();
+    blockValidator = new BlockValidator(spec, recentChainData);
+
+    final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
+    storageSystem.chainUpdater().setCurrentSlot(nextSlot);
+
+    final SignedBlockAndState signedBlockAndState =
+        storageSystem
+            .chainBuilder()
+            .generateBlockAtSlot(
+                nextSlot,
+                BlockOptions.create()
+                    .setSkipStateTransition(true)
+                    .setExecutionPayload(
+                        specContext.getDataStructureUtil().randomExecutionPayload()));
+
+    InternalValidationResult result =
+        blockValidator.validate(signedBlockAndState.getBlock()).join();
+    assertTrue(result.isReject());
   }
 }

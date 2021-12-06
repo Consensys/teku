@@ -312,7 +312,9 @@ public class BeaconChainUtil {
         exits,
         eth1Data,
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        Optional.empty(),
+        false);
   }
 
   public void finalizeChainAtEpoch(final UInt64 epoch) throws Exception {

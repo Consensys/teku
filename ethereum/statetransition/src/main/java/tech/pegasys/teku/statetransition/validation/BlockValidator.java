@@ -19,6 +19,7 @@ import static tech.pegasys.teku.util.config.Constants.MAXIMUM_GOSSIP_CLOCK_DISPA
 import static tech.pegasys.teku.util.config.Constants.VALID_BLOCK_SET_SIZE;
 
 import com.google.common.base.Objects;
+import java.util.Optional;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -33,6 +34,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -101,19 +103,37 @@ public class BlockValidator {
                           parentBlock.get().getSlot().max(firstSlotInBlockEpoch),
                           block.getParentRoot()))
                   .thenApply(
-                      postState -> {
-                        if (postState.isEmpty()) {
+                      maybePostState -> {
+                        if (maybePostState.isEmpty()) {
                           LOG.trace(
                               "Block was available but state wasn't. Must have been pruned by finalized.");
                           return InternalValidationResult.IGNORE;
                         }
-                        if (!blockIsProposedByTheExpectedProposer(block, postState.get())) {
+                        final BeaconState postState = maybePostState.get();
+
+                        if (!blockIsProposedByTheExpectedProposer(block, postState)) {
                           return reject(
                               "Block proposed by incorrect proposer (%s)",
                               block.getProposerIndex());
                         }
-                        if (!blockSignatureIsValidWithRespectToProposerIndex(
-                            block, postState.get())) {
+                        if (spec.atSlot(block.getSlot()).miscHelpers().isMergeComplete(postState)) {
+                          Optional<ExecutionPayload> executionPayload =
+                              block.getMessage().getBody().getOptionalExecutionPayload();
+
+                          if (executionPayload.isEmpty()) {
+                            return reject("Missing execution payload");
+                          }
+
+                          if (executionPayload
+                                  .get()
+                                  .getTimestamp()
+                                  .compareTo(spec.computeTimeAtSlot(postState, block.getSlot()))
+                              != 0) {
+                            return reject(
+                                "Execution Payload timestamp is not consistence with and block slot time");
+                          }
+                        }
+                        if (!blockSignatureIsValidWithRespectToProposerIndex(block, postState)) {
                           return reject("Block signature is invalid");
                         }
                         return InternalValidationResult.ACCEPT;
