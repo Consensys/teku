@@ -132,7 +132,7 @@ public class ValidatorOptions {
       names = {"--Xvalidators-fee-recipient-address"},
       paramLabel = "<ADDRESS>",
       description =
-          "Suggested fee recipient sent to the execution engine, which could use it as coinbase when producing a new execution block.",
+          "Suggested fee recipient sent to the execution engine, which could use it as fee recipient when producing a new execution block.",
       arity = "0..1",
       hidden = true)
   private String feeRecipient = null;

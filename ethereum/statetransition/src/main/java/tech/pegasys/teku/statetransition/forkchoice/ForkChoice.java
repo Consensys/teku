@@ -249,7 +249,7 @@ public class ForkChoice {
           BlockImportResult.failedStateTransition(
               new IllegalStateException(
                   "Invalid ExecutionPayload: "
-                      + payloadResult.getMessage().orElse("No reason provided")));
+                      + payloadResult.getValidationError().orElse("No reason provided")));
       reportInvalidBlock(block, result);
       return result;
     }

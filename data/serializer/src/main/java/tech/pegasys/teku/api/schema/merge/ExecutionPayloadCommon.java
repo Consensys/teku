@@ -30,38 +30,40 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public abstract class ExecutionPayloadCommon {
 
+  @JsonProperty("parent_hash")
   @Schema(
-      name = "parent_hash",
       type = "string",
       format = "byte",
       pattern = PATTERN_BYTES32,
       description = DESCRIPTION_BYTES32)
   public final Bytes32 parentHash;
 
+  @JsonProperty("fee_recipient")
   @Schema(
       type = "string",
       format = "byte",
       pattern = PATTERN_BYTES20,
       description = DESCRIPTION_BYTES20)
-  public final Bytes20 coinbase;
+  public final Bytes20 feeRecipient;
 
+  @JsonProperty("state_root")
   @Schema(
-      name = "state_root",
       type = "string",
       format = "byte",
       pattern = PATTERN_BYTES32,
       description = DESCRIPTION_BYTES32)
   public final Bytes32 stateRoot;
 
+  @JsonProperty("receipt_root")
   @Schema(
-      name = "receipt_root",
       type = "string",
       format = "byte",
       pattern = PATTERN_BYTES32,
       description = DESCRIPTION_BYTES32)
   public final Bytes32 receiptRoot;
 
-  @Schema(name = "logs_bloom", type = "string", format = "byte")
+  @JsonProperty("logs_bloom")
+  @Schema(type = "string", format = "byte")
   public final Bytes logsBloom;
 
   @Schema(
@@ -71,26 +73,31 @@ public abstract class ExecutionPayloadCommon {
       description = DESCRIPTION_BYTES32)
   public final Bytes32 random;
 
-  @Schema(name = "block_number", type = "string", format = "uint64")
+  @JsonProperty("block_number")
+  @Schema(type = "string", format = "uint64")
   public final UInt64 blockNumber;
 
-  @Schema(name = "gas_limit", type = "string", format = "uint64")
+  @JsonProperty("gas_limit")
+  @Schema(type = "string", format = "uint64")
   public final UInt64 gasLimit;
 
-  @Schema(name = "gas_used", type = "string", format = "uint64")
+  @JsonProperty("gas_used")
+  @Schema(type = "string", format = "uint64")
   public final UInt64 gasUsed;
 
   @Schema(type = "string", format = "uint64")
   public final UInt64 timestamp;
 
-  @Schema(name = "extra_data", type = "string", format = "byte")
+  @JsonProperty("extra_data")
+  @Schema(type = "string", format = "byte")
   public final Bytes extraData;
 
-  @Schema(name = "base_fee_per_gas", type = "string", format = "uint256")
+  @JsonProperty("base_fee_per_gas")
+  @Schema(type = "string", format = "uint256")
   public final UInt256 baseFeePerGas;
 
+  @JsonProperty("block_hash")
   @Schema(
-      name = "block_hash",
       type = "string",
       format = "byte",
       pattern = PATTERN_BYTES32,
@@ -99,7 +106,7 @@ public abstract class ExecutionPayloadCommon {
 
   public ExecutionPayloadCommon(
       @JsonProperty("parent_hash") Bytes32 parentHash,
-      @JsonProperty("coinbase") Bytes20 coinbase,
+      @JsonProperty("fee_recipient") Bytes20 feeRecipient,
       @JsonProperty("state_root") Bytes32 stateRoot,
       @JsonProperty("receipt_root") Bytes32 receiptRoot,
       @JsonProperty("logs_bloom") Bytes logsBloom,
@@ -112,7 +119,7 @@ public abstract class ExecutionPayloadCommon {
       @JsonProperty("base_fee_per_gas") UInt256 baseFeePerGas,
       @JsonProperty("block_hash") Bytes32 blockHash) {
     this.parentHash = parentHash;
-    this.coinbase = coinbase;
+    this.feeRecipient = feeRecipient;
     this.stateRoot = stateRoot;
     this.receiptRoot = receiptRoot;
     this.logsBloom = logsBloom;
@@ -129,7 +136,7 @@ public abstract class ExecutionPayloadCommon {
   public ExecutionPayloadCommon(
       tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload executionPayload) {
     this.parentHash = executionPayload.getParentHash();
-    this.coinbase = executionPayload.getCoinbase();
+    this.feeRecipient = executionPayload.getFeeRecipient();
     this.stateRoot = executionPayload.getStateRoot();
     this.receiptRoot = executionPayload.getReceiptRoot();
     this.logsBloom = executionPayload.getLogsBloom();
@@ -153,7 +160,7 @@ public abstract class ExecutionPayloadCommon {
     }
     final ExecutionPayload that = (ExecutionPayload) o;
     return Objects.equals(parentHash, that.parentHash)
-        && Objects.equals(coinbase, that.coinbase)
+        && Objects.equals(feeRecipient, that.feeRecipient)
         && Objects.equals(stateRoot, that.stateRoot)
         && Objects.equals(receiptRoot, that.receiptRoot)
         && Objects.equals(logsBloom, that.logsBloom)
@@ -171,7 +178,7 @@ public abstract class ExecutionPayloadCommon {
   public int hashCode() {
     return Objects.hash(
         parentHash,
-        coinbase,
+        feeRecipient,
         stateRoot,
         receiptRoot,
         logsBloom,
@@ -189,7 +196,7 @@ public abstract class ExecutionPayloadCommon {
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("parentHash", parentHash)
-        .add("coinbase", coinbase)
+        .add("feeRecipient", feeRecipient)
         .add("stateRoot", stateRoot)
         .add("receiptRoot", receiptRoot)
         .add("logsBloom", logsBloom)

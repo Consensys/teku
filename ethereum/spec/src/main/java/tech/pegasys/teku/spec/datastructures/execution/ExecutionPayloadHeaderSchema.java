@@ -52,7 +52,7 @@ public class ExecutionPayloadHeaderSchema
     super(
         "ExecutionPayloadHeader",
         namedSchema("parent_hash", SszPrimitiveSchemas.BYTES32_SCHEMA),
-        namedSchema("coinbase", SszByteVectorSchema.create(Bytes20.SIZE)),
+        namedSchema("fee_recipient", SszByteVectorSchema.create(Bytes20.SIZE)),
         namedSchema("state_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema("receipt_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema("logs_bloom", SszByteVectorSchema.create(specConfig.getBytesPerLogsBloom())),
@@ -78,7 +78,7 @@ public class ExecutionPayloadHeaderSchema
 
   public ExecutionPayloadHeader create(
       Bytes32 parentHash,
-      Bytes20 coinbase,
+      Bytes20 feeRecipient,
       Bytes32 stateRoot,
       Bytes32 receiptRoot,
       Bytes logsBloom,
@@ -94,7 +94,7 @@ public class ExecutionPayloadHeaderSchema
     return new ExecutionPayloadHeader(
         this,
         SszBytes32.of(parentHash),
-        SszByteVector.fromBytes(coinbase.getWrappedBytes()),
+        SszByteVector.fromBytes(feeRecipient.getWrappedBytes()),
         SszBytes32.of(stateRoot),
         SszBytes32.of(receiptRoot),
         SszByteVector.fromBytes(logsBloom),
