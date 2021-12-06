@@ -43,9 +43,9 @@ public class ExecutionEngineConfigurationTest {
   }
 
   @Test
-  public void merge_oExceptionThrownIfEeEndpointSpecified() {
+  public void merge_noExceptionThrownIfEeEndpointSpecified() {
     final ExecutionEngineConfiguration.Builder builder =
-        configBuilder.specProvider(mergeSpec).endpoint("some endpoint");
+        configBuilder.specProvider(mergeSpec).endpoint("someEndpoint");
 
     Assertions.assertThatCode(builder::build).doesNotThrowAnyException();
   }
