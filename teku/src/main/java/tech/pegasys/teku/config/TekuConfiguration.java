@@ -29,6 +29,7 @@ import tech.pegasys.teku.networking.p2p.network.config.WireLogsConfig;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
 import tech.pegasys.teku.services.beaconchain.BeaconChainConfiguration;
+import tech.pegasys.teku.services.beaconchain.BeaconChainControllerFactory;
 import tech.pegasys.teku.services.chainstorage.StorageConfiguration;
 import tech.pegasys.teku.services.executionengine.ExecutionEngineConfiguration;
 import tech.pegasys.teku.services.powchain.PowchainConfiguration;
@@ -74,7 +75,8 @@ public class TekuConfiguration {
       final MetricsConfig metricsConfig,
       final StoreConfig storeConfig,
       final NatConfiguration natConfiguration,
-      final ValidatorRestApiConfig validatorRestApiConfig) {
+      final ValidatorRestApiConfig validatorRestApiConfig,
+      final BeaconChainControllerFactory beaconChainControllerFactory) {
     this.eth2NetworkConfiguration = eth2NetworkConfiguration;
     this.storageConfiguration = storageConfiguration;
     this.weakSubjectivityConfig = weakSubjectivityConfig;
@@ -94,7 +96,8 @@ public class TekuConfiguration {
             beaconRestApiConfig,
             powchainConfiguration,
             storeConfig,
-            spec);
+            spec,
+            beaconChainControllerFactory);
     this.validatorClientConfig =
         new ValidatorClientConfiguration(
             validatorConfig, interopConfig, validatorRestApiConfig, spec);
@@ -195,6 +198,9 @@ public class TekuConfiguration {
     private final NatConfiguration.Builder natConfigBuilder = NatConfiguration.builder();
     private final StoreConfig.Builder storeConfigBuilder = StoreConfig.builder();
 
+    private BeaconChainControllerFactory beaconChainControllerFactory =
+        BeaconChainControllerFactory.DEFAULT;
+
     private Builder() {}
 
     public TekuConfiguration build() {
@@ -248,7 +254,8 @@ public class TekuConfiguration {
           metricsConfigBuilder.build(),
           storeConfigBuilder.build(),
           natConfigBuilder.build(),
-          validatorRestApiConfigBuilder.build());
+          validatorRestApiConfigBuilder.build(),
+          beaconChainControllerFactory);
     }
 
     public Builder eth2NetworkConfig(final Consumer<Eth2NetworkConfiguration.Builder> consumer) {
@@ -347,6 +354,12 @@ public class TekuConfiguration {
 
     public Builder store(final Consumer<StoreConfig.Builder> storeConfigBuilderConsumer) {
       storeConfigBuilderConsumer.accept(storeConfigBuilder);
+      return this;
+    }
+
+    public Builder beaconChainControllerFactory(
+        BeaconChainControllerFactory beaconChainControllerFactory) {
+      this.beaconChainControllerFactory = beaconChainControllerFactory;
       return this;
     }
   }

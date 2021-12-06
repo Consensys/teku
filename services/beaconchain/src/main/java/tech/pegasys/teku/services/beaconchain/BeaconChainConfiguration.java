@@ -36,6 +36,8 @@ public class BeaconChainConfiguration {
   private final PowchainConfiguration powchainConfiguration;
   private final Spec spec;
 
+  private final BeaconChainControllerFactory beaconChainControllerFactory;
+
   public BeaconChainConfiguration(
       final Eth2NetworkConfiguration eth2NetworkConfiguration,
       final WeakSubjectivityConfig weakSubjectivityConfig,
@@ -46,7 +48,8 @@ public class BeaconChainConfiguration {
       final BeaconRestApiConfig beaconRestApiConfig,
       final PowchainConfiguration powchainConfiguration,
       final StoreConfig storeConfig,
-      final Spec spec) {
+      final Spec spec,
+      final BeaconChainControllerFactory beaconChainControllerFactory) {
     this.eth2NetworkConfiguration = eth2NetworkConfiguration;
     this.weakSubjectivityConfig = weakSubjectivityConfig;
     this.validatorConfig = validatorConfig;
@@ -57,6 +60,7 @@ public class BeaconChainConfiguration {
     this.powchainConfiguration = powchainConfiguration;
     this.storeConfig = storeConfig;
     this.spec = spec;
+    this.beaconChainControllerFactory = beaconChainControllerFactory;
   }
 
   public Spec getSpec() {
@@ -97,5 +101,9 @@ public class BeaconChainConfiguration {
 
   public StoreConfig storeConfig() {
     return storeConfig;
+  }
+
+  public BeaconChainControllerFactory getBeaconChainControllerFactory() {
+    return beaconChainControllerFactory;
   }
 }

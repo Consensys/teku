@@ -23,7 +23,8 @@ public class BeaconChainService extends Service implements BeaconChainServiceFac
 
   public BeaconChainService(
       final ServiceConfig serviceConfig, final BeaconChainConfiguration beaconConfig) {
-    this.controller = new BeaconChainController(serviceConfig, beaconConfig);
+    this.controller =
+        beaconConfig.getBeaconChainControllerFactory().create(serviceConfig, beaconConfig);
   }
 
   @Override
