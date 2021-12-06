@@ -16,7 +16,6 @@ package tech.pegasys.teku.bls.impl.blst;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.commons.io.IOUtils;
 
 public class MacCpuInfo {
