@@ -22,6 +22,7 @@ import static tech.pegasys.teku.reference.TestDataUtils.loadYaml;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
@@ -35,7 +36,6 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
-import tech.pegasys.teku.ssz.SszData;
 
 public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
 

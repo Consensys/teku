@@ -13,11 +13,11 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.core.encodings.context;
 
+import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
-import tech.pegasys.teku.ssz.SszData;
-import tech.pegasys.teku.ssz.schema.SszSchema;
 
 public interface ForkDigestPayloadContext<TPayload extends SszData> {
 

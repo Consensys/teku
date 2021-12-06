@@ -14,9 +14,9 @@
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
 import java.util.function.IntUnaryOperator;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.networking.eth2.peers.PeerScorer;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
-import tech.pegasys.teku.ssz.collections.SszBitvector;
 
 /** Scores peers higher if they are tracking subnets that are not tracked by other peers. */
 public class SubnetScorer implements PeerScorer {

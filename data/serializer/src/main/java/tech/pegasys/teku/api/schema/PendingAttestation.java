@@ -18,8 +18,8 @@ import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES_SSZ
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.collections.SszBitlist;
 
 public class PendingAttestation {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES_SSZ)

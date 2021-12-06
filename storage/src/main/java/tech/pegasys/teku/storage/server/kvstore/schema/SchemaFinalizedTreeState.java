@@ -16,8 +16,8 @@ package tech.pegasys.teku.storage.server.kvstore.schema;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeSource.CompressedBranchInfo;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.tree.TreeNodeSource.CompressedBranchInfo;
 
 public interface SchemaFinalizedTreeState extends SchemaFinalized {
 

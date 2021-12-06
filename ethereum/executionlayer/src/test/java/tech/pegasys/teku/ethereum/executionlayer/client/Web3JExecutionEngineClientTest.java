@@ -46,6 +46,8 @@ import tech.pegasys.teku.ethereum.executionlayer.client.serialization.UInt256AsH
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.UInt256AsHexSerializer;
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.UInt64AsHexDeserializer;
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.UInt64AsHexSerializer;
+import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
+import tech.pegasys.teku.infrastructure.ssz.type.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
@@ -54,8 +56,6 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedStatus;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.type.Bytes20;
-import tech.pegasys.teku.ssz.type.Bytes8;
 
 @TestSpecContext(milestone = SpecMilestone.MERGE)
 public class Web3JExecutionEngineClientTest {

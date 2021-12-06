@@ -15,9 +15,9 @@ package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
 import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopics.getAttestationSubnetTopic;
 
+import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.ssz.type.Bytes4;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class AttestationSubnetTopicProvider {

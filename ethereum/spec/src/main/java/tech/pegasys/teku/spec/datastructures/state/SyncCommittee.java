@@ -14,14 +14,14 @@
 package tech.pegasys.teku.spec.datastructures.state;
 
 import java.util.List;
+import tech.pegasys.teku.infrastructure.ssz.SszVector;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszVectorSchema;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKeySchema;
-import tech.pegasys.teku.ssz.SszVector;
-import tech.pegasys.teku.ssz.containers.Container2;
-import tech.pegasys.teku.ssz.containers.ContainerSchema2;
-import tech.pegasys.teku.ssz.schema.SszVectorSchema;
-import tech.pegasys.teku.ssz.tree.TreeNode;
 
 public class SyncCommittee
     extends Container2<SyncCommittee, SszVector<SszPublicKey>, SszPublicKey> {

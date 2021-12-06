@@ -13,12 +13,12 @@
 
 package tech.pegasys.teku.reference.phase0.rewards;
 
+import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSchema;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas;
-import tech.pegasys.teku.ssz.collections.SszUInt64List;
-import tech.pegasys.teku.ssz.containers.Container2;
-import tech.pegasys.teku.ssz.containers.ContainerSchema2;
-import tech.pegasys.teku.ssz.schema.collections.SszUInt64ListSchema;
-import tech.pegasys.teku.ssz.tree.TreeNode;
 
 public class ExpectedDeltas extends Container2<ExpectedDeltas, SszUInt64List, SszUInt64List> {
   public static final DeltasSchema SSZ_SCHEMA = new DeltasSchema();

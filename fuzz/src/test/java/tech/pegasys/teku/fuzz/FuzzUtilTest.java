@@ -32,6 +32,8 @@ import tech.pegasys.teku.fuzz.input.BlockHeaderFuzzInput;
 import tech.pegasys.teku.fuzz.input.DepositFuzzInput;
 import tech.pegasys.teku.fuzz.input.ProposerSlashingFuzzInput;
 import tech.pegasys.teku.fuzz.input.VoluntaryExitFuzzInput;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -46,8 +48,6 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
-import tech.pegasys.teku.ssz.SszData;
-import tech.pegasys.teku.ssz.schema.SszSchema;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.SpecDependent;
 

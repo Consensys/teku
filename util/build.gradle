@@ -2,7 +2,7 @@ dependencies {
   implementation project(':infrastructure:exceptions')
   implementation project(':infrastructure:io')
   implementation project(':infrastructure:logging')
-  implementation project(':ssz')
+  implementation project(':infrastructure:ssz')
 
   implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'

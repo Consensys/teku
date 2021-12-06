@@ -15,8 +15,8 @@ package tech.pegasys.teku.spec.datastructures.operations.versions.merge;
 
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
+import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.type.Bytes20;
 
 public class BeaconPreparableProposer {
   private final UInt64 validatorIndex;

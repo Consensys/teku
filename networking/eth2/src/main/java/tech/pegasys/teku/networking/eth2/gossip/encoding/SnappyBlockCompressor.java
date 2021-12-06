@@ -16,7 +16,7 @@ package tech.pegasys.teku.networking.eth2.gossip.encoding;
 import java.io.IOException;
 import org.apache.tuweni.bytes.Bytes;
 import org.xerial.snappy.Snappy;
-import tech.pegasys.teku.ssz.sos.SszLengthBounds;
+import tech.pegasys.teku.infrastructure.ssz.sos.SszLengthBounds;
 
 /**
  * Implements snappy compression using the "block" format. See:

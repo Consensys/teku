@@ -14,11 +14,11 @@
 package tech.pegasys.teku.spec.datastructures.operations;
 
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
-import tech.pegasys.teku.ssz.containers.Container2;
-import tech.pegasys.teku.ssz.containers.ContainerSchema2;
-import tech.pegasys.teku.ssz.tree.TreeNode;
 
 public class SignedAggregateAndProof
     extends Container2<SignedAggregateAndProof, AggregateAndProof, SszSignature> {

@@ -5,7 +5,7 @@ dependencies {
   implementation testFixtures(project(':ethereum:spec'))
   implementation project(':ethereum:networks')
   implementation project(':infrastructure:async')
-  implementation project(':ssz')
+  implementation project(':infrastructure:ssz')
   implementation project(':storage')
   implementation project(':util')
 

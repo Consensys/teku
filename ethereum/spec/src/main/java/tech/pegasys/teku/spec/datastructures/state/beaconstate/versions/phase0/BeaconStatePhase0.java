@@ -14,10 +14,10 @@
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0;
 
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
-import tech.pegasys.teku.ssz.SszList;
 
 public interface BeaconStatePhase0 extends BeaconState {
 

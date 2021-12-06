@@ -15,11 +15,11 @@ package tech.pegasys.teku.spec.datastructures.operations;
 
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEPOSIT_CONTRACT_TREE_DEPTH;
 
-import tech.pegasys.teku.ssz.collections.SszBytes32Vector;
-import tech.pegasys.teku.ssz.containers.Container2;
-import tech.pegasys.teku.ssz.containers.ContainerSchema2;
-import tech.pegasys.teku.ssz.schema.collections.SszBytes32VectorSchema;
-import tech.pegasys.teku.ssz.tree.TreeNode;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBytes32VectorSchema;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class Deposit extends Container2<Deposit, SszBytes32Vector, DepositData> {
 

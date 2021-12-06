@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.spec.datastructures.execution;
 
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.impl.SszByteListSchemaImpl;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfigMerge;
-import tech.pegasys.teku.ssz.schema.collections.impl.SszByteListSchemaImpl;
-import tech.pegasys.teku.ssz.tree.TreeNode;
 
 public class TransactionSchema extends SszByteListSchemaImpl<Transaction> {
 

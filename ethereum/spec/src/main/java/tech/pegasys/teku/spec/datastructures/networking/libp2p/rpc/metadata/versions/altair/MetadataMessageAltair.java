@@ -13,12 +13,12 @@
 
 package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.altair;
 
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
-import tech.pegasys.teku.ssz.collections.SszBitvector;
-import tech.pegasys.teku.ssz.containers.Container3;
-import tech.pegasys.teku.ssz.primitive.SszUInt64;
-import tech.pegasys.teku.ssz.tree.TreeNode;
 
 public class MetadataMessageAltair
     extends Container3<MetadataMessageAltair, SszUInt64, SszBitvector, SszBitvector>

@@ -16,12 +16,12 @@ package tech.pegasys.teku.networking.eth2.rpc.core.encodings.ssz;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
+import tech.pegasys.teku.infrastructure.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.DeserializationFailedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcPayloadEncoder;
-import tech.pegasys.teku.ssz.SszData;
-import tech.pegasys.teku.ssz.schema.SszSchema;
-import tech.pegasys.teku.ssz.sos.SszDeserializeException;
 
 public class DefaultRpcPayloadEncoder<T extends SszData> implements RpcPayloadEncoder<T> {
   private static final Logger LOG = LogManager.getLogger();

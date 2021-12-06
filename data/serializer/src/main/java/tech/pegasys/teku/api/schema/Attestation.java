@@ -20,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
-import tech.pegasys.teku.ssz.collections.SszBitlist;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 
 public class Attestation {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES_SSZ)

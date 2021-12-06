@@ -25,6 +25,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
+import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.p2p.connection.ConnectionManager;
 import tech.pegasys.teku.networking.p2p.connection.PeerSelectionStrategy;
@@ -43,7 +44,6 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
-import tech.pegasys.teku.ssz.type.Bytes4;
 import tech.pegasys.teku.storage.store.KeyValueStore;
 
 public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {

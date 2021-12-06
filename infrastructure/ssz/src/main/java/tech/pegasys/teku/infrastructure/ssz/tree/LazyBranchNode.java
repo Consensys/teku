@@ -1,0 +1,113 @@
+/*
+ * Copyright 2021 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
+package tech.pegasys.teku.infrastructure.ssz.tree;
+
+import com.google.common.base.Suppliers;
+import java.util.function.Supplier;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.crypto.Hash;
+
+public class LazyBranchNode implements BranchNode {
+  private final Supplier<Bytes32> hashTreeRoot;
+  private final Bytes32 leftRoot;
+  private final Bytes32 rightRoot;
+
+  private final Supplier<TreeNode> leftLoader;
+  private final Supplier<TreeNode> rightLoader;
+
+  private LazyBranchNode(
+      final Bytes32 hashTreeRoot,
+      final Bytes32 leftRoot,
+      final Bytes32 rightRoot,
+      final Supplier<TreeNode> leftLoader,
+      final Supplier<TreeNode> rightLoader) {
+    this.hashTreeRoot = () -> hashTreeRoot;
+    this.leftRoot = leftRoot;
+    this.rightRoot = rightRoot;
+
+    this.leftLoader = Suppliers.memoize(leftLoader::get);
+    this.rightLoader = Suppliers.memoize(rightLoader::get);
+  }
+
+  private LazyBranchNode(
+      final Bytes32 leftRoot,
+      final Bytes32 rightRoot,
+      final Supplier<TreeNode> leftLoader,
+      final Supplier<TreeNode> rightLoader) {
+    this.hashTreeRoot =
+        Suppliers.memoize(() -> Hash.sha256(Bytes.concatenate(leftRoot, rightRoot)));
+    this.leftRoot = leftRoot;
+    this.rightRoot = rightRoot;
+    this.leftLoader = leftLoader;
+    this.rightLoader = rightLoader;
+  }
+
+  public static LazyBranchNode createWithKnownHash(
+      final Bytes32 hashTreeRoot,
+      final Bytes32 leftRoot,
+      final Bytes32 rightRoot,
+      final Supplier<TreeNode> leftLoader,
+      final Supplier<TreeNode> rightLoader) {
+    return new LazyBranchNode(hashTreeRoot, leftRoot, rightRoot, leftLoader, rightLoader);
+  }
+
+  public static LazyBranchNode createWithUnknownHash(
+      final Bytes32 leftRoot,
+      final Bytes32 rightRoot,
+      final Supplier<TreeNode> leftLoader,
+      final Supplier<TreeNode> rightLoader) {
+    return new LazyBranchNode(
+        leftRoot,
+        rightRoot,
+        Suppliers.memoize(leftLoader::get),
+        Suppliers.memoize(rightLoader::get));
+  }
+
+  @Override
+  public TreeNode left() {
+    return leftLoader.get();
+  }
+
+  @Override
+  public TreeNode right() {
+    return rightLoader.get();
+  }
+
+  @Override
+  public BranchNode rebind(final boolean left, final TreeNode newNode) {
+    return left
+        ? new LazyBranchNode(newNode.hashTreeRoot(), rightRoot, () -> newNode, rightLoader)
+        : new LazyBranchNode(leftRoot, newNode.hashTreeRoot(), leftLoader, () -> newNode);
+  }
+
+  @Override
+  public Bytes32 hashTreeRoot() {
+    return hashTreeRoot.get();
+  }
+
+  @Override
+  public TreeNode updated(TreeUpdates newNodes) {
+    if (newNodes.isEmpty()) {
+      return this;
+    } else if (newNodes.isFinal()) {
+      return newNodes.getNode(0);
+    } else {
+      Pair<TreeUpdates, TreeUpdates> children = newNodes.splitAtPivot();
+      return BranchNode.create(
+          left().updated(children.getLeft()), right().updated(children.getRight()));
+    }
+  }
+}

@@ -25,11 +25,11 @@ import tech.pegasys.teku.api.response.v2.debug.GetStateResponseV2;
 import tech.pegasys.teku.api.response.v2.validator.GetNewBlockResponseV2;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.BLSSignature;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
+import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
+import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.collections.SszBitlist;
-import tech.pegasys.teku.ssz.collections.SszBitvector;
-import tech.pegasys.teku.ssz.type.Bytes20;
-import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class JsonProvider {
   private void addTekuMappers() {

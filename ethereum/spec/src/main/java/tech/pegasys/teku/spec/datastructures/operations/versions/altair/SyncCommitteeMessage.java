@@ -15,12 +15,12 @@ package tech.pegasys.teku.spec.datastructures.operations.versions.altair;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container4;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
-import tech.pegasys.teku.ssz.containers.Container4;
-import tech.pegasys.teku.ssz.primitive.SszBytes32;
-import tech.pegasys.teku.ssz.primitive.SszUInt64;
-import tech.pegasys.teku.ssz.tree.TreeNode;
 
 public class SyncCommitteeMessage
     extends Container4<SyncCommitteeMessage, SszUInt64, SszBytes32, SszUInt64, SszSignature> {
