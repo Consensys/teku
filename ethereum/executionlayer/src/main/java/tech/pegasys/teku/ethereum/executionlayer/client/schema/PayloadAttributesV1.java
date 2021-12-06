@@ -43,18 +43,18 @@ public class PayloadAttributesV1 {
 
   @JsonSerialize(using = Bytes20Serializer.class)
   @JsonDeserialize(using = Bytes20Deserializer.class)
-  private final Bytes20 feeRecipient;
+  private final Bytes20 suggestedFeeRecipient;
 
   public PayloadAttributesV1(
       @JsonProperty("timestamp") UInt64 timestamp,
       @JsonProperty("random") Bytes32 random,
-      @JsonProperty("feeRecipient") Bytes20 feeRecipient) {
+      @JsonProperty("suggestedFeeRecipient") Bytes20 suggestedFeeRecipient) {
     checkNotNull(timestamp, "timestamp");
     checkNotNull(random, "random");
-    checkNotNull(feeRecipient, "feeRecipient");
+    checkNotNull(suggestedFeeRecipient, "suggestedFeeRecipient");
     this.timestamp = timestamp;
     this.random = random;
-    this.feeRecipient = feeRecipient;
+    this.suggestedFeeRecipient = suggestedFeeRecipient;
   }
 
   public static Optional<PayloadAttributesV1> fromInternalForkChoiceState(
@@ -74,12 +74,12 @@ public class PayloadAttributesV1 {
     final PayloadAttributesV1 that = (PayloadAttributesV1) o;
     return Objects.equals(timestamp, that.timestamp)
         && Objects.equals(random, that.random)
-        && Objects.equals(feeRecipient, that.feeRecipient);
+        && Objects.equals(suggestedFeeRecipient, that.suggestedFeeRecipient);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(timestamp, random, feeRecipient);
+    return Objects.hash(timestamp, random, suggestedFeeRecipient);
   }
 
   @Override
@@ -87,7 +87,7 @@ public class PayloadAttributesV1 {
     return MoreObjects.toStringHelper(this)
         .add("timestamp", timestamp)
         .add("random", random)
-        .add("feeRecipient", feeRecipient)
+        .add("suggestedFeeRecipient", suggestedFeeRecipient)
         .toString();
   }
 }

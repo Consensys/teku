@@ -30,21 +30,21 @@ public class ExecutePayloadResult {
   @JsonDeserialize(using = Bytes32Deserializer.class)
   private final Bytes32 latestValidHash;
 
-  private final String message;
+  private final String validationError;
 
   public ExecutePayloadResult(
       @JsonProperty("status") ExecutionPayloadStatus status,
       @JsonProperty("latestValidHash") Bytes32 latestValidHash,
-      @JsonProperty("message") String message) {
+      @JsonProperty("validationError") String validationError) {
     checkNotNull(status, "status");
     this.status = status;
     this.latestValidHash = latestValidHash;
-    this.message = message;
+    this.validationError = validationError;
   }
 
   public tech.pegasys.teku.spec.executionengine.ExecutePayloadResult asInternalExecutionPayload() {
     return new tech.pegasys.teku.spec.executionengine.ExecutePayloadResult(
-        status, Optional.ofNullable(latestValidHash), Optional.ofNullable(message));
+        status, Optional.ofNullable(latestValidHash), Optional.ofNullable(validationError));
   }
 
   @Override
@@ -54,12 +54,12 @@ public class ExecutePayloadResult {
     final ExecutePayloadResult that = (ExecutePayloadResult) o;
     return Objects.equals(status, that.status)
         && Objects.equals(latestValidHash, that.latestValidHash)
-        && Objects.equals(message, that.message);
+        && Objects.equals(validationError, that.validationError);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(status, latestValidHash, message);
+    return Objects.hash(status, latestValidHash, validationError);
   }
 
   @Override
@@ -67,7 +67,7 @@ public class ExecutePayloadResult {
     return MoreObjects.toStringHelper(this)
         .add("status", status)
         .add("latestValidHash", latestValidHash)
-        .add("message", message)
+        .add("validationError", validationError)
         .toString();
   }
 }
