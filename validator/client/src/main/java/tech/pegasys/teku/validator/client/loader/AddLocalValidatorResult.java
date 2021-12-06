@@ -18,11 +18,11 @@ import java.util.Optional;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 
-public class MutableValidatorAddResult {
+public class AddLocalValidatorResult {
   private final PostKeyResult result;
   private final Optional<Signer> signer;
 
-  public MutableValidatorAddResult(final PostKeyResult result, final Optional<Signer> signer) {
+  public AddLocalValidatorResult(final PostKeyResult result, final Optional<Signer> signer) {
     this.result = result;
     this.signer = signer;
   }
@@ -39,7 +39,7 @@ public class MutableValidatorAddResult {
   public boolean equals(final Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    final MutableValidatorAddResult that = (MutableValidatorAddResult) o;
+    final AddLocalValidatorResult that = (AddLocalValidatorResult) o;
     return Objects.equals(result, that.result) && Objects.equals(signer, that.signer);
   }
 

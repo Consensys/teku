@@ -28,6 +28,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -66,7 +67,7 @@ public class ExternalValidatorSourceTest {
 
   @Test
   void shouldThrowExceptionWhenAddValidator() {
-    assertThatThrownBy(() -> validatorSource.addValidator(null, "pass"))
+    assertThatThrownBy(() -> validatorSource.addValidator(null, "pass", BLSPublicKey.empty()))
         .isInstanceOf(UnsupportedOperationException.class);
   }
 
