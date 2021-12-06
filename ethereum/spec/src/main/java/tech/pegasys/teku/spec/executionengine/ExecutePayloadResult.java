@@ -19,6 +19,8 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 
 public class ExecutePayloadResult {
+  public static final ExecutePayloadResult VALID =
+      new ExecutePayloadResult(ExecutionPayloadStatus.VALID, Optional.empty(), Optional.empty());
   public static final ExecutePayloadResult SYNCING =
       new ExecutePayloadResult(ExecutionPayloadStatus.SYNCING, Optional.empty(), Optional.empty());
   private final ExecutionPayloadStatus status;
