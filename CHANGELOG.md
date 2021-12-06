@@ -38,3 +38,4 @@ For information on changes in released versions of Teku, see the [releases page]
     The version of BLST to use can be explicitly set by setting the `teku.portableBlst` system property. e.g `JAVA_OPTS="-Dteku.portableBlst=true" teku`
 
 ### Bug Fixes
+ - Generated head events will now send the slot of the latest block rather than the calculated head slot.
