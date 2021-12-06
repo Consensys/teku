@@ -197,17 +197,6 @@ public class ForkChoice {
         block.getSlot(),
         blockSlotState.get().getSlot());
 
-    // Verify block signature up-front. Significantly reduces potential scope of DoS attack
-    // Actually need to do all checks in ForkChoiceUtil.checkOnBlockConditions
-    // Could actually do all the block processing off the fork choice thread.
-    // Putting the block in the store and updating checkpoints is a separate step after
-    // blockProcessor
-
-    // maybe need to verify all signatures in block though to keep batching support?
-    // or possibly just batch only the other signatures and not the block signature itself
-
-    // Can then send payload to execution engine
-
     final ForkChoicePayloadExecutor payloadExecutor =
         new ForkChoicePayloadExecutor(spec, block, executionEngine);
     final ForkChoiceUtil forkChoiceUtil = spec.atSlot(block.getSlot()).getForkChoiceUtil();
@@ -280,7 +269,6 @@ public class ForkChoice {
 
     // Note: not using thenRun here because we want to ensure each step is on the event thread
     transaction.commit().join();
-    // TODO: Would be better to just get this status right as part of transaction.commit()
     forkChoiceStrategy.onExecutionPayloadResult(block.getRoot(), payloadResult.getStatus());
 
     proposerWeightings.onBlockReceived(block, blockSlotState, forkChoiceStrategy);
