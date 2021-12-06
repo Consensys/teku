@@ -18,23 +18,27 @@ import static tech.pegasys.teku.data.slashinginterchange.Metadata.INTERCHANGE_VE
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.PublicKeyException;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.data.signingrecord.ValidatorSigningRecord;
 import tech.pegasys.teku.data.slashinginterchange.Metadata;
 import tech.pegasys.teku.data.slashinginterchange.SigningHistory;
 import tech.pegasys.teku.data.slashinginterchange.SlashingProtectionInterchangeFormat;
 import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
-import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class SlashingProtectionExporter {
@@ -42,26 +46,36 @@ public class SlashingProtectionExporter {
   private final List<SigningHistory> signingHistoryList = new ArrayList<>();
   private Bytes32 genesisValidatorsRoot = null;
   private final SyncDataAccessor syncDataAccessor;
-  private final SubCommandLogger log;
 
-  public SlashingProtectionExporter(final SubCommandLogger log, final String path) {
-    this.log = log;
+  public SlashingProtectionExporter(final String path) {
     syncDataAccessor = SyncDataAccessor.create(Paths.get(path));
   }
 
-  public void initialise(final Path slashProtectionPath) {
+  // returns a map of errors and the associated keys.
+  public Map<BLSPublicKey, String> initialise(
+      final Path slashProtectionPath, final Consumer<String> infoLogger) {
     File slashingProtectionRecords = slashProtectionPath.toFile();
-    Arrays.stream(slashingProtectionRecords.listFiles())
-        .filter(file -> file.isFile() && file.getName().endsWith(".yml"))
-        .forEach(this::readSlashProtectionFile);
+    final Map<BLSPublicKey, String> importErrors = new HashMap<>();
+    for (File currentFile : slashingProtectionRecords.listFiles()) {
+      final Optional<String> maybeError = readSlashProtectionFile(currentFile, infoLogger);
+      maybeError.ifPresent(
+          error -> {
+            final BLSPublicKey key =
+                BLSPublicKey.fromBytesCompressed(
+                    Bytes48.fromHexString(currentFile.getName().replace(".yml", "")));
+            importErrors.put(key, error);
+          });
+    }
+    return importErrors;
   }
 
-  void readSlashProtectionFile(final File file) {
+  // returns an error if there was one
+  Optional<String> readSlashProtectionFile(final File file, final Consumer<String> infoLogger) {
     try {
       Optional<ValidatorSigningRecord> maybeRecord =
           syncDataAccessor.read(file.toPath()).map(ValidatorSigningRecord::fromBytes);
       if (maybeRecord.isEmpty()) {
-        log.exit(1, "Failed to read from file " + file.getName());
+        return Optional.of("Failed to read from file " + file.getName());
       }
       ValidatorSigningRecord validatorSigningRecord = maybeRecord.get();
 
@@ -70,8 +84,7 @@ public class SlashingProtectionExporter {
           this.genesisValidatorsRoot = validatorSigningRecord.getGenesisValidatorsRoot();
         } else if (!genesisValidatorsRoot.equals(
             validatorSigningRecord.getGenesisValidatorsRoot())) {
-          log.exit(
-              1,
+          return Optional.of(
               "The genesisValidatorsRoot of "
                   + file.getName()
                   + " does not match the expected "
@@ -80,19 +93,21 @@ public class SlashingProtectionExporter {
       }
 
       final String pubkey = file.getName().substring(0, file.getName().length() - ".yml".length());
-      log.display("Exporting " + pubkey);
+      infoLogger.accept("Exporting " + pubkey);
       signingHistoryList.add(
           new SigningHistory(BLSPubKey.fromHexString(pubkey), validatorSigningRecord));
-    } catch (IOException e) {
-      log.exit(1, "Failed to read from file " + file.toString(), e);
+      return Optional.empty();
+    } catch (UncheckedIOException | IOException e) {
+      return Optional.of("Failed to read from file " + file);
     } catch (PublicKeyException e) {
-      log.exit(1, "Public key in file " + file.getName() + " does not appear valid.");
+      return Optional.of("Public key in file " + file.getName() + " does not appear valid.");
     }
   }
 
-  public void saveToFile(final String toFileName) throws IOException {
+  public void saveToFile(final String toFileName, final Consumer<String> infoLogger)
+      throws IOException {
     syncDataAccessor.syncedWrite(Path.of(toFileName), getJsonByteData());
-    log.display(
+    infoLogger.accept(
         "Wrote "
             + signingHistoryList.size()
             + " validator slashing protection records to "

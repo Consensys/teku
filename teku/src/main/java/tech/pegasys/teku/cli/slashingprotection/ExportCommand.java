@@ -15,8 +15,10 @@ package tech.pegasys.teku.cli.slashingprotection;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Map;
 import org.apache.logging.log4j.util.Strings;
 import picocli.CommandLine;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.ValidatorClientDataOptions;
 import tech.pegasys.teku.cli.util.SlashingProtectionCommandUtils;
@@ -58,14 +60,20 @@ public class ExportCommand implements Runnable {
         SUB_COMMAND_LOG, slashProtectionPath);
 
     SlashingProtectionExporter slashingProtectionExporter =
-        new SlashingProtectionExporter(SUB_COMMAND_LOG, toFileName);
+        new SlashingProtectionExporter(toFileName);
 
     SUB_COMMAND_LOG.display("Reading slashing protection data from: " + slashProtectionPath);
-    slashingProtectionExporter.initialise(slashProtectionPath);
+    final Map<BLSPublicKey, String> errors =
+        slashingProtectionExporter.initialise(slashProtectionPath, SUB_COMMAND_LOG::display);
 
+    if (!errors.isEmpty()) {
+      errors.forEach((key, error) -> SUB_COMMAND_LOG.display("ERROR: " + error));
+      SUB_COMMAND_LOG.exit(
+          1, "There were errors reading from slashing protection files, cannot complete.");
+    }
     try {
       SUB_COMMAND_LOG.display("Writing slashing protection data to: " + toFileName);
-      slashingProtectionExporter.saveToFile(toFileName);
+      slashingProtectionExporter.saveToFile(toFileName, SUB_COMMAND_LOG::display);
     } catch (IOException e) {
       SUB_COMMAND_LOG.exit(1, "Failed to export slashing protection data.", e);
     }
