@@ -31,11 +31,8 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
 
 public class ExecutionPayloadHeader extends ExecutionPayloadCommon {
 
-  @Schema(
-      name = "transactions_root",
-      type = "string",
-      format = "byte",
-      description = DESCRIPTION_BYTES32)
+  @JsonProperty("transactions_root")
+  @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
   public final Bytes32 transactionsRoot;
 
   @JsonCreator

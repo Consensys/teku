@@ -30,39 +30,40 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public abstract class ExecutionPayloadCommon {
 
+  @JsonProperty("parent_hash")
   @Schema(
-      name = "parent_hash",
       type = "string",
       format = "byte",
       pattern = PATTERN_BYTES32,
       description = DESCRIPTION_BYTES32)
   public final Bytes32 parentHash;
 
+  @JsonProperty("fee_recipient")
   @Schema(
-      name = "fee_recipient",
       type = "string",
       format = "byte",
       pattern = PATTERN_BYTES20,
       description = DESCRIPTION_BYTES20)
   public final Bytes20 feeRecipient;
 
+  @JsonProperty("state_root")
   @Schema(
-      name = "state_root",
       type = "string",
       format = "byte",
       pattern = PATTERN_BYTES32,
       description = DESCRIPTION_BYTES32)
   public final Bytes32 stateRoot;
 
+  @JsonProperty("receipt_root")
   @Schema(
-      name = "receipt_root",
       type = "string",
       format = "byte",
       pattern = PATTERN_BYTES32,
       description = DESCRIPTION_BYTES32)
   public final Bytes32 receiptRoot;
 
-  @Schema(name = "logs_bloom", type = "string", format = "byte")
+  @JsonProperty("logs_bloom")
+  @Schema(type = "string", format = "byte")
   public final Bytes logsBloom;
 
   @Schema(
@@ -72,26 +73,31 @@ public abstract class ExecutionPayloadCommon {
       description = DESCRIPTION_BYTES32)
   public final Bytes32 random;
 
-  @Schema(name = "block_number", type = "string", format = "uint64")
+  @JsonProperty("block_number")
+  @Schema(type = "string", format = "uint64")
   public final UInt64 blockNumber;
 
-  @Schema(name = "gas_limit", type = "string", format = "uint64")
+  @JsonProperty("gas_limit")
+  @Schema(type = "string", format = "uint64")
   public final UInt64 gasLimit;
 
-  @Schema(name = "gas_used", type = "string", format = "uint64")
+  @JsonProperty("gas_used")
+  @Schema(type = "string", format = "uint64")
   public final UInt64 gasUsed;
 
   @Schema(type = "string", format = "uint64")
   public final UInt64 timestamp;
 
-  @Schema(name = "extra_data", type = "string", format = "byte")
+  @JsonProperty("extra_data")
+  @Schema(type = "string", format = "byte")
   public final Bytes extraData;
 
-  @Schema(name = "base_fee_per_gas", type = "string", format = "uint256")
+  @JsonProperty("base_fee_per_gas")
+  @Schema(type = "string", format = "uint256")
   public final UInt256 baseFeePerGas;
 
+  @JsonProperty("block_hash")
   @Schema(
-      name = "block_hash",
       type = "string",
       format = "byte",
       pattern = PATTERN_BYTES32,
