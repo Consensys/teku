@@ -26,6 +26,7 @@ import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.Arrays;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
@@ -118,5 +119,35 @@ public class KeystoreLocker {
     final ByteBuffer readBuffer = ByteBuffer.allocate(Long.BYTES).order(ByteOrder.nativeOrder());
     readBuffer.put(bytes);
     return readBuffer.getLong(0);
+  }
+
+  private Path getLockFilePath(final Path keystoreFile) {
+    return Path.of(keystoreFile.toString() + ".lock");
+  }
+
+  public void unlockKeystore(final Path keystoreFile) {
+    final Path lockfilePath = getLockFilePath(keystoreFile);
+    try (final FileChannel channel =
+            FileChannel.open(lockfilePath, StandardOpenOption.READ, StandardOpenOption.WRITE);
+        final FileLock lock = channel.tryLock()) {
+      if (lock == null) {
+        // File is already locked, consider it a valid lock
+        throw keystoreInUseException(lockfilePath);
+      }
+      if (channel.size() != Long.BYTES) {
+        throw keystoreInUseException(lockfilePath);
+      }
+      final long pidFromFile = readPidFromFile(channel);
+      if (!Arrays.equals(longPidToNativeByteArray(pidFromFile), getProcessPID())) {
+        throw keystoreInUseException(lockfilePath);
+      }
+
+      lock.release();
+      if (!lockfilePath.toFile().delete()) {
+        LOG.warn("Failed to delete lock file: " + lockfilePath);
+      }
+    } catch (final IOException e) {
+      LOG.debug("Failed to cleanup lock file", e);
+    }
   }
 }

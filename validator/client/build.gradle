@@ -21,8 +21,10 @@ dependencies {
   implementation project(':util')
   implementation project(':data:serializer')
   implementation project(':data:provider')
+  implementation project(':data:dataexchange')
 
   implementation 'org.apache.tuweni:tuweni-bytes'
+  implementation 'commons-io:commons-io'
 
   implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'

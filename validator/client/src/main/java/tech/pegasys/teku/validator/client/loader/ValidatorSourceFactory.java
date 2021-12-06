@@ -15,12 +15,13 @@ package tech.pegasys.teku.validator.client.loader;
 
 import java.io.File;
 import java.net.http.HttpClient;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -32,6 +33,7 @@ import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
 
 public class ValidatorSourceFactory {
+  private static final Logger LOG = LogManager.getLogger();
   private final Spec spec;
   private final ValidatorConfig config;
   private final InteropConfig interopConfig;
@@ -89,7 +91,9 @@ public class ValidatorSourceFactory {
     final Path keystorePath = ValidatorClientService.getAlterableKeystorePath(dataDirLayout);
     final Path keystorePasswordPath =
         ValidatorClientService.getAlterableKeystorePasswordPath(dataDirLayout);
-    if (!(Files.exists(keystorePath) && Files.exists(keystorePasswordPath))) {
+
+    if (!ensurePathExists(keystorePath) || !ensurePathExists(keystorePasswordPath)) {
+      LOG.error("Could not initialise mutable paths, mutable storage will not be available");
       return Optional.empty();
     }
 
@@ -104,10 +108,14 @@ public class ValidatorSourceFactory {
             new KeystoreLocker(),
             keyStoreFilesLocator,
             asyncRunner,
-            false);
-    mutableLocalValidatorSource =
-        Optional.of(new MutableLocalValidatorSource(localValidatorSource, slashingProtector));
+            false,
+            maybeDataDir);
+    mutableLocalValidatorSource = Optional.of(localValidatorSource);
     return mutableLocalValidatorSource;
+  }
+
+  private boolean ensurePathExists(final Path directory) {
+    return directory.toFile().exists() || directory.toFile().mkdirs();
   }
 
   private Optional<ValidatorSource> addLocalValidatorSource() {
@@ -124,7 +132,8 @@ public class ValidatorSourceFactory {
                 new KeystoreLocker(),
                 keyStoreFilesLocator,
                 asyncRunner,
-                true)));
+                true,
+                maybeDataDir)));
   }
 
   private Optional<ValidatorSource> addExternalValidatorSource() {
