@@ -316,7 +316,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       final BeaconStateUtil beaconStateUtil =
           spec.atSlot(newChainHead.getForkChoiceSlot()).getBeaconStateUtil();
       chainHeadChannel.chainHeadUpdated(
-          newChainHead.getForkChoiceSlot(),
+          newChainHead.getSlot(),
           newChainHead.getStateRoot(),
           newChainHead.getRoot(),
           epochTransition,
