@@ -17,9 +17,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
 import tech.pegasys.signers.bls.keystore.KeyStoreValidationException;
 import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
@@ -32,7 +29,6 @@ import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysResponse
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 
 public class KeyManager {
-  private static final Logger LOG = LogManager.getLogger();
   private final ValidatorLoader validatorLoader;
   private final DataDirLayout dataDirLayout;
 
@@ -130,19 +126,7 @@ public class KeyManager {
     } catch (KeyStoreValidationException ex) {
       return PostKeyResult.error(ex.getMessage());
     }
-    final BLSPublicKey publicKey =
-        BLSPublicKey.fromBytesCompressed(Bytes48.wrap(keyStoreData.getPubkey()));
-    if (validatorLoader.getOwnedValidators().getValidator(publicKey).isPresent()) {
-      return PostKeyResult.duplicate();
-    }
 
-    if (slashingProtectionImporter.isPresent()) {
-      final Optional<String> errorString =
-          slashingProtectionImporter.get().updateSigningRecord(publicKey, LOG::debug);
-      if (errorString.isPresent()) {
-        return PostKeyResult.error(errorString.get());
-      }
-    }
-    return validatorLoader.loadMutableValidator(keyStoreData, password);
+    return validatorLoader.loadMutableValidator(keyStoreData, password, slashingProtectionImporter);
   }
 }

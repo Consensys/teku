@@ -30,6 +30,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.DeletableSigner;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
+import tech.pegasys.teku.data.SlashingProtectionImporter;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
@@ -92,20 +93,28 @@ public class ValidatorLoader {
   }
 
   public synchronized PostKeyResult loadMutableValidator(
-      final KeyStoreData keyStoreData, final String password) {
-    if (!(mutableValidatorSource.isPresent()
-        && mutableValidatorSource.get().canAddValidator()
-        && maybeDataDirLayout.isPresent())) {
+      final KeyStoreData keyStoreData,
+      final String password,
+      final Optional<SlashingProtectionImporter> slashingProtectionImporter) {
+    if (!canAddValidator()) {
       return PostKeyResult.error("Not able to add validator");
     }
     final BLSPublicKey publicKey =
         BLSPublicKey.fromBytesCompressed(Bytes48.wrap(keyStoreData.getPubkey()));
+
+    if (slashingProtectionImporter.isPresent()) {
+      final Optional<String> errorString =
+          slashingProtectionImporter.get().updateSigningRecord(publicKey, LOG::debug);
+      if (errorString.isPresent()) {
+        return PostKeyResult.error(errorString.get());
+      }
+    }
     if (ownedValidators.hasValidator(publicKey)) {
       return PostKeyResult.duplicate();
     }
 
     final AddLocalValidatorResult validatorAddResult =
-        mutableValidatorSource.get().addValidator(keyStoreData, password);
+        mutableValidatorSource.get().addValidator(keyStoreData, password, publicKey);
 
     if (validatorAddResult.getSigner().isEmpty()) {
       return validatorAddResult.getResult();
@@ -119,6 +128,12 @@ public class ValidatorLoader {
         new Validator(publicKey, new DeletableSigner(signer), graffitiProvider, false));
 
     LOG.info("Added validator: " + publicKey.toAbbreviatedString());
+  }
+
+  private boolean canAddValidator() {
+    return mutableValidatorSource.isPresent()
+        && mutableValidatorSource.get().canAddValidator()
+        && maybeDataDirLayout.isPresent();
   }
 
   public OwnedValidators getOwnedValidators() {

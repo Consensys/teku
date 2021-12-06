@@ -43,6 +43,7 @@ import org.mockito.ArgumentMatchers;
 import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.core.signatures.DeletableSigner;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
@@ -604,7 +605,7 @@ class ValidatorLoaderTest {
             metricsSystem,
             Optional.empty());
     validatorLoader.loadValidators();
-    final PostKeyResult result = validatorLoader.loadMutableValidator(null, "");
+    final PostKeyResult result = validatorLoader.loadMutableValidator(null, "", Optional.empty());
     assertThat(result).isEqualTo(PostKeyResult.error("Not able to add validator"));
   }
 
@@ -628,8 +629,13 @@ class ValidatorLoaderTest {
         Resources.toString(Resources.getResource("pbkdf2TestVector.json"), StandardCharsets.UTF_8);
     PostKeyResult result =
         validatorLoader.loadMutableValidator(
-            KeyStoreLoader.loadFromString(keystoreString), "testpassword");
+            KeyStoreLoader.loadFromString(keystoreString), "testpassword", Optional.empty());
     assertThat(result.getImportStatus()).isEqualTo(ImportStatus.IMPORTED);
+
+    final Optional<Validator> validator =
+        validatorLoader.getOwnedValidators().getValidator(PUBLIC_KEY1);
+    assertThat(validator).isPresent();
+    assertThat(validator.orElseThrow().getSigner()).isInstanceOf(DeletableSigner.class);
   }
 
   @Test

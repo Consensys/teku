@@ -84,20 +84,18 @@ public class LocalValidatorSource implements ValidatorSource {
 
   @Override
   public boolean canAddValidator() {
-    return !readOnly;
+    return !readOnly && maybeDataDirLayout.isPresent();
   }
 
   @Override
   public AddLocalValidatorResult addValidator(
-      final KeyStoreData keyStoreData, final String password) {
-    if (readOnly || maybeDataDirLayout.isEmpty()) {
+      final KeyStoreData keyStoreData, final String password, final BLSPublicKey publicKey) {
+    if (!canAddValidator()) {
       return new AddLocalValidatorResult(
           PostKeyResult.error("Cannot add validator to a read only source."), Optional.empty());
     }
 
     final DataDirLayout dataDirLayout = maybeDataDirLayout.get();
-    final BLSPublicKey publicKey =
-        BLSPublicKey.fromBytesCompressed(Bytes48.wrap(keyStoreData.getPubkey()));
     final String fileName = publicKey.toBytesCompressed().toUnprefixedHexString();
     final Path passwordPath =
         ValidatorClientService.getAlterableKeystorePasswordPath(dataDirLayout)

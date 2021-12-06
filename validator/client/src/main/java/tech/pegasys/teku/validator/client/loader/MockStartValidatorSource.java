@@ -60,7 +60,7 @@ public class MockStartValidatorSource implements ValidatorSource {
 
   @Override
   public AddLocalValidatorResult addValidator(
-      final KeyStoreData keyStoreData, final String password) {
+      final KeyStoreData keyStoreData, final String password, final BLSPublicKey publicKey) {
     throw new UnsupportedOperationException();
   }
 

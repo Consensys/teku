@@ -35,6 +35,7 @@ import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
 import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSecretKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.Signer;
@@ -59,6 +60,10 @@ class LocalValidatorSourceTest {
   private static final String EXPECTED_PASSWORD = "testpassword";
   private static final Bytes32 BLS_PRIVATE_KEY =
       Bytes32.fromHexString("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f");
+  private static BLSPublicKey PBKDF2_PUBKEY =
+      BLSPublicKey.fromSSZBytes(
+          Bytes.fromHexString(
+              "9612d7a727c9d0a22e185a1c768478dfe919cada9266988cb32359c11f2b7b27f4ae4040902382ae2910c15e2b420d07"));
   private static final BLSKeyPair EXPECTED_BLS_KEY_PAIR =
       new BLSKeyPair(BLSSecretKey.fromBytes(BLS_PRIVATE_KEY));
 
@@ -193,7 +198,8 @@ class LocalValidatorSourceTest {
   void shouldRejectAddingValidatorIfReadOnlySource() {
     final KeyStoreData keyStoreData = mock(KeyStoreData.class);
     when(keyStoreData.getPubkey()).thenReturn(dataStructureUtil.randomPublicKey().toSSZBytes());
-    final AddLocalValidatorResult result = validatorSource.addValidator(keyStoreData, "pass");
+    final AddLocalValidatorResult result =
+        validatorSource.addValidator(keyStoreData, "pass", dataStructureUtil.randomPublicKey());
     assertThat(result.getResult().getImportStatus()).isEqualTo(ImportStatus.ERROR);
     assertThat(result.getResult().getMessage().orElse("")).contains("read only source");
   }
@@ -201,7 +207,8 @@ class LocalValidatorSourceTest {
   @Test
   void shouldAddValidatorIfNotReadOnlySource(@TempDir Path tempDir) throws IOException {
     final AddLocalValidatorResult result =
-        getResultFromAddingValidator(tempDir, "pbkdf2TestVector.json", "testpassword");
+        getResultFromAddingValidator(
+            tempDir, "pbkdf2TestVector.json", "testpassword", PBKDF2_PUBKEY);
     assertThat(result.getResult().getImportStatus()).isEqualTo(ImportStatus.IMPORTED);
     assertThat(result.getSigner()).isNotEmpty();
   }
@@ -209,11 +216,13 @@ class LocalValidatorSourceTest {
   @Test
   void shouldDetectDuplicatesOnAddValidator(@TempDir Path tempDir) throws IOException {
     final AddLocalValidatorResult result =
-        getResultFromAddingValidator(tempDir, "pbkdf2TestVector.json", "testpassword");
+        getResultFromAddingValidator(
+            tempDir, "pbkdf2TestVector.json", "testpassword", PBKDF2_PUBKEY);
     assertThat(result.getResult().getImportStatus()).isEqualTo(ImportStatus.IMPORTED);
     assertThat(result.getSigner()).isNotEmpty();
     final AddLocalValidatorResult result2 =
-        getResultFromAddingValidator(tempDir, "pbkdf2TestVector.json", "testpassword");
+        getResultFromAddingValidator(
+            tempDir, "pbkdf2TestVector.json", "testpassword", PBKDF2_PUBKEY);
     assertThat(result2.getResult().getImportStatus()).isEqualTo(ImportStatus.DUPLICATE);
     assertThat(result2.getSigner()).isEmpty();
   }
@@ -221,7 +230,8 @@ class LocalValidatorSourceTest {
   @Test
   void shouldErrorIfPasswordIsIncorrectOnAddValidator(@TempDir Path tempDir) throws IOException {
     final AddLocalValidatorResult result =
-        getResultFromAddingValidator(tempDir, "pbkdf2TestVector.json", "zz");
+        getResultFromAddingValidator(
+            tempDir, "pbkdf2TestVector.json", "zz", dataStructureUtil.randomPublicKey());
 
     assertThat(result.getResult().getImportStatus()).isEqualTo(ImportStatus.ERROR);
     assertThat(result.getResult().getMessage().orElse("")).contains("password");
@@ -248,7 +258,11 @@ class LocalValidatorSourceTest {
   }
 
   private AddLocalValidatorResult getResultFromAddingValidator(
-      final Path tempDir, final String resourceName, final String password) throws IOException {
+      final Path tempDir,
+      final String resourceName,
+      final String password,
+      final BLSPublicKey publicKey)
+      throws IOException {
     final LocalValidatorSource localValidatorSource =
         new LocalValidatorSource(
             spec,
@@ -261,6 +275,6 @@ class LocalValidatorSourceTest {
     final KeyStoreData keyStoreData =
         KeyStoreLoader.loadFromString(
             Resources.toString(Resources.getResource(resourceName), StandardCharsets.UTF_8));
-    return localValidatorSource.addValidator(keyStoreData, password);
+    return localValidatorSource.addValidator(keyStoreData, password, publicKey);
   }
 }
