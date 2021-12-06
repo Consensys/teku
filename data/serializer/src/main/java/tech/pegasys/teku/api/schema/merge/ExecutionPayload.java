@@ -40,7 +40,7 @@ public class ExecutionPayload extends ExecutionPayloadCommon {
   @JsonCreator
   public ExecutionPayload(
       @JsonProperty("parent_hash") Bytes32 parentHash,
-      @JsonProperty("coinbase") Bytes20 coinbase,
+      @JsonProperty("fee_recipient") Bytes20 feeRecipient,
       @JsonProperty("state_root") Bytes32 stateRoot,
       @JsonProperty("receipt_root") Bytes32 receiptRoot,
       @JsonProperty("logs_bloom") Bytes logsBloom,
@@ -55,7 +55,7 @@ public class ExecutionPayload extends ExecutionPayloadCommon {
       @JsonProperty("transactions") List<Bytes> transactions) {
     super(
         parentHash,
-        coinbase,
+        feeRecipient,
         stateRoot,
         receiptRoot,
         logsBloom,
@@ -74,7 +74,7 @@ public class ExecutionPayload extends ExecutionPayloadCommon {
       tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload executionPayload) {
     super(
         executionPayload.getParentHash(),
-        executionPayload.getCoinbase(),
+        executionPayload.getFeeRecipient(),
         executionPayload.getStateRoot(),
         executionPayload.getReceiptRoot(),
         executionPayload.getLogsBloom(),
@@ -110,7 +110,7 @@ public class ExecutionPayload extends ExecutionPayloadCommon {
                 .getExecutionPayloadSchema()
                 .create(
                     parentHash,
-                    coinbase,
+                    feeRecipient,
                     stateRoot,
                     receiptRoot,
                     logsBloom,
@@ -149,7 +149,7 @@ public class ExecutionPayload extends ExecutionPayloadCommon {
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("parentHash", parentHash)
-        .add("coinbase", coinbase)
+        .add("feeRecipient", feeRecipient)
         .add("stateRoot", stateRoot)
         .add("receiptRoot", receiptRoot)
         .add("logsBloom", logsBloom)

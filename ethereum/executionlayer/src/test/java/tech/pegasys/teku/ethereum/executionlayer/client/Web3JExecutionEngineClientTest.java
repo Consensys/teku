@@ -207,7 +207,7 @@ public class Web3JExecutionEngineClientTest {
         internalExecutePayloadResultExpected =
             new tech.pegasys.teku.spec.executionengine.ExecutePayloadResult(
                 ExecutionPayloadStatus.VALID, Optional.empty(), Optional.empty());
-    String json = "{\"status\": \"VALID\", \"latestValidHash\": null, \"message\": null }";
+    String json = "{\"status\": \"VALID\", \"latestValidHash\": null, \"validationError\": null }";
     ExecutePayloadResult executePayloadResultDeserialized =
         objectMapper.readValue(json, ExecutePayloadResult.class);
 
@@ -231,7 +231,7 @@ public class Web3JExecutionEngineClientTest {
     String json =
         "{\"status\": \"INVALID\", \"latestValidHash\": \""
             + lastValidHash.toHexString()
-            + "\", \"message\": \"test\" }";
+            + "\", \"validationError\": \"test\" }";
     ExecutePayloadResult executePayloadResultDeserialized =
         objectMapper.readValue(json, ExecutePayloadResult.class);
 
@@ -247,21 +247,23 @@ public class Web3JExecutionEngineClientTest {
     assertThrows(
         InvalidFormatException.class,
         () -> {
-          String json = "{\"status\": \"wrong\", \"latestValidHash\": null, \"message\": null }";
+          String json =
+              "{\"status\": \"wrong\", \"latestValidHash\": null, \"validationError\": null }";
           objectMapper.readValue(json, ExecutePayloadResult.class);
         });
 
     assertThrows(
         ValueInstantiationException.class,
         () -> {
-          String json = "{\"status\": null, \"latestValidHash\": null, \"message\": null }";
+          String json = "{\"status\": null, \"latestValidHash\": null, \"validationError\": null }";
           objectMapper.readValue(json, ExecutePayloadResult.class);
         });
 
     assertThrows(
         JsonMappingException.class,
         () -> {
-          String json = "{\"status\": null, \"latestValidHash\": \"wrong\", \"message\": null }";
+          String json =
+              "{\"status\": null, \"latestValidHash\": \"wrong\", \"validationError\": null }";
           objectMapper.readValue(json, ExecutePayloadResult.class);
         });
   }

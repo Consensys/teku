@@ -11,17 +11,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku;
+package tech.pegasys.teku.services.beaconchain;
 
-import tech.pegasys.teku.services.ServiceControllerFacade;
+import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 
 /**
  * CAUTION: this API is unstable and primarily intended for debugging and testing purposes this API
  * might be changed in any version in backward incompatible way
  */
-public interface NodeFacade {
+public interface BeaconChainControllerFactory {
 
-  ServiceControllerFacade getServiceController();
+  BeaconChainControllerFactory DEFAULT = BeaconChainController::new;
 
-  void stop();
+  BeaconChainController create(
+      final ServiceConfig serviceConfig, final BeaconChainConfiguration beaconConfig);
 }

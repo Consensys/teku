@@ -128,6 +128,34 @@ public class TestSpecInvocationContextProvider implements TestTemplateInvocation
     public Eth2Network getNetwork() {
       return network;
     }
+
+    public void assumeIsOneOf(SpecMilestone... milestones) {
+      Assumptions.assumeTrue(List.of(milestones).contains(specMilestone), "Milestone skipped");
+    }
+
+    public void assumeIsOneOf(Eth2Network... networks) {
+      Assumptions.assumeTrue(List.of(networks).contains(network), "Network skipped");
+    }
+
+    public void assumeIsNotOneOf(SpecMilestone... milestones) {
+      Assumptions.assumeFalse(List.of(milestones).contains(specMilestone), "Milestone skipped");
+    }
+
+    public void assumeIsNotOneOf(Eth2Network... networks) {
+      Assumptions.assumeFalse(List.of(networks).contains(network), "Network skipped");
+    }
+
+    public void assumeMilestoneActive(SpecMilestone milestone) {
+      Assumptions.assumeTrue(specMilestone.isGreaterThanOrEqualTo(milestone), "Milestone skipped");
+    }
+
+    public void assumeMergeActive() {
+      assumeMilestoneActive(SpecMilestone.MERGE);
+    }
+
+    public void assumeAltairActive() {
+      assumeMilestoneActive(SpecMilestone.ALTAIR);
+    }
   }
 
   public static class SpecContextParameterResolver<T> implements ParameterResolver {
@@ -149,43 +177,6 @@ public class TestSpecInvocationContextProvider implements TestTemplateInvocation
         ParameterContext parameterContext, ExtensionContext extensionContext)
         throws ParameterResolutionException {
       return data;
-    }
-  }
-
-  public static class SpecContextExecutionHelper {
-    public static void skip(SpecContext specContext, SpecMilestone... milestones) {
-      Assumptions.assumeFalse(
-          List.of(milestones).contains(specContext.getSpecMilestone()), "Milestone skipped");
-    }
-
-    public static void only(SpecContext specContext, SpecMilestone... milestones) {
-      Assumptions.assumeTrue(
-          List.of(milestones).contains(specContext.getSpecMilestone()), "Milestone skipped");
-    }
-
-    public static void skip(SpecContext specContext, Eth2Network... networks) {
-      Assumptions.assumeFalse(
-          List.of(networks).contains(specContext.getNetwork()), "Network skipped");
-    }
-
-    public static void only(SpecContext specContext, Eth2Network... networks) {
-      Assumptions.assumeTrue(
-          List.of(networks).contains(specContext.getNetwork()), "Network skipped");
-    }
-
-    public static void onlyPhase0(SpecContext specContext) {
-      Assumptions.assumeTrue(
-          specContext.getSpecMilestone().equals(SpecMilestone.PHASE0), "Milestone skipped");
-    }
-
-    public static void onlyAltair(SpecContext specContext) {
-      Assumptions.assumeTrue(
-          specContext.getSpecMilestone().equals(SpecMilestone.ALTAIR), "Milestone skipped");
-    }
-
-    public static void onlyMerge(SpecContext specContext) {
-      Assumptions.assumeTrue(
-          specContext.getSpecMilestone().equals(SpecMilestone.MERGE), "Milestone skipped");
     }
   }
 }

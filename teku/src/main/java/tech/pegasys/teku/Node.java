@@ -17,5 +17,6 @@ public interface Node extends NodeFacade {
 
   void start();
 
+  @Override
   void stop();
 }

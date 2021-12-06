@@ -51,17 +51,17 @@ import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
 import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
+import tech.pegasys.teku.api.schema.merge.SignedBeaconBlockMerge;
 import tech.pegasys.teku.api.schema.phase0.BeaconBlockPhase0;
+import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
-import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContextExecutionHelper;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
@@ -198,9 +198,8 @@ public class ValidatorDataProviderTest {
   }
 
   @TestTemplate
-  void parseBlock_shouldParseAltairBlocks(SpecContext specContext) throws JsonProcessingException {
-    SpecContextExecutionHelper.only(specContext, SpecMilestone.ALTAIR);
-
+  void parseBlock_shouldParseMilestoneSpecificBlocks(SpecContext specContext)
+      throws JsonProcessingException {
     final SignedBeaconBlock internalSignedBlock = dataStructureUtil.randomSignedBeaconBlock(ONE);
     final tech.pegasys.teku.api.schema.SignedBeaconBlock signedBlock =
         schemaProvider.getSignedBeaconBlock(internalSignedBlock);
@@ -210,7 +209,17 @@ public class ValidatorDataProviderTest {
         provider.parseBlock(jsonProvider, signedBlockJson);
 
     assertThat(parsedBlock).isEqualTo(signedBlock);
-    assertThat(parsedBlock).isInstanceOf(SignedBeaconBlockAltair.class);
+    switch (specContext.getSpecMilestone()) {
+      case PHASE0:
+        assertThat(parsedBlock).isInstanceOf(SignedBeaconBlockPhase0.class);
+        break;
+      case ALTAIR:
+        assertThat(parsedBlock).isInstanceOf(SignedBeaconBlockAltair.class);
+        break;
+      case MERGE:
+        assertThat(parsedBlock).isInstanceOf(SignedBeaconBlockMerge.class);
+        break;
+    }
   }
 
   @TestTemplate

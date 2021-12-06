@@ -19,7 +19,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus.SYNCING;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -27,9 +26,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
-import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
-import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -39,10 +35,8 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.executionengine.ExecutePayloadResult;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
-import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.storage.client.RecentChainData;
 
 class ForkChoicePayloadExecutorTest {
 
@@ -54,14 +48,11 @@ class ForkChoicePayloadExecutorTest {
   private final ExecutionPayloadHeader defaultPayloadHeader =
       schemaDefinitionsMerge.getExecutionPayloadHeaderSchema().getDefault();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final ForkChoiceStrategy forkChoiceStrategy = mock(ForkChoiceStrategy.class);
-  private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final SafeFuture<ExecutePayloadResult> executionResult = new SafeFuture<>();
   private final ExecutionEngineChannel executionEngine = mock(ExecutionEngineChannel.class);
   private final ExecutionPayloadHeader payloadHeader =
       dataStructureUtil.randomExecutionPayloadHeader();
   private final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
-  private EventThread forkChoiceExecutor = new InlineEventThread();
 
   private final StateAndBlockSummary chainHead =
       StateAndBlockSummary.create(dataStructureUtil.randomBeaconState());
@@ -70,15 +61,6 @@ class ForkChoicePayloadExecutorTest {
 
   @BeforeEach
   void setUp() {
-    when(recentChainData.getForkChoiceStrategy())
-        .thenAnswer(
-            invocation -> {
-              forkChoiceExecutor.checkOnEventThread();
-              return Optional.of(forkChoiceStrategy);
-            });
-    when(recentChainData.getChainHead()).thenReturn(Optional.of(chainHead));
-    when(recentChainData.getBestBlockRoot()).thenReturn(Optional.of(chainHead.getRoot()));
-
     when(executionEngine.executePayload(any())).thenReturn(executionResult);
   }
 
@@ -99,10 +81,8 @@ class ForkChoicePayloadExecutorTest {
     verify(executionEngine).executePayload(payload);
     assertThat(result).isTrue();
 
-    final BlockImportResult blockImportResult = BlockImportResult.successful(block);
-    final SafeFuture<BlockImportResult> combinedResult = payloadExecutor.combine(blockImportResult);
-    assertThat(combinedResult).isCompletedWithValue(blockImportResult);
-    verify(forkChoiceStrategy).onExecutionPayloadResult(block.getRoot(), SYNCING);
+    final SafeFuture<ExecutePayloadResult> combinedResult = payloadExecutor.getExecutionResult();
+    assertThat(combinedResult).isCompletedWithValue(ExecutePayloadResult.SYNCING);
   }
 
   @Test
@@ -111,6 +91,8 @@ class ForkChoicePayloadExecutorTest {
     final boolean result = payloadExecutor.optimisticallyExecute(payloadHeader, defaultPayload);
     verify(executionEngine, never()).executePayload(any());
     assertThat(result).isTrue();
+    assertThat(payloadExecutor.getExecutionResult())
+        .isCompletedWithValue(ExecutePayloadResult.VALID);
   }
 
   /**
@@ -136,98 +118,29 @@ class ForkChoicePayloadExecutorTest {
   }
 
   @Test
-  void shouldReturnBlockImportResultImmediatelyWhenNotSuccessful() {
-    forkChoiceExecutor = mock(EventThread.class);
+  void shouldReturnValidImmediatelyWhenNoPayloadExecuted() {
     final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
-    payloadExecutor.optimisticallyExecute(payloadHeader, payload);
 
-    final BlockImportResult blockImportResult =
-        BlockImportResult.failedStateTransition(new RuntimeException("Bad block"));
-    final SafeFuture<BlockImportResult> result = payloadExecutor.combine(blockImportResult);
-    assertThat(result).isCompletedWithValue(blockImportResult);
+    final SafeFuture<ExecutePayloadResult> result = payloadExecutor.getExecutionResult();
+    assertThat(result).isCompletedWithValue(ExecutePayloadResult.VALID);
   }
 
   @Test
-  void shouldReturnBlockImportResultImmediatelyWhenNoPayloadExecuted() {
-    forkChoiceExecutor = mock(EventThread.class);
-    final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
-
-    final BlockImportResult blockImportResult = BlockImportResult.successful(block);
-    final SafeFuture<BlockImportResult> result = payloadExecutor.combine(blockImportResult);
-    assertThat(result).isCompletedWithValue(blockImportResult);
-    verifyChainHeadUpdated(blockImportResult);
-  }
-
-  @Test
-  void shouldCombineWithValidPayloadExecution() {
+  void shouldReturnExecutionResultWhenExecuted() {
     final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
     payloadExecutor.optimisticallyExecute(payloadHeader, payload);
 
-    final BlockImportResult blockImportResult = BlockImportResult.successful(block);
-    final SafeFuture<BlockImportResult> result = payloadExecutor.combine(blockImportResult);
+    final SafeFuture<ExecutePayloadResult> result = payloadExecutor.getExecutionResult();
     assertThat(result).isNotCompleted();
-    verifyChainHeadNotUpdated(blockImportResult);
 
-    executionResult.complete(
-        new ExecutePayloadResult(ExecutionPayloadStatus.VALID, Optional.empty(), Optional.empty()));
+    final ExecutePayloadResult payloadResult =
+        new ExecutePayloadResult(ExecutionPayloadStatus.VALID, Optional.empty(), Optional.empty());
+    this.executionResult.complete(payloadResult);
 
-    assertThat(result).isCompletedWithValue(blockImportResult);
-    verify(forkChoiceStrategy)
-        .onExecutionPayloadResult(block.getRoot(), ExecutionPayloadStatus.VALID);
-    verifyChainHeadUpdated(blockImportResult);
-  }
-
-  @Test
-  void shouldCombineWithInvalidPayloadExecution() {
-    final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
-    payloadExecutor.optimisticallyExecute(payloadHeader, payload);
-
-    final BlockImportResult blockImportResult = BlockImportResult.successful(block);
-    final SafeFuture<BlockImportResult> result = payloadExecutor.combine(blockImportResult);
-    assertThat(result).isNotCompleted();
-    verifyChainHeadNotUpdated(blockImportResult);
-
-    executionResult.complete(
-        new ExecutePayloadResult(
-            ExecutionPayloadStatus.INVALID, Optional.empty(), Optional.empty()));
-
-    assertThat(result).isCompleted();
-    verify(forkChoiceStrategy)
-        .onExecutionPayloadResult(block.getRoot(), ExecutionPayloadStatus.INVALID);
-    final BlockImportResult finalImportResult = result.join();
-    assertThat(finalImportResult.isSuccessful()).isFalse();
-    verifyChainHeadNotUpdated(finalImportResult);
-  }
-
-  @Test
-  void shouldCombineWithSyncingPayloadExecution() {
-    final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
-    payloadExecutor.optimisticallyExecute(payloadHeader, payload);
-
-    final BlockImportResult blockImportResult = BlockImportResult.successful(block);
-    final SafeFuture<BlockImportResult> result = payloadExecutor.combine(blockImportResult);
-    assertThat(result).isNotCompleted();
-    verifyChainHeadNotUpdated(blockImportResult);
-
-    executionResult.complete(new ExecutePayloadResult(SYNCING, Optional.empty(), Optional.empty()));
-
-    assertThat(result).isCompletedWithValue(blockImportResult);
-    verify(forkChoiceStrategy).onExecutionPayloadResult(block.getRoot(), SYNCING);
-    verifyChainHeadNotUpdated(blockImportResult);
-  }
-
-  private void verifyChainHeadNotUpdated(final BlockImportResult blockImportResult) {
-    verify(recentChainData, never()).updateHead(any(), any());
-    assertThat(blockImportResult.isBlockOnCanonicalChain()).isFalse();
-  }
-
-  private void verifyChainHeadUpdated(final BlockImportResult blockImportResult) {
-    verify(recentChainData).updateHead(block.getRoot(), block.getSlot());
-    assertThat(blockImportResult.isBlockOnCanonicalChain()).isTrue();
+    assertThat(result).isCompletedWithValue(payloadResult);
   }
 
   private ForkChoicePayloadExecutor createPayloadExecutor() {
-    return new ForkChoicePayloadExecutor(
-        spec, recentChainData, forkChoiceExecutor, block, executionEngine);
+    return new ForkChoicePayloadExecutor(spec, block, executionEngine);
   }
 }
