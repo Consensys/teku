@@ -7,7 +7,7 @@
       "description" : "Bytes32 hexadecimal",
       "format" : "byte"
     },
-    "coinbase" : {
+    "fee_recipient" : {
       "pattern" : "^0x[a-fA-F0-9]{40}$",
       "type" : "string",
       "description" : "Bytes20 hexadecimal",
