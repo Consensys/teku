@@ -28,6 +28,8 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
@@ -39,6 +41,7 @@ import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SlashingProtectionImporterTest {
+  private static final Logger LOG = LogManager.getLogger();
   private final String pubkey =
       "b845089a1457f811bfc000588fbb4e713669be8ce060ea6be3c6ece09afc3794106c91ca73acda5e5457122d58723bed";
   private final BLSPublicKey publicKey =
@@ -87,18 +90,17 @@ public class SlashingProtectionImporterTest {
   @Test
   public void shouldExportAndImportFile(@TempDir Path tempDir)
       throws IOException, URISyntaxException {
-    final SubCommandLogger logger = mock(SubCommandLogger.class);
     final Path exportedFile = tempDir.resolve("exportedFile.json").toAbsolutePath();
 
-    final SlashingProtectionExporter exporter =
-        new SlashingProtectionExporter(logger, tempDir.toString());
+    final SlashingProtectionExporter exporter = new SlashingProtectionExporter(tempDir.toString());
     final File ruleFile = usingResourceFile("slashProtection.yml", tempDir);
-    exporter.readSlashProtectionFile(ruleFile);
+    final Optional<String> exportError = exporter.readSlashProtectionFile(ruleFile, LOG::debug);
     final String originalFileContent = Files.readString(ruleFile.toPath());
+    assertThat(exportError).isEmpty();
 
     assertThat(Files.exists(ruleFile.toPath())).isTrue();
     assertThat(Files.exists(exportedFile)).isFalse();
-    exporter.saveToFile(exportedFile.toString());
+    exporter.saveToFile(exportedFile.toString(), LOG::debug);
     ruleFile.delete();
     assertThat(Files.exists(exportedFile)).isTrue();
     assertThat(Files.exists(ruleFile.toPath())).isFalse();
@@ -126,13 +128,12 @@ public class SlashingProtectionImporterTest {
     final File repairedRuleFile =
         usingResourceFile("slashProtectionWithGenesisRoot.yml", repairedRecords);
 
-    final SlashingProtectionExporter exporter =
-        new SlashingProtectionExporter(logger, tempDir.toString());
-    exporter.readSlashProtectionFile(repairedRuleFile);
+    final SlashingProtectionExporter exporter = new SlashingProtectionExporter(tempDir.toString());
+    exporter.readSlashProtectionFile(repairedRuleFile, LOG::debug);
     final String originalFileContent = Files.readString(initialRuleFile.toPath());
 
     assertThat(exportedFile).doesNotExist();
-    exporter.saveToFile(exportedFile.toString());
+    exporter.saveToFile(exportedFile.toString(), LOG::debug);
     assertThat(exportedFile).exists();
 
     final SlashingProtectionRepairer repairer =

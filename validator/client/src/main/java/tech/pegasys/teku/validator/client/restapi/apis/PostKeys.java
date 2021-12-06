@@ -17,12 +17,19 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUE
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Optional;
+import org.apache.commons.io.IOUtils;
+import tech.pegasys.teku.api.exceptions.BadRequestException;
+import tech.pegasys.teku.data.SlashingProtectionImporter;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.validator.client.KeyManager;
+import tech.pegasys.teku.validator.client.ValidatorClientService;
 import tech.pegasys.teku.validator.client.restapi.ValidatorTypes;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeysRequest;
 
@@ -54,22 +61,36 @@ public class PostKeys extends RestApiEndpoint {
               body.getKeystores().size(), body.getPasswords().size()));
       return;
     }
-
-    final Optional<String> slashingData = body.getSlashingProtection();
-    if (slashingData.isPresent()) {
-      final Optional<String> slashingImportErrorMessage =
-          keyManager.importSlashingProtection(slashingData.get());
-      if (slashingImportErrorMessage.isPresent()) {
-        request.respondError(SC_BAD_REQUEST, slashingImportErrorMessage.get());
-        return;
-      }
-    }
-
     if (body.getKeystores().isEmpty()) {
       request.respondOk(Collections.emptyList());
       return;
     }
 
-    request.respondOk(keyManager.importValidators(body.getKeystores(), body.getPasswords()));
+    final Optional<SlashingProtectionImporter> slashingData =
+        readSlashingProtectionDataIfPresent(body.getSlashingProtection());
+
+    request.respondOk(
+        keyManager.importValidators(body.getKeystores(), body.getPasswords(), slashingData));
+  }
+
+  private Optional<SlashingProtectionImporter> readSlashingProtectionDataIfPresent(
+      final Optional<String> slashingData) {
+    if (slashingData.isPresent()) {
+      final InputStream slashingProtectionData =
+          IOUtils.toInputStream(slashingData.get(), StandardCharsets.UTF_8);
+      final SlashingProtectionImporter importer =
+          new SlashingProtectionImporter(
+              ValidatorClientService.getSlashingProtectionPath(keyManager.getDataDirLayout()));
+      try {
+        final Optional<String> initialiseError = importer.initialise(slashingProtectionData);
+        if (initialiseError.isPresent()) {
+          throw new BadRequestException(initialiseError.get());
+        }
+        return Optional.of(importer);
+      } catch (IOException ex) {
+        throw new BadRequestException(ex.getMessage());
+      }
+    }
+    return Optional.empty();
   }
 }
