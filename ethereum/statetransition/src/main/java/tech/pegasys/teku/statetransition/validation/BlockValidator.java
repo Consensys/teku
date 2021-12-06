@@ -19,6 +19,7 @@ import static tech.pegasys.teku.util.config.Constants.MAXIMUM_GOSSIP_CLOCK_DISPA
 import static tech.pegasys.teku.util.config.Constants.VALID_BLOCK_SET_SIZE;
 
 import com.google.common.base.Objects;
+import java.util.Optional;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -116,14 +117,15 @@ public class BlockValidator {
                               block.getProposerIndex());
                         }
                         if (spec.atSlot(block.getSlot()).miscHelpers().isMergeComplete(postState)) {
-                          ExecutionPayload executionPayload =
-                              block
-                                  .getMessage()
-                                  .getBody()
-                                  .getOptionalExecutionPayload()
-                                  .orElseThrow();
+                          Optional<ExecutionPayload> executionPayload =
+                              block.getMessage().getBody().getOptionalExecutionPayload();
+
+                          if (executionPayload.isEmpty()) {
+                            return reject("Missing execution payload");
+                          }
 
                           if (executionPayload
+                                  .get()
                                   .getTimestamp()
                                   .compareTo(spec.computeTimeAtSlot(postState, block.getSlot()))
                               != 0) {
