@@ -23,6 +23,8 @@ import java.util.Optional;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class ValidatorConfig {
@@ -57,7 +59,7 @@ public class ValidatorConfig {
   private final boolean useDependentRoots;
   private final boolean generateEarlyAttestations;
   private final boolean sendAttestationsAsBatch;
-  private final Optional<Eth1Address> feeRecipient;
+  private final Optional<Eth1Address> suggestedFeeRecipient;
 
   private ValidatorConfig(
       final List<String> validatorKeys,
@@ -78,7 +80,7 @@ public class ValidatorConfig {
       final boolean generateEarlyAttestations,
       final boolean sendAttestationsAsBatch,
       final List<URI> additionalPublishUrls,
-      final Optional<Eth1Address> feeRecipient) {
+      final Optional<Eth1Address> suggestedFeeRecipient) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
@@ -100,7 +102,7 @@ public class ValidatorConfig {
     this.generateEarlyAttestations = generateEarlyAttestations;
     this.sendAttestationsAsBatch = sendAttestationsAsBatch;
     this.additionalPublishUrls = additionalPublishUrls;
-    this.feeRecipient = feeRecipient;
+    this.suggestedFeeRecipient = suggestedFeeRecipient;
   }
 
   public static Builder builder() {
@@ -172,12 +174,12 @@ public class ValidatorConfig {
     return additionalPublishUrls;
   }
 
-  public Optional<Eth1Address> getFeeRecipient() {
-    return feeRecipient;
+  public Optional<Eth1Address> getSuggestedFeeRecipient() {
+    return suggestedFeeRecipient;
   }
 
   public static final class Builder {
-
+    private Spec spec;
     private List<String> validatorKeys = new ArrayList<>();
     private List<URI> additionalPublishUrls = new ArrayList<>();
     private List<String> validatorExternalSignerPublicKeySources = new ArrayList<>();
@@ -200,7 +202,7 @@ public class ValidatorConfig {
     private boolean useDependentRoots = DEFAULT_USE_DEPENDENT_ROOTS;
     private boolean generateEarlyAttestations = DEFAULT_GENERATE_EARLY_ATTESTATIONS;
     private boolean sendAttestationsAsBatch = DEFAULT_SEND_ATTESTATIONS_AS_BATCH;
-    private Optional<Eth1Address> feeRecipient = Optional.empty();
+    private Optional<Eth1Address> suggestedFeeRecipient = Optional.empty();
 
     private Builder() {}
 
@@ -304,17 +306,22 @@ public class ValidatorConfig {
       return this;
     }
 
-    public Builder feeRecipient(final Eth1Address feeRecipient) {
-      this.feeRecipient = Optional.ofNullable(feeRecipient);
+    public Builder suggestedFeeRecipient(final Eth1Address suggestedFeeRecipient) {
+      this.suggestedFeeRecipient = Optional.ofNullable(suggestedFeeRecipient);
       return this;
     }
 
-    public Builder feeRecipient(final String feeRecipient) {
-      if (feeRecipient == null) {
-        this.feeRecipient = Optional.empty();
+    public Builder suggestedFeeRecipient(final String suggestedFeeRecipient) {
+      if (suggestedFeeRecipient == null) {
+        this.suggestedFeeRecipient = Optional.empty();
       } else {
-        this.feeRecipient = Optional.of(Eth1Address.fromHexString(feeRecipient));
+        this.suggestedFeeRecipient = Optional.of(Eth1Address.fromHexString(suggestedFeeRecipient));
       }
+      return this;
+    }
+
+    public Builder specProvider(final Spec spec) {
+      this.spec = spec;
       return this;
     }
 
@@ -323,6 +330,7 @@ public class ValidatorConfig {
       validateExternalSignerKeystoreAndPasswordFileConfig();
       validateExternalSignerTruststoreAndPasswordFileConfig();
       validateExternalSignerURLScheme();
+      validateFeeRecipient();
       return new ValidatorConfig(
           validatorKeys,
           validatorExternalSignerPublicKeySources,
@@ -342,7 +350,7 @@ public class ValidatorConfig {
           generateEarlyAttestations,
           sendAttestationsAsBatch,
           additionalPublishUrls,
-          feeRecipient);
+          suggestedFeeRecipient);
     }
 
     private void validateExternalSignerUrlAndPublicKeys() {
@@ -388,6 +396,15 @@ public class ValidatorConfig {
                   validatorExternalSignerUrl);
           throw new InvalidConfigurationException(errorMessage);
         }
+      }
+    }
+
+    private void validateFeeRecipient() {
+      if (spec.isMilestoneSupported(SpecMilestone.MERGE)
+          && suggestedFeeRecipient.isEmpty()
+          && !(validatorKeys.isEmpty() && externalPublicKeysNotDefined())) {
+        throw new InvalidConfigurationException(
+            "Invalid configuration. --validators-fee-recipient-address must be specified when Merge milestone is active");
       }
     }
 
