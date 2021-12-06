@@ -15,6 +15,8 @@ package tech.pegasys.teku.bls.impl.blst;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.commons.io.IOUtils;
 
 public class MacCpuInfo {
@@ -29,6 +31,15 @@ public class MacCpuInfo {
             .redirectErrorStream(true)
             .start();
     final String output = IOUtils.toString(process.getInputStream(), Charset.defaultCharset());
+
+    try {
+      if (!process.waitFor(5, TimeUnit.SECONDS)) {
+        throw new IllegalStateException("sysctl took too long to exit.");
+      }
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new IllegalStateException("Interrupted while waiting for sysctl to exit", e);
+    }
     return process.exitValue() == 0 && output != null && output.trim().equals("1");
   }
 }
