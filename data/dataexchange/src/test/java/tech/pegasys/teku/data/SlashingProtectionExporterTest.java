@@ -27,7 +27,6 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -184,7 +183,8 @@ public class SlashingProtectionExporterTest {
             .orElseThrow();
     final Path recordFile = tempDir.resolve(pubkey + ".yml");
     Files.write(recordFile, signingRecord.toBytes().toArrayUnsafe());
-    final Optional<String> error = exporter.readSlashProtectionFile(recordFile.toFile(), LOG::debug);
+    final Optional<String> error =
+        exporter.readSlashProtectionFile(recordFile.toFile(), LOG::debug);
     assertThat(error).isEmpty();
     assertThat(exportedFile).doesNotExist();
     exporter.saveToFile(exportedFile.toString(), LOG::debug);
