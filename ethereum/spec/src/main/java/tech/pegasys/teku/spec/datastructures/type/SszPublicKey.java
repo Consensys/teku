@@ -17,8 +17,8 @@ import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.ssz.collections.impl.SszByteVectorImpl;
-import tech.pegasys.teku.ssz.tree.TreeNode;
+import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszByteVectorImpl;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class SszPublicKey extends SszByteVectorImpl {
 

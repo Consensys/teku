@@ -15,8 +15,8 @@ package tech.pegasys.teku.spec.datastructures.operations;
 
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.collections.SszBytes32Vector;
 
 public class DepositWithIndex extends Deposit implements Comparable<DepositWithIndex> {
 

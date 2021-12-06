@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.assertj.core.api.AbstractAssert;
 import org.assertj.core.error.BasicErrorMessageFactory;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.ssz.collections.SszBitvector;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 
 public class SyncAggregateAssert extends AbstractAssert<SyncAggregateAssert, SyncAggregate> {
 

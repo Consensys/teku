@@ -23,7 +23,8 @@ public interface ValidatorSource {
 
   boolean canAddValidator();
 
-  MutableValidatorAddResult addValidator(KeyStoreData keyStoreData, String password);
+  AddLocalValidatorResult addValidator(
+      KeyStoreData keyStoreData, String password, BLSPublicKey publicKey);
 
   interface ValidatorProvider {
     BLSPublicKey getPublicKey();

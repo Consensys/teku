@@ -14,7 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
-import static tech.pegasys.teku.ssz.SszDataAssert.assertThatSszData;
+import static tech.pegasys.teku.infrastructure.ssz.SszDataAssert.assertThatSszData;
 
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;

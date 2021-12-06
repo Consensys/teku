@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.reference.altair.fork;
 
-import static tech.pegasys.teku.ssz.SszDataAssert.assertThatSszData;
+import static tech.pegasys.teku.infrastructure.ssz.SszDataAssert.assertThatSszData;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;

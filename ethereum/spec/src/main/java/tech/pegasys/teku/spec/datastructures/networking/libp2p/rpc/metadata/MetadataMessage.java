@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata;
 
+import tech.pegasys.teku.infrastructure.ssz.SszContainer;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
-import tech.pegasys.teku.ssz.SszContainer;
-import tech.pegasys.teku.ssz.collections.SszBitvector;
 
 public interface MetadataMessage extends SszContainer, RpcRequest {
   UInt64 getSeqNumber();

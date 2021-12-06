@@ -21,33 +21,44 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes48;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.core.signatures.DeletableSigner;
+import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
+import tech.pegasys.teku.data.SlashingProtectionImporter;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.validator.api.GraffitiProvider;
 import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
+import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.loader.ValidatorSource.ValidatorProvider;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 
 public class ValidatorLoader {
 
+  private static final Logger LOG = LogManager.getLogger();
   private final List<ValidatorSource> validatorSources;
   private final Optional<ValidatorSource> mutableValidatorSource;
   private final OwnedValidators ownedValidators = new OwnedValidators();
   private final GraffitiProvider graffitiProvider;
+  private final Optional<DataDirLayout> maybeDataDirLayout;
 
   private ValidatorLoader(
       final List<ValidatorSource> validatorSources,
       final Optional<ValidatorSource> mutableValidatorSource,
-      final GraffitiProvider graffitiProvider) {
+      final GraffitiProvider graffitiProvider,
+      final Optional<DataDirLayout> maybeDataDirLayout) {
     this.validatorSources = validatorSources;
     this.mutableValidatorSource = mutableValidatorSource;
     this.graffitiProvider = graffitiProvider;
+    this.maybeDataDirLayout = maybeDataDirLayout;
   }
 
   public static ValidatorLoader create(
@@ -81,13 +92,48 @@ public class ValidatorLoader {
         ownedValidators, validatorProviders, graffitiProvider);
   }
 
-  public synchronized MutableValidatorAddResult loadMutableValidator(
-      final KeyStoreData keyStoreData, final String password) {
-    if (mutableValidatorSource.isPresent() && mutableValidatorSource.get().canAddValidator()) {
-      return mutableValidatorSource.get().addValidator(keyStoreData, password);
+  public synchronized PostKeyResult loadMutableValidator(
+      final KeyStoreData keyStoreData,
+      final String password,
+      final Optional<SlashingProtectionImporter> slashingProtectionImporter) {
+    if (!canAddValidator()) {
+      return PostKeyResult.error("Not able to add validator");
     }
-    return new MutableValidatorAddResult(
-        PostKeyResult.error("Not able to add validator"), Optional.empty());
+    final BLSPublicKey publicKey =
+        BLSPublicKey.fromBytesCompressed(Bytes48.wrap(keyStoreData.getPubkey()));
+
+    if (slashingProtectionImporter.isPresent()) {
+      final Optional<String> errorString =
+          slashingProtectionImporter.get().updateSigningRecord(publicKey, LOG::debug);
+      if (errorString.isPresent()) {
+        return PostKeyResult.error(errorString.get());
+      }
+    }
+    if (ownedValidators.hasValidator(publicKey)) {
+      return PostKeyResult.duplicate();
+    }
+
+    final AddLocalValidatorResult validatorAddResult =
+        mutableValidatorSource.get().addValidator(keyStoreData, password, publicKey);
+
+    if (validatorAddResult.getSigner().isEmpty()) {
+      return validatorAddResult.getResult();
+    }
+    addValidator(validatorAddResult.getSigner().get(), publicKey);
+    return PostKeyResult.success();
+  }
+
+  private void addValidator(final Signer signer, final BLSPublicKey publicKey) {
+    ownedValidators.addValidator(
+        new Validator(publicKey, new DeletableSigner(signer), graffitiProvider, false));
+
+    LOG.info("Added validator: " + publicKey.toAbbreviatedString());
+  }
+
+  private boolean canAddValidator() {
+    return mutableValidatorSource.isPresent()
+        && mutableValidatorSource.get().canAddValidator()
+        && maybeDataDirLayout.isPresent();
   }
 
   public OwnedValidators getOwnedValidators() {
@@ -121,7 +167,8 @@ public class ValidatorLoader {
     return new ValidatorLoader(
         validatorSourceList,
         validatorSources.getMutableLocalValidatorSource(),
-        config.getGraffitiProvider());
+        config.getGraffitiProvider(),
+        maybeMutableDir);
   }
 
   private void addValidatorsFromSource(

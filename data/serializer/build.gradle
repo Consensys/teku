@@ -11,5 +11,5 @@ dependencies {
   testImplementation project(':data:provider')
   testImplementation testFixtures(project(':ethereum:spec'))
   testImplementation testFixtures(project(':ethereum:networks'))
-  testImplementation testFixtures(project(':ssz'))
+  testImplementation testFixtures(project(':infrastructure:ssz'))
 }

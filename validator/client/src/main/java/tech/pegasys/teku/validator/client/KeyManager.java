@@ -13,22 +13,28 @@
 
 package tech.pegasys.teku.validator.client;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.NotImplementedException;
+import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
+import tech.pegasys.signers.bls.keystore.KeyStoreValidationException;
+import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.data.SlashingProtectionImporter;
+import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysResponse;
-import tech.pegasys.teku.validator.client.restapi.apis.schema.ImportStatus;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 
 public class KeyManager {
-
   private final ValidatorLoader validatorLoader;
+  private final DataDirLayout dataDirLayout;
 
-  public KeyManager(final ValidatorLoader validatorLoader) {
+  public KeyManager(final ValidatorLoader validatorLoader, final DataDirLayout dataDirLayout) {
     this.validatorLoader = validatorLoader;
+    this.dataDirLayout = dataDirLayout;
   }
 
   /**
@@ -90,20 +96,37 @@ public class KeyManager {
    *
    * @param keystores strings of keystore files
    * @param passwords strings of passwords
+   * @param slashingProtectionImporter slashing protection importer with loaded context
    * @return a list of 1 status per keystore that was attempted to be imported
    */
-  public List<ImportStatus> importValidators(
-      final List<String> keystores, final List<String> passwords) {
-    throw new NotImplementedException("importValidators not implemented yet");
+  public List<PostKeyResult> importValidators(
+      final List<String> keystores,
+      final List<String> passwords,
+      final Optional<SlashingProtectionImporter> slashingProtectionImporter) {
+    final List<PostKeyResult> importResults = new ArrayList<>();
+    for (int i = 0; i < keystores.size(); i++) {
+      importResults.add(
+          importValidatorFromKeystore(
+              keystores.get(i), passwords.get(i), slashingProtectionImporter));
+    }
+    return importResults;
   }
 
-  /**
-   * Import slashing protection data
-   *
-   * @param slashingProtection slashing protection data in interchange format
-   * @return Error message on failure, otherwise Optional.empty() on success.
-   */
-  public Optional<String> importSlashingProtection(final String slashingProtection) {
-    return Optional.of("Import slashing protection is not yet implemented.");
+  public DataDirLayout getDataDirLayout() {
+    return dataDirLayout;
+  }
+
+  private PostKeyResult importValidatorFromKeystore(
+      final String keystoreString,
+      final String password,
+      final Optional<SlashingProtectionImporter> slashingProtectionImporter) {
+    final KeyStoreData keyStoreData = KeyStoreLoader.loadFromString(keystoreString);
+    try {
+      keyStoreData.validate();
+    } catch (KeyStoreValidationException ex) {
+      return PostKeyResult.error(ex.getMessage());
+    }
+
+    return validatorLoader.loadMutableValidator(keyStoreData, password, slashingProtectionImporter);
   }
 }

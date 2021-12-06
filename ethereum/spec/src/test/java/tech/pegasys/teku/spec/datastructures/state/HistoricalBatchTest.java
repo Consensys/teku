@@ -23,9 +23,9 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import tech.pegasys.teku.infrastructure.ssz.SszTestUtils;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszMutableBytes32Vector;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.ssz.SszTestUtils;
-import tech.pegasys.teku.ssz.collections.SszMutableBytes32Vector;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.SpecDependent;
 

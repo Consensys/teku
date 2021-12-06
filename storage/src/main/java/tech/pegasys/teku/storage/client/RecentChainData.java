@@ -31,6 +31,7 @@ import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.spec.Spec;
@@ -49,7 +50,6 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
-import tech.pegasys.teku.ssz.type.Bytes4;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgContext;
@@ -316,7 +316,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       final BeaconStateUtil beaconStateUtil =
           spec.atSlot(newChainHead.getForkChoiceSlot()).getBeaconStateUtil();
       chainHeadChannel.chainHeadUpdated(
-          newChainHead.getForkChoiceSlot(),
+          newChainHead.getSlot(),
           newChainHead.getStateRoot(),
           newChainHead.getRoot(),
           epochTransition,

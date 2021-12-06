@@ -16,11 +16,11 @@ package tech.pegasys.teku.spec;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigMerge;
-import tech.pegasys.teku.ssz.type.Bytes4;
 
 public enum SpecMilestone {
   PHASE0,

@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.spec.constants;
 
-import tech.pegasys.teku.ssz.type.Bytes4;
+import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
 
 public class Domain {
   // Phase0

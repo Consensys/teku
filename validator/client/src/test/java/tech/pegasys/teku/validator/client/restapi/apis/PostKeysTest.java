@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.client.restapi.apis;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -21,10 +22,14 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.validator.client.KeyManager;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeysRequest;
 
@@ -47,10 +52,12 @@ public class PostKeysTest {
   }
 
   @Test
-  void shouldImportSlashingProtectionWithoutKeysPresent() throws JsonProcessingException {
+  void shouldNotImportSlashingProtectionWithoutKeysPresent(@TempDir final Path tempDir)
+      throws JsonProcessingException {
+    final DataDirLayout dataDirLayout = getDataDirLayout(tempDir);
     final PostKeysRequest body = new PostKeysRequest();
     body.setSlashingProtection(Optional.of("{}"));
-    when(keyManager.importSlashingProtection(any())).thenReturn(Optional.empty());
+    when(keyManager.getDataDirLayout()).thenReturn(dataDirLayout);
     when(request.getRequestBody()).thenReturn(body);
 
     endpoint.handle(request);
@@ -67,14 +74,32 @@ public class PostKeysTest {
   }
 
   @Test
-  void shouldRespondBadRequestIfSlashingProtectionImportFails() throws JsonProcessingException {
+  void shouldRespondBadRequestIfSlashingProtectionImportFails(@TempDir final Path tempDir)
+      throws JsonProcessingException {
+    final DataDirLayout dataDirLayout = getDataDirLayout(tempDir);
     final PostKeysRequest body = new PostKeysRequest();
     body.setSlashingProtection(Optional.of("{}"));
-    when(keyManager.importSlashingProtection(any())).thenReturn(Optional.of("computer says no"));
+    body.setPasswords(List.of("pass"));
+    body.setKeystores(List.of("keystore"));
+    when(keyManager.getDataDirLayout()).thenReturn(dataDirLayout);
     when(request.getRequestBody()).thenReturn(body);
 
-    endpoint.handle(request);
-    verify(request).respondError(SC_BAD_REQUEST, "computer says no");
-    verify(request, never()).respondOk(any());
+    assertThatThrownBy(() -> endpoint.handle(request))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessageStartingWith("Import data does not appear to have metadata");
+  }
+
+  private DataDirLayout getDataDirLayout(final Path tempDir) {
+    return new DataDirLayout() {
+      @Override
+      public Path getBeaconDataDirectory() {
+        return null;
+      }
+
+      @Override
+      public Path getValidatorDataDirectory() {
+        return tempDir;
+      }
+    };
   }
 }

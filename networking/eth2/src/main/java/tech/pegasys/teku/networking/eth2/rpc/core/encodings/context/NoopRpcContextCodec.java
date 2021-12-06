@@ -16,10 +16,10 @@ package tech.pegasys.teku.networking.eth2.rpc.core.encodings.context;
 import io.netty.buffer.ByteBuf;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcByteBufDecoder;
-import tech.pegasys.teku.ssz.SszData;
-import tech.pegasys.teku.ssz.schema.SszSchema;
 
 class NoopRpcContextCodec<TPayload extends SszData> implements RpcContextCodec<Bytes, TPayload> {
   private static final RpcByteBufDecoder<Bytes> DECODER = new EmptyContextDecoder();

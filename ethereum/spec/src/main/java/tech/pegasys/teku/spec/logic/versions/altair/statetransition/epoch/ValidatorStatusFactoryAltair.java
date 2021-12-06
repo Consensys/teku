@@ -14,6 +14,8 @@
 package tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch;
 
 import java.util.List;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.ParticipationFlags;
@@ -26,8 +28,6 @@ import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
-import tech.pegasys.teku.ssz.SszList;
-import tech.pegasys.teku.ssz.primitive.SszByte;
 
 public class ValidatorStatusFactoryAltair extends AbstractValidatorStatusFactory {
   private final MiscHelpersAltair miscHelpersAltair;

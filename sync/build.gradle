@@ -12,7 +12,7 @@ dependencies {
     implementation project(':infrastructure:metrics')
     implementation project(':infrastructure:subscribers')
     implementation project(':infrastructure:serviceutils')
-    implementation project(':ssz')
+    implementation project(':infrastructure:ssz')
     implementation project(':storage')
     implementation project(':storage:api')
     implementation project(':util')

@@ -22,7 +22,7 @@ dependencies {
   testImplementation testFixtures(project(':ethereum:spec'))
   testImplementation testFixtures(project(':infrastructure:async'))
   testImplementation testFixtures(project(':infrastructure:metrics'))
-  testImplementation testFixtures(project(':ssz'))
+  testImplementation testFixtures(project(':infrastructure:ssz'))
   testImplementation 'com.squareup.okhttp3:mockwebserver'
   testImplementation 'org.mockito:mockito-core'
 }

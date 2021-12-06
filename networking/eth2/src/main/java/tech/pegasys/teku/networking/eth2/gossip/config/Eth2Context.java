@@ -16,9 +16,9 @@ package tech.pegasys.teku.networking.eth2.gossip.config;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.ssz.type.Bytes4;
 
 public class Eth2Context {
   private final int activeValidatorCount;

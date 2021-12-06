@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.type;
 
-import tech.pegasys.teku.ssz.schema.collections.impl.SszByteVectorSchemaImpl;
-import tech.pegasys.teku.ssz.tree.TreeNode;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.impl.SszByteVectorSchemaImpl;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class SszPublicKeySchema extends SszByteVectorSchemaImpl<SszPublicKey> {
   private static final int BLS_COMPRESSED_PUBLIC_KEY_SIZE = 48;

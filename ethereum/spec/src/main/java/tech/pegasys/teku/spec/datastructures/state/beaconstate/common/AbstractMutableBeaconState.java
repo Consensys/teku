@@ -15,15 +15,15 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate.common;
 
 import com.google.common.base.MoreObjects.ToStringHelper;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.ssz.cache.IntCache;
+import tech.pegasys.teku.infrastructure.ssz.impl.SszContainerImpl;
+import tech.pegasys.teku.infrastructure.ssz.impl.SszMutableContainerImpl;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.ssz.SszData;
-import tech.pegasys.teku.ssz.cache.IntCache;
-import tech.pegasys.teku.ssz.impl.SszContainerImpl;
-import tech.pegasys.teku.ssz.impl.SszMutableContainerImpl;
-import tech.pegasys.teku.ssz.tree.TreeNode;
 
 public abstract class AbstractMutableBeaconState<
         T extends SszContainerImpl & BeaconState & BeaconStateCache>

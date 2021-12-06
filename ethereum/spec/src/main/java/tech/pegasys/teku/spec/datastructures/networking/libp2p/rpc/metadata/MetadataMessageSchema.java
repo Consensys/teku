@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata;
 
+import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.schema.SszContainerSchema;
-import tech.pegasys.teku.ssz.tree.TreeNode;
 
 public interface MetadataMessageSchema<T extends MetadataMessage> extends SszContainerSchema<T> {
   @Override

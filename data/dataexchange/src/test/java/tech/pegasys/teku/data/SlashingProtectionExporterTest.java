@@ -15,27 +15,23 @@ package tech.pegasys.teku.data;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assumptions.assumeThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static tech.pegasys.teku.data.slashinginterchange.Metadata.INTERCHANGE_VERSION;
 
 import com.google.common.io.Resources;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.cli.OSUtils;
 import tech.pegasys.teku.data.signingrecord.ValidatorSigningRecord;
@@ -43,13 +39,12 @@ import tech.pegasys.teku.data.slashinginterchange.Metadata;
 import tech.pegasys.teku.data.slashinginterchange.SignedBlock;
 import tech.pegasys.teku.data.slashinginterchange.SigningHistory;
 import tech.pegasys.teku.data.slashinginterchange.SlashingProtectionInterchangeFormat;
-import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class SlashingProtectionExporterTest {
-  private final ArgumentCaptor<String> stringArgs = ArgumentCaptor.forClass(String.class);
-  final SubCommandLogger logger = mock(SubCommandLogger.class);
+  private static final Logger LOG = LogManager.getLogger();
+  final List<String> log = new ArrayList<>();
   private final JsonProvider jsonProvider = new JsonProvider();
   private final String pubkey =
       "b845089a1457f811bfc000588fbb4e713669be8ce060ea6be3c6ece09afc3794106c91ca73acda5e5457122d58723bed";
@@ -59,28 +54,29 @@ public class SlashingProtectionExporterTest {
   @Test
   public void shouldReadSlashingProtectionFile_withEmptyGenesisValidatorsRoot(@TempDir Path tempDir)
       throws IOException, URISyntaxException {
-    final SlashingProtectionExporter exporter =
-        new SlashingProtectionExporter(logger, tempDir.toString());
-    exporter.readSlashProtectionFile(usingResourceFile("slashProtection.yml", tempDir));
-    verify(logger, times(1)).display("Exporting " + pubkey);
+    final SlashingProtectionExporter exporter = new SlashingProtectionExporter(tempDir.toString());
+    Optional<String> error =
+        exporter.readSlashProtectionFile(
+            usingResourceFile("slashProtection.yml", tempDir), log::add);
+    assertThat(log).containsExactly("Exporting " + pubkey);
+    assertThat(error).isEmpty();
 
     final SlashingProtectionInterchangeFormat parsedData =
         jsonProvider.jsonToObject(
             exporter.getPrettyJson(), SlashingProtectionInterchangeFormat.class);
     final SlashingProtectionInterchangeFormat expectedData = getExportData(null, 327, 51, 1741);
     assertThat(parsedData).isEqualTo(expectedData);
-
-    verify(logger, never()).exit(eq(1), stringArgs.capture());
   }
 
   @Test
   public void shouldReadSlashingProtectionFile_withGenesisValidatorsRoot(@TempDir Path tempDir)
       throws IOException, URISyntaxException {
-    final SlashingProtectionExporter exporter =
-        new SlashingProtectionExporter(logger, tempDir.toString());
-    exporter.readSlashProtectionFile(
-        usingResourceFile("slashProtectionWithGenesisRoot.yml", tempDir));
-    verify(logger, times(1)).display("Exporting " + pubkey);
+    final SlashingProtectionExporter exporter = new SlashingProtectionExporter(tempDir.toString());
+    Optional<String> error =
+        exporter.readSlashProtectionFile(
+            usingResourceFile("slashProtectionWithGenesisRoot.yml", tempDir), log::add);
+    assertThat(log).containsExactly("Exporting " + pubkey);
+    assertThat(error).isEmpty();
 
     final SlashingProtectionInterchangeFormat parsedData =
         jsonProvider.jsonToObject(
@@ -88,88 +84,89 @@ public class SlashingProtectionExporterTest {
     final SlashingProtectionInterchangeFormat expectedData =
         getExportData(validatorsRoot, 327, 51, 1741);
     assertThat(parsedData).isEqualTo(expectedData);
-
-    verify(logger, never()).exit(eq(1), stringArgs.capture());
   }
 
   @Test
   public void shouldReadFilesWithEmptyRootAfterGenesisRootIsDefined(@TempDir Path tempDir)
       throws URISyntaxException, IOException {
-    final SlashingProtectionExporter exporter =
-        new SlashingProtectionExporter(logger, tempDir.toString());
-    exporter.readSlashProtectionFile(
-        usingResourceFile("slashProtectionWithGenesisRoot.yml", tempDir));
-    exporter.readSlashProtectionFile(usingResourceFile("slashProtection.yml", tempDir));
+    final SlashingProtectionExporter exporter = new SlashingProtectionExporter(tempDir.toString());
+    Optional<String> error =
+        exporter.readSlashProtectionFile(
+            usingResourceFile("slashProtectionWithGenesisRoot.yml", tempDir), log::add);
+    assertThat(error).isEmpty();
+    error =
+        exporter.readSlashProtectionFile(
+            usingResourceFile("slashProtection.yml", tempDir), log::add);
+    assertThat(error).isEmpty();
 
-    verify(logger, never()).exit(eq(1), stringArgs.capture());
-    verify(logger, times(2)).display("Exporting " + pubkey);
+    assertThat(log).containsExactly("Exporting " + pubkey, "Exporting " + pubkey);
   }
 
   @Test
   public void shouldReadFileWithGenesisRootDefinedSecond(@TempDir Path tempDir)
       throws URISyntaxException, IOException {
-    final SlashingProtectionExporter exporter =
-        new SlashingProtectionExporter(logger, tempDir.toString());
-    exporter.readSlashProtectionFile(usingResourceFile("slashProtection.yml", tempDir));
-    exporter.readSlashProtectionFile(
-        usingResourceFile("slashProtectionWithGenesisRoot.yml", tempDir));
+    final SlashingProtectionExporter exporter = new SlashingProtectionExporter(tempDir.toString());
+    Optional<String> error =
+        exporter.readSlashProtectionFile(
+            usingResourceFile("slashProtection.yml", tempDir), log::add);
+    assertThat(error).isEmpty();
+    error =
+        exporter.readSlashProtectionFile(
+            usingResourceFile("slashProtectionWithGenesisRoot.yml", tempDir), log::add);
+    assertThat(error).isEmpty();
 
-    verify(logger, never()).exit(eq(1), stringArgs.capture());
-    verify(logger, times(2)).display("Exporting " + pubkey);
+    assertThat(log).containsExactly("Exporting " + pubkey, "Exporting " + pubkey);
   }
 
   @Test
   public void shouldNotAcceptDifferentGenesisValidatorsRoot(@TempDir Path tempDir)
       throws URISyntaxException, IOException {
-    final SlashingProtectionExporter exporter =
-        new SlashingProtectionExporter(logger, tempDir.toString());
-    exporter.readSlashProtectionFile(
-        usingResourceFile("slashProtectionWithGenesisRoot2.yml", tempDir));
-    exporter.readSlashProtectionFile(
-        usingResourceFile("slashProtectionWithGenesisRoot.yml", tempDir));
-
-    verify(logger).exit(eq(1), stringArgs.capture());
-    assertThat(stringArgs.getValue()).startsWith("The genesisValidatorsRoot of");
+    final SlashingProtectionExporter exporter = new SlashingProtectionExporter(tempDir.toString());
+    Optional<String> error =
+        exporter.readSlashProtectionFile(
+            usingResourceFile("slashProtectionWithGenesisRoot2.yml", tempDir), LOG::debug);
+    assertThat(error).isEmpty();
+    error =
+        exporter.readSlashProtectionFile(
+            usingResourceFile("slashProtectionWithGenesisRoot.yml", tempDir), LOG::debug);
+    assertThat(error.orElse("")).startsWith("The genesisValidatorsRoot of");
   }
 
   @Test
-  public void shouldRequirePubkeyInFilename(@TempDir Path tempDir)
-      throws URISyntaxException, IOException {
-    final SlashingProtectionExporter exporter =
-        new SlashingProtectionExporter(logger, tempDir.toString());
-    exporter.readSlashProtectionFile(
-        new File(Resources.getResource("slashProtectionWithGenesisRoot.yml").toURI()));
-
-    verify(logger).exit(eq(1), stringArgs.capture());
-    assertThat(stringArgs.getValue())
+  public void shouldRequirePubkeyInFilename(@TempDir Path tempDir) throws URISyntaxException {
+    final SlashingProtectionExporter exporter = new SlashingProtectionExporter(tempDir.toString());
+    final Optional<String> error =
+        exporter.readSlashProtectionFile(
+            new File(Resources.getResource("slashProtectionWithGenesisRoot.yml").toURI()),
+            LOG::debug);
+    assertThat(error.orElse(""))
         .contains("Public key in file slashProtectionWithGenesisRoot.yml does not appear valid.");
   }
 
   @Test
   public void shouldPrintIfFileCannotBeRead(@TempDir Path tempDir)
       throws URISyntaxException, IOException {
-    final SlashingProtectionExporter exporter =
-        new SlashingProtectionExporter(logger, tempDir.toString());
+    final SlashingProtectionExporter exporter = new SlashingProtectionExporter(tempDir.toString());
     final File file = usingResourceFile("slashProtection.yml", tempDir);
     OSUtils.makeNonReadable(file.toPath());
     // It's not always possible to remove read permissions from a file
     assumeThat(file.canRead()).describedAs("Can read file %s", file).isFalse();
-    exporter.readSlashProtectionFile(file);
-    verify(logger).exit(eq(1), stringArgs.capture(), any(AccessDeniedException.class));
-    assertThat(stringArgs.getValue()).startsWith("Failed to read from file");
+    final Optional<String> error = exporter.readSlashProtectionFile(file, LOG::debug);
+    assertThat(error.orElse("")).startsWith("Failed to read from file");
   }
 
   @Test
   public void shouldExportSlashProtection(@TempDir Path tempDir)
       throws IOException, URISyntaxException {
     final Path exportedFile = tempDir.resolve("exportedFile.json").toAbsolutePath();
-    final SlashingProtectionExporter exporter =
-        new SlashingProtectionExporter(logger, tempDir.toString());
+    final SlashingProtectionExporter exporter = new SlashingProtectionExporter(tempDir.toString());
 
-    exporter.readSlashProtectionFile(usingResourceFile("slashProtection.yml", tempDir));
-
+    final Optional<String> error =
+        exporter.readSlashProtectionFile(
+            usingResourceFile("slashProtection.yml", tempDir), LOG::debug);
+    assertThat(error).isEmpty();
     assertThat(Files.exists(exportedFile)).isFalse();
-    exporter.saveToFile(exportedFile.toString());
+    exporter.saveToFile(exportedFile.toString(), LOG::debug);
     assertThat(Files.exists(exportedFile)).isTrue();
   }
 
@@ -177,8 +174,7 @@ public class SlashingProtectionExporterTest {
   void shouldHaveNoSignedAttestationsWhenNoAttestationsSigned(@TempDir Path tempDir)
       throws Exception {
     final Path exportedFile = tempDir.resolve("exportedFile.json").toAbsolutePath();
-    final SlashingProtectionExporter exporter =
-        new SlashingProtectionExporter(logger, tempDir.toString());
+    final SlashingProtectionExporter exporter = new SlashingProtectionExporter(tempDir.toString());
 
     final UInt64 blockSlot = UInt64.ONE;
     final ValidatorSigningRecord signingRecord =
@@ -187,10 +183,11 @@ public class SlashingProtectionExporterTest {
             .orElseThrow();
     final Path recordFile = tempDir.resolve(pubkey + ".yml");
     Files.write(recordFile, signingRecord.toBytes().toArrayUnsafe());
-    exporter.readSlashProtectionFile(recordFile.toFile());
-
+    final Optional<String> error =
+        exporter.readSlashProtectionFile(recordFile.toFile(), LOG::debug);
+    assertThat(error).isEmpty();
     assertThat(exportedFile).doesNotExist();
-    exporter.saveToFile(exportedFile.toString());
+    exporter.saveToFile(exportedFile.toString(), LOG::debug);
     assertThat(exportedFile).exists();
 
     final SlashingProtectionInterchangeFormat exportedRecords =
