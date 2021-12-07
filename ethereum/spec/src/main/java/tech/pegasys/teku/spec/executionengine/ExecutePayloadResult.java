@@ -19,17 +19,21 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 
 public class ExecutePayloadResult {
+  public static final ExecutePayloadResult VALID =
+      new ExecutePayloadResult(ExecutionPayloadStatus.VALID, Optional.empty(), Optional.empty());
   public static final ExecutePayloadResult SYNCING =
       new ExecutePayloadResult(ExecutionPayloadStatus.SYNCING, Optional.empty(), Optional.empty());
   private final ExecutionPayloadStatus status;
   private final Optional<Bytes32> latestValidHash;
-  private final Optional<String> message;
+  private final Optional<String> validationError;
 
   public ExecutePayloadResult(
-      ExecutionPayloadStatus status, Optional<Bytes32> latestValidHash, Optional<String> message) {
+      ExecutionPayloadStatus status,
+      Optional<Bytes32> latestValidHash,
+      Optional<String> validationError) {
     this.status = status;
     this.latestValidHash = latestValidHash;
-    this.message = message;
+    this.validationError = validationError;
   }
 
   public ExecutionPayloadStatus getStatus() {
@@ -40,8 +44,8 @@ public class ExecutePayloadResult {
     return latestValidHash;
   }
 
-  public Optional<String> getMessage() {
-    return message;
+  public Optional<String> getValidationError() {
+    return validationError;
   }
 
   @Override
@@ -51,12 +55,12 @@ public class ExecutePayloadResult {
     final ExecutePayloadResult that = (ExecutePayloadResult) o;
     return Objects.equals(status, that.status)
         && Objects.equals(latestValidHash, that.latestValidHash)
-        && Objects.equals(message, that.message);
+        && Objects.equals(validationError, that.validationError);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(status, latestValidHash, message);
+    return Objects.hash(status, latestValidHash, validationError);
   }
 
   @Override
@@ -64,7 +68,7 @@ public class ExecutePayloadResult {
     return MoreObjects.toStringHelper(this)
         .add("status", status)
         .add("latestValidHash", latestValidHash)
-        .add("message", message)
+        .add("validationError", validationError)
         .toString();
   }
 }

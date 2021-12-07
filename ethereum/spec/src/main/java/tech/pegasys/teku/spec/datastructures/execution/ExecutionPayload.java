@@ -71,7 +71,7 @@ public class ExecutionPayload
   public ExecutionPayload(
       ExecutionPayloadSchema schema,
       SszBytes32 parentHash,
-      SszByteVector coinbase,
+      SszByteVector feeRecipient,
       SszBytes32 stateRoot,
       SszBytes32 receiptRoot,
       SszByteVector logsBloom,
@@ -87,7 +87,7 @@ public class ExecutionPayload
     super(
         schema,
         parentHash,
-        coinbase,
+        feeRecipient,
         stateRoot,
         receiptRoot,
         logsBloom,
@@ -111,7 +111,7 @@ public class ExecutionPayload
     return getField0().get();
   }
 
-  public Bytes20 getCoinbase() {
+  public Bytes20 getFeeRecipient() {
     return Bytes20.leftPad(getField1().getBytes());
   }
 

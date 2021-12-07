@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.spec.logic.common.util;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import java.time.Instant;
 import java.util.NavigableMap;
 import java.util.Optional;
@@ -22,10 +20,9 @@ import java.util.TreeMap;
 import javax.annotation.CheckReturnValue;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -36,31 +33,25 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
-import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
-import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
-import tech.pegasys.teku.spec.logic.versions.merge.block.OptimisticExecutionPayloadExecutor;
 
 public class ForkChoiceUtil {
 
   private final SpecConfig specConfig;
   private final BeaconStateAccessors beaconStateAccessors;
   private final AttestationUtil attestationUtil;
-  private final BlockProcessor blockProcessor;
   private final MiscHelpers miscHelpers;
 
   public ForkChoiceUtil(
       final SpecConfig specConfig,
       final BeaconStateAccessors beaconStateAccessors,
       final AttestationUtil attestationUtil,
-      final BlockProcessor blockProcessor,
       final MiscHelpers miscHelpers) {
     this.specConfig = specConfig;
     this.beaconStateAccessors = beaconStateAccessors;
     this.attestationUtil = attestationUtil;
-    this.blockProcessor = blockProcessor;
     this.miscHelpers = miscHelpers;
   }
 
@@ -307,46 +298,13 @@ public class ForkChoiceUtil {
     return AttestationProcessingResult.SUCCESSFUL;
   }
 
-  /**
-   * Perform block processing. The supplied blockSlotState must already have empty slots processed
-   * to the same slot as the block.
-   */
-  @CheckReturnValue
-  public BlockImportResult onBlock(
-      final MutableStore store,
-      final SignedBeaconBlock signedBlock,
-      final BeaconState blockSlotState,
-      final IndexedAttestationCache indexedAttestationCache,
-      final OptimisticExecutionPayloadExecutor payloadExecutor) {
-    checkArgument(
-        blockSlotState.getSlot().equals(signedBlock.getSlot()),
-        "State must have slots processed up to the block slot");
-    final BeaconBlock block = signedBlock.getMessage();
-
-    // Return early if precondition checks fail;
-    final Optional<BlockImportResult> maybeFailure =
-        checkOnBlockConditions(block, blockSlotState, store);
-    if (maybeFailure.isPresent()) {
-      return maybeFailure.get();
-    }
-
-    // Make a copy of the state to avoid mutability issues
-    BeaconState state;
-
-    // Check the block is valid and compute the post-state
-    try {
-      state =
-          blockProcessor.processAndValidateBlock(
-              signedBlock, blockSlotState, indexedAttestationCache, payloadExecutor);
-    } catch (StateTransitionException e) {
-      return BlockImportResult.failedStateTransition(e);
-    }
-
+  public void applyBlockToStore(
+      final MutableStore store, final SignedBeaconBlock signedBlock, final BeaconState postState) {
     // Add new block to store
-    store.putBlockAndState(signedBlock, state);
+    store.putBlockAndState(signedBlock, postState);
 
     // Update justified checkpoint
-    final Checkpoint justifiedCheckpoint = state.getCurrent_justified_checkpoint();
+    final Checkpoint justifiedCheckpoint = postState.getCurrent_justified_checkpoint();
     if (justifiedCheckpoint.getEpoch().compareTo(store.getJustifiedCheckpoint().getEpoch()) > 0) {
       if (justifiedCheckpoint.getEpoch().compareTo(store.getBestJustifiedCheckpoint().getEpoch())
           > 0) {
@@ -359,26 +317,24 @@ public class ForkChoiceUtil {
     }
 
     // Update finalized checkpoint
-    final Checkpoint finalizedCheckpoint = state.getFinalized_checkpoint();
+    final Checkpoint finalizedCheckpoint = postState.getFinalized_checkpoint();
     if (finalizedCheckpoint.getEpoch().compareTo(store.getFinalizedCheckpoint().getEpoch()) > 0) {
       store.setFinalizedCheckpoint(finalizedCheckpoint);
 
       // Potentially update justified if different from store
-      if (!store.getJustifiedCheckpoint().equals(state.getCurrent_justified_checkpoint())) {
+      if (!store.getJustifiedCheckpoint().equals(postState.getCurrent_justified_checkpoint())) {
         // Update justified if new justified is later than store justified
         // or if store justified is not in chain with finalized checkpoint
-        if (state
+        if (postState
                     .getCurrent_justified_checkpoint()
                     .getEpoch()
                     .compareTo(store.getJustifiedCheckpoint().getEpoch())
                 > 0
             || !isFinalizedAncestorOfJustified(store)) {
-          store.setJustifiedCheckpoint(state.getCurrent_justified_checkpoint());
+          store.setJustifiedCheckpoint(postState.getCurrent_justified_checkpoint());
         }
       }
     }
-
-    return BlockImportResult.successful(signedBlock);
   }
 
   private boolean isFinalizedAncestorOfJustified(ReadOnlyStore store) {
@@ -394,29 +350,30 @@ public class ForkChoiceUtil {
     return miscHelpers.computeStartSlotAtEpoch(finalizedEpoch);
   }
 
-  private Optional<BlockImportResult> checkOnBlockConditions(
-      final BeaconBlock block, final BeaconState blockSlotState, final ReadOnlyStore store) {
+  public BlockImportResult checkOnBlockConditions(
+      final SignedBeaconBlock block, final BeaconState blockSlotState, final ReadOnlyStore store) {
     final UInt64 blockSlot = block.getSlot();
     if (blockSlotState == null) {
-      return Optional.of(BlockImportResult.FAILED_UNKNOWN_PARENT);
+      return BlockImportResult.FAILED_UNKNOWN_PARENT;
     }
     if (!blockSlotState.getSlot().equals(blockSlot)) {
-      return Optional.of(BlockImportResult.FAILED_INVALID_ANCESTRY);
+      return BlockImportResult.FAILED_INVALID_ANCESTRY;
     }
     if (blockSlot.isGreaterThan(SpecConfig.GENESIS_SLOT)
         && !beaconStateAccessors
             .getBlockRootAtSlot(blockSlotState, blockSlot.minus(1))
             .equals(block.getParentRoot())) {
       // Block is at same slot as its parent or the parent root doesn't match the state
-      return Optional.of(BlockImportResult.FAILED_INVALID_ANCESTRY);
+      return BlockImportResult.FAILED_INVALID_ANCESTRY;
     }
     if (blockIsFromFuture(store, blockSlot)) {
-      return Optional.of(BlockImportResult.FAILED_BLOCK_IS_FROM_FUTURE);
+      return BlockImportResult.FAILED_BLOCK_IS_FROM_FUTURE;
     }
     if (!blockDescendsFromLatestFinalizedBlock(block, store, store.getForkChoiceStrategy())) {
-      return Optional.of(BlockImportResult.FAILED_INVALID_ANCESTRY);
+      return BlockImportResult.FAILED_INVALID_ANCESTRY;
     }
-    return Optional.empty();
+    // Successful so far
+    return BlockImportResult.successful(block);
   }
 
   private boolean blockIsFromFuture(ReadOnlyStore store, final UInt64 blockSlot) {
@@ -424,7 +381,7 @@ public class ForkChoiceUtil {
   }
 
   public boolean blockDescendsFromLatestFinalizedBlock(
-      final BeaconBlock block,
+      final BeaconBlockSummary block,
       final ReadOnlyStore store,
       final ReadOnlyForkChoiceStrategy forkChoiceStrategy) {
     final Checkpoint finalizedCheckpoint = store.getFinalizedCheckpoint();

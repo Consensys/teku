@@ -116,6 +116,7 @@ class ValidatorLoaderTest {
 
     final ValidatorConfig config =
         ValidatorConfig.builder()
+            .specProvider(spec)
             .validatorExternalSignerUrl(SIGNER_URL)
             .validatorExternalSignerPublicKeySources(Collections.singletonList(publicKeysUrl))
             .validatorExternalSignerSlashingProtectionEnabled(true)
@@ -153,6 +154,7 @@ class ValidatorLoaderTest {
   void initializeValidatorsWithExternalSignerAndSlashingProtection() {
     final ValidatorConfig config =
         ValidatorConfig.builder()
+            .specProvider(spec)
             .validatorExternalSignerUrl(SIGNER_URL)
             .validatorExternalSignerPublicKeySources(
                 Collections.singletonList(PUBLIC_KEY1.toString()))
@@ -195,6 +197,7 @@ class ValidatorLoaderTest {
   void initializeValidatorsWithExternalSignerAndNoSlashingProtection() {
     final ValidatorConfig config =
         ValidatorConfig.builder()
+            .specProvider(spec)
             .validatorExternalSignerUrl(SIGNER_URL)
             .validatorExternalSignerPublicKeySources(
                 Collections.singletonList(PUBLIC_KEY1.toString()))
@@ -239,6 +242,7 @@ class ValidatorLoaderTest {
     writeKeystore(tempDir);
     final ValidatorConfig config =
         ValidatorConfig.builder()
+            .specProvider(spec)
             .validatorExternalSignerUrl(SIGNER_URL)
             .validatorExternalSignerPublicKeySources(
                 Collections.singletonList(PUBLIC_KEY2.toString()))
@@ -287,6 +291,7 @@ class ValidatorLoaderTest {
     writeMutableKeystore(dataDirLayout);
     final ValidatorConfig config =
         ValidatorConfig.builder()
+            .specProvider(spec)
             .validatorKeys(
                 List.of(tempDir.toAbsolutePath() + File.pathSeparator + tempDir.toAbsolutePath()))
             .build();
@@ -354,6 +359,7 @@ class ValidatorLoaderTest {
     writeMutableKeystore(dataDirLayout);
     final ValidatorConfig config =
         ValidatorConfig.builder()
+            .specProvider(spec)
             .validatorKeys(
                 List.of(tempDir.toAbsolutePath() + File.pathSeparator + tempDir.toAbsolutePath()))
             .build();
@@ -407,6 +413,7 @@ class ValidatorLoaderTest {
 
     final ValidatorConfig config =
         ValidatorConfig.builder()
+            .specProvider(spec)
             .validatorKeys(
                 List.of(tempDir.toAbsolutePath() + File.pathSeparator + tempDir.toAbsolutePath()))
             .build();
@@ -439,6 +446,7 @@ class ValidatorLoaderTest {
     writeKeystore(tempDir);
     final ValidatorConfig config =
         ValidatorConfig.builder()
+            .specProvider(spec)
             .validatorExternalSignerUrl(SIGNER_URL)
             .validatorExternalSignerPublicKeySources(
                 Collections.singletonList(PUBLIC_KEY1.toString()))
@@ -476,6 +484,7 @@ class ValidatorLoaderTest {
 
     final ValidatorConfig config =
         ValidatorConfig.builder()
+            .specProvider(spec)
             .validatorKeys(
                 List.of(tempDir.toAbsolutePath() + File.pathSeparator + tempDir.toAbsolutePath()))
             .build();
@@ -515,6 +524,7 @@ class ValidatorLoaderTest {
 
     final ValidatorConfig config =
         ValidatorConfig.builder()
+            .specProvider(spec)
             .validatorExternalSignerUrl(SIGNER_URL)
             .validatorExternalSignerPublicKeySources(Collections.singletonList(publicKeysUrl))
             .validatorExternalSignerSlashingProtectionEnabled(true)
@@ -551,6 +561,7 @@ class ValidatorLoaderTest {
 
     final ValidatorConfig config =
         ValidatorConfig.builder()
+            .specProvider(spec)
             .validatorExternalSignerUrl(SIGNER_URL)
             .validatorExternalSignerPublicKeySources(Collections.singletonList(publicKeysUrl))
             .validatorExternalSignerSlashingProtectionEnabled(true)
@@ -582,6 +593,7 @@ class ValidatorLoaderTest {
   void shouldLoadAdditionalLocalValidatorsOnReload(final @TempDir Path tempDir) throws Exception {
     final ValidatorConfig config =
         ValidatorConfig.builder()
+            .specProvider(spec)
             .validatorKeys(
                 List.of(tempDir.toAbsolutePath() + File.pathSeparator + tempDir.toAbsolutePath()))
             .build();
@@ -619,7 +631,7 @@ class ValidatorLoaderTest {
             .interopEnabled(true)
             .interopOwnedValidatorCount(ownedValidatorCount)
             .build();
-    final ValidatorConfig config = ValidatorConfig.builder().build();
+    final ValidatorConfig config = ValidatorConfig.builder().specProvider(spec).build();
     final ValidatorLoader validatorLoader =
         ValidatorLoader.create(
             spec,
@@ -639,7 +651,7 @@ class ValidatorLoaderTest {
 
   @Test
   void shouldNotLoadMutableValidatorIfNotEnabled() {
-    final ValidatorConfig config = ValidatorConfig.builder().build();
+    final ValidatorConfig config = ValidatorConfig.builder().specProvider(spec).build();
     final ValidatorLoader validatorLoader =
         ValidatorLoader.create(
             spec,
@@ -658,7 +670,7 @@ class ValidatorLoaderTest {
 
   @Test
   void shouldLoadMutableValidatorIfEnabled(@TempDir final Path tempDir) throws Exception {
-    final ValidatorConfig config = ValidatorConfig.builder().build();
+    final ValidatorConfig config = ValidatorConfig.builder().specProvider(spec).build();
     final ValidatorLoader validatorLoader =
         ValidatorLoader.create(
             spec,
@@ -694,7 +706,7 @@ class ValidatorLoaderTest {
             .interopEnabled(false)
             .interopOwnedValidatorCount(ownedValidatorCount)
             .build();
-    final ValidatorConfig config = ValidatorConfig.builder().build();
+    final ValidatorConfig config = ValidatorConfig.builder().specProvider(spec).build();
     final ValidatorLoader validatorLoader =
         ValidatorLoader.create(
             spec,

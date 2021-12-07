@@ -55,6 +55,7 @@ public class ExternalValidatorSourceTest {
   void setup() throws IOException, InterruptedException {
     config =
         ValidatorConfig.builder()
+            .specProvider(spec)
             .validatorExternalSignerUrl(new URL("http://localhost:9000"))
             .build();
     when(httpResponse.statusCode()).thenReturn(SC_OK);

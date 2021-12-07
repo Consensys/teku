@@ -34,7 +34,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpointEpochs;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.forkchoice.ProposerWeighting;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
@@ -89,7 +88,6 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
    * head.
    *
    * @param voteUpdater the vote updater to access and update pending votes from
-   * @param removedProposerWeightings expired proposer weightings to be removed
    * @param finalizedCheckpoint the current finalized checkpoint
    * @param justifiedCheckpoint the current justified checkpoint
    * @param justifiedStateEffectiveBalances the effective validator balances at the justified
@@ -98,7 +96,6 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
    */
   public Bytes32 applyPendingVotes(
       final VoteUpdater voteUpdater,
-      final List<ProposerWeighting> removedProposerWeightings,
       final Checkpoint finalizedCheckpoint,
       final Checkpoint justifiedCheckpoint,
       final List<UInt64> justifiedStateEffectiveBalances) {
@@ -112,8 +109,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
               getTotalTrackedNodeCount(),
               protoArray::getIndexByRoot,
               balances,
-              justifiedStateEffectiveBalances,
-              removedProposerWeightings);
+              justifiedStateEffectiveBalances);
 
       protoArray.applyScoreChanges(
           deltas, justifiedCheckpoint.getEpoch(), finalizedCheckpoint.getEpoch());
@@ -393,15 +389,6 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
                       block.getExecutionBlockHash().orElse(Bytes32.ZERO)));
       removedBlockRoots.forEach(protoArray::removeBlockRoot);
       protoArray.maybePrune(finalizedCheckpoint.getRoot());
-    } finally {
-      protoArrayLock.writeLock().unlock();
-    }
-  }
-
-  public void applyProposerWeighting(final ProposerWeighting proposerWeighting) {
-    protoArrayLock.writeLock().lock();
-    try {
-      protoArray.applyProposerWeighting(proposerWeighting);
     } finally {
       protoArrayLock.writeLock().unlock();
     }

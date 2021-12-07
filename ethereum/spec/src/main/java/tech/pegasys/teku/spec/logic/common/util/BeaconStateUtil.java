@@ -131,8 +131,11 @@ public class BeaconStateUtil {
 
   private Stream<UInt64> streamEffectiveBalancesForCommittee(
       final BeaconState state, final UInt64 slot, final UInt64 committeeIndex) {
-    return beaconStateAccessors.getBeaconCommittee(state, slot, committeeIndex).stream()
-        .map(validatorIndex -> state.getValidators().get(validatorIndex).getEffective_balance());
+    return beaconStateAccessors
+        .getBeaconCommittee(state, slot, committeeIndex)
+        .intStream()
+        .mapToObj(
+            validatorIndex -> state.getValidators().get(validatorIndex).getEffective_balance());
   }
 
   public int computeSubnetForAttestation(final BeaconState state, final Attestation attestation) {

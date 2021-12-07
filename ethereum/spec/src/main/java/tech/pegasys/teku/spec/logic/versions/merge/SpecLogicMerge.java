@@ -148,8 +148,7 @@ public class SpecLogicMerge extends AbstractSpecLogic {
             operationValidator,
             schemaDefinitions);
     final ForkChoiceUtil forkChoiceUtil =
-        new ForkChoiceUtil(
-            config, beaconStateAccessors, attestationUtil, blockProcessor, miscHelpers);
+        new ForkChoiceUtil(config, beaconStateAccessors, attestationUtil, miscHelpers);
     final BlockProposalUtil blockProposalUtil =
         new BlockProposalUtil(schemaDefinitions, blockProcessor);
     final SyncCommitteeUtil syncCommitteeUtil =

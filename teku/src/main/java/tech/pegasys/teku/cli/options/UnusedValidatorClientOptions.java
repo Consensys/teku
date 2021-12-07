@@ -82,15 +82,6 @@ public class UnusedValidatorClientOptions {
       hidden = true)
   private Integer peerRequestLimit = DEFAULT_PEER_REQUEST_LIMIT;
 
-  @Option(
-      names = {"--Xfork-choice-balance-attack-mitigation-enabled"},
-      paramLabel = "<BOOLEAN>",
-      description = "Whether to enable the HF1 fork choice balance attack mitigation.",
-      arity = "0..1",
-      fallbackValue = "false",
-      hidden = true)
-  private Boolean forkChoiceBalanceAttackMitigationEnabled = null;
-
   public void configure(final TekuConfiguration.Builder builder, String network) {
     // Create a config instance so we can inspect the values in the other builders
     final Eth2NetworkConfiguration eth2Config = createEth2NetworkConfig(network);
@@ -128,9 +119,6 @@ public class UnusedValidatorClientOptions {
     }
     if (StringUtils.isNotBlank(initialState)) {
       builder.customInitialState(initialState);
-    }
-    if (forkChoiceBalanceAttackMitigationEnabled != null) {
-      builder.balanceAttackMitigationEnabled(forkChoiceBalanceAttackMitigationEnabled);
     }
     if (altairForkEpoch != null) {
       builder.altairForkEpoch(altairForkEpoch);

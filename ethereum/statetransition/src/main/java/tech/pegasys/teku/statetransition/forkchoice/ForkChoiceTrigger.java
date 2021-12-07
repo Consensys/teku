@@ -16,22 +16,27 @@ package tech.pegasys.teku.statetransition.forkchoice;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public interface ForkChoiceTrigger {
+public class ForkChoiceTrigger {
 
-  static ForkChoiceTrigger create(
-      final ForkChoice forkChoice, final boolean balanceAttackMitigationEnabled) {
-    return balanceAttackMitigationEnabled
-        ? new BalanceAttackMitigationForkChoiceTrigger(forkChoice)
-        : new OriginalForkChoiceTrigger(forkChoice);
+  private final ForkChoiceRatchet forkChoiceRatchet;
+
+  public ForkChoiceTrigger(final ForkChoice forkChoice) {
+    forkChoiceRatchet = new ForkChoiceRatchet(forkChoice);
   }
 
-  void onSlotStartedWhileSyncing(final UInt64 slot);
+  public void onSlotStartedWhileSyncing(final UInt64 nodeSlot) {
+    forkChoiceRatchet.ensureForkChoiceCompleteForSlot(nodeSlot).join();
+  }
 
-  void onSlotStarted(final UInt64 slot);
+  public void onAttestationsDueForSlot(final UInt64 nodeSlot) {
+    forkChoiceRatchet.ensureForkChoiceCompleteForSlot(nodeSlot).join();
+  }
 
-  void onAttestationsDueForSlot(final UInt64 slot);
+  public SafeFuture<Void> prepareForBlockProduction(final UInt64 slot) {
+    return SafeFuture.COMPLETE;
+  }
 
-  SafeFuture<Void> prepareForBlockProduction(final UInt64 slot);
-
-  SafeFuture<Void> prepareForAttestationProduction(final UInt64 slot);
+  public SafeFuture<Void> prepareForAttestationProduction(final UInt64 slot) {
+    return forkChoiceRatchet.ensureForkChoiceCompleteForSlot(slot);
+  }
 }
