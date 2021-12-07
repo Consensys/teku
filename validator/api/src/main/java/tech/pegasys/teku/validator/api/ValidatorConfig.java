@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.validator.api;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Path;
@@ -179,15 +181,10 @@ public class ValidatorConfig {
 
   private void validateFeeRecipient() {
     if (suggestedFeeRecipient.isEmpty()
-        && !(validatorKeys.isEmpty() && externalPublicKeysNotDefined())) {
+        && !(validatorKeys.isEmpty() && validatorExternalSignerPublicKeySources.isEmpty())) {
       throw new InvalidConfigurationException(
           "Invalid configuration. --validators-fee-recipient-address must be specified when Merge milestone is active");
     }
-  }
-
-  private boolean externalPublicKeysNotDefined() {
-    return validatorExternalSignerPublicKeySources == null
-        || validatorExternalSignerPublicKeySources.isEmpty();
   }
 
   public static final class Builder {
@@ -223,8 +220,9 @@ public class ValidatorConfig {
     }
 
     public Builder validatorExternalSignerPublicKeySources(
-        List<String> validatorExternalSignerPublicKeys) {
-      this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeys;
+        List<String> validatorExternalSignerPublicKeySources) {
+      checkNotNull(validatorExternalSignerPublicKeySources);
+      this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
       return this;
     }
 
@@ -359,7 +357,7 @@ public class ValidatorConfig {
     }
 
     private void validateExternalSignerUrlAndPublicKeys() {
-      if (externalPublicKeysNotDefined()) {
+      if (validatorExternalSignerPublicKeySources.isEmpty()) {
         return;
       }
 
@@ -389,7 +387,7 @@ public class ValidatorConfig {
     }
 
     private void validateExternalSignerURLScheme() {
-      if (externalPublicKeysNotDefined() || validatorExternalSignerUrl == null) {
+      if (validatorExternalSignerPublicKeySources.isEmpty() || validatorExternalSignerUrl == null) {
         return;
       }
 
@@ -402,11 +400,6 @@ public class ValidatorConfig {
           throw new InvalidConfigurationException(errorMessage);
         }
       }
-    }
-
-    private boolean externalPublicKeysNotDefined() {
-      return validatorExternalSignerPublicKeySources == null
-          || validatorExternalSignerPublicKeySources.isEmpty();
     }
 
     private static boolean isURLSchemeHttps(final URL url) {

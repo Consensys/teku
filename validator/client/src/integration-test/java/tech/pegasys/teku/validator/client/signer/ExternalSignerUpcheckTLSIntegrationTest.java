@@ -34,14 +34,11 @@ import org.mockserver.junit.jupiter.MockServerExtension;
 import org.mockserver.model.HttpResponse;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSTestUtil;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.client.loader.HttpClientExternalSignerFactory;
 
 @ExtendWith(MockServerExtension.class)
 public class ExternalSignerUpcheckTLSIntegrationTest {
-  private static final Spec spec = TestSpecFactory.createMinimalPhase0();
   private static final BLSKeyPair KEYPAIR = BLSTestUtil.randomKeyPair(1234);
   private static final Duration TIMEOUT = Duration.ofMillis(500);
   private static final Path TEKU_KEYSTORE;
