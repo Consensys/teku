@@ -593,6 +593,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             ? new AggregatingSignatureVerificationService(
                 metricsSystem,
                 asyncRunnerFactory,
+                beaconAsyncRunner,
                 p2PConfig.getBatchVerifyMaxThreads(),
                 p2PConfig.getBatchVerifyQueueCapacity(),
                 p2PConfig.getBatchVerifyMaxBatchSize(),

@@ -20,7 +20,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -48,12 +47,14 @@ public class AggregatingSignatureVerificationServiceTest {
   private final int minBatchSizeToSplit = 5;
   private final int numThreads = 2;
   private final boolean strictThreadLimitEnabled = true;
+  private final StubAsyncRunner completionRunner = new StubAsyncRunner();
 
   private final StubAsyncRunnerFactory asyncRunnerFactory = new StubAsyncRunnerFactory();
   private AggregatingSignatureVerificationService service =
       new AggregatingSignatureVerificationService(
           new StubMetricsSystem(),
           asyncRunnerFactory,
+          completionRunner,
           numThreads,
           queueCapacity,
           batchSize,
@@ -127,7 +128,7 @@ public class AggregatingSignatureVerificationServiceTest {
   }
 
   @Test
-  public void verify_validSignatures_listVerify() throws ExecutionException, InterruptedException {
+  public void verify_validSignatures_listVerify() {
     startService();
 
     final List<SafeFuture<Boolean>> futures = new ArrayList<>();
@@ -242,6 +243,7 @@ public class AggregatingSignatureVerificationServiceTest {
         new AggregatingSignatureVerificationService(
             metrics,
             realRunnerFactory,
+            realRunnerFactory.create("completion", 1),
             1,
             queueCapacity,
             batchSize,
@@ -389,6 +391,7 @@ public class AggregatingSignatureVerificationServiceTest {
     // Get pending tasks
     final List<SignatureTask> tasks = getPendingTasks();
     service.batchVerifySignatures(tasks);
+    completionRunner.executeQueuedActions();
   }
 
   private List<SignatureTask> getPendingTasks() {
