@@ -110,7 +110,7 @@ public class ValidatorSourceFactory {
             asyncRunner,
             false,
             maybeDataDir);
-    mutableLocalValidatorSource = Optional.of(localValidatorSource);
+    mutableLocalValidatorSource = Optional.of(slashingProtected(localValidatorSource));
     return mutableLocalValidatorSource;
   }
 

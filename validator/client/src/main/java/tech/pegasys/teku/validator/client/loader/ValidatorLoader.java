@@ -39,6 +39,7 @@ import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.loader.ValidatorSource.ValidatorProvider;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 
 public class ValidatorLoader {
@@ -92,6 +93,14 @@ public class ValidatorLoader {
         ownedValidators, validatorProviders, graffitiProvider);
   }
 
+  public DeleteKeyResult deleteMutableValidator(final BLSPublicKey publicKey) {
+    if (mutableValidatorSource.isEmpty()) {
+      return DeleteKeyResult.error(
+          "Unable to delete validator, could not determine the storage location.");
+    }
+    return mutableValidatorSource.get().deleteValidator(publicKey);
+  }
+
   public synchronized PostKeyResult loadMutableValidator(
       final KeyStoreData keyStoreData,
       final String password,
@@ -132,7 +141,7 @@ public class ValidatorLoader {
 
   private boolean canAddValidator() {
     return mutableValidatorSource.isPresent()
-        && mutableValidatorSource.get().canAddValidator()
+        && mutableValidatorSource.get().canUpdateValidators()
         && maybeDataDirLayout.isPresent();
   }
 
@@ -169,6 +178,16 @@ public class ValidatorLoader {
         validatorSources.getMutableLocalValidatorSource(),
         config.getGraffitiProvider(),
         maybeMutableDir);
+  }
+
+  @VisibleForTesting
+  static ValidatorLoader create(
+      final List<ValidatorSource> validatorSources,
+      final Optional<ValidatorSource> mutableValidatorSource,
+      final GraffitiProvider graffitiProvider,
+      final Optional<DataDirLayout> maybeDataDirLayout) {
+    return new ValidatorLoader(
+        validatorSources, mutableValidatorSource, graffitiProvider, maybeDataDirLayout);
   }
 
   private void addValidatorsFromSource(

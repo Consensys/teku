@@ -92,7 +92,7 @@ public class SlashingProtectionImporterTest {
       throws IOException, URISyntaxException {
     final Path exportedFile = tempDir.resolve("exportedFile.json").toAbsolutePath();
 
-    final SlashingProtectionExporter exporter = new SlashingProtectionExporter(tempDir.toString());
+    final SlashingProtectionExporter exporter = new SlashingProtectionExporter(tempDir);
     final File ruleFile = usingResourceFile("slashProtection.yml", tempDir);
     final Optional<String> exportError = exporter.readSlashProtectionFile(ruleFile, LOG::debug);
     final String originalFileContent = Files.readString(ruleFile.toPath());
@@ -128,7 +128,7 @@ public class SlashingProtectionImporterTest {
     final File repairedRuleFile =
         usingResourceFile("slashProtectionWithGenesisRoot.yml", repairedRecords);
 
-    final SlashingProtectionExporter exporter = new SlashingProtectionExporter(tempDir.toString());
+    final SlashingProtectionExporter exporter = new SlashingProtectionExporter(tempDir);
     exporter.readSlashProtectionFile(repairedRuleFile, LOG::debug);
     final String originalFileContent = Files.readString(initialRuleFile.toPath());
 

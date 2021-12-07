@@ -72,7 +72,13 @@ public class ExternalValidatorSourceTest {
   }
 
   @Test
+  void shouldThrowExceptionWhenDeleteValidator() {
+    assertThatThrownBy(() -> validatorSource.deleteValidator(BLSPublicKey.empty()))
+        .isInstanceOf(UnsupportedOperationException.class);
+  }
+
+  @Test
   void shouldSayFalseToAddValidators() {
-    assertThat(validatorSource.canAddValidator()).isFalse();
+    assertThat(validatorSource.canUpdateValidators()).isFalse();
   }
 }

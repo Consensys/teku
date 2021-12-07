@@ -28,6 +28,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.validator.api.InteropConfig;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
 
 public class MockStartValidatorSource implements ValidatorSource {
   private static final Logger LOG = LogManager.getLogger();
@@ -54,8 +55,13 @@ public class MockStartValidatorSource implements ValidatorSource {
   }
 
   @Override
-  public boolean canAddValidator() {
+  public boolean canUpdateValidators() {
     return false;
+  }
+
+  @Override
+  public DeleteKeyResult deleteValidator(final BLSPublicKey publicKey) {
+    throw new UnsupportedOperationException("Cannot delete validator from mock validator source.");
   }
 
   @Override

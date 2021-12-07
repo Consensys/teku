@@ -170,8 +170,11 @@ public class DefaultValidatorStatusLogger implements ValidatorStatusLogger {
                   continue;
                 }
 
-                STATUS_LOG.validatorStatusChange(
-                    oldStatus.name(), newStatus.name(), key.toAbbreviatedString());
+                // if a validator got removed, it would have a newStatus of null
+                if (newStatus != null) {
+                  STATUS_LOG.validatorStatusChange(
+                      oldStatus.name(), newStatus.name(), key.toAbbreviatedString());
+                }
               }
 
               updateValidatorCountMetrics(newValidatorStatuses);

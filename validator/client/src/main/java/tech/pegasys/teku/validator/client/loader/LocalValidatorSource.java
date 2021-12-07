@@ -25,7 +25,9 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -46,6 +48,7 @@ import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.validator.api.KeyStoreFilesLocator;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 
 public class LocalValidatorSource implements ValidatorSource {
@@ -58,6 +61,8 @@ public class LocalValidatorSource implements ValidatorSource {
   private final KeyStoreFilesLocator keyStoreFilesLocator;
   private final boolean readOnly;
   private final Optional<DataDirLayout> maybeDataDirLayout;
+  private final Map<BLSPublicKey, ActiveLocalValidatorSource> localValidatorSourceMap =
+      new ConcurrentHashMap<>();
 
   public LocalValidatorSource(
       final Spec spec,
@@ -83,25 +88,37 @@ public class LocalValidatorSource implements ValidatorSource {
   }
 
   @Override
-  public boolean canAddValidator() {
+  public boolean canUpdateValidators() {
     return !readOnly && maybeDataDirLayout.isPresent();
+  }
+
+  @Override
+  public DeleteKeyResult deleteValidator(final BLSPublicKey publicKey) {
+    if (!canUpdateValidators()) {
+      return DeleteKeyResult.error(
+          "Cannot delete validator from read-only local validator source.");
+    }
+    final Optional<ActiveLocalValidatorSource> source =
+        Optional.ofNullable(localValidatorSourceMap.remove(publicKey));
+    if (source.isEmpty()) {
+      return DeleteKeyResult.error(
+          "Could not find " + publicKey.toBytesCompressed().toShortHexString() + " to delete");
+    }
+    keystoreLocker.unlockKeystore(getKeystorePath(publicKey));
+    return source.get().delete();
   }
 
   @Override
   public AddLocalValidatorResult addValidator(
       final KeyStoreData keyStoreData, final String password, final BLSPublicKey publicKey) {
-    if (!canAddValidator()) {
+    if (!canUpdateValidators()) {
       return new AddLocalValidatorResult(
           PostKeyResult.error("Cannot add validator to a read only source."), Optional.empty());
     }
 
-    final DataDirLayout dataDirLayout = maybeDataDirLayout.get();
-    final String fileName = publicKey.toBytesCompressed().toUnprefixedHexString();
-    final Path passwordPath =
-        ValidatorClientService.getAlterableKeystorePasswordPath(dataDirLayout)
-            .resolve(fileName + ".txt");
-    final Path keystorePath =
-        ValidatorClientService.getAlterableKeystorePath(dataDirLayout).resolve(fileName + ".json");
+    final DataDirLayout dataDirLayout = maybeDataDirLayout.orElseThrow();
+    final Path passwordPath = getPasswordPath(publicKey);
+    final Path keystorePath = getKeystorePath(publicKey);
     try {
       ensureDirectoryExists(ValidatorClientService.getAlterableKeystorePasswordPath(dataDirLayout));
       ensureDirectoryExists(ValidatorClientService.getAlterableKeystorePath(dataDirLayout));
@@ -114,6 +131,8 @@ public class LocalValidatorSource implements ValidatorSource {
       final ValidatorProvider provider =
           new LocalValidatorProvider(
               spec, keyStoreData, keystorePath, publicKey, password, readOnly);
+      localValidatorSourceMap.put(
+          publicKey, new ActiveLocalValidatorSource(keystorePath, passwordPath));
       return new AddLocalValidatorResult(
           PostKeyResult.success(), Optional.of(provider.createSigner()));
     } catch (InvalidConfigurationException | IOException ex) {
@@ -122,6 +141,20 @@ public class LocalValidatorSource implements ValidatorSource {
       keystoreLocker.unlockKeystore(keystorePath);
       return new AddLocalValidatorResult(PostKeyResult.error(ex.getMessage()), Optional.empty());
     }
+  }
+
+  private Path getKeystorePath(final BLSPublicKey publicKey) {
+    final DataDirLayout dataDirLayout = maybeDataDirLayout.orElseThrow();
+    final String fileName = publicKey.toBytesCompressed().toUnprefixedHexString();
+    return ValidatorClientService.getAlterableKeystorePath(dataDirLayout)
+        .resolve(fileName + ".json");
+  }
+
+  private Path getPasswordPath(final BLSPublicKey publicKey) {
+    final DataDirLayout dataDirLayout = maybeDataDirLayout.orElseThrow();
+    final String fileName = publicKey.toBytesCompressed().toUnprefixedHexString();
+    return ValidatorClientService.getAlterableKeystorePasswordPath(dataDirLayout)
+        .resolve(fileName + ".txt");
   }
 
   private void ensureDirectoryExists(final Path path) throws IOException {
@@ -146,6 +179,8 @@ public class LocalValidatorSource implements ValidatorSource {
       final BLSPublicKey publicKey =
           BLSPublicKey.fromBytesCompressedValidate(Bytes48.wrap(keyStoreData.getPubkey()));
       final String password = loadPassword(passwordPath);
+      localValidatorSourceMap.put(
+          publicKey, new ActiveLocalValidatorSource(keystorePath, passwordPath));
       return new LocalValidatorProvider(
           spec, keyStoreData, keystorePath, publicKey, password, readOnly);
     } catch (final KeyStoreValidationException e) {

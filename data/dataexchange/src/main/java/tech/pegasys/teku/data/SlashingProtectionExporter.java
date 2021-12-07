@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -46,14 +45,15 @@ public class SlashingProtectionExporter {
   private final List<SigningHistory> signingHistoryList = new ArrayList<>();
   private Bytes32 genesisValidatorsRoot = null;
   private final SyncDataAccessor syncDataAccessor;
+  protected final Path slashProtectionPath;
 
-  public SlashingProtectionExporter(final String path) {
-    syncDataAccessor = SyncDataAccessor.create(Paths.get(path));
+  public SlashingProtectionExporter(final Path slashProtectionPath) {
+    this.slashProtectionPath = slashProtectionPath;
+    syncDataAccessor = SyncDataAccessor.create(slashProtectionPath);
   }
 
   // returns a map of errors and the associated keys.
-  public Map<BLSPublicKey, String> initialise(
-      final Path slashProtectionPath, final Consumer<String> infoLogger) {
+  public Map<BLSPublicKey, String> initialise(final Consumer<String> infoLogger) {
     File slashingProtectionRecords = slashProtectionPath.toFile();
     final Map<BLSPublicKey, String> importErrors = new HashMap<>();
     for (File currentFile : slashingProtectionRecords.listFiles()) {
@@ -120,6 +120,12 @@ public class SlashingProtectionExporter {
 
   String getPrettyJson() throws JsonProcessingException {
     return jsonProvider.objectToPrettyJSON(
+        new SlashingProtectionInterchangeFormat(
+            new Metadata(INTERCHANGE_VERSION, genesisValidatorsRoot), signingHistoryList));
+  }
+
+  String getJson() throws JsonProcessingException {
+    return jsonProvider.objectToJSON(
         new SlashingProtectionInterchangeFormat(
             new Metadata(INTERCHANGE_VERSION, genesisValidatorsRoot), signingHistoryList));
   }

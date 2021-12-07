@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.logging;
 
 import com.google.common.base.Strings;
+import com.google.common.base.Throwables;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
@@ -73,11 +74,19 @@ public class ValidatorLogger {
       final UInt64 slot,
       final Set<String> maybeKey,
       final Throwable error) {
-    final String errorString =
-        String.format(
-            "%sFailed to produce %s  Slot: %s%s",
-            PREFIX, producedType, slot, formatValidators(maybeKey));
-    log.error(ColorConsolePrinter.print(errorString, Color.RED), error);
+    if (!Throwables.getRootCause(error).getMessage().contains("signer is no longer active")) {
+      final String errorString =
+          String.format(
+              "%sFailed to produce %s  Slot: %s%s",
+              PREFIX, producedType, slot, formatValidators(maybeKey));
+      log.error(ColorConsolePrinter.print(errorString, Color.RED), error);
+    } else {
+      final String errorString =
+          String.format(
+              "%sValidator deleted, cannot produce %s  Slot: %s%s",
+              PREFIX, producedType, slot, formatValidators(maybeKey));
+      log.info(ColorConsolePrinter.print(errorString, Color.YELLOW));
+    }
   }
 
   private String formatValidators(final Set<String> keys) {
