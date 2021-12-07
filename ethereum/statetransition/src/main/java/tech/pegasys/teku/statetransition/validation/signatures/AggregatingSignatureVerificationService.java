@@ -43,6 +43,7 @@ public class AggregatingSignatureVerificationService extends SignatureVerificati
 
   static final int DEFAULT_MIN_BATCH_SIZE_TO_SPLIT = 25;
 
+  private final AsyncRunner completionRunner;
   private final int numThreads;
   private final int maxBatchSize;
   private final int minBatchSizeToSplit;
@@ -58,6 +59,7 @@ public class AggregatingSignatureVerificationService extends SignatureVerificati
   AggregatingSignatureVerificationService(
       final MetricsSystem metricsSystem,
       final AsyncRunnerFactory asyncRunnerFactory,
+      final AsyncRunner completionRunner,
       final int numThreads,
       final int queueCapacity,
       final int maxBatchSize,
@@ -65,6 +67,7 @@ public class AggregatingSignatureVerificationService extends SignatureVerificati
       final boolean strictThreadLimitEnabled) {
     this.numThreads = Math.min(numThreads, Runtime.getRuntime().availableProcessors());
     this.asyncRunner = asyncRunnerFactory.create(this.getClass().getSimpleName(), this.numThreads);
+    this.completionRunner = completionRunner;
     this.maxBatchSize = maxBatchSize;
 
     this.batchSignatureTasks = new ArrayBlockingQueue<>(queueCapacity);
@@ -97,6 +100,7 @@ public class AggregatingSignatureVerificationService extends SignatureVerificati
   public AggregatingSignatureVerificationService(
       final MetricsSystem metricsSystem,
       final AsyncRunnerFactory asyncRunnerFactory,
+      final AsyncRunner completionRunner,
       final int maxThreads,
       final int queueCapacity,
       final int maxBatchSize,
@@ -104,6 +108,7 @@ public class AggregatingSignatureVerificationService extends SignatureVerificati
     this(
         metricsSystem,
         asyncRunnerFactory,
+        completionRunner,
         maxThreads,
         queueCapacity,
         maxBatchSize,
@@ -142,7 +147,8 @@ public class AggregatingSignatureVerificationService extends SignatureVerificati
       final List<Bytes> messages,
       final List<BLSSignature> signatures) {
     assertIsRunning("verify");
-    final SignatureTask task = new SignatureTask(publicKeys, messages, signatures);
+    final SignatureTask task =
+        new SignatureTask(completionRunner, publicKeys, messages, signatures);
     if (!batchSignatureTasks.offer(task)) {
       // Queue is full
       final Throwable error =
@@ -198,11 +204,11 @@ public class AggregatingSignatureVerificationService extends SignatureVerificati
             : BLS.batchVerify(allKeys, allMessages, allSignatures);
     if (batchIsValid) {
       for (SignatureTask task : tasks) {
-        task.result.complete(true);
+        task.completeAsync(true);
       }
     } else if (tasks.size() == 1) {
       // We only had 1 signature, so it must be invalid
-      tasks.get(0).result.complete(false);
+      tasks.get(0).completeAsync(false);
     } else if (tasks.size() >= minBatchSizeToSplit) {
       // Split up tasks and try to verify in smaller batches
       final List<List<SignatureTask>> splitTasks = splitTasks(tasks);
@@ -214,7 +220,7 @@ public class AggregatingSignatureVerificationService extends SignatureVerificati
       for (SignatureTask task : tasks) {
         final boolean taskIsValid =
             BLSSignatureVerifier.SIMPLE.verify(task.publicKeys, task.messages, task.signatures);
-        task.result.complete(taskIsValid);
+        task.completeAsync(taskIsValid);
       }
     }
   }
@@ -232,17 +238,24 @@ public class AggregatingSignatureVerificationService extends SignatureVerificati
   @VisibleForTesting
   static class SignatureTask {
     final SafeFuture<Boolean> result = new SafeFuture<>();
+    private final AsyncRunner asyncRunner;
     final List<List<BLSPublicKey>> publicKeys;
     final List<Bytes> messages;
     final List<BLSSignature> signatures;
 
     private SignatureTask(
+        final AsyncRunner asyncRunner,
         final List<List<BLSPublicKey>> publicKeys,
         final List<Bytes> messages,
         final List<BLSSignature> signatures) {
+      this.asyncRunner = asyncRunner;
       this.publicKeys = publicKeys;
       this.messages = messages;
       this.signatures = signatures;
+    }
+
+    public void completeAsync(final boolean isValid) {
+      asyncRunner.runAsync(() -> result.complete(isValid)).finish(result::completeExceptionally);
     }
   }
 }
