@@ -50,7 +50,7 @@ public class Eth2NetworkConfiguration {
   private final Optional<UInt64> mergeForkEpoch;
   private final Eth1Address eth1DepositContractAddress;
   private final Optional<UInt64> eth1DepositContractDeployBlock;
-  private final boolean balanceAttackMitigationEnabled;
+  private final boolean proposerBoostEnabled;
   private final Optional<Bytes32> mergeTerminalBlockHashOverride;
   private final Optional<UInt256> mergeTotalTerminalDifficultyOverride;
   private final Optional<UInt64> mergeTerminalBlockHashEpochOverride;
@@ -65,7 +65,7 @@ public class Eth2NetworkConfiguration {
       final List<String> discoveryBootnodes,
       final Eth1Address eth1DepositContractAddress,
       final Optional<UInt64> eth1DepositContractDeployBlock,
-      final boolean balanceAttackMitigationEnabled,
+      final boolean proposerBoostEnabled,
       final Optional<UInt64> altairForkEpoch,
       final Optional<UInt64> mergeForkEpoch,
       final Optional<Bytes32> mergeTerminalBlockHashOverride,
@@ -85,7 +85,7 @@ public class Eth2NetworkConfiguration {
             ? new Eth1Address(spec.getGenesisSpecConfig().getDepositContractAddress())
             : eth1DepositContractAddress;
     this.eth1DepositContractDeployBlock = eth1DepositContractDeployBlock;
-    this.balanceAttackMitigationEnabled = balanceAttackMitigationEnabled;
+    this.proposerBoostEnabled = proposerBoostEnabled;
     this.mergeTerminalBlockHashOverride = mergeTerminalBlockHashOverride;
     this.mergeTotalTerminalDifficultyOverride = mergeTotalTerminalDifficultyOverride;
     this.mergeTerminalBlockHashEpochOverride = mergeTerminalBlockHashEpochOverride;
@@ -144,8 +144,8 @@ public class Eth2NetworkConfiguration {
     return eth1DepositContractDeployBlock;
   }
 
-  public boolean isBalanceAttackMitigationEnabled() {
-    return balanceAttackMitigationEnabled;
+  public boolean isProposerBoostEnabled() {
+    return proposerBoostEnabled;
   }
 
   public Optional<UInt64> getAltairForkEpoch() {
@@ -182,7 +182,7 @@ public class Eth2NetworkConfiguration {
     private List<String> discoveryBootnodes = new ArrayList<>();
     private Eth1Address eth1DepositContractAddress;
     private Optional<UInt64> eth1DepositContractDeployBlock = Optional.empty();
-    private boolean balanceAttackMitigationEnabled = false;
+    private boolean proposerBoostEnabled = false;
     private Optional<UInt64> altairForkEpoch = Optional.empty();
     private Optional<UInt64> mergeForkEpoch = Optional.empty();
     private Optional<Bytes32> mergeTerminalBlockHashOverride = Optional.empty();
@@ -219,7 +219,7 @@ public class Eth2NetworkConfiguration {
           discoveryBootnodes,
           eth1DepositContractAddress,
           eth1DepositContractDeployBlock,
-          balanceAttackMitigationEnabled,
+          proposerBoostEnabled,
           altairForkEpoch,
           mergeForkEpoch,
           mergeTerminalBlockHashOverride,
@@ -282,8 +282,8 @@ public class Eth2NetworkConfiguration {
       return this;
     }
 
-    public Builder balanceAttackMitigationEnabled(final boolean balanceAttackMitigationEnabled) {
-      this.balanceAttackMitigationEnabled = balanceAttackMitigationEnabled;
+    public Builder proposerBoostEnabled(final boolean proposerBoostEnabled) {
+      this.proposerBoostEnabled = proposerBoostEnabled;
       return this;
     }
 

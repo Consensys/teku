@@ -34,7 +34,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.forkchoice.ProposerWeighting;
 
 public class ProtoArray {
   private static final Logger LOG = LogManager.getLogger();
@@ -554,26 +553,6 @@ public class ProtoArray {
    */
   public void removeBlockRoot(final Bytes32 blockRoot) {
     indices.remove(blockRoot);
-  }
-
-  public void applyProposerWeighting(final ProposerWeighting weighting) {
-    Optional<Integer> nodeIndex = indices.get(weighting.getTargetRoot());
-    if (nodeIndex.isEmpty()) {
-      LOG.warn("Applying proposer weighting for unknown block root {}", weighting.getTargetRoot());
-      return;
-    }
-    while (nodeIndex.isPresent()) {
-      final ProtoNode protoNode = getNodeByIndex(nodeIndex.get());
-
-      // Genesis block is fixed so we don't apply scores to it
-      if (protoNode.getBlockRoot().equals(Bytes32.ZERO)) {
-        break;
-      }
-
-      protoNode.adjustWeight(weighting.getWeight().longValue());
-      updateBestDescendantOfParent(protoNode, nodeIndex.get());
-      nodeIndex = protoNode.getParentIndex();
-    }
   }
 
   private void applyDeltas(final List<Long> deltas) {

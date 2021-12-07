@@ -87,9 +87,7 @@ class StoreTransactionUpdates {
 
     // Update finalized data
     finalizedChainData.ifPresent(
-        finalizedData -> {
-          store.finalizedAnchor = finalizedData.getLatestFinalized();
-        });
+        finalizedData -> store.finalizedAnchor = finalizedData.getLatestFinalized());
 
     // Prune blocks and states
     prunedHotBlockRoots.forEach(

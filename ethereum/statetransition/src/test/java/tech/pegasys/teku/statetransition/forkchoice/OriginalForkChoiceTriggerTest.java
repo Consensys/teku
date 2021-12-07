@@ -25,10 +25,10 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-class OriginalForkChoiceTriggerTest {
+class ForkChoiceTriggerTest {
 
   protected final ForkChoice forkChoice = mock(ForkChoice.class);
-  private final ForkChoiceTrigger trigger = ForkChoiceTrigger.create(forkChoice, false);
+  private final ForkChoiceTrigger trigger = new ForkChoiceTrigger(forkChoice);
 
   @BeforeEach
   void setUp() {
@@ -45,12 +45,6 @@ class OriginalForkChoiceTriggerTest {
   void shouldProcessHeadOnAttestationDue() {
     trigger.onAttestationsDueForSlot(UInt64.ONE);
     verify(forkChoice).processHead(UInt64.ONE);
-  }
-
-  @Test
-  void shouldNotProcessHeadOnSlotStart() {
-    trigger.onSlotStarted(UInt64.ONE);
-    verifyNoInteractions(forkChoice);
   }
 
   @Test
