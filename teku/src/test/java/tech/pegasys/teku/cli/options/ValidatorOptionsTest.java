@@ -148,13 +148,13 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void ShouldReportEmptyIfFeeRecipientNotSpecified() {
+  public void shouldReportEmptyIfFeeRecipientNotSpecified() {
     final TekuConfiguration config = getTekuConfigurationFromArguments();
     assertThat(config.validatorClient().getValidatorConfig().getSuggestedFeeRecipient()).isEmpty();
   }
 
   @Test
-  public void ShouldReportAddressIfFeeRecipientSpecified() {
+  public void shouldReportAddressIfFeeRecipientSpecified() {
     final String[] args = {
       "--Xvalidators-suggested-fee-recipient-address", "0xfe3b557e8fb62b89f4916b721be55ceb828dbd73"
     };
