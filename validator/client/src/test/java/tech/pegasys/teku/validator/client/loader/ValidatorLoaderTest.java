@@ -329,6 +329,7 @@ class ValidatorLoaderTest {
 
     final ValidatorConfig config =
         ValidatorConfig.builder()
+            .specProvider(spec)
             .validatorKeys(
                 List.of(tempDir.toAbsolutePath() + File.pathSeparator + tempDir.toAbsolutePath()))
             .build();
