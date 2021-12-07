@@ -43,6 +43,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   protected Map<Bytes32, BeaconState> block_states;
   protected Map<Checkpoint, BeaconState> checkpoint_states;
   protected Map<UInt64, VoteTracker> votes;
+  protected Optional<Bytes32> proposerBoostRoot = Optional.empty();
 
   TestStoreImpl(
       final Spec spec,
@@ -110,6 +111,11 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   @Override
   public Checkpoint getBestJustifiedCheckpoint() {
     return best_justified_checkpoint;
+  }
+
+  @Override
+  public Optional<Bytes32> getProposerBoostRoot() {
+    return proposerBoostRoot;
   }
 
   @Override
@@ -260,6 +266,16 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
+  public void setProposerBoostRoot(final Bytes32 boostedBlockRoot) {
+    proposerBoostRoot = Optional.of(boostedBlockRoot);
+  }
+
+  @Override
+  public void removeProposerBoostRoot() {
+    proposerBoostRoot = Optional.empty();
+  }
+
+  @Override
   public VoteTracker getVote(final UInt64 validatorIndex) {
     VoteTracker vote = votes.get(validatorIndex);
     return vote != null ? vote : VoteTracker.DEFAULT;
@@ -277,7 +293,9 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   public Bytes32 applyForkChoiceScoreChanges(
       final Checkpoint finalizedCheckpoint,
       final Checkpoint justifiedCheckpoint,
-      final List<UInt64> justifiedCheckpointEffectiveBalances) {
+      final List<UInt64> justifiedCheckpointEffectiveBalances,
+      final Optional<Bytes32> proposerBoostRoot,
+      final UInt64 proposerScoreBoostAmount) {
     throw new UnsupportedOperationException("Not implemented");
   }
 }

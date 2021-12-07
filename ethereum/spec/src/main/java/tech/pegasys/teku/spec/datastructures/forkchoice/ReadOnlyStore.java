@@ -58,6 +58,8 @@ public interface ReadOnlyStore {
 
   Checkpoint getBestJustifiedCheckpoint();
 
+  Optional<Bytes32> getProposerBoostRoot();
+
   ReadOnlyForkChoiceStrategy getForkChoiceStrategy();
 
   boolean containsBlock(Bytes32 blockRoot);

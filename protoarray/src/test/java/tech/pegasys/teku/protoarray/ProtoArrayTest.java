@@ -19,6 +19,7 @@ import static tech.pegasys.teku.protoarray.ProtoNodeValidationStatus.OPTIMISTIC;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -432,6 +433,10 @@ class ProtoArrayTest {
         protoArray.getTotalTrackedNodeCount(),
         protoArray::getIndexByRoot,
         balances,
-        balances);
+        balances,
+        Optional.empty(),
+        Optional.empty(),
+        UInt64.ZERO,
+        UInt64.ZERO);
   }
 }

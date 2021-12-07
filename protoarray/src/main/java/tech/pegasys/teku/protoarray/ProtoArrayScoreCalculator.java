@@ -50,7 +50,11 @@ class ProtoArrayScoreCalculator {
       int protoArraySize,
       Function<Bytes32, Optional<Integer>> getIndexByRoot,
       List<UInt64> oldBalances,
-      List<UInt64> newBalances) {
+      List<UInt64> newBalances,
+      Optional<Bytes32> previousProposerBoostRoot,
+      Optional<Bytes32> newProposerBoostRoot,
+      UInt64 previousBoostAmount,
+      UInt64 newBoostAmount) {
     List<Long> deltas = new ArrayList<>(Collections.nCopies(protoArraySize, 0L));
 
     UInt64.rangeClosed(UInt64.ZERO, store.getHighestVotedValidatorIndex())
@@ -59,6 +63,10 @@ class ProtoArrayScoreCalculator {
                 computeDelta(
                     store, getIndexByRoot, oldBalances, newBalances, deltas, validatorIndex));
 
+    previousProposerBoostRoot.ifPresent(
+        root -> subtractBalance(getIndexByRoot, deltas, root, previousBoostAmount));
+    newProposerBoostRoot.ifPresent(
+        root -> addBalance(getIndexByRoot, deltas, root, newBoostAmount));
     return deltas;
   }
 

@@ -40,4 +40,8 @@ public interface MutableStore extends ReadOnlyStore {
   void setFinalizedCheckpoint(Checkpoint finalized_checkpoint);
 
   void setBestJustifiedCheckpoint(Checkpoint best_justified_checkpoint);
+
+  void setProposerBoostRoot(Bytes32 boostedBlockRoot);
+
+  void removeProposerBoostRoot();
 }
