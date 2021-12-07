@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.forkchoice.ProposerWeighting;
 import tech.pegasys.teku.spec.datastructures.forkchoice.StubVoteUpdater;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
@@ -44,8 +43,6 @@ class ProtoArrayTest {
   private final Bytes32 block2a = dataStructureUtil.randomBytes32();
   private final Bytes32 block2b = dataStructureUtil.randomBytes32();
   private final Bytes32 block3a = dataStructureUtil.randomBytes32();
-  private final Bytes32 block3b = dataStructureUtil.randomBytes32();
-  private final Bytes32 block3c = dataStructureUtil.randomBytes32();
 
   private ProtoArray protoArray =
       new ProtoArrayBuilder()
@@ -56,70 +53,6 @@ class ProtoArrayTest {
   @BeforeEach
   void setUp() {
     addOptimisticBlock(0, Bytes32.ZERO, Bytes32.ZERO);
-  }
-
-  @Test
-  void applyProposerWeighting_shouldApplyAndReverseProposerWeightingToNodeAndDescendants() {
-    final ProposerWeighting proposerWeighting = new ProposerWeighting(block3a, UInt64.valueOf(500));
-
-    addValidBlock(1, block1a, Bytes32.ZERO);
-    addValidBlock(1, block2a, block1a);
-    addValidBlock(1, block2b, block1a);
-    addValidBlock(1, block3b, block2b);
-    addValidBlock(1, block3c, block2a);
-    addValidBlock(1, block3a, block2a);
-    protoArray.applyProposerWeighting(proposerWeighting);
-
-    assertThat(getNode(block3a).getWeight()).isEqualTo(proposerWeighting.getWeight());
-    assertThat(getNode(block2a).getWeight()).isEqualTo(proposerWeighting.getWeight());
-    assertThat(getNode(block1a).getWeight()).isEqualTo(proposerWeighting.getWeight());
-
-    assertThat(getNode(block2b).getWeight()).isEqualTo(UInt64.ZERO);
-    assertThat(getNode(block3b).getWeight()).isEqualTo(UInt64.ZERO);
-    assertThat(getNode(block3c).getWeight()).isEqualTo(UInt64.ZERO);
-
-    reverseProposerWeightings(proposerWeighting);
-
-    assertAllWeightsAreZero();
-  }
-
-  @Test
-  void applyProposerWeighting_shouldAffectSelectedHead() {
-    final ProposerWeighting proposerWeightingA =
-        new ProposerWeighting(block1a, UInt64.valueOf(500));
-    final ProposerWeighting proposerWeightingB = new ProposerWeighting(block1b, UInt64.valueOf(80));
-
-    addValidBlock(1, block1a, Bytes32.ZERO);
-    addValidBlock(1, block1b, Bytes32.ZERO);
-
-    protoArray.applyProposerWeighting(proposerWeightingB);
-    assertThat(
-            protoArray
-                .findHead(
-                    GENESIS_CHECKPOINT.getRoot(),
-                    GENESIS_CHECKPOINT.getEpoch(),
-                    GENESIS_CHECKPOINT.getEpoch())
-                .orElseThrow()
-                .getBlockRoot())
-        .isEqualTo(block1b);
-
-    protoArray.applyProposerWeighting(proposerWeightingA);
-    assertThat(
-            protoArray
-                .findHead(
-                    GENESIS_CHECKPOINT.getRoot(),
-                    GENESIS_CHECKPOINT.getEpoch(),
-                    GENESIS_CHECKPOINT.getEpoch())
-                .orElseThrow()
-                .getBlockRoot())
-        .isEqualTo(block1a);
-  }
-
-  @Test
-  void applyProposerWeighting_shouldIgnoreProposerWeightingForUnknownBlock() {
-    protoArray.applyProposerWeighting(
-        new ProposerWeighting(dataStructureUtil.randomBytes32(), UInt64.valueOf(500)));
-    assertAllWeightsAreZero();
   }
 
   @Test
@@ -491,19 +424,6 @@ class ProtoArrayTest {
         true);
   }
 
-  private void reverseProposerWeightings(final ProposerWeighting... weightings) {
-    final List<Long> deltas =
-        ProtoArrayScoreCalculator.computeDeltas(
-            voteUpdater,
-            protoArray.getTotalTrackedNodeCount(),
-            protoArray::getIndexByRoot,
-            Collections.emptyList(),
-            Collections.emptyList(),
-            List.of(weightings));
-    protoArray.applyScoreChanges(
-        deltas, GENESIS_CHECKPOINT.getEpoch(), GENESIS_CHECKPOINT.getEpoch());
-  }
-
   private List<Long> computeDeltas() {
     final List<UInt64> balances =
         Collections.nCopies(voteUpdater.getHighestVotedValidatorIndex().intValue(), UInt64.ONE);
@@ -512,15 +432,6 @@ class ProtoArrayTest {
         protoArray.getTotalTrackedNodeCount(),
         protoArray::getIndexByRoot,
         balances,
-        balances,
-        Collections.emptyList());
-  }
-
-  private void assertAllWeightsAreZero() {
-    assertThat(protoArray.getNodes()).allMatch(node -> node.getWeight().isZero());
-  }
-
-  private ProtoNode getNode(final Bytes32 blockRoot) {
-    return protoArray.getNodes().get(protoArray.getRootIndices().get(blockRoot));
+        balances);
   }
 }
