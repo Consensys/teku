@@ -36,7 +36,6 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
-import tech.pegasys.teku.spec.datastructures.forkchoice.ProposerWeighting;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
@@ -61,20 +60,22 @@ public class ForkChoice {
   private final Spec spec;
   private final EventThread forkChoiceExecutor;
   private final RecentChainData recentChainData;
-  private final ProposerWeightings proposerWeightings;
   private final ForkChoiceNotifier forkChoiceNotifier;
+
+  @SuppressWarnings("unused") // Will be used in follow up PR
+  private final boolean proposerBoostEnabled;
 
   private ForkChoice(
       final Spec spec,
       final EventThread forkChoiceExecutor,
       final RecentChainData recentChainData,
       final ForkChoiceNotifier forkChoiceNotifier,
-      final ProposerWeightings proposerWeightings) {
+      final boolean proposerBoostEnabled) {
     this.spec = spec;
     this.forkChoiceExecutor = forkChoiceExecutor;
     this.recentChainData = recentChainData;
-    this.proposerWeightings = proposerWeightings;
     this.forkChoiceNotifier = forkChoiceNotifier;
+    this.proposerBoostEnabled = proposerBoostEnabled;
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
   }
 
@@ -83,18 +84,14 @@ public class ForkChoice {
       final EventThread forkChoiceExecutor,
       final RecentChainData recentChainData,
       final ForkChoiceNotifier forkChoiceNotifier,
-      final boolean balanceAttackMitigationEnabled) {
-    final ProposerWeightings proposerWeightings =
-        balanceAttackMitigationEnabled
-            ? new ActiveProposerWeightings(forkChoiceExecutor, spec)
-            : new InactiveProposerWeightings();
+      final boolean proposerBoostEnabled) {
     return new ForkChoice(
-        spec, forkChoiceExecutor, recentChainData, forkChoiceNotifier, proposerWeightings);
+        spec, forkChoiceExecutor, recentChainData, forkChoiceNotifier, proposerBoostEnabled);
   }
 
   /**
-   * @deprecated Provided only to avoid having to hard code balanceAttackMitigationEnabled in lots
-   *     of tests. Will be removed when the feature toggle is removed.
+   * @deprecated Provided only to avoid having to hard code proposerBoostEnabled in lots of tests.
+   *     Will be removed when the feature toggle is removed.
    */
   @Deprecated
   public static ForkChoice create(
@@ -146,14 +143,9 @@ public class ForkChoice {
                           spec.getBeaconStateUtil(justifiedState.getSlot())
                               .getEffectiveBalances(justifiedState);
 
-                      final List<ProposerWeighting> removedProposerWeightings =
-                          proposerWeightings.clearProposerWeightings();
                       Bytes32 headBlockRoot =
                           transaction.applyForkChoiceScoreChanges(
-                              finalizedCheckpoint,
-                              justifiedCheckpoint,
-                              justifiedEffectiveBalances,
-                              removedProposerWeightings);
+                              finalizedCheckpoint, justifiedCheckpoint, justifiedEffectiveBalances);
 
                       recentChainData.updateHead(
                           headBlockRoot,
@@ -249,7 +241,7 @@ public class ForkChoice {
           BlockImportResult.failedStateTransition(
               new IllegalStateException(
                   "Invalid ExecutionPayload: "
-                      + payloadResult.getMessage().orElse("No reason provided")));
+                      + payloadResult.getValidationError().orElse("No reason provided")));
       reportInvalidBlock(block, result);
       return result;
     }
@@ -270,8 +262,6 @@ public class ForkChoice {
     // Note: not using thenRun here because we want to ensure each step is on the event thread
     transaction.commit().join();
     forkChoiceStrategy.onExecutionPayloadResult(block.getRoot(), payloadResult.getStatus());
-
-    proposerWeightings.onBlockReceived(block, blockSlotState, forkChoiceStrategy);
 
     final UInt64 currentEpoch = spec.computeEpochAtSlot(spec.getCurrentSlot(transaction));
 
@@ -416,10 +406,6 @@ public class ForkChoice {
               transaction.commit();
             })
         .reportExceptions();
-  }
-
-  public void onBlocksDueForSlot(final UInt64 slot) {
-    onForkChoiceThread(() -> proposerWeightings.onBlockDueForSlot(slot)).reportExceptions();
   }
 
   public void onTick(final UInt64 currentTime) {

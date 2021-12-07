@@ -109,13 +109,13 @@ public class Eth2NetworkOptions {
   private Integer startupTimeoutSeconds;
 
   @Option(
-      names = {"--Xfork-choice-balance-attack-mitigation-enabled"},
+      names = {"--Xfork-choice-proposer-boost-enabled"},
       paramLabel = "<BOOLEAN>",
-      description = "Whether to enable the HF1 fork choice balance attack mitigation.",
+      description = "Whether to enable the fork choice proposer boost feature.",
       arity = "0..1",
       fallbackValue = "false",
       hidden = true)
-  private Boolean forkChoiceBalanceAttackMitigationEnabled = null;
+  private Boolean proposerBoostEnabled = null;
 
   public Eth2NetworkConfiguration getNetworkConfiguration() {
     return createEth2NetworkConfig();
@@ -145,8 +145,8 @@ public class Eth2NetworkOptions {
     if (StringUtils.isNotBlank(initialState)) {
       builder.customInitialState(initialState);
     }
-    if (forkChoiceBalanceAttackMitigationEnabled != null) {
-      builder.balanceAttackMitigationEnabled(forkChoiceBalanceAttackMitigationEnabled);
+    if (proposerBoostEnabled != null) {
+      builder.proposerBoostEnabled(proposerBoostEnabled);
     }
     if (altairForkEpoch != null) {
       builder.altairForkEpoch(altairForkEpoch);

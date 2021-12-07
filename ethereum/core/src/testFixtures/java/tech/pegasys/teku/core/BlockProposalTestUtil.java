@@ -34,6 +34,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -46,7 +47,6 @@ import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
-import tech.pegasys.teku.spec.logic.versions.merge.helpers.MiscHelpersMerge;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -72,7 +72,8 @@ public class BlockProposalTestUtil {
       final SszList<Deposit> deposits,
       final SszList<SignedVoluntaryExit> exits,
       final Optional<List<Bytes>> transactions,
-      final Optional<Bytes32> terminalBlock)
+      final Optional<Bytes32> terminalBlock,
+      final Optional<ExecutionPayload> executionPayload)
       throws StateTransitionException, EpochProcessingException, SlotProcessingException {
 
     final UInt64 newEpoch = spec.computeEpochAtSlot(newSlot);
@@ -100,8 +101,10 @@ public class BlockProposalTestUtil {
                         () -> dataStructureUtil.emptySyncAggregateIfRequiredByState(blockSlotState))
                     .executionPayload(
                         () ->
-                            createExecutionPayload(
-                                newSlot, state, newEpoch, transactions, terminalBlock)));
+                            executionPayload.orElseGet(
+                                () ->
+                                    createExecutionPayload(
+                                        newSlot, state, newEpoch, transactions, terminalBlock))));
 
     // Sign block and set block signature
     final BeaconBlock block = newBlockAndState.getBlock();
@@ -109,6 +112,77 @@ public class BlockProposalTestUtil {
 
     final SignedBeaconBlock signedBlock = SignedBeaconBlock.create(spec, block, blockSignature);
     return new SignedBlockAndState(signedBlock, newBlockAndState.getState());
+  }
+
+  public SignedBlockAndState createNewBlockSkippingStateTransition(
+      final Signer signer,
+      final UInt64 newSlot,
+      final BeaconState state,
+      final Bytes32 parentBlockSigningRoot,
+      final Eth1Data eth1Data,
+      final SszList<Attestation> attestations,
+      final SszList<ProposerSlashing> slashings,
+      final SszList<Deposit> deposits,
+      final SszList<SignedVoluntaryExit> exits,
+      final Optional<List<Bytes>> transactions,
+      final Optional<Bytes32> terminalBlock,
+      final Optional<ExecutionPayload> executionPayload)
+      throws EpochProcessingException, SlotProcessingException {
+
+    final UInt64 newEpoch = spec.computeEpochAtSlot(newSlot);
+    final BLSSignature randaoReveal =
+        signer.createRandaoReveal(newEpoch, state.getForkInfo()).join();
+
+    final BeaconState blockSlotState = spec.processSlots(state, newSlot);
+
+    // Sign block and set block signature
+
+    final BeaconBlockBody blockBody =
+        spec.atSlot(newSlot)
+            .getSchemaDefinitions()
+            .getBeaconBlockBodySchema()
+            .createBlockBody(
+                builder ->
+                    builder
+                        .randaoReveal(randaoReveal)
+                        .eth1Data(eth1Data)
+                        .graffiti(Bytes32.ZERO)
+                        .attestations(attestations)
+                        .proposerSlashings(slashings)
+                        .attesterSlashings(blockBodyLists.createAttesterSlashings())
+                        .deposits(deposits)
+                        .voluntaryExits(exits)
+                        .syncAggregate(
+                            () ->
+                                dataStructureUtil.emptySyncAggregateIfRequiredByState(
+                                    blockSlotState))
+                        .executionPayload(
+                            () ->
+                                executionPayload.orElseGet(
+                                    () ->
+                                        createExecutionPayload(
+                                            newSlot,
+                                            state,
+                                            newEpoch,
+                                            transactions,
+                                            terminalBlock))));
+
+    final BeaconBlock block =
+        spec.atSlot(newSlot)
+            .getSchemaDefinitions()
+            .getBeaconBlockSchema()
+            .create(
+                newSlot,
+                UInt64.valueOf(spec.getBeaconProposerIndex(blockSlotState, newSlot)),
+                parentBlockSigningRoot,
+                blockSlotState.hashTreeRoot(),
+                blockBody);
+
+    // Sign block and set block signature
+    BLSSignature blockSignature = signer.signBlock(block, state.getForkInfo()).join();
+
+    final SignedBeaconBlock signedBlock = SignedBeaconBlock.create(spec, block, blockSignature);
+    return new SignedBlockAndState(signedBlock, blockSlotState);
   }
 
   private ExecutionPayload createExecutionPayload(
@@ -142,7 +216,7 @@ public class BlockProposalTestUtil {
         newSlot,
         UInt64.valueOf(30_000_000L),
         UInt64.valueOf(30_000_000L),
-        ((MiscHelpersMerge) specVersion.miscHelpers()).computeTimestampAtSlot(state, newSlot),
+        specVersion.miscHelpers().computeTimeAtSlot(state, newSlot),
         dataStructureUtil.randomBytes32(),
         UInt256.ONE,
         dataStructureUtil.randomBytes32(),
@@ -163,9 +237,26 @@ public class BlockProposalTestUtil {
       final Optional<SszList<SignedVoluntaryExit>> exits,
       final Optional<Eth1Data> eth1Data,
       final Optional<List<Bytes>> transactions,
-      final Optional<Bytes32> terminalBlock)
+      final Optional<Bytes32> terminalBlock,
+      final Optional<ExecutionPayload> executionPayload,
+      final boolean skipStateTransition)
       throws StateTransitionException, EpochProcessingException, SlotProcessingException {
     final UInt64 newEpoch = spec.computeEpochAtSlot(newSlot);
+    if (skipStateTransition) {
+      return createNewBlockSkippingStateTransition(
+          signer,
+          newSlot,
+          previousState,
+          parentBlockSigningRoot,
+          eth1Data.orElse(get_eth1_data_stub(previousState, newEpoch)),
+          attestations.orElse(blockBodyLists.createAttestations()),
+          blockBodyLists.createProposerSlashings(),
+          deposits.orElse(blockBodyLists.createDeposits()),
+          exits.orElse(blockBodyLists.createVoluntaryExits()),
+          transactions,
+          terminalBlock,
+          executionPayload);
+    }
     return createNewBlock(
         signer,
         newSlot,
@@ -177,7 +268,8 @@ public class BlockProposalTestUtil {
         deposits.orElse(blockBodyLists.createDeposits()),
         exits.orElse(blockBodyLists.createVoluntaryExits()),
         transactions,
-        terminalBlock);
+        terminalBlock,
+        executionPayload);
   }
 
   private Eth1Data get_eth1_data_stub(BeaconState state, UInt64 current_epoch) {

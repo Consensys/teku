@@ -25,7 +25,6 @@ import java.util.Optional;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.forkchoice.ProposerWeighting;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 
@@ -51,8 +50,7 @@ class ProtoArrayScoreCalculator {
       int protoArraySize,
       Function<Bytes32, Optional<Integer>> getIndexByRoot,
       List<UInt64> oldBalances,
-      List<UInt64> newBalances,
-      List<ProposerWeighting> removedProposerWeightings) {
+      List<UInt64> newBalances) {
     List<Long> deltas = new ArrayList<>(Collections.nCopies(protoArraySize, 0L));
 
     UInt64.rangeClosed(UInt64.ZERO, store.getHighestVotedValidatorIndex())
@@ -61,10 +59,6 @@ class ProtoArrayScoreCalculator {
                 computeDelta(
                     store, getIndexByRoot, oldBalances, newBalances, deltas, validatorIndex));
 
-    removedProposerWeightings.forEach(
-        weighting ->
-            subtractBalance(
-                getIndexByRoot, deltas, weighting.getTargetRoot(), weighting.getWeight()));
     return deltas;
   }
 
