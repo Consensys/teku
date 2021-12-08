@@ -16,20 +16,30 @@ package tech.pegasys.teku.test.acceptance.dsl;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
 import org.testcontainers.utility.MountableFile;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class TekuValidatorNode extends Node {
   private static final Logger LOG = LogManager.getLogger();
+  private static final int VALIDATOR_API_PORT = 9052;
 
+  private final SimpleHttpClient httpClient;
+  private final JsonProvider jsonProvider = new JsonProvider();
   private final TekuValidatorNode.Config config;
   private boolean started = false;
   private Set<File> configFiles;
@@ -37,10 +47,12 @@ public class TekuValidatorNode extends Node {
   private TekuValidatorNode(
       final Network network, final DockerVersion version, final TekuValidatorNode.Config config) {
     super(network, TEKU_DOCKER_IMAGE_NAME, version, LOG);
+    this.httpClient = new SimpleHttpClient();
     this.config = config;
 
     container
         .withWorkingDirectory(WORKING_DIRECTORY)
+        .withExposedPorts(VALIDATOR_API_PORT)
         .withCommand("validator-client", "--config-file", CONFIG_FILE_PATH);
   }
 
@@ -55,15 +67,20 @@ public class TekuValidatorNode extends Node {
     return new TekuValidatorNode(network, version, config);
   }
 
-  public TekuValidatorNode withValidatorKeystores(ValidatorKeystores validatorKeytores)
-      throws Exception {
+  public TekuValidatorNode withMutableValidatorKeystores(
+      final ValidatorKeystores validatorKeystores) {
+    this.config.withValidatorApiEnabled();
+    return this;
+  }
+
+  public TekuValidatorNode withValidatorKeystores(ValidatorKeystores validatorKeystores) {
     this.config.withValidatorKeys(
         WORKING_DIRECTORY
-            + validatorKeytores.getKeysDirectoryName()
+            + validatorKeystores.getKeysDirectoryName()
             + ":"
             + WORKING_DIRECTORY
-            + validatorKeytores.getPasswordsDirectoryName());
-    this.copyContentsToWorkingDirectory(validatorKeytores.getTarball());
+            + validatorKeystores.getPasswordsDirectoryName());
+    this.copyContentsToWorkingDirectory(validatorKeystores.getTarball());
     return this;
   }
 
@@ -95,6 +112,35 @@ public class TekuValidatorNode extends Node {
     container.stop();
   }
 
+  private URI getValidatorApiUrl() {
+    return URI.create("http://127.0.0.1:" + container.getMappedPort(VALIDATOR_API_PORT));
+  }
+
+  public String getValidatorListing() throws IOException {
+    final String result = httpClient.get(getValidatorApiUrl(), "/eth/v1/keystores");
+    LOG.debug("GET Keys: " + result);
+    return result;
+  }
+
+  public String addValidators(final ValidatorKeystores validatorKeystores, final Path tempDir) throws IOException {
+    final List<String> keystores = validatorKeystores.getKeystores(tempDir);
+    final List<String> passwords = validatorKeystores.getPasswords();
+
+    final String body = jsonProvider.objectToJSON(Map.of("keystores", keystores, "passwords", passwords));
+
+    final String result = httpClient.post(getValidatorApiUrl(), "/eth/v1/keystores", body);
+    LOG.debug("POST Keys: " + result);
+    return result;
+
+  }
+
+  public String removeValidator(final BLSPublicKey publicKey) throws IOException {
+    final String body = jsonProvider.objectToJSON(Map.of("pubkeys", List.of(publicKey.toString())));
+    final String result = httpClient.delete(getValidatorApiUrl(), "/eth/v1/keystores", body);
+    LOG.debug("DELETE Keys: " + result);
+    return result;
+  }
+
   public static class Config {
     private static final int DEFAULT_VALIDATOR_COUNT = 64;
 
@@ -118,6 +164,13 @@ public class TekuValidatorNode extends Node {
 
     public TekuValidatorNode.Config withValidatorKeys(final String validatorKeyInformation) {
       configMap.put("validator-keys", validatorKeyInformation);
+      return this;
+    }
+
+    public TekuValidatorNode.Config withValidatorApiEnabled() {
+      configMap.put("Xvalidator-api-enabled", true);
+      configMap.put("Xvalidator-api-port", VALIDATOR_API_PORT);
+      configMap.put("Xvalidator-api-host-allowlist", "*");
       return this;
     }
 
