@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
-import static com.google.common.base.Preconditions.checkState;
-
 import java.util.Collection;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -32,7 +30,6 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.versions.merge.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
-import tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.spec.executionengine.PayloadAttributes;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -40,17 +37,12 @@ public class ForkChoiceNotifier {
   private static final Logger LOG = LogManager.getLogger();
 
   private final EventThread eventThread;
+  private final Spec spec;
   private final ExecutionEngineChannel executionEngineChannel;
   private final RecentChainData recentChainData;
   private final PayloadAttributesCalculator payloadAttributesCalculator;
 
-  private Optional<ForkChoiceState> forkChoiceState = Optional.empty();
-  private Optional<PayloadAttributes> payloadAttributes = Optional.empty();
-
-  private Optional<ForkChoiceState> lastSentForkChoiceState = Optional.empty();
-  private Optional<PayloadAttributes> lastSentPayloadAttributes = Optional.empty();
-  private SafeFuture<Optional<Bytes8>> lastFuturePayloadId =
-      SafeFuture.completedFuture(Optional.empty());
+  private ForkChoiceUpdateData forkChoiceUpdateData = new ForkChoiceUpdateData();
 
   private boolean inSync = false; // Assume we are not in sync at startup.
 
@@ -58,10 +50,12 @@ public class ForkChoiceNotifier {
 
   ForkChoiceNotifier(
       final EventThread eventThread,
+      final Spec spec,
       final ExecutionEngineChannel executionEngineChannel,
       final RecentChainData recentChainData,
       final PayloadAttributesCalculator payloadAttributesCalculator) {
     this.eventThread = eventThread;
+    this.spec = spec;
     this.executionEngineChannel = executionEngineChannel;
     this.recentChainData = recentChainData;
     this.payloadAttributesCalculator = payloadAttributesCalculator;
@@ -77,6 +71,7 @@ public class ForkChoiceNotifier {
     eventThread.start();
     return new ForkChoiceNotifier(
         eventThread,
+        spec,
         executionEngineChannel,
         recentChainData,
         new PayloadAttributesCalculator(spec, eventThread, recentChainData));
@@ -125,7 +120,9 @@ public class ForkChoiceNotifier {
    *     <p>in all other cases it must Throw to avoid block production
    */
   private SafeFuture<Optional<Bytes8>> internalGetPayloadId(
-      final Bytes32 parentBeaconBlockRoot, final boolean allowPayloadIdOnTheFlyRetrieval) {
+      final Bytes32 parentBeaconBlockRoot,
+      final UInt64 blockSlot,
+      final boolean allowPayloadIdOnTheFlyRetrieval) {
     eventThread.checkOnEventThread();
 
     final Bytes32 parentExecutionHash =
@@ -135,6 +132,25 @@ public class ForkChoiceNotifier {
                 () ->
                     new IllegalStateException(
                         "Failed to retrieve execution payload hash from beacon block root"));
+
+    final UInt64 timestamp = spec.getSlotStartTime(blockSlot, recentChainData.getGenesisTime());
+    if (forkChoiceUpdateData.isPayloadIdSuitable(parentExecutionHash, timestamp)) {
+      return forkChoiceUpdateData.getPayloadId();
+    } else if (parentExecutionHash.isZero()) {
+      // Pre-merge so ok to use default payload
+      return SafeFuture.completedFuture(Optional.empty());
+    } else {
+      // Request a new payload.
+      return payloadAttributesCalculator
+          .calculatePayloadAttributes(blockSlot, inSync, forkChoiceUpdateData)
+          .thenCompose(
+              newPayloadAttributes -> {
+                forkChoiceUpdateData =
+                    forkChoiceUpdateData.withPayloadAttributes(newPayloadAttributes);
+                forkChoiceUpdateData.send(executionEngineChannel);
+                return forkChoiceUpdateData.getPayloadId();
+              });
+    }
 
     final boolean lastForkChoiceStateCorrectlyBuildsOnTop =
         lastSentForkChoiceState
@@ -243,10 +259,10 @@ public class ForkChoiceNotifier {
   private void internalUpdatePreparableProposers(
       final Collection<BeaconPreparableProposer> proposers) {
     eventThread.checkOnEventThread();
+    payloadAttributesCalculator.updateProposers(proposers);
+
     // Default to the genesis slot if we're pre-genesis.
     final UInt64 currentSlot = recentChainData.getCurrentSlot().orElse(SpecConfig.GENESIS_SLOT);
-
-    payloadAttributesCalculator.updateProposers(proposers, currentSlot);
 
     // Update payload attributes in case we now need to propose the next block
     updatePayloadAttributes(currentSlot.plus(1));
@@ -255,12 +271,7 @@ public class ForkChoiceNotifier {
   private void internalForkChoiceUpdated(final ForkChoiceState forkChoiceState) {
     eventThread.checkOnEventThread();
 
-    if (this.forkChoiceState.isPresent() && this.forkChoiceState.get().equals(forkChoiceState)) {
-      // No change required.
-      return;
-    }
-
-    this.forkChoiceState = Optional.of(forkChoiceState);
+    this.forkChoiceUpdateData = this.forkChoiceUpdateData.withForkChoiceState(forkChoiceState);
     recentChainData
         .getCurrentSlot()
         .ifPresent(currentSlot -> updatePayloadAttributes(currentSlot.plus(1)));
@@ -274,33 +285,12 @@ public class ForkChoiceNotifier {
   }
 
   private void sendForkChoiceUpdated() {
-    if (lastSentForkChoiceState.equals(forkChoiceState)
-        && lastSentPayloadAttributes.equals(payloadAttributes)) {
-      // No change to previously sent values so no need to resend
-      return;
-    }
-    forkChoiceState.ifPresentOrElse(
-        forkChoiceState -> {
-          if (forkChoiceState.getHeadBlockHash().isZero()) {
-            return;
-          }
-          lastSentForkChoiceState = this.forkChoiceState;
-          lastSentPayloadAttributes = payloadAttributes;
-          // Previous payload is no longer useful as we've moved on to prepping the next block
-          lastFuturePayloadId =
-              executionEngineChannel
-                  .forkChoiceUpdated(forkChoiceState, payloadAttributes)
-                  .thenApplyAsync(
-                      result -> handleForkChoiceResult(forkChoiceState, result), eventThread);
-        },
-        () ->
-            LOG.warn(
-                "Could not notify EL of fork choice update because fork choice state is not yet known"));
+    forkChoiceUpdateData.send(executionEngineChannel);
   }
 
   private void updatePayloadAttributes(final UInt64 blockSlot) {
     payloadAttributesCalculator
-        .calculatePayloadAttributes(blockSlot, inSync, forkChoiceState)
+        .calculatePayloadAttributes(blockSlot, inSync, forkChoiceUpdateData)
         .thenAcceptAsync(
             newPayloadAttributes -> updatePayloadAttributes(blockSlot, newPayloadAttributes),
             eventThread)
@@ -312,12 +302,10 @@ public class ForkChoiceNotifier {
   private void updatePayloadAttributes(
       final UInt64 blockSlot, final Optional<PayloadAttributes> newPayloadAttributes) {
     eventThread.checkOnEventThread();
-    if (payloadAttributes.equals(newPayloadAttributes)) {
-      // No change, nothing to do.
-      return;
-    }
     final UInt64 currentSlot = recentChainData.getCurrentSlot().orElse(UInt64.ZERO);
     if (currentSlot.isGreaterThanOrEqualTo(blockSlot)) {
+      // TODO: This is potentially a problem if we're getting a new payload ID on demand as we'll
+      // already be in the block slot.
       // Slot has already progressed so this update is too late, just drop it.
       LOG.warn(
           "Payload attribute calculation for slot {} took too long. Slot was already {}",
@@ -325,19 +313,7 @@ public class ForkChoiceNotifier {
           currentSlot);
       return;
     }
-    payloadAttributes = newPayloadAttributes;
+    forkChoiceUpdateData = forkChoiceUpdateData.withPayloadAttributes(newPayloadAttributes);
     sendForkChoiceUpdated();
-  }
-
-  private Optional<Bytes8> handleForkChoiceResult(
-      final ForkChoiceState forkChoiceState, final ForkChoiceUpdatedResult result) {
-    eventThread.checkOnEventThread();
-    if (lastSentForkChoiceState.isEmpty()
-        || !lastSentForkChoiceState.get().equals(forkChoiceState)) {
-      // Debug level because this is quite likely to happen when syncing
-      LOG.debug("Execution engine did not return payload ID in time, discarding");
-      return Optional.empty();
-    }
-    return result.getPayloadId();
   }
 }

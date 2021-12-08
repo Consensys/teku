@@ -87,6 +87,7 @@ class ForkChoiceNotifierTest {
     notifier =
         new ForkChoiceNotifier(
             eventThread,
+            spec,
             executionEngineChannel,
             recentChainData,
             new PayloadAttributesCalculator(spec, eventThread, recentChainData));
@@ -112,6 +113,7 @@ class ForkChoiceNotifierTest {
     notifier =
         new ForkChoiceNotifier(
             eventThread,
+            spec,
             executionEngineChannel,
             recentChainData,
             new PayloadAttributesCalculator(spec, eventThread, recentChainData));
@@ -385,6 +387,9 @@ class ForkChoiceNotifierTest {
     validateGetPayloadIOnTheFlyRetrieval(
         blockRoot, finalizedForkChoiceState, payloadId, payloadAttributes);
   }
+
+  @Test
+  void getPayloadId_shouldHavePayloadWhenProposingAfterEmptySlot() {}
 
   private void validateGetPayloadIOnTheFlyRetrieval(
       final Bytes32 blockRoot,
