@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.validator.api;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Path;
@@ -23,8 +25,6 @@ import java.util.Optional;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class ValidatorConfig {
@@ -175,11 +175,19 @@ public class ValidatorConfig {
   }
 
   public Optional<Eth1Address> getSuggestedFeeRecipient() {
+    validateFeeRecipient();
     return suggestedFeeRecipient;
   }
 
+  private void validateFeeRecipient() {
+    if (suggestedFeeRecipient.isEmpty()
+        && !(validatorKeys.isEmpty() && validatorExternalSignerPublicKeySources.isEmpty())) {
+      throw new InvalidConfigurationException(
+          "Invalid configuration. --validators-fee-recipient-address must be specified when Merge milestone is active");
+    }
+  }
+
   public static final class Builder {
-    private Spec spec;
     private List<String> validatorKeys = new ArrayList<>();
     private List<URI> additionalPublishUrls = new ArrayList<>();
     private List<String> validatorExternalSignerPublicKeySources = new ArrayList<>();
@@ -212,8 +220,9 @@ public class ValidatorConfig {
     }
 
     public Builder validatorExternalSignerPublicKeySources(
-        List<String> validatorExternalSignerPublicKeys) {
-      this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeys;
+        List<String> validatorExternalSignerPublicKeySources) {
+      checkNotNull(validatorExternalSignerPublicKeySources);
+      this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
       return this;
     }
 
@@ -320,17 +329,11 @@ public class ValidatorConfig {
       return this;
     }
 
-    public Builder specProvider(final Spec spec) {
-      this.spec = spec;
-      return this;
-    }
-
     public ValidatorConfig build() {
       validateExternalSignerUrlAndPublicKeys();
       validateExternalSignerKeystoreAndPasswordFileConfig();
       validateExternalSignerTruststoreAndPasswordFileConfig();
       validateExternalSignerURLScheme();
-      validateFeeRecipient();
       return new ValidatorConfig(
           validatorKeys,
           validatorExternalSignerPublicKeySources,
@@ -354,7 +357,7 @@ public class ValidatorConfig {
     }
 
     private void validateExternalSignerUrlAndPublicKeys() {
-      if (externalPublicKeysNotDefined()) {
+      if (validatorExternalSignerPublicKeySources.isEmpty()) {
         return;
       }
 
@@ -384,7 +387,7 @@ public class ValidatorConfig {
     }
 
     private void validateExternalSignerURLScheme() {
-      if (externalPublicKeysNotDefined() || validatorExternalSignerUrl == null) {
+      if (validatorExternalSignerPublicKeySources.isEmpty() || validatorExternalSignerUrl == null) {
         return;
       }
 
@@ -397,20 +400,6 @@ public class ValidatorConfig {
           throw new InvalidConfigurationException(errorMessage);
         }
       }
-    }
-
-    private void validateFeeRecipient() {
-      if (spec.isMilestoneSupported(SpecMilestone.MERGE)
-          && suggestedFeeRecipient.isEmpty()
-          && !(validatorKeys.isEmpty() && externalPublicKeysNotDefined())) {
-        throw new InvalidConfigurationException(
-            "Invalid configuration. --validators-fee-recipient-address must be specified when Merge milestone is active");
-      }
-    }
-
-    private boolean externalPublicKeysNotDefined() {
-      return validatorExternalSignerPublicKeySources == null
-          || validatorExternalSignerPublicKeySources.isEmpty();
     }
 
     private static boolean isURLSchemeHttps(final URL url) {

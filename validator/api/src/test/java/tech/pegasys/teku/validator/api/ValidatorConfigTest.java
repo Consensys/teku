@@ -18,24 +18,14 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.util.List;
 import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 class ValidatorConfigTest {
 
   private final ValidatorConfig.Builder configBuilder = ValidatorConfig.builder();
-  private final Spec altairSpec = TestSpecFactory.createMinimalAltair();
-  private final Spec mergeSpec = TestSpecFactory.createMinimalMerge();
-
-  @BeforeEach
-  void setUp() {
-    configBuilder.specProvider(altairSpec);
-  }
 
   @Test
   public void shouldThrowExceptionIfExternalPublicKeysAreSpecifiedWithoutExternalSignerUrl() {
@@ -132,26 +122,25 @@ class ValidatorConfigTest {
   @Test
   public void merge_shouldThrowExceptionIfExternalSignerPublicKeySourcesIsSpecified()
       throws MalformedURLException {
-    configBuilder.specProvider(mergeSpec);
-    final ValidatorConfig.Builder builder =
+    final ValidatorConfig config =
         configBuilder
             .validatorExternalSignerPublicKeySources(
                 List.of(BLSTestUtil.randomKeyPair(0).getPublicKey().toString()))
-            .validatorExternalSignerUrl(URI.create("http://localhost:9000").toURL());
+            .validatorExternalSignerUrl(URI.create("http://localhost:9000").toURL())
+            .build();
 
     Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
-        .isThrownBy(builder::build)
+        .isThrownBy(config::getSuggestedFeeRecipient)
         .withMessageContaining(
             "Invalid configuration. --validators-fee-recipient-address must be specified when Merge milestone is active");
   }
 
   @Test
   public void merge_shouldThrowExceptionIfValidatorKeysAreSpecified() throws MalformedURLException {
-    configBuilder.specProvider(mergeSpec);
-    final ValidatorConfig.Builder builder = configBuilder.validatorKeys(List.of("some string"));
+    final ValidatorConfig config = configBuilder.validatorKeys(List.of("some string")).build();
 
     Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
-        .isThrownBy(builder::build)
+        .isThrownBy(config::getSuggestedFeeRecipient)
         .withMessageContaining(
             "Invalid configuration. --validators-fee-recipient-address must be specified when Merge milestone is active");
   }
@@ -159,26 +148,26 @@ class ValidatorConfigTest {
   @Test
   public void merge_noExceptionThrownIfIfExternalSignerPublicKeySourcesIsSpecified()
       throws MalformedURLException {
-    configBuilder.specProvider(mergeSpec);
-    final ValidatorConfig.Builder builder =
+    final ValidatorConfig config =
         configBuilder
             .validatorExternalSignerPublicKeySources(
                 List.of(BLSTestUtil.randomKeyPair(0).getPublicKey().toString()))
             .validatorExternalSignerUrl(URI.create("http://localhost:9000").toURL())
-            .suggestedFeeRecipient("0x0000000000000000000000000000000000000000");
+            .suggestedFeeRecipient("0x0000000000000000000000000000000000000000")
+            .build();
 
-    Assertions.assertThatCode(builder::build).doesNotThrowAnyException();
+    Assertions.assertThatCode(config::getSuggestedFeeRecipient).doesNotThrowAnyException();
   }
 
   @Test
-  public void merge_noExceptionThrownIfIfValidatorKeysAreSpecified() throws MalformedURLException {
-    configBuilder.specProvider(mergeSpec);
-    final ValidatorConfig.Builder builder =
+  public void merge_noExceptionThrownIfIfValidatorKeysAreSpecified() {
+    final ValidatorConfig config =
         configBuilder
             .validatorKeys(List.of("some string"))
             .suggestedFeeRecipient(
-                Eth1Address.fromHexString("0x0000000000000000000000000000000000000000"));
+                Eth1Address.fromHexString("0x0000000000000000000000000000000000000000"))
+            .build();
 
-    Assertions.assertThatCode(builder::build).doesNotThrowAnyException();
+    Assertions.assertThatCode(config::getSuggestedFeeRecipient).doesNotThrowAnyException();
   }
 }
