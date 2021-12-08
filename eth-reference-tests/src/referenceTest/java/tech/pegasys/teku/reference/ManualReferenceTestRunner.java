@@ -47,6 +47,9 @@ public class ManualReferenceTestRunner extends Eth2ReferenceTestCase {
   /** Filter test to run only those for a specific milestone. Use values from TestFork. */
   private static final String MILESTONE = null;
 
+  /** Filter tests to run only those where the display name contains this string. */
+  private static final String DISPLAY_NAME = "";
+
   @ParameterizedTest(name = "{0}")
   @MethodSource("loadReferenceTests")
   void shouldRunReferenceTest(final String name, final TestDefinition testDefinition)
@@ -63,6 +66,7 @@ public class ManualReferenceTestRunner extends Eth2ReferenceTestCase {
                 SPEC.isBlank() || testDefinition.getConfigName().equalsIgnoreCase(SPEC))
         .filter(testDefinition -> testDefinition.getTestType().startsWith(TEST_TYPE))
         .filter(ManualReferenceTestRunner::isSelectedMilestone)
+        .filter(test -> test.getDisplayName().contains(DISPLAY_NAME))
         .map(testDefinition -> Arguments.of(testDefinition.getDisplayName(), testDefinition));
   }
 

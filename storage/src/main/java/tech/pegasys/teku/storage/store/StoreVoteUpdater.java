@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.locks.ReadWriteLock;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -66,7 +67,9 @@ public class StoreVoteUpdater implements VoteUpdater {
   public Bytes32 applyForkChoiceScoreChanges(
       final Checkpoint finalizedCheckpoint,
       final Checkpoint justifiedCheckpoint,
-      final List<UInt64> justifiedCheckpointEffectiveBalances) {
+      final List<UInt64> justifiedCheckpointEffectiveBalances,
+      final Optional<Bytes32> proposerBoostRoot,
+      final UInt64 proposerBoostAmount) {
 
     // Ensure the store lock is taken before entering forkChoiceStrategy. Otherwise it takes the
     // protoArray lock first, and may deadlock when it later needs to get votes which requires the
@@ -76,7 +79,12 @@ public class StoreVoteUpdater implements VoteUpdater {
       return store
           .getForkChoiceStrategy()
           .applyPendingVotes(
-              this, finalizedCheckpoint, justifiedCheckpoint, justifiedCheckpointEffectiveBalances);
+              this,
+              proposerBoostRoot,
+              finalizedCheckpoint,
+              justifiedCheckpoint,
+              justifiedCheckpointEffectiveBalances,
+              proposerBoostAmount);
     } finally {
       lock.writeLock().unlock();
     }

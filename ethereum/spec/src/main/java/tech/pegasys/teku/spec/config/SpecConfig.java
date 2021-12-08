@@ -129,6 +129,8 @@ public interface SpecConfig {
 
   int getSafeSlotsToUpdateJustified();
 
+  int getProposerScoreBoost();
+
   int getDepositChainId();
 
   int getDepositNetworkId();

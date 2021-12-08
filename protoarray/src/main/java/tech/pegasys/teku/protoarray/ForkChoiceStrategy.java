@@ -51,6 +51,8 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   private final ProtoArray protoArray;
 
   private List<UInt64> balances;
+  private Optional<Bytes32> proposerBoostRoot = Optional.empty();
+  private UInt64 proposerBoostAmount = UInt64.ZERO;
 
   private ForkChoiceStrategy(Spec spec, ProtoArray protoArray, List<UInt64> balances) {
     this.spec = spec;
@@ -88,6 +90,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
    * head.
    *
    * @param voteUpdater the vote updater to access and update pending votes from
+   * @param proposerBoostRoot the block root to apply proposer boost to
    * @param finalizedCheckpoint the current finalized checkpoint
    * @param justifiedCheckpoint the current justified checkpoint
    * @param justifiedStateEffectiveBalances the effective validator balances at the justified
@@ -96,9 +99,11 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
    */
   public Bytes32 applyPendingVotes(
       final VoteUpdater voteUpdater,
+      final Optional<Bytes32> proposerBoostRoot,
       final Checkpoint finalizedCheckpoint,
       final Checkpoint justifiedCheckpoint,
-      final List<UInt64> justifiedStateEffectiveBalances) {
+      final List<UInt64> justifiedStateEffectiveBalances,
+      final UInt64 proposerBoostAmount) {
     protoArrayLock.writeLock().lock();
     votesLock.writeLock().lock();
     balancesLock.writeLock().lock();
@@ -109,11 +114,17 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
               getTotalTrackedNodeCount(),
               protoArray::getIndexByRoot,
               balances,
-              justifiedStateEffectiveBalances);
+              justifiedStateEffectiveBalances,
+              this.proposerBoostRoot,
+              proposerBoostRoot,
+              this.proposerBoostAmount,
+              proposerBoostAmount);
 
       protoArray.applyScoreChanges(
           deltas, justifiedCheckpoint.getEpoch(), finalizedCheckpoint.getEpoch());
       balances = justifiedStateEffectiveBalances;
+      this.proposerBoostRoot = proposerBoostRoot;
+      this.proposerBoostAmount = proposerBoostAmount;
 
       return findHeadImpl(justifiedCheckpoint, finalizedCheckpoint).getBlockRoot();
     } finally {

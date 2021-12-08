@@ -143,6 +143,14 @@ public abstract class BeaconStateAccessors {
             epoch -> getTotalBalance(state, getActiveValidatorIndices(state, epoch)));
   }
 
+  public UInt64 getProposerBoostAmount(final BeaconState state) {
+    final int numValidators = getActiveValidatorIndices(state, getCurrentEpoch(state)).size();
+    final UInt64 avgBalance = getTotalActiveBalance(state).dividedBy(numValidators);
+    final long committeeSize = numValidators / config.getSlotsPerEpoch();
+    final UInt64 committeeWeight = avgBalance.times(committeeSize);
+    return committeeWeight.times(config.getProposerScoreBoost()).dividedBy(100);
+  }
+
   public Bytes32 getSeed(BeaconState state, UInt64 epoch, Bytes4 domain_type)
       throws IllegalArgumentException {
     UInt64 randaoIndex =

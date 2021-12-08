@@ -90,6 +90,7 @@ public class SpecConfigPhase0 implements SpecConfig {
 
   // Fork Choice
   private final int safeSlotsToUpdateJustified;
+  private final int proposerScoreBoost;
 
   // Deposit Contract
   private final int depositChainId;
@@ -143,6 +144,7 @@ public class SpecConfigPhase0 implements SpecConfig {
       final int maxVoluntaryExits,
       final UInt64 secondsPerEth1Block,
       final int safeSlotsToUpdateJustified,
+      final int proposerScoreBoost,
       final int depositChainId,
       final int depositNetworkId,
       final Bytes depositContractAddress) {
@@ -192,6 +194,7 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.maxVoluntaryExits = maxVoluntaryExits;
     this.secondsPerEth1Block = secondsPerEth1Block;
     this.safeSlotsToUpdateJustified = safeSlotsToUpdateJustified;
+    this.proposerScoreBoost = proposerScoreBoost;
     this.depositChainId = depositChainId;
     this.depositNetworkId = depositNetworkId;
     this.depositContractAddress = depositContractAddress;
@@ -448,6 +451,11 @@ public class SpecConfigPhase0 implements SpecConfig {
   }
 
   @Override
+  public int getProposerScoreBoost() {
+    return proposerScoreBoost;
+  }
+
+  @Override
   public int getDepositChainId() {
     return depositChainId;
   }
@@ -498,6 +506,7 @@ public class SpecConfigPhase0 implements SpecConfig {
         && maxDeposits == that.maxDeposits
         && maxVoluntaryExits == that.maxVoluntaryExits
         && safeSlotsToUpdateJustified == that.safeSlotsToUpdateJustified
+        && proposerScoreBoost == that.proposerScoreBoost
         && depositChainId == that.depositChainId
         && depositNetworkId == that.depositNetworkId
         && Objects.equals(baseRewardsPerEpoch, that.baseRewardsPerEpoch)
@@ -573,6 +582,7 @@ public class SpecConfigPhase0 implements SpecConfig {
         maxVoluntaryExits,
         secondsPerEth1Block,
         safeSlotsToUpdateJustified,
+        proposerScoreBoost,
         depositChainId,
         depositNetworkId,
         depositContractAddress);
