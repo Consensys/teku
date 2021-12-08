@@ -82,7 +82,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   private final AtomicReference<State> state = new AtomicReference<>(State.IDLE);
   private final int listenPort;
 
-  public LibP2PNetwork(PrivKey privKey, NodeId nodeId, Host host,
+  protected LibP2PNetwork(PrivKey privKey, NodeId nodeId, Host host,
       PeerManager peerManager, Multiaddr advertisedAddr,
       LibP2PGossipNetwork gossipNetwork, int listenPort) {
     this.privKey = privKey;
@@ -92,101 +92,6 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
     this.advertisedAddr = advertisedAddr;
     this.gossipNetwork = gossipNetwork;
     this.listenPort = listenPort;
-  }
-
-  public LibP2PNetwork(
-      final AsyncRunner asyncRunner,
-      final NetworkConfig config,
-      final PrivateKeyProvider privateKeyProvider,
-      final ReputationManager reputationManager,
-      final MetricsSystem metricsSystem,
-      final List<RpcMethod<?, ?, ?>> rpcMethods,
-      final List<PeerHandler> peerHandlers,
-      final PreparedGossipMessageFactory defaultMessageFactory,
-      final GossipTopicFilter gossipTopicFilter) {
-    this.privKey = privateKeyProvider.get();
-    this.nodeId = new LibP2PNodeId(PeerId.fromPubKey(privKey.publicKey()));
-
-    advertisedAddr =
-        MultiaddrUtil.fromInetSocketAddress(
-            new InetSocketAddress(config.getAdvertisedIp(), config.getAdvertisedPort()), nodeId);
-    this.listenPort = config.getListenPort();
-
-    // Setup gossip
-    gossipNetwork =
-        LibP2PGossipNetwork.create(
-            metricsSystem,
-            config.getGossipConfig(),
-            defaultMessageFactory,
-            gossipTopicFilter,
-            config.getWireLogsConfig().isLogWireGossip());
-
-    // Setup rpc methods
-    final List<RpcHandler<?, ?, ?>> rpcHandlers =
-        rpcMethods.stream().map(m -> new RpcHandler<>(asyncRunner, m)).collect(Collectors.toList());
-
-    // Setup peers
-    peerManager =
-        new PeerManager(
-            metricsSystem,
-            reputationManager,
-            peerHandlers,
-            rpcHandlers,
-            (peerId) -> gossipNetwork.getGossip().getGossipScore(peerId));
-
-    final Multiaddr listenAddr =
-        MultiaddrUtil.fromInetSocketAddress(
-            new InetSocketAddress(config.getNetworkInterface(), config.getListenPort()));
-    host =
-        BuilderJKt.hostJ(
-            Defaults.None,
-            b -> {
-              b.getIdentity().setFactory(() -> privKey);
-              b.getTransports().add(TcpTransport::new);
-              b.getSecureChannels().add(NoiseXXSecureChannel::new);
-              b.getMuxers().add(StreamMuxerProtocol.getMplex());
-
-              b.getNetwork().listen(listenAddr.toString());
-
-              b.getProtocols().addAll(getDefaultProtocols());
-              b.getProtocols().addAll(rpcHandlers);
-
-              if (config.getWireLogsConfig().isLogWireCipher()) {
-                b.getDebug().getBeforeSecureHandler().addLogger(LogLevel.DEBUG, "wire.ciphered");
-              }
-              Firewall firewall = new Firewall(Duration.ofSeconds(30));
-              b.getDebug().getBeforeSecureHandler().addNettyHandler(firewall);
-
-              if (config.getWireLogsConfig().isLogWirePlain()) {
-                b.getDebug().getAfterSecureHandler().addLogger(LogLevel.DEBUG, "wire.plain");
-              }
-              if (config.getWireLogsConfig().isLogWireMuxFrames()) {
-                b.getDebug().getMuxFramesHandler().addLogger(LogLevel.DEBUG, "wire.mux");
-              }
-
-              b.getConnectionHandlers().add(peerManager);
-
-              MplexFirewall mplexFirewall =
-                  new MplexFirewall(
-                      REMOTE_OPEN_STREAMS_RATE_LIMIT, REMOTE_PARALLEL_OPEN_STREAMS_COUNT_LIMIT);
-              b.getDebug().getMuxFramesHandler().addHandler(mplexFirewall);
-            });
-  }
-
-  private List<ProtocolBinding<?>> getDefaultProtocols() {
-    final Ping ping = new Ping();
-    IdentifyOuterClass.Identify identifyMsg =
-        IdentifyOuterClass.Identify.newBuilder()
-            .setProtocolVersion("ipfs/0.1.0")
-            .setAgentVersion(VersionProvider.CLIENT_IDENTITY + "/" + VersionProvider.VERSION)
-            .setPublicKey(ByteArrayExtKt.toProtobuf(privKey.publicKey().bytes()))
-            .addListenAddrs(ByteArrayExtKt.toProtobuf(advertisedAddr.getBytes()))
-            .setObservedAddr(ByteArrayExtKt.toProtobuf(advertisedAddr.getBytes()))
-            .addAllProtocols(ping.getProtocolDescriptor().getAnnounceProtocols())
-            .addAllProtocols(
-                gossipNetwork.getGossip().getProtocolDescriptor().getAnnounceProtocols())
-            .build();
-    return List.of(ping, new Identify(identifyMsg), gossipNetwork.getGossip());
   }
 
   @Override

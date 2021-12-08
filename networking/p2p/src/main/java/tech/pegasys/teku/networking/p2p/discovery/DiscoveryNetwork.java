@@ -61,7 +61,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
 
   private volatile Optional<EnrForkId> enrForkId = Optional.empty();
 
-  DiscoveryNetwork(
+  protected DiscoveryNetwork(
       final P2PNetwork<P> p2pNetwork,
       final DiscoveryService discoveryService,
       final ConnectionManager connectionManager,
@@ -83,64 +83,6 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
     // Set connection manager peer predicate so that we don't attempt to connect peers with
     // different fork digests
     connectionManager.addPeerPredicate(this::dontConnectPeersWithDifferentForkDigests);
-  }
-
-  public static <P extends Peer> DiscoveryNetwork<P> create(
-      final MetricsSystem metricsSystem,
-      final AsyncRunner asyncRunner,
-      final KeyValueStore<String, Bytes> kvStore,
-      final P2PNetwork<P> p2pNetwork,
-      final PeerSelectionStrategy peerSelectionStrategy,
-      final DiscoveryConfig discoveryConfig,
-      final NetworkConfig p2pConfig,
-      final Spec spec,
-      final SchemaDefinitionsSupplier currentSchemaDefinitionsSupplier) {
-    final DiscoveryService discoveryService =
-        createDiscoveryService(
-            metricsSystem,
-            asyncRunner,
-            discoveryConfig,
-            p2pConfig,
-            kvStore,
-            p2pNetwork.getPrivateKey(),
-            currentSchemaDefinitionsSupplier);
-    final ConnectionManager connectionManager =
-        new ConnectionManager(
-            metricsSystem,
-            discoveryService,
-            asyncRunner,
-            p2pNetwork,
-            peerSelectionStrategy,
-            discoveryConfig.getStaticPeers().stream()
-                .map(p2pNetwork::createPeerAddress)
-                .collect(toList()));
-    return new DiscoveryNetwork<>(
-        p2pNetwork, discoveryService, connectionManager, spec, currentSchemaDefinitionsSupplier);
-  }
-
-  private static DiscoveryService createDiscoveryService(
-      final MetricsSystem metricsSystem,
-      final AsyncRunner asyncRunner,
-      final DiscoveryConfig discoConfig,
-      final NetworkConfig p2pConfig,
-      final KeyValueStore<String, Bytes> kvStore,
-      final Bytes privateKey,
-      final SchemaDefinitionsSupplier currentSchemaDefinitionsSupplier) {
-    final DiscoveryService discoveryService;
-    if (discoConfig.isDiscoveryEnabled()) {
-      discoveryService =
-          new DiscV5Service(
-              metricsSystem,
-              asyncRunner,
-              discoConfig,
-              p2pConfig,
-              kvStore,
-              privateKey,
-              currentSchemaDefinitionsSupplier);
-    } else {
-      discoveryService = new NoOpDiscoveryService();
-    }
-    return discoveryService;
   }
 
   @Override
