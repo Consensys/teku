@@ -89,7 +89,8 @@ class ConstantsReader {
           "MAX_VOLUNTARY_EXITS",
           "SAFE_SLOTS_TO_UPDATE_JUSTIFIED",
           "DEPOSIT_NETWORK_ID",
-          "DEPOSIT_CONTRACT_ADDRESS");
+          "DEPOSIT_CONTRACT_ADDRESS",
+          "PROPOSER_SCORE_BOOST");
 
   private static final ImmutableMap<Class<?>, Function<Object, ?>> PARSERS =
       ImmutableMap.<Class<?>, Function<Object, ?>>builder()

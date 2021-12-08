@@ -56,6 +56,8 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   Optional<Checkpoint> justifiedCheckpoint = Optional.empty();
   Optional<Checkpoint> finalizedCheckpoint = Optional.empty();
   Optional<Checkpoint> bestJustifiedCheckpoint = Optional.empty();
+  Optional<Bytes32> proposerBoostRoot = Optional.empty();
+  boolean proposerBoostRootSet = false;
   Map<Bytes32, SlotAndBlockRoot> stateRoots = new HashMap<>();
   Map<Bytes32, SignedBlockAndState> blockAndStates = new HashMap<>();
   private final UpdatableStore.StoreUpdateHandler updateHandler;
@@ -120,6 +122,18 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   @Override
   public void setBestJustifiedCheckpoint(Checkpoint best_justified_checkpoint) {
     this.bestJustifiedCheckpoint = Optional.of(best_justified_checkpoint);
+  }
+
+  @Override
+  public void setProposerBoostRoot(final Bytes32 boostedBlockRoot) {
+    proposerBoostRoot = Optional.of(boostedBlockRoot);
+    proposerBoostRootSet = true;
+  }
+
+  @Override
+  public void removeProposerBoostRoot() {
+    proposerBoostRoot = Optional.empty();
+    proposerBoostRootSet = true;
   }
 
   @CheckReturnValue
@@ -224,6 +238,11 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   @Override
   public Checkpoint getBestJustifiedCheckpoint() {
     return bestJustifiedCheckpoint.orElseGet(store::getBestJustifiedCheckpoint);
+  }
+
+  @Override
+  public Optional<Bytes32> getProposerBoostRoot() {
+    return proposerBoostRootSet ? proposerBoostRoot : store.getProposerBoostRoot();
   }
 
   @Override

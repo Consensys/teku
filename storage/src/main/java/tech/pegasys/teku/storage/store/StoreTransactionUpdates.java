@@ -98,6 +98,10 @@ class StoreTransactionUpdates {
               slotAndBlockRoot -> slotAndBlockRoot.getBlockRoot().equals(root));
         });
 
+    if (tx.proposerBoostRootSet) {
+      store.proposerBoostRoot = tx.proposerBoostRoot;
+    }
+
     store.forkChoiceStrategy.applyUpdate(
         hotBlocks.values(), prunedHotBlockRoots, store.getFinalizedCheckpoint());
   }

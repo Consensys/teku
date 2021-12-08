@@ -289,4 +289,9 @@ public class DelegatingSpecConfig implements SpecConfig {
   public Bytes getDepositContractAddress() {
     return specConfig.getDepositContractAddress();
   }
+
+  @Override
+  public int getProposerScoreBoost() {
+    return specConfig.getProposerScoreBoost();
+  }
 }
