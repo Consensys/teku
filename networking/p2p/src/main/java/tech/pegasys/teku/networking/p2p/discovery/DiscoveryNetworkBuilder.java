@@ -1,3 +1,16 @@
+/*
+ * Copyright 2021 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.teku.networking.p2p.discovery;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -35,8 +48,7 @@ public class DiscoveryNetworkBuilder {
   protected DiscoveryService discoveryService;
   protected ConnectionManager connectionManager;
 
-  protected DiscoveryNetworkBuilder() {
-  }
+  protected DiscoveryNetworkBuilder() {}
 
   protected void initMissingDefaults() {
     if (discoveryService == null) {
@@ -50,8 +62,8 @@ public class DiscoveryNetworkBuilder {
 
   public DiscoveryNetwork<?> build() {
     initMissingDefaults();
-    return new DiscoveryNetwork<>(p2pNetwork, discoveryService, connectionManager, spec,
-        currentSchemaDefinitionsSupplier);
+    return new DiscoveryNetwork<>(
+        p2pNetwork, discoveryService, connectionManager, spec, currentSchemaDefinitionsSupplier);
   }
 
   protected ConnectionManager createConnectionManager() {
@@ -63,14 +75,14 @@ public class DiscoveryNetworkBuilder {
     checkNotNull(discoveryConfig);
 
     return new ConnectionManager(
-            metricsSystem,
-            discoveryService,
-            asyncRunner,
-            p2pNetwork,
-            peerSelectionStrategy,
-            discoveryConfig.getStaticPeers().stream()
-                .map(p2pNetwork::createPeerAddress)
-                .collect(toList()));
+        metricsSystem,
+        discoveryService,
+        asyncRunner,
+        p2pNetwork,
+        peerSelectionStrategy,
+        discoveryConfig.getStaticPeers().stream()
+            .map(p2pNetwork::createPeerAddress)
+            .collect(toList()));
   }
 
   protected DiscoveryService createDiscoveryService() {
@@ -109,8 +121,7 @@ public class DiscoveryNetworkBuilder {
     return this;
   }
 
-  public DiscoveryNetworkBuilder kvStore(
-      KeyValueStore<String, Bytes> kvStore) {
+  public DiscoveryNetworkBuilder kvStore(KeyValueStore<String, Bytes> kvStore) {
     this.kvStore = kvStore;
     return this;
   }
@@ -126,8 +137,7 @@ public class DiscoveryNetworkBuilder {
     return this;
   }
 
-  public DiscoveryNetworkBuilder discoveryConfig(
-      DiscoveryConfig discoveryConfig) {
+  public DiscoveryNetworkBuilder discoveryConfig(DiscoveryConfig discoveryConfig) {
     this.discoveryConfig = discoveryConfig;
     return this;
   }
@@ -148,14 +158,12 @@ public class DiscoveryNetworkBuilder {
     return this;
   }
 
-  public DiscoveryNetworkBuilder discoveryService(
-      DiscoveryService discoveryService) {
+  public DiscoveryNetworkBuilder discoveryService(DiscoveryService discoveryService) {
     this.discoveryService = discoveryService;
     return this;
   }
 
-  public DiscoveryNetworkBuilder connectionManager(
-      ConnectionManager connectionManager) {
+  public DiscoveryNetworkBuilder connectionManager(ConnectionManager connectionManager) {
     this.connectionManager = connectionManager;
     return this;
   }

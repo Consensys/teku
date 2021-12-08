@@ -1,3 +1,16 @@
+/*
+ * Copyright 2021 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.teku.networking.p2p.libp2p;
 
 import static tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetwork.REMOTE_OPEN_STREAMS_RATE_LIMIT;
@@ -61,8 +74,7 @@ public class LibP2PNetworkBuilder {
   protected Defaults hostBuilderDefaults = Defaults.None;
   protected Host host;
 
-  protected LibP2PNetworkBuilder() {
-  }
+  protected LibP2PNetworkBuilder() {}
 
   public P2PNetwork<Peer> build() {
     if (gossipNetwork == null) {
@@ -138,11 +150,12 @@ public class LibP2PNetworkBuilder {
               });
     }
 
-    return new LibP2PNetwork(privKey, nodeId, host, peerManager, advertisedAddr, gossipNetwork,
-        config.getListenPort());
+    return new LibP2PNetwork(
+        privKey, nodeId, host, peerManager, advertisedAddr, gossipNetwork, config.getListenPort());
   }
 
-  protected List<ProtocolBinding<?>> getDefaultProtocols(PubKey nodePubKey, Multiaddr advertisedAddr) {
+  protected List<ProtocolBinding<?>> getDefaultProtocols(
+      PubKey nodePubKey, Multiaddr advertisedAddr) {
     final Ping ping = new Ping();
     IdentifyOuterClass.Identify identifyMsg =
         IdentifyOuterClass.Identify.newBuilder()
@@ -168,14 +181,12 @@ public class LibP2PNetworkBuilder {
     return this;
   }
 
-  public LibP2PNetworkBuilder privateKeyProvider(
-      PrivateKeyProvider privateKeyProvider) {
+  public LibP2PNetworkBuilder privateKeyProvider(PrivateKeyProvider privateKeyProvider) {
     this.privateKeyProvider = privateKeyProvider;
     return this;
   }
 
-  public LibP2PNetworkBuilder reputationManager(
-      ReputationManager reputationManager) {
+  public LibP2PNetworkBuilder reputationManager(ReputationManager reputationManager) {
     this.reputationManager = reputationManager;
     return this;
   }
@@ -185,14 +196,12 @@ public class LibP2PNetworkBuilder {
     return this;
   }
 
-  public LibP2PNetworkBuilder rpcMethods(
-      List<RpcMethod<?, ?, ?>> rpcMethods) {
+  public LibP2PNetworkBuilder rpcMethods(List<RpcMethod<?, ?, ?>> rpcMethods) {
     this.rpcMethods = rpcMethods;
     return this;
   }
 
-  public LibP2PNetworkBuilder peerHandlers(
-      List<PeerHandler> peerHandlers) {
+  public LibP2PNetworkBuilder peerHandlers(List<PeerHandler> peerHandlers) {
     this.peerHandlers = peerHandlers;
     return this;
   }
@@ -203,14 +212,12 @@ public class LibP2PNetworkBuilder {
     return this;
   }
 
-  public LibP2PNetworkBuilder gossipTopicFilter(
-      GossipTopicFilter gossipTopicFilter) {
+  public LibP2PNetworkBuilder gossipTopicFilter(GossipTopicFilter gossipTopicFilter) {
     this.gossipTopicFilter = gossipTopicFilter;
     return this;
   }
 
-  public LibP2PNetworkBuilder gossipNetwork(
-      LibP2PGossipNetwork gossipNetwork) {
+  public LibP2PNetworkBuilder gossipNetwork(LibP2PGossipNetwork gossipNetwork) {
     this.gossipNetwork = gossipNetwork;
     return this;
   }

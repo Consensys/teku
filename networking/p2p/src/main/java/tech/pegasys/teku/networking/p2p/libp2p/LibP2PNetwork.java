@@ -16,54 +16,29 @@ package tech.pegasys.teku.networking.p2p.libp2p;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
-import identify.pb.IdentifyOuterClass;
 import io.libp2p.core.Host;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.crypto.PrivKey;
-import io.libp2p.core.dsl.Builder.Defaults;
-import io.libp2p.core.dsl.BuilderJKt;
 import io.libp2p.core.multiformats.Multiaddr;
-import io.libp2p.core.multistream.ProtocolBinding;
-import io.libp2p.core.mux.StreamMuxerProtocol;
-import io.libp2p.etc.types.ByteArrayExtKt;
-import io.libp2p.protocol.Identify;
-import io.libp2p.protocol.Ping;
-import io.libp2p.security.noise.NoiseXXSecureChannel;
-import io.libp2p.transport.tcp.TcpTransport;
-import io.netty.handler.logging.LogLevel;
-import java.net.InetSocketAddress;
-import java.time.Duration;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
-import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
-import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessageFactory;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipTopicsScoringConfig;
-import tech.pegasys.teku.networking.p2p.libp2p.gossip.GossipTopicFilter;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.LibP2PGossipNetwork;
-import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
-import tech.pegasys.teku.networking.p2p.network.PeerHandler;
-import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
-import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
-import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 
 public class LibP2PNetwork implements P2PNetwork<Peer> {
 
@@ -82,9 +57,14 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   private final AtomicReference<State> state = new AtomicReference<>(State.IDLE);
   private final int listenPort;
 
-  protected LibP2PNetwork(PrivKey privKey, NodeId nodeId, Host host,
-      PeerManager peerManager, Multiaddr advertisedAddr,
-      LibP2PGossipNetwork gossipNetwork, int listenPort) {
+  protected LibP2PNetwork(
+      PrivKey privKey,
+      NodeId nodeId,
+      Host host,
+      PeerManager peerManager,
+      Multiaddr advertisedAddr,
+      LibP2PGossipNetwork gossipNetwork,
+      int listenPort) {
     this.privKey = privKey;
     this.nodeId = nodeId;
     this.host = host;

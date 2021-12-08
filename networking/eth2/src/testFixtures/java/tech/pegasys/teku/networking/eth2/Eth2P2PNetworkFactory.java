@@ -63,7 +63,6 @@ import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetworkBuilder;
-import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetwork;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetworkBuilder;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.GossipTopicFilter;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
@@ -230,30 +229,33 @@ public class Eth2P2PNetworkFactory {
                 .metricsSystem(metricsSystem)
                 .asyncRunner(asyncRunner)
                 .kvStore(keyValueStore)
-                .p2pNetwork(LibP2PNetworkBuilder.create()
-                    .asyncRunner(DelayedExecutorAsyncRunner.create())
-                    .config(config.getNetworkConfig())
-                    .privateKeyProvider(PrivateKeyGenerator::generate)
-                    .reputationManager(reputationManager)
-                    .metricsSystem(METRICS_SYSTEM)
-                    .rpcMethods(new ArrayList<>(rpcMethods))
-                    .peerHandlers(peerHandlers)
-                    .preparedGossipMessageFactory(gossipEncoding.createPreparedGossipMessageFactory(
-                        recentChainData::getMilestoneByForkDigest))
-                    .gossipTopicFilter(gossipTopicsFilter)
-                    .build())
-                .peerSelectionStrategy(new Eth2PeerSelectionStrategy(
-                    targetPeerRange,
-                    gossipNetwork ->
-                        PeerSubnetSubscriptions.create(
-                            currentSchemaDefinitions,
-                            gossipNetwork,
-                            attestationSubnetTopicProvider,
-                            syncCommitteeTopicProvider,
-                            syncCommitteeSubnetService,
-                            config.getTargetSubnetSubscriberCount()),
-                    reputationManager,
-                    Collections::shuffle))
+                .p2pNetwork(
+                    LibP2PNetworkBuilder.create()
+                        .asyncRunner(DelayedExecutorAsyncRunner.create())
+                        .config(config.getNetworkConfig())
+                        .privateKeyProvider(PrivateKeyGenerator::generate)
+                        .reputationManager(reputationManager)
+                        .metricsSystem(METRICS_SYSTEM)
+                        .rpcMethods(new ArrayList<>(rpcMethods))
+                        .peerHandlers(peerHandlers)
+                        .preparedGossipMessageFactory(
+                            gossipEncoding.createPreparedGossipMessageFactory(
+                                recentChainData::getMilestoneByForkDigest))
+                        .gossipTopicFilter(gossipTopicsFilter)
+                        .build())
+                .peerSelectionStrategy(
+                    new Eth2PeerSelectionStrategy(
+                        targetPeerRange,
+                        gossipNetwork ->
+                            PeerSubnetSubscriptions.create(
+                                currentSchemaDefinitions,
+                                gossipNetwork,
+                                attestationSubnetTopicProvider,
+                                syncCommitteeTopicProvider,
+                                syncCommitteeSubnetService,
+                                config.getTargetSubnetSubscriberCount()),
+                        reputationManager,
+                        Collections::shuffle))
                 .discoveryConfig(config.getDiscoveryConfig())
                 .p2pConfig(config.getNetworkConfig())
                 .spec(config.getSpec())

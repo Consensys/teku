@@ -37,7 +37,6 @@ import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetworkBuilder;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
-import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -68,8 +67,7 @@ public class DiscoveryNetworkFactory {
     private final List<String> bootnodes = new ArrayList<>();
     private Spec spec = TestSpecFactory.createMinimalPhase0();
 
-    private DiscoveryNetworkBuilder() {
-    }
+    private DiscoveryNetworkBuilder() {}
 
     public DiscoveryNetworkBuilder staticPeer(final String staticPeer) {
       this.staticPeers.add(staticPeer);
@@ -112,7 +110,8 @@ public class DiscoveryNetworkFactory {
                 .metricsSystem(metricsSystem)
                 .asyncRunner(DelayedExecutorAsyncRunner.create())
                 .kvStore(new MemKeyValueStore<>())
-                .p2pNetwork(LibP2PNetworkBuilder.create()
+                .p2pNetwork(
+                    LibP2PNetworkBuilder.create()
                         .asyncRunner(DelayedExecutorAsyncRunner.create())
                         .config(config)
                         .privateKeyProvider(PrivateKeyGenerator::generate)
@@ -120,11 +119,12 @@ public class DiscoveryNetworkFactory {
                         .metricsSystem(METRICS_SYSTEM)
                         .rpcMethods(Collections.emptyList())
                         .peerHandlers(Collections.emptyList())
-                        .preparedGossipMessageFactory((__1, __2) -> {
-                          throw new UnsupportedOperationException();
-                        }).gossipTopicFilter(topic -> true)
-                        .build()
-                    )
+                        .preparedGossipMessageFactory(
+                            (__1, __2) -> {
+                              throw new UnsupportedOperationException();
+                            })
+                        .gossipTopicFilter(topic -> true)
+                        .build())
                 .peerSelectionStrategy(peerSelectionStrategy)
                 .discoveryConfig(discoveryConfig)
                 .p2pConfig(config)

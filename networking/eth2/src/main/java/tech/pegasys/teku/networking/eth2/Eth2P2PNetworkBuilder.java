@@ -276,18 +276,20 @@ public class Eth2P2PNetworkBuilder {
     final NetworkConfig networkConfig = config.getNetworkConfig();
     final DiscoveryConfig discoConfig = config.getDiscoveryConfig();
 
-    final P2PNetwork<Peer> p2pNetwork = libP2PNetworkBuilderSupplier.get()
-        .asyncRunner(asyncRunner)
-        .metricsSystem(metricsSystem)
-        .config(networkConfig)
-        .privateKeyProvider(
-            new LibP2PPrivateKeyLoader(keyValueStore, networkConfig.getPrivateKeyFile()))
-        .reputationManager(reputationManager)
-        .rpcMethods(rpcMethods)
-        .peerHandlers(peerHandlers)
-        .preparedGossipMessageFactory(defaultMessageFactory)
-        .gossipTopicFilter(gossipTopicsFilter)
-        .build();
+    final P2PNetwork<Peer> p2pNetwork =
+        libP2PNetworkBuilderSupplier
+            .get()
+            .asyncRunner(asyncRunner)
+            .metricsSystem(metricsSystem)
+            .config(networkConfig)
+            .privateKeyProvider(
+                new LibP2PPrivateKeyLoader(keyValueStore, networkConfig.getPrivateKeyFile()))
+            .reputationManager(reputationManager)
+            .rpcMethods(rpcMethods)
+            .peerHandlers(peerHandlers)
+            .preparedGossipMessageFactory(defaultMessageFactory)
+            .gossipTopicFilter(gossipTopicsFilter)
+            .build();
 
     final AttestationSubnetTopicProvider attestationSubnetTopicProvider =
         new AttestationSubnetTopicProvider(recentChainData, gossipEncoding);
@@ -301,7 +303,8 @@ public class Eth2P2PNetworkBuilder {
             discoConfig.getMinRandomlySelectedPeers());
     final SchemaDefinitionsSupplier currentSchemaDefinitions =
         () -> recentChainData.getCurrentSpec().getSchemaDefinitions();
-    return discoveryNetworkBuilderSupplier.get()
+    return discoveryNetworkBuilderSupplier
+        .get()
         .metricsSystem(metricsSystem)
         .asyncRunner(asyncRunner)
         .kvStore(keyValueStore)
