@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
@@ -35,7 +35,7 @@ import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 public class ValidatorKeysAcceptanceTest extends AcceptanceTestBase {
   private final JsonProvider jsonProvider = new JsonProvider();
   final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(TestSpecFactory.createMinimalAltair());
+      new DataStructureUtil(SpecFactory.create("less-swift"));
 
   @Test
   void shouldAddValidatorToRunningClient(@TempDir final Path tempDir) throws Exception {
