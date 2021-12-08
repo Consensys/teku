@@ -564,6 +564,10 @@ public class Spec {
     return atState(state).beaconStateAccessors().getTotalActiveBalance(state);
   }
 
+  public UInt64 getProposerBoostAmount(BeaconState state) {
+    return atState(state).beaconStateAccessors().getProposerBoostAmount(state);
+  }
+
   public int getPreviousEpochAttestationCapacity(final BeaconState state) {
     return atState(state).beaconStateAccessors().getPreviousEpochAttestationCapacity(state);
   }

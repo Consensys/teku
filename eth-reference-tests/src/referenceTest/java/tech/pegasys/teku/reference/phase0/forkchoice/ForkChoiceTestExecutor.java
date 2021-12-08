@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableMap;
 import java.nio.ByteOrder;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -58,7 +59,11 @@ public class ForkChoiceTestExecutor implements TestExecutor {
   private static final Logger LOG = LogManager.getLogger();
   public static final ImmutableMap<String, TestExecutor> FORK_CHOICE_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
-          .put("fork_choice/get_head", new ForkChoiceTestExecutor())
+          .put(
+              "fork_choice/get_head",
+              new ForkChoiceTestExecutor(
+                  // Disabled due to https://github.com/ethereum/consensus-specs/issues/2757
+                  "shorter_chain_but_heavier_weight"))
           .put(
               "fork_choice/on_block",
               new ForkChoiceTestExecutor("new_finalized_slot_is_justified_checkpoint_ancestor"))
@@ -95,7 +100,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
 
     final ForkChoice forkChoice =
         ForkChoice.create(
-            spec, new InlineEventThread(), recentChainData, mock(ForkChoiceNotifier.class), false);
+            spec, new InlineEventThread(), recentChainData, mock(ForkChoiceNotifier.class), true);
     final StubExecutionEngineChannel executionEngine = new StubExecutionEngineChannel(spec);
 
     runSteps(testDefinition, spec, recentChainData, forkChoice, executionEngine);
@@ -198,7 +203,11 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     final SignedBeaconBlock block =
         TestDataUtils.loadSsz(
             testDefinition, blockName + ".ssz_snappy", spec::deserializeSignedBeaconBlock);
-    LOG.info("Importing block {} at slot {}", block.getRoot(), block.getSlot());
+    LOG.info(
+        "Importing block {} at slot {} with parent {}",
+        block.getRoot(),
+        block.getSlot(),
+        block.getParentRoot());
     final SafeFuture<BlockImportResult> result = forkChoice.onBlock(block, executionEngine);
     assertThat(result).isCompleted();
     final BlockImportResult importResult = result.join();
@@ -269,6 +278,18 @@ public class ForkChoiceTestExecutor implements TestExecutor {
         case "finalized_checkpoint":
           assertCheckpoint(
               "finalized checkpoint", store.getFinalizedCheckpoint(), get(checks, checkType));
+          break;
+
+        case "proposer_boost_root":
+          final Optional<Bytes32> boostedRoot = store.getProposerBoostRoot();
+          final Bytes32 expectedBoostedRoot = getBytes32(checks, checkType);
+          if (expectedBoostedRoot.isZero()) {
+            assertThat(boostedRoot).describedAs("proposer_boost_root").isEmpty();
+          } else {
+            assertThat(boostedRoot)
+                .describedAs("proposer_boost_root")
+                .contains(expectedBoostedRoot);
+          }
           break;
 
         default:

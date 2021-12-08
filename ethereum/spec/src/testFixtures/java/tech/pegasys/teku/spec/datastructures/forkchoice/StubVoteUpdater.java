@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.datastructures.forkchoice;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -45,7 +46,9 @@ public class StubVoteUpdater implements VoteUpdater {
   public Bytes32 applyForkChoiceScoreChanges(
       final Checkpoint finalizedCheckpoint,
       final Checkpoint justifiedCheckpoint,
-      final List<UInt64> justifiedCheckpointEffectiveBalances) {
+      final List<UInt64> justifiedCheckpointEffectiveBalances,
+      final Optional<Bytes32> proposerBoostRoot,
+      final UInt64 proposerScoreBoostAmount) {
     throw new UnsupportedOperationException("Not implemented");
   }
 

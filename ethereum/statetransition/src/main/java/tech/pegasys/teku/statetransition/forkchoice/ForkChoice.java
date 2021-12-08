@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.forkchoice;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.logging.P2PLogger.P2P_LOG;
+import static tech.pegasys.teku.spec.constants.NetworkConstants.INTERVALS_PER_SLOT;
 import static tech.pegasys.teku.statetransition.forkchoice.StateRootCollector.addParentStateRoots;
 
 import com.google.common.base.Throwables;
@@ -61,8 +62,6 @@ public class ForkChoice {
   private final EventThread forkChoiceExecutor;
   private final RecentChainData recentChainData;
   private final ForkChoiceNotifier forkChoiceNotifier;
-
-  @SuppressWarnings("unused") // Will be used in follow up PR
   private final boolean proposerBoostEnabled;
 
   private ForkChoice(
@@ -145,7 +144,11 @@ public class ForkChoice {
 
                       Bytes32 headBlockRoot =
                           transaction.applyForkChoiceScoreChanges(
-                              finalizedCheckpoint, justifiedCheckpoint, justifiedEffectiveBalances);
+                              finalizedCheckpoint,
+                              justifiedCheckpoint,
+                              justifiedEffectiveBalances,
+                              recentChainData.getStore().getProposerBoostRoot(),
+                              spec.getProposerBoostAmount(justifiedState));
 
                       recentChainData.updateHead(
                           headBlockRoot,
@@ -259,6 +262,16 @@ public class ForkChoice {
     addParentStateRoots(blockSlotState, transaction);
     forkChoiceUtil.applyBlockToStore(transaction, block, postState);
 
+    if (proposerBoostEnabled && spec.getCurrentSlot(transaction).equals(block.getSlot())) {
+      final int secondsPerSlot = spec.getSecondsPerSlot(block.getSlot());
+      final UInt64 timeIntoSlot =
+          transaction.getTime().minus(transaction.getGenesisTime()).mod(secondsPerSlot);
+      final boolean isBeforeAttestingInterval =
+          timeIntoSlot.isLessThan(secondsPerSlot / INTERVALS_PER_SLOT);
+      if (isBeforeAttestingInterval) {
+        transaction.setProposerBoostRoot(block.getRoot());
+      }
+    }
     // Note: not using thenRun here because we want to ensure each step is on the event thread
     transaction.commit().join();
     forkChoiceStrategy.onExecutionPayloadResult(block.getRoot(), payloadResult.getStatus());
@@ -410,7 +423,11 @@ public class ForkChoice {
 
   public void onTick(final UInt64 currentTime) {
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
+    final UInt64 previousSlot = spec.getCurrentSlot(transaction);
     spec.onTick(transaction, currentTime);
+    if (spec.getCurrentSlot(transaction).isGreaterThan(previousSlot)) {
+      transaction.removeProposerBoostRoot();
+    }
     transaction.commit().join();
   }
 

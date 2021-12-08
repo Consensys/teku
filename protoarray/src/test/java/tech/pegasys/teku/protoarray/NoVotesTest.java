@@ -23,6 +23,7 @@ import static tech.pegasys.teku.protoarray.ProtoArrayTestUtil.getHash;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -202,7 +203,12 @@ public class NoVotesTest {
       final Checkpoint justifiedCheckpoint,
       final List<UInt64> justifiedStateEffectiveBalances) {
     return forkChoice.applyPendingVotes(
-        store, finalizedCheckpoint, justifiedCheckpoint, justifiedStateEffectiveBalances);
+        store,
+        Optional.empty(),
+        finalizedCheckpoint,
+        justifiedCheckpoint,
+        justifiedStateEffectiveBalances,
+        ZERO);
   }
 
   private UInt64 unsigned(final int i) {
