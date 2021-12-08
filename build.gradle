@@ -756,15 +756,30 @@ task dockerUpload {
   doLast {
     for (def variant in dockerVariants) {
       def tags = ""
-      versionPrefixes.forEach { prefix -> tags += "-t ${dockerImageName}:${prefix.trim()}-${variant} "}
+      def dctTags = []
+      versionPrefixes.forEach { prefix ->
+        tags += "-t ${dockerImageName}:${prefix.trim()}-${variant} "
+        dctTags.add("${dockerImageName}:${prefix.trim()}-${variant}")
+      }
       if (variant == dockerVariants[0]) {
-        versionPrefixes.forEach { prefix -> tags += "-t ${dockerImageName}:${prefix.trim()} "}
+        versionPrefixes.forEach { prefix ->
+          tags += "-t ${dockerImageName}:${prefix.trim()} "
+          dctTags.add("${dockerImageName}:${prefix.trim()}")
+        }
       }
 
       exec {
         workingDir dockerBuildDir
         executable "sh"
-        args "-c", "docker buildx build --platform ${dockerPlatforms} --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} --push ${tags} ."
+        args "-c", "docker buildx build --platform ${dockerPlatforms} --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} ${tags} ."
+      }
+
+      for (def tag in dctTags) {
+        exec {
+          workingDir dockerBuildDir
+          executable "sh"
+          args "-c", "docker trust sign ${tag} && docker push ${tag}"
+        }
       }
     }
   }
