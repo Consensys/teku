@@ -49,7 +49,7 @@ public class SlashingProtectionExporter {
 
   public SlashingProtectionExporter(final Path slashProtectionPath) {
     this.slashProtectionPath = slashProtectionPath;
-    syncDataAccessor = SyncDataAccessor.create(slashProtectionPath);
+    this.syncDataAccessor = SyncDataAccessor.create(slashProtectionPath);
   }
 
   // returns a map of errors and the associated keys.
