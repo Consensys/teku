@@ -29,6 +29,10 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
 import tech.pegasys.teku.storage.store.KeyValueStore;
 
+/**
+ * CAUTION: this API is unstable and primarily intended for debugging and testing purposes this API
+ * might be changed in any version in backward incompatible way
+ */
 public class DiscoveryNetworkBuilder {
 
   public static DiscoveryNetworkBuilder create() {
