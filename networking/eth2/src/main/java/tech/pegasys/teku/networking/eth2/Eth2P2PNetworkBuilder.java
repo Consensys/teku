@@ -79,39 +79,39 @@ public class Eth2P2PNetworkBuilder {
   public static final int DEFAULT_ETH2_RPC_OUTSTANDING_PING_THRESHOLD = 2;
   public static final Duration DEFAULT_ETH2_STATUS_UPDATE_INTERVAL = Duration.ofMinutes(5);
 
-  private P2PConfig config;
-  private EventChannels eventChannels;
-  private RecentChainData recentChainData;
-  private OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
-  private OperationProcessor<ValidateableAttestation> gossipedAttestationConsumer;
-  private OperationProcessor<ValidateableAttestation> gossipedAggregateProcessor;
-  private OperationProcessor<AttesterSlashing> gossipedAttesterSlashingConsumer;
-  private GossipPublisher<AttesterSlashing> attesterSlashingGossipPublisher;
-  private OperationProcessor<ProposerSlashing> gossipedProposerSlashingConsumer;
-  private GossipPublisher<ProposerSlashing> proposerSlashingGossipPublisher;
-  private OperationProcessor<SignedVoluntaryExit> gossipedVoluntaryExitConsumer;
-  private GossipPublisher<SignedVoluntaryExit> voluntaryExitGossipPublisher;
-  private ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
-  private StorageQueryChannel historicalChainData;
-  private MetricsSystem metricsSystem;
-  private final List<RpcMethod<?, ?, ?>> rpcMethods = new ArrayList<>();
-  private final List<PeerHandler> peerHandlers = new ArrayList<>();
-  private TimeProvider timeProvider;
-  private AsyncRunner asyncRunner;
-  private KeyValueStore<String, Bytes> keyValueStore;
-  private Duration eth2RpcPingInterval = DEFAULT_ETH2_RPC_PING_INTERVAL;
-  private int eth2RpcOutstandingPingThreshold = DEFAULT_ETH2_RPC_OUTSTANDING_PING_THRESHOLD;
-  private final Duration eth2StatusUpdateInterval = DEFAULT_ETH2_STATUS_UPDATE_INTERVAL;
-  private Optional<Checkpoint> requiredCheckpoint = Optional.empty();
-  private Spec spec;
-  private OperationProcessor<SignedContributionAndProof>
+  protected P2PConfig config;
+  protected EventChannels eventChannels;
+  protected RecentChainData recentChainData;
+  protected OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
+  protected OperationProcessor<ValidateableAttestation> gossipedAttestationConsumer;
+  protected OperationProcessor<ValidateableAttestation> gossipedAggregateProcessor;
+  protected OperationProcessor<AttesterSlashing> gossipedAttesterSlashingConsumer;
+  protected GossipPublisher<AttesterSlashing> attesterSlashingGossipPublisher;
+  protected OperationProcessor<ProposerSlashing> gossipedProposerSlashingConsumer;
+  protected GossipPublisher<ProposerSlashing> proposerSlashingGossipPublisher;
+  protected OperationProcessor<SignedVoluntaryExit> gossipedVoluntaryExitConsumer;
+  protected GossipPublisher<SignedVoluntaryExit> voluntaryExitGossipPublisher;
+  protected ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
+  protected StorageQueryChannel historicalChainData;
+  protected MetricsSystem metricsSystem;
+  protected final List<RpcMethod<?, ?, ?>> rpcMethods = new ArrayList<>();
+  protected final List<PeerHandler> peerHandlers = new ArrayList<>();
+  protected TimeProvider timeProvider;
+  protected AsyncRunner asyncRunner;
+  protected KeyValueStore<String, Bytes> keyValueStore;
+  protected Duration eth2RpcPingInterval = DEFAULT_ETH2_RPC_PING_INTERVAL;
+  protected int eth2RpcOutstandingPingThreshold = DEFAULT_ETH2_RPC_OUTSTANDING_PING_THRESHOLD;
+  protected final Duration eth2StatusUpdateInterval = DEFAULT_ETH2_STATUS_UPDATE_INTERVAL;
+  protected Optional<Checkpoint> requiredCheckpoint = Optional.empty();
+  protected Spec spec;
+  protected OperationProcessor<SignedContributionAndProof>
       gossipedSignedContributionAndProofProcessor;
-  private GossipPublisher<SignedContributionAndProof> signedContributionAndProofGossipPublisher;
-  private OperationProcessor<ValidateableSyncCommitteeMessage>
+  protected GossipPublisher<SignedContributionAndProof> signedContributionAndProofGossipPublisher;
+  protected OperationProcessor<ValidateableSyncCommitteeMessage>
       gossipedSyncCommitteeMessageProcessor;
-  private GossipPublisher<ValidateableSyncCommitteeMessage> syncCommitteeMessageGossipPublisher;
+  protected GossipPublisher<ValidateableSyncCommitteeMessage> syncCommitteeMessageGossipPublisher;
 
-  private Eth2P2PNetworkBuilder() {}
+  protected Eth2P2PNetworkBuilder() {}
 
   public static Eth2P2PNetworkBuilder create() {
     return new Eth2P2PNetworkBuilder();
