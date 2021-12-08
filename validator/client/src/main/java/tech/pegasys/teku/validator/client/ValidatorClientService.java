@@ -35,7 +35,6 @@ import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.beaconnode.BeaconNodeApi;
@@ -228,7 +227,7 @@ public class ValidatorClientService extends Service {
           new BeaconProposerPreparer(
               validatorApiChannel,
               validatorIndexProvider,
-              config.getValidatorConfig().getSuggestedFeeRecipient().map(Eth1Address::toBytes20),
+              config.getValidatorConfig().getSuggestedFeeRecipient(),
               validators,
               spec));
     }
