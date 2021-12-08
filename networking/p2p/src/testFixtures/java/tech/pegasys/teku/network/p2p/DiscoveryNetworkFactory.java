@@ -35,6 +35,7 @@ import tech.pegasys.teku.networking.p2p.connection.PeerSelectionStrategy;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
+import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetworkBuilder;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetworkBuilder;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
@@ -52,8 +53,8 @@ public class DiscoveryNetworkFactory {
 
   private final List<DiscoveryNetwork<?>> networks = new ArrayList<>();
 
-  public DiscoveryNetworkBuilder builder() {
-    return new DiscoveryNetworkBuilder();
+  public DiscoveryTestNetworkBuilder builder() {
+    return new DiscoveryTestNetworkBuilder();
   }
 
   public void stopAll() throws InterruptedException, ExecutionException, TimeoutException {
@@ -61,20 +62,20 @@ public class DiscoveryNetworkFactory {
         SafeFuture.allOf(networks.stream().map(DiscoveryNetwork::stop).toArray(SafeFuture[]::new)));
   }
 
-  public class DiscoveryNetworkBuilder {
+  public class DiscoveryTestNetworkBuilder {
 
     private final List<String> staticPeers = new ArrayList<>();
     private final List<String> bootnodes = new ArrayList<>();
     private Spec spec = TestSpecFactory.createMinimalPhase0();
 
-    private DiscoveryNetworkBuilder() {}
+    private DiscoveryTestNetworkBuilder() {}
 
-    public DiscoveryNetworkBuilder staticPeer(final String staticPeer) {
+    public DiscoveryTestNetworkBuilder staticPeer(final String staticPeer) {
       this.staticPeers.add(staticPeer);
       return this;
     }
 
-    public DiscoveryNetworkBuilder bootnode(final String bootnode) {
+    public DiscoveryTestNetworkBuilder bootnode(final String bootnode) {
       this.bootnodes.add(bootnode);
       return this;
     }
@@ -106,7 +107,7 @@ public class DiscoveryNetworkFactory {
         final PeerSelectionStrategy peerSelectionStrategy =
             new SimplePeerSelectionStrategy(new TargetPeerRange(20, 30, 0));
         final DiscoveryNetwork<?> network =
-            tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetworkBuilder.create()
+            DiscoveryNetworkBuilder.create()
                 .metricsSystem(metricsSystem)
                 .asyncRunner(DelayedExecutorAsyncRunner.create())
                 .kvStore(new MemKeyValueStore<>())
