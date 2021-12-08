@@ -43,14 +43,17 @@ public class OptimisticHeadValidator extends Service {
   static final Duration RECHECK_INTERVAL = Duration.ofMinutes(1);
   private final AsyncRunner asyncRunner;
   private final RecentChainData recentChainData;
+  private final ForkChoice forkChoice;
   private final ExecutionEngineChannel executionEngine;
   private Optional<Cancellable> cancellable = Optional.empty();
 
   public OptimisticHeadValidator(
       final AsyncRunner asyncRunner,
+      final ForkChoice forkChoice,
       final RecentChainData recentChainData,
       final ExecutionEngineChannel executionEngine) {
     this.asyncRunner = asyncRunner;
+    this.forkChoice = forkChoice;
     this.recentChainData = recentChainData;
     this.executionEngine = executionEngine;
   }
@@ -107,10 +110,13 @@ public class OptimisticHeadValidator extends Service {
     return executionEngine
         .executePayload(executionPayload)
         .thenAccept(
-            result ->
-                recentChainData
-                    .getForkChoiceStrategy()
-                    .orElseThrow()
-                    .onExecutionPayloadResult(blockRoot, result.getStatus()));
+            result -> {
+              forkChoice.updateLatestValidFinalizedSlot(result);
+
+              recentChainData
+                  .getForkChoiceStrategy()
+                  .orElseThrow()
+                  .onExecutionPayloadResult(blockRoot, result.getStatus());
+            });
   }
 }
