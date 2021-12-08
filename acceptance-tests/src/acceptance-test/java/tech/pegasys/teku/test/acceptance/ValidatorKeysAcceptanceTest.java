@@ -18,9 +18,14 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Iterator;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
@@ -29,6 +34,8 @@ import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class ValidatorKeysAcceptanceTest extends AcceptanceTestBase {
   private final JsonProvider jsonProvider = new JsonProvider();
+  final DataStructureUtil dataStructureUtil =
+      new DataStructureUtil(TestSpecFactory.createMinimalAltair());
 
   @Test
   void shouldAddValidatorToRunningClient(@TempDir final Path tempDir) throws Exception {
@@ -57,28 +64,77 @@ public class ValidatorKeysAcceptanceTest extends AcceptanceTestBase {
 
     getValidatorListing(validatorClient, 0);
 
-    final JsonNode addResult =
-        jsonProvider
-            .getObjectMapper()
-            .readTree(validatorClient.addValidators(validatorKeystores, tempDir));
-    assertThat(addResult.get("data").size()).isEqualTo(8);
+    addValidatorsAndExpect(validatorClient, validatorKeystores, tempDir, Optional.of("imported"));
 
     validatorClient.waitForLogMessageContaining("Added validator");
     validatorClient.waitForLogMessageContaining("Published block");
     getValidatorListing(validatorClient, 8);
 
-    final JsonNode removeResult =
-        jsonProvider
-            .getObjectMapper()
-            .readTree(validatorClient.removeValidator(validatorKeystores.getPublicKeys().get(0)));
-    assertThat(removeResult.get("data").size()).isEqualTo(1);
+    // second add attempt would be duplicates
+    addValidatorsAndExpect(validatorClient, validatorKeystores, tempDir, Optional.of("duplicate"));
+
+    // a random key won't be found
+    removeValidatorAndCheckStatus(
+        validatorClient, dataStructureUtil.randomPublicKey(), "not_found");
+
+    beaconNode.waitForLogMessageContaining("Epoch Event *** Epoch: 1");
+    // remove a validator
+    final BLSPublicKey removedPubkey = validatorKeystores.getPublicKeys().get(0);
+    removeValidatorAndCheckStatus(validatorClient, removedPubkey, "deleted");
+
+    // should only be 7 validators left
     validatorClient.waitForLogMessageContaining("Deleted validator");
+    validatorClient.waitForLogMessageContaining("Published block");
     getValidatorListing(validatorClient, 7);
+
+    // remove the same validator again
+    removeValidatorAndCheckStatus(validatorClient, removedPubkey, "not_active");
 
     validatorClient.stop();
 
     beaconNode.stop();
     eth1Node.stop();
+  }
+
+  private void addValidatorsAndExpect(
+      final TekuValidatorNode validatorClient,
+      final ValidatorKeystores validatorKeystores,
+      final Path tempDir,
+      final Optional<String> status)
+      throws IOException {
+    final JsonNode addResult =
+        jsonProvider
+            .getObjectMapper()
+            .readTree(validatorClient.addValidators(validatorKeystores, tempDir));
+    assertThat(addResult.get("data").size()).isEqualTo(validatorKeystores.getValidatorCount());
+    status.ifPresent(expected -> checkStatus(addResult.get("data"), expected));
+  }
+
+  private void removeValidatorAndCheckStatus(
+      final TekuValidatorNode validatorClient,
+      final BLSPublicKey publicKey,
+      final String expectedStatus)
+      throws IOException {
+    final JsonNode removeResult =
+        jsonProvider.getObjectMapper().readTree(validatorClient.removeValidator(publicKey));
+    assertThat(removeResult.get("data").size()).isEqualTo(1);
+    checkStatus(removeResult.get("data"), expectedStatus);
+  }
+
+  private void checkStatus(final JsonNode data, final String status) {
+    assertThat(data.isArray()).isTrue();
+    for (Iterator<JsonNode> it = data.elements(); it.hasNext(); ) {
+      final JsonNode node = it.next();
+      assertThat(node.get("status").asText()).isEqualTo(status);
+    }
+  }
+
+  private void checkReadOnly(final JsonNode data, final boolean readOnlyStatus) {
+    assertThat(data.isArray()).isTrue();
+    for (Iterator<JsonNode> it = data.elements(); it.hasNext(); ) {
+      final JsonNode node = it.next();
+      assertThat(node.get("readonly").asBoolean()).isEqualTo(readOnlyStatus);
+    }
   }
 
   private void getValidatorListing(final TekuValidatorNode validatorClient, final int expectedKeys)
@@ -88,5 +144,6 @@ public class ValidatorKeysAcceptanceTest extends AcceptanceTestBase {
     final JsonNode data = result.get("data");
     assertThat(data.isArray()).isTrue();
     assertThat(data.size()).isEqualTo(expectedKeys);
+    checkReadOnly(data, false);
   }
 }
