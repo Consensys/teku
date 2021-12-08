@@ -31,11 +31,11 @@ import org.junit.jupiter.api.TestTemplate;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.operations.versions.merge.BeaconPreparableProposer;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
@@ -47,7 +47,7 @@ public class BeaconProposerPreparerTest {
   private final ValidatorIndexProvider validatorIndexProvider = mock(ValidatorIndexProvider.class);
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private BeaconProposerPreparer beaconProposerPreparer;
-  private Bytes20 feeRecipient;
+  private Eth1Address feeRecipient;
 
   private long slotsPerEpoch;
 
@@ -69,7 +69,7 @@ public class BeaconProposerPreparerTest {
         new OwnedValidators(
             Map.of(validator1.getPublicKey(), validator1, validator2.getPublicKey(), validator2));
 
-    feeRecipient = specContext.getDataStructureUtil().randomBytes20();
+    feeRecipient = specContext.getDataStructureUtil().randomEth1Address();
 
     beaconProposerPreparer =
         new BeaconProposerPreparer(

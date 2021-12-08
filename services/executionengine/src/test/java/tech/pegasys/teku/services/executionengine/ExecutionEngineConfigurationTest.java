@@ -22,31 +22,23 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 public class ExecutionEngineConfigurationTest {
   private final ExecutionEngineConfiguration.Builder configBuilder =
       ExecutionEngineConfiguration.builder();
-  private final Spec altairSpec = TestSpecFactory.createMinimalAltair();
   private final Spec mergeSpec = TestSpecFactory.createMinimalMerge();
 
   @Test
-  public void altair_noExceptionThrownIfNoEeEndpointSpecified() {
-    final ExecutionEngineConfiguration.Builder builder = configBuilder.specProvider(altairSpec);
-
-    Assertions.assertThatCode(builder::build).doesNotThrowAnyException();
-  }
-
-  @Test
-  public void merge_shouldThrowExceptionIfNoEeEndpointSpecified() {
-    final ExecutionEngineConfiguration.Builder builder = configBuilder.specProvider(mergeSpec);
+  public void shouldThrowExceptionIfNoEeEndpointSpecified() {
+    final ExecutionEngineConfiguration config = configBuilder.specProvider(mergeSpec).build();
 
     Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
-        .isThrownBy(builder::build)
+        .isThrownBy(config::getEndpoint)
         .withMessageContaining(
             "Invalid configuration. --ee-endpoint parameter is mandatory when Merge milestone is enabled");
   }
 
   @Test
-  public void merge_noExceptionThrownIfEeEndpointSpecified() {
-    final ExecutionEngineConfiguration.Builder builder =
-        configBuilder.specProvider(mergeSpec).endpoint("someEndpoint");
+  public void noExceptionThrownIfEeEndpointSpecified() {
+    final ExecutionEngineConfiguration config =
+        configBuilder.specProvider(mergeSpec).endpoint("someEndpoint").build();
 
-    Assertions.assertThatCode(builder::build).doesNotThrowAnyException();
+    Assertions.assertThatCode(config::getEndpoint).doesNotThrowAnyException();
   }
 }

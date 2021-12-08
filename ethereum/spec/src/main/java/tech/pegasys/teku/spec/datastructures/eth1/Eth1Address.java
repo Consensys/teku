@@ -13,67 +13,17 @@
 
 package tech.pegasys.teku.spec.datastructures.eth1;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
-import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
 
-public class Eth1Address {
-  /** The number of bytes in this value - i.e. 20 */
-  private static final int SIZE = 20;
+public class Eth1Address extends Bytes20 {
+  public static final Eth1Address ZERO = new Eth1Address(Bytes.wrap(new byte[SIZE]));
 
-  private final Bytes bytes;
-
-  public static Eth1Address ZERO =
-      Eth1Address.fromHexString("0x0000000000000000000000000000000000000000");
-
-  public Eth1Address(Bytes bytes) {
-    checkArgument(
-        bytes.size() == SIZE,
-        "Bytes%s should be %s bytes, but was %s bytes.",
-        SIZE,
-        SIZE,
-        bytes.size());
-    this.bytes = bytes;
-  }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    final Eth1Address address = (Eth1Address) o;
-    return bytes.equals(address.bytes);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(bytes);
-  }
-
-  @Override
-  public String toString() {
-    return bytes.toString();
+  public Eth1Address(final Bytes bytes) {
+    super(bytes);
   }
 
   public static Eth1Address fromHexString(String value) {
-    Bytes bytes = Bytes.fromHexString(value);
-    return new Eth1Address(bytes);
-  }
-
-  public String toHexString() {
-    return bytes.toHexString();
-  }
-
-  public Bytes toBytes() {
-    return bytes;
-  }
-
-  public Bytes20 toBytes20() {
-    return new Bytes20(bytes);
+    return new Eth1Address(Bytes.fromHexString(value));
   }
 }
