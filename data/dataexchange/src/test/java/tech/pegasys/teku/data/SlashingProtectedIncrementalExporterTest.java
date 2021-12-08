@@ -15,11 +15,11 @@ package tech.pegasys.teku.data;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.io.Resources;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -49,20 +49,15 @@ public class SlashingProtectedIncrementalExporterTest {
     exporter.saveToFile(exportedFile.toString(), LOG::debug);
 
     final String exportedData = exporter.finalise();
-    assertThat(exportedData)
-        .isEqualTo(
-            "{\"metadata\":{\"interchange_format_version\":\"5\"},"
-                + "\"data\":[{\"pubkey\":\"0xb845089a1457f811bfc000588fbb4e713669be8ce060ea6be3c6ece09afc3794106c91ca73acda5e5457122d58723bed\","
-                + "\"signed_blocks\":[{\"slot\":\"327\"}],\"signed_attestations\":[{\"source_epoch\":\"51\",\"target_epoch\":\"1741\"}]}]}");
+    final String expectedResult = resourceFileAsString("shouldExportSlashProtection.json");
+    assertThat(exportedData).isEqualTo(expectedResult);
   }
 
   @Test
-  void shouldCreateEmptySlashingProtectionDocument(@TempDir Path tempDir)
-      throws JsonProcessingException {
+  void shouldCreateEmptySlashingProtectionDocument(@TempDir Path tempDir) throws IOException {
     final SlashingProtectionIncrementalExporter exporter =
         new SlashingProtectionIncrementalExporter(tempDir);
-    assertThat(exporter.finalise())
-        .isEqualTo("{\"metadata\":{\"interchange_format_version\":\"5\"},\"data\":[]}");
+    assertThat(exporter.finalise()).isEqualTo(resourceFileAsString("emptySlashingData.json"));
   }
 
   private File usingResourceFile(final String resourceFileName, final Path tempDir)
@@ -73,5 +68,9 @@ public class SlashingProtectedIncrementalExporterTest {
         tempFile,
         StandardCopyOption.REPLACE_EXISTING);
     return tempFile.toFile();
+  }
+
+  private String resourceFileAsString(final String resourceFileName) throws IOException {
+    return Resources.toString(Resources.getResource(resourceFileName), StandardCharsets.UTF_8);
   }
 }
