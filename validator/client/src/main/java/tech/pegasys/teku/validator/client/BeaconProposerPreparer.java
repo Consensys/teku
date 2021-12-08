@@ -18,9 +18,10 @@ import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.operations.versions.merge.BeaconPreparableProposer;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
@@ -31,19 +32,19 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
   private final ValidatorIndexProvider validatorIndexProvider;
   private final OwnedValidators validators;
   private final Spec spec;
-  private final Bytes20 feeRecipient;
+  private final Optional<Eth1Address> feeRecipient;
   private boolean firstCallDone = false;
 
   public BeaconProposerPreparer(
       ValidatorApiChannel validatorApiChannel,
       ValidatorIndexProvider validatorIndexProvider,
-      Optional<Bytes20> feeRecipient,
+      Optional<Eth1Address> feeRecipient,
       OwnedValidators validators,
       Spec spec) {
     this.validatorApiChannel = validatorApiChannel;
     this.validatorIndexProvider = validatorIndexProvider;
     this.validators = validators;
-    this.feeRecipient = feeRecipient.orElse(null);
+    this.feeRecipient = feeRecipient;
     this.spec = spec;
   }
 
@@ -58,11 +59,19 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
                   integers.stream()
                       .map(
                           index ->
-                              new BeaconPreparableProposer(UInt64.valueOf(index), feeRecipient))
+                              new BeaconPreparableProposer(
+                                  UInt64.valueOf(index), getFeeRecipient()))
                       .collect(Collectors.toList()))
           .thenAccept(validatorApiChannel::prepareBeaconProposer)
           .finish(VALIDATOR_LOGGER::beaconProposerPreparationFailed);
     }
+  }
+
+  private Eth1Address getFeeRecipient() {
+    return feeRecipient.orElseThrow(
+        () ->
+            new InvalidConfigurationException(
+                "Invalid configuration. --validators-fee-recipient-address must be specified when Merge milestone is active"));
   }
 
   @Override

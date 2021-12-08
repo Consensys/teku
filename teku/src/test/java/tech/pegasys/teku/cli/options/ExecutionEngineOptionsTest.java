@@ -14,10 +14,13 @@
 package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ExecutionEngineOptionsTest extends AbstractBeaconNodeCommandTest {
 
@@ -26,18 +29,27 @@ public class ExecutionEngineOptionsTest extends AbstractBeaconNodeCommandTest {
     final TekuConfiguration config =
         getTekuConfigurationFromFile("executionEngineOptions_config.yaml");
 
-    assertThat(config.executionEngine().isEnabled()).isTrue();
+    // Spec doesn't include the merge so execution engine is disabled
+    assertThat(config.executionEngine().isEnabled()).isFalse();
     assertThat(config.executionEngine().getEndpoint()).isEqualTo("http://example.com:1234/path/");
   }
 
   @Test
-  public void shouldReportEEEnabledIfEndpointSpecified() {
-    final String[] args = {"--Xee-endpoint", "http://example.com:1234/path/"};
+  public void shouldReportEEEnabledIfSpecEnablesMerge() {
+    final String[] args = {
+      "--Xnetwork-altair-fork-epoch",
+      "0",
+      "--Xnetwork-merge-fork-epoch",
+      "1",
+      "--Xee-endpoint",
+      "http://example.com:1234/path/"
+    };
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     assertThat(config.executionEngine().isEnabled()).isTrue();
 
     assertThat(
             createConfigBuilder()
+                .eth2NetworkConfig(b -> b.altairForkEpoch(UInt64.ZERO).mergeForkEpoch(UInt64.ONE))
                 .executionEngine(b -> b.endpoint("http://example.com:1234/path/"))
                 .build())
         .usingRecursiveComparison()
@@ -48,5 +60,13 @@ public class ExecutionEngineOptionsTest extends AbstractBeaconNodeCommandTest {
   public void shouldReportEEDisabledIfEndpointNotSpecified() {
     final TekuConfiguration config = getTekuConfigurationFromArguments();
     assertThat(config.executionEngine().isEnabled()).isFalse();
+  }
+
+  @Test
+  void shouldThrowInvalidConfigurationExceptionIfEndpointRequiredButNotSpecified() {
+    final String[] args = {"--Xnetwork-altair-fork-epoch", "0", "--Xnetwork-merge-fork-epoch", "1"};
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+    assertThatThrownBy(config.executionEngine()::getEndpoint)
+        .isInstanceOf(InvalidConfigurationException.class);
   }
 }

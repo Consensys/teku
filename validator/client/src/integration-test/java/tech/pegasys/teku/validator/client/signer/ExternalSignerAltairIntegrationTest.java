@@ -93,7 +93,6 @@ public class ExternalSignerAltairIntegrationTest {
     this.client = client;
     final ValidatorConfig config =
         ValidatorConfig.builder()
-            .specProvider(spec)
             .validatorExternalSignerPublicKeySources(List.of(KEYPAIR.getPublicKey().toString()))
             .validatorExternalSignerUrl(new URL("http://127.0.0.1:" + client.getLocalPort()))
             .validatorExternalSignerTimeout(TIMEOUT)
