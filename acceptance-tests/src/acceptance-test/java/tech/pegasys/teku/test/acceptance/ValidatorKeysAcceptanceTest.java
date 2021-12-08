@@ -13,7 +13,11 @@
 
 package tech.pegasys.teku.test.acceptance;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+
 import com.fasterxml.jackson.databind.JsonNode;
+import java.io.IOException;
+import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.provider.JsonProvider;
@@ -23,13 +27,9 @@ import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
-import java.io.IOException;
-import java.nio.file.Path;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-
 public class ValidatorKeysAcceptanceTest extends AcceptanceTestBase {
   private final JsonProvider jsonProvider = new JsonProvider();
+
   @Test
   void shouldAddValidatorToRunningClient(@TempDir final Path tempDir) throws Exception {
     final String networkName = "less-swift";
@@ -55,19 +55,25 @@ public class ValidatorKeysAcceptanceTest extends AcceptanceTestBase {
     beaconNode.start();
     validatorClient.start();
 
-    final JsonNode data = getValidatorListing(validatorClient);
-    assertThat(data.isArray()).isTrue();
-    assertThat(data.size()).isZero();
+    getValidatorListing(validatorClient, 0);
 
-    final JsonNode addResult = jsonProvider.getObjectMapper().readTree(validatorClient.addValidators(validatorKeystores, tempDir));
+    final JsonNode addResult =
+        jsonProvider
+            .getObjectMapper()
+            .readTree(validatorClient.addValidators(validatorKeystores, tempDir));
     assertThat(addResult.get("data").size()).isEqualTo(8);
 
     validatorClient.waitForLogMessageContaining("Added validator");
     validatorClient.waitForLogMessageContaining("Published block");
+    getValidatorListing(validatorClient, 8);
 
-    final JsonNode removeResult = jsonProvider.getObjectMapper().readTree(validatorClient.removeValidator(validatorKeystores.getPublicKeys().get(0)));
+    final JsonNode removeResult =
+        jsonProvider
+            .getObjectMapper()
+            .readTree(validatorClient.removeValidator(validatorKeystores.getPublicKeys().get(0)));
     assertThat(removeResult.get("data").size()).isEqualTo(1);
     validatorClient.waitForLogMessageContaining("Deleted validator");
+    getValidatorListing(validatorClient, 7);
 
     validatorClient.stop();
 
@@ -75,11 +81,12 @@ public class ValidatorKeysAcceptanceTest extends AcceptanceTestBase {
     eth1Node.stop();
   }
 
-  private JsonNode getValidatorListing(final TekuValidatorNode validatorClient) throws IOException {
-    final JsonNode result = jsonProvider.getObjectMapper().readTree(validatorClient.getValidatorListing());
+  private void getValidatorListing(final TekuValidatorNode validatorClient, final int expectedKeys)
+      throws IOException {
+    final JsonNode result =
+        jsonProvider.getObjectMapper().readTree(validatorClient.getValidatorListing());
     final JsonNode data = result.get("data");
     assertThat(data.isArray()).isTrue();
-    return data;
-
+    assertThat(data.size()).isEqualTo(expectedKeys);
   }
 }

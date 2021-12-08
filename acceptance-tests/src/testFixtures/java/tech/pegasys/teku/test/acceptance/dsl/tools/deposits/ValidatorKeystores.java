@@ -63,20 +63,26 @@ public class ValidatorKeystores {
   }
 
   public List<String> getKeystores(final Path tempDir) {
-    return validatorKeys.stream().map(key -> {
-      try {
-        KeyStoreData keyStoreData = generateKeystoreData(key.getValidatorKey(), VALIDATOR_KEYS_PASSWORD);
-        final Path keystoreFile = tempDir.resolve(key.getValidatorKey().getPublicKey().toAbbreviatedString() + ".json");
-        KeyStoreLoader.saveToFile(keystoreFile, keyStoreData);
-        Files.readString(keystoreFile, StandardCharsets.UTF_8);
-        return Files.readString(keystoreFile, StandardCharsets.UTF_8);
-      } catch (JsonProcessingException e) {
-        return "";
-      } catch (IOException e) {
-        LOG.error("Failed to write file", e);
-        return "";
-      }
-    } ).collect(Collectors.toList());
+    return validatorKeys.stream()
+        .map(
+            key -> {
+              try {
+                KeyStoreData keyStoreData =
+                    generateKeystoreData(key.getValidatorKey(), VALIDATOR_KEYS_PASSWORD);
+                final Path keystoreFile =
+                    tempDir.resolve(
+                        key.getValidatorKey().getPublicKey().toAbbreviatedString() + ".json");
+                KeyStoreLoader.saveToFile(keystoreFile, keyStoreData);
+                Files.readString(keystoreFile, StandardCharsets.UTF_8);
+                return Files.readString(keystoreFile, StandardCharsets.UTF_8);
+              } catch (JsonProcessingException e) {
+                return "";
+              } catch (IOException e) {
+                LOG.error("Failed to write file", e);
+                return "";
+              }
+            })
+        .collect(Collectors.toList());
   }
 
   public List<String> getPasswords() {
@@ -84,7 +90,9 @@ public class ValidatorKeystores {
   }
 
   public List<BLSPublicKey> getPublicKeys() {
-    return validatorKeys.stream().map(key -> key.getValidatorKey().getPublicKey()).collect(Collectors.toList());
+    return validatorKeys.stream()
+        .map(key -> key.getValidatorKey().getPublicKey())
+        .collect(Collectors.toList());
   }
 
   public File getTarball() {

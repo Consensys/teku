@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
@@ -122,16 +121,17 @@ public class TekuValidatorNode extends Node {
     return result;
   }
 
-  public String addValidators(final ValidatorKeystores validatorKeystores, final Path tempDir) throws IOException {
+  public String addValidators(final ValidatorKeystores validatorKeystores, final Path tempDir)
+      throws IOException {
     final List<String> keystores = validatorKeystores.getKeystores(tempDir);
     final List<String> passwords = validatorKeystores.getPasswords();
 
-    final String body = jsonProvider.objectToJSON(Map.of("keystores", keystores, "passwords", passwords));
+    final String body =
+        jsonProvider.objectToJSON(Map.of("keystores", keystores, "passwords", passwords));
 
     final String result = httpClient.post(getValidatorApiUrl(), "/eth/v1/keystores", body);
     LOG.debug("POST Keys: " + result);
     return result;
-
   }
 
   public String removeValidator(final BLSPublicKey publicKey) throws IOException {
