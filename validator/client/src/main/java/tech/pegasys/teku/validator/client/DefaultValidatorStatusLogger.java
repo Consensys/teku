@@ -163,18 +163,19 @@ public class DefaultValidatorStatusLogger implements ValidatorStatusLogger {
                 return;
               }
 
-              for (BLSPublicKey key : oldValidatorStatuses.keySet()) {
+              for (BLSPublicKey key : newValidatorStatuses.keySet()) {
                 ValidatorStatus oldStatus = oldValidatorStatuses.get(key);
                 ValidatorStatus newStatus = newValidatorStatuses.get(key);
+                // report the status of a new validator
+                if (oldStatus == null) {
+                  STATUS_LOG.validatorStatus(key.toAbbreviatedString(), newStatus.name());
+                  continue;
+                }
                 if (oldStatus.equals(newStatus)) {
                   continue;
                 }
-
-                // if a validator got removed, it would have a newStatus of null
-                if (newStatus != null) {
-                  STATUS_LOG.validatorStatusChange(
-                      oldStatus.name(), newStatus.name(), key.toAbbreviatedString());
-                }
+                STATUS_LOG.validatorStatusChange(
+                    oldStatus.name(), newStatus.name(), key.toAbbreviatedString());
               }
 
               updateValidatorCountMetrics(newValidatorStatuses);

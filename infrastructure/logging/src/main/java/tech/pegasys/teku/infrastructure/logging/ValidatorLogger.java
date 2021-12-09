@@ -84,7 +84,7 @@ public class ValidatorLogger {
       final String producedType, final UInt64 slot, final Set<String> maybeKey) {
     final String errorString =
         String.format(
-            "%sValidator deleted, skipping previously scheduled %s production. Slot: %s%s",
+            "%sValidator removed, skipping previously scheduled %s production. Slot: %s%s",
             PREFIX, producedType, slot, formatValidators(maybeKey));
     log.info(ColorConsolePrinter.print(errorString, Color.YELLOW));
   }
