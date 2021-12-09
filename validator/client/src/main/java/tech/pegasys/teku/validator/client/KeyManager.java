@@ -13,22 +13,31 @@
 
 package tech.pegasys.teku.validator.client;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
 import tech.pegasys.signers.bls.keystore.KeyStoreValidationException;
 import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.data.SlashingProtectionImporter;
+import tech.pegasys.teku.data.SlashingProtectionIncrementalExporter;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysResponse;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.DeletionStatus;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 
 public class KeyManager {
+  private static final String EXPORT_FAILED =
+      "{\"metadata\":{\"interchange_format_version\":\"5\"},\"data\":[]}";
+  private static final Logger LOG = LogManager.getLogger();
   private final ValidatorLoader validatorLoader;
   private final DataDirLayout dataDirLayout;
 
@@ -74,15 +83,65 @@ public class KeyManager {
    * @param validators list of validator public keys that should be removed
    * @return The result of each deletion, and slashing protection data
    */
-  public DeleteKeysResponse deleteValidators(final List<BLSPublicKey> validators) {
-    final List<DeleteKeyResult> deletionResults =
-        validators.stream()
-            .map(
-                key ->
-                    DeleteKeyResult.error(
-                        String.format("error: key %s not deleted", key.toAbbreviatedString())))
-            .collect(Collectors.toList());
-    return new DeleteKeysResponse(deletionResults, "");
+  public synchronized DeleteKeysResponse deleteValidators(final List<BLSPublicKey> validators) {
+    final List<DeleteKeyResult> deletionResults = new ArrayList<>();
+    final SlashingProtectionIncrementalExporter exporter =
+        new SlashingProtectionIncrementalExporter(
+            ValidatorClientService.getSlashingProtectionPath(dataDirLayout));
+    for (final BLSPublicKey publicKey : validators) {
+      Optional<Validator> maybeValidator =
+          validatorLoader.getOwnedValidators().getValidator(publicKey);
+
+      // read-only check in a non-destructive manner
+      if (maybeValidator.isPresent() && maybeValidator.get().isReadOnly()) {
+        deletionResults.add(DeleteKeyResult.error("Cannot remove read-only validator"));
+        continue;
+      }
+      // delete validator from owned validators list
+      maybeValidator = validatorLoader.getOwnedValidators().removeValidator(publicKey);
+      if (maybeValidator.isPresent()) {
+        deletionResults.add(deleteValidator(maybeValidator.get(), exporter));
+      } else {
+        deletionResults.add(attemptToGetSlashingDataForInactiveValidator(publicKey, exporter));
+      }
+    }
+    String exportedData;
+    try {
+      exportedData = exporter.finalise();
+    } catch (JsonProcessingException e) {
+      LOG.error("Failed to serialize slashing export data", e);
+      exportedData = EXPORT_FAILED;
+    }
+    return new DeleteKeysResponse(deletionResults, exportedData);
+  }
+
+  @VisibleForTesting
+  DeleteKeyResult attemptToGetSlashingDataForInactiveValidator(
+      final BLSPublicKey publicKey, final SlashingProtectionIncrementalExporter exporter) {
+    if (exporter.haveSlashingProtectionData(publicKey)) {
+      final Optional<String> error = exporter.addPublicKeyToExport(publicKey, LOG::debug);
+      return error.map(DeleteKeyResult::error).orElseGet(DeleteKeyResult::notActive);
+    } else {
+      return DeleteKeyResult.notFound();
+    }
+  }
+
+  @VisibleForTesting
+  DeleteKeyResult deleteValidator(
+      final Validator activeValidator, final SlashingProtectionIncrementalExporter exporter) {
+    final Signer signer = activeValidator.getSigner();
+    signer.delete();
+    LOG.info("Removed validator: {}", activeValidator.getPublicKey().toAbbreviatedString());
+    final DeleteKeyResult deleteKeyResult =
+        validatorLoader.deleteMutableValidator(activeValidator.getPublicKey());
+    if (deleteKeyResult.getStatus() == DeletionStatus.DELETED) {
+      Optional<String> error =
+          exporter.addPublicKeyToExport(activeValidator.getPublicKey(), LOG::debug);
+      if (error.isPresent()) {
+        return DeleteKeyResult.error(error.get());
+      }
+    }
+    return deleteKeyResult;
   }
 
   /**

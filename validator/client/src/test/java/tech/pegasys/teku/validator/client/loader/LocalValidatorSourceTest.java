@@ -53,6 +53,8 @@ import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.KeyStoreFilesLocator;
 import tech.pegasys.teku.validator.client.loader.ValidatorSource.ValidatorProvider;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.DeletionStatus;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.ImportStatus;
 
 class LocalValidatorSourceTest {
@@ -195,6 +197,16 @@ class LocalValidatorSourceTest {
   }
 
   @Test
+  void shouldRejectDeletingValidatorIfReadOnlySource() {
+    final KeyStoreData keyStoreData = mock(KeyStoreData.class);
+    when(keyStoreData.getPubkey()).thenReturn(dataStructureUtil.randomPublicKey().toSSZBytes());
+    final DeleteKeyResult result =
+        validatorSource.deleteValidator(dataStructureUtil.randomPublicKey());
+    assertThat(result.getStatus()).isEqualTo(DeletionStatus.ERROR);
+    assertThat(result.getMessage().orElse("")).contains("read-only local validator source");
+  }
+
+  @Test
   void shouldRejectAddingValidatorIfReadOnlySource() {
     final KeyStoreData keyStoreData = mock(KeyStoreData.class);
     when(keyStoreData.getPubkey()).thenReturn(dataStructureUtil.randomPublicKey().toSSZBytes());
@@ -240,7 +252,7 @@ class LocalValidatorSourceTest {
 
   @Test
   void shouldSayFalseToAddValidators() {
-    assertThat(validatorSource.canAddValidator()).isFalse();
+    assertThat(validatorSource.canUpdateValidators()).isFalse();
   }
 
   public DataDirLayout dataDirLayout(final Path tempDir) {

@@ -17,11 +17,14 @@ import java.util.List;
 import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.Signer;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
 
 public interface ValidatorSource {
   List<ValidatorProvider> getAvailableValidators();
 
-  boolean canAddValidator();
+  boolean canUpdateValidators();
+
+  DeleteKeyResult deleteValidator(BLSPublicKey publicKey);
 
   AddLocalValidatorResult addValidator(
       KeyStoreData keyStoreData, String password, BLSPublicKey publicKey);
