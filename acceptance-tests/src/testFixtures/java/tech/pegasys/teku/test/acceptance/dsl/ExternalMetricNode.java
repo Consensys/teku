@@ -25,13 +25,10 @@ import org.testcontainers.containers.Network;
 import org.testcontainers.images.builder.ImageFromDockerfile;
 import tech.pegasys.teku.data.publisher.MetricsDataClient;
 import tech.pegasys.teku.infrastructure.async.Waiter;
-import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.test.data.publisher.DeserializedMetricDataObject;
 
 public class ExternalMetricNode extends Node {
-  private final JsonProvider jsonProvider = new JsonProvider();
   private static final Logger LOG = LogManager.getLogger();
-  private final SimpleHttpClient httpClient;
 
   public static final int STUB_PORT = 8001;
   protected static final String WORKING_DIRECTORY =
@@ -39,21 +36,18 @@ public class ExternalMetricNode extends Node {
 
   private boolean started = false;
 
-  private ExternalMetricNode(
-      final SimpleHttpClient httpClient, Network network, ImageFromDockerfile image) {
+  private ExternalMetricNode(Network network, ImageFromDockerfile image) {
     super(network, image, LOG);
-    this.httpClient = httpClient;
     container.withWorkingDirectory(WORKING_DIRECTORY).withExposedPorts(STUB_PORT);
   }
 
-  public static ExternalMetricNode create(
-      final SimpleHttpClient httpClient, final Network network) {
+  public static ExternalMetricNode create(final Network network) {
     final ImageFromDockerfile image =
         new ImageFromDockerfile()
             .withDockerfile(
                 Path.of(
                     "src/testFixtures/java/tech/pegasys/teku/test/acceptance/stubServer/Dockerfile"));
-    return new ExternalMetricNode(httpClient, network, image);
+    return new ExternalMetricNode(network, image);
   }
 
   public String getAddress() {

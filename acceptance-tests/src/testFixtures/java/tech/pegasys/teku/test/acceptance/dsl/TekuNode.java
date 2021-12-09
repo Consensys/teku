@@ -24,10 +24,8 @@ import io.libp2p.core.PeerId;
 import io.libp2p.core.crypto.KEY_TYPE;
 import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PrivKey;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.StringReader;
 import java.net.URI;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -69,7 +67,6 @@ import tech.pegasys.teku.api.schema.interfaces.SignedBlock;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateConfig;
@@ -79,22 +76,15 @@ import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 public class TekuNode extends Node {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final SimpleHttpClient httpClient;
   private final Config config;
-  private final JsonProvider jsonProvider = new JsonProvider();
   private final Spec spec;
   private Optional<EventStreamListener> maybeEventStreamListener = Optional.empty();
 
   private boolean started = false;
   private Set<File> configFiles;
 
-  private TekuNode(
-      final SimpleHttpClient httpClient,
-      final Network network,
-      final DockerVersion version,
-      final Config config) {
+  private TekuNode(final Network network, final DockerVersion version, final Config config) {
     super(network, TEKU_DOCKER_IMAGE_NAME, version, LOG);
-    this.httpClient = httpClient;
     this.config = config;
     this.spec = SpecFactory.create(config.getNetworkName());
 
@@ -110,7 +100,6 @@ public class TekuNode extends Node {
   }
 
   public static TekuNode create(
-      final SimpleHttpClient httpClient,
       final Network network,
       final DockerVersion version,
       final Consumer<Config> configOptions,
@@ -120,7 +109,7 @@ public class TekuNode extends Node {
     final Config config = new Config();
     configOptions.accept(config);
 
-    final TekuNode node = new TekuNode(httpClient, network, version, config);
+    final TekuNode node = new TekuNode(network, version, config);
 
     if (config.getGenesisStateConfig().isPresent()) {
       final GenesisStateConfig genesisConfig = config.getGenesisStateConfig().get();
@@ -480,24 +469,10 @@ public class TekuNode extends Node {
     LOG.debug("Waiting for validator count to be {}", expectedValidatorCount);
     waitFor(
         () -> {
-          final String validatorCount = getMetricValue("validator_local_validator_count");
+          final double validatorCount = getMetricValue("validator_local_validator_count");
           LOG.debug("Current validator count {}", validatorCount);
-          assertThat(Double.parseDouble(validatorCount)).isEqualTo(expectedValidatorCount);
+          assertThat(validatorCount).isEqualTo(expectedValidatorCount);
         });
-  }
-
-  private String getMetricValue(final String metricName) throws IOException {
-    final String prefix = metricName + " ";
-    final String allMetrics = httpClient.get(getMetricsUrl(), "/metrics");
-    try (BufferedReader reader = new BufferedReader(new StringReader(allMetrics))) {
-      for (String line = reader.readLine(); line != null; line = reader.readLine()) {
-        if (line.startsWith(prefix)) {
-          return line.substring(prefix.length());
-        }
-      }
-    }
-    throw new IllegalArgumentException(
-        "Did not find metric " + metricName + " in: \n" + allMetrics);
   }
 
   /**
@@ -530,10 +505,6 @@ public class TekuNode extends Node {
 
   private URI getRestApiUrl() {
     return URI.create("http://127.0.0.1:" + container.getMappedPort(REST_API_PORT));
-  }
-
-  private URI getMetricsUrl() {
-    return URI.create("http://127.0.0.1:" + container.getMappedPort(METRICS_PORT));
   }
 
   @Override

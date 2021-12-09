@@ -30,15 +30,12 @@ import org.testcontainers.containers.Network;
 import org.testcontainers.utility.MountableFile;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class TekuValidatorNode extends Node {
   private static final Logger LOG = LogManager.getLogger();
   private static final int VALIDATOR_API_PORT = 9052;
 
-  private final SimpleHttpClient httpClient;
-  private final JsonProvider jsonProvider = new JsonProvider();
   private final TekuValidatorNode.Config config;
   private boolean started = false;
   private Set<File> configFiles;
@@ -46,7 +43,6 @@ public class TekuValidatorNode extends Node {
   private TekuValidatorNode(
       final Network network, final DockerVersion version, final TekuValidatorNode.Config config) {
     super(network, TEKU_DOCKER_IMAGE_NAME, version, LOG);
-    this.httpClient = new SimpleHttpClient();
     this.config = config;
     if (config.configMap.containsKey("Xvalidator-api-enabled")) {
       container.withExposedPorts(VALIDATOR_API_PORT);
@@ -68,8 +64,7 @@ public class TekuValidatorNode extends Node {
     return new TekuValidatorNode(network, version, config);
   }
 
-  public TekuValidatorNode withMutableValidatorKeystores(
-      final ValidatorKeystores validatorKeystores) {
+  public TekuValidatorNode withValidatorApiEnabled() {
     this.config.withValidatorApiEnabled();
     return this;
   }
