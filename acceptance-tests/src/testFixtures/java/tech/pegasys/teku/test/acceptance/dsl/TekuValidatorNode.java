@@ -36,6 +36,7 @@ public class TekuValidatorNode extends Node {
   private final TekuValidatorNode.Config config;
   private boolean started = false;
   private Set<File> configFiles;
+  private final ValidatorKeysApi validatorKeysApi = new ValidatorKeysApi(httpClient, this::getValidatorApiUrl);
 
   private TekuValidatorNode(
       final Network network, final DockerVersion version, final TekuValidatorNode.Config config) {
@@ -64,6 +65,13 @@ public class TekuValidatorNode extends Node {
   public TekuValidatorNode withValidatorApiEnabled() {
     this.config.withValidatorApiEnabled();
     return this;
+  }
+
+  public ValidatorKeysApi getValidatorKeysApi() {
+    if (!config.configMap.containsKey("Xvalidator-api-enabled")) {
+      LOG.error("Retrieving validator keys api but api is not enabled");
+    }
+    return validatorKeysApi;
   }
 
   public TekuValidatorNode withValidatorKeystores(ValidatorKeystores validatorKeystores) {
@@ -107,11 +115,6 @@ public class TekuValidatorNode extends Node {
 
   private URI getValidatorApiUrl() {
     return URI.create("http://127.0.0.1:" + container.getMappedPort(VALIDATOR_API_PORT));
-  }
-
-  public ValidatorKeysApi createValidatorApi() {
-    // a supplier here avoids the port needing to be open to be able to create the object
-    return new ValidatorKeysApi(httpClient, this::getValidatorApiUrl);
   }
 
   public static class Config {

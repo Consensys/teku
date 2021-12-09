@@ -48,7 +48,7 @@ public class ValidatorKeysAcceptanceTest extends AcceptanceTestBase {
                         .withInteropModeDisabled()
                         .withBeaconNode(beaconNode))
             .withValidatorApiEnabled();
-    final ValidatorKeysApi api = validatorClient.createValidatorApi();
+    final ValidatorKeysApi api = validatorClient.getValidatorKeysApi();
 
     beaconNode.start();
     validatorClient.start();
