@@ -49,6 +49,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.validator.api.KeyStoreFilesLocator;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.DeletionStatus;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 
 public class LocalValidatorSource implements ValidatorSource {
@@ -98,14 +99,16 @@ public class LocalValidatorSource implements ValidatorSource {
       return DeleteKeyResult.error(
           "Cannot delete validator from read-only local validator source.");
     }
-    final Optional<ActiveLocalValidatorSource> source =
-        Optional.ofNullable(localValidatorSourceMap.remove(publicKey));
-    if (source.isEmpty()) {
+    final ActiveLocalValidatorSource source = localValidatorSourceMap.remove(publicKey);
+    if (source == null) {
       return DeleteKeyResult.error(
           "Could not find " + publicKey.toBytesCompressed().toShortHexString() + " to delete");
     }
-    keystoreLocker.unlockKeystore(getKeystorePath(publicKey));
-    return source.get().delete();
+    final DeleteKeyResult result = source.delete();
+    if (result.getStatus() == DeletionStatus.DELETED) {
+      keystoreLocker.unlockKeystore(getKeystorePath(publicKey));
+    }
+    return result;
   }
 
   @Override
