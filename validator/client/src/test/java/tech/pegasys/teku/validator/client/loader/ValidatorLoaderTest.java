@@ -59,6 +59,8 @@ import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.DeletionStatus;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.ImportStatus;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 
@@ -317,6 +319,33 @@ class ValidatorLoaderTest {
   }
 
   @Test
+  void shouldReturnErrorIfDeleteOnReadOnlySource(@TempDir Path tempDir) throws Exception {
+    writeKeystore(tempDir);
+
+    final ValidatorConfig config =
+        ValidatorConfig.builder()
+            .validatorKeys(
+                List.of(tempDir.toAbsolutePath() + File.pathSeparator + tempDir.toAbsolutePath()))
+            .build();
+    final ValidatorLoader validatorLoader =
+        ValidatorLoader.create(
+            spec,
+            config,
+            disabledInteropConfig,
+            httpClientFactory,
+            slashingProtector,
+            publicKeyLoader,
+            asyncRunner,
+            metricsSystem,
+            Optional.empty());
+
+    final DeleteKeyResult result =
+        validatorLoader.deleteMutableValidator(dataStructureUtil.randomPublicKey());
+    assertThat(result.getStatus()).isEqualTo(DeletionStatus.ERROR);
+    assertThat(result.getMessage().orElse("")).contains("Unable to delete validator");
+  }
+
+  @Test
   void shouldInitializeOnlyLocalValidatorsWhenRestDisabled(
       @TempDir Path tempDir, @TempDir Path tempDirMutable) throws Exception {
     final DataDirLayout dataDirLayout =
@@ -349,6 +378,24 @@ class ValidatorLoaderTest {
     assertThat(validator1).isNotNull();
     assertThat(validator1.getPublicKey()).isEqualTo(PUBLIC_KEY1);
     assertThat(validator1.isReadOnly()).isTrue();
+  }
+
+  @Test
+  void shouldCallMutableValidatorSourceToDelete(@TempDir final Path tempDir) {
+    final ValidatorSource validatorSource = mock(ValidatorSource.class);
+    final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
+    final DataDirLayout dataDirLayout =
+        new SeparateServiceDataDirLayout(tempDir, Optional.empty(), Optional.empty());
+    ValidatorLoader loader =
+        ValidatorLoader.create(
+            List.of(validatorSource),
+            Optional.of(validatorSource),
+            null,
+            Optional.of(dataDirLayout));
+
+    when(validatorSource.deleteValidator(publicKey)).thenReturn(DeleteKeyResult.success());
+    loader.deleteMutableValidator(publicKey);
+    verify(validatorSource).deleteValidator(publicKey);
   }
 
   @Test

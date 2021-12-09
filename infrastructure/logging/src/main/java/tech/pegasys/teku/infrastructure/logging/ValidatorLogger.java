@@ -80,6 +80,15 @@ public class ValidatorLogger {
     log.error(ColorConsolePrinter.print(errorString, Color.RED), error);
   }
 
+  public void signerNoLongerActive(
+      final String producedType, final UInt64 slot, final Set<String> maybeKey) {
+    final String errorString =
+        String.format(
+            "%sValidator removed, skipping previously scheduled %s production. Slot: %s%s",
+            PREFIX, producedType, slot, formatValidators(maybeKey));
+    log.info(ColorConsolePrinter.print(errorString, Color.YELLOW));
+  }
+
   private String formatValidators(final Set<String> keys) {
     if (keys.isEmpty()) {
       return "";

@@ -67,4 +67,8 @@ public class OwnedValidators {
   public boolean hasValidator(final BLSPublicKey publicKey) {
     return validators.containsKey(publicKey);
   }
+
+  public Optional<Validator> removeValidator(final BLSPublicKey publicKey) {
+    return Optional.ofNullable(validators.remove(publicKey));
+  }
 }
