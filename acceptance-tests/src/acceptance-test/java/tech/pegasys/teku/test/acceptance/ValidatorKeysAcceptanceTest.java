@@ -23,8 +23,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.spec.SpecFactory;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
@@ -33,8 +31,6 @@ import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class ValidatorKeysAcceptanceTest extends AcceptanceTestBase {
   private final JsonProvider jsonProvider = new JsonProvider();
-  final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(SpecFactory.create("less-swift"));
 
   @Test
   void shouldMaintainValidatorsInMutableClient(@TempDir final Path tempDir) throws Exception {
@@ -44,6 +40,8 @@ public class ValidatorKeysAcceptanceTest extends AcceptanceTestBase {
 
     final ValidatorKeystores validatorKeystores =
         createTekuDepositSender(networkName).sendValidatorDeposits(eth1Node, 8);
+    final ValidatorKeystores extraKeys =
+        createTekuDepositSender(networkName).sendValidatorDeposits(eth1Node, 1);
 
     final TekuNode beaconNode =
         createTekuNode(config -> config.withNetwork(networkName).withDepositsFrom(eth1Node));
@@ -73,8 +71,7 @@ public class ValidatorKeysAcceptanceTest extends AcceptanceTestBase {
     addValidatorsAndExpect(validatorClient, validatorKeystores, tempDir, "duplicate");
 
     // a random key won't be found, remove should give not_found
-    removeValidatorAndCheckStatus(
-        validatorClient, dataStructureUtil.randomPublicKey(), "not_found");
+    removeValidatorAndCheckStatus(validatorClient, extraKeys.getPublicKeys().get(0), "not_found");
 
     // wait for epoch 1 to ensure the validator has attested, which will give slashing protection
     // data
