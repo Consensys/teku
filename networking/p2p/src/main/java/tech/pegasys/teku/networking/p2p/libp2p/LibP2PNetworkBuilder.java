@@ -75,9 +75,7 @@ public class LibP2PNetworkBuilder {
 
   protected Firewall firewall = new Firewall(Duration.ofSeconds(30));
   protected MplexFirewall mplexFirewall =
-      new MplexFirewall(
-          REMOTE_OPEN_STREAMS_RATE_LIMIT, REMOTE_PARALLEL_OPEN_STREAMS_COUNT_LIMIT);
-
+      new MplexFirewall(REMOTE_OPEN_STREAMS_RATE_LIMIT, REMOTE_PARALLEL_OPEN_STREAMS_COUNT_LIMIT);
 
   protected LibP2PGossipNetwork gossipNetwork;
   protected PeerManager peerManager;

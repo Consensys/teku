@@ -104,7 +104,7 @@ public class TekuConfigurationTest {
             .beaconChainControllerFactory(customControllerFactory)
             .build();
 
-    try(BeaconNodeFacade beaconNode = TekuFacade.startBeaconNode(tekuConfiguration)) {
+    try (BeaconNodeFacade beaconNode = TekuFacade.startBeaconNode(tekuConfiguration)) {
       assertThat(beaconNode).isNotNull();
       assertThat(customDiscoveryBuilderMethodCalled).isTrue();
       assertThat(customLibP2PBuilderMethodCalled).isTrue();
