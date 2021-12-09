@@ -17,44 +17,47 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.assertj.core.api.Assertions;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
+import tech.pegasys.teku.test.acceptance.dsl.SimpleHttpClient;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class ValidatorKeysApi {
+  private static final Logger LOG = LogManager.getLogger();
   private final JsonProvider jsonProvider = new JsonProvider();
-  private final Path tempDir;
+  private final SimpleHttpClient httpClient;
+  private final Supplier<URI> validatorUri;
 
-  public ValidatorKeysApi(final Path tempDir) {
-    this.tempDir = tempDir;
+  public ValidatorKeysApi(final SimpleHttpClient httpClient, final Supplier<URI> validatorUri) {
+    this.httpClient = httpClient;
+    this.validatorUri = validatorUri;
   }
 
   public void addValidatorsAndExpect(
-      final TekuValidatorNode validatorClient,
-      final ValidatorKeystores validatorKeystores,
-      final String expectedStatus)
-      throws IOException {
+      final ValidatorKeystores validatorKeystores, final String expectedStatus) throws IOException {
+    final Path tempDir = Files.createTempDirectory("validator-keys-api");
     final JsonNode addResult =
-        jsonProvider
-            .getObjectMapper()
-            .readTree(validatorClient.addValidators(validatorKeystores, tempDir));
+        jsonProvider.getObjectMapper().readTree(addValidators(validatorKeystores, tempDir));
     assertThat(addResult.get("data").size()).isEqualTo(validatorKeystores.getValidatorCount());
     checkStatus(addResult.get("data"), expectedStatus);
+    tempDir.toFile().delete();
   }
 
   public void removeValidatorAndCheckStatus(
-      final TekuValidatorNode validatorClient,
-      final BLSPublicKey publicKey,
-      final String expectedStatus)
-      throws IOException {
+      final BLSPublicKey publicKey, final String expectedStatus) throws IOException {
     final JsonNode removeResult =
-        jsonProvider.getObjectMapper().readTree(validatorClient.removeValidator(publicKey));
+        jsonProvider.getObjectMapper().readTree(removeValidator(publicKey));
     assertThat(removeResult.get("data").size()).isEqualTo(1);
     checkStatus(removeResult.get("data"), expectedStatus);
     if (expectedStatus.equals("deleted") || expectedStatus.equals("not_active")) {
@@ -66,11 +69,8 @@ public class ValidatorKeysApi {
     }
   }
 
-  public void getValidatorListing(
-      final TekuValidatorNode validatorClient, final List<BLSPublicKey> expectedKeys)
-      throws IOException {
-    final JsonNode result =
-        jsonProvider.getObjectMapper().readTree(validatorClient.getValidatorListing());
+  public void assertValidatorsAreExactly(final List<BLSPublicKey> expectedKeys) throws IOException {
+    final JsonNode result = jsonProvider.getObjectMapper().readTree(getValidatorListing());
     final JsonNode data = result.get("data");
     assertThat(data.isArray()).isTrue();
     final List<String> expectedKeyStrings =
@@ -82,8 +82,34 @@ public class ValidatorKeysApi {
             .map(node -> node.asText())
             .collect(Collectors.toList());
 
-    Assertions.assertThat(actualKeyStrings).containsAll(expectedKeyStrings);
+    Assertions.assertThat(actualKeyStrings).containsOnlyOnceElementsOf(expectedKeyStrings);
     checkReadOnly(data, false);
+  }
+
+  private String getValidatorListing() throws IOException {
+    final String result = httpClient.get(validatorUri.get(), "/eth/v1/keystores");
+    LOG.debug("GET Keys: " + result);
+    return result;
+  }
+
+  private String addValidators(final ValidatorKeystores validatorKeystores, final Path tempDir)
+      throws IOException {
+    final List<String> keystores = validatorKeystores.getKeystores(tempDir);
+    final List<String> passwords = validatorKeystores.getPasswords();
+
+    final String body =
+        jsonProvider.objectToJSON(Map.of("keystores", keystores, "passwords", passwords));
+
+    final String result = httpClient.post(validatorUri.get(), "/eth/v1/keystores", body);
+    LOG.debug("POST Keys: " + result);
+    return result;
+  }
+
+  private String removeValidator(final BLSPublicKey publicKey) throws IOException {
+    final String body = jsonProvider.objectToJSON(Map.of("pubkeys", List.of(publicKey.toString())));
+    final String result = httpClient.delete(validatorUri.get(), "/eth/v1/keystores", body);
+    LOG.debug("DELETE Keys: " + result);
+    return result;
   }
 
   private void checkReadOnly(final JsonNode data, final boolean readOnlyStatus) {

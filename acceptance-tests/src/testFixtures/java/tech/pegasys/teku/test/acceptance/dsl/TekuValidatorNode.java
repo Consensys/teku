@@ -16,11 +16,8 @@ package tech.pegasys.teku.test.acceptance.dsl;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URI;
-import java.nio.file.Path;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -28,8 +25,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
 import org.testcontainers.utility.MountableFile;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.test.acceptance.dsl.tools.ValidatorKeysApi;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class TekuValidatorNode extends Node {
@@ -112,30 +109,9 @@ public class TekuValidatorNode extends Node {
     return URI.create("http://127.0.0.1:" + container.getMappedPort(VALIDATOR_API_PORT));
   }
 
-  public String getValidatorListing() throws IOException {
-    final String result = httpClient.get(getValidatorApiUrl(), "/eth/v1/keystores");
-    LOG.debug("GET Keys: " + result);
-    return result;
-  }
-
-  public String addValidators(final ValidatorKeystores validatorKeystores, final Path tempDir)
-      throws IOException {
-    final List<String> keystores = validatorKeystores.getKeystores(tempDir);
-    final List<String> passwords = validatorKeystores.getPasswords();
-
-    final String body =
-        jsonProvider.objectToJSON(Map.of("keystores", keystores, "passwords", passwords));
-
-    final String result = httpClient.post(getValidatorApiUrl(), "/eth/v1/keystores", body);
-    LOG.debug("POST Keys: " + result);
-    return result;
-  }
-
-  public String removeValidator(final BLSPublicKey publicKey) throws IOException {
-    final String body = jsonProvider.objectToJSON(Map.of("pubkeys", List.of(publicKey.toString())));
-    final String result = httpClient.delete(getValidatorApiUrl(), "/eth/v1/keystores", body);
-    LOG.debug("DELETE Keys: " + result);
-    return result;
+  public ValidatorKeysApi createValidatorApi() {
+    // a supplier here avoids the port needing to be open to be able to create the object
+    return new ValidatorKeysApi(httpClient, this::getValidatorApiUrl);
   }
 
   public static class Config {

@@ -13,10 +13,8 @@
 
 package tech.pegasys.teku.test.acceptance;
 
-import java.nio.file.Path;
 import java.util.Collections;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
@@ -28,8 +26,7 @@ import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 public class ValidatorKeysAcceptanceTest extends AcceptanceTestBase {
 
   @Test
-  void shouldMaintainValidatorsInMutableClient(@TempDir final Path tempDir) throws Exception {
-    final ValidatorKeysApi api = new ValidatorKeysApi(tempDir);
+  void shouldMaintainValidatorsInMutableClient() throws Exception {
     final String networkName = "less-swift";
     final BesuNode eth1Node = createBesuNode();
     eth1Node.start();
@@ -51,37 +48,37 @@ public class ValidatorKeysAcceptanceTest extends AcceptanceTestBase {
                         .withInteropModeDisabled()
                         .withBeaconNode(beaconNode))
             .withValidatorApiEnabled();
+    final ValidatorKeysApi api = validatorClient.createValidatorApi();
 
     beaconNode.start();
     validatorClient.start();
 
-    api.getValidatorListing(validatorClient, Collections.emptyList());
+    api.assertValidatorsAreExactly(Collections.emptyList());
 
-    api.addValidatorsAndExpect(validatorClient, validatorKeystores, "imported");
+    api.addValidatorsAndExpect(validatorKeystores, "imported");
 
     validatorClient.waitForLogMessageContaining("Added validator");
     validatorClient.waitForLogMessageContaining("Published block");
-    api.getValidatorListing(validatorClient, validatorKeystores.getPublicKeys());
+    api.assertValidatorsAreExactly(validatorKeystores.getPublicKeys());
 
     // second add attempt would be duplicates
-    api.addValidatorsAndExpect(validatorClient, validatorKeystores, "duplicate");
+    api.addValidatorsAndExpect(validatorKeystores, "duplicate");
 
     // a random key won't be found, remove should give not_found
-    api.removeValidatorAndCheckStatus(
-        validatorClient, extraKeys.getPublicKeys().get(0), "not_found");
+    api.removeValidatorAndCheckStatus(extraKeys.getPublicKeys().get(0), "not_found");
 
     beaconNode.waitForEpoch(2);
     // remove a validator
     final BLSPublicKey removedPubkey = validatorKeystores.getPublicKeys().get(0);
-    api.removeValidatorAndCheckStatus(validatorClient, removedPubkey, "deleted");
+    api.removeValidatorAndCheckStatus(removedPubkey, "deleted");
 
     // should only be 7 validators left
     validatorClient.waitForLogMessageContaining("Removed validator");
     validatorClient.waitForLogMessageContaining("Published block");
-    api.getValidatorListing(validatorClient, validatorKeystores.getPublicKeys().subList(1, 7));
+    api.assertValidatorsAreExactly(validatorKeystores.getPublicKeys().subList(1, 7));
 
     // remove the same validator again
-    api.removeValidatorAndCheckStatus(validatorClient, removedPubkey, "not_active");
+    api.removeValidatorAndCheckStatus(removedPubkey, "not_active");
 
     validatorClient.stop();
 
