@@ -84,7 +84,12 @@ class ForkChoiceNotifierTest {
     // initialize post-merge by default
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     recentChainData = storageSystem.recentChainData();
-    notifier = new ForkChoiceNotifier(eventThread, spec, executionEngineChannel, recentChainData);
+    notifier =
+        new ForkChoiceNotifier(
+            eventThread,
+            executionEngineChannel,
+            recentChainData,
+            new PayloadAttributesCalculator(spec, eventThread, recentChainData));
     notifier.onSyncingStatusChanged(true); // Start in sync to make testing easier
     storageSystem.chainUpdater().initializeGenesisWithPayload(false);
     storageSystem.chainUpdater().updateBestBlock(storageSystem.chainUpdater().advanceChain());
@@ -104,7 +109,12 @@ class ForkChoiceNotifierTest {
   void reInitializePreMerge() {
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     recentChainData = storageSystem.recentChainData();
-    notifier = new ForkChoiceNotifier(eventThread, spec, executionEngineChannel, recentChainData);
+    notifier =
+        new ForkChoiceNotifier(
+            eventThread,
+            executionEngineChannel,
+            recentChainData,
+            new PayloadAttributesCalculator(spec, eventThread, recentChainData));
     notifier.onSyncingStatusChanged(true);
     storageSystem.chainUpdater().initializeGenesis(false);
     storageSystem.chainUpdater().updateBestBlock(storageSystem.chainUpdater().advanceChain());
