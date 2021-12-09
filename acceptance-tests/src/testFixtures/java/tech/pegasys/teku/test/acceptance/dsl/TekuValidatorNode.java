@@ -48,10 +48,12 @@ public class TekuValidatorNode extends Node {
     super(network, TEKU_DOCKER_IMAGE_NAME, version, LOG);
     this.httpClient = new SimpleHttpClient();
     this.config = config;
+    if (config.configMap.containsKey("Xvalidator-api-enabled")) {
+      container.withExposedPorts(VALIDATOR_API_PORT);
+    }
 
     container
         .withWorkingDirectory(WORKING_DIRECTORY)
-        .withExposedPorts(VALIDATOR_API_PORT)
         .withCommand("validator-client", "--config-file", CONFIG_FILE_PATH);
   }
 
