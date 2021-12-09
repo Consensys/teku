@@ -18,6 +18,7 @@ import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 
 import com.google.common.base.MoreObjects;
+import com.google.common.base.Throwables;
 import com.google.common.collect.Sets;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -29,6 +30,7 @@ import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.core.signatures.SignerNotActiveException;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -130,8 +132,25 @@ public class DutyResult {
         .values()
         .forEach(
             failure ->
-                logger.dutyFailed(
-                    producedType, slot, summarizeKeys(failure.validatorKeys), failure.error));
+                reportDutyFailed(
+                    logger,
+                    producedType,
+                    slot,
+                    summarizeKeys(failure.validatorKeys),
+                    failure.error));
+  }
+
+  private void reportDutyFailed(
+      final ValidatorLogger logger,
+      final String producedType,
+      final UInt64 slot,
+      final Set<String> summarizeKeys,
+      final Throwable error) {
+    if (Throwables.getRootCause(error) instanceof SignerNotActiveException) {
+      logger.signerNoLongerActive(producedType, slot, summarizeKeys);
+    } else {
+      logger.dutyFailed(producedType, slot, summarizeKeys, error);
+    }
   }
 
   private Set<String> summarizeKeys(final Set<BLSPublicKey> validatorKeys) {

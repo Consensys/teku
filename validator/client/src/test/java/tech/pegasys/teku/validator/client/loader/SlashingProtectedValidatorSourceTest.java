@@ -50,8 +50,15 @@ public class SlashingProtectedValidatorSourceTest {
 
   @Test
   void shouldDelegateCanAddValidator() {
-    validatorSource.canAddValidator();
-    verify(delegate).canAddValidator();
+    validatorSource.canUpdateValidators();
+    verify(delegate).canUpdateValidators();
+  }
+
+  @Test
+  void shouldDelegateDeleteValidator() {
+    final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
+    validatorSource.deleteValidator(publicKey);
+    verify(delegate).deleteValidator(publicKey);
   }
 
   @Test

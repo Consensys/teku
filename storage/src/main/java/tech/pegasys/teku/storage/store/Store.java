@@ -86,6 +86,7 @@ class Store implements UpdatableStore {
   AnchorPoint finalizedAnchor;
   Checkpoint justifiedCheckpoint;
   Checkpoint bestJustifiedCheckpoint;
+  Optional<Bytes32> proposerBoostRoot = Optional.empty();
   final CachingTaskQueue<Bytes32, StateAndBlockSummary> states;
   final Map<Bytes32, SignedBeaconBlock> blocks;
   final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates;
@@ -357,6 +358,16 @@ class Store implements UpdatableStore {
     readLock.lock();
     try {
       return bestJustifiedCheckpoint;
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  @Override
+  public Optional<Bytes32> getProposerBoostRoot() {
+    readLock.lock();
+    try {
+      return proposerBoostRoot;
     } finally {
       readLock.unlock();
     }

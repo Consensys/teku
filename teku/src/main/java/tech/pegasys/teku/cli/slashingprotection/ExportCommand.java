@@ -60,11 +60,11 @@ public class ExportCommand implements Runnable {
         SUB_COMMAND_LOG, slashProtectionPath);
 
     SlashingProtectionExporter slashingProtectionExporter =
-        new SlashingProtectionExporter(toFileName);
+        new SlashingProtectionExporter(slashProtectionPath);
 
     SUB_COMMAND_LOG.display("Reading slashing protection data from: " + slashProtectionPath);
     final Map<BLSPublicKey, String> errors =
-        slashingProtectionExporter.initialise(slashProtectionPath, SUB_COMMAND_LOG::display);
+        slashingProtectionExporter.initialise(SUB_COMMAND_LOG::display);
 
     if (!errors.isEmpty()) {
       errors.forEach((key, error) -> SUB_COMMAND_LOG.display("ERROR: " + error));

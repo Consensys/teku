@@ -28,6 +28,7 @@ import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
 import tech.pegasys.teku.validator.client.signer.ExternalSigner;
 import tech.pegasys.teku.validator.client.signer.ExternalSignerStatusLogger;
 import tech.pegasys.teku.validator.client.signer.ExternalSignerUpcheck;
@@ -89,8 +90,14 @@ public class ExternalValidatorSource implements ValidatorSource {
   }
 
   @Override
-  public boolean canAddValidator() {
+  public boolean canUpdateValidators() {
     return false;
+  }
+
+  @Override
+  public DeleteKeyResult deleteValidator(final BLSPublicKey publicKey) {
+    throw new UnsupportedOperationException(
+        "Cannot delete validator from external validator source.");
   }
 
   @Override

@@ -54,7 +54,7 @@ public class SlashingProtectionExporterTest {
   @Test
   public void shouldReadSlashingProtectionFile_withEmptyGenesisValidatorsRoot(@TempDir Path tempDir)
       throws IOException, URISyntaxException {
-    final SlashingProtectionExporter exporter = new SlashingProtectionExporter(tempDir.toString());
+    final SlashingProtectionExporter exporter = new SlashingProtectionExporter(tempDir);
     Optional<String> error =
         exporter.readSlashProtectionFile(
             usingResourceFile("slashProtection.yml", tempDir), log::add);
@@ -71,7 +71,7 @@ public class SlashingProtectionExporterTest {
   @Test
   public void shouldReadSlashingProtectionFile_withGenesisValidatorsRoot(@TempDir Path tempDir)
       throws IOException, URISyntaxException {
-    final SlashingProtectionExporter exporter = new SlashingProtectionExporter(tempDir.toString());
+    final SlashingProtectionExporter exporter = new SlashingProtectionExporter(tempDir);
     Optional<String> error =
         exporter.readSlashProtectionFile(
             usingResourceFile("slashProtectionWithGenesisRoot.yml", tempDir), log::add);
@@ -89,7 +89,7 @@ public class SlashingProtectionExporterTest {
   @Test
   public void shouldReadFilesWithEmptyRootAfterGenesisRootIsDefined(@TempDir Path tempDir)
       throws URISyntaxException, IOException {
-    final SlashingProtectionExporter exporter = new SlashingProtectionExporter(tempDir.toString());
+    final SlashingProtectionExporter exporter = new SlashingProtectionExporter(tempDir);
     Optional<String> error =
         exporter.readSlashProtectionFile(
             usingResourceFile("slashProtectionWithGenesisRoot.yml", tempDir), log::add);
@@ -105,7 +105,7 @@ public class SlashingProtectionExporterTest {
   @Test
   public void shouldReadFileWithGenesisRootDefinedSecond(@TempDir Path tempDir)
       throws URISyntaxException, IOException {
-    final SlashingProtectionExporter exporter = new SlashingProtectionExporter(tempDir.toString());
+    final SlashingProtectionExporter exporter = new SlashingProtectionExporter(tempDir);
     Optional<String> error =
         exporter.readSlashProtectionFile(
             usingResourceFile("slashProtection.yml", tempDir), log::add);
@@ -121,7 +121,7 @@ public class SlashingProtectionExporterTest {
   @Test
   public void shouldNotAcceptDifferentGenesisValidatorsRoot(@TempDir Path tempDir)
       throws URISyntaxException, IOException {
-    final SlashingProtectionExporter exporter = new SlashingProtectionExporter(tempDir.toString());
+    final SlashingProtectionExporter exporter = new SlashingProtectionExporter(tempDir);
     Optional<String> error =
         exporter.readSlashProtectionFile(
             usingResourceFile("slashProtectionWithGenesisRoot2.yml", tempDir), LOG::debug);
@@ -134,7 +134,7 @@ public class SlashingProtectionExporterTest {
 
   @Test
   public void shouldRequirePubkeyInFilename(@TempDir Path tempDir) throws URISyntaxException {
-    final SlashingProtectionExporter exporter = new SlashingProtectionExporter(tempDir.toString());
+    final SlashingProtectionExporter exporter = new SlashingProtectionExporter(tempDir);
     final Optional<String> error =
         exporter.readSlashProtectionFile(
             new File(Resources.getResource("slashProtectionWithGenesisRoot.yml").toURI()),
@@ -146,7 +146,7 @@ public class SlashingProtectionExporterTest {
   @Test
   public void shouldPrintIfFileCannotBeRead(@TempDir Path tempDir)
       throws URISyntaxException, IOException {
-    final SlashingProtectionExporter exporter = new SlashingProtectionExporter(tempDir.toString());
+    final SlashingProtectionExporter exporter = new SlashingProtectionExporter(tempDir);
     final File file = usingResourceFile("slashProtection.yml", tempDir);
     OSUtils.makeNonReadable(file.toPath());
     // It's not always possible to remove read permissions from a file
@@ -159,7 +159,7 @@ public class SlashingProtectionExporterTest {
   public void shouldExportSlashProtection(@TempDir Path tempDir)
       throws IOException, URISyntaxException {
     final Path exportedFile = tempDir.resolve("exportedFile.json").toAbsolutePath();
-    final SlashingProtectionExporter exporter = new SlashingProtectionExporter(tempDir.toString());
+    final SlashingProtectionExporter exporter = new SlashingProtectionExporter(tempDir);
 
     final Optional<String> error =
         exporter.readSlashProtectionFile(
@@ -174,7 +174,7 @@ public class SlashingProtectionExporterTest {
   void shouldHaveNoSignedAttestationsWhenNoAttestationsSigned(@TempDir Path tempDir)
       throws Exception {
     final Path exportedFile = tempDir.resolve("exportedFile.json").toAbsolutePath();
-    final SlashingProtectionExporter exporter = new SlashingProtectionExporter(tempDir.toString());
+    final SlashingProtectionExporter exporter = new SlashingProtectionExporter(tempDir);
 
     final UInt64 blockSlot = UInt64.ONE;
     final ValidatorSigningRecord signingRecord =

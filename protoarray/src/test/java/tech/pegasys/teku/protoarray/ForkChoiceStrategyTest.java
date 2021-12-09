@@ -112,7 +112,12 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
             .getEffectiveBalances(anchor.getState());
     final Bytes32 head =
         forkChoiceStrategy.applyPendingVotes(
-            store, anchor.getCheckpoint(), anchor.getCheckpoint(), effectiveBalances);
+            store,
+            Optional.empty(),
+            anchor.getCheckpoint(),
+            anchor.getCheckpoint(),
+            effectiveBalances,
+            ZERO);
     assertThat(head).isEqualTo(anchor.getRoot());
   }
 
@@ -327,9 +332,11 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     final Bytes32 bestHead =
         strategy.applyPendingVotes(
             transaction,
+            Optional.empty(),
             storageSystem.recentChainData().getFinalizedCheckpoint().orElseThrow(),
             storageSystem.recentChainData().getStore().getBestJustifiedCheckpoint(),
-            effectiveBalances);
+            effectiveBalances,
+            ZERO);
     transaction.commit();
 
     assertThat(bestHead).isEqualTo(block4.getRoot());
