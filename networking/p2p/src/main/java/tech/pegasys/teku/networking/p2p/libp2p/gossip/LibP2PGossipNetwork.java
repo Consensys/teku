@@ -13,52 +13,29 @@
 
 package tech.pegasys.teku.networking.p2p.libp2p.gossip;
 
-import com.google.common.base.Preconditions;
 import io.libp2p.core.PeerId;
-import io.libp2p.core.pubsub.PubsubApi;
-import io.libp2p.core.pubsub.PubsubApiKt;
 import io.libp2p.core.pubsub.PubsubPublisherApi;
 import io.libp2p.core.pubsub.PubsubSubscription;
 import io.libp2p.core.pubsub.Topic;
-import io.libp2p.core.pubsub.ValidationResult;
-import io.libp2p.pubsub.FastIdSeenCache;
-import io.libp2p.pubsub.MaxCountTopicSubscriptionFilter;
-import io.libp2p.pubsub.PubsubProtocol;
 import io.libp2p.pubsub.PubsubRouterMessageValidator;
-import io.libp2p.pubsub.SeenCache;
-import io.libp2p.pubsub.TTLSeenCache;
-import io.libp2p.pubsub.TopicSubscriptionFilter;
 import io.libp2p.pubsub.gossip.Gossip;
-import io.libp2p.pubsub.gossip.GossipParams;
-import io.libp2p.pubsub.gossip.GossipRouter;
-import io.libp2p.pubsub.gossip.GossipScoreParams;
 import io.libp2p.pubsub.gossip.GossipTopicScoreParams;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelHandler;
-import io.netty.handler.logging.LogLevel;
-import io.netty.handler.logging.LoggingHandler;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import kotlin.jvm.functions.Function0;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
-import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
-import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessageFactory;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
-import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipTopicsScoringConfig;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNodeId;
 import tech.pegasys.teku.networking.p2p.libp2p.config.LibP2PParamsFactory;
@@ -68,91 +45,19 @@ public class LibP2PGossipNetwork implements GossipNetwork {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private static final PubsubRouterMessageValidator STRICT_FIELDS_VALIDATOR =
-      new GossipWireValidator();
-  private static final Function0<Long> NULL_SEQNO_GENERATOR = () -> null;
+  static final PubsubRouterMessageValidator STRICT_FIELDS_VALIDATOR = new GossipWireValidator();
+  static final Function0<Long> NULL_SEQNO_GENERATOR = () -> null;
 
   private final MetricsSystem metricsSystem;
   private final Gossip gossip;
   private final PubsubPublisherApi publisher;
-  private final TopicHandlers topicHandlers;
+  private final GossipTopicHandlers topicHandlers;
 
-  public static LibP2PGossipNetwork create(
-      MetricsSystem metricsSystem,
-      GossipConfig gossipConfig,
-      PreparedGossipMessageFactory defaultMessageFactory,
-      GossipTopicFilter gossipTopicFilter,
-      boolean logWireGossip) {
-
-    TopicHandlers topicHandlers = new TopicHandlers();
-    Gossip gossip =
-        createGossip(
-            gossipConfig, logWireGossip, defaultMessageFactory, gossipTopicFilter, topicHandlers);
-    PubsubPublisherApi publisher = gossip.createPublisher(null, NULL_SEQNO_GENERATOR);
-
-    return new LibP2PGossipNetwork(metricsSystem, gossip, publisher, topicHandlers);
-  }
-
-  private static Gossip createGossip(
-      GossipConfig gossipConfig,
-      boolean gossipLogsEnabled,
-      PreparedGossipMessageFactory defaultMessageFactory,
-      GossipTopicFilter gossipTopicFilter,
-      TopicHandlers topicHandlers) {
-    final GossipParams gossipParams = LibP2PParamsFactory.createGossipParams(gossipConfig);
-    final GossipScoreParams scoreParams =
-        LibP2PParamsFactory.createGossipScoreParams(gossipConfig.getScoringConfig());
-
-    final TopicSubscriptionFilter subscriptionFilter =
-        new MaxCountTopicSubscriptionFilter(100, 200, gossipTopicFilter::isRelevantTopic);
-    GossipRouter router =
-        new GossipRouter(
-            gossipParams, scoreParams, PubsubProtocol.Gossip_V_1_1, subscriptionFilter) {
-
-          final SeenCache<Optional<ValidationResult>> seenCache =
-              new TTLSeenCache<>(
-                  new FastIdSeenCache<>(
-                      msg -> Hash.sha256(msg.getProtobufMessage().getData().toByteArray())),
-                  gossipParams.getSeenTTL(),
-                  getCurTimeMillis());
-
-          @NotNull
-          @Override
-          protected SeenCache<Optional<ValidationResult>> getSeenMessages() {
-            return seenCache;
-          }
-        };
-
-    router.setMessageFactory(
-        msg -> {
-          Preconditions.checkArgument(
-              msg.getTopicIDsCount() == 1,
-              "Unexpected number of topics for a single message: " + msg.getTopicIDsCount());
-          String topic = msg.getTopicIDs(0);
-          Bytes payload = Bytes.wrap(msg.getData().toByteArray());
-
-          PreparedGossipMessage preparedMessage =
-              topicHandlers
-                  .getHandlerForTopic(topic)
-                  .map(handler -> handler.prepareMessage(payload))
-                  .orElse(defaultMessageFactory.create(topic, payload));
-
-          return new PreparedPubsubMessage(msg, preparedMessage);
-        });
-    router.setMessageValidator(STRICT_FIELDS_VALIDATOR);
-
-    ChannelHandler debugHandler =
-        gossipLogsEnabled ? new LoggingHandler("wire.gossip", LogLevel.DEBUG) : null;
-    PubsubApi pubsubApi = PubsubApiKt.createPubsubApi(router);
-
-    return new Gossip(router, pubsubApi, debugHandler);
-  }
-
-  public LibP2PGossipNetwork(
+  LibP2PGossipNetwork(
       MetricsSystem metricsSystem,
       Gossip gossip,
       PubsubPublisherApi publisher,
-      TopicHandlers topicHandlers) {
+      GossipTopicHandlers topicHandlers) {
     this.metricsSystem = metricsSystem;
     this.gossip = gossip;
     this.publisher = publisher;
@@ -207,18 +112,5 @@ public class LibP2PGossipNetwork implements GossipNetwork {
 
   public Gossip getGossip() {
     return gossip;
-  }
-
-  private static class TopicHandlers {
-
-    private final Map<String, TopicHandler> topicToHandlerMap = new ConcurrentHashMap<>();
-
-    public void add(String topic, TopicHandler handler) {
-      topicToHandlerMap.put(topic, handler);
-    }
-
-    public Optional<TopicHandler> getHandlerForTopic(String topic) {
-      return Optional.ofNullable(topicToHandlerMap.get(topic));
-    }
   }
 }
