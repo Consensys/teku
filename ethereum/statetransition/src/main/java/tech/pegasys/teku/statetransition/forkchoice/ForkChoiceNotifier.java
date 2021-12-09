@@ -16,8 +16,6 @@ package tech.pegasys.teku.statetransition.forkchoice;
 import static com.google.common.base.Preconditions.checkState;
 
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,16 +24,12 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.type.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.versions.merge.BeaconPreparableProposer;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult;
@@ -43,15 +37,12 @@ import tech.pegasys.teku.spec.executionengine.PayloadAttributes;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class ForkChoiceNotifier {
-  private static final long MAX_PROPOSER_SEEN_EPOCHS = 2;
   private static final Logger LOG = LogManager.getLogger();
 
   private final EventThread eventThread;
-  private final Spec spec;
   private final ExecutionEngineChannel executionEngineChannel;
   private final RecentChainData recentChainData;
-
-  private final Map<UInt64, ProposerInfo> proposerInfoByValidatorIndex = new HashMap<>();
+  private final PayloadAttributesCalculator payloadAttributesCalculator;
 
   private Optional<ForkChoiceState> forkChoiceState = Optional.empty();
   private Optional<PayloadAttributes> payloadAttributes = Optional.empty();
@@ -67,13 +58,13 @@ public class ForkChoiceNotifier {
 
   ForkChoiceNotifier(
       final EventThread eventThread,
-      final Spec spec,
       final ExecutionEngineChannel executionEngineChannel,
-      final RecentChainData recentChainData) {
+      final RecentChainData recentChainData,
+      final PayloadAttributesCalculator payloadAttributesCalculator) {
     this.eventThread = eventThread;
-    this.spec = spec;
     this.executionEngineChannel = executionEngineChannel;
     this.recentChainData = recentChainData;
+    this.payloadAttributesCalculator = payloadAttributesCalculator;
   }
 
   public static ForkChoiceNotifier create(
@@ -84,7 +75,11 @@ public class ForkChoiceNotifier {
     final AsyncRunnerEventThread eventThread =
         new AsyncRunnerEventThread("forkChoiceNotifier", asyncRunnerFactory);
     eventThread.start();
-    return new ForkChoiceNotifier(eventThread, spec, executionEngineChannel, recentChainData);
+    return new ForkChoiceNotifier(
+        eventThread,
+        executionEngineChannel,
+        recentChainData,
+        new PayloadAttributesCalculator(spec, eventThread, recentChainData));
   }
 
   public void onUpdatePreparableProposers(final Collection<BeaconPreparableProposer> proposers) {
@@ -251,16 +246,7 @@ public class ForkChoiceNotifier {
     // Default to the genesis slot if we're pre-genesis.
     final UInt64 currentSlot = recentChainData.getCurrentSlot().orElse(SpecConfig.GENESIS_SLOT);
 
-    // Remove expired validators
-    proposerInfoByValidatorIndex.values().removeIf(info -> info.hasExpired(currentSlot));
-
-    // Update validators
-    final UInt64 expirySlot =
-        currentSlot.plus(spec.getSlotsPerEpoch(currentSlot) * MAX_PROPOSER_SEEN_EPOCHS);
-    for (BeaconPreparableProposer proposer : proposers) {
-      proposerInfoByValidatorIndex.put(
-          proposer.getValidatorIndex(), new ProposerInfo(expirySlot, proposer.getFeeRecipient()));
-    }
+    payloadAttributesCalculator.updateProposers(proposers, currentSlot);
 
     // Update payload attributes in case we now need to propose the next block
     updatePayloadAttributes(currentSlot.plus(1));
@@ -313,7 +299,8 @@ public class ForkChoiceNotifier {
   }
 
   private void updatePayloadAttributes(final UInt64 blockSlot) {
-    calculatePayloadAttributes(blockSlot)
+    payloadAttributesCalculator
+        .calculatePayloadAttributes(blockSlot, inSync, forkChoiceState)
         .thenAcceptAsync(
             newPayloadAttributes -> updatePayloadAttributes(blockSlot, newPayloadAttributes),
             eventThread)
@@ -352,73 +339,5 @@ public class ForkChoiceNotifier {
       return Optional.empty();
     }
     return result.getPayloadId();
-  }
-
-  private SafeFuture<Optional<PayloadAttributes>> calculatePayloadAttributes(
-      final UInt64 blockSlot) {
-    eventThread.checkOnEventThread();
-    if (!inSync) {
-      // We don't produce blocks while syncing so don't bother preparing the payload
-      return SafeFuture.completedFuture(Optional.empty());
-    }
-    if (forkChoiceState.isEmpty() || forkChoiceState.get().getHeadBlockHash().isZero()) {
-      // No forkChoiceUpdated message will be sent so no point calculating payload attributes
-      return SafeFuture.completedFuture(Optional.empty());
-    }
-    if (!recentChainData.isJustifiedCheckpointFullyValidated()) {
-      // If we've optimistically synced far enough that our justified checkpoint is optimistic,
-      // stop producing blocks because the majority of validators see the optimistic chain as valid.
-      return SafeFuture.completedFuture(Optional.empty());
-    }
-    final UInt64 epoch = spec.computeEpochAtSlot(blockSlot);
-    return getStateInEpoch(epoch)
-        .thenApplyAsync(
-            maybeState -> calculatePayloadAttributes(blockSlot, epoch, maybeState), eventThread);
-  }
-
-  private Optional<PayloadAttributes> calculatePayloadAttributes(
-      final UInt64 blockSlot, final UInt64 epoch, final Optional<BeaconState> maybeState) {
-    eventThread.checkOnEventThread();
-    if (maybeState.isEmpty()) {
-      return Optional.empty();
-    }
-    final BeaconState state = maybeState.get();
-    final UInt64 proposerIndex = UInt64.valueOf(spec.getBeaconProposerIndex(state, blockSlot));
-    final ProposerInfo proposerInfo = proposerInfoByValidatorIndex.get(proposerIndex);
-    if (proposerInfo == null) {
-      // Proposer is not one of our validators. No need to propose a block.
-      return Optional.empty();
-    }
-    final UInt64 timestamp = spec.computeTimeAtSlot(state, blockSlot);
-    final Bytes32 random = spec.getRandaoMix(state, epoch);
-    return Optional.of(new PayloadAttributes(timestamp, random, proposerInfo.feeRecipient));
-  }
-
-  private SafeFuture<Optional<BeaconState>> getStateInEpoch(final UInt64 requiredEpoch) {
-    final Optional<StateAndBlockSummary> chainHead = recentChainData.getChainHead();
-    if (chainHead.isEmpty()) {
-      return SafeFuture.completedFuture(Optional.empty());
-    }
-    final StateAndBlockSummary head = chainHead.get();
-    if (spec.computeEpochAtSlot(head.getSlot()).equals(requiredEpoch)) {
-      return SafeFuture.completedFuture(Optional.of(head.getState()));
-    } else {
-      return recentChainData.retrieveStateAtSlot(
-          new SlotAndBlockRoot(spec.computeStartSlotAtEpoch(requiredEpoch), head.getRoot()));
-    }
-  }
-
-  private static class ProposerInfo {
-    UInt64 expirySlot;
-    Bytes20 feeRecipient;
-
-    public ProposerInfo(UInt64 expirySlot, Bytes20 feeRecipient) {
-      this.expirySlot = expirySlot;
-      this.feeRecipient = feeRecipient;
-    }
-
-    public boolean hasExpired(final UInt64 currentSlot) {
-      return currentSlot.isGreaterThanOrEqualTo(expirySlot);
-    }
   }
 }
