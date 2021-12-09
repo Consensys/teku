@@ -53,13 +53,13 @@ public class ValidatorKeysAcceptanceTest extends AcceptanceTestBase {
     beaconNode.start();
     validatorClient.start();
 
-    api.assertValidatorsAreExactly(Collections.emptyList());
+    api.assertValidatorListing(Collections.emptyList());
 
     api.addValidatorsAndExpect(validatorKeystores, "imported");
 
     validatorClient.waitForLogMessageContaining("Added validator");
     validatorClient.waitForLogMessageContaining("Published block");
-    api.assertValidatorsAreExactly(validatorKeystores.getPublicKeys());
+    api.assertValidatorListing(validatorKeystores.getPublicKeys());
 
     // second add attempt would be duplicates
     api.addValidatorsAndExpect(validatorKeystores, "duplicate");
@@ -75,7 +75,7 @@ public class ValidatorKeysAcceptanceTest extends AcceptanceTestBase {
     // should only be 7 validators left
     validatorClient.waitForLogMessageContaining("Removed validator");
     validatorClient.waitForLogMessageContaining("Published block");
-    api.assertValidatorsAreExactly(validatorKeystores.getPublicKeys().subList(1, 7));
+    api.assertValidatorListing(validatorKeystores.getPublicKeys().subList(1, 7));
 
     // remove the same validator again
     api.removeValidatorAndCheckStatus(removedPubkey, "not_active");

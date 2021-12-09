@@ -69,7 +69,7 @@ public class ValidatorKeysApi {
     }
   }
 
-  public void assertValidatorsAreExactly(final List<BLSPublicKey> expectedKeys) throws IOException {
+  public void assertValidatorListing(final List<BLSPublicKey> expectedKeys) throws IOException {
     final JsonNode result = jsonProvider.getObjectMapper().readTree(getValidatorListing());
     final JsonNode data = result.get("data");
     assertThat(data.isArray()).isTrue();

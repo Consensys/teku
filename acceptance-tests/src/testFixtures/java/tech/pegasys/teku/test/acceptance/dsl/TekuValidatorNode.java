@@ -36,7 +36,8 @@ public class TekuValidatorNode extends Node {
   private final TekuValidatorNode.Config config;
   private boolean started = false;
   private Set<File> configFiles;
-  private final ValidatorKeysApi validatorKeysApi = new ValidatorKeysApi(httpClient, this::getValidatorApiUrl);
+  private final ValidatorKeysApi validatorKeysApi =
+      new ValidatorKeysApi(httpClient, this::getValidatorApiUrl);
 
   private TekuValidatorNode(
       final Network network, final DockerVersion version, final TekuValidatorNode.Config config) {
