@@ -25,7 +25,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -118,11 +117,6 @@ public class Eth2P2PNetworkBuilder {
   protected OperationProcessor<ValidateableSyncCommitteeMessage>
       gossipedSyncCommitteeMessageProcessor;
   protected GossipPublisher<ValidateableSyncCommitteeMessage> syncCommitteeMessageGossipPublisher;
-
-  protected Supplier<DiscoveryNetworkBuilder> discoveryNetworkBuilderSupplier =
-      DiscoveryNetworkBuilder::create;
-  protected Supplier<LibP2PNetworkBuilder> libP2PNetworkBuilderSupplier =
-      LibP2PNetworkBuilder::create;
 
   protected Eth2P2PNetworkBuilder() {}
 
@@ -281,8 +275,7 @@ public class Eth2P2PNetworkBuilder {
     final DiscoveryConfig discoConfig = config.getDiscoveryConfig();
 
     final P2PNetwork<Peer> p2pNetwork =
-        libP2PNetworkBuilderSupplier
-            .get()
+        createLibP2PNetworkBuilder()
             .asyncRunner(asyncRunner)
             .metricsSystem(metricsSystem)
             .config(networkConfig)
@@ -307,8 +300,7 @@ public class Eth2P2PNetworkBuilder {
             discoConfig.getMinRandomlySelectedPeers());
     final SchemaDefinitionsSupplier currentSchemaDefinitions =
         () -> recentChainData.getCurrentSpec().getSchemaDefinitions();
-    return discoveryNetworkBuilderSupplier
-        .get()
+    return createDiscoveryNetworkBuilder()
         .metricsSystem(metricsSystem)
         .asyncRunner(asyncRunner)
         .kvStore(keyValueStore)
@@ -331,6 +323,14 @@ public class Eth2P2PNetworkBuilder {
         .spec(config.getSpec())
         .currentSchemaDefinitionsSupplier(currentSchemaDefinitions)
         .build();
+  }
+
+  protected DiscoveryNetworkBuilder createDiscoveryNetworkBuilder() {
+    return DiscoveryNetworkBuilder.create();
+  }
+
+  protected LibP2PNetworkBuilder createLibP2PNetworkBuilder() {
+    return LibP2PNetworkBuilder.create();
   }
 
   private void validate() {
@@ -540,19 +540,6 @@ public class Eth2P2PNetworkBuilder {
   public Eth2P2PNetworkBuilder specProvider(final Spec spec) {
     checkNotNull(spec);
     this.spec = spec;
-    return this;
-  }
-
-  public Eth2P2PNetworkBuilder discoveryNetworkBuilderSupplier(
-      Supplier<DiscoveryNetworkBuilder> discoveryNetworkBuilderSupplier) {
-    checkNotNull(discoveryNetworkBuilderSupplier);
-    this.discoveryNetworkBuilderSupplier = discoveryNetworkBuilderSupplier;
-    return this;
-  }
-
-  public Eth2P2PNetworkBuilder libP2PNetworkBuilderSupplier(
-      Supplier<LibP2PNetworkBuilder> libP2PNetworkBuilderSupplier) {
-    this.libP2PNetworkBuilderSupplier = libP2PNetworkBuilderSupplier;
     return this;
   }
 }
