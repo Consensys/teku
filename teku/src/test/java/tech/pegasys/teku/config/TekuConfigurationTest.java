@@ -26,6 +26,8 @@ import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkBuilder;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetworkBuilder;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetworkBuilder;
+import tech.pegasys.teku.networking.p2p.libp2p.gossip.LibP2PGossipNetwork;
+import tech.pegasys.teku.networking.p2p.libp2p.gossip.LibP2PGossipNetworkBuilder;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.services.beaconchain.BeaconChainController;
@@ -39,6 +41,7 @@ public class TekuConfigurationTest {
   void beaconChainControllerFactory_useCustomFactories() {
     AtomicBoolean customDiscoveryBuilderMethodCalled = new AtomicBoolean();
     AtomicBoolean customLibP2PBuilderMethodCalled = new AtomicBoolean();
+    AtomicBoolean customGossipNetworkBuilderCalled = new AtomicBoolean();
 
     DiscoveryNetworkBuilder customDiscoveryNetworkBuilder =
         new DiscoveryNetworkBuilder() {
@@ -49,12 +52,26 @@ public class TekuConfigurationTest {
           }
         };
 
+    LibP2PGossipNetworkBuilder customGossipNetworkBuilder =
+        new LibP2PGossipNetworkBuilder() {
+          @Override
+          public LibP2PGossipNetwork build() {
+            customGossipNetworkBuilderCalled.set(true);
+            return super.build();
+          }
+        };
+
     LibP2PNetworkBuilder customLibP2PNetworkBuilder =
         new LibP2PNetworkBuilder() {
           @Override
           public P2PNetwork<Peer> build() {
             customLibP2PBuilderMethodCalled.set(true);
             return super.build();
+          }
+
+          @Override
+          protected LibP2PGossipNetworkBuilder createLibP2PGossipNetworkBuilder() {
+            return customGossipNetworkBuilder;
           }
         };
 
@@ -87,12 +104,11 @@ public class TekuConfigurationTest {
             .beaconChainControllerFactory(customControllerFactory)
             .build();
 
-    BeaconNodeFacade beaconNode = TekuFacade.startBeaconNode(tekuConfiguration);
-
-    assertThat(beaconNode).isNotNull();
-    assertThat(customDiscoveryBuilderMethodCalled).isTrue();
-    assertThat(customLibP2PBuilderMethodCalled).isTrue();
-
-    beaconNode.stop();
+    try(BeaconNodeFacade beaconNode = TekuFacade.startBeaconNode(tekuConfiguration)) {
+      assertThat(beaconNode).isNotNull();
+      assertThat(customDiscoveryBuilderMethodCalled).isTrue();
+      assertThat(customLibP2PBuilderMethodCalled).isTrue();
+      assertThat(customGossipNetworkBuilderCalled).isTrue();
+    }
   }
 }
