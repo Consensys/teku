@@ -22,6 +22,12 @@ import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.BeaconNodeFacade;
 import tech.pegasys.teku.TekuFacade;
 import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
+import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkBuilder;
+import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
+import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetworkBuilder;
+import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetworkBuilder;
+import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
+import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.services.beaconchain.BeaconChainController;
 import tech.pegasys.teku.services.beaconchain.BeaconChainControllerFactory;
 
@@ -30,15 +36,47 @@ public class TekuConfigurationTest {
   @TempDir Path tempDir;
 
   @Test
-  void beaconChainControllerFactory_useCustomFactory() {
-    AtomicBoolean customMethodCalled = new AtomicBoolean();
+  void beaconChainControllerFactory_useCustomFactories() {
+    AtomicBoolean customDiscoveryBuilderMethodCalled = new AtomicBoolean();
+    AtomicBoolean customLibP2PBuilderMethodCalled = new AtomicBoolean();
+
+    DiscoveryNetworkBuilder customDiscoveryNetworkBuilder =
+        new DiscoveryNetworkBuilder() {
+          @Override
+          public DiscoveryNetwork<?> build() {
+            customDiscoveryBuilderMethodCalled.set(true);
+            return super.build();
+          }
+        };
+
+    LibP2PNetworkBuilder customLibP2PNetworkBuilder =
+        new LibP2PNetworkBuilder() {
+          @Override
+          public P2PNetwork<Peer> build() {
+            customLibP2PBuilderMethodCalled.set(true);
+            return super.build();
+          }
+        };
+
+    Eth2P2PNetworkBuilder customEth2P2PNetworkBuilder =
+        new Eth2P2PNetworkBuilder() {
+          @Override
+          protected DiscoveryNetworkBuilder createDiscoveryNetworkBuilder() {
+            return customDiscoveryNetworkBuilder;
+          }
+
+          @Override
+          protected LibP2PNetworkBuilder createLibP2PNetworkBuilder() {
+            return customLibP2PNetworkBuilder;
+          }
+        };
+
     BeaconChainControllerFactory customControllerFactory =
         (serviceConfig, beaconConfig) ->
             new BeaconChainController(serviceConfig, beaconConfig) {
               @Override
-              protected void initP2PNetwork() {
-                super.initP2PNetwork();
-                customMethodCalled.set(true);
+              protected Eth2P2PNetworkBuilder createEth2P2PNetworkBuilder() {
+                return customEth2P2PNetworkBuilder;
               }
             };
 
@@ -52,7 +90,8 @@ public class TekuConfigurationTest {
     BeaconNodeFacade beaconNode = TekuFacade.startBeaconNode(tekuConfiguration);
 
     assertThat(beaconNode).isNotNull();
-    assertThat(customMethodCalled).isTrue();
+    assertThat(customDiscoveryBuilderMethodCalled).isTrue();
+    assertThat(customLibP2PBuilderMethodCalled).isTrue();
 
     beaconNode.stop();
   }

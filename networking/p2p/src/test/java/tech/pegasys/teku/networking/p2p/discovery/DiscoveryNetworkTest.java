@@ -158,17 +158,18 @@ class DiscoveryNetworkTest {
     final NetworkConfig networkConfig = NetworkConfig.builder().build();
     final PeerSelectionStrategy peerSelectionStrategy =
         new SimplePeerSelectionStrategy(new TargetPeerRange(20, 30, 0));
-    final DiscoveryNetwork<Peer> network =
-        DiscoveryNetwork.create(
-            new NoOpMetricsSystem(),
-            DelayedExecutorAsyncRunner.create(),
-            new MemKeyValueStore<>(),
-            p2pNetwork,
-            peerSelectionStrategy,
-            discoveryConfig,
-            networkConfig,
-            spec,
-            spec::getGenesisSchemaDefinitions);
+    final DiscoveryNetwork<?> network =
+        DiscoveryNetworkBuilder.create()
+            .metricsSystem(new NoOpMetricsSystem())
+            .asyncRunner(DelayedExecutorAsyncRunner.create())
+            .kvStore(new MemKeyValueStore<>())
+            .p2pNetwork(p2pNetwork)
+            .peerSelectionStrategy(peerSelectionStrategy)
+            .discoveryConfig(discoveryConfig)
+            .p2pConfig(networkConfig)
+            .spec(spec)
+            .currentSchemaDefinitionsSupplier(spec::getGenesisSchemaDefinitions)
+            .build();
     assertThat(network.getEnr()).isEmpty();
   }
 

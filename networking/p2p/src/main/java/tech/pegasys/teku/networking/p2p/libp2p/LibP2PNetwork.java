@@ -16,60 +16,35 @@ package tech.pegasys.teku.networking.p2p.libp2p;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
-import identify.pb.IdentifyOuterClass;
 import io.libp2p.core.Host;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.crypto.PrivKey;
-import io.libp2p.core.dsl.Builder.Defaults;
-import io.libp2p.core.dsl.BuilderJKt;
 import io.libp2p.core.multiformats.Multiaddr;
-import io.libp2p.core.multistream.ProtocolBinding;
-import io.libp2p.core.mux.StreamMuxerProtocol;
-import io.libp2p.etc.types.ByteArrayExtKt;
-import io.libp2p.protocol.Identify;
-import io.libp2p.protocol.Ping;
-import io.libp2p.security.noise.NoiseXXSecureChannel;
-import io.libp2p.transport.tcp.TcpTransport;
-import io.netty.handler.logging.LogLevel;
-import java.net.InetSocketAddress;
-import java.time.Duration;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
-import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
-import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessageFactory;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipTopicsScoringConfig;
-import tech.pegasys.teku.networking.p2p.libp2p.gossip.GossipTopicFilter;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.LibP2PGossipNetwork;
-import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
-import tech.pegasys.teku.networking.p2p.network.PeerHandler;
-import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
-import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
-import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 
 public class LibP2PNetwork implements P2PNetwork<Peer> {
 
   private static final Logger LOG = LogManager.getLogger();
-  private static final int REMOTE_OPEN_STREAMS_RATE_LIMIT = 256;
-  private static final int REMOTE_PARALLEL_OPEN_STREAMS_COUNT_LIMIT = 256;
+  static final int REMOTE_OPEN_STREAMS_RATE_LIMIT = 256;
+  static final int REMOTE_PARALLEL_OPEN_STREAMS_COUNT_LIMIT = 256;
 
   private final PrivKey privKey;
   private final NodeId nodeId;
@@ -82,99 +57,21 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   private final AtomicReference<State> state = new AtomicReference<>(State.IDLE);
   private final int listenPort;
 
-  public LibP2PNetwork(
-      final AsyncRunner asyncRunner,
-      final NetworkConfig config,
-      final PrivateKeyProvider privateKeyProvider,
-      final ReputationManager reputationManager,
-      final MetricsSystem metricsSystem,
-      final List<RpcMethod<?, ?, ?>> rpcMethods,
-      final List<PeerHandler> peerHandlers,
-      final PreparedGossipMessageFactory defaultMessageFactory,
-      final GossipTopicFilter gossipTopicFilter) {
-    this.privKey = privateKeyProvider.get();
-    this.nodeId = new LibP2PNodeId(PeerId.fromPubKey(privKey.publicKey()));
-
-    advertisedAddr =
-        MultiaddrUtil.fromInetSocketAddress(
-            new InetSocketAddress(config.getAdvertisedIp(), config.getAdvertisedPort()), nodeId);
-    this.listenPort = config.getListenPort();
-
-    // Setup gossip
-    gossipNetwork =
-        LibP2PGossipNetwork.create(
-            metricsSystem,
-            config.getGossipConfig(),
-            defaultMessageFactory,
-            gossipTopicFilter,
-            config.getWireLogsConfig().isLogWireGossip());
-
-    // Setup rpc methods
-    final List<RpcHandler<?, ?, ?>> rpcHandlers =
-        rpcMethods.stream().map(m -> new RpcHandler<>(asyncRunner, m)).collect(Collectors.toList());
-
-    // Setup peers
-    peerManager =
-        new PeerManager(
-            metricsSystem,
-            reputationManager,
-            peerHandlers,
-            rpcHandlers,
-            (peerId) -> gossipNetwork.getGossip().getGossipScore(peerId));
-
-    final Multiaddr listenAddr =
-        MultiaddrUtil.fromInetSocketAddress(
-            new InetSocketAddress(config.getNetworkInterface(), config.getListenPort()));
-    host =
-        BuilderJKt.hostJ(
-            Defaults.None,
-            b -> {
-              b.getIdentity().setFactory(() -> privKey);
-              b.getTransports().add(TcpTransport::new);
-              b.getSecureChannels().add(NoiseXXSecureChannel::new);
-              b.getMuxers().add(StreamMuxerProtocol.getMplex());
-
-              b.getNetwork().listen(listenAddr.toString());
-
-              b.getProtocols().addAll(getDefaultProtocols());
-              b.getProtocols().addAll(rpcHandlers);
-
-              if (config.getWireLogsConfig().isLogWireCipher()) {
-                b.getDebug().getBeforeSecureHandler().addLogger(LogLevel.DEBUG, "wire.ciphered");
-              }
-              Firewall firewall = new Firewall(Duration.ofSeconds(30));
-              b.getDebug().getBeforeSecureHandler().addNettyHandler(firewall);
-
-              if (config.getWireLogsConfig().isLogWirePlain()) {
-                b.getDebug().getAfterSecureHandler().addLogger(LogLevel.DEBUG, "wire.plain");
-              }
-              if (config.getWireLogsConfig().isLogWireMuxFrames()) {
-                b.getDebug().getMuxFramesHandler().addLogger(LogLevel.DEBUG, "wire.mux");
-              }
-
-              b.getConnectionHandlers().add(peerManager);
-
-              MplexFirewall mplexFirewall =
-                  new MplexFirewall(
-                      REMOTE_OPEN_STREAMS_RATE_LIMIT, REMOTE_PARALLEL_OPEN_STREAMS_COUNT_LIMIT);
-              b.getDebug().getMuxFramesHandler().addHandler(mplexFirewall);
-            });
-  }
-
-  private List<ProtocolBinding<?>> getDefaultProtocols() {
-    final Ping ping = new Ping();
-    IdentifyOuterClass.Identify identifyMsg =
-        IdentifyOuterClass.Identify.newBuilder()
-            .setProtocolVersion("ipfs/0.1.0")
-            .setAgentVersion(VersionProvider.CLIENT_IDENTITY + "/" + VersionProvider.VERSION)
-            .setPublicKey(ByteArrayExtKt.toProtobuf(privKey.publicKey().bytes()))
-            .addListenAddrs(ByteArrayExtKt.toProtobuf(advertisedAddr.getBytes()))
-            .setObservedAddr(ByteArrayExtKt.toProtobuf(advertisedAddr.getBytes()))
-            .addAllProtocols(ping.getProtocolDescriptor().getAnnounceProtocols())
-            .addAllProtocols(
-                gossipNetwork.getGossip().getProtocolDescriptor().getAnnounceProtocols())
-            .build();
-    return List.of(ping, new Identify(identifyMsg), gossipNetwork.getGossip());
+  protected LibP2PNetwork(
+      PrivKey privKey,
+      NodeId nodeId,
+      Host host,
+      PeerManager peerManager,
+      Multiaddr advertisedAddr,
+      LibP2PGossipNetwork gossipNetwork,
+      int listenPort) {
+    this.privKey = privKey;
+    this.nodeId = nodeId;
+    this.host = host;
+    this.peerManager = peerManager;
+    this.advertisedAddr = advertisedAddr;
+    this.gossipNetwork = gossipNetwork;
+    this.listenPort = listenPort;
   }
 
   @Override

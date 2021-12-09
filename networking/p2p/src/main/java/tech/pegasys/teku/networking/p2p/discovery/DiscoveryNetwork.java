@@ -13,27 +13,19 @@
 
 package tech.pegasys.teku.networking.p2p.discovery;
 
-import static java.util.stream.Collectors.toList;
-
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.p2p.connection.ConnectionManager;
-import tech.pegasys.teku.networking.p2p.connection.PeerSelectionStrategy;
-import tech.pegasys.teku.networking.p2p.discovery.discv5.DiscV5Service;
-import tech.pegasys.teku.networking.p2p.discovery.noop.NoOpDiscoveryService;
 import tech.pegasys.teku.networking.p2p.network.DelegatingP2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
-import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
@@ -44,7 +36,6 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
-import tech.pegasys.teku.storage.store.KeyValueStore;
 
 public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   private static final Logger LOG = LogManager.getLogger();
@@ -61,7 +52,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
 
   private volatile Optional<EnrForkId> enrForkId = Optional.empty();
 
-  DiscoveryNetwork(
+  protected DiscoveryNetwork(
       final P2PNetwork<P> p2pNetwork,
       final DiscoveryService discoveryService,
       final ConnectionManager connectionManager,
@@ -83,64 +74,6 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
     // Set connection manager peer predicate so that we don't attempt to connect peers with
     // different fork digests
     connectionManager.addPeerPredicate(this::dontConnectPeersWithDifferentForkDigests);
-  }
-
-  public static <P extends Peer> DiscoveryNetwork<P> create(
-      final MetricsSystem metricsSystem,
-      final AsyncRunner asyncRunner,
-      final KeyValueStore<String, Bytes> kvStore,
-      final P2PNetwork<P> p2pNetwork,
-      final PeerSelectionStrategy peerSelectionStrategy,
-      final DiscoveryConfig discoveryConfig,
-      final NetworkConfig p2pConfig,
-      final Spec spec,
-      final SchemaDefinitionsSupplier currentSchemaDefinitionsSupplier) {
-    final DiscoveryService discoveryService =
-        createDiscoveryService(
-            metricsSystem,
-            asyncRunner,
-            discoveryConfig,
-            p2pConfig,
-            kvStore,
-            p2pNetwork.getPrivateKey(),
-            currentSchemaDefinitionsSupplier);
-    final ConnectionManager connectionManager =
-        new ConnectionManager(
-            metricsSystem,
-            discoveryService,
-            asyncRunner,
-            p2pNetwork,
-            peerSelectionStrategy,
-            discoveryConfig.getStaticPeers().stream()
-                .map(p2pNetwork::createPeerAddress)
-                .collect(toList()));
-    return new DiscoveryNetwork<>(
-        p2pNetwork, discoveryService, connectionManager, spec, currentSchemaDefinitionsSupplier);
-  }
-
-  private static DiscoveryService createDiscoveryService(
-      final MetricsSystem metricsSystem,
-      final AsyncRunner asyncRunner,
-      final DiscoveryConfig discoConfig,
-      final NetworkConfig p2pConfig,
-      final KeyValueStore<String, Bytes> kvStore,
-      final Bytes privateKey,
-      final SchemaDefinitionsSupplier currentSchemaDefinitionsSupplier) {
-    final DiscoveryService discoveryService;
-    if (discoConfig.isDiscoveryEnabled()) {
-      discoveryService =
-          new DiscV5Service(
-              metricsSystem,
-              asyncRunner,
-              discoConfig,
-              p2pConfig,
-              kvStore,
-              privateKey,
-              currentSchemaDefinitionsSupplier);
-    } else {
-      discoveryService = new NoOpDiscoveryService();
-    }
-    return discoveryService;
   }
 
   @Override

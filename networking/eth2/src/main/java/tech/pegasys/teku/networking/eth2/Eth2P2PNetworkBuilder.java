@@ -49,12 +49,15 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
+import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetworkBuilder;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessageFactory;
-import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetwork;
+import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetworkBuilder;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PPrivateKeyLoader;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.GossipTopicFilter;
+import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerHandler;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
+import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.spec.Spec;
@@ -74,44 +77,48 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.KeyValueStore;
 import tech.pegasys.teku.util.config.Constants;
 
+/**
+ * CAUTION: this API is unstable and primarily intended for debugging and testing purposes this API
+ * might be changed in any version in backward incompatible way
+ */
 public class Eth2P2PNetworkBuilder {
   public static final Duration DEFAULT_ETH2_RPC_PING_INTERVAL = Duration.ofSeconds(10);
   public static final int DEFAULT_ETH2_RPC_OUTSTANDING_PING_THRESHOLD = 2;
   public static final Duration DEFAULT_ETH2_STATUS_UPDATE_INTERVAL = Duration.ofMinutes(5);
 
-  private P2PConfig config;
-  private EventChannels eventChannels;
-  private RecentChainData recentChainData;
-  private OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
-  private OperationProcessor<ValidateableAttestation> gossipedAttestationConsumer;
-  private OperationProcessor<ValidateableAttestation> gossipedAggregateProcessor;
-  private OperationProcessor<AttesterSlashing> gossipedAttesterSlashingConsumer;
-  private GossipPublisher<AttesterSlashing> attesterSlashingGossipPublisher;
-  private OperationProcessor<ProposerSlashing> gossipedProposerSlashingConsumer;
-  private GossipPublisher<ProposerSlashing> proposerSlashingGossipPublisher;
-  private OperationProcessor<SignedVoluntaryExit> gossipedVoluntaryExitConsumer;
-  private GossipPublisher<SignedVoluntaryExit> voluntaryExitGossipPublisher;
-  private ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
-  private StorageQueryChannel historicalChainData;
-  private MetricsSystem metricsSystem;
-  private final List<RpcMethod<?, ?, ?>> rpcMethods = new ArrayList<>();
-  private final List<PeerHandler> peerHandlers = new ArrayList<>();
-  private TimeProvider timeProvider;
-  private AsyncRunner asyncRunner;
-  private KeyValueStore<String, Bytes> keyValueStore;
-  private Duration eth2RpcPingInterval = DEFAULT_ETH2_RPC_PING_INTERVAL;
-  private int eth2RpcOutstandingPingThreshold = DEFAULT_ETH2_RPC_OUTSTANDING_PING_THRESHOLD;
-  private final Duration eth2StatusUpdateInterval = DEFAULT_ETH2_STATUS_UPDATE_INTERVAL;
-  private Optional<Checkpoint> requiredCheckpoint = Optional.empty();
-  private Spec spec;
-  private OperationProcessor<SignedContributionAndProof>
+  protected P2PConfig config;
+  protected EventChannels eventChannels;
+  protected RecentChainData recentChainData;
+  protected OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
+  protected OperationProcessor<ValidateableAttestation> gossipedAttestationConsumer;
+  protected OperationProcessor<ValidateableAttestation> gossipedAggregateProcessor;
+  protected OperationProcessor<AttesterSlashing> gossipedAttesterSlashingConsumer;
+  protected GossipPublisher<AttesterSlashing> attesterSlashingGossipPublisher;
+  protected OperationProcessor<ProposerSlashing> gossipedProposerSlashingConsumer;
+  protected GossipPublisher<ProposerSlashing> proposerSlashingGossipPublisher;
+  protected OperationProcessor<SignedVoluntaryExit> gossipedVoluntaryExitConsumer;
+  protected GossipPublisher<SignedVoluntaryExit> voluntaryExitGossipPublisher;
+  protected ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
+  protected StorageQueryChannel historicalChainData;
+  protected MetricsSystem metricsSystem;
+  protected final List<RpcMethod<?, ?, ?>> rpcMethods = new ArrayList<>();
+  protected final List<PeerHandler> peerHandlers = new ArrayList<>();
+  protected TimeProvider timeProvider;
+  protected AsyncRunner asyncRunner;
+  protected KeyValueStore<String, Bytes> keyValueStore;
+  protected Duration eth2RpcPingInterval = DEFAULT_ETH2_RPC_PING_INTERVAL;
+  protected int eth2RpcOutstandingPingThreshold = DEFAULT_ETH2_RPC_OUTSTANDING_PING_THRESHOLD;
+  protected final Duration eth2StatusUpdateInterval = DEFAULT_ETH2_STATUS_UPDATE_INTERVAL;
+  protected Optional<Checkpoint> requiredCheckpoint = Optional.empty();
+  protected Spec spec;
+  protected OperationProcessor<SignedContributionAndProof>
       gossipedSignedContributionAndProofProcessor;
-  private GossipPublisher<SignedContributionAndProof> signedContributionAndProofGossipPublisher;
-  private OperationProcessor<ValidateableSyncCommitteeMessage>
+  protected GossipPublisher<SignedContributionAndProof> signedContributionAndProofGossipPublisher;
+  protected OperationProcessor<ValidateableSyncCommitteeMessage>
       gossipedSyncCommitteeMessageProcessor;
-  private GossipPublisher<ValidateableSyncCommitteeMessage> syncCommitteeMessageGossipPublisher;
+  protected GossipPublisher<ValidateableSyncCommitteeMessage> syncCommitteeMessageGossipPublisher;
 
-  private Eth2P2PNetworkBuilder() {}
+  protected Eth2P2PNetworkBuilder() {}
 
   public static Eth2P2PNetworkBuilder create() {
     return new Eth2P2PNetworkBuilder();
@@ -266,17 +273,21 @@ public class Eth2P2PNetworkBuilder {
         new Eth2GossipTopicFilter(recentChainData, gossipEncoding, spec);
     final NetworkConfig networkConfig = config.getNetworkConfig();
     final DiscoveryConfig discoConfig = config.getDiscoveryConfig();
-    final LibP2PNetwork p2pNetwork =
-        new LibP2PNetwork(
-            asyncRunner,
-            networkConfig,
-            new LibP2PPrivateKeyLoader(keyValueStore, networkConfig.getPrivateKeyFile()),
-            reputationManager,
-            metricsSystem,
-            rpcMethods,
-            peerHandlers,
-            defaultMessageFactory,
-            gossipTopicsFilter);
+
+    final P2PNetwork<Peer> p2pNetwork =
+        createLibP2PNetworkBuilder()
+            .asyncRunner(asyncRunner)
+            .metricsSystem(metricsSystem)
+            .config(networkConfig)
+            .privateKeyProvider(
+                new LibP2PPrivateKeyLoader(keyValueStore, networkConfig.getPrivateKeyFile()))
+            .reputationManager(reputationManager)
+            .rpcMethods(rpcMethods)
+            .peerHandlers(peerHandlers)
+            .preparedGossipMessageFactory(defaultMessageFactory)
+            .gossipTopicFilter(gossipTopicsFilter)
+            .build();
+
     final AttestationSubnetTopicProvider attestationSubnetTopicProvider =
         new AttestationSubnetTopicProvider(recentChainData, gossipEncoding);
     final SyncCommitteeSubnetTopicProvider syncCommitteeSubnetTopicProvider =
@@ -289,27 +300,37 @@ public class Eth2P2PNetworkBuilder {
             discoConfig.getMinRandomlySelectedPeers());
     final SchemaDefinitionsSupplier currentSchemaDefinitions =
         () -> recentChainData.getCurrentSpec().getSchemaDefinitions();
-    return DiscoveryNetwork.create(
-        metricsSystem,
-        asyncRunner,
-        keyValueStore,
-        p2pNetwork,
-        new Eth2PeerSelectionStrategy(
-            targetPeerRange,
-            network ->
-                PeerSubnetSubscriptions.create(
-                    currentSchemaDefinitions,
-                    network,
-                    attestationSubnetTopicProvider,
-                    syncCommitteeSubnetTopicProvider,
-                    syncCommitteeSubnetService,
-                    config.getTargetSubnetSubscriberCount()),
-            reputationManager,
-            Collections::shuffle),
-        discoConfig,
-        networkConfig,
-        config.getSpec(),
-        currentSchemaDefinitions);
+    return createDiscoveryNetworkBuilder()
+        .metricsSystem(metricsSystem)
+        .asyncRunner(asyncRunner)
+        .kvStore(keyValueStore)
+        .p2pNetwork(p2pNetwork)
+        .peerSelectionStrategy(
+            new Eth2PeerSelectionStrategy(
+                targetPeerRange,
+                network ->
+                    PeerSubnetSubscriptions.create(
+                        currentSchemaDefinitions,
+                        network,
+                        attestationSubnetTopicProvider,
+                        syncCommitteeSubnetTopicProvider,
+                        syncCommitteeSubnetService,
+                        config.getTargetSubnetSubscriberCount()),
+                reputationManager,
+                Collections::shuffle))
+        .discoveryConfig(discoConfig)
+        .p2pConfig(networkConfig)
+        .spec(config.getSpec())
+        .currentSchemaDefinitionsSupplier(currentSchemaDefinitions)
+        .build();
+  }
+
+  protected DiscoveryNetworkBuilder createDiscoveryNetworkBuilder() {
+    return DiscoveryNetworkBuilder.create();
+  }
+
+  protected LibP2PNetworkBuilder createLibP2PNetworkBuilder() {
+    return LibP2PNetworkBuilder.create();
   }
 
   private void validate() {

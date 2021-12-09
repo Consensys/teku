@@ -722,7 +722,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         new FileKeyValueStore(beaconDataDirectory.resolve(KEY_VALUE_STORE_SUBDIRECTORY));
 
     this.p2pNetwork =
-        Eth2P2PNetworkBuilder.create()
+        createEth2P2PNetworkBuilder()
             .config(beaconConfig.p2pConfig())
             .eventChannels(eventChannels)
             .recentChainData(recentChainData)
@@ -750,6 +750,10 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             .requiredCheckpoint(weakSubjectivityValidator.getWSCheckpoint())
             .specProvider(spec)
             .build();
+  }
+
+  protected Eth2P2PNetworkBuilder createEth2P2PNetworkBuilder() {
+    return Eth2P2PNetworkBuilder.create();
   }
 
   protected void initSlotProcessor() {

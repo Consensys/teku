@@ -35,9 +35,9 @@ import tech.pegasys.teku.networking.p2p.connection.PeerSelectionStrategy;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
-import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetwork;
+import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetworkBuilder;
+import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetworkBuilder;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
-import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -51,10 +51,10 @@ public class DiscoveryNetworkFactory {
   private static final int MIN_PORT = 9000;
   private static final int MAX_PORT = 12000;
 
-  private final List<DiscoveryNetwork<Peer>> networks = new ArrayList<>();
+  private final List<DiscoveryNetwork<?>> networks = new ArrayList<>();
 
-  public DiscoveryNetworkBuilder builder() {
-    return new DiscoveryNetworkBuilder();
+  public DiscoveryTestNetworkBuilder builder() {
+    return new DiscoveryTestNetworkBuilder();
   }
 
   public void stopAll() throws InterruptedException, ExecutionException, TimeoutException {
@@ -62,24 +62,25 @@ public class DiscoveryNetworkFactory {
         SafeFuture.allOf(networks.stream().map(DiscoveryNetwork::stop).toArray(SafeFuture[]::new)));
   }
 
-  public class DiscoveryNetworkBuilder {
+  public class DiscoveryTestNetworkBuilder {
+
     private final List<String> staticPeers = new ArrayList<>();
     private final List<String> bootnodes = new ArrayList<>();
     private Spec spec = TestSpecFactory.createMinimalPhase0();
 
-    private DiscoveryNetworkBuilder() {}
+    private DiscoveryTestNetworkBuilder() {}
 
-    public DiscoveryNetworkBuilder staticPeer(final String staticPeer) {
+    public DiscoveryTestNetworkBuilder staticPeer(final String staticPeer) {
       this.staticPeers.add(staticPeer);
       return this;
     }
 
-    public DiscoveryNetworkBuilder bootnode(final String bootnode) {
+    public DiscoveryTestNetworkBuilder bootnode(final String bootnode) {
       this.bootnodes.add(bootnode);
       return this;
     }
 
-    public DiscoveryNetwork<Peer> buildAndStart() throws Exception {
+    public DiscoveryNetwork<?> buildAndStart() throws Exception {
       int attempt = 1;
       while (true) {
 
@@ -105,28 +106,32 @@ public class DiscoveryNetworkFactory {
                 Constants.REPUTATION_MANAGER_CAPACITY);
         final PeerSelectionStrategy peerSelectionStrategy =
             new SimplePeerSelectionStrategy(new TargetPeerRange(20, 30, 0));
-        final DiscoveryNetwork<Peer> network =
-            DiscoveryNetwork.create(
-                metricsSystem,
-                DelayedExecutorAsyncRunner.create(),
-                new MemKeyValueStore<>(),
-                new LibP2PNetwork(
-                    DelayedExecutorAsyncRunner.create(),
-                    config,
-                    PrivateKeyGenerator::generate,
-                    reputationManager,
-                    METRICS_SYSTEM,
-                    Collections.emptyList(),
-                    Collections.emptyList(),
-                    (__1, __2) -> {
-                      throw new UnsupportedOperationException();
-                    },
-                    topic -> true),
-                peerSelectionStrategy,
-                discoveryConfig,
-                config,
-                spec,
-                spec::getGenesisSchemaDefinitions);
+        final DiscoveryNetwork<?> network =
+            DiscoveryNetworkBuilder.create()
+                .metricsSystem(metricsSystem)
+                .asyncRunner(DelayedExecutorAsyncRunner.create())
+                .kvStore(new MemKeyValueStore<>())
+                .p2pNetwork(
+                    LibP2PNetworkBuilder.create()
+                        .asyncRunner(DelayedExecutorAsyncRunner.create())
+                        .config(config)
+                        .privateKeyProvider(PrivateKeyGenerator::generate)
+                        .reputationManager(reputationManager)
+                        .metricsSystem(METRICS_SYSTEM)
+                        .rpcMethods(Collections.emptyList())
+                        .peerHandlers(Collections.emptyList())
+                        .preparedGossipMessageFactory(
+                            (__1, __2) -> {
+                              throw new UnsupportedOperationException();
+                            })
+                        .gossipTopicFilter(topic -> true)
+                        .build())
+                .peerSelectionStrategy(peerSelectionStrategy)
+                .discoveryConfig(discoveryConfig)
+                .p2pConfig(config)
+                .spec(spec)
+                .currentSchemaDefinitionsSupplier(spec::getGenesisSchemaDefinitions)
+                .build();
         try {
           network.start().get(30, TimeUnit.SECONDS);
           networks.add(network);

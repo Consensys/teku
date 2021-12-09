@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.network.p2p.DiscoveryNetworkFactory;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
-import tech.pegasys.teku.networking.p2p.peer.Peer;
 
 public class DiscoveryNetworkIntegrationTest {
   private final DiscoveryNetworkFactory discoveryNetworkFactory = new DiscoveryNetworkFactory();
@@ -37,16 +36,16 @@ public class DiscoveryNetworkIntegrationTest {
 
   @Test
   public void shouldConnectToStaticPeers() throws Exception {
-    final DiscoveryNetwork<Peer> network1 = discoveryNetworkFactory.builder().buildAndStart();
-    final DiscoveryNetwork<Peer> network2 =
+    final DiscoveryNetwork<?> network1 = discoveryNetworkFactory.builder().buildAndStart();
+    final DiscoveryNetwork<?> network2 =
         discoveryNetworkFactory.builder().staticPeer(network1.getNodeAddress()).buildAndStart();
     assertConnected(network1, network2);
   }
 
   @Test
   public void shouldReconnectToStaticPeersAfterDisconnection() throws Exception {
-    final DiscoveryNetwork<Peer> network1 = discoveryNetworkFactory.builder().buildAndStart();
-    final DiscoveryNetwork<Peer> network2 =
+    final DiscoveryNetwork<?> network1 = discoveryNetworkFactory.builder().buildAndStart();
+    final DiscoveryNetwork<?> network2 =
         discoveryNetworkFactory.builder().staticPeer(network1.getNodeAddress()).buildAndStart();
     assertConnected(network1, network2);
 
@@ -62,8 +61,8 @@ public class DiscoveryNetworkIntegrationTest {
 
   @Test
   public void shouldReconnectToStaticPeersWhenAlreadyConnected() throws Exception {
-    final DiscoveryNetwork<Peer> network1 = discoveryNetworkFactory.builder().buildAndStart();
-    final DiscoveryNetwork<Peer> network2 =
+    final DiscoveryNetwork<?> network1 = discoveryNetworkFactory.builder().buildAndStart();
+    final DiscoveryNetwork<?> network2 =
         discoveryNetworkFactory.builder().staticPeer(network1.getNodeAddress()).buildAndStart();
     assertConnected(network1, network2);
 
@@ -83,8 +82,8 @@ public class DiscoveryNetworkIntegrationTest {
 
   @Test
   public void shouldConnectToBootnodes() throws Exception {
-    final DiscoveryNetwork<Peer> network1 = discoveryNetworkFactory.builder().buildAndStart();
-    final DiscoveryNetwork<Peer> network2 =
+    final DiscoveryNetwork<?> network1 = discoveryNetworkFactory.builder().buildAndStart();
+    final DiscoveryNetwork<?> network2 =
         discoveryNetworkFactory.builder().bootnode(network1.getEnr().orElseThrow()).buildAndStart();
     assertConnected(network1, network2);
   }
@@ -92,20 +91,20 @@ public class DiscoveryNetworkIntegrationTest {
   @Test
   @Disabled("Discovery library still buggy")
   public void shouldDiscoverPeers() throws Exception {
-    final DiscoveryNetwork<Peer> network1 = discoveryNetworkFactory.builder().buildAndStart();
-    final DiscoveryNetwork<Peer> network2 =
+    final DiscoveryNetwork<?> network1 = discoveryNetworkFactory.builder().buildAndStart();
+    final DiscoveryNetwork<?> network2 =
         discoveryNetworkFactory.builder().bootnode(network1.getEnr().orElseThrow()).buildAndStart();
     assertConnected(network1, network2);
 
     // Only knows about network1, but should discovery network2
-    final DiscoveryNetwork<Peer> network3 =
+    final DiscoveryNetwork<?> network3 =
         discoveryNetworkFactory.builder().bootnode(network1.getEnr().orElseThrow()).buildAndStart();
     assertConnected(network1, network3);
     assertConnected(network2, network3);
   }
 
   private void assertConnected(
-      final DiscoveryNetwork<Peer> network1, final DiscoveryNetwork<Peer> network2) {
+      final DiscoveryNetwork<?> network1, final DiscoveryNetwork<?> network2) {
     Waiter.waitFor(
         () -> {
           assertThat(network1.getPeer(network2.getNodeId())).isPresent();
