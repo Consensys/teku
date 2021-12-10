@@ -224,7 +224,7 @@ public class BlockProposalTestUtil {
   }
 
   private Boolean isMergeComplete(final BeaconState state) {
-    return spec.atSlot(state.getSlot()).miscHelpers().isMergeComplete(state);
+    return spec.atSlot(state.getSlot()).miscHelpers().isMergeTransitionComplete(state);
   }
 
   public SignedBlockAndState createBlock(

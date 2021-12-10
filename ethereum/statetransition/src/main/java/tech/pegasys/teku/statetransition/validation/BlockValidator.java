@@ -116,7 +116,7 @@ public class BlockValidator {
                               "Block proposed by incorrect proposer (%s)",
                               block.getProposerIndex());
                         }
-                        if (spec.atSlot(block.getSlot()).miscHelpers().isMergeComplete(postState)) {
+                        if (spec.atSlot(block.getSlot()).miscHelpers().isMergeTransitionComplete(postState)) {
                           Optional<ExecutionPayload> executionPayload =
                               block.getMessage().getBody().getOptionalExecutionPayload();
 
