@@ -96,7 +96,6 @@ public interface P2PNetwork<T extends Peer> extends GossipNetwork {
 
   Optional<String> getDiscoveryAddress();
 
-
   Optional<DiscoveryNetwork<?>> getDiscoveryNetwork();
 
   /**

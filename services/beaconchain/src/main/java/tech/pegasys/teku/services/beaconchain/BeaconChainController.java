@@ -145,8 +145,8 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
  * initialization behavior (see {@link BeaconChainControllerFactory}} however this class may change
  * in a backward incompatible manner and either break compilation or runtime behavior
  */
-public class BeaconChainController extends Service implements TimeTickChannel,
-    BeaconChainControllerFacade {
+public class BeaconChainController extends Service
+    implements TimeTickChannel, BeaconChainControllerFacade {
   private static final Logger LOG = LogManager.getLogger();
 
   protected static final String KEY_VALUE_STORE_SUBDIRECTORY = "kvstore";
