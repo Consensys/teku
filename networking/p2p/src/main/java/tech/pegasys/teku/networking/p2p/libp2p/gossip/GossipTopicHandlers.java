@@ -11,22 +11,22 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku;
+package tech.pegasys.teku.networking.p2p.libp2p.gossip;
 
-import tech.pegasys.teku.services.ServiceControllerFacade;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
 
-/**
- * CAUTION: this API is unstable and primarily intended for debugging and testing purposes this API
- * might be changed in any version in backward incompatible way
- */
-public interface NodeFacade extends AutoCloseable {
+class GossipTopicHandlers {
 
-  ServiceControllerFacade getServiceController();
+  private final Map<String, TopicHandler> topicToHandlerMap = new ConcurrentHashMap<>();
 
-  void stop();
+  public void add(String topic, TopicHandler handler) {
+    topicToHandlerMap.put(topic, handler);
+  }
 
-  @Override
-  default void close() {
-    stop();
+  public Optional<TopicHandler> getHandlerForTopic(String topic) {
+    return Optional.ofNullable(topicToHandlerMap.get(topic));
   }
 }

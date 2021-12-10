@@ -43,6 +43,7 @@ import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessageFactory;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetwork.PrivateKeyProvider;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.GossipTopicFilter;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.LibP2PGossipNetwork;
+import tech.pegasys.teku.networking.p2p.libp2p.gossip.LibP2PGossipNetworkBuilder;
 import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerHandler;
@@ -72,6 +73,10 @@ public class LibP2PNetworkBuilder {
   protected PreparedGossipMessageFactory preparedGossipMessageFactory;
   protected GossipTopicFilter gossipTopicFilter;
 
+  protected Firewall firewall = new Firewall(Duration.ofSeconds(30));
+  protected MplexFirewall mplexFirewall =
+      new MplexFirewall(REMOTE_OPEN_STREAMS_RATE_LIMIT, REMOTE_PARALLEL_OPEN_STREAMS_COUNT_LIMIT);
+
   protected LibP2PGossipNetwork gossipNetwork;
   protected PeerManager peerManager;
 
@@ -84,12 +89,13 @@ public class LibP2PNetworkBuilder {
     if (gossipNetwork == null) {
       // Setup gossip
       gossipNetwork =
-          LibP2PGossipNetwork.create(
-              metricsSystem,
-              config.getGossipConfig(),
-              preparedGossipMessageFactory,
-              gossipTopicFilter,
-              config.getWireLogsConfig().isLogWireGossip());
+          createLibP2PGossipNetworkBuilder()
+              .metricsSystem(metricsSystem)
+              .gossipConfig(config.getGossipConfig())
+              .defaultMessageFactory(preparedGossipMessageFactory)
+              .gossipTopicFilter(gossipTopicFilter)
+              .logWireGossip(config.getWireLogsConfig().isLogWireGossip())
+              .build();
     }
 
     // Setup rpc methods
@@ -135,7 +141,6 @@ public class LibP2PNetworkBuilder {
                 if (config.getWireLogsConfig().isLogWireCipher()) {
                   b.getDebug().getBeforeSecureHandler().addLogger(LogLevel.DEBUG, "wire.ciphered");
                 }
-                Firewall firewall = new Firewall(Duration.ofSeconds(30));
                 b.getDebug().getBeforeSecureHandler().addNettyHandler(firewall);
 
                 if (config.getWireLogsConfig().isLogWirePlain()) {
@@ -147,9 +152,6 @@ public class LibP2PNetworkBuilder {
 
                 b.getConnectionHandlers().add(peerManager);
 
-                MplexFirewall mplexFirewall =
-                    new MplexFirewall(
-                        REMOTE_OPEN_STREAMS_RATE_LIMIT, REMOTE_PARALLEL_OPEN_STREAMS_COUNT_LIMIT);
                 b.getDebug().getMuxFramesHandler().addHandler(mplexFirewall);
               });
     }
@@ -173,6 +175,10 @@ public class LibP2PNetworkBuilder {
                 gossipNetwork.getGossip().getProtocolDescriptor().getAnnounceProtocols())
             .build();
     return List.of(ping, new Identify(identifyMsg), gossipNetwork.getGossip());
+  }
+
+  protected LibP2PGossipNetworkBuilder createLibP2PGossipNetworkBuilder() {
+    return LibP2PGossipNetworkBuilder.create();
   }
 
   public LibP2PNetworkBuilder asyncRunner(AsyncRunner asyncRunner) {
@@ -238,6 +244,16 @@ public class LibP2PNetworkBuilder {
 
   public LibP2PNetworkBuilder host(Host host) {
     this.host = host;
+    return this;
+  }
+
+  public LibP2PNetworkBuilder firewall(Firewall firewall) {
+    this.firewall = firewall;
+    return this;
+  }
+
+  public LibP2PNetworkBuilder mplexFirewall(MplexFirewall mplexFirewall) {
+    this.mplexFirewall = mplexFirewall;
     return this;
   }
 }
