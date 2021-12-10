@@ -27,6 +27,7 @@ WORKDIR /opt/teku
 COPY --chown=teku:teku teku /opt/teku/
 
 ENV TEKU_REST_API_INTERFACE="0.0.0.0"
+ENV TEKU_XVALIDATOR_API_INTERFACE="0.0.0.0"
 ENV TEKU_METRICS_INTERFACE="0.0.0.0"
 
 # List Exposed Ports

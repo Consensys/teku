@@ -19,9 +19,12 @@ import static org.assertj.core.api.Assertions.fail;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
+import java.net.URI;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.util.List;
@@ -30,16 +33,20 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import org.apache.commons.compress.utils.IOUtils;
+import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.output.OutputFrame;
 import org.testcontainers.images.PullPolicy;
 import org.testcontainers.images.builder.ImageFromDockerfile;
 import tech.pegasys.teku.infrastructure.async.Waiter;
+import tech.pegasys.teku.provider.JsonProvider;
 
 public abstract class Node {
-
+  private static final Logger LOG = LogManager.getLogger();
   public static final String TEKU_DOCKER_IMAGE_NAME = "consensys/teku";
+  protected final SimpleHttpClient httpClient = new SimpleHttpClient();
+  protected final JsonProvider jsonProvider = new JsonProvider();
 
   protected static final int REST_API_PORT = 9051;
   protected static final int METRICS_PORT = 8008;
@@ -90,6 +97,26 @@ public abstract class Node {
     container.stop();
   }
 
+  public void waitForEpoch(final int epoch) {
+    waitFor(() -> assertThat(getMetricValue("beacon_epoch")).isEqualTo(epoch), 2, TimeUnit.MINUTES);
+  }
+
+  public double getMetricValue(final String metricName) throws IOException {
+    final String allMetrics = httpClient.get(getMetricsUrl(), "/metrics");
+    final String prefix = metricName + " ";
+    try (BufferedReader reader = new BufferedReader(new StringReader(allMetrics))) {
+      for (String line = reader.readLine(); line != null; line = reader.readLine()) {
+        if (line.startsWith(prefix)) {
+          final String value = line.substring(prefix.length());
+          LOG.debug("Metric {}: {}", metricName, value);
+          return Double.parseDouble(value);
+        }
+      }
+    }
+    throw new IllegalArgumentException(
+        "Did not find metric " + metricName + " in: \n" + allMetrics);
+  }
+
   public void waitForLogMessageContaining(final String filter) {
     waitFor(() -> assertThat(getFilteredOutput(filter)).isNotEmpty(), 2, TimeUnit.MINUTES);
   }
@@ -109,6 +136,10 @@ public abstract class Node {
     } catch (final Throwable t) {
       fail(t.getMessage() + " Logs: " + container.getLogs(), t);
     }
+  }
+
+  private URI getMetricsUrl() {
+    return URI.create("http://127.0.0.1:" + container.getMappedPort(METRICS_PORT));
   }
 
   public String getLoggedErrors() {
