@@ -762,6 +762,11 @@ task dockerUpload {
         versionPrefixes.forEach { prefix -> tags += "-t ${dockerImageName}:${prefix.trim()} "}
       }
 
+      copy {
+        from file("${projectDir}/docker/${variant}/Dockerfile")
+        into(dockerBuildDir)
+      }
+      
       exec {
         workingDir dockerBuildDir
         executable "sh"

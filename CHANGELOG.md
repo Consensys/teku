@@ -17,3 +17,4 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Bug Fixes
 * Updated to latest log4j and disabled JNDI lookup support.
+* Fix multiarch JDK17 variant docker image to bundle Java 17 instead of Java 16
