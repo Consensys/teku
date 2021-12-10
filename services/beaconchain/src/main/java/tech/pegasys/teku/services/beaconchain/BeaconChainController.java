@@ -889,7 +889,8 @@ public class BeaconChainController extends Service
   protected void initForkChoiceNotifier() {
     LOG.debug("BeaconChainController.initForkChoiceNotifier()");
     forkChoiceNotifier =
-        ForkChoiceNotifier.create(asyncRunnerFactory, spec, executionEngine, recentChainData);
+        ForkChoiceNotifier.create(
+            asyncRunnerFactory, spec, timeProvider, executionEngine, recentChainData);
   }
 
   protected void setupInitialState(final RecentChainData client) {

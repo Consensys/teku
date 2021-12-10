@@ -23,8 +23,8 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.ssz.type.Bytes8;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.versions.merge.BeaconPreparableProposer;
@@ -37,25 +37,26 @@ public class ForkChoiceNotifier {
   private static final Logger LOG = LogManager.getLogger();
 
   private final EventThread eventThread;
-  private final Spec spec;
   private final ExecutionEngineChannel executionEngineChannel;
   private final RecentChainData recentChainData;
   private final PayloadAttributesCalculator payloadAttributesCalculator;
+  private final Spec spec;
+  private final TimeProvider timeProvider;
 
   private ForkChoiceUpdateData forkChoiceUpdateData = new ForkChoiceUpdateData();
 
   private boolean inSync = false; // Assume we are not in sync at startup.
 
-  private Optional<Bytes32> executionPayloadTerminalBlockHash = Optional.empty();
-
   ForkChoiceNotifier(
       final EventThread eventThread,
       final Spec spec,
+      final TimeProvider timeProvider,
       final ExecutionEngineChannel executionEngineChannel,
       final RecentChainData recentChainData,
       final PayloadAttributesCalculator payloadAttributesCalculator) {
     this.eventThread = eventThread;
     this.spec = spec;
+    this.timeProvider = timeProvider;
     this.executionEngineChannel = executionEngineChannel;
     this.recentChainData = recentChainData;
     this.payloadAttributesCalculator = payloadAttributesCalculator;
@@ -64,6 +65,7 @@ public class ForkChoiceNotifier {
   public static ForkChoiceNotifier create(
       final AsyncRunnerFactory asyncRunnerFactory,
       final Spec spec,
+      final TimeProvider timeProvider,
       final ExecutionEngineChannel executionEngineChannel,
       final RecentChainData recentChainData) {
     final AsyncRunnerEventThread eventThread =
@@ -72,6 +74,7 @@ public class ForkChoiceNotifier {
     return new ForkChoiceNotifier(
         eventThread,
         spec,
+        timeProvider,
         executionEngineChannel,
         recentChainData,
         new PayloadAttributesCalculator(spec, eventThread, recentChainData));
@@ -96,8 +99,9 @@ public class ForkChoiceNotifier {
         });
   }
 
-  public SafeFuture<Optional<Bytes8>> getPayloadId(Bytes32 parentBeaconBlockRoot) {
-    return eventThread.executeFuture(() -> internalGetPayloadId(parentBeaconBlockRoot, true));
+  public SafeFuture<Optional<Bytes8>> getPayloadId(
+      final Bytes32 parentBeaconBlockRoot, final UInt64 blockSlot) {
+    return eventThread.executeFuture(() -> internalGetPayloadId(parentBeaconBlockRoot, blockSlot));
   }
 
   public void onTerminalBlockReached(Bytes32 executionBlockHash) {
@@ -106,12 +110,13 @@ public class ForkChoiceNotifier {
 
   private void internalTerminalBlockReached(Bytes32 executionBlockHash) {
     eventThread.checkOnEventThread();
-    executionPayloadTerminalBlockHash = Optional.of(executionBlockHash);
+    LOG.debug("internalTerminalBlockReached executionBlockHash {}", executionBlockHash);
+    forkChoiceUpdateData = forkChoiceUpdateData.withTerminalBlockHash(executionBlockHash);
+    LOG.debug("internalTerminalBlockReached forkChoiceUpdateData {}", forkChoiceUpdateData);
   }
 
   /**
    * @param parentBeaconBlockRoot root of the beacon block the new block will be built on
-   * @param allowPayloadIdOnTheFlyRetrieval safely control recursive calls
    * @return must return a Future resolving to:
    *     <p>Optional.empty() only when is safe to produce a block with an empty execution payload
    *     (after the merge fork and before Terminal Block arrival)
@@ -120,10 +125,13 @@ public class ForkChoiceNotifier {
    *     <p>in all other cases it must Throw to avoid block production
    */
   private SafeFuture<Optional<Bytes8>> internalGetPayloadId(
-      final Bytes32 parentBeaconBlockRoot,
-      final UInt64 blockSlot,
-      final boolean allowPayloadIdOnTheFlyRetrieval) {
+      final Bytes32 parentBeaconBlockRoot, final UInt64 blockSlot) {
     eventThread.checkOnEventThread();
+
+    LOG.debug(
+        "internalGetPayloadId parentBeaconBlockRoot {} blockSlot {}",
+        parentBeaconBlockRoot,
+        blockSlot);
 
     final Bytes32 parentExecutionHash =
         recentChainData
@@ -136,7 +144,7 @@ public class ForkChoiceNotifier {
     final UInt64 timestamp = spec.getSlotStartTime(blockSlot, recentChainData.getGenesisTime());
     if (forkChoiceUpdateData.isPayloadIdSuitable(parentExecutionHash, timestamp)) {
       return forkChoiceUpdateData.getPayloadId();
-    } else if (parentExecutionHash.isZero()) {
+    } else if (parentExecutionHash.isZero() && !forkChoiceUpdateData.hasTerminalBlockHash()) {
       // Pre-merge so ok to use default payload
       return SafeFuture.completedFuture(Optional.empty());
     } else {
@@ -145,124 +153,33 @@ public class ForkChoiceNotifier {
           .calculatePayloadAttributes(blockSlot, inSync, forkChoiceUpdateData)
           .thenCompose(
               newPayloadAttributes -> {
-                forkChoiceUpdateData =
-                    forkChoiceUpdateData.withPayloadAttributes(newPayloadAttributes);
-                forkChoiceUpdateData.send(executionEngineChannel);
-                return forkChoiceUpdateData.getPayloadId();
+                // update attributes and, since this has been executed async recheck suitability of
+                // Data since forkChoiceUpdateData could have been modified in the meantime
+                // TODO: is it possible that a on(Event) has been executed inbetween and changed
+                //  forkChoiceState contained in forkChoiceUpdateData? if yes, re-running
+                //  isPayloadIdSuitable is not enough, we need to ensure congruence with
+                //  parentBeaconBlockRoot
+                if (updatePayloadAttributes(blockSlot, newPayloadAttributes)
+                    && forkChoiceUpdateData.isPayloadIdSuitable(parentExecutionHash, timestamp)) {
+                  return forkChoiceUpdateData.getPayloadId();
+                } else {
+                  return SafeFuture.failedFuture(
+                      new RuntimeException("Unable to obtain a payloadId"));
+                }
               });
     }
-
-    final boolean lastForkChoiceStateCorrectlyBuildsOnTop =
-        lastSentForkChoiceState
-            .map(ForkChoiceState::getHeadBlockHash)
-            .map(
-                fcsHead -> {
-                  // post-merge block
-                  if (!parentExecutionHash.isZero() && fcsHead.equals(parentExecutionHash)) {
-                    return true;
-                  }
-
-                  // merge block
-                  return parentExecutionHash.isZero()
-                      && executionPayloadTerminalBlockHash.isPresent()
-                      && fcsHead.equals(executionPayloadTerminalBlockHash.get());
-                })
-            .orElse(false);
-
-    if (lastForkChoiceStateCorrectlyBuildsOnTop) {
-      // current Future Payload ID builds on the correct block
-
-      return lastFuturePayloadId.thenApply(
-          payloadId -> {
-
-            // at this stage we expect payloadId to be present
-            if (payloadId.isPresent()) {
-              return payloadId;
-            }
-
-            throw new IllegalStateException(
-                String.format(
-                    "PayloadId not available for Beacon Block Root %s", parentBeaconBlockRoot));
-          });
-    }
-
-    // we have no SentForkChoiceState or doesn't build on top of the right block
-    if (parentExecutionHash.isZero()) {
-      // pre-merge
-
-      if (executionPayloadTerminalBlockHash.isEmpty()) {
-        // we are in pre-merge and terminal block is not reached, we can build a block with empty
-        // payload
-        return SafeFuture.completedFuture(Optional.empty());
-      }
-
-      if (allowPayloadIdOnTheFlyRetrieval) {
-        // we are in pre-merge and terminal block is reached
-        // try to obtain a payloadId now
-        final Bytes32 terminalBlockHash = executionPayloadTerminalBlockHash.get();
-        return requestPayloadId(terminalBlockHash, Bytes32.ZERO, parentBeaconBlockRoot);
-      }
-    }
-
-    // Merge is complete, so we must have a real payloadId, but we don't have one that matches
-
-    if (allowPayloadIdOnTheFlyRetrieval) {
-      // try to obtain a payloadId now
-      Bytes32 finalizedExecutionBlockHash;
-
-      finalizedExecutionBlockHash =
-          lastSentForkChoiceState
-              .map(ForkChoiceState::getFinalizedBlockHash)
-              .orElseGet(this::retrieveFinalizedExecutionBlockHash);
-
-      return requestPayloadId(
-          parentExecutionHash, finalizedExecutionBlockHash, parentBeaconBlockRoot);
-    }
-
-    throw new IllegalStateException(
-        String.format("PayloadId not available for Beacon Block Root %s", parentBeaconBlockRoot));
-  }
-
-  private SafeFuture<Optional<Bytes8>> requestPayloadId(
-      Bytes32 parentExecutionBlockHash,
-      Bytes32 finalizedExecutionBlockHash,
-      Bytes32 parentBeaconBlockRoot) {
-
-    final ForkChoiceState newForkChoiceState =
-        new ForkChoiceState(
-            parentExecutionBlockHash, parentExecutionBlockHash, finalizedExecutionBlockHash);
-
-    internalForkChoiceUpdated(newForkChoiceState);
-    checkState(
-        lastSentForkChoiceState
-            .map(lsfcState -> lsfcState.equals(newForkChoiceState))
-            .orElse(false),
-        "Required fork choice state was not sent");
-    return internalGetPayloadId(parentBeaconBlockRoot, false);
-  }
-
-  private Bytes32 retrieveFinalizedExecutionBlockHash() {
-    ForkChoiceStrategy forkChoiceStrategy = recentChainData.getForkChoiceStrategy().orElseThrow();
-    final Bytes32 finalizedRoot =
-        recentChainData
-            .getFinalizedCheckpoint()
-            .orElseThrow(() -> new IllegalStateException("Unable to obtain finalized checkpoint"))
-            .getRoot();
-    return forkChoiceStrategy
-        .executionBlockHash(finalizedRoot)
-        .orElseThrow(
-            () ->
-                new IllegalStateException(
-                    "Unable to get finalized execution Payload hash from finalized checkpoint"));
   }
 
   private void internalUpdatePreparableProposers(
       final Collection<BeaconPreparableProposer> proposers) {
     eventThread.checkOnEventThread();
-    payloadAttributesCalculator.updateProposers(proposers);
+
+    LOG.debug("internalUpdatePreparableProposers proposers {}", proposers);
 
     // Default to the genesis slot if we're pre-genesis.
     final UInt64 currentSlot = recentChainData.getCurrentSlot().orElse(SpecConfig.GENESIS_SLOT);
+
+    payloadAttributesCalculator.updateProposers(proposers, currentSlot);
 
     // Update payload attributes in case we now need to propose the next block
     updatePayloadAttributes(currentSlot.plus(1));
@@ -271,7 +188,12 @@ public class ForkChoiceNotifier {
   private void internalForkChoiceUpdated(final ForkChoiceState forkChoiceState) {
     eventThread.checkOnEventThread();
 
+    LOG.debug("internalForkChoiceUpdated forkChoiceState {}", forkChoiceState);
+
     this.forkChoiceUpdateData = this.forkChoiceUpdateData.withForkChoiceState(forkChoiceState);
+
+    LOG.debug("internalForkChoiceUpdated forkChoiceUpdateData {}", forkChoiceUpdateData);
+
     recentChainData
         .getCurrentSlot()
         .ifPresent(currentSlot -> updatePayloadAttributes(currentSlot.plus(1)));
@@ -280,6 +202,9 @@ public class ForkChoiceNotifier {
 
   private void internalAttestationsDue(final UInt64 slot) {
     eventThread.checkOnEventThread();
+
+    LOG.debug("internalAttestationsDue slot {}", slot);
+
     // Assume `slot` is empty and check if we need to prepare to propose in the next slot
     updatePayloadAttributes(slot.plus(1));
   }
@@ -289,6 +214,7 @@ public class ForkChoiceNotifier {
   }
 
   private void updatePayloadAttributes(final UInt64 blockSlot) {
+    LOG.debug("updatePayloadAttributes blockSlot {}", blockSlot);
     payloadAttributesCalculator
         .calculatePayloadAttributes(blockSlot, inSync, forkChoiceUpdateData)
         .thenAcceptAsync(
@@ -299,21 +225,27 @@ public class ForkChoiceNotifier {
                 LOG.error("Failed to calculate payload attributes for slot {}", blockSlot, error));
   }
 
-  private void updatePayloadAttributes(
+  private boolean updatePayloadAttributes(
       final UInt64 blockSlot, final Optional<PayloadAttributes> newPayloadAttributes) {
     eventThread.checkOnEventThread();
-    final UInt64 currentSlot = recentChainData.getCurrentSlot().orElse(UInt64.ZERO);
-    if (currentSlot.isGreaterThanOrEqualTo(blockSlot)) {
-      // TODO: This is potentially a problem if we're getting a new payload ID on demand as we'll
-      // already be in the block slot.
-      // Slot has already progressed so this update is too late, just drop it.
+
+    LOG.debug("updatePayloadAttributes blockSlot {} {}", blockSlot, newPayloadAttributes);
+
+    UInt64 expirationTime = calculatePayloadAttributesExpiration(blockSlot);
+    if (timeProvider.getTimeInSeconds().isGreaterThan(expirationTime)) {
       LOG.warn(
-          "Payload attribute calculation for slot {} took too long. Slot was already {}",
+          "Payload attribute calculation for slot {} took too long. Was expected before {}",
           blockSlot,
-          currentSlot);
-      return;
+          expirationTime);
+      return false;
     }
     forkChoiceUpdateData = forkChoiceUpdateData.withPayloadAttributes(newPayloadAttributes);
     sendForkChoiceUpdated();
+    return true;
+  }
+
+  private UInt64 calculatePayloadAttributesExpiration(final UInt64 blockSlot) {
+    return spec.getSlotStartTime(blockSlot, recentChainData.getGenesisTime())
+        .plus(spec.getSecondsPerSlot(blockSlot) / 3);
   }
 }
