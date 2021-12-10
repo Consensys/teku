@@ -16,6 +16,7 @@ package tech.pegasys.teku.test.acceptance.dsl;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.File;
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -25,19 +26,26 @@ import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
 import org.testcontainers.utility.MountableFile;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.test.acceptance.dsl.tools.ValidatorKeysApi;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class TekuValidatorNode extends Node {
   private static final Logger LOG = LogManager.getLogger();
+  private static final int VALIDATOR_API_PORT = 9052;
 
   private final TekuValidatorNode.Config config;
   private boolean started = false;
   private Set<File> configFiles;
+  private final ValidatorKeysApi validatorKeysApi =
+      new ValidatorKeysApi(httpClient, this::getValidatorApiUrl);
 
   private TekuValidatorNode(
       final Network network, final DockerVersion version, final TekuValidatorNode.Config config) {
     super(network, TEKU_DOCKER_IMAGE_NAME, version, LOG);
     this.config = config;
+    if (config.configMap.containsKey("Xvalidator-api-enabled")) {
+      container.withExposedPorts(VALIDATOR_API_PORT);
+    }
 
     container
         .withWorkingDirectory(WORKING_DIRECTORY)
@@ -55,15 +63,26 @@ public class TekuValidatorNode extends Node {
     return new TekuValidatorNode(network, version, config);
   }
 
-  public TekuValidatorNode withValidatorKeystores(ValidatorKeystores validatorKeytores)
-      throws Exception {
+  public TekuValidatorNode withValidatorApiEnabled() {
+    this.config.withValidatorApiEnabled();
+    return this;
+  }
+
+  public ValidatorKeysApi getValidatorKeysApi() {
+    if (!config.configMap.containsKey("Xvalidator-api-enabled")) {
+      LOG.error("Retrieving validator keys api but api is not enabled");
+    }
+    return validatorKeysApi;
+  }
+
+  public TekuValidatorNode withValidatorKeystores(ValidatorKeystores validatorKeystores) {
     this.config.withValidatorKeys(
         WORKING_DIRECTORY
-            + validatorKeytores.getKeysDirectoryName()
+            + validatorKeystores.getKeysDirectoryName()
             + ":"
             + WORKING_DIRECTORY
-            + validatorKeytores.getPasswordsDirectoryName());
-    this.copyContentsToWorkingDirectory(validatorKeytores.getTarball());
+            + validatorKeystores.getPasswordsDirectoryName());
+    this.copyContentsToWorkingDirectory(validatorKeystores.getTarball());
     return this;
   }
 
@@ -95,6 +114,10 @@ public class TekuValidatorNode extends Node {
     container.stop();
   }
 
+  private URI getValidatorApiUrl() {
+    return URI.create("http://127.0.0.1:" + container.getMappedPort(VALIDATOR_API_PORT));
+  }
+
   public static class Config {
     private static final int DEFAULT_VALIDATOR_COUNT = 64;
 
@@ -118,6 +141,13 @@ public class TekuValidatorNode extends Node {
 
     public TekuValidatorNode.Config withValidatorKeys(final String validatorKeyInformation) {
       configMap.put("validator-keys", validatorKeyInformation);
+      return this;
+    }
+
+    public TekuValidatorNode.Config withValidatorApiEnabled() {
+      configMap.put("Xvalidator-api-enabled", true);
+      configMap.put("Xvalidator-api-port", VALIDATOR_API_PORT);
+      configMap.put("Xvalidator-api-host-allowlist", "*");
       return this;
     }
 

@@ -18,7 +18,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -27,10 +30,27 @@ import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.utils.IOUtils;
 import org.apache.commons.io.FileUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import org.testcontainers.shaded.com.fasterxml.jackson.core.JsonProcessingException;
+import tech.pegasys.signers.bls.keystore.KeyStore;
+import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
+import tech.pegasys.signers.bls.keystore.model.Cipher;
+import tech.pegasys.signers.bls.keystore.model.CipherFunction;
+import tech.pegasys.signers.bls.keystore.model.KdfParam;
+import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
+import tech.pegasys.signers.bls.keystore.model.Pbkdf2Param;
+import tech.pegasys.signers.bls.keystore.model.Pbkdf2PseudoRandomFunction;
+import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.crypto.SecureRandomProvider;
 
 public class ValidatorKeystores {
-
+  private static final Logger LOG = LogManager.getLogger();
   final List<ValidatorKeys> validatorKeys;
+  private final SecureRandom secureRandom = SecureRandomProvider.createSecureRandom();
 
   final String KEYS_DIRECTORY_NAME = "keys";
   final String PASSWORDS_DIRECTORY_NAME = "passwords";
@@ -40,6 +60,39 @@ public class ValidatorKeystores {
 
   public ValidatorKeystores(List<ValidatorKeys> validatorKeys) {
     this.validatorKeys = validatorKeys;
+  }
+
+  public List<String> getKeystores(final Path tempDir) {
+    return validatorKeys.stream()
+        .map(
+            key -> {
+              try {
+                KeyStoreData keyStoreData =
+                    generateKeystoreData(key.getValidatorKey(), VALIDATOR_KEYS_PASSWORD);
+                final Path keystoreFile =
+                    tempDir.resolve(
+                        key.getValidatorKey().getPublicKey().toAbbreviatedString() + ".json");
+                KeyStoreLoader.saveToFile(keystoreFile, keyStoreData);
+                Files.readString(keystoreFile, StandardCharsets.UTF_8);
+                return Files.readString(keystoreFile, StandardCharsets.UTF_8);
+              } catch (JsonProcessingException e) {
+                return "";
+              } catch (IOException e) {
+                LOG.error("Failed to write file", e);
+                return "";
+              }
+            })
+        .collect(Collectors.toList());
+  }
+
+  public List<String> getPasswords() {
+    return validatorKeys.stream().map((__) -> VALIDATOR_KEYS_PASSWORD).collect(Collectors.toList());
+  }
+
+  public List<BLSPublicKey> getPublicKeys() {
+    return validatorKeys.stream()
+        .map(key -> key.getValidatorKey().getPublicKey())
+        .collect(Collectors.toList());
   }
 
   public File getTarball() {
@@ -119,5 +172,19 @@ public class ValidatorKeystores {
         tarArchiveOutputStream.closeArchiveEntry();
       }
     }
+  }
+
+  private KeyStoreData generateKeystoreData(final BLSKeyPair key, final String password) {
+    final KdfParam kdfParam =
+        new Pbkdf2Param(
+            32, 1, Pbkdf2PseudoRandomFunction.HMAC_SHA256, Bytes32.random(secureRandom));
+    final Cipher cipher = new Cipher(CipherFunction.AES_128_CTR, Bytes.random(16, secureRandom));
+    return KeyStore.encrypt(
+        key.getSecretKey().toBytes(),
+        key.getPublicKey().toBytesCompressed(),
+        password,
+        "",
+        kdfParam,
+        cipher);
   }
 }

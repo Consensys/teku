@@ -33,8 +33,6 @@ import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateGenerator;
 
 @ExtendWith(CaptureArtifacts.class)
 public class AcceptanceTestBase {
-
-  private final SimpleHttpClient httpClient = new SimpleHttpClient();
   private final List<Node> nodes = new ArrayList<>();
   private final Network network = Network.newNetwork();
   private final GenesisStateGenerator genesisStateGenerator = new GenesisStateGenerator();
@@ -56,15 +54,14 @@ public class AcceptanceTestBase {
   protected TekuNode createTekuNode(
       final DockerVersion version, final Consumer<TekuNode.Config> configOptions) {
     try {
-      return addNode(
-          TekuNode.create(httpClient, network, version, configOptions, genesisStateGenerator));
+      return addNode(TekuNode.create(network, version, configOptions, genesisStateGenerator));
     } catch (IOException | TimeoutException e) {
       throw new RuntimeException(e);
     }
   }
 
   protected ExternalMetricNode createExternalMetricNode() {
-    return addNode(ExternalMetricNode.create(httpClient, network));
+    return addNode(ExternalMetricNode.create(network));
   }
 
   protected TekuVoluntaryExit createVoluntaryExit(

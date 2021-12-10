@@ -56,4 +56,21 @@ public class SimpleHttpClient {
     assertThat(responseBody).isNotNull();
     return responseBody.string();
   }
+
+  public String delete(final URI baseUrl, final String path, final String jsonBody)
+      throws IOException {
+    final RequestBody requestBody = RequestBody.create(jsonBody, JSON);
+    final Response response =
+        httpClient
+            .newCall(
+                new Request.Builder()
+                    .url(baseUrl.resolve(path).toURL())
+                    .delete(requestBody)
+                    .build())
+            .execute();
+    assertThat(response.isSuccessful()).isTrue();
+    final ResponseBody responseBody = response.body();
+    assertThat(responseBody).isNotNull();
+    return responseBody.string();
+  }
 }
