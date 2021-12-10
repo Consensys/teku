@@ -195,7 +195,7 @@ public class BlockProposalTestUtil {
     final ExecutionPayloadSchema schema =
         SchemaDefinitionsMerge.required(specVersion.getSchemaDefinitions())
             .getExecutionPayloadSchema();
-    if (terminalBlock.isEmpty() && !isMergeComplete(state)) {
+    if (terminalBlock.isEmpty() && !isMergeTransitionComplete(state)) {
       return schema.getDefault();
     }
 
@@ -223,7 +223,7 @@ public class BlockProposalTestUtil {
         transactions.orElse(Collections.emptyList()));
   }
 
-  private Boolean isMergeComplete(final BeaconState state) {
+  private Boolean isMergeTransitionComplete(final BeaconState state) {
     return spec.atSlot(state.getSlot()).miscHelpers().isMergeTransitionComplete(state);
   }
 
