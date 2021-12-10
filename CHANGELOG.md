@@ -16,3 +16,4 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Additions and Improvements
 
 ### Bug Fixes
+* Updated to latest log4j and disabled JNDI lookup support.
