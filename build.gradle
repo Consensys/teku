@@ -331,6 +331,7 @@ application {
       // We shutdown log4j ourselves, as otherwise his shutdown hook runs before our own and whatever
       // happens during shutdown is not logged.
       "-Dlog4j.shutdownHookEnabled=false",
+      "-Dlog4j2.formatMsgNoLookups=true",
       // run `jcmd <PID> VM.native_memory` to check JVM native memory consumption
       "-XX:NativeMemoryTracking=summary",
       // 32Mb for Netty Direct ByteBuf
