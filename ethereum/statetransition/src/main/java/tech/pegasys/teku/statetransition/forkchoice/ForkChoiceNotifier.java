@@ -155,10 +155,11 @@ public class ForkChoiceNotifier {
               newPayloadAttributes -> {
                 // update attributes and, since this has been executed async recheck suitability of
                 // Data since forkChoiceUpdateData could have been modified in the meantime
-                // TODO: is it possible that a on(Event) has been executed inbetween and changed
-                //  forkChoiceState contained in forkChoiceUpdateData? if yes, re-running
-                //  isPayloadIdSuitable is not enough, we need to ensure congruence with
-                //  parentBeaconBlockRoot
+                //
+                // if an on(Event) has been executed inbetween and changed
+                //  forkChoiceState contained in forkChoiceUpdateData, re-running
+                //  isPayloadIdSuitable should be fine: as long as has a correct
+                //  timestamp and builds atop the right block it is a usable payload
                 if (updatePayloadAttributes(blockSlot, newPayloadAttributes)
                     && forkChoiceUpdateData.isPayloadIdSuitable(parentExecutionHash, timestamp)) {
                   return forkChoiceUpdateData.getPayloadId();
