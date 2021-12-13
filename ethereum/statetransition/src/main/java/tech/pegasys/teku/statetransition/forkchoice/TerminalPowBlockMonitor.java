@@ -103,7 +103,7 @@ public class TerminalPowBlockMonitor {
     // beaconState must be available at this stage
     BeaconState beaconState = recentChainData.getBestState().orElseThrow();
 
-    if (spec.atSlot(beaconState.getSlot()).miscHelpers().isMergeComplete(beaconState)) {
+    if (spec.atSlot(beaconState.getSlot()).miscHelpers().isMergeTransitionComplete(beaconState)) {
       LOG.info("MERGE is completed. Stopping.");
       stop();
       return;
@@ -134,7 +134,9 @@ public class TerminalPowBlockMonitor {
       return;
     }
 
-    if (spec.atSlot(beaconState.get().getSlot()).miscHelpers().isMergeComplete(beaconState.get())) {
+    if (spec.atSlot(beaconState.get().getSlot())
+        .miscHelpers()
+        .isMergeTransitionComplete(beaconState.get())) {
       LOG.info("MERGE is completed. Stopping.");
       stop();
       return;
