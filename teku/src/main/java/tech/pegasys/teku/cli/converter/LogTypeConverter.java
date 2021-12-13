@@ -38,9 +38,9 @@ public class LogTypeConverter implements ITypeConverter<Level> {
       case "ALL":
         return Level.ALL;
     }
-    throw (new CommandLine.TypeConversionException(
+    throw new CommandLine.TypeConversionException(
         "'"
             + value
-            + "' is not a valid log level. Supported values are [OFF|FATAL|WARN|INFO|DEBUG|TRACE|ALL]"));
+            + "' is not a valid log level. Supported values are [OFF|FATAL|WARN|INFO|DEBUG|TRACE|ALL]");
   }
 }

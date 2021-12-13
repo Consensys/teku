@@ -144,7 +144,6 @@ public class Generator {
     // check
     try (BlsKeyPairIO.Reader reader = BlsKeyPairIO.createReaderForFile(outFile.getName())) {
       for (BLSKeyPair keyPair : reader.withLimit(10)) {
-        keyPair.getPublicKey().hashCode();
         System.out.println(keyPair);
       }
     }

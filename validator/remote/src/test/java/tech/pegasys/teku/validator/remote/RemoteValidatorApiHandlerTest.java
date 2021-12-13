@@ -268,9 +268,7 @@ class RemoteValidatorApiHandlerTest {
 
     AttesterDuties validatorDuties = unwrapToValue(future);
 
-    assertThat(validatorDuties.getDuties().get(0))
-        .usingRecursiveComparison()
-        .isEqualTo(expectedValidatorDuties);
+    assertThat(validatorDuties.getDuties().get(0)).isEqualTo(expectedValidatorDuties);
   }
 
   @Test
@@ -312,9 +310,7 @@ class RemoteValidatorApiHandlerTest {
 
     ProposerDuties validatorDuties = unwrapToValue(future);
 
-    assertThat(validatorDuties.getDuties().get(0))
-        .usingRecursiveComparison()
-        .isEqualTo(expectedValidatorDuties);
+    assertThat(validatorDuties.getDuties().get(0)).isEqualTo(expectedValidatorDuties);
     assertThat(validatorDuties.getDependentRoot()).isEqualTo(response.dependentRoot);
   }
 

@@ -52,13 +52,13 @@ public class StateSelectorFactory {
 
   public StateSelector byKeywordOrSlot(final String selectorMethod) {
     switch (selectorMethod) {
-      case ("head"):
+      case "head":
         return headSelector();
-      case ("genesis"):
+      case "genesis":
         return genesisSelector();
-      case ("finalized"):
+      case "finalized":
         return finalizedSelector();
-      case ("justified"):
+      case "justified":
         return justifiedSelector();
     }
     try {
@@ -77,7 +77,7 @@ public class StateSelectorFactory {
   }
 
   public StateSelector justifiedSelector() {
-    return () -> client.getJustifiedState();
+    return client::getJustifiedState;
   }
 
   public StateSelector genesisSelector() {

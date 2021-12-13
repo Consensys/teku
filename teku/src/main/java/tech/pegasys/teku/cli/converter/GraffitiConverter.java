@@ -23,7 +23,7 @@ public class GraffitiConverter implements CommandLine.ITypeConverter<Bytes32> {
     try {
       return Bytes32Parser.toBytes32(value);
     } catch (final IllegalArgumentException e) {
-      throw (new CommandLine.TypeConversionException(e.getMessage()));
+      throw new CommandLine.TypeConversionException(e.getMessage());
     }
   }
 }
