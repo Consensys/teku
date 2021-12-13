@@ -134,7 +134,9 @@ public class TerminalPowBlockMonitor {
       return;
     }
 
-    if (spec.atSlot(beaconState.get().getSlot()).miscHelpers().isMergeTransitionComplete(beaconState.get())) {
+    if (spec.atSlot(beaconState.get().getSlot())
+        .miscHelpers()
+        .isMergeTransitionComplete(beaconState.get())) {
       LOG.info("MERGE is completed. Stopping.");
       stop();
       return;
