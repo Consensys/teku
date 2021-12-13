@@ -6,7 +6,7 @@ dependencyManagement {
 
     dependency 'com.google.auto.service:auto-service:1.0-rc7'
 
-    dependencySet(group: 'com.google.errorprone', version: '2.7.1') {
+    dependencySet(group: 'com.google.errorprone', version: '2.10.0') {
       entry 'error_prone_annotation'
       entry 'error_prone_check_api'
       entry 'error_prone_core'
@@ -102,7 +102,7 @@ dependencyManagement {
       entry 'log4j-slf4j-impl'
     }
 
-    dependency 'org.assertj:assertj-core:3.16.1'
+    dependency 'org.assertj:assertj-core:3.21.0'
 
     dependency 'org.awaitility:awaitility:4.0.3'
 
@@ -110,14 +110,14 @@ dependencyManagement {
 
     dependency 'org.java-websocket:Java-WebSocket:1.5.2'
 
-    dependencySet(group: 'org.junit.jupiter', version: '5.8.1') {
+    dependencySet(group: 'org.junit.jupiter', version: '5.8.2') {
       entry 'junit-jupiter-api'
       entry 'junit-jupiter-engine'
       entry 'junit-jupiter-params'
     }
 
-    dependency 'org.mockito:mockito-core:3.11.2'
-    dependency 'org.mockito:mockito-junit-jupiter:3.11.2'
+    dependency 'org.mockito:mockito-core:4.1.0'
+    dependency 'org.mockito:mockito-junit-jupiter:4.1.0'
 
     dependencySet(group: "org.openjdk.jmh", version: "1.27") {
       entry 'jmh-core'

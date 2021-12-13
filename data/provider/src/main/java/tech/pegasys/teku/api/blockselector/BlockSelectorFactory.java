@@ -51,11 +51,11 @@ public class BlockSelectorFactory {
       }
     }
     switch (selectorMethod) {
-      case ("head"):
+      case "head":
         return headSelector();
-      case ("genesis"):
+      case "genesis":
         return genesisSelector();
-      case ("finalized"):
+      case "finalized":
         return finalizedSelector();
     }
     try {

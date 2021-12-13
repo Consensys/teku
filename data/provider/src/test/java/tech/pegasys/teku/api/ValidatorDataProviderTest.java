@@ -52,7 +52,6 @@ import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
 import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
 import tech.pegasys.teku.api.schema.merge.SignedBeaconBlockMerge;
-import tech.pegasys.teku.api.schema.phase0.BeaconBlockPhase0;
 import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -101,7 +100,7 @@ public class ValidatorDataProviderTest {
     schemaProvider = new SchemaObjectProvider(spec);
     provider = new ValidatorDataProvider(spec, validatorApiChannel, combinedChainDataClient);
     blockInternal = dataStructureUtil.randomBeaconBlock(123);
-    block = new BeaconBlockPhase0(blockInternal);
+    block = schemaProvider.getBeaconBlock(blockInternal);
   }
 
   @TestTemplate

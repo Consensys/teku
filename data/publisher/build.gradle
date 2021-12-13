@@ -12,14 +12,14 @@ dependencies {
     implementation 'org.hyperledger.besu.internal:metrics-core'
     implementation 'com.squareup.okhttp3:okhttp'
 
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api'
     testImplementation 'org.assertj:assertj-core'
     testImplementation 'org.mockito:mockito-core'
     testImplementation 'com.squareup.okhttp3:mockwebserver'
     testImplementation testFixtures(project(':infrastructure:metrics'))
     testImplementation testFixtures(project(':infrastructure:async'))
     testImplementation testFixtures(project(':infrastructure:time'))
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 
     testFixturesImplementation 'com.fasterxml.jackson.core:jackson-databind'
     testFixturesImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'

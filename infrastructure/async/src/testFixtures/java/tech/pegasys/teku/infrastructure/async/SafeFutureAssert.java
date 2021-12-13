@@ -40,14 +40,16 @@ public class SafeFutureAssert<T> extends AbstractCompletableFutureAssert<SafeFut
         .isSameAs(t);
   }
 
-  public ThrowableAssert isCompletedExceptionallyWith(
-      final Class<? extends Throwable> exceptionType) {
+  public <X extends Throwable> ThrowableAssert<X> isCompletedExceptionallyWith(
+      final Class<X> exceptionType) {
     isCompletedExceptionally();
     return Assertions.assertThatThrownBy(actual::join)
         .isInstanceOf(CompletionException.class)
         .extracting(Throwable::getCause)
         .isInstanceOf(exceptionType)
-        .asInstanceOf(new InstanceOfAssertFactory<>(Throwable.class, ThrowableAssert::new));
+        .asInstanceOf(
+            new InstanceOfAssertFactory<X, ThrowableAssert<X>>(
+                exceptionType, ThrowableAssert::new));
   }
 
   public void isCompletedWithEmptyOptional() {

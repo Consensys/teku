@@ -183,7 +183,7 @@ public final class DataStructureUtil {
   }
 
   public Bytes4 randomBytes4() {
-    return new Bytes4(randomBytes32().slice(0, 4));
+    return new Bytes4(randomBytes(4));
   }
 
   public Bytes20 randomBytes20() {
