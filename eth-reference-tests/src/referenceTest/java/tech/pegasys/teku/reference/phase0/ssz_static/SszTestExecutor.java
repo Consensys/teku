@@ -99,14 +99,6 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
               new SszTestExecutor<>(
                   schemas -> SchemaDefinitionsMerge.required(schemas).getExecutionPayloadSchema()))
           .put("ssz_static/PowBlock", IGNORE_TESTS)
-
-          // SSZ Generic
-          .put("ssz_generic/basic_vector", IGNORE_TESTS)
-          .put("ssz_generic/bitlist", IGNORE_TESTS)
-          .put("ssz_generic/bitvector", IGNORE_TESTS)
-          .put("ssz_generic/boolean", IGNORE_TESTS)
-          .put("ssz_generic/containers", IGNORE_TESTS)
-          .put("ssz_generic/uints", IGNORE_TESTS)
           .build();
 
   public SszTestExecutor(final SchemaProvider<T> sszType) {
