@@ -28,7 +28,7 @@ import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DepositStorage;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 
-public class StorageService extends Service {
+public class StorageService extends Service implements StorageServiceFacade {
   private final StorageConfiguration config;
   private volatile ChainStorage chainStorage;
   private final ServiceConfig serviceConfig;
@@ -79,5 +79,10 @@ public class StorageService extends Service {
         () -> {
           database.close();
         });
+  }
+
+  @Override
+  public ChainStorage getChainStorage() {
+    return chainStorage;
   }
 }

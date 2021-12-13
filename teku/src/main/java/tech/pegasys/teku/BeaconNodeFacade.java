@@ -15,6 +15,7 @@ package tech.pegasys.teku;
 
 import java.util.Optional;
 import tech.pegasys.teku.services.beaconchain.BeaconChainServiceFacade;
+import tech.pegasys.teku.services.chainstorage.StorageServiceFacade;
 
 /**
  * CAUTION: this API is unstable and primarily intended for debugging and testing purposes this API
@@ -27,6 +28,14 @@ public interface BeaconNodeFacade extends NodeFacade {
     return getServiceController().getServices().stream()
         .filter(service -> service instanceof BeaconChainServiceFacade)
         .map(service -> (BeaconChainServiceFacade) service)
+        .findFirst();
+  }
+
+  /** Shortcut method to find {@link StorageServiceFacade} service if any */
+  default Optional<StorageServiceFacade> getStorageService() {
+    return getServiceController().getServices().stream()
+        .filter(service -> service instanceof StorageServiceFacade)
+        .map(service -> (StorageServiceFacade) service)
         .findFirst();
   }
 }

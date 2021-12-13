@@ -19,6 +19,9 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
+/**
+ * CAUTION: this API is unstable and might be changed in any version in backward incompatible way
+ */
 public interface DiscoveryService {
 
   SafeFuture<?> start();
