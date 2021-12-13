@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.validator.api;
 
+import com.google.common.base.MoreObjects;
+import java.util.Objects;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -37,5 +39,33 @@ public class ProposerDuty {
 
   public UInt64 getSlot() {
     return slot;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final ProposerDuty that = (ProposerDuty) o;
+    return validatorIndex == that.validatorIndex
+        && Objects.equals(publicKey, that.publicKey)
+        && Objects.equals(slot, that.slot);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(publicKey, validatorIndex, slot);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("publicKey", publicKey)
+        .add("validatorIndex", validatorIndex)
+        .add("slot", slot)
+        .toString();
   }
 }

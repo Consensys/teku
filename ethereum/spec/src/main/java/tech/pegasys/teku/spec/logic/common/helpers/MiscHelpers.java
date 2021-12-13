@@ -241,7 +241,7 @@ public class MiscHelpers {
     return new ForkData(currentVersion, genesisValidatorsRoot).hashTreeRoot();
   }
 
-  public boolean isMergeComplete(final BeaconState state) {
+  public boolean isMergeTransitionComplete(final BeaconState state) {
     return false;
   }
 }

@@ -165,7 +165,7 @@ public class V4FinalizedKvStoreDao<S extends SchemaFinalized> implements KvStore
       final Consumer<String> logger) {
     final Optional<UInt64> maybeCount = getObjectCountForColumn(key, oldColumns, dao);
     maybeCount.ifPresentOrElse(
-        (count) -> logger.accept(String.format("Copy column %s - %s objects", key, count)),
+        count -> logger.accept(String.format("Copy column %s - %s objects", key, count)),
         () -> logger.accept(String.format("Copy column %s", key)));
 
     return maybeCount;
@@ -176,11 +176,11 @@ public class V4FinalizedKvStoreDao<S extends SchemaFinalized> implements KvStore
       final Map<String, KvStoreColumn<?, ?>> oldColumns,
       final V4FinalizedKvStoreDao<?> dao) {
     switch (key) {
-      case ("FINALIZED_STATES_BY_SLOT"):
-      case ("SLOTS_BY_FINALIZED_STATE_ROOT"):
-      case ("SLOTS_BY_FINALIZED_ROOT"):
+      case "FINALIZED_STATES_BY_SLOT":
+      case "SLOTS_BY_FINALIZED_STATE_ROOT":
+      case "SLOTS_BY_FINALIZED_ROOT":
         return getEntityCountFromColumn(oldColumns.get(key), dao);
-      case ("FINALIZED_BLOCKS_BY_SLOT"):
+      case "FINALIZED_BLOCKS_BY_SLOT":
         return getEntityCountFromColumn(oldColumns.get("SLOTS_BY_FINALIZED_ROOT"), dao);
       default:
         break;

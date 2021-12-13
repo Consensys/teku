@@ -94,7 +94,7 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
       final OptimisticExecutionPayloadExecutor payloadExecutor)
       throws BlockProcessingException {
     final MutableBeaconStateMerge state = MutableBeaconStateMerge.required(genericState);
-    if (miscHelpersMerge.isMergeComplete(state)) {
+    if (miscHelpersMerge.isMergeTransitionComplete(state)) {
       if (!payload.getParentHash().equals(state.getLatestExecutionPayloadHeader().getBlockHash())) {
         throw new BlockProcessingException(
             "Execution payload parent hash does not match previous execution payload header");

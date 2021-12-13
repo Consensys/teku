@@ -27,18 +27,18 @@ public class MiscHelpersMerge extends MiscHelpersAltair {
   }
 
   @Override
-  public boolean isMergeComplete(final BeaconState genericState) {
+  public boolean isMergeTransitionComplete(final BeaconState genericState) {
     final BeaconStateMerge state = BeaconStateMerge.required(genericState);
     return !state.getLatestExecutionPayloadHeader().isDefault();
   }
 
-  public boolean isMergeBlock(final BeaconState genericState, final BeaconBlock block) {
+  public boolean isMergeTransitionBlock(final BeaconState genericState, final BeaconBlock block) {
     final BeaconStateMerge state = BeaconStateMerge.required(genericState);
     final BeaconBlockBodyMerge blockBody = BeaconBlockBodyMerge.required(block.getBody());
-    return !isMergeComplete(state) && !blockBody.getExecutionPayload().isDefault();
+    return !isMergeTransitionComplete(state) && !blockBody.getExecutionPayload().isDefault();
   }
 
   public boolean isExecutionEnabled(final BeaconState genericState, final BeaconBlock block) {
-    return isMergeBlock(genericState, block) || isMergeComplete(genericState);
+    return isMergeTransitionBlock(genericState, block) || isMergeTransitionComplete(genericState);
   }
 }
