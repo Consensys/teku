@@ -188,4 +188,13 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   public Stream<P> streamPeers() {
     return p2pNetwork.streamPeers();
   }
+
+  @Override
+  public Optional<DiscoveryNetwork<?>> getDiscoveryNetwork() {
+    return Optional.of(this);
+  }
+
+  public DiscoveryService getDiscoveryService() {
+    return discoveryService;
+  }
 }

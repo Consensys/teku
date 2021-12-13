@@ -11,13 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.services.beaconchain;
+package tech.pegasys.teku.storage.server;
+
+import tech.pegasys.teku.storage.api.StorageQueryChannel;
 
 /**
  * CAUTION: this API is unstable and primarily intended for debugging and testing purposes this API
  * might be changed in any version in backward incompatible way
  */
-public interface BeaconChainServiceFacade {
-
-  BeaconChainControllerFacade getBeaconChainController();
-}
+public interface ChainStorageFacade extends StorageQueryChannel {}

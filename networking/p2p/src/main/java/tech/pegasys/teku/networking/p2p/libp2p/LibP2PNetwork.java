@@ -29,6 +29,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
@@ -206,5 +207,10 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   @FunctionalInterface
   public interface PrivateKeyProvider {
     PrivKey get();
+  }
+
+  @Override
+  public Optional<DiscoveryNetwork<?>> getDiscoveryNetwork() {
+    return Optional.empty();
   }
 }
