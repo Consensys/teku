@@ -189,6 +189,7 @@ class ForkChoiceNotifierTest {
   }
 
   @Test
+  @SuppressWarnings("unchecked")
   void onForkChoiceUpdated_shouldNotSendNotificationOfOutOfOrderPayloadAttributes() {
     final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
     final BeaconState headState = recentChainData.getBestState().orElseThrow();
