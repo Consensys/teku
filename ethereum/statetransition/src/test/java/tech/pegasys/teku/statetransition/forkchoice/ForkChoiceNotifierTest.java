@@ -34,7 +34,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.type.Bytes8;
-import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.spec.Spec;
@@ -60,7 +59,6 @@ class ForkChoiceNotifierTest {
 
   private final InlineEventThread eventThread = new InlineEventThread();
   private final Spec spec = TestSpecFactory.createMinimalMerge();
-  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private StorageSystem storageSystem;
@@ -90,7 +88,6 @@ class ForkChoiceNotifierTest {
         new ForkChoiceNotifier(
             eventThread,
             spec,
-            timeProvider,
             executionEngineChannel,
             recentChainData,
             new PayloadAttributesCalculator(spec, eventThread, recentChainData));
@@ -117,7 +114,6 @@ class ForkChoiceNotifierTest {
         new ForkChoiceNotifier(
             eventThread,
             spec,
-            timeProvider,
             executionEngineChannel,
             recentChainData,
             new PayloadAttributesCalculator(spec, eventThread, recentChainData));

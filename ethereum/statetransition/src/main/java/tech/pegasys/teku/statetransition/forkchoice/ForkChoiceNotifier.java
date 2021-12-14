@@ -23,7 +23,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.ssz.type.Bytes8;
-import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -41,7 +40,6 @@ public class ForkChoiceNotifier {
   private final RecentChainData recentChainData;
   private final PayloadAttributesCalculator payloadAttributesCalculator;
   private final Spec spec;
-  private final TimeProvider timeProvider;
 
   private ForkChoiceUpdateData forkChoiceUpdateData = new ForkChoiceUpdateData();
 
@@ -50,13 +48,11 @@ public class ForkChoiceNotifier {
   ForkChoiceNotifier(
       final EventThread eventThread,
       final Spec spec,
-      final TimeProvider timeProvider,
       final ExecutionEngineChannel executionEngineChannel,
       final RecentChainData recentChainData,
       final PayloadAttributesCalculator payloadAttributesCalculator) {
     this.eventThread = eventThread;
     this.spec = spec;
-    this.timeProvider = timeProvider;
     this.executionEngineChannel = executionEngineChannel;
     this.recentChainData = recentChainData;
     this.payloadAttributesCalculator = payloadAttributesCalculator;
@@ -65,7 +61,6 @@ public class ForkChoiceNotifier {
   public static ForkChoiceNotifier create(
       final AsyncRunnerFactory asyncRunnerFactory,
       final Spec spec,
-      final TimeProvider timeProvider,
       final ExecutionEngineChannel executionEngineChannel,
       final RecentChainData recentChainData) {
     final AsyncRunnerEventThread eventThread =
@@ -74,7 +69,6 @@ public class ForkChoiceNotifier {
     return new ForkChoiceNotifier(
         eventThread,
         spec,
-        timeProvider,
         executionEngineChannel,
         recentChainData,
         new PayloadAttributesCalculator(spec, eventThread, recentChainData));
@@ -149,24 +143,27 @@ public class ForkChoiceNotifier {
       return SafeFuture.completedFuture(Optional.empty());
     } else {
       // Request a new payload.
+
+      // to make sure that we deal with the same data when calculatePayloadAttributes asynchronously
+      // returns, we save locally the current class reference.
+      ForkChoiceUpdateData localForkChoiceUpdateData = forkChoiceUpdateData;
       return payloadAttributesCalculator
-          .calculatePayloadAttributes(blockSlot, inSync, forkChoiceUpdateData)
+          .calculatePayloadAttributes(blockSlot, inSync, localForkChoiceUpdateData)
           .thenCompose(
               newPayloadAttributes -> {
-                // update attributes and, since this has been executed async recheck suitability of
-                // Data since forkChoiceUpdateData could have been modified in the meantime
-                //
-                // if an on(Event) has been executed inbetween and changed
-                //  forkChoiceState contained in forkChoiceUpdateData, re-running
-                //  isPayloadIdSuitable should be fine: as long as has a correct
-                //  timestamp and builds atop the right block it is a usable payload
-                if (updatePayloadAttributes(blockSlot, newPayloadAttributes)
-                    && forkChoiceUpdateData.isPayloadIdSuitable(parentExecutionHash, timestamp)) {
-                  return forkChoiceUpdateData.getPayloadId();
-                } else {
+
+                // we make the updated local data global, reverting any potential data not yet sent
+                // to EL, we also force sequenceNumbering, so it will be sent
+                // more reasoning on this may be required.
+                forkChoiceUpdateData =
+                    localForkChoiceUpdateData.withPayloadAttributes(newPayloadAttributes);
+                sendForkChoiceUpdatedOverridingSequenceNumber();
+                if (forkChoiceUpdateData.getPayloadId().isCompletedNormally()
+                    && forkChoiceUpdateData.getPayloadId().join().isEmpty()) {
                   return SafeFuture.failedFuture(
                       new RuntimeException("Unable to obtain a payloadId"));
                 }
+                return forkChoiceUpdateData.getPayloadId();
               });
     }
   }
@@ -211,11 +208,21 @@ public class ForkChoiceNotifier {
   }
 
   private void sendForkChoiceUpdated() {
-    forkChoiceUpdateData.send(executionEngineChannel);
+    forkChoiceUpdateData.send(executionEngineChannel, false);
+  }
+
+  private void sendForkChoiceUpdatedOverridingSequenceNumber() {
+    forkChoiceUpdateData.send(executionEngineChannel, true);
   }
 
   private void updatePayloadAttributes(final UInt64 blockSlot) {
     LOG.debug("updatePayloadAttributes blockSlot {}", blockSlot);
+
+    // this is the earliest common stage at which we want to enforce the EL call ordering
+    // by setting the seq no we enforce the order by which we end up calling the EL will respect the
+    // same order at which we arrived here, despite the subsequent async calls
+    forkChoiceUpdateData.setSequenceNumber();
+
     payloadAttributesCalculator
         .calculatePayloadAttributes(blockSlot, inSync, forkChoiceUpdateData)
         .thenAcceptAsync(
@@ -232,21 +239,8 @@ public class ForkChoiceNotifier {
 
     LOG.debug("updatePayloadAttributes blockSlot {} {}", blockSlot, newPayloadAttributes);
 
-    UInt64 expirationTime = calculatePayloadAttributesExpiration(blockSlot);
-    if (timeProvider.getTimeInSeconds().isGreaterThan(expirationTime)) {
-      LOG.warn(
-          "Payload attribute calculation for slot {} took too long. Was expected before {}",
-          blockSlot,
-          expirationTime);
-      return false;
-    }
     forkChoiceUpdateData = forkChoiceUpdateData.withPayloadAttributes(newPayloadAttributes);
     sendForkChoiceUpdated();
     return true;
-  }
-
-  private UInt64 calculatePayloadAttributesExpiration(final UInt64 blockSlot) {
-    return spec.getSlotStartTime(blockSlot, recentChainData.getGenesisTime())
-        .plus(spec.getSecondsPerSlot(blockSlot) / 3);
   }
 }
