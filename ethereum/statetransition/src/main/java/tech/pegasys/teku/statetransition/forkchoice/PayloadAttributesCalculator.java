@@ -20,14 +20,12 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
-import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.versions.merge.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
 import tech.pegasys.teku.spec.executionengine.PayloadAttributes;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -37,7 +35,6 @@ public class PayloadAttributesCalculator {
   private final Spec spec;
   private final EventThread eventThread;
   private final RecentChainData recentChainData;
-
   private final Map<UInt64, ProposerInfo> proposerInfoByValidatorIndex = new HashMap<>();
 
   public PayloadAttributesCalculator(
@@ -64,13 +61,13 @@ public class PayloadAttributesCalculator {
   public SafeFuture<Optional<PayloadAttributes>> calculatePayloadAttributes(
       final UInt64 blockSlot,
       final boolean inSync,
-      final Optional<ForkChoiceState> forkChoiceState) {
+      final ForkChoiceUpdateData forkChoiceUpdateData) {
     eventThread.checkOnEventThread();
     if (!inSync) {
       // We don't produce blocks while syncing so don't bother preparing the payload
       return SafeFuture.completedFuture(Optional.empty());
     }
-    if (forkChoiceState.isEmpty() || forkChoiceState.get().getHeadBlockHash().isZero()) {
+    if (!forkChoiceUpdateData.hasHeadBlockHash()) {
       // No forkChoiceUpdated message will be sent so no point calculating payload attributes
       return SafeFuture.completedFuture(Optional.empty());
     }
@@ -114,20 +111,6 @@ public class PayloadAttributesCalculator {
     } else {
       return recentChainData.retrieveStateAtSlot(
           new SlotAndBlockRoot(spec.computeStartSlotAtEpoch(requiredEpoch), head.getRoot()));
-    }
-  }
-
-  private static class ProposerInfo {
-    UInt64 expirySlot;
-    Bytes20 feeRecipient;
-
-    public ProposerInfo(UInt64 expirySlot, Bytes20 feeRecipient) {
-      this.expirySlot = expirySlot;
-      this.feeRecipient = feeRecipient;
-    }
-
-    public boolean hasExpired(final UInt64 currentSlot) {
-      return currentSlot.isGreaterThanOrEqualTo(expirySlot);
     }
   }
 }
