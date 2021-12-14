@@ -17,6 +17,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
@@ -30,13 +32,15 @@ import tech.pegasys.teku.spec.executionengine.PayloadAttributes;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class PayloadAttributesCalculator {
-
+  private static final Logger LOG = LogManager.getLogger();
   private static final long MAX_PROPOSER_SEEN_EPOCHS = 2;
 
   private final Spec spec;
   private final EventThread eventThread;
   private final RecentChainData recentChainData;
   private final Map<UInt64, ProposerInfo> proposerInfoByValidatorIndex = new HashMap<>();
+  private long payloadAttributesSequenceProducer = 0;
+  private long payloadAttributesSequenceConsumer = -1;
 
   public PayloadAttributesCalculator(
       final Spec spec, final EventThread eventThread, final RecentChainData recentChainData) {
@@ -78,14 +82,30 @@ public class PayloadAttributesCalculator {
       return SafeFuture.completedFuture(Optional.empty());
     }
     final UInt64 epoch = spec.computeEpochAtSlot(blockSlot);
+
+    // we want to preserve ordering in payload calculation,
+    // so we first generate a sequence for each calculation request
+    final long sequenceNumber = payloadAttributesSequenceProducer++;
     return getStateInEpoch(epoch)
         .thenApplyAsync(
-            maybeState -> calculatePayloadAttributes(blockSlot, epoch, maybeState), eventThread);
+            maybeState -> calculatePayloadAttributes(blockSlot, epoch, maybeState, sequenceNumber),
+            eventThread);
   }
 
   private Optional<PayloadAttributes> calculatePayloadAttributes(
-      final UInt64 blockSlot, final UInt64 epoch, final Optional<BeaconState> maybeState) {
+      final UInt64 blockSlot,
+      final UInt64 epoch,
+      final Optional<BeaconState> maybeState,
+      final long sequenceNumber) {
     eventThread.checkOnEventThread();
+
+    // to preserve ordering we make sure we haven't already calculated a payload that has been
+    // requested later than the current one
+    if (sequenceNumber < payloadAttributesSequenceConsumer) {
+      LOG.warn("ignoring calculation since is not respecting the ordering");
+      return Optional.empty();
+    }
+    payloadAttributesSequenceConsumer = sequenceNumber;
     if (maybeState.isEmpty()) {
       return Optional.empty();
     }
