@@ -22,7 +22,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.versions.merge.BeaconPreparableProposer;
@@ -46,10 +45,8 @@ public class PayloadAttributesCalculator {
     this.recentChainData = recentChainData;
   }
 
-  public void updateProposers(final Collection<BeaconPreparableProposer> proposers) {
-    // Default to the genesis slot if we're pre-genesis.
-    final UInt64 currentSlot = recentChainData.getCurrentSlot().orElse(SpecConfig.GENESIS_SLOT);
-
+  public void updateProposers(
+      final Collection<BeaconPreparableProposer> proposers, final UInt64 currentSlot) {
     // Remove expired validators
     proposerInfoByValidatorIndex.values().removeIf(info -> info.hasExpired(currentSlot));
 
