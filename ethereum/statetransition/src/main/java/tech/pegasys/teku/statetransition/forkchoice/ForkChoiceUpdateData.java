@@ -15,7 +15,6 @@ package tech.pegasys.teku.statetransition.forkchoice;
 
 import com.google.common.base.MoreObjects;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicLong;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -29,28 +28,23 @@ import tech.pegasys.teku.spec.executionengine.PayloadAttributes;
 
 public class ForkChoiceUpdateData {
   private static final Logger LOG = LogManager.getLogger();
-  private static final AtomicLong sequenceCounter = new AtomicLong(0);
-  private static volatile long lastSentSequenceNumber = -1;
 
   private final ForkChoiceState forkChoiceState;
   private final Optional<PayloadAttributes> payloadAttributes;
   private final Optional<Bytes32> terminalBlockHash;
   private final SafeFuture<Optional<Bytes8>> payloadId = new SafeFuture<>();
-  private volatile long sequenceNumber;
   private boolean sent = false;
 
   public ForkChoiceUpdateData() {
     this.forkChoiceState = new ForkChoiceState(Bytes32.ZERO, Bytes32.ZERO, Bytes32.ZERO);
     this.payloadAttributes = Optional.empty();
     this.terminalBlockHash = Optional.empty();
-    this.sequenceNumber = -1;
   }
 
   public ForkChoiceUpdateData(
       final ForkChoiceState forkChoiceState,
       final Optional<PayloadAttributes> payloadAttributes,
-      final Optional<Bytes32> terminalBlockHash,
-      final long sequenceNumber) {
+      final Optional<Bytes32> terminalBlockHash) {
     if (terminalBlockHash.isPresent() && forkChoiceState.getHeadBlockHash().isZero()) {
       this.forkChoiceState =
           new ForkChoiceState(terminalBlockHash.get(), terminalBlockHash.get(), Bytes32.ZERO);
@@ -59,15 +53,13 @@ public class ForkChoiceUpdateData {
     }
     this.payloadAttributes = payloadAttributes;
     this.terminalBlockHash = terminalBlockHash;
-    this.sequenceNumber = sequenceNumber;
   }
 
   public ForkChoiceUpdateData withForkChoiceState(final ForkChoiceState forkChoiceState) {
     if (this.forkChoiceState.equals(forkChoiceState)) {
       return this;
     }
-    return new ForkChoiceUpdateData(
-        forkChoiceState, payloadAttributes, terminalBlockHash, sequenceNumber);
+    return new ForkChoiceUpdateData(forkChoiceState, payloadAttributes, terminalBlockHash);
   }
 
   public ForkChoiceUpdateData withPayloadAttributes(
@@ -75,8 +67,7 @@ public class ForkChoiceUpdateData {
     if (this.payloadAttributes.equals(payloadAttributes)) {
       return this;
     }
-    return new ForkChoiceUpdateData(
-        forkChoiceState, payloadAttributes, terminalBlockHash, sequenceNumber);
+    return new ForkChoiceUpdateData(forkChoiceState, payloadAttributes, terminalBlockHash);
   }
 
   public ForkChoiceUpdateData withTerminalBlockHash(final Bytes32 terminalBlockHash) {
@@ -85,11 +76,7 @@ public class ForkChoiceUpdateData {
       return this;
     }
     return new ForkChoiceUpdateData(
-        forkChoiceState, payloadAttributes, Optional.of(terminalBlockHash), sequenceNumber);
-  }
-
-  public void setSequenceNumber() {
-    this.sequenceNumber = sequenceCounter.incrementAndGet();
+        forkChoiceState, payloadAttributes, Optional.of(terminalBlockHash));
   }
 
   public boolean isPayloadIdSuitable(final Bytes32 parentExecutionHash, final UInt64 timestamp) {
@@ -126,24 +113,12 @@ public class ForkChoiceUpdateData {
     return payloadId;
   }
 
-  public void send(
-      final ExecutionEngineChannel executionEngine, final boolean overrideSequenceNumber) {
+  public void send(final ExecutionEngineChannel executionEngine) {
     if (sent) {
       LOG.debug("send - already sent");
       return;
     }
     sent = true;
-
-    if (!overrideSequenceNumber) {
-      if (lastSentSequenceNumber >= sequenceNumber) {
-        LOG.debug(
-            "send - trying to send data with sequence number {} but last sent was {}",
-            sequenceNumber,
-            lastSentSequenceNumber);
-        return;
-      }
-      lastSentSequenceNumber = sequenceNumber;
-    }
 
     if (forkChoiceState.getHeadBlockHash().isZero()) {
       LOG.debug("send - getHeadBlockHash is zero - returning empty");
@@ -181,7 +156,6 @@ public class ForkChoiceUpdateData {
         .add("payloadAttributes", payloadAttributes)
         .add("terminalBlockHash", terminalBlockHash)
         .add("payloadId", payloadId)
-        .add("sequenceNumber", sequenceNumber)
         .toString();
   }
 }

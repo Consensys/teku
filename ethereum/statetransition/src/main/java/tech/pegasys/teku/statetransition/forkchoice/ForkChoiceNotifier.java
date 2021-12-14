@@ -42,6 +42,7 @@ public class ForkChoiceNotifier {
   private final Spec spec;
 
   private ForkChoiceUpdateData forkChoiceUpdateData = new ForkChoiceUpdateData();
+  private UInt64 lastSeenPayloadAttributeTimestamp = UInt64.ZERO;
 
   private boolean inSync = false; // Assume we are not in sync at startup.
 
@@ -157,7 +158,7 @@ public class ForkChoiceNotifier {
                 // more reasoning on this may be required.
                 forkChoiceUpdateData =
                     localForkChoiceUpdateData.withPayloadAttributes(newPayloadAttributes);
-                sendForkChoiceUpdatedOverridingSequenceNumber();
+                sendForkChoiceUpdated();
                 if (forkChoiceUpdateData.getPayloadId().isCompletedNormally()
                     && forkChoiceUpdateData.getPayloadId().join().isEmpty()) {
                   return SafeFuture.failedFuture(
@@ -208,20 +209,11 @@ public class ForkChoiceNotifier {
   }
 
   private void sendForkChoiceUpdated() {
-    forkChoiceUpdateData.send(executionEngineChannel, false);
-  }
-
-  private void sendForkChoiceUpdatedOverridingSequenceNumber() {
-    forkChoiceUpdateData.send(executionEngineChannel, true);
+    forkChoiceUpdateData.send(executionEngineChannel);
   }
 
   private void updatePayloadAttributes(final UInt64 blockSlot) {
     LOG.debug("updatePayloadAttributes blockSlot {}", blockSlot);
-
-    // this is the earliest common stage at which we want to enforce the EL call ordering
-    // by setting the seq no we enforce the order by which we end up calling the EL will respect the
-    // same order at which we arrived here, despite the subsequent async calls
-    forkChoiceUpdateData.setSequenceNumber();
 
     payloadAttributesCalculator
         .calculatePayloadAttributes(blockSlot, inSync, forkChoiceUpdateData)
@@ -236,6 +228,23 @@ public class ForkChoiceNotifier {
   private boolean updatePayloadAttributes(
       final UInt64 blockSlot, final Optional<PayloadAttributes> newPayloadAttributes) {
     eventThread.checkOnEventThread();
+
+    LOG.debug(
+        "updatePayloadAttributes blockSlot {} newPayloadAttributes {}",
+        blockSlot,
+        newPayloadAttributes);
+
+    if (newPayloadAttributes.isPresent()) {
+      UInt64 newPayloadAttributesTimestamp = newPayloadAttributes.get().getTimestamp();
+      if (newPayloadAttributesTimestamp.isLessThan(lastSeenPayloadAttributeTimestamp)) {
+        LOG.debug(
+            "updatePayloadAttributes newPayloadAttributes contains a timestamp from the past {}, last seen {}",
+            newPayloadAttributesTimestamp,
+            lastSeenPayloadAttributeTimestamp);
+        return false;
+      }
+      lastSeenPayloadAttributeTimestamp = newPayloadAttributesTimestamp;
+    }
 
     LOG.debug("updatePayloadAttributes blockSlot {} {}", blockSlot, newPayloadAttributes);
 
