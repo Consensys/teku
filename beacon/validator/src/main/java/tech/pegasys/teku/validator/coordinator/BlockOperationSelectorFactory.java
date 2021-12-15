@@ -130,7 +130,7 @@ public class BlockOperationSelectorFactory {
           .executionPayload(
               () ->
                   forkChoiceNotifier
-                      .getPayloadId(parentRoot)
+                      .getPayloadId(parentRoot, blockSlotState.getSlot())
                       .thenApply(
                           maybePayloadId -> {
                             if (maybePayloadId.isEmpty()) {
