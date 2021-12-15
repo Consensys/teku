@@ -243,7 +243,7 @@ public class ForkChoiceNotifier {
     // to preserve ordering we make sure we haven't already calculated a payload that has been
     // requested later than the current one
     if (sequenceNumber <= payloadAttributesSequenceConsumer) {
-      LOG.warn("ignoring calculated payload attributes since they violates ordering");
+      LOG.warn("Ignoring calculated payload attributes since it violates ordering");
       return false;
     }
     payloadAttributesSequenceConsumer = sequenceNumber;
