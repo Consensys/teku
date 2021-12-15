@@ -326,8 +326,8 @@ public class BeaconChainController extends Service
     initExecutionEngine();
     initForkChoiceNotifier();
     initTerminalPowBlockMonitor();
-    initOptimisticHeadValidator();
     initForkChoice();
+    initOptimisticHeadValidator();
     initBlockImporter();
     initCombinedChainDataClient();
     initAttestationPool();

@@ -145,6 +145,9 @@ class Store implements UpdatableStore {
     this.finalizedAnchor = finalizedAnchor;
     states.cache(finalizedAnchor.getRoot(), finalizedAnchor);
 
+    // [Merge] Track latest finalized slot validated against EL
+    latestValidFinalizedSlot = UInt64.ZERO;
+
     // Set up block provider to draw from in-memory blocks
     this.blockProvider =
         BlockProvider.combined(
