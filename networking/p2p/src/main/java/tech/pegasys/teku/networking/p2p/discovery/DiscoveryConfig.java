@@ -118,7 +118,8 @@ public class DiscoveryConfig {
 
     private void initMissingDefaults() {
       if (minRandomlySelectedPeers.isEmpty()) {
-        minRandomlySelectedPeers = OptionalInt.of(Math.max(1, minPeers * 2 / 10));
+        minRandomlySelectedPeers =
+            OptionalInt.of(Math.min(maxPeers, Math.max(1, minPeers * 2 / 10)));
       }
       if (listenUdpPort.isEmpty()) {
         listenUdpPort = OptionalInt.of(DEFAULT_P2P_PORT);
