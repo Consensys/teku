@@ -108,7 +108,9 @@ public class DiscoveryNetworkBuilder {
               p2pConfig,
               kvStore,
               p2pNetwork.getPrivateKey(),
-              currentSchemaDefinitionsSupplier);
+              currentSchemaDefinitionsSupplier,
+              DiscV5Service.createDefaultDiscoverySystemBuilder(),
+              DiscV5Service.DEFAULT_NODE_RECORD_CONVERTER);
     } else {
       discoveryService = new NoOpDiscoveryService();
     }
