@@ -230,7 +230,7 @@ public interface SszPrimitiveSchemas {
         @Override
         public SszUInt256 createFromLeafBackingNode(LeafDataNode node, int internalIndex) {
           // reverse() is due to LE -> BE conversion
-          return SszUInt256.of(UInt256.fromBytes(node.hashTreeRoot().reverse()));
+          return SszUInt256.of(UInt256.fromBytes(node.getData().reverse()));
         }
 
         @Override
