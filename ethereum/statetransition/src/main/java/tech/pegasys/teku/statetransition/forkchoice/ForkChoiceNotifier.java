@@ -159,12 +159,15 @@ public class ForkChoiceNotifier {
                 forkChoiceUpdateData =
                     localForkChoiceUpdateData.withPayloadAttributes(newPayloadAttributes);
                 sendForkChoiceUpdated();
-                if (forkChoiceUpdateData.getPayloadId().isCompletedNormally()
-                    && forkChoiceUpdateData.getPayloadId().join().isEmpty()) {
-                  return SafeFuture.failedFuture(
-                      new RuntimeException("Unable to obtain a payloadId"));
-                }
-                return forkChoiceUpdateData.getPayloadId();
+                return forkChoiceUpdateData
+                    .getPayloadId()
+                    .thenApply(
+                        payloadId -> {
+                          if (payloadId.isEmpty()) {
+                            throw new IllegalStateException("Unable to obtain a payloadId");
+                          }
+                          return payloadId;
+                        });
               });
     }
   }

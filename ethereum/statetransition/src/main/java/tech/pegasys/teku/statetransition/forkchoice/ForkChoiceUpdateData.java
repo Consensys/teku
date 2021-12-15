@@ -127,7 +127,6 @@ public class ForkChoiceUpdateData {
     }
 
     LOG.debug("send - calling forkChoiceUpdated({}, {})", forkChoiceState, payloadAttributes);
-    // TODO: Handle errors here instead of propagating to result?
     executionEngine
         .forkChoiceUpdated(forkChoiceState, payloadAttributes)
         .thenApply(ForkChoiceUpdatedResult::getPayloadId)
