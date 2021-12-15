@@ -17,10 +17,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.BeaconNodeFacade;
 import tech.pegasys.teku.TekuFacade;
+import tech.pegasys.teku.cli.TempDirUtils;
 import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkBuilder;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
@@ -35,7 +36,12 @@ import tech.pegasys.teku.services.beaconchain.BeaconChainControllerFactory;
 
 public class TekuConfigurationTest {
 
-  @TempDir Path tempDir;
+  Path tempDir = TempDirUtils.createTempDir();
+
+  @AfterEach
+  void cleanup() {
+    TempDirUtils.deleteDirLenient(tempDir, 10, true);
+  }
 
   @Test
   void beaconChainControllerFactory_useCustomFactories() {
