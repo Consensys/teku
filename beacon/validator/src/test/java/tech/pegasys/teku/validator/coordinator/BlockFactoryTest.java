@@ -161,7 +161,7 @@ class BlockFactoryTest {
     when(proposerSlashingPool.getItemsForBlock(any(), any(), any())).thenReturn(proposerSlashings);
     when(voluntaryExitPool.getItemsForBlock(any(), any(), any())).thenReturn(voluntaryExits);
     when(eth1DataCache.getEth1Vote(any())).thenReturn(ETH1_DATA);
-    when(forkChoiceNotifier.getPayloadId(any()))
+    when(forkChoiceNotifier.getPayloadId(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(Bytes8.fromHexStringLenient("0x0"))));
     when(executionEngine.getPayload(any(), any()))
         .thenReturn(SafeFuture.completedFuture(executionPayload));
