@@ -14,6 +14,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Breaking Changes
 
 ### Additions and Improvements
+* Updated CLI options ensuring unmatched options aren't confused as parameters.
 
 ### Bug Fixes
 * Updated to latest log4j and disabled JNDI lookup support.
