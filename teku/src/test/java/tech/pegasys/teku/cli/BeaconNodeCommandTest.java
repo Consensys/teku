@@ -83,6 +83,18 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  public void unmatchedOptionsNotAllowedAsOptionParameters() {
+    final String[] args = {"--eth1-endpoints http://localhost:8545 --foo"};
+
+    beaconNodeCommand.parse(args);
+    String str = getCommandLineOutput();
+    assertThat(str).contains("Unknown option");
+    assertThat(str).contains("To display full help:");
+    assertThat(str).contains("--help");
+    assertThat(str).doesNotContain("Default");
+  }
+
+  @Test
   public void invalidValueShouldDisplayShortHelpMessage() {
     final String[] args = {"--metrics-enabled=bob"};
 
