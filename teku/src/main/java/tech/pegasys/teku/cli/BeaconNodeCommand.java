@@ -204,18 +204,19 @@ public class BeaconNodeCommand implements Callable<Integer> {
     metricCategoryConverter.addCategories(StandardMetricCategory.class);
   }
 
-  private CommandLine registerConverters(final CommandLine commandLine) {
+  private CommandLine configureCommandLine(final CommandLine commandLine) {
     return commandLine
         .registerConverter(MetricCategory.class, metricCategoryConverter)
-        .registerConverter(UInt64.class, UInt64::valueOf);
+        .registerConverter(UInt64.class, UInt64::valueOf)
+        .setUnmatchedOptionsAllowedAsOptionParameters(false);
   }
 
   private CommandLine getConfigFileCommandLine(final ConfigFileCommand configFileCommand) {
-    return registerConverters(new CommandLine(configFileCommand));
+    return configureCommandLine(new CommandLine(configFileCommand));
   }
 
   private CommandLine getCommandLine() {
-    return registerConverters(new CommandLine(this));
+    return configureCommandLine(new CommandLine(this));
   }
 
   public int parse(final String[] args) {
