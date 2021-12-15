@@ -48,10 +48,11 @@ class OptimisticHeadValidatorTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
   private final ExecutionEngineChannel executionEngine = mock(ExecutionEngineChannel.class);
   private final ForkChoiceStrategy forkChoiceStrategy = mock(ForkChoiceStrategy.class);
+  private final ForkChoice forkChoice = mock(ForkChoice.class);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
 
   private final OptimisticHeadValidator validator =
-      new OptimisticHeadValidator(asyncRunner, recentChainData, executionEngine);
+      new OptimisticHeadValidator(asyncRunner, forkChoice, recentChainData, executionEngine);
 
   @BeforeEach
   void setUp() {
@@ -73,15 +74,17 @@ class OptimisticHeadValidatorTest {
     when(recentChainData.retrieveBlockByRoot(block2.getRoot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(block2)));
 
+    final ExecutePayloadResult executePayloadResult =
+        new ExecutePayloadResult(VALID, Optional.empty(), Optional.empty());
+
     when(executionEngine.executePayload(
             block1.getBody().getOptionalExecutionPayload().orElseThrow()))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                new ExecutePayloadResult(VALID, Optional.empty(), Optional.empty())));
+        .thenReturn(SafeFuture.completedFuture(executePayloadResult));
 
     asyncRunner.executeQueuedActions();
 
     verify(forkChoiceStrategy).onExecutionPayloadResult(block1.getRoot(), VALID);
+    verify(forkChoice).updateLatestValidFinalizedSlot(executePayloadResult);
     verify(forkChoiceStrategy, never()).onExecutionPayloadResult(eq(block2.getRoot()), any());
 
     // Should not execute default payloads

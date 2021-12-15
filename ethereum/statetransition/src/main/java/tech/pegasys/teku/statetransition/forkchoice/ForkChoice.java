@@ -276,7 +276,6 @@ public class ForkChoice {
     if (payloadResult.getStatus() == ExecutionPayloadStatus.VALID) {
       UInt64 latestValidFinalizedSlot = transaction.getLatestFinalized().getSlot();
       if (latestValidFinalizedSlot.compareTo(transaction.getLatestValidFinalizedSlot()) != 0) {
-        LOG.info("updating LatestValidFinalizedSlot {}", latestValidFinalizedSlot);
         transaction.setLatestValidFinalizedSlot(latestValidFinalizedSlot);
       }
     }
@@ -303,9 +302,6 @@ public class ForkChoice {
   }
 
   public void updateLatestValidFinalizedSlot(final ExecutePayloadResult payloadResult) {
-
-    LOG.info("updateLatestValidFinalizedSlot {}", payloadResult);
-
     onForkChoiceThread(
             () -> {
               if (payloadResult.getStatus() != ExecutionPayloadStatus.VALID) {
