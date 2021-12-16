@@ -21,7 +21,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class Constants {
 
   public static final ImmutableList<String> NETWORK_DEFINITIONS =
-      ImmutableList.of("mainnet", "minimal", "swift", "pyrmont", "prater", "less-swift");
+      ImmutableList.of(
+          "mainnet", "minimal", "swift", "pyrmont", "prater", "kintsugi", "less-swift");
 
   // Misc
   @Deprecated public static UInt64 ETH1_FOLLOW_DISTANCE = UInt64.valueOf(1024);

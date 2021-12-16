@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.spec.SpecMilestone.ALTAIR;
+import static tech.pegasys.teku.spec.SpecMilestone.MERGE;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 
 import java.util.Arrays;
@@ -45,6 +46,9 @@ public class SpecFactoryTest {
     final Spec spec = SpecFactory.create(configName);
     if (configName.equals("minimal")) { // Minimal doesn't have altair scheduled
       assertThat(spec.getForkSchedule().getSupportedMilestones()).containsExactly(PHASE0);
+    } else if (configName.equals("kintsugi")) {
+      assertThat(spec.getForkSchedule().getSupportedMilestones())
+          .containsExactly(PHASE0, ALTAIR, MERGE);
     } else {
       assertThat(spec.getForkSchedule().getSupportedMilestones()).containsExactly(PHASE0, ALTAIR);
     }
