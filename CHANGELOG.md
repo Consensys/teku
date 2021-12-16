@@ -15,8 +15,5 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Additions and Improvements
 * Added `kintsugi` network definition. 
-* Updated CLI options ensuring unmatched options aren't confused as parameters.
 
 ### Bug Fixes
-* Updated to log4j 2.16.0.
-* Fix multiarch JDK17 variant docker image to bundle Java 17 instead of Java 16
