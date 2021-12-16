@@ -353,8 +353,7 @@ class ForkChoiceTest {
 
     // Should now have finalized epoch 2
     assertThat(recentChainData.getFinalizedEpoch()).isEqualTo(UInt64.valueOf(2));
-    assertThat(recentChainData.getLatestValidFinalizedSlot())
-        .isEqualTo(Optional.of(UInt64.valueOf(16)));
+    assertThat(recentChainData.getLatestValidFinalizedSlot()).isEqualTo(UInt64.valueOf(16));
   }
 
   @Test
@@ -369,8 +368,7 @@ class ForkChoiceTest {
     assertThat(recentChainData.getFinalizedEpoch()).isEqualTo(UInt64.valueOf(2));
 
     // latest valid finalized should have advanced to 16
-    assertThat(recentChainData.getLatestValidFinalizedSlot())
-        .isEqualTo(Optional.of(UInt64.valueOf(16)));
+    assertThat(recentChainData.getLatestValidFinalizedSlot()).isEqualTo(UInt64.valueOf(16));
   }
 
   @Test
@@ -391,16 +389,16 @@ class ForkChoiceTest {
     assertThat(recentChainData.getFinalizedEpoch()).isEqualTo(UInt64.valueOf(2));
 
     // latest valid finalized slot should remain 0
-    assertThat(recentChainData.getLatestValidFinalizedSlot())
-        .isEqualTo(Optional.of(UInt64.valueOf(0)));
+    assertThat(recentChainData.getLatestValidFinalizedSlot()).isEqualTo(UInt64.valueOf(0));
 
     // we now simulate an update from OptimisticHeadValidator
-    forkChoice.updateLatestValidFinalizedSlot(
-        new ExecutePayloadResult(ExecutionPayloadStatus.VALID, Optional.empty(), Optional.empty()));
+    forkChoice.onExecutionPayloadResult(
+        epoch4Block.getRoot(),
+        new ExecutePayloadResult(ExecutionPayloadStatus.VALID, Optional.empty(), Optional.empty()),
+        recentChainData.getStore().getLatestFinalizedBlockSlot());
 
     // latest valid finalized should have advanced to 16
-    assertThat(recentChainData.getLatestValidFinalizedSlot())
-        .isEqualTo(Optional.of(UInt64.valueOf(16)));
+    assertThat(recentChainData.getLatestValidFinalizedSlot()).isEqualTo(UInt64.valueOf(16));
   }
 
   @Test

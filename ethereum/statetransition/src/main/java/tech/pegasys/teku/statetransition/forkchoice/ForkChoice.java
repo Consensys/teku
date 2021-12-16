@@ -275,7 +275,7 @@ public class ForkChoice {
 
     if (payloadResult.getStatus() == ExecutionPayloadStatus.VALID) {
       UInt64 latestValidFinalizedSlot = transaction.getLatestFinalized().getSlot();
-      if (latestValidFinalizedSlot.compareTo(transaction.getLatestValidFinalizedSlot()) != 0) {
+      if (latestValidFinalizedSlot.isGreaterThan(transaction.getLatestValidFinalizedSlot())) {
         transaction.setLatestValidFinalizedSlot(latestValidFinalizedSlot);
       }
     }
@@ -301,23 +301,28 @@ public class ForkChoice {
     return result;
   }
 
-  public void updateLatestValidFinalizedSlot(final ExecutePayloadResult payloadResult) {
+  public void onExecutionPayloadResult(
+      final Bytes32 blockRoot,
+      final ExecutePayloadResult result,
+      final UInt64 latestFinalizedBlockSlot) {
     onForkChoiceThread(
             () -> {
-              if (payloadResult.getStatus() != ExecutionPayloadStatus.VALID) {
+              if (result.getStatus() != ExecutionPayloadStatus.VALID) {
                 return;
               }
               UInt64 latestValidFinalizedSlotInStore =
-                  recentChainData.getStore().getLatestFinalized().getSlot();
+                  recentChainData.getLatestValidFinalizedSlot();
 
-              if (recentChainData
-                  .getLatestValidFinalizedSlot()
-                  .map(value -> value.compareTo(latestValidFinalizedSlotInStore) != 0)
-                  .orElse(true)) {
+              if (latestFinalizedBlockSlot.isGreaterThan(latestValidFinalizedSlotInStore)) {
                 final StoreTransaction transaction = recentChainData.startStoreTransaction();
-                transaction.setLatestValidFinalizedSlot(latestValidFinalizedSlotInStore);
+                transaction.setLatestValidFinalizedSlot(latestFinalizedBlockSlot);
                 transaction.commit().join();
               }
+
+              recentChainData
+                  .getForkChoiceStrategy()
+                  .orElseThrow()
+                  .onExecutionPayloadResult(blockRoot, result.getStatus());
             })
         .reportExceptions();
   }

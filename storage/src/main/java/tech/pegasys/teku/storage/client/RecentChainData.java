@@ -526,8 +526,8 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         && store.getForkChoiceStrategy().isFullyValidated(store.getJustifiedCheckpoint().getRoot());
   }
 
-  public Optional<UInt64> getLatestValidFinalizedSlot() {
-    return store == null ? Optional.empty() : Optional.of(store.getLatestValidFinalizedSlot());
+  public UInt64 getLatestValidFinalizedSlot() {
+    return store == null ? UInt64.ZERO : store.getLatestValidFinalizedSlot();
   }
 
   @Override

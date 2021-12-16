@@ -86,7 +86,7 @@ class Store implements UpdatableStore {
   AnchorPoint finalizedAnchor;
   Checkpoint justifiedCheckpoint;
   Checkpoint bestJustifiedCheckpoint;
-  UInt64 latestValidFinalizedSlot;
+  UInt64 latestValidFinalizedSlot = UInt64.ZERO;
   Optional<Bytes32> proposerBoostRoot = Optional.empty();
   final CachingTaskQueue<Bytes32, StateAndBlockSummary> states;
   final Map<Bytes32, SignedBeaconBlock> blocks;
@@ -144,9 +144,6 @@ class Store implements UpdatableStore {
     // Track latest finalized block
     this.finalizedAnchor = finalizedAnchor;
     states.cache(finalizedAnchor.getRoot(), finalizedAnchor);
-
-    // [Merge] Track latest finalized slot validated against EL
-    latestValidFinalizedSlot = UInt64.ZERO;
 
     // Set up block provider to draw from in-memory blocks
     this.blockProvider =
