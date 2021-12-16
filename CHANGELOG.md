@@ -14,6 +14,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Breaking Changes
 
 ### Additions and Improvements
+* Added `kintsugi` network definition. 
 * Updated CLI options ensuring unmatched options aren't confused as parameters.
 
 ### Bug Fixes
