@@ -243,4 +243,16 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
         .usingRecursiveComparison()
         .isEqualTo(tekuConfiguration);
   }
+
+  @Test
+  public void minimumRandomlySelectedPeerCount_shouldBeBoundedByMaxPeers() {
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments(
+            "--p2p-peer-lower-bound", "0",
+            "--p2p-peer-upper-bound", "0");
+    assertThat(tekuConfiguration.discovery().getMinRandomlySelectedPeers()).isEqualTo(0);
+    assertThat(createConfigBuilder().discovery(b -> b.minPeers(0).maxPeers(0)).build())
+        .usingRecursiveComparison()
+        .isEqualTo(tekuConfiguration);
+  }
 }
