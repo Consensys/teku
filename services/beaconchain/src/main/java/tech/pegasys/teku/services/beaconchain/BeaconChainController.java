@@ -326,8 +326,8 @@ public class BeaconChainController extends Service
     initExecutionEngine();
     initForkChoiceNotifier();
     initTerminalPowBlockMonitor();
-    initOptimisticHeadValidator();
     initForkChoice();
+    initOptimisticHeadValidator();
     initBlockImporter();
     initCombinedChainDataClient();
     initAttestationPool();
@@ -371,7 +371,8 @@ public class BeaconChainController extends Service
     if (spec.isMilestoneSupported(SpecMilestone.MERGE)) {
       optimisticHeadValidator =
           Optional.of(
-              new OptimisticHeadValidator(beaconAsyncRunner, recentChainData, executionEngine));
+              new OptimisticHeadValidator(
+                  beaconAsyncRunner, forkChoice, recentChainData, executionEngine));
     }
   }
 

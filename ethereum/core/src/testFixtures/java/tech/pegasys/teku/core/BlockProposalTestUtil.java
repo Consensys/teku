@@ -104,7 +104,7 @@ public class BlockProposalTestUtil {
                             executionPayload.orElseGet(
                                 () ->
                                     createExecutionPayload(
-                                        newSlot, state, newEpoch, transactions, terminalBlock))));
+                                        newSlot, state, transactions, terminalBlock))));
 
     // Sign block and set block signature
     final BeaconBlock block = newBlockAndState.getBlock();
@@ -161,11 +161,7 @@ public class BlockProposalTestUtil {
                                 executionPayload.orElseGet(
                                     () ->
                                         createExecutionPayload(
-                                            newSlot,
-                                            state,
-                                            newEpoch,
-                                            transactions,
-                                            terminalBlock))));
+                                            newSlot, state, transactions, terminalBlock))));
 
     final BeaconBlock block =
         spec.atSlot(newSlot)
@@ -188,7 +184,6 @@ public class BlockProposalTestUtil {
   private ExecutionPayload createExecutionPayload(
       final UInt64 newSlot,
       final BeaconState state,
-      final UInt64 newEpoch,
       final Optional<List<Bytes>> transactions,
       final Optional<Bytes32> terminalBlock) {
     final SpecVersion specVersion = spec.atSlot(newSlot);
@@ -205,6 +200,7 @@ public class BlockProposalTestUtil {
       throw new IllegalArgumentException("Merge already happened, cannot set terminal block hash");
     }
     Bytes32 parentHash = terminalBlock.orElse(currentExecutionPayloadBlockHash);
+    UInt64 currentEpoch = specVersion.beaconStateAccessors().getCurrentEpoch(state);
 
     return schema.create(
         parentHash,
@@ -212,7 +208,7 @@ public class BlockProposalTestUtil {
         dataStructureUtil.randomBytes32(),
         dataStructureUtil.randomBytes32(),
         dataStructureUtil.randomBytes256(),
-        specVersion.beaconStateAccessors().getRandaoMix(state, newEpoch),
+        specVersion.beaconStateAccessors().getRandaoMix(state, currentEpoch),
         newSlot,
         UInt64.valueOf(30_000_000L),
         UInt64.valueOf(30_000_000L),

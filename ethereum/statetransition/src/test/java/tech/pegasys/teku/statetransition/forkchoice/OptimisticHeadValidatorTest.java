@@ -15,12 +15,11 @@ package tech.pegasys.teku.statetransition.forkchoice;
 
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus.VALID;
 
@@ -31,7 +30,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
-import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -40,6 +39,7 @@ import tech.pegasys.teku.spec.executionengine.ExecutePayloadResult;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 
 class OptimisticHeadValidatorTest {
   private final Spec spec = TestSpecFactory.createMinimalMerge();
@@ -47,15 +47,16 @@ class OptimisticHeadValidatorTest {
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
   private final ExecutionEngineChannel executionEngine = mock(ExecutionEngineChannel.class);
-  private final ForkChoiceStrategy forkChoiceStrategy = mock(ForkChoiceStrategy.class);
+  private final UpdatableStore store = mock(UpdatableStore.class);
+  private final ForkChoice forkChoice = mock(ForkChoice.class);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
 
   private final OptimisticHeadValidator validator =
-      new OptimisticHeadValidator(asyncRunner, recentChainData, executionEngine);
+      new OptimisticHeadValidator(asyncRunner, forkChoice, recentChainData, executionEngine);
 
   @BeforeEach
   void setUp() {
-    when(recentChainData.getForkChoiceStrategy()).thenReturn(Optional.of(forkChoiceStrategy));
+    when(recentChainData.getStore()).thenReturn(store);
     assertThat(validator.start()).isCompleted();
   }
 
@@ -73,16 +74,22 @@ class OptimisticHeadValidatorTest {
     when(recentChainData.retrieveBlockByRoot(block2.getRoot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(block2)));
 
+    final ExecutePayloadResult executePayloadResult =
+        new ExecutePayloadResult(VALID, Optional.empty(), Optional.empty());
+
     when(executionEngine.executePayload(
             block1.getBody().getOptionalExecutionPayload().orElseThrow()))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                new ExecutePayloadResult(VALID, Optional.empty(), Optional.empty())));
+        .thenReturn(SafeFuture.completedFuture(executePayloadResult));
+
+    final UInt64 latestFinalizedBlockSlot = UInt64.ONE;
+
+    when(store.getLatestFinalizedBlockSlot()).thenReturn(latestFinalizedBlockSlot);
 
     asyncRunner.executeQueuedActions();
 
-    verify(forkChoiceStrategy).onExecutionPayloadResult(block1.getRoot(), VALID);
-    verify(forkChoiceStrategy, never()).onExecutionPayloadResult(eq(block2.getRoot()), any());
+    verify(forkChoice)
+        .onExecutionPayloadResult(block1.getRoot(), executePayloadResult, latestFinalizedBlockSlot);
+    verifyNoMoreInteractions(forkChoice);
 
     // Should not execute default payloads
     verify(executionEngine, never())

@@ -22,6 +22,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,6 +46,8 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
+import tech.pegasys.teku.spec.executionengine.ExecutePayloadResult;
+import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
 import tech.pegasys.teku.spec.executionengine.StubExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
@@ -337,6 +340,68 @@ class ForkChoiceTest {
   }
 
   @Test
+  void onBlock_shouldUpdateLatestValidFinalizedSlotPreMergeBlock() {
+    // make EL returning INVALID, but will never be called
+    executionEngine.setExecutePayloadResult(
+        new ExecutePayloadResult(
+            ExecutionPayloadStatus.INVALID, Optional.empty(), Optional.empty()));
+
+    UInt64 slotToImport = prepFinalizeEpoch(2);
+
+    final SignedBlockAndState epoch4Block = chainBuilder.generateBlockAtSlot(slotToImport);
+    importBlock(epoch4Block);
+
+    // Should now have finalized epoch 2
+    assertThat(recentChainData.getFinalizedEpoch()).isEqualTo(UInt64.valueOf(2));
+    assertThat(recentChainData.getLatestValidFinalizedSlot()).isEqualTo(UInt64.valueOf(16));
+  }
+
+  @Test
+  void onBlock_shouldUpdateLatestValidFinalizedSlotPostMergeBlock() {
+    doMerge();
+    UInt64 slotToImport = prepFinalizeEpoch(2);
+
+    final SignedBlockAndState epoch4Block = chainBuilder.generateBlockAtSlot(slotToImport);
+    importBlock(epoch4Block);
+
+    // Should now have finalized epoch 2
+    assertThat(recentChainData.getFinalizedEpoch()).isEqualTo(UInt64.valueOf(2));
+
+    // latest valid finalized should have advanced to 16
+    assertThat(recentChainData.getLatestValidFinalizedSlot()).isEqualTo(UInt64.valueOf(16));
+  }
+
+  @Test
+  void onBlock_shouldNotUpdateLatestValidFinalizedSlotPostMergeBlockELSyncing() {
+    doMerge();
+    UInt64 slotToImport = prepFinalizeEpoch(2);
+
+    // make EL returning SYNCING
+    executionEngine.setExecutePayloadResult(
+        new ExecutePayloadResult(
+            ExecutionPayloadStatus.SYNCING, Optional.empty(), Optional.empty()));
+
+    // generate block which finalize epoch 2
+    final SignedBlockAndState epoch4Block = chainBuilder.generateBlockAtSlot(slotToImport);
+    importBlock(epoch4Block);
+
+    // Should now have finalized epoch 2
+    assertThat(recentChainData.getFinalizedEpoch()).isEqualTo(UInt64.valueOf(2));
+
+    // latest valid finalized slot should remain 0
+    assertThat(recentChainData.getLatestValidFinalizedSlot()).isEqualTo(UInt64.valueOf(0));
+
+    // we now simulate an update from OptimisticHeadValidator
+    forkChoice.onExecutionPayloadResult(
+        epoch4Block.getRoot(),
+        new ExecutePayloadResult(ExecutionPayloadStatus.VALID, Optional.empty(), Optional.empty()),
+        recentChainData.getStore().getLatestFinalizedBlockSlot());
+
+    // latest valid finalized should have advanced to 16
+    assertThat(recentChainData.getLatestValidFinalizedSlot()).isEqualTo(UInt64.valueOf(16));
+  }
+
+  @Test
   void applyHead_shouldSendForkChoiceUpdatedNotification() {
     final SignedBlockAndState blockAndState = storageSystem.chainUpdater().advanceChainUntil(1);
 
@@ -394,6 +459,30 @@ class ForkChoiceTest {
         chainBuilder.generateBlockAtSlot(newBlockSlot, epoch2BlockOptions);
 
     importBlock(epoch2Block);
+  }
+
+  private UInt64 prepFinalizeEpoch(long epoch) {
+    final ChainUpdater chainUpdater = storageSystem.chainUpdater();
+    final UInt64 epochPlus2StartSlot = spec.computeStartSlotAtEpoch(UInt64.valueOf(epoch).plus(2));
+
+    chainUpdater.setTime(
+        spec.getSlotStartTime(epochPlus2StartSlot, genesis.getState().getGenesis_time()));
+
+    justifyEpoch(chainUpdater, epoch);
+
+    prepEpochForJustification(chainUpdater, epochPlus2StartSlot);
+
+    return epochPlus2StartSlot;
+  }
+
+  private void doMerge() {
+    final SignedBlockAndState epoch4Block =
+        chainBuilder.generateBlockAtSlot(
+            storageSystem.chainUpdater().getHeadSlot().plus(1),
+            ChainBuilder.BlockOptions.create()
+                .setTerminalBlockHash(dataStructureUtil.randomBytes32()));
+
+    storageSystem.chainUpdater().updateBestBlock(epoch4Block);
   }
 
   @Test
