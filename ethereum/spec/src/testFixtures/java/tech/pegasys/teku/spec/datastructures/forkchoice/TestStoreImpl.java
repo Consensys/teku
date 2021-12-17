@@ -44,6 +44,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   protected Map<Checkpoint, BeaconState> checkpoint_states;
   protected Map<UInt64, VoteTracker> votes;
   protected Optional<Bytes32> proposerBoostRoot = Optional.empty();
+  protected UInt64 latestValidFinalizedSlot;
 
   TestStoreImpl(
       final Spec spec,
@@ -121,6 +122,11 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   @Override
   public ReadOnlyForkChoiceStrategy getForkChoiceStrategy() {
     throw new UnsupportedOperationException("Not implemented");
+  }
+
+  @Override
+  public UInt64 getLatestValidFinalizedSlot() {
+    return latestValidFinalizedSlot;
   }
 
   private SignedBeaconBlock getSignedBlock(final Bytes32 blockRoot) {
@@ -268,6 +274,11 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   @Override
   public void setProposerBoostRoot(final Bytes32 boostedBlockRoot) {
     proposerBoostRoot = Optional.of(boostedBlockRoot);
+  }
+
+  @Override
+  public void setLatestValidFinalizedSlot(UInt64 latestValidFinalizedSlot) {
+    this.latestValidFinalizedSlot = latestValidFinalizedSlot;
   }
 
   @Override

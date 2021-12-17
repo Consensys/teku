@@ -272,6 +272,14 @@ public class ForkChoice {
         transaction.setProposerBoostRoot(block.getRoot());
       }
     }
+
+    if (payloadResult.getStatus() == ExecutionPayloadStatus.VALID) {
+      UInt64 latestValidFinalizedSlot = transaction.getLatestFinalized().getSlot();
+      if (latestValidFinalizedSlot.isGreaterThan(transaction.getLatestValidFinalizedSlot())) {
+        transaction.setLatestValidFinalizedSlot(latestValidFinalizedSlot);
+      }
+    }
+
     // Note: not using thenRun here because we want to ensure each step is on the event thread
     transaction.commit().join();
     forkChoiceStrategy.onExecutionPayloadResult(block.getRoot(), payloadResult.getStatus());
@@ -291,6 +299,32 @@ public class ForkChoice {
     }
     notifyForkChoiceUpdated();
     return result;
+  }
+
+  public void onExecutionPayloadResult(
+      final Bytes32 blockRoot,
+      final ExecutePayloadResult result,
+      final UInt64 latestFinalizedBlockSlot) {
+    onForkChoiceThread(
+            () -> {
+              if (result.getStatus() != ExecutionPayloadStatus.VALID) {
+                return;
+              }
+              UInt64 latestValidFinalizedSlotInStore =
+                  recentChainData.getLatestValidFinalizedSlot();
+
+              if (latestFinalizedBlockSlot.isGreaterThan(latestValidFinalizedSlotInStore)) {
+                final StoreTransaction transaction = recentChainData.startStoreTransaction();
+                transaction.setLatestValidFinalizedSlot(latestFinalizedBlockSlot);
+                transaction.commit().join();
+              }
+
+              recentChainData
+                  .getForkChoiceStrategy()
+                  .orElseThrow()
+                  .onExecutionPayloadResult(blockRoot, result.getStatus());
+            })
+        .reportExceptions();
   }
 
   private void updateForkChoiceForImportedBlock(
