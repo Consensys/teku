@@ -183,7 +183,7 @@ public class ValidatorConfig {
     if (suggestedFeeRecipient.isEmpty()
         && !(validatorKeys.isEmpty() && validatorExternalSignerPublicKeySources.isEmpty())) {
       throw new InvalidConfigurationException(
-          "Invalid configuration. --validators-fee-recipient-address must be specified when Merge milestone is active");
+          "Invalid configuration. --Xvalidators-suggested-fee-recipient-address must be specified when Merge milestone is active");
     }
   }
 

@@ -71,7 +71,7 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
     return feeRecipient.orElseThrow(
         () ->
             new InvalidConfigurationException(
-                "Invalid configuration. --validators-fee-recipient-address must be specified when Merge milestone is active"));
+                "Invalid configuration. --Xvalidators-suggested-fee-recipient-address must be specified when Merge milestone is active"));
   }
 
   @Override
