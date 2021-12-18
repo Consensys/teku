@@ -17,3 +17,4 @@ For information on changes in released versions of Teku, see the [releases page]
 * Added `kintsugi` network definition. 
 
 ### Bug Fixes
+* Updated to log4j 2.17.0.
