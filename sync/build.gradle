@@ -30,7 +30,7 @@ dependencies {
     testImplementation testFixtures(project('::networking:p2p'))
     testImplementation 'org.hyperledger.besu.internal:metrics-core'
 
-    integrationTestImplementation testFixtures(project(':bls'))
+    integrationTestImplementation testFixtures(project(':infrastructure:bls'))
     integrationTestImplementation testFixtures(project(':ethereum:statetransition'))
     integrationTestImplementation testFixtures(project('::networking:eth2'))
     integrationTestImplementation testFixtures(project(':sync'))
