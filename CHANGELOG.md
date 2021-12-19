@@ -12,9 +12,11 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ## Unreleased Changes
 ### Breaking Changes
+* API users should switch to using response 'code' from BadRequests, rather than 'status' field, in line with the standard API.
 
 ### Additions and Improvements
 * Added `kintsugi` network definition. 
 
 ### Bug Fixes
 * Updated to log4j 2.17.0.
+* Made BadRequests compliant with the api, returning 'code' rather than 'status'.
