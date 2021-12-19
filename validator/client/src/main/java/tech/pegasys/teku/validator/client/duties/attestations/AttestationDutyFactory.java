@@ -26,15 +26,11 @@ public class AttestationDutyFactory
 
   private final ForkProvider forkProvider;
   private final ValidatorApiChannel validatorApiChannel;
-  private final boolean sendAttestationsAsBatch;
 
   public AttestationDutyFactory(
-      final ForkProvider forkProvider,
-      final ValidatorApiChannel validatorApiChannel,
-      final boolean sendAttestationsAsBatch) {
+      final ForkProvider forkProvider, final ValidatorApiChannel validatorApiChannel) {
     this.forkProvider = forkProvider;
     this.validatorApiChannel = validatorApiChannel;
-    this.sendAttestationsAsBatch = sendAttestationsAsBatch;
   }
 
   @Override
@@ -44,9 +40,7 @@ public class AttestationDutyFactory
         slot,
         forkProvider,
         validatorApiChannel,
-        sendAttestationsAsBatch
-            ? new BatchAttestationSendingStrategy<>(validatorApiChannel::sendSignedAttestations)
-            : new IndividualSendingStrategy<>(validatorApiChannel::sendSignedAttestations));
+        new BatchAttestationSendingStrategy<>(validatorApiChannel::sendSignedAttestations));
   }
 
   @Override
@@ -56,9 +50,7 @@ public class AttestationDutyFactory
         validatorApiChannel,
         forkProvider,
         VALIDATOR_LOGGER,
-        sendAttestationsAsBatch
-            ? new BatchAttestationSendingStrategy<>(validatorApiChannel::sendAggregateAndProofs)
-            : new IndividualSendingStrategy<>(validatorApiChannel::sendAggregateAndProofs));
+        new BatchAttestationSendingStrategy<>(validatorApiChannel::sendAggregateAndProofs));
   }
 
   @Override
