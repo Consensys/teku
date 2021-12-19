@@ -27,24 +27,23 @@ import tech.pegasys.teku.provider.JsonProvider;
 
 public class BadRequest {
   private static final Logger LOG = LogManager.getLogger();
-  private final Integer status;
+  private final Integer code;
   private final String message;
 
   public BadRequest(String message) {
     this.message = message;
-    this.status = SC_BAD_REQUEST;
+    this.code = SC_BAD_REQUEST;
   }
 
   @JsonCreator
-  public BadRequest(
-      @JsonProperty("status") Integer status, @JsonProperty("message") String message) {
-    this.status = status;
+  public BadRequest(@JsonProperty("code") Integer code, @JsonProperty("message") String message) {
+    this.code = code;
     this.message = message;
   }
 
-  @JsonProperty("status")
-  public final Integer getStatus() {
-    return status;
+  @JsonProperty("code")
+  public final Integer getCode() {
+    return code;
   }
 
   @JsonProperty("message")
