@@ -96,7 +96,7 @@ public class GetStateCommitteesTest extends AbstractDataBackedRestAPIIntegration
     final Response response = get("head", Map.of("slot", "1", "epoch", "1"));
     assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
     final BadRequest body = jsonProvider.jsonToObject(response.body().string(), BadRequest.class);
-    assertThat(body.getStatus()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(body.getCode()).isEqualTo(SC_BAD_REQUEST);
     assertThat(body.getMessage()).isEqualToIgnoringCase("Slot 1 is not in epoch 1");
   }
 
@@ -105,7 +105,7 @@ public class GetStateCommitteesTest extends AbstractDataBackedRestAPIIntegration
     final Response response = get("head", Map.of("epoch", "1024000"));
     assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
     final BadRequest body = jsonProvider.jsonToObject(response.body().string(), BadRequest.class);
-    assertThat(body.getStatus()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(body.getCode()).isEqualTo(SC_BAD_REQUEST);
     assertThat(body.getMessage()).startsWith("Epoch 1024000 is too far ahead ");
   }
 
