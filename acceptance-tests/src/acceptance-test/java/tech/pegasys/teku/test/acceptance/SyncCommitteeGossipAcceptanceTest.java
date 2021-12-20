@@ -28,6 +28,7 @@ import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 public class SyncCommitteeGossipAcceptanceTest extends AcceptanceTestBase {
   private static final int NODE_VALIDATORS = 8;
   private static final int TOTAL_VALIDATORS = NODE_VALIDATORS * 2;
+  private final String network = "less-swift";
 
   private final SystemTimeProvider timeProvider = new SystemTimeProvider();
   private TekuNode primaryNode;
@@ -36,7 +37,7 @@ public class SyncCommitteeGossipAcceptanceTest extends AcceptanceTestBase {
 
   @BeforeEach
   public void setup() {
-    final int genesisTime = timeProvider.getTimeInSeconds().plus(5).intValue();
+    final int genesisTime = timeProvider.getTimeInSeconds().plus(15).intValue();
     primaryNode =
         createTekuNode(
             config -> configureNode(config, genesisTime).withInteropValidators(0, NODE_VALIDATORS));
@@ -51,8 +52,7 @@ public class SyncCommitteeGossipAcceptanceTest extends AcceptanceTestBase {
         createValidatorNode(
             config ->
                 config
-                    .withNetwork("minimal")
-                    .withAltairEpoch(UInt64.ZERO)
+                    .withNetwork(network)
                     .withInteropValidators(NODE_VALIDATORS, NODE_VALIDATORS)
                     .withBeaconNode(secondaryNode));
   }
@@ -65,6 +65,8 @@ public class SyncCommitteeGossipAcceptanceTest extends AcceptanceTestBase {
     secondaryNode.start();
     secondaryNode.startEventListener(List.of(EventType.contribution_and_proof));
     validatorClient.start();
+
+    primaryNode.waitForEpoch(1);
 
     secondaryNode.waitForFullSyncCommitteeAggregate();
     validatorClient.stop();
@@ -86,7 +88,7 @@ public class SyncCommitteeGossipAcceptanceTest extends AcceptanceTestBase {
   }
 
   private TekuNode.Config configureNode(final TekuNode.Config node, final int genesisTime) {
-    return node.withNetwork("minimal")
+    return node.withNetwork(network)
         .withAltairEpoch(UInt64.ZERO)
         .withGenesisTime(genesisTime)
         .withInteropNumberOfValidators(TOTAL_VALIDATORS)

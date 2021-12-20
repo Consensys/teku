@@ -300,7 +300,7 @@ public class TekuNode extends Node {
           }
           assertThat(percentageOfBitsSet >= 1.0).isTrue();
         },
-        5,
+        2,
         MINUTES);
   }
 
