@@ -38,10 +38,10 @@ public class ValidatorLivenessAcceptanceTest extends AcceptanceTestBase {
     final int genesisTime = timeProvider.getTimeInSeconds().plus(10).intValue();
     primaryNode =
         createTekuNode(
-            config -> configureNode(config, genesisTime)
-                .withAltairEpoch(altairEpoch)
-                .withInteropValidators(0, NODE_VALIDATORS)
-        );
+            config ->
+                configureNode(config, genesisTime)
+                    .withAltairEpoch(altairEpoch)
+                    .withInteropValidators(0, NODE_VALIDATORS));
     secondaryNode =
         createTekuNode(
             config ->
