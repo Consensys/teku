@@ -380,7 +380,7 @@ class ForkChoiceTest {
 
     // generate block which finalize epoch 2
     final SignedBlockAndState epoch4Block = chainBuilder.generateBlockAtSlot(slotToImport);
-    importBlockWithError(epoch4Block, FailureReason.FAILED_EXECUTION_PAYLOAD_EXECUTION);
+    importBlockWithError(epoch4Block, FailureReason.FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING);
 
     assertThat(recentChainData.getEnqueuedExecutionPayloadExecutionRetry())
         .isEqualTo(Optional.of(epoch4Block.getBlock()));
