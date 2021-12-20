@@ -21,6 +21,7 @@ import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParam
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.BEACON_BLOCK_ROOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SUBCOMMITTEE_INDEX;
@@ -89,6 +90,9 @@ public class GetSyncCommitteeContribution extends AbstractHandler {
             status = RES_OK,
             content = @OpenApiContent(from = GetSyncCommitteeContributionResponse.class)),
         @OpenApiResponse(status = RES_BAD_REQUEST, description = "Invalid request syntax."),
+        @OpenApiResponse(
+            status = RES_NOT_FOUND,
+            description = "No matching sync committee messages were found"),
         @OpenApiResponse(status = RES_INTERNAL_ERROR, description = "Beacon node internal error.")
       })
   @Override
