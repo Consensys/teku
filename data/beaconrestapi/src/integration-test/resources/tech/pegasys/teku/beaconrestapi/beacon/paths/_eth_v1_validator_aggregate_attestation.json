@@ -35,6 +35,9 @@
       "400" : {
         "description" : "Invalid parameter supplied"
       },
+      "404" : {
+        "description" : "No matching attestations were found"
+      },
       "403" : {
         "description" : "Beacon node was not assigned to aggregate on that subnet"
       },

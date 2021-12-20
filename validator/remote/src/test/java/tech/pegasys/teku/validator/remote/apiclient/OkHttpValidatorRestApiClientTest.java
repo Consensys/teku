@@ -514,6 +514,13 @@ class OkHttpValidatorRestApiClientTest {
   }
 
   @Test
+  public void createSyncCommitteeContribution_WhenNotFound_ReturnsEmpty() {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_FOUND));
+
+    assertThat(apiClient.createSyncCommitteeContribution(UInt64.ONE, 0, Bytes32.ZERO)).isEmpty();
+  }
+
+  @Test
   public void sendAggregateAndProofs_MakesExpectedRequest() throws Exception {
     final SignedAggregateAndProof signedAggregateAndProof = schemaObjects.signedAggregateAndProof();
 

@@ -21,3 +21,4 @@ For information on changes in released versions of Teku, see the [releases page]
 * Updated to log4j 2.17.0.
 * Made BadRequests compliant with the api, returning 'code' rather than 'status'.
 * Fixed: Invalid sync contributions were created if a validator was present multiple times in the same sync sub-committee.
+* Reduced error to warning when sync contribution cannot be created because the beacon node has no matching sync messages.

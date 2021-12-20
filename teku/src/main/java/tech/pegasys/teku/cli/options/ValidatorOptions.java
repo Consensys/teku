@@ -110,16 +110,6 @@ public class ValidatorOptions {
   private boolean generateEarlyAttestations = ValidatorConfig.DEFAULT_GENERATE_EARLY_ATTESTATIONS;
 
   @Option(
-      names = {"--Xvalidators-batch-attestations-enabled"},
-      paramLabel = "<BOOLEAN>",
-      description =
-          "Send all attestations for a slot to the beacon node in a single batch. Default: true",
-      fallbackValue = "true",
-      hidden = true,
-      arity = "0..1")
-  private boolean sendAttestationsAsBatch = ValidatorConfig.DEFAULT_SEND_ATTESTATIONS_AS_BATCH;
-
-  @Option(
       names = {"--Xvalidators-publish-to-additional-nodes"},
       paramLabel = "<URL>",
       description = "Publish validator duties to additional beacon nodes",
@@ -158,7 +148,6 @@ public class ValidatorOptions {
                         Optional.ofNullable(graffiti), Optional.ofNullable(graffitiFile)))
                 .useDependentRoots(useDependentRoots)
                 .generateEarlyAttestations(generateEarlyAttestations)
-                .sendAttestationsAsBatch(sendAttestationsAsBatch)
                 .additionalPublishUrls(additionalPublishUrls)
                 .suggestedFeeRecipient(suggestedFeeRecipient));
     validatorKeysOptions.configure(builder);
