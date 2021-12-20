@@ -23,6 +23,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.ATTESTATION
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_FORBIDDEN;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
@@ -90,6 +91,9 @@ public class GetAggregateAttestation extends AbstractHandler implements Handler 
             description =
                 "Returns aggregated `Attestation` object with same `AttestationData` root."),
         @OpenApiResponse(status = RES_BAD_REQUEST, description = "Invalid parameter supplied"),
+        @OpenApiResponse(
+            status = RES_NOT_FOUND,
+            description = "No matching attestations were found"),
         @OpenApiResponse(
             status = RES_FORBIDDEN,
             description = "Beacon node was not assigned to aggregate on that subnet"),
