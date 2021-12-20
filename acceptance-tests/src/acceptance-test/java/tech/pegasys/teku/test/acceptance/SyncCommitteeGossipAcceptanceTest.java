@@ -37,7 +37,7 @@ public class SyncCommitteeGossipAcceptanceTest extends AcceptanceTestBase {
 
   @BeforeEach
   public void setup() {
-    final int genesisTime = timeProvider.getTimeInSeconds().plus(15).intValue();
+    final int genesisTime = timeProvider.getTimeInSeconds().plus(10).intValue();
     primaryNode =
         createTekuNode(
             config -> configureNode(config, genesisTime).withInteropValidators(0, NODE_VALIDATORS));
