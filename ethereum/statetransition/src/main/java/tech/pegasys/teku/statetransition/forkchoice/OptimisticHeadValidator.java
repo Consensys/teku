@@ -157,10 +157,10 @@ public class OptimisticHeadValidator extends Service {
                               LOG.warn(
                                   "Cannot re-execute payload against Execution Client: still syncing");
                               return false;
+                            default:
+                              LOG.error("error: {}", blockImportResult.getFailureReason());
+                              return false;
                           }
-
-                          LOG.warn("error: {}", blockImportResult.getFailureReason());
-                          return false;
                         })
                     .exceptionally(
                         error -> {
