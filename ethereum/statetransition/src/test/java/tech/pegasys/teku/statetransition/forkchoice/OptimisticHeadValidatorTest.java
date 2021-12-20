@@ -21,7 +21,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus.VALID;
 
 import java.util.Map;
 import java.util.Optional;
@@ -74,12 +73,9 @@ class OptimisticHeadValidatorTest {
     when(recentChainData.retrieveBlockByRoot(block2.getRoot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(block2)));
 
-    final ExecutePayloadResult executePayloadResult =
-        new ExecutePayloadResult(VALID, Optional.empty(), Optional.empty());
-
     when(executionEngine.executePayload(
             block1.getBody().getOptionalExecutionPayload().orElseThrow()))
-        .thenReturn(SafeFuture.completedFuture(executePayloadResult));
+        .thenReturn(SafeFuture.completedFuture(ExecutePayloadResult.VALID));
 
     final UInt64 latestFinalizedBlockSlot = UInt64.ONE;
 
@@ -88,7 +84,8 @@ class OptimisticHeadValidatorTest {
     asyncRunner.executeQueuedActions();
 
     verify(forkChoice)
-        .onExecutionPayloadResult(block1.getRoot(), executePayloadResult, latestFinalizedBlockSlot);
+        .onExecutionPayloadResult(
+            block1.getRoot(), ExecutePayloadResult.VALID, latestFinalizedBlockSlot);
     verifyNoMoreInteractions(forkChoice);
 
     // Should not execute default payloads

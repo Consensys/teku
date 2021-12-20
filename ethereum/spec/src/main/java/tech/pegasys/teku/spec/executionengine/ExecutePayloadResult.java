@@ -20,24 +20,70 @@ import org.apache.tuweni.bytes.Bytes32;
 
 public class ExecutePayloadResult {
   public static final ExecutePayloadResult VALID =
-      new ExecutePayloadResult(ExecutionPayloadStatus.VALID, Optional.empty(), Optional.empty());
+      new ExecutePayloadResult(
+          Optional.of(ExecutionPayloadStatus.VALID),
+          Optional.empty(),
+          Optional.empty(),
+          Optional.empty());
   public static final ExecutePayloadResult SYNCING =
-      new ExecutePayloadResult(ExecutionPayloadStatus.SYNCING, Optional.empty(), Optional.empty());
-  private final ExecutionPayloadStatus status;
-  private final Optional<Bytes32> latestValidHash;
-  private final Optional<String> validationError;
+      new ExecutePayloadResult(
+          Optional.of(ExecutionPayloadStatus.SYNCING),
+          Optional.empty(),
+          Optional.empty(),
+          Optional.empty());
 
-  public ExecutePayloadResult(
+  public static ExecutePayloadResult failedExecution(final Throwable cause) {
+    return new ExecutePayloadResult(
+        Optional.empty(), Optional.empty(), Optional.empty(), Optional.of(cause));
+  }
+
+  public static ExecutePayloadResult invalid(
+      Optional<Bytes32> latestValidHash, Optional<String> validationError) {
+    return new ExecutePayloadResult(
+        Optional.of(ExecutionPayloadStatus.INVALID),
+        latestValidHash,
+        validationError,
+        Optional.empty());
+  }
+
+  public static ExecutePayloadResult create(
       ExecutionPayloadStatus status,
       Optional<Bytes32> latestValidHash,
       Optional<String> validationError) {
+    return new ExecutePayloadResult(
+        Optional.of(status), latestValidHash, validationError, Optional.empty());
+  }
+
+  private final Optional<ExecutionPayloadStatus> status;
+  private final Optional<Bytes32> latestValidHash;
+  private final Optional<String> validationError;
+  private final Optional<Throwable> failureCause;
+
+  private ExecutePayloadResult(
+      Optional<ExecutionPayloadStatus> status,
+      Optional<Bytes32> latestValidHash,
+      Optional<String> validationError,
+      Optional<Throwable> failureCause) {
     this.status = status;
     this.latestValidHash = latestValidHash;
     this.validationError = validationError;
+    this.failureCause = failureCause;
   }
 
-  public ExecutionPayloadStatus getStatus() {
+  public boolean hasFailedExecution() {
+    return failureCause.isPresent();
+  }
+
+  public Optional<Throwable> getFailureCause() {
+    return failureCause;
+  }
+
+  public Optional<ExecutionPayloadStatus> getStatus() {
     return status;
+  }
+
+  public boolean hasStatus(ExecutionPayloadStatus status) {
+    return this.status.map(s -> s == status).orElse(false);
   }
 
   public Optional<Bytes32> getLatestValidHash() {

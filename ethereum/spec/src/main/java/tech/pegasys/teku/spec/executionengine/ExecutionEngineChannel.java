@@ -50,9 +50,7 @@ public interface ExecutionEngineChannel extends ChannelInterface {
         @Override
         public SafeFuture<ExecutePayloadResult> executePayload(
             final ExecutionPayload executionPayload) {
-          return SafeFuture.completedFuture(
-              new ExecutePayloadResult(
-                  ExecutionPayloadStatus.SYNCING, Optional.empty(), Optional.empty()));
+          return SafeFuture.completedFuture(ExecutePayloadResult.SYNCING);
         }
       };
 

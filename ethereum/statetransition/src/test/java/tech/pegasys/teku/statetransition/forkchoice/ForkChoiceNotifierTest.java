@@ -49,7 +49,6 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.merge.BeaconPre
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionengine.ExecutePayloadResult;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
-import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedStatus;
@@ -105,10 +104,7 @@ class ForkChoiceNotifierTest {
     forkChoiceStrategy = recentChainData.getForkChoiceStrategy().orElseThrow();
 
     when(executionEngineChannel.executePayload(any()))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                new ExecutePayloadResult(
-                    ExecutionPayloadStatus.VALID, Optional.empty(), Optional.empty())));
+        .thenReturn(SafeFuture.completedFuture(ExecutePayloadResult.VALID));
     when(executionEngineChannel.forkChoiceUpdated(any(), any()))
         .thenReturn(
             SafeFuture.completedFuture(

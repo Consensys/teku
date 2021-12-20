@@ -82,9 +82,7 @@ class MergeTransitionHelpersTest {
     final PowBlock powBlock = withPowBlock(payload.getParentHash(), terminalDifficulty.plus(1));
     withPowBlock(powBlock.getParentHash(), terminalDifficulty.subtract(1));
 
-    final ExecutePayloadResult expectedPayloadResult =
-        new ExecutePayloadResult(
-            ExecutionPayloadStatus.VALID, Optional.empty(), Optional.of("Good block!"));
+    final ExecutePayloadResult expectedPayloadResult = ExecutePayloadResult.VALID;
     when(executionEngine.executePayload(payload))
         .thenReturn(SafeFuture.completedFuture(expectedPayloadResult));
 
@@ -115,7 +113,7 @@ class MergeTransitionHelpersTest {
       final SafeFuture<ExecutePayloadResult> result, final ExecutionPayloadStatus expectedStatus) {
     assertThat(result)
         .isCompletedWithValueMatching(
-            payloadResult -> payloadResult.getStatus() == expectedStatus,
+            payloadResult -> payloadResult.hasStatus(expectedStatus),
             "a payload result with status " + expectedStatus);
   }
 }

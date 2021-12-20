@@ -141,6 +141,7 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
                 LOG.trace(
                     "executePayload(executionPayload={}) -> {}",
                     executionPayload,
-                    executePayloadResult));
+                    executePayloadResult))
+        .exceptionally(ExecutePayloadResult::failedExecution);
   }
 }

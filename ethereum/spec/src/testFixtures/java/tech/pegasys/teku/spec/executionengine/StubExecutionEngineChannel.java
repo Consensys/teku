@@ -37,8 +37,7 @@ public class StubExecutionEngineChannel implements ExecutionEngineChannel {
   private final AtomicLong payloadIdCounter = new AtomicLong(0);
   private final Spec spec;
 
-  private ExecutePayloadResult executePayloadResult =
-      new ExecutePayloadResult(ExecutionPayloadStatus.VALID, Optional.empty(), Optional.empty());
+  private ExecutePayloadResult executePayloadResult = ExecutePayloadResult.VALID;
 
   public StubExecutionEngineChannel(Spec spec) {
     this.payloadIdToHeadAndAttrsCache = LRUCache.create(10);

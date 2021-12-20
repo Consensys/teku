@@ -23,7 +23,6 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.executionengine.ExecutePayloadResult;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
-import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
 
 public class MergeTransitionHelpers {
 
@@ -70,9 +69,7 @@ public class MergeTransitionHelpers {
   }
 
   private static SafeFuture<ExecutePayloadResult> invalid(final String message) {
-    return completedFuture(
-        new ExecutePayloadResult(
-            ExecutionPayloadStatus.INVALID, Optional.empty(), Optional.of(message)));
+    return completedFuture(ExecutePayloadResult.invalid(Optional.empty(), Optional.of(message)));
   }
 
   private SafeFuture<ExecutePayloadResult> validateParentPowBlock(

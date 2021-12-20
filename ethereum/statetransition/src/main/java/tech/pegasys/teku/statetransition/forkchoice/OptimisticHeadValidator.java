@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.forkchoice;
 
 import java.time.Duration;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -48,6 +49,8 @@ public class OptimisticHeadValidator extends Service {
   private final ExecutionEngineChannel executionEngine;
   private Optional<Cancellable> cancellable = Optional.empty();
 
+  private final AtomicBoolean reexecutingExecutionPayload = new AtomicBoolean(false);
+
   public OptimisticHeadValidator(
       final AsyncRunner asyncRunner,
       final ForkChoice forkChoice,
@@ -64,11 +67,11 @@ public class OptimisticHeadValidator extends Service {
     cancellable =
         Optional.of(
             asyncRunner.runWithFixedDelay(
-                this::verifyOptimisticHeads,
+                this::execute,
                 RECHECK_INTERVAL,
                 error -> LOG.error("Failed to validate optimistic chain heads", error)));
     // Run immediately on start
-    verifyOptimisticHeads();
+    execute();
     return SafeFuture.COMPLETE;
   }
 
@@ -77,6 +80,19 @@ public class OptimisticHeadValidator extends Service {
     cancellable.ifPresent(Cancellable::cancel);
     cancellable = Optional.empty();
     return SafeFuture.COMPLETE;
+  }
+
+  private void execute() {
+    verifyOptimisticHeads();
+    if (reexecutingExecutionPayload.compareAndSet(false, true)) {
+      LOG.debug("re-executing execution payloads for queued blocks");
+      SafeFuture.asyncDoWhile(this::reexecuteQueuedExecutionPayloadRetry)
+          .always(
+              () -> {
+                LOG.debug("re-executing completed");
+                reexecutingExecutionPayload.set(false);
+              });
+    }
   }
 
   private void verifyOptimisticHeads() {
@@ -112,8 +128,47 @@ public class OptimisticHeadValidator extends Service {
     return executionEngine
         .executePayload(executionPayload)
         .thenAccept(
-            result -> {
-              forkChoice.onExecutionPayloadResult(blockRoot, result, latestFinalizedBlockSlot);
-            });
+            result ->
+                forkChoice.onExecutionPayloadResult(blockRoot, result, latestFinalizedBlockSlot));
+  }
+
+  private SafeFuture<Boolean> reexecuteQueuedExecutionPayloadRetry() {
+    return recentChainData
+        .getEnqueuedExecutionPayloadExecutionRetry()
+        .map(
+            block ->
+                forkChoice
+                    .onBlock(block, executionEngine)
+                    .thenApply(
+                        blockImportResult -> {
+                          if (blockImportResult.isSuccessful()) {
+                            return true;
+                          }
+
+                          switch (blockImportResult.getFailureReason()) {
+                            case FAILED_EXECUTION_PAYLOAD_EXECUTION:
+                              LOG.error(
+                                  "An error occurred while trying to re-execute payload against Execution Client.",
+                                  blockImportResult
+                                      .getFailureCause()
+                                      .orElseGet(() -> new UnknownError("Missing failure cause")));
+                              return false;
+                            case FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING:
+                              LOG.warn(
+                                  "Cannot re-execute payload against Execution Client: still syncing");
+                              return false;
+                          }
+
+                          LOG.warn("error: {}", blockImportResult.getFailureReason());
+                          return false;
+                        })
+                    .exceptionally(
+                        error -> {
+                          LOG.error(
+                              "An error occurred while trying to re-execute payload against Execution Client.",
+                              error);
+                          return false;
+                        }))
+        .orElse(SafeFuture.completedFuture(false));
   }
 }
