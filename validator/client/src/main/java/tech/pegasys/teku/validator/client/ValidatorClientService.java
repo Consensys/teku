@@ -171,10 +171,7 @@ public class ValidatorClientService extends Service {
     final BlockDutyFactory blockDutyFactory =
         new BlockDutyFactory(forkProvider, validatorApiChannel, spec);
     final AttestationDutyFactory attestationDutyFactory =
-        new AttestationDutyFactory(
-            forkProvider,
-            validatorApiChannel,
-            config.getValidatorConfig().sendAttestationsAsBatch());
+        new AttestationDutyFactory(forkProvider, validatorApiChannel);
     final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =
         new BeaconCommitteeSubscriptions(validatorApiChannel);
     final DutyLoader<?> attestationDutyLoader =
