@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBytes32;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsInt;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUInt64;
@@ -117,7 +118,7 @@ public class GetSyncCommitteeContribution extends AbstractHandler {
 
       final SafeFuture<Optional<SyncCommitteeContribution>> future =
           provider.createSyncCommitteeContribution(slot, subcommitteeIndex, blockRoot);
-      handleOptionalResult(ctx, future, this::processResult, SC_BAD_REQUEST);
+      handleOptionalResult(ctx, future, this::processResult, SC_NOT_FOUND);
     } catch (final IllegalArgumentException e) {
       ctx.json(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
       ctx.status(SC_BAD_REQUEST);
