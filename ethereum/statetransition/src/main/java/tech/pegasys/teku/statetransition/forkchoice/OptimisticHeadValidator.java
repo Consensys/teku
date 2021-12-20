@@ -21,6 +21,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
@@ -43,14 +44,17 @@ public class OptimisticHeadValidator extends Service {
   static final Duration RECHECK_INTERVAL = Duration.ofMinutes(1);
   private final AsyncRunner asyncRunner;
   private final RecentChainData recentChainData;
+  private final ForkChoice forkChoice;
   private final ExecutionEngineChannel executionEngine;
   private Optional<Cancellable> cancellable = Optional.empty();
 
   public OptimisticHeadValidator(
       final AsyncRunner asyncRunner,
+      final ForkChoice forkChoice,
       final RecentChainData recentChainData,
       final ExecutionEngineChannel executionEngine) {
     this.asyncRunner = asyncRunner;
+    this.forkChoice = forkChoice;
     this.recentChainData = recentChainData;
     this.executionEngine = executionEngine;
   }
@@ -104,13 +108,12 @@ public class OptimisticHeadValidator extends Service {
     if (executionPayload.isDefault()) {
       return SafeFuture.COMPLETE;
     }
+    UInt64 latestFinalizedBlockSlot = recentChainData.getStore().getLatestFinalizedBlockSlot();
     return executionEngine
         .executePayload(executionPayload)
         .thenAccept(
-            result ->
-                recentChainData
-                    .getForkChoiceStrategy()
-                    .orElseThrow()
-                    .onExecutionPayloadResult(blockRoot, result.getStatus()));
+            result -> {
+              forkChoice.onExecutionPayloadResult(blockRoot, result, latestFinalizedBlockSlot);
+            });
   }
 }

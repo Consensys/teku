@@ -18,6 +18,7 @@ import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 import static org.quartz.TriggerBuilder.newTrigger;
 import static tech.pegasys.teku.util.config.Constants.TIME_TICKER_REFRESH_RATE;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import org.quartz.DateBuilder;
 import org.quartz.JobDetail;
 import org.quartz.Scheduler;
@@ -33,6 +34,9 @@ public class TimerService extends Service {
 
   public static final String TIME_EVENTS_CHANNEL = "TimeEventsChannel";
 
+  private static final AtomicInteger TIMER_ID_GENERATOR = new AtomicInteger();
+  private static final AtomicInteger TIMER_TRIGGER_ID_GENERATOR = new AtomicInteger();
+
   private final Scheduler sched;
   private final JobDetail job;
   private static int START_DELAY = 0;
@@ -43,7 +47,10 @@ public class TimerService extends Service {
     this.interval = (int) ((1.0 / TIME_TICKER_REFRESH_RATE) * 1000); // Tick interval
     try {
       sched = sf.getScheduler();
-      job = newJob(ScheduledTimeEvent.class).withIdentity("Timer").build();
+      job =
+          newJob(ScheduledTimeEvent.class)
+              .withIdentity("Timer-" + TIMER_ID_GENERATOR.incrementAndGet())
+              .build();
       job.getJobDataMap()
           .put(TIME_EVENTS_CHANNEL, config.getEventChannels().getPublisher(TimeTickChannel.class));
 
@@ -57,7 +64,7 @@ public class TimerService extends Service {
     try {
       SimpleTrigger trigger =
           newTrigger()
-              .withIdentity("TimerTrigger")
+              .withIdentity("TimerTrigger-" + TIMER_TRIGGER_ID_GENERATOR.incrementAndGet())
               .startAt(DateBuilder.futureDate(START_DELAY, DateBuilder.IntervalUnit.MILLISECOND))
               .withSchedule(simpleSchedule().withIntervalInMilliseconds(interval).repeatForever())
               .build();

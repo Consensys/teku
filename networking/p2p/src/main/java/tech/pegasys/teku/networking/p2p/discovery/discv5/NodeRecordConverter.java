@@ -34,7 +34,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 public class NodeRecordConverter {
   private static final Logger LOG = LogManager.getLogger();
 
-  static Optional<DiscoveryPeer> convertToDiscoveryPeer(
+  public Optional<DiscoveryPeer> convertToDiscoveryPeer(
       final NodeRecord nodeRecord, final SchemaDefinitions schemaDefinitions) {
     return nodeRecord
         .getTcpAddress()

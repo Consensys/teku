@@ -149,7 +149,7 @@ class BlockOperationSelectorFactoryTest {
     when(attesterSlashingValidator.validateFully(any())).thenReturn(ACCEPT);
     when(proposerSlashingValidator.validateFully(any())).thenReturn(ACCEPT);
     when(voluntaryExitValidator.validateFully(any())).thenReturn(ACCEPT);
-    when(forkChoiceNotifier.getPayloadId(any()))
+    when(forkChoiceNotifier.getPayloadId(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
   }
 
@@ -279,7 +279,7 @@ class BlockOperationSelectorFactoryTest {
     final Bytes8 payloadId = dataStructureUtil.randomBytes8();
     final ExecutionPayload randomExecutionPayload = dataStructureUtil.randomExecutionPayload();
 
-    when(forkChoiceNotifier.getPayloadId(any()))
+    when(forkChoiceNotifier.getPayloadId(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(payloadId)));
     when(executionEngine.getPayload(payloadId, slot))
         .thenReturn(SafeFuture.completedFuture(randomExecutionPayload));

@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.ATTESTATION_SUBNET_ENR_FIELD;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.ETH2_ENR_FIELD;
 import static tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork.SYNC_COMMITTEE_SUBNET_ENR_FIELD;
-import static tech.pegasys.teku.networking.p2p.discovery.discv5.NodeRecordConverter.convertToDiscoveryPeer;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -55,6 +54,7 @@ class NodeRecordConverterTest {
   private static final SszBitvectorSchema<?> SYNCNETS_SCHEMA =
       SCHEMA_DEFINITIONS.getSyncnetsENRFieldSchema();
   private static final SszBitvector SYNCNETS = SYNCNETS_SCHEMA.getDefault();
+  private static final NodeRecordConverter CONVERTER = new NodeRecordConverter();
 
   @Test
   public void shouldConvertRealEnrToDiscoveryPeer() throws Exception {
@@ -71,7 +71,8 @@ class NodeRecordConverterTest {
             Optional.empty(),
             ATTNETS,
             SYNCNETS);
-    assertThat(convertToDiscoveryPeer(nodeRecord, SCHEMA_DEFINITIONS)).contains(expectedPeer);
+    assertThat(CONVERTER.convertToDiscoveryPeer(nodeRecord, SCHEMA_DEFINITIONS))
+        .contains(expectedPeer);
   }
 
   @Test
@@ -251,7 +252,7 @@ class NodeRecordConverterTest {
   }
 
   private Optional<DiscoveryPeer> convertNodeRecordWithFields(final EnrField... fields) {
-    return convertToDiscoveryPeer(createNodeRecord(fields), SCHEMA_DEFINITIONS);
+    return CONVERTER.convertToDiscoveryPeer(createNodeRecord(fields), SCHEMA_DEFINITIONS);
   }
 
   private NodeRecord createNodeRecord(final EnrField... fields) {

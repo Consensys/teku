@@ -86,6 +86,7 @@ class Store implements UpdatableStore {
   AnchorPoint finalizedAnchor;
   Checkpoint justifiedCheckpoint;
   Checkpoint bestJustifiedCheckpoint;
+  UInt64 latestValidFinalizedSlot = UInt64.ZERO;
   Optional<Bytes32> proposerBoostRoot = Optional.empty();
   final CachingTaskQueue<Bytes32, StateAndBlockSummary> states;
   final Map<Bytes32, SignedBeaconBlock> blocks;
@@ -368,6 +369,16 @@ class Store implements UpdatableStore {
     readLock.lock();
     try {
       return proposerBoostRoot;
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  @Override
+  public UInt64 getLatestValidFinalizedSlot() {
+    readLock.lock();
+    try {
+      return latestValidFinalizedSlot;
     } finally {
       readLock.unlock();
     }

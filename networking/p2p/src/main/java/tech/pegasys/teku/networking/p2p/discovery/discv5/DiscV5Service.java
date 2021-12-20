@@ -15,7 +15,6 @@ package tech.pegasys.teku.networking.p2p.discovery.discv5;
 
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
-import static tech.pegasys.teku.networking.p2p.discovery.discv5.NodeRecordConverter.convertToDiscoveryPeer;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -52,9 +51,16 @@ public class DiscV5Service extends Service implements DiscoveryService {
   private static final Logger LOG = LogManager.getLogger();
   private static final String SEQ_NO_STORE_KEY = "local-enr-seqno";
   private static final Duration BOOTNODE_REFRESH_DELAY = Duration.ofMinutes(2);
+  public static NodeRecordConverter DEFAULT_NODE_RECORD_CONVERTER = new NodeRecordConverter();
+
+  public static DiscoverySystemBuilder createDefaultDiscoverySystemBuilder() {
+    return new DiscoverySystemBuilder();
+  }
+
   private final AsyncRunner asyncRunner;
   private final Bytes localNodePrivateKey;
   private final SchemaDefinitionsSupplier currentSchemaDefinitionsSupplier;
+  private final NodeRecordConverter nodeRecordConverter;
 
   private final DiscoverySystem discoverySystem;
   private final KeyValueStore<String, Bytes> kvStore;
@@ -68,10 +74,13 @@ public class DiscV5Service extends Service implements DiscoveryService {
       final NetworkConfig p2pConfig,
       final KeyValueStore<String, Bytes> kvStore,
       final Bytes privateKey,
-      final SchemaDefinitionsSupplier currentSchemaDefinitionsSupplier) {
+      final SchemaDefinitionsSupplier currentSchemaDefinitionsSupplier,
+      final DiscoverySystemBuilder discoverySystemBuilder,
+      final NodeRecordConverter nodeRecordConverter) {
     this.asyncRunner = asyncRunner;
     this.localNodePrivateKey = privateKey;
     this.currentSchemaDefinitionsSupplier = currentSchemaDefinitionsSupplier;
+    this.nodeRecordConverter = nodeRecordConverter;
     final String listenAddress = p2pConfig.getNetworkInterface();
     final int listenUdpPort = discoConfig.getListenUdpPort();
     final String advertisedAddress = p2pConfig.getAdvertisedIp();
@@ -92,7 +101,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
     }
     final NodeRecord localNodeRecord = nodeRecordBuilder.build();
     this.discoverySystem =
-        new DiscoverySystemBuilder()
+        discoverySystemBuilder
             .listen(listenAddress, listenUdpPort)
             .privateKey(privateKey)
             .bootnodes(bootnodes)
@@ -158,7 +167,9 @@ public class DiscV5Service extends Service implements DiscoveryService {
   public Stream<DiscoveryPeer> streamKnownPeers() {
     final SchemaDefinitions schemaDefinitions =
         currentSchemaDefinitionsSupplier.getSchemaDefinitions();
-    return activeNodes().flatMap(node -> convertToDiscoveryPeer(node, schemaDefinitions).stream());
+    return activeNodes()
+        .flatMap(
+            node -> nodeRecordConverter.convertToDiscoveryPeer(node, schemaDefinitions).stream());
   }
 
   @Override
@@ -174,7 +185,9 @@ public class DiscV5Service extends Service implements DiscoveryService {
     final SchemaDefinitions schemaDefinitions =
         currentSchemaDefinitionsSupplier.getSchemaDefinitions();
     return foundNodes.stream()
-        .flatMap(nodeRecord -> convertToDiscoveryPeer(nodeRecord, schemaDefinitions).stream())
+        .flatMap(
+            nodeRecord ->
+                nodeRecordConverter.convertToDiscoveryPeer(nodeRecord, schemaDefinitions).stream())
         .collect(toList());
   }
 

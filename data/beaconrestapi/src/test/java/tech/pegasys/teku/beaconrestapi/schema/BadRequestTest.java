@@ -29,7 +29,7 @@ public class BadRequestTest {
   @Test
   void shouldSerializeFromCodeAndMessage() {
     final String string = BadRequest.serialize(jsonProvider, 1, "1");
-    assertThat(string).isEqualTo("{\"status\":1,\"message\":\"1\"}");
+    assertThat(string).isEqualTo("{\"code\":1,\"message\":\"1\"}");
   }
 
   @Test

@@ -58,6 +58,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   Optional<Checkpoint> bestJustifiedCheckpoint = Optional.empty();
   Optional<Bytes32> proposerBoostRoot = Optional.empty();
   boolean proposerBoostRootSet = false;
+  Optional<UInt64> latestValidFinalizedSlot = Optional.empty();
   Map<Bytes32, SlotAndBlockRoot> stateRoots = new HashMap<>();
   Map<Bytes32, SignedBlockAndState> blockAndStates = new HashMap<>();
   private final UpdatableStore.StoreUpdateHandler updateHandler;
@@ -136,6 +137,11 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
     proposerBoostRootSet = true;
   }
 
+  @Override
+  public void setLatestValidFinalizedSlot(UInt64 slot) {
+    this.latestValidFinalizedSlot = Optional.of(slot);
+  }
+
   @CheckReturnValue
   @Override
   public SafeFuture<Void> commit() {
@@ -189,6 +195,11 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   @Override
   public Optional<Checkpoint> getInitialCheckpoint() {
     return store.getInitialCheckpoint();
+  }
+
+  @Override
+  public UInt64 getLatestValidFinalizedSlot() {
+    return latestValidFinalizedSlot.orElseGet(store::getLatestValidFinalizedSlot);
   }
 
   @Override

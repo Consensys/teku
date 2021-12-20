@@ -21,6 +21,7 @@ public enum Eth2Network {
   MAINNET,
   PYRMONT,
   PRATER,
+  KINTSUGI,
   // Test networks
   MINIMAL,
   SWIFT,
