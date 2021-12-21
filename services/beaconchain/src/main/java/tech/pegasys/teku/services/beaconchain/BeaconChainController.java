@@ -82,6 +82,7 @@ import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.BlockManager;
+import tech.pegasys.teku.statetransition.block.ReexecutingExecutionPayloadBlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
@@ -839,9 +840,20 @@ public class BeaconChainController extends Service
     final FutureItems<SignedBeaconBlock> futureBlocks =
         FutureItems.create(SignedBeaconBlock::getSlot);
     BlockValidator blockValidator = new BlockValidator(spec, recentChainData);
-    blockManager =
-        BlockManager.create(
-            pendingBlocks, futureBlocks, recentChainData, blockImporter, blockValidator);
+    if (spec.isMilestoneSupported(SpecMilestone.MERGE)) {
+      blockManager =
+          ReexecutingExecutionPayloadBlockManager.create(
+              pendingBlocks,
+              futureBlocks,
+              recentChainData,
+              blockImporter,
+              blockValidator,
+              beaconAsyncRunner);
+    } else {
+      blockManager =
+          BlockManager.create(
+              pendingBlocks, futureBlocks, recentChainData, blockImporter, blockValidator);
+    }
     eventChannels
         .subscribe(SlotEventsChannel.class, blockManager)
         .subscribe(BlockImportChannel.class, blockManager)

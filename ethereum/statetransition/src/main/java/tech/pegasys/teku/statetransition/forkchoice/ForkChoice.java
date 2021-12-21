@@ -305,9 +305,12 @@ public class ForkChoice {
       applyVotesFromBlock(forkChoiceStrategy, currentEpoch, indexedAttestationCache);
     }
 
-    final BlockImportResult result = BlockImportResult.successful(block);
+    final BlockImportResult result;
     if (payloadResultStatus == ExecutionPayloadStatus.VALID) {
+      result = BlockImportResult.successful(block);
       updateForkChoiceForImportedBlock(block, result, forkChoiceStrategy);
+    } else {
+      result = BlockImportResult.optimisticallySuccessful(block);
     }
     notifyForkChoiceUpdated();
     return result;

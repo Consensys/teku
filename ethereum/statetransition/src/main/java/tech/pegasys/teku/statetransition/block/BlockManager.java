@@ -30,7 +30,6 @@ import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.datastructures.blocks.ReceivedBlockListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
-import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
@@ -145,23 +144,35 @@ public class BlockManager extends Service
             result -> {
               if (result.isSuccessful()) {
                 LOG.trace("Imported block: {}", block);
-              } else if (result.getFailureReason() == FailureReason.UNKNOWN_PARENT) {
-                // Add to the pending pool so it is triggered once the parent is imported
-                pendingBlocks.add(block);
-                // Check if the parent was imported while we were trying to import this block and if
-                // so, remove from the pendingPool again and process now We must add the block to
-                // the pending pool before this check happens to avoid race conditions between
-                // performing the check and the parent importing.
-                if (recentChainData.containsBlock(block.getParentRoot())) {
-                  pendingBlocks.remove(block);
-                  importBlockIgnoringResult(block);
-                }
-              } else if (result.getFailureReason() == FailureReason.BLOCK_IS_FROM_FUTURE) {
-                futureBlocks.add(block);
               } else {
-                LOG.trace(
-                    "Unable to import block for reason {}: {}", result.getFailureReason(), block);
-                dropInvalidBlock(block);
+                switch (result.getFailureReason()) {
+                  case UNKNOWN_PARENT:
+                    // Add to the pending pool so it is triggered once the parent is imported
+                    pendingBlocks.add(block);
+                    // Check if the parent was imported while we were trying to import this block
+                    // and if
+                    // so, remove from the pendingPool again and process now We must add the block
+                    // to
+                    // the pending pool before this check happens to avoid race conditions between
+                    // performing the check and the parent importing.
+                    if (recentChainData.containsBlock(block.getParentRoot())) {
+                      pendingBlocks.remove(block);
+                      importBlockIgnoringResult(block);
+                    }
+                    break;
+                  case BLOCK_IS_FROM_FUTURE:
+                    futureBlocks.add(block);
+                    break;
+                  case FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING:
+                  case FAILED_EXECUTION_PAYLOAD_EXECUTION:
+                    break;
+                  default:
+                    LOG.trace(
+                        "Unable to import block for reason {}: {}",
+                        result.getFailureReason(),
+                        block);
+                    dropInvalidBlock(block);
+                }
               }
             });
   }
