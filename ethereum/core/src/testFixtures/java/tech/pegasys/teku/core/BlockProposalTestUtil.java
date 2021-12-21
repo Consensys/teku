@@ -104,7 +104,7 @@ public class BlockProposalTestUtil {
                             executionPayload.orElseGet(
                                 () ->
                                     createExecutionPayload(
-                                        newSlot, state, newEpoch, transactions, terminalBlock))));
+                                        newSlot, state, transactions, terminalBlock))));
 
     // Sign block and set block signature
     final BeaconBlock block = newBlockAndState.getBlock();
@@ -161,11 +161,7 @@ public class BlockProposalTestUtil {
                                 executionPayload.orElseGet(
                                     () ->
                                         createExecutionPayload(
-                                            newSlot,
-                                            state,
-                                            newEpoch,
-                                            transactions,
-                                            terminalBlock))));
+                                            newSlot, state, transactions, terminalBlock))));
 
     final BeaconBlock block =
         spec.atSlot(newSlot)
@@ -188,14 +184,13 @@ public class BlockProposalTestUtil {
   private ExecutionPayload createExecutionPayload(
       final UInt64 newSlot,
       final BeaconState state,
-      final UInt64 newEpoch,
       final Optional<List<Bytes>> transactions,
       final Optional<Bytes32> terminalBlock) {
     final SpecVersion specVersion = spec.atSlot(newSlot);
     final ExecutionPayloadSchema schema =
         SchemaDefinitionsMerge.required(specVersion.getSchemaDefinitions())
             .getExecutionPayloadSchema();
-    if (terminalBlock.isEmpty() && !isMergeComplete(state)) {
+    if (terminalBlock.isEmpty() && !isMergeTransitionComplete(state)) {
       return schema.getDefault();
     }
 
@@ -205,6 +200,7 @@ public class BlockProposalTestUtil {
       throw new IllegalArgumentException("Merge already happened, cannot set terminal block hash");
     }
     Bytes32 parentHash = terminalBlock.orElse(currentExecutionPayloadBlockHash);
+    UInt64 currentEpoch = specVersion.beaconStateAccessors().getCurrentEpoch(state);
 
     return schema.create(
         parentHash,
@@ -212,7 +208,7 @@ public class BlockProposalTestUtil {
         dataStructureUtil.randomBytes32(),
         dataStructureUtil.randomBytes32(),
         dataStructureUtil.randomBytes256(),
-        specVersion.beaconStateAccessors().getRandaoMix(state, newEpoch),
+        specVersion.beaconStateAccessors().getRandaoMix(state, currentEpoch),
         newSlot,
         UInt64.valueOf(30_000_000L),
         UInt64.valueOf(30_000_000L),
@@ -223,8 +219,8 @@ public class BlockProposalTestUtil {
         transactions.orElse(Collections.emptyList()));
   }
 
-  private Boolean isMergeComplete(final BeaconState state) {
-    return spec.atSlot(state.getSlot()).miscHelpers().isMergeComplete(state);
+  private Boolean isMergeTransitionComplete(final BeaconState state) {
+    return spec.atSlot(state.getSlot()).miscHelpers().isMergeTransitionComplete(state);
   }
 
   public SignedBlockAndState createBlock(

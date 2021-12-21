@@ -132,7 +132,7 @@ class ValidatorConfigTest {
     Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
         .isThrownBy(config::getSuggestedFeeRecipient)
         .withMessageContaining(
-            "Invalid configuration. --validators-fee-recipient-address must be specified when Merge milestone is active");
+            "Invalid configuration. --Xvalidators-suggested-fee-recipient-address must be specified when Merge milestone is active");
   }
 
   @Test
@@ -142,7 +142,7 @@ class ValidatorConfigTest {
     Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
         .isThrownBy(config::getSuggestedFeeRecipient)
         .withMessageContaining(
-            "Invalid configuration. --validators-fee-recipient-address must be specified when Merge milestone is active");
+            "Invalid configuration. --Xvalidators-suggested-fee-recipient-address must be specified when Merge milestone is active");
   }
 
   @Test

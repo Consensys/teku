@@ -37,6 +37,9 @@ public class StubExecutionEngineChannel implements ExecutionEngineChannel {
   private final AtomicLong payloadIdCounter = new AtomicLong(0);
   private final Spec spec;
 
+  private ExecutePayloadResult executePayloadResult =
+      new ExecutePayloadResult(ExecutionPayloadStatus.VALID, Optional.empty(), Optional.empty());
+
   public StubExecutionEngineChannel(Spec spec) {
     this.payloadIdToHeadAndAttrsCache = LRUCache.create(10);
     this.spec = spec;
@@ -117,8 +120,15 @@ public class StubExecutionEngineChannel implements ExecutionEngineChannel {
 
   @Override
   public SafeFuture<ExecutePayloadResult> executePayload(final ExecutionPayload executionPayload) {
-    return SafeFuture.completedFuture(
-        new ExecutePayloadResult(ExecutionPayloadStatus.VALID, Optional.empty(), Optional.empty()));
+    return SafeFuture.completedFuture(executePayloadResult);
+  }
+
+  public ExecutePayloadResult getExecutePayloadResult() {
+    return executePayloadResult;
+  }
+
+  public void setExecutePayloadResult(ExecutePayloadResult executePayloadResult) {
+    this.executePayloadResult = executePayloadResult;
   }
 
   private static class HeadAndAttributes {

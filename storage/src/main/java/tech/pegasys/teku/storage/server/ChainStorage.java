@@ -40,7 +40,8 @@ import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.server.state.FinalizedStateCache;
 import tech.pegasys.teku.storage.store.StoreBuilder;
 
-public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel, VoteUpdateChannel {
+public class ChainStorage
+    implements StorageUpdateChannel, StorageQueryChannel, VoteUpdateChannel, ChainStorageFacade {
 
   private final Database database;
   private final FinalizedStateCache finalizedStateCache;

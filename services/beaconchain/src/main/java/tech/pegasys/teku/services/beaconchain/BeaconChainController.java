@@ -145,7 +145,8 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
  * initialization behavior (see {@link BeaconChainControllerFactory}} however this class may change
  * in a backward incompatible manner and either break compilation or runtime behavior
  */
-public class BeaconChainController extends Service implements TimeTickChannel {
+public class BeaconChainController extends Service
+    implements TimeTickChannel, BeaconChainControllerFacade {
   private static final Logger LOG = LogManager.getLogger();
 
   protected static final String KEY_VALUE_STORE_SUBDIRECTORY = "kvstore";
@@ -325,8 +326,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     initExecutionEngine();
     initForkChoiceNotifier();
     initTerminalPowBlockMonitor();
-    initOptimisticHeadValidator();
     initForkChoice();
+    initOptimisticHeadValidator();
     initBlockImporter();
     initCombinedChainDataClient();
     initAttestationPool();
@@ -370,7 +371,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     if (spec.isMilestoneSupported(SpecMilestone.MERGE)) {
       optimisticHeadValidator =
           Optional.of(
-              new OptimisticHeadValidator(beaconAsyncRunner, recentChainData, executionEngine));
+              new OptimisticHeadValidator(
+                  beaconAsyncRunner, forkChoice, recentChainData, executionEngine));
     }
   }
 
@@ -1000,5 +1002,45 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     }
 
     slotProcessor.onTick(currentTime);
+  }
+
+  @Override
+  public Spec getSpec() {
+    return spec;
+  }
+
+  @Override
+  public TimeProvider getTimeProvider() {
+    return timeProvider;
+  }
+
+  @Override
+  public AsyncRunnerFactory getAsyncRunnerFactory() {
+    return asyncRunnerFactory;
+  }
+
+  @Override
+  public SignatureVerificationService getSignatureVerificationService() {
+    return signatureVerificationService;
+  }
+
+  @Override
+  public RecentChainData getRecentChainData() {
+    return recentChainData;
+  }
+
+  @Override
+  public CombinedChainDataClient getCombinedChainDataClient() {
+    return combinedChainDataClient;
+  }
+
+  @Override
+  public Eth2P2PNetwork getP2pNetwork() {
+    return p2pNetwork;
+  }
+
+  @Override
+  public Optional<BeaconRestApi> getBeaconRestAPI() {
+    return beaconRestAPI;
   }
 }

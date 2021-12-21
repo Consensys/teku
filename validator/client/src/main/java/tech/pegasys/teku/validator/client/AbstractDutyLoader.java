@@ -36,12 +36,13 @@ public abstract class AbstractDutyLoader<D, S extends ScheduledDuties> implement
 
   @Override
   public SafeFuture<Optional<S>> loadDutiesForEpoch(final UInt64 epoch) {
-    LOG.trace("Requesting attestation duties for epoch {}", epoch);
+    LOG.trace("Requesting duties for epoch {}", epoch);
     return validatorIndexProvider
         .getValidatorIndices(validators.getPublicKeys())
         .thenCompose(
             validatorIndices -> {
               if (validatorIndices.isEmpty()) {
+                LOG.trace("No duties because no validator indices are known");
                 return SafeFuture.completedFuture(Optional.empty());
               }
               return requestDuties(epoch, validatorIndices)

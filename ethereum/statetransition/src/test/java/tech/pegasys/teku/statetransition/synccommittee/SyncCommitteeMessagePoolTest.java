@@ -182,6 +182,33 @@ class SyncCommitteeMessagePoolTest {
   }
 
   @Test
+  void shouldAggregateSignatureMultipleTimesWhenValidatorInSameSubcommitteeMultipleTimes() {
+    final ValidateableSyncCommitteeMessage message =
+        ValidateableSyncCommitteeMessage.fromValidator(
+            dataStructureUtil.randomSyncCommitteeMessage());
+    message.setSubcommitteeAssignments(
+        SyncSubcommitteeAssignments.builder()
+            .addAssignment(1, 1)
+            .addAssignment(1, 2)
+            .addAssignment(1, 3)
+            .build());
+
+    addValid(message);
+
+    final BLSSignature signature = message.getMessage().getSignature();
+    final BLSSignature expectedAggregate = BLS.aggregate(List.of(signature, signature, signature));
+
+    final UInt64 slot = message.getSlot();
+    final Bytes32 blockRoot = message.getBeaconBlockRoot();
+
+    // One message but gets included for all three subnets.
+    final Optional<SyncCommitteeContribution> contribution =
+        pool.createContribution(slot, blockRoot, 1);
+    assertThat(contribution).isPresent();
+    assertThat(contribution.orElseThrow().getSignature()).isEqualTo(expectedAggregate);
+  }
+
+  @Test
   void shouldExcludeMessagesWhereSlotDoesNotMatch() {
     final ValidateableSyncCommitteeMessage message =
         ValidateableSyncCommitteeMessage.fromValidator(

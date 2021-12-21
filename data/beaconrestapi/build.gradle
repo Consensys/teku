@@ -27,16 +27,16 @@ dependencies {
     implementation 'org.apache.tuweni:tuweni-units'
     implementation 'org.webjars:swagger-ui'
 
-    testImplementation testFixtures(project(':bls'))
     testImplementation testFixtures(project(':storage'))
     testImplementation testFixtures(project(':ethereum:spec'))
     testImplementation project(':ethereum:networks')
     testImplementation testFixtures(project(':infrastructure:async'))
+    testImplementation testFixtures(project(':infrastructure:bls'))
     testImplementation testFixtures(project(':infrastructure:restapi'))
 
     testCompileOnly 'io.libp2p:jvm-libp2p-minimal'
 
-    integrationTestImplementation testFixtures(project(':bls'))
+    integrationTestImplementation testFixtures(project(':infrastructure:bls'))
     integrationTestImplementation testFixtures(project(':ethereum:spec'))
     integrationTestImplementation project(':ethereum:weaksubjectivity')
     integrationTestImplementation testFixtures(project(':ethereum:core'))

@@ -1,13 +1,13 @@
 dependencies {
   api project(':ethereum:events')
 
-  implementation project(':bls')
   implementation project(':data')
   implementation project(':ethereum:core')
   implementation project(':ethereum:pow:api')
   implementation project(':ethereum:spec')
   implementation project(':ethereum:weaksubjectivity')
   implementation project(':infrastructure:async')
+  implementation project(':infrastructure:bls')
   implementation project(':infrastructure:collections')
   implementation project(':infrastructure:logging')
   implementation project(':infrastructure:metrics')
@@ -24,18 +24,18 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-units'
   implementation 'org.apache.tuweni:tuweni-ssz'
 
-  testImplementation testFixtures(project(':bls'))
   testImplementation testFixtures(project(':ethereum:core'))
   testImplementation testFixtures(project(':ethereum:spec'))
   testImplementation testFixtures(project(':ethereum:networks'))
   testImplementation testFixtures(project(':ethereum:weaksubjectivity'))
   testImplementation testFixtures(project(':infrastructure:async'))
+  testImplementation testFixtures(project(':infrastructure:bls'))
   testImplementation testFixtures(project(':infrastructure:time'))
   testImplementation testFixtures(project(':infrastructure:metrics'))
   testImplementation testFixtures(project(':storage'))
   testImplementation 'org.hyperledger.besu.internal:metrics-core'
 
-  testFixturesApi testFixtures(project(':bls'))
+  testFixturesApi testFixtures(project(':infrastructure:bls'))
   testFixturesApi testFixtures(project(':storage'))
 
   testFixturesImplementation 'org.mockito:mockito-core'

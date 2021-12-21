@@ -1,13 +1,13 @@
 dependencies {
   api project(':ethereum:spec')
 
-  implementation project(':bls')
   implementation project(':data')
   implementation project(':infrastructure:collections')
   implementation project(':infrastructure:io')
   implementation project(':infrastructure:metrics')
   implementation project(':data:signingrecord')
   implementation project(':infrastructure:async')
+  implementation project(':infrastructure:bls')
   implementation project(':infrastructure:ssz')
 
   implementation 'com.fasterxml.jackson.core:jackson-databind'
@@ -15,7 +15,7 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-ssz'
   implementation 'org.apache.tuweni:tuweni-bytes'
 
-  testImplementation testFixtures(project(':bls'))
+  testImplementation testFixtures(project(':infrastructure:bls'))
   testImplementation testFixtures(project(':infrastructure:crypto'))
   testImplementation testFixtures(project(':infrastructure:metrics'))
   testImplementation testFixtures(project(':infrastructure:async'))
@@ -27,8 +27,8 @@ dependencies {
 
   testFixturesApi testFixtures(project(':ethereum:spec'))
 
-  testFixturesImplementation project(':bls')
-  testFixturesImplementation testFixtures(project(':bls'))
+  testFixturesImplementation project(':infrastructure:bls')
+  testFixturesImplementation testFixtures(project(':infrastructure:bls'))
   testFixturesImplementation project(':ethereum:spec')
   testFixturesImplementation testFixtures(project(':ethereum:spec'))
   testFixturesImplementation project(':ethereum:networks')

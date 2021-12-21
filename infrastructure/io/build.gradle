@@ -1,4 +1,6 @@
 dependencies {
     implementation 'org.apache.tuweni:tuweni-bytes'
     implementation project(':infrastructure:exceptions')
+
+    testFixturesImplementation 'commons-io:commons-io'
 }

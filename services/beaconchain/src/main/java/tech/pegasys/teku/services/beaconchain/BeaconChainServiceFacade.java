@@ -19,5 +19,5 @@ package tech.pegasys.teku.services.beaconchain;
  */
 public interface BeaconChainServiceFacade {
 
-  BeaconChainController getBeaconChainController();
+  BeaconChainControllerFacade getBeaconChainController();
 }

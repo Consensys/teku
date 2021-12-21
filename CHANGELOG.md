@@ -12,9 +12,16 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ## Unreleased Changes
 ### Breaking Changes
+* API users should switch to using response 'code' from BadRequests, rather than 'status' field, in line with the standard API.
 
 ### Additions and Improvements
+* Added `kintsugi` network definition. 
+* Optimised discv5 by caching calculated node ID.
+* Avoided object allocation when calculating integer square root values.
 
 ### Bug Fixes
-* Updated to latest log4j and disabled JNDI lookup support.
-* Fix multiarch JDK17 variant docker image to bundle Java 17 instead of Java 16
+* Updated to log4j 2.17.0.
+* Made BadRequests compliant with the api, returning 'code' rather than 'status'.
+* Fixed: Invalid sync contributions were created if a validator was present multiple times in the same sync sub-committee.
+* Reduced error to warning when sync contribution cannot be created because the beacon node has no matching sync messages.
+* Fixed issue where validator duties were not performed during the first epoch after startup.

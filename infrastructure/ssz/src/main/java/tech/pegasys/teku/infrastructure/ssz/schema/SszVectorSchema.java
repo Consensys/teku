@@ -43,7 +43,7 @@ public interface SszVectorSchema<
   @SuppressWarnings("unchecked")
   static <ElementDataT extends SszData> SszVectorSchema<ElementDataT, ?> create(
       SszSchema<ElementDataT> elementSchema, long length, SszSchemaHints hints) {
-    checkArgument(length >= 0 && length <= MAX_VECTOR_LENGTH);
+    checkArgument(length > 0 && length <= MAX_VECTOR_LENGTH);
     if (elementSchema instanceof SszPrimitiveSchema) {
       return (SszVectorSchema<ElementDataT, ?>)
           SszPrimitiveVectorSchema.create((SszPrimitiveSchema<?, ?>) elementSchema, length, hints);

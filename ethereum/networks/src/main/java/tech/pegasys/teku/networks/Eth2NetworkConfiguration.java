@@ -15,6 +15,7 @@ package tech.pegasys.teku.networks;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Arrays.asList;
+import static tech.pegasys.teku.spec.networks.Eth2Network.KINTSUGI;
 import static tech.pegasys.teku.spec.networks.Eth2Network.LESS_SWIFT;
 import static tech.pegasys.teku.spec.networks.Eth2Network.MAINNET;
 import static tech.pegasys.teku.spec.networks.Eth2Network.MINIMAL;
@@ -330,6 +331,8 @@ public class Eth2NetworkConfiguration {
           return applyPyrmontNetworkDefaults();
         case PRATER:
           return applyPraterNetworkDefaults();
+        case KINTSUGI:
+          return applyKintsugiNetworkDefaults();
         case SWIFT:
           return applySwiftNetworkDefaults();
         case LESS_SWIFT:
@@ -441,6 +444,22 @@ public class Eth2NetworkConfiguration {
               "enr:-LK4QL3Y2elAiia5WV18p_pu9t_7syTsZs-rWGD6_IHhiEvBUIzZtT88VMsI-rN8fNSukaHuq7qtDhZwRISdG9O4uQsBh2F0dG5ldHOI__________-EZXRoMpA7CIeVAAAgCf__________gmlkgnY0gmlwhBLGowKJc2VjcDI1NmsxoQK13jMsuO1LbguOsFZ0hxvRe7PT8V1W9qeUMs6fgiwuM4N0Y3CCI4yDdWRwgiOM",
               "enr:-LK4QAtPY91umFgpKmvSEcsDdzXxB6Ss5pa55oqk-t58Uv9qF-B68jEjsN7B_SBGe4qCH1thKwokbS8-zC8Xy-NsED8Bh2F0dG5ldHOI__________-EZXRoMpDzGkhaAAAAAP__________gmlkgnY0gmlwhBKeqH2Jc2VjcDI1NmsxoQIRA0fHAr6eECjjIZZK-GB6dE0awWYtTrOMACfjq12M5oN0Y3CCI4yDdWRwgiOM",
               "enr:-LK4QLvxqICUmpMitpwHDwJNEUGj1ecsW_ZlGImx6SwfyFJICV2SO6lYcdxDKHAK0RzdWYo8dGm3tL__NpP_4Afy5psBh2F0dG5ldHOI__________-EZXRoMpDzGkhaAAAAAP__________gmlkgnY0gmlwhBLBEDqJc2VjcDI1NmsxoQJw2JPyabX2G_f9eAkbjhBDshIeUP-eZ-KoMGqFTdxUToN0Y3CCI4yDdWRwgiOM");
+    }
+
+    public Builder applyKintsugiNetworkDefaults() {
+      return reset()
+          .constants(KINTSUGI.configName())
+          .startupTimeoutSeconds(120)
+          .eth1DepositContractDeployBlock(0)
+          .defaultInitialState(
+              "https://github.com/eth-clients/merge-testnets/raw/3d07b2914747c4a8bd847a27c272e048cb2d29d8/kintsugi/genesis.ssz")
+          .discoveryBootnodes(
+              "enr:-Iq4QKuNB_wHmWon7hv5HntHiSsyE1a6cUTK1aT7xDSU_hNTLW3R4mowUboCsqYoh1kN9v3ZoSu_WuvW9Aw0tQ0Dxv6GAXxQ7Nv5gmlkgnY0gmlwhLKAlv6Jc2VjcDI1NmsxoQK6S-Cii_KmfFdUJL2TANL3ksaKUnNXvTCv1tLwXs0QgIN1ZHCCIyk",
+              "enr:-KG4QIkKUzDxrv7Xz8u9K9QqoTqEwKKCkLoChxVnfeILU6IdBoWoNOxPGvdl474l1iPFoR8CJUhgGEeO-k1SJ7SJCOEDhGV0aDKQR9ByjGEAAHAKAAAAAAAAAIJpZIJ2NIJpcISl6LnPiXNlY3AyNTZrMaEDprwHy6RKAKJguvGCldiGAI5JDJmQ8TZVnnWQur8zEh2DdGNwgiMog3VkcIIjKA",
+              "enr:-Ly4QGJodG8Q0vX5ePXsLsXody1Fbeauyottk3-iAvJ_6XfTVlWGsnfBQPlIOBgexXJqD78bUD5OCnXF5igBBJ4WuboBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpBH0HKMYQAAcAoAAAAAAAAAgmlkgnY0gmlwhEDhBN-Jc2VjcDI1NmsxoQPf98kXQf3Nh3ooc8vBdbUY2WAHR1VDrDhXYTKvRt4n-IhzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA",
+              "enr:-KG4QLIhAeEVABV4Id22qEbjemJ0b9JBjRhdYpKN0kvpVi_GbFkQTvAf7-Da-5sW2oNenTW3is_GxLImUCtYzxPMOR4DhGV0aDKQR9ByjGEAAHAKAAAAAAAAAIJpZIJ2NIJpcISl6LF5iXNlY3AyNTZrMaED6XFvht9SUPD0FlYWnjunXhF9FdQMQO56816C9iFNt-WDdGNwgiMog3VkcIIjKA",
+              "enr:-LK4QPluMnS3OaiMpy7E0dSF-n7ES9Ort7mpOj85lS_43jGvfuV-SOZyjYNG-WEIT5aOzpWH2vgBbF2MoB94IZdDLxIBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpBH0HKMYQAAcAoAAAAAAAAAgmlkgnY0gmlwhKEjS06Jc2VjcDI1NmsxoQM0uDjlVaZoToQ6ReyUkgFTQizlE6avXGljrWIz9Rf4LoN0Y3CCIyiDdWRwgiMo",
+              "enr:-Ku4QM4JL9b3RGfRnnfAY7jqDRiTTGaU2OWk0j4YWbR7N2YHc7RjPGiVERqiWHasIjmMz-No86wsvf4KHuyM4FeRtuMFh2F0dG5ldHOIAAAAAAAAAACEZXRoMpBH0HKMYQAAcAoAAAAAAAAAgmlkgnY0gmlwhKEjQ92Jc2VjcDI1NmsxoQN_UgL8zuTFqyGm5_lKZqUdoHMH2XeU0OvNmZwgycMmSIN0Y3CCIyg");
     }
   }
 }

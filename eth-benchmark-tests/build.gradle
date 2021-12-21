@@ -9,11 +9,11 @@ idea {
 }
 
 dependencies {
-  implementation project(':bls')
   implementation project(':ethereum:weaksubjectivity')
   implementation project(':ethereum:spec')
   implementation project(':eth-tests')
   implementation project(':infrastructure:async')
+  implementation project(':infrastructure:bls')
   implementation project(':data')
 
   implementation testFixtures(project(':ethereum:core'))
@@ -27,7 +27,7 @@ dependencies {
   jmh 'org.openjdk.jmh:jmh-core'
   jmh 'org.openjdk.jmh:jmh-generator-annprocess'
   jmh 'org.apache.tuweni:tuweni-ssz'
-  jmh project(':bls')
+  jmh project(':infrastructure:bls')
   jmh testFixtures(project(':ethereum:weaksubjectivity'))
   jmh testFixtures(project(':infrastructure:async'))
 }

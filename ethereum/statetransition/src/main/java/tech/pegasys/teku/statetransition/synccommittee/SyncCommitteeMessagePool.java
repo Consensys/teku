@@ -158,8 +158,12 @@ public class SyncCommitteeMessagePool implements SlotEventsChannel {
     private final List<BLSSignature> signatures = new ArrayList<>();
 
     public void add(final Set<Integer> participationIndices, final BLSSignature signature) {
-      this.participationIndices.addAll(participationIndices);
-      this.signatures.add(signature);
+      for (Integer index : participationIndices) {
+        if (!this.participationIndices.add(index)) {
+          throw new IllegalStateException("Already added " + index);
+        }
+        this.signatures.add(signature);
+      }
     }
 
     public boolean isEmpty() {

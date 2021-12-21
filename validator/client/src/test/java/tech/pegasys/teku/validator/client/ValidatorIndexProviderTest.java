@@ -22,6 +22,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.core.signatures.NoOpSigner.NO_OP_SIGNER;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,12 +33,17 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
 class ValidatorIndexProviderTest {
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final Spec spec = TestSpecFactory.createDefault();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
   private final BLSPublicKey key1 = dataStructureUtil.randomPublicKey();
 
@@ -46,7 +52,7 @@ class ValidatorIndexProviderTest {
   @Test
   void shouldReturnEmptyWhenValidatorIsUnknown() {
     final ValidatorIndexProvider provider =
-        new ValidatorIndexProvider(ownedValidatorsWithKeys(key1), validatorApiChannel);
+        new ValidatorIndexProvider(ownedValidatorsWithKeys(key1), validatorApiChannel, asyncRunner);
     assertThat(provider.getValidatorIndex(key1)).isEmpty();
   }
 
@@ -56,7 +62,7 @@ class ValidatorIndexProviderTest {
     final BLSPublicKey key3 = dataStructureUtil.randomPublicKey();
     final OwnedValidators validators = ownedValidatorsWithKeys(key1, key2, key3);
     final ValidatorIndexProvider provider =
-        new ValidatorIndexProvider(validators, validatorApiChannel);
+        new ValidatorIndexProvider(validators, validatorApiChannel, asyncRunner);
 
     when(validatorApiChannel.getValidatorIndices(validators.getPublicKeys()))
         .thenReturn(SafeFuture.completedFuture(Map.of(key1, 1, key2, 20, key3, 300)));
@@ -68,12 +74,31 @@ class ValidatorIndexProviderTest {
   }
 
   @Test
+  void shouldRetryWhenLoadRequestFails() {
+    final OwnedValidators validators = ownedValidatorsWithKeys(key1);
+    final ValidatorIndexProvider provider =
+        new ValidatorIndexProvider(validators, validatorApiChannel, asyncRunner);
+
+    when(validatorApiChannel.getValidatorIndices(validators.getPublicKeys()))
+        .thenReturn(SafeFuture.failedFuture(new IOException("Server not available")))
+        .thenReturn(SafeFuture.completedFuture(Map.of(key1, 1)));
+    provider.lookupValidators();
+
+    assertThat(provider.getValidatorIndex(key1)).isEmpty();
+
+    assertThat(asyncRunner.hasDelayedActions()).isTrue();
+    asyncRunner.executeQueuedActions();
+
+    assertThat(provider.getValidatorIndex(key1)).contains(1);
+  }
+
+  @Test
   void shouldLookupValidatorKeysThatWerePreviouslyUnknown() {
     final BLSPublicKey key2 = dataStructureUtil.randomPublicKey();
     final BLSPublicKey key3 = dataStructureUtil.randomPublicKey();
     final OwnedValidators ownedValidators = ownedValidatorsWithKeys(key1, key2, key3);
     final ValidatorIndexProvider provider =
-        new ValidatorIndexProvider(ownedValidators, validatorApiChannel);
+        new ValidatorIndexProvider(ownedValidators, validatorApiChannel, asyncRunner);
 
     when(validatorApiChannel.getValidatorIndices(ownedValidators.getPublicKeys()))
         .thenReturn(SafeFuture.completedFuture(Map.of(key2, 20)));
@@ -98,7 +123,7 @@ class ValidatorIndexProviderTest {
     when(validatorApiChannel.getValidatorIndices(Set.of(key1))).thenReturn(result);
 
     final ValidatorIndexProvider provider =
-        new ValidatorIndexProvider(ownedValidatorsWithKeys(key1), validatorApiChannel);
+        new ValidatorIndexProvider(ownedValidatorsWithKeys(key1), validatorApiChannel, asyncRunner);
 
     provider.lookupValidators();
     verify(validatorApiChannel).getValidatorIndices(Set.of(key1));
@@ -115,7 +140,7 @@ class ValidatorIndexProviderTest {
   @Test
   void shouldNotMakeRequestWhenAllValidatorsAreKnown() {
     final ValidatorIndexProvider provider =
-        new ValidatorIndexProvider(ownedValidatorsWithKeys(key1), validatorApiChannel);
+        new ValidatorIndexProvider(ownedValidatorsWithKeys(key1), validatorApiChannel, asyncRunner);
 
     when(validatorApiChannel.getValidatorIndices(Set.of(key1)))
         .thenReturn(SafeFuture.completedFuture(Map.of(key1, 1)));
@@ -131,7 +156,7 @@ class ValidatorIndexProviderTest {
   @Test
   void shouldWaitForFirstSuccessfulRequestBeforeLookingUpValidatorIndices() {
     final ValidatorIndexProvider provider =
-        new ValidatorIndexProvider(ownedValidatorsWithKeys(key1), validatorApiChannel);
+        new ValidatorIndexProvider(ownedValidatorsWithKeys(key1), validatorApiChannel, asyncRunner);
 
     final SafeFuture<Map<BLSPublicKey, Integer>> requestResult = new SafeFuture<>();
     when(validatorApiChannel.getValidatorIndices(Set.of(key1))).thenReturn(requestResult);

@@ -14,12 +14,14 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBytes32;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsInt;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUInt64;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.BEACON_BLOCK_ROOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNAL_ERROR;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SUBCOMMITTEE_INDEX;
@@ -88,6 +90,9 @@ public class GetSyncCommitteeContribution extends AbstractHandler {
             status = RES_OK,
             content = @OpenApiContent(from = GetSyncCommitteeContributionResponse.class)),
         @OpenApiResponse(status = RES_BAD_REQUEST, description = "Invalid request syntax."),
+        @OpenApiResponse(
+            status = RES_NOT_FOUND,
+            description = "No matching sync committee messages were found"),
         @OpenApiResponse(status = RES_INTERNAL_ERROR, description = "Beacon node internal error.")
       })
   @Override
@@ -117,7 +122,7 @@ public class GetSyncCommitteeContribution extends AbstractHandler {
 
       final SafeFuture<Optional<SyncCommitteeContribution>> future =
           provider.createSyncCommitteeContribution(slot, subcommitteeIndex, blockRoot);
-      handleOptionalResult(ctx, future, this::processResult, SC_BAD_REQUEST);
+      handleOptionalResult(ctx, future, this::processResult, SC_NOT_FOUND);
     } catch (final IllegalArgumentException e) {
       ctx.json(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
       ctx.status(SC_BAD_REQUEST);

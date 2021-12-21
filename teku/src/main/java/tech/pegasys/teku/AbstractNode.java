@@ -97,8 +97,7 @@ public abstract class AbstractNode implements Node {
         .getMergeTotalTerminalDifficultyOverride()
         .ifPresent(
             ttdo ->
-                STATUS_LOG.warnMergeParameterChanged(
-                    "TERMINAL_TOTAL_DIFFICULTY", ttdo.toHexString()));
+                STATUS_LOG.warnMergeParameterChanged("TERMINAL_TOTAL_DIFFICULTY", ttdo.toString()));
 
     tekuConfig
         .eth2NetworkConfiguration()
