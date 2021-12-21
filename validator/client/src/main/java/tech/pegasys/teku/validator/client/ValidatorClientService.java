@@ -167,7 +167,8 @@ public class ValidatorClientService extends Service {
       AsyncRunner asyncRunner) {
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
-    this.validatorIndexProvider = new ValidatorIndexProvider(validators, validatorApiChannel);
+    this.validatorIndexProvider =
+        new ValidatorIndexProvider(validators, validatorApiChannel, asyncRunner);
     final BlockDutyFactory blockDutyFactory =
         new BlockDutyFactory(forkProvider, validatorApiChannel, spec);
     final AttestationDutyFactory attestationDutyFactory =
