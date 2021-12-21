@@ -21,7 +21,6 @@ dependencies {
   implementation project(':infrastructure:serviceutils')
 
   implementation 'io.libp2p:jvm-libp2p-minimal'
-  implementation 'io.vertx:vertx-core'
   implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.apache.tuweni:tuweni-plumtree'
   implementation 'org.apache.tuweni:tuweni-rlpx'
