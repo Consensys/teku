@@ -51,7 +51,7 @@ public class Generator {
   @Disabled
   @Test
   public void generateBlocks() throws Exception {
-    final Spec spec = TestSpecFactory.createMainnetPhase0();
+    final Spec spec = TestSpecFactory.createMainnetAltair();
     Constants.setConstants("mainnet");
 
     AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = false;
@@ -65,7 +65,7 @@ public class Generator {
 
     System.out.println("Keypairs done.");
 
-    RecentChainData localStorage = MemoryOnlyRecentChainData.create();
+    RecentChainData localStorage = MemoryOnlyRecentChainData.create(spec);
     BeaconChainUtil localChain =
         BeaconChainUtil.builder()
             .specProvider(spec)
@@ -80,7 +80,7 @@ public class Generator {
     List<Attestation> attestations = Collections.emptyList();
 
     String blocksFile =
-        "blocks_epoch_" + Constants.SLOTS_PER_EPOCH + "_validators_" + validatorsCount + ".ssz";
+        "blocks_epoch_" + Constants.SLOTS_PER_EPOCH + "_validators_" + validatorsCount + ".ssz.gz";
 
     try (Writer writer = BlockIO.createFileWriter(blocksFile)) {
 
