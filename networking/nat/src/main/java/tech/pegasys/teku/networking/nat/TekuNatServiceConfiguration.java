@@ -228,6 +228,11 @@ public class TekuNatServiceConfiguration implements UpnpServiceConfiguration {
   }
 
   @Override
+  public Executor getRemoteListenerExecutor() {
+    return executorService;
+  }
+
+  @Override
   public void shutdown() {
     executorService.shutdown();
   }
