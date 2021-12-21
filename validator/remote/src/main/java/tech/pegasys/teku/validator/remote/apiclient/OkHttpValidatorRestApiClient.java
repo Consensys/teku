@@ -298,7 +298,8 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
             GET_SYNC_COMMITTEE_CONTRIBUTION,
             pathParams,
             queryParams,
-            createHandler(GetSyncCommitteeContributionResponse.class))
+            createHandler(GetSyncCommitteeContributionResponse.class)
+                .withHandler(SC_NOT_FOUND, (request, response) -> Optional.empty()))
         .map(response -> response.data);
   }
 

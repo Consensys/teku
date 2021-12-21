@@ -34,6 +34,7 @@ import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -51,7 +52,7 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.duties.attestations.AttestationProductionDuty;
-import tech.pegasys.teku.validator.client.duties.attestations.IndividualSendingStrategy;
+import tech.pegasys.teku.validator.client.duties.attestations.BatchAttestationSendingStrategy;
 
 class AttestationProductionDutyTest {
 
@@ -70,7 +71,7 @@ class AttestationProductionDutyTest {
           SLOT,
           forkProvider,
           validatorApiChannel,
-          new IndividualSendingStrategy<>(validatorApiChannel::sendSignedAttestations));
+          new BatchAttestationSendingStrategy<>(validatorApiChannel::sendSignedAttestations));
 
   @BeforeEach
   public void setUp() {
@@ -287,6 +288,7 @@ class AttestationProductionDutyTest {
     verifyNoMoreInteractions(validatorLogger);
   }
 
+  @SuppressWarnings("unchecked")
   @Test
   public void shouldCreateAttestationForMultipleValidatorsInSameCommittee() {
     final int committeeIndex = 3;
@@ -323,9 +325,11 @@ class AttestationProductionDutyTest {
     assertThat(attestationResult2).isCompletedWithValue(Optional.of(attestationData));
     assertThat(attestationResult3).isCompletedWithValue(Optional.of(attestationData));
 
-    verify(validatorApiChannel).sendSignedAttestations(List.of(expectedAttestation1));
-    verify(validatorApiChannel).sendSignedAttestations(List.of(expectedAttestation2));
-    verify(validatorApiChannel).sendSignedAttestations(List.of(expectedAttestation3));
+    ArgumentCaptor<List<Attestation>> argumentCaptor = ArgumentCaptor.forClass(List.class);
+    verify(validatorApiChannel).sendSignedAttestations(argumentCaptor.capture());
+    assertThat(argumentCaptor.getValue())
+        .containsExactlyInAnyOrder(
+            expectedAttestation1, expectedAttestation2, expectedAttestation3);
 
     // Should have only needed to create one unsigned attestation and reused it for each validator
     verify(validatorApiChannel, times(1)).createAttestationData(any(), anyInt());
@@ -334,6 +338,7 @@ class AttestationProductionDutyTest {
     verifyNoMoreInteractions(validatorLogger);
   }
 
+  @SuppressWarnings("unchecked")
   @Test
   public void shouldCreateAttestationForMultipleValidatorsInDifferentCommittees() {
     final int committeeIndex1 = 3;
@@ -374,9 +379,11 @@ class AttestationProductionDutyTest {
     assertThat(attestationResult2).isCompletedWithValue(Optional.of(unsignedAttestation2));
     assertThat(attestationResult3).isCompletedWithValue(Optional.of(unsignedAttestation1));
 
-    verify(validatorApiChannel).sendSignedAttestations(List.of(expectedAttestation1));
-    verify(validatorApiChannel).sendSignedAttestations(List.of(expectedAttestation2));
-    verify(validatorApiChannel).sendSignedAttestations(List.of(expectedAttestation3));
+    ArgumentCaptor<List<Attestation>> argumentCaptor = ArgumentCaptor.forClass(List.class);
+    verify(validatorApiChannel).sendSignedAttestations(argumentCaptor.capture());
+    assertThat(argumentCaptor.getValue())
+        .containsExactlyInAnyOrder(
+            expectedAttestation1, expectedAttestation2, expectedAttestation3);
 
     // Need to create an unsigned attestation for each committee
     verify(validatorApiChannel, times(2)).createAttestationData(any(), anyInt());

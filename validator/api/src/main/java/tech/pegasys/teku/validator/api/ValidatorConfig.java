@@ -58,7 +58,6 @@ public class ValidatorConfig {
   private final int validatorExternalSignerConcurrentRequestLimit;
   private final boolean useDependentRoots;
   private final boolean generateEarlyAttestations;
-  private final boolean sendAttestationsAsBatch;
   private final Optional<Eth1Address> suggestedFeeRecipient;
 
   private ValidatorConfig(
@@ -78,7 +77,6 @@ public class ValidatorConfig {
       final int validatorExternalSignerConcurrentRequestLimit,
       final boolean useDependentRoots,
       final boolean generateEarlyAttestations,
-      final boolean sendAttestationsAsBatch,
       final List<URI> additionalPublishUrls,
       final Optional<Eth1Address> suggestedFeeRecipient) {
     this.validatorKeys = validatorKeys;
@@ -100,7 +98,6 @@ public class ValidatorConfig {
         validatorExternalSignerConcurrentRequestLimit;
     this.useDependentRoots = useDependentRoots;
     this.generateEarlyAttestations = generateEarlyAttestations;
-    this.sendAttestationsAsBatch = sendAttestationsAsBatch;
     this.additionalPublishUrls = additionalPublishUrls;
     this.suggestedFeeRecipient = suggestedFeeRecipient;
   }
@@ -166,10 +163,6 @@ public class ValidatorConfig {
     return useDependentRoots;
   }
 
-  public boolean sendAttestationsAsBatch() {
-    return sendAttestationsAsBatch;
-  }
-
   public List<URI> getAdditionalPublishUrls() {
     return additionalPublishUrls;
   }
@@ -183,7 +176,7 @@ public class ValidatorConfig {
     if (suggestedFeeRecipient.isEmpty()
         && !(validatorKeys.isEmpty() && validatorExternalSignerPublicKeySources.isEmpty())) {
       throw new InvalidConfigurationException(
-          "Invalid configuration. --validators-fee-recipient-address must be specified when Merge milestone is active");
+          "Invalid configuration. --Xvalidators-suggested-fee-recipient-address must be specified when Merge milestone is active");
     }
   }
 
@@ -209,7 +202,6 @@ public class ValidatorConfig {
         DEFAULT_VALIDATOR_EXTERNAL_SIGNER_SLASHING_PROTECTION_ENABLED;
     private boolean useDependentRoots = DEFAULT_USE_DEPENDENT_ROOTS;
     private boolean generateEarlyAttestations = DEFAULT_GENERATE_EARLY_ATTESTATIONS;
-    private boolean sendAttestationsAsBatch = DEFAULT_SEND_ATTESTATIONS_AS_BATCH;
     private Optional<Eth1Address> suggestedFeeRecipient = Optional.empty();
 
     private Builder() {}
@@ -305,11 +297,6 @@ public class ValidatorConfig {
       return this;
     }
 
-    public Builder sendAttestationsAsBatch(final boolean sendAttestationsAsBatch) {
-      this.sendAttestationsAsBatch = sendAttestationsAsBatch;
-      return this;
-    }
-
     public Builder additionalPublishUrls(final List<URI> publishUrls) {
       this.additionalPublishUrls = publishUrls;
       return this;
@@ -351,7 +338,6 @@ public class ValidatorConfig {
           validatorExternalSignerConcurrentRequestLimit,
           useDependentRoots,
           generateEarlyAttestations,
-          sendAttestationsAsBatch,
           additionalPublishUrls,
           suggestedFeeRecipient);
     }

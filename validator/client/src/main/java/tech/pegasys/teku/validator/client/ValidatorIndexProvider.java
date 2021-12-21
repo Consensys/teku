@@ -17,6 +17,7 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
 import com.google.common.collect.Sets;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
@@ -26,23 +27,30 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
 public class ValidatorIndexProvider {
+
   private static final Logger LOG = LogManager.getLogger();
+  public static final Duration RETRY_DELAY = Duration.ofSeconds(5);
   private final OwnedValidators validators;
   private final ValidatorApiChannel validatorApiChannel;
+  private final AsyncRunner asyncRunner;
   private final Map<BLSPublicKey, Integer> validatorIndexesByPublicKey = new ConcurrentHashMap<>();
 
   private final AtomicBoolean requestInProgress = new AtomicBoolean(false);
   private final SafeFuture<Void> firstSuccessfulRequest = new SafeFuture<>();
 
   public ValidatorIndexProvider(
-      final OwnedValidators validators, final ValidatorApiChannel validatorApiChannel) {
+      final OwnedValidators validators,
+      final ValidatorApiChannel validatorApiChannel,
+      final AsyncRunner asyncRunner) {
     this.validators = validators;
     this.validatorApiChannel = validatorApiChannel;
+    this.asyncRunner = asyncRunner;
   }
 
   public void lookupValidators() {
@@ -65,7 +73,11 @@ public class ValidatorIndexProvider {
             })
         .orTimeout(30, TimeUnit.SECONDS)
         .whenComplete((result, error) -> requestInProgress.set(false))
-        .finish(error -> LOG.debug("Failed to load validator indexes.", error));
+        .finish(
+            error -> {
+              LOG.warn("Failed to load validator indexes. Retrying.", error);
+              asyncRunner.runAfterDelay(this::lookupValidators, RETRY_DELAY).reportExceptions();
+            });
   }
 
   private Collection<BLSPublicKey> getUnknownValidators() {

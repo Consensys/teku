@@ -44,7 +44,7 @@ public class ExecutionEngineConfiguration {
     return endpoint.orElseThrow(
         () ->
             new InvalidConfigurationException(
-                "Invalid configuration. --ee-endpoint parameter is mandatory when Merge milestone is enabled"));
+                "Invalid configuration. --Xee-endpoint parameter is mandatory when Merge milestone is enabled"));
   }
 
   public static class Builder {

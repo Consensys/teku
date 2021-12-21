@@ -33,6 +33,7 @@ import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -49,7 +50,7 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.duties.attestations.AggregationDuty;
-import tech.pegasys.teku.validator.client.duties.attestations.IndividualSendingStrategy;
+import tech.pegasys.teku.validator.client.duties.attestations.BatchAttestationSendingStrategy;
 
 class AggregationDutyTest {
   private static final String TYPE = "aggregate";
@@ -72,11 +73,13 @@ class AggregationDutyTest {
           validatorApiChannel,
           forkProvider,
           validatorLogger,
-          new IndividualSendingStrategy<>(validatorApiChannel::sendAggregateAndProofs));
+          new BatchAttestationSendingStrategy<>(validatorApiChannel::sendAggregateAndProofs));
 
   @BeforeEach
   public void setUp() {
     when(forkProvider.getForkInfo(any())).thenReturn(SafeFuture.completedFuture(forkInfo));
+    when(validatorApiChannel.sendAggregateAndProofs(any()))
+        .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
   }
 
   @Test
@@ -115,6 +118,7 @@ class AggregationDutyTest {
             List.of(new SignedAggregateAndProof(expectedAggregateAndProof, aggregateSignature)));
   }
 
+  @SuppressWarnings("unchecked")
   @Test
   public void shouldProduceAggregateAndProofForMultipleCommittees() {
     final int validator1Index = 1;
@@ -162,13 +166,14 @@ class AggregationDutyTest {
 
     assertThat(duty.performDuty()).isCompleted();
 
-    verify(validatorApiChannel)
-        .sendAggregateAndProofs(
-            List.of(new SignedAggregateAndProof(aggregateAndProof1, aggregateSignature1)));
+    ArgumentCaptor<List<SignedAggregateAndProof>> argumentCaptor =
+        ArgumentCaptor.forClass(List.class);
+    verify(validatorApiChannel).sendAggregateAndProofs(argumentCaptor.capture());
 
-    verify(validatorApiChannel)
-        .sendAggregateAndProofs(
-            List.of(new SignedAggregateAndProof(aggregateAndProof2, aggregateSignature2)));
+    assertThat(argumentCaptor.getValue())
+        .containsExactlyInAnyOrder(
+            new SignedAggregateAndProof(aggregateAndProof1, aggregateSignature1),
+            new SignedAggregateAndProof(aggregateAndProof2, aggregateSignature2));
   }
 
   @Test
