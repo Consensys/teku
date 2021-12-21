@@ -16,7 +16,8 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Additions and Improvements
 * Added `kintsugi` network definition. 
-* Optimsied discv5 by caching calculated node ID.
+* Optimised discv5 by caching calculated node ID.
+* Avoided object allocation when calculating integer square root values.
 
 ### Bug Fixes
 * Updated to log4j 2.17.0.

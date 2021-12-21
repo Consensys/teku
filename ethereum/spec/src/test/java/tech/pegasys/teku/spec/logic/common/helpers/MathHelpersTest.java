@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.spec.logic.common.helpers;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -67,15 +67,36 @@ public class MathHelpersTest {
   }
 
   @Test
-  void sqrtOfANonSquareNumber() {
-    UInt64 actual = MathHelpers.integerSquareRoot(UInt64.valueOf(27L));
-    UInt64 expected = UInt64.valueOf(5L);
+  void sqrtOfMaxValue() {
+    assertThatThrownBy(() -> MathHelpers.integerSquareRoot(UInt64.MAX_VALUE))
+        .isInstanceOf(ArithmeticException.class);
+  }
+
+  @Test
+  void sqrtOfMaxValueMinusOne() {
+    UInt64 actual = MathHelpers.integerSquareRoot(UInt64.MAX_VALUE.minus(1));
+    UInt64 expected = UInt64.valueOf(4294967295L);
     assertEquals(expected, actual);
   }
 
   @Test
-  void sqrtOfANegativeNumber() {
-    assertThrows(
-        IllegalArgumentException.class, () -> MathHelpers.integerSquareRoot(UInt64.valueOf(-1L)));
+  void sqrtOfZero() {
+    UInt64 actual = MathHelpers.integerSquareRoot(UInt64.ZERO);
+    UInt64 expected = UInt64.ZERO;
+    assertEquals(expected, actual);
+  }
+
+  @Test
+  void sqrtOfOne() {
+    UInt64 actual = MathHelpers.integerSquareRoot(UInt64.ONE);
+    UInt64 expected = UInt64.ONE;
+    assertEquals(expected, actual);
+  }
+
+  @Test
+  void sqrtOfANonSquareNumber() {
+    UInt64 actual = MathHelpers.integerSquareRoot(UInt64.valueOf(27L));
+    UInt64 expected = UInt64.valueOf(5L);
+    assertEquals(expected, actual);
   }
 }
