@@ -91,7 +91,7 @@ public class SpecConfigLoaderTest {
       writeStreamToFile(inputStream, file);
       assertThatThrownBy(() -> SpecConfigLoader.loadConfig(file.toAbsolutePath().toString()))
           .isInstanceOf(IllegalArgumentException.class)
-          .hasMessageContaining("Failed to load spec config");
+          .hasMessageMatching("network \".*\" is unsupported");
     }
   }
 
@@ -102,7 +102,7 @@ public class SpecConfigLoaderTest {
       writeStreamToFile(inputStream, file);
       assertThatThrownBy(() -> SpecConfigLoader.loadConfig(file.toAbsolutePath().toString()))
           .isInstanceOf(IllegalArgumentException.class)
-          .hasMessageContaining("Failed to load spec config")
+          .hasMessageMatching("network \".*\" is unsupported")
           .hasRootCauseMessage(
               "Could not load spec config preset 'foo' specified in config '%s'",
               file.toAbsolutePath().toString());

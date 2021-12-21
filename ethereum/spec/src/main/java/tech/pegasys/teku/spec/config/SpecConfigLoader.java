@@ -88,7 +88,7 @@ public class SpecConfigLoader {
         }
       }
     } catch (IOException | IllegalArgumentException e) {
-      throw new IllegalArgumentException("Failed to load spec config: " + source, e);
+      throw new IllegalArgumentException("network \"" + source + "\" is unsupported", e);
     }
   }
 
