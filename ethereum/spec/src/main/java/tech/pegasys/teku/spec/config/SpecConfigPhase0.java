@@ -18,6 +18,7 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.logic.common.helpers.MathHelpers;
 
 public class SpecConfigPhase0 implements SpecConfig {
   private final Map<String, Object> rawConfig;
@@ -57,6 +58,7 @@ public class SpecConfigPhase0 implements SpecConfig {
   private final int secondsPerSlot;
   private final int minAttestationInclusionDelay;
   private final int slotsPerEpoch;
+  private final long squareRootSlotsPerEpoch;
   private final int minSeedLookahead;
   private final int maxSeedLookahead;
   private final UInt64 minEpochsToInactivityPenalty;
@@ -198,6 +200,7 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.depositChainId = depositChainId;
     this.depositNetworkId = depositNetworkId;
     this.depositContractAddress = depositContractAddress;
+    this.squareRootSlotsPerEpoch = MathHelpers.integerSquareRoot(slotsPerEpoch);
   }
 
   @Override
@@ -333,6 +336,11 @@ public class SpecConfigPhase0 implements SpecConfig {
   @Override
   public int getSlotsPerEpoch() {
     return slotsPerEpoch;
+  }
+
+  @Override
+  public long getSquareRootSlotsPerEpoch() {
+    return squareRootSlotsPerEpoch;
   }
 
   @Override
