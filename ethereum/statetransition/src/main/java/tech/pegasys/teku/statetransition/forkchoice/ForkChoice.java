@@ -251,15 +251,10 @@ public class ForkChoice {
 
     if (payloadResult.hasStatus(ExecutionPayloadStatus.SYNCING)
         && !recentChainData.isOptimisticSyncPossible()) {
-
-      recentChainData.enqueueExecutionPayloadExecutionRetry(block);
-
       return BlockImportResult.FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING;
     }
 
     if (payloadResult.hasFailedExecution()) {
-      recentChainData.enqueueExecutionPayloadExecutionRetry(block);
-
       return BlockImportResult.failedExecutionPayloadExecution(
           payloadResult.getFailureCause().orElseThrow());
     }

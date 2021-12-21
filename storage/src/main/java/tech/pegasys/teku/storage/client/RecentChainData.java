@@ -17,11 +17,9 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
-import java.util.Queue;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -92,8 +90,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   private final Map<SpecMilestone, Bytes4> milestoneToForkDigest = new ConcurrentHashMap<>();
   private volatile Optional<ChainHead> chainHead = Optional.empty();
   private volatile UInt64 genesisTime;
-
-  private final Queue<SignedBeaconBlock> payloadExecutionRetryQueue = new ConcurrentLinkedQueue<>();
 
   RecentChainData(
       final AsyncRunner asyncRunner,
@@ -537,14 +533,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   public boolean isOptimisticSyncPossible() {
     return store != null
         && !store.getLatestFinalized().getExecutionBlockHash().map(Bytes32::isZero).orElse(true);
-  }
-
-  public boolean enqueueExecutionPayloadExecutionRetry(SignedBeaconBlock block) {
-    return payloadExecutionRetryQueue.add(block);
-  }
-
-  public Optional<SignedBeaconBlock> getEnqueuedExecutionPayloadExecutionRetry() {
-    return Optional.ofNullable(payloadExecutionRetryQueue.poll());
   }
 
   @Override
