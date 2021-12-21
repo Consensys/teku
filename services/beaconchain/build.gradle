@@ -38,6 +38,4 @@ dependencies {
   testImplementation testFixtures(project(':infrastructure:metrics'))
 
   implementation 'io.libp2p:jvm-libp2p-minimal'
-  implementation 'io.vertx:vertx-core'
-  implementation 'io.vertx:vertx-web'
 }
