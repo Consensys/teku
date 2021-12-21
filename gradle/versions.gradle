@@ -1,8 +1,8 @@
 dependencyManagement {
   dependencies {
-    dependency 'com.fasterxml.jackson.core:jackson-databind:2.13.0'
-    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.13.0'
-    dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.13.0'
+    dependency 'com.fasterxml.jackson.core:jackson-databind:2.13.1'
+    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.13.1'
+    dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.13.1'
 
     dependency 'com.google.auto.service:auto-service:1.0-rc7'
 
@@ -13,7 +13,7 @@ dependencyManagement {
       entry 'error_prone_test_helpers'
     }
 
-    dependency 'tech.pegasys.tools.epchecks:errorprone-checks:1.0.0'
+    dependency 'tech.pegasys.tools.epchecks:errorprone-checks:1.0.1'
 
     dependency 'com.google.guava:guava:31.0.1-jre'
     dependency 'com.google.code.gson:gson:2.8.9'
@@ -46,7 +46,7 @@ dependencyManagement {
 
     dependency 'org.hdrhistogram:HdrHistogram:2.1.12'
 
-    dependency 'org.jetbrains.kotlin:kotlin-stdlib:1.6.0'
+    dependency 'org.jetbrains.kotlin:kotlin-stdlib:1.6.10'
 
     dependency 'io.pkts:pkts-core:3.0.3'
 
@@ -74,7 +74,7 @@ dependencyManagement {
       entry 'vertx-unit'
       entry 'vertx-web'
     }
-    dependency 'io.projectreactor:reactor-core:3.4.12'
+    dependency 'io.projectreactor:reactor-core:3.4.13'
 
     dependency 'it.unimi.dsi:fastutil:8.5.6'
 
@@ -117,15 +117,15 @@ dependencyManagement {
       entry 'junit-jupiter-params'
     }
 
-    dependency 'org.mockito:mockito-core:4.1.0'
-    dependency 'org.mockito:mockito-junit-jupiter:4.1.0'
+    dependency 'org.mockito:mockito-core:4.2.0'
+    dependency 'org.mockito:mockito-junit-jupiter:4.2.0'
 
     dependencySet(group: "org.openjdk.jmh", version: "1.33") {
       entry 'jmh-core'
       entry 'jmh-generator-annprocess'
     }
     dependency 'org.quartz-scheduler:quartz:2.3.2'
-    dependency 'org.rocksdb:rocksdbjni:6.26.1'
+    dependency 'org.rocksdb:rocksdbjni:6.27.3'
     dependency 'org.fusesource.leveldbjni:leveldbjni-win64:1.8'
     dependency 'org.fusesource.leveldbjni:leveldbjni-win32:1.8'
     dependency 'tech.pegasys:leveldb-native:0.2.0'
@@ -140,7 +140,7 @@ dependencyManagement {
 
     dependency 'io.prometheus:simpleclient:0.9.0'
 
-    dependencySet(group: 'org.hyperledger.besu.internal', version: '21.10.3') {
+    dependencySet(group: 'org.hyperledger.besu.internal', version: '21.10.5') {
       entry('metrics-core') {
         // We include netty-all so omit the separated jars
         exclude 'io.netty:netty-tcnative-boringssl-static'
@@ -161,7 +161,7 @@ dependencyManagement {
       exclude 'org.apache.tuweni:units'
     }
 
-    dependency 'tech.pegasys.signers.internal:bls-keystore:1.0.21'
+    dependency 'tech.pegasys.signers.internal:bls-keystore:1.0.23'
 
     dependency 'org.jupnp:org.jupnp.support:2.6.0'
     dependency 'org.jupnp:org.jupnp:2.6.0'
