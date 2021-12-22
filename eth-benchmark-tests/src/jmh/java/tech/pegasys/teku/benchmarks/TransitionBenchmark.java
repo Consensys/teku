@@ -85,7 +85,7 @@ public abstract class TransitionBenchmark {
         BlsKeyPairIO.createReaderForResource(keysFile).readAll(validatorsCount);
 
     final BlockImportNotifications blockImportNotifications = mock(BlockImportNotifications.class);
-    spec = TestSpecFactory.createMainnetPhase0();
+    spec = TestSpecFactory.createMainnetAltair();
     wsValidator = WeakSubjectivityFactory.lenientValidator();
     recentChainData = MemoryOnlyRecentChainData.create(spec);
     ForkChoice forkChoice =
