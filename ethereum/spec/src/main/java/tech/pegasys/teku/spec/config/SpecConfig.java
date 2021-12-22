@@ -83,6 +83,9 @@ public interface SpecConfig {
 
   int getSlotsPerEpoch();
 
+  /** Returns integerSquareRoot(getSlotsPerEpoch()) but with the benefit of precalculating. */
+  long getSquareRootSlotsPerEpoch();
+
   int getMinSeedLookahead();
 
   int getMaxSeedLookahead();

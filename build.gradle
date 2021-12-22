@@ -13,14 +13,13 @@ buildscript {
 }
 
 plugins {
-  id 'com.diffplug.spotless' version '6.0.4'
+  id 'com.diffplug.spotless' version '6.0.5'
   id 'com.github.ben-manes.versions' version '0.39.0'
   id 'com.github.jk1.dependency-license-report' version '1.16'
-  id 'io.spring.dependency-management' version '1.0.9.RELEASE'
+  id 'io.spring.dependency-management' version '1.0.11.RELEASE'
   id 'net.ltgt.errorprone' version '2.0.2' apply false
-  id 'me.champeau.gradle.jmh' version '0.5.3' apply false
   id 'de.undercouch.download' version '4.1.2'
-  id 'org.ajoberstar.grgit' version '4.1.0'
+  id 'org.ajoberstar.grgit' version '4.1.1'
 }
 
 rootProject.version = calculatePublishVersion()
@@ -115,7 +114,7 @@ allprojects {
       endWithNewline()
       licenseHeaderFile "${rootDir}/gradle/spotless.java.license"
       // See gradle.properties for exports/opens flags required by JDK 16 and Google Java Format plugin
-      googleJavaFormat('1.10.0')
+      googleJavaFormat('1.13.0')
     }
   }
 
@@ -551,6 +550,40 @@ subprojects {
       }
     }
   }
+
+  if (project.file('src/jmh/java').exists()) {
+    println "JMH in: ${project.name}"
+    sourceSets {
+      jmh {
+        java.srcDirs = ['src/jmh/java']
+        resources.srcDirs = ['src/jmh/resources']
+        compileClasspath += sourceSets.main.runtimeClasspath
+      }
+    }
+
+    tasks.getByName("compileJmhJava") {
+
+      options.compilerArgs = []
+
+      options.errorprone {
+        enabled = false
+      }
+    }
+
+    dependencies {
+      jmhImplementation 'org.openjdk.jmh:jmh-core'
+      jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess'
+    }
+
+    classes.finalizedBy(jmhClasses)
+
+    task jmh(type: JavaExec, dependsOn: jmhClasses) {
+      mainClass = 'org.openjdk.jmh.Main'
+      classpath = sourceSets.jmh.compileClasspath + sourceSets.jmh.runtimeClasspath
+      systemProperty("jmh.blackhole.mode", "COMPILER")
+    }
+  }
+
 
   configurations {
     integrationTestImplementation.extendsFrom testImplementation

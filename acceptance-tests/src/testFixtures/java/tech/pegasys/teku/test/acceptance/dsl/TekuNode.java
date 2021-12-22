@@ -39,6 +39,7 @@ import java.util.Set;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
@@ -138,7 +139,19 @@ public class TekuNode extends Node {
     maybeEventStreamListener = Optional.of(new EventStreamListener(getEventUrl(eventTypes)));
   }
 
-  public List<SignedContributionAndProof> getContributionAndProofEvents() {
+  public void waitForContributionAndProofEvent(
+      final Predicate<SignedContributionAndProof> condition) {
+    waitFor(
+        () -> {
+          final List<SignedContributionAndProof> events = getContributionAndProofEvents();
+          assertThat(events.stream().filter(condition).findAny())
+              .describedAs(
+                  "Did not find contribution and proof event matching condition in %s", events)
+              .isPresent();
+        });
+  }
+
+  private List<SignedContributionAndProof> getContributionAndProofEvents() {
     if (maybeEventStreamListener.isEmpty()) {
       return Collections.emptyList();
     }

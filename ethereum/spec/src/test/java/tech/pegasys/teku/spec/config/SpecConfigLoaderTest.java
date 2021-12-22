@@ -91,7 +91,12 @@ public class SpecConfigLoaderTest {
       writeStreamToFile(inputStream, file);
       assertThatThrownBy(() -> SpecConfigLoader.loadConfig(file.toAbsolutePath().toString()))
           .isInstanceOf(IllegalArgumentException.class)
-          .hasMessageContaining("Failed to load spec config");
+          .hasMessage(
+              "Unable to load configuration for network \""
+                  + file.toAbsolutePath()
+                  + "\": Could not load spec config preset '300' specified in config '"
+                  + file.toAbsolutePath()
+                  + "'");
     }
   }
 
@@ -102,7 +107,12 @@ public class SpecConfigLoaderTest {
       writeStreamToFile(inputStream, file);
       assertThatThrownBy(() -> SpecConfigLoader.loadConfig(file.toAbsolutePath().toString()))
           .isInstanceOf(IllegalArgumentException.class)
-          .hasMessageContaining("Failed to load spec config")
+          .hasMessage(
+              "Unable to load configuration for network \""
+                  + file.toAbsolutePath()
+                  + "\": Could not load spec config preset 'foo' specified in config '"
+                  + file.toAbsolutePath()
+                  + "'")
           .hasRootCauseMessage(
               "Could not load spec config preset 'foo' specified in config '%s'",
               file.toAbsolutePath().toString());
