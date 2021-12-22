@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.spec.logic.versions.altair;
 
-import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.integerSquareRoot;
-
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -190,7 +188,7 @@ public class SpecLogicAltair extends AbstractSpecLogic {
             : beaconStateAccessors.getBlockRootAtSlot(state, startSlot);
 
     final UInt64 oldestWorthySlotForSourceReward =
-        state.getSlot().minusMinZero(integerSquareRoot(specConfig.getSlotsPerEpoch()));
+        state.getSlot().minusMinZero(specConfig.getSquareRootSlotsPerEpoch());
     return new AttestationWorthinessCheckerAltair(
         expectedAttestationTarget, oldestWorthySlotForSourceReward);
   }

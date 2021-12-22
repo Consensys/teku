@@ -36,6 +36,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
@@ -55,10 +56,15 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
   }
 
   public UInt64 getBaseRewardPerIncrement(final BeaconState state) {
-    return config
-        .getEffectiveBalanceIncrement()
-        .times(config.getBaseRewardFactor())
-        .dividedBy(integerSquareRoot(getTotalActiveBalance(state)));
+    return BeaconStateCache.getTransitionCaches(state)
+        .getBaseRewardPerIncrement()
+        .get(
+            getCurrentEpoch(state),
+            __ ->
+                config
+                    .getEffectiveBalanceIncrement()
+                    .times(config.getBaseRewardFactor())
+                    .dividedBy(integerSquareRoot(getTotalActiveBalance(state))));
   }
 
   /**
@@ -182,7 +188,7 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
     // Participation flag indices
     final List<Integer> participationFlagIndices = new ArrayList<>();
     if (isMatchingSource
-        && inclusionDelay.isLessThanOrEqualTo(integerSquareRoot(config.getSlotsPerEpoch()))) {
+        && inclusionDelay.isLessThanOrEqualTo(config.getSquareRootSlotsPerEpoch())) {
       participationFlagIndices.add(ParticipationFlags.TIMELY_SOURCE_FLAG_INDEX);
     }
     if (isMatchingTarget && inclusionDelay.isLessThanOrEqualTo(config.getSlotsPerEpoch())) {
