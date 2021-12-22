@@ -88,7 +88,8 @@ public class SpecConfigLoader {
         }
       }
     } catch (IOException | IllegalArgumentException e) {
-      throw new IllegalArgumentException("Failed to load spec config: " + source, e);
+      throw new IllegalArgumentException(
+          "Unable to load configuration for network \"" + source + "\": " + e.getMessage(), e);
     }
   }
 
