@@ -164,7 +164,12 @@ public class BlockManager extends Service
                     futureBlocks.add(block);
                     break;
                   case FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING:
+                    LOG.error("Unable to import block: Execution Client is still syncing");
+                    break;
                   case FAILED_EXECUTION_PAYLOAD_EXECUTION:
+                    LOG.error(
+                        "Unable to import block: Execution Client communication error.",
+                        result.getFailureCause().orElse(null));
                     break;
                   default:
                     LOG.trace(
