@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.test.acceptance;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -68,23 +66,18 @@ public class SyncCommitteeGossipAcceptanceTest extends AcceptanceTestBase {
 
     primaryNode.waitForEpoch(1);
 
+    // primary node has validators 1-7, expect gossip from aggregators 8-15 coming through
+    primaryNode.waitForContributionAndProofEvent(
+        proof -> proof.message.aggregatorIndex.isGreaterThanOrEqualTo(8));
+
+    // secondary node has remote validators 8-15, expect gossip from aggregators 1-7
+    secondaryNode.waitForContributionAndProofEvent(
+        proof -> proof.message.aggregatorIndex.isLessThan(8));
+
     secondaryNode.waitForFullSyncCommitteeAggregate();
     validatorClient.stop();
     secondaryNode.stop();
     primaryNode.stop();
-
-    // primary node has validators 1-7, expect gossip from aggregators 8-15 coming through
-    assertThat(
-            primaryNode.getContributionAndProofEvents().stream()
-                .filter(proof -> proof.message.aggregatorIndex.isGreaterThanOrEqualTo(8))
-                .count())
-        .isGreaterThan(0);
-    // secondary node has remote validators 8-15, expect gossip from aggregators 1-7
-    assertThat(
-            secondaryNode.getContributionAndProofEvents().stream()
-                .filter(proof -> proof.message.aggregatorIndex.isLessThan(8))
-                .count())
-        .isGreaterThan(0);
   }
 
   private TekuNode.Config configureNode(final TekuNode.Config node, final int genesisTime) {
