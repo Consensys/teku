@@ -43,7 +43,7 @@ public class ExecutePayloadResult {
   }
 
   public tech.pegasys.teku.spec.executionengine.ExecutePayloadResult asInternalExecutionPayload() {
-    return new tech.pegasys.teku.spec.executionengine.ExecutePayloadResult(
+    return tech.pegasys.teku.spec.executionengine.ExecutePayloadResult.create(
         status, Optional.ofNullable(latestValidHash), Optional.ofNullable(validationError));
   }
 

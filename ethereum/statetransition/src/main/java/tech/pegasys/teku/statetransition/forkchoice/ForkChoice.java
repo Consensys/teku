@@ -239,7 +239,7 @@ public class ForkChoice {
       final CapturingIndexedAttestationCache indexedAttestationCache,
       final BeaconState postState,
       final ExecutePayloadResult payloadResult) {
-    if (payloadResult.getStatus() == ExecutionPayloadStatus.INVALID) {
+    if (payloadResult.hasStatus(ExecutionPayloadStatus.INVALID)) {
       final BlockImportResult result =
           BlockImportResult.failedStateTransition(
               new IllegalStateException(
@@ -248,6 +248,18 @@ public class ForkChoice {
       reportInvalidBlock(block, result);
       return result;
     }
+
+    if (payloadResult.hasStatus(ExecutionPayloadStatus.SYNCING)
+        && !recentChainData.isOptimisticSyncPossible()) {
+      return BlockImportResult.FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING;
+    }
+
+    if (payloadResult.hasFailedExecution()) {
+      return BlockImportResult.failedExecutionPayloadExecution(
+          payloadResult.getFailureCause().orElseThrow());
+    }
+
+    final ExecutionPayloadStatus payloadResultStatus = payloadResult.getStatus().orElseThrow();
 
     final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
 
@@ -273,7 +285,7 @@ public class ForkChoice {
       }
     }
 
-    if (payloadResult.getStatus() == ExecutionPayloadStatus.VALID) {
+    if (payloadResult.hasStatus(ExecutionPayloadStatus.VALID)) {
       UInt64 latestValidFinalizedSlot = transaction.getLatestFinalized().getSlot();
       if (latestValidFinalizedSlot.isGreaterThan(transaction.getLatestValidFinalizedSlot())) {
         transaction.setLatestValidFinalizedSlot(latestValidFinalizedSlot);
@@ -282,7 +294,7 @@ public class ForkChoice {
 
     // Note: not using thenRun here because we want to ensure each step is on the event thread
     transaction.commit().join();
-    forkChoiceStrategy.onExecutionPayloadResult(block.getRoot(), payloadResult.getStatus());
+    forkChoiceStrategy.onExecutionPayloadResult(block.getRoot(), payloadResultStatus);
 
     final UInt64 currentEpoch = spec.computeEpochAtSlot(spec.getCurrentSlot(transaction));
 
@@ -294,7 +306,7 @@ public class ForkChoice {
     }
 
     final BlockImportResult result = BlockImportResult.successful(block);
-    if (payloadResult.getStatus() == ExecutionPayloadStatus.VALID) {
+    if (payloadResultStatus == ExecutionPayloadStatus.VALID) {
       updateForkChoiceForImportedBlock(block, result, forkChoiceStrategy);
     }
     notifyForkChoiceUpdated();
@@ -307,7 +319,7 @@ public class ForkChoice {
       final UInt64 latestFinalizedBlockSlot) {
     onForkChoiceThread(
             () -> {
-              if (result.getStatus() != ExecutionPayloadStatus.VALID) {
+              if (!result.hasStatus(ExecutionPayloadStatus.VALID)) {
                 return;
               }
               UInt64 latestValidFinalizedSlotInStore =
@@ -322,7 +334,7 @@ public class ForkChoice {
               recentChainData
                   .getForkChoiceStrategy()
                   .orElseThrow()
-                  .onExecutionPayloadResult(blockRoot, result.getStatus());
+                  .onExecutionPayloadResult(blockRoot, result.getStatus().orElseThrow());
             })
         .reportExceptions();
   }

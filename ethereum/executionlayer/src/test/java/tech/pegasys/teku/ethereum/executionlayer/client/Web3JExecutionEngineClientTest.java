@@ -205,8 +205,7 @@ public class Web3JExecutionEngineClientTest {
         new ExecutePayloadResult(ExecutionPayloadStatus.VALID, null, null);
     tech.pegasys.teku.spec.executionengine.ExecutePayloadResult
         internalExecutePayloadResultExpected =
-            new tech.pegasys.teku.spec.executionengine.ExecutePayloadResult(
-                ExecutionPayloadStatus.VALID, Optional.empty(), Optional.empty());
+            tech.pegasys.teku.spec.executionengine.ExecutePayloadResult.VALID;
     String json = "{\"status\": \"VALID\", \"latestValidHash\": null, \"validationError\": null }";
     ExecutePayloadResult executePayloadResultDeserialized =
         objectMapper.readValue(json, ExecutePayloadResult.class);
@@ -225,8 +224,8 @@ public class Web3JExecutionEngineClientTest {
         new ExecutePayloadResult(ExecutionPayloadStatus.INVALID, lastValidHash, "test");
     tech.pegasys.teku.spec.executionengine.ExecutePayloadResult
         internalExecutePayloadResultExpected =
-            new tech.pegasys.teku.spec.executionengine.ExecutePayloadResult(
-                ExecutionPayloadStatus.INVALID, Optional.of(lastValidHash), Optional.of("test"));
+            tech.pegasys.teku.spec.executionengine.ExecutePayloadResult.invalid(
+                Optional.of(lastValidHash), Optional.of("test"));
 
     String json =
         "{\"status\": \"INVALID\", \"latestValidHash\": \""

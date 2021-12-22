@@ -27,6 +27,15 @@ public interface BlockImportResult {
   BlockImportResult FAILED_WEAK_SUBJECTIVITY_CHECKS =
       new FailedBlockImportResult(FailureReason.FAILED_WEAK_SUBJECTIVITY_CHECKS, Optional.empty());
 
+  BlockImportResult FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING =
+      new FailedBlockImportResult(
+          FailureReason.FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING, Optional.empty());
+
+  static BlockImportResult failedExecutionPayloadExecution(final Throwable cause) {
+    return new FailedBlockImportResult(
+        FailureReason.FAILED_EXECUTION_PAYLOAD_EXECUTION, Optional.of(cause));
+  }
+
   static BlockImportResult failedStateTransition(final Exception cause) {
     return new FailedBlockImportResult(FailureReason.FAILED_STATE_TRANSITION, Optional.of(cause));
   }
@@ -49,6 +58,8 @@ public interface BlockImportResult {
     DOES_NOT_DESCEND_FROM_LATEST_FINALIZED,
     FAILED_STATE_TRANSITION,
     FAILED_WEAK_SUBJECTIVITY_CHECKS,
+    FAILED_EXECUTION_PAYLOAD_EXECUTION,
+    FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING,
     INTERNAL_ERROR // A catch-all category for unexpected errors (bugs)
   }
 

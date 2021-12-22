@@ -112,8 +112,7 @@ public class OptimisticHeadValidator extends Service {
     return executionEngine
         .executePayload(executionPayload)
         .thenAccept(
-            result -> {
-              forkChoice.onExecutionPayloadResult(blockRoot, result, latestFinalizedBlockSlot);
-            });
+            result ->
+                forkChoice.onExecutionPayloadResult(blockRoot, result, latestFinalizedBlockSlot));
   }
 }

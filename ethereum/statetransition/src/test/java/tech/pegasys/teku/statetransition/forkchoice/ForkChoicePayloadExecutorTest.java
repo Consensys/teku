@@ -21,7 +21,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,7 +33,6 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.executionengine.ExecutePayloadResult;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
-import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -133,11 +131,9 @@ class ForkChoicePayloadExecutorTest {
     final SafeFuture<ExecutePayloadResult> result = payloadExecutor.getExecutionResult();
     assertThat(result).isNotCompleted();
 
-    final ExecutePayloadResult payloadResult =
-        new ExecutePayloadResult(ExecutionPayloadStatus.VALID, Optional.empty(), Optional.empty());
-    this.executionResult.complete(payloadResult);
+    this.executionResult.complete(ExecutePayloadResult.VALID);
 
-    assertThat(result).isCompletedWithValue(payloadResult);
+    assertThat(result).isCompletedWithValue(ExecutePayloadResult.VALID);
   }
 
   private ForkChoicePayloadExecutor createPayloadExecutor() {

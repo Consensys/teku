@@ -530,6 +530,11 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return store == null ? UInt64.ZERO : store.getLatestValidFinalizedSlot();
   }
 
+  public boolean isOptimisticSyncPossible() {
+    return store != null
+        && !store.getLatestFinalized().getExecutionBlockHash().map(Bytes32::isZero).orElse(true);
+  }
+
   @Override
   public void onNewFinalizedCheckpoint(Checkpoint finalizedCheckpoint) {
     finalizedCheckpointChannel.onNewFinalizedCheckpoint(finalizedCheckpoint);

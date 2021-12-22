@@ -47,10 +47,10 @@ import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.executionengine.ExecutePayloadResult;
-import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
 import tech.pegasys.teku.spec.executionengine.StubExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel.ReorgEvent;
 import tech.pegasys.teku.storage.client.ChainUpdater;
@@ -343,8 +343,7 @@ class ForkChoiceTest {
   void onBlock_shouldUpdateLatestValidFinalizedSlotPreMergeBlock() {
     // make EL returning INVALID, but will never be called
     executionEngine.setExecutePayloadResult(
-        new ExecutePayloadResult(
-            ExecutionPayloadStatus.INVALID, Optional.empty(), Optional.empty()));
+        ExecutePayloadResult.invalid(Optional.empty(), Optional.empty()));
 
     UInt64 slotToImport = prepFinalizeEpoch(2);
 
@@ -372,33 +371,63 @@ class ForkChoiceTest {
   }
 
   @Test
-  void onBlock_shouldNotUpdateLatestValidFinalizedSlotPostMergeBlockELSyncing() {
+  void onBlock_shouldNotOptimisticallyImportBeforeFinalizedExecutionPayloadELSyncing() {
     doMerge();
     UInt64 slotToImport = prepFinalizeEpoch(2);
 
     // make EL returning SYNCING
-    executionEngine.setExecutePayloadResult(
-        new ExecutePayloadResult(
-            ExecutionPayloadStatus.SYNCING, Optional.empty(), Optional.empty()));
+    executionEngine.setExecutePayloadResult(ExecutePayloadResult.SYNCING);
 
     // generate block which finalize epoch 2
     final SignedBlockAndState epoch4Block = chainBuilder.generateBlockAtSlot(slotToImport);
+    importBlockWithError(epoch4Block, FailureReason.FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING);
+  }
+
+  @Test
+  void onBlock_shouldNotOptimisticallyImportBeforeFinalizedExecutionPayloadELFailure() {
+    doMerge();
+    UInt64 slotToImport = prepFinalizeEpoch(2);
+
+    // make EL returning low level error
+    executionEngine.setExecutePayloadResult(
+        ExecutePayloadResult.failedExecution(new RuntimeException("net error")));
+
+    // generate block which finalize epoch 2
+    final SignedBlockAndState epoch4Block = chainBuilder.generateBlockAtSlot(slotToImport);
+    importBlockWithError(epoch4Block, FailureReason.FAILED_EXECUTION_PAYLOAD_EXECUTION);
+  }
+
+  @Test
+  void onBlock_shouldNotUpdateLatestValidFinalizedSlotWhenOptimisticallyImported() {
+    doMerge();
+    UInt64 slotToImport = prepFinalizeEpoch(2);
+
+    final SignedBlockAndState epoch4Block = chainBuilder.generateBlockAtSlot(slotToImport);
     importBlock(epoch4Block);
 
-    // Should now have finalized epoch 2
-    assertThat(recentChainData.getFinalizedEpoch()).isEqualTo(UInt64.valueOf(2));
+    slotToImport = prepFinalizeEpoch(4);
 
-    // latest valid finalized slot should remain 0
-    assertThat(recentChainData.getLatestValidFinalizedSlot()).isEqualTo(UInt64.valueOf(0));
+    // make EL returning SYNCING
+    executionEngine.setExecutePayloadResult(ExecutePayloadResult.SYNCING);
+
+    // generate block which finalize epoch 4
+    final SignedBlockAndState epoch6Block = chainBuilder.generateBlockAtSlot(slotToImport);
+    importBlock(epoch6Block);
+
+    // Should now have finalized epoch 3
+    assertThat(recentChainData.getFinalizedEpoch()).isEqualTo(UInt64.valueOf(4));
+
+    // latest valid finalized slot should remain 16
+    assertThat(recentChainData.getLatestValidFinalizedSlot()).isEqualTo(UInt64.valueOf(24));
 
     // we now simulate an update from OptimisticHeadValidator
     forkChoice.onExecutionPayloadResult(
-        epoch4Block.getRoot(),
-        new ExecutePayloadResult(ExecutionPayloadStatus.VALID, Optional.empty(), Optional.empty()),
+        epoch6Block.getRoot(),
+        ExecutePayloadResult.VALID,
         recentChainData.getStore().getLatestFinalizedBlockSlot());
 
-    // latest valid finalized should have advanced to 16
-    assertThat(recentChainData.getLatestValidFinalizedSlot()).isEqualTo(UInt64.valueOf(16));
+    // latest valid finalized should have advanced to 32
+    assertThat(recentChainData.getLatestValidFinalizedSlot()).isEqualTo(UInt64.valueOf(32));
   }
 
   @Test
@@ -425,7 +454,9 @@ class ForkChoiceTest {
   }
 
   private void justifyEpoch(final ChainUpdater chainUpdater, final long epoch) {
-    final UInt64 nextEpochStartSlot = spec.computeStartSlotAtEpoch(UInt64.valueOf(epoch + 1));
+    final UInt64 nextEpochStartSlot =
+        spec.computeStartSlotAtEpoch(UInt64.valueOf(epoch + 1))
+            .max(chainUpdater.getHeadSlot().plus(1));
     // Advance chain to an epoch we can actually justify
     prepEpochForJustification(chainUpdater, nextEpochStartSlot);
 
@@ -550,6 +581,19 @@ class ForkChoiceTest {
     final SafeFuture<BlockImportResult> result =
         forkChoice.onBlock(block.getBlock(), executionEngine);
     assertBlockImportedSuccessfully(result);
+  }
+
+  private void assertBlockImportFailure(
+      final SafeFuture<BlockImportResult> importResult, FailureReason failureReason) {
+    assertThat(importResult).isCompleted();
+    final BlockImportResult result = importResult.join();
+    assertThat(result.getFailureReason()).isEqualTo(failureReason);
+  }
+
+  private void importBlockWithError(final SignedBlockAndState block, FailureReason failureReason) {
+    final SafeFuture<BlockImportResult> result =
+        forkChoice.onBlock(block.getBlock(), executionEngine);
+    assertBlockImportFailure(result, failureReason);
   }
 
   private void processHead(final UInt64 slot) {
