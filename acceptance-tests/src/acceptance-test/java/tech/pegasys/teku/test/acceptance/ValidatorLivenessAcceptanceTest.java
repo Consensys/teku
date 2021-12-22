@@ -17,6 +17,7 @@ import static tech.pegasys.teku.test.acceptance.dsl.ValidatorLivenessExpectation
 import static tech.pegasys.teku.test.acceptance.dsl.ValidatorLivenessExpectation.expectNotLive;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -59,6 +60,7 @@ public class ValidatorLivenessAcceptanceTest extends AcceptanceTestBase {
    *  - by epoch 5, all validators should be seen as performing duties in epoch 3
    */
   @Test
+  @Disabled
   void shouldTrackValidatorLivenessOverEpochs() throws Exception {
     primaryNode.start();
 
