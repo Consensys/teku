@@ -9,7 +9,7 @@ dependencies {
     implementation 'org.apache.tuweni:tuweni-ssz'
 
     testFixturesImplementation project(':infrastructure:unsigned')
-    testFixturesImplementation testFixtures(project(':bls'))
+    testFixturesImplementation testFixtures(project(':infrastructure:bls'))
     testFixturesImplementation project(':infrastructure:io')
     testFixturesImplementation 'org.apache.tuweni:tuweni-units'
     testFixturesImplementation 'org.junit.jupiter:junit-jupiter-api'
@@ -17,7 +17,7 @@ dependencies {
     testFixturesApi project(':ethereum:pow:api')
     testFixturesApi 'com.google.guava:guava'
 
-    testImplementation testFixtures(project(':bls'))
+    testImplementation testFixtures(project(':infrastructure:bls'))
 
     testImplementation 'org.assertj:assertj-core'
     testImplementation 'org.mockito:mockito-core'
@@ -26,12 +26,12 @@ dependencies {
 
 
     // From datastructures - TODO(#3356) clean up these imports
-    api project(':bls')
+    api project(':infrastructure:bls')
     api project(':infrastructure:ssz')
     api project(':util')
 
-    implementation project(':bls')
     implementation project(':infrastructure:async')
+    implementation project(':infrastructure:bls')
     implementation project(':infrastructure:crypto')
     api project(':infrastructure:collections')
     implementation project(':infrastructure:events')
@@ -44,7 +44,7 @@ dependencies {
     implementation 'org.apache.tuweni:tuweni-units'
     implementation 'org.apache.tuweni:tuweni-ssz'
 
-    testImplementation testFixtures(project(':bls'))
+    testImplementation testFixtures(project(':infrastructure:bls'))
     testImplementation testFixtures(project(':infrastructure:ssz'))
 
     testImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
@@ -57,9 +57,9 @@ dependencies {
     testFixturesApi 'com.google.guava:guava'
     testFixturesApi project(':infrastructure:unsigned')
 
-    testFixturesImplementation project(':bls')
-    testFixturesImplementation testFixtures(project(':bls'))
     testFixturesImplementation project(':util')
     testFixturesImplementation project(':infrastructure:async')
+    testFixturesImplementation project(':infrastructure:bls')
+    testFixturesImplementation testFixtures(project(':infrastructure:bls'))
     testFixturesImplementation project(':infrastructure:events')
 }

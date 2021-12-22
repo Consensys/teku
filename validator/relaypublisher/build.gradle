@@ -1,8 +1,8 @@
 dependencies {
-  implementation project(':bls')
   implementation project(':data:serializer')
   implementation project(':ethereum:spec')
   implementation project(':infrastructure:async')
+  implementation project(':infrastructure:bls')
   implementation project(':infrastructure:events')
   implementation project(':infrastructure:http')
   implementation project(':infrastructure:logging')
@@ -17,7 +17,6 @@ dependencies {
 
   implementation 'com.launchdarkly:okhttp-eventsource'
   implementation 'com.squareup.okhttp3:okhttp'
-  implementation 'io.vertx:vertx-core'
 
   testImplementation testFixtures(project(':ethereum:spec'))
   testImplementation testFixtures(project(':infrastructure:async'))

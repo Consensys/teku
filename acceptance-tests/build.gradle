@@ -1,9 +1,8 @@
 dependencies {
-  acceptanceTestImplementation project(":bls")
+  acceptanceTestImplementation project(":infrastructure:bls")
   acceptanceTestImplementation project(':infrastructure:time')
   acceptanceTestImplementation project(':data:serializer')
 
-  testFixturesImplementation project(':bls')
   testFixturesImplementation project(':data:provider')
   testFixturesImplementation project(':data:serializer')
   testFixturesImplementation project(':ethereum:spec')
@@ -13,6 +12,7 @@ dependencies {
   testFixturesImplementation project(':data:publisher')
   testFixturesImplementation testFixtures(project(':data:publisher'))
   testFixturesImplementation project(':infrastructure:async')
+  testFixturesImplementation project(':infrastructure:bls')
   testFixturesImplementation testFixtures(project(':infrastructure:async'))
   testFixturesImplementation project(':teku')
 

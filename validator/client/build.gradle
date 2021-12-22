@@ -1,6 +1,6 @@
 dependencies {
   api 'org.bouncycastle:bcprov-jdk15on'
-  implementation project(':bls')
+  implementation project(':infrastructure:bls')
   implementation project(':infrastructure:crypto')
   implementation project(':infrastructure:exceptions')
   implementation project(':infrastructure:io')
@@ -37,8 +37,8 @@ dependencies {
   testImplementation testFixtures(project(':ethereum:core'))
   testImplementation testFixtures(project(':ethereum:networks'))
   testImplementation testFixtures(project(':infrastructure:async'))
+  testImplementation testFixtures(project(':infrastructure:bls'))
   testImplementation testFixtures(project(':infrastructure:time'))
   testImplementation testFixtures(project(':infrastructure:restapi'))
-  testImplementation testFixtures(project(':bls'))
 
 }

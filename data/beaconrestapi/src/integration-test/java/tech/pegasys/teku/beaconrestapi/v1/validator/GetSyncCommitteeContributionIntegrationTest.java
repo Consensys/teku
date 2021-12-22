@@ -17,6 +17,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
@@ -51,14 +52,14 @@ public class GetSyncCommitteeContributionIntegrationTest
   }
 
   @Test
-  void shouldReturnFailedIfNotCreated() throws IOException {
+  void shouldReturnNotFoundIfNotCreated() throws IOException {
     final SafeFuture<Optional<SyncCommitteeContribution>> future =
         SafeFuture.completedFuture(Optional.empty());
 
     when(validatorApiChannel.createSyncCommitteeContribution(eq(ONE), eq(1), eq(blockRoot)))
         .thenReturn(future);
     final Response response = get(ONE, 1, blockRoot);
-    assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(response.code()).isEqualTo(SC_NOT_FOUND);
   }
 
   @ParameterizedTest

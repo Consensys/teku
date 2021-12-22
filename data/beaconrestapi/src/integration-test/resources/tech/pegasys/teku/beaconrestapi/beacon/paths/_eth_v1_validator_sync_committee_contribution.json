@@ -43,6 +43,9 @@
       "400" : {
         "description" : "Invalid request syntax."
       },
+      "404" : {
+        "description" : "No matching sync committee messages were found"
+      },
       "500" : {
         "description" : "Beacon node internal error."
       }

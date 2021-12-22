@@ -1,12 +1,12 @@
 dependencies {
   api project(':networking:p2p')
-  implementation project(':bls')
   implementation project(':data')
   implementation project(':ethereum:core')
   implementation project(':ethereum:events')
   implementation project(':ethereum:spec')
   implementation project(':ethereum:statetransition')
   implementation project(':infrastructure:async')
+  implementation project(':infrastructure:bls')
   implementation project(':infrastructure:crypto')
   implementation project(':infrastructure:collections')
   implementation project(':infrastructure:exceptions')
@@ -21,7 +21,6 @@ dependencies {
   implementation project(':infrastructure:serviceutils')
 
   implementation 'io.libp2p:jvm-libp2p-minimal'
-  implementation 'io.vertx:vertx-core'
   implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.apache.tuweni:tuweni-plumtree'
   implementation 'org.apache.tuweni:tuweni-rlpx'

@@ -1,13 +1,13 @@
 dependencies {
     api project(':ethereum:spec')
 
-    implementation project(':bls')
     implementation project(':data')
     implementation project(':data:serializer')
     implementation project(':ethereum:core')
     implementation project(':ethereum:spec')
     implementation project(':ethereum:statetransition')
     implementation project(':infrastructure:async')
+    implementation project(':infrastructure:bls')
     implementation project(':infrastructure:http')
     implementation project(':networking:eth2')
     implementation project(':infrastructure:serviceutils')
@@ -22,7 +22,7 @@ dependencies {
     testImplementation testFixtures(project(':ethereum:core'))
     testImplementation testFixtures(project(':ethereum:spec'))
     testImplementation testFixtures(project(':infrastructure:async'))
+    testImplementation testFixtures(project(':infrastructure:bls'))
     testImplementation testFixtures(project(':infrastructure:ssz'))
     testImplementation testFixtures(project(':storage'))
-    testImplementation testFixtures(project(':bls'))
 }

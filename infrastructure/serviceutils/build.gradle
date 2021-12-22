@@ -8,8 +8,6 @@ dependencies {
   implementation project(':infrastructure:logging')
   implementation project(':infrastructure:version')
 
-  implementation 'io.vertx:vertx-core'
-  implementation 'io.vertx:vertx-web'
   implementation 'org.hyperledger.besu:plugin-api'
 
   testImplementation testFixtures(project(':infrastructure:async'))

@@ -1,11 +1,11 @@
 dependencies {
   implementation project(':beacon:validator')
-  implementation project(':bls')
   implementation project(':data')
   implementation project(':data:serializer')
   implementation project(':data:signingrecord')
   implementation project(':data:publisher')
   implementation project(':data:beaconrestapi')
+  implementation project(':infrastructure:bls')
   implementation project(':infrastructure:exceptions')
   implementation project(':infrastructure:metrics')
   implementation project(':data:dataexchange')
@@ -50,7 +50,6 @@ dependencies {
   implementation 'info.picocli:picocli'
   implementation 'io.libp2p:jvm-libp2p-minimal'
   implementation 'io.vertx:vertx-core'
-  implementation 'io.vertx:vertx-web'
   implementation 'org.apache.logging.log4j:log4j-slf4j-impl'
   implementation 'org.apache.tuweni:tuweni-plumtree'
   implementation 'org.apache.tuweni:tuweni-ssz'
@@ -64,9 +63,9 @@ dependencies {
   integrationTestImplementation 'org.mock-server:mockserver-junit-jupiter'
 
   testImplementation testFixtures(project(':infrastructure:async'))
+  testImplementation testFixtures(project(':infrastructure:bls'))
   testImplementation testFixtures(project(':infrastructure:io'))
   testImplementation testFixtures(project(':ethereum:spec'))
-  testImplementation testFixtures(project(':bls'))
   testImplementation testFixtures(project(':storage'))
 
   testImplementation project(':data:provider')

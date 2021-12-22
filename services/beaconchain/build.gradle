@@ -31,13 +31,11 @@ dependencies {
   implementation project(':validator:api')
   implementation project(':validator:client')
 
-  testImplementation testFixtures(project(':bls'))
   testImplementation testFixtures(project(':storage'))
   testImplementation testFixtures(project(':ethereum:spec'))
   testImplementation testFixtures(project(':ethereum:networks'))
+  testImplementation testFixtures(project(':infrastructure:bls'))
   testImplementation testFixtures(project(':infrastructure:metrics'))
 
   implementation 'io.libp2p:jvm-libp2p-minimal'
-  implementation 'io.vertx:vertx-core'
-  implementation 'io.vertx:vertx-web'
 }
