@@ -1,7 +1,3 @@
-plugins {
-  id 'me.champeau.gradle.jmh'
-}
-
 dependencies {
   implementation project(':infrastructure:crypto')
   implementation 'org.apache.commons:commons-lang3'
@@ -12,13 +8,4 @@ dependencies {
   testFixturesApi 'org.apache.tuweni:tuweni-bytes'
   testFixturesApi 'org.apache.tuweni:tuweni-units'
   testFixturesApi project(':infrastructure:unsigned')
-
-  jmh 'org.openjdk.jmh:jmh-generator-annprocess'
-  jmh 'org.apache.tuweni:tuweni-ssz'
-}
-
-jmh {
-  include = '.*'
-  resultFormat = 'CSV'
-  duplicateClassesStrategy = 'warn'
 }
