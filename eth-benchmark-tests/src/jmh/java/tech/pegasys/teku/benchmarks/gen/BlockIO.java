@@ -27,6 +27,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.spec.Spec;
@@ -109,7 +110,8 @@ public class BlockIO {
 
   public static Writer createFileWriter(String outFile) {
     try {
-      return new Writer(new ObjectOutputStream(new FileOutputStream(outFile)));
+      return new Writer(
+          new ObjectOutputStream(new GZIPOutputStream(new FileOutputStream(outFile))));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

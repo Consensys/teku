@@ -161,6 +161,11 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
+  public long getSquareRootSlotsPerEpoch() {
+    return specConfig.getSquareRootSlotsPerEpoch();
+  }
+
+  @Override
   public int getMinSeedLookahead() {
     return specConfig.getMinSeedLookahead();
   }
