@@ -37,6 +37,7 @@ public class TransitionCaches {
   private static final int MAX_COMMITTEE_SHUFFLE_CACHE = 2;
   private static final int MAX_EFFECTIVE_BALANCE_CACHE = 1;
   private static final int MAX_SYNC_COMMITTEE_CACHE = 2;
+  public static final int MAX_BASE_REWARD_PER_INCREMENT_CACHE = 1;
 
   private static final TransitionCaches NO_OP_INSTANCE =
       new TransitionCaches(
@@ -47,6 +48,7 @@ public class TransitionCaches {
           NoOpCache.getNoOpCache(),
           NoOpCache.getNoOpCache(),
           ValidatorIndexCache.NO_OP_INSTANCE,
+          NoOpCache.getNoOpCache(),
           NoOpCache.getNoOpCache(),
           NoOpCache.getNoOpCache(),
           NoOpCache.getNoOpCache()) {
@@ -76,6 +78,7 @@ public class TransitionCaches {
   private final ValidatorIndexCache validatorIndexCache;
   private final Cache<Bytes32, IntList> committeeShuffle;
   private final Cache<UInt64, List<UInt64>> effectiveBalances;
+  private final Cache<UInt64, UInt64> baseRewardPerIncrement;
 
   private final Cache<UInt64, Map<UInt64, SyncSubcommitteeAssignments>> syncCommitteeCache;
 
@@ -92,6 +95,7 @@ public class TransitionCaches {
     committeeShuffle = LRUCache.create(MAX_COMMITTEE_SHUFFLE_CACHE);
     effectiveBalances = LRUCache.create(MAX_EFFECTIVE_BALANCE_CACHE);
     syncCommitteeCache = LRUCache.create(MAX_SYNC_COMMITTEE_CACHE);
+    baseRewardPerIncrement = LRUCache.create(MAX_BASE_REWARD_PER_INCREMENT_CACHE);
   }
 
   private TransitionCaches(
@@ -104,7 +108,8 @@ public class TransitionCaches {
       ValidatorIndexCache validatorIndexCache,
       Cache<Bytes32, IntList> committeeShuffle,
       Cache<UInt64, List<UInt64>> effectiveBalances,
-      Cache<UInt64, Map<UInt64, SyncSubcommitteeAssignments>> syncCommitteeCache) {
+      Cache<UInt64, Map<UInt64, SyncSubcommitteeAssignments>> syncCommitteeCache,
+      Cache<UInt64, UInt64> baseRewardPerIncrement) {
     this.activeValidators = activeValidators;
     this.beaconProposerIndex = beaconProposerIndex;
     this.beaconCommittee = beaconCommittee;
@@ -115,6 +120,7 @@ public class TransitionCaches {
     this.committeeShuffle = committeeShuffle;
     this.effectiveBalances = effectiveBalances;
     this.syncCommitteeCache = syncCommitteeCache;
+    this.baseRewardPerIncrement = baseRewardPerIncrement;
   }
 
   public void setLatestTotalBalances(TotalBalances totalBalances) {
@@ -186,6 +192,10 @@ public class TransitionCaches {
     return syncCommitteeCache;
   }
 
+  public Cache<UInt64, UInt64> getBaseRewardPerIncrement() {
+    return baseRewardPerIncrement;
+  }
+
   /**
    * Makes an independent copy which contains all the data in this instance Modifications to
    * returned caches shouldn't affect caches from this instance
@@ -201,6 +211,7 @@ public class TransitionCaches {
         validatorIndexCache,
         committeeShuffle.copy(),
         effectiveBalances.copy(),
-        syncCommitteeCache.copy());
+        syncCommitteeCache.copy(),
+        baseRewardPerIncrement.copy());
   }
 }

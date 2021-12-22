@@ -1,10 +1,6 @@
-plugins {
-  id 'me.champeau.gradle.jmh'
-}
-
 idea {
   module {
-    testSourceDirs += sourceSets.main.java.srcDirs
+    testSourceDirs += sourceSets.jmh.java.srcDirs
   }
 }
 
@@ -23,24 +19,8 @@ dependencies {
 
   implementation 'org.apache.tuweni:tuweni-bytes'
 
-  jmh project(':infrastructure:crypto')
-  jmh 'org.openjdk.jmh:jmh-core'
-  jmh 'org.openjdk.jmh:jmh-generator-annprocess'
-  jmh 'org.apache.tuweni:tuweni-ssz'
-  jmh project(':infrastructure:bls')
-  jmh testFixtures(project(':ethereum:weaksubjectivity'))
-  jmh testFixtures(project(':infrastructure:async'))
-}
-
-jmh {
-  resultFormat = 'CSV'
-  duplicateClassesStrategy = 'warn'
-}
-
-jmhJar {
-  manifest {
-    attributes(
-        'Multi-Release': 'true'
-    )
-  }
+  jmhImplementation project(':infrastructure:crypto')
+  jmhImplementation 'org.apache.tuweni:tuweni-ssz'
+  jmhImplementation testFixtures(project(':ethereum:weaksubjectivity'))
+  jmhImplementation testFixtures(project(':infrastructure:async'))
 }
