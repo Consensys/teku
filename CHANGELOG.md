@@ -25,3 +25,4 @@ For information on changes in released versions of Teku, see the [releases page]
 * Fixed: Invalid sync contributions were created if a validator was present multiple times in the same sync sub-committee.
 * Reduced error to warning when sync contribution cannot be created because the beacon node has no matching sync messages.
 * Fixed issue where validator duties were not performed during the first epoch after startup.
+* Updated jvm-libp2p to improve negotiation of mplex and multistream connections.
