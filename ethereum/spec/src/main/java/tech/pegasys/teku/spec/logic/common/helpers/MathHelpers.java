@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.logic.common.helpers;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.nio.ByteOrder;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -20,22 +22,27 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class MathHelpers {
 
-  public static UInt64 integerSquareRoot(int n) {
-    return integerSquareRoot(UInt64.valueOf(n));
+  public static long integerSquareRoot(long n) {
+    checkArgument(n >= 0, "Cannot calculate integerSquareRoot of negative number");
+    return integerSquareRootInternal(n);
   }
 
   public static UInt64 integerSquareRoot(UInt64 n) {
     if (n.compareTo(UInt64.MAX_VALUE) >= 0) {
       throw new ArithmeticException("uint64 overflow");
     }
-    long x = n.longValue();
+    return UInt64.valueOf(integerSquareRootInternal(n.longValue()));
+  }
+
+  private static long integerSquareRootInternal(long n) {
+    long x = n;
     long y = Long.divideUnsigned(x + 1, 2);
     while (Long.compareUnsigned(y, x) < 0) {
       x = y;
-      final long nDividedByX = Long.divideUnsigned(n.longValue(), x);
+      final long nDividedByX = Long.divideUnsigned(n, x);
       y = Long.divideUnsigned(x + nDividedByX, 2);
     }
-    return UInt64.valueOf(x);
+    return x;
   }
 
   public static Bytes uintToBytes(long value, int numBytes) {
