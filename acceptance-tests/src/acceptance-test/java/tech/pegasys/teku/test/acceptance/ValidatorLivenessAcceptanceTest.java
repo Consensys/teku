@@ -60,7 +60,7 @@ public class ValidatorLivenessAcceptanceTest extends AcceptanceTestBase {
    *  - by epoch 5, all validators should be seen as performing duties in epoch 3
    */
   @Test
-  @Disabled
+  @Disabled("this test has been flaking (88% over last 100 CI) #4821")
   void shouldTrackValidatorLivenessOverEpochs() throws Exception {
     primaryNode.start();
 
