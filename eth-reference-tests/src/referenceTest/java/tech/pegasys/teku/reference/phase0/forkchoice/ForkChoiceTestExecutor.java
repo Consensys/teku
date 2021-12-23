@@ -59,11 +59,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
   private static final Logger LOG = LogManager.getLogger();
   public static final ImmutableMap<String, TestExecutor> FORK_CHOICE_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
-          .put(
-              "fork_choice/get_head",
-              new ForkChoiceTestExecutor(
-                  // Disabled due to https://github.com/ethereum/consensus-specs/issues/2757
-                  "shorter_chain_but_heavier_weight"))
+          .put("fork_choice/get_head", new ForkChoiceTestExecutor())
+          .put("fork_choice/ex_ante", new ForkChoiceTestExecutor())
           .put(
               "fork_choice/on_block",
               new ForkChoiceTestExecutor("new_finalized_slot_is_justified_checkpoint_ancestor"))
