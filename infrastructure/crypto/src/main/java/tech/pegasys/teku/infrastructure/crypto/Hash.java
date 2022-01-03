@@ -19,12 +19,14 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 
 public class Hash {
-  public static Bytes32 sha256(final Bytes input) {
-    return sha256(input.toArrayUnsafe());
-  }
-
   public static Bytes32 sha256(final byte[] input) {
     return Bytes32.wrap(createSha256MessageDigest().digest(input));
+  }
+
+  public static Bytes32 sha256(final Bytes input) {
+    final MessageDigest digest = createSha256MessageDigest();
+    input.update(digest);
+    return Bytes32.wrap(digest.digest());
   }
 
   // Note: Doesn't use varargs to avoid creating a Bytes[] instance.
