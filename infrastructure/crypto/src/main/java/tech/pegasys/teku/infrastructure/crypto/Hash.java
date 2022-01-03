@@ -30,17 +30,17 @@ public class Hash {
   // Note: Doesn't use varargs to avoid creating a Bytes[] instance.
   public static Bytes32 sha256(final Bytes a, final Bytes b) {
     final MessageDigest digest = createSha256MessageDigest();
-    digest.update(a.toArrayUnsafe());
-    digest.update(b.toArrayUnsafe());
+    a.update(digest);
+    b.update(digest);
     return Bytes32.wrap(digest.digest());
   }
 
   // Note: Doesn't use varargs to avoid creating a Bytes[] instance.
   public static Bytes32 sha256(final Bytes a, final Bytes b, final Bytes c) {
     final MessageDigest digest = createSha256MessageDigest();
-    digest.update(a.toArrayUnsafe());
-    digest.update(b.toArrayUnsafe());
-    digest.update(c.toArrayUnsafe());
+    a.update(digest);
+    b.update(digest);
+    c.update(digest);
     return Bytes32.wrap(digest.digest());
   }
 
