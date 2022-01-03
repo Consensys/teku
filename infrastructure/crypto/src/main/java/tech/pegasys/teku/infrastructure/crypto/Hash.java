@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.infrastructure.crypto;
 
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -23,8 +24,29 @@ public class Hash {
   }
 
   public static Bytes32 sha256(final byte[] input) {
+    return Bytes32.wrap(createSha256MessageDigest().digest(input));
+  }
+
+  // Note: Doesn't use varargs to avoid creating a Bytes[] instance.
+  public static Bytes32 sha256(final Bytes a, final Bytes b) {
+    final MessageDigest digest = createSha256MessageDigest();
+    digest.update(a.toArrayUnsafe());
+    digest.update(b.toArrayUnsafe());
+    return Bytes32.wrap(digest.digest());
+  }
+
+  // Note: Doesn't use varargs to avoid creating a Bytes[] instance.
+  public static Bytes32 sha256(final Bytes a, final Bytes b, final Bytes c) {
+    final MessageDigest digest = createSha256MessageDigest();
+    digest.update(a.toArrayUnsafe());
+    digest.update(b.toArrayUnsafe());
+    digest.update(c.toArrayUnsafe());
+    return Bytes32.wrap(digest.digest());
+  }
+
+  private static MessageDigest createSha256MessageDigest() {
     try {
-      return Bytes32.wrap(BouncyCastleMessageDigestFactory.create("SHA-256").digest(input));
+      return BouncyCastleMessageDigestFactory.create("SHA-256");
     } catch (final NoSuchAlgorithmException e) {
       throw new IllegalStateException("SHA-256 algorithm not available");
     }

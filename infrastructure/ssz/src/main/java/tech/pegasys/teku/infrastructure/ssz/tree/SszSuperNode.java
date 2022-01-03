@@ -86,11 +86,10 @@ public class SszSuperNode implements TreeNode, LeafDataNode {
       }
     } else {
       return Hash.sha256(
-          Bytes.wrap(
-              hashTreeRoot(curDepth + 1, offset),
-              hashTreeRoot(
-                  curDepth + 1,
-                  offset + elementTemplate.getSszLength() * (1 << ((depth - curDepth) - 1)))));
+          hashTreeRoot(curDepth + 1, offset),
+          hashTreeRoot(
+              curDepth + 1,
+              offset + elementTemplate.getSszLength() * (1 << ((depth - curDepth) - 1))));
     }
   }
 
