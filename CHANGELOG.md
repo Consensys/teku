@@ -13,5 +13,6 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ## Unreleased Changes
 ### Additions and Improvements
+* Reduced amount of data copying required when calculating sha256 hashes.
 
 ### Bug Fixes
