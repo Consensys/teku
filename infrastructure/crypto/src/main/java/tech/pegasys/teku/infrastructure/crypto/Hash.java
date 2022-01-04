@@ -32,10 +32,8 @@ public class Hash {
   // Note: Doesn't use varargs to avoid creating a Bytes[] instance.
   public static Bytes32 sha256(final Bytes a, final Bytes b) {
     final MessageDigest digest = createSha256MessageDigest();
-    digest.update(a.toArrayUnsafe());
-    digest.update(b.toArrayUnsafe());
-    //    a.update(digest);
-    //    b.update(digest);
+    a.update(digest);
+    b.update(digest);
     return Bytes32.wrap(digest.digest());
   }
 
@@ -50,7 +48,7 @@ public class Hash {
 
   private static MessageDigest createSha256MessageDigest() {
     try {
-      return BouncyCastleMessageDigestFactory.createSha256();
+      return BouncyCastleMessageDigestFactory.create("SHA-256");
     } catch (final NoSuchAlgorithmException e) {
       throw new IllegalStateException("SHA-256 algorithm not available");
     }

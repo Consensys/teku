@@ -15,23 +15,14 @@ package tech.pegasys.teku.infrastructure.crypto;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.Provider;
-import java.security.Security;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class BouncyCastleMessageDigestFactory {
 
-  private static final Provider sha256Provider = selectSha256Provider();
-
-  private static Provider selectSha256Provider() {
-    // Use the SUN provider if it's available. It's still a known good implementation but uses
-    // intrinsics to provide optimised native implementations
-    final Provider sunProvider = Security.getProvider("SUN");
-    return sunProvider != null ? sunProvider : new BouncyCastleProvider();
-  }
+  private static final BouncyCastleProvider securityProvider = new BouncyCastleProvider();
 
   @SuppressWarnings("DoNotInvokeMessageDigestDirectly")
-  public static MessageDigest createSha256() throws NoSuchAlgorithmException {
-    return MessageDigest.getInstance("SHA-256", sha256Provider);
+  public static MessageDigest create(String algorithm) throws NoSuchAlgorithmException {
+    return MessageDigest.getInstance(algorithm, securityProvider);
   }
 }
