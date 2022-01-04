@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.infrastructure.crypto;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -37,5 +40,23 @@ public class HashBenchmark {
   @Fork(2)
   public void measureSha256_multiarg(Blackhole blackhole) {
     blackhole.consume(Hash.sha256(data1, data2));
+  }
+
+  @Benchmark
+  @Fork(2)
+  public void measure_defaultImplementation(Blackhole blackhole)
+      throws NoSuchAlgorithmException, NoSuchProviderException {
+    final MessageDigest digest = MessageDigest.getInstance("SHA-256", "SUN");
+    data1.update(digest);
+    blackhole.consume(digest.digest());
+  }
+
+  @Benchmark
+  @Fork(2)
+  public void measure_bouncyCastleImplementation(Blackhole blackhole)
+      throws NoSuchAlgorithmException {
+    final MessageDigest digest = BouncyCastleMessageDigestFactory.createSha256();
+    data1.update(digest);
+    blackhole.consume(digest.digest());
   }
 }
