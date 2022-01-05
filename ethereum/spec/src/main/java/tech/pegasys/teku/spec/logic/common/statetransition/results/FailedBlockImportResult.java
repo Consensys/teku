@@ -50,6 +50,12 @@ public class FailedBlockImportResult implements BlockImportResult {
   }
 
   @Override
+  public boolean hasFailedExecutingExecutionPayload() {
+    return failureReason == FailureReason.FAILED_EXECUTION_PAYLOAD_EXECUTION
+        || failureReason == FailureReason.FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING;
+  }
+
+  @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("failureReason", failureReason)

@@ -842,17 +842,17 @@ public class BeaconChainController extends Service
     BlockValidator blockValidator = new BlockValidator(spec, recentChainData);
     if (spec.isMilestoneSupported(SpecMilestone.MERGE)) {
       blockManager =
-          ReexecutingExecutionPayloadBlockManager.create(
-              pendingBlocks,
-              futureBlocks,
+          new ReexecutingExecutionPayloadBlockManager(
               recentChainData,
               blockImporter,
+              pendingBlocks,
+              futureBlocks,
               blockValidator,
               beaconAsyncRunner);
     } else {
       blockManager =
-          BlockManager.create(
-              pendingBlocks, futureBlocks, recentChainData, blockImporter, blockValidator);
+          new BlockManager(
+              recentChainData, blockImporter, pendingBlocks, futureBlocks, blockValidator);
     }
     eventChannels
         .subscribe(SlotEventsChannel.class, blockManager)

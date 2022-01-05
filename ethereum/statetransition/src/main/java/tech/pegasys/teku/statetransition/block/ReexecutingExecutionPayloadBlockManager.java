@@ -26,7 +26,6 @@ import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
-import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
@@ -38,12 +37,12 @@ public class ReexecutingExecutionPayloadBlockManager extends BlockManager {
   private static final Duration RECHECK_INTERVAL = Duration.ofSeconds(2);
 
   private final AtomicBoolean reexecutingExecutionPayload = new AtomicBoolean(false);
-  private final Set<SignedBeaconBlock> pendingBlocks = LimitedSet.create(10);
+  private final Set<SignedBeaconBlock> pendingBlocksForEPReexecution = LimitedSet.create(10);
   private final AsyncRunner asyncRunner;
 
   private Optional<Cancellable> cancellable = Optional.empty();
 
-  private ReexecutingExecutionPayloadBlockManager(
+  public ReexecutingExecutionPayloadBlockManager(
       RecentChainData recentChainData,
       BlockImporter blockImporter,
       PendingPool<SignedBeaconBlock> pendingBlocks,
@@ -80,18 +79,17 @@ public class ReexecutingExecutionPayloadBlockManager extends BlockManager {
 
   @Override
   protected SafeFuture<?> doStop() {
-    return super.doStop()
-        .thenRun(
-            () -> {
-              cancellable.ifPresent(Cancellable::cancel);
-              cancellable = Optional.empty();
-            });
+    cancellable.ifPresent(Cancellable::cancel);
+    cancellable = Optional.empty();
+
+    return super.doStop();
   }
 
   @Override
   public void onSlot(UInt64 slot) {
     super.onSlot(slot);
-    pendingBlocks.removeIf(block -> block.getSlot().isLessThan(slot.plus(EXPIRES_IN_SLOT)));
+    pendingBlocksForEPReexecution.removeIf(
+        block -> block.getSlot().isLessThan(slot.plus(EXPIRES_IN_SLOT)));
   }
 
   @Override
@@ -100,7 +98,7 @@ public class ReexecutingExecutionPayloadBlockManager extends BlockManager {
         .thenPeek(
             blockImportResult -> {
               if (requiresReexecution(blockImportResult)) {
-                pendingBlocks.add(block);
+                pendingBlocksForEPReexecution.add(block);
               }
             });
   }
@@ -108,22 +106,11 @@ public class ReexecutingExecutionPayloadBlockManager extends BlockManager {
   private void execute() {
     if (reexecutingExecutionPayload.compareAndSet(false, true)) {
       LOG.debug("re-executing execution payloads for queued blocks");
-      SafeFuture.allOfFailFast(
-              pendingBlocks.stream()
+      SafeFuture.allOf(
+              pendingBlocksForEPReexecution.stream()
                   .map(this::reexecuteExecutionPayload)
                   .toArray(SafeFuture[]::new))
-          .thenPeek(__ -> reexecutingExecutionPayload.set(false))
-          .exceptionally(
-              error -> {
-                if (error instanceof StopExecutionError) {
-                  LOG.error(
-                      "An error occurred which prevents additional payload executions: {} reason: {}",
-                      error.getMessage(),
-                      error.getCause().getMessage());
-                  return null;
-                }
-                throw new RuntimeException(error);
-              })
+          .alwaysRun(() -> reexecutingExecutionPayload.set(false))
           .reportExceptions();
     }
   }
@@ -133,40 +120,17 @@ public class ReexecutingExecutionPayloadBlockManager extends BlockManager {
         .thenAccept(
             blockImportResult -> {
               if (canBeRemoved(blockImportResult)) {
-                pendingBlocks.remove(block);
+                pendingBlocksForEPReexecution.remove(block);
               }
-              applySubsequentExecutionPreventionCheck(blockImportResult);
             });
   }
 
   private boolean requiresReexecution(BlockImportResult blockImportResult) {
-    final FailureReason failureReason = blockImportResult.getFailureReason();
-    return failureReason == FailureReason.FAILED_EXECUTION_PAYLOAD_EXECUTION
-        || failureReason == FailureReason.FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING;
+    return blockImportResult.hasFailedExecutingExecutionPayload();
   }
 
   private boolean canBeRemoved(BlockImportResult blockImportResult) {
-    if (blockImportResult.isSuccessful()) {
-      return true;
-    }
-    final FailureReason failureReason = blockImportResult.getFailureReason();
-    return failureReason != FailureReason.FAILED_EXECUTION_PAYLOAD_EXECUTION
-        && failureReason != FailureReason.FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING;
-  }
-
-  private void applySubsequentExecutionPreventionCheck(BlockImportResult blockImportResult) {
-    final FailureReason failureReason = blockImportResult.getFailureReason();
-    if (failureReason == FailureReason.FAILED_EXECUTION_PAYLOAD_EXECUTION
-        || failureReason == FailureReason.FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING) {
-      throw new StopExecutionError(blockImportResult);
-    }
-  }
-
-  private static class StopExecutionError extends Error {
-    StopExecutionError(final BlockImportResult blockImportResult) {
-      super(
-          blockImportResult.getFailureReason().toString(),
-          blockImportResult.getFailureCause().orElseThrow(RuntimeException::new));
-    }
+    return blockImportResult.isSuccessful()
+        || !blockImportResult.hasFailedExecutingExecutionPayload();
   }
 }

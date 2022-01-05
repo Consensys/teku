@@ -51,7 +51,7 @@ public class BlockManager extends Service
   private final Subscribers<ReceivedBlockListener> receivedBlockSubscribers =
       Subscribers.create(true);
 
-  BlockManager(
+  public BlockManager(
       final RecentChainData recentChainData,
       final BlockImporter blockImporter,
       final PendingPool<SignedBeaconBlock> pendingBlocks,
@@ -62,15 +62,6 @@ public class BlockManager extends Service
     this.pendingBlocks = pendingBlocks;
     this.futureBlocks = futureBlocks;
     this.validator = validator;
-  }
-
-  public static BlockManager create(
-      final PendingPool<SignedBeaconBlock> pendingBlocks,
-      final FutureItems<SignedBeaconBlock> futureBlocks,
-      final RecentChainData recentChainData,
-      final BlockImporter blockImporter,
-      final BlockValidator validator) {
-    return new BlockManager(recentChainData, blockImporter, pendingBlocks, futureBlocks, validator);
   }
 
   @Override
@@ -164,7 +155,7 @@ public class BlockManager extends Service
                     futureBlocks.add(block);
                     break;
                   case FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING:
-                    LOG.error("Unable to import block: Execution Client is still syncing");
+                    LOG.warn("Unable to import block: Execution Client is still syncing");
                     break;
                   case FAILED_EXECUTION_PAYLOAD_EXECUTION:
                     LOG.error(

@@ -109,8 +109,8 @@ public class SyncingNodeManager {
     final FutureItems<SignedBeaconBlock> futureBlocks =
         FutureItems.create(SignedBeaconBlock::getSlot);
     BlockManager blockManager =
-        BlockManager.create(
-            pendingBlocks, futureBlocks, recentChainData, blockImporter, blockValidator);
+        new BlockManager(
+            recentChainData, blockImporter, pendingBlocks, futureBlocks, blockValidator);
 
     eventChannels
         .subscribe(SlotEventsChannel.class, blockManager)
