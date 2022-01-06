@@ -60,7 +60,7 @@ public class MiscHelpers {
       int position = Math.max(indexRet, flip);
 
       Bytes positionDiv256 = uintToBytes(Math.floorDiv(position, 256), 4);
-      Bytes hashBytes = Hash.sha256(Bytes.wrap(seed, roundAsByte, positionDiv256));
+      Bytes hashBytes = Hash.sha256(seed, roundAsByte, positionDiv256);
 
       int bitIndex = position & 0xff;
       int theByte = hashBytes.get(bitIndex / 8);
@@ -82,7 +82,7 @@ public class MiscHelpers {
     while (true) {
       int candidate_index = indices.getInt(computeShuffledIndex(i % total, total, seed));
       if (i % 32 == 0) {
-        hash = Hash.sha256(Bytes.concatenate(seed, uint64ToBytes(Math.floorDiv(i, 32))));
+        hash = Hash.sha256(seed, uint64ToBytes(Math.floorDiv(i, 32)));
       }
       int random_byte = UnsignedBytes.toInt(hash.get(i % 32));
       UInt64 effective_balance = state.getValidators().get(candidate_index).getEffective_balance();
@@ -183,13 +183,13 @@ public class MiscHelpers {
           flip = pivot - i;
           bitIndex = i & 0xff;
           if (bitIndex == 0 || i == mirror1) {
-            hashBytes = Hash.sha256(Bytes.wrap(seed, roundAsByte, uintToBytes(i / 256, 4)));
+            hashBytes = Hash.sha256(seed, roundAsByte, uintToBytes(i / 256, 4));
           }
         } else {
           flip = pivot + listSize - i;
           bitIndex = flip & 0xff;
           if (bitIndex == 0xff || i == pivot + 1) {
-            hashBytes = Hash.sha256(Bytes.wrap(seed, roundAsByte, uintToBytes(flip / 256, 4)));
+            hashBytes = Hash.sha256(seed, roundAsByte, uintToBytes(flip / 256, 4));
           }
         }
 
