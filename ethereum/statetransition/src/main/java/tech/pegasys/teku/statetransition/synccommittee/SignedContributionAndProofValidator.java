@@ -215,7 +215,7 @@ public class SignedContributionAndProofValidator {
 
     final SpecConfigAltair config =
         SpecConfigAltair.required(spec.getSpecConfig(contributionEpoch));
-    final SyncCommittee currentSyncCommittee =
+    final SyncCommittee syncCommittee =
         syncCommitteeUtil.getSyncCommittee(state, contributionEpoch);
     final int subcommitteeSize = config.getSyncCommitteeSize() / SYNC_COMMITTEE_SUBNET_COUNT;
 
@@ -229,7 +229,7 @@ public class SignedContributionAndProofValidator {
             .mapToObj(
                 participantIndex ->
                     getParticipantPublicKey(
-                        currentSyncCommittee, contribution, subcommitteeSize, participantIndex))
+                        state, syncCommittee, contribution, subcommitteeSize, participantIndex))
             .collect(Collectors.toList());
 
     if (!signatureVerifier.verify(
@@ -261,14 +261,15 @@ public class SignedContributionAndProofValidator {
   }
 
   private BLSPublicKey getParticipantPublicKey(
-      final SyncCommittee currentSyncCommittee,
+      final BeaconStateAltair state,
+      final SyncCommittee syncCommittee,
       final SyncCommitteeContribution contribution,
       final int subcommitteeSize,
       final int participantIndex) {
-    return currentSyncCommittee
-        .getPubkeys()
-        .get(contribution.getSubcommitteeIndex().intValue() * subcommitteeSize + participantIndex)
-        .getBLSPublicKey();
+    final int committeeIndex =
+        contribution.getSubcommitteeIndex().intValue() * subcommitteeSize + participantIndex;
+    return spec.getSyncCommitteeUtilRequired(state.getSlot())
+        .getSyncCommitteeParticipantPubKey(state, syncCommittee, committeeIndex);
   }
 
   private boolean isInSyncSubcommittee(

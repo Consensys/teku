@@ -151,6 +151,27 @@ public class SyncCommitteeUtil {
         .getOrDefault(validatorIndex, SyncSubcommitteeAssignments.NONE);
   }
 
+  public BLSPublicKey getCurrentSyncCommitteeParticipantPubKey(
+      final BeaconStateAltair state, final int committeeIndex) {
+    final SyncCommittee syncCommittee = state.getCurrentSyncCommittee();
+    return getSyncCommitteeParticipantPubKey(state, syncCommittee, committeeIndex);
+  }
+
+  public BLSPublicKey getSyncCommitteeParticipantPubKey(
+      final BeaconStateAltair state, final SyncCommittee syncCommittee, final int committeeIndex) {
+    final BLSPublicKey uncachedPublicKey =
+        syncCommittee.getPubkeys().get(committeeIndex).getBLSPublicKey();
+    final int validatorIndex =
+        validatorsUtil
+            .getValidatorIndex(state, uncachedPublicKey)
+            .orElseThrow(
+                () -> new IllegalStateException("Unknown validator found in sync committee"));
+    return beaconStateAccessors
+        .getValidatorPubKey(state, UInt64.valueOf(validatorIndex))
+        .orElseThrow(
+            () -> new IllegalStateException("Validator in sync committee has no public key"));
+  }
+
   public int getSubcommitteeSize() {
     return specConfig.getSyncCommitteeSize() / SYNC_COMMITTEE_SUBNET_COUNT;
   }

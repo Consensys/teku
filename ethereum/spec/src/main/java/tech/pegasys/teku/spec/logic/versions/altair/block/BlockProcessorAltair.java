@@ -25,7 +25,6 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
-import tech.pegasys.teku.infrastructure.ssz.SszVector;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -42,7 +41,6 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
-import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
@@ -51,6 +49,7 @@ import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValida
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
@@ -60,11 +59,13 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
   private final SpecConfigAltair specConfigAltair;
   private final MiscHelpersAltair miscHelpersAltair;
   private final BeaconStateAccessorsAltair beaconStateAccessorsAltair;
+  private final SyncCommitteeUtil syncCommitteeUtil;
 
   public BlockProcessorAltair(
       final SpecConfigAltair specConfig,
       final Predicates predicates,
       final MiscHelpersAltair miscHelpers,
+      final SyncCommitteeUtil syncCommitteeUtil,
       final BeaconStateAccessorsAltair beaconStateAccessors,
       final BeaconStateMutators beaconStateMutators,
       final OperationSignatureVerifier operationSignatureVerifier,
@@ -87,6 +88,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
     this.specConfigAltair = specConfig;
     this.miscHelpersAltair = miscHelpers;
     this.beaconStateAccessorsAltair = beaconStateAccessors;
+    this.syncCommitteeUtil = syncCommitteeUtil;
   }
 
   @Override
@@ -177,12 +179,12 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
       final BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException {
     final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(baseState);
-    final SszVector<SszPublicKey> committeePubkeys = state.getCurrentSyncCommittee().getPubkeys();
     final List<BLSPublicKey> participantPubkeys = new ArrayList<>();
     final List<BLSPublicKey> idlePubkeys = new ArrayList<>();
 
-    for (int i = 0; i < committeePubkeys.size(); i++) {
-      final BLSPublicKey publicKey = committeePubkeys.get(i).getBLSPublicKey();
+    for (int i = 0; i < specConfigAltair.getSyncCommitteeSize(); i++) {
+      final BLSPublicKey publicKey =
+          syncCommitteeUtil.getCurrentSyncCommitteeParticipantPubKey(state, i);
       if (aggregate.getSyncCommitteeBits().getBit(i)) {
         participantPubkeys.add(publicKey);
       } else {
