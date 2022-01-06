@@ -103,7 +103,7 @@ dependencyManagement {
       entry 'log4j-slf4j-impl'
     }
 
-    dependency 'org.assertj:assertj-core:3.21.0'
+    dependency 'org.assertj:assertj-core:3.22.0'
 
     dependency 'org.awaitility:awaitility:4.1.1'
 
@@ -120,7 +120,7 @@ dependencyManagement {
     dependency 'org.mockito:mockito-core:4.2.0'
     dependency 'org.mockito:mockito-junit-jupiter:4.2.0'
 
-    dependencySet(group: "org.openjdk.jmh", version: "1.33") {
+    dependencySet(group: "org.openjdk.jmh", version: "1.34") {
       entry 'jmh-core'
       entry 'jmh-generator-annprocess'
     }

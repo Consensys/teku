@@ -14,5 +14,6 @@ For information on changes in released versions of Teku, see the [releases page]
 ## Unreleased Changes
 ### Additions and Improvements
 * Optimised sync committee processing to avoid duplicate group checks for public keys.
+* Reduced amount of data copying required when calculating sha256 hashes.
 
 ### Bug Fixes

@@ -170,7 +170,7 @@ public class SszNodeTemplate {
           @Override
           public Bytes32 visitBranch(
               long gIndex, TreeNode node, Bytes32 leftVisitResult, Bytes32 rightVisitResult) {
-            return Hash.sha256(Bytes.wrap(leftVisitResult, rightVisitResult));
+            return Hash.sha256(leftVisitResult, rightVisitResult);
           }
         });
   }
