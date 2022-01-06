@@ -82,7 +82,7 @@ public class BeaconStateUtil {
     UInt64 randaoIndex = epoch.plus(EPOCHS_PER_HISTORICAL_VECTOR - MIN_SEED_LOOKAHEAD - 1);
     Bytes32 mix = get_randao_mix(state, randaoIndex);
     Bytes epochBytes = uint_to_bytes(epoch.longValue(), 8);
-    return Hash.sha256(Bytes.concatenate(domain_type.getWrappedBytes(), epochBytes, mix));
+    return Hash.sha256(domain_type.getWrappedBytes(), epochBytes, mix);
   }
 
   /**
@@ -439,9 +439,8 @@ public class BeaconStateUtil {
               UInt64 epoch = compute_epoch_at_slot(slot);
               Bytes32 seed =
                   Hash.sha256(
-                      Bytes.concatenate(
-                          get_seed(state, epoch, Domain.BEACON_PROPOSER),
-                          uint_to_bytes(slot.longValue(), 8)));
+                      get_seed(state, epoch, Domain.BEACON_PROPOSER),
+                      uint_to_bytes(slot.longValue(), 8));
               IntList indices = get_active_validator_indices(state, epoch);
               return compute_proposer_index(state, indices, seed);
             });
@@ -691,7 +690,7 @@ public class BeaconStateUtil {
       int position = Math.max(indexRet, flip);
 
       Bytes positionDiv256 = uint_to_bytes(Math.floorDiv(position, 256), 4);
-      Bytes hashBytes = Hash.sha256(Bytes.wrap(seed, roundAsByte, positionDiv256));
+      Bytes hashBytes = Hash.sha256(seed, roundAsByte, positionDiv256);
 
       int bitIndex = position & 0xff;
       int theByte = hashBytes.get(bitIndex / 8);
@@ -722,7 +721,7 @@ public class BeaconStateUtil {
     while (true) {
       int candidate_index = indices.getInt(compute_shuffled_index(i % total, total, seed));
       if (i % 32 == 0) {
-        hash = Hash.sha256(Bytes.concatenate(seed, uint_to_bytes(Math.floorDiv(i, 32), 8)));
+        hash = Hash.sha256(seed, uint_to_bytes(Math.floorDiv(i, 32), 8));
       }
       int random_byte = UnsignedBytes.toInt(hash.get(i % 32));
       UInt64 effective_balance = state.getValidators().get(candidate_index).getEffective_balance();

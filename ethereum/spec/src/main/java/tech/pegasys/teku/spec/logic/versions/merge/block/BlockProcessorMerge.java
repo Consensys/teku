@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValida
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.block.BlockProcessorAltair;
 import tech.pegasys.teku.spec.logic.versions.merge.helpers.BeaconStateAccessorsMerge;
@@ -44,6 +45,7 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
       final SpecConfigMerge specConfig,
       final Predicates predicates,
       final MiscHelpersMerge miscHelpers,
+      final SyncCommitteeUtil syncCommitteeUtil,
       final BeaconStateAccessorsMerge beaconStateAccessors,
       final BeaconStateMutators beaconStateMutators,
       final OperationSignatureVerifier operationSignatureVerifier,
@@ -56,6 +58,7 @@ public class BlockProcessorMerge extends BlockProcessorAltair {
         specConfig,
         predicates,
         miscHelpers,
+        syncCommitteeUtil,
         beaconStateAccessors,
         beaconStateMutators,
         operationSignatureVerifier,

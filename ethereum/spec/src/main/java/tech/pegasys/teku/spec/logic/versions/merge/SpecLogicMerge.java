@@ -132,11 +132,15 @@ public class SpecLogicMerge extends AbstractSpecLogic {
             validatorsUtil,
             beaconStateUtil,
             validatorStatusFactory);
+    final SyncCommitteeUtil syncCommitteeUtil =
+        new SyncCommitteeUtil(
+            beaconStateAccessors, validatorsUtil, config, miscHelpers, schemaDefinitions);
     final BlockProcessorMerge blockProcessor =
         new BlockProcessorMerge(
             config,
             predicates,
             miscHelpers,
+            syncCommitteeUtil,
             beaconStateAccessors,
             beaconStateMutators,
             operationSignatureVerifier,
@@ -149,9 +153,6 @@ public class SpecLogicMerge extends AbstractSpecLogic {
         new ForkChoiceUtil(config, beaconStateAccessors, attestationUtil, miscHelpers);
     final BlockProposalUtil blockProposalUtil =
         new BlockProposalUtil(schemaDefinitions, blockProcessor);
-    final SyncCommitteeUtil syncCommitteeUtil =
-        new SyncCommitteeUtil(
-            beaconStateAccessors, validatorsUtil, config, miscHelpers, schemaDefinitions);
 
     // State upgrade
     final MergeStateUpgrade stateUpgrade =

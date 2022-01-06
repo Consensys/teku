@@ -15,11 +15,11 @@ package tech.pegasys.teku.bls.impl.blst;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes48;
 import supranational.blst.P1;
 import supranational.blst.P1_Affine;
@@ -75,8 +75,8 @@ class BlstPublicKey implements PublicKey {
   }
 
   final P1_Affine ecPoint;
-  private final Supplier<Boolean> isInfinity = Suppliers.memoize(() -> checkForInfinity());
-  private final Supplier<Boolean> isInGroup = Suppliers.memoize(() -> checkGroupMembership());
+  private final Supplier<Boolean> isInfinity = Suppliers.memoize(this::checkForInfinity);
+  private final Supplier<Boolean> isInGroup = Suppliers.memoize(this::checkGroupMembership);
 
   public BlstPublicKey(P1_Affine ecPoint) {
     this.ecPoint = ecPoint;
