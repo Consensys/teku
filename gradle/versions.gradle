@@ -30,7 +30,7 @@ dependencyManagement {
 
     dependency 'info.picocli:picocli:4.6.2'
 
-    dependencySet(group: 'io.javalin', version: '4.1.1') {
+    dependencySet(group: 'io.javalin', version: '4.2.0') {
       entry 'javalin'
       entry('javalin-openapi') {
         exclude 'org.webjars.npm:redoc'
