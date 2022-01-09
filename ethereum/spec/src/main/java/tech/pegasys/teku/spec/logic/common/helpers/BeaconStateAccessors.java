@@ -157,7 +157,7 @@ public abstract class BeaconStateAccessors {
         epoch.plus(config.getEpochsPerHistoricalVector() - config.getMinSeedLookahead() - 1);
     Bytes32 mix = getRandaoMix(state, randaoIndex);
     Bytes epochBytes = uint64ToBytes(epoch);
-    return Hash.sha256(Bytes.concatenate(domain_type.getWrappedBytes(), epochBytes, mix));
+    return Hash.sha256(domain_type.getWrappedBytes(), epochBytes, mix);
   }
 
   /**
@@ -201,9 +201,7 @@ public abstract class BeaconStateAccessors {
             slot -> {
               UInt64 epoch = miscHelpers.computeEpochAtSlot(slot);
               Bytes32 seed =
-                  Hash.sha256(
-                      Bytes.concatenate(
-                          getSeed(state, epoch, Domain.BEACON_PROPOSER), uint64ToBytes(slot)));
+                  Hash.sha256(getSeed(state, epoch, Domain.BEACON_PROPOSER), uint64ToBytes(slot));
               IntList indices = getActiveValidatorIndices(state, epoch);
               return miscHelpers.computeProposerIndex(state, indices, seed);
             });
