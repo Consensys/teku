@@ -53,17 +53,6 @@ public class ReexecutingExecutionPayloadBlockManager extends BlockManager {
     this.asyncRunner = asyncRunner;
   }
 
-  public static BlockManager create(
-      final PendingPool<SignedBeaconBlock> pendingBlocks,
-      final FutureItems<SignedBeaconBlock> futureBlocks,
-      final RecentChainData recentChainData,
-      final BlockImporter blockImporter,
-      final BlockValidator validator,
-      final AsyncRunner asyncRunner) {
-    return new ReexecutingExecutionPayloadBlockManager(
-        recentChainData, blockImporter, pendingBlocks, futureBlocks, validator, asyncRunner);
-  }
-
   @Override
   public SafeFuture<?> doStart() {
     return super.doStart()
