@@ -23,7 +23,9 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.IntPredicate;
@@ -232,12 +234,11 @@ public class ChainDataProvider {
                             spec.atSlot(state.getSlot()).getMilestone())));
   }
 
-  public boolean isFinalized(final SignedBeaconBlock signedBeaconBlock) {
-    return combinedChainDataClient.isFinalized(signedBeaconBlock.getMessage().slot);
-  }
-
-  public boolean isFinalized(final UInt64 slot) {
-    return combinedChainDataClient.isFinalized(slot);
+  public List<Map<String, Object>> getProtoArrayData() {
+    return recentChainData
+        .getForkChoiceStrategy()
+        .map(forkChoice -> forkChoice.getNodeData())
+        .orElse(Collections.emptyList());
   }
 
   /**

@@ -17,6 +17,8 @@ import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableMap;
+import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -177,6 +179,20 @@ public class ProtoNode {
         this.validationStatus,
         validationStatus);
     this.validationStatus = validationStatus;
+  }
+
+  public Map<String, Object> getData() {
+    return ImmutableMap.<String, Object>builder()
+        .put("slot", blockSlot)
+        .put("blockRoot", blockRoot)
+        .put("parentRoot", parentRoot)
+        .put("stateRoot", stateRoot)
+        .put("justifiedEpoch", justifiedEpoch)
+        .put("finalizedEpoch", finalizedEpoch)
+        .put("executionBlockHash", executionBlockHash)
+        .put("validationStatus", validationStatus.name())
+        .put("weight", weight)
+        .build();
   }
 
   @Override
