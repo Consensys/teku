@@ -16,8 +16,6 @@ package tech.pegasys.teku.spec.datastructures.interop;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uintToBytes32;
 
 import java.math.BigInteger;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -25,7 +23,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSecretKey;
-import tech.pegasys.teku.infrastructure.crypto.BouncyCastleMessageDigestFactory;
+import tech.pegasys.teku.infrastructure.crypto.Hash;
 
 public class MockStartValidatorKeyPairFactory {
   private static final BigInteger CURVE_ORDER =
@@ -39,24 +37,10 @@ public class MockStartValidatorKeyPairFactory {
   }
 
   private BLSKeyPair createKeyPairForValidator(final int validatorIndex) {
-    final Bytes hash = sha256(uintToBytes32(validatorIndex));
+    final Bytes hash = Hash.sha256(uintToBytes32(validatorIndex));
     final BigInteger privKey = hash.reverse().toUnsignedBigInteger().mod(CURVE_ORDER);
     final Bytes32 privKeyBytes = Bytes32.leftPad(Bytes.of(privKey.toByteArray()));
 
     return new BLSKeyPair(BLSSecretKey.fromBytes(privKeyBytes));
-  }
-
-  private Bytes sha256(final Bytes indexBytes) {
-    final MessageDigest sha256Digest = getSha256Digest();
-    indexBytes.update(sha256Digest);
-    return Bytes.wrap(sha256Digest.digest());
-  }
-
-  private MessageDigest getSha256Digest() {
-    try {
-      return BouncyCastleMessageDigestFactory.create("SHA-256");
-    } catch (NoSuchAlgorithmException e) {
-      throw new RuntimeException(e);
-    }
   }
 }
