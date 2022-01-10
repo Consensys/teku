@@ -48,6 +48,7 @@ public class MessageDigestFactory {
    *
    * @return the security provider.
    */
+  @SuppressWarnings("DoNotInvokeMessageDigestDirectly")
   private static Provider selectSecurityProvider() {
     final Provider sunProvider = Security.getProvider("SUN");
     if (sunProvider == null) {
