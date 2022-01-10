@@ -15,8 +15,6 @@ package tech.pegasys.teku.api;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
-import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -40,7 +38,6 @@ public class DataProvider {
   private final ValidatorDataProvider validatorDataProvider;
   private final NodeDataProvider nodeDataProvider;
   private final ConfigProvider configProvider;
-  private final TimeProvider timeProvider;
 
   private DataProvider(
       final ConfigProvider configProvider,
@@ -48,15 +45,13 @@ public class DataProvider {
       final NodeDataProvider nodeDataProvider,
       final ChainDataProvider chainDataProvider,
       final SyncDataProvider syncDataProvider,
-      final ValidatorDataProvider validatorDataProvider,
-      final TimeProvider timeProvider) {
+      final ValidatorDataProvider validatorDataProvider) {
     this.configProvider = configProvider;
     this.networkDataProvider = networkDataProvider;
     this.nodeDataProvider = nodeDataProvider;
     this.chainDataProvider = chainDataProvider;
     this.syncDataProvider = syncDataProvider;
     this.validatorDataProvider = validatorDataProvider;
-    this.timeProvider = timeProvider;
   }
 
   public ConfigProvider getConfigProvider() {
@@ -83,10 +78,6 @@ public class DataProvider {
     return nodeDataProvider;
   }
 
-  public TimeProvider getTimeProvider() {
-    return timeProvider;
-  }
-
   public static DataProvider.Builder builder() {
     return new Builder();
   }
@@ -108,7 +99,6 @@ public class DataProvider {
     private SyncCommitteeContributionPool syncCommitteeContributionPool;
 
     private boolean isLivenessTrackingEnabled = true;
-    private TimeProvider timeProvider = new SystemTimeProvider();
 
     public Builder recentChainData(final RecentChainData recentChainData) {
       this.recentChainData = recentChainData;
@@ -183,11 +173,6 @@ public class DataProvider {
       return this;
     }
 
-    public Builder timeProvider(final TimeProvider timeProvider) {
-      this.timeProvider = timeProvider;
-      return this;
-    }
-
     public Builder spec(final Spec spec) {
       this.spec = spec;
       return this;
@@ -218,15 +203,13 @@ public class DataProvider {
       checkNotNull(chainDataProvider, "Expect Chain Data Provider");
       checkNotNull(syncDataProvider, "Expect Sync Data Provider");
       checkNotNull(validatorDataProvider, "Expect Validator Data Provider");
-      checkNotNull(timeProvider, "Expect Time Provider");
       return new DataProvider(
           configProvider,
           networkDataProvider,
           nodeDataProvider,
           chainDataProvider,
           syncDataProvider,
-          validatorDataProvider,
-          timeProvider);
+          validatorDataProvider);
     }
   }
 }

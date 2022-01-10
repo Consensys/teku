@@ -37,8 +37,6 @@ import org.junit.jupiter.params.provider.EnumSource;
 import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.events.EventSubscriptionManager.EventSource;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
-import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
-import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class EventSubscriberTest {
@@ -50,8 +48,6 @@ public class EventSubscriberTest {
   private final ServletResponse servletResponse = mock(ServletResponse.class);
   private final TestServletOutputStream outputStream = new TestServletOutputStream();
   private final JsonProvider jsonProvider = new JsonProvider();
-  private static final int CURRENT_TIME = 10_000;
-  private final TimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(CURRENT_TIME);
 
   private final Context context = new Context(req, res, Collections.emptyMap());
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
@@ -72,12 +68,7 @@ public class EventSubscriberTest {
   void shouldGetSseClient() {
     EventSubscriber eventSubscriber =
         new EventSubscriber(
-            List.of("head"),
-            sseClient,
-            onCloseCallback,
-            asyncRunner,
-            MAX_PENDING_EVENTS,
-            timeProvider);
+            List.of("head"), sseClient, onCloseCallback, asyncRunner, MAX_PENDING_EVENTS);
     assertThat(eventSubscriber.getSseClient()).isEqualTo(sseClient);
   }
 
@@ -85,12 +76,7 @@ public class EventSubscriberTest {
   void shouldDisconnectAfterTooManyRequestsAreLogged() throws Exception {
     EventSubscriber eventSubscriber =
         new EventSubscriber(
-            List.of("head"),
-            sseClient,
-            onCloseCallback,
-            asyncRunner,
-            MAX_PENDING_EVENTS,
-            timeProvider);
+            List.of("head"), sseClient, onCloseCallback, asyncRunner, MAX_PENDING_EVENTS);
 
     for (int i = 0; i < MAX_PENDING_EVENTS + 1; i++) {
       verify(onCloseCallback, never()).run();
@@ -103,12 +89,7 @@ public class EventSubscriberTest {
   void shouldStopSendingEventsWhenQueueOverflows() throws Exception {
     EventSubscriber eventSubscriber =
         new EventSubscriber(
-            List.of("head"),
-            sseClient,
-            onCloseCallback,
-            asyncRunner,
-            MAX_PENDING_EVENTS,
-            timeProvider);
+            List.of("head"), sseClient, onCloseCallback, asyncRunner, MAX_PENDING_EVENTS);
 
     for (int i = 0; i < MAX_PENDING_EVENTS + 1; i++) {
       verify(onCloseCallback, never()).run();
@@ -128,8 +109,7 @@ public class EventSubscriberTest {
             sseClient,
             onCloseCallback,
             asyncRunner,
-            MAX_PENDING_EVENTS,
-            timeProvider);
+            MAX_PENDING_EVENTS);
     for (EventType eventType : allEventTypes) {
       eventSubscriber.onEvent(eventType, event("test"));
     }
@@ -142,12 +122,7 @@ public class EventSubscriberTest {
   void shouldNotDisconnectIfQueueProcessingCatchesUp() throws IOException {
     EventSubscriber eventSubscriber =
         new EventSubscriber(
-            List.of("head"),
-            sseClient,
-            onCloseCallback,
-            asyncRunner,
-            MAX_PENDING_EVENTS,
-            timeProvider);
+            List.of("head"), sseClient, onCloseCallback, asyncRunner, MAX_PENDING_EVENTS);
 
     for (int i = 0; i < MAX_PENDING_EVENTS; i++) {
       eventSubscriber.onEvent(EventType.head, event("test"));
@@ -167,12 +142,7 @@ public class EventSubscriberTest {
   void shouldNotSendEventsIfNotSubscribed(final EventType eventType) throws Exception {
     EventSubscriber subscriber =
         new EventSubscriber(
-            List.of(eventType.name()),
-            sseClient,
-            onCloseCallback,
-            asyncRunner,
-            MAX_PENDING_EVENTS,
-            timeProvider);
+            List.of(eventType.name()), sseClient, onCloseCallback, asyncRunner, MAX_PENDING_EVENTS);
     for (EventType val : allEventTypes) {
       if (val.compareTo(eventType) != 0) {
         subscriber.onEvent(val, event("test"));
@@ -186,12 +156,7 @@ public class EventSubscriberTest {
   void shouldSendEventsIfSubscribed(final EventType eventType) throws IOException {
     EventSubscriber subscriber =
         new EventSubscriber(
-            List.of(eventType.name()),
-            sseClient,
-            onCloseCallback,
-            asyncRunner,
-            MAX_PENDING_EVENTS,
-            timeProvider);
+            List.of(eventType.name()), sseClient, onCloseCallback, asyncRunner, MAX_PENDING_EVENTS);
 
     subscriber.onEvent(eventType, event("test"));
 

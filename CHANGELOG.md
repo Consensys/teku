@@ -16,6 +16,5 @@ For information on changes in released versions of Teku, see the [releases page]
 * Optimised sync committee processing to avoid duplicate group checks for public keys.
 * Reduced amount of data copying required when calculating sha256 hashes and use a more efficient sha256 implementation when available.
 * Updated Javalin to version 4.2.0.
-* Send keepalive messages on the event stream to reduce disconnects.
 
 ### Bug Fixes

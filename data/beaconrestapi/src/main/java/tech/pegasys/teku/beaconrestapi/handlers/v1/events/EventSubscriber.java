@@ -24,8 +24,6 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.events.EventSubscriptionManager.EventSource;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
-import tech.pegasys.teku.infrastructure.time.TimeProvider;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class EventSubscriber {
   private static final Logger LOG = LogManager.getLogger();
@@ -36,8 +34,6 @@ public class EventSubscriber {
   private final Runnable closeCallback;
   private final int maxPendingEvents;
   private final AtomicBoolean processingQueue;
-  private final TimeProvider timeProvider;
-  private UInt64 lastEventSentSeconds;
   final AsyncRunner asyncRunner;
 
   public EventSubscriber(
@@ -45,23 +41,19 @@ public class EventSubscriber {
       final SseClient sseClient,
       final Runnable closeCallback,
       final AsyncRunner asyncRunner,
-      final int maxPendingEvents,
-      final TimeProvider timeProvider) {
+      final int maxPendingEvents) {
     this.eventTypes = EventType.getTopics(eventTypes);
     this.sseClient = sseClient;
     this.closeCallback = closeCallback;
     this.maxPendingEvents = maxPendingEvents;
-    this.timeProvider = timeProvider;
     this.queuedEvents = new ConcurrentLinkedQueue<>();
     this.processingQueue = new AtomicBoolean(false);
     this.asyncRunner = asyncRunner;
     this.sseClient.onClose(closeCallback);
-    lastEventSentSeconds = timeProvider.getTimeInSeconds();
   }
 
   public void onEvent(final EventType eventType, final EventSource message)
       throws JsonProcessingException {
-    keepAlive();
     if (!eventTypes.contains(eventType)) {
       return;
     }
@@ -73,14 +65,6 @@ public class EventSubscriber {
       stopped.set(true);
       sseClient.ctx.req.getAsyncContext().complete();
       closeCallback.run();
-    }
-  }
-
-  private void keepAlive() {
-    final UInt64 timeSeconds = timeProvider.getTimeInSeconds();
-    if (timeSeconds.minusMinZero(lastEventSentSeconds).isGreaterThanOrEqualTo(30)) {
-      sseClient.sendComment(" ");
-      lastEventSentSeconds = timeSeconds;
     }
   }
 
@@ -102,7 +86,6 @@ public class EventSubscriber {
                   sseClient.hashCode());
               QueuedEvent event = queuedEvents.poll();
               while (event != null && !stopped.get()) {
-                lastEventSentSeconds = timeProvider.getTimeInSeconds();
                 sseClient.sendEvent(event.getEventType().name(), event.getMessageData());
                 event = queuedEvents.poll();
               }

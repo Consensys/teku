@@ -33,7 +33,6 @@ dependencies {
     testImplementation testFixtures(project(':infrastructure:async'))
     testImplementation testFixtures(project(':infrastructure:bls'))
     testImplementation testFixtures(project(':infrastructure:restapi'))
-    testImplementation testFixtures(project(':infrastructure:time'))
 
     testCompileOnly 'io.libp2p:jvm-libp2p-minimal'
 
