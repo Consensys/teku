@@ -15,15 +15,13 @@ package tech.pegasys.teku.spec.datastructures.util;
 
 import static tech.pegasys.teku.spec.constants.NetworkConstants.BLS_WITHDRAWAL_PREFIX;
 
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.infrastructure.crypto.BouncyCastleMessageDigestFactory;
+import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -64,22 +62,8 @@ public class DepositGenerator {
   }
 
   private Bytes32 createWithdrawalCredentials(final BLSPublicKey withdrawalPublicKey) {
-    final Bytes publicKeyHash = sha256(withdrawalPublicKey.toBytesCompressed());
+    final Bytes publicKeyHash = Hash.sha256(withdrawalPublicKey.toBytesCompressed());
     final Bytes credentials = Bytes.wrap(BLS_WITHDRAWAL_PREFIX, publicKeyHash.slice(1));
     return Bytes32.wrap(credentials);
-  }
-
-  private Bytes sha256(final Bytes indexBytes) {
-    final MessageDigest sha256Digest = getSha256Digest();
-    indexBytes.update(sha256Digest);
-    return Bytes.wrap(sha256Digest.digest());
-  }
-
-  private MessageDigest getSha256Digest() {
-    try {
-      return BouncyCastleMessageDigestFactory.create("SHA-256");
-    } catch (NoSuchAlgorithmException e) {
-      throw new RuntimeException(e);
-    }
   }
 }
