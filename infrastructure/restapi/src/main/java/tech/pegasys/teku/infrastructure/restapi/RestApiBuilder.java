@@ -19,6 +19,7 @@ import static tech.pegasys.teku.infrastructure.restapi.types.CoreTypes.HTTP_ERRO
 
 import io.javalin.Javalin;
 import io.javalin.core.JavalinConfig;
+import io.javalin.jetty.JettyUtil;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -183,6 +184,7 @@ public class RestApiBuilder {
             }
           }
         });
+    JettyUtil.INSTANCE.setLogIfNotStarted(false);
     return server;
   }
 

@@ -42,6 +42,7 @@ import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetEvents implements Handler {
@@ -49,6 +50,7 @@ public class GetEvents implements Handler {
   public static final String ROUTE = "/eth/v1/events";
   private final JsonProvider jsonProvider;
   private final EventSubscriptionManager eventSubscriptionManager;
+  private final TimeProvider timeProvider;
 
   public GetEvents(
       final DataProvider dataProvider,
@@ -64,7 +66,8 @@ public class GetEvents implements Handler {
         dataProvider.getConfigProvider(),
         eventChannels,
         asyncRunner,
-        maxPendingEvents);
+        maxPendingEvents,
+        dataProvider.getTimeProvider());
   }
 
   GetEvents(
@@ -75,8 +78,10 @@ public class GetEvents implements Handler {
       final ConfigProvider configProvider,
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner,
-      final int maxPendingEvents) {
+      final int maxPendingEvents,
+      final TimeProvider timeProvider) {
     this.jsonProvider = jsonProvider;
+    this.timeProvider = timeProvider;
     eventSubscriptionManager =
         new EventSubscriptionManager(
             nodeDataProvider,
@@ -86,7 +91,8 @@ public class GetEvents implements Handler {
             configProvider,
             asyncRunner,
             eventChannels,
-            maxPendingEvents);
+            maxPendingEvents,
+            this.timeProvider);
   }
 
   @OpenApi(

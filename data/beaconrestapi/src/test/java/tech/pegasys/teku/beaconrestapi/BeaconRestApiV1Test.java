@@ -130,27 +130,25 @@ public class BeaconRestApiV1Test {
             .restApiPort(THE_PORT)
             .build();
     when(app.jettyServer()).thenReturn(server);
-    new BeaconRestApi(
-        new DataProvider(
-            TestSpecFactory.createMinimalPhase0(),
-            storageClient,
-            combinedChainDataClient,
-            null,
-            syncService,
-            null,
-            attestationPool,
-            blockManager,
-            attestationManager,
-            true,
-            activeValidatorChannel,
-            attesterSlashingPool,
-            proposerSlashingPool,
-            voluntaryExitPool,
-            syncCommitteeContributionPool),
-        beaconRestApiConfig,
-        eventChannels,
-        new StubAsyncRunner(),
-        app);
+    final DataProvider dataProvider =
+        DataProvider.builder()
+            .spec(TestSpecFactory.createMinimalPhase0())
+            .recentChainData(storageClient)
+            .combinedChainDataClient(combinedChainDataClient)
+            .p2pNetwork(null)
+            .syncService(syncService)
+            .validatorApiChannel(null)
+            .blockManager(blockManager)
+            .attestationManager(attestationManager)
+            .isLivenessTrackingEnabled(false)
+            .activeValidatorChannel(activeValidatorChannel)
+            .attestationPool(attestationPool)
+            .attesterSlashingPool(attesterSlashingPool)
+            .proposerSlashingPool(proposerSlashingPool)
+            .voluntaryExitPool(voluntaryExitPool)
+            .syncCommitteeContributionPool(syncCommitteeContributionPool)
+            .build();
+    new BeaconRestApi(dataProvider, beaconRestApiConfig, eventChannels, new StubAsyncRunner(), app);
   }
 
   @ParameterizedTest(name = "{0}")

@@ -20,6 +20,7 @@ import static org.mockito.Mockito.when;
 import io.javalin.http.Context;
 import io.javalin.http.sse.SseClient;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -44,6 +45,7 @@ import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
@@ -70,6 +72,8 @@ public class EventSubscriptionManagerTest {
   private final UInt64 slot = UInt64.valueOf("1024100");
   private final UInt64 epoch = spec.computeEpochAtSlot(slot);
   private final UInt64 depth = UInt64.valueOf(100);
+  private static final int CURRENT_TIME = 10_000;
+  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(CURRENT_TIME);
   private final ChainReorgEvent chainReorgEvent =
       new ChainReorgEvent(
           slot,
@@ -127,7 +131,8 @@ public class EventSubscriptionManagerTest {
             configProvider,
             asyncRunner,
             channels,
-            10);
+            10,
+            timeProvider);
     client1 = new SseClient(ctx);
   }
 
@@ -139,11 +144,24 @@ public class EventSubscriptionManagerTest {
     triggerReorgEvent();
     final String eventString = outputStream.getString();
     assertThat(eventString).contains("event: chain_reorg\n");
+    assertThat(outputStream.countComments()).isEqualTo(0);
     final ChainReorgEvent event =
         jsonProvider.jsonToObject(
             eventString.substring(eventString.indexOf("{")), ChainReorgEvent.class);
 
     assertThat(event).isEqualTo(chainReorgEvent);
+  }
+
+  @Test
+  void shouldSendKeepalive() {
+    when(req.getQueryString()).thenReturn("&topics=finalized_checkpoint");
+    manager.registerClient(client1);
+
+    triggerHeadEvent();
+    assertThat(outputStream.getWriteCounter()).isEqualTo(0);
+    timeProvider.advanceTimeBy(Duration.ofSeconds(31));
+    triggerHeadEvent();
+    assertThat(outputStream.countComments()).isEqualTo(1);
   }
 
   @Test
@@ -154,6 +172,7 @@ public class EventSubscriptionManagerTest {
     triggerHeadEvent();
     final String eventString = outputStream.getString();
     assertThat(eventString).contains("event: head\n");
+    assertThat(outputStream.countComments()).isEqualTo(0);
     final HeadEvent event =
         jsonProvider.jsonToObject(eventString.substring(eventString.indexOf("{")), HeadEvent.class);
 
@@ -216,6 +235,7 @@ public class EventSubscriptionManagerTest {
     triggerSyncStateEvent();
     final String eventString = outputStream.getString();
     assertThat(eventString).contains("event: sync_state\n");
+    assertThat(outputStream.countComments()).isEqualTo(0);
     final SyncStateChangeEvent event =
         jsonProvider.jsonToObject(
             eventString.substring(eventString.indexOf("{")), SyncStateChangeEvent.class);
@@ -247,6 +267,7 @@ public class EventSubscriptionManagerTest {
     triggerAttestationEvent();
     final String eventString = outputStream.getString();
     assertThat(eventString).contains("event: attestation\n");
+    assertThat(outputStream.countComments()).isEqualTo(0);
     final Attestation event =
         jsonProvider.jsonToObject(
             eventString.substring(eventString.indexOf("{")), Attestation.class);
