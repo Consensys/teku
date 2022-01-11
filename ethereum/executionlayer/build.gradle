@@ -2,6 +2,7 @@ dependencies {
   implementation project(':ethereum:spec')
   implementation project(':infrastructure:async')
   implementation project(':infrastructure:events')
+  implementation project(':infrastructure:metrics')
 
   api 'org.web3j:core'
 
