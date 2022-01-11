@@ -35,7 +35,6 @@ public class BeaconNodeServiceController extends ServiceController {
       services.add(new ExecutionEngineService(serviceConfig, tekuConfig.executionEngine()));
     }
     services.add(new BeaconChainService(serviceConfig, tekuConfig.beaconChain()));
-    services.add(ValidatorClientService.create(serviceConfig, tekuConfig.validatorClient()));
     services.add(new TimerService(serviceConfig));
     services.add(
         new NatService(
@@ -43,6 +42,7 @@ public class BeaconNodeServiceController extends ServiceController {
             tekuConfig.network().getListenPort(),
             tekuConfig.discovery().isDiscoveryEnabled()));
     powchainService(tekuConfig, serviceConfig).ifPresent(services::add);
+    services.add(ValidatorClientService.create(serviceConfig, tekuConfig.validatorClient()));
   }
 
   private Optional<PowchainService> powchainService(
