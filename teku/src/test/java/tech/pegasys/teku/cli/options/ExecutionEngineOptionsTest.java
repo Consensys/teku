@@ -49,7 +49,8 @@ public class ExecutionEngineOptionsTest extends AbstractBeaconNodeCommandTest {
 
     assertThat(
             createConfigBuilder()
-                .eth2NetworkConfig(b -> b.altairForkEpoch(UInt64.ZERO).mergeForkEpoch(UInt64.ONE))
+                .eth2NetworkConfig(
+                    b -> b.altairForkEpoch(UInt64.ZERO).bellatrixForkEpoch(UInt64.ONE))
                 .executionEngine(b -> b.endpoint("http://example.com:1234/path/"))
                 .build())
         .usingRecursiveComparison()

@@ -31,7 +31,7 @@ public class SpecConfigAssertions {
     assertAllFieldsSet(config, SpecConfigAltair.class);
   }
 
-  static void assertAllMergeFieldsSet(final SpecConfig config) throws Exception {
+  static void assertAllBellatrixFieldsSet(final SpecConfig config) throws Exception {
     assertAllFieldsSet(config, SpecConfigMerge.class);
   }
 

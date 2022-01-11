@@ -129,7 +129,7 @@ class BlockFactoryTest {
     final SszList<ProposerSlashing> proposerSlashings = blockBodyLists.createProposerSlashings();
     final SszList<SignedVoluntaryExit> voluntaryExits = blockBodyLists.createVoluntaryExits();
 
-    if (spec.getGenesisSpec().getMilestone().isGreaterThanOrEqualTo(SpecMilestone.MERGE)) {
+    if (spec.getGenesisSpec().getMilestone().isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)) {
       executionPayload =
           SchemaDefinitionsMerge.required(spec.getGenesisSpec().getSchemaDefinitions())
               .getExecutionPayloadSchema()

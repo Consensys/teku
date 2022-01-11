@@ -88,9 +88,10 @@ public abstract class AbstractNode implements Node {
 
     tekuConfig
         .eth2NetworkConfiguration()
-        .getMergeForkEpoch()
+        .getBellatrixForkEpoch()
         .ifPresent(
-            forkEpoch -> STATUS_LOG.warnForkEpochChanged(SpecMilestone.MERGE.name(), forkEpoch));
+            forkEpoch ->
+                STATUS_LOG.warnForkEpochChanged(SpecMilestone.BELLATRIX.name(), forkEpoch));
 
     tekuConfig
         .eth2NetworkConfiguration()

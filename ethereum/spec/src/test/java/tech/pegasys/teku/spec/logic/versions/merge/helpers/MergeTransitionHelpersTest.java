@@ -41,7 +41,7 @@ class MergeTransitionHelpersTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final ExecutionEngineChannel executionEngine = mock(ExecutionEngineChannel.class);
   private final UInt256 terminalDifficulty =
-      spec.getGenesisSpecConfig().toVersionMerge().orElseThrow().getTerminalTotalDifficulty();
+      spec.getGenesisSpecConfig().toVersionBellatrix().orElseThrow().getTerminalTotalDifficulty();
 
   private final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
 

@@ -16,8 +16,8 @@ package tech.pegasys.teku.spec.config;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllAltairFieldsSet;
+import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllBellatrixFieldsSet;
 import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllFieldsSet;
-import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllMergeFieldsSet;
 
 import java.io.InputStream;
 import java.net.URL;
@@ -64,7 +64,7 @@ public class SpecConfigLoaderTest {
   @Test
   public void shouldLoadMainnet() throws Exception {
     final SpecConfig config = SpecConfigLoader.loadConfig("mainnet");
-    assertAllMergeFieldsSet(config);
+    assertAllBellatrixFieldsSet(config);
   }
 
   @Test

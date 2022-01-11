@@ -57,7 +57,7 @@ import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedStatus;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-@TestSpecContext(milestone = SpecMilestone.MERGE)
+@TestSpecContext(milestone = SpecMilestone.BELLATRIX)
 public class Web3JExecutionEngineClientTest {
   Writer jsonWriter;
   JsonGenerator jsonGenerator;

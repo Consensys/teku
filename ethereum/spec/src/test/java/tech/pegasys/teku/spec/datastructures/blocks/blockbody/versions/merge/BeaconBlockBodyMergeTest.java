@@ -33,7 +33,7 @@ class BeaconBlockBodyMergeTest extends AbstractBeaconBlockBodyTest<BeaconBlockBo
   @BeforeEach
   void setup() {
     super.setUpBaseClass(
-        SpecMilestone.MERGE,
+        SpecMilestone.BELLATRIX,
         () -> {
           syncAggregate = dataStructureUtil.randomSyncAggregate();
           executionPayload = dataStructureUtil.randomExecutionPayload();

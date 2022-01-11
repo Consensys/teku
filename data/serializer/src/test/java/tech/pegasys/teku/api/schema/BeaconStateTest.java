@@ -40,7 +40,7 @@ public class BeaconStateTest {
       case ALTAIR:
         beaconState = new BeaconStateAltair(beaconStateInternal);
         break;
-      case MERGE:
+      case BELLATRIX:
         beaconState = new BeaconStateMerge(beaconStateInternal);
         break;
       default:

@@ -220,7 +220,7 @@ public class ValidatorClientService extends Service {
               metricsSystem, spec, syncCommitteeDutyLoader, new Random()::nextInt));
     }
 
-    if (spec.isMilestoneSupported(SpecMilestone.MERGE)) {
+    if (spec.isMilestoneSupported(SpecMilestone.BELLATRIX)) {
       validatorTimingChannels.add(
           new BeaconProposerPreparer(
               validatorApiChannel,

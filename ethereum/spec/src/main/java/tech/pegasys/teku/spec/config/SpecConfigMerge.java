@@ -23,11 +23,11 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class SpecConfigMerge extends DelegatingSpecConfigAltair {
 
   // Fork
-  private final Bytes4 mergeForkVersion;
-  private final UInt64 mergeForkEpoch;
-  private final UInt64 inactivityPenaltyQuotientMerge;
-  private final int minSlashingPenaltyQuotientMerge;
-  private final int proportionalSlashingMultiplierMerge;
+  private final Bytes4 bellatrixForkVersion;
+  private final UInt64 bellatrixForkEpoch;
+  private final UInt64 inactivityPenaltyQuotientBellatrix;
+  private final int minSlashingPenaltyQuotientBellatrix;
+  private final int proportionalSlashingMultiplierBellatrix;
   private final int maxBytesPerTransaction;
   private final int maxTransactionsPerPayload;
   private final int bytesPerLogsBloom;
@@ -40,11 +40,11 @@ public class SpecConfigMerge extends DelegatingSpecConfigAltair {
 
   public SpecConfigMerge(
       final SpecConfigAltair specConfig,
-      final Bytes4 mergeForkVersion,
-      final UInt64 mergeForkEpoch,
-      final UInt64 inactivityPenaltyQuotientMerge,
-      final int minSlashingPenaltyQuotientMerge,
-      final int proportionalSlashingMultiplierMerge,
+      final Bytes4 bellatrixForkVersion,
+      final UInt64 bellatrixForkEpoch,
+      final UInt64 inactivityPenaltyQuotientBellatrix,
+      final int minSlashingPenaltyQuotientBellatrix,
+      final int proportionalSlashingMultiplierBellatrix,
       final int maxBytesPerTransaction,
       final int maxTransactionsPerPayload,
       final int bytesPerLogsBloom,
@@ -53,11 +53,11 @@ public class SpecConfigMerge extends DelegatingSpecConfigAltair {
       final Bytes32 terminalBlockHash,
       final UInt64 terminalBlockHashActivationEpoch) {
     super(specConfig);
-    this.mergeForkVersion = mergeForkVersion;
-    this.mergeForkEpoch = mergeForkEpoch;
-    this.inactivityPenaltyQuotientMerge = inactivityPenaltyQuotientMerge;
-    this.minSlashingPenaltyQuotientMerge = minSlashingPenaltyQuotientMerge;
-    this.proportionalSlashingMultiplierMerge = proportionalSlashingMultiplierMerge;
+    this.bellatrixForkVersion = bellatrixForkVersion;
+    this.bellatrixForkEpoch = bellatrixForkEpoch;
+    this.inactivityPenaltyQuotientBellatrix = inactivityPenaltyQuotientBellatrix;
+    this.minSlashingPenaltyQuotientBellatrix = minSlashingPenaltyQuotientBellatrix;
+    this.proportionalSlashingMultiplierBellatrix = proportionalSlashingMultiplierBellatrix;
     this.maxBytesPerTransaction = maxBytesPerTransaction;
     this.maxTransactionsPerPayload = maxTransactionsPerPayload;
     this.bytesPerLogsBloom = bytesPerLogsBloom;
@@ -69,32 +69,32 @@ public class SpecConfigMerge extends DelegatingSpecConfigAltair {
 
   public static SpecConfigMerge required(final SpecConfig specConfig) {
     return specConfig
-        .toVersionMerge()
+        .toVersionBellatrix()
         .orElseThrow(
             () ->
                 new IllegalArgumentException(
-                    "Expected merge spec config but got: "
+                    "Expected bellatrix spec config but got: "
                         + specConfig.getClass().getSimpleName()));
   }
 
-  public Bytes4 getMergeForkVersion() {
-    return mergeForkVersion;
+  public Bytes4 getBellatrixForkVersion() {
+    return bellatrixForkVersion;
   }
 
-  public UInt64 getMergeForkEpoch() {
-    return mergeForkEpoch;
+  public UInt64 getBellatrixForkEpoch() {
+    return bellatrixForkEpoch;
   }
 
-  public UInt64 getInactivityPenaltyQuotientMerge() {
-    return inactivityPenaltyQuotientMerge;
+  public UInt64 getInactivityPenaltyQuotientBellatrix() {
+    return inactivityPenaltyQuotientBellatrix;
   }
 
-  public int getMinSlashingPenaltyQuotientMerge() {
-    return minSlashingPenaltyQuotientMerge;
+  public int getMinSlashingPenaltyQuotientBellatrix() {
+    return minSlashingPenaltyQuotientBellatrix;
   }
 
-  public int getProportionalSlashingMultiplierMerge() {
-    return proportionalSlashingMultiplierMerge;
+  public int getProportionalSlashingMultiplierBellatrix() {
+    return proportionalSlashingMultiplierBellatrix;
   }
 
   public int getMaxBytesPerTransaction() {
@@ -126,7 +126,7 @@ public class SpecConfigMerge extends DelegatingSpecConfigAltair {
   }
 
   @Override
-  public Optional<SpecConfigMerge> toVersionMerge() {
+  public Optional<SpecConfigMerge> toVersionBellatrix() {
     return Optional.of(this);
   }
 
@@ -140,15 +140,16 @@ public class SpecConfigMerge extends DelegatingSpecConfigAltair {
     }
     final SpecConfigMerge that = (SpecConfigMerge) o;
     return Objects.equals(specConfig, that.specConfig)
-        && minSlashingPenaltyQuotientMerge == that.minSlashingPenaltyQuotientMerge
-        && proportionalSlashingMultiplierMerge == that.proportionalSlashingMultiplierMerge
+        && minSlashingPenaltyQuotientBellatrix == that.minSlashingPenaltyQuotientBellatrix
+        && proportionalSlashingMultiplierBellatrix == that.proportionalSlashingMultiplierBellatrix
         && maxBytesPerTransaction == that.maxBytesPerTransaction
         && maxTransactionsPerPayload == that.maxTransactionsPerPayload
         && bytesPerLogsBloom == that.bytesPerLogsBloom
         && maxExtraDataBytes == that.maxExtraDataBytes
-        && Objects.equals(mergeForkVersion, that.mergeForkVersion)
-        && Objects.equals(mergeForkEpoch, that.mergeForkEpoch)
-        && Objects.equals(inactivityPenaltyQuotientMerge, that.inactivityPenaltyQuotientMerge)
+        && Objects.equals(bellatrixForkVersion, that.bellatrixForkVersion)
+        && Objects.equals(bellatrixForkEpoch, that.bellatrixForkEpoch)
+        && Objects.equals(
+            inactivityPenaltyQuotientBellatrix, that.inactivityPenaltyQuotientBellatrix)
         && Objects.equals(terminalTotalDifficulty, that.terminalTotalDifficulty)
         && Objects.equals(terminalBlockHash, that.terminalBlockHash)
         && Objects.equals(terminalBlockHashActivationEpoch, that.terminalBlockHashActivationEpoch);
@@ -158,11 +159,11 @@ public class SpecConfigMerge extends DelegatingSpecConfigAltair {
   public int hashCode() {
     return Objects.hash(
         specConfig,
-        mergeForkVersion,
-        mergeForkEpoch,
-        inactivityPenaltyQuotientMerge,
-        minSlashingPenaltyQuotientMerge,
-        proportionalSlashingMultiplierMerge,
+        bellatrixForkVersion,
+        bellatrixForkEpoch,
+        inactivityPenaltyQuotientBellatrix,
+        minSlashingPenaltyQuotientBellatrix,
+        proportionalSlashingMultiplierBellatrix,
         maxBytesPerTransaction,
         maxTransactionsPerPayload,
         bytesPerLogsBloom,

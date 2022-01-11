@@ -32,7 +32,7 @@ public class TestSpecFactory {
         return createMinimalPhase0();
       case ALTAIR:
         return createMinimalAltair();
-      case MERGE:
+      case BELLATRIX:
         return createMinimalMerge();
       default:
         throw new IllegalStateException("unsupported milestone");
@@ -45,7 +45,7 @@ public class TestSpecFactory {
         return createMainnetPhase0();
       case ALTAIR:
         return createMainnetAltair();
-      case MERGE:
+      case BELLATRIX:
         return createMainnetMerge();
       default:
         throw new IllegalStateException("unsupported milestone");
@@ -54,7 +54,7 @@ public class TestSpecFactory {
 
   public static Spec createMinimalMerge() {
     final SpecConfigMerge specConfig = getMergeSpecConfig(Eth2Network.MINIMAL);
-    return create(specConfig, SpecMilestone.MERGE);
+    return create(specConfig, SpecMilestone.BELLATRIX);
   }
 
   public static Spec createMinimalAltair() {
@@ -76,13 +76,13 @@ public class TestSpecFactory {
   /**
    * Create a spec that forks to merge at the provided slot (altair genesis)
    *
-   * @param mergeForkEpoch The merge fork epoch
+   * @param bellatrixForkEpoch The bellatrix fork epoch
    * @return A spec with altair and merge enabled, forking to merge at the given epoch
    */
-  public static Spec createMinimalWithMergeForkEpoch(final UInt64 mergeForkEpoch) {
+  public static Spec createMinimalWithBellatrixForkEpoch(final UInt64 bellatrixForkEpoch) {
     final SpecConfigMerge config =
-        getMergeSpecConfig(Eth2Network.MINIMAL, UInt64.ZERO, mergeForkEpoch);
-    return create(config, SpecMilestone.MERGE);
+        getMergeSpecConfig(Eth2Network.MINIMAL, UInt64.ZERO, bellatrixForkEpoch);
+    return create(config, SpecMilestone.BELLATRIX);
   }
 
   public static Spec createMinimalPhase0() {
@@ -92,7 +92,7 @@ public class TestSpecFactory {
 
   public static Spec createMainnetMerge() {
     final SpecConfigMerge specConfig = getMergeSpecConfig(Eth2Network.MAINNET);
-    return create(specConfig, SpecMilestone.MERGE);
+    return create(specConfig, SpecMilestone.BELLATRIX);
   }
 
   public static Spec createMainnetAltair() {
@@ -119,7 +119,7 @@ public class TestSpecFactory {
   }
 
   public static Spec createMerge(final SpecConfig config) {
-    return create(config, SpecMilestone.MERGE);
+    return create(config, SpecMilestone.BELLATRIX);
   }
 
   public static Spec create(final SpecMilestone specMilestone, final Eth2Network network) {
@@ -128,7 +128,7 @@ public class TestSpecFactory {
         return create(SpecConfigLoader.loadConfig(network.configName()), specMilestone);
       case ALTAIR:
         return create(getAltairSpecConfig(network), specMilestone);
-      case MERGE:
+      case BELLATRIX:
         return create(getMergeSpecConfig(network), specMilestone);
       default:
         throw new IllegalStateException("unsupported milestone");
@@ -156,12 +156,12 @@ public class TestSpecFactory {
   }
 
   private static SpecConfigMerge getMergeSpecConfig(
-      final Eth2Network network, final UInt64 altairForkEpoch, UInt64 mergeForkEpoch) {
+      final Eth2Network network, final UInt64 altairForkEpoch, UInt64 bellatrixForkEpoch) {
     return SpecConfigMerge.required(
         SpecConfigLoader.loadConfig(
             network.configName(),
             c ->
                 c.altairBuilder(a -> a.altairForkEpoch(altairForkEpoch))
-                    .mergeBuilder(m -> m.mergeForkEpoch(mergeForkEpoch))));
+                    .mergeBuilder(m -> m.bellatrixForkEpoch(bellatrixForkEpoch))));
   }
 }

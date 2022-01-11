@@ -995,7 +995,7 @@ public final class DataStructureUtil {
       case ALTAIR:
         return BeaconStateBuilderAltair.create(this, spec, validatorCount, numItemsInSSZLists)
             .build();
-      case MERGE:
+      case BELLATRIX:
         return BeaconStateBuilderMerge.create(this, spec, validatorCount, numItemsInSSZLists)
             .build();
       default:

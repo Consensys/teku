@@ -59,7 +59,7 @@ public class MergeStateUpgrade implements StateUpgrade<BeaconStateMerge> {
               state.setFork(
                   new Fork(
                       preState.getFork().getCurrent_version(),
-                      specConfig.getMergeForkVersion(),
+                      specConfig.getBellatrixForkVersion(),
                       epoch));
 
               state.setLatestExecutionPayloadHeader(

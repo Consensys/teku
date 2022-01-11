@@ -360,7 +360,7 @@ public class BeaconChainController extends Service
   }
 
   protected void initTerminalPowBlockMonitor() {
-    if (spec.isMilestoneSupported(SpecMilestone.MERGE)) {
+    if (spec.isMilestoneSupported(SpecMilestone.BELLATRIX)) {
       terminalPowBlockMonitor =
           Optional.of(
               new TerminalPowBlockMonitor(
@@ -369,7 +369,7 @@ public class BeaconChainController extends Service
   }
 
   protected void initOptimisticHeadValidator() {
-    if (spec.isMilestoneSupported(SpecMilestone.MERGE)) {
+    if (spec.isMilestoneSupported(SpecMilestone.BELLATRIX)) {
       optimisticHeadValidator =
           Optional.of(
               new OptimisticHeadValidator(
@@ -845,7 +845,7 @@ public class BeaconChainController extends Service
     final FutureItems<SignedBeaconBlock> futureBlocks =
         FutureItems.create(SignedBeaconBlock::getSlot);
     BlockValidator blockValidator = new BlockValidator(spec, recentChainData);
-    if (spec.isMilestoneSupported(SpecMilestone.MERGE)) {
+    if (spec.isMilestoneSupported(SpecMilestone.BELLATRIX)) {
       blockManager =
           new ReexecutingExecutionPayloadBlockManager(
               recentChainData,

@@ -40,7 +40,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.B
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 
 @TestSpecContext(
-    milestone = {SpecMilestone.ALTAIR, SpecMilestone.MERGE},
+    milestone = {SpecMilestone.ALTAIR, SpecMilestone.BELLATRIX},
     doNotGenerateSpec = true)
 public class StateUpgradeTransitionTest {
   private static final List<BLSKeyPair> VALIDATOR_KEYS =
@@ -64,8 +64,8 @@ public class StateUpgradeTransitionTest {
         beforeBeaconStateClass = BeaconStatePhase0.class;
         afterBeaconStateClass = BeaconStateAltair.class;
         break;
-      case MERGE:
-        spec = TestSpecFactory.createMinimalWithMergeForkEpoch(milestoneTransitionEpoch);
+      case BELLATRIX:
+        spec = TestSpecFactory.createMinimalWithBellatrixForkEpoch(milestoneTransitionEpoch);
         beforeBeaconStateClass = BeaconStateAltair.class;
         afterBeaconStateClass = BeaconStateMerge.class;
         break;

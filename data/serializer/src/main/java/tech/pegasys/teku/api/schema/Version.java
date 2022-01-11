@@ -22,7 +22,7 @@ public enum Version {
 
   public static Version fromMilestone(final SpecMilestone milestone) {
     switch (milestone) {
-      case MERGE:
+      case BELLATRIX:
         return merge;
       case ALTAIR:
         return altair;

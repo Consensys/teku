@@ -150,7 +150,7 @@ public class TestSpecInvocationContextProvider implements TestTemplateInvocation
     }
 
     public void assumeMergeActive() {
-      assumeMilestoneActive(SpecMilestone.MERGE);
+      assumeMilestoneActive(SpecMilestone.BELLATRIX);
     }
 
     public void assumeAltairActive() {

@@ -171,7 +171,7 @@ public class ValidatorDataProvider {
       case ALTAIR:
         signedBeaconBlock = mapper.treeToValue(jsonNode, SignedBeaconBlockAltair.class);
         break;
-      case MERGE:
+      case BELLATRIX:
         signedBeaconBlock = mapper.treeToValue(jsonNode, SignedBeaconBlockMerge.class);
         break;
       default:

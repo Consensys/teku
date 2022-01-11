@@ -35,7 +35,7 @@ import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.SpecConfigBuilder;
+import tech.pegasys.teku.spec.config.SpecConfigBuilder.BellatrixBuilder;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
@@ -75,19 +75,20 @@ public class TerminalPowBlockMonitorTest {
 
   private void setUpTerminalBlockHashConfig() {
     setUpCommon(
-        mergeBuilder ->
-            mergeBuilder
-                .mergeForkEpoch(MERGE_FORK_EPOCH)
+        bellatrixBuilder ->
+            bellatrixBuilder
+                .bellatrixForkEpoch(MERGE_FORK_EPOCH)
                 .terminalBlockHash(TERMINAL_BLOCK_HASH)
                 .terminalBlockHashActivationEpoch(TERMINAL_BLOCK_EPOCH));
   }
 
   private void setUpTTDConfig() {
     setUpCommon(
-        mergeBuilder -> mergeBuilder.mergeForkEpoch(MERGE_FORK_EPOCH).terminalTotalDifficulty(TTD));
+        bellatrixBuilder ->
+            bellatrixBuilder.bellatrixForkEpoch(MERGE_FORK_EPOCH).terminalTotalDifficulty(TTD));
   }
 
-  private void setUpCommon(Consumer<SpecConfigBuilder.MergeBuilder> mergeBuilder) {
+  private void setUpCommon(Consumer<BellatrixBuilder> mergeBuilder) {
     spec =
         TestSpecFactory.createMerge(
             SpecConfigLoader.loadConfig(

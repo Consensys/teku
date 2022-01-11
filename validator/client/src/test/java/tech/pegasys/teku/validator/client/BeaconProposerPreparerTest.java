@@ -40,7 +40,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.merge.BeaconPre
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
-@TestSpecContext(milestone = SpecMilestone.MERGE)
+@TestSpecContext(milestone = SpecMilestone.BELLATRIX)
 public class BeaconProposerPreparerTest {
   private final int validator1Index = 19;
   private final int validator2Index = 23;

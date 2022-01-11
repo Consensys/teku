@@ -49,8 +49,8 @@ public class SpecVersion extends DelegatingSpecLogic {
         return Optional.of(createPhase0(specConfig));
       case ALTAIR:
         return specConfig.toVersionAltair().map(SpecVersion::createAltair);
-      case MERGE:
-        return specConfig.toVersionMerge().map(SpecVersion::createMerge);
+      case BELLATRIX:
+        return specConfig.toVersionBellatrix().map(SpecVersion::createMerge);
       default:
         throw new UnsupportedOperationException("Unknown milestone requested: " + milestone);
     }
@@ -71,7 +71,7 @@ public class SpecVersion extends DelegatingSpecLogic {
   static SpecVersion createMerge(final SpecConfigMerge specConfig) {
     final SchemaDefinitionsMerge schemaDefinitions = new SchemaDefinitionsMerge(specConfig);
     final SpecLogic specLogic = SpecLogicMerge.create(specConfig, schemaDefinitions);
-    return new SpecVersion(SpecMilestone.MERGE, specConfig, schemaDefinitions, specLogic);
+    return new SpecVersion(SpecMilestone.BELLATRIX, specConfig, schemaDefinitions, specLogic);
   }
 
   public SpecMilestone getMilestone() {

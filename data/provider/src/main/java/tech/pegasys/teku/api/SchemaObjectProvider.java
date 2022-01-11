@@ -66,7 +66,7 @@ public class SchemaObjectProvider {
             block.getParentRoot(),
             block.getStateRoot(),
             getBeaconBlockBodyAltair(block.getBody()));
-      case MERGE:
+      case BELLATRIX:
         return new BeaconBlockMerge(
             block.getSlot(),
             block.getProposerIndex(),
@@ -100,7 +100,7 @@ public class SchemaObjectProvider {
         return new BeaconStatePhase0(state);
       case ALTAIR:
         return new BeaconStateAltair(state);
-      case MERGE:
+      case BELLATRIX:
         return new BeaconStateMerge(state);
       default:
         throw new IllegalArgumentException("Unsupported milestone for slot " + slot);

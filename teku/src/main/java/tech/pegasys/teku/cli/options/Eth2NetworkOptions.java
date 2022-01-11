@@ -63,7 +63,7 @@ public class Eth2NetworkOptions {
       paramLabel = "<epoch>",
       description = "Override the Merge fork activation epoch.",
       arity = "1")
-  private UInt64 mergeForkEpoch;
+  private UInt64 bellatrixForkEpoch;
 
   @Option(
       names = {"--Xnetwork-merge-total-terminal-difficulty-override"},
@@ -151,8 +151,8 @@ public class Eth2NetworkOptions {
     if (altairForkEpoch != null) {
       builder.altairForkEpoch(altairForkEpoch);
     }
-    if (mergeForkEpoch != null) {
-      builder.mergeForkEpoch(mergeForkEpoch);
+    if (bellatrixForkEpoch != null) {
+      builder.bellatrixForkEpoch(bellatrixForkEpoch);
     }
     if (mergeTotalTerminalDifficultyOverride != null) {
       builder.mergeTotalTerminalDifficultyOverride(mergeTotalTerminalDifficultyOverride);

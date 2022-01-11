@@ -132,7 +132,9 @@ public class Eth2P2PNetworkBuilder {
     final SubnetSubscriptionService syncCommitteeSubnetService = new SubnetSubscriptionService();
     final RpcEncoding rpcEncoding =
         RpcEncoding.createSszSnappyEncoding(
-            spec.isMilestoneSupported(SpecMilestone.MERGE) ? MAX_CHUNK_SIZE_MERGE : MAX_CHUNK_SIZE);
+            spec.isMilestoneSupported(SpecMilestone.BELLATRIX)
+                ? MAX_CHUNK_SIZE_MERGE
+                : MAX_CHUNK_SIZE);
     final Eth2PeerManager eth2PeerManager =
         Eth2PeerManager.create(
             asyncRunner,
@@ -233,7 +235,7 @@ public class Eth2P2PNetworkBuilder {
             signedContributionAndProofGossipPublisher,
             gossipedSyncCommitteeMessageProcessor,
             syncCommitteeMessageGossipPublisher);
-      case MERGE:
+      case BELLATRIX:
         return new GossipForkSubscriptionsMerge(
             forkAndSpecMilestone.getFork(),
             spec,

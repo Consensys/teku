@@ -45,6 +45,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.SpecConfigBuilder.BellatrixBuilder;
 
 public class SpecConfigReader {
   private static final Logger LOG = LogManager.getLogger();
@@ -172,7 +173,7 @@ public class SpecConfigReader {
             });
 
     // Process merge config
-    streamConfigSetters(SpecConfigBuilder.MergeBuilder.class)
+    streamConfigSetters(BellatrixBuilder.class)
         .forEach(
             setter -> {
               final String constantKey = camelToSnakeCase(setter.getName());

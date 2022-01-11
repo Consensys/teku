@@ -37,6 +37,6 @@ public class RewardsAndPenaltiesCalculatorMerge extends RewardsAndPenaltiesCalcu
 
   @Override
   protected UInt64 getInactivityPenaltyQuotient() {
-    return specConfigMerge.getInactivityPenaltyQuotientMerge();
+    return specConfigMerge.getInactivityPenaltyQuotientBellatrix();
   }
 }

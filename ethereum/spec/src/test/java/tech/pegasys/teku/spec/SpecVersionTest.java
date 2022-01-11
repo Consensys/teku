@@ -54,9 +54,9 @@ class SpecVersionTest {
     final SpecConfigMerge mergeSpecConfig = SpecConfigMerge.required(minimalConfig);
     final SpecVersion expectedVersion = SpecVersion.createMerge(mergeSpecConfig);
     final Optional<SpecVersion> actualVersion =
-        SpecVersion.create(SpecMilestone.MERGE, minimalConfig);
+        SpecVersion.create(SpecMilestone.BELLATRIX, minimalConfig);
     assertThat(actualVersion).isPresent();
-    assertThat(actualVersion.get().getMilestone()).isEqualTo(SpecMilestone.MERGE);
+    assertThat(actualVersion.get().getMilestone()).isEqualTo(SpecMilestone.BELLATRIX);
     assertThat(actualVersion.get().getSchemaDefinitions())
         .hasSameClassAs(expectedVersion.getSchemaDefinitions());
   }

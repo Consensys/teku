@@ -67,7 +67,7 @@ public class BeaconStateBuilderMerge
       final int defaultValidatorCount,
       final int defaultItemsInSSZLists) {
     return new BeaconStateBuilderMerge(
-        spec.forMilestone(SpecMilestone.MERGE),
+        spec.forMilestone(SpecMilestone.BELLATRIX),
         dataStructureUtil,
         defaultValidatorCount,
         defaultItemsInSSZLists);

@@ -33,7 +33,7 @@ public class ExecutionEngineConfiguration {
   }
 
   public boolean isEnabled() {
-    return spec.isMilestoneSupported(SpecMilestone.MERGE);
+    return spec.isMilestoneSupported(SpecMilestone.BELLATRIX);
   }
 
   public Spec getSpec() {

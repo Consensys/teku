@@ -32,6 +32,6 @@ public class BeaconStateMutatorsMerge extends BeaconStateMutatorsAltair {
 
   @Override
   protected int getMinSlashingPenaltyQuotient() {
-    return specConfigMerge.getMinSlashingPenaltyQuotientMerge();
+    return specConfigMerge.getMinSlashingPenaltyQuotientBellatrix();
   }
 }

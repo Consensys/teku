@@ -25,8 +25,10 @@ public class SpecConfigMergeTest {
 
   @Test
   public void equals_mainnet() {
-    SpecConfigMerge configA = SpecConfigLoader.loadConfig("mainnet").toVersionMerge().orElseThrow();
-    SpecConfigMerge configB = SpecConfigLoader.loadConfig("mainnet").toVersionMerge().orElseThrow();
+    SpecConfigMerge configA =
+        SpecConfigLoader.loadConfig("mainnet").toVersionBellatrix().orElseThrow();
+    SpecConfigMerge configB =
+        SpecConfigLoader.loadConfig("mainnet").toVersionBellatrix().orElseThrow();
 
     assertThat(configA).isEqualTo(configB);
     assertThat(configA.hashCode()).isEqualTo(configB.hashCode());

@@ -54,7 +54,7 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  void shouldUseMergeForkEpochIfSpecified() {
+  void shouldUseBellatrixForkEpochIfSpecified() {
     final TekuConfiguration config =
         getTekuConfigurationFromArguments(
             "--Xnetwork-merge-fork-epoch", "120000", "--Xee-endpoint", "someEndpoint");
@@ -62,11 +62,11 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(spec.getForkSchedule().getSpecMilestoneAtEpoch(UInt64.valueOf(119999)))
         .isEqualTo(SpecMilestone.ALTAIR);
     assertThat(spec.getForkSchedule().getSpecMilestoneAtEpoch(UInt64.valueOf(120000)))
-        .isEqualTo(SpecMilestone.MERGE);
+        .isEqualTo(SpecMilestone.BELLATRIX);
     assertThat(
             createConfigBuilder()
                 .executionEngine(b -> b.endpoint("someEndpoint"))
-                .eth2NetworkConfig(b -> b.mergeForkEpoch(UInt64.valueOf(120000)))
+                .eth2NetworkConfig(b -> b.bellatrixForkEpoch(UInt64.valueOf(120000)))
                 .build())
         .usingRecursiveComparison()
         .isEqualTo(config);

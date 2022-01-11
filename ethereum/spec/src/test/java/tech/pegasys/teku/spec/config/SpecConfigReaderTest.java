@@ -15,7 +15,7 @@ package tech.pegasys.teku.spec.config;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllMergeFieldsSet;
+import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllBellatrixFieldsSet;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -49,7 +49,7 @@ public class SpecConfigReaderTest {
     // Spot check a few values
     assertThat(config.getMaxCommitteesPerSlot()).isEqualTo(64);
     Assertions.assertThat(config.getTargetCommitteeSize()).isEqualTo(128);
-    assertAllMergeFieldsSet(config);
+    assertAllBellatrixFieldsSet(config);
   }
 
   @Test
@@ -60,7 +60,7 @@ public class SpecConfigReaderTest {
     // Spot check a few values
     assertThat(config.getMaxCommitteesPerSlot()).isEqualTo(4);
     Assertions.assertThat(config.getTargetCommitteeSize()).isEqualTo(4);
-    assertAllMergeFieldsSet(config);
+    assertAllBellatrixFieldsSet(config);
   }
 
   @Test
@@ -248,7 +248,7 @@ public class SpecConfigReaderTest {
     return List.of(
         getStandardConfigPath("presets/" + presetName + "/phase0"),
         getStandardConfigPath("presets/" + presetName + "/altair"),
-        getStandardConfigPath("presets/" + presetName + "/merge"));
+        getStandardConfigPath("presets/" + presetName + "/bellatrix"));
   }
 
   private static String getStandardConfigPath(final String name) {

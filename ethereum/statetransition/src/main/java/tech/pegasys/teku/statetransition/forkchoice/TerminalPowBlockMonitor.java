@@ -120,9 +120,9 @@ public class TerminalPowBlockMonitor {
     }
 
     UInt64 epoch = spec.computeEpochAtSlot(maybeSlot.get());
-    Optional<SpecConfigMerge> maybeMergeSpecConfig = spec.getSpecConfig(epoch).toVersionMerge();
+    Optional<SpecConfigMerge> maybeMergeSpecConfig = spec.getSpecConfig(epoch).toVersionBellatrix();
     if (maybeMergeSpecConfig.isEmpty()
-        || maybeMergeSpecConfig.get().getMergeForkEpoch().isGreaterThan(epoch)) {
+        || maybeMergeSpecConfig.get().getBellatrixForkEpoch().isGreaterThan(epoch)) {
       return;
     }
 
@@ -162,7 +162,8 @@ public class TerminalPowBlockMonitor {
   private void checkTerminalBlockByBlockHash(Bytes32 blockHashTracking) {
     UInt64 slot = recentChainData.getCurrentSlot().orElseThrow();
     final SpecVersion specVersion = spec.atSlot(slot);
-    final Optional<SpecConfigMerge> maybeSpecConfigMerge = specVersion.getConfig().toVersionMerge();
+    final Optional<SpecConfigMerge> maybeSpecConfigMerge =
+        specVersion.getConfig().toVersionBellatrix();
     if (maybeSpecConfigMerge.isEmpty()) {
       return;
     }
@@ -207,7 +208,7 @@ public class TerminalPowBlockMonitor {
               final Optional<SpecConfigMerge> maybeSpecConfigMerge =
                   recentChainData
                       .getCurrentEpoch()
-                      .flatMap(epoch -> spec.atEpoch(epoch).getConfig().toVersionMerge());
+                      .flatMap(epoch -> spec.atEpoch(epoch).getConfig().toVersionBellatrix());
               if (maybeSpecConfigMerge.isEmpty()) {
                 return SafeFuture.COMPLETE;
               }
