@@ -30,8 +30,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.response.v1.beacon.BlockHeader;
 import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
@@ -75,19 +78,17 @@ public class ChainDataProviderTest {
 
   private SignedBlockAndState bestBlock;
   private Bytes32 blockRoot;
-  private UInt64 slot;
   private RecentChainData recentChainData;
   private final CombinedChainDataClient mockCombinedChainDataClient =
       mock(CombinedChainDataClient.class);
-  private UInt64 actualBalance;
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final DataStructureUtil data = new DataStructureUtil(spec);
   private final SpecConfig specConfig = spec.getGenesisSpecConfig();
 
   @BeforeEach
   public void setup() {
-    slot = UInt64.valueOf(specConfig.getSlotsPerEpoch() * 3L);
-    actualBalance = specConfig.getMaxEffectiveBalance().plus(100000);
+    final UInt64 slot = UInt64.valueOf(specConfig.getSlotsPerEpoch() * 3L);
+    final UInt64 actualBalance = specConfig.getMaxEffectiveBalance().plus(100000);
     storageSystem.chainUpdater().initializeGenesis(true, actualBalance, Optional.empty());
     bestBlock = storageSystem.chainUpdater().advanceChain(slot);
     storageSystem.chainUpdater().updateBestBlock(bestBlock);
@@ -167,7 +168,7 @@ public class ChainDataProviderTest {
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
     SafeFuture<Optional<BeaconState>> future = provider.getBeaconState("head");
     final Optional<BeaconState> maybeState = future.get();
-    assertThat(maybeState.get().asInternalBeaconState(spec).hashTreeRoot())
+    assertThat(maybeState.orElseThrow().asInternalBeaconState(spec).hashTreeRoot())
         .isEqualTo(beaconStateInternal.hashTreeRoot());
   }
 
@@ -185,7 +186,7 @@ public class ChainDataProviderTest {
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
 
     Validator validator =
-        new Validator(recentChainData.getBestState().get().getValidators().get(1));
+        new Validator(recentChainData.getBestState().orElseThrow().getValidators().get(1));
 
     assertThat(provider.validatorParameterToIndex(validator.pubkey.toHexString()))
         .isEqualTo(Optional.of(1));
@@ -219,14 +220,31 @@ public class ChainDataProviderTest {
                 UInt64.valueOf(Integer.MAX_VALUE).increment().toString()));
   }
 
-  @Test
-  public void validatorParameterToIndex_shouldThrowExceptionWithInvalidPublicKey() {
+  @ParameterizedTest(name = "{0}")
+  @ValueSource(
+      strings = {
+        "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcd",
+        "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdefaa",
+      })
+  public void validatorParameterToIndex_shouldThrowExceptionWithInvalidLengthPublicKey(
+      final String parameterId) {
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
 
-    assertThrows(
-        BadRequestException.class,
-        () -> provider.validatorParameterToIndex(Bytes32.EMPTY.toHexString()));
+    assertThatThrownBy(() -> provider.validatorParameterToIndex(parameterId))
+        .hasMessageContaining("but got length " + parameterId.length());
+  }
+
+  @Test
+  public void validatorParameterToIndex_shouldThrowExceptionWithIllegalCharacter() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
+
+    assertThatThrownBy(
+            () ->
+                provider.validatorParameterToIndex(
+                    "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdeG"))
+        .hasMessageContaining("Illegal character 'G'");
   }
 
   @Test
@@ -235,8 +253,8 @@ public class ChainDataProviderTest {
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
     final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock block =
-        combinedChainDataClient.getBestBlock().get();
-    BlockHeader result = provider.getBlockHeader("head").get().get();
+        combinedChainDataClient.getBestBlock().orElseThrow();
+    BlockHeader result = provider.getBlockHeader("head").get().orElseThrow();
     final BeaconBlockHeader beaconBlockHeader =
         new BeaconBlockHeader(
             block.getSlot(),
@@ -272,7 +290,7 @@ public class ChainDataProviderTest {
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
     final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock block =
-        combinedChainDataClient.getBestBlock().get();
+        combinedChainDataClient.getBestBlock().orElseThrow();
     List<BlockHeader> results = provider.getBlockHeaders(Optional.empty(), Optional.empty()).get();
     assertThat(results.get(0).root).isEqualTo(block.getRoot());
   }
@@ -347,12 +365,11 @@ public class ChainDataProviderTest {
   }
 
   @Test
-  public void validatorParameterToIndex_shouldThrowBadRequestExceptionWhenKeyNotFound() {
+  public void validatorParameterToIndex_shouldReturnEmptyWhenHexStringNotFound() {
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
-    assertThrows(
-        BadRequestException.class,
-        () -> provider.validatorParameterToIndex(Bytes32.fromHexString("0x00").toHexString()));
+    assertThat(provider.validatorParameterToIndex(Bytes48.fromHexString("0x00").toHexString()))
+        .isEmpty();
   }
 
   @Test
@@ -427,7 +444,7 @@ public class ChainDataProviderTest {
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
 
-    assertThat(provider.getStateFinalityCheckpoints("genesis").get().get())
+    assertThat(provider.getStateFinalityCheckpoints("genesis").get().orElseThrow())
         .isEqualTo(
             new FinalityCheckpointsResponse(
                 tech.pegasys.teku.api.schema.Checkpoint.EMPTY,
@@ -451,7 +468,8 @@ public class ChainDataProviderTest {
             new tech.pegasys.teku.api.schema.Checkpoint(internalState.getFinalized_checkpoint()));
 
     when(mockCombinedChainDataClient.getBestState()).thenReturn(Optional.of(internalState));
-    assertThat(provider.getStateFinalityCheckpoints("head").get().get()).isEqualTo(expected);
+    assertThat(provider.getStateFinalityCheckpoints("head").get().orElseThrow())
+        .isEqualTo(expected);
     verify(mockCombinedChainDataClient).getBestState();
   }
 
@@ -465,7 +483,7 @@ public class ChainDataProviderTest {
     final SafeFuture<Optional<StateSyncCommittees>> future =
         provider.getStateSyncCommittees("head", Optional.empty());
     assertThat(future).isCompleted();
-    assertThat(future.get().get())
+    assertThat(future.get().orElseThrow())
         .isEqualTo(new StateSyncCommittees(committeeIndices, List.of(committeeIndices)));
   }
 
@@ -480,7 +498,7 @@ public class ChainDataProviderTest {
 
     final SafeFuture<Optional<StateSyncCommittees>> future =
         provider.getStateSyncCommittees("head", Optional.empty());
-    assertThat(future.get().get()).isEqualTo(new StateSyncCommittees(List.of(), List.of()));
+    assertThat(future.get().orElseThrow()).isEqualTo(new StateSyncCommittees(List.of(), List.of()));
   }
 
   @Test
