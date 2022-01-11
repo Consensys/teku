@@ -21,6 +21,7 @@ import static tech.pegasys.teku.statetransition.forkchoice.StateRootCollector.ad
 import com.google.common.base.Throwables;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -28,6 +29,7 @@ import tech.pegasys.teku.infrastructure.async.ExceptionThrowingRunnable;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
+import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.spec.Spec;
@@ -63,6 +65,10 @@ public class ForkChoice {
   private final RecentChainData recentChainData;
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final boolean proposerBoostEnabled;
+
+  private final Subscribers<OptimisticSyncSubscriber> optimisticSyncSubscribers =
+      Subscribers.create(true);
+  private final AtomicBoolean optimisticSyncing = new AtomicBoolean(false);
 
   private ForkChoice(
       final Spec spec,
@@ -311,6 +317,14 @@ public class ForkChoice {
       updateForkChoiceForImportedBlock(block, result, forkChoiceStrategy);
     } else {
       result = BlockImportResult.optimisticallySuccessful(block);
+      if (optimisticSyncing.compareAndSet(false, true)
+          && recentChainData
+              .getBestBlockRoot()
+              .map(bestRoot -> bestRoot.equals(block.getParentRoot()))
+              .orElse(false)) {
+        optimisticSyncSubscribers.deliver(
+            OptimisticSyncSubscriber::onOptimisticSyncingChanged, true);
+      }
     }
     notifyForkChoiceUpdated();
     return result;
@@ -352,6 +366,10 @@ public class ForkChoice {
       recentChainData.updateHead(bestHeadBlock.getBlockRoot(), bestHeadBlock.getSlot());
       if (bestHeadBlock.getBlockRoot().equals(block.getRoot())) {
         result.markAsCanonical();
+        if (optimisticSyncing.compareAndSet(true, false)) {
+          optimisticSyncSubscribers.deliver(
+              OptimisticSyncSubscriber::onOptimisticSyncingChanged, false);
+        }
       }
     }
   }
@@ -509,5 +527,17 @@ public class ForkChoice {
 
   private <T> SafeFuture<T> onForkChoiceThread(final ExceptionThrowingSupplier<T> task) {
     return forkChoiceExecutor.execute(task);
+  }
+
+  public long subscribeToOptimisticSync(OptimisticSyncSubscriber subscriber) {
+    return optimisticSyncSubscribers.subscribe(subscriber);
+  }
+
+  public void unsubscribeFromOptimisticSync(long subscriberId) {
+    optimisticSyncSubscribers.unsubscribe(subscriberId);
+  }
+
+  public interface OptimisticSyncSubscriber {
+    void onOptimisticSyncingChanged(boolean isSyncingOptimistically);
   }
 }

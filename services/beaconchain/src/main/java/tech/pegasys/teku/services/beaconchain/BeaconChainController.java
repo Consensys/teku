@@ -889,6 +889,8 @@ public class BeaconChainController extends Service
     syncService.subscribeToSyncStateChanges(
         syncState -> forkChoiceNotifier.onSyncingStatusChanged(syncState.isInSync()));
     forkChoiceNotifier.onSyncingStatusChanged(syncService.getCurrentSyncState().isInSync());
+
+    forkChoice.subscribeToOptimisticSync(syncService.getOptimisticSyncSubscriber());
   }
 
   protected void initOperationsReOrgManager() {
