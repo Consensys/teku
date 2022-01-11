@@ -154,11 +154,6 @@ public class ProtoNode {
     this.bestDescendantIndex = bestDescendantIndex;
   }
 
-  public BlockInformation createBlockInformation() {
-    return new BlockInformation(
-        blockSlot, blockRoot, parentRoot, stateRoot, justifiedEpoch, finalizedEpoch);
-  }
-
   public boolean isFullyValidated() {
     return validationStatus == ProtoNodeValidationStatus.VALID;
   }

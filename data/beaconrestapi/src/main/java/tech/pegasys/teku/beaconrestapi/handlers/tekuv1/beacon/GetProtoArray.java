@@ -51,9 +51,10 @@ public class GetProtoArray implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get current protoarray data",
+      summary = "Get current fork choice data",
       tags = {TAG_TEKU},
-      description = "Get the raw data stored in protoarray.",
+      description =
+          "Get the raw data stored in the fork choice protoarray to aid debugging. This API is considered unstable and the returned data format may change in the future.",
       responses = {
         @OpenApiResponse(
             status = RES_OK,
