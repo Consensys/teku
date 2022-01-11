@@ -782,23 +782,28 @@ public class BeaconChainController extends Service
 
   public void initRestAPI() {
     LOG.debug("BeaconChainController.initRestAPI()");
-    DataProvider dataProvider =
-        new DataProvider(
-            spec,
-            recentChainData,
-            combinedChainDataClient,
-            p2pNetwork,
-            syncService,
-            eventChannels.getPublisher(ValidatorApiChannel.class, beaconAsyncRunner),
-            attestationPool,
-            blockManager,
-            attestationManager,
-            beaconConfig.beaconRestApiConfig().isBeaconLivenessTrackingEnabled(),
-            eventChannels.getPublisher(ActiveValidatorChannel.class, beaconAsyncRunner),
-            attesterSlashingPool,
-            proposerSlashingPool,
-            voluntaryExitPool,
-            syncCommitteeContributionPool);
+    final DataProvider dataProvider =
+        DataProvider.builder()
+            .spec(spec)
+            .recentChainData(recentChainData)
+            .combinedChainDataClient(combinedChainDataClient)
+            .p2pNetwork(p2pNetwork)
+            .syncService(syncService)
+            .validatorApiChannel(
+                eventChannels.getPublisher(ValidatorApiChannel.class, beaconAsyncRunner))
+            .attestationPool(attestationPool)
+            .blockManager(blockManager)
+            .attestationManager(attestationManager)
+            .isLivenessTrackingEnabled(
+                beaconConfig.beaconRestApiConfig().isBeaconLivenessTrackingEnabled())
+            .activeValidatorChannel(
+                eventChannels.getPublisher(ActiveValidatorChannel.class, beaconAsyncRunner))
+            .attesterSlashingPool(attesterSlashingPool)
+            .proposerSlashingPool(proposerSlashingPool)
+            .voluntaryExitPool(voluntaryExitPool)
+            .syncCommitteeContributionPool(syncCommitteeContributionPool)
+            .build();
+
     if (beaconConfig.beaconRestApiConfig().isRestApiEnabled()) {
 
       beaconRestAPI =
