@@ -35,16 +35,12 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Map;
-import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.v1.teku.GetAllBlocksAtSlotResponse;
-import tech.pegasys.teku.api.schema.SignedBeaconBlock;
-import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetAllBlocksAtSlot implements Handler {
@@ -85,19 +81,17 @@ public class GetAllBlocksAtSlot implements Handler {
     ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
 
     try {
-      SafeFuture<Set<SignedBeaconBlock>> future =
+      SafeFuture<GetAllBlocksAtSlotResponse> future =
           chainDataProvider.getAllBlocksAtSlot(pathParamMap.get(SLOT));
       ctx.future(
           future.thenApplyChecked(
               result -> {
-                if (result.isEmpty()) {
+                if (result.getData().isEmpty()) {
                   ctx.status(SC_NOT_FOUND);
                   return BadRequest.serialize(
                       jsonProvider, SC_NOT_FOUND, "Blocks not found: " + pathParamMap.get(SLOT));
                 }
-                final Version version =
-                    chainDataProvider.getVersionAtSlot(UInt64.valueOf(pathParamMap.get(SLOT)));
-                return jsonProvider.objectToJSON(new GetAllBlocksAtSlotResponse(version, result));
+                return jsonProvider.objectToJSON(result);
               }));
     } catch (NumberFormatException ex) {
       ctx.status(SC_BAD_REQUEST);
