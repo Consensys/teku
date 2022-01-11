@@ -18,3 +18,4 @@ For information on changes in released versions of Teku, see the [releases page]
 * Updated Javalin to version 4.2.0.
 
 ### Bug Fixes
+* Rest api endpoints accepting validator IDs will no longer reject valid bytes48 hex strings that are not on the g2 curve.
