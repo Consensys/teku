@@ -260,6 +260,7 @@ public class ValidatorClientService extends Service {
   protected SafeFuture<?> doStart() {
     return initializationComplete.thenCompose(
         (__) -> {
+          validatorRestApi.ifPresent(restApi -> restApi.start().reportExceptions());
           SystemSignalListener.registerReloadConfigListener(validatorLoader::loadValidators);
           validatorIndexProvider.lookupValidators();
           eventChannels.subscribe(
@@ -271,7 +272,6 @@ public class ValidatorClientService extends Service {
                   spec,
                   metricsSystem));
           validatorStatusLogger.printInitialValidatorStatuses().reportExceptions();
-          validatorRestApi.ifPresent(restApi -> restApi.start().reportExceptions());
           return beaconNodeApi.subscribeToEvents();
         });
   }

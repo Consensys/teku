@@ -14,24 +14,23 @@
 package tech.pegasys.teku.infrastructure.crypto;
 
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 
 public class Hash {
   public static Bytes32 sha256(final byte[] input) {
-    return Bytes32.wrap(createSha256MessageDigest().digest(input));
+    return Bytes32.wrap(MessageDigestFactory.createSha256().digest(input));
   }
 
   public static Bytes32 sha256(final Bytes input) {
-    final MessageDigest digest = createSha256MessageDigest();
+    final MessageDigest digest = MessageDigestFactory.createSha256();
     input.update(digest);
     return Bytes32.wrap(digest.digest());
   }
 
   // Note: Doesn't use varargs to avoid creating a Bytes[] instance.
   public static Bytes32 sha256(final Bytes a, final Bytes b) {
-    final MessageDigest digest = createSha256MessageDigest();
+    final MessageDigest digest = MessageDigestFactory.createSha256();
     a.update(digest);
     b.update(digest);
     return Bytes32.wrap(digest.digest());
@@ -39,18 +38,10 @@ public class Hash {
 
   // Note: Doesn't use varargs to avoid creating a Bytes[] instance.
   public static Bytes32 sha256(final Bytes a, final Bytes b, final Bytes c) {
-    final MessageDigest digest = createSha256MessageDigest();
+    final MessageDigest digest = MessageDigestFactory.createSha256();
     a.update(digest);
     b.update(digest);
     c.update(digest);
     return Bytes32.wrap(digest.digest());
-  }
-
-  private static MessageDigest createSha256MessageDigest() {
-    try {
-      return BouncyCastleMessageDigestFactory.create("SHA-256");
-    } catch (final NoSuchAlgorithmException e) {
-      throw new IllegalStateException("SHA-256 algorithm not available");
-    }
   }
 }

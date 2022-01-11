@@ -82,6 +82,7 @@ import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.BlockManager;
+import tech.pegasys.teku.statetransition.block.ReexecutingExecutionPayloadBlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
@@ -781,23 +782,28 @@ public class BeaconChainController extends Service
 
   public void initRestAPI() {
     LOG.debug("BeaconChainController.initRestAPI()");
-    DataProvider dataProvider =
-        new DataProvider(
-            spec,
-            recentChainData,
-            combinedChainDataClient,
-            p2pNetwork,
-            syncService,
-            eventChannels.getPublisher(ValidatorApiChannel.class, beaconAsyncRunner),
-            attestationPool,
-            blockManager,
-            attestationManager,
-            beaconConfig.beaconRestApiConfig().isBeaconLivenessTrackingEnabled(),
-            eventChannels.getPublisher(ActiveValidatorChannel.class, beaconAsyncRunner),
-            attesterSlashingPool,
-            proposerSlashingPool,
-            voluntaryExitPool,
-            syncCommitteeContributionPool);
+    final DataProvider dataProvider =
+        DataProvider.builder()
+            .spec(spec)
+            .recentChainData(recentChainData)
+            .combinedChainDataClient(combinedChainDataClient)
+            .p2pNetwork(p2pNetwork)
+            .syncService(syncService)
+            .validatorApiChannel(
+                eventChannels.getPublisher(ValidatorApiChannel.class, beaconAsyncRunner))
+            .attestationPool(attestationPool)
+            .blockManager(blockManager)
+            .attestationManager(attestationManager)
+            .isLivenessTrackingEnabled(
+                beaconConfig.beaconRestApiConfig().isBeaconLivenessTrackingEnabled())
+            .activeValidatorChannel(
+                eventChannels.getPublisher(ActiveValidatorChannel.class, beaconAsyncRunner))
+            .attesterSlashingPool(attesterSlashingPool)
+            .proposerSlashingPool(proposerSlashingPool)
+            .voluntaryExitPool(voluntaryExitPool)
+            .syncCommitteeContributionPool(syncCommitteeContributionPool)
+            .build();
+
     if (beaconConfig.beaconRestApiConfig().isRestApiEnabled()) {
 
       beaconRestAPI =
@@ -839,9 +845,20 @@ public class BeaconChainController extends Service
     final FutureItems<SignedBeaconBlock> futureBlocks =
         FutureItems.create(SignedBeaconBlock::getSlot);
     BlockValidator blockValidator = new BlockValidator(spec, recentChainData);
-    blockManager =
-        BlockManager.create(
-            pendingBlocks, futureBlocks, recentChainData, blockImporter, blockValidator);
+    if (spec.isMilestoneSupported(SpecMilestone.MERGE)) {
+      blockManager =
+          new ReexecutingExecutionPayloadBlockManager(
+              recentChainData,
+              blockImporter,
+              pendingBlocks,
+              futureBlocks,
+              blockValidator,
+              beaconAsyncRunner);
+    } else {
+      blockManager =
+          new BlockManager(
+              recentChainData, blockImporter, pendingBlocks, futureBlocks, blockValidator);
+    }
     eventChannels
         .subscribe(SlotEventsChannel.class, blockManager)
         .subscribe(BlockImportChannel.class, blockManager)

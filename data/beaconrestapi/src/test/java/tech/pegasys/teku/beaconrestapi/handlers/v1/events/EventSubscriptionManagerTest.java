@@ -139,6 +139,7 @@ public class EventSubscriptionManagerTest {
     triggerReorgEvent();
     final String eventString = outputStream.getString();
     assertThat(eventString).contains("event: chain_reorg\n");
+    assertThat(outputStream.countComments()).isEqualTo(0);
     final ChainReorgEvent event =
         jsonProvider.jsonToObject(
             eventString.substring(eventString.indexOf("{")), ChainReorgEvent.class);
@@ -154,6 +155,7 @@ public class EventSubscriptionManagerTest {
     triggerHeadEvent();
     final String eventString = outputStream.getString();
     assertThat(eventString).contains("event: head\n");
+    assertThat(outputStream.countComments()).isEqualTo(0);
     final HeadEvent event =
         jsonProvider.jsonToObject(eventString.substring(eventString.indexOf("{")), HeadEvent.class);
 
@@ -216,6 +218,7 @@ public class EventSubscriptionManagerTest {
     triggerSyncStateEvent();
     final String eventString = outputStream.getString();
     assertThat(eventString).contains("event: sync_state\n");
+    assertThat(outputStream.countComments()).isEqualTo(0);
     final SyncStateChangeEvent event =
         jsonProvider.jsonToObject(
             eventString.substring(eventString.indexOf("{")), SyncStateChangeEvent.class);
@@ -247,6 +250,7 @@ public class EventSubscriptionManagerTest {
     triggerAttestationEvent();
     final String eventString = outputStream.getString();
     assertThat(eventString).contains("event: attestation\n");
+    assertThat(outputStream.countComments()).isEqualTo(0);
     final Attestation event =
         jsonProvider.jsonToObject(
             eventString.substring(eventString.indexOf("{")), Attestation.class);

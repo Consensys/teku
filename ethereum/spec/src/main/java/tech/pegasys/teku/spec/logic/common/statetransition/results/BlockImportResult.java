@@ -48,6 +48,10 @@ public interface BlockImportResult {
     return new SuccessfulBlockImportResult(block);
   }
 
+  static BlockImportResult optimisticallySuccessful(final SignedBeaconBlock block) {
+    return new OptimisticSuccessfulBlockImportResult(block);
+  }
+
   static BlockImportResult knownBlock(final SignedBeaconBlock block) {
     return new SuccessfulBlockImportResult(block);
   }
@@ -78,6 +82,14 @@ public interface BlockImportResult {
   Optional<Throwable> getFailureCause();
 
   default boolean isBlockOnCanonicalChain() {
+    return false;
+  }
+
+  default boolean isImportedOptimistically() {
+    return false;
+  }
+
+  default boolean hasFailedExecutingExecutionPayload() {
     return false;
   }
 

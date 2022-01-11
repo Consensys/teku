@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.api;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -37,39 +39,19 @@ public class DataProvider {
   private final NodeDataProvider nodeDataProvider;
   private final ConfigProvider configProvider;
 
-  public DataProvider(
-      final Spec spec,
-      final RecentChainData recentChainData,
-      final CombinedChainDataClient combinedChainDataClient,
-      final Eth2P2PNetwork p2pNetwork,
-      final SyncService syncService,
-      final ValidatorApiChannel validatorApiChannel,
-      final AggregatingAttestationPool attestationPool,
-      final BlockManager blockManager,
-      final AttestationManager attestationManager,
-      final boolean isLivenessTrackingEnabled,
-      final ActiveValidatorChannel activeValidatorChannel,
-      final OperationPool<AttesterSlashing> attesterSlashingPool,
-      final OperationPool<ProposerSlashing> proposerSlashingPool,
-      final OperationPool<SignedVoluntaryExit> voluntaryExitPool,
-      final SyncCommitteeContributionPool syncCommitteeContributionPool) {
-    this.configProvider = new ConfigProvider(spec);
-    networkDataProvider = new NetworkDataProvider(p2pNetwork);
-    nodeDataProvider =
-        new NodeDataProvider(
-            attestationPool,
-            attesterSlashingPool,
-            proposerSlashingPool,
-            voluntaryExitPool,
-            syncCommitteeContributionPool,
-            blockManager,
-            attestationManager,
-            isLivenessTrackingEnabled,
-            activeValidatorChannel);
-    chainDataProvider = new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
-    syncDataProvider = new SyncDataProvider(syncService);
-    this.validatorDataProvider =
-        new ValidatorDataProvider(spec, validatorApiChannel, combinedChainDataClient);
+  private DataProvider(
+      final ConfigProvider configProvider,
+      final NetworkDataProvider networkDataProvider,
+      final NodeDataProvider nodeDataProvider,
+      final ChainDataProvider chainDataProvider,
+      final SyncDataProvider syncDataProvider,
+      final ValidatorDataProvider validatorDataProvider) {
+    this.configProvider = configProvider;
+    this.networkDataProvider = networkDataProvider;
+    this.nodeDataProvider = nodeDataProvider;
+    this.chainDataProvider = chainDataProvider;
+    this.syncDataProvider = syncDataProvider;
+    this.validatorDataProvider = validatorDataProvider;
   }
 
   public ConfigProvider getConfigProvider() {
@@ -94,5 +76,140 @@ public class DataProvider {
 
   public NodeDataProvider getNodeDataProvider() {
     return nodeDataProvider;
+  }
+
+  public static DataProvider.Builder builder() {
+    return new Builder();
+  }
+
+  public static class Builder {
+    private Spec spec;
+    private RecentChainData recentChainData;
+    private CombinedChainDataClient combinedChainDataClient;
+    private Eth2P2PNetwork p2pNetwork;
+    private SyncService syncService;
+    private ValidatorApiChannel validatorApiChannel;
+    private AggregatingAttestationPool attestationPool;
+    private BlockManager blockManager;
+    private AttestationManager attestationManager;
+    private ActiveValidatorChannel activeValidatorChannel;
+    private OperationPool<AttesterSlashing> attesterSlashingPool;
+    private OperationPool<ProposerSlashing> proposerSlashingPool;
+    private OperationPool<SignedVoluntaryExit> voluntaryExitPool;
+    private SyncCommitteeContributionPool syncCommitteeContributionPool;
+
+    private boolean isLivenessTrackingEnabled = true;
+
+    public Builder recentChainData(final RecentChainData recentChainData) {
+      this.recentChainData = recentChainData;
+      return this;
+    }
+
+    public Builder combinedChainDataClient(final CombinedChainDataClient combinedChainDataClient) {
+      this.combinedChainDataClient = combinedChainDataClient;
+      return this;
+    }
+
+    public Builder p2pNetwork(final Eth2P2PNetwork p2pNetwork) {
+      this.p2pNetwork = p2pNetwork;
+      return this;
+    }
+
+    public Builder syncService(final SyncService syncService) {
+      this.syncService = syncService;
+      return this;
+    }
+
+    public Builder validatorApiChannel(final ValidatorApiChannel validatorApiChannel) {
+      this.validatorApiChannel = validatorApiChannel;
+      return this;
+    }
+
+    public Builder attestationPool(final AggregatingAttestationPool attestationPool) {
+      this.attestationPool = attestationPool;
+      return this;
+    }
+
+    public Builder blockManager(final BlockManager blockManager) {
+      this.blockManager = blockManager;
+      return this;
+    }
+
+    public Builder attestationManager(final AttestationManager attestationManager) {
+      this.attestationManager = attestationManager;
+      return this;
+    }
+
+    public Builder isLivenessTrackingEnabled(final boolean isLivenessTrackingEnabled) {
+      this.isLivenessTrackingEnabled = isLivenessTrackingEnabled;
+      return this;
+    }
+
+    public Builder activeValidatorChannel(final ActiveValidatorChannel activeValidatorChannel) {
+      this.activeValidatorChannel = activeValidatorChannel;
+      return this;
+    }
+
+    public Builder attesterSlashingPool(
+        final OperationPool<AttesterSlashing> attesterSlashingPool) {
+      this.attesterSlashingPool = attesterSlashingPool;
+      return this;
+    }
+
+    public Builder proposerSlashingPool(
+        final OperationPool<ProposerSlashing> proposerSlashingPool) {
+      this.proposerSlashingPool = proposerSlashingPool;
+      return this;
+    }
+
+    public Builder voluntaryExitPool(final OperationPool<SignedVoluntaryExit> voluntaryExitPool) {
+      this.voluntaryExitPool = voluntaryExitPool;
+      return this;
+    }
+
+    public Builder syncCommitteeContributionPool(
+        final SyncCommitteeContributionPool syncCommitteeContributionPool) {
+      this.syncCommitteeContributionPool = syncCommitteeContributionPool;
+      return this;
+    }
+
+    public Builder spec(final Spec spec) {
+      this.spec = spec;
+      return this;
+    }
+
+    public DataProvider build() {
+      final ConfigProvider configProvider = new ConfigProvider(spec);
+      final NetworkDataProvider networkDataProvider = new NetworkDataProvider(p2pNetwork);
+      final NodeDataProvider nodeDataProvider =
+          new NodeDataProvider(
+              attestationPool,
+              attesterSlashingPool,
+              proposerSlashingPool,
+              voluntaryExitPool,
+              syncCommitteeContributionPool,
+              blockManager,
+              attestationManager,
+              isLivenessTrackingEnabled,
+              activeValidatorChannel);
+      final ChainDataProvider chainDataProvider =
+          new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
+      final SyncDataProvider syncDataProvider = new SyncDataProvider(syncService);
+      final ValidatorDataProvider validatorDataProvider =
+          new ValidatorDataProvider(spec, validatorApiChannel, combinedChainDataClient);
+
+      checkNotNull(configProvider, "Expect config Provider");
+      checkNotNull(networkDataProvider, "Expect Network Data Provider");
+      checkNotNull(chainDataProvider, "Expect Chain Data Provider");
+      checkNotNull(syncDataProvider, "Expect Sync Data Provider");
+      checkNotNull(validatorDataProvider, "Expect Validator Data Provider");
+      return new DataProvider(
+          configProvider,
+          networkDataProvider,
+          nodeDataProvider,
+          chainDataProvider,
+          syncDataProvider,
+          validatorDataProvider);
+    }
   }
 }

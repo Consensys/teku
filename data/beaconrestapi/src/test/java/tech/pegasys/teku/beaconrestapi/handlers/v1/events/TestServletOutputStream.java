@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.WriteListener;
@@ -47,6 +48,10 @@ public class TestServletOutputStream extends ServletOutputStream {
 
   public int countEvents() {
     return StringUtils.countMatches(getString(), "event: ");
+  }
+
+  public int countComments() {
+    return (int) Arrays.stream(getString().split("[\r\n]+")).filter(s -> s.startsWith(":")).count();
   }
 
   public List<String> getEvents() {
