@@ -52,9 +52,9 @@ public class Eth2NetworkConfiguration {
   private final Eth1Address eth1DepositContractAddress;
   private final Optional<UInt64> eth1DepositContractDeployBlock;
   private final boolean proposerBoostEnabled;
-  private final Optional<Bytes32> mergeTerminalBlockHashOverride;
-  private final Optional<UInt256> mergeTotalTerminalDifficultyOverride;
-  private final Optional<UInt64> mergeTerminalBlockHashEpochOverride;
+  private final Optional<Bytes32> terminalBlockHashOverride;
+  private final Optional<UInt256> totalTerminalDifficultyOverride;
+  private final Optional<UInt64> terminalBlockHashEpochOverride;
 
   private Eth2NetworkConfiguration(
       final Spec spec,
@@ -69,9 +69,9 @@ public class Eth2NetworkConfiguration {
       final boolean proposerBoostEnabled,
       final Optional<UInt64> altairForkEpoch,
       final Optional<UInt64> bellatrixForkEpoch,
-      final Optional<Bytes32> mergeTerminalBlockHashOverride,
-      final Optional<UInt256> mergeTotalTerminalDifficultyOverride,
-      final Optional<UInt64> mergeTerminalBlockHashEpochOverride) {
+      final Optional<Bytes32> terminalBlockHashOverride,
+      final Optional<UInt256> totalTerminalDifficultyOverride,
+      final Optional<UInt64> terminalBlockHashEpochOverride) {
     this.spec = spec;
     this.constants = constants;
     this.initialState = initialState;
@@ -87,9 +87,9 @@ public class Eth2NetworkConfiguration {
             : eth1DepositContractAddress;
     this.eth1DepositContractDeployBlock = eth1DepositContractDeployBlock;
     this.proposerBoostEnabled = proposerBoostEnabled;
-    this.mergeTerminalBlockHashOverride = mergeTerminalBlockHashOverride;
-    this.mergeTotalTerminalDifficultyOverride = mergeTotalTerminalDifficultyOverride;
-    this.mergeTerminalBlockHashEpochOverride = mergeTerminalBlockHashEpochOverride;
+    this.terminalBlockHashOverride = terminalBlockHashOverride;
+    this.totalTerminalDifficultyOverride = totalTerminalDifficultyOverride;
+    this.terminalBlockHashEpochOverride = terminalBlockHashEpochOverride;
   }
 
   public static Eth2NetworkConfiguration.Builder builder(final String network) {
@@ -157,16 +157,16 @@ public class Eth2NetworkConfiguration {
     return bellatrixForkEpoch;
   }
 
-  public Optional<Bytes32> getMergeTerminalBlockHashOverride() {
-    return mergeTerminalBlockHashOverride;
+  public Optional<Bytes32> getTerminalBlockHashOverride() {
+    return terminalBlockHashOverride;
   }
 
-  public Optional<UInt256> getMergeTotalTerminalDifficultyOverride() {
-    return mergeTotalTerminalDifficultyOverride;
+  public Optional<UInt256> getTotalTerminalDifficultyOverride() {
+    return totalTerminalDifficultyOverride;
   }
 
-  public Optional<UInt64> getMergeTerminalBlockHashEpochOverride() {
-    return mergeTerminalBlockHashEpochOverride;
+  public Optional<UInt64> getTerminalBlockHashEpochOverride() {
+    return terminalBlockHashEpochOverride;
   }
 
   @Override
@@ -186,9 +186,9 @@ public class Eth2NetworkConfiguration {
     private boolean proposerBoostEnabled = false;
     private Optional<UInt64> altairForkEpoch = Optional.empty();
     private Optional<UInt64> bellatrixForkEpoch = Optional.empty();
-    private Optional<Bytes32> mergeTerminalBlockHashOverride = Optional.empty();
-    private Optional<UInt256> mergeTotalTerminalDifficultyOverride = Optional.empty();
-    private Optional<UInt64> mergeTerminalBlockHashEpochOverride = Optional.empty();
+    private Optional<Bytes32> terminalBlockHashOverride = Optional.empty();
+    private Optional<UInt256> totalTerminalDifficultyOverride = Optional.empty();
+    private Optional<UInt64> terminalBlockHashEpochOverride = Optional.empty();
     private Spec spec;
 
     public void spec(Spec spec) {
@@ -223,9 +223,9 @@ public class Eth2NetworkConfiguration {
           proposerBoostEnabled,
           altairForkEpoch,
           bellatrixForkEpoch,
-          mergeTerminalBlockHashOverride,
-          mergeTotalTerminalDifficultyOverride,
-          mergeTerminalBlockHashEpochOverride);
+          terminalBlockHashOverride,
+          totalTerminalDifficultyOverride,
+          terminalBlockHashEpochOverride);
     }
 
     public Builder constants(final String constants) {
@@ -298,20 +298,18 @@ public class Eth2NetworkConfiguration {
       return this;
     }
 
-    public Builder mergeTotalTerminalDifficultyOverride(
-        final UInt256 mergeTotalTerminalDifficultyOverride) {
-      this.mergeTotalTerminalDifficultyOverride = Optional.of(mergeTotalTerminalDifficultyOverride);
+    public Builder totalTerminalDifficultyOverride(final UInt256 totalTerminalDifficultyOverride) {
+      this.totalTerminalDifficultyOverride = Optional.of(totalTerminalDifficultyOverride);
       return this;
     }
 
-    public Builder mergeTerminalBlockHashOverride(final Bytes32 mergeTerminalBlockHashOverride) {
-      this.mergeTerminalBlockHashOverride = Optional.of(mergeTerminalBlockHashOverride);
+    public Builder terminalBlockHashOverride(final Bytes32 terminalBlockHashOverride) {
+      this.terminalBlockHashOverride = Optional.of(terminalBlockHashOverride);
       return this;
     }
 
-    public Builder mergeTerminalBlockHashEpochOverride(
-        final UInt64 mergeTerminalBlockHashEpochOverride) {
-      this.mergeTerminalBlockHashEpochOverride = Optional.of(mergeTerminalBlockHashEpochOverride);
+    public Builder terminalBlockHashEpochOverride(final UInt64 terminalBlockHashEpochOverride) {
+      this.terminalBlockHashEpochOverride = Optional.of(terminalBlockHashEpochOverride);
       return this;
     }
 

@@ -39,7 +39,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
 abstract class AbstractBlockMetadataStoreTest {
 
-  protected final Spec spec = TestSpecFactory.createMinimalMerge();
+  protected final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final ChainBuilder chainBuilder = ChainBuilder.create(spec);
   private final SignedBlockAndState genesis = chainBuilder.generateGenesis();
   private final Checkpoint genesisCheckpoint =

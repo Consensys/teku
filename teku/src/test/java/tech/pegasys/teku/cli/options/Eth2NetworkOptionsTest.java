@@ -57,7 +57,7 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   void shouldUseBellatrixForkEpochIfSpecified() {
     final TekuConfiguration config =
         getTekuConfigurationFromArguments(
-            "--Xnetwork-merge-fork-epoch", "120000", "--Xee-endpoint", "someEndpoint");
+            "--Xnetwork-bellatrix-fork-epoch", "120000", "--Xee-endpoint", "someEndpoint");
     final Spec spec = config.eth2NetworkConfiguration().getSpec();
     assertThat(spec.getForkSchedule().getSpecMilestoneAtEpoch(UInt64.valueOf(119999)))
         .isEqualTo(SpecMilestone.ALTAIR);
@@ -75,11 +75,11 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   void shouldMergeTransitionsOverrideBeEmptyByDefault() {
     final TekuConfiguration config = getTekuConfigurationFromArguments();
-    assertThat(config.eth2NetworkConfiguration().getMergeTotalTerminalDifficultyOverride())
+    assertThat(config.eth2NetworkConfiguration().getTotalTerminalDifficultyOverride())
         .isEqualTo(Optional.empty());
-    assertThat(config.eth2NetworkConfiguration().getMergeTerminalBlockHashOverride())
+    assertThat(config.eth2NetworkConfiguration().getTerminalBlockHashOverride())
         .isEqualTo(Optional.empty());
-    assertThat(config.eth2NetworkConfiguration().getMergeTerminalBlockHashEpochOverride())
+    assertThat(config.eth2NetworkConfiguration().getTerminalBlockHashEpochOverride())
         .isEqualTo(Optional.empty());
   }
 
@@ -87,14 +87,14 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   void shouldLoadMergeTerminalTotalDifficultyOverride() {
     final TekuConfiguration config =
         getTekuConfigurationFromArguments(
-            "--Xnetwork-merge-total-terminal-difficulty-override", "123456789012345678901");
-    assertThat(config.eth2NetworkConfiguration().getMergeTotalTerminalDifficultyOverride())
+            "--Xnetwork-total-terminal-difficulty-override", "123456789012345678901");
+    assertThat(config.eth2NetworkConfiguration().getTotalTerminalDifficultyOverride())
         .isEqualTo(Optional.of(UInt256.valueOf(new BigInteger("123456789012345678901"))));
     assertThat(
             createConfigBuilder()
                 .eth2NetworkConfig(
                     b ->
-                        b.mergeTotalTerminalDifficultyOverride(
+                        b.totalTerminalDifficultyOverride(
                             UInt256.valueOf(new BigInteger("123456789012345678901"))))
                 .build())
         .usingRecursiveComparison()
@@ -105,9 +105,9 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   void shouldLoadMergeTerminalBlockHashOverride() {
     final TekuConfiguration config =
         getTekuConfigurationFromArguments(
-            "--Xnetwork-merge-terminal-block-hash-override",
+            "--Xnetwork-terminal-block-hash-override",
             "0x7562f205a2d14e80a3a67da9df0b769b0ba0111a8e81034606f8f27f51f4dd8e");
-    assertThat(config.eth2NetworkConfiguration().getMergeTerminalBlockHashOverride())
+    assertThat(config.eth2NetworkConfiguration().getTerminalBlockHashOverride())
         .isEqualTo(
             Optional.of(
                 Bytes32.fromHexStringStrict(
@@ -116,7 +116,7 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
             createConfigBuilder()
                 .eth2NetworkConfig(
                     b ->
-                        b.mergeTerminalBlockHashOverride(
+                        b.terminalBlockHashOverride(
                             Bytes32.fromHexStringStrict(
                                 "0x7562f205a2d14e80a3a67da9df0b769b0ba0111a8e81034606f8f27f51f4dd8e")))
                 .build())
@@ -125,41 +125,38 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  void shouldLoadMergeTerminalBlockHashEpochOverride() {
+  void shouldLoadTerminalBlockHashEpochOverride() {
     final TekuConfiguration config =
         getTekuConfigurationFromArguments(
-            "--Xnetwork-merge-terminal-block-hash-epoch-override", "120000");
-    assertThat(config.eth2NetworkConfiguration().getMergeTerminalBlockHashEpochOverride())
+            "--Xnetwork-terminal-block-hash-epoch-override", "120000");
+    assertThat(config.eth2NetworkConfiguration().getTerminalBlockHashEpochOverride())
         .isEqualTo(Optional.of(UInt64.valueOf(120000)));
     assertThat(
             createConfigBuilder()
-                .eth2NetworkConfig(
-                    b -> b.mergeTerminalBlockHashEpochOverride(UInt64.valueOf(120000)))
+                .eth2NetworkConfig(b -> b.terminalBlockHashEpochOverride(UInt64.valueOf(120000)))
                 .build())
         .usingRecursiveComparison()
         .isEqualTo(config);
   }
 
   @Test
-  void shouldFailLoadingInvalidMergeTransitionOverrides() {
+  void shouldFailLoadingInvalidTransitionOverrides() {
     assertThrows(
         AssertionError.class,
         () -> {
-          getTekuConfigurationFromArguments(
-              "--Xnetwork-merge-total-terminal-difficulty-override", "asd");
+          getTekuConfigurationFromArguments("--Xnetwork-total-terminal-difficulty-override", "asd");
         });
 
     assertThrows(
         AssertionError.class,
         () -> {
-          getTekuConfigurationFromArguments("--Xnetwork-merge-terminal-block-hash-override", "756");
+          getTekuConfigurationFromArguments("--Xnetwork-terminal-block-hash-override", "756");
         });
 
     assertThrows(
         AssertionError.class,
         () -> {
-          getTekuConfigurationFromArguments(
-              "--Xnetwork-merge-terminal-block-hash-epoch-override", "asd");
+          getTekuConfigurationFromArguments("--Xnetwork-terminal-block-hash-epoch-override", "asd");
         });
   }
 }

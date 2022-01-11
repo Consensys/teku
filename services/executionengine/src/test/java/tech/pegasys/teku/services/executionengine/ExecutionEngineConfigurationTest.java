@@ -22,22 +22,22 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 public class ExecutionEngineConfigurationTest {
   private final ExecutionEngineConfiguration.Builder configBuilder =
       ExecutionEngineConfiguration.builder();
-  private final Spec mergeSpec = TestSpecFactory.createMinimalMerge();
+  private final Spec bellatrixSpec = TestSpecFactory.createMinimalBellatrix();
 
   @Test
   public void shouldThrowExceptionIfNoEeEndpointSpecified() {
-    final ExecutionEngineConfiguration config = configBuilder.specProvider(mergeSpec).build();
+    final ExecutionEngineConfiguration config = configBuilder.specProvider(bellatrixSpec).build();
 
     Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
         .isThrownBy(config::getEndpoint)
         .withMessageContaining(
-            "Invalid configuration. --Xee-endpoint parameter is mandatory when Merge milestone is enabled");
+            "Invalid configuration. --Xee-endpoint parameter is mandatory when Bellatrix milestone is enabled");
   }
 
   @Test
   public void noExceptionThrownIfEeEndpointSpecified() {
     final ExecutionEngineConfiguration config =
-        configBuilder.specProvider(mergeSpec).endpoint("someEndpoint").build();
+        configBuilder.specProvider(bellatrixSpec).endpoint("someEndpoint").build();
 
     Assertions.assertThatCode(config::getEndpoint).doesNotThrowAnyException();
   }

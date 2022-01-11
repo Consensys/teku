@@ -33,18 +33,19 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.executionengine.ExecutePayloadResult;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
+import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class ForkChoicePayloadExecutorTest {
 
-  private final Spec spec = TestSpecFactory.createMinimalMerge();
-  private final SchemaDefinitionsMerge schemaDefinitionsMerge =
-      spec.getGenesisSchemaDefinitions().toVersionMerge().orElseThrow();
+  private final Spec spec = TestSpecFactory.createMinimalBellatrix();
+  private final SchemaDefinitionsBellatrix schemaDefinitionsBellatrix =
+      spec.getGenesisSchemaDefinitions().toVersionBellatrix().orElseThrow();
   private final ExecutionPayload defaultPayload =
-      schemaDefinitionsMerge.getExecutionPayloadSchema().getDefault();
+      schemaDefinitionsBellatrix.getExecutionPayloadSchema().getDefault();
   private final ExecutionPayloadHeader defaultPayloadHeader =
-      schemaDefinitionsMerge.getExecutionPayloadHeaderSchema().getDefault();
+      schemaDefinitionsBellatrix.getExecutionPayloadHeaderSchema().getDefault();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final SafeFuture<ExecutePayloadResult> executionResult = new SafeFuture<>();
   private final ExecutionEngineChannel executionEngine = mock(ExecutionEngineChannel.class);
@@ -95,10 +96,10 @@ class ForkChoicePayloadExecutorTest {
 
   /**
    * The details of how we validate the merge block are all handled by {@link
-   * tech.pegasys.teku.spec.logic.versions.merge.helpers.MergeTransitionHelpers} so we don't want to
-   * retest all that here. Instead, we check that those extra checks started (the call to {@link
-   * ExecutionEngineChannel#getPowBlock(Bytes32)}) and check that we didn't execute the payload as
-   * MergeTransitionHelpers will take care of that after the TTD validations are done.
+   * BellatrixTransitionHelpers} so we don't want to retest all that here. Instead, we check that
+   * those extra checks started (the call to {@link ExecutionEngineChannel#getPowBlock(Bytes32)})
+   * and check that we didn't execute the payload as {@link BellatrixTransitionHelpers} will take
+   * care of that after the TTD validations are done.
    *
    * <p>Since the future we return from getPowBlock is never completed we never complete the
    * validations which saves us a bunch of mocking.

@@ -134,7 +134,7 @@ public class SpecConfigLoaderTest {
 
   static Stream<Arguments> knownNetworks() {
     return Stream.of(Eth2Network.values())
-        .map(network -> Arguments.of(network.configName(), SpecConfigMerge.class));
+        .map(network -> Arguments.of(network.configName(), SpecConfigBellatrix.class));
   }
 
   private void writeStreamToFile(final InputStream inputStream, final Path filePath)

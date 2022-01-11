@@ -2,7 +2,7 @@
   "type" : "object",
   "properties" : {
     "message" : {
-      "$ref" : "#/components/schemas/BeaconBlockMerge"
+      "$ref" : "#/components/schemas/BeaconBlockBellatrix"
     },
     "signature" : {
       "type" : "string",

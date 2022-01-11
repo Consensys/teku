@@ -28,7 +28,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public class StubExecutionEngineChannel implements ExecutionEngineChannel {
 
@@ -79,12 +79,13 @@ public class StubExecutionEngineChannel implements ExecutionEngineChannel {
 
   @Override
   public SafeFuture<ExecutionPayload> getPayload(final Bytes8 payloadId, final UInt64 slot) {
-    Optional<SchemaDefinitionsMerge> schemaDefinitionsMerge =
-        spec.atSlot(slot).getSchemaDefinitions().toVersionMerge();
+    Optional<SchemaDefinitionsBellatrix> schemaDefinitionsBellatrix =
+        spec.atSlot(slot).getSchemaDefinitions().toVersionBellatrix();
 
-    if (schemaDefinitionsMerge.isEmpty()) {
+    if (schemaDefinitionsBellatrix.isEmpty()) {
       return SafeFuture.failedFuture(
-          new UnsupportedOperationException("getPayload not supported for non-Merge milestones"));
+          new UnsupportedOperationException(
+              "getPayload not supported for non-Bellatrix milestones"));
     }
 
     Optional<HeadAndAttributes> maybeHeadAndAttrs =
@@ -97,7 +98,7 @@ public class StubExecutionEngineChannel implements ExecutionEngineChannel {
     PayloadAttributes payloadAttributes = headAndAttrs.attributes;
 
     return SafeFuture.completedFuture(
-        schemaDefinitionsMerge
+        schemaDefinitionsBellatrix
             .get()
             .getExecutionPayloadSchema()
             .create(

@@ -35,7 +35,7 @@ import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.BeaconStateMerge;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 
@@ -67,7 +67,7 @@ public class StateUpgradeTransitionTest {
       case BELLATRIX:
         spec = TestSpecFactory.createMinimalWithBellatrixForkEpoch(milestoneTransitionEpoch);
         beforeBeaconStateClass = BeaconStateAltair.class;
-        afterBeaconStateClass = BeaconStateMerge.class;
+        afterBeaconStateClass = BeaconStateBellatrix.class;
         break;
       default:
         throw new IllegalArgumentException("unsupported milestone");

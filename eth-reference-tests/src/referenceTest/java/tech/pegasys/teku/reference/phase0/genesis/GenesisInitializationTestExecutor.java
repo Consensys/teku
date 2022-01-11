@@ -31,7 +31,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public class GenesisInitializationTestExecutor implements TestExecutor {
 
@@ -56,7 +56,7 @@ public class GenesisInitializationTestExecutor implements TestExecutor {
               loadSsz(
                   testDefinition,
                   "execution_payload_header.ssz_snappy",
-                  SchemaDefinitionsMerge.required(spec.getGenesisSchemaDefinitions())
+                  SchemaDefinitionsBellatrix.required(spec.getGenesisSchemaDefinitions())
                       .getExecutionPayloadHeaderSchema()));
     } else {
       executionPayloadHeader = Optional.empty();

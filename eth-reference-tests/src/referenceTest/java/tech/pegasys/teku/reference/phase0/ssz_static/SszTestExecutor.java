@@ -26,7 +26,7 @@ import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public class SszTestExecutor<T extends SszData> implements TestExecutor {
   private final SchemaProvider<T> sszType;
@@ -88,16 +88,18 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
           .put("ssz_static/LightClientSnapshot", IGNORE_TESTS)
           .put("ssz_static/LightClientUpdate", IGNORE_TESTS)
 
-          // Merge types
+          // Bellatrix types
           .put(
               "ssz_static/ExecutionPayloadHeader",
               new SszTestExecutor<>(
                   schemas ->
-                      SchemaDefinitionsMerge.required(schemas).getExecutionPayloadHeaderSchema()))
+                      SchemaDefinitionsBellatrix.required(schemas)
+                          .getExecutionPayloadHeaderSchema()))
           .put(
               "ssz_static/ExecutionPayload",
               new SszTestExecutor<>(
-                  schemas -> SchemaDefinitionsMerge.required(schemas).getExecutionPayloadSchema()))
+                  schemas ->
+                      SchemaDefinitionsBellatrix.required(schemas).getExecutionPayloadSchema()))
           .put("ssz_static/PowBlock", IGNORE_TESTS)
           .build();
 

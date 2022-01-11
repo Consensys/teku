@@ -20,7 +20,7 @@ import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.altair.fork.ForkUpgradeTestExecutor;
 import tech.pegasys.teku.reference.altair.fork.TransitionTestExecutor;
 import tech.pegasys.teku.reference.altair.rewards.RewardsTestExecutorAltair;
-import tech.pegasys.teku.reference.altair.rewards.RewardsTestExecutorMerge;
+import tech.pegasys.teku.reference.altair.rewards.RewardsTestExecutorBellatrix;
 import tech.pegasys.teku.reference.common.epoch_processing.EpochProcessingTestExecutor;
 import tech.pegasys.teku.reference.common.operations.OperationsTestExecutor;
 import tech.pegasys.teku.reference.phase0.bls.BlsTests;
@@ -64,11 +64,11 @@ public abstract class Eth2ReferenceTestCase {
           .putAll(RewardsTestExecutorAltair.REWARDS_TEST_TYPES)
           .build();
 
-  private final ImmutableMap<String, TestExecutor> MERGE_TEST_TYPES =
+  private final ImmutableMap<String, TestExecutor> BELLATRIX_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
           .putAll(TransitionTestExecutor.TRANSITION_TEST_TYPES)
           .putAll(ForkUpgradeTestExecutor.FORK_UPGRADE_TEST_TYPES)
-          .putAll(RewardsTestExecutorMerge.REWARDS_TEST_TYPES)
+          .putAll(RewardsTestExecutorBellatrix.REWARDS_TEST_TYPES)
           .build();
 
   protected void runReferenceTest(final TestDefinition testDefinition) throws Throwable {
@@ -91,8 +91,8 @@ public abstract class Eth2ReferenceTestCase {
       testExecutor = PHASE_0_TEST_TYPES.get(testDefinition.getTestType());
     } else if (testDefinition.getFork().equals(TestFork.ALTAIR)) {
       testExecutor = ALTAIR_TEST_TYPES.get(testDefinition.getTestType());
-    } else if (testDefinition.getFork().equals(TestFork.MERGE)) {
-      testExecutor = MERGE_TEST_TYPES.get(testDefinition.getTestType());
+    } else if (testDefinition.getFork().equals(TestFork.BELLATRIX)) {
+      testExecutor = BELLATRIX_TEST_TYPES.get(testDefinition.getTestType());
     }
 
     // Look for a common test type if no specific override present

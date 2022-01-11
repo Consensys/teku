@@ -172,13 +172,13 @@ public class SpecConfigReader {
               unprocessedConfig.remove(constantKey);
             });
 
-    // Process merge config
+    // Process bellatrix config
     streamConfigSetters(BellatrixBuilder.class)
         .forEach(
             setter -> {
               final String constantKey = camelToSnakeCase(setter.getName());
               final Object rawValue = unprocessedConfig.get(constantKey);
-              invokeSetter(setter, configBuilder::mergeBuilder, constantKey, rawValue);
+              invokeSetter(setter, configBuilder::bellatrixBuilder, constantKey, rawValue);
               unprocessedConfig.remove(constantKey);
             });
 

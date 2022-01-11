@@ -22,7 +22,7 @@ import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
-import tech.pegasys.teku.spec.datastructures.operations.versions.merge.BeaconPreparableProposer;
+import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
@@ -71,7 +71,7 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
     return feeRecipient.orElseThrow(
         () ->
             new InvalidConfigurationException(
-                "Invalid configuration. --Xvalidators-suggested-fee-recipient-address must be specified when Merge milestone is active"));
+                "Invalid configuration. --Xvalidators-suggested-fee-recipient-address must be specified when Bellatrix milestone is active"));
   }
 
   @Override

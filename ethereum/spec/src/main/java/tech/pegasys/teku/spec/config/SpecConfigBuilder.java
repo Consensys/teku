@@ -104,8 +104,8 @@ public class SpecConfigBuilder {
   // Altair
   private Optional<AltairBuilder> altairBuilder = Optional.empty();
 
-  // Merge
-  private Optional<BellatrixBuilder> mergeBuilder = Optional.empty();
+  // Bellatrix
+  private Optional<BellatrixBuilder> bellatrixBuilder = Optional.empty();
 
   public SpecConfig build() {
     validate();
@@ -165,9 +165,9 @@ public class SpecConfigBuilder {
     if (altairBuilder.isPresent()) {
       final SpecConfigAltair altairConfig = altairBuilder.get().build(config);
       config = altairConfig;
-      if (mergeBuilder.isPresent()) {
-        final SpecConfigMerge mergeConfig = mergeBuilder.get().build(altairConfig);
-        config = mergeBuilder.get().build(mergeConfig);
+      if (bellatrixBuilder.isPresent()) {
+        final SpecConfigBellatrix bellatrixConfig = bellatrixBuilder.get().build(altairConfig);
+        config = bellatrixBuilder.get().build(bellatrixConfig);
       }
     }
     return config;
@@ -225,7 +225,7 @@ public class SpecConfigBuilder {
     validateConstant("depositContractAddress", depositContractAddress);
 
     altairBuilder.ifPresent(AltairBuilder::validate);
-    mergeBuilder.ifPresent(BellatrixBuilder::validate);
+    bellatrixBuilder.ifPresent(BellatrixBuilder::validate);
   }
 
   private void validateConstant(final String name, final Object value) {
@@ -675,12 +675,12 @@ public class SpecConfigBuilder {
     }
   }
 
-  // Merge
-  public SpecConfigBuilder mergeBuilder(final Consumer<BellatrixBuilder> consumer) {
-    if (mergeBuilder.isEmpty()) {
-      mergeBuilder = Optional.of(new BellatrixBuilder());
+  // Bellatrix
+  public SpecConfigBuilder bellatrixBuilder(final Consumer<BellatrixBuilder> consumer) {
+    if (bellatrixBuilder.isEmpty()) {
+      bellatrixBuilder = Optional.of(new BellatrixBuilder());
     }
-    consumer.accept(mergeBuilder.get());
+    consumer.accept(bellatrixBuilder.get());
     return this;
   }
 
@@ -703,8 +703,8 @@ public class SpecConfigBuilder {
 
     private BellatrixBuilder() {}
 
-    SpecConfigMerge build(final SpecConfigAltair specConfig) {
-      return new SpecConfigMerge(
+    SpecConfigBellatrix build(final SpecConfigAltair specConfig) {
+      return new SpecConfigBellatrix(
           specConfig,
           bellatrixForkVersion,
           bellatrixForkEpoch,

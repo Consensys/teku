@@ -61,7 +61,7 @@ public enum BeaconStateFields {
   INACTIVITY_SCORES,
   CURRENT_SYNC_COMMITTEE,
   NEXT_SYNC_COMMITTEE,
-  // Merge fields
+  // Bellatrix fields
   LATEST_EXECUTION_PAYLOAD_HEADER;
 
   public static void copyCommonFieldsFromSource(

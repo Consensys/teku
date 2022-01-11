@@ -21,9 +21,9 @@ import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.altair.BeaconBlockAltair;
 import tech.pegasys.teku.api.schema.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.api.schema.altair.BeaconStateAltair;
-import tech.pegasys.teku.api.schema.merge.BeaconBlockBodyMerge;
-import tech.pegasys.teku.api.schema.merge.BeaconBlockMerge;
-import tech.pegasys.teku.api.schema.merge.BeaconStateMerge;
+import tech.pegasys.teku.api.schema.bellatrix.BeaconBlockBellatrix;
+import tech.pegasys.teku.api.schema.bellatrix.BeaconBlockBodyBellatrix;
+import tech.pegasys.teku.api.schema.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.api.schema.phase0.BeaconBlockPhase0;
 import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -67,12 +67,12 @@ public class SchemaObjectProvider {
             block.getStateRoot(),
             getBeaconBlockBodyAltair(block.getBody()));
       case BELLATRIX:
-        return new BeaconBlockMerge(
+        return new BeaconBlockBellatrix(
             block.getSlot(),
             block.getProposerIndex(),
             block.getParentRoot(),
             block.getStateRoot(),
-            getBeaconBlockBodyMerge(block.getBody()));
+            getBeaconBlockBodyBellatrix(block.getBody()));
       default:
         throw new IllegalArgumentException("Unsupported milestone for slot " + slot);
     }
@@ -85,11 +85,11 @@ public class SchemaObjectProvider {
             .required(body));
   }
 
-  private BeaconBlockBodyMerge getBeaconBlockBodyMerge(
+  private BeaconBlockBodyBellatrix getBeaconBlockBodyBellatrix(
       final tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody body) {
-    return new BeaconBlockBodyMerge(
-        tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge.BeaconBlockBodyMerge
-            .required(body));
+    return new BeaconBlockBodyBellatrix(
+        tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
+            .BeaconBlockBodyBellatrix.required(body));
   }
 
   public BeaconState getBeaconState(
@@ -101,7 +101,7 @@ public class SchemaObjectProvider {
       case ALTAIR:
         return new BeaconStateAltair(state);
       case BELLATRIX:
-        return new BeaconStateMerge(state);
+        return new BeaconStateBellatrix(state);
       default:
         throw new IllegalArgumentException("Unsupported milestone for slot " + slot);
     }

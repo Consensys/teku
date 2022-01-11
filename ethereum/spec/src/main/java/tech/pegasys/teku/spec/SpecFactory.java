@@ -22,9 +22,9 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
+import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigBuilder;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
-import tech.pegasys.teku.spec.config.SpecConfigMerge;
 
 public class SpecFactory {
 
@@ -54,7 +54,7 @@ public class SpecFactory {
 
   private static void overrideBellatrixForkEpoch(
       final SpecConfigBuilder builder, final UInt64 forkEpoch) {
-    builder.mergeBuilder(mergeBuilder -> mergeBuilder.bellatrixForkEpoch(forkEpoch));
+    builder.bellatrixBuilder(bellatrixBuilder -> bellatrixBuilder.bellatrixForkEpoch(forkEpoch));
   }
 
   public static Spec create(final SpecConfig config) {
@@ -63,7 +63,7 @@ public class SpecFactory {
     final UInt64 bellatrixForkEpoch =
         config
             .toVersionBellatrix()
-            .map(SpecConfigMerge::getBellatrixForkEpoch)
+            .map(SpecConfigBellatrix::getBellatrixForkEpoch)
             .orElse(FAR_FUTURE_EPOCH);
     final SpecMilestone highestMilestoneSupported;
 

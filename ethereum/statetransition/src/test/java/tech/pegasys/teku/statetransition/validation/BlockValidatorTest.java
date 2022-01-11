@@ -242,7 +242,7 @@ public class BlockValidatorTest {
 
   @TestTemplate
   void shouldReturnAcceptOnCorrectExecutionPayloadTimestamp(SpecContext specContext) {
-    specContext.assumeMergeActive();
+    specContext.assumeBellatrixActive();
 
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     storageSystem.chainUpdater().initializeGenesisWithPayload(false);
@@ -260,7 +260,7 @@ public class BlockValidatorTest {
 
   @TestTemplate
   void shouldReturnInvalidOnWrongExecutionPayloadTimestamp(SpecContext specContext) {
-    specContext.assumeMergeActive();
+    specContext.assumeBellatrixActive();
 
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     storageSystem.chainUpdater().initializeGenesisWithPayload(false);

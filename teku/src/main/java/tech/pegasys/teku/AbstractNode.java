@@ -95,23 +95,25 @@ public abstract class AbstractNode implements Node {
 
     tekuConfig
         .eth2NetworkConfiguration()
-        .getMergeTotalTerminalDifficultyOverride()
+        .getTotalTerminalDifficultyOverride()
         .ifPresent(
             ttdo ->
-                STATUS_LOG.warnMergeParameterChanged("TERMINAL_TOTAL_DIFFICULTY", ttdo.toString()));
+                STATUS_LOG.warnBellatrixParameterChanged(
+                    "TERMINAL_TOTAL_DIFFICULTY", ttdo.toString()));
 
     tekuConfig
         .eth2NetworkConfiguration()
-        .getMergeTerminalBlockHashOverride()
+        .getTerminalBlockHashOverride()
         .ifPresent(
-            tbho -> STATUS_LOG.warnMergeParameterChanged("TERMINAL_BLOCK_HASH", tbho.toString()));
+            tbho ->
+                STATUS_LOG.warnBellatrixParameterChanged("TERMINAL_BLOCK_HASH", tbho.toString()));
 
     tekuConfig
         .eth2NetworkConfiguration()
-        .getMergeTerminalBlockHashEpochOverride()
+        .getTerminalBlockHashEpochOverride()
         .ifPresent(
             tbheo ->
-                STATUS_LOG.warnMergeParameterChanged(
+                STATUS_LOG.warnBellatrixParameterChanged(
                     "TERMINAL_BLOCK_HASH_ACTIVATION_EPOCH", tbheo.toString()));
   }
 

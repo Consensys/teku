@@ -20,7 +20,7 @@
       "format" : "byte"
     },
     "body" : {
-      "$ref" : "#/components/schemas/BeaconBlockBodyMerge"
+      "$ref" : "#/components/schemas/BeaconBlockBodyBellatrix"
     }
   }
 }

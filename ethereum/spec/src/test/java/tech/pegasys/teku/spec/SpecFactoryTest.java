@@ -42,7 +42,7 @@ public class SpecFactoryTest {
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("getKnownConfigNames")
-  public void defaultFactoryShouldNotEnableMergeUnlessForkEpochIsSet(final String configName) {
+  public void defaultFactoryShouldNotEnableBellatrixUnlessForkEpochIsSet(final String configName) {
     final Spec spec = SpecFactory.create(configName);
     if (configName.equals("minimal")) { // Minimal doesn't have altair scheduled
       assertThat(spec.getForkSchedule().getSupportedMilestones()).containsExactly(PHASE0);

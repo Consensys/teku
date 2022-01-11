@@ -61,7 +61,7 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 class ForkChoiceTest {
 
-  private final Spec spec = TestSpecFactory.createMinimalMerge();
+  private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final StorageSystem storageSystem =
       InMemoryStorageSystemBuilder.create()

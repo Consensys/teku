@@ -58,40 +58,40 @@ public class Eth2NetworkOptions {
   private UInt64 altairForkEpoch;
 
   @Option(
-      names = {"--Xnetwork-merge-fork-epoch"},
+      names = {"--Xnetwork-bellatrix-fork-epoch"},
       hidden = true,
       paramLabel = "<epoch>",
-      description = "Override the Merge fork activation epoch.",
+      description = "Override the Bellatrix fork activation epoch.",
       arity = "1")
   private UInt64 bellatrixForkEpoch;
 
   @Option(
-      names = {"--Xnetwork-merge-total-terminal-difficulty-override"},
+      names = {"--Xnetwork-total-terminal-difficulty-override"},
       hidden = true,
       paramLabel = "<uint256>",
       description = "Override total terminal difficulty for The Merge",
       arity = "1",
       converter = UInt256Converter.class)
-  private UInt256 mergeTotalTerminalDifficultyOverride;
+  private UInt256 totalTerminalDifficultyOverride;
 
   @Option(
-      names = {"--Xnetwork-merge-terminal-block-hash-override"},
+      names = {"--Xnetwork-terminal-block-hash-override"},
       hidden = true,
       paramLabel = "<Bytes32 hex>",
       description =
-          "Override terminal block hash for The Merge. To be used in conjunction with --Xnetwork-merge-terminal-block-hash-epoch-override",
+          "Override terminal block hash for The Merge. To be used in conjunction with --Xnetwork-bellatrix-terminal-block-hash-epoch-override",
       arity = "1",
       converter = Bytes32Converter.class)
-  private Bytes32 mergeTerminalBlockHashOverride;
+  private Bytes32 terminalBlockHashOverride;
 
   @Option(
-      names = {"--Xnetwork-merge-terminal-block-hash-epoch-override"},
+      names = {"--Xnetwork-terminal-block-hash-epoch-override"},
       hidden = true,
       paramLabel = "<epoch>",
       description =
-          "Override terminal block hash for The Merge. To be used in conjunction with --Xnetwork-merge-terminal-block-hash-override",
+          "Override terminal block hash for The Merge. To be used in conjunction with --Xnetwork-bellatrix-terminal-block-hash-override",
       arity = "1")
-  private UInt64 mergeTerminalBlockHashEpochOverride;
+  private UInt64 terminalBlockHashEpochOverride;
 
   @Option(
       names = {"--Xstartup-target-peer-count"},
@@ -154,14 +154,14 @@ public class Eth2NetworkOptions {
     if (bellatrixForkEpoch != null) {
       builder.bellatrixForkEpoch(bellatrixForkEpoch);
     }
-    if (mergeTotalTerminalDifficultyOverride != null) {
-      builder.mergeTotalTerminalDifficultyOverride(mergeTotalTerminalDifficultyOverride);
+    if (totalTerminalDifficultyOverride != null) {
+      builder.totalTerminalDifficultyOverride(totalTerminalDifficultyOverride);
     }
-    if (mergeTerminalBlockHashOverride != null) {
-      builder.mergeTerminalBlockHashOverride(mergeTerminalBlockHashOverride);
+    if (terminalBlockHashOverride != null) {
+      builder.terminalBlockHashOverride(terminalBlockHashOverride);
     }
-    if (mergeTerminalBlockHashEpochOverride != null) {
-      builder.mergeTerminalBlockHashEpochOverride(mergeTerminalBlockHashEpochOverride);
+    if (terminalBlockHashEpochOverride != null) {
+      builder.terminalBlockHashEpochOverride(terminalBlockHashEpochOverride);
     }
   }
 

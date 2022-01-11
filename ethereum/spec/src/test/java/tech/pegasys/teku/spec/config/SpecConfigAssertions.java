@@ -32,7 +32,7 @@ public class SpecConfigAssertions {
   }
 
   static void assertAllBellatrixFieldsSet(final SpecConfig config) throws Exception {
-    assertAllFieldsSet(config, SpecConfigMerge.class);
+    assertAllFieldsSet(config, SpecConfigBellatrix.class);
   }
 
   static void assertAllFieldsSet(final SpecConfig config, Class<?> targetConfig) throws Exception {

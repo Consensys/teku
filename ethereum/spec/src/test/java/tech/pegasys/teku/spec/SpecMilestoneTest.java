@@ -20,13 +20,13 @@ import tech.pegasys.teku.infrastructure.ssz.type.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
+import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
-import tech.pegasys.teku.spec.config.SpecConfigMerge;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class SpecMilestoneTest {
-  private final SpecConfigMerge mergeSpecConfig =
-      SpecConfigMerge.required(SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()));
+  private final SpecConfigBellatrix bellatrixSpecConfig =
+      SpecConfigBellatrix.required(SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()));
   private final SpecConfigAltair altairSpecConfig =
       SpecConfigAltair.required(SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()));
   private final SpecConfig phase0SpecConfig =
@@ -55,7 +55,7 @@ public class SpecMilestoneTest {
   }
 
   @Test
-  public void getAllPriorMilestones_merge() {
+  public void getAllPriorMilestones_bellatrix() {
     assertThat(SpecMilestone.getAllPriorMilestones(SpecMilestone.BELLATRIX))
         .contains(SpecMilestone.PHASE0, SpecMilestone.ALTAIR);
   }
@@ -73,7 +73,7 @@ public class SpecMilestoneTest {
   }
 
   @Test
-  public void getMilestonesUpTo_merge() {
+  public void getMilestonesUpTo_bellatrix() {
     assertThat(SpecMilestone.getMilestonesUpTo(SpecMilestone.BELLATRIX))
         .contains(SpecMilestone.PHASE0, SpecMilestone.ALTAIR, SpecMilestone.BELLATRIX);
   }
@@ -115,9 +115,9 @@ public class SpecMilestoneTest {
   }
 
   @Test
-  public void getForkVersion_merge() {
-    final Bytes4 expected = mergeSpecConfig.getBellatrixForkVersion();
-    assertThat(SpecMilestone.getForkVersion(mergeSpecConfig, SpecMilestone.BELLATRIX))
+  public void getForkVersion_bellatrix() {
+    final Bytes4 expected = bellatrixSpecConfig.getBellatrixForkVersion();
+    assertThat(SpecMilestone.getForkVersion(bellatrixSpecConfig, SpecMilestone.BELLATRIX))
         .contains(expected);
   }
 
@@ -136,9 +136,9 @@ public class SpecMilestoneTest {
   }
 
   @Test
-  public void getForkSlot_merge() {
-    final UInt64 expected = mergeSpecConfig.getBellatrixForkEpoch();
-    assertThat(SpecMilestone.getForkEpoch(mergeSpecConfig, SpecMilestone.BELLATRIX))
+  public void getForkSlot_bellatrix() {
+    final UInt64 expected = bellatrixSpecConfig.getBellatrixForkEpoch();
+    assertThat(SpecMilestone.getForkEpoch(bellatrixSpecConfig, SpecMilestone.BELLATRIX))
         .contains(expected);
   }
 
@@ -149,7 +149,7 @@ public class SpecMilestoneTest {
   }
 
   @Test
-  public void getForkSlot_mergeNotScheduled() {
+  public void getForkSlot_bellatrixNotScheduled() {
     assertThat(SpecMilestone.getForkEpoch(phase0SpecConfig, SpecMilestone.BELLATRIX))
         .contains(UInt64.MAX_VALUE);
   }
