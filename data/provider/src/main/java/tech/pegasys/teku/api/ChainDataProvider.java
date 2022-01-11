@@ -259,10 +259,8 @@ public class ChainDataProvider {
     if (validatorParameter.toLowerCase().startsWith("0x")) {
       final Bytes48 keyBytes = getBytes48FromParameter(validatorParameter);
       try {
-        // validate key against g2 curve
-        return spec.getValidatorIndex(state, BLSPublicKey.fromBytesCompressedValidate(keyBytes));
+        return spec.getValidatorIndex(state, BLSPublicKey.fromBytesCompressed(keyBytes));
       } catch (IllegalArgumentException ex) {
-        // failure to validate on the curve guarantees it is not in the validator list
         return Optional.empty();
       }
     }
