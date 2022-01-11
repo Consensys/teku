@@ -59,6 +59,7 @@ import tech.pegasys.teku.api.stateselector.StateSelectorFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
@@ -237,7 +238,7 @@ public class ChainDataProvider {
   public List<Map<String, Object>> getProtoArrayData() {
     return recentChainData
         .getForkChoiceStrategy()
-        .map(forkChoice -> forkChoice.getNodeData())
+        .map(ForkChoiceStrategy::getNodeData)
         .orElse(Collections.emptyList());
   }
 
