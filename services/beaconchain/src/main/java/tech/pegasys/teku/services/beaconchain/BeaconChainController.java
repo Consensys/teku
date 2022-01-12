@@ -464,7 +464,7 @@ public class BeaconChainController extends Service
     LOG.debug("BeaconChainController.initForkChoice()");
     final boolean proposerBoostEnabled = beaconConfig.eth2NetworkConfig().isProposerBoostEnabled();
     forkChoice =
-        ForkChoice.create(
+        new ForkChoice(
             spec, forkChoiceExecutor, recentChainData, forkChoiceNotifier, proposerBoostEnabled);
     forkChoiceTrigger = new ForkChoiceTrigger(forkChoice);
   }
@@ -890,7 +890,7 @@ public class BeaconChainController extends Service
         syncState -> forkChoiceNotifier.onSyncingStatusChanged(syncState.isInSync()));
     forkChoiceNotifier.onSyncingStatusChanged(syncService.getCurrentSyncState().isInSync());
 
-    forkChoice.subscribeToOptimisticSync(syncService.getOptimisticSyncSubscriber());
+    forkChoice.subscribeToOptimisticSyncChanges(syncService.getOptimisticSyncSubscriber());
   }
 
   protected void initOperationsReOrgManager() {

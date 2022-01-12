@@ -21,7 +21,6 @@ import static tech.pegasys.teku.statetransition.forkchoice.StateRootCollector.ad
 import com.google.common.base.Throwables;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -32,6 +31,7 @@ import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
+import tech.pegasys.teku.protoarray.ForkChoiceStrategy.ForkChoiceStateAndIsHeadOptimistic;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.cache.CapturingIndexedAttestationCache;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
@@ -48,7 +48,6 @@ import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.executionengine.ExecutePayloadResult;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
-import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
@@ -68,9 +67,9 @@ public class ForkChoice {
 
   private final Subscribers<OptimisticSyncSubscriber> optimisticSyncSubscribers =
       Subscribers.create(true);
-  private final AtomicBoolean optimisticSyncing = new AtomicBoolean(false);
+  private Optional<Boolean> optimisticSyncing = Optional.empty();
 
-  private ForkChoice(
+  public ForkChoice(
       final Spec spec,
       final EventThread forkChoiceExecutor,
       final RecentChainData recentChainData,
@@ -84,27 +83,17 @@ public class ForkChoice {
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
   }
 
-  public static ForkChoice create(
-      final Spec spec,
-      final EventThread forkChoiceExecutor,
-      final RecentChainData recentChainData,
-      final ForkChoiceNotifier forkChoiceNotifier,
-      final boolean proposerBoostEnabled) {
-    return new ForkChoice(
-        spec, forkChoiceExecutor, recentChainData, forkChoiceNotifier, proposerBoostEnabled);
-  }
-
   /**
    * @deprecated Provided only to avoid having to hard code proposerBoostEnabled in lots of tests.
    *     Will be removed when the feature toggle is removed.
    */
   @Deprecated
-  public static ForkChoice create(
+  public ForkChoice(
       final Spec spec,
       final EventThread forkChoiceExecutor,
       final RecentChainData recentChainData,
       final ForkChoiceNotifier forkChoiceNotifier) {
-    return create(spec, forkChoiceExecutor, recentChainData, forkChoiceNotifier, false);
+    this(spec, forkChoiceExecutor, recentChainData, forkChoiceNotifier, false);
   }
 
   private void initializeProtoArrayForkChoice() {
@@ -168,7 +157,7 @@ public class ForkChoice {
                                                   + headBlockRoot))));
 
                       transaction.commit();
-                      notifyForkChoiceUpdated();
+                      notifyForkChoiceUpdatedAndOptimisticSyncingChanged();
                       return true;
                     }));
   }
@@ -317,16 +306,8 @@ public class ForkChoice {
       updateForkChoiceForImportedBlock(block, result, forkChoiceStrategy);
     } else {
       result = BlockImportResult.optimisticallySuccessful(block);
-      if (optimisticSyncing.compareAndSet(false, true)
-          && recentChainData
-              .getBestBlockRoot()
-              .map(bestRoot -> bestRoot.equals(block.getParentRoot()))
-              .orElse(false)) {
-        optimisticSyncSubscribers.deliver(
-            OptimisticSyncSubscriber::onOptimisticSyncingChanged, true);
-      }
     }
-    notifyForkChoiceUpdated();
+    notifyForkChoiceUpdatedAndOptimisticSyncingChanged();
     return result;
   }
 
@@ -366,10 +347,6 @@ public class ForkChoice {
       recentChainData.updateHead(bestHeadBlock.getBlockRoot(), bestHeadBlock.getSlot());
       if (bestHeadBlock.getBlockRoot().equals(block.getRoot())) {
         result.markAsCanonical();
-        if (optimisticSyncing.compareAndSet(true, false)) {
-          optimisticSyncSubscribers.deliver(
-              OptimisticSyncSubscriber::onOptimisticSyncingChanged, false);
-        }
       }
     }
   }
@@ -410,13 +387,21 @@ public class ForkChoice {
         result.getFailureCause());
   }
 
-  private void notifyForkChoiceUpdated() {
-    final ForkChoiceState forkChoiceState =
+  private void notifyForkChoiceUpdatedAndOptimisticSyncingChanged() {
+    final ForkChoiceStateAndIsHeadOptimistic forkChoiceStateAndIsHeadOptimistic =
         getForkChoiceStrategy()
             .getForkChoiceState(
                 recentChainData.getJustifiedCheckpoint().orElseThrow(),
                 recentChainData.getFinalizedCheckpoint().orElseThrow());
-    forkChoiceNotifier.onForkChoiceUpdated(forkChoiceState);
+    forkChoiceNotifier.onForkChoiceUpdated(forkChoiceStateAndIsHeadOptimistic.forkChoiceState);
+    if (optimisticSyncing
+        .map(os -> !os.equals(forkChoiceStateAndIsHeadOptimistic.isHeadOptimistic))
+        .orElse(true)) {
+      optimisticSyncing = Optional.of(forkChoiceStateAndIsHeadOptimistic.isHeadOptimistic);
+      optimisticSyncSubscribers.deliver(
+          OptimisticSyncSubscriber::onOptimisticSyncingChanged,
+          forkChoiceStateAndIsHeadOptimistic.isHeadOptimistic);
+    }
   }
 
   private void applyVotesFromBlock(
@@ -529,11 +514,11 @@ public class ForkChoice {
     return forkChoiceExecutor.execute(task);
   }
 
-  public long subscribeToOptimisticSync(OptimisticSyncSubscriber subscriber) {
+  public long subscribeToOptimisticSyncChanges(OptimisticSyncSubscriber subscriber) {
     return optimisticSyncSubscribers.subscribe(subscriber);
   }
 
-  public void unsubscribeFromOptimisticSync(long subscriberId) {
+  public void unsubscribeFromOptimisticSyncChanges(long subscriberId) {
     optimisticSyncSubscribers.unsubscribe(subscriberId);
   }
 
