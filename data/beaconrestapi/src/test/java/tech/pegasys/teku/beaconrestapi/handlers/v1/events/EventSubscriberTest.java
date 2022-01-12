@@ -184,7 +184,7 @@ public class EventSubscriberTest {
 
     assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
     asyncRunner.executeQueuedActions();
-    assertThat(outputStream.countEvents()).isEqualTo(1);
+    assertThat(outputStream.countEvents()).isEqualTo(0);
     assertThat(outputStream.countComments()).isEqualTo(1);
 
     // Keep alive schedules another to be run
