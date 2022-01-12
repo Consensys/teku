@@ -46,11 +46,13 @@ import tech.pegasys.teku.api.response.v1.beacon.ValidatorBalanceResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.response.v1.debug.ChainHead;
+import tech.pegasys.teku.api.response.v1.teku.GetAllBlocksAtSlotResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.Root;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
+import tech.pegasys.teku.api.schema.SignedBeaconBlockWithRoot;
 import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.api.stateselector.StateSelectorFactory;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -201,7 +203,7 @@ public class ChainDataProvider {
                             spec.atSlot(state.getSlot()).getMilestone())));
   }
 
-  public SafeFuture<Set<SignedBeaconBlock>> getAllBlocksAtSlot(final String slot) {
+  public SafeFuture<GetAllBlocksAtSlotResponse> getAllBlocksAtSlot(final String slot) {
     if (slot.startsWith("0x")) {
       throw new BadRequestException(
           String.format("block roots are not currently supported: %s", slot));
@@ -210,10 +212,15 @@ public class ChainDataProvider {
           .nonCanonicalBlocksSelector(UInt64.valueOf(slot))
           .getBlock()
           .thenApply(
-              blockList ->
-                  blockList.stream()
-                      .map(schemaObjectProvider::getSignedBeaconBlock)
-                      .collect(Collectors.toSet()));
+              blockList -> {
+                final Set<SignedBeaconBlockWithRoot> blocks =
+                    blockList.stream()
+                        .map(SignedBeaconBlockWithRoot::new)
+                        .collect(Collectors.toSet());
+
+                return new GetAllBlocksAtSlotResponse(
+                    getVersionAtSlot(UInt64.valueOf(slot)), blocks);
+              });
     }
   }
 

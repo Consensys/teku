@@ -9,7 +9,7 @@
       "uniqueItems" : true,
       "type" : "array",
       "items" : {
-        "$ref" : "#/components/schemas/SignedBeaconBlock"
+        "$ref" : "#/components/schemas/SignedBeaconBlockWithRoot"
       }
     }
   }
