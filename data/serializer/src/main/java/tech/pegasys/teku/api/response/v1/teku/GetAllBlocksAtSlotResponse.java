@@ -16,15 +16,15 @@ package tech.pegasys.teku.api.response.v1.teku;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Set;
-import tech.pegasys.teku.api.schema.SignedBeaconBlock;
+import tech.pegasys.teku.api.schema.SignedBeaconBlockWithRoot;
 import tech.pegasys.teku.api.schema.Version;
 
 public class GetAllBlocksAtSlotResponse {
   private final Version version;
 
-  private final Set<SignedBeaconBlock> data;
+  private final Set<SignedBeaconBlockWithRoot> data;
 
-  public Set<SignedBeaconBlock> getData() {
+  public Set<SignedBeaconBlockWithRoot> getData() {
     return data;
   }
 
@@ -35,7 +35,7 @@ public class GetAllBlocksAtSlotResponse {
   @JsonCreator
   public GetAllBlocksAtSlotResponse(
       @JsonProperty("version") final Version version,
-      @JsonProperty("data") final Set<SignedBeaconBlock> data) {
+      @JsonProperty("data") final Set<SignedBeaconBlockWithRoot> data) {
     this.version = version;
     this.data = data;
   }
