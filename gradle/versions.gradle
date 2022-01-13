@@ -13,7 +13,7 @@ dependencyManagement {
       entry 'error_prone_test_helpers'
     }
 
-    dependency 'tech.pegasys.tools.epchecks:errorprone-checks:1.0.1'
+    dependency 'tech.pegasys.tools.epchecks:errorprone-checks:1.0.2'
 
     dependency 'com.google.guava:guava:31.0.1-jre'
     dependency 'com.google.code.gson:gson:2.8.9'
@@ -21,7 +21,7 @@ dependencyManagement {
     dependency 'com.googlecode.json-simple:json-simple:1.1.1'
     dependency 'org.jsoup:jsoup:1.14.3'
 
-    dependency 'com.launchdarkly:okhttp-eventsource:2.3.2'
+    dependency 'com.launchdarkly:okhttp-eventsource:2.4.0'
 
     dependency 'com.squareup.okhttp3:okhttp:4.9.2'
     dependency 'com.squareup.okhttp3:mockwebserver:4.9.2'
@@ -74,7 +74,7 @@ dependencyManagement {
       entry 'vertx-unit'
       entry 'vertx-web'
     }
-    dependency 'io.projectreactor:reactor-core:3.4.13'
+    dependency 'io.projectreactor:reactor-core:3.4.14'
 
     dependency 'it.unimi.dsi:fastutil:8.5.6'
 
@@ -158,7 +158,7 @@ dependencyManagement {
       exclude 'org.apache.tuweni:units'
     }
 
-    dependency 'tech.pegasys.signers.internal:bls-keystore:1.0.23'
+    dependency 'tech.pegasys.signers.internal:bls-keystore:1.0.25'
 
     dependency 'org.jupnp:org.jupnp.support:2.6.0'
     dependency 'org.jupnp:org.jupnp:2.6.0'
