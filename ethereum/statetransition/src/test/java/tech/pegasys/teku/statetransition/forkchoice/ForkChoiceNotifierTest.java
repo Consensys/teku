@@ -179,7 +179,8 @@ class ForkChoiceNotifierTest {
 
   @Test
   void onForkChoiceUpdated_shouldNotSendNotificationWhenHeadBlockHashIsZero() {
-    notifier.onForkChoiceUpdated(new ForkChoiceState(Bytes32.ZERO, Bytes32.ZERO, Bytes32.ZERO, false));
+    notifier.onForkChoiceUpdated(
+        new ForkChoiceState(Bytes32.ZERO, Bytes32.ZERO, Bytes32.ZERO, false));
 
     verifyNoInteractions(executionEngineChannel);
   }
