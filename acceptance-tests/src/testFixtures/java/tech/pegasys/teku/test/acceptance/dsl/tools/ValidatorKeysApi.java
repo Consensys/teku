@@ -94,7 +94,11 @@ public class ValidatorKeysApi {
   }
 
   private String getValidatorListing() throws IOException {
-    final String result = httpClient.get(validatorUri.get(), "/eth/v1/keystores");
+    final String result =
+        httpClient.get(
+            validatorUri.get(),
+            "/eth/v1/keystores",
+            Map.of("Authorization", "Bearer " + apiPasswordSupplier.get()));
     LOG.debug("GET Keys: " + result);
     return result;
   }
