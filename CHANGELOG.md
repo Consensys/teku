@@ -19,3 +19,4 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Bug Fixes
 * Rest api endpoints accepting validator IDs will no longer reject valid bytes48 hex strings that are not on the g2 curve.
+* Upgraded discovery to fix `ConcurrentModificationException`
