@@ -31,7 +31,6 @@ import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
-import tech.pegasys.teku.protoarray.ForkChoiceStrategy.ForkChoiceStateAndIsHeadOptimistic;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.cache.CapturingIndexedAttestationCache;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
@@ -48,6 +47,7 @@ import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.executionengine.ExecutePayloadResult;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
+import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
@@ -388,19 +388,18 @@ public class ForkChoice {
   }
 
   private void notifyForkChoiceUpdatedAndOptimisticSyncingChanged() {
-    final ForkChoiceStateAndIsHeadOptimistic forkChoiceStateAndIsHeadOptimistic =
+    final ForkChoiceState forkChoiceState =
         getForkChoiceStrategy()
             .getForkChoiceState(
                 recentChainData.getJustifiedCheckpoint().orElseThrow(),
                 recentChainData.getFinalizedCheckpoint().orElseThrow());
-    forkChoiceNotifier.onForkChoiceUpdated(forkChoiceStateAndIsHeadOptimistic.forkChoiceState);
+    forkChoiceNotifier.onForkChoiceUpdated(forkChoiceState);
     if (optimisticSyncing
-        .map(os -> !os.equals(forkChoiceStateAndIsHeadOptimistic.isHeadOptimistic))
+        .map(oldValue -> !oldValue.equals(forkChoiceState.isHeadOptimistic()))
         .orElse(true)) {
-      optimisticSyncing = Optional.of(forkChoiceStateAndIsHeadOptimistic.isHeadOptimistic);
+      optimisticSyncing = Optional.of(forkChoiceState.isHeadOptimistic());
       optimisticSyncSubscribers.deliver(
-          OptimisticSyncSubscriber::onOptimisticSyncingChanged,
-          forkChoiceStateAndIsHeadOptimistic.isHeadOptimistic);
+          OptimisticSyncSubscriber::onOptimisticSyncingChanged, forkChoiceState.isHeadOptimistic());
     }
   }
 

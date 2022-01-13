@@ -179,7 +179,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     }
   }
 
-  public ForkChoiceStateAndIsHeadOptimistic getForkChoiceState(
+  public ForkChoiceState getForkChoiceState(
       final Checkpoint justifiedCheckpoint, final Checkpoint finalizedCheckpoint) {
     protoArrayLock.readLock().lock();
     try {
@@ -194,9 +194,10 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
               .getProtoNode(finalizedCheckpoint.getRoot())
               .map(ProtoNode::getExecutionBlockHash)
               .orElse(Bytes32.ZERO);
-      return new ForkChoiceStateAndIsHeadOptimistic(
-          new ForkChoiceState(
-              headExecutionBlockHash, headExecutionBlockHash, finalizedExecutionHash),
+      return new ForkChoiceState(
+          headExecutionBlockHash,
+          headExecutionBlockHash,
+          finalizedExecutionHash,
           headNode.isOptimistic());
     } finally {
       protoArrayLock.readLock().unlock();
@@ -451,17 +452,6 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       }
     } finally {
       protoArrayLock.writeLock().unlock();
-    }
-  }
-
-  public static class ForkChoiceStateAndIsHeadOptimistic {
-    public final ForkChoiceState forkChoiceState;
-    public final boolean isHeadOptimistic;
-
-    ForkChoiceStateAndIsHeadOptimistic(
-        final ForkChoiceState forkChoiceState, final boolean isHeadOptimistic) {
-      this.forkChoiceState = forkChoiceState;
-      this.isHeadOptimistic = isHeadOptimistic;
     }
   }
 }

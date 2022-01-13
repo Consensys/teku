@@ -524,7 +524,7 @@ class ForkChoiceTest {
             .orElseThrow();
     verify(forkChoiceNotifier)
         .onForkChoiceUpdated(
-            new ForkChoiceState(headExecutionHash, headExecutionHash, finalizedExecutionHash));
+            new ForkChoiceState(headExecutionHash, headExecutionHash, finalizedExecutionHash, false));
   }
 
   private void justifyEpoch(final ChainUpdater chainUpdater, final long epoch) {
