@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.forkchoice;
 
 import java.time.Duration;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -47,6 +48,7 @@ public class OptimisticHeadValidator extends Service {
   private final ForkChoice forkChoice;
   private final ExecutionEngineChannel executionEngine;
   private Optional<Cancellable> cancellable = Optional.empty();
+  private final AtomicBoolean running = new AtomicBoolean(false);
 
   public OptimisticHeadValidator(
       final AsyncRunner asyncRunner,
@@ -80,11 +82,14 @@ public class OptimisticHeadValidator extends Service {
   }
 
   private void verifyOptimisticHeads() {
-    SafeFuture.allOf(
-            recentChainData.getOptimisticChainHeads().keySet().stream()
-                .map(this::reexecuteBlockPayload)
-                .toArray(SafeFuture[]::new))
-        .reportExceptions();
+    if (running.compareAndSet(false, true)) {
+      SafeFuture.allOf(
+              recentChainData.getOptimisticChainHeads().keySet().stream()
+                  .map(this::reexecuteBlockPayload)
+                  .toArray(SafeFuture[]::new))
+          .alwaysRun(() -> running.set(false))
+          .reportExceptions();
+    }
   }
 
   private SafeFuture<Void> reexecuteBlockPayload(final Bytes32 blockRoot) {

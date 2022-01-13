@@ -22,9 +22,11 @@ import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.service.serviceutils.Service;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoice.OptimisticSyncSubscriber;
 import tech.pegasys.teku.sync.forward.ForwardSync;
 
-public class SyncStateTracker extends Service implements SyncStateProvider {
+public class SyncStateTracker extends Service
+    implements SyncStateProvider, OptimisticSyncSubscriber {
   private static final Logger LOG = LogManager.getLogger();
   private final AsyncRunner asyncRunner;
   private final ForwardSync syncService;
@@ -38,6 +40,7 @@ public class SyncStateTracker extends Service implements SyncStateProvider {
   private boolean syncActive = false;
   private long peerConnectedSubscriptionId;
   private long syncSubscriptionId;
+  private boolean optimisticSyncActive = false;
 
   private volatile SyncState currentState;
 
@@ -67,6 +70,12 @@ public class SyncStateTracker extends Service implements SyncStateProvider {
   }
 
   @Override
+  public void onOptimisticSyncingChanged(final boolean active) {
+    optimisticSyncActive = active;
+    updateCurrentState();
+  }
+
+  @Override
   public long subscribeToSyncStateChanges(final SyncStateSubscriber subscriber) {
     return subscribers.subscribe(subscriber);
   }
@@ -78,7 +87,7 @@ public class SyncStateTracker extends Service implements SyncStateProvider {
 
   private void updateCurrentState() {
     final SyncState previousState = currentState;
-    if (syncActive) {
+    if (syncActive || optimisticSyncActive) {
       currentState = SyncState.SYNCING;
     } else if (startingUp) {
       currentState = SyncState.START_UP;

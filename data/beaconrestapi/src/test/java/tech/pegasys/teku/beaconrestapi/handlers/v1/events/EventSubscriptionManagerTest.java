@@ -139,7 +139,6 @@ public class EventSubscriptionManagerTest {
     triggerReorgEvent();
     final String eventString = outputStream.getString();
     assertThat(eventString).contains("event: chain_reorg\n");
-    assertThat(outputStream.countComments()).isEqualTo(0);
     final ChainReorgEvent event =
         jsonProvider.jsonToObject(
             eventString.substring(eventString.indexOf("{")), ChainReorgEvent.class);
@@ -155,7 +154,6 @@ public class EventSubscriptionManagerTest {
     triggerHeadEvent();
     final String eventString = outputStream.getString();
     assertThat(eventString).contains("event: head\n");
-    assertThat(outputStream.countComments()).isEqualTo(0);
     final HeadEvent event =
         jsonProvider.jsonToObject(eventString.substring(eventString.indexOf("{")), HeadEvent.class);
 
@@ -163,7 +161,7 @@ public class EventSubscriptionManagerTest {
   }
 
   @Test
-  void shouldPropagateContributions() throws IOException {
+  void shouldPropagateContributions() {
     when(req.getQueryString()).thenReturn("&topics=contribution_and_proof");
     manager.registerClient(client1);
 
@@ -173,7 +171,7 @@ public class EventSubscriptionManagerTest {
   }
 
   @Test
-  void shouldPropagateHeadAndReorg() throws IOException {
+  void shouldPropagateHeadAndReorg() {
     when(req.getQueryString()).thenReturn("&topics=chain_reorg,head");
     manager.registerClient(client1);
 
@@ -184,7 +182,7 @@ public class EventSubscriptionManagerTest {
   }
 
   @Test
-  void shouldPropagateMultipleMessagesIfSubscribed() throws IOException {
+  void shouldPropagateMultipleMessagesIfSubscribed() {
     when(req.getQueryString()).thenReturn("&topics=chain_reorg,finalized_checkpoint");
     manager.registerClient(client1);
 
@@ -218,7 +216,6 @@ public class EventSubscriptionManagerTest {
     triggerSyncStateEvent();
     final String eventString = outputStream.getString();
     assertThat(eventString).contains("event: sync_state\n");
-    assertThat(outputStream.countComments()).isEqualTo(0);
     final SyncStateChangeEvent event =
         jsonProvider.jsonToObject(
             eventString.substring(eventString.indexOf("{")), SyncStateChangeEvent.class);
@@ -250,7 +247,6 @@ public class EventSubscriptionManagerTest {
     triggerAttestationEvent();
     final String eventString = outputStream.getString();
     assertThat(eventString).contains("event: attestation\n");
-    assertThat(outputStream.countComments()).isEqualTo(0);
     final Attestation event =
         jsonProvider.jsonToObject(
             eventString.substring(eventString.indexOf("{")), Attestation.class);
@@ -278,7 +274,7 @@ public class EventSubscriptionManagerTest {
     when(req.getQueryString()).thenReturn("&topics=head");
     manager.registerClient(client1);
     triggerFinalizedCheckpointEvent();
-    assertThat(outputStream.getWriteCounter()).isEqualTo(0);
+    assertThat(outputStream.countEvents()).isEqualTo(0);
   }
 
   @Test
@@ -287,7 +283,7 @@ public class EventSubscriptionManagerTest {
     manager.registerClient(client1);
 
     triggerReorgEvent();
-    assertThat(outputStream.getWriteCounter()).isEqualTo(0);
+    assertThat(outputStream.countEvents()).isEqualTo(0);
   }
 
   @Test
@@ -296,7 +292,7 @@ public class EventSubscriptionManagerTest {
     manager.registerClient(client1);
 
     triggerHeadEvent();
-    assertThat(outputStream.getWriteCounter()).isEqualTo(0);
+    assertThat(outputStream.countEvents()).isEqualTo(0);
   }
 
   @Test
@@ -305,7 +301,7 @@ public class EventSubscriptionManagerTest {
     manager.registerClient(client1);
 
     triggerBlockEvent();
-    assertThat(outputStream.getWriteCounter()).isEqualTo(0);
+    assertThat(outputStream.countEvents()).isEqualTo(0);
   }
 
   @Test
@@ -314,7 +310,7 @@ public class EventSubscriptionManagerTest {
     manager.registerClient(client1);
 
     triggerAttestationEvent();
-    assertThat(outputStream.getWriteCounter()).isEqualTo(0);
+    assertThat(outputStream.countEvents()).isEqualTo(0);
   }
 
   @Test
@@ -323,7 +319,7 @@ public class EventSubscriptionManagerTest {
     manager.registerClient(client1);
 
     triggerVoluntaryExitEvent();
-    assertThat(outputStream.getWriteCounter()).isEqualTo(0);
+    assertThat(outputStream.countEvents()).isEqualTo(0);
   }
 
   private void triggerVoluntaryExitEvent() {
