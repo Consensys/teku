@@ -15,6 +15,7 @@ package tech.pegasys.teku.sync;
 
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.service.serviceutils.Service;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.sync.events.SyncState;
 import tech.pegasys.teku.sync.events.SyncStateTracker;
 import tech.pegasys.teku.sync.forward.ForwardSync;
@@ -71,6 +72,11 @@ public class DefaultSyncService extends Service implements SyncService {
   @Override
   public SyncState getCurrentSyncState() {
     return syncStateTracker.getCurrentSyncState();
+  }
+
+  @Override
+  public ForkChoice.OptimisticSyncSubscriber getOptimisticSyncSubscriber() {
+    return syncStateTracker;
   }
 
   @Override

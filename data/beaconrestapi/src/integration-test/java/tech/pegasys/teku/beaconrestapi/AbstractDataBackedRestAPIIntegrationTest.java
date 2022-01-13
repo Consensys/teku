@@ -146,7 +146,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     forkChoice =
         useMockForkChoice
             ? mock(ForkChoice.class)
-            : ForkChoice.create(
+            : new ForkChoice(
                 spec, new InlineEventThread(), recentChainData, mock(ForkChoiceNotifier.class));
     beaconChainUtil =
         BeaconChainUtil.create(

@@ -28,6 +28,7 @@ import tech.pegasys.teku.infrastructure.async.ExceptionThrowingRunnable;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
+import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.spec.Spec;
@@ -64,7 +65,11 @@ public class ForkChoice {
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final boolean proposerBoostEnabled;
 
-  private ForkChoice(
+  private final Subscribers<OptimisticSyncSubscriber> optimisticSyncSubscribers =
+      Subscribers.create(true);
+  private Optional<Boolean> optimisticSyncing = Optional.empty();
+
+  public ForkChoice(
       final Spec spec,
       final EventThread forkChoiceExecutor,
       final RecentChainData recentChainData,
@@ -78,27 +83,17 @@ public class ForkChoice {
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
   }
 
-  public static ForkChoice create(
-      final Spec spec,
-      final EventThread forkChoiceExecutor,
-      final RecentChainData recentChainData,
-      final ForkChoiceNotifier forkChoiceNotifier,
-      final boolean proposerBoostEnabled) {
-    return new ForkChoice(
-        spec, forkChoiceExecutor, recentChainData, forkChoiceNotifier, proposerBoostEnabled);
-  }
-
   /**
    * @deprecated Provided only to avoid having to hard code proposerBoostEnabled in lots of tests.
    *     Will be removed when the feature toggle is removed.
    */
   @Deprecated
-  public static ForkChoice create(
+  public ForkChoice(
       final Spec spec,
       final EventThread forkChoiceExecutor,
       final RecentChainData recentChainData,
       final ForkChoiceNotifier forkChoiceNotifier) {
-    return create(spec, forkChoiceExecutor, recentChainData, forkChoiceNotifier, false);
+    this(spec, forkChoiceExecutor, recentChainData, forkChoiceNotifier, false);
   }
 
   private void initializeProtoArrayForkChoice() {
@@ -162,7 +157,7 @@ public class ForkChoice {
                                                   + headBlockRoot))));
 
                       transaction.commit();
-                      notifyForkChoiceUpdated();
+                      notifyForkChoiceUpdatedAndOptimisticSyncingChanged();
                       return true;
                     }));
   }
@@ -312,7 +307,7 @@ public class ForkChoice {
     } else {
       result = BlockImportResult.optimisticallySuccessful(block);
     }
-    notifyForkChoiceUpdated();
+    notifyForkChoiceUpdatedAndOptimisticSyncingChanged();
     return result;
   }
 
@@ -392,13 +387,20 @@ public class ForkChoice {
         result.getFailureCause());
   }
 
-  private void notifyForkChoiceUpdated() {
+  private void notifyForkChoiceUpdatedAndOptimisticSyncingChanged() {
     final ForkChoiceState forkChoiceState =
         getForkChoiceStrategy()
             .getForkChoiceState(
                 recentChainData.getJustifiedCheckpoint().orElseThrow(),
                 recentChainData.getFinalizedCheckpoint().orElseThrow());
     forkChoiceNotifier.onForkChoiceUpdated(forkChoiceState);
+    if (optimisticSyncing
+        .map(oldValue -> !oldValue.equals(forkChoiceState.isHeadOptimistic()))
+        .orElse(true)) {
+      optimisticSyncing = Optional.of(forkChoiceState.isHeadOptimistic());
+      optimisticSyncSubscribers.deliver(
+          OptimisticSyncSubscriber::onOptimisticSyncingChanged, forkChoiceState.isHeadOptimistic());
+    }
   }
 
   private void applyVotesFromBlock(
@@ -509,5 +511,17 @@ public class ForkChoice {
 
   private <T> SafeFuture<T> onForkChoiceThread(final ExceptionThrowingSupplier<T> task) {
     return forkChoiceExecutor.execute(task);
+  }
+
+  public long subscribeToOptimisticSyncChanges(OptimisticSyncSubscriber subscriber) {
+    return optimisticSyncSubscribers.subscribe(subscriber);
+  }
+
+  public void unsubscribeFromOptimisticSyncChanges(long subscriberId) {
+    optimisticSyncSubscribers.unsubscribe(subscriberId);
+  }
+
+  public interface OptimisticSyncSubscriber {
+    void onOptimisticSyncingChanged(boolean isSyncingOptimistically);
   }
 }
