@@ -5,6 +5,7 @@ import java.text.SimpleDateFormat
 
 buildscript {
   repositories {
+    mavenCentral()
     maven { url "https://artifacts.consensys.net/public/maven/maven/" }
   }
   dependencies {
@@ -13,7 +14,7 @@ buildscript {
 }
 
 plugins {
-  id 'com.diffplug.spotless' version '6.1.0'
+  id 'com.diffplug.spotless' version '6.1.2'
   id 'com.github.ben-manes.versions' version '0.40.0'
   id 'com.github.jk1.dependency-license-report' version '1.16'
   id 'io.spring.dependency-management' version '1.0.11.RELEASE'
@@ -80,7 +81,6 @@ allprojects {
 
   repositories {
     mavenLocal()
-    jcenter()
     mavenCentral()
     maven { url "https://artifacts.consensys.net/public/maven/maven/" }
     maven { url "https://dl.cloudsmith.io/public/libp2p/jvm-libp2p/maven/" }
