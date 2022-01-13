@@ -416,8 +416,8 @@ class ForkChoiceTest {
     executionEngine.setExecutePayloadResult(
         ExecutePayloadResult.invalid(Optional.empty(), Optional.empty()));
 
-    // generate block which finalize epoch 4
-    importBlockWithError(epoch4Block, FailureReason.FAILED_STATE_TRANSITION);
+    storageSystem.chainUpdater().setCurrentSlot(slotToImport.increment());
+    importBlockWithError(chainBuilder.generateNextBlock(), FailureReason.FAILED_STATE_TRANSITION);
   }
 
   @Test
@@ -497,7 +497,6 @@ class ForkChoiceTest {
     executionEngine.setExecutePayloadResult(ExecutePayloadResult.SYNCING);
 
     // import a fork which won't be canonical
-
     importBlockOptimistically(alternativeChain.generateBlockAtSlot(forkSlot));
 
     // no notification is expected
