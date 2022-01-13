@@ -34,35 +34,30 @@ import org.jetbrains.annotations.NotNull;
 
 public class AuthorizationManager implements AccessManager {
   private static final Logger LOG = LogManager.getLogger();
+  private static final String BEARER_PREFIX = "Bearer ";
   private Optional<String> bearer;
-  static final String BEARER_PREFIX = "Bearer ";
-  private static String INIT_FAILED =
-      "Failed to initialize authorization mapping - will not be able to make requests to api";
 
   public AuthorizationManager(final Path path) {
     final File passwordFile = path.toFile();
+    final String initFailedMessage =
+        "Failed to initialize authorization bearer token - all API requests will be rejected.";
     if (!passwordFile.exists() || !passwordFile.canRead() || passwordFile.isDirectory()) {
-      LOG.error(INIT_FAILED);
+      LOG.error(initFailedMessage);
       bearer = Optional.empty();
       return;
     }
     try (Stream<String> lines = Files.lines(path)) {
       bearer = lines.findFirst().map(val -> URLEncoder.encode(val, StandardCharsets.UTF_8));
     } catch (IOException e) {
-      LOG.error(INIT_FAILED, e);
+      LOG.error(initFailedMessage, e);
       bearer = Optional.empty();
     }
   }
 
   private void unauthorized(final Context ctx, final String message) {
-    LOG.info(message);
+    LOG.debug(message);
     ctx.json("{\n  \"status\": 401, \n \"message\":\"Unauthorized\"\n}");
     ctx.status(SC_UNAUTHORIZED);
-  }
-
-  private void unauthorized(final Context ctx) {
-    unauthorized(
-        ctx, String.format("API Reject - Unauthorized \"%s %s\"", ctx.method(), ctx.matchedPath()));
   }
 
   @Override
@@ -87,11 +82,9 @@ public class AuthorizationManager implements AccessManager {
       return;
     }
     if (!auth.substring(BEARER_PREFIX.length()).equals(bearer.get())) {
-      unauthorized(ctx);
+      unauthorized(ctx, "API Reject - Unauthorized");
       return;
     }
-
-    LOG.info(String.format("API \"%s %s\"", ctx.method(), ctx.matchedPath()));
 
     handler.handle(ctx);
   }

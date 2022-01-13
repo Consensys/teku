@@ -33,7 +33,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Consumer;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -147,9 +146,8 @@ public class RestApiBuilder {
 
   private void checkAccessFile(final Path path) {
     if (!path.toFile().exists()) {
-      final Bytes generated =
-          Bytes.of(RandomStringUtils.randomAlphanumeric(16).getBytes(StandardCharsets.UTF_8));
       try {
+        final Bytes generated = Bytes.random(16);
         LOG.info("Initializing API auth access file {}", path.toAbsolutePath());
         Files.writeString(path, generated.toUnprefixedHexString(), StandardCharsets.UTF_8);
       } catch (IOException e) {
