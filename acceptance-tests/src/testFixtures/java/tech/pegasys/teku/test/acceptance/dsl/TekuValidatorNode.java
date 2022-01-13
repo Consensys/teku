@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.File;
 import java.net.URI;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -32,12 +33,13 @@ import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 public class TekuValidatorNode extends Node {
   private static final Logger LOG = LogManager.getLogger();
   private static final int VALIDATOR_API_PORT = 9052;
+  protected static final String VALIDATOR_PATH = DATA_PATH + "validator/";
 
   private final TekuValidatorNode.Config config;
   private boolean started = false;
   private Set<File> configFiles;
   private final ValidatorKeysApi validatorKeysApi =
-      new ValidatorKeysApi(httpClient, this::getValidatorApiUrl);
+      new ValidatorKeysApi(httpClient, this::getValidatorApiUrl, this::getApiPassword);
 
   private TekuValidatorNode(
       final Network network, final DockerVersion version, final TekuValidatorNode.Config config) {
@@ -116,6 +118,19 @@ public class TekuValidatorNode extends Node {
 
   private URI getValidatorApiUrl() {
     return URI.create("http://127.0.0.1:" + container.getMappedPort(VALIDATOR_API_PORT));
+  }
+
+  public String getApiPassword() {
+    try {
+      final File passwordFile = File.createTempFile("validator-api-bearer", ".tmp");
+      container.copyFileFromContainer(
+          VALIDATOR_PATH + "validator-api-bearer", passwordFile.toString());
+      passwordFile.deleteOnExit();
+      return Files.readString(passwordFile.toPath());
+    } catch (Exception e) {
+      LOG.error("Failed to read api password from container", e);
+      return "INVALID";
+    }
   }
 
   public static class Config {
