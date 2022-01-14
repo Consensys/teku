@@ -24,6 +24,7 @@ import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockManager;
+import tech.pegasys.teku.statetransition.forkchoice.PayloadAttributesCalculator;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -97,6 +98,7 @@ public class DataProvider {
     private OperationPool<ProposerSlashing> proposerSlashingPool;
     private OperationPool<SignedVoluntaryExit> voluntaryExitPool;
     private SyncCommitteeContributionPool syncCommitteeContributionPool;
+    private PayloadAttributesCalculator payloadAttributesCalculator;
 
     private boolean isLivenessTrackingEnabled = true;
 
@@ -173,6 +175,12 @@ public class DataProvider {
       return this;
     }
 
+    public Builder payloadAttributesCalculator(
+        final PayloadAttributesCalculator payloadAttributesCalculator) {
+      this.payloadAttributesCalculator = payloadAttributesCalculator;
+      return this;
+    }
+
     public Builder spec(final Spec spec) {
       this.spec = spec;
       return this;
@@ -191,7 +199,8 @@ public class DataProvider {
               blockManager,
               attestationManager,
               isLivenessTrackingEnabled,
-              activeValidatorChannel);
+              activeValidatorChannel,
+              payloadAttributesCalculator);
       final ChainDataProvider chainDataProvider =
           new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
       final SyncDataProvider syncDataProvider = new SyncDataProvider(syncService);
