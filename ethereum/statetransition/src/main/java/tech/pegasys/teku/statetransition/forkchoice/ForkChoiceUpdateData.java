@@ -36,7 +36,7 @@ public class ForkChoiceUpdateData {
   private boolean sent = false;
 
   public ForkChoiceUpdateData() {
-    this.forkChoiceState = new ForkChoiceState(Bytes32.ZERO, Bytes32.ZERO, Bytes32.ZERO);
+    this.forkChoiceState = new ForkChoiceState(Bytes32.ZERO, Bytes32.ZERO, Bytes32.ZERO, false);
     this.payloadAttributes = Optional.empty();
     this.terminalBlockHash = Optional.empty();
   }
@@ -47,7 +47,8 @@ public class ForkChoiceUpdateData {
       final Optional<Bytes32> terminalBlockHash) {
     if (terminalBlockHash.isPresent() && forkChoiceState.getHeadBlockHash().isZero()) {
       this.forkChoiceState =
-          new ForkChoiceState(terminalBlockHash.get(), terminalBlockHash.get(), Bytes32.ZERO);
+          new ForkChoiceState(
+              terminalBlockHash.get(), terminalBlockHash.get(), Bytes32.ZERO, false);
     } else {
       this.forkChoiceState = forkChoiceState;
     }

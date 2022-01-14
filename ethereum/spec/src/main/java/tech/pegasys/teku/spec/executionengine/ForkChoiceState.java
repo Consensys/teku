@@ -21,12 +21,17 @@ public class ForkChoiceState {
   private final Bytes32 headBlockHash;
   private final Bytes32 safeBlockHash;
   private final Bytes32 finalizedBlockHash;
+  private final boolean isHeadOptimistic;
 
   public ForkChoiceState(
-      final Bytes32 headBlockHash, final Bytes32 safeBlockHash, final Bytes32 finalizedBlockHash) {
+      final Bytes32 headBlockHash,
+      final Bytes32 safeBlockHash,
+      final Bytes32 finalizedBlockHash,
+      final boolean isHeadOptimistic) {
     this.headBlockHash = headBlockHash;
     this.safeBlockHash = safeBlockHash;
     this.finalizedBlockHash = finalizedBlockHash;
+    this.isHeadOptimistic = isHeadOptimistic;
   }
 
   public Bytes32 getHeadBlockHash() {
@@ -41,12 +46,17 @@ public class ForkChoiceState {
     return finalizedBlockHash;
   }
 
+  public boolean isHeadOptimistic() {
+    return isHeadOptimistic;
+  }
+
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("headBlockHash", headBlockHash)
         .add("safeBlockHash", safeBlockHash)
         .add("finalizedBlockHash", finalizedBlockHash)
+        .add("isHeadOptimistic", isHeadOptimistic)
         .toString();
   }
 
@@ -61,11 +71,12 @@ public class ForkChoiceState {
     final ForkChoiceState that = (ForkChoiceState) o;
     return Objects.equals(headBlockHash, that.headBlockHash)
         && Objects.equals(safeBlockHash, that.safeBlockHash)
-        && Objects.equals(finalizedBlockHash, that.finalizedBlockHash);
+        && Objects.equals(finalizedBlockHash, that.finalizedBlockHash)
+        && isHeadOptimistic == that.isHeadOptimistic;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(headBlockHash, safeBlockHash, finalizedBlockHash);
+    return Objects.hash(headBlockHash, safeBlockHash, finalizedBlockHash, isHeadOptimistic);
   }
 }

@@ -198,7 +198,6 @@ public class ProtoArray {
 
     int bestDescendantIndex = justifiedNode.getBestDescendantIndex().orElse(justifiedIndex);
     ProtoNode bestNode = getNodeByIndex(bestDescendantIndex);
-    ;
 
     // Normally the best descendant index would point straight to chain head, but onBlock only
     // updates the parent, not all the ancestors. When applyScoreChanges runs it propagates the

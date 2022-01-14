@@ -195,7 +195,10 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
               .map(ProtoNode::getExecutionBlockHash)
               .orElse(Bytes32.ZERO);
       return new ForkChoiceState(
-          headExecutionBlockHash, headExecutionBlockHash, finalizedExecutionHash);
+          headExecutionBlockHash,
+          headExecutionBlockHash,
+          finalizedExecutionHash,
+          headNode.isOptimistic());
     } finally {
       protoArrayLock.readLock().unlock();
     }
