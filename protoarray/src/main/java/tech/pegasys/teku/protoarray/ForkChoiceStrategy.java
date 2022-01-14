@@ -382,6 +382,15 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     }
   }
 
+  public List<Map<String, Object>> getNodeData() {
+    protoArrayLock.readLock().lock();
+    try {
+      return protoArray.getNodes().stream().map(ProtoNode::getData).collect(Collectors.toList());
+    } finally {
+      protoArrayLock.readLock().unlock();
+    }
+  }
+
   @Override
   public void applyUpdate(
       final Collection<BlockAndCheckpointEpochs> newBlocks,

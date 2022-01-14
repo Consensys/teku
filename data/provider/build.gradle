@@ -12,6 +12,7 @@ dependencies {
     implementation project(':networking:eth2')
     implementation project(':infrastructure:serviceutils')
     implementation project(':infrastructure:ssz')
+    implementation project(':protoarray')
     implementation project(':storage')
     implementation project(':sync')
     implementation project(':validator:api')
