@@ -50,7 +50,8 @@ import tech.pegasys.teku.validator.client.loader.PublicKeyLoader;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
 import tech.pegasys.teku.validator.client.restapi.ValidatorRestApi;
 import tech.pegasys.teku.validator.client.restapi.ValidatorRestApiConfig;
-import tech.pegasys.teku.validator.relaypublisher.MultiPublishingBeaconNodeApi;
+import tech.pegasys.teku.validator.eventadapter.InProcessBeaconNodeApi;
+import tech.pegasys.teku.validator.remote.RemoteBeaconNodeApi;
 
 public class ValidatorClientService extends Service {
   private static final Logger LOG = LogManager.getLogger();
@@ -94,14 +95,26 @@ public class ValidatorClientService extends Service {
     final boolean generateEarlyAttestations =
         config.getValidatorConfig().generateEarlyAttestations();
     final BeaconNodeApi beaconNodeApi =
-        MultiPublishingBeaconNodeApi.create(
-            services,
-            asyncRunner,
-            config.getValidatorConfig().getBeaconNodeApiEndpoint(),
-            config.getSpec(),
-            useDependentRoots,
-            generateEarlyAttestations,
-            config.getValidatorConfig().getAdditionalPublishUrls());
+        config
+            .getValidatorConfig()
+            .getBeaconNodeApiEndpoint()
+            .map(
+                endpoint ->
+                    RemoteBeaconNodeApi.create(
+                        services,
+                        asyncRunner,
+                        endpoint,
+                        config.getSpec(),
+                        useDependentRoots,
+                        generateEarlyAttestations))
+            .orElseGet(
+                () ->
+                    InProcessBeaconNodeApi.create(
+                        services,
+                        asyncRunner,
+                        useDependentRoots,
+                        generateEarlyAttestations,
+                        config.getSpec()));
 
     final ValidatorApiChannel validatorApiChannel = beaconNodeApi.getValidatorApi();
     final GenesisDataProvider genesisDataProvider =
