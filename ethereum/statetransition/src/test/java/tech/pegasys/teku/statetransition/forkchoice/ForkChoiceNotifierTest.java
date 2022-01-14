@@ -179,7 +179,8 @@ class ForkChoiceNotifierTest {
 
   @Test
   void onForkChoiceUpdated_shouldNotSendNotificationWhenHeadBlockHashIsZero() {
-    notifier.onForkChoiceUpdated(new ForkChoiceState(Bytes32.ZERO, Bytes32.ZERO, Bytes32.ZERO));
+    notifier.onForkChoiceUpdated(
+        new ForkChoiceState(Bytes32.ZERO, Bytes32.ZERO, Bytes32.ZERO, false));
 
     verifyNoInteractions(executionEngineChannel);
   }
@@ -444,7 +445,7 @@ class ForkChoiceNotifierTest {
     final Bytes8 payloadId = dataStructureUtil.randomBytes8();
 
     final ForkChoiceState forkChoiceState =
-        new ForkChoiceState(terminalBlockHash, terminalBlockHash, Bytes32.ZERO);
+        new ForkChoiceState(terminalBlockHash, terminalBlockHash, Bytes32.ZERO, false);
 
     final BeaconState headState = recentChainData.getBestState().orElseThrow();
     final UInt64 blockSlot = headState.getSlot().plus(1);
@@ -626,6 +627,6 @@ class ForkChoiceNotifierTest {
     final Bytes32 finalizedExecutionHash =
         forkChoiceStrategy.executionBlockHash(finalizedRoot).orElseThrow();
 
-    return new ForkChoiceState(headExecutionHash, headExecutionHash, finalizedExecutionHash);
+    return new ForkChoiceState(headExecutionHash, headExecutionHash, finalizedExecutionHash, false);
   }
 }

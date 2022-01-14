@@ -23,7 +23,9 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.IntPredicate;
@@ -33,6 +35,7 @@ import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.api.blockselector.BlockSelectorFactory;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.response.SszResponse;
@@ -45,18 +48,20 @@ import tech.pegasys.teku.api.response.v1.beacon.ValidatorBalanceResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.response.v1.debug.ChainHead;
+import tech.pegasys.teku.api.response.v1.teku.GetAllBlocksAtSlotResponse;
 import tech.pegasys.teku.api.schema.Attestation;
-import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.Fork;
-import tech.pegasys.teku.api.schema.PublicKeyException;
 import tech.pegasys.teku.api.schema.Root;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
+import tech.pegasys.teku.api.schema.SignedBeaconBlockWithRoot;
 import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.api.stateselector.StateSelectorFactory;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
@@ -201,7 +206,7 @@ public class ChainDataProvider {
                             spec.atSlot(state.getSlot()).getMilestone())));
   }
 
-  public SafeFuture<Set<SignedBeaconBlock>> getAllBlocksAtSlot(final String slot) {
+  public SafeFuture<GetAllBlocksAtSlotResponse> getAllBlocksAtSlot(final String slot) {
     if (slot.startsWith("0x")) {
       throw new BadRequestException(
           String.format("block roots are not currently supported: %s", slot));
@@ -210,10 +215,15 @@ public class ChainDataProvider {
           .nonCanonicalBlocksSelector(UInt64.valueOf(slot))
           .getBlock()
           .thenApply(
-              blockList ->
-                  blockList.stream()
-                      .map(schemaObjectProvider::getSignedBeaconBlock)
-                      .collect(Collectors.toSet()));
+              blockList -> {
+                final Set<SignedBeaconBlockWithRoot> blocks =
+                    blockList.stream()
+                        .map(SignedBeaconBlockWithRoot::new)
+                        .collect(Collectors.toSet());
+
+                return new GetAllBlocksAtSlotResponse(
+                    getVersionAtSlot(UInt64.valueOf(slot)), blocks);
+              });
     }
   }
 
@@ -232,12 +242,11 @@ public class ChainDataProvider {
                             spec.atSlot(state.getSlot()).getMilestone())));
   }
 
-  public boolean isFinalized(final SignedBeaconBlock signedBeaconBlock) {
-    return combinedChainDataClient.isFinalized(signedBeaconBlock.getMessage().slot);
-  }
-
-  public boolean isFinalized(final UInt64 slot) {
-    return combinedChainDataClient.isFinalized(slot);
+  public List<Map<String, Object>> getProtoArrayData() {
+    return recentChainData
+        .getForkChoiceStrategy()
+        .map(ForkChoiceStrategy::getNodeData)
+        .orElse(Collections.emptyList());
   }
 
   /**
@@ -254,8 +263,7 @@ public class ChainDataProvider {
     }
     return recentChainData
         .getBestState()
-        .map(state -> validatorParameterToIndex(state, validatorParameter))
-        .orElse(Optional.empty());
+        .flatMap(state -> validatorParameterToIndex(state, validatorParameter));
   }
 
   private Optional<Integer> validatorParameterToIndex(
@@ -266,11 +274,11 @@ public class ChainDataProvider {
     }
 
     if (validatorParameter.toLowerCase().startsWith("0x")) {
+      final Bytes48 keyBytes = getBytes48FromParameter(validatorParameter);
       try {
-        BLSPubKey publicKey = BLSPubKey.fromHexString(validatorParameter);
-        return spec.getValidatorIndex(state, publicKey.asBLSPublicKey());
-      } catch (PublicKeyException ex) {
-        throw new BadRequestException(String.format("Invalid public key: %s", validatorParameter));
+        return spec.getValidatorIndex(state, BLSPublicKey.fromBytesCompressed(keyBytes));
+      } catch (IllegalArgumentException ex) {
+        return Optional.empty();
       }
     }
     try {
@@ -287,6 +295,21 @@ public class ChainDataProvider {
       return Optional.of(validatorIndex);
     } catch (NumberFormatException ex) {
       throw new BadRequestException(String.format("Invalid validator: %s", validatorParameter));
+    }
+  }
+
+  private Bytes48 getBytes48FromParameter(final String validatorParameter) {
+    try {
+      if (validatorParameter.length() != 98) {
+        throw new IllegalArgumentException(
+            String.format(
+                "Expected a length of 98 for a hex encoded bytes48 with 0x prefix, but got length %s",
+                validatorParameter.length()));
+      }
+      return Bytes48.fromHexString(validatorParameter);
+    } catch (IllegalArgumentException ex) {
+      throw new BadRequestException(
+          String.format("Invalid public key: %s; %s", validatorParameter, ex.getMessage()));
     }
   }
 

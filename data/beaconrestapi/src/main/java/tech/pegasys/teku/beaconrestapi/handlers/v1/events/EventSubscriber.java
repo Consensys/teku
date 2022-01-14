@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.sse.SseClient;
+import java.time.Duration;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -50,6 +51,8 @@ public class EventSubscriber {
     this.processingQueue = new AtomicBoolean(false);
     this.asyncRunner = asyncRunner;
     this.sseClient.onClose(closeCallback);
+
+    keepAlive();
   }
 
   public void onEvent(final EventType eventType, final EventSource message)
@@ -101,5 +104,20 @@ public class EventSubscriber {
             error ->
                 LOG.error(
                     "Failed to process event queue for client " + sseClient.hashCode(), error));
+  }
+
+  private void keepAlive() {
+    if (!stopped.get()) {
+      asyncRunner
+          .runAfterDelay(
+              () -> {
+                if (!stopped.get()) {
+                  sseClient.sendComment("");
+                }
+              },
+              Duration.ofSeconds(30))
+          .alwaysRun(this::keepAlive)
+          .reportExceptions();
+    }
   }
 }

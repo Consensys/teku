@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 ConsenSys AG.
+ * Copyright 2022 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,28 +15,18 @@ package tech.pegasys.teku.api.response.v1.teku;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.Set;
-import tech.pegasys.teku.api.schema.SignedBeaconBlockWithRoot;
-import tech.pegasys.teku.api.schema.Version;
+import java.util.List;
+import java.util.Map;
 
-public class GetAllBlocksAtSlotResponse {
-  private final Version version;
-
-  private final Set<SignedBeaconBlockWithRoot> data;
-
-  public Set<SignedBeaconBlockWithRoot> getData() {
-    return data;
-  }
-
-  public Version getVersion() {
-    return version;
-  }
+public class GetProtoArrayResponse {
+  private final List<Map<String, Object>> data;
 
   @JsonCreator
-  public GetAllBlocksAtSlotResponse(
-      @JsonProperty("version") final Version version,
-      @JsonProperty("data") final Set<SignedBeaconBlockWithRoot> data) {
-    this.version = version;
+  public GetProtoArrayResponse(@JsonProperty("data") final List<Map<String, Object>> data) {
     this.data = data;
+  }
+
+  public List<Map<String, Object>> getData() {
+    return data;
   }
 }

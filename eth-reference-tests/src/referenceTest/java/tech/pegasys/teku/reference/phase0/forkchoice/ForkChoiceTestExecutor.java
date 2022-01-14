@@ -96,7 +96,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
         spec.getSlotStartTime(anchorBlock.getSlot(), anchorState.getGenesis_time()));
 
     final ForkChoice forkChoice =
-        ForkChoice.create(
+        new ForkChoice(
             spec, new InlineEventThread(), recentChainData, mock(ForkChoiceNotifier.class), true);
     final StubExecutionEngineChannel executionEngine = new StubExecutionEngineChannel(spec);
 

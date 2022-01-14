@@ -13,9 +13,13 @@
 
 package tech.pegasys.teku.services.executionengine;
 
+import static tech.pegasys.teku.util.config.Constants.MAXIMUM_CONCURRENT_EE_REQUESTS;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionEngineChannelImpl;
+import tech.pegasys.teku.ethereum.executionlayer.ThrottlingExecutionEngineChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.service.serviceutils.Service;
@@ -27,10 +31,12 @@ public class ExecutionEngineService extends Service {
 
   private final EventChannels eventChannels;
   private final ExecutionEngineConfiguration config;
+  private final MetricsSystem metricsSystem;
 
   public ExecutionEngineService(
       final ServiceConfig serviceConfig, final ExecutionEngineConfiguration config) {
     this.eventChannels = serviceConfig.getEventChannels();
+    this.metricsSystem = serviceConfig.getMetricsSystem();
     this.config = config;
   }
 
@@ -39,7 +45,10 @@ public class ExecutionEngineService extends Service {
     final String endpoint = config.getEndpoint();
     LOG.info("Using execution engine at {}", endpoint);
     final ExecutionEngineChannel executionEngine =
-        ExecutionEngineChannelImpl.create(endpoint, config.getSpec());
+        new ThrottlingExecutionEngineChannel(
+            ExecutionEngineChannelImpl.create(endpoint, config.getSpec()),
+            MAXIMUM_CONCURRENT_EE_REQUESTS,
+            metricsSystem);
     eventChannels.subscribe(ExecutionEngineChannel.class, executionEngine);
     return SafeFuture.COMPLETE;
   }

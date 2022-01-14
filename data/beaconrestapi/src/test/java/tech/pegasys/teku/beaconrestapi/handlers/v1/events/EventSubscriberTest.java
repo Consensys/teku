@@ -113,9 +113,10 @@ public class EventSubscriberTest {
     for (EventType eventType : allEventTypes) {
       eventSubscriber.onEvent(eventType, event("test"));
     }
-    assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
+    assertThat(asyncRunner.countDelayedActions()).isEqualTo(2);
     asyncRunner.executeQueuedActions();
     assertThat(outputStream.countEvents()).isEqualTo(allEventTypes.size());
+    assertThat(outputStream.countComments()).isEqualTo(1);
   }
 
   @Test
@@ -148,7 +149,11 @@ public class EventSubscriberTest {
         subscriber.onEvent(val, event("test"));
       }
     }
-    assertThat(asyncRunner.hasDelayedActions()).isFalse();
+
+    assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
+    asyncRunner.executeQueuedActions();
+    assertThat(outputStream.countEvents()).isEqualTo(0);
+    assertThat(outputStream.countComments()).isEqualTo(1);
   }
 
   @ParameterizedTest
@@ -160,9 +165,30 @@ public class EventSubscriberTest {
 
     subscriber.onEvent(eventType, event("test"));
 
-    assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
+    assertThat(asyncRunner.countDelayedActions()).isEqualTo(2);
     asyncRunner.executeQueuedActions();
     assertThat(outputStream.countEvents()).isEqualTo(1);
+    assertThat(outputStream.countComments()).isEqualTo(1);
+  }
+
+  @Test
+  @SuppressWarnings("unused")
+  void shouldSendKeepAlive() {
+    final EventSubscriber subscriber =
+        new EventSubscriber(
+            List.of(EventType.voluntary_exit.name()),
+            sseClient,
+            onCloseCallback,
+            asyncRunner,
+            MAX_PENDING_EVENTS);
+
+    assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
+    asyncRunner.executeQueuedActions();
+    assertThat(outputStream.countEvents()).isEqualTo(0);
+    assertThat(outputStream.countComments()).isEqualTo(1);
+
+    // Keep alive schedules another to be run
+    assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
   }
 
   private EventSource event(final String message) {
