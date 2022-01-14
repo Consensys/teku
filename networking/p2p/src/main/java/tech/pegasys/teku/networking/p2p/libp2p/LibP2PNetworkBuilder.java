@@ -88,18 +88,8 @@ public class LibP2PNetworkBuilder {
   protected LibP2PNetworkBuilder() {}
 
   public P2PNetwork<Peer> build() {
-    if (gossipNetwork == null) {
-      // Setup gossip
-      gossipNetwork =
-          createLibP2PGossipNetworkBuilder()
-              .metricsSystem(metricsSystem)
-              .gossipConfig(config.getGossipConfig())
-              .defaultMessageFactory(preparedGossipMessageFactory)
-              .gossipTopicFilter(gossipTopicFilter)
-              .logWireGossip(config.getWireLogsConfig().isLogWireGossip())
-              .build();
-    }
 
+    gossipNetwork = createGossipNetwork();
     // Setup rpc methods
     rpcHandlers = createRpcHandlers();
     // Setup peers
@@ -120,6 +110,16 @@ public class LibP2PNetworkBuilder {
   protected List<RpcHandler<?, ?, ?>> createRpcHandlers() {
     return rpcMethods.stream().map(m -> new RpcHandler<>(asyncRunner, m))
         .collect(Collectors.toList());
+  }
+
+  protected LibP2PGossipNetwork createGossipNetwork() {
+    return createLibP2PGossipNetworkBuilder()
+        .metricsSystem(metricsSystem)
+        .gossipConfig(config.getGossipConfig())
+        .defaultMessageFactory(preparedGossipMessageFactory)
+        .gossipTopicFilter(gossipTopicFilter)
+        .logWireGossip(config.getWireLogsConfig().isLogWireGossip())
+        .build();
   }
 
   protected PeerManager createPeerManager() {
@@ -238,11 +238,6 @@ public class LibP2PNetworkBuilder {
 
   public LibP2PNetworkBuilder gossipTopicFilter(GossipTopicFilter gossipTopicFilter) {
     this.gossipTopicFilter = gossipTopicFilter;
-    return this;
-  }
-
-  public LibP2PNetworkBuilder gossipNetwork(LibP2PGossipNetwork gossipNetwork) {
-    this.gossipNetwork = gossipNetwork;
     return this;
   }
 
