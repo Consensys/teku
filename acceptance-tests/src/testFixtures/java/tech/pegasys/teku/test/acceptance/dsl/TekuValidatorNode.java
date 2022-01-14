@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.File;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -24,6 +25,7 @@ import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
+import org.testcontainers.shaded.org.apache.commons.io.IOUtils;
 import org.testcontainers.utility.MountableFile;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.tools.ValidatorKeysApi;
@@ -32,12 +34,13 @@ import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 public class TekuValidatorNode extends Node {
   private static final Logger LOG = LogManager.getLogger();
   private static final int VALIDATOR_API_PORT = 9052;
+  protected static final String VALIDATOR_PATH = DATA_PATH + "validator/";
 
   private final TekuValidatorNode.Config config;
   private boolean started = false;
   private Set<File> configFiles;
   private final ValidatorKeysApi validatorKeysApi =
-      new ValidatorKeysApi(httpClient, this::getValidatorApiUrl);
+      new ValidatorKeysApi(httpClient, this::getValidatorApiUrl, this::getApiPassword);
 
   private TekuValidatorNode(
       final Network network, final DockerVersion version, final TekuValidatorNode.Config config) {
@@ -116,6 +119,12 @@ public class TekuValidatorNode extends Node {
 
   private URI getValidatorApiUrl() {
     return URI.create("http://127.0.0.1:" + container.getMappedPort(VALIDATOR_API_PORT));
+  }
+
+  public String getApiPassword() {
+    return container.copyFileFromContainer(
+        VALIDATOR_PATH + "validator-api-bearer",
+        in -> IOUtils.toString(in, StandardCharsets.UTF_8));
   }
 
   public static class Config {

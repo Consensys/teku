@@ -17,9 +17,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.infrastructure.restapi.OpenApiTestUtil;
 import tech.pegasys.teku.infrastructure.restapi.RestApi;
+import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.validator.client.KeyManager;
 
 class ValidatorOpenApiTest {
@@ -39,9 +40,14 @@ class ValidatorOpenApiTest {
   private JsonNode jsonNode;
 
   @BeforeEach
-  void setup() throws JsonProcessingException {
+  void setup() throws IOException {
+    final Path validatorDataDirectory = Files.createTempDirectory("openapi");
+    final DataDirLayout dataDirLayout = mock(DataDirLayout.class);
+
     when(config.getRestApiInterface()).thenReturn("127.1.1.1");
     when(config.isRestApiDocsEnabled()).thenReturn(true);
+    when(keyManager.getDataDirLayout()).thenReturn(dataDirLayout);
+    when(dataDirLayout.getValidatorDataDirectory()).thenReturn(validatorDataDirectory);
     restApi = ValidatorRestApi.create(config, keyManager);
     maybeJson = restApi.getRestApiDocs();
     assertThat(maybeJson).isPresent();
