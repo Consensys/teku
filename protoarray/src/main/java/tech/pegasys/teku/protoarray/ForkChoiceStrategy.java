@@ -195,6 +195,8 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
               .map(ProtoNode::getExecutionBlockHash)
               .orElse(Bytes32.ZERO);
       return new ForkChoiceState(
+          headNode.getBlockRoot(),
+          headNode.getBlockSlot(),
           headExecutionBlockHash,
           headExecutionBlockHash,
           finalizedExecutionHash,
