@@ -62,7 +62,7 @@ class AttestationManagerIntegrationTest {
   private final AggregatingAttestationPool attestationPool =
       new AggregatingAttestationPool(spec, new NoOpMetricsSystem());
   private final ForkChoice forkChoice =
-      ForkChoice.create(
+      new ForkChoice(
           spec, new InlineEventThread(), recentChainData, mock(ForkChoiceNotifier.class));
 
   private final PendingPool<ValidateableAttestation> pendingAttestations =

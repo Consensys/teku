@@ -14,6 +14,7 @@
 package tech.pegasys.teku.sync;
 
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.sync.events.SyncStateProvider;
 import tech.pegasys.teku.sync.events.SyncingStatus;
 import tech.pegasys.teku.sync.forward.ForwardSync;
@@ -25,6 +26,8 @@ public interface SyncService extends SyncStateProvider {
   SafeFuture<?> stop();
 
   ForwardSync getForwardSync();
+
+  ForkChoice.OptimisticSyncSubscriber getOptimisticSyncSubscriber();
 
   RecentBlockFetcher getRecentBlockFetcher();
 

@@ -111,7 +111,7 @@ public class BeaconChainUtil {
         spec,
         storageClient,
         validatorKeys,
-        ForkChoice.create(
+        new ForkChoice(
             spec, new InlineEventThread(), storageClient, mock(ForkChoiceNotifier.class)),
         true);
   }
@@ -133,7 +133,7 @@ public class BeaconChainUtil {
         spec,
         validatorKeys,
         storageClient,
-        ForkChoice.create(
+        new ForkChoice(
             spec, new InlineEventThread(), storageClient, mock(ForkChoiceNotifier.class)),
         signDeposits);
   }
@@ -369,7 +369,7 @@ public class BeaconChainUtil {
       if (forkChoice == null) {
         final InlineEventThread forkChoiceExecutor = new InlineEventThread();
         forkChoice =
-            ForkChoice.create(
+            new ForkChoice(
                 spec, forkChoiceExecutor, recentChainData, mock(ForkChoiceNotifier.class));
       }
       if (validatorKeys == null) {

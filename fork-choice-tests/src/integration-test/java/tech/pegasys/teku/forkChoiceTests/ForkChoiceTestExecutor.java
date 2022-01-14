@@ -172,7 +172,7 @@ public class ForkChoiceTestExecutor {
 
     final InlineEventThread forkChoiceExecutor = new InlineEventThread();
     ForkChoice forkChoice =
-        ForkChoice.create(SPEC, forkChoiceExecutor, storageClient, mock(ForkChoiceNotifier.class));
+        new ForkChoice(SPEC, forkChoiceExecutor, storageClient, mock(ForkChoiceNotifier.class));
 
     @SuppressWarnings("ModifiedButNotUsed")
     List<SignedBeaconBlock> blockBuffer = new ArrayList<>();

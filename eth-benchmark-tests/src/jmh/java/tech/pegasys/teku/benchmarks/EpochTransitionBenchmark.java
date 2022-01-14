@@ -107,7 +107,7 @@ public class EpochTransitionBenchmark {
 
     recentChainData = MemoryOnlyRecentChainData.create(spec);
     ForkChoice forkChoice =
-        ForkChoice.create(
+        new ForkChoice(
             spec, new InlineEventThread(), recentChainData, mock(ForkChoiceNotifier.class));
     localChain = BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);
     localChain.initializeStorage();

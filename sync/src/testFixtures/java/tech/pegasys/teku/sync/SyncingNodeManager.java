@@ -94,7 +94,7 @@ public class SyncingNodeManager {
     chainUtil.initializeStorage();
 
     ForkChoice forkChoice =
-        ForkChoice.create(
+        new ForkChoice(
             spec, new InlineEventThread(), recentChainData, mock(ForkChoiceNotifier.class));
     BlockImporter blockImporter =
         new BlockImporter(
