@@ -296,7 +296,14 @@ licenseReport {
   configurations = ['runtimeClasspath']
   outputDir = "${buildDir}/reports/licenses"
   // These jars don't have machine readable license information
-  excludes = ['org.junit:junit-bom', 'org.rxtx:rxtx', 'com.fasterxml.jackson:jackson-bom', 'io.netty:netty-tcnative-classes']
+  excludes = [
+      'org.junit:junit-bom',
+      'org.rxtx:rxtx',
+      'com.fasterxml.jackson:jackson-bom',
+      'io.netty:netty-tcnative-classes',
+      'org.jetbrains.kotlinx:kotlinx-coroutines-bom',
+      'org.jetbrains.kotlinx:kotlinx-coroutines-core',
+  ]
   allowedLicensesFile = new File("${rootDir}/gradle/license-report-config/allowed-licenses.json")
   filters = [new LicenseBundleNormalizer()]
   renderers = [new GroupedLicenseHtmlRenderer()]
