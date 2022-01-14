@@ -14,11 +14,8 @@
 package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.time.Duration;
 import java.util.Optional;
@@ -100,26 +97,6 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
     TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
     assertThat(tekuConfiguration.validatorClient().getValidatorConfig().getBeaconNodeApiEndpoint())
         .isEmpty();
-  }
-
-  @Test
-  void shouldReadMultipleValidUrls() throws URISyntaxException {
-    final ValidatorConfig config =
-        getTekuConfigurationFromArguments(
-                "--Xvalidators-publish-to-additional-nodes=http://u:h@t.net:9090,https://u:p@u.com")
-            .validatorClient()
-            .getValidatorConfig();
-    assertThat(config.getAdditionalPublishUrls())
-        .containsExactlyInAnyOrder(new URI("http://u:h@t.net:9090"), new URI("https://u:p@u.com"));
-  }
-
-  @Test
-  void shouldDetectInvalidPublishUrl() {
-    assertThatThrownBy(
-            () ->
-                getTekuConfigurationFromArguments(
-                    "--Xvalidators-publish-to-additional-nodes=invalid-{url}"))
-        .hasMessageContaining("cannot convert 'invalid-{url}' to URI");
   }
 
   @Test

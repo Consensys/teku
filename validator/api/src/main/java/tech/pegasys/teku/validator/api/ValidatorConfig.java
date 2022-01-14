@@ -54,7 +54,6 @@ public class ValidatorConfig {
   private final ValidatorPerformanceTrackingMode validatorPerformanceTrackingMode;
   private final boolean validatorKeystoreLockingEnabled;
   private final Optional<URI> beaconNodeApiEndpoint;
-  private final List<URI> additionalPublishUrls;
   private final int validatorExternalSignerConcurrentRequestLimit;
   private final boolean useDependentRoots;
   private final boolean generateEarlyAttestations;
@@ -77,7 +76,6 @@ public class ValidatorConfig {
       final int validatorExternalSignerConcurrentRequestLimit,
       final boolean useDependentRoots,
       final boolean generateEarlyAttestations,
-      final List<URI> additionalPublishUrls,
       final Optional<Eth1Address> suggestedFeeRecipient) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
@@ -98,7 +96,6 @@ public class ValidatorConfig {
         validatorExternalSignerConcurrentRequestLimit;
     this.useDependentRoots = useDependentRoots;
     this.generateEarlyAttestations = generateEarlyAttestations;
-    this.additionalPublishUrls = additionalPublishUrls;
     this.suggestedFeeRecipient = suggestedFeeRecipient;
   }
 
@@ -163,10 +160,6 @@ public class ValidatorConfig {
     return useDependentRoots;
   }
 
-  public List<URI> getAdditionalPublishUrls() {
-    return additionalPublishUrls;
-  }
-
   public Optional<Eth1Address> getSuggestedFeeRecipient() {
     validateFeeRecipient();
     return suggestedFeeRecipient;
@@ -182,7 +175,6 @@ public class ValidatorConfig {
 
   public static final class Builder {
     private List<String> validatorKeys = new ArrayList<>();
-    private List<URI> additionalPublishUrls = new ArrayList<>();
     private List<String> validatorExternalSignerPublicKeySources = new ArrayList<>();
     private URL validatorExternalSignerUrl;
     private int validatorExternalSignerConcurrentRequestLimit =
@@ -297,11 +289,6 @@ public class ValidatorConfig {
       return this;
     }
 
-    public Builder additionalPublishUrls(final List<URI> publishUrls) {
-      this.additionalPublishUrls = publishUrls;
-      return this;
-    }
-
     public Builder suggestedFeeRecipient(final Eth1Address suggestedFeeRecipient) {
       this.suggestedFeeRecipient = Optional.ofNullable(suggestedFeeRecipient);
       return this;
@@ -338,7 +325,6 @@ public class ValidatorConfig {
           validatorExternalSignerConcurrentRequestLimit,
           useDependentRoots,
           generateEarlyAttestations,
-          additionalPublishUrls,
           suggestedFeeRecipient);
     }
 

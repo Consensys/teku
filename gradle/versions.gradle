@@ -41,7 +41,7 @@ dependencyManagement {
     dependency 'io.protostuff:protostuff-core:1.6.2'
     dependency 'io.protostuff:protostuff-runtime:1.6.2'
 
-    dependency 'io.libp2p:jvm-libp2p-minimal:0.8.6-RELEASE'
+    dependency 'io.libp2p:jvm-libp2p-minimal:0.8.7-RELEASE'
     dependency 'tech.pegasys:jblst:0.3.6-4'
 
     dependency 'org.hdrhistogram:HdrHistogram:2.1.12'
@@ -61,7 +61,7 @@ dependencyManagement {
     dependency 'org.webjars:swagger-ui:3.43.0'
     dependency 'io.github.classgraph:classgraph:4.8.138'
 
-    dependencySet(group: 'io.netty', version: '4.1.69.Final') {
+    dependencySet(group: 'io.netty', version: '4.1.71.Final') {
       entry('netty-all') {
         exclude "io.netty:netty-transport-rxtx"
         exclude "org.rxtx:rxtx"
