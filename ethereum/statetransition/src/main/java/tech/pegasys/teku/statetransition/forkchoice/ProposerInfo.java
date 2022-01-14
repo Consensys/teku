@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
-import com.google.common.collect.ImmutableMap;
-import java.util.Map;
 import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -30,12 +28,5 @@ class ProposerInfo {
 
   public boolean hasExpired(final UInt64 currentSlot) {
     return currentSlot.isGreaterThanOrEqualTo(expirySlot);
-  }
-
-  public Map<String, Object> getData() {
-    return ImmutableMap.<String, Object>builder()
-        .put("expirySlot", expirySlot.intValue())
-        .put("feeRecipient", feeRecipient.toHexString())
-        .build();
   }
 }

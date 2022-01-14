@@ -6,10 +6,7 @@
       "items" : {
         "type" : "object",
         "additionalProperties" : {
-          "type" : "object",
-          "additionalProperties" : {
-            "type" : "object"
-          }
+          "type" : "object"
         }
       }
     }

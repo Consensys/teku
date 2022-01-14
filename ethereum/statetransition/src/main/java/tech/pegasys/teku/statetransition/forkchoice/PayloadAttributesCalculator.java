@@ -117,13 +117,15 @@ public class PayloadAttributesCalculator {
     }
   }
 
-  public List<Map<Integer, Map<String, Object>>> getData() {
+  public List<Map<String, Object>> getData() {
     return proposerInfoByValidatorIndex.entrySet().stream()
         .map(
-            uInt64ProposerInfoEntry ->
-                ImmutableMap.of(
-                    uInt64ProposerInfoEntry.getKey().intValue(),
-                    uInt64ProposerInfoEntry.getValue().getData()))
+            proposerInfoEntry ->
+                ImmutableMap.<String, Object>builder()
+                    .put("proposerIndex", proposerInfoEntry.getKey().intValue())
+                    .put("feeRecipient", proposerInfoEntry.getValue().feeRecipient.toHexString())
+                    .put("expirySlot", proposerInfoEntry.getValue().expirySlot.intValue())
+                    .build())
         .collect(Collectors.toList());
   }
 }

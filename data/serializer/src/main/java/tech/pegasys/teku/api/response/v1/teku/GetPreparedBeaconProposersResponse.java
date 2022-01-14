@@ -19,15 +19,15 @@ import java.util.List;
 import java.util.Map;
 
 public class GetPreparedBeaconProposersResponse {
-  private final List<Map<Integer, Map<String, Object>>> data;
+  private final List<Map<String, Object>> data;
 
   @JsonCreator
   public GetPreparedBeaconProposersResponse(
-      @JsonProperty("data") final List<Map<Integer, Map<String, Object>>> data) {
+      @JsonProperty("data") final List<Map<String, Object>> data) {
     this.data = data;
   }
 
-  public List<Map<Integer, Map<String, Object>>> getData() {
+  public List<Map<String, Object>> getData() {
     return data;
   }
 }

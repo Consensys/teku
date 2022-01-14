@@ -187,7 +187,7 @@ public class NodeDataProvider {
             });
   }
 
-  public List<Map<Integer, Map<String, Object>>> getPreparedBeaconProposers() {
+  public List<Map<String, Object>> getPreparedBeaconProposers() {
     return payloadAttributesCalculator.getData();
   }
 }
