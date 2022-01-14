@@ -53,7 +53,6 @@ public class ValidatorKeysAcceptanceTest extends AcceptanceTestBase {
     beaconNode.start();
     validatorClient.start();
 
-    validatorClient.waitForLogMessageContaining("Javalin started");
     api.assertValidatorListing(Collections.emptyList());
 
     api.addValidatorsAndExpect(validatorKeystores, "imported");

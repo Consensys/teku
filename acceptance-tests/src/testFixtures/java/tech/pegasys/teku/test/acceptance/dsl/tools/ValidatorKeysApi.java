@@ -94,13 +94,13 @@ public class ValidatorKeysApi {
   }
 
   private String getValidatorListing() throws IOException {
-    final String result =
-        httpClient.get(
-            validatorUri.get(),
-            "/eth/v1/keystores",
-            Map.of("Authorization", "Bearer " + apiPasswordSupplier.get()));
+    final String result = httpClient.get(validatorUri.get(), KEYS_URL, authHeaders());
     LOG.debug("GET Keys: " + result);
     return result;
+  }
+
+  private Map<String, String> authHeaders() {
+    return Map.of("Authorization", "Bearer " + apiPasswordSupplier.get());
   }
 
   private String addValidators(final ValidatorKeystores validatorKeystores, final Path tempDir)
@@ -111,24 +111,14 @@ public class ValidatorKeysApi {
     final String body =
         jsonProvider.objectToJSON(Map.of("keystores", keystores, "passwords", passwords));
 
-    final String result =
-        httpClient.post(
-            validatorUri.get(),
-            KEYS_URL,
-            body,
-            Map.of("Authorization", "Bearer " + apiPasswordSupplier.get()));
+    final String result = httpClient.post(validatorUri.get(), KEYS_URL, body, authHeaders());
     LOG.debug("POST Keys: " + result);
     return result;
   }
 
   private String removeValidator(final BLSPublicKey publicKey) throws IOException {
     final String body = jsonProvider.objectToJSON(Map.of("pubkeys", List.of(publicKey.toString())));
-    final String result =
-        httpClient.delete(
-            validatorUri.get(),
-            KEYS_URL,
-            body,
-            Map.of("Authorization", "Bearer " + apiPasswordSupplier.get()));
+    final String result = httpClient.delete(validatorUri.get(), KEYS_URL, body, authHeaders());
     LOG.debug("DELETE Keys: " + result);
     return result;
   }

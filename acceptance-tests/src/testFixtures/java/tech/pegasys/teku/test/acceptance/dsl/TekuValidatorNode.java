@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.File;
 import java.net.URI;
-import java.nio.file.Files;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -25,6 +25,7 @@ import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
+import org.testcontainers.shaded.org.apache.commons.io.IOUtils;
 import org.testcontainers.utility.MountableFile;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.tools.ValidatorKeysApi;
@@ -121,16 +122,9 @@ public class TekuValidatorNode extends Node {
   }
 
   public String getApiPassword() {
-    try {
-      final File passwordFile = File.createTempFile("validator-api-bearer", ".tmp");
-      container.copyFileFromContainer(
-          VALIDATOR_PATH + "validator-api-bearer", passwordFile.toString());
-      passwordFile.deleteOnExit();
-      return Files.readString(passwordFile.toPath());
-    } catch (Exception e) {
-      LOG.error("Failed to read api password from container", e);
-      return "INVALID";
-    }
+    return container.copyFileFromContainer(
+        VALIDATOR_PATH + "validator-api-bearer",
+        in -> IOUtils.toString(in, StandardCharsets.UTF_8));
   }
 
   public static class Config {

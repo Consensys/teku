@@ -60,7 +60,6 @@ public class RestApiBuilder {
 
   private final OpenApiDocBuilder openApiDocBuilder = new OpenApiDocBuilder();
   private boolean openApiDocsEnabled = false;
-  private Optional<Path> passwordFilePath = Optional.empty();
   private Optional<AccessManager> accessManager = Optional.empty();
 
   public RestApiBuilder listenAddress(final String listenAddress) {
@@ -74,8 +73,7 @@ public class RestApiBuilder {
   }
 
   public RestApiBuilder passwordFilePath(final Path passwordFilePath) {
-    this.passwordFilePath = Optional.of(passwordFilePath);
-    this.passwordFilePath.ifPresent(this::checkAccessFile);
+    checkAccessFile(passwordFilePath);
     return this;
   }
 
