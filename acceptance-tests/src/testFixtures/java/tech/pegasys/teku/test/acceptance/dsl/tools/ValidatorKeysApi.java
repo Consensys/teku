@@ -16,6 +16,7 @@ package tech.pegasys.teku.test.acceptance.dsl.tools;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.base.Suppliers;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
@@ -35,13 +36,19 @@ import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class ValidatorKeysApi {
   private static final Logger LOG = LogManager.getLogger();
+  private static final String KEYS_URL = "/eth/v1/keystores";
   private final JsonProvider jsonProvider = new JsonProvider();
   private final SimpleHttpClient httpClient;
   private final Supplier<URI> validatorUri;
+  private final Supplier<String> apiPasswordSupplier;
 
-  public ValidatorKeysApi(final SimpleHttpClient httpClient, final Supplier<URI> validatorUri) {
+  public ValidatorKeysApi(
+      final SimpleHttpClient httpClient,
+      final Supplier<URI> validatorUri,
+      final Supplier<String> apiPasswordSupplier) {
     this.httpClient = httpClient;
     this.validatorUri = validatorUri;
+    this.apiPasswordSupplier = Suppliers.memoize(apiPasswordSupplier::get);
   }
 
   public void addValidatorsAndExpect(
@@ -87,9 +94,13 @@ public class ValidatorKeysApi {
   }
 
   private String getValidatorListing() throws IOException {
-    final String result = httpClient.get(validatorUri.get(), "/eth/v1/keystores");
+    final String result = httpClient.get(validatorUri.get(), KEYS_URL, authHeaders());
     LOG.debug("GET Keys: " + result);
     return result;
+  }
+
+  private Map<String, String> authHeaders() {
+    return Map.of("Authorization", "Bearer " + apiPasswordSupplier.get());
   }
 
   private String addValidators(final ValidatorKeystores validatorKeystores, final Path tempDir)
@@ -100,14 +111,14 @@ public class ValidatorKeysApi {
     final String body =
         jsonProvider.objectToJSON(Map.of("keystores", keystores, "passwords", passwords));
 
-    final String result = httpClient.post(validatorUri.get(), "/eth/v1/keystores", body);
+    final String result = httpClient.post(validatorUri.get(), KEYS_URL, body, authHeaders());
     LOG.debug("POST Keys: " + result);
     return result;
   }
 
   private String removeValidator(final BLSPublicKey publicKey) throws IOException {
     final String body = jsonProvider.objectToJSON(Map.of("pubkeys", List.of(publicKey.toString())));
-    final String result = httpClient.delete(validatorUri.get(), "/eth/v1/keystores", body);
+    final String result = httpClient.delete(validatorUri.get(), KEYS_URL, body, authHeaders());
     LOG.debug("DELETE Keys: " + result);
     return result;
   }
