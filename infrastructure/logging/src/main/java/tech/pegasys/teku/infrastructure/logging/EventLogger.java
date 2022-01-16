@@ -88,6 +88,32 @@ public class EventLogger {
     info("Syncing completed", Color.GREEN);
   }
 
+  public void headNoMoreOptimisticWhileSyncing() {
+    info("Execution Client caught up Beacon chain while syncing", Color.YELLOW);
+  }
+
+  public void headTurnedOptimisticWhileSyncing() {
+    info("Execution Client fallen behind Beacon chain while syncing", Color.YELLOW);
+  }
+
+  public void headTurnedOptimisticWhileInSync() {
+    info(
+        "Unable to verify head against Execution Client. Waiting the Execution Client to be back in sync",
+        Color.YELLOW);
+  }
+
+  public void syncCompletedWhileHeadIsOptimistic() {
+    info("Beacon chain syncing complete, waiting for Execution Client", Color.YELLOW);
+  }
+
+  public void executionClientIsOffline() {
+    info("Execution Client is offline. See teku logs for more details", Color.RED);
+  }
+
+  public void executionClientIsOnline() {
+    info("Execution Client is back online", Color.GREEN);
+  }
+
   public void syncStart() {
     info("Syncing started", Color.YELLOW);
   }
