@@ -90,7 +90,7 @@ public class ValidatorIndexProvider {
           "Discovered new indices for validators: {}",
           () ->
               knownValidators.entrySet().stream()
-                  .map(entry -> entry.getKey().toAbbreviatedString() + "=" + entry.getValue())
+                  .map(entry -> entry.getKey().toString() + "=" + entry.getValue())
                   .collect(joining(", ")));
     }
   }

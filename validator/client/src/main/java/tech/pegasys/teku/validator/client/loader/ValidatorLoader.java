@@ -136,7 +136,7 @@ public class ValidatorLoader {
     ownedValidators.addValidator(
         new Validator(publicKey, new DeletableSigner(signer), graffitiProvider, false));
 
-    LOG.info("Added validator: {}", publicKey.toAbbreviatedString());
+    LOG.info("Added validator: {}", publicKey.toString());
   }
 
   private boolean canAddValidator() {
