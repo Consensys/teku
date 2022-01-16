@@ -448,14 +448,11 @@ class ForkChoiceNotifierTest {
     final UInt64 blockSlot = headState.getSlot().plus(1);
     final Bytes32 blockRoot = recentChainData.getBestBlockRoot().orElseThrow();
 
+    // we expect head block root and slot to be ZERO since in the test we do not send an
+    // onForkChoiceUpdated before calling onTerminalBlock, so it will initialize ZEROED
     final ForkChoiceState forkChoiceState =
         new ForkChoiceState(
-            blockRoot,
-            headState.getSlot(),
-            terminalBlockHash,
-            terminalBlockHash,
-            Bytes32.ZERO,
-            false);
+            Bytes32.ZERO, UInt64.ZERO, terminalBlockHash, terminalBlockHash, Bytes32.ZERO, false);
 
     final PayloadAttributes payloadAttributes = withProposerForSlot(headState, blockSlot);
 
@@ -568,13 +565,13 @@ class ForkChoiceNotifierTest {
         .thenReturn(responseFuture);
 
     // Initially has no payload ID.
-    assertThatSafeFuture(notifier.getPayloadId(blockRoot, blockSlot)).isNotCompleted();
+    SafeFuture<Optional<Bytes8>> futurePayloadId = notifier.getPayloadId(blockRoot, blockSlot);
+    assertThatSafeFuture(futurePayloadId).isNotCompleted();
 
     responseFuture.complete(
         new ForkChoiceUpdatedResult(ForkChoiceUpdatedStatus.SUCCESS, Optional.of(payloadId)));
 
-    assertThatSafeFuture(notifier.getPayloadId(blockRoot, blockSlot))
-        .isCompletedWithOptionalContaining(payloadId);
+    assertThatSafeFuture(futurePayloadId).isCompletedWithOptionalContaining(payloadId);
   }
 
   private PayloadAttributes withProposerForSlot(final UInt64 blockSlot) {
