@@ -13,10 +13,7 @@
 
 package tech.pegasys.teku.cli.options;
 
-import java.net.URI;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import picocli.CommandLine;
@@ -110,15 +107,6 @@ public class ValidatorOptions {
   private boolean generateEarlyAttestations = ValidatorConfig.DEFAULT_GENERATE_EARLY_ATTESTATIONS;
 
   @Option(
-      names = {"--Xvalidators-publish-to-additional-nodes"},
-      paramLabel = "<URL>",
-      description = "Publish validator duties to additional beacon nodes",
-      hidden = true,
-      split = ",",
-      arity = "1..*")
-  private List<URI> additionalPublishUrls = new ArrayList<>();
-
-  @Option(
       names = {"--Xvalidators-suggested-fee-recipient-address"},
       paramLabel = "<ADDRESS>",
       description =
@@ -148,7 +136,6 @@ public class ValidatorOptions {
                         Optional.ofNullable(graffiti), Optional.ofNullable(graffitiFile)))
                 .useDependentRoots(useDependentRoots)
                 .generateEarlyAttestations(generateEarlyAttestations)
-                .additionalPublishUrls(additionalPublishUrls)
                 .suggestedFeeRecipient(suggestedFeeRecipient));
     validatorKeysOptions.configure(builder);
   }
