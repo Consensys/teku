@@ -109,16 +109,60 @@ class SyncStateTrackerTest {
     verify(eventLogger).syncStart();
     syncSubscriber.onSyncingChange(false);
     assertSyncState(SyncState.START_UP);
+    verify(eventLogger).syncCompleted();
     verifyNoMoreInteractions(eventLogger);
   }
 
   @Test
-  public void shouldBeSyncingWhenBeaconInSyncButOptimistic() {
-    when(network.getPeerCount()).thenReturn(STARTUP_TARGET_PEER_COUNT);
+  public void shouldNotLogOptimisticMessagesOnStartUp() {
+    // initialize with optimistic
     tracker.onOptimisticHeadChanged(true);
-    syncSubscriber.onSyncingChange(false);
+
+    // start syncing
+    syncSubscriber.onSyncingChange(true);
     assertSyncState(SyncState.SYNCING);
+    verify(eventLogger).syncStart();
+
+    // head no more optimistic
+    tracker.onOptimisticHeadChanged(false);
+
+    // in sync
+    syncSubscriber.onSyncingChange(false);
+    verify(eventLogger).syncCompleted();
+    assertSyncState(SyncState.START_UP);
+
+    // turn head optimistic
+    tracker.onOptimisticHeadChanged(true);
+    assertSyncState(SyncState.SYNCING);
+
+    verifyNoMoreInteractions(eventLogger);
+  }
+
+  @Test
+  public void shouldLogCorrectSequenceOfSyncEvents() {
+    // start syncing
+    syncSubscriber.onSyncingChange(true);
+    assertSyncState(SyncState.SYNCING);
+    verify(eventLogger).syncStart();
+
+    // get connected
+    when(network.getPeerCount()).thenReturn(STARTUP_TARGET_PEER_COUNT);
+    peerSubscriber.onConnected(new StubPeer());
+
+    // turn head optimistic
+    tracker.onOptimisticHeadChanged(true);
+    verify(eventLogger).headTurnedOptimisticWhileSyncing();
+
+    // beacon synced while head is optimistic
+    syncSubscriber.onSyncingChange(false);
     verify(eventLogger).syncCompletedWhileHeadIsOptimistic();
+
+    // head no longer optimistic
+    tracker.onOptimisticHeadChanged(false);
+    assertSyncState(SyncState.IN_SYNC);
+    verify(eventLogger).syncCompleted();
+
+    verifyNoMoreInteractions(eventLogger);
   }
 
   @Test

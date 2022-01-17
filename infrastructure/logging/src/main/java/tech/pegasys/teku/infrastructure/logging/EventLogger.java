@@ -88,17 +88,19 @@ public class EventLogger {
     info("Syncing completed", Color.GREEN);
   }
 
-  public void headNoMoreOptimisticWhileSyncing() {
-    info("Execution Client caught up Beacon chain while syncing", Color.YELLOW);
+  public void headNoLongerOptimisticWhileSyncing() {
+    info("Execution Client syncing complete. Continuing to sync beacon chain blocks", Color.YELLOW);
   }
 
   public void headTurnedOptimisticWhileSyncing() {
-    info("Execution Client fallen behind Beacon chain while syncing", Color.YELLOW);
+    info(
+        "Execution Client syncing in progress, proceeding with optimistic sync of beacon chain",
+        Color.YELLOW);
   }
 
   public void headTurnedOptimisticWhileInSync() {
-    info(
-        "Unable to verify head against Execution Client. Waiting the Execution Client to be back in sync",
+    warn(
+        "Unable to execute the current chain head block payload because the Execution Client is syncing. Activating optimistic sync of the beacon chain node",
         Color.YELLOW);
   }
 

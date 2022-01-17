@@ -159,7 +159,7 @@ public class SyncStateTracker extends Service
     }
 
     if (syncActive) {
-      eventLogger.headNoMoreOptimisticWhileSyncing();
+      eventLogger.headNoLongerOptimisticWhileSyncing();
     } else {
       eventLogger.syncCompleted();
     }

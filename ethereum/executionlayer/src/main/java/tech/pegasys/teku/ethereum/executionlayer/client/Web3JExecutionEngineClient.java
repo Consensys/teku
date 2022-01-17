@@ -156,7 +156,8 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
                     handleError(exception.toString());
                     return new Response<>(exception.getMessage());
                   } else if (response.hasError()) {
-                    final String errorMessage = response.getError().getCode() + ": " + response.getError().getMessage();
+                    final String errorMessage =
+                        response.getError().getCode() + ": " + response.getError().getMessage();
                     handleError(errorMessage);
                     return new Response<>(errorMessage);
                   } else {
