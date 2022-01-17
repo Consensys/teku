@@ -126,9 +126,9 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
     return doRequest(web3jRequest);
   }
 
-  private void handleError() {
+  private void handleError(String error) {
     if (isErrored.compareAndSet(false, true)) {
-      EVENT_LOG.executionClientIsOffline();
+      EVENT_LOG.executionClientIsOffline(error);
     }
   }
 
@@ -140,7 +140,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 
   private <T> SafeFuture<T> doWeb3JRequest(CompletableFuture<T> web3Request) {
     return SafeFuture.of(web3Request)
-        .catchAndRethrow(__ -> handleError())
+        .catchAndRethrow(error -> handleError(error.toString()))
         .thenPeek(__ -> handleSuccess());
   }
 
@@ -153,12 +153,12 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
             .handle(
                 (response, exception) -> {
                   if (exception != null) {
-                    handleError();
+                    handleError(exception.toString());
                     return new Response<>(exception.getMessage());
                   } else if (response.hasError()) {
-                    handleError();
-                    return new Response<>(
-                        response.getError().getCode() + ": " + response.getError().getMessage());
+                    final String errorMessage = response.getError().getCode() + ": " + response.getError().getMessage();
+                    handleError(errorMessage);
+                    return new Response<>(errorMessage);
                   } else {
                     handleSuccess();
                     return new Response<>(response.getResult());
