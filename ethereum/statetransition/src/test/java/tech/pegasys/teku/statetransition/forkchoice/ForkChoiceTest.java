@@ -343,7 +343,7 @@ class ForkChoiceTest {
         forkChoice.onBlock(blockAndState.getBlock(), executionEngine);
     assertBlockImportedSuccessfully(importResult, false);
 
-    assertForkChoiceUpdateNotification(blockAndState);
+    assertForkChoiceUpdateNotification(blockAndState, false);
   }
 
   @Test
@@ -509,10 +509,43 @@ class ForkChoiceTest {
 
     processHead(ONE);
 
-    assertForkChoiceUpdateNotification(blockAndState);
+    assertForkChoiceUpdateNotification(blockAndState, false);
   }
 
-  private void assertForkChoiceUpdateNotification(final SignedBlockAndState blockAndState) {
+  @Test
+  void applyHead_shouldSendForkChoiceUpdatedNotificationWhenOptimistic() {
+    doMerge();
+    finalizeEpoch(2);
+    assertThat(recentChainData.isOptimisticSyncPossible()).isTrue();
+    assertThat(recentChainData.getOptimisticHead()).isEmpty();
+
+    final UInt64 nextBlockSlot = storageSystem.chainBuilder().getLatestSlot().plus(1);
+    storageSystem.chainUpdater().setCurrentSlot(nextBlockSlot);
+    final SignedBlockAndState blockAndState =
+        storageSystem.chainBuilder().generateBlockAtSlot(nextBlockSlot);
+
+    executionEngine.setExecutePayloadResult(ExecutePayloadResult.SYNCING);
+    final SafeFuture<BlockImportResult> result =
+        forkChoice.onBlock(blockAndState.getBlock(), executionEngine);
+    assertBlockImportedSuccessfully(result, true);
+
+    assertForkChoiceUpdateNotification(blockAndState, true);
+
+    // Optimistic head should be tracked
+    assertThat(recentChainData.getOptimisticHead()).isPresent();
+    final ForkChoiceState optimisticHead = recentChainData.getOptimisticHead().orElseThrow();
+    assertThat(optimisticHead.isHeadOptimistic()).isTrue();
+    assertThat(optimisticHead.getHeadBlockSlot()).isEqualTo(blockAndState.getSlot());
+    assertThat(optimisticHead.getHeadBlockRoot()).isEqualTo(blockAndState.getRoot());
+
+    // Optimistic head should not be present once the block is validated
+    forkChoice.onExecutionPayloadResult(blockAndState.getRoot(), ExecutePayloadResult.VALID, ZERO);
+    processHead(recentChainData.getHeadSlot());
+    assertThat(recentChainData.getOptimisticHead()).isEmpty();
+  }
+
+  private void assertForkChoiceUpdateNotification(
+      final SignedBlockAndState blockAndState, final boolean optimisticHead) {
     final ForkChoiceStrategy forkChoiceStrategy =
         recentChainData.getForkChoiceStrategy().orElseThrow();
     final Bytes32 headExecutionHash =
@@ -529,7 +562,7 @@ class ForkChoiceTest {
                 headExecutionHash,
                 headExecutionHash,
                 finalizedExecutionHash,
-                false));
+                optimisticHead));
   }
 
   private void justifyEpoch(final ChainUpdater chainUpdater, final long epoch) {
@@ -583,6 +616,11 @@ class ForkChoiceTest {
     prepEpochForJustification(chainUpdater, epochPlus2StartSlot);
 
     return epochPlus2StartSlot;
+  }
+
+  private void finalizeEpoch(final long epoch) {
+    final UInt64 nextBlockSlot = prepFinalizeEpoch(epoch);
+    importBlock(chainBuilder.generateBlockAtSlot(nextBlockSlot));
   }
 
   private void doMerge() {
