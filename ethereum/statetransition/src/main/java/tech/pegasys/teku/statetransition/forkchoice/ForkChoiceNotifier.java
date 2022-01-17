@@ -257,4 +257,8 @@ public class ForkChoiceNotifier {
     sendForkChoiceUpdated();
     return true;
   }
+
+  public PayloadAttributesCalculator getPayloadAttributesCalculator() {
+    return payloadAttributesCalculator;
+  }
 }
