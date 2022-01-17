@@ -4,10 +4,7 @@
     "data" : {
       "type" : "array",
       "items" : {
-        "type" : "object",
-        "additionalProperties" : {
-          "type" : "object"
-        }
+        "$ref" : "#/components/schemas/ProposerInfoSchema"
       }
     }
   }

@@ -122,9 +122,11 @@ public class PayloadAttributesCalculator {
         .map(
             proposerInfoEntry ->
                 ImmutableMap.<String, Object>builder()
-                    .put("proposerIndex", proposerInfoEntry.getKey().intValue())
-                    .put("feeRecipient", proposerInfoEntry.getValue().feeRecipient.toHexString())
-                    .put("expirySlot", proposerInfoEntry.getValue().expirySlot.intValue())
+                    // changing the following attributes require a change to
+                    // tech.pegasys.teku.api.response.v1.teku.ProposerInfoSchema
+                    .put("proposer_index", proposerInfoEntry.getKey())
+                    .put("fee_recipient", proposerInfoEntry.getValue().feeRecipient)
+                    .put("expiry_slot", proposerInfoEntry.getValue().expirySlot)
                     .build())
         .collect(Collectors.toList());
   }

@@ -18,7 +18,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_INTERNA
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RES_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNAVAILABLE;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_TEKU;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_EXPERIMENTAL;
 
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -53,7 +53,7 @@ public class GetPreparedBeaconProposers implements Handler {
       path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get current prepared beacon proposers",
-      tags = {TAG_TEKU},
+      tags = {TAG_EXPERIMENTAL},
       description =
           "Get the current proposers information held by beacon node as result of prepare_beacon_proposer validator API calls. This API is considered unstable and the returned data format may change in the future.",
       responses = {

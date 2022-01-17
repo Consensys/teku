@@ -13,24 +13,29 @@
 
 package tech.pegasys.teku.api.response.v1.teku;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
+import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES20;
+import static tech.pegasys.teku.api.schema.SchemaConstants.PATTERN_BYTES20;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.List;
-import java.util.Map;
+import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class GetPreparedBeaconProposersResponse {
-  @ArraySchema(schema = @Schema(implementation = ProposerInfoSchema.class))
-  private final List<Map<String, Object>> data;
+public class ProposerInfoSchema {
 
-  @JsonCreator
-  public GetPreparedBeaconProposersResponse(
-      @JsonProperty("data") final List<Map<String, Object>> proposers_info) {
-    this.data = proposers_info;
-  }
+  @Schema(type = "string", format = "uint64")
+  @JsonProperty("proposer_index")
+  UInt64 proposer_index;
 
-  public List<Map<String, Object>> getData() {
-    return data;
-  }
+  @Schema(
+      type = "string",
+      format = "byte",
+      pattern = PATTERN_BYTES20,
+      description = DESCRIPTION_BYTES20)
+  @JsonProperty("fee_recipient")
+  Bytes20 fee_recipient;
+
+  @Schema(type = "string", format = "uint64")
+  @JsonProperty("expiry_slot")
+  UInt64 expiry_slot;
 }
