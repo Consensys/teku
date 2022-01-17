@@ -36,7 +36,9 @@ public class ForkChoiceUpdateData {
   private boolean sent = false;
 
   public ForkChoiceUpdateData() {
-    this.forkChoiceState = new ForkChoiceState(Bytes32.ZERO, Bytes32.ZERO, Bytes32.ZERO, false);
+    this.forkChoiceState =
+        new ForkChoiceState(
+            Bytes32.ZERO, UInt64.ZERO, Bytes32.ZERO, Bytes32.ZERO, Bytes32.ZERO, false);
     this.payloadAttributes = Optional.empty();
     this.terminalBlockHash = Optional.empty();
   }
@@ -45,10 +47,15 @@ public class ForkChoiceUpdateData {
       final ForkChoiceState forkChoiceState,
       final Optional<PayloadAttributes> payloadAttributes,
       final Optional<Bytes32> terminalBlockHash) {
-    if (terminalBlockHash.isPresent() && forkChoiceState.getHeadBlockHash().isZero()) {
+    if (terminalBlockHash.isPresent() && forkChoiceState.getHeadExecutionBlockHash().isZero()) {
       this.forkChoiceState =
           new ForkChoiceState(
-              terminalBlockHash.get(), terminalBlockHash.get(), Bytes32.ZERO, false);
+              forkChoiceState.getHeadBlockRoot(),
+              forkChoiceState.getHeadBlockSlot(),
+              terminalBlockHash.get(),
+              terminalBlockHash.get(),
+              Bytes32.ZERO,
+              false);
     } else {
       this.forkChoiceState = forkChoiceState;
     }
@@ -99,12 +106,12 @@ public class ForkChoiceUpdateData {
       // pre-merge, must build on top of a detected terminal block
       boolean isSuitable =
           terminalBlockHash.isPresent()
-              && forkChoiceState.getHeadBlockHash().equals(terminalBlockHash.get());
+              && forkChoiceState.getHeadExecutionBlockHash().equals(terminalBlockHash.get());
       LOG.debug("isPayloadIdSuitable - pre-merge: returning {}", isSuitable);
       return isSuitable;
     } else {
       // post-merge, must build on top of the existing parent
-      boolean isSuitable = forkChoiceState.getHeadBlockHash().equals(parentExecutionHash);
+      boolean isSuitable = forkChoiceState.getHeadExecutionBlockHash().equals(parentExecutionHash);
       LOG.debug("isPayloadIdSuitable - post-merge: returning {}", isSuitable);
       return isSuitable;
     }
@@ -121,7 +128,7 @@ public class ForkChoiceUpdateData {
     }
     sent = true;
 
-    if (forkChoiceState.getHeadBlockHash().isZero()) {
+    if (forkChoiceState.getHeadExecutionBlockHash().isZero()) {
       LOG.debug("send - getHeadBlockHash is zero - returning empty");
       payloadId.complete(Optional.empty());
       return;
@@ -142,7 +149,7 @@ public class ForkChoiceUpdateData {
   }
 
   public boolean hasHeadBlockHash() {
-    return !forkChoiceState.getHeadBlockHash().isZero();
+    return !forkChoiceState.getHeadExecutionBlockHash().isZero();
   }
 
   public boolean hasTerminalBlockHash() {

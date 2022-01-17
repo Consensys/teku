@@ -394,6 +394,7 @@ public class ForkChoice {
                 recentChainData.getJustifiedCheckpoint().orElseThrow(),
                 recentChainData.getFinalizedCheckpoint().orElseThrow());
     forkChoiceNotifier.onForkChoiceUpdated(forkChoiceState);
+    recentChainData.onForkChoiceUpdated(forkChoiceState);
     if (optimisticSyncing
         .map(oldValue -> !oldValue.equals(forkChoiceState.isHeadOptimistic()))
         .orElse(true)) {
