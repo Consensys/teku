@@ -49,6 +49,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -89,6 +90,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   private final Map<Bytes4, SpecMilestone> forkDigestToMilestone = new ConcurrentHashMap<>();
   private final Map<SpecMilestone, Bytes4> milestoneToForkDigest = new ConcurrentHashMap<>();
   private volatile Optional<ChainHead> chainHead = Optional.empty();
+  private volatile Optional<ForkChoiceState> optimisticHead = Optional.empty();
   private volatile UInt64 genesisTime;
 
   RecentChainData(
@@ -325,6 +327,19 @@ public abstract class RecentChainData implements StoreUpdateHandler {
           optionalReorgContext);
     }
     bestBlockInitialized.complete(null);
+  }
+
+  public void onForkChoiceUpdated(final ForkChoiceState forkChoiceState) {
+    optimisticHead =
+        forkChoiceState.isHeadOptimistic() ? Optional.of(forkChoiceState) : Optional.empty();
+  }
+
+  public Optional<ForkChoiceState> getOptimisticHead() {
+    return optimisticHead;
+  }
+
+  public Optional<UInt64> getOptimisticHeadSlot() {
+    return optimisticHead.map(ForkChoiceState::getHeadBlockSlot);
   }
 
   private UInt64 getChainHeadSlot(final ChainHead head) {
