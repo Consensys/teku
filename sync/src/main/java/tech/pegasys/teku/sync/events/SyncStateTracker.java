@@ -86,7 +86,7 @@ public class SyncStateTracker extends Service
 
   @Override
   public void onOptimisticHeadChanged(final boolean active) {
-    logSyncStateOnOptimisticSyncingChanged(headIsOptimistic, active);
+    logSyncStateOnOptimisticHeadChanged(headIsOptimistic, active);
     headIsOptimistic = active;
     updateCurrentState();
   }
@@ -142,7 +142,7 @@ public class SyncStateTracker extends Service
     updateCurrentState();
   }
 
-  private void logSyncStateOnOptimisticSyncingChanged(
+  private void logSyncStateOnOptimisticHeadChanged(
       final boolean wasHeadPreviouslyOptimistic, final boolean isHeadOptimistic) {
 
     if (wasHeadPreviouslyOptimistic == isHeadOptimistic || startingUp) {
