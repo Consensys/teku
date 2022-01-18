@@ -38,6 +38,9 @@ public class SpecConfigBellatrix extends DelegatingSpecConfigAltair {
   private final Bytes32 terminalBlockHash;
   private final UInt64 terminalBlockHashActivationEpoch;
 
+  // Optimistic Sync
+  private final int safeSlotsToImportOptimistically;
+
   public SpecConfigBellatrix(
       final SpecConfigAltair specConfig,
       final Bytes4 bellatrixForkVersion,
@@ -51,7 +54,8 @@ public class SpecConfigBellatrix extends DelegatingSpecConfigAltair {
       final int maxExtraDataBytes,
       final UInt256 terminalTotalDifficulty,
       final Bytes32 terminalBlockHash,
-      final UInt64 terminalBlockHashActivationEpoch) {
+      final UInt64 terminalBlockHashActivationEpoch,
+      final int safeSlotsToImportOptimistically) {
     super(specConfig);
     this.bellatrixForkVersion = bellatrixForkVersion;
     this.bellatrixForkEpoch = bellatrixForkEpoch;
@@ -65,6 +69,7 @@ public class SpecConfigBellatrix extends DelegatingSpecConfigAltair {
     this.terminalTotalDifficulty = terminalTotalDifficulty;
     this.terminalBlockHash = terminalBlockHash;
     this.terminalBlockHashActivationEpoch = terminalBlockHashActivationEpoch;
+    this.safeSlotsToImportOptimistically = safeSlotsToImportOptimistically;
   }
 
   public static SpecConfigBellatrix required(final SpecConfig specConfig) {
@@ -123,6 +128,10 @@ public class SpecConfigBellatrix extends DelegatingSpecConfigAltair {
 
   public UInt64 getTerminalBlockHashActivationEpoch() {
     return terminalBlockHashActivationEpoch;
+  }
+
+  public int getSafeSlotsToImportOptimistically() {
+    return safeSlotsToImportOptimistically;
   }
 
   @Override

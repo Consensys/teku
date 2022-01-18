@@ -245,7 +245,7 @@ public class ForkChoice {
     }
 
     if (payloadResult.hasStatus(ExecutionPayloadStatus.SYNCING)
-        && !recentChainData.isOptimisticSyncPossible()) {
+        && !recentChainData.isOptimisticSyncPossible(block.getSlot())) {
       return BlockImportResult.FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING;
     }
 

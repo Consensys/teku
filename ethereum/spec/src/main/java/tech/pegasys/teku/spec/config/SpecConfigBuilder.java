@@ -701,6 +701,9 @@ public class SpecConfigBuilder {
     private Bytes32 terminalBlockHash;
     private UInt64 terminalBlockHashActivationEpoch;
 
+    // Optimistic Sync
+    private int safeSlotsToImportOptimistically = 128;
+
     private BellatrixBuilder() {}
 
     SpecConfigBellatrix build(final SpecConfigAltair specConfig) {
@@ -717,7 +720,8 @@ public class SpecConfigBuilder {
           maxExtraDataBytes,
           terminalTotalDifficulty,
           terminalBlockHash,
-          terminalBlockHashActivationEpoch);
+          terminalBlockHashActivationEpoch,
+          safeSlotsToImportOptimistically);
     }
 
     void validate() {
@@ -810,6 +814,12 @@ public class SpecConfigBuilder {
 
     public BellatrixBuilder maxExtraDataBytes(final int maxExtraDataBytes) {
       this.maxExtraDataBytes = maxExtraDataBytes;
+      return this;
+    }
+
+    public BellatrixBuilder safeSlotsToImportOptimistically(
+        final int safeSlotsToImportOptimistically) {
+      this.safeSlotsToImportOptimistically = safeSlotsToImportOptimistically;
       return this;
     }
   }

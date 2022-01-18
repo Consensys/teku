@@ -93,6 +93,7 @@ public class SpecConfigBellatrixTest {
         dataStructureUtil.randomPositiveInt(),
         dataStructureUtil.randomUInt256(),
         dataStructureUtil.randomBytes32(),
-        dataStructureUtil.randomUInt64());
+        dataStructureUtil.randomUInt64(),
+        dataStructureUtil.randomPositiveInt());
   }
 }
