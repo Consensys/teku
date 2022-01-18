@@ -42,7 +42,7 @@ public interface SchemaDefinitions {
     return Optional.empty();
   }
 
-  default Optional<SchemaDefinitionsMerge> toVersionMerge() {
+  default Optional<SchemaDefinitionsBellatrix> toVersionBellatrix() {
     return Optional.empty();
   }
 }

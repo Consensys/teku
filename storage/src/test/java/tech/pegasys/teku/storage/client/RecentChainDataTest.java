@@ -65,7 +65,7 @@ import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 class RecentChainDataTest {
-  private final Spec spec = TestSpecFactory.createMinimalMerge();
+  private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final SpecConfig genesisSpecConfig = spec.getGenesisSpecConfig();
   private StorageSystem storageSystem;
@@ -905,11 +905,7 @@ class RecentChainDataTest {
   @Test
   void isOptimisticSyncPossible_shouldBeTrueWhenMergeBlockNotJustifiedAndBlockOldEnough() {
     initPostGenesis();
-    final int safeSyncDistance =
-        spec.getGenesisSpecConfig()
-            .toVersionMerge()
-            .orElseThrow()
-            .getSafeSlotsToImportOptimistically();
+    final int safeSyncDistance = getSafeSyncDistance();
     final UInt64 mergeBlockSlot = recentChainData.getHeadSlot().plus(1);
     final UInt64 importBlockSlot = mergeBlockSlot.plus(1);
     storageSystem
@@ -926,7 +922,7 @@ class RecentChainDataTest {
   @Test
   void isOptimisticSyncPossible_shouldBeFalseWhenMergeBlockIsOldButImportingBlockIsRecent() {
     initPostGenesis();
-    final UInt64 safeSyncDistance = UInt64.valueOf(128);
+    final int safeSyncDistance = getSafeSyncDistance();
     final UInt64 mergeBlockSlot = recentChainData.getHeadSlot().plus(1);
     final UInt64 importBlockSlot = mergeBlockSlot.plus(1).plus(safeSyncDistance);
     storageSystem
@@ -938,6 +934,13 @@ class RecentChainDataTest {
 
     storageSystem.chainUpdater().setCurrentSlot(importBlockSlot.plus(1));
     assertThat(recentChainData.isOptimisticSyncPossible(importBlockSlot)).isFalse();
+  }
+
+  private int getSafeSyncDistance() {
+    return spec.getGenesisSpecConfig()
+        .toVersionBellatrix()
+        .orElseThrow()
+        .getSafeSlotsToImportOptimistically();
   }
 
   @Test

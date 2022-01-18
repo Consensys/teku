@@ -29,7 +29,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 public class ChainUpdater {
@@ -88,7 +88,7 @@ public class ChainUpdater {
         signDeposits,
         spec.getGenesisSpecConfig().getMaxEffectiveBalance(),
         Optional.of(
-            SchemaDefinitionsMerge.required(spec.getGenesisSchemaDefinitions())
+            SchemaDefinitionsBellatrix.required(spec.getGenesisSchemaDefinitions())
                 .getExecutionPayloadHeaderSchema()
                 .create(
                     Bytes32.random(),

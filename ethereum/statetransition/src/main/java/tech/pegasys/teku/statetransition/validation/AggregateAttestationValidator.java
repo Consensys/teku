@@ -15,9 +15,6 @@ package tech.pegasys.teku.statetransition.validation;
 
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_signing_root;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ignore;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 import static tech.pegasys.teku.util.config.Constants.VALID_AGGREGATE_SET_SIZE;
@@ -84,7 +81,7 @@ public class AggregateAttestationValidator {
 
     final AggregatorIndexAndEpoch aggregatorIndexAndEpoch =
         new AggregatorIndexAndEpoch(
-            aggregateAndProof.getIndex(), compute_epoch_at_slot(aggregateSlot));
+            aggregateAndProof.getIndex(), spec.computeEpochAtSlot(aggregateSlot));
     if (receivedAggregatorIndexAndEpochs.contains(aggregatorIndexAndEpoch)) {
       return completedFuture(ignore("Ignoring duplicate aggregate"));
     }
@@ -197,12 +194,12 @@ public class AggregateAttestationValidator {
       final BLSPublicKey aggregatorPublicKey) {
     final AggregateAndProof aggregateAndProof = signedAggregate.getMessage();
     final Bytes32 domain =
-        get_domain(
+        spec.getDomain(
             Domain.AGGREGATE_AND_PROOF,
-            compute_epoch_at_slot(aggregateAndProof.getAggregate().getData().getSlot()),
+            spec.computeEpochAtSlot(aggregateAndProof.getAggregate().getData().getSlot()),
             state.getFork(),
             state.getGenesis_validators_root());
-    final Bytes signingRoot = compute_signing_root(aggregateAndProof, domain);
+    final Bytes signingRoot = spec.computeSigningRoot(aggregateAndProof, domain);
     return signatureVerifier.verify(
         aggregatorPublicKey, signingRoot, signedAggregate.getSignature());
   }
@@ -214,12 +211,12 @@ public class AggregateAttestationValidator {
       final BLSPublicKey aggregatorPublicKey,
       final BLSSignature selectionProof) {
     final Bytes32 domain =
-        get_domain(
+        spec.getDomain(
             Domain.SELECTION_PROOF,
-            compute_epoch_at_slot(aggregateSlot),
+            spec.computeEpochAtSlot(aggregateSlot),
             state.getFork(),
             state.getGenesis_validators_root());
-    final Bytes signingRoot = compute_signing_root(aggregateSlot.longValue(), domain);
+    final Bytes signingRoot = spec.computeSigningRoot(aggregateSlot, domain);
     return signatureVerifier.verify(aggregatorPublicKey, signingRoot, selectionProof);
   }
 

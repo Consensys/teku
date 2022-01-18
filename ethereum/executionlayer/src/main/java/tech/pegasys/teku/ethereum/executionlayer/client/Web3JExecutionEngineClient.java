@@ -13,11 +13,14 @@
 
 package tech.pegasys.teku.ethereum.executionlayer.client;
 
+import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
@@ -46,6 +49,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   private final Web3j eth1Web3j;
   private final HttpService eeWeb3jService;
   private final AtomicLong nextId = new AtomicLong(MESSAGE_ORDER_RESET_ID);
+  private final AtomicBoolean isErrored = new AtomicBoolean(false);
 
   public Web3JExecutionEngineClient(String eeEndpoint) {
     this.eeWeb3jService = new HttpService(eeEndpoint, createOkHttpClient());
@@ -64,7 +68,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 
   @Override
   public SafeFuture<Optional<PowBlock>> getPowBlock(Bytes32 blockHash) {
-    return SafeFuture.of(eth1Web3j.ethGetBlockByHash(blockHash.toHexString(), false).sendAsync())
+    return doWeb3JRequest(eth1Web3j.ethGetBlockByHash(blockHash.toHexString(), false).sendAsync())
         .thenApply(EthBlock::getBlock)
         .thenApply(Web3JExecutionEngineClient::eth1BlockToPowBlock)
         .thenApply(Optional::ofNullable);
@@ -72,7 +76,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 
   @Override
   public SafeFuture<PowBlock> getPowChainHead() {
-    return SafeFuture.of(
+    return doWeb3JRequest(
             eth1Web3j.ethGetBlockByNumber(DefaultBlockParameterName.LATEST, false).sendAsync())
         .thenApply(EthBlock::getBlock)
         .thenApply(Web3JExecutionEngineClient::eth1BlockToPowBlock);
@@ -122,6 +126,24 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
     return doRequest(web3jRequest);
   }
 
+  private void handleError(Throwable error) {
+    if (isErrored.compareAndSet(false, true)) {
+      EVENT_LOG.executionClientIsOffline(error);
+    }
+  }
+
+  private void handleSuccess() {
+    if (isErrored.compareAndSet(true, false)) {
+      EVENT_LOG.executionClientIsOnline();
+    }
+  }
+
+  private <T> SafeFuture<T> doWeb3JRequest(CompletableFuture<T> web3Request) {
+    return SafeFuture.of(web3Request)
+        .catchAndRethrow(this::handleError)
+        .thenPeek(__ -> handleSuccess());
+  }
+
   private <T> SafeFuture<Response<T>> doRequest(
       Request<?, ? extends org.web3j.protocol.core.Response<T>> web3jRequest) {
     web3jRequest.setId(nextId.getAndIncrement());
@@ -131,11 +153,15 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
             .handle(
                 (response, exception) -> {
                   if (exception != null) {
+                    handleError(exception);
                     return new Response<>(exception.getMessage());
                   } else if (response.hasError()) {
-                    return new Response<>(
-                        response.getError().getCode() + ": " + response.getError().getMessage());
+                    final String errorMessage =
+                        response.getError().getCode() + ": " + response.getError().getMessage();
+                    handleError(new Error(errorMessage));
+                    return new Response<>(errorMessage);
                   } else {
+                    handleSuccess();
                     return new Response<>(response.getResult());
                   }
                 });

@@ -42,12 +42,12 @@ import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.BeaconStateMerge;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BlockProposalTestUtil {
@@ -188,14 +188,14 @@ public class BlockProposalTestUtil {
       final Optional<Bytes32> terminalBlock) {
     final SpecVersion specVersion = spec.atSlot(newSlot);
     final ExecutionPayloadSchema schema =
-        SchemaDefinitionsMerge.required(specVersion.getSchemaDefinitions())
+        SchemaDefinitionsBellatrix.required(specVersion.getSchemaDefinitions())
             .getExecutionPayloadSchema();
     if (terminalBlock.isEmpty() && !isMergeTransitionComplete(state)) {
       return schema.getDefault();
     }
 
     Bytes32 currentExecutionPayloadBlockHash =
-        BeaconStateMerge.required(state).getLatestExecutionPayloadHeader().getBlockHash();
+        BeaconStateBellatrix.required(state).getLatestExecutionPayloadHeader().getBlockHash();
     if (!currentExecutionPayloadBlockHash.isZero() && terminalBlock.isPresent()) {
       throw new IllegalArgumentException("Merge already happened, cannot set terminal block hash");
     }

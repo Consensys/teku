@@ -15,8 +15,8 @@ package tech.pegasys.teku.api.schema.interfaces;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import tech.pegasys.teku.api.schema.altair.BeaconStateAltair;
-import tech.pegasys.teku.api.schema.merge.BeaconStateMerge;
+import tech.pegasys.teku.api.schema.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 
-@Schema(oneOf = {BeaconStatePhase0.class, BeaconStateAltair.class, BeaconStateMerge.class})
+@Schema(oneOf = {BeaconStatePhase0.class, BeaconStateAltair.class, BeaconStateBellatrix.class})
 public interface State {}

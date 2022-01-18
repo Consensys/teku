@@ -18,8 +18,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
+import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
-import tech.pegasys.teku.spec.config.SpecConfigMerge;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 class SpecVersionTest {
@@ -50,13 +50,13 @@ class SpecVersionTest {
   }
 
   @Test
-  void shouldCreateMergeSpec() {
-    final SpecConfigMerge mergeSpecConfig = SpecConfigMerge.required(minimalConfig);
-    final SpecVersion expectedVersion = SpecVersion.createMerge(mergeSpecConfig);
+  void shouldCreateBellatrixSpec() {
+    final SpecConfigBellatrix bellatrixSpecConfig = SpecConfigBellatrix.required(minimalConfig);
+    final SpecVersion expectedVersion = SpecVersion.createBellatrix(bellatrixSpecConfig);
     final Optional<SpecVersion> actualVersion =
-        SpecVersion.create(SpecMilestone.MERGE, minimalConfig);
+        SpecVersion.create(SpecMilestone.BELLATRIX, minimalConfig);
     assertThat(actualVersion).isPresent();
-    assertThat(actualVersion.get().getMilestone()).isEqualTo(SpecMilestone.MERGE);
+    assertThat(actualVersion.get().getMilestone()).isEqualTo(SpecMilestone.BELLATRIX);
     assertThat(actualVersion.get().getSchemaDefinitions())
         .hasSameClassAs(expectedVersion.getSchemaDefinitions());
   }

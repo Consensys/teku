@@ -37,7 +37,7 @@ import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.config.SpecConfigMerge;
+import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -555,7 +555,8 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   private boolean isBellatrixBlockOld(final UInt64 blockSlot) {
-    final Optional<SpecConfigMerge> maybeConfig = getCurrentSpec().getConfig().toVersionMerge();
+    final Optional<SpecConfigBellatrix> maybeConfig =
+        getCurrentSpec().getConfig().toVersionBellatrix();
     if (maybeConfig.isEmpty()) {
       return false;
     }

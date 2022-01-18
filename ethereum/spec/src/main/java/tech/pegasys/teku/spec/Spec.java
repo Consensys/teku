@@ -46,6 +46,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
+import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -70,7 +71,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTrans
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
-import tech.pegasys.teku.spec.logic.versions.merge.block.OptimisticExecutionPayloadExecutor;
+import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class Spec {
@@ -156,10 +157,6 @@ public class Spec {
 
   public SpecConfig getGenesisSpecConfig() {
     return getGenesisSpec().getConfig();
-  }
-
-  public BeaconStateUtil getGenesisBeaconStateUtil() {
-    return getGenesisSpec().getBeaconStateUtil();
   }
 
   public SchemaDefinitions getGenesisSchemaDefinitions() {
@@ -297,6 +294,16 @@ public class Spec {
 
   public Bytes computeSigningRoot(BeaconBlock block, Bytes32 domain) {
     return atBlock(block).miscHelpers().computeSigningRoot(block, domain);
+  }
+
+  public Bytes computeSigningRoot(AggregateAndProof proof, Bytes32 domain) {
+    return atSlot(proof.getAggregate().getData().getSlot())
+        .miscHelpers()
+        .computeSigningRoot(proof, domain);
+  }
+
+  public Bytes computeSigningRoot(UInt64 slot, Bytes32 domain) {
+    return atSlot(slot).miscHelpers().computeSigningRoot(slot, domain);
   }
 
   public Bytes4 computeForkDigest(Bytes4 currentVersion, Bytes32 genesisValidatorsRoot) {

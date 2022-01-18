@@ -54,7 +54,7 @@ import tech.pegasys.teku.spec.executionengine.StubExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.forkchoice.ForkChoice.OptimisticSyncSubscriber;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoice.OptimisticHeadSubscriber;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel.ReorgEvent;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -64,7 +64,7 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 class ForkChoiceTest {
 
-  private final Spec spec = TestSpecFactory.createMinimalMerge();
+  private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final StorageSystem storageSystem =
       InMemoryStorageSystemBuilder.create()
@@ -77,8 +77,8 @@ class ForkChoiceTest {
   private final RecentChainData recentChainData = storageSystem.recentChainData();
 
   private final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
-  private final OptimisticSyncSubscriber optimisticSyncStateTracker =
-      mock(OptimisticSyncSubscriber.class);
+  private final OptimisticHeadSubscriber optimisticSyncStateTracker =
+      mock(OptimisticHeadSubscriber.class);
   private final StubExecutionEngineChannel executionEngine = new StubExecutionEngineChannel(spec);
   private ForkChoice forkChoice =
       new ForkChoice(spec, new InlineEventThread(), recentChainData, forkChoiceNotifier, false);
@@ -92,7 +92,7 @@ class ForkChoiceTest {
         .chainUpdater()
         .setTime(genesis.getState().getGenesis_time().plus(10L * spec.getSecondsPerSlot(ZERO)));
 
-    forkChoice.subscribeToOptimisticSyncChanges(optimisticSyncStateTracker);
+    forkChoice.subscribeToOptimisticHeadChanges(optimisticSyncStateTracker);
   }
 
   @Test
@@ -460,7 +460,7 @@ class ForkChoiceTest {
 
     // since protoArray initializes with optimistic nodes,
     // we expect a first notification to be optimistic false
-    verify(optimisticSyncStateTracker).onOptimisticSyncingChanged(false);
+    verify(optimisticSyncStateTracker).onOptimisticHeadChanged(false);
 
     final SignedBlockAndState epoch4Block = chainBuilder.generateBlockAtSlot(slotToImport);
     importBlock(epoch4Block);
@@ -474,7 +474,7 @@ class ForkChoiceTest {
     final SignedBlockAndState epoch6Block = chainBuilder.generateBlockAtSlot(slotToImport);
     importBlockOptimistically(epoch6Block);
 
-    verify(optimisticSyncStateTracker).onOptimisticSyncingChanged(true);
+    verify(optimisticSyncStateTracker).onOptimisticHeadChanged(true);
 
     UInt64 forkSlot = slotToImport.increment();
 
@@ -487,7 +487,7 @@ class ForkChoiceTest {
 
     importBlock(chainBuilder.generateBlockAtSlot(forkSlot));
 
-    verify(optimisticSyncStateTracker, times(2)).onOptimisticSyncingChanged(false);
+    verify(optimisticSyncStateTracker, times(2)).onOptimisticHeadChanged(false);
 
     // builds atop the canonical chain
     storageSystem.chainUpdater().setCurrentSlot(forkSlot.plus(1));

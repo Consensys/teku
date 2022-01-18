@@ -149,8 +149,8 @@ public class TestSpecInvocationContextProvider implements TestTemplateInvocation
       Assumptions.assumeTrue(specMilestone.isGreaterThanOrEqualTo(milestone), "Milestone skipped");
     }
 
-    public void assumeMergeActive() {
-      assumeMilestoneActive(SpecMilestone.MERGE);
+    public void assumeBellatrixActive() {
+      assumeMilestoneActive(SpecMilestone.BELLATRIX);
     }
 
     public void assumeAltairActive() {
