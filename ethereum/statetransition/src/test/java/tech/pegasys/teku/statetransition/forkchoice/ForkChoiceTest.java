@@ -378,9 +378,9 @@ class ForkChoiceTest {
   }
 
   @Test
-  void onBlock_shouldNotOptimisticallyImportBeforeFinalizedExecutionPayloadELSyncing() {
+  void onBlock_shouldNotOptimisticallyImportBeforeMergeBlockJustifiedELSyncing() {
     doMerge();
-    UInt64 slotToImport = prepFinalizeEpoch(2);
+    UInt64 slotToImport = recentChainData.getHeadSlot().plus(1);
 
     // make EL returning SYNCING
     executionEngine.setExecutePayloadResult(ExecutePayloadResult.SYNCING);
@@ -391,9 +391,9 @@ class ForkChoiceTest {
   }
 
   @Test
-  void onBlock_shouldNotOptimisticallyImportBeforeFinalizedExecutionPayloadELFailure() {
+  void onBlock_shouldNotOptimisticallyImportOnELFailure() {
     doMerge();
-    UInt64 slotToImport = prepFinalizeEpoch(2);
+    UInt64 slotToImport = recentChainData.getHeadSlot().plus(1);
 
     // make EL returning low level error
     executionEngine.setExecutePayloadResult(

@@ -38,6 +38,9 @@ public class SpecConfigMerge extends DelegatingSpecConfigAltair {
   private final Bytes32 terminalBlockHash;
   private final UInt64 terminalBlockHashActivationEpoch;
 
+  // Optimistic Sync
+  private final int safeSlotsToImportOptimistically;
+
   public SpecConfigMerge(
       final SpecConfigAltair specConfig,
       final Bytes4 mergeForkVersion,
@@ -51,7 +54,8 @@ public class SpecConfigMerge extends DelegatingSpecConfigAltair {
       final int maxExtraDataBytes,
       final UInt256 terminalTotalDifficulty,
       final Bytes32 terminalBlockHash,
-      final UInt64 terminalBlockHashActivationEpoch) {
+      final UInt64 terminalBlockHashActivationEpoch,
+      final int safeSlotsToImportOptimistically) {
     super(specConfig);
     this.mergeForkVersion = mergeForkVersion;
     this.mergeForkEpoch = mergeForkEpoch;
@@ -65,6 +69,7 @@ public class SpecConfigMerge extends DelegatingSpecConfigAltair {
     this.terminalTotalDifficulty = terminalTotalDifficulty;
     this.terminalBlockHash = terminalBlockHash;
     this.terminalBlockHashActivationEpoch = terminalBlockHashActivationEpoch;
+    this.safeSlotsToImportOptimistically = safeSlotsToImportOptimistically;
   }
 
   public static SpecConfigMerge required(final SpecConfig specConfig) {
@@ -123,6 +128,10 @@ public class SpecConfigMerge extends DelegatingSpecConfigAltair {
 
   public UInt64 getTerminalBlockHashActivationEpoch() {
     return terminalBlockHashActivationEpoch;
+  }
+
+  public int getSafeSlotsToImportOptimistically() {
+    return safeSlotsToImportOptimistically;
   }
 
   @Override
