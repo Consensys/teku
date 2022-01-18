@@ -26,44 +26,21 @@ public class Constants {
 
   // Misc
   @Deprecated public static UInt64 ETH1_FOLLOW_DISTANCE = UInt64.valueOf(1024);
-  @Deprecated public static int MAX_COMMITTEES_PER_SLOT;
-  @Deprecated public static int TARGET_COMMITTEE_SIZE;
   @Deprecated public static int MAX_VALIDATORS_PER_COMMITTEE;
   @Deprecated public static int MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
   @Deprecated public static UInt64 MIN_GENESIS_TIME;
-  @Deprecated public static UInt64 HYSTERESIS_QUOTIENT;
-  @Deprecated public static UInt64 HYSTERESIS_DOWNWARD_MULTIPLIER;
-  @Deprecated public static UInt64 HYSTERESIS_UPWARD_MULTIPLIER;
-  @Deprecated public static int PROPORTIONAL_SLASHING_MULTIPLIER;
 
   // Gwei values
   @Deprecated public static UInt64 MIN_DEPOSIT_AMOUNT;
   @Deprecated public static UInt64 MAX_EFFECTIVE_BALANCE;
-  @Deprecated public static UInt64 EJECTION_BALANCE;
-  @Deprecated public static UInt64 EFFECTIVE_BALANCE_INCREMENT;
 
   // Time parameters
   @Deprecated public static UInt64 GENESIS_DELAY;
   @Deprecated public static int SECONDS_PER_SLOT = 12;
   @Deprecated public static int MIN_ATTESTATION_INCLUSION_DELAY;
   @Deprecated public static int SLOTS_PER_EPOCH;
-  @Deprecated public static int MIN_SEED_LOOKAHEAD;
-  @Deprecated public static int MAX_SEED_LOOKAHEAD;
-  @Deprecated public static UInt64 MIN_EPOCHS_TO_INACTIVITY_PENALTY;
   @Deprecated public static int EPOCHS_PER_ETH1_VOTING_PERIOD;
   @Deprecated public static int SLOTS_PER_HISTORICAL_ROOT;
-  @Deprecated public static int MIN_VALIDATOR_WITHDRAWABILITY_DELAY;
-  @Deprecated public static UInt64 SHARD_COMMITTEE_PERIOD;
-
-  // State list lengths
-  @Deprecated public static int EPOCHS_PER_HISTORICAL_VECTOR;
-  @Deprecated public static int EPOCHS_PER_SLASHINGS_VECTOR;
-  @Deprecated public static int HISTORICAL_ROOTS_LIMIT;
-  @Deprecated public static long VALIDATOR_REGISTRY_LIMIT;
-
-  @Deprecated public static int WHISTLEBLOWER_REWARD_QUOTIENT;
-  @Deprecated public static UInt64 PROPOSER_REWARD_QUOTIENT;
-  @Deprecated public static int MIN_SLASHING_PENALTY_QUOTIENT;
 
   // Validator
   @Deprecated public static UInt64 SECONDS_PER_ETH1_BLOCK = UInt64.valueOf(14L);
