@@ -17,7 +17,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoice.OptimisticHeadSubscriber;
 import tech.pegasys.teku.sync.events.SyncState;
 import tech.pegasys.teku.sync.events.SyncingStatus;
 import tech.pegasys.teku.sync.forward.ForwardSync;
@@ -25,7 +25,7 @@ import tech.pegasys.teku.sync.gossip.FetchRecentBlocksService;
 import tech.pegasys.teku.sync.gossip.RecentBlockFetcher;
 
 public class NoopSyncService
-    implements ForwardSync, RecentBlockFetcher, SyncService, ForkChoice.OptimisticSyncSubscriber {
+    implements ForwardSync, RecentBlockFetcher, SyncService, OptimisticHeadSubscriber {
 
   @Override
   public SafeFuture<?> start() {
@@ -81,12 +81,12 @@ public class NoopSyncService
   }
 
   @Override
-  public void onOptimisticSyncingChanged(boolean isSyncingOptimistically) {
+  public void onOptimisticHeadChanged(boolean isSyncingOptimistically) {
     // No-op
   }
 
   @Override
-  public ForkChoice.OptimisticSyncSubscriber getOptimisticSyncSubscriber() {
+  public OptimisticHeadSubscriber getOptimisticSyncSubscriber() {
     return this;
   }
 

@@ -75,7 +75,7 @@ public class DefaultSyncService extends Service implements SyncService {
   }
 
   @Override
-  public ForkChoice.OptimisticSyncSubscriber getOptimisticSyncSubscriber() {
+  public ForkChoice.OptimisticHeadSubscriber getOptimisticSyncSubscriber() {
     return syncStateTracker;
   }
 

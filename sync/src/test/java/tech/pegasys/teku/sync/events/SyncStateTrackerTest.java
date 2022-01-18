@@ -11,12 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.sync.forward;
+package tech.pegasys.teku.sync.events;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.time.Duration;
@@ -24,13 +26,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.network.p2p.peer.StubPeer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
-import tech.pegasys.teku.sync.events.SyncState;
-import tech.pegasys.teku.sync.events.SyncStateProvider;
-import tech.pegasys.teku.sync.events.SyncStateTracker;
+import tech.pegasys.teku.sync.forward.ForwardSync;
 import tech.pegasys.teku.sync.forward.ForwardSync.SyncSubscriber;
 
 class SyncStateTrackerTest {
@@ -44,9 +45,16 @@ class SyncStateTrackerTest {
 
   private final ForwardSync syncService = mock(ForwardSync.class);
 
+  private final EventLogger eventLogger = mock(EventLogger.class);
+
   private final SyncStateTracker tracker =
       new SyncStateTracker(
-          asyncRunner, syncService, network, STARTUP_TARGET_PEER_COUNT, STARTUP_TIMEOUT);
+          asyncRunner,
+          syncService,
+          network,
+          STARTUP_TARGET_PEER_COUNT,
+          STARTUP_TIMEOUT,
+          eventLogger);
   private SyncSubscriber syncSubscriber;
   private PeerConnectedSubscriber<Peer> peerSubscriber;
 
@@ -90,14 +98,71 @@ class SyncStateTrackerTest {
   public void shouldBeSyncingWhenSyncStarts() {
     syncSubscriber.onSyncingChange(true);
     assertSyncState(SyncState.SYNCING);
+    verify(eventLogger).syncStart();
+    verifyNoMoreInteractions(eventLogger);
   }
 
   @Test
   public void shouldReturnToStartupModeWhenSyncCompletesIfPeerRequirementNotMet() {
     syncSubscriber.onSyncingChange(true);
     assertSyncState(SyncState.SYNCING);
+    verify(eventLogger).syncStart();
     syncSubscriber.onSyncingChange(false);
     assertSyncState(SyncState.START_UP);
+    verify(eventLogger).syncCompleted();
+    verifyNoMoreInteractions(eventLogger);
+  }
+
+  @Test
+  public void shouldNotLogOptimisticMessagesOnStartUp() {
+    // initialize with optimistic
+    tracker.onOptimisticHeadChanged(true);
+
+    // start syncing
+    syncSubscriber.onSyncingChange(true);
+    assertSyncState(SyncState.SYNCING);
+    verify(eventLogger).syncStart();
+
+    // head no more optimistic
+    tracker.onOptimisticHeadChanged(false);
+
+    // in sync
+    syncSubscriber.onSyncingChange(false);
+    verify(eventLogger).syncCompleted();
+    assertSyncState(SyncState.START_UP);
+
+    // turn head optimistic
+    tracker.onOptimisticHeadChanged(true);
+    assertSyncState(SyncState.SYNCING);
+
+    verifyNoMoreInteractions(eventLogger);
+  }
+
+  @Test
+  public void shouldLogCorrectSequenceOfSyncEvents() {
+    // start syncing
+    syncSubscriber.onSyncingChange(true);
+    assertSyncState(SyncState.SYNCING);
+    verify(eventLogger).syncStart();
+
+    // get connected
+    when(network.getPeerCount()).thenReturn(STARTUP_TARGET_PEER_COUNT);
+    peerSubscriber.onConnected(new StubPeer());
+
+    // turn head optimistic
+    tracker.onOptimisticHeadChanged(true);
+    verify(eventLogger).headTurnedOptimisticWhileSyncing();
+
+    // beacon synced while head is optimistic
+    syncSubscriber.onSyncingChange(false);
+    verify(eventLogger).syncCompletedWhileHeadIsOptimistic();
+
+    // head no longer optimistic
+    tracker.onOptimisticHeadChanged(false);
+    assertSyncState(SyncState.IN_SYNC);
+    verify(eventLogger).syncCompleted();
+
+    verifyNoMoreInteractions(eventLogger);
   }
 
   @Test
@@ -144,6 +209,7 @@ class SyncStateTrackerTest {
     when(network.getPeerCount()).thenReturn(STARTUP_TARGET_PEER_COUNT);
     peerSubscriber.onConnected(new StubPeer());
     assertSyncState(SyncState.IN_SYNC);
+    verifyNoInteractions(eventLogger);
   }
 
   @Test
