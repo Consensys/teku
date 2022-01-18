@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.cli.subcommand.internal.validator.options;
 
-import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
-
 import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -35,6 +33,7 @@ import tech.pegasys.teku.cli.subcommand.internal.validator.tools.ConsoleAdapter;
 import tech.pegasys.teku.cli.subcommand.internal.validator.tools.DepositSender;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -98,20 +97,21 @@ public class DepositOptions {
   public DepositSender createDepositSender(final boolean verboseOutputEnabled) {
     final Eth2NetworkConfiguration networkConfig =
         Eth2NetworkConfiguration.builder(network).build();
+    final tech.pegasys.teku.spec.Spec spec = networkConfig.getSpec();
     Constants.setConstants(networkConfig.getConstants());
     return new DepositSender(
-        networkConfig.getSpec(),
+        spec,
         eth1NodeUrl,
         getEth1Credentials(),
         getContractAddress(networkConfig),
         verboseOutputEnabled,
-        getAmount(),
+        getAmount(spec.getGenesisSpecConfig()),
         shutdownFunction,
         consoleAdapter);
   }
 
-  UInt64 getAmount() {
-    return Optional.ofNullable(this.amount).orElse(MAX_EFFECTIVE_BALANCE);
+  UInt64 getAmount(final SpecConfig specConfig) {
+    return Optional.ofNullable(this.amount).orElse(specConfig.getMaxEffectiveBalance());
   }
 
   private Eth1Address getContractAddress(final Eth2NetworkConfiguration networkConfig) {

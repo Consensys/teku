@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.function.IntConsumer;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.web3j.crypto.CipherException;
@@ -35,7 +34,9 @@ import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
 import tech.pegasys.teku.cli.subcommand.internal.validator.tools.ConsoleAdapter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigLoader;
+import tech.pegasys.teku.spec.networks.Eth2Network;
 
 class DepositOptionsTest {
   private static final String ETH1_PRIVATE_KEY =
@@ -44,13 +45,8 @@ class DepositOptionsTest {
       ECKeyPair.create(Numeric.toBigInt(ETH1_PRIVATE_KEY));
   private static final IntConsumer SHUTDOWN_FUNCTION = status -> {};
   private static final String PASSWORD = "test123";
-  private CommandSpec commandSpec = mock(CommandSpec.class);
-  private ConsoleAdapter consoleAdapter = mock(ConsoleAdapter.class);
-
-  @AfterEach
-  public void tearDown() {
-    Constants.setConstants("minimal");
-  }
+  private final CommandSpec commandSpec = mock(CommandSpec.class);
+  private final ConsoleAdapter consoleAdapter = mock(ConsoleAdapter.class);
 
   @Test
   void eth1PrivateKeyReturnsCredential() {
@@ -155,12 +151,16 @@ class DepositOptionsTest {
 
   @Test
   public void shouldUseMaxEffectiveBalanceAsDefaultAmount() {
-    Constants.MAX_EFFECTIVE_BALANCE = UInt64.valueOf(12345678);
+    final UInt64 expectedAmount = UInt64.valueOf(12345678);
     final Eth1PrivateKeyOptions eth1PrivateKeyOptions = new Eth1PrivateKeyOptions();
     eth1PrivateKeyOptions.eth1PrivateKey = ETH1_PRIVATE_KEY;
     final DepositOptions depositOptions =
         new DepositOptions(commandSpec, eth1PrivateKeyOptions, SHUTDOWN_FUNCTION, consoleAdapter);
 
-    assertThat(depositOptions.getAmount()).isEqualTo(Constants.MAX_EFFECTIVE_BALANCE);
+    final SpecConfig config =
+        SpecConfigLoader.loadConfig(
+            Eth2Network.MAINNET.configName(),
+            builder -> builder.maxEffectiveBalance(expectedAmount));
+    assertThat(depositOptions.getAmount(config)).isEqualTo(expectedAmount);
   }
 }

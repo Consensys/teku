@@ -55,7 +55,7 @@ class GenesisGeneratorTest {
       new GenesisGenerator(genesisSpec, spec.fork(UInt64.ZERO));
 
   private final List<DepositData> initialDepositData =
-      new MockStartDepositGenerator(new DepositGenerator(spec, true))
+      new MockStartDepositGenerator(spec, new DepositGenerator(spec, true))
           .createDeposits(VALIDATOR_KEYS);
   private final List<Deposit> initialDeposits =
       IntStream.range(0, initialDepositData.size())
@@ -132,7 +132,7 @@ class GenesisGeneratorTest {
   @Test
   public void shouldActivateToppedUpValidator() {
     MockStartDepositGenerator mockStartDepositGenerator =
-        new MockStartDepositGenerator(new DepositGenerator(spec, true));
+        new MockStartDepositGenerator(spec, new DepositGenerator(spec, true));
     DepositData PARTIAL_DEPOSIT_DATA =
         mockStartDepositGenerator
             .createDeposits(VALIDATOR_KEYS.subList(0, 1), UInt64.valueOf(1000000000L))

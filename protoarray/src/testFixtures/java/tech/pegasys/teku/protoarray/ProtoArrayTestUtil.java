@@ -21,13 +21,13 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.forkchoice.TestStoreFactory;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
-import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.logic.common.helpers.MathHelpers;
 
 public class ProtoArrayTestUtil {
 
   // Gives a deterministic hash for a given integer
   public static Bytes32 getHash(int i) {
-    return BeaconStateUtil.uint_to_bytes32(Integer.toUnsignedLong(i + 1));
+    return MathHelpers.uintToBytes32(Integer.toUnsignedLong(i + 1));
   }
 
   public static ForkChoiceStrategy createProtoArrayForkChoiceStrategy(
