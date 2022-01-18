@@ -15,7 +15,6 @@ package tech.pegasys.teku.util.config;
 
 import com.google.common.collect.ImmutableList;
 import java.time.Duration;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class Constants {
@@ -26,47 +25,16 @@ public class Constants {
 
   // Misc
   @Deprecated public static UInt64 ETH1_FOLLOW_DISTANCE = UInt64.valueOf(1024);
-  @Deprecated public static int MAX_COMMITTEES_PER_SLOT;
-  @Deprecated public static int TARGET_COMMITTEE_SIZE;
   @Deprecated public static int MAX_VALIDATORS_PER_COMMITTEE;
-  @Deprecated public static int MIN_PER_EPOCH_CHURN_LIMIT;
-  @Deprecated public static int CHURN_LIMIT_QUOTIENT;
-  @Deprecated public static int SHUFFLE_ROUND_COUNT;
   @Deprecated public static int MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
   @Deprecated public static UInt64 MIN_GENESIS_TIME;
-  @Deprecated public static UInt64 HYSTERESIS_QUOTIENT;
-  @Deprecated public static UInt64 HYSTERESIS_DOWNWARD_MULTIPLIER;
-  @Deprecated public static UInt64 HYSTERESIS_UPWARD_MULTIPLIER;
-  @Deprecated public static int PROPORTIONAL_SLASHING_MULTIPLIER;
-
-  // Gwei values
-  @Deprecated public static UInt64 MIN_DEPOSIT_AMOUNT;
-  @Deprecated public static UInt64 MAX_EFFECTIVE_BALANCE;
-  @Deprecated public static UInt64 EJECTION_BALANCE;
-  @Deprecated public static UInt64 EFFECTIVE_BALANCE_INCREMENT;
 
   // Time parameters
   @Deprecated public static UInt64 GENESIS_DELAY;
   @Deprecated public static int SECONDS_PER_SLOT = 12;
-  @Deprecated public static int MIN_ATTESTATION_INCLUSION_DELAY;
   @Deprecated public static int SLOTS_PER_EPOCH;
-  @Deprecated public static int MIN_SEED_LOOKAHEAD;
-  @Deprecated public static int MAX_SEED_LOOKAHEAD;
-  @Deprecated public static UInt64 MIN_EPOCHS_TO_INACTIVITY_PENALTY;
   @Deprecated public static int EPOCHS_PER_ETH1_VOTING_PERIOD;
   @Deprecated public static int SLOTS_PER_HISTORICAL_ROOT;
-  @Deprecated public static int MIN_VALIDATOR_WITHDRAWABILITY_DELAY;
-  @Deprecated public static UInt64 SHARD_COMMITTEE_PERIOD;
-
-  // State list lengths
-  @Deprecated public static int EPOCHS_PER_HISTORICAL_VECTOR;
-  @Deprecated public static int EPOCHS_PER_SLASHINGS_VECTOR;
-  @Deprecated public static int HISTORICAL_ROOTS_LIMIT;
-  @Deprecated public static long VALIDATOR_REGISTRY_LIMIT;
-
-  @Deprecated public static int WHISTLEBLOWER_REWARD_QUOTIENT;
-  @Deprecated public static UInt64 PROPOSER_REWARD_QUOTIENT;
-  @Deprecated public static int MIN_SLASHING_PENALTY_QUOTIENT;
 
   // Validator
   @Deprecated public static UInt64 SECONDS_PER_ETH1_BLOCK = UInt64.valueOf(14L);
@@ -76,10 +44,10 @@ public class Constants {
 
   // Networking
   public static final int GOSSIP_MAX_SIZE = 1048576; // bytes
-  public static final int GOSSIP_MAX_SIZE_MERGE = 10485760; // bytes
+  public static final int GOSSIP_MAX_SIZE_BELLATRIX = 10485760; // bytes
   public static final int MAX_REQUEST_BLOCKS = 1024;
   public static final int MAX_CHUNK_SIZE = 1048576; // bytes
-  public static final int MAX_CHUNK_SIZE_MERGE = 10485760; // bytes
+  public static final int MAX_CHUNK_SIZE_BELLATRIX = 10485760; // bytes
   public static final int ATTESTATION_SUBNET_COUNT = 64;
   public static final UInt64 ATTESTATION_PROPAGATION_SLOT_RANGE = UInt64.valueOf(32);
   public static final int MAXIMUM_GOSSIP_CLOCK_DISPARITY = 500; // in ms
@@ -91,14 +59,10 @@ public class Constants {
   public static final int VALID_VALIDATOR_SET_SIZE = 10000;
   public static final int VALID_CONTRIBUTION_AND_PROOF_SET_SIZE = 10000;
   public static final int VALID_SYNC_COMMITTEE_MESSAGE_SET_SIZE = 10000;
-  public static final int NETWORKING_FAILURE_REPEAT_INTERVAL = 3; // in sec
 
-  // Teku specific
-  public static final Bytes32 ZERO_HASH = Bytes32.ZERO;
   public static final double TIME_TICKER_REFRESH_RATE = 2; // per sec
   public static final Duration ETH1_INDIVIDUAL_BLOCK_RETRY_TIMEOUT = Duration.ofMillis(500);
   public static final Duration ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT = Duration.ofSeconds(2);
-  public static final Duration ETH1_LOCAL_CHAIN_BEHIND_FOLLOW_DISTANCE_WAIT = Duration.ofSeconds(3);
   public static final Duration ETH1_ENDPOINT_MONITOR_SERVICE_POLL_INTERVAL = Duration.ofSeconds(10);
   public static final Duration ETH1_VALID_ENDPOINT_CHECK_INTERVAL =
       Duration.ofSeconds(60); // usable

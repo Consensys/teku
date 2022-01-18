@@ -21,7 +21,7 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.spec.logic.common.helpers.MathHelpers;
 
 @State(Scope.Thread)
 public class SpecBenchmarks {
@@ -33,6 +33,6 @@ public class SpecBenchmarks {
   @Measurement(iterations = 10, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   public void integerSquareRoot(Blackhole bh) {
     n = n.plus(UInt64.ONE);
-    bh.consume(BeaconStateUtil.integer_squareroot(n));
+    bh.consume(MathHelpers.integerSquareRoot(n));
   }
 }

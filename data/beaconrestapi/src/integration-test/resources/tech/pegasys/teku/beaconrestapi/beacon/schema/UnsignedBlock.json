@@ -5,6 +5,6 @@
   }, {
     "$ref" : "#/components/schemas/BeaconBlockAltair"
   }, {
-    "$ref" : "#/components/schemas/BeaconBlockMerge"
+    "$ref" : "#/components/schemas/BeaconBlockBellatrix"
   } ]
 }

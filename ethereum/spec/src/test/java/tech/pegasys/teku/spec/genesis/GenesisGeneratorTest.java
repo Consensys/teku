@@ -40,7 +40,7 @@ import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.BeaconStateMerge;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -55,7 +55,7 @@ class GenesisGeneratorTest {
       new GenesisGenerator(genesisSpec, spec.fork(UInt64.ZERO));
 
   private final List<DepositData> initialDepositData =
-      new MockStartDepositGenerator(new DepositGenerator(spec, true))
+      new MockStartDepositGenerator(spec, new DepositGenerator(spec, true))
           .createDeposits(VALIDATOR_KEYS);
   private final List<Deposit> initialDeposits =
       IntStream.range(0, initialDepositData.size())
@@ -132,7 +132,7 @@ class GenesisGeneratorTest {
   @Test
   public void shouldActivateToppedUpValidator() {
     MockStartDepositGenerator mockStartDepositGenerator =
-        new MockStartDepositGenerator(new DepositGenerator(spec, true));
+        new MockStartDepositGenerator(spec, new DepositGenerator(spec, true));
     DepositData PARTIAL_DEPOSIT_DATA =
         mockStartDepositGenerator
             .createDeposits(VALIDATOR_KEYS.subList(0, 1), UInt64.valueOf(1000000000L))
@@ -191,7 +191,7 @@ class GenesisGeneratorTest {
 
   @Test
   public void shouldGenerateStateWithExecutionPayload() {
-    final Spec spec = TestSpecFactory.createMinimalMerge();
+    final Spec spec = TestSpecFactory.createMinimalBellatrix();
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     final GenesisGenerator genesisGenerator =
         new GenesisGenerator(spec.getGenesisSpec(), spec.fork(UInt64.ZERO));
@@ -203,8 +203,8 @@ class GenesisGeneratorTest {
     final ExecutionPayloadHeader payloadHeader = dataStructureUtil.randomExecutionPayloadHeader();
     genesisGenerator.updateExecutionPayloadHeader(payloadHeader);
     final BeaconState actualState = genesisGenerator.getGenesisState();
-    assertThat(actualState).isInstanceOf(BeaconStateMerge.class);
-    assertThat(BeaconStateMerge.required(actualState).getLatestExecutionPayloadHeader())
+    assertThat(actualState).isInstanceOf(BeaconStateBellatrix.class);
+    assertThat(BeaconStateBellatrix.required(actualState).getLatestExecutionPayloadHeader())
         .isEqualTo(payloadHeader);
   }
 }

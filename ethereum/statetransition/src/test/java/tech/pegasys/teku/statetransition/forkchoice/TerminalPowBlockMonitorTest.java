@@ -35,7 +35,7 @@ import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.SpecConfigBuilder;
+import tech.pegasys.teku.spec.config.SpecConfigBuilder.BellatrixBuilder;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
@@ -47,7 +47,7 @@ import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 public class TerminalPowBlockMonitorTest {
-  private static final UInt64 MERGE_FORK_EPOCH = UInt64.ONE;
+  private static final UInt64 BELLATRIX_FORK_EPOCH = UInt64.ONE;
   private static final UInt256 TTD = UInt256.valueOf(10_000_000);
   private static final Bytes32 TERMINAL_BLOCK_HASH = Bytes32.random();
   private static final UInt64 TERMINAL_BLOCK_EPOCH = UInt64.valueOf(2);
@@ -75,27 +75,28 @@ public class TerminalPowBlockMonitorTest {
 
   private void setUpTerminalBlockHashConfig() {
     setUpCommon(
-        mergeBuilder ->
-            mergeBuilder
-                .mergeForkEpoch(MERGE_FORK_EPOCH)
+        bellatrixBuilder ->
+            bellatrixBuilder
+                .bellatrixForkEpoch(BELLATRIX_FORK_EPOCH)
                 .terminalBlockHash(TERMINAL_BLOCK_HASH)
                 .terminalBlockHashActivationEpoch(TERMINAL_BLOCK_EPOCH));
   }
 
   private void setUpTTDConfig() {
     setUpCommon(
-        mergeBuilder -> mergeBuilder.mergeForkEpoch(MERGE_FORK_EPOCH).terminalTotalDifficulty(TTD));
+        bellatrixBuilder ->
+            bellatrixBuilder.bellatrixForkEpoch(BELLATRIX_FORK_EPOCH).terminalTotalDifficulty(TTD));
   }
 
-  private void setUpCommon(Consumer<SpecConfigBuilder.MergeBuilder> mergeBuilder) {
+  private void setUpCommon(Consumer<BellatrixBuilder> bellatrixBuilder) {
     spec =
-        TestSpecFactory.createMerge(
+        TestSpecFactory.createBellatrix(
             SpecConfigLoader.loadConfig(
                 "minimal",
                 phase0Builder ->
                     phase0Builder
                         .altairBuilder(altairBuilder -> altairBuilder.altairForkEpoch(UInt64.ZERO))
-                        .mergeBuilder(mergeBuilder)));
+                        .bellatrixBuilder(bellatrixBuilder)));
     dataStructureUtil = new DataStructureUtil(spec);
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     storageSystem.chainUpdater().initializeGenesis(false);
@@ -125,13 +126,13 @@ public class TerminalPowBlockMonitorTest {
   }
 
   @Test
-  void shouldNotFailWhenCurrentSlotInMergeMilestoneButHeadStateIsFromEarlierMilestone() {
+  void shouldNotFailWhenCurrentSlotInBellatrixMilestoneButHeadStateIsFromEarlierMilestone() {
     setUpTTDConfig();
 
-    // Current epoch is in merge, but state is still genesis from phase0.
+    // Current epoch is in bellatrix, but state is still genesis from phase0.
     storageSystem
         .chainUpdater()
-        .setCurrentSlot(spec.computeStartSlotAtEpoch(MERGE_FORK_EPOCH).plus(1));
+        .setCurrentSlot(spec.computeStartSlotAtEpoch(BELLATRIX_FORK_EPOCH).plus(1));
 
     // Terminal block has been reached
     final Bytes32 headBlockHash = dataStructureUtil.randomBytes32();
@@ -162,7 +163,7 @@ public class TerminalPowBlockMonitorTest {
 
     terminalPowBlockMonitor.start();
 
-    // NOT YET MERGE FORK - should not notify
+    // NOT YET BELLATRIX FORK - should not notify
     goToSlot(UInt64.ONE);
 
     assertThat(terminalPowBlockMonitor.isRunning()).isTrue();
@@ -173,10 +174,10 @@ public class TerminalPowBlockMonitorTest {
     verify(executionEngine, times(0)).getPowChainHead();
     verify(forkChoiceNotifier, times(0)).onTerminalBlockReached(any());
 
-    // AT MERGE FORK, TTD not reached - should not send
+    // AT BELLATRIX FORK, TTD not reached - should not send
     headBlockHash = dataStructureUtil.randomBytes32();
 
-    goToSlot(MERGE_FORK_EPOCH.times(spec.getGenesisSpecConfig().getSlotsPerEpoch()));
+    goToSlot(BELLATRIX_FORK_EPOCH.times(spec.getGenesisSpecConfig().getSlotsPerEpoch()));
 
     when(executionEngine.getPowChainHead())
         .thenReturn(
@@ -188,7 +189,7 @@ public class TerminalPowBlockMonitorTest {
     verify(executionEngine, times(1)).getPowChainHead();
     verify(forkChoiceNotifier, times(0)).onTerminalBlockReached(any());
 
-    // AT MERGE FORK, TTD reached - should notify
+    // AT BELLATRIX FORK, TTD reached - should notify
     headBlockHash = dataStructureUtil.randomBytes32();
     headBlockParentHash = dataStructureUtil.randomBytes32();
     when(executionEngine.getPowChainHead())
@@ -268,7 +269,7 @@ public class TerminalPowBlockMonitorTest {
 
     terminalPowBlockMonitor.start();
 
-    // NOT YET MERGE FORK - should not notify
+    // NOT YET BELLATRIX FORK - should not notify
     goToSlot(UInt64.ONE);
 
     assertThat(terminalPowBlockMonitor.isRunning()).isTrue();
@@ -279,8 +280,8 @@ public class TerminalPowBlockMonitorTest {
     verify(executionEngine, times(0)).getPowBlock(any());
     verify(forkChoiceNotifier, times(0)).onTerminalBlockReached(any());
 
-    // AT MERGE FORK, Terminal Bloch Epoch not reached - should not notify
-    goToSlot(MERGE_FORK_EPOCH.times(spec.getGenesisSpecConfig().getSlotsPerEpoch()));
+    // AT BELLATRIX FORK, Terminal Bloch Epoch not reached - should not notify
+    goToSlot(BELLATRIX_FORK_EPOCH.times(spec.getGenesisSpecConfig().getSlotsPerEpoch()));
 
     asyncRunner.executeQueuedActions();
 
@@ -322,7 +323,7 @@ public class TerminalPowBlockMonitorTest {
   @Test
   void shouldImmediatelyStopWhenMergeCompleted() {
     setUpTerminalBlockHashConfig();
-    goToSlot(MERGE_FORK_EPOCH.times(spec.getGenesisSpecConfig().getSlotsPerEpoch()));
+    goToSlot(BELLATRIX_FORK_EPOCH.times(spec.getGenesisSpecConfig().getSlotsPerEpoch()));
     doMerge(TERMINAL_BLOCK_HASH);
 
     terminalPowBlockMonitor.start();

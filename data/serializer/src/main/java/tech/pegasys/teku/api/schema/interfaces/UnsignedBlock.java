@@ -15,8 +15,8 @@ package tech.pegasys.teku.api.schema.interfaces;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import tech.pegasys.teku.api.schema.altair.BeaconBlockAltair;
-import tech.pegasys.teku.api.schema.merge.BeaconBlockMerge;
+import tech.pegasys.teku.api.schema.bellatrix.BeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.phase0.BeaconBlockPhase0;
 
-@Schema(oneOf = {BeaconBlockPhase0.class, BeaconBlockAltair.class, BeaconBlockMerge.class})
+@Schema(oneOf = {BeaconBlockPhase0.class, BeaconBlockAltair.class, BeaconBlockBellatrix.class})
 public interface UnsignedBlock {}

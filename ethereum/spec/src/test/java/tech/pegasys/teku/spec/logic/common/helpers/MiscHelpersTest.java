@@ -144,12 +144,24 @@ class MiscHelpersTest {
       final boolean expected = i % (n * specConfig.getSlotsPerEpoch()) == 0 && i != 0;
 
       final UInt64 blockSlot = UInt64.valueOf(i);
-      assertThat(
-              tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.isSlotAtNthEpochBoundary(
-                  blockSlot, blockSlot.minus(1), n))
+      assertThat(miscHelpers.isSlotAtNthEpochBoundary(blockSlot, blockSlot.minus(1), n))
           .describedAs("Block at %d should %sbe at epoch boundary", i, expected ? "" : "not ")
           .isEqualTo(expected);
     }
+  }
+
+  @Test
+  public void isSlotAtNthEpochBoundary_invalidNParameter_zero() {
+    assertThatThrownBy(() -> miscHelpers.isSlotAtNthEpochBoundary(UInt64.ONE, UInt64.ZERO, 0))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Parameter n must be greater than 0");
+  }
+
+  @Test
+  public void isSlotAtNthEpochBoundary_invalidNParameter_negative() {
+    assertThatThrownBy(() -> miscHelpers.isSlotAtNthEpochBoundary(UInt64.ONE, UInt64.ZERO, -1))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Parameter n must be greater than 0");
   }
 
   public static Stream<Arguments> getNValues() {

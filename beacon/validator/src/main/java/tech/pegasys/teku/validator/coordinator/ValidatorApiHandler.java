@@ -57,7 +57,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
-import tech.pegasys.teku.spec.datastructures.operations.versions.merge.BeaconPreparableProposer;
+import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
@@ -293,7 +293,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     }
     final BeaconState blockSlotState = maybeBlockSlotState.get();
     final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, slot.minus(1));
-    if (!combinedChainDataClient.isFullyValidatedHotBlock(parentRoot)) {
+    if (combinedChainDataClient.isOptimisticBlock(parentRoot)) {
       LOG.warn(
           "Unable to produce block at slot {} because parent has optimistically validated payload",
           slot);
@@ -342,7 +342,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                           final BeaconBlock block = blockAndState.getBlock().getMessage();
 
                           // The head block must not be optimistically synced.
-                          if (!combinedChainDataClient.isFullyValidatedHotBlock(block.getRoot())) {
+                          if (combinedChainDataClient.isOptimisticBlock(block.getRoot())) {
                             return NodeSyncingException.failedFuture();
                           }
                           if (blockAndState.getSlot().compareTo(minQuerySlot) < 0) {

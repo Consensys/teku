@@ -24,7 +24,7 @@ import tech.pegasys.teku.api.response.v2.validator.GetNewBlockResponseV2;
 import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.api.schema.altair.BeaconBlockAltair;
-import tech.pegasys.teku.api.schema.merge.BeaconBlockMerge;
+import tech.pegasys.teku.api.schema.bellatrix.BeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.phase0.BeaconBlockPhase0;
 
 public class GetNewBlockResponseV2Deserializer extends JsonDeserializer<GetNewBlockResponseV2> {
@@ -42,8 +42,8 @@ public class GetNewBlockResponseV2Deserializer extends JsonDeserializer<GetNewBl
         Version.valueOf(node.findValue("version").asText().toLowerCase(Locale.ROOT));
     final BeaconBlock block;
     switch (version) {
-      case merge:
-        block = mapper.treeToValue(node.findValue("data"), BeaconBlockMerge.class);
+      case bellatrix:
+        block = mapper.treeToValue(node.findValue("data"), BeaconBlockBellatrix.class);
         break;
       case altair:
         block = mapper.treeToValue(node.findValue("data"), BeaconBlockAltair.class);

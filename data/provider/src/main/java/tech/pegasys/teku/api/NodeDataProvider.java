@@ -17,6 +17,7 @@ import static tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorCa
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
@@ -37,6 +38,7 @@ import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockManager;
+import tech.pegasys.teku.statetransition.forkchoice.PayloadAttributesCalculator;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
@@ -55,20 +57,22 @@ public class NodeDataProvider {
   private final AttestationManager attestationManager;
   private final ActiveValidatorChannel activeValidatorChannel;
   private final boolean isLivenessTrackingEnabled;
+  private final PayloadAttributesCalculator payloadAttributesCalculator;
 
   public NodeDataProvider(
-      AggregatingAttestationPool attestationPool,
-      OperationPool<tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing>
+      final AggregatingAttestationPool attestationPool,
+      final OperationPool<tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing>
           attesterSlashingsPool,
-      OperationPool<tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing>
+      final OperationPool<tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing>
           proposerSlashingPool,
-      OperationPool<tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit>
+      final OperationPool<tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit>
           voluntaryExitPool,
       final SyncCommitteeContributionPool syncCommitteeContributionPool,
-      BlockManager blockManager,
-      AttestationManager attestationManager,
+      final BlockManager blockManager,
+      final AttestationManager attestationManager,
       final boolean isLivenessTrackingEnabled,
-      final ActiveValidatorChannel activeValidatorChannel) {
+      final ActiveValidatorChannel activeValidatorChannel,
+      final PayloadAttributesCalculator payloadAttributesCalculator) {
     this.attestationPool = attestationPool;
     this.attesterSlashingPool = attesterSlashingsPool;
     this.proposerSlashingPool = proposerSlashingPool;
@@ -78,6 +82,7 @@ public class NodeDataProvider {
     this.attestationManager = attestationManager;
     this.activeValidatorChannel = activeValidatorChannel;
     this.isLivenessTrackingEnabled = isLivenessTrackingEnabled;
+    this.payloadAttributesCalculator = payloadAttributesCalculator;
   }
 
   public List<Attestation> getAttestations(
@@ -180,5 +185,9 @@ public class NodeDataProvider {
                           new ValidatorLivenessAtEpoch(validatorIndex, request.epoch, liveness)));
               return Optional.of(new PostValidatorLivenessResponse(livenessAtEpochs));
             });
+  }
+
+  public List<Map<String, Object>> getPreparedBeaconProposers() {
+    return payloadAttributesCalculator.getData();
   }
 }

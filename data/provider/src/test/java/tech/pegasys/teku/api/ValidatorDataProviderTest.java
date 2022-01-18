@@ -51,7 +51,7 @@ import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
 import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
-import tech.pegasys.teku.api.schema.merge.SignedBeaconBlockMerge;
+import tech.pegasys.teku.api.schema.bellatrix.SignedBeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -215,8 +215,8 @@ public class ValidatorDataProviderTest {
       case ALTAIR:
         assertThat(parsedBlock).isInstanceOf(SignedBeaconBlockAltair.class);
         break;
-      case MERGE:
-        assertThat(parsedBlock).isInstanceOf(SignedBeaconBlockMerge.class);
+      case BELLATRIX:
+        assertThat(parsedBlock).isInstanceOf(SignedBeaconBlockBellatrix.class);
         break;
     }
   }
