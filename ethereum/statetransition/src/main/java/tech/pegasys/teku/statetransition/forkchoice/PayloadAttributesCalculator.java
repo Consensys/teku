@@ -13,10 +13,13 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
+import com.google.common.collect.ImmutableMap;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
@@ -35,7 +38,7 @@ public class PayloadAttributesCalculator {
   private final Spec spec;
   private final EventThread eventThread;
   private final RecentChainData recentChainData;
-  private final Map<UInt64, ProposerInfo> proposerInfoByValidatorIndex = new HashMap<>();
+  private final Map<UInt64, ProposerInfo> proposerInfoByValidatorIndex = new ConcurrentHashMap<>();
 
   public PayloadAttributesCalculator(
       final Spec spec, final EventThread eventThread, final RecentChainData recentChainData) {
@@ -112,5 +115,19 @@ public class PayloadAttributesCalculator {
       return recentChainData.retrieveStateAtSlot(
           new SlotAndBlockRoot(spec.computeStartSlotAtEpoch(requiredEpoch), head.getRoot()));
     }
+  }
+
+  public List<Map<String, Object>> getData() {
+    return proposerInfoByValidatorIndex.entrySet().stream()
+        .map(
+            proposerInfoEntry ->
+                ImmutableMap.<String, Object>builder()
+                    // changing the following attributes require a change to
+                    // tech.pegasys.teku.api.response.v1.teku.ProposerInfoSchema
+                    .put("proposer_index", proposerInfoEntry.getKey())
+                    .put("fee_recipient", proposerInfoEntry.getValue().feeRecipient)
+                    .put("expiry_slot", proposerInfoEntry.getValue().expirySlot)
+                    .build())
+        .collect(Collectors.toList());
   }
 }

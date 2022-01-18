@@ -157,7 +157,7 @@ public class SlotProcessorTest {
     assertThat(captor.getValue()).isEqualTo(ZERO);
 
     verify(syncService).isSyncActive();
-    verify(eventLogger).syncEvent(ZERO, ZERO, 1);
+    verify(eventLogger).syncEvent(ZERO, ZERO, Optional.empty(), 1);
   }
 
   @Test
@@ -221,15 +221,15 @@ public class SlotProcessorTest {
     when(p2pNetwork.getPeerCount()).thenReturn(1);
 
     slotProcessor.onTick(beaconState.getGenesis_time().plus(SECONDS_PER_SLOT / 3));
+    final Checkpoint justifiedCheckpoint = recentChainData.getStore().getJustifiedCheckpoint();
     final Checkpoint finalizedCheckpoint = recentChainData.getStore().getFinalizedCheckpoint();
     verify(eventLogger)
         .slotEvent(
             ZERO,
             recentChainData.getHeadSlot(),
             recentChainData.getBestBlockRoot().orElseThrow(),
-            ZERO,
+            justifiedCheckpoint.getEpoch(),
             finalizedCheckpoint.getEpoch(),
-            finalizedCheckpoint.getRoot(),
             1);
     verify(forkChoiceTrigger).onAttestationsDueForSlot(slot);
   }

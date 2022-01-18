@@ -18,6 +18,7 @@ import static tech.pegasys.teku.infrastructure.logging.ColorConsolePrinter.print
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -76,11 +77,27 @@ public class EventLogger {
     info(driftEventLog, Color.WHITE);
   }
 
-  public void syncEvent(final UInt64 nodeSlot, final UInt64 headSlot, final int numPeers) {
-    final String syncEventLog =
-        String.format(
-            "Syncing     *** Target slot: %s, Head slot: %s, Remaining slots: %s, Connected peers: %s",
-            nodeSlot, headSlot, nodeSlot.minusMinZero(headSlot), numPeers);
+  public void syncEvent(
+      final UInt64 nodeSlot,
+      final UInt64 headSlot,
+      final Optional<UInt64> optimisticHeadSlot,
+      final int numPeers) {
+    final String syncEventLog;
+    if (optimisticHeadSlot.isPresent()) {
+      syncEventLog =
+          String.format(
+              "Syncing     *** Target slot: %s, Head slot: %s, Validated slot: %s, Remaining slots: %s, Connected peers: %s",
+              nodeSlot,
+              optimisticHeadSlot.get(),
+              headSlot,
+              nodeSlot.minusMinZero(headSlot),
+              numPeers);
+    } else {
+      syncEventLog =
+          String.format(
+              "Syncing     *** Target slot: %s, Head slot: %s, Remaining slots: %s, Connected peers: %s",
+              nodeSlot, headSlot, nodeSlot.minusMinZero(headSlot), numPeers);
+    }
     info(syncEventLog, Color.WHITE);
   }
 
@@ -104,9 +121,8 @@ public class EventLogger {
       final UInt64 nodeSlot,
       final UInt64 headSlot,
       final Bytes32 bestBlockRoot,
-      final UInt64 nodeEpoch,
+      final UInt64 justifiedCheckpoint,
       final UInt64 finalizedCheckpoint,
-      final Bytes32 finalizedRoot,
       final int numPeers) {
     String blockRoot = "   ... empty";
     if (nodeSlot.equals(headSlot)) {
@@ -114,13 +130,8 @@ public class EventLogger {
     }
     final String slotEventLog =
         String.format(
-            "Slot Event  *** Slot: %s, Block: %s, Epoch: %s, Finalized checkpoint: %s, Finalized root: %s, Peers: %d",
-            nodeSlot,
-            blockRoot,
-            nodeEpoch,
-            finalizedCheckpoint,
-            LogFormatter.formatHashRoot(finalizedRoot),
-            numPeers);
+            "Slot Event  *** Slot: %s, Block: %s, Justified: %s, Finalized: %s, Peers: %d",
+            nodeSlot, blockRoot, justifiedCheckpoint, finalizedCheckpoint, numPeers);
     info(slotEventLog, Color.WHITE);
   }
 

@@ -131,7 +131,7 @@ public class KeyManager {
       final Validator activeValidator, final SlashingProtectionIncrementalExporter exporter) {
     final Signer signer = activeValidator.getSigner();
     signer.delete();
-    LOG.info("Removed validator: {}", activeValidator.getPublicKey().toAbbreviatedString());
+    LOG.info("Removed validator: {}", activeValidator.getPublicKey().toString());
     final DeleteKeyResult deleteKeyResult =
         validatorLoader.deleteMutableValidator(activeValidator.getPublicKey());
     if (deleteKeyResult.getStatus() == DeletionStatus.DELETED) {

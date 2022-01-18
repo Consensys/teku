@@ -72,7 +72,7 @@ public class StubExecutionEngineChannel implements ExecutionEngineChannel {
                   payloadIdToHeadAndAttrsCache.invalidateWithNewValue(
                       payloadId,
                       new HeadAndAttributes(
-                          forkChoiceState.getHeadBlockHash(), payloadAttributes1));
+                          forkChoiceState.getHeadExecutionBlockHash(), payloadAttributes1));
                   return payloadId;
                 })));
   }

@@ -18,6 +18,10 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class LogFormatter {
   public static String formatHashRoot(final Bytes32 root) {
+    return root.toUnprefixedHexString();
+  }
+
+  public static String formatAbbreviatedHashRoot(final Bytes32 root) {
     final String hash = root.toUnprefixedHexString();
     return String.format("%s..%s", hash.substring(0, 6), hash.substring(hash.length() - 4));
   }
