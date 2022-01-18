@@ -15,7 +15,6 @@ package tech.pegasys.teku.util.config;
 
 import com.google.common.collect.ImmutableList;
 import java.time.Duration;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class Constants {
@@ -65,14 +64,10 @@ public class Constants {
   public static final int VALID_VALIDATOR_SET_SIZE = 10000;
   public static final int VALID_CONTRIBUTION_AND_PROOF_SET_SIZE = 10000;
   public static final int VALID_SYNC_COMMITTEE_MESSAGE_SET_SIZE = 10000;
-  public static final int NETWORKING_FAILURE_REPEAT_INTERVAL = 3; // in sec
 
-  // Teku specific
-  public static final Bytes32 ZERO_HASH = Bytes32.ZERO;
   public static final double TIME_TICKER_REFRESH_RATE = 2; // per sec
   public static final Duration ETH1_INDIVIDUAL_BLOCK_RETRY_TIMEOUT = Duration.ofMillis(500);
   public static final Duration ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT = Duration.ofSeconds(2);
-  public static final Duration ETH1_LOCAL_CHAIN_BEHIND_FOLLOW_DISTANCE_WAIT = Duration.ofSeconds(3);
   public static final Duration ETH1_ENDPOINT_MONITOR_SERVICE_POLL_INTERVAL = Duration.ofSeconds(10);
   public static final Duration ETH1_VALID_ENDPOINT_CHECK_INTERVAL =
       Duration.ofSeconds(60); // usable
