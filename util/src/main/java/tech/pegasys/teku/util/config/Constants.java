@@ -29,9 +29,6 @@ public class Constants {
   @Deprecated public static int MAX_COMMITTEES_PER_SLOT;
   @Deprecated public static int TARGET_COMMITTEE_SIZE;
   @Deprecated public static int MAX_VALIDATORS_PER_COMMITTEE;
-  @Deprecated public static int MIN_PER_EPOCH_CHURN_LIMIT;
-  @Deprecated public static int CHURN_LIMIT_QUOTIENT;
-  @Deprecated public static int SHUFFLE_ROUND_COUNT;
   @Deprecated public static int MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
   @Deprecated public static UInt64 MIN_GENESIS_TIME;
   @Deprecated public static UInt64 HYSTERESIS_QUOTIENT;

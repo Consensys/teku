@@ -115,26 +115,6 @@ public class BeaconStateUtilTest {
   }
 
   @Test
-  public void isSlotAtNthEpochBoundary_invalidNParameter_zero() {
-    assertThatThrownBy(
-            () ->
-                tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.isSlotAtNthEpochBoundary(
-                    UInt64.ONE, UInt64.ZERO, 0))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Parameter n must be greater than 0");
-  }
-
-  @Test
-  public void isSlotAtNthEpochBoundary_invalidNParameter_negative() {
-    assertThatThrownBy(
-            () ->
-                tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.isSlotAtNthEpochBoundary(
-                    UInt64.ONE, UInt64.ZERO, -1))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Parameter n must be greater than 0");
-  }
-
-  @Test
   public void
       getAttestersTotalEffectiveBalance_calculatesTotalEffectiveBalanceInAllCommitteesForSlot() {
     final BeaconState state =

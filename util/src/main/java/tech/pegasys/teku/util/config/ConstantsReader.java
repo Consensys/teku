@@ -72,6 +72,9 @@ class ConstantsReader {
           "DOMAIN_SELECTION_PROOF",
           "DOMAIN_AGGREGATE_AND_PROOF",
           // Removed from Constants (only available through SpecConfig)
+          "MIN_PER_EPOCH_CHURN_LIMIT",
+          "CHURN_LIMIT_QUOTIENT",
+          "SHUFFLE_ROUND_COUNT",
           "GENESIS_FORK_VERSION",
           "BASE_REWARDS_PER_EPOCH",
           "DEPOSIT_CONTRACT_TREE_DEPTH",

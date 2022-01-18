@@ -44,13 +44,13 @@ class ConstantsReaderTest {
   @Test
   public void shouldLoadConstants() throws Exception {
     final String config =
-        "MAX_COMMITTEES_PER_SLOT: 68\n" + "# 2**7 (= 128)\n" + "TARGET_COMMITTEE_SIZE: 129";
+        "MAX_COMMITTEES_PER_SLOT: 68\n" + "# 2**7 (= 128)\n" + "MAX_VALIDATORS_PER_COMMITTEE: 129";
     ConstantsReader.loadConstants(
         new ByteArrayInputStream(config.getBytes(StandardCharsets.UTF_8)));
 
     // Sanity check a couple of values
     assertThat(Constants.MAX_COMMITTEES_PER_SLOT).isEqualTo(68);
-    assertThat(Constants.TARGET_COMMITTEE_SIZE).isEqualTo(129);
+    assertThat(Constants.MAX_VALIDATORS_PER_COMMITTEE).isEqualTo(129);
   }
 
   @Test
@@ -59,7 +59,7 @@ class ConstantsReaderTest {
 
     // Sanity check a couple of values
     assertThat(Constants.MAX_COMMITTEES_PER_SLOT).isEqualTo(64);
-    assertThat(Constants.TARGET_COMMITTEE_SIZE).isEqualTo(128);
+    assertThat(Constants.MAX_VALIDATORS_PER_COMMITTEE).isEqualTo(2048);
     assertAllFieldsSet();
   }
 
@@ -68,7 +68,7 @@ class ConstantsReaderTest {
     Constants.setConstants("minimal");
 
     assertThat(Constants.MAX_COMMITTEES_PER_SLOT).isEqualTo(4);
-    assertThat(Constants.TARGET_COMMITTEE_SIZE).isEqualTo(4);
+    assertThat(Constants.MAX_VALIDATORS_PER_COMMITTEE).isEqualTo(2048);
     assertAllFieldsSet();
   }
 
@@ -84,7 +84,7 @@ class ConstantsReaderTest {
   @Test
   public void shouldLoadFromUrl() throws Exception {
     Constants.setConstants(Constants.class.getResource("configs/swift.yaml").toExternalForm());
-    assertThat(Constants.TARGET_COMMITTEE_SIZE).isEqualTo(4);
+    assertThat(Constants.MAX_VALIDATORS_PER_COMMITTEE).isEqualTo(2048);
     assertAllFieldsSet();
   }
 
