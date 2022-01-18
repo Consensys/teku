@@ -153,7 +153,7 @@ class ValidatorApiHandlerTest {
   public void setUp() {
     when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(forkChoiceTrigger.prepareForBlockProduction(any())).thenReturn(SafeFuture.COMPLETE);
-    when(chainDataClient.isFullyValidatedHotBlock(any())).thenReturn(true);
+    when(chainDataClient.isOptimisticBlock(any())).thenReturn(false);
   }
 
   @Test
@@ -429,7 +429,7 @@ class ValidatorApiHandlerTest {
     when(chainDataClient.getStateAtSlotExact(newSlot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockSlotState)));
     final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, newSlot.minus(1));
-    when(chainDataClient.isFullyValidatedHotBlock(parentRoot)).thenReturn(false);
+    when(chainDataClient.isOptimisticBlock(parentRoot)).thenReturn(true);
 
     final SafeFuture<Optional<BeaconBlock>> result =
         validatorApiHandler.createUnsignedBlock(
@@ -486,7 +486,7 @@ class ValidatorApiHandlerTest {
         .thenReturn(blockAndStateResult);
     when(forkChoiceTrigger.prepareForAttestationProduction(slot)).thenReturn(SafeFuture.COMPLETE);
 
-    when(chainDataClient.isFullyValidatedHotBlock(blockAndState.getRoot())).thenReturn(false);
+    when(chainDataClient.isOptimisticBlock(blockAndState.getRoot())).thenReturn(true);
 
     final int committeeIndex = 0;
     final SafeFuture<Optional<AttestationData>> result =
