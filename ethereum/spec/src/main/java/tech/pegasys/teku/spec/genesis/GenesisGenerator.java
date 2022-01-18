@@ -37,7 +37,6 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
-import tech.pegasys.teku.util.config.Constants;
 
 public class GenesisGenerator {
 
@@ -184,7 +183,7 @@ public class GenesisGenerator {
   }
 
   private void updateGenesisTime(final UInt64 eth1Timestamp) {
-    UInt64 genesisTime = eth1Timestamp.plus(Constants.GENESIS_DELAY);
+    UInt64 genesisTime = eth1Timestamp.plus(specConfig.getGenesisDelay());
     state.setGenesis_time(genesisTime);
   }
 }

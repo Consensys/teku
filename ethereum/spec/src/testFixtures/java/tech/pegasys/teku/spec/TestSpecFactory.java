@@ -13,17 +13,25 @@
 
 package tech.pegasys.teku.spec;
 
+import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
+import tech.pegasys.teku.spec.config.SpecConfigBuilder;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class TestSpecFactory {
 
   public static Spec createDefault() {
-    return createMinimalPhase0();
+    return createDefault(__ -> {});
+  }
+
+  public static Spec createDefault(final Consumer<SpecConfigBuilder> modifier) {
+    final SpecConfig config =
+        SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName(), modifier);
+    return create(config, SpecMilestone.PHASE0);
   }
 
   public static Spec createMinimal(final SpecMilestone specMilestone) {

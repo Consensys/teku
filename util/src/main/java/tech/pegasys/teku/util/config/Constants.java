@@ -31,12 +31,10 @@ public class Constants {
 
   // Gwei values
   @Deprecated public static UInt64 MIN_DEPOSIT_AMOUNT;
-  @Deprecated public static UInt64 MAX_EFFECTIVE_BALANCE;
 
   // Time parameters
   @Deprecated public static UInt64 GENESIS_DELAY;
   @Deprecated public static int SECONDS_PER_SLOT = 12;
-  @Deprecated public static int MIN_ATTESTATION_INCLUSION_DELAY;
   @Deprecated public static int SLOTS_PER_EPOCH;
   @Deprecated public static int EPOCHS_PER_ETH1_VOTING_PERIOD;
   @Deprecated public static int SLOTS_PER_HISTORICAL_ROOT;

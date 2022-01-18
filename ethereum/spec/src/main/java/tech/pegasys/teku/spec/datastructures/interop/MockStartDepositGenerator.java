@@ -14,20 +14,22 @@
 package tech.pegasys.teku.spec.datastructures.interop;
 
 import static java.util.stream.Collectors.toList;
-import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
 
 import java.util.List;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 
 public class MockStartDepositGenerator {
   private final DepositGenerator depositGenerator;
+  private SpecConfig specConfig;
 
   public MockStartDepositGenerator(final Spec spec) {
     this(new DepositGenerator(spec));
+    specConfig = spec.getGenesisSpecConfig();
   }
 
   public MockStartDepositGenerator(DepositGenerator depositGenerator) {
@@ -47,7 +49,7 @@ public class MockStartDepositGenerator {
 
   private DepositData createDepositData(final BLSKeyPair keyPair) {
     return depositGenerator.createDepositData(
-        keyPair, MAX_EFFECTIVE_BALANCE, keyPair.getPublicKey());
+        keyPair, specConfig.getMaxEffectiveBalance(), keyPair.getPublicKey());
   }
 
   private DepositData createDepositData(final BLSKeyPair keyPair, final UInt64 depositBalance) {

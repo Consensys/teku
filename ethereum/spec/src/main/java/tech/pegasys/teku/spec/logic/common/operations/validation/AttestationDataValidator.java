@@ -23,7 +23,6 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
-import tech.pegasys.teku.util.config.Constants;
 
 public class AttestationDataValidator
     implements OperationStateTransitionValidator<AttestationData> {
@@ -67,7 +66,7 @@ public class AttestationDataValidator
         () ->
             check(
                 data.getSlot()
-                        .plus(Constants.MIN_ATTESTATION_INCLUSION_DELAY)
+                        .plus(specConfig.getMinAttestationInclusionDelay())
                         .compareTo(state.getSlot())
                     <= 0,
                 AttestationInvalidReason.SUBMITTED_TOO_QUICKLY),
