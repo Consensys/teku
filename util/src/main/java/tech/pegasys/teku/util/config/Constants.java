@@ -29,9 +29,6 @@ public class Constants {
   @Deprecated public static int MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
   @Deprecated public static UInt64 MIN_GENESIS_TIME;
 
-  // Gwei values
-  @Deprecated public static UInt64 MIN_DEPOSIT_AMOUNT;
-
   // Time parameters
   @Deprecated public static UInt64 GENESIS_DELAY;
   @Deprecated public static int SECONDS_PER_SLOT = 12;

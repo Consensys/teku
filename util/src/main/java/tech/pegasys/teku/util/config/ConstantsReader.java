@@ -73,6 +73,7 @@ class ConstantsReader {
           "DOMAIN_AGGREGATE_AND_PROOF",
           // Removed from Constants (only available through SpecConfig)
           "MIN_VALIDATOR_WITHDRAWABILITY_DELAY",
+          "MIN_DEPOSIT_AMOUNT",
           "MIN_ATTESTATION_INCLUSION_DELAY",
           "MAX_EFFECTIVE_BALANCE",
           "SHARD_COMMITTEE_PERIOD",

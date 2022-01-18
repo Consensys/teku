@@ -41,6 +41,7 @@ public class GenesisHandler implements Eth1EventsChannel {
   private final TimeProvider timeProvider;
   private final GenesisGenerator genesisGenerator;
   private final Spec spec;
+  private final DepositUtil depositUtil;
 
   public GenesisHandler(
       final RecentChainData recentChainData, final TimeProvider timeProvider, final Spec spec) {
@@ -48,6 +49,7 @@ public class GenesisHandler implements Eth1EventsChannel {
     this.timeProvider = timeProvider;
     this.spec = spec;
     this.genesisGenerator = spec.createGenesisGenerator();
+    this.depositUtil = new DepositUtil(spec);
   }
 
   @Override
@@ -60,7 +62,7 @@ public class GenesisHandler implements Eth1EventsChannel {
         "Processing {} deposits from block {}", event.getDeposits().size(), event.getBlockNumber());
     final List<DepositWithIndex> deposits =
         event.getDeposits().stream()
-            .map(DepositUtil::convertDepositEventToOperationDeposit)
+            .map(depositUtil::convertDepositEventToOperationDeposit)
             .collect(Collectors.toList());
 
     processNewData(event.getBlockHash(), event.getBlockTimestamp(), deposits);
