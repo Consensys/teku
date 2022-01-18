@@ -516,7 +516,6 @@ class ForkChoiceTest {
   void applyHead_shouldSendForkChoiceUpdatedNotificationWhenOptimistic() {
     doMerge();
     finalizeEpoch(2);
-    assertThat(recentChainData.isOptimisticSyncPossible()).isTrue();
     assertThat(recentChainData.getOptimisticHead()).isEmpty();
 
     final UInt64 nextBlockSlot = storageSystem.chainBuilder().getLatestSlot().plus(1);
