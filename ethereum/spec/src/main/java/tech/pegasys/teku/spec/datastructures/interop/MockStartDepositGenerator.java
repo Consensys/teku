@@ -25,15 +25,15 @@ import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 
 public class MockStartDepositGenerator {
   private final DepositGenerator depositGenerator;
-  private SpecConfig specConfig;
+  private final SpecConfig specConfig;
 
   public MockStartDepositGenerator(final Spec spec) {
-    this(new DepositGenerator(spec));
-    specConfig = spec.getGenesisSpecConfig();
+    this(spec, new DepositGenerator(spec));
   }
 
-  public MockStartDepositGenerator(DepositGenerator depositGenerator) {
+  public MockStartDepositGenerator(final Spec spec, final DepositGenerator depositGenerator) {
     this.depositGenerator = depositGenerator;
+    this.specConfig = spec.getGenesisSpecConfig();
   }
 
   public List<DepositData> createDeposits(final List<BLSKeyPair> validatorKeys) {
