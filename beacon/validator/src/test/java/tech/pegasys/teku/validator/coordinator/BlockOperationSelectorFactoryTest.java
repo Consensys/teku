@@ -53,7 +53,7 @@ import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttesterSlashingValidator.AttesterSlashingInvalidReason;
 import tech.pegasys.teku.spec.logic.common.operations.validation.ProposerSlashingValidator.ProposerSlashingInvalidReason;
 import tech.pegasys.teku.spec.logic.common.operations.validation.VoluntaryExitValidator.ExitInvalidReason;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -63,7 +63,7 @@ import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContribution
 import tech.pegasys.teku.statetransition.validation.OperationValidator;
 
 class BlockOperationSelectorFactoryTest {
-  private final Spec spec = TestSpecFactory.createMinimalMerge();
+  private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private final Function<UInt64, BeaconBlockBodySchema<?>> beaconBlockSchemaSupplier =
@@ -120,7 +120,7 @@ class BlockOperationSelectorFactoryTest {
   private final ExecutionEngineChannel executionEngine = mock(ExecutionEngineChannel.class);
 
   private final ExecutionPayload defaultExecutionPayload =
-      SchemaDefinitionsMerge.required(spec.getGenesisSpec().getSchemaDefinitions())
+      SchemaDefinitionsBellatrix.required(spec.getGenesisSpec().getSchemaDefinitions())
           .getExecutionPayloadSchema()
           .getDefault();
 

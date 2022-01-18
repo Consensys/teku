@@ -50,8 +50,8 @@ class ConstantsReader {
           "INACTIVITY_SCORE_BIAS",
           "INACTIVITY_SCORE_RECOVERY_RATE",
           // Unsupported, upcoming fork-related keys
-          "MERGE_FORK_VERSION",
-          "MERGE_FORK_EPOCH",
+          "BELLATRIX_FORK_VERSION",
+          "BELLATRIX_FORK_EPOCH",
           "SHARDING_FORK_VERSION",
           "SHARDING_FORK_EPOCH",
           "TRANSITION_TOTAL_DIFFICULTY", // has been renamed to TERMINAL_TOTAL_DIFFICULTY

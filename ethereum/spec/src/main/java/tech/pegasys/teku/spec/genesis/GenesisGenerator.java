@@ -74,8 +74,8 @@ public class GenesisGenerator {
 
   public void updateExecutionPayloadHeader(ExecutionPayloadHeader payloadHeader) {
     state
-        .toMutableVersionMerge()
-        .ifPresent(stateMerge -> stateMerge.setLatestExecutionPayloadHeader(payloadHeader));
+        .toMutableVersionBellatrix()
+        .ifPresent(stateBellatrix -> stateBellatrix.setLatestExecutionPayloadHeader(payloadHeader));
   }
 
   public void updateCandidateState(

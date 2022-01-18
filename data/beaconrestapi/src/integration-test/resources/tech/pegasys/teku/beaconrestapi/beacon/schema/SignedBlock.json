@@ -5,6 +5,6 @@
   }, {
     "$ref" : "#/components/schemas/SignedBeaconBlockAltair"
   }, {
-    "$ref" : "#/components/schemas/SignedBeaconBlockMerge"
+    "$ref" : "#/components/schemas/SignedBeaconBlockBellatrix"
   } ]
 }

@@ -31,7 +31,7 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
-import tech.pegasys.teku.api.schema.merge.BeaconPreparableProposer;
+import tech.pegasys.teku.api.schema.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;

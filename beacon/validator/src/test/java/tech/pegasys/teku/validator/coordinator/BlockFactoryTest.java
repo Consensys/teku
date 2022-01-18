@@ -38,7 +38,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge.BeaconBlockBodyMerge;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -51,7 +51,7 @@ import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
@@ -102,8 +102,8 @@ class BlockFactoryTest {
   }
 
   @Test
-  void shouldIncludeExecutionPayloadWhenMergeIsActive() throws Exception {
-    final BeaconBlock block = assertBlockCreated(1, TestSpecFactory.createMinimalMerge());
+  void shouldIncludeExecutionPayloadWhenBellatrixIsActive() throws Exception {
+    final BeaconBlock block = assertBlockCreated(1, TestSpecFactory.createMinimalBellatrix());
     final ExecutionPayload result = getExecutionPayload(block);
     assertThat(result).isEqualTo(executionPayload);
   }
@@ -113,7 +113,7 @@ class BlockFactoryTest {
   }
 
   private ExecutionPayload getExecutionPayload(final BeaconBlock block) {
-    return BeaconBlockBodyMerge.required(block.getBody()).getExecutionPayload();
+    return BeaconBlockBodyBellatrix.required(block.getBody()).getExecutionPayload();
   }
 
   private BeaconBlock assertBlockCreated(final int blockSlot, final Spec spec)
@@ -129,9 +129,9 @@ class BlockFactoryTest {
     final SszList<ProposerSlashing> proposerSlashings = blockBodyLists.createProposerSlashings();
     final SszList<SignedVoluntaryExit> voluntaryExits = blockBodyLists.createVoluntaryExits();
 
-    if (spec.getGenesisSpec().getMilestone().isGreaterThanOrEqualTo(SpecMilestone.MERGE)) {
+    if (spec.getGenesisSpec().getMilestone().isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)) {
       executionPayload =
-          SchemaDefinitionsMerge.required(spec.getGenesisSpec().getSchemaDefinitions())
+          SchemaDefinitionsBellatrix.required(spec.getGenesisSpec().getSchemaDefinitions())
               .getExecutionPayloadSchema()
               .getDefault();
     } else {

@@ -44,7 +44,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
-@TestSpecContext(milestone = {SpecMilestone.ALTAIR, SpecMilestone.MERGE})
+@TestSpecContext(milestone = {SpecMilestone.ALTAIR, SpecMilestone.BELLATRIX})
 public class BlockValidatorTest {
   private Spec spec;
   private RecentChainData recentChainData;
@@ -242,7 +242,7 @@ public class BlockValidatorTest {
 
   @TestTemplate
   void shouldReturnAcceptOnCorrectExecutionPayloadTimestamp(SpecContext specContext) {
-    specContext.assumeMergeActive();
+    specContext.assumeBellatrixActive();
 
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     storageSystem.chainUpdater().initializeGenesisWithPayload(false);
@@ -260,7 +260,7 @@ public class BlockValidatorTest {
 
   @TestTemplate
   void shouldReturnInvalidOnWrongExecutionPayloadTimestamp(SpecContext specContext) {
-    specContext.assumeMergeActive();
+    specContext.assumeBellatrixActive();
 
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     storageSystem.chainUpdater().initializeGenesisWithPayload(false);

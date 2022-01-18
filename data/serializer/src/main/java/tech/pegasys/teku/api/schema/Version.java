@@ -18,12 +18,12 @@ import tech.pegasys.teku.spec.SpecMilestone;
 public enum Version {
   phase0,
   altair,
-  merge;
+  bellatrix;
 
   public static Version fromMilestone(final SpecMilestone milestone) {
     switch (milestone) {
-      case MERGE:
-        return merge;
+      case BELLATRIX:
+        return bellatrix;
       case ALTAIR:
         return altair;
       case PHASE0:

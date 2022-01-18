@@ -54,7 +54,7 @@ public class BeaconBlockBuilder {
     if (executionPayload == null) {
       executionPayload =
           spec.getSchemaDefinitions()
-              .toVersionMerge()
+              .toVersionBellatrix()
               .map(definitions -> definitions.getExecutionPayloadSchema().getDefault())
               .orElse(null);
     }

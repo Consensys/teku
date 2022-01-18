@@ -17,7 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.util.config.Constants.MAX_CHUNK_SIZE;
-import static tech.pegasys.teku.util.config.Constants.MAX_CHUNK_SIZE_MERGE;
+import static tech.pegasys.teku.util.config.Constants.MAX_CHUNK_SIZE_BELLATRIX;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -35,7 +35,7 @@ import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkManager;
 import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsAltair;
-import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsMerge;
+import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsBellatrix;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsPhase0;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
@@ -132,7 +132,9 @@ public class Eth2P2PNetworkBuilder {
     final SubnetSubscriptionService syncCommitteeSubnetService = new SubnetSubscriptionService();
     final RpcEncoding rpcEncoding =
         RpcEncoding.createSszSnappyEncoding(
-            spec.isMilestoneSupported(SpecMilestone.MERGE) ? MAX_CHUNK_SIZE_MERGE : MAX_CHUNK_SIZE);
+            spec.isMilestoneSupported(SpecMilestone.BELLATRIX)
+                ? MAX_CHUNK_SIZE_BELLATRIX
+                : MAX_CHUNK_SIZE);
     final Eth2PeerManager eth2PeerManager =
         Eth2PeerManager.create(
             asyncRunner,
@@ -233,8 +235,8 @@ public class Eth2P2PNetworkBuilder {
             signedContributionAndProofGossipPublisher,
             gossipedSyncCommitteeMessageProcessor,
             syncCommitteeMessageGossipPublisher);
-      case MERGE:
-        return new GossipForkSubscriptionsMerge(
+      case BELLATRIX:
+        return new GossipForkSubscriptionsBellatrix(
             forkAndSpecMilestone.getFork(),
             spec,
             asyncRunner,

@@ -20,8 +20,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
+import tech.pegasys.teku.api.schema.bellatrix.SignedBeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.interfaces.SignedBlock;
-import tech.pegasys.teku.api.schema.merge.SignedBeaconBlockMerge;
 import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 
 public class GetBlockResponseV2 {
@@ -34,7 +34,7 @@ public class GetBlockResponseV2 {
   @JsonSubTypes({
     @JsonSubTypes.Type(value = SignedBeaconBlockPhase0.class, name = "phase0"),
     @JsonSubTypes.Type(value = SignedBeaconBlockAltair.class, name = "altair"),
-    @JsonSubTypes.Type(value = SignedBeaconBlockMerge.class, name = "merge")
+    @JsonSubTypes.Type(value = SignedBeaconBlockBellatrix.class, name = "bellatrix")
   })
   public final SignedBlock data;
 

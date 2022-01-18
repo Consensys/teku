@@ -36,7 +36,7 @@ import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeSubnetSubscription;
-import tech.pegasys.teku.api.schema.merge.BeaconPreparableProposer;
+import tech.pegasys.teku.api.schema.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;

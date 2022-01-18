@@ -23,8 +23,8 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.executionengine.ExecutePayloadResult;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
-import tech.pegasys.teku.spec.logic.versions.merge.block.OptimisticExecutionPayloadExecutor;
-import tech.pegasys.teku.spec.logic.versions.merge.helpers.MergeTransitionHelpers;
+import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
+import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
 
 class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
   private static final Logger LOG = LogManager.getLogger();
@@ -57,18 +57,19 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
       // because it check the parentRoot matches
       return true;
     }
-    final MergeTransitionHelpers mergeTransitionHelpers =
+    final BellatrixTransitionHelpers bellatrixTransitionHelpers =
         spec.atSlot(block.getSlot())
-            .getMergeTransitionHelpers()
+            .getBellatrixTransitionHelpers()
             .orElseThrow(
                 () ->
                     new IllegalStateException(
-                        "Attempting to validate a merge block when spec does not have merge transition helpers"));
+                        "Attempting to validate a bellatrix block when spec does not have bellatrix transition helpers"));
 
     if (latestExecutionPayloadHeader.isDefault()) {
       // This is the first filled payload, so need to check it's a valid merge block
       result =
-          Optional.of(mergeTransitionHelpers.validateMergeBlock(executionEngine, executionPayload));
+          Optional.of(
+              bellatrixTransitionHelpers.validateMergeBlock(executionEngine, executionPayload));
     } else {
       result =
           Optional.of(

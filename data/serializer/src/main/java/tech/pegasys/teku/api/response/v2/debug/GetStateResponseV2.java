@@ -19,8 +19,8 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.api.schema.altair.BeaconStateAltair;
+import tech.pegasys.teku.api.schema.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.api.schema.interfaces.State;
-import tech.pegasys.teku.api.schema.merge.BeaconStateMerge;
 import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 
 public class GetStateResponseV2 {
@@ -33,7 +33,7 @@ public class GetStateResponseV2 {
   @JsonSubTypes({
     @JsonSubTypes.Type(value = BeaconStatePhase0.class, name = "phase0"),
     @JsonSubTypes.Type(value = BeaconStateAltair.class, name = "altair"),
-    @JsonSubTypes.Type(value = BeaconStateMerge.class, name = "merge")
+    @JsonSubTypes.Type(value = BeaconStateBellatrix.class, name = "bellatrix")
   })
   public final State data;
 

@@ -46,8 +46,8 @@ import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
 import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeSubnetSubscription;
-import tech.pegasys.teku.api.schema.merge.BeaconPreparableProposer;
-import tech.pegasys.teku.api.schema.merge.SignedBeaconBlockMerge;
+import tech.pegasys.teku.api.schema.bellatrix.BeaconPreparableProposer;
+import tech.pegasys.teku.api.schema.bellatrix.SignedBeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
@@ -171,8 +171,8 @@ public class ValidatorDataProvider {
       case ALTAIR:
         signedBeaconBlock = mapper.treeToValue(jsonNode, SignedBeaconBlockAltair.class);
         break;
-      case MERGE:
-        signedBeaconBlock = mapper.treeToValue(jsonNode, SignedBeaconBlockMerge.class);
+      case BELLATRIX:
+        signedBeaconBlock = mapper.treeToValue(jsonNode, SignedBeaconBlockBellatrix.class);
         break;
       default:
         throw new IllegalArgumentException("Could not determine milestone for slot " + slot);
@@ -371,7 +371,9 @@ public class ValidatorDataProvider {
 
   public void prepareBeaconProposer(
       Collection<BeaconPreparableProposer> beaconPreparableProposers) {
-    List<tech.pegasys.teku.spec.datastructures.operations.versions.merge.BeaconPreparableProposer>
+    List<
+            tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix
+                .BeaconPreparableProposer>
         internalBeaconPreparableProposer =
             beaconPreparableProposers.stream()
                 .map(BeaconPreparableProposer::asInternalBeaconPreparableProposer)
