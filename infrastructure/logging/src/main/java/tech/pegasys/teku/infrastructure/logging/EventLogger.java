@@ -125,8 +125,8 @@ public class EventLogger {
     info("Beacon chain syncing complete, waiting for Execution Client", Color.YELLOW);
   }
 
-  public void executionClientIsOffline(String error) {
-    error(String.format("Execution Client is offline. Reason: %s", error), Color.RED);
+  public void executionClientIsOffline(Throwable error) {
+    error("Execution Client is offline", Color.RED, error);
   }
 
   public void executionClientIsOnline() {
@@ -208,7 +208,7 @@ public class EventLogger {
     log.warn(print(message, color));
   }
 
-  private void error(final String message, final Color color) {
-    log.error(print(message, color));
+  private void error(final String message, final Color color, final Throwable error) {
+    log.error(print(message, color), error);
   }
 }
