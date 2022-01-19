@@ -30,26 +30,28 @@ class SpecConfigBuilderTest {
 
   @Test
   public void shouldLoadAltairForkEpoch() {
+    final UInt64 randomEpoch = dataStructureUtil.randomEpoch();
     final Spec spec =
         getSpec(
             phase0Builder ->
                 phase0Builder.altairBuilder(
-                    altairBuilder -> altairBuilder.altairForkEpoch(UInt64.valueOf(10))));
+                    altairBuilder -> altairBuilder.altairForkEpoch(randomEpoch)));
 
     assertThat(spec.getGenesisSpec().getConfig().getRawConfig().get("ALTAIR_FORK_EPOCH"))
-        .isEqualTo(UInt64.valueOf(10));
+        .isEqualTo(randomEpoch);
   }
 
   @Test
   public void shouldLoadBellatrixForkEpoch() {
+    final UInt64 randomEpoch = dataStructureUtil.randomEpoch();
     final Spec spec =
         getSpec(
             phase0Builder ->
                 phase0Builder.bellatrixBuilder(
-                    mergeBuilder -> mergeBuilder.bellatrixForkEpoch(UInt64.valueOf(683921))));
+                    mergeBuilder -> mergeBuilder.bellatrixForkEpoch(randomEpoch)));
 
     assertThat(spec.getGenesisSpec().getConfig().getRawConfig().get("BELLATRIX_FORK_EPOCH"))
-        .isEqualTo(UInt64.valueOf(683921));
+        .isEqualTo(randomEpoch);
   }
 
   @Test
