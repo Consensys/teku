@@ -22,8 +22,11 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class SpecConfigBuilderTest {
+
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
 
   @Test
   public void shouldLoadAltairForkEpoch() {
@@ -51,20 +54,20 @@ class SpecConfigBuilderTest {
 
   @Test
   public void shouldLoadTerminalTotalDifficulty() {
+    final UInt256 randomUInt256 = dataStructureUtil.randomUInt256();
     final Spec spec =
         getSpec(
             phase0Builder ->
                 phase0Builder.bellatrixBuilder(
-                    mergeBuilder ->
-                        mergeBuilder.terminalTotalDifficulty(UInt256.valueOf(12_000_000))));
+                    mergeBuilder -> mergeBuilder.terminalTotalDifficulty(randomUInt256)));
 
     assertThat(spec.getGenesisSpec().getConfig().getRawConfig().get("TERMINAL_TOTAL_DIFFICULTY"))
-        .isEqualTo(UInt256.valueOf(12_000_000));
+        .isEqualTo(randomUInt256);
   }
 
   @Test
   public void shouldLoadTerminalBlockHash() {
-    final Bytes32 randomBytes32 = Bytes32.random();
+    final Bytes32 randomBytes32 = dataStructureUtil.randomBytes32();
     final Spec spec =
         getSpec(
             phase0Builder ->
@@ -77,19 +80,19 @@ class SpecConfigBuilderTest {
 
   @Test
   public void shouldLoadTerminalBlockHashActivationEpoch() {
+    final UInt64 randomUInt64 = dataStructureUtil.randomUInt64();
     final Spec spec =
         getSpec(
             phase0Builder ->
                 phase0Builder.bellatrixBuilder(
-                    mergeBuilder ->
-                        mergeBuilder.terminalBlockHashActivationEpoch(UInt64.valueOf(7294629))));
+                    mergeBuilder -> mergeBuilder.terminalBlockHashActivationEpoch(randomUInt64)));
 
     assertThat(
             spec.getGenesisSpec()
                 .getConfig()
                 .getRawConfig()
                 .get("TERMINAL_BLOCK_HASH_ACTIVATION_EPOCH"))
-        .isEqualTo(UInt64.valueOf(7294629));
+        .isEqualTo(randomUInt64);
   }
 
   private Spec getSpec(Consumer<SpecConfigBuilder> consumer) {
