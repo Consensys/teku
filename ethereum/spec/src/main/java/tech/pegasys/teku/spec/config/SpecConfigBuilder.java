@@ -721,7 +721,8 @@ public class SpecConfigBuilder {
           maxExtraDataBytes,
           terminalTotalDifficulty,
           terminalBlockHash,
-          terminalBlockHashActivationEpoch);
+          terminalBlockHashActivationEpoch,
+          safeSlotsToImportOptimistically);
     }
 
     void validate() {
@@ -760,7 +761,7 @@ public class SpecConfigBuilder {
     public BellatrixBuilder bellatrixForkEpoch(final UInt64 bellatrixForkEpoch) {
       checkNotNull(bellatrixForkEpoch);
       this.bellatrixForkEpoch = bellatrixForkEpoch;
-      rawConfig.put("MERGE_FORK_EPOCH", bellatrixForkEpoch);
+      rawConfig.put("BELLATRIX_FORK_EPOCH", bellatrixForkEpoch);
       return this;
     }
 

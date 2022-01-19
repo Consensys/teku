@@ -38,14 +38,14 @@ class SpecConfigBuilderTest {
   }
 
   @Test
-  public void shouldLoadMergeForkEpoch() {
+  public void shouldLoadBellatrixForkEpoch() {
     final Spec spec =
         getSpec(
             phase0Builder ->
-                phase0Builder.mergeBuilder(
-                    mergeBuilder -> mergeBuilder.mergeForkEpoch(UInt64.valueOf(683921))));
+                phase0Builder.bellatrixBuilder(
+                    mergeBuilder -> mergeBuilder.bellatrixForkEpoch(UInt64.valueOf(683921))));
 
-    assertThat(spec.getGenesisSpec().getConfig().getRawConfig().get("MERGE_FORK_EPOCH"))
+    assertThat(spec.getGenesisSpec().getConfig().getRawConfig().get("BELLATRIX_FORK_EPOCH"))
         .isEqualTo(UInt64.valueOf(683921));
   }
 
@@ -54,7 +54,7 @@ class SpecConfigBuilderTest {
     final Spec spec =
         getSpec(
             phase0Builder ->
-                phase0Builder.mergeBuilder(
+                phase0Builder.bellatrixBuilder(
                     mergeBuilder ->
                         mergeBuilder.terminalTotalDifficulty(UInt256.valueOf(12_000_000))));
 
@@ -67,7 +67,7 @@ class SpecConfigBuilderTest {
     final Spec spec =
         getSpec(
             phase0Builder ->
-                phase0Builder.mergeBuilder(
+                phase0Builder.bellatrixBuilder(
                     mergeBuilder ->
                         mergeBuilder.terminalBlockHash(
                             Bytes32.fromHexString(
@@ -84,7 +84,7 @@ class SpecConfigBuilderTest {
     final Spec spec =
         getSpec(
             phase0Builder ->
-                phase0Builder.mergeBuilder(
+                phase0Builder.bellatrixBuilder(
                     mergeBuilder ->
                         mergeBuilder.terminalBlockHashActivationEpoch(UInt64.valueOf(7294629))));
 
