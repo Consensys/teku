@@ -144,7 +144,7 @@ public interface SpecConfig {
     return Optional.empty();
   }
 
-  default Optional<SpecConfigMerge> toVersionMerge() {
+  default Optional<SpecConfigBellatrix> toVersionBellatrix() {
     return Optional.empty();
   }
 }

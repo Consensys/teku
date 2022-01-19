@@ -344,14 +344,14 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
 
   @Test
   void executionBlockHash_shouldBeEmptyForUnknownBlock() {
-    final StorageSystem storageSystem = initStorageSystem(TestSpecFactory.createMinimalMerge());
+    final StorageSystem storageSystem = initStorageSystem(TestSpecFactory.createMinimalBellatrix());
     final ForkChoiceStrategy strategy = getProtoArray(storageSystem);
     assertThat(strategy.executionBlockHash(Bytes32.ZERO)).isEmpty();
   }
 
   @Test
   void executionBlockHash_shouldGetExecutionRootForKnownBlock() {
-    final StorageSystem storageSystem = initStorageSystem(TestSpecFactory.createMinimalMerge());
+    final StorageSystem storageSystem = initStorageSystem(TestSpecFactory.createMinimalBellatrix());
     final SignedBlockAndState block1 =
         storageSystem
             .chainBuilder()

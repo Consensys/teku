@@ -62,12 +62,14 @@ public class DepositProviderTest {
   private Eth1Data randomEth1Data;
 
   private MerkleTree depositMerkleTree;
+  private DepositUtil depositUtil;
 
   void setup(final int maxDeposits) {
     when(state.getSlot()).thenReturn(UInt64.valueOf(1234));
 
     SpecConfig specConfig = SpecConfigLoader.loadConfig("minimal", b -> b.maxDeposits(maxDeposits));
     spec = TestSpecFactory.createPhase0(specConfig);
+    depositUtil = new DepositUtil(spec);
     dataStructureUtil = new DataStructureUtil(spec);
     depositProvider =
         new DepositProvider(new StubMetricsSystem(), recentChainData, eth1DataCache, spec);
@@ -180,7 +182,7 @@ public class DepositProviderTest {
     depositProvider.onDepositsFromBlock(event);
 
     depositMerkleTree.add(
-        DepositUtil.convertDepositEventToOperationDeposit(deposit).getData().hashTreeRoot());
+        depositUtil.convertDepositEventToOperationDeposit(deposit).getData().hashTreeRoot());
     verify(eth1DataCache)
         .onBlockWithDeposit(
             event.getBlockTimestamp(),
@@ -273,7 +275,7 @@ public class DepositProviderTest {
 
   private void mockDepositsFromEth1Block(int startIndex, int n) {
     allSeenDepositsList.subList(startIndex, n).stream()
-        .map(DepositUtil::convertDepositEventToOperationDeposit)
+        .map(depositUtil::convertDepositEventToOperationDeposit)
         .map(Deposit::getData)
         .map(DepositData::hashTreeRoot)
         .forEachOrdered(depositMerkleTree::add);

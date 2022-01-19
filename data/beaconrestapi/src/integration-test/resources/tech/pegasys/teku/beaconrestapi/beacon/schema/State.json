@@ -5,6 +5,6 @@
   }, {
     "$ref" : "#/components/schemas/BeaconStateAltair"
   }, {
-    "$ref" : "#/components/schemas/BeaconStateMerge"
+    "$ref" : "#/components/schemas/BeaconStateBellatrix"
   } ]
 }

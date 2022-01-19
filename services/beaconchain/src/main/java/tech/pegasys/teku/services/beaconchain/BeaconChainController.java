@@ -360,7 +360,7 @@ public class BeaconChainController extends Service
   }
 
   protected void initTerminalPowBlockMonitor() {
-    if (spec.isMilestoneSupported(SpecMilestone.MERGE)) {
+    if (spec.isMilestoneSupported(SpecMilestone.BELLATRIX)) {
       terminalPowBlockMonitor =
           Optional.of(
               new TerminalPowBlockMonitor(
@@ -369,7 +369,7 @@ public class BeaconChainController extends Service
   }
 
   protected void initOptimisticHeadValidator() {
-    if (spec.isMilestoneSupported(SpecMilestone.MERGE)) {
+    if (spec.isMilestoneSupported(SpecMilestone.BELLATRIX)) {
       optimisticHeadValidator =
           Optional.of(
               new OptimisticHeadValidator(
@@ -802,6 +802,7 @@ public class BeaconChainController extends Service
             .proposerSlashingPool(proposerSlashingPool)
             .voluntaryExitPool(voluntaryExitPool)
             .syncCommitteeContributionPool(syncCommitteeContributionPool)
+            .payloadAttributesCalculator(forkChoiceNotifier.getPayloadAttributesCalculator())
             .build();
 
     if (beaconConfig.beaconRestApiConfig().isRestApiEnabled()) {
@@ -845,7 +846,7 @@ public class BeaconChainController extends Service
     final FutureItems<SignedBeaconBlock> futureBlocks =
         FutureItems.create(SignedBeaconBlock::getSlot);
     BlockValidator blockValidator = new BlockValidator(spec, recentChainData);
-    if (spec.isMilestoneSupported(SpecMilestone.MERGE)) {
+    if (spec.isMilestoneSupported(SpecMilestone.BELLATRIX)) {
       blockManager =
           new ReexecutingExecutionPayloadBlockManager(
               recentChainData,
@@ -890,7 +891,12 @@ public class BeaconChainController extends Service
         syncState -> forkChoiceNotifier.onSyncingStatusChanged(syncState.isInSync()));
     forkChoiceNotifier.onSyncingStatusChanged(syncService.getCurrentSyncState().isInSync());
 
-    forkChoice.subscribeToOptimisticSyncChanges(syncService.getOptimisticSyncSubscriber());
+    forkChoice.subscribeToOptimisticHeadChanges(syncService.getOptimisticSyncSubscriber());
+    forkChoice
+        .getOptimisticSyncing()
+        .ifPresent(
+            isOptimistic ->
+                syncService.getOptimisticSyncSubscriber().onOptimisticHeadChanged(isOptimistic));
   }
 
   protected void initOperationsReOrgManager() {

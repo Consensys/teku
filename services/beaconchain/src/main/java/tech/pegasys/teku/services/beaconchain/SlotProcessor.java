@@ -23,6 +23,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.NodeSlot;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.statetransition.EpochCachePrimer;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
@@ -122,7 +123,7 @@ public class SlotProcessor {
       processSlotStart(epoch);
     }
     if (isSlotAttestationDue(calculatedSlot, currentTime, nodeSlotStartTime)) {
-      processSlotAttestation(epoch);
+      processSlotAttestation();
       nodeSlot.inc();
     }
 
@@ -139,7 +140,11 @@ public class SlotProcessor {
   private void processSlotWhileSyncing() {
     UInt64 slot = nodeSlot.getValue();
     this.forkChoiceTrigger.onSlotStartedWhileSyncing(slot);
-    eventLog.syncEvent(slot, recentChainData.getHeadSlot(), p2pNetwork.getPeerCount());
+    eventLog.syncEvent(
+        slot,
+        recentChainData.getHeadSlot(),
+        recentChainData.getOptimisticHeadSlot(),
+        p2pNetwork.getPeerCount());
     slotEventsChannelPublisher.onSlot(slot);
   }
 
@@ -210,7 +215,7 @@ public class SlotProcessor {
     slotEventsChannelPublisher.onSlot(nodeSlot.getValue());
   }
 
-  private void processSlotAttestation(final UInt64 nodeEpoch) {
+  private void processSlotAttestation() {
     onTickSlotAttestation = nodeSlot.getValue();
     forkChoiceTrigger.onAttestationsDueForSlot(onTickSlotAttestation);
     forkChoiceNotifier.onAttestationsDue(onTickSlotAttestation);
@@ -218,18 +223,13 @@ public class SlotProcessor {
         .getChainHead()
         .ifPresent(
             (head) ->
-                recentChainData
-                    .getFinalizedCheckpoint()
-                    .ifPresent(
-                        finalizedCheckpoint ->
-                            eventLog.slotEvent(
-                                nodeSlot.getValue(),
-                                head.getSlot(),
-                                head.getRoot(),
-                                nodeEpoch,
-                                finalizedCheckpoint.getEpoch(),
-                                finalizedCheckpoint.getRoot(),
-                                p2pNetwork.getPeerCount())));
+                eventLog.slotEvent(
+                    nodeSlot.getValue(),
+                    head.getSlot(),
+                    head.getRoot(),
+                    recentChainData.getJustifiedCheckpoint().map(Checkpoint::getEpoch).orElse(ZERO),
+                    recentChainData.getFinalizedCheckpoint().map(Checkpoint::getEpoch).orElse(ZERO),
+                    p2pNetwork.getPeerCount()));
   }
 
   @VisibleForTesting

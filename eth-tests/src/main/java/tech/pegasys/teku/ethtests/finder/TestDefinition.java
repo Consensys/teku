@@ -54,14 +54,14 @@ public class TestDefinition {
         spec = TestSpecFactory.createMainnetPhase0();
       } else if (configName.equals(TestSpecConfig.MAINNET) && fork.equals(TestFork.ALTAIR)) {
         spec = TestSpecFactory.createMainnetAltair();
-      } else if (configName.equals(TestSpecConfig.MAINNET) && fork.equals(TestFork.MERGE)) {
-        spec = TestSpecFactory.createMainnetMerge();
+      } else if (configName.equals(TestSpecConfig.MAINNET) && fork.equals(TestFork.BELLATRIX)) {
+        spec = TestSpecFactory.createMainnetBellatrix();
       } else if (configName.equals(TestSpecConfig.MINIMAL) && fork.equals(TestFork.PHASE0)) {
         spec = TestSpecFactory.createMinimalPhase0();
       } else if (configName.equals(TestSpecConfig.MINIMAL) && fork.equals(TestFork.ALTAIR)) {
         spec = TestSpecFactory.createMinimalAltair();
-      } else if (configName.equals(TestSpecConfig.MINIMAL) && fork.equals(TestFork.MERGE)) {
-        spec = TestSpecFactory.createMinimalMerge();
+      } else if (configName.equals(TestSpecConfig.MINIMAL) && fork.equals(TestFork.BELLATRIX)) {
+        spec = TestSpecFactory.createMinimalBellatrix();
       } else {
         // Set generic value
         spec = TestSpecFactory.createMinimalPhase0();

@@ -15,7 +15,7 @@ package tech.pegasys.teku.spec;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.spec.SpecMilestone.ALTAIR;
-import static tech.pegasys.teku.spec.SpecMilestone.MERGE;
+import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 
 import java.util.Arrays;
@@ -42,13 +42,13 @@ public class SpecFactoryTest {
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("getKnownConfigNames")
-  public void defaultFactoryShouldNotEnableMergeUnlessForkEpochIsSet(final String configName) {
+  public void defaultFactoryShouldNotEnableBellatrixUnlessForkEpochIsSet(final String configName) {
     final Spec spec = SpecFactory.create(configName);
     if (configName.equals("minimal")) { // Minimal doesn't have altair scheduled
       assertThat(spec.getForkSchedule().getSupportedMilestones()).containsExactly(PHASE0);
     } else if (configName.equals("kintsugi")) {
       assertThat(spec.getForkSchedule().getSupportedMilestones())
-          .containsExactly(PHASE0, ALTAIR, MERGE);
+          .containsExactly(PHASE0, ALTAIR, BELLATRIX);
     } else {
       assertThat(spec.getForkSchedule().getSupportedMilestones()).containsExactly(PHASE0, ALTAIR);
     }
@@ -76,7 +76,7 @@ public class SpecFactoryTest {
   @ParameterizedTest
   @EnumSource(
       value = SpecMilestone.class,
-      names = {"MERGE"},
+      names = {"BELLATRIX"},
       mode = EnumSource.Mode.EXCLUDE)
   public void shouldCreateTheRightAttestationWorthinessChecker(SpecMilestone milestone) {
     final Spec spec;

@@ -202,7 +202,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
                 testDefinition
                     .getSpec()
                     .getGenesisSchemaDefinitions()
-                    .toVersionMerge()
+                    .toVersionBellatrix()
                     .orElseThrow()
                     .getExecutionPayloadSchema());
         processor.processExecutionPayload(

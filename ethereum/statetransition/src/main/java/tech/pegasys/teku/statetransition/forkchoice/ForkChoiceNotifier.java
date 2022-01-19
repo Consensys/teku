@@ -26,7 +26,7 @@ import tech.pegasys.teku.infrastructure.ssz.type.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.datastructures.operations.versions.merge.BeaconPreparableProposer;
+import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
 import tech.pegasys.teku.spec.executionengine.PayloadAttributes;
@@ -115,7 +115,7 @@ public class ForkChoiceNotifier {
    * @param parentBeaconBlockRoot root of the beacon block the new block will be built on
    * @return must return a Future resolving to:
    *     <p>Optional.empty() only when is safe to produce a block with an empty execution payload
-   *     (after the merge fork and before Terminal Block arrival)
+   *     (after the bellatrix fork and before Terminal Block arrival)
    *     <p>Optional.of(payloadId) when one of the following: 1. builds on top of execution head of
    *     parentBeaconBlockRoot 2. builds on top of the terminal block
    *     <p>in all other cases it must Throw to avoid block production
@@ -256,5 +256,9 @@ public class ForkChoiceNotifier {
     forkChoiceUpdateData = forkChoiceUpdateData.withPayloadAttributes(newPayloadAttributes);
     sendForkChoiceUpdated();
     return true;
+  }
+
+  public PayloadAttributesCalculator getPayloadAttributesCalculator() {
+    return payloadAttributesCalculator;
   }
 }

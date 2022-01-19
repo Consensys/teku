@@ -14,17 +14,23 @@
 package tech.pegasys.teku.spec.datastructures.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.util.config.Constants.MIN_DEPOSIT_AMOUNT;
 
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 
 public class DepositUtil {
+  private final Spec spec;
 
-  public static DepositWithIndex convertDepositEventToOperationDeposit(
+  public DepositUtil(final Spec spec) {
+    this.spec = spec;
+  }
+
+  public DepositWithIndex convertDepositEventToOperationDeposit(
       tech.pegasys.teku.ethereum.pow.api.Deposit event) {
     checkArgument(
-        event.getAmount().isGreaterThanOrEqualTo(MIN_DEPOSIT_AMOUNT), "Deposit amount too low");
+        event.getAmount().isGreaterThanOrEqualTo(spec.getGenesisSpecConfig().getMinDepositAmount()),
+        "Deposit amount too low");
     DepositData data =
         new DepositData(
             event.getPubkey(),

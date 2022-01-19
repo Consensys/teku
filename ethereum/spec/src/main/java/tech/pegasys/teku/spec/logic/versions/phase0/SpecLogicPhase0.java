@@ -31,7 +31,7 @@ import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
-import tech.pegasys.teku.spec.logic.versions.merge.helpers.MergeTransitionHelpers;
+import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
 import tech.pegasys.teku.spec.logic.versions.phase0.block.BlockProcessorPhase0;
 import tech.pegasys.teku.spec.logic.versions.phase0.helpers.BeaconStateAccessorsPhase0;
 import tech.pegasys.teku.spec.logic.versions.phase0.statetransition.epoch.EpochProcessorPhase0;
@@ -159,7 +159,7 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
   }
 
   @Override
-  public Optional<MergeTransitionHelpers> getMergeTransitionHelpers() {
+  public Optional<BellatrixTransitionHelpers> getBellatrixTransitionHelpers() {
     return Optional.empty();
   }
 }

@@ -29,7 +29,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 public class ChainUpdater {
@@ -88,7 +88,7 @@ public class ChainUpdater {
         signDeposits,
         spec.getGenesisSpecConfig().getMaxEffectiveBalance(),
         Optional.of(
-            SchemaDefinitionsMerge.required(spec.getGenesisSchemaDefinitions())
+            SchemaDefinitionsBellatrix.required(spec.getGenesisSchemaDefinitions())
                 .getExecutionPayloadHeaderSchema()
                 .create(
                     Bytes32.random(),
@@ -122,14 +122,30 @@ public class ChainUpdater {
   }
 
   public SignedBlockAndState finalizeEpoch(final UInt64 epoch) {
-
     final SignedBlockAndState blockAndState =
         chainBuilder.getLatestBlockAndStateAtEpochBoundary(epoch);
     final Checkpoint checkpoint = new Checkpoint(epoch, blockAndState.getRoot());
 
     final StoreTransaction tx = recentChainData.startStoreTransaction();
     tx.setFinalizedCheckpoint(checkpoint);
-    tx.commit().reportExceptions();
+    assertThat(tx.commit()).isDone();
+
+    return blockAndState;
+  }
+
+  public SignedBlockAndState justifyEpoch(final long epoch) {
+    return justifyEpoch(UInt64.valueOf(epoch));
+  }
+
+  public SignedBlockAndState justifyEpoch(final UInt64 epoch) {
+    final SignedBlockAndState blockAndState =
+        chainBuilder.getLatestBlockAndStateAtEpochBoundary(epoch);
+    final Checkpoint checkpoint = new Checkpoint(epoch, blockAndState.getRoot());
+
+    final StoreTransaction tx = recentChainData.startStoreTransaction();
+    tx.setJustifiedCheckpoint(checkpoint);
+    tx.setBestJustifiedCheckpoint(checkpoint);
+    assertThat(tx.commit()).isDone();
 
     return blockAndState;
   }

@@ -31,7 +31,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteVectorSche
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.config.SpecConfigMerge;
+import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 
 public class ExecutionPayloadSchema
     extends ContainerSchema14<
@@ -51,7 +51,7 @@ public class ExecutionPayloadSchema
         SszBytes32,
         SszList<Transaction>> {
 
-  public ExecutionPayloadSchema(final SpecConfigMerge specConfig) {
+  public ExecutionPayloadSchema(final SpecConfigBellatrix specConfig) {
     super(
         "ExecutionPayload",
         namedSchema("parent_hash", SszPrimitiveSchemas.BYTES32_SCHEMA),

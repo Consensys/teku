@@ -33,7 +33,7 @@ import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
-import tech.pegasys.teku.spec.logic.versions.merge.helpers.MergeTransitionHelpers;
+import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
 
 public class DelegatingSpecLogic implements SpecLogic {
   private final SpecLogic specLogic;
@@ -103,8 +103,8 @@ public class DelegatingSpecLogic implements SpecLogic {
   }
 
   @Override
-  public Optional<MergeTransitionHelpers> getMergeTransitionHelpers() {
-    return specLogic.getMergeTransitionHelpers();
+  public Optional<BellatrixTransitionHelpers> getBellatrixTransitionHelpers() {
+    return specLogic.getBellatrixTransitionHelpers();
   }
 
   @Override

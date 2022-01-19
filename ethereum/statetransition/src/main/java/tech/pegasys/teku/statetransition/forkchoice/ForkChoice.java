@@ -65,7 +65,7 @@ public class ForkChoice {
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final boolean proposerBoostEnabled;
 
-  private final Subscribers<OptimisticSyncSubscriber> optimisticSyncSubscribers =
+  private final Subscribers<OptimisticHeadSubscriber> optimisticSyncSubscribers =
       Subscribers.create(true);
   private Optional<Boolean> optimisticSyncing = Optional.empty();
 
@@ -245,7 +245,7 @@ public class ForkChoice {
     }
 
     if (payloadResult.hasStatus(ExecutionPayloadStatus.SYNCING)
-        && !recentChainData.isOptimisticSyncPossible()) {
+        && !recentChainData.isOptimisticSyncPossible(block.getSlot())) {
       return BlockImportResult.FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING;
     }
 
@@ -394,12 +394,13 @@ public class ForkChoice {
                 recentChainData.getJustifiedCheckpoint().orElseThrow(),
                 recentChainData.getFinalizedCheckpoint().orElseThrow());
     forkChoiceNotifier.onForkChoiceUpdated(forkChoiceState);
+    recentChainData.onForkChoiceUpdated(forkChoiceState);
     if (optimisticSyncing
         .map(oldValue -> !oldValue.equals(forkChoiceState.isHeadOptimistic()))
         .orElse(true)) {
       optimisticSyncing = Optional.of(forkChoiceState.isHeadOptimistic());
       optimisticSyncSubscribers.deliver(
-          OptimisticSyncSubscriber::onOptimisticSyncingChanged, forkChoiceState.isHeadOptimistic());
+          OptimisticHeadSubscriber::onOptimisticHeadChanged, forkChoiceState.isHeadOptimistic());
     }
   }
 
@@ -513,15 +514,19 @@ public class ForkChoice {
     return forkChoiceExecutor.execute(task);
   }
 
-  public long subscribeToOptimisticSyncChanges(OptimisticSyncSubscriber subscriber) {
+  public Optional<Boolean> getOptimisticSyncing() {
+    return optimisticSyncing;
+  }
+
+  public long subscribeToOptimisticHeadChanges(OptimisticHeadSubscriber subscriber) {
     return optimisticSyncSubscribers.subscribe(subscriber);
   }
 
-  public void unsubscribeFromOptimisticSyncChanges(long subscriberId) {
+  public void unsubscribeFromOptimisticHeadChanges(long subscriberId) {
     optimisticSyncSubscribers.unsubscribe(subscriberId);
   }
 
-  public interface OptimisticSyncSubscriber {
-    void onOptimisticSyncingChanged(boolean isSyncingOptimistically);
+  public interface OptimisticHeadSubscriber {
+    void onOptimisticHeadChanged(boolean isHeadOptimistic);
   }
 }

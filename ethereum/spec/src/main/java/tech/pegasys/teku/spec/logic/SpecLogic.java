@@ -33,7 +33,7 @@ import tech.pegasys.teku.spec.logic.common.util.ExecutionPayloadUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
-import tech.pegasys.teku.spec.logic.versions.merge.helpers.MergeTransitionHelpers;
+import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
 
 public interface SpecLogic {
   Optional<StateUpgrade<?>> getStateUpgrade();
@@ -72,5 +72,5 @@ public interface SpecLogic {
 
   Optional<ExecutionPayloadUtil> getExecutionPayloadUtil();
 
-  Optional<MergeTransitionHelpers> getMergeTransitionHelpers();
+  Optional<BellatrixTransitionHelpers> getBellatrixTransitionHelpers();
 }

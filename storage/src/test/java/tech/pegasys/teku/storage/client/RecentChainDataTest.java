@@ -31,6 +31,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -51,6 +53,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel.HeadEvent;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel.ReorgEvent;
@@ -62,7 +65,7 @@ import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 class RecentChainDataTest {
-  private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final SpecConfig genesisSpecConfig = spec.getGenesisSpecConfig();
   private StorageSystem storageSystem;
@@ -81,16 +84,13 @@ class RecentChainDataTest {
   private void initPreGenesis(final boolean updateHeadForEmptySlots) {
     storageSystem =
         InMemoryStorageSystemBuilder.create()
+            .specProvider(spec)
             .storageMode(StateStorageMode.PRUNE)
             .storeConfig(
                 StoreConfig.builder().updateHeadForEmptySlots(updateHeadForEmptySlots).build())
             .build();
     chainBuilder = storageSystem.chainBuilder();
     recentChainData = storageSystem.recentChainData();
-
-    genesis = chainBuilder.generateGenesis();
-    genesisState = genesis.getState();
-    genesisBlock = genesis.getBlock().getMessage();
   }
 
   private void initPostGenesis() {
@@ -99,12 +99,31 @@ class RecentChainDataTest {
 
   private void initPostGenesis(final boolean updateHeadForEmptySlots) {
     initPreGenesis(updateHeadForEmptySlots);
+
+    generateGenesisWithoutIniting();
     recentChainData.initializeFromGenesis(genesisState, UInt64.ZERO);
+  }
+
+  private void generateGenesisWithoutIniting() {
+    genesis = chainBuilder.generateGenesis();
+    genesisState = genesis.getState();
+    genesisBlock = genesis.getBlock().getMessage();
+  }
+
+  @BeforeAll
+  public static void disableDepositBlsVerification() {
+    AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = false;
+  }
+
+  @AfterAll
+  public static void EnableDepositBlsVerification() {
+    AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = false;
   }
 
   @Test
   public void initialize_setupInitialState() {
     initPreGenesis();
+    generateGenesisWithoutIniting();
     recentChainData.initializeFromGenesis(genesisState, UInt64.ZERO);
 
     assertThat(recentChainData.getGenesisTime()).isEqualTo(genesisState.getGenesis_time());
@@ -314,6 +333,7 @@ class RecentChainDataTest {
   @ValueSource(booleans = {true, false})
   public void updateHead_noReorgEventWhenBestBlockFirstSet(final boolean updateHeadForEmptySlots) {
     initPreGenesis(updateHeadForEmptySlots);
+    generateGenesisWithoutIniting();
     recentChainData.initializeFromGenesis(genesisState, UInt64.ZERO);
 
     assertThat(storageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
@@ -420,7 +440,8 @@ class RecentChainDataTest {
   public void updateHead_reorgEventWhenChainSwitchesToNewBlockAtSameSlot(
       final boolean updateHeadForEmptySlots) {
     initPreGenesis(updateHeadForEmptySlots);
-    final ChainBuilder chainBuilder = ChainBuilder.create(BLSKeyGenerator.generateKeyPairs(16));
+    final ChainBuilder chainBuilder =
+        ChainBuilder.create(spec, BLSKeyGenerator.generateKeyPairs(16));
     final SignedBlockAndState genesis = chainBuilder.generateGenesis();
     recentChainData.initializeFromGenesis(genesis.getState(), UInt64.ZERO);
     assertThat(storageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
@@ -466,7 +487,8 @@ class RecentChainDataTest {
   public void updateHead_reorgEventWhenChainSwitchesToNewBlockAtLaterSlot(
       final boolean updateHeadForEmptySlots) {
     initPreGenesis(updateHeadForEmptySlots);
-    final ChainBuilder chainBuilder = ChainBuilder.create(BLSKeyGenerator.generateKeyPairs(16));
+    final ChainBuilder chainBuilder =
+        ChainBuilder.create(spec, BLSKeyGenerator.generateKeyPairs(16));
     final SignedBlockAndState genesis = chainBuilder.generateGenesis();
     recentChainData.initializeFromGenesis(genesis.getState(), UInt64.ZERO);
     assertThat(storageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
@@ -514,6 +536,7 @@ class RecentChainDataTest {
   @ValueSource(booleans = {true, false})
   public void updateHead_ignoreStaleUpdate(final boolean updateHeadForEmptySlots) {
     initPreGenesis(updateHeadForEmptySlots);
+    generateGenesisWithoutIniting();
     final UpdatableStore store = mock(UpdatableStore.class);
 
     // Set up mock store with genesis data and a small chain
@@ -852,6 +875,89 @@ class RecentChainDataTest {
     final SignedBlockAndState genesis = chainBuilder.generateGenesis();
     recentChainData.initializeFromGenesis(genesis.getState(), UInt64.ZERO);
     assertThat(recentChainData.getAncestorsOnFork(UInt64.valueOf(1), Bytes32.ZERO)).isEmpty();
+  }
+
+  @Test
+  void isOptimisticSyncPossible_shouldBeFalseWhenMergeBlockDoesNotExistAndBlockTooRecent() {
+    initPostGenesis();
+    assertThat(recentChainData.isOptimisticSyncPossible(recentChainData.getHeadSlot())).isFalse();
+  }
+
+  @Test
+  void isOptimisticSyncPossible_shouldBeFalseWhenMergeBlockNotJustifiedAndBlockTooRecent() {
+    initPostGenesis();
+    storageSystem
+        .chainUpdater()
+        .saveBlock(
+            chainBuilder.generateBlockAtSlot(
+                recentChainData.getHeadSlot().plus(1),
+                BlockOptions.create().setTerminalBlockHash(dataStructureUtil.randomBytes32())));
+    assertThat(recentChainData.isOptimisticSyncPossible(recentChainData.getHeadSlot())).isFalse();
+  }
+
+  @Test
+  void isOptimisticSyncPossible_shouldBeTrueWhenGenesisIsPostMerge() {
+    initPreGenesis();
+    storageSystem.chainUpdater().initializeGenesisWithPayload(false);
+    assertThat(recentChainData.isOptimisticSyncPossible(recentChainData.getHeadSlot())).isTrue();
+  }
+
+  @Test
+  void isOptimisticSyncPossible_shouldBeTrueWhenMergeBlockNotJustifiedAndBlockOldEnough() {
+    initPostGenesis();
+    final int safeSyncDistance = getSafeSyncDistance();
+    final UInt64 mergeBlockSlot = recentChainData.getHeadSlot().plus(1);
+    final UInt64 importBlockSlot = mergeBlockSlot.plus(1);
+    storageSystem
+        .chainUpdater()
+        .saveBlock(
+            chainBuilder.generateBlockAtSlot(
+                mergeBlockSlot,
+                BlockOptions.create().setTerminalBlockHash(dataStructureUtil.randomBytes32())));
+
+    storageSystem.chainUpdater().setCurrentSlot(importBlockSlot.plus(safeSyncDistance));
+    assertThat(recentChainData.isOptimisticSyncPossible(importBlockSlot)).isTrue();
+  }
+
+  @Test
+  void isOptimisticSyncPossible_shouldBeFalseWhenMergeBlockIsOldButImportingBlockIsRecent() {
+    initPostGenesis();
+    final int safeSyncDistance = getSafeSyncDistance();
+    final UInt64 mergeBlockSlot = recentChainData.getHeadSlot().plus(1);
+    final UInt64 importBlockSlot = mergeBlockSlot.plus(1).plus(safeSyncDistance);
+    storageSystem
+        .chainUpdater()
+        .saveBlock(
+            chainBuilder.generateBlockAtSlot(
+                mergeBlockSlot,
+                BlockOptions.create().setTerminalBlockHash(dataStructureUtil.randomBytes32())));
+
+    storageSystem.chainUpdater().setCurrentSlot(importBlockSlot.plus(1));
+    assertThat(recentChainData.isOptimisticSyncPossible(importBlockSlot)).isFalse();
+  }
+
+  private int getSafeSyncDistance() {
+    return spec.getGenesisSpecConfig()
+        .toVersionBellatrix()
+        .orElseThrow()
+        .getSafeSlotsToImportOptimistically();
+  }
+
+  @Test
+  void isOptimisticSyncPossible_shouldBeTrueWhenMergeBlockJustified() {
+    initPostGenesis();
+    final UInt64 mergeBlockSlot = spec.computeStartSlotAtEpoch(UInt64.valueOf(1));
+    final UInt64 importBlockSlot = spec.computeStartSlotAtEpoch(UInt64.valueOf(2));
+    storageSystem
+        .chainUpdater()
+        .saveBlock(
+            chainBuilder.generateBlockAtSlot(
+                mergeBlockSlot,
+                BlockOptions.create().setTerminalBlockHash(dataStructureUtil.randomBytes32())));
+    storageSystem.chainUpdater().justifyEpoch(1);
+
+    storageSystem.chainUpdater().setCurrentSlot(importBlockSlot);
+    assertThat(recentChainData.isOptimisticSyncPossible(importBlockSlot)).isTrue();
   }
 
   /**

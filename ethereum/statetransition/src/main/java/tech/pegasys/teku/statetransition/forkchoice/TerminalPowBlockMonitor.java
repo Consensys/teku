@@ -28,7 +28,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.config.SpecConfigMerge;
+import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
@@ -44,7 +44,7 @@ public class TerminalPowBlockMonitor {
   private final RecentChainData recentChainData;
   private final ForkChoiceNotifier forkChoiceNotifier;
 
-  private final AtomicBoolean isMerge = new AtomicBoolean(false);
+  private final AtomicBoolean isBellatrix = new AtomicBoolean(false);
 
   private Optional<Bytes32> maybeBlockHashTracking = Optional.empty();
 
@@ -75,7 +75,8 @@ public class TerminalPowBlockMonitor {
                 this::monitor,
                 pollingPeriod,
                 (error) -> LOG.error("An error occurred while executing the monitor task", error)));
-    LOG.info("Monitor has started. Waiting MERGE fork activation. Polling every {}", pollingPeriod);
+    LOG.info(
+        "Monitor has started. Waiting BELLATRIX fork activation. Polling every {}", pollingPeriod);
   }
 
   public synchronized void stop() {
@@ -92,10 +93,10 @@ public class TerminalPowBlockMonitor {
   }
 
   private synchronized void monitor() {
-    if (!isMerge.get()) {
+    if (!isBellatrix.get()) {
       initMergeState();
-      if (!isMerge.get()) {
-        LOG.trace("Monitor is sill inactive. MERGE fork not yet activated.");
+      if (!isBellatrix.get()) {
+        LOG.trace("Monitor is sill inactive. BELLATRIX fork not yet activated.");
         return;
       }
     }
@@ -120,13 +121,14 @@ public class TerminalPowBlockMonitor {
     }
 
     UInt64 epoch = spec.computeEpochAtSlot(maybeSlot.get());
-    Optional<SpecConfigMerge> maybeMergeSpecConfig = spec.getSpecConfig(epoch).toVersionMerge();
-    if (maybeMergeSpecConfig.isEmpty()
-        || maybeMergeSpecConfig.get().getMergeForkEpoch().isGreaterThan(epoch)) {
+    Optional<SpecConfigBellatrix> maybeBellatrixSpecConfig =
+        spec.getSpecConfig(epoch).toVersionBellatrix();
+    if (maybeBellatrixSpecConfig.isEmpty()
+        || maybeBellatrixSpecConfig.get().getBellatrixForkEpoch().isGreaterThan(epoch)) {
       return;
     }
 
-    SpecConfigMerge specConfigMerge = maybeMergeSpecConfig.get();
+    SpecConfigBellatrix specConfigBellatrix = maybeBellatrixSpecConfig.get();
 
     Optional<BeaconState> beaconState = recentChainData.getBestState();
     if (beaconState.isEmpty()) {
@@ -142,37 +144,38 @@ public class TerminalPowBlockMonitor {
       return;
     }
 
-    if (specConfigMerge.getTerminalBlockHash().isZero()) {
+    if (specConfigBellatrix.getTerminalBlockHash().isZero()) {
       maybeBlockHashTracking = Optional.empty();
       LOG.info(
           "Enabling tracking by Block Total Difficulty {}",
-          specConfigMerge.getTerminalTotalDifficulty());
+          specConfigBellatrix.getTerminalTotalDifficulty());
     } else {
-      maybeBlockHashTracking = Optional.of(specConfigMerge.getTerminalBlockHash());
+      maybeBlockHashTracking = Optional.of(specConfigBellatrix.getTerminalBlockHash());
       LOG.info(
           "Enabling tracking by Block Hash {} and Activation Epoch {}",
-          specConfigMerge.getTerminalBlockHash(),
-          specConfigMerge.getTerminalBlockHashActivationEpoch());
+          specConfigBellatrix.getTerminalBlockHash(),
+          specConfigBellatrix.getTerminalBlockHashActivationEpoch());
     }
 
-    isMerge.set(true);
+    isBellatrix.set(true);
     LOG.info("Monitor is now active");
   }
 
   private void checkTerminalBlockByBlockHash(Bytes32 blockHashTracking) {
     UInt64 slot = recentChainData.getCurrentSlot().orElseThrow();
     final SpecVersion specVersion = spec.atSlot(slot);
-    final Optional<SpecConfigMerge> maybeSpecConfigMerge = specVersion.getConfig().toVersionMerge();
-    if (maybeSpecConfigMerge.isEmpty()) {
+    final Optional<SpecConfigBellatrix> maybeSpecConfigBellatrix =
+        specVersion.getConfig().toVersionBellatrix();
+    if (maybeSpecConfigBellatrix.isEmpty()) {
       return;
     }
-    final SpecConfigMerge specConfigMerge = maybeSpecConfigMerge.get();
+    final SpecConfigBellatrix specConfigBellatrix = maybeSpecConfigBellatrix.get();
 
     final boolean isActivationEpochReached =
         specVersion
             .miscHelpers()
             .computeEpochAtSlot(slot)
-            .isGreaterThanOrEqualTo(specConfigMerge.getTerminalBlockHashActivationEpoch());
+            .isGreaterThanOrEqualTo(specConfigBellatrix.getTerminalBlockHashActivationEpoch());
 
     if (isActivationEpochReached) {
       executionEngine
@@ -204,16 +207,16 @@ public class TerminalPowBlockMonitor {
         .getPowChainHead()
         .thenCompose(
             powBlock -> {
-              final Optional<SpecConfigMerge> maybeSpecConfigMerge =
+              final Optional<SpecConfigBellatrix> maybeSpecConfigBellatrix =
                   recentChainData
                       .getCurrentEpoch()
-                      .flatMap(epoch -> spec.atEpoch(epoch).getConfig().toVersionMerge());
-              if (maybeSpecConfigMerge.isEmpty()) {
+                      .flatMap(epoch -> spec.atEpoch(epoch).getConfig().toVersionBellatrix());
+              if (maybeSpecConfigBellatrix.isEmpty()) {
                 return SafeFuture.COMPLETE;
               }
-              final SpecConfigMerge specConfigMerge = maybeSpecConfigMerge.get();
+              final SpecConfigBellatrix specConfigBellatrix = maybeSpecConfigBellatrix.get();
               UInt256 totalDifficulty = powBlock.getTotalDifficulty();
-              if (totalDifficulty.compareTo(specConfigMerge.getTerminalTotalDifficulty()) < 0) {
+              if (totalDifficulty.compareTo(specConfigBellatrix.getTerminalTotalDifficulty()) < 0) {
                 LOG.trace("checkTerminalBlockByTTD: Total Terminal Difficulty not reached.");
                 return SafeFuture.COMPLETE;
               }
@@ -221,7 +224,7 @@ public class TerminalPowBlockMonitor {
               // TTD is reached
               if (notYetFound(powBlock.getBlockHash())) {
                 LOG.trace("checkTerminalBlockByTTD: Terminal Block found!");
-                return validateTerminalBlockParentByTTD(specConfigMerge, powBlock)
+                return validateTerminalBlockParentByTTD(specConfigBellatrix, powBlock)
                     .thenAccept(
                         valid -> {
                           if (valid) {
@@ -240,7 +243,7 @@ public class TerminalPowBlockMonitor {
   }
 
   private SafeFuture<Boolean> validateTerminalBlockParentByTTD(
-      final SpecConfigMerge specConfigMerge, final PowBlock terminalBlock) {
+      final SpecConfigBellatrix specConfigBellatrix, final PowBlock terminalBlock) {
     return executionEngine
         .getPowBlock(terminalBlock.getParentHash())
         .thenApply(
@@ -250,7 +253,8 @@ public class TerminalPowBlockMonitor {
                       .orElseThrow(
                           () -> new IllegalStateException("Terminal Block Parent not found!"))
                       .getTotalDifficulty();
-              return totalDifficulty.compareTo(specConfigMerge.getTerminalTotalDifficulty()) < 0;
+              return totalDifficulty.compareTo(specConfigBellatrix.getTerminalTotalDifficulty())
+                  < 0;
             });
   }
 

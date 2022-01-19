@@ -55,6 +55,7 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
   private final Counter depositCounter;
   private final Spec spec;
   private final DepositsSchemaCache depositsSchemaCache = new DepositsSchemaCache();
+  private final DepositUtil depositUtil;
 
   public DepositProvider(
       MetricsSystem metricsSystem,
@@ -64,6 +65,7 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
     this.recentChainData = recentChainData;
     this.eth1DataCache = eth1DataCache;
     this.spec = spec;
+    depositUtil = new DepositUtil(spec);
     depositMerkleTree =
         new OptimizedMerkleTree(spec.getGenesisSpecConfig().getDepositContractTreeDepth());
     depositCounter =
@@ -76,7 +78,7 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
   @Override
   public synchronized void onDepositsFromBlock(DepositsFromBlockEvent event) {
     event.getDeposits().stream()
-        .map(DepositUtil::convertDepositEventToOperationDeposit)
+        .map(depositUtil::convertDepositEventToOperationDeposit)
         .forEach(
             deposit -> {
               if (!recentChainData.isPreGenesis()) {

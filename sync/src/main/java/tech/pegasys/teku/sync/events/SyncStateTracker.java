@@ -13,25 +13,29 @@
 
 package tech.pegasys.teku.sync.events;
 
+import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
+
 import java.time.Duration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.service.serviceutils.Service;
-import tech.pegasys.teku.statetransition.forkchoice.ForkChoice.OptimisticSyncSubscriber;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoice.OptimisticHeadSubscriber;
 import tech.pegasys.teku.sync.forward.ForwardSync;
 
 public class SyncStateTracker extends Service
-    implements SyncStateProvider, OptimisticSyncSubscriber {
+    implements SyncStateProvider, OptimisticHeadSubscriber {
   private static final Logger LOG = LogManager.getLogger();
   private final AsyncRunner asyncRunner;
   private final ForwardSync syncService;
   private final P2PNetwork<? extends Peer> network;
   private final Subscribers<SyncStateSubscriber> subscribers = Subscribers.create(true);
+  private final EventLogger eventLogger;
 
   private final Duration startupTimeout;
   private final int startupTargetPeerCount;
@@ -40,7 +44,7 @@ public class SyncStateTracker extends Service
   private boolean syncActive = false;
   private long peerConnectedSubscriptionId;
   private long syncSubscriptionId;
-  private boolean optimisticSyncActive = false;
+  private boolean headIsOptimistic = false;
 
   private volatile SyncState currentState;
 
@@ -50,11 +54,22 @@ public class SyncStateTracker extends Service
       final P2PNetwork<? extends Peer> network,
       final int startupTargetPeerCount,
       final Duration startupTimeout) {
+    this(asyncRunner, syncService, network, startupTargetPeerCount, startupTimeout, EVENT_LOG);
+  }
+
+  SyncStateTracker(
+      final AsyncRunner asyncRunner,
+      final ForwardSync syncService,
+      final P2PNetwork<? extends Peer> network,
+      final int startupTargetPeerCount,
+      final Duration startupTimeout,
+      final EventLogger eventLogger) {
     this.asyncRunner = asyncRunner;
     this.syncService = syncService;
     this.network = network;
     this.startupTargetPeerCount = startupTargetPeerCount;
     this.startupTimeout = startupTimeout;
+    this.eventLogger = eventLogger;
     if (startupTargetPeerCount == 0 || startupTimeout.toMillis() == 0) {
       startingUp = false;
       currentState = SyncState.IN_SYNC;
@@ -70,8 +85,9 @@ public class SyncStateTracker extends Service
   }
 
   @Override
-  public void onOptimisticSyncingChanged(final boolean active) {
-    optimisticSyncActive = active;
+  public void onOptimisticHeadChanged(final boolean active) {
+    logSyncStateOnOptimisticHeadChanged(headIsOptimistic, active);
+    headIsOptimistic = active;
     updateCurrentState();
   }
 
@@ -87,7 +103,7 @@ public class SyncStateTracker extends Service
 
   private void updateCurrentState() {
     final SyncState previousState = currentState;
-    if (syncActive || optimisticSyncActive) {
+    if (syncActive || headIsOptimistic) {
       currentState = SyncState.SYNCING;
     } else if (startingUp) {
       currentState = SyncState.START_UP;
@@ -121,8 +137,51 @@ public class SyncStateTracker extends Service
   }
 
   private synchronized void onSyncingChanged(final boolean active) {
+    logSyncStateOnSyncingChanged(syncActive, active);
     syncActive = active;
     updateCurrentState();
+  }
+
+  private void logSyncStateOnOptimisticHeadChanged(
+      final boolean wasHeadPreviouslyOptimistic, final boolean isHeadOptimistic) {
+
+    if (wasHeadPreviouslyOptimistic == isHeadOptimistic || startingUp) {
+      return;
+    }
+
+    if (isHeadOptimistic) {
+      if (syncActive) {
+        eventLogger.headTurnedOptimisticWhileSyncing();
+      } else {
+        eventLogger.headTurnedOptimisticWhileInSync();
+      }
+      return;
+    }
+
+    if (syncActive) {
+      eventLogger.headNoLongerOptimisticWhileSyncing();
+    } else {
+      eventLogger.syncCompleted();
+    }
+  }
+
+  private void logSyncStateOnSyncingChanged(
+      final boolean wasPreviouslySyncing, final boolean isSyncing) {
+
+    if (wasPreviouslySyncing == isSyncing) {
+      return;
+    }
+
+    if (isSyncing) {
+      eventLogger.syncStart();
+      return;
+    }
+
+    if (headIsOptimistic) {
+      eventLogger.syncCompletedWhileHeadIsOptimistic();
+    } else {
+      eventLogger.syncCompleted();
+    }
   }
 
   private synchronized void markStartupComplete() {

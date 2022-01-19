@@ -36,11 +36,11 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
-import tech.pegasys.teku.spec.datastructures.operations.versions.merge.BeaconPreparableProposer;
+import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
-@TestSpecContext(milestone = SpecMilestone.MERGE)
+@TestSpecContext(milestone = SpecMilestone.BELLATRIX)
 public class BeaconProposerPreparerTest {
   private final int validator1Index = 19;
   private final int validator2Index = 23;

@@ -1,0 +1,26 @@
+{
+  "get" : {
+    "tags" : [ "Experimental" ],
+    "summary" : "Get current prepared beacon proposers",
+    "description" : "Get the current proposers information held by beacon node as result of prepare_beacon_proposer validator API calls. This API is considered unstable and the returned data format may change in the future.",
+    "operationId" : "getTekuV1BeaconPrepared_beacon_proposers",
+    "responses" : {
+      "200" : {
+        "description" : "OK",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetPreparedBeaconProposersResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Server Error"
+      },
+      "503" : {
+        "description" : "Beacon node is currently syncing and not serving requests"
+      }
+    }
+  }
+}

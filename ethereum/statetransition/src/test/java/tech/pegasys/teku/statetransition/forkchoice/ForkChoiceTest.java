@@ -54,7 +54,7 @@ import tech.pegasys.teku.spec.executionengine.StubExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.forkchoice.ForkChoice.OptimisticSyncSubscriber;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoice.OptimisticHeadSubscriber;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel.ReorgEvent;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -64,7 +64,7 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 class ForkChoiceTest {
 
-  private final Spec spec = TestSpecFactory.createMinimalMerge();
+  private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final StorageSystem storageSystem =
       InMemoryStorageSystemBuilder.create()
@@ -77,8 +77,8 @@ class ForkChoiceTest {
   private final RecentChainData recentChainData = storageSystem.recentChainData();
 
   private final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
-  private final OptimisticSyncSubscriber optimisticSyncStateTracker =
-      mock(OptimisticSyncSubscriber.class);
+  private final OptimisticHeadSubscriber optimisticSyncStateTracker =
+      mock(OptimisticHeadSubscriber.class);
   private final StubExecutionEngineChannel executionEngine = new StubExecutionEngineChannel(spec);
   private ForkChoice forkChoice =
       new ForkChoice(spec, new InlineEventThread(), recentChainData, forkChoiceNotifier, false);
@@ -92,7 +92,7 @@ class ForkChoiceTest {
         .chainUpdater()
         .setTime(genesis.getState().getGenesis_time().plus(10L * spec.getSecondsPerSlot(ZERO)));
 
-    forkChoice.subscribeToOptimisticSyncChanges(optimisticSyncStateTracker);
+    forkChoice.subscribeToOptimisticHeadChanges(optimisticSyncStateTracker);
   }
 
   @Test
@@ -343,7 +343,7 @@ class ForkChoiceTest {
         forkChoice.onBlock(blockAndState.getBlock(), executionEngine);
     assertBlockImportedSuccessfully(importResult, false);
 
-    assertForkChoiceUpdateNotification(blockAndState);
+    assertForkChoiceUpdateNotification(blockAndState, false);
   }
 
   @Test
@@ -378,9 +378,9 @@ class ForkChoiceTest {
   }
 
   @Test
-  void onBlock_shouldNotOptimisticallyImportBeforeFinalizedExecutionPayloadELSyncing() {
+  void onBlock_shouldNotOptimisticallyImportBeforeMergeBlockJustifiedELSyncing() {
     doMerge();
-    UInt64 slotToImport = prepFinalizeEpoch(2);
+    UInt64 slotToImport = recentChainData.getHeadSlot().plus(1);
 
     // make EL returning SYNCING
     executionEngine.setExecutePayloadResult(ExecutePayloadResult.SYNCING);
@@ -391,9 +391,9 @@ class ForkChoiceTest {
   }
 
   @Test
-  void onBlock_shouldNotOptimisticallyImportBeforeFinalizedExecutionPayloadELFailure() {
+  void onBlock_shouldNotOptimisticallyImportOnELFailure() {
     doMerge();
-    UInt64 slotToImport = prepFinalizeEpoch(2);
+    UInt64 slotToImport = recentChainData.getHeadSlot().plus(1);
 
     // make EL returning low level error
     executionEngine.setExecutePayloadResult(
@@ -460,7 +460,7 @@ class ForkChoiceTest {
 
     // since protoArray initializes with optimistic nodes,
     // we expect a first notification to be optimistic false
-    verify(optimisticSyncStateTracker).onOptimisticSyncingChanged(false);
+    verify(optimisticSyncStateTracker).onOptimisticHeadChanged(false);
 
     final SignedBlockAndState epoch4Block = chainBuilder.generateBlockAtSlot(slotToImport);
     importBlock(epoch4Block);
@@ -474,7 +474,7 @@ class ForkChoiceTest {
     final SignedBlockAndState epoch6Block = chainBuilder.generateBlockAtSlot(slotToImport);
     importBlockOptimistically(epoch6Block);
 
-    verify(optimisticSyncStateTracker).onOptimisticSyncingChanged(true);
+    verify(optimisticSyncStateTracker).onOptimisticHeadChanged(true);
 
     UInt64 forkSlot = slotToImport.increment();
 
@@ -487,7 +487,7 @@ class ForkChoiceTest {
 
     importBlock(chainBuilder.generateBlockAtSlot(forkSlot));
 
-    verify(optimisticSyncStateTracker, times(2)).onOptimisticSyncingChanged(false);
+    verify(optimisticSyncStateTracker, times(2)).onOptimisticHeadChanged(false);
 
     // builds atop the canonical chain
     storageSystem.chainUpdater().setCurrentSlot(forkSlot.plus(1));
@@ -509,10 +509,42 @@ class ForkChoiceTest {
 
     processHead(ONE);
 
-    assertForkChoiceUpdateNotification(blockAndState);
+    assertForkChoiceUpdateNotification(blockAndState, false);
   }
 
-  private void assertForkChoiceUpdateNotification(final SignedBlockAndState blockAndState) {
+  @Test
+  void applyHead_shouldSendForkChoiceUpdatedNotificationWhenOptimistic() {
+    doMerge();
+    finalizeEpoch(2);
+    assertThat(recentChainData.getOptimisticHead()).isEmpty();
+
+    final UInt64 nextBlockSlot = storageSystem.chainBuilder().getLatestSlot().plus(1);
+    storageSystem.chainUpdater().setCurrentSlot(nextBlockSlot);
+    final SignedBlockAndState blockAndState =
+        storageSystem.chainBuilder().generateBlockAtSlot(nextBlockSlot);
+
+    executionEngine.setExecutePayloadResult(ExecutePayloadResult.SYNCING);
+    final SafeFuture<BlockImportResult> result =
+        forkChoice.onBlock(blockAndState.getBlock(), executionEngine);
+    assertBlockImportedSuccessfully(result, true);
+
+    assertForkChoiceUpdateNotification(blockAndState, true);
+
+    // Optimistic head should be tracked
+    assertThat(recentChainData.getOptimisticHead()).isPresent();
+    final ForkChoiceState optimisticHead = recentChainData.getOptimisticHead().orElseThrow();
+    assertThat(optimisticHead.isHeadOptimistic()).isTrue();
+    assertThat(optimisticHead.getHeadBlockSlot()).isEqualTo(blockAndState.getSlot());
+    assertThat(optimisticHead.getHeadBlockRoot()).isEqualTo(blockAndState.getRoot());
+
+    // Optimistic head should not be present once the block is validated
+    forkChoice.onExecutionPayloadResult(blockAndState.getRoot(), ExecutePayloadResult.VALID, ZERO);
+    processHead(recentChainData.getHeadSlot());
+    assertThat(recentChainData.getOptimisticHead()).isEmpty();
+  }
+
+  private void assertForkChoiceUpdateNotification(
+      final SignedBlockAndState blockAndState, final boolean optimisticHead) {
     final ForkChoiceStrategy forkChoiceStrategy =
         recentChainData.getForkChoiceStrategy().orElseThrow();
     final Bytes32 headExecutionHash =
@@ -524,7 +556,12 @@ class ForkChoiceTest {
     verify(forkChoiceNotifier)
         .onForkChoiceUpdated(
             new ForkChoiceState(
-                headExecutionHash, headExecutionHash, finalizedExecutionHash, false));
+                blockAndState.getRoot(),
+                blockAndState.getSlot(),
+                headExecutionHash,
+                headExecutionHash,
+                finalizedExecutionHash,
+                optimisticHead));
   }
 
   private void justifyEpoch(final ChainUpdater chainUpdater, final long epoch) {
@@ -578,6 +615,11 @@ class ForkChoiceTest {
     prepEpochForJustification(chainUpdater, epochPlus2StartSlot);
 
     return epochPlus2StartSlot;
+  }
+
+  private void finalizeEpoch(final long epoch) {
+    final UInt64 nextBlockSlot = prepFinalizeEpoch(epoch);
+    importBlock(chainBuilder.generateBlockAtSlot(nextBlockSlot));
   }
 
   private void doMerge() {
