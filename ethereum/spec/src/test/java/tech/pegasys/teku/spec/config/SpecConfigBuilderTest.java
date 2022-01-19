@@ -64,19 +64,15 @@ class SpecConfigBuilderTest {
 
   @Test
   public void shouldLoadTerminalBlockHash() {
+    final Bytes32 randomBytes32 = Bytes32.random();
     final Spec spec =
         getSpec(
             phase0Builder ->
                 phase0Builder.bellatrixBuilder(
-                    mergeBuilder ->
-                        mergeBuilder.terminalBlockHash(
-                            Bytes32.fromHexString(
-                                "0x0000000000000000000000000000000000000000000000000000922192989272"))));
+                    mergeBuilder -> mergeBuilder.terminalBlockHash(randomBytes32)));
 
     assertThat(spec.getGenesisSpec().getConfig().getRawConfig().get("TERMINAL_BLOCK_HASH"))
-        .isEqualTo(
-            Bytes32.fromHexString(
-                "0x0000000000000000000000000000000000000000000000000000922192989272"));
+        .isEqualTo(randomBytes32);
   }
 
   @Test
