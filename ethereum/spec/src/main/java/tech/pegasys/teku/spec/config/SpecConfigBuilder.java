@@ -166,9 +166,8 @@ public class SpecConfigBuilder {
     if (altairBuilder.isPresent()) {
       final SpecConfigAltair altairConfig = altairBuilder.get().build(config);
       config = altairConfig;
-      if (bellatrixBuilder.isPresent()) {
-        final SpecConfigBellatrix bellatrixConfig = bellatrixBuilder.get().build(altairConfig);
-        config = bellatrixBuilder.get().build(bellatrixConfig);
+      if (bellatrixBuilder.isPresent() && bellatrixBuilder.get().isBellatrixEnabled()) {
+        config = bellatrixBuilder.get().build(altairConfig);
       }
     }
     return config;
@@ -226,7 +225,9 @@ public class SpecConfigBuilder {
     validateConstant("depositContractAddress", depositContractAddress);
 
     altairBuilder.ifPresent(AltairBuilder::validate);
-    bellatrixBuilder.ifPresent(BellatrixBuilder::validate);
+    bellatrixBuilder
+        .filter(BellatrixBuilder::isBellatrixEnabled)
+        .ifPresent(BellatrixBuilder::validate);
   }
 
   private void validateConstant(final String name, final Object value) {
@@ -708,7 +709,11 @@ public class SpecConfigBuilder {
 
     private BellatrixBuilder() {}
 
-    SpecConfigBellatrix build(final SpecConfigAltair specConfig) {
+    public boolean isBellatrixEnabled() {
+      return bellatrixForkEpoch != null && !bellatrixForkEpoch.equals(SpecConfig.FAR_FUTURE_EPOCH);
+    }
+
+    SpecConfig build(final SpecConfigAltair specConfig) {
       return new SpecConfigBellatrix(
           specConfig,
           bellatrixForkVersion,
