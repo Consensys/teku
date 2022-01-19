@@ -666,6 +666,7 @@ public class SpecConfigBuilder {
     public AltairBuilder altairForkEpoch(final UInt64 altairForkEpoch) {
       checkNotNull(altairForkEpoch);
       this.altairForkEpoch = altairForkEpoch;
+      rawConfig.put("ALTAIR_FORK_EPOCH", altairForkEpoch);
       return this;
     }
 
@@ -761,6 +762,7 @@ public class SpecConfigBuilder {
     public BellatrixBuilder bellatrixForkEpoch(final UInt64 bellatrixForkEpoch) {
       checkNotNull(bellatrixForkEpoch);
       this.bellatrixForkEpoch = bellatrixForkEpoch;
+      rawConfig.put("BELLATRIX_FORK_EPOCH", bellatrixForkEpoch);
       return this;
     }
 
@@ -799,17 +801,20 @@ public class SpecConfigBuilder {
 
     public BellatrixBuilder terminalTotalDifficulty(final UInt256 terminalTotalDifficulty) {
       this.terminalTotalDifficulty = terminalTotalDifficulty;
+      rawConfig.put("TERMINAL_TOTAL_DIFFICULTY", terminalTotalDifficulty);
       return this;
     }
 
     public BellatrixBuilder terminalBlockHash(final Bytes32 terminalBlockHash) {
       this.terminalBlockHash = terminalBlockHash;
+      rawConfig.put("TERMINAL_BLOCK_HASH", terminalBlockHash);
       return this;
     }
 
     public BellatrixBuilder terminalBlockHashActivationEpoch(
         final UInt64 terminalBlockHashActivationEpoch) {
       this.terminalBlockHashActivationEpoch = terminalBlockHashActivationEpoch;
+      rawConfig.put("TERMINAL_BLOCK_HASH_ACTIVATION_EPOCH", terminalBlockHashActivationEpoch);
       return this;
     }
 
