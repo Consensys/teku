@@ -48,20 +48,15 @@ public class SimpleHttpClient {
     final URL url = baseUrl.resolve(path).toURL();
     final Request.Builder builder = new Request.Builder().url(baseUrl.resolve(path).toURL()).get();
     headers.forEach(builder::header);
-    try {
-      final Response response = httpClient.newCall(builder.build()).execute();
-      assertThat(response.isSuccessful())
-          .describedAs(
-              "Received unsuccessful response from %s: %s %s",
-              url, response.code(), response.message())
-          .isTrue();
-      final ResponseBody body = response.body();
-      assertThat(body).isNotNull();
-      return body.string();
-    } catch (IOException e) {
-      LOG.error("GET {} failed", path, e);
-      return "";
-    }
+    final Response response = httpClient.newCall(builder.build()).execute();
+    assertThat(response.isSuccessful())
+        .describedAs(
+            "Received unsuccessful response from %s: %s %s",
+            url, response.code(), response.message())
+        .isTrue();
+    final ResponseBody body = response.body();
+    assertThat(body).isNotNull();
+    return body.string();
   }
 
   public String post(final URI baseUrl, final String path, final String jsonBody)

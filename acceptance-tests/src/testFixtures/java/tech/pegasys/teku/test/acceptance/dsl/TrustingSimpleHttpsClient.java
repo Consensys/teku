@@ -28,7 +28,7 @@ import tech.pegasys.teku.infrastructure.crypto.SecureRandomProvider;
 
 public class TrustingSimpleHttpsClient extends SimpleHttpClient {
   private static final Logger LOG = LogManager.getLogger();
-  private static final TrustManager[] TRUST_ALL_CERTS =
+  private static final TrustManager[] TRUST_VALIDATOR_CERT =
       new TrustManager[] {
         new X509TrustManager() {
           @Override
@@ -85,7 +85,7 @@ public class TrustingSimpleHttpsClient extends SimpleHttpClient {
   private static OkHttpClient getUnsafeOkHttpClient() {
     try {
       final SSLContext sslContext = SSLContext.getInstance("SSL");
-      sslContext.init(null, TRUST_ALL_CERTS, SecureRandomProvider.createSecureRandom());
+      sslContext.init(null, TRUST_VALIDATOR_CERT, SecureRandomProvider.createSecureRandom());
       OkHttpClient.Builder builder = new OkHttpClient.Builder();
       builder.hostnameVerifier((hostname, session) -> true);
 
