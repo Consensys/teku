@@ -22,6 +22,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
+import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.type.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -29,7 +30,6 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
-import tech.pegasys.teku.spec.executionengine.PayloadAttributes;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class ForkChoiceNotifier {
@@ -42,8 +42,6 @@ public class ForkChoiceNotifier {
   private final Spec spec;
 
   private ForkChoiceUpdateData forkChoiceUpdateData = new ForkChoiceUpdateData();
-  private long payloadAttributesSequenceProducer = 0;
-  private long payloadAttributesSequenceConsumer = -1;
 
   private boolean inSync = false; // Assume we are not in sync at startup.
 
@@ -64,7 +62,8 @@ public class ForkChoiceNotifier {
       final AsyncRunnerFactory asyncRunnerFactory,
       final Spec spec,
       final ExecutionEngineChannel executionEngineChannel,
-      final RecentChainData recentChainData) {
+      final RecentChainData recentChainData,
+      final Optional<? extends Bytes20> proposerDefaultFeeRecipient) {
     final AsyncRunnerEventThread eventThread =
         new AsyncRunnerEventThread("forkChoiceNotifier", asyncRunnerFactory);
     eventThread.start();
@@ -73,7 +72,8 @@ public class ForkChoiceNotifier {
         spec,
         executionEngineChannel,
         recentChainData,
-        new PayloadAttributesCalculator(spec, eventThread, recentChainData));
+        new PayloadAttributesCalculator(
+            spec, eventThread, recentChainData, proposerDefaultFeeRecipient));
   }
 
   public void onUpdatePreparableProposers(final Collection<BeaconPreparableProposer> proposers) {
@@ -113,6 +113,7 @@ public class ForkChoiceNotifier {
 
   /**
    * @param parentBeaconBlockRoot root of the beacon block the new block will be built on
+   * @param blockSlot slot of the block being produced, for which the payloadId has been requested
    * @return must return a Future resolving to:
    *     <p>Optional.empty() only when is safe to produce a block with an empty execution payload
    *     (after the bellatrix fork and before Terminal Block arrival)
@@ -150,7 +151,7 @@ public class ForkChoiceNotifier {
       // returns, we save locally the current class reference.
       ForkChoiceUpdateData localForkChoiceUpdateData = forkChoiceUpdateData;
       return payloadAttributesCalculator
-          .calculatePayloadAttributes(blockSlot, inSync, localForkChoiceUpdateData)
+          .calculatePayloadAttributes(blockSlot, inSync, localForkChoiceUpdateData, true)
           .thenCompose(
               newPayloadAttributes -> {
 
@@ -218,44 +219,23 @@ public class ForkChoiceNotifier {
   private void updatePayloadAttributes(final UInt64 blockSlot) {
     LOG.debug("updatePayloadAttributes blockSlot {}", blockSlot);
 
-    // we want to preserve ordering in payload calculation,
-    // so we first generate a sequence for each calculation request
-    final long sequenceNumber = payloadAttributesSequenceProducer++;
-    payloadAttributesCalculator
-        .calculatePayloadAttributes(blockSlot, inSync, forkChoiceUpdateData)
-        .thenAcceptAsync(
-            newPayloadAttributes ->
-                updatePayloadAttributes(blockSlot, newPayloadAttributes, sequenceNumber),
-            eventThread)
-        .finish(
-            error ->
-                LOG.error("Failed to calculate payload attributes for slot {}", blockSlot, error));
-  }
+    forkChoiceUpdateData.withPayloadAttributesAsync(
+        // PayloadAttributes supplier
+        () ->
+            payloadAttributesCalculator.calculatePayloadAttributes(
+                blockSlot, inSync, forkChoiceUpdateData, false),
 
-  private boolean updatePayloadAttributes(
-      final UInt64 blockSlot,
-      final Optional<PayloadAttributes> newPayloadAttributes,
-      final long sequenceNumber) {
-    eventThread.checkOnEventThread();
+        // ForkChoiceUpdateData consumer
+        newForkChoiceUpdateData -> {
+          forkChoiceUpdateData = newForkChoiceUpdateData;
+          sendForkChoiceUpdated();
+        },
 
-    LOG.debug(
-        "updatePayloadAttributes blockSlot {} newPayloadAttributes {}",
-        blockSlot,
-        newPayloadAttributes);
+        // error handler
+        error -> LOG.error("Failed to calculate payload attributes for slot {}", blockSlot, error),
 
-    // to preserve ordering we make sure we haven't already calculated a payload that has been
-    // requested later than the current one
-    if (sequenceNumber <= payloadAttributesSequenceConsumer) {
-      LOG.warn("Ignoring calculated payload attributes since it violates ordering");
-      return false;
-    }
-    payloadAttributesSequenceConsumer = sequenceNumber;
-
-    LOG.debug("updatePayloadAttributes blockSlot {} {}", blockSlot, newPayloadAttributes);
-
-    forkChoiceUpdateData = forkChoiceUpdateData.withPayloadAttributes(newPayloadAttributes);
-    sendForkChoiceUpdated();
-    return true;
+        // Executor
+        eventThread);
   }
 
   public PayloadAttributesCalculator getPayloadAttributesCalculator() {

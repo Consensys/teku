@@ -45,6 +45,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionengine.ExecutePayloadResult;
@@ -69,6 +70,7 @@ class ForkChoiceNotifierTest {
   private RecentChainData recentChainData;
   private ForkChoiceStrategy forkChoiceStrategy;
   private PayloadAttributesCalculator payloadAttributesCalculator;
+  private Optional<Eth1Address> defaultFeeRecipient = Optional.of(Eth1Address.ZERO);
 
   private final ExecutionEngineChannel executionEngineChannel = mock(ExecutionEngineChannel.class);
 
@@ -90,7 +92,9 @@ class ForkChoiceNotifierTest {
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     recentChainData = storageSystem.recentChainData();
     payloadAttributesCalculator =
-        spy(new PayloadAttributesCalculator(spec, eventThread, recentChainData));
+        spy(
+            new PayloadAttributesCalculator(
+                spec, eventThread, recentChainData, defaultFeeRecipient));
     notifier =
         new ForkChoiceNotifier(
             eventThread,
@@ -115,7 +119,9 @@ class ForkChoiceNotifierTest {
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     recentChainData = storageSystem.recentChainData();
     payloadAttributesCalculator =
-        spy(new PayloadAttributesCalculator(spec, eventThread, recentChainData));
+        spy(
+            new PayloadAttributesCalculator(
+                spec, eventThread, recentChainData, defaultFeeRecipient));
     notifier =
         new ForkChoiceNotifier(
             eventThread,
@@ -210,7 +216,7 @@ class ForkChoiceNotifierTest {
               return deferredResponseA;
             })
         .when(payloadAttributesCalculator)
-        .calculatePayloadAttributes(any(), anyBoolean(), any());
+        .calculatePayloadAttributes(any(), anyBoolean(), any(), anyBoolean());
 
     notifier.onForkChoiceUpdated(forkChoiceState); // calculate attributes for slot 2
     // it is called once with no attributes. the one with attributes is pending
@@ -219,7 +225,7 @@ class ForkChoiceNotifierTest {
     // forward to real method call
     doAnswer(InvocationOnMock::callRealMethod)
         .when(payloadAttributesCalculator)
-        .calculatePayloadAttributes(any(), anyBoolean(), any());
+        .calculatePayloadAttributes(any(), anyBoolean(), any(), anyBoolean());
 
     storageSystem
         .chainUpdater()

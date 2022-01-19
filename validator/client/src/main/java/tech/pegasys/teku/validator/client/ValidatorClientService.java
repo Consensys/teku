@@ -238,7 +238,7 @@ public class ValidatorClientService extends Service {
           new BeaconProposerPreparer(
               validatorApiChannel,
               validatorIndexProvider,
-              config.getValidatorConfig().getSuggestedFeeRecipient(),
+              config.getValidatorConfig().getProposerDefaultFeeRecipient(),
               validators,
               spec));
     }

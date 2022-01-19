@@ -16,8 +16,8 @@ package tech.pegasys.teku.cli.options;
 import java.nio.file.Path;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import picocli.CommandLine;
 import picocli.CommandLine.Help.Visibility;
+import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.cli.converter.GraffitiConverter;
 import tech.pegasys.teku.config.TekuConfiguration;
@@ -27,8 +27,11 @@ import tech.pegasys.teku.validator.api.ValidatorPerformanceTrackingMode;
 
 public class ValidatorOptions {
 
-  @CommandLine.Mixin(name = "Validator Keys")
+  @Mixin(name = "Validator Keys")
   private ValidatorKeysOptions validatorKeysOptions;
+
+  @Mixin(name = "Validator Proposer")
+  private ValidatorProposerOptions validatorProposerOptions;
 
   @Option(
       names = {"--validators-graffiti"},
@@ -106,15 +109,6 @@ public class ValidatorOptions {
       arity = "0..1")
   private boolean generateEarlyAttestations = ValidatorConfig.DEFAULT_GENERATE_EARLY_ATTESTATIONS;
 
-  @Option(
-      names = {"--Xvalidators-suggested-fee-recipient-address"},
-      paramLabel = "<ADDRESS>",
-      description =
-          "Suggested fee recipient sent to the execution engine, which could use it as fee recipient when producing a new execution block.",
-      arity = "0..1",
-      hidden = true)
-  private String suggestedFeeRecipient = null;
-
   public void configure(TekuConfiguration.Builder builder) {
     if (validatorPerformanceTrackingEnabled != null) {
       if (validatorPerformanceTrackingEnabled) {
@@ -135,8 +129,8 @@ public class ValidatorOptions {
                     new FileBackedGraffitiProvider(
                         Optional.ofNullable(graffiti), Optional.ofNullable(graffitiFile)))
                 .useDependentRoots(useDependentRoots)
-                .generateEarlyAttestations(generateEarlyAttestations)
-                .suggestedFeeRecipient(suggestedFeeRecipient));
+                .generateEarlyAttestations(generateEarlyAttestations));
+    validatorProposerOptions.configure(builder);
     validatorKeysOptions.configure(builder);
   }
 }

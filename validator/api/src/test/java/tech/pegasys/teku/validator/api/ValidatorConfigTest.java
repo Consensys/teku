@@ -130,9 +130,9 @@ class ValidatorConfigTest {
             .build();
 
     Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
-        .isThrownBy(config::getSuggestedFeeRecipient)
+        .isThrownBy(config::getProposerDefaultFeeRecipient)
         .withMessageContaining(
-            "Invalid configuration. --Xvalidators-suggested-fee-recipient-address must be specified when Bellatrix milestone is active");
+            "Invalid configuration. --Xvalidators-proposer-default-fee-recipient must be specified when Bellatrix milestone is active");
   }
 
   @Test
@@ -140,9 +140,9 @@ class ValidatorConfigTest {
     final ValidatorConfig config = configBuilder.validatorKeys(List.of("some string")).build();
 
     Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
-        .isThrownBy(config::getSuggestedFeeRecipient)
+        .isThrownBy(config::getProposerDefaultFeeRecipient)
         .withMessageContaining(
-            "Invalid configuration. --Xvalidators-suggested-fee-recipient-address must be specified when Bellatrix milestone is active");
+            "Invalid configuration. --Xvalidators-proposer-default-fee-recipient must be specified when Bellatrix milestone is active");
   }
 
   @Test
@@ -153,10 +153,10 @@ class ValidatorConfigTest {
             .validatorExternalSignerPublicKeySources(
                 List.of(BLSTestUtil.randomKeyPair(0).getPublicKey().toString()))
             .validatorExternalSignerUrl(URI.create("http://localhost:9000").toURL())
-            .suggestedFeeRecipient("0x0000000000000000000000000000000000000000")
+            .proposerDefaultFeeRecipient("0x0000000000000000000000000000000000000000")
             .build();
 
-    Assertions.assertThatCode(config::getSuggestedFeeRecipient).doesNotThrowAnyException();
+    Assertions.assertThatCode(config::getProposerDefaultFeeRecipient).doesNotThrowAnyException();
   }
 
   @Test
@@ -164,10 +164,10 @@ class ValidatorConfigTest {
     final ValidatorConfig config =
         configBuilder
             .validatorKeys(List.of("some string"))
-            .suggestedFeeRecipient(
+            .proposerDefaultFeeRecipient(
                 Eth1Address.fromHexString("0x0000000000000000000000000000000000000000"))
             .build();
 
-    Assertions.assertThatCode(config::getSuggestedFeeRecipient).doesNotThrowAnyException();
+    Assertions.assertThatCode(config::getProposerDefaultFeeRecipient).doesNotThrowAnyException();
   }
 }

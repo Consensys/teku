@@ -20,9 +20,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
+import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -33,18 +36,24 @@ import tech.pegasys.teku.spec.executionengine.PayloadAttributes;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class PayloadAttributesCalculator {
+  private static final Logger LOG = LogManager.getLogger();
   private static final long MAX_PROPOSER_SEEN_EPOCHS = 2;
 
   private final Spec spec;
   private final EventThread eventThread;
   private final RecentChainData recentChainData;
   private final Map<UInt64, ProposerInfo> proposerInfoByValidatorIndex = new ConcurrentHashMap<>();
+  private final Optional<? extends Bytes20> proposerDefaultFeeRecipient;
 
   public PayloadAttributesCalculator(
-      final Spec spec, final EventThread eventThread, final RecentChainData recentChainData) {
+      final Spec spec,
+      final EventThread eventThread,
+      final RecentChainData recentChainData,
+      final Optional<? extends Bytes20> proposerDefaultFeeRecipient) {
     this.spec = spec;
     this.eventThread = eventThread;
     this.recentChainData = recentChainData;
+    this.proposerDefaultFeeRecipient = proposerDefaultFeeRecipient;
   }
 
   public void updateProposers(
@@ -64,7 +73,8 @@ public class PayloadAttributesCalculator {
   public SafeFuture<Optional<PayloadAttributes>> calculatePayloadAttributes(
       final UInt64 blockSlot,
       final boolean inSync,
-      final ForkChoiceUpdateData forkChoiceUpdateData) {
+      final ForkChoiceUpdateData forkChoiceUpdateData,
+      final boolean mandatoryPayloadAttributes) {
     eventThread.checkOnEventThread();
     if (!inSync) {
       // We don't produce blocks while syncing so don't bother preparing the payload
@@ -82,11 +92,17 @@ public class PayloadAttributesCalculator {
     final UInt64 epoch = spec.computeEpochAtSlot(blockSlot);
     return getStateInEpoch(epoch)
         .thenApplyAsync(
-            maybeState -> calculatePayloadAttributes(blockSlot, epoch, maybeState), eventThread);
+            maybeState ->
+                calculatePayloadAttributes(
+                    blockSlot, epoch, maybeState, mandatoryPayloadAttributes),
+            eventThread);
   }
 
   private Optional<PayloadAttributes> calculatePayloadAttributes(
-      final UInt64 blockSlot, final UInt64 epoch, final Optional<BeaconState> maybeState) {
+      final UInt64 blockSlot,
+      final UInt64 epoch,
+      final Optional<BeaconState> maybeState,
+      final boolean mandatoryPayloadAttributes) {
     eventThread.checkOnEventThread();
     if (maybeState.isEmpty()) {
       return Optional.empty();
@@ -94,13 +110,29 @@ public class PayloadAttributesCalculator {
     final BeaconState state = maybeState.get();
     final UInt64 proposerIndex = UInt64.valueOf(spec.getBeaconProposerIndex(state, blockSlot));
     final ProposerInfo proposerInfo = proposerInfoByValidatorIndex.get(proposerIndex);
-    if (proposerInfo == null) {
+    if (proposerInfo == null && !mandatoryPayloadAttributes) {
       // Proposer is not one of our validators. No need to propose a block.
       return Optional.empty();
     }
     final UInt64 timestamp = spec.computeTimeAtSlot(state, blockSlot);
     final Bytes32 random = spec.getRandaoMix(state, epoch);
-    return Optional.of(new PayloadAttributes(timestamp, random, proposerInfo.feeRecipient));
+    return Optional.of(new PayloadAttributes(timestamp, random, getFeeRecipient(proposerInfo)));
+  }
+
+  // this function MUST return a fee recipient.
+  private Bytes20 getFeeRecipient(final ProposerInfo proposerInfo) {
+    if (proposerInfo != null) {
+      return proposerInfo.feeRecipient;
+    }
+    if (proposerDefaultFeeRecipient.isPresent()) {
+      LOG.warn(
+          "Payload Attributes are required but current proposer hasn't prepared. Using Beacon Node's default values.");
+      return proposerDefaultFeeRecipient.get();
+    }
+    // TODO: rise a RED EVENT LOG?
+    LOG.error(
+        "Payload Attributes are required but current proposer hasn't prepared and there is no default fee recipient configured. FEES ARE GOING TO BE BURNED!");
+    return Bytes20.ZERO;
   }
 
   private SafeFuture<Optional<BeaconState>> getStateInEpoch(final UInt64 requiredEpoch) {
