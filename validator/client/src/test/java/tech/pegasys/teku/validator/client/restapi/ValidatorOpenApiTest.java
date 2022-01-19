@@ -46,6 +46,8 @@ class ValidatorOpenApiTest {
 
     when(config.getRestApiInterface()).thenReturn("127.1.1.1");
     when(config.isRestApiDocsEnabled()).thenReturn(true);
+    when(config.getRestApiKeystoreFile()).thenReturn(Path.of("keystore"));
+    when(config.getRestApiKeystorePasswordFile()).thenReturn(Path.of("pass"));
     when(keyManager.getDataDirLayout()).thenReturn(dataDirLayout);
     when(dataDirLayout.getValidatorDataDirectory()).thenReturn(validatorDataDirectory);
     restApi = ValidatorRestApi.create(config, keyManager);

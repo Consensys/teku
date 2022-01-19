@@ -77,6 +77,22 @@ public class ValidatorRestApiOptions {
       arity = "0..*")
   private final List<String> restApiCorsAllowedOrigins = new ArrayList<>();
 
+  @CommandLine.Option(
+      names = {"--Xvalidator-api-keystore-file"},
+      paramLabel = "<keystoreFile>",
+      description = "Keystore used for ssl for the validator api.",
+      hidden = true,
+      arity = "1")
+  private String keystoreFile;
+
+  @CommandLine.Option(
+      names = {"--Xvalidator-api-keystore-password-file"},
+      paramLabel = "<keystorePasswordFile>",
+      description = "Password used to decrypt the keystore for the validator api.",
+      hidden = true,
+      arity = "1")
+  private String keystorePasswordFile;
+
   public void configure(final TekuConfiguration.Builder builder) {
     builder.validatorApi(
         validatorApiBuilder ->
@@ -86,6 +102,8 @@ public class ValidatorRestApiOptions {
                 .restApiPort(restApiPort)
                 .restApiInterface(restApiInterface)
                 .restApiCorsAllowedOrigins(restApiCorsAllowedOrigins)
+                .validatorApiKeystoreFile(keystoreFile)
+                .validatorApiKeystorePasswordFile(keystorePasswordFile)
                 .restApiHostAllowlist(restApiHostAllowlist));
   }
 }
