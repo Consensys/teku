@@ -77,7 +77,7 @@ public class RestApiBuilder {
 
   public RestApiBuilder sslCertificate(final Path sslPath, final Path sslPasswordPath) {
     this.maybeKeystorePath = Optional.of(sslPath);
-    this.maybePasswordPath = Optional.of(sslPasswordPath);
+    this.maybePasswordPath = Optional.ofNullable(sslPasswordPath);
     return this;
   }
 
@@ -237,14 +237,16 @@ public class RestApiBuilder {
     SslContextFactory sslContextFactory = new SslContextFactory.Server();
     maybeKeystorePath.ifPresent(
         keystorePath -> sslContextFactory.setKeyStorePath(keystorePath.toString()));
-    maybePasswordPath.ifPresent(
+    maybePasswordPath.ifPresentOrElse(
         passwordPath -> {
           try {
             sslContextFactory.setKeyStorePassword(Files.readString(passwordPath, UTF_8).trim());
           } catch (IOException e) {
             LOG.error("Failed to read password file for validator api keystore", e);
           }
-        });
+        },
+        () -> sslContextFactory.setKeyStorePassword(""));
+
     sslContextFactory.setProvider("Conscrypt");
 
     return sslContextFactory;

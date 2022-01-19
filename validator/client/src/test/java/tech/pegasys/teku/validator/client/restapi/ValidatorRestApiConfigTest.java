@@ -34,7 +34,7 @@ class ValidatorRestApiConfigTest {
   void validatorApiRequiresSsl() {
     assertThatThrownBy(() -> ValidatorRestApiConfig.builder().restApiEnabled(true).build())
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("requires ssl keystore and password defined");
+        .hasMessageContaining("requires ssl keystore");
   }
 
   @Test
@@ -51,16 +51,14 @@ class ValidatorRestApiConfigTest {
   }
 
   @Test
-  void validatorApiRequiresPasswordToExist(@TempDir final Path tempPath) throws IOException {
+  void validatorApiDoesNotRequiresPasswordToExist(@TempDir final Path tempPath) throws IOException {
     tempPath.resolve("keystore").toFile().createNewFile();
-    assertThatThrownBy(
-            () ->
-                ValidatorRestApiConfig.builder()
-                    .restApiEnabled(true)
-                    .validatorApiKeystoreFile(tempPath.resolve("keystore").toString())
-                    .validatorApiKeystorePasswordFile(tempPath.resolve("pass").toString())
-                    .build())
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Could not access Validator api password");
+    final ValidatorRestApiConfig config =
+        ValidatorRestApiConfig.builder()
+            .restApiEnabled(true)
+            .validatorApiKeystoreFile(tempPath.resolve("keystore").toString())
+            .build();
+    assertThat(config).isInstanceOf(ValidatorRestApiConfig.class);
+    assertThat(config.isRestApiEnabled()).isTrue();
   }
 }

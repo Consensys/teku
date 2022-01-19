@@ -25,11 +25,18 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class SimpleHttpClient {
-  private final OkHttpClient httpClient = new OkHttpClient();
+  private static final Logger LOG = LogManager.getLogger();
+  protected OkHttpClient httpClient;
   private static final okhttp3.MediaType JSON =
       okhttp3.MediaType.parse("application/json; charset=utf-8");
+
+  public SimpleHttpClient() {
+    httpClient = new OkHttpClient();
+  }
 
   public String get(final URI baseUrl, final String path) throws IOException {
     return this.get(baseUrl, path, Collections.emptyMap());
@@ -37,18 +44,24 @@ public class SimpleHttpClient {
 
   public String get(final URI baseUrl, final String path, Map<String, String> headers)
       throws IOException {
+    LOG.debug("GET {}, headers: {}", path, headers.toString());
     final URL url = baseUrl.resolve(path).toURL();
     final Request.Builder builder = new Request.Builder().url(baseUrl.resolve(path).toURL()).get();
     headers.forEach(builder::header);
-    final Response response = httpClient.newCall(builder.build()).execute();
-    assertThat(response.isSuccessful())
-        .describedAs(
-            "Received unsuccessful response from %s: %s %s",
-            url, response.code(), response.message())
-        .isTrue();
-    final ResponseBody body = response.body();
-    assertThat(body).isNotNull();
-    return body.string();
+    try {
+      final Response response = httpClient.newCall(builder.build()).execute();
+      assertThat(response.isSuccessful())
+          .describedAs(
+              "Received unsuccessful response from %s: %s %s",
+              url, response.code(), response.message())
+          .isTrue();
+      final ResponseBody body = response.body();
+      assertThat(body).isNotNull();
+      return body.string();
+    } catch (IOException e) {
+      LOG.error("GET {} failed", path, e);
+      return "";
+    }
   }
 
   public String post(final URI baseUrl, final String path, final String jsonBody)

@@ -164,21 +164,14 @@ public class ValidatorRestApiConfig {
 
     public ValidatorRestApiConfig build() {
       if (restApiEnabled) {
-        if (restApiKeystoreFile == null || restApiKeystorePasswordFile == null) {
-          throw new IllegalArgumentException(
-              "Validator api requires ssl keystore and password defined.");
+        if (restApiKeystoreFile == null) {
+          throw new IllegalArgumentException("Validator api requires ssl keystore to be defined.");
         }
-        if (!restApiKeystoreFile.toFile().exists()) {
+        if (!restApiKeystoreFile.toFile().exists() || !restApiKeystoreFile.toFile().isFile()) {
           throw new IllegalArgumentException(
               String.format(
                   "Could not access Validator api keystore file %s",
                   restApiKeystoreFile.toAbsolutePath()));
-        }
-        if (!restApiKeystorePasswordFile.toFile().exists()) {
-          throw new IllegalArgumentException(
-              String.format(
-                  "Could not access Validator api password file %s",
-                  restApiKeystorePasswordFile.toAbsolutePath()));
         }
       }
       return new ValidatorRestApiConfig(
