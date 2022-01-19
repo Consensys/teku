@@ -51,7 +51,7 @@ public class GenesisHandlerTest {
   private Spec spec = TestSpecFactory.createPhase0(specConfig);
 
   private final List<DepositData> initialDepositData =
-      new MockStartDepositGenerator(new DepositGenerator(spec, true))
+      new MockStartDepositGenerator(spec, new DepositGenerator(spec, true))
           .createDeposits(VALIDATOR_KEYS);
   private final List<Deposit> initialDeposits =
       IntStream.range(0, initialDepositData.size())

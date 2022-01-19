@@ -37,7 +37,7 @@ import tech.pegasys.teku.spec.executionengine.ExecutePayloadResult;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
 import tech.pegasys.teku.spec.executionengine.PayloadAttributes;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
   private static final Logger LOG = LogManager.getLogger();
@@ -117,7 +117,7 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
         .thenCombine(
             SafeFuture.of(
                 () ->
-                    SchemaDefinitionsMerge.required(spec.atSlot(slot).getSchemaDefinitions())
+                    SchemaDefinitionsBellatrix.required(spec.atSlot(slot).getSchemaDefinitions())
                         .getExecutionPayloadSchema()),
             ExecutionPayloadV1::asInternalExecutionPayload)
         .thenPeek(

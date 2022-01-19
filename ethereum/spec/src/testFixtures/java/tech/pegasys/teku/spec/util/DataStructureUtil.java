@@ -64,7 +64,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.SpecConfigMerge;
+import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
@@ -116,7 +116,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsMerge;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public final class DataStructureUtil {
   private static final Spec DEFAULT_SPEC_PROVIDER = TestSpecFactory.createMinimalPhase0();
@@ -406,21 +406,22 @@ public final class DataStructureUtil {
   }
 
   public ExecutionPayloadHeader randomExecutionPayloadHeader() {
-    final SpecConfigMerge specConfigMerge = SpecConfigMerge.required(spec.getGenesisSpecConfig());
-    return SchemaDefinitionsMerge.required(spec.getGenesisSchemaDefinitions())
+    final SpecConfigBellatrix specConfigBellatrix =
+        SpecConfigBellatrix.required(spec.getGenesisSpecConfig());
+    return SchemaDefinitionsBellatrix.required(spec.getGenesisSchemaDefinitions())
         .getExecutionPayloadHeaderSchema()
         .create(
             randomBytes32(),
             randomBytes20(),
             randomBytes32(),
             randomBytes32(),
-            randomBytes(specConfigMerge.getBytesPerLogsBloom()),
+            randomBytes(specConfigBellatrix.getBytesPerLogsBloom()),
             randomBytes32(),
             randomUInt64(),
             randomUInt64(),
             randomUInt64(),
             randomUInt64(),
-            randomBytes(randomInt(specConfigMerge.getMaxExtraDataBytes())),
+            randomBytes(randomInt(specConfigBellatrix.getMaxExtraDataBytes())),
             randomUInt256(),
             randomBytes32(),
             randomBytes32());
@@ -428,32 +429,33 @@ public final class DataStructureUtil {
 
   public ExecutionPayload randomExecutionPayloadIfRequiredBySchema(
       BeaconBlockBodySchema<?> schema) {
-    return schema.toVersionMerge().map(__ -> randomExecutionPayload()).orElse(null);
+    return schema.toVersionBellatrix().map(__ -> randomExecutionPayload()).orElse(null);
   }
 
   public ExecutionPayload randomExecutionPayload() {
-    final SpecConfigMerge specConfigMerge = SpecConfigMerge.required(spec.getGenesisSpecConfig());
-    return SchemaDefinitionsMerge.required(spec.getGenesisSchemaDefinitions())
+    final SpecConfigBellatrix specConfigBellatrix =
+        SpecConfigBellatrix.required(spec.getGenesisSpecConfig());
+    return SchemaDefinitionsBellatrix.required(spec.getGenesisSchemaDefinitions())
         .getExecutionPayloadSchema()
         .create(
             randomBytes32(),
             randomBytes20(),
             randomBytes32(),
             randomBytes32(),
-            randomBytes(specConfigMerge.getBytesPerLogsBloom()),
+            randomBytes(specConfigBellatrix.getBytesPerLogsBloom()),
             randomBytes32(),
             randomUInt64(),
             randomUInt64(),
             randomUInt64(),
             randomUInt64(),
-            randomBytes(randomInt(specConfigMerge.getMaxExtraDataBytes())),
+            randomBytes(randomInt(specConfigBellatrix.getMaxExtraDataBytes())),
             randomUInt256(),
             randomBytes32(),
             randomExecutionPayloadTransactions());
   }
 
   public ExecutionPayload emptyExecutionPayload() {
-    return getMergeSchemaDefinitions(UInt64.ZERO)
+    return getBellatrixSchemaDefinitions(UInt64.ZERO)
         .getExecutionPayloadSchema()
         .create(
             Bytes32.ZERO,
@@ -995,8 +997,8 @@ public final class DataStructureUtil {
       case ALTAIR:
         return BeaconStateBuilderAltair.create(this, spec, validatorCount, numItemsInSSZLists)
             .build();
-      case MERGE:
-        return BeaconStateBuilderMerge.create(this, spec, validatorCount, numItemsInSSZLists)
+      case BELLATRIX:
+        return BeaconStateBuilderBellatrix.create(this, spec, validatorCount, numItemsInSSZLists)
             .build();
       default:
         throw new IllegalStateException("Unsupported milestone");
@@ -1016,8 +1018,8 @@ public final class DataStructureUtil {
     return BeaconStateBuilderAltair.create(this, spec, 10, 10);
   }
 
-  public BeaconStateBuilderMerge stateBuilderMerge() {
-    return BeaconStateBuilderMerge.create(this, spec, 10, 10);
+  public BeaconStateBuilderBellatrix stateBuilderBellatrix() {
+    return BeaconStateBuilderBellatrix.create(this, spec, 10, 10);
   }
 
   public BeaconState randomBeaconState(UInt64 slot) {
@@ -1118,8 +1120,8 @@ public final class DataStructureUtil {
     return SchemaDefinitionsAltair.required(spec.atSlot(slot).getSchemaDefinitions());
   }
 
-  private SchemaDefinitionsMerge getMergeSchemaDefinitions(final UInt64 slot) {
-    return SchemaDefinitionsMerge.required(spec.atSlot(slot).getSchemaDefinitions());
+  private SchemaDefinitionsBellatrix getBellatrixSchemaDefinitions(final UInt64 slot) {
+    return SchemaDefinitionsBellatrix.required(spec.atSlot(slot).getSchemaDefinitions());
   }
 
   int getEpochsPerEth1VotingPeriod() {

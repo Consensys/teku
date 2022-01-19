@@ -3,7 +3,7 @@
   "properties" : {
     "version" : {
       "type" : "string",
-      "enum" : [ "phase0", "altair", "merge" ]
+      "enum" : [ "phase0", "altair", "bellatrix" ]
     },
     "data" : {
       "$ref" : "#/components/schemas/UnsignedBlock"

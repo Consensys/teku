@@ -105,6 +105,34 @@ public class EventLogger {
     info("Syncing completed", Color.GREEN);
   }
 
+  public void headNoLongerOptimisticWhileSyncing() {
+    info("Execution Client syncing complete. Continuing to sync beacon chain blocks", Color.YELLOW);
+  }
+
+  public void headTurnedOptimisticWhileSyncing() {
+    info(
+        "Execution Client syncing in progress, proceeding with optimistic sync of beacon chain",
+        Color.YELLOW);
+  }
+
+  public void headTurnedOptimisticWhileInSync() {
+    warn(
+        "Unable to execute the current chain head block payload because the Execution Client is syncing. Activating optimistic sync of the beacon chain node",
+        Color.YELLOW);
+  }
+
+  public void syncCompletedWhileHeadIsOptimistic() {
+    info("Beacon chain syncing complete, waiting for Execution Client", Color.YELLOW);
+  }
+
+  public void executionClientIsOffline(Throwable error) {
+    error("Execution Client is offline", Color.RED, error);
+  }
+
+  public void executionClientIsOnline() {
+    info("Execution Client is back online", Color.GREEN);
+  }
+
   public void syncStart() {
     info("Syncing started", Color.YELLOW);
   }
@@ -172,5 +200,9 @@ public class EventLogger {
 
   private void warn(final String message, final Color color) {
     log.warn(print(message, color));
+  }
+
+  private void error(final String message, final Color color, final Throwable error) {
+    log.error(print(message, color), error);
   }
 }

@@ -64,10 +64,10 @@ public class StatusLogger {
             Color.YELLOW));
   }
 
-  public void warnMergeParameterChanged(final String parameterName, final String newValue) {
+  public void warnBellatrixParameterChanged(final String parameterName, final String newValue) {
     log.warn(
         print(
-            "Merge parameter " + parameterName + " has been overridden to " + newValue,
+            "Bellatrix parameter " + parameterName + " has been overridden to " + newValue,
             Color.YELLOW));
   }
 

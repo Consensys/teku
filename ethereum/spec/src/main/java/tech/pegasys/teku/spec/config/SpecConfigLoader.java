@@ -81,10 +81,10 @@ public class SpecConfigLoader {
         }
       }
 
-      try (final InputStream mergeInput = loadMergePreset(preset).orElse(null)) {
-        // Merge is optional
-        if (mergeInput != null) {
-          processor.processConfig(mergeInput);
+      try (final InputStream bellatrixInput = loadBellatrixPreset(preset).orElse(null)) {
+        // Bellatrix is optional
+        if (bellatrixInput != null) {
+          processor.processConfig(bellatrixInput);
         }
       }
     } catch (IOException | IllegalArgumentException e) {
@@ -116,9 +116,9 @@ public class SpecConfigLoader {
         .load(PRESET_PATH + preset + "/altair.yaml", PRESET_PATH + preset + "/altair.yml");
   }
 
-  private static Optional<InputStream> loadMergePreset(final String preset) throws IOException {
+  private static Optional<InputStream> loadBellatrixPreset(final String preset) throws IOException {
     return getPresetLoader()
-        .load(PRESET_PATH + preset + "/merge.yaml", PRESET_PATH + preset + "/merge.yml");
+        .load(PRESET_PATH + preset + "/bellatrix.yaml", PRESET_PATH + preset + "/bellatrix.yml");
   }
 
   private static ResourceLoader getConfigLoader() {
@@ -152,7 +152,7 @@ public class SpecConfigLoader {
                 Stream.of(
                     PRESET_PATH + s + "/phase0.yaml",
                     PRESET_PATH + s + "/altair.yaml",
-                    PRESET_PATH + s + "/merge.yaml"))
+                    PRESET_PATH + s + "/bellatrix.yaml"))
         .collect(Collectors.toList());
   }
 

@@ -35,12 +35,12 @@ import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.merge.BeaconStateMerge;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 
 @TestSpecContext(
-    milestone = {SpecMilestone.ALTAIR, SpecMilestone.MERGE},
+    milestone = {SpecMilestone.ALTAIR, SpecMilestone.BELLATRIX},
     doNotGenerateSpec = true)
 public class StateUpgradeTransitionTest {
   private static final List<BLSKeyPair> VALIDATOR_KEYS =
@@ -64,10 +64,10 @@ public class StateUpgradeTransitionTest {
         beforeBeaconStateClass = BeaconStatePhase0.class;
         afterBeaconStateClass = BeaconStateAltair.class;
         break;
-      case MERGE:
-        spec = TestSpecFactory.createMinimalWithMergeForkEpoch(milestoneTransitionEpoch);
+      case BELLATRIX:
+        spec = TestSpecFactory.createMinimalWithBellatrixForkEpoch(milestoneTransitionEpoch);
         beforeBeaconStateClass = BeaconStateAltair.class;
-        afterBeaconStateClass = BeaconStateMerge.class;
+        afterBeaconStateClass = BeaconStateBellatrix.class;
         break;
       default:
         throw new IllegalArgumentException("unsupported milestone");
@@ -109,7 +109,7 @@ public class StateUpgradeTransitionTest {
 
   private BeaconState createGenesis(final Spec spec) {
     final List<DepositData> initialDepositData =
-        new MockStartDepositGenerator(new DepositGenerator(spec, true))
+        new MockStartDepositGenerator(spec, new DepositGenerator(spec, true))
             .createDeposits(VALIDATOR_KEYS, spec.getGenesisSpecConfig().getMaxEffectiveBalance());
 
     final List<DepositWithIndex> deposits = new ArrayList<>();

@@ -19,7 +19,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.merge.BeaconBlockBodySchemaMerge;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodySchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -48,7 +48,7 @@ public interface BeaconBlockBodySchema<T extends BeaconBlockBody> extends SszCon
     return Optional.empty();
   }
 
-  default Optional<BeaconBlockBodySchemaMerge<?>> toVersionMerge() {
+  default Optional<BeaconBlockBodySchemaBellatrix<?>> toVersionBellatrix() {
     return Optional.empty();
   }
 }

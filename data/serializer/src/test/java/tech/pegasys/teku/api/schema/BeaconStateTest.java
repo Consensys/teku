@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.api.schema.altair.BeaconStateAltair;
-import tech.pegasys.teku.api.schema.merge.BeaconStateMerge;
+import tech.pegasys.teku.api.schema.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecContext;
@@ -40,8 +40,8 @@ public class BeaconStateTest {
       case ALTAIR:
         beaconState = new BeaconStateAltair(beaconStateInternal);
         break;
-      case MERGE:
-        beaconState = new BeaconStateMerge(beaconStateInternal);
+      case BELLATRIX:
+        beaconState = new BeaconStateBellatrix(beaconStateInternal);
         break;
       default:
         throw new IllegalStateException("Unsupported milestone");

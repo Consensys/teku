@@ -55,7 +55,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
-import tech.pegasys.teku.spec.datastructures.operations.versions.merge.BeaconPreparableProposer;
+import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.AttesterDuty;
@@ -424,7 +424,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
                     beaconPreparableProposers.stream()
                         .map(
                             pbp ->
-                                new tech.pegasys.teku.api.schema.merge.BeaconPreparableProposer(
+                                new tech.pegasys.teku.api.schema.bellatrix.BeaconPreparableProposer(
                                     pbp.getValidatorIndex(), pbp.getFeeRecipient()))
                         .collect(toList())))
         .finish(error -> LOG.error("Failed to prepare beacon proposers", error));

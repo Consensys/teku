@@ -515,10 +515,10 @@ public class CombinedChainDataClient {
     return signedBeaconBlocks;
   }
 
-  public boolean isFullyValidatedHotBlock(final Bytes32 blockRoot) {
+  public boolean isOptimisticBlock(final Bytes32 blockRoot) {
     return recentChainData
         .getForkChoiceStrategy()
-        .map(forkChoice -> forkChoice.isFullyValidated(blockRoot))
+        .map(forkChoice -> forkChoice.isOptimistic(blockRoot))
         .orElse(false);
   }
 }

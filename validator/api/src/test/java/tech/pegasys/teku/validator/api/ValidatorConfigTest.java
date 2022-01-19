@@ -120,7 +120,7 @@ class ValidatorConfigTest {
   }
 
   @Test
-  public void merge_shouldThrowExceptionIfExternalSignerPublicKeySourcesIsSpecified()
+  public void bellatrix_shouldThrowExceptionIfExternalSignerPublicKeySourcesIsSpecified()
       throws MalformedURLException {
     final ValidatorConfig config =
         configBuilder
@@ -132,21 +132,21 @@ class ValidatorConfigTest {
     Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
         .isThrownBy(config::getSuggestedFeeRecipient)
         .withMessageContaining(
-            "Invalid configuration. --Xvalidators-suggested-fee-recipient-address must be specified when Merge milestone is active");
+            "Invalid configuration. --Xvalidators-suggested-fee-recipient-address must be specified when Bellatrix milestone is active");
   }
 
   @Test
-  public void merge_shouldThrowExceptionIfValidatorKeysAreSpecified() throws MalformedURLException {
+  public void bellatrix_shouldThrowExceptionIfValidatorKeysAreSpecified() {
     final ValidatorConfig config = configBuilder.validatorKeys(List.of("some string")).build();
 
     Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
         .isThrownBy(config::getSuggestedFeeRecipient)
         .withMessageContaining(
-            "Invalid configuration. --Xvalidators-suggested-fee-recipient-address must be specified when Merge milestone is active");
+            "Invalid configuration. --Xvalidators-suggested-fee-recipient-address must be specified when Bellatrix milestone is active");
   }
 
   @Test
-  public void merge_noExceptionThrownIfIfExternalSignerPublicKeySourcesIsSpecified()
+  public void bellatrix_noExceptionThrownIfIfExternalSignerPublicKeySourcesIsSpecified()
       throws MalformedURLException {
     final ValidatorConfig config =
         configBuilder
@@ -160,7 +160,7 @@ class ValidatorConfigTest {
   }
 
   @Test
-  public void merge_noExceptionThrownIfIfValidatorKeysAreSpecified() {
+  public void bellatrix_noExceptionThrownIfIfValidatorKeysAreSpecified() {
     final ValidatorConfig config =
         configBuilder
             .validatorKeys(List.of("some string"))

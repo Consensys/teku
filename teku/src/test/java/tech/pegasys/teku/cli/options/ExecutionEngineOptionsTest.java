@@ -35,11 +35,11 @@ public class ExecutionEngineOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void shouldReportEEEnabledIfSpecEnablesMerge() {
+  public void shouldReportEEEnabledIfSpecEnablesBellatrix() {
     final String[] args = {
       "--Xnetwork-altair-fork-epoch",
       "0",
-      "--Xnetwork-merge-fork-epoch",
+      "--Xnetwork-bellatrix-fork-epoch",
       "1",
       "--Xee-endpoint",
       "http://example.com:1234/path/"
@@ -49,7 +49,8 @@ public class ExecutionEngineOptionsTest extends AbstractBeaconNodeCommandTest {
 
     assertThat(
             createConfigBuilder()
-                .eth2NetworkConfig(b -> b.altairForkEpoch(UInt64.ZERO).mergeForkEpoch(UInt64.ONE))
+                .eth2NetworkConfig(
+                    b -> b.altairForkEpoch(UInt64.ZERO).bellatrixForkEpoch(UInt64.ONE))
                 .executionEngine(b -> b.endpoint("http://example.com:1234/path/"))
                 .build())
         .usingRecursiveComparison()
@@ -64,7 +65,9 @@ public class ExecutionEngineOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   void shouldThrowInvalidConfigurationExceptionIfEndpointRequiredButNotSpecified() {
-    final String[] args = {"--Xnetwork-altair-fork-epoch", "0", "--Xnetwork-merge-fork-epoch", "1"};
+    final String[] args = {
+      "--Xnetwork-altair-fork-epoch", "0", "--Xnetwork-bellatrix-fork-epoch", "1"
+    };
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     assertThatThrownBy(config.executionEngine()::getEndpoint)
         .isInstanceOf(InvalidConfigurationException.class);

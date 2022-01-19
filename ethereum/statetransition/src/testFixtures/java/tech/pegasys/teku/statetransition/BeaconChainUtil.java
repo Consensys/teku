@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static org.mockito.Mockito.mock;
 import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
-import static tech.pegasys.teku.util.config.Constants.MIN_ATTESTATION_INCLUSION_DELAY;
 
 import java.util.List;
 import java.util.Optional;
@@ -323,7 +322,10 @@ public class BeaconChainUtil {
     }
 
     AttestationGenerator attestationGenerator = new AttestationGenerator(spec, validatorKeys);
-    createAndImportBlockAtSlot(recentChainData.getHeadSlot().plus(MIN_ATTESTATION_INCLUSION_DELAY));
+    createAndImportBlockAtSlot(
+        recentChainData
+            .getHeadSlot()
+            .plus(spec.getGenesisSpecConfig().getMinAttestationInclusionDelay()));
 
     while (recentChainData.getStore().getFinalizedCheckpoint().getEpoch().compareTo(epoch) < 0) {
 

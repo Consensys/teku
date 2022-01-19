@@ -33,7 +33,7 @@ public class ExecutionEngineConfiguration {
   }
 
   public boolean isEnabled() {
-    return spec.isMilestoneSupported(SpecMilestone.MERGE);
+    return spec.isMilestoneSupported(SpecMilestone.BELLATRIX);
   }
 
   public Spec getSpec() {
@@ -44,7 +44,7 @@ public class ExecutionEngineConfiguration {
     return endpoint.orElseThrow(
         () ->
             new InvalidConfigurationException(
-                "Invalid configuration. --Xee-endpoint parameter is mandatory when Merge milestone is enabled"));
+                "Invalid configuration. --Xee-endpoint parameter is mandatory when Bellatrix milestone is enabled"));
   }
 
   public static class Builder {

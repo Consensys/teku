@@ -45,7 +45,7 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 public class ReexecutingExecutionPayloadBlockManagerTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
-  private final Spec spec = TestSpecFactory.createMinimalMerge();
+  private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final BlockImportNotifications blockImportNotifications =
       mock(BlockImportNotifications.class);
   private final UInt64 historicalBlockTolerance = UInt64.valueOf(5);

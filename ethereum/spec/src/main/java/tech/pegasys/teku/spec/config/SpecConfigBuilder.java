@@ -104,8 +104,8 @@ public class SpecConfigBuilder {
   // Altair
   private Optional<AltairBuilder> altairBuilder = Optional.empty();
 
-  // Merge
-  private Optional<MergeBuilder> mergeBuilder = Optional.empty();
+  // Bellatrix
+  private Optional<BellatrixBuilder> bellatrixBuilder = Optional.empty();
 
   public SpecConfig build() {
     validate();
@@ -165,9 +165,9 @@ public class SpecConfigBuilder {
     if (altairBuilder.isPresent()) {
       final SpecConfigAltair altairConfig = altairBuilder.get().build(config);
       config = altairConfig;
-      if (mergeBuilder.isPresent()) {
-        final SpecConfigMerge mergeConfig = mergeBuilder.get().build(altairConfig);
-        config = mergeBuilder.get().build(mergeConfig);
+      if (bellatrixBuilder.isPresent()) {
+        final SpecConfigBellatrix bellatrixConfig = bellatrixBuilder.get().build(altairConfig);
+        config = bellatrixBuilder.get().build(bellatrixConfig);
       }
     }
     return config;
@@ -225,7 +225,7 @@ public class SpecConfigBuilder {
     validateConstant("depositContractAddress", depositContractAddress);
 
     altairBuilder.ifPresent(AltairBuilder::validate);
-    mergeBuilder.ifPresent(MergeBuilder::validate);
+    bellatrixBuilder.ifPresent(BellatrixBuilder::validate);
   }
 
   private void validateConstant(final String name, final Object value) {
@@ -676,22 +676,22 @@ public class SpecConfigBuilder {
     }
   }
 
-  // Merge
-  public SpecConfigBuilder mergeBuilder(final Consumer<MergeBuilder> consumer) {
-    if (mergeBuilder.isEmpty()) {
-      mergeBuilder = Optional.of(new MergeBuilder());
+  // Bellatrix
+  public SpecConfigBuilder bellatrixBuilder(final Consumer<BellatrixBuilder> consumer) {
+    if (bellatrixBuilder.isEmpty()) {
+      bellatrixBuilder = Optional.of(new BellatrixBuilder());
     }
-    consumer.accept(mergeBuilder.get());
+    consumer.accept(bellatrixBuilder.get());
     return this;
   }
 
-  public class MergeBuilder {
+  public class BellatrixBuilder {
     // Fork
-    private Bytes4 mergeForkVersion;
-    private UInt64 mergeForkEpoch;
-    private UInt64 inactivityPenaltyQuotientMerge;
-    private Integer minSlashingPenaltyQuotientMerge;
-    private Integer proportionalSlashingMultiplierMerge;
+    private Bytes4 bellatrixForkVersion;
+    private UInt64 bellatrixForkEpoch;
+    private UInt64 inactivityPenaltyQuotientBellatrix;
+    private Integer minSlashingPenaltyQuotientBellatrix;
+    private Integer proportionalSlashingMultiplierBellatrix;
     private Integer maxBytesPerTransaction;
     private Integer maxTransactionsPerPayload;
     private Integer bytesPerLogsBloom;
@@ -702,16 +702,19 @@ public class SpecConfigBuilder {
     private Bytes32 terminalBlockHash;
     private UInt64 terminalBlockHashActivationEpoch;
 
-    private MergeBuilder() {}
+    // Optimistic Sync
+    private int safeSlotsToImportOptimistically = 128;
 
-    SpecConfigMerge build(final SpecConfigAltair specConfig) {
-      return new SpecConfigMerge(
+    private BellatrixBuilder() {}
+
+    SpecConfigBellatrix build(final SpecConfigAltair specConfig) {
+      return new SpecConfigBellatrix(
           specConfig,
-          mergeForkVersion,
-          mergeForkEpoch,
-          inactivityPenaltyQuotientMerge,
-          minSlashingPenaltyQuotientMerge,
-          proportionalSlashingMultiplierMerge,
+          bellatrixForkVersion,
+          bellatrixForkEpoch,
+          inactivityPenaltyQuotientBellatrix,
+          minSlashingPenaltyQuotientBellatrix,
+          proportionalSlashingMultiplierBellatrix,
           maxBytesPerTransaction,
           maxTransactionsPerPayload,
           bytesPerLogsBloom,
@@ -722,11 +725,12 @@ public class SpecConfigBuilder {
     }
 
     void validate() {
-      validateConstant("mergeForkVersion", mergeForkVersion);
-      validateConstant("mergeForkEpoch", mergeForkEpoch);
-      validateConstant("inactivityPenaltyQuotientMerge", inactivityPenaltyQuotientMerge);
-      validateConstant("minSlashingPenaltyQuotientMerge", minSlashingPenaltyQuotientMerge);
-      validateConstant("proportionalSlashingMultiplierMerge", proportionalSlashingMultiplierMerge);
+      validateConstant("bellatrixForkVersion", bellatrixForkVersion);
+      validateConstant("bellatrixForkEpoch", bellatrixForkEpoch);
+      validateConstant("inactivityPenaltyQuotientBellatrix", inactivityPenaltyQuotientBellatrix);
+      validateConstant("minSlashingPenaltyQuotientBellatrix", minSlashingPenaltyQuotientBellatrix);
+      validateConstant(
+          "proportionalSlashingMultiplierBellatrix", proportionalSlashingMultiplierBellatrix);
       validateConstant("maxBytesPerTransaction", maxBytesPerTransaction);
       validateConstant("maxTransactionsPerPayload", maxTransactionsPerPayload);
       validateConstant("bytesPerLogsBloom", bytesPerLogsBloom);
@@ -747,73 +751,79 @@ public class SpecConfigBuilder {
       }
     }
 
-    public MergeBuilder mergeForkVersion(final Bytes4 mergeForkVersion) {
-      checkNotNull(mergeForkVersion);
-      this.mergeForkVersion = mergeForkVersion;
+    public BellatrixBuilder bellatrixForkVersion(final Bytes4 bellatrixForkVersion) {
+      checkNotNull(bellatrixForkVersion);
+      this.bellatrixForkVersion = bellatrixForkVersion;
       return this;
     }
 
-    public MergeBuilder mergeForkEpoch(final UInt64 mergeForkEpoch) {
-      checkNotNull(mergeForkEpoch);
-      this.mergeForkEpoch = mergeForkEpoch;
-      rawConfig.put("MERGE_FORK_EPOCH", mergeForkEpoch);
+    public BellatrixBuilder bellatrixForkEpoch(final UInt64 bellatrixForkEpoch) {
+      checkNotNull(bellatrixForkEpoch);
+      this.bellatrixForkEpoch = bellatrixForkEpoch;
+      rawConfig.put("MERGE_FORK_EPOCH", bellatrixForkEpoch);
       return this;
     }
 
-    public MergeBuilder inactivityPenaltyQuotientMerge(
-        final UInt64 inactivityPenaltyQuotientMerge) {
-      this.inactivityPenaltyQuotientMerge = inactivityPenaltyQuotientMerge;
+    public BellatrixBuilder inactivityPenaltyQuotientBellatrix(
+        final UInt64 inactivityPenaltyQuotientBellatrix) {
+      this.inactivityPenaltyQuotientBellatrix = inactivityPenaltyQuotientBellatrix;
       return this;
     }
 
-    public MergeBuilder minSlashingPenaltyQuotientMerge(
-        final Integer minSlashingPenaltyQuotientMerge) {
-      this.minSlashingPenaltyQuotientMerge = minSlashingPenaltyQuotientMerge;
+    public BellatrixBuilder minSlashingPenaltyQuotientBellatrix(
+        final Integer minSlashingPenaltyQuotientBellatrix) {
+      this.minSlashingPenaltyQuotientBellatrix = minSlashingPenaltyQuotientBellatrix;
       return this;
     }
 
-    public MergeBuilder proportionalSlashingMultiplierMerge(
-        final Integer proportionalSlashingMultiplierMerge) {
-      this.proportionalSlashingMultiplierMerge = proportionalSlashingMultiplierMerge;
+    public BellatrixBuilder proportionalSlashingMultiplierBellatrix(
+        final Integer proportionalSlashingMultiplierBellatrix) {
+      this.proportionalSlashingMultiplierBellatrix = proportionalSlashingMultiplierBellatrix;
       return this;
     }
 
-    public MergeBuilder maxBytesPerTransaction(final int maxBytesPerTransaction) {
+    public BellatrixBuilder maxBytesPerTransaction(final int maxBytesPerTransaction) {
       this.maxBytesPerTransaction = maxBytesPerTransaction;
       return this;
     }
 
-    public MergeBuilder maxTransactionsPerPayload(final int maxTransactionsPerPayload) {
+    public BellatrixBuilder maxTransactionsPerPayload(final int maxTransactionsPerPayload) {
       this.maxTransactionsPerPayload = maxTransactionsPerPayload;
       return this;
     }
 
-    public MergeBuilder bytesPerLogsBloom(final int bytesPerLogsBloom) {
+    public BellatrixBuilder bytesPerLogsBloom(final int bytesPerLogsBloom) {
       this.bytesPerLogsBloom = bytesPerLogsBloom;
       return this;
     }
 
-    public MergeBuilder terminalTotalDifficulty(final UInt256 terminalTotalDifficulty) {
+    public BellatrixBuilder terminalTotalDifficulty(final UInt256 terminalTotalDifficulty) {
       this.terminalTotalDifficulty = terminalTotalDifficulty;
       rawConfig.put("TERMINAL_TOTAL_DIFFICULTY", terminalTotalDifficulty);
       return this;
     }
 
-    public MergeBuilder terminalBlockHash(final Bytes32 terminalBlockHash) {
+    public BellatrixBuilder terminalBlockHash(final Bytes32 terminalBlockHash) {
       this.terminalBlockHash = terminalBlockHash;
       rawConfig.put("TERMINAL_BLOCK_HASH", terminalBlockHash);
       return this;
     }
 
-    public MergeBuilder terminalBlockHashActivationEpoch(
+    public BellatrixBuilder terminalBlockHashActivationEpoch(
         final UInt64 terminalBlockHashActivationEpoch) {
       this.terminalBlockHashActivationEpoch = terminalBlockHashActivationEpoch;
       rawConfig.put("TERMINAL_BLOCK_HASH_ACTIVATION_EPOCH", terminalBlockHashActivationEpoch);
       return this;
     }
 
-    public MergeBuilder maxExtraDataBytes(final int maxExtraDataBytes) {
+    public BellatrixBuilder maxExtraDataBytes(final int maxExtraDataBytes) {
       this.maxExtraDataBytes = maxExtraDataBytes;
+      return this;
+    }
+
+    public BellatrixBuilder safeSlotsToImportOptimistically(
+        final int safeSlotsToImportOptimistically) {
+      this.safeSlotsToImportOptimistically = safeSlotsToImportOptimistically;
       return this;
     }
   }

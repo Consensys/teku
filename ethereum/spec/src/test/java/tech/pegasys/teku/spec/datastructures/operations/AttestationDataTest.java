@@ -20,41 +20,29 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.util.config.Constants;
 
 class AttestationDataTest {
-  private final Spec spec = TestSpecFactory.createDefault();
+  private final Spec spec =
+      TestSpecFactory.createDefault(builder -> builder.minAttestationInclusionDelay(2));
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private UInt64 slot = dataStructureUtil.randomUInt64();
-  private UInt64 index = dataStructureUtil.randomUInt64();
-  private Bytes32 beaconBlockRoot = dataStructureUtil.randomBytes32();
-  private UInt64 source_epoch = dataStructureUtil.randomUInt64();
-  private Bytes32 source_root = dataStructureUtil.randomBytes32();
-  private UInt64 target_epoch = dataStructureUtil.randomUInt64();
-  private Bytes32 target_root = dataStructureUtil.randomBytes32();
-  private Checkpoint source = new Checkpoint(source_epoch, source_root);
-  private Checkpoint target = new Checkpoint(target_epoch, target_root);
+  private final UInt64 slot = dataStructureUtil.randomUInt64();
+  private final UInt64 index = dataStructureUtil.randomUInt64();
+  private final Bytes32 beaconBlockRoot = dataStructureUtil.randomBytes32();
+  private final UInt64 source_epoch = dataStructureUtil.randomUInt64();
+  private final Bytes32 source_root = dataStructureUtil.randomBytes32();
+  private final UInt64 target_epoch = dataStructureUtil.randomUInt64();
+  private final Bytes32 target_root = dataStructureUtil.randomBytes32();
+  private final Checkpoint source = new Checkpoint(source_epoch, source_root);
+  private final Checkpoint target = new Checkpoint(target_epoch, target_root);
 
-  private AttestationData attestationData =
+  private final AttestationData attestationData =
       new AttestationData(slot, index, beaconBlockRoot, source, target);
-
-  @BeforeAll
-  static void initialize() {
-    Constants.MIN_ATTESTATION_INCLUSION_DELAY = 2;
-  }
-
-  @AfterAll
-  static void reset() {
-    Constants.setConstants("minimal");
-  }
 
   @Test
   void shouldNotBeProcessableBeforeSlotAfterCreationSlot() {

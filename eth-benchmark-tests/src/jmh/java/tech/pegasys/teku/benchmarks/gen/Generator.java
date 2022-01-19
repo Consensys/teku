@@ -13,9 +13,6 @@
 
 package tech.pegasys.teku.benchmarks.gen;
 
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.get_current_epoch;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -79,13 +76,14 @@ public class Generator {
     UInt64 currentSlot = localStorage.getHeadSlot();
     List<Attestation> attestations = Collections.emptyList();
 
+    final int slotsPerEpoch = spec.getGenesisSpecConfig().getSlotsPerEpoch();
     String blocksFile =
-        "blocks_epoch_" + Constants.SLOTS_PER_EPOCH + "_validators_" + validatorsCount + ".ssz.gz";
+        "blocks_epoch_" + slotsPerEpoch + "_validators_" + validatorsCount + ".ssz.gz";
 
     try (Writer writer = BlockIO.createFileWriter(blocksFile)) {
 
       for (int j = 0; j < 50; j++) {
-        for (int i = 0; i < Constants.SLOTS_PER_EPOCH; i++) {
+        for (int i = 0; i < slotsPerEpoch; i++) {
           long s = System.currentTimeMillis();
           currentSlot = currentSlot.plus(UInt64.ONE);
 
@@ -150,7 +148,7 @@ public class Generator {
   }
 
   String getCommittees(final Spec spec, BeaconState state) {
-    UInt64 cnt = get_committee_count_per_slot(state, get_current_epoch(state));
+    UInt64 cnt = spec.getCommitteeCountPerSlot(state, spec.getCurrentEpoch(state));
     List<List<Integer>> committees = new ArrayList<>();
     for (UInt64 index = UInt64.ZERO; index.compareTo(cnt) < 0; index = index.plus(UInt64.ONE)) {
 

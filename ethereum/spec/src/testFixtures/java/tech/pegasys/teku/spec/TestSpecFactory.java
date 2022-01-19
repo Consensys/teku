@@ -13,17 +13,25 @@
 
 package tech.pegasys.teku.spec;
 
+import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
+import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
+import tech.pegasys.teku.spec.config.SpecConfigBuilder;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
-import tech.pegasys.teku.spec.config.SpecConfigMerge;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class TestSpecFactory {
 
   public static Spec createDefault() {
-    return createMinimalPhase0();
+    return createDefault(__ -> {});
+  }
+
+  public static Spec createDefault(final Consumer<SpecConfigBuilder> modifier) {
+    final SpecConfig config =
+        SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName(), modifier);
+    return create(config, SpecMilestone.PHASE0);
   }
 
   public static Spec createMinimal(final SpecMilestone specMilestone) {
@@ -32,8 +40,8 @@ public class TestSpecFactory {
         return createMinimalPhase0();
       case ALTAIR:
         return createMinimalAltair();
-      case MERGE:
-        return createMinimalMerge();
+      case BELLATRIX:
+        return createMinimalBellatrix();
       default:
         throw new IllegalStateException("unsupported milestone");
     }
@@ -45,16 +53,16 @@ public class TestSpecFactory {
         return createMainnetPhase0();
       case ALTAIR:
         return createMainnetAltair();
-      case MERGE:
-        return createMainnetMerge();
+      case BELLATRIX:
+        return createMainnetBellatrix();
       default:
         throw new IllegalStateException("unsupported milestone");
     }
   }
 
-  public static Spec createMinimalMerge() {
-    final SpecConfigMerge specConfig = getMergeSpecConfig(Eth2Network.MINIMAL);
-    return create(specConfig, SpecMilestone.MERGE);
+  public static Spec createMinimalBellatrix() {
+    final SpecConfigBellatrix specConfig = getBellatrixSpecConfig(Eth2Network.MINIMAL);
+    return create(specConfig, SpecMilestone.BELLATRIX);
   }
 
   public static Spec createMinimalAltair() {
@@ -74,15 +82,15 @@ public class TestSpecFactory {
   }
 
   /**
-   * Create a spec that forks to merge at the provided slot (altair genesis)
+   * Create a spec that forks to bellatrix at the provided slot (altair genesis)
    *
-   * @param mergeForkEpoch The merge fork epoch
-   * @return A spec with altair and merge enabled, forking to merge at the given epoch
+   * @param bellatrixForkEpoch The bellatrix fork epoch
+   * @return A spec with altair and bellatrix enabled, forking to bellatrix at the given epoch
    */
-  public static Spec createMinimalWithMergeForkEpoch(final UInt64 mergeForkEpoch) {
-    final SpecConfigMerge config =
-        getMergeSpecConfig(Eth2Network.MINIMAL, UInt64.ZERO, mergeForkEpoch);
-    return create(config, SpecMilestone.MERGE);
+  public static Spec createMinimalWithBellatrixForkEpoch(final UInt64 bellatrixForkEpoch) {
+    final SpecConfigBellatrix config =
+        getBellatrixSpecConfig(Eth2Network.MINIMAL, UInt64.ZERO, bellatrixForkEpoch);
+    return create(config, SpecMilestone.BELLATRIX);
   }
 
   public static Spec createMinimalPhase0() {
@@ -90,9 +98,9 @@ public class TestSpecFactory {
     return create(specConfig, SpecMilestone.PHASE0);
   }
 
-  public static Spec createMainnetMerge() {
-    final SpecConfigMerge specConfig = getMergeSpecConfig(Eth2Network.MAINNET);
-    return create(specConfig, SpecMilestone.MERGE);
+  public static Spec createMainnetBellatrix() {
+    final SpecConfigBellatrix specConfig = getBellatrixSpecConfig(Eth2Network.MAINNET);
+    return create(specConfig, SpecMilestone.BELLATRIX);
   }
 
   public static Spec createMainnetAltair() {
@@ -118,8 +126,8 @@ public class TestSpecFactory {
     return create(config, SpecMilestone.ALTAIR);
   }
 
-  public static Spec createMerge(final SpecConfig config) {
-    return create(config, SpecMilestone.MERGE);
+  public static Spec createBellatrix(final SpecConfig config) {
+    return create(config, SpecMilestone.BELLATRIX);
   }
 
   public static Spec create(final SpecMilestone specMilestone, final Eth2Network network) {
@@ -128,8 +136,8 @@ public class TestSpecFactory {
         return create(SpecConfigLoader.loadConfig(network.configName()), specMilestone);
       case ALTAIR:
         return create(getAltairSpecConfig(network), specMilestone);
-      case MERGE:
-        return create(getMergeSpecConfig(network), specMilestone);
+      case BELLATRIX:
+        return create(getBellatrixSpecConfig(network), specMilestone);
       default:
         throw new IllegalStateException("unsupported milestone");
     }
@@ -151,17 +159,17 @@ public class TestSpecFactory {
             network.configName(), c -> c.altairBuilder(a -> a.altairForkEpoch(altairForkEpoch))));
   }
 
-  private static SpecConfigMerge getMergeSpecConfig(final Eth2Network network) {
-    return getMergeSpecConfig(network, UInt64.ZERO, UInt64.ZERO);
+  private static SpecConfigBellatrix getBellatrixSpecConfig(final Eth2Network network) {
+    return getBellatrixSpecConfig(network, UInt64.ZERO, UInt64.ZERO);
   }
 
-  private static SpecConfigMerge getMergeSpecConfig(
-      final Eth2Network network, final UInt64 altairForkEpoch, UInt64 mergeForkEpoch) {
-    return SpecConfigMerge.required(
+  private static SpecConfigBellatrix getBellatrixSpecConfig(
+      final Eth2Network network, final UInt64 altairForkEpoch, UInt64 bellatrixForkEpoch) {
+    return SpecConfigBellatrix.required(
         SpecConfigLoader.loadConfig(
             network.configName(),
             c ->
                 c.altairBuilder(a -> a.altairForkEpoch(altairForkEpoch))
-                    .mergeBuilder(m -> m.mergeForkEpoch(mergeForkEpoch))));
+                    .bellatrixBuilder(m -> m.bellatrixForkEpoch(bellatrixForkEpoch))));
   }
 }

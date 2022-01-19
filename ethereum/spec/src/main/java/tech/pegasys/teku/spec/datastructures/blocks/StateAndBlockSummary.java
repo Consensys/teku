@@ -90,7 +90,7 @@ public class StateAndBlockSummary implements BeaconBlockSummary {
 
   public Optional<Bytes32> getExecutionBlockHash() {
     return state
-        .toVersionMerge()
+        .toVersionBellatrix()
         .map(state -> state.getLatestExecutionPayloadHeader().getBlockHash());
   }
 
