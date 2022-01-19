@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.client.restapi;
 
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -33,14 +34,19 @@ public class ValidatorRestApiConfig {
   private final List<String> restApiCorsAllowedOrigins;
   private final int maxUrlLength;
 
-  public ValidatorRestApiConfig(
+  private final Path restApiKeystoreFile;
+  private final Path restApiKeystorePasswordFile;
+
+  private ValidatorRestApiConfig(
       final int restApiPort,
       final boolean restApiDocsEnabled,
       final boolean restApiEnabled,
       final String restApiInterface,
       final List<String> restApiHostAllowlist,
       final List<String> restApiCorsAllowedOrigins,
-      final int maxUrlLength) {
+      final int maxUrlLength,
+      final Path restApiKeystoreFile,
+      final Path restApiKeystorePasswordFile) {
     this.restApiPort = restApiPort;
     this.restApiDocsEnabled = restApiDocsEnabled;
     this.restApiEnabled = restApiEnabled;
@@ -48,6 +54,8 @@ public class ValidatorRestApiConfig {
     this.restApiHostAllowlist = restApiHostAllowlist;
     this.restApiCorsAllowedOrigins = restApiCorsAllowedOrigins;
     this.maxUrlLength = maxUrlLength;
+    this.restApiKeystoreFile = restApiKeystoreFile;
+    this.restApiKeystorePasswordFile = restApiKeystorePasswordFile;
   }
 
   public static ValidatorRestApiConfigBuilder builder() {
@@ -82,6 +90,14 @@ public class ValidatorRestApiConfig {
     return maxUrlLength;
   }
 
+  public Path getRestApiKeystoreFile() {
+    return restApiKeystoreFile;
+  }
+
+  public Path getRestApiKeystorePasswordFile() {
+    return restApiKeystorePasswordFile;
+  }
+
   public static final class ValidatorRestApiConfigBuilder {
     // Validator rest api
     private int restApiPort = DEFAULT_REST_API_PORT;
@@ -91,9 +107,26 @@ public class ValidatorRestApiConfig {
     private List<String> restApiHostAllowlist = DEFAULT_REST_API_HOST_ALLOWLIST;
     private List<String> restApiCorsAllowedOrigins = Collections.emptyList();
     private int maxUrlLength = MAX_URL_LENGTH;
+    private Path restApiKeystoreFile;
+    private Path restApiKeystorePasswordFile;
 
     public ValidatorRestApiConfigBuilder restApiPort(final int restApiPort) {
       this.restApiPort = restApiPort;
+      return this;
+    }
+
+    public ValidatorRestApiConfigBuilder validatorApiKeystoreFile(final String keystoreFile) {
+      if (keystoreFile != null) {
+        this.restApiKeystoreFile = Path.of(keystoreFile);
+      }
+      return this;
+    }
+
+    public ValidatorRestApiConfigBuilder validatorApiKeystorePasswordFile(
+        final String keystorePasswordFile) {
+      if (keystorePasswordFile != null) {
+        this.restApiKeystorePasswordFile = Path.of(keystorePasswordFile);
+      }
       return this;
     }
 
@@ -130,6 +163,17 @@ public class ValidatorRestApiConfig {
     }
 
     public ValidatorRestApiConfig build() {
+      if (restApiEnabled) {
+        if (restApiKeystoreFile == null) {
+          throw new IllegalArgumentException("Validator api requires ssl keystore to be defined.");
+        }
+        if (!restApiKeystoreFile.toFile().exists() || !restApiKeystoreFile.toFile().isFile()) {
+          throw new IllegalArgumentException(
+              String.format(
+                  "Could not access Validator api keystore file %s",
+                  restApiKeystoreFile.toAbsolutePath()));
+        }
+      }
       return new ValidatorRestApiConfig(
           restApiPort,
           restApiDocsEnabled,
@@ -137,7 +181,9 @@ public class ValidatorRestApiConfig {
           restApiInterface,
           restApiHostAllowlist,
           restApiCorsAllowedOrigins,
-          maxUrlLength);
+          maxUrlLength,
+          restApiKeystoreFile,
+          restApiKeystorePasswordFile);
     }
   }
 }
