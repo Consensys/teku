@@ -15,6 +15,7 @@ package tech.pegasys.teku.networks;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Arrays.asList;
+import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
 import static tech.pegasys.teku.spec.networks.Eth2Network.KINTSUGI;
 import static tech.pegasys.teku.spec.networks.Eth2Network.LESS_SWIFT;
 import static tech.pegasys.teku.spec.networks.Eth2Network.MAINNET;
@@ -189,6 +190,7 @@ public class Eth2NetworkConfiguration {
     private Optional<Bytes32> terminalBlockHashOverride = Optional.empty();
     private Optional<UInt256> totalTerminalDifficultyOverride = Optional.empty();
     private Optional<UInt64> terminalBlockHashEpochOverride = Optional.empty();
+    private int safeSlotsToImportOptimistically = DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
     private Spec spec;
 
     public void spec(Spec spec) {
@@ -198,7 +200,21 @@ public class Eth2NetworkConfiguration {
     public Eth2NetworkConfiguration build() {
       checkNotNull(constants, "Missing constants");
       if (spec == null) {
-        spec = SpecFactory.create(constants, altairForkEpoch, bellatrixForkEpoch);
+        spec =
+            SpecFactory.create(
+                constants,
+                builder -> {
+                  altairForkEpoch.ifPresent(
+                      forkEpoch ->
+                          builder.altairBuilder(
+                              altairBuilder -> altairBuilder.altairForkEpoch(forkEpoch)));
+                  builder.bellatrixBuilder(
+                      bellatrixBuilder -> {
+                        bellatrixBuilder.safeSlotsToImportOptimistically(
+                            safeSlotsToImportOptimistically);
+                        bellatrixForkEpoch.ifPresent(bellatrixBuilder::bellatrixForkEpoch);
+                      });
+                });
       }
       // if the deposit contract was not set, default from constants
       if (eth1DepositContractAddress == null) {
@@ -295,6 +311,11 @@ public class Eth2NetworkConfiguration {
 
     public Builder bellatrixForkEpoch(final UInt64 bellatrixForkEpoch) {
       this.bellatrixForkEpoch = Optional.of(bellatrixForkEpoch);
+      return this;
+    }
+
+    public Builder safeSlotsToImportOptimistically(final int safeSlotsToImportOptimistically) {
+      this.safeSlotsToImportOptimistically = safeSlotsToImportOptimistically;
       return this;
     }
 

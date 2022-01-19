@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.config;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static tech.pegasys.teku.spec.config.SpecConfigFormatter.camelToSnakeCase;
+import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
 
 import java.math.BigInteger;
 import java.util.HashMap;
@@ -702,7 +703,7 @@ public class SpecConfigBuilder {
     private UInt64 terminalBlockHashActivationEpoch;
 
     // Optimistic Sync
-    private int safeSlotsToImportOptimistically = 128;
+    private int safeSlotsToImportOptimistically = DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
 
     private BellatrixBuilder() {}
 
