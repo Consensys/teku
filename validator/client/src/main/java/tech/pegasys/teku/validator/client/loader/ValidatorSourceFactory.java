@@ -88,9 +88,9 @@ public class ValidatorSourceFactory {
       return Optional.empty();
     }
     final DataDirLayout dataDirLayout = maybeDataDir.get();
-    final Path keystorePath = ValidatorClientService.getAlterableKeystorePath(dataDirLayout);
+    final Path keystorePath = ValidatorClientService.getManagedLocalKeystorePath(dataDirLayout);
     final Path keystorePasswordPath =
-        ValidatorClientService.getAlterableKeystorePasswordPath(dataDirLayout);
+        ValidatorClientService.getManagedLocalKeystorePasswordPath(dataDirLayout);
 
     if (!ensurePathExists(keystorePath) || !ensurePathExists(keystorePasswordPath)) {
       LOG.error("Could not initialise mutable paths, mutable storage will not be available");

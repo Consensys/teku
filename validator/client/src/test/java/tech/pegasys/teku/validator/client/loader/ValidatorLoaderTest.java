@@ -720,11 +720,11 @@ class ValidatorLoaderTest {
 
   private void writeMutableKeystore(final DataDirLayout tempDir) throws Exception {
     final URL resource = Resources.getResource("testKeystore.json");
-    final Path keystore = ValidatorClientService.getAlterableKeystorePath(tempDir);
-    final Path keystorePassword = ValidatorClientService.getAlterableKeystorePasswordPath(tempDir);
-    Files.createDirectory(tempDir.getValidatorDataDirectory());
-    Files.createDirectory(keystore);
-    Files.createDirectory(keystorePassword);
+    final Path keystore = ValidatorClientService.getManagedLocalKeystorePath(tempDir);
+    final Path keystorePassword =
+        ValidatorClientService.getManagedLocalKeystorePasswordPath(tempDir);
+    assertThat(keystore.toFile().mkdirs()).isTrue();
+    assertThat(keystorePassword.toFile().mkdirs()).isTrue();
     Files.copy(Path.of(resource.toURI()), keystore.resolve("key.json"));
     Files.writeString(keystorePassword.resolve("key.txt"), "testpassword");
   }
