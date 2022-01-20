@@ -879,9 +879,21 @@ public class BeaconChainController extends Service
             spec,
             executionEngine,
             recentChainData,
-            spec.isMilestoneSupported(SpecMilestone.BELLATRIX)
-                ? beaconConfig.validatorConfig().getProposerDefaultFeeRecipient()
-                : Optional.of(Bytes20.ZERO));
+            getProposerDefaultFeeRecipient());
+  }
+
+  private Optional<? extends Bytes20> getProposerDefaultFeeRecipient() {
+    if (!spec.isMilestoneSupported(SpecMilestone.BELLATRIX)) {
+      return Optional.of(Bytes20.ZERO);
+    }
+
+    Optional<? extends Bytes20> defaultFeeRecipient =
+        beaconConfig.validatorConfig().getProposerDefaultFeeRecipient();
+    if (defaultFeeRecipient.isEmpty() && beaconConfig.beaconRestApiConfig().isRestApiEnabled()) {
+      STATUS_LOG.warnMissingProposerDefaultFeeRecipientWithRestAPIEnabled();
+    }
+
+    return defaultFeeRecipient;
   }
 
   protected void setupInitialState(final RecentChainData client) {
