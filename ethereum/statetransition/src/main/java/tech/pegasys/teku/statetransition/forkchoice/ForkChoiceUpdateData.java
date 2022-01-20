@@ -17,7 +17,6 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Supplier;
 import java.util.Optional;
 import java.util.concurrent.Executor;
-import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -93,33 +92,27 @@ public class ForkChoiceUpdateData {
         forkChoiceState, payloadAttributes, Optional.of(terminalBlockHash));
   }
 
-  public void withPayloadAttributesAsync(
+  public SafeFuture<Optional<ForkChoiceUpdateData>> withPayloadAttributesAsync(
       final Supplier<SafeFuture<Optional<PayloadAttributes>>> payloadAttributesCalculator,
-      final Consumer<ForkChoiceUpdateData> forkChoiceUpdateDataConsumer,
-      final Consumer<Throwable> errorConsumer,
       final Executor executor) {
     // we want to preserve ordering in payload calculation,
     // so we first generate a sequence for each calculation request
     final long sequenceNumber = payloadAttributesSequenceProducer++;
 
-    payloadAttributesCalculator
+    return payloadAttributesCalculator
         .get()
-        .thenAcceptAsync(
+        .thenApplyAsync(
             newPayloadAttributes -> {
               // to preserve ordering we make sure we haven't already calculated a payload that has
-              // been
-              // requested later than the current one
+              // been requested later than the current one
               if (sequenceNumber <= payloadAttributesSequenceConsumer) {
                 LOG.warn("Ignoring calculated payload attributes since it violates ordering");
-                return;
+                return Optional.empty();
               }
-
               payloadAttributesSequenceConsumer = sequenceNumber;
-
-              forkChoiceUpdateDataConsumer.accept(this.withPayloadAttributes(newPayloadAttributes));
+              return Optional.of(this.withPayloadAttributes(newPayloadAttributes));
             },
-            executor)
-        .finish(errorConsumer);
+            executor);
   }
 
   public boolean isPayloadIdSuitable(final Bytes32 parentExecutionHash, final UInt64 timestamp) {

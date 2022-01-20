@@ -219,23 +219,24 @@ public class ForkChoiceNotifier {
   private void updatePayloadAttributes(final UInt64 blockSlot) {
     LOG.debug("updatePayloadAttributes blockSlot {}", blockSlot);
 
-    forkChoiceUpdateData.withPayloadAttributesAsync(
-        // PayloadAttributes supplier
-        () ->
-            payloadAttributesCalculator.calculatePayloadAttributes(
-                blockSlot, inSync, forkChoiceUpdateData, false),
-
-        // ForkChoiceUpdateData consumer
-        newForkChoiceUpdateData -> {
-          forkChoiceUpdateData = newForkChoiceUpdateData;
-          sendForkChoiceUpdated();
-        },
-
-        // error handler
-        error -> LOG.error("Failed to calculate payload attributes for slot {}", blockSlot, error),
-
-        // Executor
-        eventThread);
+    forkChoiceUpdateData
+        .withPayloadAttributesAsync(
+            // PayloadAttributes supplier
+            () ->
+                payloadAttributesCalculator.calculatePayloadAttributes(
+                    blockSlot, inSync, forkChoiceUpdateData, false),
+            // Executor
+            eventThread)
+        .thenAccept(
+            newForkChoiceUpdateData -> {
+              if (newForkChoiceUpdateData.isPresent()) {
+                forkChoiceUpdateData = newForkChoiceUpdateData.get();
+                sendForkChoiceUpdated();
+              }
+            })
+        .finish(
+            error ->
+                LOG.error("Failed to calculate payload attributes for slot {}", blockSlot, error));
   }
 
   public PayloadAttributesCalculator getPayloadAttributesCalculator() {
