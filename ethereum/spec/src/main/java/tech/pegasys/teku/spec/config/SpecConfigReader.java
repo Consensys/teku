@@ -109,7 +109,7 @@ public class SpecConfigReader {
   }
 
   public Optional<String> read(final InputStream source) throws IOException {
-    return read(source, false);
+    return read(source, true);
   }
 
   /**
