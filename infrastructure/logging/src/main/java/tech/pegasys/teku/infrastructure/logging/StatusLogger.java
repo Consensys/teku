@@ -80,6 +80,14 @@ public class StatusLogger {
             Color.RED));
   }
 
+  public void warnMissingProposerDefaultFeeRecipientWithPreparedBeaconProposerBeingCalled() {
+    log.warn(
+        print(
+            "Validator Client detected and NO DEFAULT PROPOSER FEE RECIPIENT!!! "
+                + "it is STRONGLY recommended to configure it to avoid possible LOSS OF FEES gained proposing a block",
+            Color.RED));
+  }
+
   public void fatalError(final String description, final Throwable cause) {
     log.fatal("Exiting due to fatal error in {}", description, cause);
   }

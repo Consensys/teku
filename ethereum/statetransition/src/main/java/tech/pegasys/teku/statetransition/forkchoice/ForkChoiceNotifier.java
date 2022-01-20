@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+
 import java.util.Collection;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -178,6 +180,10 @@ public class ForkChoiceNotifier {
     eventThread.checkOnEventThread();
 
     LOG.debug("internalUpdatePreparableProposers proposers {}", proposers);
+
+    if (!payloadAttributesCalculator.isProposerDefaultFeeRecipientDefined()) {
+      STATUS_LOG.warnMissingProposerDefaultFeeRecipientWithPreparedBeaconProposerBeingCalled();
+    }
 
     // Default to the genesis slot if we're pre-genesis.
     final UInt64 currentSlot = recentChainData.getCurrentSlot().orElse(SpecConfig.GENESIS_SLOT);

@@ -162,4 +162,8 @@ public class PayloadAttributesCalculator {
                     .build())
         .collect(Collectors.toList());
   }
+
+  public boolean isProposerDefaultFeeRecipientDefined() {
+    return proposerDefaultFeeRecipient.isPresent();
+  }
 }
