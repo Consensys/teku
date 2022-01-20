@@ -221,11 +221,9 @@ public class ForkChoiceNotifier {
 
     forkChoiceUpdateData
         .withPayloadAttributesAsync(
-            // PayloadAttributes supplier
             () ->
                 payloadAttributesCalculator.calculatePayloadAttributes(
                     blockSlot, inSync, forkChoiceUpdateData, false),
-            // Executor
             eventThread)
         .thenAccept(
             newForkChoiceUpdateData -> {

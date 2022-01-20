@@ -40,6 +40,7 @@ import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.io.PortAvailability;
+import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
@@ -878,7 +879,9 @@ public class BeaconChainController extends Service
             spec,
             executionEngine,
             recentChainData,
-            beaconConfig.validatorConfig().getProposerDefaultFeeRecipient());
+            spec.isMilestoneSupported(SpecMilestone.BELLATRIX)
+                ? beaconConfig.validatorConfig().getProposerDefaultFeeRecipient()
+                : Optional.of(Bytes20.ZERO));
   }
 
   protected void setupInitialState(final RecentChainData client) {
