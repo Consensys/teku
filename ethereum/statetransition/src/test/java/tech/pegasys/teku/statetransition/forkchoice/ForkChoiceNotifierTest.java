@@ -45,7 +45,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionengine.ExecutePayloadResult;
@@ -70,7 +69,8 @@ class ForkChoiceNotifierTest {
   private RecentChainData recentChainData;
   private ForkChoiceStrategy forkChoiceStrategy;
   private PayloadAttributesCalculator payloadAttributesCalculator;
-  private Optional<Eth1Address> defaultFeeRecipient = Optional.of(Eth1Address.ZERO);
+  private Optional<Bytes20> defaultFeeRecipient =
+      Optional.of(Bytes20.fromHexString("0x2Df386eFF130f991321bfC4F8372Ba838b9AB14B"));
 
   private final ExecutionEngineChannel executionEngineChannel = mock(ExecutionEngineChannel.class);
 
@@ -88,13 +88,20 @@ class ForkChoiceNotifierTest {
 
   @BeforeEach
   void setUp() {
+    setUp(false);
+  }
+
+  void setUp(final boolean doNotInitializeWithDefaultFeeRecipient) {
     // initialize post-merge by default
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     recentChainData = storageSystem.recentChainData();
     payloadAttributesCalculator =
         spy(
             new PayloadAttributesCalculator(
-                spec, eventThread, recentChainData, defaultFeeRecipient));
+                spec,
+                eventThread,
+                recentChainData,
+                doNotInitializeWithDefaultFeeRecipient ? Optional.empty() : defaultFeeRecipient));
     notifier =
         new ForkChoiceNotifier(
             eventThread,
@@ -464,7 +471,7 @@ class ForkChoiceNotifierTest {
 
     notifier.onTerminalBlockReached(terminalBlockHash);
 
-    validateGetPayloadIOnTheFlyRetrieval(
+    validateGetPayloadIdOnTheFlyRetrieval(
         blockSlot, blockRoot, forkChoiceState, payloadId, payloadAttributes);
   }
 
@@ -492,7 +499,7 @@ class ForkChoiceNotifierTest {
 
     final Bytes8 payloadId = dataStructureUtil.randomBytes8();
 
-    validateGetPayloadIOnTheFlyRetrieval(
+    validateGetPayloadIdOnTheFlyRetrieval(
         blockSlot, blockRoot, nonFinalizedForkChoiceState, payloadId, payloadAttributes);
   }
 
@@ -514,7 +521,54 @@ class ForkChoiceNotifierTest {
     final Bytes32 blockRoot = recentChainData.getBestBlockRoot().orElseThrow();
     final PayloadAttributes payloadAttributes = withProposerForSlot(headState, blockSlot);
 
-    validateGetPayloadIOnTheFlyRetrieval(
+    validateGetPayloadIdOnTheFlyRetrieval(
+        blockSlot, blockRoot, finalizedForkChoiceState, payloadId, payloadAttributes);
+  }
+
+  @Test
+  void getPayloadId_shouldObtainAPayloadIdOnPostMergeBlockFinalizedEvenIfProposerNotPrepared() {
+    final Bytes8 payloadId = dataStructureUtil.randomBytes8();
+
+    // current slot: 1
+
+    // send post-merge onForkChoiceUpdated (with finalized block state)
+    ForkChoiceState finalizedForkChoiceState = getCurrentForkChoiceState();
+    assertThat(finalizedForkChoiceState.getFinalizedExecutionBlockHash())
+        .isNotEqualTo(Bytes32.ZERO);
+    notifier.onForkChoiceUpdated(finalizedForkChoiceState);
+    verify(executionEngineChannel).forkChoiceUpdated(finalizedForkChoiceState, Optional.empty());
+
+    final BeaconState headState = recentChainData.getBestState().orElseThrow();
+    final UInt64 blockSlot = headState.getSlot().plus(2); // proposing slot 3
+    final Bytes32 blockRoot = recentChainData.getBestBlockRoot().orElseThrow();
+    final PayloadAttributes payloadAttributes =
+        withProposerForSlotButDoNotPrepare(headState, blockSlot);
+
+    validateGetPayloadIdOnTheFlyRetrieval(
+        blockSlot, blockRoot, finalizedForkChoiceState, payloadId, payloadAttributes);
+  }
+
+  @Test
+  void getPayloadId_shouldBurnFeeIfDefaultFeeRecipientIsNotConfigured() {
+    setUp(true);
+    final Bytes8 payloadId = dataStructureUtil.randomBytes8();
+
+    // current slot: 1
+
+    // send post-merge onForkChoiceUpdated (with finalized block state)
+    ForkChoiceState finalizedForkChoiceState = getCurrentForkChoiceState();
+    assertThat(finalizedForkChoiceState.getFinalizedExecutionBlockHash())
+        .isNotEqualTo(Bytes32.ZERO);
+    notifier.onForkChoiceUpdated(finalizedForkChoiceState);
+    verify(executionEngineChannel).forkChoiceUpdated(finalizedForkChoiceState, Optional.empty());
+
+    final BeaconState headState = recentChainData.getBestState().orElseThrow();
+    final UInt64 blockSlot = headState.getSlot().plus(2); // proposing slot 3
+    final Bytes32 blockRoot = recentChainData.getBestBlockRoot().orElseThrow();
+    final PayloadAttributes payloadAttributes =
+        withProposerForSlotButDoNotPrepareAndFeeBurn(headState, blockSlot);
+
+    validateGetPayloadIdOnTheFlyRetrieval(
         blockSlot, blockRoot, finalizedForkChoiceState, payloadId, payloadAttributes);
   }
 
@@ -557,7 +611,7 @@ class ForkChoiceNotifierTest {
         .isCompletedWithEmptyOptional();
   }
 
-  private void validateGetPayloadIOnTheFlyRetrieval(
+  private void validateGetPayloadIdOnTheFlyRetrieval(
       final UInt64 blockSlot,
       final Bytes32 blockRoot,
       final ForkChoiceState forkChoiceState,
@@ -590,14 +644,35 @@ class ForkChoiceNotifierTest {
     return withProposerForSlot(state, blockSlot);
   }
 
+  private PayloadAttributes withProposerForSlotButDoNotPrepareAndFeeBurn(
+      final BeaconState headState, final UInt64 blockSlot) {
+    return withProposerForSlot(headState, blockSlot, false, Optional.of(Bytes20.ZERO));
+  }
+
+  private PayloadAttributes withProposerForSlotButDoNotPrepare(
+      final BeaconState headState, final UInt64 blockSlot) {
+    return withProposerForSlot(headState, blockSlot, false, defaultFeeRecipient);
+  }
+
   private PayloadAttributes withProposerForSlot(
       final BeaconState headState, final UInt64 blockSlot) {
+    return withProposerForSlot(headState, blockSlot, true, Optional.empty());
+  }
+
+  private PayloadAttributes withProposerForSlot(
+      final BeaconState headState,
+      final UInt64 blockSlot,
+      final boolean doPrepare,
+      final Optional<Bytes20> overrideFeeRecipient) {
     final int block2Proposer = spec.getBeaconProposerIndex(headState, blockSlot);
-    final PayloadAttributes payloadAttributes = getExpectedPayloadAttributes(headState, blockSlot);
-    notifier.onUpdatePreparableProposers(
-        List.of(
-            new BeaconPreparableProposer(
-                UInt64.valueOf(block2Proposer), payloadAttributes.getFeeRecipient())));
+    final PayloadAttributes payloadAttributes =
+        getExpectedPayloadAttributes(headState, blockSlot, overrideFeeRecipient);
+    if (doPrepare) {
+      notifier.onUpdatePreparableProposers(
+          List.of(
+              new BeaconPreparableProposer(
+                  UInt64.valueOf(block2Proposer), payloadAttributes.getFeeRecipient())));
+    }
     return payloadAttributes;
   }
 
@@ -606,9 +681,9 @@ class ForkChoiceNotifierTest {
     final int block2Proposer1 = spec.getBeaconProposerIndex(headState, blockSlot1);
     final int block2Proposer2 = spec.getBeaconProposerIndex(headState, blockSlot2);
     final PayloadAttributes payloadAttributes1 =
-        getExpectedPayloadAttributes(headState, blockSlot1);
+        getExpectedPayloadAttributes(headState, blockSlot1, Optional.empty());
     final PayloadAttributes payloadAttributes2 =
-        getExpectedPayloadAttributes(headState, blockSlot2);
+        getExpectedPayloadAttributes(headState, blockSlot2, Optional.empty());
 
     if (block2Proposer1 == block2Proposer2) {
       throw new UnsupportedOperationException(
@@ -624,8 +699,10 @@ class ForkChoiceNotifierTest {
   }
 
   private PayloadAttributes getExpectedPayloadAttributes(
-      final BeaconState headState, final UInt64 blockSlot) {
-    final Bytes20 feeRecipient = dataStructureUtil.randomBytes20();
+      final BeaconState headState,
+      final UInt64 blockSlot,
+      final Optional<Bytes20> overrideFeeRecipient) {
+    final Bytes20 feeRecipient = overrideFeeRecipient.orElse(dataStructureUtil.randomBytes20());
     final UInt64 timestamp = spec.computeTimeAtSlot(headState, blockSlot);
     final Bytes32 random = spec.getRandaoMix(headState, UInt64.ZERO);
     return new PayloadAttributes(timestamp, random, feeRecipient);
