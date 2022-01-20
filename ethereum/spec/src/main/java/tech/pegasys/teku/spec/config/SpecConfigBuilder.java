@@ -166,7 +166,7 @@ public class SpecConfigBuilder {
     if (altairBuilder.isPresent()) {
       final SpecConfigAltair altairConfig = altairBuilder.get().build(config);
       config = altairConfig;
-      if (bellatrixBuilder.isPresent() && bellatrixBuilder.get().isBellatrixEnabled()) {
+      if (bellatrixBuilder.isPresent() && bellatrixBuilder.get().isBellatrixIncluded()) {
         config = bellatrixBuilder.get().build(altairConfig);
       }
     }
@@ -226,7 +226,7 @@ public class SpecConfigBuilder {
 
     altairBuilder.ifPresent(AltairBuilder::validate);
     bellatrixBuilder
-        .filter(BellatrixBuilder::isBellatrixEnabled)
+        .filter(BellatrixBuilder::isBellatrixIncluded)
         .ifPresent(BellatrixBuilder::validate);
   }
 
@@ -709,8 +709,8 @@ public class SpecConfigBuilder {
 
     private BellatrixBuilder() {}
 
-    public boolean isBellatrixEnabled() {
-      return bellatrixForkEpoch != null && !bellatrixForkEpoch.equals(SpecConfig.FAR_FUTURE_EPOCH);
+    public boolean isBellatrixIncluded() {
+      return bellatrixForkEpoch != null;
     }
 
     SpecConfig build(final SpecConfigAltair specConfig) {
