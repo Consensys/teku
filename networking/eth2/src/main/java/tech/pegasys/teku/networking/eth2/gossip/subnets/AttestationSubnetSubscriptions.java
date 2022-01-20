@@ -14,8 +14,6 @@
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -38,8 +36,6 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
   private final OperationProcessor<ValidateableAttestation> processor;
   private final ForkInfo forkInfo;
   private final int maxMessageSize;
-
-  private final Map<Integer, TopicChannel> subnetIdToTopicChannel = new HashMap<>();
 
   public AttestationSubnetSubscriptions(
       final AsyncRunner asyncRunner,
@@ -100,12 +96,5 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
             state ->
                 state.map(
                     s -> recentChainData.getSpec().computeSubnetForAttestation(s, attestation)));
-  }
-
-  @Override
-  public synchronized void close() {
-    // Close gossip channels
-    subnetIdToTopicChannel.values().forEach(TopicChannel::close);
-    subnetIdToTopicChannel.clear();
   }
 }

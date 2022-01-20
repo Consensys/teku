@@ -13,8 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-import org.apache.tuweni.bytes.Bytes;
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
@@ -30,10 +29,12 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlockGossipManager implements GossipManager {
 
+  private final GossipNetwork gossipNetwork;
   private final GossipEncoding gossipEncoding;
-  private final TopicChannel channel;
 
-  private final AtomicBoolean shutdown = new AtomicBoolean(false);
+  private final Eth2TopicHandler<SignedBeaconBlock> topicHandler;
+
+  private Optional<TopicChannel> channel = Optional.empty();
 
   public BlockGossipManager(
       final RecentChainData recentChainData,
@@ -44,6 +45,7 @@ public class BlockGossipManager implements GossipManager {
       final ForkInfo forkInfo,
       final OperationProcessor<SignedBeaconBlock> processor,
       final int maxMessageSize) {
+    this.gossipNetwork = gossipNetwork;
     this.gossipEncoding = gossipEncoding;
 
     // Gossip topics are specific to a fork so use the schema for the current fork.
@@ -51,7 +53,7 @@ public class BlockGossipManager implements GossipManager {
         spec.atEpoch(forkInfo.getFork().getEpoch())
             .getSchemaDefinitions()
             .getSignedBeaconBlockSchema();
-    final Eth2TopicHandler<SignedBeaconBlock> topicHandler =
+    this.topicHandler =
         new Eth2TopicHandler<>(
             recentChainData,
             asyncRunner,
@@ -61,19 +63,24 @@ public class BlockGossipManager implements GossipManager {
             GossipTopicName.BEACON_BLOCK,
             signedBeaconBlockSchema,
             maxMessageSize);
-    this.channel = gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
   }
 
   public void publishBlock(final SignedBeaconBlock block) {
-    final Bytes data = gossipEncoding.encode(block);
-    channel.gossip(data);
+    channel.ifPresent(c -> c.gossip(gossipEncoding.encode(block)));
   }
 
   @Override
-  public void shutdown() {
-    if (shutdown.compareAndSet(false, true)) {
-      // Close gossip channels
-      channel.close();
+  public void subscribe() {
+    if (channel.isEmpty()) {
+      channel = Optional.of(gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler));
+    }
+  }
+
+  @Override
+  public void unsubscribe() {
+    if (channel.isPresent()) {
+      channel.get().close();
+      channel = Optional.empty();
     }
   }
 }

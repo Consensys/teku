@@ -71,6 +71,7 @@ public class BlockGossipManagerTest {
             forkInfo,
             processor,
             GOSSIP_MAX_SIZE);
+    blockGossipManager.subscribe();
   }
 
   @Test

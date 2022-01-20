@@ -67,6 +67,7 @@ public class AttestationSubnetSubscriptionsTest {
             processor,
             recentChainData.getCurrentForkInfo().orElseThrow(),
             GOSSIP_MAX_SIZE);
+    subnetSubscriptions.subscribe();
 
     when(gossipNetwork.subscribe(any(), any())).thenReturn(mock(TopicChannel.class));
   }

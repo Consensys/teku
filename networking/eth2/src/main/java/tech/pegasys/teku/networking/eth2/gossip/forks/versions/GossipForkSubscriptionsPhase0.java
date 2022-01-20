@@ -115,6 +115,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
   public final void startGossip(final Bytes32 genesisValidatorsRoot) {
     final ForkInfo forkInfo = new ForkInfo(fork, genesisValidatorsRoot);
     addGossipManagers(forkInfo);
+    gossipManagers.forEach(GossipManager::subscribe);
   }
 
   protected void addGossipManagers(final ForkInfo forkInfo) {
@@ -195,7 +196,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
 
   @Override
   public void stopGossip() {
-    gossipManagers.forEach(GossipManager::shutdown);
+    gossipManagers.forEach(GossipManager::unsubscribe);
   }
 
   @Override

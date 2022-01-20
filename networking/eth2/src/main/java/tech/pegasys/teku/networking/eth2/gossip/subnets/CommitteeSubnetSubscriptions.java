@@ -23,14 +23,15 @@ import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-abstract class CommitteeSubnetSubscriptions implements AutoCloseable {
+abstract class CommitteeSubnetSubscriptions {
 
   protected final Spec spec;
   protected final RecentChainData recentChainData;
   protected final GossipNetwork gossipNetwork;
   protected final GossipEncoding gossipEncoding;
 
-  private final Map<Integer, TopicChannel> subnetIdToTopicChannel = new HashMap<>();
+  private final Map<Integer, RequestedSubscription> subnetIdToSubscription = new HashMap<>();
+  private boolean subscribed = false;
 
   protected CommitteeSubnetSubscriptions(
       final RecentChainData recentChainData,
@@ -43,31 +44,71 @@ abstract class CommitteeSubnetSubscriptions implements AutoCloseable {
   }
 
   protected synchronized Optional<TopicChannel> getChannelForSubnet(final int subnetId) {
-    return Optional.ofNullable(subnetIdToTopicChannel.get(subnetId));
+    return Optional.ofNullable(subnetIdToSubscription.get(subnetId))
+        .flatMap(RequestedSubscription::getChannel);
   }
 
   public synchronized void subscribeToSubnetId(final int subnetId) {
-    subnetIdToTopicChannel.computeIfAbsent(subnetId, this::createChannelForSubnetId);
-  }
-
-  public synchronized void unsubscribeFromSubnetId(final int subnetId) {
-    final TopicChannel topicChannel = subnetIdToTopicChannel.remove(subnetId);
-    if (topicChannel != null) {
-      topicChannel.close();
+    final RequestedSubscription subscription =
+        subnetIdToSubscription.computeIfAbsent(subnetId, this::createChannelForSubnetId);
+    // Don't subscribe if we've been told to unsubscribe from everything
+    if (subscribed) {
+      subscription.subscribe();
     }
   }
 
-  private TopicChannel createChannelForSubnetId(final int subnetId) {
+  public synchronized void unsubscribeFromSubnetId(final int subnetId) {
+    final RequestedSubscription subscription = subnetIdToSubscription.remove(subnetId);
+    if (subscription != null) {
+      subscription.unsubscribe();
+    }
+  }
+
+  private RequestedSubscription createChannelForSubnetId(final int subnetId) {
     final Eth2TopicHandler<?> topicHandler = createTopicHandler(subnetId);
-    return gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
+    return new RequestedSubscription(topicHandler);
   }
 
   protected abstract Eth2TopicHandler<?> createTopicHandler(final int subnetId);
 
-  @Override
-  public synchronized void close() {
-    // Close gossip channels
-    subnetIdToTopicChannel.values().forEach(TopicChannel::close);
-    subnetIdToTopicChannel.clear();
+  public synchronized void subscribe() {
+    if (subscribed) {
+      return;
+    }
+    subscribed = true;
+    subnetIdToSubscription.values().forEach(RequestedSubscription::subscribe);
+  }
+
+  public synchronized void unsubscribe() {
+    if (!subscribed) {
+      return;
+    }
+    subscribed = false;
+    subnetIdToSubscription.values().forEach(RequestedSubscription::unsubscribe);
+  }
+
+  private class RequestedSubscription {
+    private final Eth2TopicHandler<?> topicHandler;
+    private Optional<TopicChannel> channel = Optional.empty();
+
+    private RequestedSubscription(final Eth2TopicHandler<?> topicHandler) {
+      this.topicHandler = topicHandler;
+    }
+
+    public void subscribe() {
+      if (channel.isPresent()) {
+        return;
+      }
+      channel = Optional.of(gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler));
+    }
+
+    public void unsubscribe() {
+      channel.ifPresent(TopicChannel::close);
+      channel = Optional.empty();
+    }
+
+    public Optional<TopicChannel> getChannel() {
+      return channel;
+    }
   }
 }
