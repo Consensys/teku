@@ -123,8 +123,9 @@ public class LocalValidatorSource implements ValidatorSource {
     final Path passwordPath = getPasswordPath(publicKey);
     final Path keystorePath = getKeystorePath(publicKey);
     try {
-      ensureDirectoryExists(ValidatorClientService.getAlterableKeystorePasswordPath(dataDirLayout));
-      ensureDirectoryExists(ValidatorClientService.getAlterableKeystorePath(dataDirLayout));
+      ensureDirectoryExists(
+          ValidatorClientService.getManagedLocalKeystorePasswordPath(dataDirLayout));
+      ensureDirectoryExists(ValidatorClientService.getManagedLocalKeystorePath(dataDirLayout));
 
       if (passwordPath.toFile().exists() || keystorePath.toFile().exists()) {
         return new AddLocalValidatorResult(PostKeyResult.duplicate(), Optional.empty());
@@ -149,14 +150,14 @@ public class LocalValidatorSource implements ValidatorSource {
   private Path getKeystorePath(final BLSPublicKey publicKey) {
     final DataDirLayout dataDirLayout = maybeDataDirLayout.orElseThrow();
     final String fileName = publicKey.toBytesCompressed().toUnprefixedHexString();
-    return ValidatorClientService.getAlterableKeystorePath(dataDirLayout)
+    return ValidatorClientService.getManagedLocalKeystorePath(dataDirLayout)
         .resolve(fileName + ".json");
   }
 
   private Path getPasswordPath(final BLSPublicKey publicKey) {
     final DataDirLayout dataDirLayout = maybeDataDirLayout.orElseThrow();
     final String fileName = publicKey.toBytesCompressed().toUnprefixedHexString();
-    return ValidatorClientService.getAlterableKeystorePasswordPath(dataDirLayout)
+    return ValidatorClientService.getManagedLocalKeystorePasswordPath(dataDirLayout)
         .resolve(fileName + ".txt");
   }
 

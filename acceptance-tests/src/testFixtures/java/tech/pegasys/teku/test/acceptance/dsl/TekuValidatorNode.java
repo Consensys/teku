@@ -130,7 +130,7 @@ public class TekuValidatorNode extends Node {
 
   public String getApiPassword() {
     return container.copyFileFromContainer(
-        VALIDATOR_PATH + "validator-api-bearer",
+        VALIDATOR_PATH + "key-manager/validator-api-bearer",
         in -> IOUtils.toString(in, StandardCharsets.UTF_8));
   }
 
