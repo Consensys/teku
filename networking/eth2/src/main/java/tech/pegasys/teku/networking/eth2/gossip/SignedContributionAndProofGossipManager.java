@@ -24,7 +24,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class SignedContributionAndProofGossipManager
-    extends AbstractGossipManager<SignedContributionAndProof> {
+    extends PublisherEnabledGossipManager<SignedContributionAndProof> {
 
   public SignedContributionAndProofGossipManager(
       final RecentChainData recentChainData,

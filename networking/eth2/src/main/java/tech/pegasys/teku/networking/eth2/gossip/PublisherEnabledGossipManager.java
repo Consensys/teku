@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2022 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -14,35 +14,39 @@
 package tech.pegasys.teku.networking.eth2.gossip;
 
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
-import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class ProposerSlashingGossipManager extends PublisherEnabledGossipManager<ProposerSlashing> {
+public abstract class PublisherEnabledGossipManager<T extends SszData>
+    extends AbstractGossipManager<T> {
 
-  public ProposerSlashingGossipManager(
+  protected PublisherEnabledGossipManager(
       final RecentChainData recentChainData,
+      final GossipTopicName topicName,
       final AsyncRunner asyncRunner,
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final OperationProcessor<ProposerSlashing> processor,
-      final GossipPublisher<ProposerSlashing> publisher,
+      final OperationProcessor<T> processor,
+      final GossipPublisher<T> publisher,
+      final SszSchema<T> gossipType,
       final int maxMessageSize) {
     super(
         recentChainData,
-        GossipTopicName.PROPOSER_SLASHING,
+        topicName,
         asyncRunner,
         gossipNetwork,
         gossipEncoding,
         forkInfo,
         processor,
-        publisher,
-        ProposerSlashing.SSZ_SCHEMA,
+        gossipType,
         maxMessageSize);
+    publisher.subscribe(this::publishMessage);
   }
 }

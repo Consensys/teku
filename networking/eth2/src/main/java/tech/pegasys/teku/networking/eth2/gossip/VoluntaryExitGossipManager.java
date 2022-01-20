@@ -22,7 +22,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class VoluntaryExitGossipManager extends AbstractGossipManager<SignedVoluntaryExit> {
+public class VoluntaryExitGossipManager extends PublisherEnabledGossipManager<SignedVoluntaryExit> {
 
   public VoluntaryExitGossipManager(
       final RecentChainData recentChainData,

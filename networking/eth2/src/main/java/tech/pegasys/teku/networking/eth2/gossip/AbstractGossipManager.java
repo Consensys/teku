@@ -28,21 +28,21 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public abstract class AbstractGossipManager<T extends SszData> implements GossipManager {
 
+  private final GossipNetwork gossipNetwork;
   private final GossipEncoding gossipEncoding;
 
   private final Eth2TopicHandler<?> topicHandler;
-  private final GossipNetwork gossipNetwork;
+
   private Optional<TopicChannel> channel = Optional.empty();
 
   protected AbstractGossipManager(
       final RecentChainData recentChainData,
-      final String topicName,
+      final GossipTopicName topicName,
       final AsyncRunner asyncRunner,
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
       final OperationProcessor<T> processor,
-      final GossipPublisher<T> publisher,
       final SszSchema<T> gossipType,
       final int maxMessageSize) {
     this.gossipNetwork = gossipNetwork;
@@ -57,31 +57,6 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
             gossipType,
             maxMessageSize);
     this.gossipEncoding = gossipEncoding;
-    publisher.subscribe(this::publishMessage);
-  }
-
-  protected AbstractGossipManager(
-      final RecentChainData recentChainData,
-      final GossipTopicName topicName,
-      final AsyncRunner asyncRunner,
-      final GossipNetwork gossipNetwork,
-      final GossipEncoding gossipEncoding,
-      final ForkInfo forkInfo,
-      final OperationProcessor<T> processor,
-      final GossipPublisher<T> publisher,
-      final SszSchema<T> gossipType,
-      final int maxMessageSize) {
-    this(
-        recentChainData,
-        topicName.toString(),
-        asyncRunner,
-        gossipNetwork,
-        gossipEncoding,
-        forkInfo,
-        processor,
-        publisher,
-        gossipType,
-        maxMessageSize);
   }
 
   protected void publishMessage(T message) {
