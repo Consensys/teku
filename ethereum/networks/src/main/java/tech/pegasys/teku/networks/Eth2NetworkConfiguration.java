@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networks;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Arrays.asList;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
@@ -199,6 +200,8 @@ public class Eth2NetworkConfiguration {
 
     public Eth2NetworkConfiguration build() {
       checkNotNull(constants, "Missing constants");
+      checkArgument(
+          safeSlotsToImportOptimistically >= 0, "Safe slots to import optimistically must be >= 0");
       if (spec == null) {
         spec =
             SpecFactory.create(
