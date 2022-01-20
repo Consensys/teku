@@ -18,7 +18,7 @@ import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
-import java.util.Optional;
+import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
@@ -29,32 +29,12 @@ import tech.pegasys.teku.spec.config.SpecConfigLoader;
 public class SpecFactory {
 
   public static Spec create(String configName) {
-    return create(configName, Optional.empty(), Optional.empty());
+    return create(configName, __ -> {});
   }
 
-  public static Spec create(
-      String configName,
-      final Optional<UInt64> altairForkEpoch,
-      final Optional<UInt64> bellatrixForkEpoch) {
-    final SpecConfig config =
-        SpecConfigLoader.loadConfig(
-            configName,
-            builder -> {
-              altairForkEpoch.ifPresent(forkEpoch -> overrideAltairForkEpoch(builder, forkEpoch));
-              bellatrixForkEpoch.ifPresent(
-                  forkEpoch -> overrideBellatrixForkEpoch(builder, forkEpoch));
-            });
+  public static Spec create(final String configName, final Consumer<SpecConfigBuilder> modifier) {
+    final SpecConfig config = SpecConfigLoader.loadConfig(configName, modifier);
     return create(config);
-  }
-
-  private static void overrideAltairForkEpoch(
-      final SpecConfigBuilder builder, final UInt64 forkEpoch) {
-    builder.altairBuilder(altairBuilder -> altairBuilder.altairForkEpoch(forkEpoch));
-  }
-
-  private static void overrideBellatrixForkEpoch(
-      final SpecConfigBuilder builder, final UInt64 forkEpoch) {
-    builder.bellatrixBuilder(bellatrixBuilder -> bellatrixBuilder.bellatrixForkEpoch(forkEpoch));
   }
 
   public static Spec create(final SpecConfig config) {

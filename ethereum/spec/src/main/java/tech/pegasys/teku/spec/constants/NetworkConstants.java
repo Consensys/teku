@@ -21,4 +21,5 @@ public class NetworkConstants {
   public static final Bytes BLS_WITHDRAWAL_PREFIX = Bytes.fromHexString("0x00");
   public static final int DEPOSIT_CONTRACT_TREE_DEPTH = 32;
   public static final int INTERVALS_PER_SLOT = 3;
+  public static final int DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY = 128;
 }
