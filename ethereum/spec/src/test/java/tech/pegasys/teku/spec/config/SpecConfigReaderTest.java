@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.config;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllAltairFieldsSet;
 import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllBellatrixFieldsSet;
 
 import java.io.IOException;
@@ -29,11 +30,11 @@ public class SpecConfigReaderTest {
 
   @Test
   public void read_multiFileFormat_mismatchedDuplicateFields() {
-    processFileAsInputStream(getInvalidConfigPath("multifile_dupFields/config"), reader::read);
+    processFileAsInputStream(getInvalidConfigPath("multifile_dupFields/config"), this::readConfig);
     processFileAsInputStream(
         getInvalidConfigPath("multifile_dupFields/preset_phase0"),
         preset -> {
-          assertThatThrownBy(() -> reader.read(preset))
+          assertThatThrownBy(() -> readConfig(preset))
               .isInstanceOf(IllegalArgumentException.class)
               .hasMessageContaining(
                   "Found duplicate declarations for spec constant 'MAX_COMMITTEES_PER_SLOT' with divergent values: '12' and '64'");
@@ -64,8 +65,8 @@ public class SpecConfigReaderTest {
   }
 
   @Test
-  public void read_missingConfig() throws Exception {
-    processFileAsInputStream(getInvalidConfigPath("missingChurnLimit"), reader::read);
+  public void read_missingConfig() {
+    processFileAsInputStream(getInvalidConfigPath("missingChurnLimit"), this::readConfig);
 
     assertThatThrownBy(reader::build)
         .isInstanceOf(IllegalArgumentException.class)
@@ -73,8 +74,8 @@ public class SpecConfigReaderTest {
   }
 
   @Test
-  public void read_missingAltairConstant() throws IOException {
-    processFileAsInputStream(getInvalidConfigPath("missingAltairField"), reader::read);
+  public void read_missingAltairConstant() {
+    processFileAsInputStream(getInvalidConfigPath("missingAltairField"), this::readConfig);
 
     assertThatThrownBy(reader::build)
         .isInstanceOf(IllegalArgumentException.class)
@@ -82,11 +83,30 @@ public class SpecConfigReaderTest {
   }
 
   @Test
+  void read_unknownConstant() {
+    assertThatThrownBy(
+            () -> processFileAsInputStream(getInvalidConfigPath("unknownField"), this::readConfig))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Detected unknown spec config entries: UNKNOWN_CONSTANT");
+  }
+
+  @Test
+  void read_ignoringUnknownConstant() {
+    Assertions.assertThatCode(
+            () -> {
+              processFileAsInputStream(
+                  getInvalidConfigPath("unknownField"), source -> reader.read(source, true));
+              assertAllAltairFieldsSet(reader.build());
+            })
+        .doesNotThrowAnyException();
+  }
+
+  @Test
   public void read_emptyFile() {
     processFileAsInputStream(
         getInvalidConfigPath("empty"),
         stream -> {
-          assertThatThrownBy(() -> reader.read(stream))
+          assertThatThrownBy(() -> readConfig(stream))
               .isInstanceOf(IllegalArgumentException.class)
               .hasMessageContaining("Supplied spec config is empty");
           return null;
@@ -94,8 +114,8 @@ public class SpecConfigReaderTest {
   }
 
   @Test
-  public void read_almostEmptyFile() throws Exception {
-    processFileAsInputStream(getInvalidConfigPath("almostEmpty"), reader::read);
+  public void read_almostEmptyFile() {
+    processFileAsInputStream(getInvalidConfigPath("almostEmpty"), this::readConfig);
 
     assertThatThrownBy(reader::build)
         .isInstanceOf(IllegalArgumentException.class)
@@ -107,7 +127,7 @@ public class SpecConfigReaderTest {
     processFileAsInputStream(
         getInvalidConfigPath("invalidInteger_wrongType"),
         stream -> {
-          assertThatThrownBy(() -> reader.read(stream))
+          assertThatThrownBy(() -> readConfig(stream))
               .isInstanceOf(IllegalArgumentException.class)
               .hasMessageContaining(
                   "Failed to parse value for constant MAX_COMMITTEES_PER_SLOT: 'string value'");
@@ -120,7 +140,7 @@ public class SpecConfigReaderTest {
     processFileAsInputStream(
         getInvalidConfigPath("invalidInteger_tooLarge"),
         stream -> {
-          assertThatThrownBy(() -> reader.read(stream))
+          assertThatThrownBy(() -> readConfig(stream))
               .isInstanceOf(IllegalArgumentException.class)
               .hasMessageContaining(
                   "Failed to parse value for constant MAX_COMMITTEES_PER_SLOT: '2147483648'");
@@ -133,7 +153,7 @@ public class SpecConfigReaderTest {
     processFileAsInputStream(
         getInvalidConfigPath("invalidInteger_negative"),
         stream -> {
-          assertThatThrownBy(() -> reader.read(stream))
+          assertThatThrownBy(() -> readConfig(stream))
               .isInstanceOf(IllegalArgumentException.class)
               .hasMessageContaining(
                   "Failed to parse value for constant MAX_COMMITTEES_PER_SLOT: '-1'");
@@ -146,7 +166,7 @@ public class SpecConfigReaderTest {
     processFileAsInputStream(
         getInvalidConfigPath("invalidLong_wrongType"),
         stream -> {
-          assertThatThrownBy(() -> reader.read(stream))
+          assertThatThrownBy(() -> readConfig(stream))
               .isInstanceOf(IllegalArgumentException.class)
               .hasMessageContaining(
                   "Cannot read spec config: Cannot deserialize value of type `java.lang.String` from Array");
@@ -159,7 +179,7 @@ public class SpecConfigReaderTest {
     processFileAsInputStream(
         getInvalidConfigPath("invalidLong_tooLarge"),
         stream -> {
-          assertThatThrownBy(() -> reader.read(stream))
+          assertThatThrownBy(() -> readConfig(stream))
               .isInstanceOf(IllegalArgumentException.class)
               .hasMessageContaining(
                   "Failed to parse value for constant VALIDATOR_REGISTRY_LIMIT: '9223372036854775808'");
@@ -172,7 +192,7 @@ public class SpecConfigReaderTest {
     processFileAsInputStream(
         getInvalidConfigPath("invalidLong_negative"),
         stream -> {
-          assertThatThrownBy(() -> reader.read(stream))
+          assertThatThrownBy(() -> readConfig(stream))
               .isInstanceOf(IllegalArgumentException.class)
               .hasMessageContaining(
                   "Failed to parse value for constant VALIDATOR_REGISTRY_LIMIT: '-1099511627776'");
@@ -185,7 +205,7 @@ public class SpecConfigReaderTest {
     processFileAsInputStream(
         getInvalidConfigPath("invalidUInt64_negative"),
         stream -> {
-          assertThatThrownBy(() -> reader.read(stream))
+          assertThatThrownBy(() -> readConfig(stream))
               .isInstanceOf(IllegalArgumentException.class)
               .hasMessageContaining("Failed to parse value for constant MIN_GENESIS_TIME: '-1'");
           return null;
@@ -197,7 +217,7 @@ public class SpecConfigReaderTest {
     processFileAsInputStream(
         getInvalidConfigPath("invalidUInt64_tooLarge"),
         stream -> {
-          assertThatThrownBy(() -> reader.read(stream))
+          assertThatThrownBy(() -> readConfig(stream))
               .isInstanceOf(IllegalArgumentException.class)
               .hasMessageContaining(
                   "Failed to parse value for constant MIN_GENESIS_TIME: '18446744073709552001'");
@@ -210,7 +230,7 @@ public class SpecConfigReaderTest {
     processFileAsInputStream(
         getInvalidConfigPath("invalidBytes4_tooLarge"),
         stream -> {
-          assertThatThrownBy(() -> reader.read(stream))
+          assertThatThrownBy(() -> readConfig(stream))
               .isInstanceOf(IllegalArgumentException.class)
               .hasMessageContaining(
                   "Failed to parse value for constant GENESIS_FORK_VERSION: '0x0102030405'");
@@ -223,7 +243,7 @@ public class SpecConfigReaderTest {
     processFileAsInputStream(
         getInvalidConfigPath("invalidBytes4_tooSmall"),
         stream -> {
-          assertThatThrownBy(() -> reader.read(stream))
+          assertThatThrownBy(() -> readConfig(stream))
               .isInstanceOf(IllegalArgumentException.class)
               .hasMessageContaining(
                   "Failed to parse value for constant GENESIS_FORK_VERSION: '0x0102'");
@@ -233,15 +253,17 @@ public class SpecConfigReaderTest {
 
   private SpecConfig readStandardConfigWithPreset(final String configName) {
     final String configPath = getStandardConfigPath(configName);
-    final SpecConfigReader reader = new SpecConfigReader();
-
-    final Optional<String> preset = processFileAsInputStream(configPath, reader::read);
+    final Optional<String> preset = processFileAsInputStream(configPath, this::readConfig);
     if (preset.isPresent()) {
       for (String presetPath : getPresetPaths(preset.get())) {
-        processFileAsInputStream(presetPath, reader::read);
+        processFileAsInputStream(presetPath, this::readConfig);
       }
     }
     return reader.build();
+  }
+
+  private Optional<String> readConfig(final InputStream preset) throws IOException {
+    return reader.read(preset, false);
   }
 
   private List<String> getPresetPaths(final String presetName) {
