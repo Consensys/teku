@@ -32,7 +32,7 @@ public class DeleteKeys extends RestApiEndpoint {
         EndpointMetadata.delete(ROUTE)
             .operationId("DeleteKeys")
             .summary("Delete Keys")
-            .security("bearerAuth")
+            .withBearerAuthSecurity()
             .description(
                 "DELETE must delete all keys from `request.pubkeys` that are known to the key manager."
                     + "<br>Additionally, DELETE must fetch the slashing protection data for the requested keys, "

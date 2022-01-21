@@ -177,6 +177,10 @@ public class EndpointMetadata {
       return this;
     }
 
+    public EndpointMetaDataBuilder withBearerAuthSecurity() {
+      return security("bearerAuth");
+    }
+
     public EndpointMetaDataBuilder security(final String security) {
       this.security = Optional.ofNullable(security);
       return this;

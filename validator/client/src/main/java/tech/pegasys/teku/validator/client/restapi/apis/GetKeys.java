@@ -31,7 +31,7 @@ public class GetKeys extends RestApiEndpoint {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("ListKeys")
-            .security("bearerAuth")
+            .withBearerAuthSecurity()
             .summary("List Keys")
             .description(
                 "List all validating pubkeys known to and decrypted by this keymanager binary")
