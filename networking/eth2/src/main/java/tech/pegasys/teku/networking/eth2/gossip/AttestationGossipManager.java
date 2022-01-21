@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -29,7 +28,6 @@ public class AttestationGossipManager implements GossipManager {
 
   private final AttestationSubnetSubscriptions subnetSubscriptions;
 
-  private final AtomicBoolean shutdown = new AtomicBoolean(false);
   private final Counter attestationPublishSuccessCounter;
   private final Counter attestationPublishFailureCounter;
 
@@ -81,9 +79,12 @@ public class AttestationGossipManager implements GossipManager {
   }
 
   @Override
-  public void shutdown() {
-    if (shutdown.compareAndSet(false, true)) {
-      subnetSubscriptions.close();
-    }
+  public void subscribe() {
+    subnetSubscriptions.subscribe();
+  }
+
+  @Override
+  public void unsubscribe() {
+    subnetSubscriptions.unsubscribe();
   }
 }

@@ -15,7 +15,6 @@ package tech.pegasys.teku.networking.eth2.gossip;
 
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -35,12 +34,9 @@ public class SyncCommitteeMessageGossipManager implements GossipManager {
   private final Spec spec;
   private final SyncCommitteeStateUtils syncCommitteeStateUtils;
   private final SyncCommitteeSubnetSubscriptions subnetSubscriptions;
-  private final GossipPublisher<ValidateableSyncCommitteeMessage> gossipPublisher;
 
-  private final AtomicBoolean shutdown = new AtomicBoolean(false);
   private final Counter publishSuccessCounter;
   private final Counter publishFailureCounter;
-  private final long subscriberId;
 
   public SyncCommitteeMessageGossipManager(
       final MetricsSystem metricsSystem,
@@ -51,7 +47,6 @@ public class SyncCommitteeMessageGossipManager implements GossipManager {
     this.spec = spec;
     this.syncCommitteeStateUtils = syncCommitteeStateUtils;
     this.subnetSubscriptions = subnetSubscriptions;
-    this.gossipPublisher = gossipPublisher;
     final LabelledMetric<Counter> publishedSyncCommitteeCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.BEACON,
@@ -60,7 +55,7 @@ public class SyncCommitteeMessageGossipManager implements GossipManager {
             "result");
     publishSuccessCounter = publishedSyncCommitteeCounter.labels("success");
     publishFailureCounter = publishedSyncCommitteeCounter.labels("failure");
-    this.subscriberId = gossipPublisher.subscribe(this::publish);
+    gossipPublisher.subscribe(this::publish);
   }
 
   public void publish(final ValidateableSyncCommitteeMessage message) {
@@ -130,10 +125,12 @@ public class SyncCommitteeMessageGossipManager implements GossipManager {
   }
 
   @Override
-  public void shutdown() {
-    if (shutdown.compareAndSet(false, true)) {
-      subnetSubscriptions.close();
-      gossipPublisher.unsubscribe(subscriberId);
-    }
+  public void subscribe() {
+    subnetSubscriptions.subscribe();
+  }
+
+  @Override
+  public void unsubscribe() {
+    subnetSubscriptions.unsubscribe();
   }
 }

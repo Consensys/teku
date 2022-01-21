@@ -14,5 +14,7 @@
 package tech.pegasys.teku.networking.eth2.gossip;
 
 public interface GossipManager {
-  void shutdown();
+  void subscribe();
+
+  void unsubscribe();
 }

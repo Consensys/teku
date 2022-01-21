@@ -63,6 +63,7 @@ public class AttestationGossipManagerTest {
       new ForkInfo(spec.fork(UInt64.ZERO), dataStructureUtil.randomBytes32());
   private final AttestationSubnetSubscriptions attestationSubnetSubscriptions =
       new AttestationSubnetSubscriptions(
+          spec,
           asyncRunner,
           gossipNetwork,
           gossipEncoding,

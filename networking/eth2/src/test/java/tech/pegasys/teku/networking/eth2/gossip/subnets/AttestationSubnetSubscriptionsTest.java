@@ -60,6 +60,7 @@ public class AttestationSubnetSubscriptionsTest {
     BeaconChainUtil.create(spec, 0, recentChainData).initializeStorage();
     subnetSubscriptions =
         new AttestationSubnetSubscriptions(
+            spec,
             asyncRunner,
             gossipNetwork,
             gossipEncoding,
@@ -67,6 +68,7 @@ public class AttestationSubnetSubscriptionsTest {
             processor,
             recentChainData.getCurrentForkInfo().orElseThrow(),
             GOSSIP_MAX_SIZE);
+    subnetSubscriptions.subscribe();
 
     when(gossipNetwork.subscribe(any(), any())).thenReturn(mock(TopicChannel.class));
   }

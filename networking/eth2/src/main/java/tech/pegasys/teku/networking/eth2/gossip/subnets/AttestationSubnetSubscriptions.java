@@ -14,8 +14,6 @@
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -27,6 +25,7 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHa
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.SingleAttestationTopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
@@ -34,14 +33,15 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions {
 
+  private final Spec spec;
   private final AsyncRunner asyncRunner;
+  private final RecentChainData recentChainData;
   private final OperationProcessor<ValidateableAttestation> processor;
   private final ForkInfo forkInfo;
   private final int maxMessageSize;
 
-  private final Map<Integer, TopicChannel> subnetIdToTopicChannel = new HashMap<>();
-
   public AttestationSubnetSubscriptions(
+      final Spec spec,
       final AsyncRunner asyncRunner,
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
@@ -49,8 +49,10 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
       final OperationProcessor<ValidateableAttestation> processor,
       final ForkInfo forkInfo,
       final int maxMessageSize) {
-    super(recentChainData, gossipNetwork, gossipEncoding);
+    super(gossipNetwork, gossipEncoding);
+    this.spec = spec;
     this.asyncRunner = asyncRunner;
+    this.recentChainData = recentChainData;
     this.processor = processor;
     this.forkInfo = forkInfo;
     this.maxMessageSize = maxMessageSize;
@@ -100,12 +102,5 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
             state ->
                 state.map(
                     s -> recentChainData.getSpec().computeSubnetForAttestation(s, attestation)));
-  }
-
-  @Override
-  public synchronized void close() {
-    // Close gossip channels
-    subnetIdToTopicChannel.values().forEach(TopicChannel::close);
-    subnetIdToTopicChannel.clear();
   }
 }

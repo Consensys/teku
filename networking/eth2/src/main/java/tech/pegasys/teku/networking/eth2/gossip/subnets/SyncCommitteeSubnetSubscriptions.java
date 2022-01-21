@@ -21,6 +21,7 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopics;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
@@ -29,6 +30,8 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class SyncCommitteeSubnetSubscriptions extends CommitteeSubnetSubscriptions {
 
+  private final Spec spec;
+  private final RecentChainData recentChainData;
   private final SchemaDefinitionsAltair schemaDefinitions;
   private final AsyncRunner asyncRunner;
   private final OperationProcessor<ValidateableSyncCommitteeMessage> processor;
@@ -36,6 +39,7 @@ public class SyncCommitteeSubnetSubscriptions extends CommitteeSubnetSubscriptio
   private final int maxMessageSize;
 
   public SyncCommitteeSubnetSubscriptions(
+      final Spec spec,
       final RecentChainData recentChainData,
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
@@ -44,7 +48,9 @@ public class SyncCommitteeSubnetSubscriptions extends CommitteeSubnetSubscriptio
       final OperationProcessor<ValidateableSyncCommitteeMessage> processor,
       final ForkInfo forkInfo,
       final int maxMessageSize) {
-    super(recentChainData, gossipNetwork, gossipEncoding);
+    super(gossipNetwork, gossipEncoding);
+    this.spec = spec;
+    this.recentChainData = recentChainData;
     this.schemaDefinitions = schemaDefinitions;
     this.asyncRunner = asyncRunner;
     this.processor = processor;

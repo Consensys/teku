@@ -22,7 +22,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class AttesterSlashingGossipManager extends AbstractGossipManager<AttesterSlashing> {
+public class AttesterSlashingGossipManager extends PublisherEnabledGossipManager<AttesterSlashing> {
 
   public AttesterSlashingGossipManager(
       final RecentChainData recentChainData,

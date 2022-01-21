@@ -114,6 +114,7 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
 
     final SyncCommitteeSubnetSubscriptions syncCommitteeSubnetSubscriptions =
         new SyncCommitteeSubnetSubscriptions(
+            spec,
             recentChainData,
             discoveryNetwork,
             gossipEncoding,
