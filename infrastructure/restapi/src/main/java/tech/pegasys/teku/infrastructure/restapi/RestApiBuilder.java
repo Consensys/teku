@@ -157,9 +157,7 @@ public class RestApiBuilder {
         if (!path.getParent().toFile().mkdirs() && !path.getParent().toFile().isDirectory()) {
           LOG.error("Could not mkdirs for file {}", path.toAbsolutePath());
           throw new IllegalStateException(
-              String.format(
-                  "Cannot create directories %s",
-                  path.getParent().toAbsolutePath()));
+              String.format("Cannot create directories %s", path.getParent().toAbsolutePath()));
         }
         final Bytes generated = Bytes.random(16);
         LOG.info("Initializing API auth access file {}", path.toAbsolutePath());
