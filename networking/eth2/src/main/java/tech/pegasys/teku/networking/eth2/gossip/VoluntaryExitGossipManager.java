@@ -22,7 +22,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class VoluntaryExitGossipManager extends PublisherEnabledGossipManager<SignedVoluntaryExit> {
+public class VoluntaryExitGossipManager extends AbstractGossipManager<SignedVoluntaryExit> {
 
   public VoluntaryExitGossipManager(
       final RecentChainData recentChainData,
@@ -31,7 +31,6 @@ public class VoluntaryExitGossipManager extends PublisherEnabledGossipManager<Si
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
       final OperationProcessor<SignedVoluntaryExit> processor,
-      final GossipPublisher<SignedVoluntaryExit> publisher,
       final int maxMessageSize) {
     super(
         recentChainData,
@@ -41,8 +40,11 @@ public class VoluntaryExitGossipManager extends PublisherEnabledGossipManager<Si
         gossipEncoding,
         forkInfo,
         processor,
-        publisher,
         SignedVoluntaryExit.SSZ_SCHEMA,
         maxMessageSize);
+  }
+
+  public void publishVoluntaryExit(final SignedVoluntaryExit message) {
+    publishMessage(message);
   }
 }

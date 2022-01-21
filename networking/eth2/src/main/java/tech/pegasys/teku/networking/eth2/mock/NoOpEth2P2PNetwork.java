@@ -19,6 +19,11 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.mock.MockP2PNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
 
 public class NoOpEth2P2PNetwork extends MockP2PNetwork<Eth2Peer> implements Eth2P2PNetwork {
   private final Spec spec;
@@ -49,4 +54,20 @@ public class NoOpEth2P2PNetwork extends MockP2PNetwork<Eth2Peer> implements Eth2
   public MetadataMessage getMetadata() {
     return spec.getGenesisSchemaDefinitions().getMetadataMessageSchema().createDefault();
   }
+
+  @Override
+  public void publishSyncCommitteeMessage(final ValidateableSyncCommitteeMessage message) {}
+
+  @Override
+  public void publishSyncCommitteeContribution(
+      final SignedContributionAndProof signedContributionAndProof) {}
+
+  @Override
+  public void publishProposerSlashing(final ProposerSlashing proposerSlashing) {}
+
+  @Override
+  public void publishAttesterSlashing(final AttesterSlashing attesterSlashing) {}
+
+  @Override
+  public void publishVoluntaryExit(final SignedVoluntaryExit signedVoluntaryExit) {}
 }

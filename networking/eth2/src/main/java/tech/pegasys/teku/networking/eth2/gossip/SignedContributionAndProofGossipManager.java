@@ -24,7 +24,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class SignedContributionAndProofGossipManager
-    extends PublisherEnabledGossipManager<SignedContributionAndProof> {
+    extends AbstractGossipManager<SignedContributionAndProof> {
 
   public SignedContributionAndProofGossipManager(
       final RecentChainData recentChainData,
@@ -34,7 +34,6 @@ public class SignedContributionAndProofGossipManager
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
       final OperationProcessor<SignedContributionAndProof> processor,
-      final GossipPublisher<SignedContributionAndProof> publisher,
       final int maxMessageSize) {
     super(
         recentChainData,
@@ -44,8 +43,11 @@ public class SignedContributionAndProofGossipManager
         gossipEncoding,
         forkInfo,
         processor,
-        publisher,
         schemaDefinitions.getSignedContributionAndProofSchema(),
         maxMessageSize);
+  }
+
+  public void publishContribution(final SignedContributionAndProof message) {
+    publishMessage(message);
   }
 }

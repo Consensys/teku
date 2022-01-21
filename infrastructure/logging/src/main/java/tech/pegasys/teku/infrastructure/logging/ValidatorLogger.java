@@ -158,4 +158,14 @@ public class ValidatorLogger {
     final String errorString = String.format("%sFailed to send proposers to Beacon Node", PREFIX);
     log.error(ColorConsolePrinter.print(errorString, Color.RED), error);
   }
+
+  public void executionPayloadPreparedUsingBeaconDefaultFeeRecipient(final UInt64 slot) {
+    log.warn(
+        ColorConsolePrinter.print(
+            "Beacon Node has been requested to produce a block for slot "
+                + slot
+                + " but proposer hasn't been prepared by any Validator Client. "
+                + "Using Beacon Node's default fee recipient.",
+            Color.YELLOW));
+  }
 }

@@ -44,6 +44,11 @@ import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -290,6 +295,32 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
   @Override
   public MetadataMessage getMetadata() {
     return peerManager.getMetadataMessage();
+  }
+
+  @Override
+  public void publishSyncCommitteeMessage(final ValidateableSyncCommitteeMessage message) {
+    gossipForkManager.publishSyncCommitteeMessage(message);
+  }
+
+  @Override
+  public void publishSyncCommitteeContribution(
+      final SignedContributionAndProof signedContributionAndProof) {
+    gossipForkManager.publishSyncCommitteeContribution(signedContributionAndProof);
+  }
+
+  @Override
+  public void publishProposerSlashing(final ProposerSlashing proposerSlashing) {
+    gossipForkManager.publishProposerSlashing(proposerSlashing);
+  }
+
+  @Override
+  public void publishAttesterSlashing(final AttesterSlashing attesterSlashing) {
+    gossipForkManager.publishAttesterSlashing(attesterSlashing);
+  }
+
+  @Override
+  public void publishVoluntaryExit(final SignedVoluntaryExit signedVoluntaryExit) {
+    gossipForkManager.publishVoluntaryExit(signedVoluntaryExit);
   }
 
   @VisibleForTesting

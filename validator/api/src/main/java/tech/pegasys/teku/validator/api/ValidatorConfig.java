@@ -57,7 +57,7 @@ public class ValidatorConfig {
   private final int validatorExternalSignerConcurrentRequestLimit;
   private final boolean useDependentRoots;
   private final boolean generateEarlyAttestations;
-  private final Optional<Eth1Address> suggestedFeeRecipient;
+  private final Optional<Eth1Address> proposerDefaultFeeRecipient;
 
   private ValidatorConfig(
       final List<String> validatorKeys,
@@ -76,7 +76,7 @@ public class ValidatorConfig {
       final int validatorExternalSignerConcurrentRequestLimit,
       final boolean useDependentRoots,
       final boolean generateEarlyAttestations,
-      final Optional<Eth1Address> suggestedFeeRecipient) {
+      final Optional<Eth1Address> proposerDefaultFeeRecipient) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
@@ -96,7 +96,7 @@ public class ValidatorConfig {
         validatorExternalSignerConcurrentRequestLimit;
     this.useDependentRoots = useDependentRoots;
     this.generateEarlyAttestations = generateEarlyAttestations;
-    this.suggestedFeeRecipient = suggestedFeeRecipient;
+    this.proposerDefaultFeeRecipient = proposerDefaultFeeRecipient;
   }
 
   public static Builder builder() {
@@ -160,16 +160,16 @@ public class ValidatorConfig {
     return useDependentRoots;
   }
 
-  public Optional<Eth1Address> getSuggestedFeeRecipient() {
-    validateFeeRecipient();
-    return suggestedFeeRecipient;
+  public Optional<Eth1Address> getProposerDefaultFeeRecipient() {
+    validateProposerDefaultFeeRecipient();
+    return proposerDefaultFeeRecipient;
   }
 
-  private void validateFeeRecipient() {
-    if (suggestedFeeRecipient.isEmpty()
+  private void validateProposerDefaultFeeRecipient() {
+    if (proposerDefaultFeeRecipient.isEmpty()
         && !(validatorKeys.isEmpty() && validatorExternalSignerPublicKeySources.isEmpty())) {
       throw new InvalidConfigurationException(
-          "Invalid configuration. --Xvalidators-suggested-fee-recipient-address must be specified when Bellatrix milestone is active");
+          "Invalid configuration. --Xvalidators-proposer-default-fee-recipient must be specified when Bellatrix milestone is active");
     }
   }
 
@@ -194,7 +194,7 @@ public class ValidatorConfig {
         DEFAULT_VALIDATOR_EXTERNAL_SIGNER_SLASHING_PROTECTION_ENABLED;
     private boolean useDependentRoots = DEFAULT_USE_DEPENDENT_ROOTS;
     private boolean generateEarlyAttestations = DEFAULT_GENERATE_EARLY_ATTESTATIONS;
-    private Optional<Eth1Address> suggestedFeeRecipient = Optional.empty();
+    private Optional<Eth1Address> proposerDefaultFeeRecipient = Optional.empty();
 
     private Builder() {}
 
@@ -289,16 +289,17 @@ public class ValidatorConfig {
       return this;
     }
 
-    public Builder suggestedFeeRecipient(final Eth1Address suggestedFeeRecipient) {
-      this.suggestedFeeRecipient = Optional.ofNullable(suggestedFeeRecipient);
+    public Builder proposerDefaultFeeRecipient(final Eth1Address proposerDefaultFeeRecipient) {
+      this.proposerDefaultFeeRecipient = Optional.ofNullable(proposerDefaultFeeRecipient);
       return this;
     }
 
-    public Builder suggestedFeeRecipient(final String suggestedFeeRecipient) {
-      if (suggestedFeeRecipient == null) {
-        this.suggestedFeeRecipient = Optional.empty();
+    public Builder proposerDefaultFeeRecipient(final String proposerDefaultFeeRecipient) {
+      if (proposerDefaultFeeRecipient == null) {
+        this.proposerDefaultFeeRecipient = Optional.empty();
       } else {
-        this.suggestedFeeRecipient = Optional.of(Eth1Address.fromHexString(suggestedFeeRecipient));
+        this.proposerDefaultFeeRecipient =
+            Optional.of(Eth1Address.fromHexString(proposerDefaultFeeRecipient));
       }
       return this;
     }
@@ -325,7 +326,7 @@ public class ValidatorConfig {
           validatorExternalSignerConcurrentRequestLimit,
           useDependentRoots,
           generateEarlyAttestations,
-          suggestedFeeRecipient);
+          proposerDefaultFeeRecipient);
     }
 
     private void validateExternalSignerUrlAndPublicKeys() {
