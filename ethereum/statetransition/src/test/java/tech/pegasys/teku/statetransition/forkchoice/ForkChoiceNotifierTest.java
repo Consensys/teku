@@ -472,7 +472,7 @@ class ForkChoiceNotifierTest {
     notifier.onTerminalBlockReached(terminalBlockHash);
 
     validateGetPayloadIdOnTheFlyRetrieval(
-        blockSlot, blockRoot, forkChoiceState, payloadId, payloadAttributes);
+        blockSlot, blockRoot, forkChoiceState, payloadId, payloadAttributes, false);
   }
 
   @Test
@@ -500,7 +500,7 @@ class ForkChoiceNotifierTest {
     final Bytes8 payloadId = dataStructureUtil.randomBytes8();
 
     validateGetPayloadIdOnTheFlyRetrieval(
-        blockSlot, blockRoot, nonFinalizedForkChoiceState, payloadId, payloadAttributes);
+        blockSlot, blockRoot, nonFinalizedForkChoiceState, payloadId, payloadAttributes, false);
   }
 
   @Test
@@ -522,7 +522,7 @@ class ForkChoiceNotifierTest {
     final PayloadAttributes payloadAttributes = withProposerForSlot(headState, blockSlot);
 
     validateGetPayloadIdOnTheFlyRetrieval(
-        blockSlot, blockRoot, finalizedForkChoiceState, payloadId, payloadAttributes);
+        blockSlot, blockRoot, finalizedForkChoiceState, payloadId, payloadAttributes, false);
   }
 
   @Test
@@ -542,14 +542,14 @@ class ForkChoiceNotifierTest {
     final UInt64 blockSlot = headState.getSlot().plus(2); // proposing slot 3
     final Bytes32 blockRoot = recentChainData.getBestBlockRoot().orElseThrow();
     final PayloadAttributes payloadAttributes =
-        withProposerForSlotButDoNotPrepare(headState, blockSlot);
+        withProposerForSlotButDoNotPrepare(headState, blockSlot, defaultFeeRecipient);
 
     validateGetPayloadIdOnTheFlyRetrieval(
-        blockSlot, blockRoot, finalizedForkChoiceState, payloadId, payloadAttributes);
+        blockSlot, blockRoot, finalizedForkChoiceState, payloadId, payloadAttributes, false);
   }
 
   @Test
-  void getPayloadId_shouldBurnFeeIfDefaultFeeRecipientIsNotConfigured() {
+  void getPayloadId_shouldFailIfDefaultFeeRecipientIsNotConfigured() {
     setUp(true);
     final Bytes8 payloadId = dataStructureUtil.randomBytes8();
 
@@ -566,10 +566,10 @@ class ForkChoiceNotifierTest {
     final UInt64 blockSlot = headState.getSlot().plus(2); // proposing slot 3
     final Bytes32 blockRoot = recentChainData.getBestBlockRoot().orElseThrow();
     final PayloadAttributes payloadAttributes =
-        withProposerForSlotButDoNotPrepareAndFeeBurn(headState, blockSlot);
+        withProposerForSlotButDoNotPrepare(headState, blockSlot, Optional.empty());
 
     validateGetPayloadIdOnTheFlyRetrieval(
-        blockSlot, blockRoot, finalizedForkChoiceState, payloadId, payloadAttributes);
+        blockSlot, blockRoot, finalizedForkChoiceState, payloadId, payloadAttributes, true);
   }
 
   @Test
@@ -616,7 +616,8 @@ class ForkChoiceNotifierTest {
       final Bytes32 blockRoot,
       final ForkChoiceState forkChoiceState,
       final Bytes8 payloadId,
-      final PayloadAttributes payloadAttributes) {
+      final PayloadAttributes payloadAttributes,
+      final boolean mustFail) {
     final SafeFuture<ForkChoiceUpdatedResult> responseFuture = new SafeFuture<>();
 
     storageSystem.chainUpdater().setCurrentSlot(blockSlot);
@@ -631,7 +632,11 @@ class ForkChoiceNotifierTest {
     responseFuture.complete(
         new ForkChoiceUpdatedResult(ForkChoiceUpdatedStatus.SUCCESS, Optional.of(payloadId)));
 
-    assertThatSafeFuture(futurePayloadId).isCompletedWithOptionalContaining(payloadId);
+    if (mustFail) {
+      assertThatSafeFuture(futurePayloadId).isCompletedExceptionally();
+    } else {
+      assertThatSafeFuture(futurePayloadId).isCompletedWithOptionalContaining(payloadId);
+    }
   }
 
   private PayloadAttributes withProposerForSlot(final UInt64 blockSlot) {
@@ -644,14 +649,11 @@ class ForkChoiceNotifierTest {
     return withProposerForSlot(state, blockSlot);
   }
 
-  private PayloadAttributes withProposerForSlotButDoNotPrepareAndFeeBurn(
-      final BeaconState headState, final UInt64 blockSlot) {
-    return withProposerForSlot(headState, blockSlot, false, Optional.of(Bytes20.ZERO));
-  }
-
   private PayloadAttributes withProposerForSlotButDoNotPrepare(
-      final BeaconState headState, final UInt64 blockSlot) {
-    return withProposerForSlot(headState, blockSlot, false, defaultFeeRecipient);
+      final BeaconState headState,
+      final UInt64 blockSlot,
+      final Optional<Bytes20> overrideFeeRecipient) {
+    return withProposerForSlot(headState, blockSlot, false, overrideFeeRecipient);
   }
 
   private PayloadAttributes withProposerForSlot(

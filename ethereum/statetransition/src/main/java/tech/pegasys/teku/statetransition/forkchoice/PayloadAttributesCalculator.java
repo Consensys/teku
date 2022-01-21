@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
+import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
+
 import com.google.common.collect.ImmutableMap;
 import java.util.Collection;
 import java.util.List;
@@ -20,8 +22,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
@@ -36,7 +36,6 @@ import tech.pegasys.teku.spec.executionengine.PayloadAttributes;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class PayloadAttributesCalculator {
-  private static final Logger LOG = LogManager.getLogger();
   private static final long MAX_PROPOSER_SEEN_EPOCHS = 2;
 
   private final Spec spec;
@@ -116,23 +115,21 @@ public class PayloadAttributesCalculator {
     }
     final UInt64 timestamp = spec.computeTimeAtSlot(state, blockSlot);
     final Bytes32 random = spec.getRandaoMix(state, epoch);
-    return Optional.of(new PayloadAttributes(timestamp, random, getFeeRecipient(proposerInfo)));
+    return Optional.of(
+        new PayloadAttributes(timestamp, random, getFeeRecipient(proposerInfo, blockSlot)));
   }
 
   // this function MUST return a fee recipient.
-  private Bytes20 getFeeRecipient(final ProposerInfo proposerInfo) {
+  private Bytes20 getFeeRecipient(final ProposerInfo proposerInfo, final UInt64 blockSlot) {
     if (proposerInfo != null) {
       return proposerInfo.feeRecipient;
     }
     if (proposerDefaultFeeRecipient.isPresent()) {
-      LOG.warn(
-          "Payload Attributes are required but current proposer hasn't prepared. Using Beacon Node's default values.");
+      VALIDATOR_LOGGER.executionPayloadPreparedUsingBeaconDefaultFeeRecipient(blockSlot);
       return proposerDefaultFeeRecipient.get();
     }
-    // TODO: rise a RED EVENT LOG?
-    LOG.error(
-        "Payload Attributes are required but current proposer hasn't prepared and there is no default fee recipient configured. FEES ARE GOING TO BE BURNED!");
-    return Bytes20.ZERO;
+    throw new IllegalStateException(
+        "Unable to determine proposer fee recipient address for slot " + blockSlot);
   }
 
   private SafeFuture<Optional<BeaconState>> getStateInEpoch(final UInt64 requiredEpoch) {
