@@ -30,7 +30,6 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
-import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkManager;
 import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkSubscriptions;
@@ -93,11 +92,8 @@ public class Eth2P2PNetworkBuilder {
   protected OperationProcessor<ValidateableAttestation> gossipedAttestationConsumer;
   protected OperationProcessor<ValidateableAttestation> gossipedAggregateProcessor;
   protected OperationProcessor<AttesterSlashing> gossipedAttesterSlashingConsumer;
-  protected GossipPublisher<AttesterSlashing> attesterSlashingGossipPublisher;
   protected OperationProcessor<ProposerSlashing> gossipedProposerSlashingConsumer;
-  protected GossipPublisher<ProposerSlashing> proposerSlashingGossipPublisher;
   protected OperationProcessor<SignedVoluntaryExit> gossipedVoluntaryExitConsumer;
-  protected GossipPublisher<SignedVoluntaryExit> voluntaryExitGossipPublisher;
   protected ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
   protected StorageQueryChannel historicalChainData;
   protected MetricsSystem metricsSystem;
@@ -113,10 +109,8 @@ public class Eth2P2PNetworkBuilder {
   protected Spec spec;
   protected OperationProcessor<SignedContributionAndProof>
       gossipedSignedContributionAndProofProcessor;
-  protected GossipPublisher<SignedContributionAndProof> signedContributionAndProofGossipPublisher;
   protected OperationProcessor<ValidateableSyncCommitteeMessage>
       gossipedSyncCommitteeMessageProcessor;
-  protected GossipPublisher<ValidateableSyncCommitteeMessage> syncCommitteeMessageGossipPublisher;
 
   protected Eth2P2PNetworkBuilder() {}
 
@@ -208,11 +202,8 @@ public class Eth2P2PNetworkBuilder {
             gossipedAttestationConsumer,
             gossipedAggregateProcessor,
             gossipedAttesterSlashingConsumer,
-            attesterSlashingGossipPublisher,
             gossipedProposerSlashingConsumer,
-            proposerSlashingGossipPublisher,
-            gossipedVoluntaryExitConsumer,
-            voluntaryExitGossipPublisher);
+            gossipedVoluntaryExitConsumer);
       case ALTAIR:
         return new GossipForkSubscriptionsAltair(
             forkAndSpecMilestone.getFork(),
@@ -226,15 +217,10 @@ public class Eth2P2PNetworkBuilder {
             gossipedAttestationConsumer,
             gossipedAggregateProcessor,
             gossipedAttesterSlashingConsumer,
-            attesterSlashingGossipPublisher,
             gossipedProposerSlashingConsumer,
-            proposerSlashingGossipPublisher,
             gossipedVoluntaryExitConsumer,
-            voluntaryExitGossipPublisher,
             gossipedSignedContributionAndProofProcessor,
-            signedContributionAndProofGossipPublisher,
-            gossipedSyncCommitteeMessageProcessor,
-            syncCommitteeMessageGossipPublisher);
+            gossipedSyncCommitteeMessageProcessor);
       case BELLATRIX:
         return new GossipForkSubscriptionsBellatrix(
             forkAndSpecMilestone.getFork(),
@@ -248,15 +234,10 @@ public class Eth2P2PNetworkBuilder {
             gossipedAttestationConsumer,
             gossipedAggregateProcessor,
             gossipedAttesterSlashingConsumer,
-            attesterSlashingGossipPublisher,
             gossipedProposerSlashingConsumer,
-            proposerSlashingGossipPublisher,
             gossipedVoluntaryExitConsumer,
-            voluntaryExitGossipPublisher,
             gossipedSignedContributionAndProofProcessor,
-            signedContributionAndProofGossipPublisher,
-            gossipedSyncCommitteeMessageProcessor,
-            syncCommitteeMessageGossipPublisher);
+            gossipedSyncCommitteeMessageProcessor);
       default:
         throw new UnsupportedOperationException(
             "Gossip not supported for fork " + forkAndSpecMilestone.getSpecMilestone());
@@ -348,13 +329,9 @@ public class Eth2P2PNetworkBuilder {
     assertNotNull("gossipedAttesterSlashingProcessor", gossipedAttesterSlashingConsumer);
     assertNotNull("gossipedProposerSlashingProcessor", gossipedProposerSlashingConsumer);
     assertNotNull("gossipedVoluntaryExitProcessor", gossipedVoluntaryExitConsumer);
-    assertNotNull("voluntaryExitGossipPublisher", voluntaryExitGossipPublisher);
-    assertNotNull(
-        "signedContributionAndProofGossipPublisher", signedContributionAndProofGossipPublisher);
     assertNotNull(
         "gossipedSignedContributionAndProofProcessor", gossipedSignedContributionAndProofProcessor);
     assertNotNull("gossipedSyncCommitteeMessageProcessor", gossipedSyncCommitteeMessageProcessor);
-    assertNotNull("syncCommitteeMessageGossipPublisher", syncCommitteeMessageGossipPublisher);
   }
 
   private void assertNotNull(String fieldName, Object fieldValue) {
@@ -395,27 +372,6 @@ public class Eth2P2PNetworkBuilder {
       final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider) {
     checkNotNull(processedAttestationSubscriptionProvider);
     this.processedAttestationSubscriptionProvider = processedAttestationSubscriptionProvider;
-    return this;
-  }
-
-  public Eth2P2PNetworkBuilder voluntaryExitGossipPublisher(
-      final GossipPublisher<SignedVoluntaryExit> voluntaryExitGossipPublisher) {
-    checkNotNull(voluntaryExitGossipPublisher);
-    this.voluntaryExitGossipPublisher = voluntaryExitGossipPublisher;
-    return this;
-  }
-
-  public Eth2P2PNetworkBuilder attesterSlashingGossipPublisher(
-      final GossipPublisher<AttesterSlashing> attesterSlashingGossipPublisher) {
-    checkNotNull(attesterSlashingGossipPublisher);
-    this.attesterSlashingGossipPublisher = attesterSlashingGossipPublisher;
-    return this;
-  }
-
-  public Eth2P2PNetworkBuilder proposerSlashingGossipPublisher(
-      final GossipPublisher<ProposerSlashing> proposerSlashingGossipPublisher) {
-    checkNotNull(proposerSlashingGossipPublisher);
-    this.proposerSlashingGossipPublisher = proposerSlashingGossipPublisher;
     return this;
   }
 
@@ -469,25 +425,11 @@ public class Eth2P2PNetworkBuilder {
     return this;
   }
 
-  public Eth2P2PNetworkBuilder signedContributionAndProofGossipPublisher(
-      final GossipPublisher<SignedContributionAndProof> signedContributionAndProofGossipPublisher) {
-    checkNotNull(signedContributionAndProofGossipPublisher);
-    this.signedContributionAndProofGossipPublisher = signedContributionAndProofGossipPublisher;
-    return this;
-  }
-
   public Eth2P2PNetworkBuilder gossipedSyncCommitteeMessageProcessor(
       final OperationProcessor<ValidateableSyncCommitteeMessage>
           gossipedSyncCommitteeMessageProcessor) {
     checkNotNull(gossipedSyncCommitteeMessageProcessor);
     this.gossipedSyncCommitteeMessageProcessor = gossipedSyncCommitteeMessageProcessor;
-    return this;
-  }
-
-  public Eth2P2PNetworkBuilder syncCommitteeMessageGossipPublisher(
-      final GossipPublisher<ValidateableSyncCommitteeMessage> syncCommitteeMessageGossipPublisher) {
-    checkNotNull(syncCommitteeMessageGossipPublisher);
-    this.syncCommitteeMessageGossipPublisher = syncCommitteeMessageGossipPublisher;
     return this;
   }
 

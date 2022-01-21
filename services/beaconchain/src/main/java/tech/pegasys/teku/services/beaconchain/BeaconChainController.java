@@ -47,7 +47,6 @@ import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkBuilder;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
-import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSubnetsSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSyncCommitteeSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
@@ -68,12 +67,11 @@ import tech.pegasys.teku.spec.datastructures.interop.InteropStartupUtil;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.statetransition.EpochCachePrimer;
+import tech.pegasys.teku.statetransition.OperationAcceptedFilter;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.OperationsReOrgManager;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -101,7 +99,6 @@ import tech.pegasys.teku.statetransition.validation.AttestationValidator;
 import tech.pegasys.teku.statetransition.validation.AttesterSlashingValidator;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.statetransition.validation.ProposerSlashingValidator;
-import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.statetransition.validation.VoluntaryExitValidator;
 import tech.pegasys.teku.statetransition.validation.signatures.AggregatingSignatureVerificationService;
 import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
@@ -676,51 +673,6 @@ public class BeaconChainController extends Service
         beaconConfig.p2pConfig().getNetworkConfig().getListenPort(),
         beaconConfig.p2pConfig().getDiscoveryConfig().getListenUdpPort());
 
-    final GossipPublisher<AttesterSlashing> attesterSlashingGossipPublisher =
-        new GossipPublisher<>();
-    final GossipPublisher<ProposerSlashing> proposerSlashingGossipPublisher =
-        new GossipPublisher<>();
-    final GossipPublisher<SignedVoluntaryExit> voluntaryExitGossipPublisher =
-        new GossipPublisher<>();
-    final GossipPublisher<SignedContributionAndProof> signedContributionAndProofGossipPublisher =
-        new GossipPublisher<>();
-    final GossipPublisher<ValidateableSyncCommitteeMessage> syncCommitteeMessageGossipPublisher =
-        new GossipPublisher<>();
-
-    // Set up gossip for voluntary exits
-    voluntaryExitPool.subscribeOperationAdded(
-        (item, result) -> {
-          if (result.code() == ValidationResultCode.ACCEPT) {
-            voluntaryExitGossipPublisher.publish(item);
-          }
-        });
-    // Set up gossip for attester slashings
-    attesterSlashingPool.subscribeOperationAdded(
-        (item, result) -> {
-          if (result.code() == ValidationResultCode.ACCEPT) {
-            attesterSlashingGossipPublisher.publish(item);
-          }
-        });
-    // Set up gossip for proposer slashings
-    proposerSlashingPool.subscribeOperationAdded(
-        (item, result) -> {
-          if (result.code() == ValidationResultCode.ACCEPT) {
-            proposerSlashingGossipPublisher.publish(item);
-          }
-        });
-    syncCommitteeContributionPool.subscribeOperationAdded(
-        (item, result) -> {
-          if (result.code() == ValidationResultCode.ACCEPT) {
-            signedContributionAndProofGossipPublisher.publish(item);
-          }
-        });
-    syncCommitteeMessagePool.subscribeOperationAdded(
-        (item, result) -> {
-          if (result.code() == ValidationResultCode.ACCEPT) {
-            syncCommitteeMessageGossipPublisher.publish(item);
-          }
-        });
-
     final KeyValueStore<String, Bytes> keyValueStore =
         new FileKeyValueStore(beaconDataDirectory.resolve(KEY_VALUE_STORE_SUBDIRECTORY));
 
@@ -733,15 +685,10 @@ public class BeaconChainController extends Service
             .gossipedAttestationProcessor(attestationManager::addAttestation)
             .gossipedAggregateProcessor(attestationManager::addAggregate)
             .gossipedAttesterSlashingProcessor(attesterSlashingPool::add)
-            .attesterSlashingGossipPublisher(attesterSlashingGossipPublisher)
             .gossipedProposerSlashingProcessor(proposerSlashingPool::add)
-            .proposerSlashingGossipPublisher(proposerSlashingGossipPublisher)
             .gossipedVoluntaryExitProcessor(voluntaryExitPool::add)
-            .voluntaryExitGossipPublisher(voluntaryExitGossipPublisher)
-            .signedContributionAndProofGossipPublisher(signedContributionAndProofGossipPublisher)
             .gossipedSignedContributionAndProofProcessor(syncCommitteeContributionPool::add)
             .gossipedSyncCommitteeMessageProcessor(syncCommitteeMessagePool::add)
-            .syncCommitteeMessageGossipPublisher(syncCommitteeMessageGossipPublisher)
             .processedAttestationSubscriptionProvider(
                 attestationManager::subscribeToAttestationsToSend)
             .historicalChainData(
@@ -753,6 +700,17 @@ public class BeaconChainController extends Service
             .requiredCheckpoint(weakSubjectivityValidator.getWSCheckpoint())
             .specProvider(spec)
             .build();
+
+    syncCommitteeMessagePool.subscribeOperationAdded(
+        new OperationAcceptedFilter<>(p2pNetwork::publishSyncCommitteeMessage));
+    syncCommitteeContributionPool.subscribeOperationAdded(
+        new OperationAcceptedFilter<>(p2pNetwork::publishSyncCommitteeContribution));
+    proposerSlashingPool.subscribeOperationAdded(
+        new OperationAcceptedFilter<>(p2pNetwork::publishProposerSlashing));
+    attesterSlashingPool.subscribeOperationAdded(
+        new OperationAcceptedFilter<>(p2pNetwork::publishAttesterSlashing));
+    voluntaryExitPool.subscribeOperationAdded(
+        new OperationAcceptedFilter<>(p2pNetwork::publishVoluntaryExit));
   }
 
   protected Eth2P2PNetworkBuilder createEth2P2PNetworkBuilder() {
