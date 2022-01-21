@@ -49,4 +49,23 @@ public abstract class PublisherEnabledGossipManager<T extends SszData>
         maxMessageSize);
     publisher.subscribe(this::publishMessage);
   }
+
+  // Methods overridden to add synchronization because the publisher subscription will trigger
+  // publishing messages without going through GossipForkManager where synchronization is normally
+  // done
+
+  @Override
+  protected synchronized void publishMessage(final T message) {
+    super.publishMessage(message);
+  }
+
+  @Override
+  public synchronized void subscribe() {
+    super.subscribe();
+  }
+
+  @Override
+  public synchronized void unsubscribe() {
+    super.unsubscribe();
+  }
 }
