@@ -50,13 +50,9 @@ class SyncCommitteeMessageGossipManagerTest {
   private final SyncCommitteeSubnetSubscriptions subnetSubscriptions =
       mock(SyncCommitteeSubnetSubscriptions.class);
 
-  @SuppressWarnings("unchecked")
-  private final GossipPublisher<ValidateableSyncCommitteeMessage> publisher =
-      mock(GossipPublisher.class);
-
   private final SyncCommitteeMessageGossipManager gossipManager =
       new SyncCommitteeMessageGossipManager(
-          metricsSystem, spec, syncCommitteeStateUtils, subnetSubscriptions, publisher);
+          metricsSystem, spec, syncCommitteeStateUtils, subnetSubscriptions);
 
   @BeforeEach
   void setUp() {

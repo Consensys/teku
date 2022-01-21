@@ -42,8 +42,7 @@ public class SyncCommitteeMessageGossipManager implements GossipManager {
       final MetricsSystem metricsSystem,
       final Spec spec,
       final SyncCommitteeStateUtils syncCommitteeStateUtils,
-      final SyncCommitteeSubnetSubscriptions subnetSubscriptions,
-      final GossipPublisher<ValidateableSyncCommitteeMessage> gossipPublisher) {
+      final SyncCommitteeSubnetSubscriptions subnetSubscriptions) {
     this.spec = spec;
     this.syncCommitteeStateUtils = syncCommitteeStateUtils;
     this.subnetSubscriptions = subnetSubscriptions;
@@ -55,7 +54,6 @@ public class SyncCommitteeMessageGossipManager implements GossipManager {
             "result");
     publishSuccessCounter = publishedSyncCommitteeCounter.labels("success");
     publishFailureCounter = publishedSyncCommitteeCounter.labels("failure");
-    gossipPublisher.subscribe(this::publish);
   }
 
   public void publish(final ValidateableSyncCommitteeMessage message) {

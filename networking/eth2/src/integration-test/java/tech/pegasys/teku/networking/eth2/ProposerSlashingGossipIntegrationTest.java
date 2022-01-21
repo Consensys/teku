@@ -27,18 +27,20 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkFactory.Eth2P2PNetworkBuilder;
-import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class ProposerSlashingGossipIntegrationTest {
 
+  private final Spec spec = TestSpecFactory.createDefault();
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(3);
   private final Eth2P2PNetworkFactory networkFactory = new Eth2P2PNetworkFactory();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @AfterEach
   public void tearDown() throws Exception {
@@ -50,7 +52,6 @@ public class ProposerSlashingGossipIntegrationTest {
     final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
 
     // Set up publishers & consumers
-    final GossipPublisher<ProposerSlashing> gossipPublisher = new GossipPublisher<>();
     Set<ProposerSlashing> receivedGossip = new HashSet<>();
     final OperationProcessor<ProposerSlashing> operationProcessor =
         (slashing) -> {
@@ -59,8 +60,7 @@ public class ProposerSlashingGossipIntegrationTest {
         };
 
     // Setup network 1
-    final Consumer<Eth2P2PNetworkBuilder> networkBuilder =
-        b -> b.gossipEncoding(gossipEncoding).proposerSlashingGossipPublisher(gossipPublisher);
+    final Consumer<Eth2P2PNetworkBuilder> networkBuilder = b -> b.gossipEncoding(gossipEncoding);
     NodeManager node1 = createNodeManager(networkBuilder);
 
     // Setup network 2
@@ -81,17 +81,14 @@ public class ProposerSlashingGossipIntegrationTest {
 
     // Create and publish slashing
     final ProposerSlashing slashing = dataStructureUtil.randomProposerSlashing();
-    gossipPublisher.publish(slashing);
+    node1.network().publishProposerSlashing(slashing);
 
     // Verify the slashing was gossiped across the network
-    Waiter.waitFor(
-        () -> {
-          assertThat(receivedGossip).containsExactly(slashing);
-        });
+    Waiter.waitFor(() -> assertThat(receivedGossip).containsExactly(slashing));
   }
 
   private NodeManager createNodeManager(final Consumer<Eth2P2PNetworkBuilder> networkBuilder)
       throws Exception {
-    return NodeManager.create(networkFactory, validatorKeys, networkBuilder);
+    return NodeManager.create(spec, networkFactory, validatorKeys, networkBuilder);
   }
 }

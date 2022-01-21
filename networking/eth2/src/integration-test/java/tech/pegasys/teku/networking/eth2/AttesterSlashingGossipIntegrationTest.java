@@ -27,7 +27,6 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkFactory.Eth2P2PNetworkBuilder;
-import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -50,7 +49,6 @@ public class AttesterSlashingGossipIntegrationTest {
     final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
 
     // Set up publishers & consumers
-    final GossipPublisher<AttesterSlashing> gossipPublisher = new GossipPublisher<>();
     Set<AttesterSlashing> receivedGossip = new HashSet<>();
     final OperationProcessor<AttesterSlashing> operationProcessor =
         (slashing) -> {
@@ -59,8 +57,7 @@ public class AttesterSlashingGossipIntegrationTest {
         };
 
     // Setup network 1
-    final Consumer<Eth2P2PNetworkBuilder> networkBuilder =
-        b -> b.gossipEncoding(gossipEncoding).attesterSlashingGossipPublisher(gossipPublisher);
+    final Consumer<Eth2P2PNetworkBuilder> networkBuilder = b -> b.gossipEncoding(gossipEncoding);
     NodeManager node1 = createNodeManager(networkBuilder);
 
     // Setup network 2
@@ -81,7 +78,7 @@ public class AttesterSlashingGossipIntegrationTest {
 
     // Create and publish slashing
     final AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashing();
-    gossipPublisher.publish(slashing);
+    node1.network().publishAttesterSlashing(slashing);
 
     // Verify the slashing was gossiped across the network
     Waiter.waitFor(

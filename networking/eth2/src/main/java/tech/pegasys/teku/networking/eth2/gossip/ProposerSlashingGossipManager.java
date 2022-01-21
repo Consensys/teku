@@ -22,7 +22,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class ProposerSlashingGossipManager extends PublisherEnabledGossipManager<ProposerSlashing> {
+public class ProposerSlashingGossipManager extends AbstractGossipManager<ProposerSlashing> {
 
   public ProposerSlashingGossipManager(
       final RecentChainData recentChainData,
@@ -31,7 +31,6 @@ public class ProposerSlashingGossipManager extends PublisherEnabledGossipManager
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
       final OperationProcessor<ProposerSlashing> processor,
-      final GossipPublisher<ProposerSlashing> publisher,
       final int maxMessageSize) {
     super(
         recentChainData,
@@ -41,8 +40,11 @@ public class ProposerSlashingGossipManager extends PublisherEnabledGossipManager
         gossipEncoding,
         forkInfo,
         processor,
-        publisher,
         ProposerSlashing.SSZ_SCHEMA,
         maxMessageSize);
+  }
+
+  public void publishProposerSlashing(final ProposerSlashing message) {
+    publishMessage(message);
   }
 }

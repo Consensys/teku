@@ -22,7 +22,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class AttesterSlashingGossipManager extends PublisherEnabledGossipManager<AttesterSlashing> {
+public class AttesterSlashingGossipManager extends AbstractGossipManager<AttesterSlashing> {
 
   public AttesterSlashingGossipManager(
       final RecentChainData recentChainData,
@@ -31,7 +31,6 @@ public class AttesterSlashingGossipManager extends PublisherEnabledGossipManager
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
       final OperationProcessor<AttesterSlashing> processor,
-      final GossipPublisher<AttesterSlashing> publisher,
       final int maxMessageSize) {
     super(
         recentChainData,
@@ -41,8 +40,11 @@ public class AttesterSlashingGossipManager extends PublisherEnabledGossipManager
         gossipEncoding,
         forkInfo,
         processor,
-        publisher,
         AttesterSlashing.SSZ_SCHEMA,
         maxMessageSize);
+  }
+
+  public void publishAttesterSlashing(final AttesterSlashing message) {
+    publishMessage(message);
   }
 }

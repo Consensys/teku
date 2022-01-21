@@ -17,7 +17,6 @@ import static tech.pegasys.teku.util.config.Constants.GOSSIP_MAX_SIZE_BELLATRIX;
 
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
-import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
@@ -46,15 +45,10 @@ public class GossipForkSubscriptionsBellatrix extends GossipForkSubscriptionsAlt
       OperationProcessor<ValidateableAttestation> attestationProcessor,
       OperationProcessor<ValidateableAttestation> aggregateProcessor,
       OperationProcessor<AttesterSlashing> attesterSlashingProcessor,
-      GossipPublisher<AttesterSlashing> attesterSlashingGossipPublisher,
       OperationProcessor<ProposerSlashing> proposerSlashingProcessor,
-      GossipPublisher<ProposerSlashing> proposerSlashingGossipPublisher,
       OperationProcessor<SignedVoluntaryExit> voluntaryExitProcessor,
-      GossipPublisher<SignedVoluntaryExit> voluntaryExitGossipPublisher,
       OperationProcessor<SignedContributionAndProof> signedContributionAndProofOperationProcessor,
-      GossipPublisher<SignedContributionAndProof> signedContributionAndProofGossipPublisher,
-      OperationProcessor<ValidateableSyncCommitteeMessage> syncCommitteeMessageOperationProcessor,
-      GossipPublisher<ValidateableSyncCommitteeMessage> syncCommitteeMessageGossipPublisher) {
+      OperationProcessor<ValidateableSyncCommitteeMessage> syncCommitteeMessageOperationProcessor) {
     super(
         fork,
         spec,
@@ -67,15 +61,10 @@ public class GossipForkSubscriptionsBellatrix extends GossipForkSubscriptionsAlt
         attestationProcessor,
         aggregateProcessor,
         attesterSlashingProcessor,
-        attesterSlashingGossipPublisher,
         proposerSlashingProcessor,
-        proposerSlashingGossipPublisher,
         voluntaryExitProcessor,
-        voluntaryExitGossipPublisher,
         signedContributionAndProofOperationProcessor,
-        signedContributionAndProofGossipPublisher,
-        syncCommitteeMessageOperationProcessor,
-        syncCommitteeMessageGossipPublisher);
+        syncCommitteeMessageOperationProcessor);
   }
 
   @Override
