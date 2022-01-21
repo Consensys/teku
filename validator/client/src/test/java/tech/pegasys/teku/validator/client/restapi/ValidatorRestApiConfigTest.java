@@ -47,12 +47,13 @@ class ValidatorRestApiConfigTest {
 
   @Test
   void validatorApiShouldNotAllowDisableSslForMostHosts() {
-    assertThatThrownBy(() ->
-        ValidatorRestApiConfig.builder()
-            .restApiEnabled(true)
-            .restApiSslEnabled(false)
-            .restApiInterface("192.168.1.1")
-            .build())
+    assertThatThrownBy(
+            () ->
+                ValidatorRestApiConfig.builder()
+                    .restApiEnabled(true)
+                    .restApiSslEnabled(false)
+                    .restApiInterface("192.168.1.1")
+                    .build())
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("SSL connections can only be disabled on the localhost interface");
   }
