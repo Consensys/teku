@@ -154,11 +154,11 @@ public class RestApiBuilder {
   private void checkAccessFile(final Path path) {
     if (!path.toFile().exists()) {
       try {
-        if (!path.getParent().toFile().mkdirs()) {
+        if (!path.getParent().toFile().mkdirs() && !path.getParent().toFile().isDirectory()) {
           LOG.error("Could not mkdirs for file {}", path.toAbsolutePath());
           throw new IllegalStateException(
               String.format(
-                  "Cannot write to path %s, check folders are present and writable.",
+                  "Cannot create directories %s",
                   path.getParent().toAbsolutePath()));
         }
         final Bytes generated = Bytes.random(16);
