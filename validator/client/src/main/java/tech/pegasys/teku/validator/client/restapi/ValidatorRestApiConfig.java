@@ -18,6 +18,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
 public class ValidatorRestApiConfig {
 
@@ -180,6 +181,11 @@ public class ValidatorRestApiConfig {
                 String.format(
                     "Could not access Validator api keystore file %s",
                     restApiKeystoreFile.toAbsolutePath()));
+          }
+        } else {
+          if (restApiKeystoreFile != null) {
+            throw new InvalidConfigurationException(
+                "Validator-api has Xvalidator-api-ssl-enabled set to false, and a keystore is specified.");
           }
         }
       }
