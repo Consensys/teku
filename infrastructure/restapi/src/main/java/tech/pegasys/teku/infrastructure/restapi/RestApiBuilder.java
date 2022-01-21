@@ -76,7 +76,7 @@ public class RestApiBuilder {
   }
 
   public RestApiBuilder sslCertificate(final Path sslPath, final Path sslPasswordPath) {
-    this.maybeKeystorePath = Optional.of(sslPath);
+    this.maybeKeystorePath = Optional.ofNullable(sslPath);
     this.maybePasswordPath = Optional.ofNullable(sslPasswordPath);
     return this;
   }
@@ -154,6 +154,13 @@ public class RestApiBuilder {
   private void checkAccessFile(final Path path) {
     if (!path.toFile().exists()) {
       try {
+        if (!path.getParent().toFile().mkdirs()) {
+          LOG.error("Could not mkdirs for file {}", path.toAbsolutePath());
+          throw new IllegalStateException(
+              String.format(
+                  "Cannot write to path %s, check folders are present and writable.",
+                  path.getParent().toAbsolutePath()));
+        }
         final Bytes generated = Bytes.random(16);
         LOG.info("Initializing API auth access file {}", path.toAbsolutePath());
         Files.writeString(path, generated.toUnprefixedHexString(), UTF_8);

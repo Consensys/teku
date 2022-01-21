@@ -17,6 +17,7 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 public class ValidatorRestApiConfig {
 
@@ -103,6 +104,7 @@ public class ValidatorRestApiConfig {
     private int restApiPort = DEFAULT_REST_API_PORT;
     private boolean restApiDocsEnabled = false;
     private boolean restApiEnabled = false;
+    private boolean restApiSslEnabled = true;
     private String restApiInterface = DEFAULT_REST_API_INTERFACE;
     private List<String> restApiHostAllowlist = DEFAULT_REST_API_HOST_ALLOWLIST;
     private List<String> restApiCorsAllowedOrigins = Collections.emptyList();
@@ -164,14 +166,21 @@ public class ValidatorRestApiConfig {
 
     public ValidatorRestApiConfig build() {
       if (restApiEnabled) {
-        if (restApiKeystoreFile == null) {
-          throw new IllegalArgumentException("Validator api requires ssl keystore to be defined.");
-        }
-        if (!restApiKeystoreFile.toFile().exists() || !restApiKeystoreFile.toFile().isFile()) {
+        if (!restApiSslEnabled && !Objects.equals(restApiInterface, DEFAULT_REST_API_INTERFACE)) {
           throw new IllegalArgumentException(
-              String.format(
-                  "Could not access Validator api keystore file %s",
-                  restApiKeystoreFile.toAbsolutePath()));
+              "SSL connections can only be disabled on the localhost interface.");
+        }
+        if (restApiSslEnabled) {
+          if (restApiKeystoreFile == null) {
+            throw new IllegalArgumentException(
+                "Validator api requires ssl keystore to be defined.");
+          }
+          if (!restApiKeystoreFile.toFile().exists() || !restApiKeystoreFile.toFile().isFile()) {
+            throw new IllegalArgumentException(
+                String.format(
+                    "Could not access Validator api keystore file %s",
+                    restApiKeystoreFile.toAbsolutePath()));
+          }
         }
       }
       return new ValidatorRestApiConfig(
@@ -184,6 +193,11 @@ public class ValidatorRestApiConfig {
           maxUrlLength,
           restApiKeystoreFile,
           restApiKeystorePasswordFile);
+    }
+
+    public ValidatorRestApiConfigBuilder restApiSslEnabled(final boolean restApiSslEnabled) {
+      this.restApiSslEnabled = restApiSslEnabled;
+      return this;
     }
   }
 }

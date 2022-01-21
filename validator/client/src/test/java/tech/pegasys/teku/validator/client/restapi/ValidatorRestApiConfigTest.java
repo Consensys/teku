@@ -38,6 +38,26 @@ class ValidatorRestApiConfigTest {
   }
 
   @Test
+  void validatorApiShouldAllowDisableSslForLocalhost() {
+    final ValidatorRestApiConfig config =
+        ValidatorRestApiConfig.builder().restApiEnabled(true).restApiSslEnabled(false).build();
+    assertThat(config.isRestApiEnabled()).isTrue();
+    assertThat(config.getRestApiKeystoreFile()).isNull();
+  }
+
+  @Test
+  void validatorApiShouldNotAllowDisableSslForMostHosts() {
+    assertThatThrownBy(() ->
+        ValidatorRestApiConfig.builder()
+            .restApiEnabled(true)
+            .restApiSslEnabled(false)
+            .restApiInterface("192.168.1.1")
+            .build())
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("SSL connections can only be disabled on the localhost interface");
+  }
+
+  @Test
   void validatorApiRequiresKeystoreToExist(@TempDir final Path tempPath) {
     assertThatThrownBy(
             () ->

@@ -40,6 +40,7 @@ public class OpenApiDocBuilder {
   private String description;
   private String licenseName;
   private String licenseUrl;
+  private boolean bearerAuth;
 
   private final Map<String, Map<HandlerType, RestApiEndpoint>> endpoints = new LinkedHashMap<>();
 
@@ -61,6 +62,11 @@ public class OpenApiDocBuilder {
   public OpenApiDocBuilder license(final String licenseName, final String licenseUrl) {
     this.licenseName = licenseName;
     this.licenseUrl = licenseUrl;
+    return this;
+  }
+
+  public OpenApiDocBuilder bearerAuth(final boolean bearerAuth) {
+    this.bearerAuth = bearerAuth;
     return this;
   }
 
@@ -122,7 +128,20 @@ public class OpenApiDocBuilder {
 
   private void writeComponents(final JsonGenerator gen) throws IOException {
     gen.writeObjectFieldStart("components");
+    writeSecuritySchemas(gen);
     writeSchemas(gen);
+    gen.writeEndObject();
+  }
+
+  private void writeSecuritySchemas(final JsonGenerator gen) throws IOException {
+    if (!bearerAuth) {
+      return;
+    }
+    gen.writeObjectFieldStart("securitySchemes");
+    gen.writeObjectFieldStart("bearerAuth");
+    gen.writeStringField("type", "http");
+    gen.writeStringField("scheme", "bearer");
+    gen.writeEndObject();
     gen.writeEndObject();
   }
 
