@@ -41,6 +41,16 @@ public class ValidatorRestApiOptions {
   private boolean restApiDocsEnabled = false;
 
   @CommandLine.Option(
+      names = {"--Xvalidator-api-ssl-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
+      description = "Enable ssl for the validator-api. Can be disabled for localhost.",
+      hidden = true,
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean restApiSslEnabled = true;
+
+  @CommandLine.Option(
       names = {"--Xvalidator-api-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
@@ -101,6 +111,7 @@ public class ValidatorRestApiOptions {
                 .restApiDocsEnabled(restApiDocsEnabled)
                 .restApiPort(restApiPort)
                 .restApiInterface(restApiInterface)
+                .restApiSslEnabled(restApiSslEnabled)
                 .restApiCorsAllowedOrigins(restApiCorsAllowedOrigins)
                 .validatorApiKeystoreFile(keystoreFile)
                 .validatorApiKeystorePasswordFile(keystorePasswordFile)

@@ -45,6 +45,7 @@ public class EndpointMetadata {
   private final String path;
   private final String operationId;
   private final String summary;
+  private final Optional<String> security;
   private final String description;
   private final Map<String, OpenApiResponse> responses;
   private final Optional<DeserializableTypeDefinition<?>> requestBodyType;
@@ -54,6 +55,7 @@ public class EndpointMetadata {
       final String path,
       final String operationId,
       final String summary,
+      final Optional<String> security,
       final String description,
       final Map<String, OpenApiResponse> responses,
       final Optional<DeserializableTypeDefinition<?>> requestBodyType) {
@@ -61,6 +63,7 @@ public class EndpointMetadata {
     this.path = path;
     this.operationId = operationId;
     this.summary = summary;
+    this.security = security;
     this.description = description;
     this.responses = responses;
     this.requestBodyType = requestBodyType;
@@ -84,6 +87,10 @@ public class EndpointMetadata {
 
   public String getPath() {
     return path;
+  }
+
+  public Optional<String> getSecurity() {
+    return security;
   }
 
   public SerializableTypeDefinition<?> getResponseType(
@@ -119,6 +126,15 @@ public class EndpointMetadata {
       gen.writeEndObject();
     }
 
+    if (security.isPresent()) {
+      gen.writeArrayFieldStart("security");
+      gen.writeStartObject();
+      gen.writeArrayFieldStart(security.get());
+      gen.writeEndArray();
+      gen.writeEndObject();
+      gen.writeEndArray();
+    }
+
     gen.writeObjectFieldStart("responses");
     for (Entry<String, OpenApiResponse> responseEntry : responses.entrySet()) {
       gen.writeFieldName(responseEntry.getKey());
@@ -147,6 +163,7 @@ public class EndpointMetadata {
     private String operationId;
     private String summary;
     private String description;
+    private Optional<String> security = Optional.empty();
     private Optional<DeserializableTypeDefinition<?>> requestBodyType = Optional.empty();
     private final Map<String, OpenApiResponse> responses = new LinkedHashMap<>();
 
@@ -157,6 +174,15 @@ public class EndpointMetadata {
 
     public EndpointMetaDataBuilder path(final String path) {
       this.path = path;
+      return this;
+    }
+
+    public EndpointMetaDataBuilder withBearerAuthSecurity() {
+      return security("bearerAuth");
+    }
+
+    public EndpointMetaDataBuilder security(final String security) {
+      this.security = Optional.ofNullable(security);
       return this;
     }
 
@@ -246,7 +272,7 @@ public class EndpointMetadata {
         withInternalErrorResponse();
       }
       return new EndpointMetadata(
-          method, path, operationId, summary, description, responses, requestBodyType);
+          method, path, operationId, summary, security, description, responses, requestBodyType);
     }
   }
 }

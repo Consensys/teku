@@ -98,6 +98,16 @@ class EndpointMetadataTest {
   }
 
   @Test
+  void shouldAddSecurityToEndpoint() {
+    final EndpointMetadata metadata =
+        validBuilder()
+            .security("authBearer")
+            .response(SC_OK, "Success", CoreTypes.STRING_TYPE)
+            .build();
+    assertThat(metadata.getSecurity()).contains("authBearer");
+  }
+
+  @Test
   @SuppressWarnings({"unchecked", "rawtypes"})
   void requestBodyType_shouldAcceptLists() {
     final DeserializableArrayTypeDefinition<String> type =

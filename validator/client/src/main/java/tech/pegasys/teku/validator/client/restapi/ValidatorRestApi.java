@@ -40,6 +40,7 @@ public class ValidatorRestApi {
                         StringUtils.capitalize(
                             VersionProvider.CLIENT_IDENTITY + " Validator Rest API"))
                     .version(VersionProvider.IMPLEMENTATION_VERSION)
+                    .bearerAuth(true)
                     .description("An implementation of the key management standard Rest API.")
                     .license("Apache 2.0", "https://www.apache.org/licenses/LICENSE-2.0.html"))
         .openApiDocsEnabled(config.isRestApiDocsEnabled())

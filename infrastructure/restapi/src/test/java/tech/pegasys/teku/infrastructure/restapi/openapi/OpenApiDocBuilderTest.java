@@ -63,6 +63,15 @@ class OpenApiDocBuilderTest {
   }
 
   @Test
+  void shouldIncludeSecurityComponentIfDefined() throws Exception {
+    final Map<String, Object> openApiDoc = parse(validBuilder().bearerAuth(true).build());
+    final Map<String, Object> components = getObject(openApiDoc, "components");
+    final Map<String, Object> securitySchemes = getObject(components, "securitySchemes");
+    assertThat(getObject(securitySchemes, "bearerAuth"))
+        .containsExactly(entry("type", "http"), entry("scheme", "bearer"));
+  }
+
+  @Test
   void shouldIncludeDescription() throws Exception {
     final Map<String, Object> result =
         parse(validBuilder().description("Some description").build());
