@@ -38,6 +38,20 @@ class ValidatorRestApiConfigTest {
   }
 
   @Test
+  void validatorApiShouldNotAcceptCertIfInHttpMode(@TempDir final Path tempPath) {
+    assertThatThrownBy(
+            () ->
+                ValidatorRestApiConfig.builder()
+                    .restApiEnabled(true)
+                    .restApiSslEnabled(false)
+                    .validatorApiKeystoreFile(tempPath.resolve("keystore").toString())
+                    .build())
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining(
+            "validator-api-ssl-enabled set to false, and a keystore is specified");
+  }
+
+  @Test
   void validatorApiShouldAllowDisableSslForLocalhost() {
     final ValidatorRestApiConfig config =
         ValidatorRestApiConfig.builder().restApiEnabled(true).restApiSslEnabled(false).build();
