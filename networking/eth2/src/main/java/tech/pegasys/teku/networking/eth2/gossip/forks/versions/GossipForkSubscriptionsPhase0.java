@@ -121,6 +121,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
   protected void addGossipManagers(final ForkInfo forkInfo) {
     AttestationSubnetSubscriptions attestationSubnetSubscriptions =
         new AttestationSubnetSubscriptions(
+            spec,
             asyncRunner,
             discoveryNetwork,
             gossipEncoding,
