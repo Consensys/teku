@@ -30,7 +30,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkFactory.Eth2P2PNetworkBuilder;
-import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.spec.Spec;
@@ -60,8 +59,6 @@ public class VoluntaryExitGossipIntegrationTest {
         config.getShardCommitteePeriod().plus(2).times(config.getSlotsPerEpoch());
 
     // Set up publishers & consumers
-    final GossipPublisher<SignedVoluntaryExit> voluntaryExitGossipPublisher =
-        new GossipPublisher<>();
     Set<SignedVoluntaryExit> receivedVoluntaryExits = new HashSet<>();
     final OperationProcessor<SignedVoluntaryExit> operationProcessor =
         (voluntaryExit) -> {
@@ -70,8 +67,7 @@ public class VoluntaryExitGossipIntegrationTest {
         };
 
     // Setup network 1
-    final Consumer<Eth2P2PNetworkBuilder> networkBuilder =
-        b -> b.gossipEncoding(gossipEncoding).voluntaryExitPublisher(voluntaryExitGossipPublisher);
+    final Consumer<Eth2P2PNetworkBuilder> networkBuilder = b -> b.gossipEncoding(gossipEncoding);
     NodeManager node1 = createNodeManager(networkBuilder);
     node1.chainUtil().setSlot(blockSlot);
 
@@ -103,13 +99,10 @@ public class VoluntaryExitGossipIntegrationTest {
     final SignedVoluntaryExit voluntaryExit = exitGenerator.valid(state, 0);
 
     // Publish voluntary exit
-    voluntaryExitGossipPublisher.publish(voluntaryExit);
+    node1.network().publishVoluntaryExit(voluntaryExit);
 
     // Verify the expected exit was gossiped across the network
-    Waiter.waitFor(
-        () -> {
-          assertThat(receivedVoluntaryExits).containsExactly(voluntaryExit);
-        });
+    Waiter.waitFor(() -> assertThat(receivedVoluntaryExits).containsExactly(voluntaryExit));
   }
 
   private NodeManager createNodeManager(final Consumer<Eth2P2PNetworkBuilder> networkBuilder)

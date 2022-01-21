@@ -23,6 +23,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,6 +31,10 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -129,37 +134,72 @@ public class GossipForkManager {
   }
 
   public synchronized void publishAttestation(final ValidateableAttestation attestation) {
-    getSubscriptionActiveAtSlot(attestation.getData().getSlot())
-        .filter(this::isActive)
-        .ifPresentOrElse(
-            subscription -> subscription.publishAttestation(attestation),
-            () ->
-                LOG.warn(
-                    "Not publishing attestation because no gossip subscriptions are active for slot {}",
-                    attestation.getData().getSlot()));
+    publishMessage(
+        attestation.getData().getSlot(),
+        attestation,
+        "attestation",
+        GossipForkSubscriptions::publishAttestation);
   }
 
   public synchronized void publishBlock(final SignedBeaconBlock block) {
-    getSubscriptionActiveAtSlot(block.getSlot())
-        .filter(this::isActive)
-        .ifPresentOrElse(
-            subscription -> subscription.publishBlock(block),
-            () ->
-                LOG.warn(
-                    "Not publishing block because no gossip subscriptions are active for slot {}",
-                    block.getSlot()));
+    publishMessage(block.getSlot(), block, "block", GossipForkSubscriptions::publishBlock);
   }
 
   public synchronized void publishSyncCommitteeMessage(
       final ValidateableSyncCommitteeMessage message) {
-    getSubscriptionActiveAtSlot(message.getSlot())
+    publishMessage(
+        message.getSlot(),
+        message,
+        "sync committee message",
+        GossipForkSubscriptions::publishSyncCommitteeMessage);
+  }
+
+  public void publishSyncCommitteeContribution(final SignedContributionAndProof message) {
+    publishMessage(
+        message.getMessage().getContribution().getSlot(),
+        message,
+        "sync committee contribution",
+        GossipForkSubscriptions::publishSyncCommitteeContribution);
+  }
+
+  public void publishProposerSlashing(final ProposerSlashing message) {
+    publishMessage(
+        message.getHeader_1().getMessage().getSlot(),
+        message,
+        "proposer slashing",
+        GossipForkSubscriptions::publishProposerSlashing);
+  }
+
+  public void publishAttesterSlashing(final AttesterSlashing message) {
+    publishMessage(
+        message.getAttestation_1().getData().getSlot(),
+        message,
+        "attester slashing",
+        GossipForkSubscriptions::publishAttesterSlashing);
+  }
+
+  public void publishVoluntaryExit(final SignedVoluntaryExit message) {
+    publishMessage(
+        spec.computeStartSlotAtEpoch(message.getMessage().getEpoch()),
+        message,
+        "voluntary exit",
+        GossipForkSubscriptions::publishVoluntaryExit);
+  }
+
+  private <T> void publishMessage(
+      final UInt64 slot,
+      final T message,
+      final String type,
+      final BiConsumer<GossipForkSubscriptions, T> publisher) {
+    getSubscriptionActiveAtSlot(slot)
         .filter(this::isActive)
         .ifPresentOrElse(
-            subscription -> subscription.publishSyncCommitteeMessage(message),
+            subscription -> publisher.accept(subscription, message),
             () ->
                 LOG.warn(
-                    "Not publishing sync committee message because no gossip subscriptions are active for slot {}",
-                    message.getSlot()));
+                    "Not publishing {} because no gossip subscriptions are active for slot {}",
+                    type,
+                    slot));
   }
 
   public synchronized void subscribeToAttestationSubnetId(final int subnetId) {

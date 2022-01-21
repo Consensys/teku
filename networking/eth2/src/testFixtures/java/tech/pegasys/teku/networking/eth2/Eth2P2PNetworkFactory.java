@@ -44,7 +44,6 @@ import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.network.p2p.jvmlibp2p.PrivateKeyGenerator;
-import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
 import tech.pegasys.teku.networking.eth2.gossip.config.GossipConfigurator;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkManager;
@@ -119,11 +118,8 @@ public class Eth2P2PNetworkFactory {
     protected OperationProcessor<ValidateableAttestation> gossipedAttestationProcessor;
     protected OperationProcessor<ValidateableAttestation> gossipedAggregateProcessor;
     protected OperationProcessor<AttesterSlashing> attesterSlashingProcessor;
-    private GossipPublisher<AttesterSlashing> attesterSlashingGossipPublisher;
     protected OperationProcessor<ProposerSlashing> proposerSlashingProcessor;
-    private GossipPublisher<ProposerSlashing> proposerSlashingGossipPublisher;
     protected OperationProcessor<SignedVoluntaryExit> voluntaryExitProcessor;
-    protected GossipPublisher<SignedVoluntaryExit> voluntaryExitPublisher;
     protected ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
     protected VerifiedBlockAttestationsSubscriptionProvider
         verifiedBlockAttestationsSubscriptionProvider;
@@ -277,11 +273,8 @@ public class Eth2P2PNetworkFactory {
                 gossipedAttestationProcessor,
                 gossipedAggregateProcessor,
                 attesterSlashingProcessor,
-                attesterSlashingGossipPublisher,
                 proposerSlashingProcessor,
-                proposerSlashingGossipPublisher,
-                voluntaryExitProcessor,
-                voluntaryExitPublisher));
+                voluntaryExitProcessor));
         final GossipForkManager gossipForkManager = gossipForkManagerBuilder.build();
 
         return new ActiveEth2P2PNetwork(
@@ -378,15 +371,6 @@ public class Eth2P2PNetworkFactory {
       if (voluntaryExitProcessor == null) {
         voluntaryExitProcessor = OperationProcessor.noop();
       }
-      if (voluntaryExitPublisher == null) {
-        voluntaryExitPublisher = new GossipPublisher<>();
-      }
-      if (proposerSlashingGossipPublisher == null) {
-        proposerSlashingGossipPublisher = new GossipPublisher<>();
-      }
-      if (attesterSlashingGossipPublisher == null) {
-        attesterSlashingGossipPublisher = new GossipPublisher<>();
-      }
     }
 
     public Eth2P2PNetworkBuilder spec(final Spec spec) {
@@ -465,13 +449,6 @@ public class Eth2P2PNetworkFactory {
       return this;
     }
 
-    public Eth2P2PNetworkBuilder attesterSlashingGossipPublisher(
-        final GossipPublisher<AttesterSlashing> attesterSlashingGossipPublisher) {
-      checkNotNull(attesterSlashingGossipPublisher);
-      this.attesterSlashingGossipPublisher = attesterSlashingGossipPublisher;
-      return this;
-    }
-
     public Eth2P2PNetworkBuilder gossipedProposerSlashingProcessor(
         final OperationProcessor<ProposerSlashing> gossipedProposerSlashingProcessor) {
       checkNotNull(gossipedProposerSlashingProcessor);
@@ -479,24 +456,10 @@ public class Eth2P2PNetworkFactory {
       return this;
     }
 
-    public Eth2P2PNetworkBuilder proposerSlashingGossipPublisher(
-        final GossipPublisher<ProposerSlashing> proposerSlashingGossipPublisher) {
-      checkNotNull(proposerSlashingGossipPublisher);
-      this.proposerSlashingGossipPublisher = proposerSlashingGossipPublisher;
-      return this;
-    }
-
     public Eth2P2PNetworkBuilder gossipedVoluntaryExitProcessor(
         final OperationProcessor<SignedVoluntaryExit> gossipedVoluntaryExitProcessor) {
       checkNotNull(gossipedVoluntaryExitProcessor);
       this.voluntaryExitProcessor = gossipedVoluntaryExitProcessor;
-      return this;
-    }
-
-    public Eth2P2PNetworkBuilder voluntaryExitPublisher(
-        final GossipPublisher<SignedVoluntaryExit> publisher) {
-      checkNotNull(publisher);
-      this.voluntaryExitPublisher = publisher;
       return this;
     }
 
