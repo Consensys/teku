@@ -1,0 +1,30 @@
+{
+  "crypto" : {
+    "kdf" : {
+      "function" : "pbkdf2",
+      "params" : {
+        "dklen" : 32,
+        "c" : 1,
+        "prf" : "hmac-sha256",
+        "salt" : "3522e12d5eec8f3e964a43cb68f76ace68189682425b59d0b2500c2c03e694ba"
+      },
+      "message" : ""
+    },
+    "checksum" : {
+      "function" : "sha256",
+      "params" : { },
+      "message" : "819c128a4401ae2277c8aacfe4725dc459c22fbad231808c69b3abf2b1836d7d"
+    },
+    "cipher" : {
+      "function" : "aes-128-ctr",
+      "params" : {
+        "iv" : "c3193a3d676c482507b5923121000813"
+      },
+      "message" : "8a47a441148bde3e4c48a407b007ac2cd058779809d267ac08427dc04ebd4430"
+    }
+  },
+  "pubkey" : "982d829cab4f09be252a2c57b77c166679b7e9fdf6f5cc882462b8f4dc9a90beb303c85af56304fb79b975d3643e2ed1",
+  "version" : 4,
+  "path" : "",
+  "uuid" : "764acc1c-2b22-4dca-9216-5bba3420eb26"
+}
