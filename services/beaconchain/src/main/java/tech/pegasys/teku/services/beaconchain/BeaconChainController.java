@@ -40,6 +40,7 @@ import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.io.PortAvailability;
+import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
@@ -873,7 +874,26 @@ public class BeaconChainController extends Service
   protected void initForkChoiceNotifier() {
     LOG.debug("BeaconChainController.initForkChoiceNotifier()");
     forkChoiceNotifier =
-        ForkChoiceNotifier.create(asyncRunnerFactory, spec, executionEngine, recentChainData);
+        ForkChoiceNotifier.create(
+            asyncRunnerFactory,
+            spec,
+            executionEngine,
+            recentChainData,
+            getProposerDefaultFeeRecipient());
+  }
+
+  private Optional<? extends Bytes20> getProposerDefaultFeeRecipient() {
+    if (!spec.isMilestoneSupported(SpecMilestone.BELLATRIX)) {
+      return Optional.of(Bytes20.ZERO);
+    }
+
+    Optional<? extends Bytes20> defaultFeeRecipient =
+        beaconConfig.validatorConfig().getProposerDefaultFeeRecipient();
+    if (defaultFeeRecipient.isEmpty() && beaconConfig.beaconRestApiConfig().isRestApiEnabled()) {
+      STATUS_LOG.warnMissingProposerDefaultFeeRecipientWithRestAPIEnabled();
+    }
+
+    return defaultFeeRecipient;
   }
 
   protected void setupInitialState(final RecentChainData client) {
