@@ -13,14 +13,13 @@
 
 package tech.pegasys.teku.validator.client.restapi;
 
-import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
-
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
 public class ValidatorRestApiConfig {
 
