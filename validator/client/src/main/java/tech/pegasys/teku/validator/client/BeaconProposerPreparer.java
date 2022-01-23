@@ -19,9 +19,9 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
@@ -32,13 +32,13 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
   private final ValidatorIndexProvider validatorIndexProvider;
   private final OwnedValidators validators;
   private final Spec spec;
-  private final Optional<Eth1Address> feeRecipient;
+  private final Optional<? extends Bytes20> feeRecipient;
   private boolean firstCallDone = false;
 
   public BeaconProposerPreparer(
       ValidatorApiChannel validatorApiChannel,
       ValidatorIndexProvider validatorIndexProvider,
-      Optional<Eth1Address> feeRecipient,
+      Optional<? extends Bytes20> feeRecipient,
       OwnedValidators validators,
       Spec spec) {
     this.validatorApiChannel = validatorApiChannel;
@@ -67,11 +67,11 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
     }
   }
 
-  private Eth1Address getFeeRecipient() {
+  private Bytes20 getFeeRecipient() {
     return feeRecipient.orElseThrow(
         () ->
             new InvalidConfigurationException(
-                "Invalid configuration. --Xvalidators-suggested-fee-recipient-address must be specified when Bellatrix milestone is active"));
+                "Invalid configuration. --Xvalidators-proposer-default-fee-recipient must be specified when Bellatrix milestone is active"));
   }
 
   @Override
