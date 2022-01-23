@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.core.signatures;
 
+import java.net.URL;
+import java.util.Optional;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -121,6 +123,11 @@ public class LocalSigner implements Signer {
   @Override
   public boolean isLocal() {
     return true;
+  }
+
+  @Override
+  public Optional<URL> getSigningServiceUrl() {
+    return Optional.empty();
   }
 
   private SafeFuture<BLSSignature> sign(final Bytes signing_root) {

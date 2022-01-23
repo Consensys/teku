@@ -1,0 +1,59 @@
+{
+  "get" : {
+    "operationId" : "ListRemoteKeys",
+    "summary" : "List Remote Keys",
+    "description" : "List all remote keys in use by a validator client",
+    "responses" : {
+      "200" : {
+        "description" : "Success response",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/ListRemoteKeysResponse"
+            }
+          }
+        }
+      },
+      "401" : {
+        "description" : "Unauthorized, no token is found",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "403" : {
+        "description" : "Forbidden, a token is found but is invalid",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  }
+}

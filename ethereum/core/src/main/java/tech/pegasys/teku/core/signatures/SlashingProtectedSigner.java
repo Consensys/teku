@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.core.signatures;
 
+import java.net.URL;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
@@ -142,6 +144,11 @@ public class SlashingProtectedSigner implements Signer {
   @Override
   public boolean isLocal() {
     return delegate.isLocal();
+  }
+
+  @Override
+  public Optional<URL> getSigningServiceUrl() {
+    return delegate.getSigningServiceUrl();
   }
 
   @Override

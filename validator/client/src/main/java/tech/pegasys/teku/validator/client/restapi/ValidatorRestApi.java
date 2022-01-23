@@ -27,6 +27,7 @@ import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.validator.client.KeyManager;
 import tech.pegasys.teku.validator.client.restapi.apis.DeleteKeys;
 import tech.pegasys.teku.validator.client.restapi.apis.GetKeys;
+import tech.pegasys.teku.validator.client.restapi.apis.GetRemoteKeys;
 import tech.pegasys.teku.validator.client.restapi.apis.PostKeys;
 
 public class ValidatorRestApi {
@@ -60,6 +61,7 @@ public class ValidatorRestApi {
         .endpoint(new GetKeys(keyManager))
         .endpoint(new DeleteKeys(keyManager))
         .endpoint(new PostKeys(keyManager))
+        .endpoint(new GetRemoteKeys(keyManager))
         .passwordFilePath(
             keyManager
                 .getDataDirLayout()

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2021 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,8 +13,12 @@
 
 package tech.pegasys.teku.core.signatures;
 
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Optional;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -27,33 +31,28 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.Contribu
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionData;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 
-public interface Signer {
+public class NoOpRemoteSigner extends NoOpSigner implements Signer {
+  private static final Logger LOG = LogManager.getLogger();
+  public static final NoOpRemoteSigner NO_OP_REMOTE_SIGNER = new NoOpRemoteSigner();
 
-  void delete();
+  private NoOpRemoteSigner() {
+    super();
+  }
 
-  SafeFuture<BLSSignature> createRandaoReveal(UInt64 epoch, ForkInfo forkInfo);
+  @Override
+  public boolean isLocal() {
+    return false;
+  }
 
-  SafeFuture<BLSSignature> signBlock(BeaconBlock block, ForkInfo forkInfo);
-
-  SafeFuture<BLSSignature> signAttestationData(AttestationData attestationData, ForkInfo forkInfo);
-
-  SafeFuture<BLSSignature> signAggregationSlot(UInt64 slot, ForkInfo forkInfo);
-
-  SafeFuture<BLSSignature> signAggregateAndProof(
-      AggregateAndProof aggregateAndProof, ForkInfo forkInfo);
-
-  SafeFuture<BLSSignature> signVoluntaryExit(VoluntaryExit voluntaryExit, ForkInfo forkInfo);
-
-  SafeFuture<BLSSignature> signSyncCommitteeMessage(
-      UInt64 slot, Bytes32 beaconBlockRoot, ForkInfo forkInfo);
-
-  SafeFuture<BLSSignature> signSyncCommitteeSelectionProof(
-      SyncAggregatorSelectionData selectionData, ForkInfo forkInfo);
-
-  SafeFuture<BLSSignature> signContributionAndProof(
-      ContributionAndProof contributionAndProof, ForkInfo forkInfo);
-
-  boolean isLocal();
-
-  Optional<URL> getSigningServiceUrl();
+  @Override
+  public Optional<URL> getSigningServiceUrl() {
+    Optional<URL> result;
+    try {
+      result = Optional.of(new URL("http://example.com/"));
+    } catch (MalformedURLException e) {
+      result = Optional.empty();
+      LOG.error("Failed to get signing service URL", e);
+    }
+    return result;
+  }
 }

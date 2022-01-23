@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.core.signatures;
 
+import java.net.URL;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -28,7 +30,7 @@ import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 public class NoOpSigner implements Signer {
   public static final NoOpSigner NO_OP_SIGNER = new NoOpSigner();
 
-  private NoOpSigner() {}
+  NoOpSigner() {}
 
   @Override
   public void delete() {}
@@ -86,6 +88,11 @@ public class NoOpSigner implements Signer {
 
   @Override
   public boolean isLocal() {
-    return false;
+    return true;
+  }
+
+  @Override
+  public Optional<URL> getSigningServiceUrl() {
+    return Optional.empty();
   }
 }

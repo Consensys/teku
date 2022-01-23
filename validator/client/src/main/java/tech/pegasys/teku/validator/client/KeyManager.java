@@ -18,6 +18,7 @@ import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
@@ -53,6 +54,12 @@ public class KeyManager {
    */
   public List<Validator> getActiveValidatorKeys() {
     return validatorLoader.getOwnedValidators().getActiveValidators();
+  }
+
+  public List<Validator> getActiveRemoteValidatorKeys() {
+    return validatorLoader.getOwnedValidators().getActiveValidators().stream()
+        .filter(validator -> !validator.getSigner().isLocal())
+        .collect(Collectors.toList());
   }
 
   /**
