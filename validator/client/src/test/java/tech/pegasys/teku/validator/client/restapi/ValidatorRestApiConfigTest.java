@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
 class ValidatorRestApiConfigTest {
 
@@ -33,7 +34,7 @@ class ValidatorRestApiConfigTest {
   @Test
   void validatorApiRequiresSsl() {
     assertThatThrownBy(() -> ValidatorRestApiConfig.builder().restApiEnabled(true).build())
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(InvalidConfigurationException.class)
         .hasMessageContaining("requires ssl keystore");
   }
 
@@ -80,7 +81,7 @@ class ValidatorRestApiConfigTest {
                     .validatorApiKeystoreFile(tempPath.resolve("keystore").toString())
                     .validatorApiKeystorePasswordFile(tempPath.resolve("pass").toString())
                     .build())
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(InvalidConfigurationException.class)
         .hasMessageContaining("Could not access Validator api keystore");
   }
 

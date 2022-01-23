@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.validator.client.restapi;
 
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
@@ -180,14 +182,14 @@ public class ValidatorRestApiConfig {
           restApiKeystoreFile.ifPresentOrElse(
               keystore -> {
                 if (!keystore.toFile().exists() || !keystore.toFile().isFile()) {
-                  throw new IllegalArgumentException(
+                  throw new InvalidConfigurationException(
                       String.format(
                           "Could not access Validator api keystore file %s",
                           keystore.toAbsolutePath()));
                 }
               },
               () -> {
-                throw new IllegalArgumentException(
+                throw new InvalidConfigurationException(
                     "Validator api requires ssl keystore to be defined.");
               });
         } else {
