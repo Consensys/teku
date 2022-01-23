@@ -181,11 +181,6 @@ public class ValidatorRestApiConfig {
                     "Could not access Validator api keystore file %s",
                     restApiKeystoreFile.toAbsolutePath()));
           }
-        } else {
-          if (restApiKeystoreFile != null) {
-            throw new IllegalArgumentException(
-                "Validator-api has Xvalidator-api-ssl-enabled set to false, and a keystore is specified.");
-          }
         }
       }
       return new ValidatorRestApiConfig(
