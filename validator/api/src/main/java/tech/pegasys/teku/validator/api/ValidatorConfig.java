@@ -40,6 +40,8 @@ public class ValidatorConfig {
   public static final boolean DEFAULT_GENERATE_EARLY_ATTESTATIONS = true;
   public static final boolean DEFAULT_SEND_ATTESTATIONS_AS_BATCH = true;
   public static final Optional<Bytes32> DEFAULT_GRAFFITI = Optional.empty();
+  public static final Duration DEFAULT_VALIDATOR_PROPOSER_CONFIG_REFRESH_RATE =
+      Duration.ofSeconds(60);
 
   private final List<String> validatorKeys;
   private final List<String> validatorExternalSignerPublicKeySources;
@@ -58,6 +60,8 @@ public class ValidatorConfig {
   private final boolean useDependentRoots;
   private final boolean generateEarlyAttestations;
   private final Optional<Eth1Address> proposerDefaultFeeRecipient;
+  private final String proposerConfigSource;
+  private final long proposerConfigSourceRefreshRate;
 
   private ValidatorConfig(
       final List<String> validatorKeys,
@@ -76,7 +80,9 @@ public class ValidatorConfig {
       final int validatorExternalSignerConcurrentRequestLimit,
       final boolean useDependentRoots,
       final boolean generateEarlyAttestations,
-      final Optional<Eth1Address> proposerDefaultFeeRecipient) {
+      final Optional<Eth1Address> proposerDefaultFeeRecipient,
+      final String proposerConfigSource,
+      final long proposerConfigSourceRefreshRate) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
@@ -97,6 +103,8 @@ public class ValidatorConfig {
     this.useDependentRoots = useDependentRoots;
     this.generateEarlyAttestations = generateEarlyAttestations;
     this.proposerDefaultFeeRecipient = proposerDefaultFeeRecipient;
+    this.proposerConfigSource = proposerConfigSource;
+    this.proposerConfigSourceRefreshRate = proposerConfigSourceRefreshRate;
   }
 
   public static Builder builder() {
@@ -195,6 +203,8 @@ public class ValidatorConfig {
     private boolean useDependentRoots = DEFAULT_USE_DEPENDENT_ROOTS;
     private boolean generateEarlyAttestations = DEFAULT_GENERATE_EARLY_ATTESTATIONS;
     private Optional<Eth1Address> proposerDefaultFeeRecipient = Optional.empty();
+    private String proposerConfigSource;
+    private long proposerConfigSourceRefreshRate;
 
     private Builder() {}
 
@@ -304,6 +314,16 @@ public class ValidatorConfig {
       return this;
     }
 
+    public Builder proposerConfigSource(final String proposerConfigSource) {
+      this.proposerConfigSource = proposerConfigSource;
+      return this;
+    }
+
+    public Builder proposerConfigSourceRefreshRate(final long proposerConfigSourceRefreshRate) {
+      this.proposerConfigSourceRefreshRate = proposerConfigSourceRefreshRate;
+      return this;
+    }
+
     public ValidatorConfig build() {
       validateExternalSignerUrlAndPublicKeys();
       validateExternalSignerKeystoreAndPasswordFileConfig();
@@ -326,7 +346,9 @@ public class ValidatorConfig {
           validatorExternalSignerConcurrentRequestLimit,
           useDependentRoots,
           generateEarlyAttestations,
-          proposerDefaultFeeRecipient);
+          proposerDefaultFeeRecipient,
+          proposerConfigSource,
+          proposerConfigSourceRefreshRate);
     }
 
     private void validateExternalSignerUrlAndPublicKeys() {

@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli.options;
 
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.validator.api.ValidatorConfig;
 
 public class ValidatorProposerOptions {
   @Option(
@@ -26,7 +27,31 @@ public class ValidatorProposerOptions {
       hidden = true)
   private String proposerDefaultFeeRecipient = null;
 
+  @Option(
+      names = {"--Xvalidators-proposer-config"},
+      paramLabel = "<STRING>",
+      description = "remote URL or local file path to load proposer configuration from",
+      arity = "0..1",
+      hidden = true)
+  private String proposerConfig = null;
+
+  @Option(
+      names = {"--Xvalidators-proposer-config-refresh-rate"},
+      paramLabel = "<INTEGER>",
+      description =
+          "Sets the frequency, in seconds, at which the proposer configuration is reloaded. "
+              + "0 means never refresh.",
+      arity = "0..1",
+      hidden = true)
+  private long proposerConfigRefreshRate =
+      ValidatorConfig.DEFAULT_VALIDATOR_PROPOSER_CONFIG_REFRESH_RATE.toSeconds();
+
   public void configure(TekuConfiguration.Builder builder) {
-    builder.validator(config -> config.proposerDefaultFeeRecipient(proposerDefaultFeeRecipient));
+    builder.validator(
+        config ->
+            config
+                .proposerDefaultFeeRecipient(proposerDefaultFeeRecipient)
+                .proposerConfigSource(proposerConfig)
+                .proposerConfigSourceRefreshRate(proposerConfigRefreshRate));
   }
 }
