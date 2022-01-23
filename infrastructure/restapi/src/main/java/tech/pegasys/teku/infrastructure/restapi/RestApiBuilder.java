@@ -75,9 +75,10 @@ public class RestApiBuilder {
     return this;
   }
 
-  public RestApiBuilder sslCertificate(final Path sslPath, final Path sslPasswordPath) {
-    this.maybeKeystorePath = Optional.ofNullable(sslPath);
-    this.maybePasswordPath = Optional.ofNullable(sslPasswordPath);
+  public RestApiBuilder sslCertificate(
+      final Optional<Path> sslPath, final Optional<Path> sslPasswordPath) {
+    this.maybeKeystorePath = sslPath;
+    this.maybePasswordPath = sslPasswordPath;
     return this;
   }
 

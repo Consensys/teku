@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
 class ValidatorRestApiConfigTest {
 
@@ -33,8 +34,21 @@ class ValidatorRestApiConfigTest {
   @Test
   void validatorApiRequiresSsl() {
     assertThatThrownBy(() -> ValidatorRestApiConfig.builder().restApiEnabled(true).build())
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(InvalidConfigurationException.class)
         .hasMessageContaining("requires ssl keystore");
+  }
+
+  @Test
+  void validatorApiShouldNotLoadCertInHttpMode(@TempDir final Path tempPath) {
+    final ValidatorRestApiConfig config =
+        ValidatorRestApiConfig.builder()
+            .restApiEnabled(true)
+            .restApiSslEnabled(false)
+            .validatorApiKeystoreFile(tempPath.resolve("keystore").toString())
+            .validatorApiKeystorePasswordFile(tempPath.resolve("pass").toString())
+            .build();
+    assertThat(config.getRestApiKeystoreFile()).isEmpty();
+    assertThat(config.getRestApiKeystorePasswordFile()).isEmpty();
   }
 
   @Test
@@ -42,7 +56,7 @@ class ValidatorRestApiConfigTest {
     final ValidatorRestApiConfig config =
         ValidatorRestApiConfig.builder().restApiEnabled(true).restApiSslEnabled(false).build();
     assertThat(config.isRestApiEnabled()).isTrue();
-    assertThat(config.getRestApiKeystoreFile()).isNull();
+    assertThat(config.getRestApiKeystoreFile()).isEmpty();
   }
 
   @Test
@@ -67,13 +81,13 @@ class ValidatorRestApiConfigTest {
                     .validatorApiKeystoreFile(tempPath.resolve("keystore").toString())
                     .validatorApiKeystorePasswordFile(tempPath.resolve("pass").toString())
                     .build())
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(InvalidConfigurationException.class)
         .hasMessageContaining("Could not access Validator api keystore");
   }
 
   @Test
   void validatorApiDoesNotRequiresPasswordToExist(@TempDir final Path tempPath) throws IOException {
-    tempPath.resolve("keystore").toFile().createNewFile();
+    assertThat(tempPath.resolve("keystore").toFile().createNewFile()).isTrue();
     final ValidatorRestApiConfig config =
         ValidatorRestApiConfig.builder()
             .restApiEnabled(true)

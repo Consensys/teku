@@ -18,6 +18,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
 public class ValidatorRestApiConfig {
 
@@ -35,8 +37,8 @@ public class ValidatorRestApiConfig {
   private final List<String> restApiCorsAllowedOrigins;
   private final int maxUrlLength;
 
-  private final Path restApiKeystoreFile;
-  private final Path restApiKeystorePasswordFile;
+  private final Optional<Path> restApiKeystoreFile;
+  private final Optional<Path> restApiKeystorePasswordFile;
 
   private ValidatorRestApiConfig(
       final int restApiPort,
@@ -46,8 +48,8 @@ public class ValidatorRestApiConfig {
       final List<String> restApiHostAllowlist,
       final List<String> restApiCorsAllowedOrigins,
       final int maxUrlLength,
-      final Path restApiKeystoreFile,
-      final Path restApiKeystorePasswordFile) {
+      final Optional<Path> restApiKeystoreFile,
+      final Optional<Path> restApiKeystorePasswordFile) {
     this.restApiPort = restApiPort;
     this.restApiDocsEnabled = restApiDocsEnabled;
     this.restApiEnabled = restApiEnabled;
@@ -91,11 +93,11 @@ public class ValidatorRestApiConfig {
     return maxUrlLength;
   }
 
-  public Path getRestApiKeystoreFile() {
+  public Optional<Path> getRestApiKeystoreFile() {
     return restApiKeystoreFile;
   }
 
-  public Path getRestApiKeystorePasswordFile() {
+  public Optional<Path> getRestApiKeystorePasswordFile() {
     return restApiKeystorePasswordFile;
   }
 
@@ -109,8 +111,8 @@ public class ValidatorRestApiConfig {
     private List<String> restApiHostAllowlist = DEFAULT_REST_API_HOST_ALLOWLIST;
     private List<String> restApiCorsAllowedOrigins = Collections.emptyList();
     private int maxUrlLength = MAX_URL_LENGTH;
-    private Path restApiKeystoreFile;
-    private Path restApiKeystorePasswordFile;
+    private Optional<Path> restApiKeystoreFile = Optional.empty();
+    private Optional<Path> restApiKeystorePasswordFile = Optional.empty();
 
     public ValidatorRestApiConfigBuilder restApiPort(final int restApiPort) {
       this.restApiPort = restApiPort;
@@ -118,16 +120,21 @@ public class ValidatorRestApiConfig {
     }
 
     public ValidatorRestApiConfigBuilder validatorApiKeystoreFile(final String keystoreFile) {
-      if (keystoreFile != null) {
-        this.restApiKeystoreFile = Path.of(keystoreFile);
+      if (keystoreFile == null) {
+        restApiKeystoreFile = Optional.empty();
+      } else {
+        restApiKeystoreFile = Optional.of(Path.of(keystoreFile));
       }
+
       return this;
     }
 
     public ValidatorRestApiConfigBuilder validatorApiKeystorePasswordFile(
         final String keystorePasswordFile) {
-      if (keystorePasswordFile != null) {
-        this.restApiKeystorePasswordFile = Path.of(keystorePasswordFile);
+      if (keystorePasswordFile == null) {
+        restApiKeystorePasswordFile = Optional.empty();
+      } else {
+        restApiKeystorePasswordFile = Optional.of(Path.of(keystorePasswordFile));
       }
       return this;
     }
@@ -171,16 +178,22 @@ public class ValidatorRestApiConfig {
               "SSL connections can only be disabled on the localhost interface.");
         }
         if (restApiSslEnabled) {
-          if (restApiKeystoreFile == null) {
-            throw new IllegalArgumentException(
-                "Validator api requires ssl keystore to be defined.");
-          }
-          if (!restApiKeystoreFile.toFile().exists() || !restApiKeystoreFile.toFile().isFile()) {
-            throw new IllegalArgumentException(
-                String.format(
-                    "Could not access Validator api keystore file %s",
-                    restApiKeystoreFile.toAbsolutePath()));
-          }
+          restApiKeystoreFile.ifPresentOrElse(
+              keystore -> {
+                if (!keystore.toFile().exists() || !keystore.toFile().isFile()) {
+                  throw new InvalidConfigurationException(
+                      String.format(
+                          "Could not access Validator api keystore file %s",
+                          keystore.toAbsolutePath()));
+                }
+              },
+              () -> {
+                throw new InvalidConfigurationException(
+                    "Validator api requires ssl keystore to be defined.");
+              });
+        } else {
+          restApiKeystoreFile = Optional.empty();
+          restApiKeystorePasswordFile = Optional.empty();
         }
       }
       return new ValidatorRestApiConfig(

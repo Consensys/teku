@@ -164,7 +164,6 @@ public class TekuValidatorNode extends Node {
 
     public TekuValidatorNode.Config withValidatorApiEnabled() {
       configMap.put("Xvalidator-api-enabled", true);
-      configMap.put("Xvalidator-api-docs-enabled", true);
       configMap.put("Xvalidator-api-port", VALIDATOR_API_PORT);
       configMap.put("Xvalidator-api-host-allowlist", "*");
       configMap.put("Xvalidator-api-keystore-file", "/keystore.pfx");
