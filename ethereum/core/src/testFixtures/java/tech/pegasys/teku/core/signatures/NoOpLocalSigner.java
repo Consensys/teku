@@ -13,30 +13,19 @@
 
 package tech.pegasys.teku.core.signatures;
 
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Optional;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
-public class NoOpRemoteSigner extends NoOpSigner {
-  public static final NoOpRemoteSigner NO_OP_REMOTE_SIGNER = new NoOpRemoteSigner();
-  private static final Logger LOG = LogManager.getLogger();
+public class NoOpLocalSigner extends NoOpSigner {
+  public static final NoOpLocalSigner NO_OP_SIGNER = new NoOpLocalSigner();
 
   @Override
   public boolean isLocal() {
-    return false;
+    return true;
   }
 
   @Override
   public Optional<URL> getSigningServiceUrl() {
-    Optional<URL> result;
-    try {
-      result = Optional.of(new URL("http://example.com/"));
-    } catch (MalformedURLException e) {
-      result = Optional.empty();
-      LOG.error("Failed to get signing service URL", e);
-    }
-    return result;
+    return Optional.empty();
   }
 }

@@ -19,8 +19,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.core.signatures.NoOpLocalSigner.NO_OP_SIGNER;
 import static tech.pegasys.teku.core.signatures.NoOpRemoteSigner.NO_OP_REMOTE_SIGNER;
-import static tech.pegasys.teku.core.signatures.NoOpSigner.NO_OP_SIGNER;
 
 import java.io.IOException;
 import java.nio.file.Files;

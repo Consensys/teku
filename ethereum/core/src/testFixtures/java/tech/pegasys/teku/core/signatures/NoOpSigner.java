@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 ConsenSys AG.
+ * Copyright 2022 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -27,8 +27,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.Contribu
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionData;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 
-public class NoOpSigner implements Signer {
-  public static final NoOpSigner NO_OP_SIGNER = new NoOpSigner();
+public abstract class NoOpSigner implements Signer {
 
   NoOpSigner() {}
 
@@ -87,12 +86,8 @@ public class NoOpSigner implements Signer {
   }
 
   @Override
-  public boolean isLocal() {
-    return true;
-  }
+  public abstract boolean isLocal();
 
   @Override
-  public Optional<URL> getSigningServiceUrl() {
-    return Optional.empty();
-  }
+  public abstract Optional<URL> getSigningServiceUrl();
 }

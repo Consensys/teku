@@ -20,7 +20,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.core.signatures.NoOpSigner.NO_OP_SIGNER;
+import static tech.pegasys.teku.core.signatures.NoOpLocalSigner.NO_OP_SIGNER;
 
 import java.io.IOException;
 import java.util.Collection;
