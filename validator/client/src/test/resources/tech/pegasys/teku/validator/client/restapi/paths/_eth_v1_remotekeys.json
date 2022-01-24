@@ -1,5 +1,6 @@
 {
   "get" : {
+    "tags" : [ "Experimental" ],
     "operationId" : "ListRemoteKeys",
     "summary" : "List Remote Keys",
     "description" : "List all remote keys in use by a validator client",

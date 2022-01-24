@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.client.restapi.apis;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
@@ -32,6 +33,7 @@ public class GetRemoteKeys extends RestApiEndpoint {
         EndpointMetadata.get(ROUTE)
             .operationId("ListRemoteKeys")
             .summary("List Remote Keys")
+            .tags(RestApiConstants.TAG_EXPERIMENTAL)
             .description("List all remote keys in use by a validator client")
             .response(SC_OK, "Success response", ValidatorTypes.LIST_REMOTE_KEYS_RESPONSE_TYPE)
             .withAuthenticationResponses()
