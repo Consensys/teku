@@ -24,7 +24,7 @@ import tech.pegasys.teku.validator.client.restapi.ValidatorTypes;
 
 public class GetRemoteKeys extends RestApiEndpoint {
 
-  public static final String ROUTE = "/eth/v1/remotekey";
+  public static final String ROUTE = "/eth/v1/remotekeys";
   private final KeyManager keyManager;
 
   public GetRemoteKeys(final KeyManager keyManager) {
