@@ -20,8 +20,10 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.restapi.json.JsonUtil.JSON_CONTENT_TYPE;
 
 import io.javalin.http.HandlerType;
+import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata.EndpointMetaDataBuilder;
 import tech.pegasys.teku.infrastructure.restapi.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.restapi.types.DeserializableArrayTypeDefinition;
@@ -105,6 +107,16 @@ class EndpointMetadataTest {
             .response(SC_OK, "Success", CoreTypes.STRING_TYPE)
             .build();
     assertThat(metadata.getSecurity()).contains("authBearer");
+  }
+
+  @Test
+  void shouldAddTagsToEndpoint() {
+    final EndpointMetadata metadata =
+        validBuilder()
+            .tags(List.of(RestApiConstants.TAG_EXPERIMENTAL))
+            .response(SC_OK, "Success", CoreTypes.STRING_TYPE)
+            .build();
+    assertThat(metadata.getTags()).containsExactly(RestApiConstants.TAG_EXPERIMENTAL);
   }
 
   @Test
