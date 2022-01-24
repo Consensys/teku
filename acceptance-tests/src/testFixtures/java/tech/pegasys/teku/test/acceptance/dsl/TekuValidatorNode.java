@@ -52,7 +52,7 @@ public class TekuValidatorNode extends Node {
       final Network network, final DockerVersion version, final TekuValidatorNode.Config config) {
     super(network, TEKU_DOCKER_IMAGE_NAME, version, LOG);
     this.config = config;
-    if (config.configMap.containsKey("Xvalidator-api-enabled")) {
+    if (config.configMap.containsKey("validator-api-enabled")) {
       container.withExposedPorts(VALIDATOR_API_PORT);
     }
 
@@ -78,7 +78,7 @@ public class TekuValidatorNode extends Node {
   }
 
   public ValidatorKeysApi getValidatorKeysApi() {
-    if (!config.configMap.containsKey("Xvalidator-api-enabled")) {
+    if (!config.configMap.containsKey("validator-api-enabled")) {
       LOG.error("Retrieving validator keys api but api is not enabled");
     }
     return validatorKeysApi;
@@ -163,10 +163,10 @@ public class TekuValidatorNode extends Node {
     }
 
     public TekuValidatorNode.Config withValidatorApiEnabled() {
-      configMap.put("Xvalidator-api-enabled", true);
-      configMap.put("Xvalidator-api-port", VALIDATOR_API_PORT);
-      configMap.put("Xvalidator-api-host-allowlist", "*");
-      configMap.put("Xvalidator-api-keystore-file", "/keystore.pfx");
+      configMap.put("validator-api-enabled", true);
+      configMap.put("validator-api-port", VALIDATOR_API_PORT);
+      configMap.put("validator-api-host-allowlist", "*");
+      configMap.put("validator-api-keystore-file", "/keystore.pfx");
       try {
         publishSelfSignedCertificate("/keystore.pfx");
       } catch (Exception e) {

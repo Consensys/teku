@@ -23,19 +23,17 @@ public class ValidatorRestApiOptions {
   @CommandLine.Spec CommandLine.Model.CommandSpec cliSpec;
 
   @CommandLine.Option(
-      names = {"--Xvalidator-api-port"},
+      names = {"--validator-api-port"},
       paramLabel = "<INTEGER>",
       description = "Port number of Rest API",
-      hidden = true,
       arity = "1")
   private int restApiPort = ValidatorRestApiConfig.DEFAULT_REST_API_PORT;
 
   @CommandLine.Option(
-      names = {"--Xvalidator-api-docs-enabled"},
+      names = {"--validator-api-docs-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
       description = "Enable swagger-docs and swagger-ui endpoints",
-      hidden = true,
       fallbackValue = "true",
       arity = "0..1")
   private boolean restApiDocsEnabled = false;
@@ -51,55 +49,49 @@ public class ValidatorRestApiOptions {
   private boolean restApiSslEnabled = true;
 
   @CommandLine.Option(
-      names = {"--Xvalidator-api-enabled"},
+      names = {"--validator-api-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
       description = "Enables Validator Rest API",
-      hidden = true,
       fallbackValue = "true",
       arity = "0..1")
   private boolean restApiEnabled = false;
 
   @CommandLine.Option(
-      names = {"--Xvalidator-api-interface"},
+      names = {"--validator-api-interface"},
       paramLabel = "<NETWORK>",
       description = "Interface of Validator Rest API",
-      hidden = true,
       arity = "1")
   private String restApiInterface = ValidatorRestApiConfig.DEFAULT_REST_API_INTERFACE;
 
   @CommandLine.Option(
-      names = {"--Xvalidator-api-host-allowlist"},
+      names = {"--validator-api-host-allowlist"},
       paramLabel = "<hostname>",
       description = "Comma-separated list of hostnames to allow, or * to allow any host",
-      hidden = true,
       split = ",",
       arity = "0..*")
   private final List<String> restApiHostAllowlist =
       ValidatorRestApiConfig.DEFAULT_REST_API_HOST_ALLOWLIST;
 
   @CommandLine.Option(
-      names = {"--Xvalidator-api-cors-origins"},
+      names = {"--validator-api-cors-origins"},
       paramLabel = "<origin>",
       description = "Comma separated list of origins to allow, or * to allow any origin",
-      hidden = true,
       split = ",",
       arity = "0..*")
   private final List<String> restApiCorsAllowedOrigins = new ArrayList<>();
 
   @CommandLine.Option(
-      names = {"--Xvalidator-api-keystore-file"},
+      names = {"--validator-api-keystore-file"},
       paramLabel = "<keystoreFile>",
       description = "Keystore used for ssl for the validator api.",
-      hidden = true,
       arity = "1")
   private String keystoreFile;
 
   @CommandLine.Option(
-      names = {"--Xvalidator-api-keystore-password-file"},
+      names = {"--validator-api-keystore-password-file"},
       paramLabel = "<keystorePasswordFile>",
       description = "Password used to decrypt the keystore for the validator api.",
-      hidden = true,
       arity = "1")
   private String keystorePasswordFile;
 
