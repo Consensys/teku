@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.cli.subcommand.debug;
 
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -24,7 +25,11 @@ import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Spec;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.restapi.RestApi;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
+import tech.pegasys.teku.validator.client.restapi.ValidatorRestApi;
+import tech.pegasys.teku.validator.client.restapi.ValidatorRestApiConfig;
 
 @Command(
     name = "debug-tools",
@@ -79,5 +84,53 @@ public class DebugToolsCommand implements Runnable {
       System.err.println("Failed to write autocomplete script: " + e.getMessage());
       return 1;
     }
+  }
+
+  @Command(
+      name = "generate-swagger-docs",
+      description = "Generate swagger-docs for rest APIs.",
+      mixinStandardHelpOptions = true,
+      showDefaultValues = true,
+      abbreviateSynopsis = true,
+      versionProvider = PicoCliVersionProvider.class,
+      synopsisHeading = "%n",
+      descriptionHeading = "%nDescription:%n%n",
+      optionListHeading = "%nOptions:%n",
+      footerHeading = "%n",
+      footer = "Teku is licensed under the Apache License 2.0")
+  public int generateSwaggerDocs(
+      @Option(
+              required = true,
+              names = {"--output", "-o"},
+              description = "Directory to write swagger docs to.")
+          final Path outputPath)
+      throws Exception {
+    if (!outputPath.toFile().mkdirs() && !outputPath.toFile().isDirectory()) {
+      throw new InvalidConfigurationException(
+          String.format(
+              "Destination path %s could not be created or is not a directory",
+              outputPath.toAbsolutePath()));
+    }
+    ValidatorRestApiConfig config =
+        ValidatorRestApiConfig.builder().restApiDocsEnabled(true).build();
+
+    RestApi api = ValidatorRestApi.create(config, null);
+
+    api.getRestApiDocs()
+        .ifPresentOrElse(
+            (docs) -> {
+              final Path validatorApiPath = outputPath.resolve("validator-api.json");
+              System.out.println("Writing validator-api to " + validatorApiPath.toAbsolutePath());
+              try (FileWriter fileWriter =
+                  new FileWriter(validatorApiPath.toFile(), StandardCharsets.UTF_8)) {
+                fileWriter.write(docs);
+              } catch (IOException e) {
+                System.err.println("Failed to write validator-api.json: " + e.getMessage());
+              }
+            },
+            () -> {
+              System.err.println("Failed to create rest api document for the validator api.");
+            });
+    return 0;
   }
 }

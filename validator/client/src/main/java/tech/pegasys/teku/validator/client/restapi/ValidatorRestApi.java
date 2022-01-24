@@ -32,40 +32,46 @@ import tech.pegasys.teku.validator.client.restapi.apis.PostKeys;
 
 public class ValidatorRestApi {
   public static RestApi create(final ValidatorRestApiConfig config, final KeyManager keyManager) {
-    return new RestApiBuilder()
-        .openApiInfo(
-            openApi ->
-                openApi
-                    .title(
-                        StringUtils.capitalize(
-                            VersionProvider.CLIENT_IDENTITY + " Validator Rest API"))
-                    .version(VersionProvider.IMPLEMENTATION_VERSION)
-                    .bearerAuth(true)
-                    .description("An implementation of the key management standard Rest API.")
-                    .license("Apache 2.0", "https://www.apache.org/licenses/LICENSE-2.0.html"))
-        .openApiDocsEnabled(config.isRestApiDocsEnabled())
-        .listenAddress(config.getRestApiInterface())
-        .port(config.getRestApiPort())
-        .maxUrlLength(config.getMaxUrlLength())
-        .corsAllowedOrigins(config.getRestApiCorsAllowedOrigins())
-        .hostAllowlist(config.getRestApiHostAllowlist())
-        .exceptionHandler(
-            ServiceUnavailableException.class,
-            (throwable, url) ->
-                new HttpErrorResponse(SC_SERVICE_UNAVAILABLE, "Service unavailable"))
-        .exceptionHandler(
-            BadRequestException.class,
-            (throwable, url) -> new HttpErrorResponse(SC_BAD_REQUEST, throwable.getMessage()))
-        .exceptionHandler(
-            JsonProcessingException.class,
-            (throwable, url) -> new HttpErrorResponse(SC_BAD_REQUEST, throwable.getMessage()))
-        .endpoint(new GetKeys(keyManager))
-        .endpoint(new DeleteKeys(keyManager))
-        .endpoint(new PostKeys(keyManager))
-        .sslCertificate(config.getRestApiKeystoreFile(), config.getRestApiKeystorePasswordFile())
-        .passwordFilePath(
-            ValidatorClientService.getKeyManagerPath(keyManager.getDataDirLayout())
-                .resolve("validator-api-bearer"))
-        .build();
+    RestApiBuilder builder =
+        new RestApiBuilder()
+            .openApiInfo(
+                openApi ->
+                    openApi
+                        .title(
+                            StringUtils.capitalize(
+                                VersionProvider.CLIENT_IDENTITY + " Validator Rest API"))
+                        .version(VersionProvider.IMPLEMENTATION_VERSION)
+                        .bearerAuth(true)
+                        .description("An implementation of the key management standard Rest API.")
+                        .license("Apache 2.0", "https://www.apache.org/licenses/LICENSE-2.0.html"))
+            .openApiDocsEnabled(config.isRestApiDocsEnabled())
+            .listenAddress(config.getRestApiInterface())
+            .port(config.getRestApiPort())
+            .maxUrlLength(config.getMaxUrlLength())
+            .corsAllowedOrigins(config.getRestApiCorsAllowedOrigins())
+            .hostAllowlist(config.getRestApiHostAllowlist())
+            .exceptionHandler(
+                ServiceUnavailableException.class,
+                (throwable, url) ->
+                    new HttpErrorResponse(SC_SERVICE_UNAVAILABLE, "Service unavailable"))
+            .exceptionHandler(
+                BadRequestException.class,
+                (throwable, url) -> new HttpErrorResponse(SC_BAD_REQUEST, throwable.getMessage()))
+            .exceptionHandler(
+                JsonProcessingException.class,
+                (throwable, url) -> new HttpErrorResponse(SC_BAD_REQUEST, throwable.getMessage()))
+            .endpoint(new GetKeys(keyManager))
+            .endpoint(new DeleteKeys(keyManager))
+            .endpoint(new PostKeys(keyManager))
+            .sslCertificate(
+                config.getRestApiKeystoreFile(), config.getRestApiKeystorePasswordFile());
+    // when generating rest-api docs, the keyManager may not be set
+    if (keyManager != null) {
+      builder.passwordFilePath(
+          ValidatorClientService.getKeyManagerPath(keyManager.getDataDirLayout())
+              .resolve("validator-api-bearer"));
+    }
+
+    return builder.build();
   }
 }
