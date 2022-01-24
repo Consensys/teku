@@ -19,7 +19,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.core.signatures.NoOpSigner.NO_OP_SIGNER;
+import static tech.pegasys.teku.core.signatures.NoOpLocalSigner.NO_OP_SIGNER;
+import static tech.pegasys.teku.core.signatures.NoOpRemoteSigner.NO_OP_REMOTE_SIGNER;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -186,6 +187,39 @@ class KeyManagerTest {
     final Validator validator2 =
         new Validator(keyPair2.getPublicKey(), NO_OP_SIGNER, Optional::empty, false);
     return Arrays.asList(validator1, validator2);
+  }
+
+  @Test
+  void shouldReturnActiveRemoteValidatorsList() {
+    final BLSKeyPair keyPair1 = BLSTestUtil.randomKeyPair(1);
+    final BLSKeyPair keyPair2 = BLSTestUtil.randomKeyPair(2);
+    final BLSKeyPair keyPair3 = BLSTestUtil.randomKeyPair(3);
+    final Validator validator1 =
+        new Validator(keyPair1.getPublicKey(), NO_OP_REMOTE_SIGNER, Optional::empty, true);
+    final Validator validator2 =
+        new Validator(keyPair2.getPublicKey(), NO_OP_REMOTE_SIGNER, Optional::empty, false);
+    final Validator validator3 =
+        new Validator(keyPair3.getPublicKey(), NO_OP_SIGNER, Optional::empty, false);
+    List<Validator> activeValidators = Arrays.asList(validator1, validator2, validator3);
+
+    final KeyManager keyManager = new KeyManager(validatorLoader, dataDirLayout);
+    when(ownedValidators.getActiveValidators()).thenReturn(activeValidators);
+    when(validatorLoader.getOwnedValidators()).thenReturn(ownedValidators);
+    final List<Validator> result = keyManager.getActiveRemoteValidatorKeys();
+
+    final List<Validator> activeRemoteValidators = Arrays.asList(validator1, validator2);
+    assertThat(result).isEqualTo(activeRemoteValidators);
+  }
+
+  @Test
+  void shouldReturnEmptyRemoteKeyList() {
+    final KeyManager keyManager = new KeyManager(validatorLoader, dataDirLayout);
+    final List<Validator> validatorsList = Collections.emptyList();
+    when(ownedValidators.getActiveValidators()).thenReturn(validatorsList);
+    when(validatorLoader.getOwnedValidators()).thenReturn(ownedValidators);
+    final List<Validator> activeValidatorList = keyManager.getActiveRemoteValidatorKeys();
+
+    assertThat(activeValidatorList).isEmpty();
   }
 
   private DataDirLayout getDataDirLayout(final Path tempDir) {

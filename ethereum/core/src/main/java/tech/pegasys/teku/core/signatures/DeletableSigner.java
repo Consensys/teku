@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.core.signatures;
 
+import java.net.URL;
+import java.util.Optional;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.StampedLock;
@@ -102,8 +104,8 @@ public class DeletableSigner implements Signer {
   }
 
   @Override
-  public boolean isLocal() {
-    return delegate.isLocal();
+  public Optional<URL> getSigningServiceUrl() {
+    return delegate.getSigningServiceUrl();
   }
 
   private SafeFuture<BLSSignature> sign(ExceptionThrowingFutureSupplier<BLSSignature> supplier) {

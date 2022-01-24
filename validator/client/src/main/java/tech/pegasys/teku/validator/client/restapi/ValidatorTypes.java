@@ -18,6 +18,7 @@ import static tech.pegasys.teku.infrastructure.restapi.types.CoreTypes.STRING_TY
 import static tech.pegasys.teku.infrastructure.restapi.types.DeserializableTypeDefinition.enumOf;
 import static tech.pegasys.teku.infrastructure.restapi.types.SerializableTypeDefinition.listOf;
 
+import java.net.URL;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -97,6 +98,22 @@ public class ValidatorTypes {
       SerializableTypeDefinition.<List<Validator>>object()
           .name("ListKeysResponse")
           .withField("data", listOf(ACTIVE_VALIDATOR), Function.identity())
+          .build();
+
+  public static SerializableTypeDefinition<Validator> REMOTE_KEY =
+      SerializableTypeDefinition.object(Validator.class)
+          .withField("pubkey", PUBKEY_TYPE, Validator::getPublicKey)
+          .withOptionalField(
+              "url",
+              STRING_TYPE,
+              validator -> validator.getSigner().getSigningServiceUrl().map(URL::toString))
+          .withField("readonly", BOOLEAN_TYPE, Validator::isReadOnly)
+          .build();
+
+  public static SerializableTypeDefinition<List<Validator>> LIST_REMOTE_KEYS_RESPONSE_TYPE =
+      SerializableTypeDefinition.<List<Validator>>object()
+          .name("ListRemoteKeysResponse")
+          .withField("data", listOf(REMOTE_KEY), Function.identity())
           .build();
 
   static SerializableTypeDefinition<DeleteKeyResult> DELETE_KEY_RESULT =

@@ -29,6 +29,7 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.net.http.HttpTimeoutException;
 import java.time.Duration;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
@@ -253,8 +254,8 @@ public class ExternalSigner implements Signer {
   }
 
   @Override
-  public boolean isLocal() {
-    return false;
+  public Optional<URL> getSigningServiceUrl() {
+    return Optional.of(signingServiceUrl);
   }
 
   private SafeFuture<Bytes> signingRootFromSyncCommitteeUtils(
