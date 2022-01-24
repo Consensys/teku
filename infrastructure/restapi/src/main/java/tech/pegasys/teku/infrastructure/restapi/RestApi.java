@@ -13,21 +13,35 @@
 
 package tech.pegasys.teku.infrastructure.restapi;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.google.common.base.Throwables;
 import io.javalin.Javalin;
+import java.io.IOException;
 import java.net.BindException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.service.serviceutils.Service;
 
 public class RestApi extends Service {
+  private static final Logger LOG = LogManager.getLogger();
   private final Javalin app;
   private final Optional<String> restApiDocs;
+  private final Optional<Path> passwordPath;
 
-  public RestApi(final Javalin app, final Optional<String> restApiDocs) {
+  public RestApi(
+      final Javalin app,
+      final Optional<String> restApiDocs,
+      final Optional<Path> passwordFilePath) {
     this.app = app;
     this.restApiDocs = restApiDocs;
+    this.passwordPath = passwordFilePath;
   }
 
   public Optional<String> getRestApiDocs() {
@@ -37,6 +51,7 @@ public class RestApi extends Service {
   @Override
   protected SafeFuture<?> doStart() {
     try {
+      passwordPath.ifPresent(this::checkAccessFile);
       app.start();
     } catch (final RuntimeException e) {
       if (Throwables.getRootCause(e) instanceof BindException) {
@@ -48,6 +63,25 @@ public class RestApi extends Service {
       }
     }
     return SafeFuture.COMPLETE;
+  }
+
+  private void checkAccessFile(final Path path) {
+    if (!path.toFile().exists()) {
+      try {
+        if (!path.getParent().toFile().mkdirs() && !path.getParent().toFile().isDirectory()) {
+          LOG.error("Could not mkdirs for file {}", path.toAbsolutePath());
+          throw new IllegalStateException(
+              String.format("Cannot create directories %s", path.getParent().toAbsolutePath()));
+        }
+        final Bytes generated = Bytes.random(16);
+        LOG.info("Initializing API auth access file {}", path.toAbsolutePath());
+        Files.writeString(path, generated.toUnprefixedHexString(), UTF_8);
+      } catch (IOException e) {
+        LOG.error("Failed to write auth file to " + path, e);
+        throw new IllegalStateException("Failed to initialise access file for validator-api.");
+      }
+    }
+    app._conf.accessManager(new AuthorizationManager(path));
   }
 
   @Override

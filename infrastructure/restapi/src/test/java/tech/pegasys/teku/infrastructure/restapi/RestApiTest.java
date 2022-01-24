@@ -27,7 +27,7 @@ import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException
 class RestApiTest {
   private final Javalin app = mock(Javalin.class);
 
-  private final RestApi restApi = new RestApi(app, Optional.empty());
+  private final RestApi restApi = new RestApi(app, Optional.empty(), Optional.empty());
 
   @Test
   void start_shouldThrowInvalidConfigurationExceptionWhenPortInUse() {
