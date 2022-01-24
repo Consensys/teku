@@ -1,8 +1,7 @@
-const fs = require("fs");
-const fetch = require("node-fetch");
-const ghpages = require("gh-pages");
-
-const config = require("./config.js");
+import fs from "fs";
+import fetch from "node-fetch";
+import ghpages from "gh-pages";
+import config from "./config.js";
 
 const log = (...args) => console.log(...args); // eslint-disable-line no-console
 
