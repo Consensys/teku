@@ -27,6 +27,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.schema.ReplayDepositsResult;
 import tech.pegasys.teku.util.config.Constants;
@@ -35,6 +36,7 @@ public class Eth1DepositManager {
 
   private static final Logger LOG = LogManager.getLogger();
 
+  private final SpecConfig config;
   private final Eth1Provider eth1Provider;
   private final AsyncRunner asyncRunner;
   private final ValidatingEth1EventsPublisher eth1EventsPublisher;
@@ -45,6 +47,7 @@ public class Eth1DepositManager {
   private final Eth1HeadTracker headTracker;
 
   public Eth1DepositManager(
+      final SpecConfig config,
       final Eth1Provider eth1Provider,
       final AsyncRunner asyncRunner,
       final ValidatingEth1EventsPublisher eth1EventsPublisher,
@@ -53,6 +56,7 @@ public class Eth1DepositManager {
       final MinimumGenesisTimeBlockFinder minimumGenesisTimeBlockFinder,
       final Optional<UInt64> depositContractDeployBlock,
       final Eth1HeadTracker headTracker) {
+    this.config = config;
     this.eth1Provider = eth1Provider;
     this.asyncRunner = asyncRunner;
     this.eth1EventsPublisher = eth1EventsPublisher;
@@ -96,7 +100,7 @@ public class Eth1DepositManager {
         replayDepositsResult != null, "eth1 replayDepositsResult should be defined");
     BigInteger startBlockNumber = getFirstUnprocessedBlockNumber(replayDepositsResult);
     if (headBlock.getNumber().compareTo(startBlockNumber) >= 0) {
-      if (isBlockAfterMinGenesis(headBlock)) {
+      if (isBlockAfterMinGenesis(config, headBlock)) {
         return headAfterMinGenesisMode(headBlock, replayDepositsResult);
       } else {
         return headBeforeMinGenesisMode(headBlock, startBlockNumber);

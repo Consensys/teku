@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.pow;
 
-import static tech.pegasys.teku.util.config.Constants.ETH1_FOLLOW_DISTANCE;
-
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -24,21 +22,24 @@ import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 
 public class BlockBasedEth1HeadTracker implements Eth1HeadTracker {
   private static final Logger LOG = LogManager.getLogger();
   private final AtomicBoolean running = new AtomicBoolean(false);
   private final AsyncRunner asyncRunner;
   private final Eth1Provider eth1Provider;
+  private final SpecConfig config;
   private Optional<UInt64> headAtFollowDistance = Optional.empty();
   private final AtomicBoolean reachedHead = new AtomicBoolean(false);
 
   private final Subscribers<HeadUpdatedSubscriber> subscribers = Subscribers.create(true);
 
-  public BlockBasedEth1HeadTracker(final AsyncRunner asyncRunner, final Eth1Provider eth1Provider) {
+  public BlockBasedEth1HeadTracker(
+      final AsyncRunner asyncRunner, final Eth1Provider eth1Provider, final SpecConfig config) {
     this.asyncRunner = asyncRunner;
     this.eth1Provider = eth1Provider;
+    this.config = config;
   }
 
   @Override
@@ -65,8 +66,7 @@ public class BlockBasedEth1HeadTracker implements Eth1HeadTracker {
             () ->
                 asyncRunner
                     .runAfterDelay(
-                        this::pollLatestHead,
-                        Duration.ofSeconds(Constants.SECONDS_PER_ETH1_BLOCK.longValue()))
+                        this::pollLatestHead, Duration.ofSeconds(config.getSecondsPerEth1Block()))
                     .finish(
                         () -> {},
                         error ->
@@ -75,11 +75,11 @@ public class BlockBasedEth1HeadTracker implements Eth1HeadTracker {
 
   private void onLatestBlockHead(final Block headBlock) {
     final UInt64 headBlockNumber = UInt64.valueOf(headBlock.getNumber());
-    if (headBlockNumber.compareTo(ETH1_FOLLOW_DISTANCE) < 0) {
+    if (headBlockNumber.compareTo(config.getEth1FollowDistance()) < 0) {
       LOG.debug("Not processing Eth1 blocks because chain has not reached minimum follow distance");
       return;
     }
-    final UInt64 newHeadAtFollowDistance = headBlockNumber.minus(ETH1_FOLLOW_DISTANCE);
+    final UInt64 newHeadAtFollowDistance = headBlockNumber.minus(config.getEth1FollowDistance());
     if (headAtFollowDistance
         .map(current -> current.compareTo(newHeadAtFollowDistance) < 0)
         .orElse(true)) {

@@ -68,7 +68,7 @@ public class TerminalPowBlockMonitor {
       return;
     }
     final Duration pollingPeriod =
-        Duration.ofSeconds(spec.getGenesisSpec().getConfig().getSecondsPerEth1Block().longValue());
+        Duration.ofSeconds(spec.getGenesisSpec().getConfig().getSecondsPerEth1Block());
     timer =
         Optional.of(
             asyncRunner.runWithFixedDelay(

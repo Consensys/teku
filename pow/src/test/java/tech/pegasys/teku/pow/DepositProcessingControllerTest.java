@@ -23,8 +23,9 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.math.BigInteger;
+import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
@@ -36,7 +37,9 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.Eth1HeadTracker.HeadUpdatedSubscriber;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
-import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigBuilder;
+import tech.pegasys.teku.spec.config.SpecConfigLoader;
 
 public class DepositProcessingControllerTest {
 
@@ -47,23 +50,28 @@ public class DepositProcessingControllerTest {
   private final Eth1HeadTracker headTracker = Mockito.mock(BlockBasedEth1HeadTracker.class);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
-  private final DepositProcessingController depositProcessingController =
-      new DepositProcessingController(
-          eth1Provider,
-          eth1EventsChannel,
-          asyncRunner,
-          depositFetcher,
-          eth1BlockFetcher,
-          headTracker);
+  private DepositProcessingController depositProcessingController;
 
-  @AfterEach
-  void tearDown() {
-    Constants.setConstants("minimal");
+  private void createDepositProcessingController(final Consumer<SpecConfigBuilder> configModifier) {
+    final SpecConfig config = SpecConfigLoader.loadConfig("minimal", configModifier);
+    depositProcessingController =
+        new DepositProcessingController(
+            config,
+            eth1Provider,
+            eth1EventsChannel,
+            asyncRunner,
+            depositFetcher,
+            eth1BlockFetcher,
+            headTracker);
+  }
+
+  @BeforeEach
+  void setUp() {
+    createDepositProcessingController(__ -> {});
   }
 
   @Test
   void doesAnotherRequestWhenTheLatestCanonicalBlockGetsUpdatedDuringCurrentRequest() {
-
     SafeFuture<Void> future = new SafeFuture<>();
     when(depositFetcher.fetchDepositsInRange(BigInteger.ONE, BigInteger.valueOf(10)))
         .thenReturn(future);
@@ -106,12 +114,9 @@ public class DepositProcessingControllerTest {
 
   @Test
   void fetchDepositsBlockOneBlockAtATime() {
-
-    Constants.GENESIS_DELAY = UInt64.valueOf(2);
-    // calculateCandidateGenesisTimestamp will return
-    // blockTime + 2
-
-    Constants.MIN_GENESIS_TIME = UInt64.valueOf(100);
+    // calculateCandidateGenesisTimestamp will return blockTime + 2
+    createDepositProcessingController(
+        builder -> builder.genesisDelay(UInt64.valueOf(2)).minGenesisTime(UInt64.valueOf(100)));
 
     depositProcessingController.switchToBlockByBlockMode();
     depositProcessingController.startSubscription(BigInteger.ONE);

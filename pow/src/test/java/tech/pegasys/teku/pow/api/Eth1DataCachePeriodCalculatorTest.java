@@ -17,17 +17,24 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigLoader;
 
 class Eth1DataCachePeriodCalculatorTest {
+  private final SpecConfig config = SpecConfigLoader.loadConfig("minimal");
+
   @Test
   void shouldCalculateCachePeriodForMinimalConstantsFromFollowDistance() {
-    assertThat(Eth1DataCachePeriodCalculator.calculateEth1DataCacheDurationPriorToFollowDistance())
+    assertThat(
+            Eth1DataCachePeriodCalculator.calculateEth1DataCacheDurationPriorToFollowDistance(
+                config))
         .isEqualTo(UInt64.valueOf(470));
   }
 
   @Test
   void shouldCalculateCachePeriodForMinimalConstantsFromCurrentTime() {
-    assertThat(Eth1DataCachePeriodCalculator.calculateEth1DataCacheDurationPriorToCurrentTime())
+    assertThat(
+            Eth1DataCachePeriodCalculator.calculateEth1DataCacheDurationPriorToCurrentTime(config))
         .isEqualTo(UInt64.valueOf(694));
   }
 }

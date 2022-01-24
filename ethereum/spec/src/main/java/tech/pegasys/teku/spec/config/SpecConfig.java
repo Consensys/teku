@@ -128,7 +128,7 @@ public interface SpecConfig {
 
   int getMaxVoluntaryExits();
 
-  UInt64 getSecondsPerEth1Block();
+  int getSecondsPerEth1Block();
 
   int getSafeSlotsToUpdateJustified();
 

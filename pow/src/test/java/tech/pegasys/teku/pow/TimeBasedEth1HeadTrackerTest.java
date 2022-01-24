@@ -52,7 +52,7 @@ class TimeBasedEth1HeadTrackerTest {
               builder ->
                   builder
                       .eth1FollowDistance(UInt64.valueOf(FOLLOW_DISTANCE))
-                      .secondsPerEth1Block(UInt64.valueOf(SECONDS_PER_BLOCK))));
+                      .secondsPerEth1Block(SECONDS_PER_BLOCK)));
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInMillis(0);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
   private final Eth1Provider eth1Provider = mock(Eth1Provider.class);

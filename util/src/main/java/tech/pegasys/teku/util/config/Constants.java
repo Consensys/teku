@@ -23,21 +23,12 @@ public class Constants {
       ImmutableList.of(
           "mainnet", "minimal", "swift", "pyrmont", "prater", "kintsugi", "less-swift");
 
-  // Misc
-  @Deprecated public static UInt64 ETH1_FOLLOW_DISTANCE = UInt64.valueOf(1024);
   @Deprecated public static int MAX_VALIDATORS_PER_COMMITTEE;
-  @Deprecated public static int MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
-  @Deprecated public static UInt64 MIN_GENESIS_TIME;
 
-  // Time parameters
-  @Deprecated public static UInt64 GENESIS_DELAY;
   @Deprecated public static int SECONDS_PER_SLOT = 12;
   @Deprecated public static int SLOTS_PER_EPOCH;
   @Deprecated public static int EPOCHS_PER_ETH1_VOTING_PERIOD;
   @Deprecated public static int SLOTS_PER_HISTORICAL_ROOT;
-
-  // Validator
-  @Deprecated public static UInt64 SECONDS_PER_ETH1_BLOCK = UInt64.valueOf(14L);
 
   // Deposit Contract
   @Deprecated public static int DEPOSIT_CHAIN_ID;

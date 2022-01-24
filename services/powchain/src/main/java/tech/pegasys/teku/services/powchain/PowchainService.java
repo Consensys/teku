@@ -53,6 +53,7 @@ import tech.pegasys.teku.pow.Web3jEth1Provider;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 
 public class PowchainService extends Service {
@@ -72,6 +73,7 @@ public class PowchainService extends Service {
 
     this.okHttpClient = createOkHttpClient();
     this.web3js = createWeb3js(powConfig);
+    final SpecConfig config = powConfig.getSpec().getGenesisSpecConfig();
     Eth1ProviderSelector eth1ProviderSelector =
         new Eth1ProviderSelector(
             IntStream.range(0, web3js.size())
@@ -109,7 +111,7 @@ public class PowchainService extends Service {
             eth1EventsPublisher,
             eth1Provider,
             serviceConfig.getTimeProvider(),
-            calculateEth1DataCacheDurationPriorToCurrentTime());
+            calculateEth1DataCacheDurationPriorToCurrentTime(config));
 
     final DepositFetcher depositFetcher =
         new DepositFetcher(
@@ -125,10 +127,11 @@ public class PowchainService extends Service {
           new TimeBasedEth1HeadTracker(
               powConfig.getSpec(), serviceConfig.getTimeProvider(), asyncRunner, eth1Provider);
     } else {
-      headTracker = new BlockBasedEth1HeadTracker(asyncRunner, eth1Provider);
+      headTracker = new BlockBasedEth1HeadTracker(asyncRunner, eth1Provider, config);
     }
     final DepositProcessingController depositProcessingController =
         new DepositProcessingController(
+            config,
             eth1Provider,
             eth1EventsPublisher,
             asyncRunner,
@@ -140,12 +143,13 @@ public class PowchainService extends Service {
         powConfig.getDepositContractDeployBlock();
     eth1DepositManager =
         new Eth1DepositManager(
+            config,
             eth1Provider,
             asyncRunner,
             eth1EventsPublisher,
             eth1DepositStorageChannel,
             depositProcessingController,
-            new MinimumGenesisTimeBlockFinder(eth1Provider, eth1DepositContractDeployBlock),
+            new MinimumGenesisTimeBlockFinder(config, eth1Provider, eth1DepositContractDeployBlock),
             eth1DepositContractDeployBlock,
             headTracker);
 
