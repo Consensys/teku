@@ -1,7 +1,7 @@
-const fs = require("fs");
-const path = require("path");
-const yaml = require("js-yaml");
-const GitUrlParse = require("git-url-parse");
+import fs from "fs";
+import path from "path";
+import yaml from "js-yaml";
+import GitUrlParse from "git-url-parse";
 
 const distDir = process.env.OA_DIST_DIR || "./dist";
 const specDir =
@@ -13,7 +13,7 @@ const gitEmail = process.env.OA_GIT_EMAIL || "ci-build@consensys.net";
 const branch = process.env.OA_GH_PAGES_BRANCH || "gh-pages";
 const versionsFileName = process.env.OA_VERSIONS_FILE_NAME || "versions.json";
 
-module.exports = {
+export default  {
   getConfig,
 };
 
