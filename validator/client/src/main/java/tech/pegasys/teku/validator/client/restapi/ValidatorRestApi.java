@@ -25,6 +25,7 @@ import tech.pegasys.teku.infrastructure.restapi.RestApi;
 import tech.pegasys.teku.infrastructure.restapi.RestApiBuilder;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.validator.client.KeyManager;
+import tech.pegasys.teku.validator.client.ValidatorClientService;
 import tech.pegasys.teku.validator.client.restapi.apis.DeleteKeys;
 import tech.pegasys.teku.validator.client.restapi.apis.GetKeys;
 import tech.pegasys.teku.validator.client.restapi.apis.GetRemoteKeys;
@@ -40,6 +41,7 @@ public class ValidatorRestApi {
                         StringUtils.capitalize(
                             VersionProvider.CLIENT_IDENTITY + " Validator Rest API"))
                     .version(VersionProvider.IMPLEMENTATION_VERSION)
+                    .bearerAuth(true)
                     .description("An implementation of the key management standard Rest API.")
                     .license("Apache 2.0", "https://www.apache.org/licenses/LICENSE-2.0.html"))
         .openApiDocsEnabled(config.isRestApiDocsEnabled())
@@ -61,11 +63,10 @@ public class ValidatorRestApi {
         .endpoint(new GetKeys(keyManager))
         .endpoint(new DeleteKeys(keyManager))
         .endpoint(new PostKeys(keyManager))
+        .sslCertificate(config.getRestApiKeystoreFile(), config.getRestApiKeystorePasswordFile())
         .endpoint(new GetRemoteKeys(keyManager))
         .passwordFilePath(
-            keyManager
-                .getDataDirLayout()
-                .getValidatorDataDirectory()
+            ValidatorClientService.getKeyManagerPath(keyManager.getDataDirLayout())
                 .resolve("validator-api-bearer"))
         .build();
   }

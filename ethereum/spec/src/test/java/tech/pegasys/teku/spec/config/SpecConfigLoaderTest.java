@@ -19,12 +19,16 @@ import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllAltair
 import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllBellatrixFieldsSet;
 import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllFieldsSet;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.io.Resources;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
@@ -80,6 +84,17 @@ public class SpecConfigLoaderTest {
       final Path file = tempDir.resolve("mainnet.yml");
       writeStreamToFile(inputStream, file);
       final SpecConfig config = SpecConfigLoader.loadConfig(file.toAbsolutePath().toString());
+      assertAllAltairFieldsSet(config);
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"altairForkSpec.json", "mergeForkSpec.json", "bellatrixForkSpec.json"})
+  void shouldLoadMainnetPreservingBackwardsCompatibilityWithRestApi(final String specFilename)
+      throws Exception {
+    try (final InputStream in =
+        Resources.getResource(SpecConfigLoaderTest.class, specFilename).openStream()) {
+      final SpecConfig config = SpecConfigLoader.loadRemoteConfig(readJsonConfig(in));
       assertAllAltairFieldsSet(config);
     }
   }
@@ -158,5 +173,12 @@ public class SpecConfigLoaderTest {
 
   private InputStream loadInvalidFile(final String file) {
     return getClass().getResourceAsStream("invalid/" + file);
+  }
+
+  private Map<String, String> readJsonConfig(final InputStream source) throws IOException {
+    final ObjectMapper mapper = new ObjectMapper();
+    return mapper
+        .readerFor(mapper.getTypeFactory().constructMapType(Map.class, String.class, String.class))
+        .readValue(source);
   }
 }

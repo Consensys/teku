@@ -71,6 +71,23 @@ public class StatusLogger {
             Color.YELLOW));
   }
 
+  public void warnMissingProposerDefaultFeeRecipientWithRestAPIEnabled() {
+    log.warn(
+        print(
+            "No default proposer fee recipient has been specified and rest API is enabled. "
+                + "If a Validator Client is going to use this node it is strongly recommended to "
+                + "configure it to avoid possible block production failures",
+            Color.RED));
+  }
+
+  public void warnMissingProposerDefaultFeeRecipientWithPreparedBeaconProposerBeingCalled() {
+    log.warn(
+        print(
+            "Validator Client detected and no default proposer fee recipient configured! "
+                + "it is strongly recommended to configure it to avoid possible block production failures",
+            Color.RED));
+  }
+
   public void fatalError(final String description, final Throwable cause) {
     log.fatal("Exiting due to fatal error in {}", description, cause);
   }

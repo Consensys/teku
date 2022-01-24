@@ -14,7 +14,9 @@
 package tech.pegasys.teku.statetransition.forkchoice;
 
 import com.google.common.base.MoreObjects;
+import com.google.common.base.Supplier;
 import java.util.Optional;
+import java.util.concurrent.Executor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -34,6 +36,9 @@ public class ForkChoiceUpdateData {
   private final Optional<Bytes32> terminalBlockHash;
   private final SafeFuture<Optional<Bytes8>> payloadId = new SafeFuture<>();
   private boolean sent = false;
+
+  private long payloadAttributesSequenceProducer = 0;
+  private long payloadAttributesSequenceConsumer = -1;
 
   public ForkChoiceUpdateData() {
     this.forkChoiceState =
@@ -85,6 +90,29 @@ public class ForkChoiceUpdateData {
     }
     return new ForkChoiceUpdateData(
         forkChoiceState, payloadAttributes, Optional.of(terminalBlockHash));
+  }
+
+  public SafeFuture<Optional<ForkChoiceUpdateData>> withPayloadAttributesAsync(
+      final Supplier<SafeFuture<Optional<PayloadAttributes>>> payloadAttributesCalculator,
+      final Executor executor) {
+    // we want to preserve ordering in payload calculation,
+    // so we first generate a sequence for each calculation request
+    final long sequenceNumber = payloadAttributesSequenceProducer++;
+
+    return payloadAttributesCalculator
+        .get()
+        .thenApplyAsync(
+            newPayloadAttributes -> {
+              // to preserve ordering we make sure we haven't already calculated a payload that has
+              // been requested later than the current one
+              if (sequenceNumber <= payloadAttributesSequenceConsumer) {
+                LOG.warn("Ignoring calculated payload attributes since it violates ordering");
+                return Optional.empty();
+              }
+              payloadAttributesSequenceConsumer = sequenceNumber;
+              return Optional.of(this.withPayloadAttributes(newPayloadAttributes));
+            },
+            executor);
   }
 
   public boolean isPayloadIdSuitable(final Bytes32 parentExecutionHash, final UInt64 timestamp) {

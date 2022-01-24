@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.cli.options;
 
+import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -94,6 +96,15 @@ public class Eth2NetworkOptions {
   private UInt64 terminalBlockHashEpochOverride;
 
   @Option(
+      names = {"--Xnetwork-safe-slots-to-import-optimistically"},
+      hidden = true,
+      paramLabel = "<NUMBER>",
+      description =
+          "Override the the number of slots that must pass before it is considered safe to optimistically import a block",
+      arity = "1")
+  private Integer safeSlotsToImportOptimistically = DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
+
+  @Option(
       names = {"--Xstartup-target-peer-count"},
       paramLabel = "<NUMBER>",
       description = "Number of peers to wait for before considering the node in sync.",
@@ -163,6 +174,7 @@ public class Eth2NetworkOptions {
     if (terminalBlockHashEpochOverride != null) {
       builder.terminalBlockHashEpochOverride(terminalBlockHashEpochOverride);
     }
+    builder.safeSlotsToImportOptimistically(safeSlotsToImportOptimistically);
   }
 
   public String getNetwork() {

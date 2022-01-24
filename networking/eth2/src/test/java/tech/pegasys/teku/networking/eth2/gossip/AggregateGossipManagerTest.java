@@ -72,6 +72,7 @@ public class AggregateGossipManagerTest {
             forkInfo,
             processor,
             GOSSIP_MAX_SIZE);
+    gossipManager.subscribe();
   }
 
   @Test

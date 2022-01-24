@@ -15,7 +15,6 @@ package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
-import tech.pegasys.teku.networking.eth2.gossip.GossipPublisher;
 import tech.pegasys.teku.networking.eth2.gossip.SignedContributionAndProofGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.SyncCommitteeMessageGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
@@ -40,13 +39,10 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
 
   private final OperationProcessor<SignedContributionAndProof>
       signedContributionAndProofOperationProcessor;
-  private final GossipPublisher<SignedContributionAndProof>
-      signedContributionAndProofGossipPublisher;
   private final OperationProcessor<ValidateableSyncCommitteeMessage>
       syncCommitteeMessageOperationProcessor;
-  private final GossipPublisher<ValidateableSyncCommitteeMessage>
-      syncCommitteeMessageGossipPublisher;
   private SyncCommitteeMessageGossipManager syncCommitteeMessageGossipManager;
+  private SignedContributionAndProofGossipManager syncCommitteeContributionGossipManager;
 
   public GossipForkSubscriptionsAltair(
       final Fork fork,
@@ -60,17 +56,12 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
       final OperationProcessor<ValidateableAttestation> attestationProcessor,
       final OperationProcessor<ValidateableAttestation> aggregateProcessor,
       final OperationProcessor<AttesterSlashing> attesterSlashingProcessor,
-      final GossipPublisher<AttesterSlashing> attesterSlashingGossipPublisher,
       final OperationProcessor<ProposerSlashing> proposerSlashingProcessor,
-      final GossipPublisher<ProposerSlashing> proposerSlashingGossipPublisher,
       final OperationProcessor<SignedVoluntaryExit> voluntaryExitProcessor,
-      final GossipPublisher<SignedVoluntaryExit> voluntaryExitGossipPublisher,
       final OperationProcessor<SignedContributionAndProof>
           signedContributionAndProofOperationProcessor,
-      final GossipPublisher<SignedContributionAndProof> signedContributionAndProofGossipPublisher,
       final OperationProcessor<ValidateableSyncCommitteeMessage>
-          syncCommitteeMessageOperationProcessor,
-      final GossipPublisher<ValidateableSyncCommitteeMessage> syncCommitteeMessageGossipPublisher) {
+          syncCommitteeMessageOperationProcessor) {
     super(
         fork,
         spec,
@@ -83,16 +74,11 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
         attestationProcessor,
         aggregateProcessor,
         attesterSlashingProcessor,
-        attesterSlashingGossipPublisher,
         proposerSlashingProcessor,
-        proposerSlashingGossipPublisher,
-        voluntaryExitProcessor,
-        voluntaryExitGossipPublisher);
+        voluntaryExitProcessor);
     this.signedContributionAndProofOperationProcessor =
         signedContributionAndProofOperationProcessor;
-    this.signedContributionAndProofGossipPublisher = signedContributionAndProofGossipPublisher;
     this.syncCommitteeMessageOperationProcessor = syncCommitteeMessageOperationProcessor;
-    this.syncCommitteeMessageGossipPublisher = syncCommitteeMessageGossipPublisher;
   }
 
   @Override
@@ -100,7 +86,7 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
     super.addGossipManagers(forkInfo);
     final SchemaDefinitionsAltair schemaDefinitions =
         SchemaDefinitionsAltair.required(spec.atEpoch(getActivationEpoch()).getSchemaDefinitions());
-    addGossipManager(
+    syncCommitteeContributionGossipManager =
         new SignedContributionAndProofGossipManager(
             recentChainData,
             schemaDefinitions,
@@ -109,11 +95,12 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
             gossipEncoding,
             forkInfo,
             signedContributionAndProofOperationProcessor,
-            signedContributionAndProofGossipPublisher,
-            getMessageMaxSize()));
+            getMessageMaxSize());
+    addGossipManager(syncCommitteeContributionGossipManager);
 
     final SyncCommitteeSubnetSubscriptions syncCommitteeSubnetSubscriptions =
         new SyncCommitteeSubnetSubscriptions(
+            spec,
             recentChainData,
             discoveryNetwork,
             gossipEncoding,
@@ -127,14 +114,18 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
             metricsSystem,
             spec,
             new SyncCommitteeStateUtils(spec, recentChainData),
-            syncCommitteeSubnetSubscriptions,
-            syncCommitteeMessageGossipPublisher);
+            syncCommitteeSubnetSubscriptions);
     addGossipManager(syncCommitteeMessageGossipManager);
   }
 
   @Override
   public void publishSyncCommitteeMessage(final ValidateableSyncCommitteeMessage message) {
     syncCommitteeMessageGossipManager.publish(message);
+  }
+
+  @Override
+  public void publishSyncCommitteeContribution(final SignedContributionAndProof message) {
+    syncCommitteeContributionGossipManager.publishContribution(message);
   }
 
   @Override

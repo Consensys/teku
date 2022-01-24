@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.config;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static tech.pegasys.teku.spec.config.SpecConfigFormatter.camelToSnakeCase;
+import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
 
 import java.math.BigInteger;
 import java.util.HashMap;
@@ -165,9 +166,8 @@ public class SpecConfigBuilder {
     if (altairBuilder.isPresent()) {
       final SpecConfigAltair altairConfig = altairBuilder.get().build(config);
       config = altairConfig;
-      if (bellatrixBuilder.isPresent()) {
-        final SpecConfigBellatrix bellatrixConfig = bellatrixBuilder.get().build(altairConfig);
-        config = bellatrixBuilder.get().build(bellatrixConfig);
+      if (bellatrixBuilder.isPresent() && bellatrixBuilder.get().isBellatrixIncluded()) {
+        config = bellatrixBuilder.get().build(altairConfig);
       }
     }
     return config;
@@ -225,7 +225,9 @@ public class SpecConfigBuilder {
     validateConstant("depositContractAddress", depositContractAddress);
 
     altairBuilder.ifPresent(AltairBuilder::validate);
-    bellatrixBuilder.ifPresent(BellatrixBuilder::validate);
+    bellatrixBuilder
+        .filter(BellatrixBuilder::isBellatrixIncluded)
+        .ifPresent(BellatrixBuilder::validate);
   }
 
   private void validateConstant(final String name, final Object value) {
@@ -665,6 +667,7 @@ public class SpecConfigBuilder {
     public AltairBuilder altairForkEpoch(final UInt64 altairForkEpoch) {
       checkNotNull(altairForkEpoch);
       this.altairForkEpoch = altairForkEpoch;
+      rawConfig.put("ALTAIR_FORK_EPOCH", altairForkEpoch);
       return this;
     }
 
@@ -702,11 +705,15 @@ public class SpecConfigBuilder {
     private UInt64 terminalBlockHashActivationEpoch;
 
     // Optimistic Sync
-    private int safeSlotsToImportOptimistically = 128;
+    private int safeSlotsToImportOptimistically = DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
 
     private BellatrixBuilder() {}
 
-    SpecConfigBellatrix build(final SpecConfigAltair specConfig) {
+    public boolean isBellatrixIncluded() {
+      return bellatrixForkEpoch != null;
+    }
+
+    SpecConfig build(final SpecConfigAltair specConfig) {
       return new SpecConfigBellatrix(
           specConfig,
           bellatrixForkVersion,
@@ -760,6 +767,7 @@ public class SpecConfigBuilder {
     public BellatrixBuilder bellatrixForkEpoch(final UInt64 bellatrixForkEpoch) {
       checkNotNull(bellatrixForkEpoch);
       this.bellatrixForkEpoch = bellatrixForkEpoch;
+      rawConfig.put("BELLATRIX_FORK_EPOCH", bellatrixForkEpoch);
       return this;
     }
 
@@ -798,17 +806,20 @@ public class SpecConfigBuilder {
 
     public BellatrixBuilder terminalTotalDifficulty(final UInt256 terminalTotalDifficulty) {
       this.terminalTotalDifficulty = terminalTotalDifficulty;
+      rawConfig.put("TERMINAL_TOTAL_DIFFICULTY", terminalTotalDifficulty);
       return this;
     }
 
     public BellatrixBuilder terminalBlockHash(final Bytes32 terminalBlockHash) {
       this.terminalBlockHash = terminalBlockHash;
+      rawConfig.put("TERMINAL_BLOCK_HASH", terminalBlockHash);
       return this;
     }
 
     public BellatrixBuilder terminalBlockHashActivationEpoch(
         final UInt64 terminalBlockHashActivationEpoch) {
       this.terminalBlockHashActivationEpoch = terminalBlockHashActivationEpoch;
+      rawConfig.put("TERMINAL_BLOCK_HASH_ACTIVATION_EPOCH", terminalBlockHashActivationEpoch);
       return this;
     }
 

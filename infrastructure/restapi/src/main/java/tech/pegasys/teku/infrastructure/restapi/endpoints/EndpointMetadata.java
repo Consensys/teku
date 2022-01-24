@@ -27,7 +27,9 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import io.javalin.http.HandlerType;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -45,25 +47,31 @@ public class EndpointMetadata {
   private final String path;
   private final String operationId;
   private final String summary;
+  private final Optional<String> security;
   private final String description;
   private final Map<String, OpenApiResponse> responses;
   private final Optional<DeserializableTypeDefinition<?>> requestBodyType;
+  private final List<String> tags;
 
   private EndpointMetadata(
       final HandlerType method,
       final String path,
       final String operationId,
       final String summary,
+      final Optional<String> security,
       final String description,
       final Map<String, OpenApiResponse> responses,
-      final Optional<DeserializableTypeDefinition<?>> requestBodyType) {
+      final Optional<DeserializableTypeDefinition<?>> requestBodyType,
+      final List<String> tags) {
     this.method = method;
     this.path = path;
     this.operationId = operationId;
     this.summary = summary;
+    this.security = security;
     this.description = description;
     this.responses = responses;
     this.requestBodyType = requestBodyType;
+    this.tags = tags;
   }
 
   public static EndpointMetaDataBuilder get(final String path) {
@@ -86,6 +94,14 @@ public class EndpointMetadata {
     return path;
   }
 
+  public Optional<String> getSecurity() {
+    return security;
+  }
+
+  public List<String> getTags() {
+    return tags;
+  }
+
   public SerializableTypeDefinition<?> getResponseType(
       final int statusCode, final String contentType) {
     final OpenApiResponse response = responses.get(Integer.toString(statusCode));
@@ -102,6 +118,7 @@ public class EndpointMetadata {
 
   public void writeOpenApi(final JsonGenerator gen) throws IOException {
     gen.writeObjectFieldStart(method.name().toLowerCase(Locale.ROOT));
+    writeTags(gen);
     gen.writeStringField("operationId", operationId);
     gen.writeStringField("summary", summary);
     gen.writeStringField("description", description);
@@ -119,6 +136,15 @@ public class EndpointMetadata {
       gen.writeEndObject();
     }
 
+    if (security.isPresent()) {
+      gen.writeArrayFieldStart("security");
+      gen.writeStartObject();
+      gen.writeArrayFieldStart(security.get());
+      gen.writeEndArray();
+      gen.writeEndObject();
+      gen.writeEndArray();
+    }
+
     gen.writeObjectFieldStart("responses");
     for (Entry<String, OpenApiResponse> responseEntry : responses.entrySet()) {
       gen.writeFieldName(responseEntry.getKey());
@@ -126,6 +152,18 @@ public class EndpointMetadata {
     }
     gen.writeEndObject();
     gen.writeEndObject();
+  }
+
+  private void writeTags(final JsonGenerator gen) throws IOException {
+    if (tags.isEmpty()) {
+      return;
+    }
+    gen.writeArrayFieldStart("tags");
+
+    for (String tag : tags) {
+      gen.writeString(tag);
+    }
+    gen.writeEndArray();
   }
 
   public Collection<OpenApiTypeDefinition> getReferencedTypeDefinitions() {
@@ -147,8 +185,10 @@ public class EndpointMetadata {
     private String operationId;
     private String summary;
     private String description;
+    private Optional<String> security = Optional.empty();
     private Optional<DeserializableTypeDefinition<?>> requestBodyType = Optional.empty();
     private final Map<String, OpenApiResponse> responses = new LinkedHashMap<>();
+    private List<String> tags = Collections.emptyList();
 
     public EndpointMetaDataBuilder method(final HandlerType method) {
       this.method = method;
@@ -157,6 +197,15 @@ public class EndpointMetadata {
 
     public EndpointMetaDataBuilder path(final String path) {
       this.path = path;
+      return this;
+    }
+
+    public EndpointMetaDataBuilder withBearerAuthSecurity() {
+      return security("bearerAuth");
+    }
+
+    public EndpointMetaDataBuilder security(final String security) {
+      this.security = Optional.ofNullable(security);
       return this;
     }
 
@@ -246,7 +295,20 @@ public class EndpointMetadata {
         withInternalErrorResponse();
       }
       return new EndpointMetadata(
-          method, path, operationId, summary, description, responses, requestBodyType);
+          method,
+          path,
+          operationId,
+          summary,
+          security,
+          description,
+          responses,
+          requestBodyType,
+          tags);
+    }
+
+    public EndpointMetaDataBuilder tags(final String... tags) {
+      this.tags = List.of(tags);
+      return this;
     }
   }
 }

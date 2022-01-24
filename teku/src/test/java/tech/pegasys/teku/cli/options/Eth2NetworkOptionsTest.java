@@ -73,6 +73,25 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  void shouldUseCustomSafeSlotsToImportOptimistically() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments(
+            "--Xnetwork-bellatrix-fork-epoch",
+            "120000",
+            "--Xee-endpoint",
+            "someEndpoint",
+            "--Xnetwork-safe-slots-to-import-optimistically",
+            "256");
+    final Spec spec = config.eth2NetworkConfiguration().getSpec();
+    assertThat(
+            spec.getGenesisSpecConfig()
+                .toVersionBellatrix()
+                .orElseThrow()
+                .getSafeSlotsToImportOptimistically())
+        .isEqualTo(256);
+  }
+
+  @Test
   void shouldMergeTransitionsOverrideBeEmptyByDefault() {
     final TekuConfiguration config = getTekuConfigurationFromArguments();
     assertThat(config.eth2NetworkConfiguration().getTotalTerminalDifficultyOverride())

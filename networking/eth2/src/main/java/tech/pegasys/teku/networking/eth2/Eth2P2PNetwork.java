@@ -17,20 +17,35 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
 
 public interface Eth2P2PNetwork extends P2PNetwork<Eth2Peer> {
 
   void onEpoch(UInt64 epoch);
 
-  void subscribeToAttestationSubnetId(final int subnetId);
+  void subscribeToAttestationSubnetId(int subnetId);
 
-  void unsubscribeFromAttestationSubnetId(final int subnetId);
+  void unsubscribeFromAttestationSubnetId(int subnetId);
 
-  void setLongTermAttestationSubnetSubscriptions(final Iterable<Integer> subnetIndices);
+  void setLongTermAttestationSubnetSubscriptions(Iterable<Integer> subnetIndices);
 
-  void subscribeToSyncCommitteeSubnetId(final int subnetId);
+  void subscribeToSyncCommitteeSubnetId(int subnetId);
 
-  void unsubscribeFromSyncCommitteeSubnetId(final int subnetId);
+  void unsubscribeFromSyncCommitteeSubnetId(int subnetId);
 
   MetadataMessage getMetadata();
+
+  void publishSyncCommitteeMessage(ValidateableSyncCommitteeMessage message);
+
+  void publishSyncCommitteeContribution(SignedContributionAndProof signedContributionAndProof);
+
+  void publishProposerSlashing(ProposerSlashing proposerSlashing);
+
+  void publishAttesterSlashing(AttesterSlashing attesterSlashing);
+
+  void publishVoluntaryExit(SignedVoluntaryExit signedVoluntaryExit);
 }

@@ -15,8 +15,13 @@ package tech.pegasys.teku.test.acceptance.dsl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.google.common.io.Resources;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -40,13 +45,14 @@ public class TekuValidatorNode extends Node {
   private boolean started = false;
   private Set<File> configFiles;
   private final ValidatorKeysApi validatorKeysApi =
-      new ValidatorKeysApi(httpClient, this::getValidatorApiUrl, this::getApiPassword);
+      new ValidatorKeysApi(
+          new TrustingSimpleHttpsClient(), this::getValidatorApiUrl, this::getApiPassword);
 
   private TekuValidatorNode(
       final Network network, final DockerVersion version, final TekuValidatorNode.Config config) {
     super(network, TEKU_DOCKER_IMAGE_NAME, version, LOG);
     this.config = config;
-    if (config.configMap.containsKey("Xvalidator-api-enabled")) {
+    if (config.configMap.containsKey("validator-api-enabled")) {
       container.withExposedPorts(VALIDATOR_API_PORT);
     }
 
@@ -72,7 +78,7 @@ public class TekuValidatorNode extends Node {
   }
 
   public ValidatorKeysApi getValidatorKeysApi() {
-    if (!config.configMap.containsKey("Xvalidator-api-enabled")) {
+    if (!config.configMap.containsKey("validator-api-enabled")) {
       LOG.error("Retrieving validator keys api but api is not enabled");
     }
     return validatorKeysApi;
@@ -93,9 +99,10 @@ public class TekuValidatorNode extends Node {
     assertThat(started).isFalse();
     LOG.debug("Start validator node {}", nodeAlias);
     started = true;
-    final Map<File, String> configFiles = config.write();
-    this.configFiles = configFiles.keySet();
-    configFiles.forEach(
+    config.writeConfigFile();
+    final Map<File, String> configFileMap = config.getConfigFileMap();
+    this.configFiles = configFileMap.keySet();
+    configFileMap.forEach(
         (localFile, targetPath) ->
             container.withCopyFileToContainer(
                 MountableFile.forHostPath(localFile.getAbsolutePath()), targetPath));
@@ -118,12 +125,12 @@ public class TekuValidatorNode extends Node {
   }
 
   private URI getValidatorApiUrl() {
-    return URI.create("http://127.0.0.1:" + container.getMappedPort(VALIDATOR_API_PORT));
+    return URI.create("https://127.0.0.1:" + container.getMappedPort(VALIDATOR_API_PORT));
   }
 
   public String getApiPassword() {
     return container.copyFileFromContainer(
-        VALIDATOR_PATH + "validator-api-bearer",
+        VALIDATOR_PATH + "key-manager/validator-api-bearer",
         in -> IOUtils.toString(in, StandardCharsets.UTF_8));
   }
 
@@ -131,6 +138,8 @@ public class TekuValidatorNode extends Node {
     private static final int DEFAULT_VALIDATOR_COUNT = 64;
 
     private Map<String, Object> configMap = new HashMap<>();
+    private boolean keyfilesGenerated = false;
+    private final Map<File, String> configFileMap = new HashMap<>();
 
     public Config() {
       configMap.put("validators-keystore-locking-enabled", false);
@@ -154,9 +163,15 @@ public class TekuValidatorNode extends Node {
     }
 
     public TekuValidatorNode.Config withValidatorApiEnabled() {
-      configMap.put("Xvalidator-api-enabled", true);
-      configMap.put("Xvalidator-api-port", VALIDATOR_API_PORT);
-      configMap.put("Xvalidator-api-host-allowlist", "*");
+      configMap.put("validator-api-enabled", true);
+      configMap.put("validator-api-port", VALIDATOR_API_PORT);
+      configMap.put("validator-api-host-allowlist", "*");
+      configMap.put("validator-api-keystore-file", "/keystore.pfx");
+      try {
+        publishSelfSignedCertificate("/keystore.pfx");
+      } catch (Exception e) {
+        LOG.error("Could not generate self signed cert", e);
+      }
       return this;
     }
 
@@ -177,14 +192,11 @@ public class TekuValidatorNode extends Node {
       return this;
     }
 
-    public Map<File, String> write() throws Exception {
-      final Map<File, String> configFiles = new HashMap<>();
-
+    public void writeConfigFile() throws Exception {
       final File configFile = File.createTempFile("config", ".yaml");
       configFile.deleteOnExit();
-      writeTo(configFile);
-      configFiles.put(configFile, CONFIG_FILE_PATH);
-      return configFiles;
+      writeConfigFileTo(configFile);
+      configFileMap.put(configFile, CONFIG_FILE_PATH);
     }
 
     public TekuValidatorNode.Config withAltairEpoch(final UInt64 altairSlot) {
@@ -192,8 +204,29 @@ public class TekuValidatorNode extends Node {
       return this;
     }
 
-    private void writeTo(final File configFile) throws Exception {
+    private void writeConfigFileTo(final File configFile) throws Exception {
       YAML_MAPPER.writeValue(configFile, configMap);
+    }
+
+    public void publishSelfSignedCertificate(final String targetKeystoreFile)
+        throws URISyntaxException, IOException {
+      if (!keyfilesGenerated) {
+        keyfilesGenerated = true;
+
+        final File keystoreFile = File.createTempFile("keystore", ".pfx");
+        try (OutputStream out = new FileOutputStream(keystoreFile)) {
+          // validatorApi.pfx has a long expiry, and no password
+          Resources.copy(
+              Resources.getResource(TekuValidatorNode.class, "validatorApi.pfx").toURI().toURL(),
+              out);
+        }
+
+        configFileMap.put(keystoreFile, targetKeystoreFile);
+      }
+    }
+
+    public Map<File, String> getConfigFileMap() {
+      return configFileMap;
     }
   }
 }

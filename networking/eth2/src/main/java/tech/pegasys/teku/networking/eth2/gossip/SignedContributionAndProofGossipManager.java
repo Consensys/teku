@@ -34,7 +34,6 @@ public class SignedContributionAndProofGossipManager
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
       final OperationProcessor<SignedContributionAndProof> processor,
-      final GossipPublisher<SignedContributionAndProof> publisher,
       final int maxMessageSize) {
     super(
         recentChainData,
@@ -44,8 +43,11 @@ public class SignedContributionAndProofGossipManager
         gossipEncoding,
         forkInfo,
         processor,
-        publisher,
         schemaDefinitions.getSignedContributionAndProofSchema(),
         maxMessageSize);
+  }
+
+  public void publishContribution(final SignedContributionAndProof message) {
+    publishMessage(message);
   }
 }

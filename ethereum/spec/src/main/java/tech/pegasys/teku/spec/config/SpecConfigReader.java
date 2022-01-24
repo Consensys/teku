@@ -108,10 +108,6 @@ public class SpecConfigReader {
     return build();
   }
 
-  public Optional<String> read(final InputStream source) throws IOException {
-    return read(source, true);
-  }
-
   /**
    * Reads and processes the resource, returns any referenced "preset" to be processed if a preset
    * field is set

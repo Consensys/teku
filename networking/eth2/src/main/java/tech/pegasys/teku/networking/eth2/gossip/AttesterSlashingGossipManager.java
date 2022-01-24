@@ -31,7 +31,6 @@ public class AttesterSlashingGossipManager extends AbstractGossipManager<Atteste
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
       final OperationProcessor<AttesterSlashing> processor,
-      final GossipPublisher<AttesterSlashing> publisher,
       final int maxMessageSize) {
     super(
         recentChainData,
@@ -41,8 +40,11 @@ public class AttesterSlashingGossipManager extends AbstractGossipManager<Atteste
         gossipEncoding,
         forkInfo,
         processor,
-        publisher,
         AttesterSlashing.SSZ_SCHEMA,
         maxMessageSize);
+  }
+
+  public void publishAttesterSlashing(final AttesterSlashing message) {
+    publishMessage(message);
   }
 }

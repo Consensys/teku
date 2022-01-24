@@ -31,7 +31,6 @@ public class VoluntaryExitGossipManager extends AbstractGossipManager<SignedVolu
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
       final OperationProcessor<SignedVoluntaryExit> processor,
-      final GossipPublisher<SignedVoluntaryExit> publisher,
       final int maxMessageSize) {
     super(
         recentChainData,
@@ -41,8 +40,11 @@ public class VoluntaryExitGossipManager extends AbstractGossipManager<SignedVolu
         gossipEncoding,
         forkInfo,
         processor,
-        publisher,
         SignedVoluntaryExit.SSZ_SCHEMA,
         maxMessageSize);
+  }
+
+  public void publishVoluntaryExit(final SignedVoluntaryExit message) {
+    publishMessage(message);
   }
 }

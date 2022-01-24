@@ -13,26 +13,17 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
-import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.AggregateAttestationTopicHandler;
-import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
-import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class AggregateGossipManager implements GossipManager {
-
-  private final GossipEncoding gossipEncoding;
-  private final TopicChannel channel;
-
-  private final AtomicBoolean shutdown = new AtomicBoolean(false);
+public class AggregateGossipManager extends AbstractGossipManager<SignedAggregateAndProof> {
 
   public AggregateGossipManager(
       final RecentChainData recentChainData,
@@ -42,36 +33,25 @@ public class AggregateGossipManager implements GossipManager {
       final ForkInfo forkInfo,
       final OperationProcessor<ValidateableAttestation> processor,
       final int maxMessageSize) {
-    final Spec spec = recentChainData.getSpec();
-    this.gossipEncoding = gossipEncoding;
-    final Eth2TopicHandler<?> aggregateAttestationTopicHandler =
-        AggregateAttestationTopicHandler.createHandler(
-            recentChainData,
-            asyncRunner,
-            processor,
-            gossipEncoding,
-            forkInfo.getForkDigest(spec),
-            maxMessageSize);
-    this.channel =
-        gossipNetwork.subscribe(
-            aggregateAttestationTopicHandler.getTopic(), aggregateAttestationTopicHandler);
+    super(
+        recentChainData,
+        GossipTopicName.BEACON_AGGREGATE_AND_PROOF,
+        asyncRunner,
+        gossipNetwork,
+        gossipEncoding,
+        forkInfo,
+        proofMessage ->
+            processor.process(
+                ValidateableAttestation.aggregateFromNetwork(
+                    recentChainData.getSpec(), proofMessage)),
+        SignedAggregateAndProof.SSZ_SCHEMA,
+        maxMessageSize);
   }
 
   public void onNewAggregate(final ValidateableAttestation validateableAttestation) {
     if (!validateableAttestation.isAggregate() || !validateableAttestation.markGossiped()) {
       return;
     }
-    // TODO: implement adding the on new aggregate to the validator
-    //    validator.addSeenAggregate(validateableAttestation);
-    final Bytes data = gossipEncoding.encode(validateableAttestation.getSignedAggregateAndProof());
-    channel.gossip(data);
-  }
-
-  @Override
-  public void shutdown() {
-    if (shutdown.compareAndSet(false, true)) {
-      // Close gossip channels
-      channel.close();
-    }
+    publishMessage(validateableAttestation.getSignedAggregateAndProof());
   }
 }
