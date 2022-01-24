@@ -306,8 +306,8 @@ public class EndpointMetadata {
           tags);
     }
 
-    public EndpointMetaDataBuilder tags(final List<String> tags) {
-      this.tags = tags;
+    public EndpointMetaDataBuilder tags(final String... tags) {
+      this.tags = List.of(tags);
       return this;
     }
   }
