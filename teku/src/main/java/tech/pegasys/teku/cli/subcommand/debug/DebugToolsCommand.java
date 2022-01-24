@@ -28,6 +28,7 @@ import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.restapi.RestApi;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
+import tech.pegasys.teku.validator.client.KeyManager;
 import tech.pegasys.teku.validator.client.restapi.ValidatorRestApi;
 import tech.pegasys.teku.validator.client.restapi.ValidatorRestApiConfig;
 
@@ -114,7 +115,8 @@ public class DebugToolsCommand implements Runnable {
     ValidatorRestApiConfig config =
         ValidatorRestApiConfig.builder().restApiDocsEnabled(true).build();
 
-    RestApi api = ValidatorRestApi.create(config, null);
+    final KeyManager keyManager = new NoOpKeyManager();
+    RestApi api = ValidatorRestApi.create(config, keyManager);
 
     api.getRestApiDocs()
         .ifPresentOrElse(
