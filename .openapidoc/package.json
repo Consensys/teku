@@ -2,6 +2,7 @@
   "name": "openapidoc",
   "version": "1.0.0",
   "description": "Prepare Teku OpenAPI spec to be pushed to gh-pages branch",
+  "type": "module",
   "repository": {
     "type": "git",
     "url": "git://github.com/ConsenSys/teku.git"
