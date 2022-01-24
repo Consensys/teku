@@ -20,11 +20,6 @@ public class NoOpLocalSigner extends NoOpSigner {
   public static final NoOpLocalSigner NO_OP_SIGNER = new NoOpLocalSigner();
 
   @Override
-  public boolean isLocal() {
-    return true;
-  }
-
-  @Override
   public Optional<URL> getSigningServiceUrl() {
     return Optional.empty();
   }

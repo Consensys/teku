@@ -24,11 +24,6 @@ public class NoOpRemoteSigner extends NoOpSigner {
   private static final Logger LOG = LogManager.getLogger();
 
   @Override
-  public boolean isLocal() {
-    return false;
-  }
-
-  @Override
   public Optional<URL> getSigningServiceUrl() {
     Optional<URL> result;
     try {

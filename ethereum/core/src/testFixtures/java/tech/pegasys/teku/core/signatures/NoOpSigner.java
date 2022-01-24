@@ -86,8 +86,5 @@ public abstract class NoOpSigner implements Signer {
   }
 
   @Override
-  public abstract boolean isLocal();
-
-  @Override
   public abstract Optional<URL> getSigningServiceUrl();
 }

@@ -254,11 +254,6 @@ public class ExternalSigner implements Signer {
   }
 
   @Override
-  public boolean isLocal() {
-    return false;
-  }
-
-  @Override
   public Optional<URL> getSigningServiceUrl() {
     return Optional.of(signingServiceUrl);
   }

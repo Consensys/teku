@@ -121,11 +121,6 @@ public class LocalSigner implements Signer {
   }
 
   @Override
-  public boolean isLocal() {
-    return true;
-  }
-
-  @Override
   public Optional<URL> getSigningServiceUrl() {
     return Optional.empty();
   }

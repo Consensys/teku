@@ -104,11 +104,6 @@ public class DeletableSigner implements Signer {
   }
 
   @Override
-  public boolean isLocal() {
-    return delegate.isLocal();
-  }
-
-  @Override
   public Optional<URL> getSigningServiceUrl() {
     return delegate.getSigningServiceUrl();
   }

@@ -53,7 +53,9 @@ public interface Signer {
   SafeFuture<BLSSignature> signContributionAndProof(
       ContributionAndProof contributionAndProof, ForkInfo forkInfo);
 
-  boolean isLocal();
+  default boolean isLocal() {
+    return getSigningServiceUrl().isEmpty();
+  }
 
   Optional<URL> getSigningServiceUrl();
 }
