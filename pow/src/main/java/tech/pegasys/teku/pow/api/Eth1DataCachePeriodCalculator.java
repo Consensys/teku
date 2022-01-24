@@ -13,35 +13,35 @@
 
 package tech.pegasys.teku.pow.api;
 
-import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_ETH1_VOTING_PERIOD;
-import static tech.pegasys.teku.util.config.Constants.ETH1_FOLLOW_DISTANCE;
-import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_ETH1_BLOCK;
-import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
-
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.SpecConfig;
 
 public class Eth1DataCachePeriodCalculator {
 
-  public static UInt64 calculateEth1DataCacheDurationPriorToFollowDistance() {
+  public static UInt64 calculateEth1DataCacheDurationPriorToFollowDistance(
+      final SpecConfig config) {
     // Worst case we're in the very last moment of the current slot
-    long cacheDurationSeconds = SECONDS_PER_SLOT;
+    long cacheDurationSeconds = config.getSecondsPerSlot();
 
     // Worst case this slot is at the very end of the current voting period
-    cacheDurationSeconds += (EPOCHS_PER_ETH1_VOTING_PERIOD * SLOTS_PER_EPOCH * SECONDS_PER_SLOT);
+    cacheDurationSeconds +=
+        ((long) config.getEpochsPerEth1VotingPeriod())
+            * config.getSlotsPerEpoch()
+            * config.getSecondsPerSlot();
 
     // We need 2 * ETH1_FOLLOW_DISTANCE prior to that but this assumes our current time is from a
     // block already ETH1_FOLLOW_DISTANCE behind head.
-    cacheDurationSeconds += SECONDS_PER_ETH1_BLOCK.longValue() * ETH1_FOLLOW_DISTANCE.longValue();
+    cacheDurationSeconds +=
+        ((long) config.getSecondsPerEth1Block()) * config.getEth1FollowDistance().longValue();
 
     // And we want to be able to create blocks for at least the past epoch
-    cacheDurationSeconds += SLOTS_PER_EPOCH * SECONDS_PER_SLOT;
+    cacheDurationSeconds += ((long) config.getSlotsPerEpoch()) * config.getSecondsPerSlot();
     return UInt64.valueOf(cacheDurationSeconds);
   }
 
-  public static UInt64 calculateEth1DataCacheDurationPriorToCurrentTime() {
+  public static UInt64 calculateEth1DataCacheDurationPriorToCurrentTime(final SpecConfig config) {
     // Add in the difference between current time and a block ETH1_FOLLOW_DISTANCE behind.
-    return calculateEth1DataCacheDurationPriorToFollowDistance()
-        .plus(SECONDS_PER_ETH1_BLOCK.times(ETH1_FOLLOW_DISTANCE));
+    return calculateEth1DataCacheDurationPriorToFollowDistance(config)
+        .plus(config.getEth1FollowDistance().times(config.getSecondsPerEth1Block()));
   }
 }

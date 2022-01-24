@@ -21,7 +21,6 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.stream.IntStream;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
@@ -41,14 +40,13 @@ import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
-import tech.pegasys.teku.util.config.Constants;
 
 public class GenesisHandlerTest {
   private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(3);
   private final SpecConfig specConfig =
       SpecConfigLoader.loadConfig(
           "minimal", b -> b.minGenesisActiveValidatorCount(VALIDATOR_KEYS.size()));
-  private Spec spec = TestSpecFactory.createPhase0(specConfig);
+  private final Spec spec = TestSpecFactory.createPhase0(specConfig);
 
   private final List<DepositData> initialDepositData =
       new MockStartDepositGenerator(spec, new DepositGenerator(spec, true))
@@ -79,14 +77,9 @@ public class GenesisHandlerTest {
     when(timeProvider.getTimeInSeconds()).thenReturn(UInt64.ZERO);
   }
 
-  @AfterEach
-  public void tearDown() {
-    Constants.setConstants("minimal");
-  }
-
   @Test
   public void onDepositsFromBlock_shouldInitializeGenesis() {
-    final UInt64 genesisTime = Constants.MIN_GENESIS_TIME;
+    final UInt64 genesisTime = specConfig.getMinGenesisTime();
     final int batchSize = initialDepositData.size() / 2;
 
     final DepositsFromBlockEvent event1 =

@@ -21,32 +21,26 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.Eth1HeadTracker.HeadUpdatedSubscriber;
-import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigLoader;
 
 class BlockBasedEth1HeadTrackerTest {
   private static final long FOLLOW_DISTANCE = 1000;
+
+  private final SpecConfig config =
+      SpecConfigLoader.loadConfig(
+          "minimal", builder -> builder.eth1FollowDistance(UInt64.valueOf(FOLLOW_DISTANCE)));
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final Eth1Provider eth1Provider = mock(Eth1Provider.class);
   private final HeadUpdatedSubscriber subscriber = mock(HeadUpdatedSubscriber.class);
 
-  private final Eth1HeadTracker tracker = new BlockBasedEth1HeadTracker(asyncRunner, eth1Provider);
-
-  @BeforeAll
-  static void setConstants() {
-    Constants.ETH1_FOLLOW_DISTANCE = UInt64.valueOf(FOLLOW_DISTANCE);
-  }
-
-  @AfterAll
-  static void resetConstants() {
-    Constants.setConstants("minimal");
-  }
+  private final Eth1HeadTracker tracker =
+      new BlockBasedEth1HeadTracker(asyncRunner, eth1Provider, config);
 
   @Test
   void shouldStayFollowDistanceBehindEth1ChainHead() {

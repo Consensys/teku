@@ -88,7 +88,7 @@ public class SpecConfigPhase0 implements SpecConfig {
   private final int maxVoluntaryExits;
 
   // Validator
-  private final UInt64 secondsPerEth1Block;
+  private final int secondsPerEth1Block;
 
   // Fork Choice
   private final int safeSlotsToUpdateJustified;
@@ -144,7 +144,7 @@ public class SpecConfigPhase0 implements SpecConfig {
       final int maxAttestations,
       final int maxDeposits,
       final int maxVoluntaryExits,
-      final UInt64 secondsPerEth1Block,
+      final int secondsPerEth1Block,
       final int safeSlotsToUpdateJustified,
       final int proposerScoreBoost,
       final int depositChainId,
@@ -449,7 +449,7 @@ public class SpecConfigPhase0 implements SpecConfig {
   }
 
   @Override
-  public UInt64 getSecondsPerEth1Block() {
+  public int getSecondsPerEth1Block() {
     return secondsPerEth1Block;
   }
 
@@ -534,7 +534,7 @@ public class SpecConfigPhase0 implements SpecConfig {
         && Objects.equals(shardCommitteePeriod, that.shardCommitteePeriod)
         && Objects.equals(proposerRewardQuotient, that.proposerRewardQuotient)
         && Objects.equals(inactivityPenaltyQuotient, that.inactivityPenaltyQuotient)
-        && Objects.equals(secondsPerEth1Block, that.secondsPerEth1Block)
+        && secondsPerEth1Block == that.secondsPerEth1Block
         && Objects.equals(depositContractAddress, that.depositContractAddress);
   }
 

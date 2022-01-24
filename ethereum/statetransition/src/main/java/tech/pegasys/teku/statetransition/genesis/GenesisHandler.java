@@ -33,7 +33,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.DepositUtil;
 import tech.pegasys.teku.spec.genesis.GenesisGenerator;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.config.Constants;
 
 public class GenesisHandler implements Eth1EventsChannel {
   private static final Logger LOG = LogManager.getLogger();
@@ -92,7 +91,7 @@ public class GenesisHandler implements Eth1EventsChannel {
       eth2Genesis(genesisGenerator.getGenesisState());
     } else if (roundPercent(newActiveValidatorCount) > previousValidatorRequirementPercent) {
       STATUS_LOG.genesisValidatorsActivated(
-          newActiveValidatorCount, Constants.MIN_GENESIS_ACTIVE_VALIDATOR_COUNT);
+          newActiveValidatorCount, spec.getGenesisSpecConfig().getMinGenesisActiveValidatorCount());
     }
   }
 
@@ -110,7 +109,9 @@ public class GenesisHandler implements Eth1EventsChannel {
   }
 
   private int roundPercent(int activeValidatorCount) {
-    return activeValidatorCount * 100 / Constants.MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
+    return activeValidatorCount
+        * 100
+        / spec.getGenesisSpecConfig().getMinGenesisActiveValidatorCount();
   }
 
   private void eth2Genesis(BeaconState genesisState) {
