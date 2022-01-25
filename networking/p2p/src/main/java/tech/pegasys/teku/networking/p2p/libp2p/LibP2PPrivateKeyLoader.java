@@ -36,11 +36,6 @@ public class LibP2PPrivateKeyLoader implements LibP2PNetwork.PrivateKeyProvider 
     this.privateKeyFile = privateKeyFile;
   }
 
-  public static PrivKey loadPrivateKey(
-      KeyValueStore<String, Bytes> keyValueStore, final Optional<String> privateKeyFile) {
-    return new LibP2PPrivateKeyLoader(keyValueStore, privateKeyFile).get();
-  }
-
   @Override
   public PrivKey get() {
     final Bytes privKeyBytes =

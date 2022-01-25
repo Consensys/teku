@@ -55,7 +55,7 @@ public class MultiaddrUtil {
   }
 
   private static Multiaddr addPeerId(final Multiaddr addr, final NodeId nodeId) {
-    return new Multiaddr(addr, Multiaddr.fromString("/p2p/" + nodeId.toBase58()));
+    return addr.withP2P(PeerId.fromBase58(nodeId.toBase58()));
   }
 
   private static LibP2PNodeId getNodeId(final DiscoveryPeer peer) {
