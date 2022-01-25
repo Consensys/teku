@@ -29,3 +29,4 @@ For information on changes in released versions of Teku, see the [releases page]
 * Rest api endpoints accepting validator IDs will no longer reject valid bytes48 hex strings that are not on the g2 curve.
 * Upgraded discovery to fix `ConcurrentModificationException`.
 * Fixed 503 response from REST APIs when creating an attestation or block based on finalized data.
+* Improved peer validation during libp2p handshake.
