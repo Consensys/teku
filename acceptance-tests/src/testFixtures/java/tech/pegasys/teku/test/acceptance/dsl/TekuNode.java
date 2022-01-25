@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.test.acceptance.dsl;
 
-import static java.util.Arrays.asList;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
@@ -27,8 +27,10 @@ import io.libp2p.core.crypto.PrivKey;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Files;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -566,6 +568,7 @@ public class TekuNode extends Node {
       configMap.put("p2p-port", P2P_PORT);
       configMap.put("p2p-advertised-port", P2P_PORT);
       configMap.put("p2p-interface", "0.0.0.0");
+      configMap.put("p2p-private-key-file", PRIVATE_KEY_FILE_PATH);
       configMap.put("Xinterop-genesis-time", 0);
       configMap.put("Xinterop-owned-validator-start-index", 0);
       configMap.put("Xstartup-target-peer-count", 0);
@@ -657,7 +660,7 @@ public class TekuNode extends Node {
 
     public Config withPeers(final TekuNode... nodes) {
       final String peers =
-          asList(nodes).stream().map(TekuNode::getMultiAddr).collect(Collectors.joining(", "));
+          Arrays.stream(nodes).map(TekuNode::getMultiAddr).collect(Collectors.joining(", "));
       LOG.debug("Set peers: {}", peers);
       configMap.put("p2p-static-peers", peers);
       return this;
@@ -678,6 +681,12 @@ public class TekuNode extends Node {
       configFile.deleteOnExit();
       writeTo(configFile);
       configFiles.put(configFile, CONFIG_FILE_PATH);
+
+      final File privateKeyFile = File.createTempFile("private-key", ".txt");
+      privateKeyFile.deleteOnExit();
+      Files.writeString(
+          privateKeyFile.toPath(), Bytes.wrap(privateKey.bytes()).toHexString(), UTF_8);
+      configFiles.put(privateKeyFile, PRIVATE_KEY_FILE_PATH);
       return configFiles;
     }
 
