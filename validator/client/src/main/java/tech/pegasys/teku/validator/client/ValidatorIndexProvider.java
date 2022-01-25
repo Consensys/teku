@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.client;
 
+import static java.util.Collections.unmodifiableMap;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
@@ -105,5 +106,9 @@ public class ValidatorIndexProvider {
     return firstSuccessfulRequest.thenApply(
         __ ->
             publicKeys.stream().flatMap(key -> getValidatorIndex(key).stream()).collect(toList()));
+  }
+
+  public SafeFuture<Map<BLSPublicKey, Integer>> getValidatorIndexesByPublicKey() {
+    return firstSuccessfulRequest.thenApply(__ -> unmodifiableMap(validatorIndexesByPublicKey));
   }
 }

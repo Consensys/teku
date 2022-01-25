@@ -40,8 +40,7 @@ public class ValidatorConfig {
   public static final boolean DEFAULT_GENERATE_EARLY_ATTESTATIONS = true;
   public static final boolean DEFAULT_SEND_ATTESTATIONS_AS_BATCH = true;
   public static final Optional<Bytes32> DEFAULT_GRAFFITI = Optional.empty();
-  public static final Duration DEFAULT_VALIDATOR_PROPOSER_CONFIG_REFRESH_RATE =
-      Duration.ofSeconds(60);
+  public static final boolean DEFAULT_VALIDATOR_PROPOSER_CONFIG_REFRESH_ENABLED = false;
 
   private final List<String> validatorKeys;
   private final List<String> validatorExternalSignerPublicKeySources;
@@ -61,7 +60,7 @@ public class ValidatorConfig {
   private final boolean generateEarlyAttestations;
   private final Optional<Eth1Address> proposerDefaultFeeRecipient;
   private final String proposerConfigSource;
-  private final long proposerConfigSourceRefreshRate;
+  private final boolean refreshProposerConfigFromSource;
 
   private ValidatorConfig(
       final List<String> validatorKeys,
@@ -82,7 +81,7 @@ public class ValidatorConfig {
       final boolean generateEarlyAttestations,
       final Optional<Eth1Address> proposerDefaultFeeRecipient,
       final String proposerConfigSource,
-      final long proposerConfigSourceRefreshRate) {
+      final boolean refreshProposerConfigFromSource) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
@@ -104,7 +103,7 @@ public class ValidatorConfig {
     this.generateEarlyAttestations = generateEarlyAttestations;
     this.proposerDefaultFeeRecipient = proposerDefaultFeeRecipient;
     this.proposerConfigSource = proposerConfigSource;
-    this.proposerConfigSourceRefreshRate = proposerConfigSourceRefreshRate;
+    this.refreshProposerConfigFromSource = refreshProposerConfigFromSource;
   }
 
   public static Builder builder() {
@@ -173,6 +172,14 @@ public class ValidatorConfig {
     return proposerDefaultFeeRecipient;
   }
 
+  public String getProposerConfigSource() {
+    return proposerConfigSource;
+  }
+
+  public boolean getRefreshProposerConfigFromSource() {
+    return refreshProposerConfigFromSource;
+  }
+
   private void validateProposerDefaultFeeRecipient() {
     if (proposerDefaultFeeRecipient.isEmpty()
         && !(validatorKeys.isEmpty() && validatorExternalSignerPublicKeySources.isEmpty())) {
@@ -204,7 +211,7 @@ public class ValidatorConfig {
     private boolean generateEarlyAttestations = DEFAULT_GENERATE_EARLY_ATTESTATIONS;
     private Optional<Eth1Address> proposerDefaultFeeRecipient = Optional.empty();
     private String proposerConfigSource;
-    private long proposerConfigSourceRefreshRate;
+    private boolean refreshProposerConfigFromSource;
 
     private Builder() {}
 
@@ -319,8 +326,8 @@ public class ValidatorConfig {
       return this;
     }
 
-    public Builder proposerConfigSourceRefreshRate(final long proposerConfigSourceRefreshRate) {
-      this.proposerConfigSourceRefreshRate = proposerConfigSourceRefreshRate;
+    public Builder refreshProposerConfigFromSource(final boolean refreshProposerConfigFromSource) {
+      this.refreshProposerConfigFromSource = refreshProposerConfigFromSource;
       return this;
     }
 
@@ -348,7 +355,7 @@ public class ValidatorConfig {
           generateEarlyAttestations,
           proposerDefaultFeeRecipient,
           proposerConfigSource,
-          proposerConfigSourceRefreshRate);
+          refreshProposerConfigFromSource);
     }
 
     private void validateExternalSignerUrlAndPublicKeys() {

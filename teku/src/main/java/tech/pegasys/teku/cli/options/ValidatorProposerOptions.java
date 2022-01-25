@@ -36,15 +36,15 @@ public class ValidatorProposerOptions {
   private String proposerConfig = null;
 
   @Option(
-      names = {"--Xvalidators-proposer-config-refresh-rate"},
-      paramLabel = "<INTEGER>",
+      names = {"--Xvalidators-proposer-config-refresh-enabled"},
+      paramLabel = "<BOOLEAN>",
       description =
-          "Sets the frequency, in seconds, at which the proposer configuration is reloaded. "
-              + "0 means never refresh.",
+          "Enable the proposer configuration reload on every proposer preparation (once per epoch)",
       arity = "0..1",
+      fallbackValue = "true",
       hidden = true)
-  private long proposerConfigRefreshRate =
-      ValidatorConfig.DEFAULT_VALIDATOR_PROPOSER_CONFIG_REFRESH_RATE.toSeconds();
+  private boolean proposerConfigRefreshEnabled =
+      ValidatorConfig.DEFAULT_VALIDATOR_PROPOSER_CONFIG_REFRESH_ENABLED;
 
   public void configure(TekuConfiguration.Builder builder) {
     builder.validator(
@@ -52,6 +52,6 @@ public class ValidatorProposerOptions {
             config
                 .proposerDefaultFeeRecipient(proposerDefaultFeeRecipient)
                 .proposerConfigSource(proposerConfig)
-                .proposerConfigSourceRefreshRate(proposerConfigRefreshRate));
+                .refreshProposerConfigFromSource(proposerConfigRefreshEnabled));
   }
 }

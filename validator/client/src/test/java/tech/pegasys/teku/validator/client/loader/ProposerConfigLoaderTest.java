@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
 import tech.pegasys.teku.validator.client.ProposerConfig;
 import tech.pegasys.teku.validator.client.ProposerConfig.Config;
+import tech.pegasys.teku.validator.client.proposerconfig.loader.ProposerConfigLoader;
 
 public class ProposerConfigLoaderTest {
   private final ProposerConfigLoader loader = new ProposerConfigLoader();

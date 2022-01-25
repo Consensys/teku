@@ -11,43 +11,42 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.client.loader;
+package tech.pegasys.teku.validator.client.proposerconfig.loader;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Optional;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.validator.client.ProposerConfig;
 
 public class ProposerConfigLoader {
-  private final JsonProvider jsonProvider = new JsonProvider();
+  final ObjectMapper objectMapper;
 
-  public ProposerConfig getProposerConfig(final String source) {
+  public ProposerConfigLoader() {
+    this(new JsonProvider().getObjectMapper());
+  }
+
+  public ProposerConfigLoader(final ObjectMapper objectMapper) {
+    this.objectMapper = objectMapper;
+  }
+
+  public ProposerConfig getProposerConfig(final File source) {
     try {
-      final ProposerConfig proposerConfig =
-          jsonProvider.getObjectMapper().readValue(source, ProposerConfig.class);
+      final ProposerConfig proposerConfig = objectMapper.readValue(source, ProposerConfig.class);
       return proposerConfig;
     } catch (IOException ex) {
-      throw new InvalidConfigurationException("Failed to proposer config from URL " + source, ex);
+      throw new InvalidConfigurationException("Failed to proposer config from File " + source, ex);
     }
   }
 
   public ProposerConfig getProposerConfig(final URL source) {
     try {
-      final ProposerConfig proposerConfig =
-          jsonProvider.getObjectMapper().readValue(source, ProposerConfig.class);
+      final ProposerConfig proposerConfig = objectMapper.readValue(source, ProposerConfig.class);
       return proposerConfig;
     } catch (IOException ex) {
       throw new InvalidConfigurationException("Failed to proposer config from URL " + source, ex);
-    }
-  }
-
-  private Optional<URL> getUrl(final String source) {
-    try {
-      return Optional.of(new URL(source));
-    } catch (IOException e) {
-      return Optional.empty();
     }
   }
 }
