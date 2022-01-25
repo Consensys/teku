@@ -48,6 +48,7 @@ import tech.pegasys.teku.validator.client.duties.synccommittee.SyncCommitteeSche
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 import tech.pegasys.teku.validator.client.loader.PublicKeyLoader;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
+import tech.pegasys.teku.validator.client.proposerconfig.ProposerConfigProvider;
 import tech.pegasys.teku.validator.client.restapi.ValidatorRestApi;
 import tech.pegasys.teku.validator.client.restapi.ValidatorRestApiConfig;
 import tech.pegasys.teku.validator.eventadapter.InProcessBeaconNodeApi;
@@ -65,6 +66,7 @@ public class ValidatorClientService extends Service {
   private final List<ValidatorTimingChannel> validatorTimingChannels = new ArrayList<>();
   private ValidatorStatusLogger validatorStatusLogger;
   private ValidatorIndexProvider validatorIndexProvider;
+  private ProposerConfigProvider proposerConfigProvider;
 
   private final SafeFuture<Void> initializationComplete = new SafeFuture<>();
 
@@ -181,6 +183,13 @@ public class ValidatorClientService extends Service {
       AsyncRunner asyncRunner) {
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
+
+    this.proposerConfigProvider =
+        ProposerConfigProvider.create(
+            asyncRunner,
+            config.getValidatorConfig().getRefreshProposerConfigFromSource(),
+            Optional.of(config.getValidatorConfig().getProposerConfigSource()));
+
     this.validatorIndexProvider =
         new ValidatorIndexProvider(validators, validatorApiChannel, asyncRunner);
     final BlockDutyFactory blockDutyFactory =
@@ -239,8 +248,8 @@ public class ValidatorClientService extends Service {
           new BeaconProposerPreparer(
               validatorApiChannel,
               validatorIndexProvider,
+              proposerConfigProvider,
               config.getValidatorConfig().getProposerDefaultFeeRecipient(),
-              validators,
               spec));
     }
     addValidatorCountMetric(metricsSystem, validators);

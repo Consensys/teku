@@ -15,12 +15,12 @@ package tech.pegasys.teku.provider;
 
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.KeyDeserializer;
-import tech.pegasys.teku.api.schema.BLSPubKey;
+import org.apache.tuweni.bytes.Bytes48;
 
-public class BLSPubKeyKeyDeserializer extends KeyDeserializer {
+public class Bytes48KeyDeserializer extends KeyDeserializer {
 
   @Override
   public Object deserializeKey(String key, DeserializationContext ctxt) {
-    return BLSPubKey.fromHexString(key);
+    return Bytes48.fromHexString(key);
   }
 }
