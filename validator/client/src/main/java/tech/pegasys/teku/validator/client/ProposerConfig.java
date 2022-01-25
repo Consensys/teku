@@ -30,7 +30,10 @@ public class ProposerConfig {
   private Config defaultConfig;
 
   @JsonCreator
-  ProposerConfig(@JsonProperty(value = "proposer_config", required = true) final Map<Bytes48, Config> proposerConfig, @JsonProperty(value = "default_config", required = true) final Config defaultConfig) {
+  ProposerConfig(
+      @JsonProperty(value = "proposer_config", required = true)
+          final Map<Bytes48, Config> proposerConfig,
+      @JsonProperty(value = "default_config", required = true) final Config defaultConfig) {
     this.proposerConfig = proposerConfig;
     this.defaultConfig = defaultConfig;
   }
