@@ -43,12 +43,12 @@ public abstract class AbstractProposerConfigProvider implements ProposerConfigPr
   public SafeFuture<Optional<ProposerConfig>> getProposerConfig() {
     if (!requestInProgress.compareAndSet(false, true)) {
       if (lastProposerConfig.isPresent()) {
-        LOG.warn("A proposer config load is already in progress, providing previous config");
+        LOG.warn("A proposer config load is in progress, providing last loaded config");
         return SafeFuture.completedFuture(lastProposerConfig);
       }
       return SafeFuture.failedFuture(
           new RuntimeException(
-              "A proposer config load is already in progress and there is no previous config"));
+              "A proposer config load is in progress and there is no previously loaded config"));
     }
 
     if (lastProposerConfig.isEmpty() || refresh) {
@@ -62,11 +62,12 @@ public abstract class AbstractProposerConfigProvider implements ProposerConfigPr
           .exceptionally(
               throwable -> {
                 if (lastProposerConfig.isPresent()) {
-                  LOG.warn("An error occurred while obtaining config, providing previous config");
+                  LOG.warn(
+                      "An error occurred while obtaining config, providing last loaded config");
                   return lastProposerConfig;
                 }
                 throw new RuntimeException(
-                    "An error occurred while obtaining config and there is no previous config",
+                    "An error occurred while obtaining config and there is no previously loaded config",
                     throwable);
               })
           .alwaysRun(() -> requestInProgress.set(false));

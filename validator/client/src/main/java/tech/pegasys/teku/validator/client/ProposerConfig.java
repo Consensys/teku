@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes48;
@@ -35,9 +36,8 @@ public class ProposerConfig {
   ProposerConfig(
       @JsonProperty(value = "proposer_config") final Map<Bytes48, Config> proposerConfig,
       @JsonProperty(value = "default_config") final Config defaultConfig) {
-    checkNotNull(proposerConfig, "proposer_config is required");
     checkNotNull(defaultConfig, "default_config is required");
-    this.proposerConfig = proposerConfig;
+    this.proposerConfig = proposerConfig == null ? ImmutableMap.of() : proposerConfig;
     this.defaultConfig = defaultConfig;
   }
 

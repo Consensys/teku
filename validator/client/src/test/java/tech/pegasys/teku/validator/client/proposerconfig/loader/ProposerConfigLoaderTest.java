@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.client.loader;
+package tech.pegasys.teku.validator.client.proposerconfig.loader;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -24,7 +24,6 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
 import tech.pegasys.teku.validator.client.ProposerConfig;
 import tech.pegasys.teku.validator.client.ProposerConfig.Config;
-import tech.pegasys.teku.validator.client.proposerconfig.loader.ProposerConfigLoader;
 
 public class ProposerConfigLoaderTest {
   private final ProposerConfigLoader loader = new ProposerConfigLoader();
