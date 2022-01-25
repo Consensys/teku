@@ -188,7 +188,7 @@ public class ValidatorClientService extends Service {
         ProposerConfigProvider.create(
             asyncRunner,
             config.getValidatorConfig().getRefreshProposerConfigFromSource(),
-            Optional.of(config.getValidatorConfig().getProposerConfigSource()));
+            Optional.ofNullable(config.getValidatorConfig().getProposerConfigSource()));
 
     this.validatorIndexProvider =
         new ValidatorIndexProvider(validators, validatorApiChannel, asyncRunner);

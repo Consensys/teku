@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.validator.client;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -23,17 +25,18 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.ssz.type.Bytes20;
 
 public class ProposerConfig {
-  @JsonProperty(value = "proposer_config", required = true)
+  @JsonProperty(value = "proposer_config")
   private Map<Bytes48, Config> proposerConfig;
 
-  @JsonProperty(value = "default_config", required = true)
+  @JsonProperty(value = "default_config")
   private Config defaultConfig;
 
   @JsonCreator
   ProposerConfig(
-      @JsonProperty(value = "proposer_config", required = true)
-          final Map<Bytes48, Config> proposerConfig,
-      @JsonProperty(value = "default_config", required = true) final Config defaultConfig) {
+      @JsonProperty(value = "proposer_config") final Map<Bytes48, Config> proposerConfig,
+      @JsonProperty(value = "default_config") final Config defaultConfig) {
+    checkNotNull(proposerConfig, "proposer_config is required");
+    checkNotNull(defaultConfig, "default_config is required");
     this.proposerConfig = proposerConfig;
     this.defaultConfig = defaultConfig;
   }
@@ -56,11 +59,12 @@ public class ProposerConfig {
 
   @JsonIgnoreProperties(ignoreUnknown = true)
   public static class Config {
-    @JsonProperty(value = "fee_recipient", required = true)
+    @JsonProperty(value = "fee_recipient")
     private Bytes20 feeRecipient;
 
     @JsonCreator
-    Config(@JsonProperty(value = "fee_recipient", required = true) final Bytes20 feeRecipient) {
+    Config(@JsonProperty(value = "fee_recipient") final Bytes20 feeRecipient) {
+      checkNotNull(feeRecipient, "fee_recipient is required");
       this.feeRecipient = feeRecipient;
     }
 
