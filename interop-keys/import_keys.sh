@@ -16,7 +16,8 @@ do
   command -v $COMMAND 2>/dev/null || { echo >&2 "I require $COMMAND but it's not installed.  Aborting."; exit 1; }
 done
 
-SIGNER_URL="http://localhost:19000"
+SIGNER_URL=${1:-http://localhost:19000}
+echo "Signer url: $SIGNER_URL"
 echo "Initialising payload.json..."
 echo "{ \"keystores\": [" > payload.json
 
