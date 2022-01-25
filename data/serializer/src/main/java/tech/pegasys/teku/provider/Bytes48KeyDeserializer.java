@@ -21,6 +21,6 @@ public class Bytes48KeyDeserializer extends KeyDeserializer {
 
   @Override
   public Object deserializeKey(String key, DeserializationContext ctxt) {
-    return Bytes48.fromHexString(key);
+    return Bytes48.fromHexStringStrict(key);
   }
 }
