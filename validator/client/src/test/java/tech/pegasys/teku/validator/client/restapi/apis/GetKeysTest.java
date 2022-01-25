@@ -27,11 +27,11 @@ import org.mockito.Mockito;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.validator.client.KeyManager;
+import tech.pegasys.teku.validator.client.ActiveKeyManager;
 import tech.pegasys.teku.validator.client.Validator;
 
 class GetKeysTest {
-  final KeyManager keyManager = Mockito.mock(KeyManager.class);
+  final ActiveKeyManager keyManager = Mockito.mock(ActiveKeyManager.class);
 
   @Test
   void shouldListValidatorKeys() throws Exception {

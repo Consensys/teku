@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client.restapi.apis;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
@@ -25,38 +26,51 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult.success;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.restapi.exceptions.MissingRequestBodyException;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.validator.client.KeyManager;
+import tech.pegasys.teku.validator.client.ActiveKeyManager;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysRequest;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysResponse;
 
 public class DeleteKeysTest {
   final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createMinimalAltair());
-  private final KeyManager keyManager = mock(KeyManager.class);
-  private final DeleteKeys endpoint = new DeleteKeys(keyManager);
+  private final ActiveKeyManager keyManager = mock(ActiveKeyManager.class);
+  private Path tempDir;
+  private DeleteKeys endpoint;
 
   private final DeleteKeysRequest requestData = new DeleteKeysRequest();
   private final RestApiRequest request = mock(RestApiRequest.class);
+
+  @BeforeEach
+  void setup() throws IOException {
+    tempDir = Files.createTempDirectory("teku_unit_test");
+    assertTrue(tempDir.toFile().mkdirs() || tempDir.toFile().isDirectory());
+    tempDir.toFile().deleteOnExit();
+    endpoint = new DeleteKeys(keyManager, tempDir);
+  }
 
   @Test
   void shouldCallKeyManagerWithListOfKeys() throws JsonProcessingException {
     final List<BLSPublicKey> keys =
         List.of(dataStructureUtil.randomPublicKey(), dataStructureUtil.randomPublicKey());
     requestData.setPublicKeys(keys);
-    when(keyManager.deleteValidators(eq(keys)))
+    when(keyManager.deleteValidators(eq(keys), any()))
         .thenReturn(new DeleteKeysResponse(List.of(success(), success()), ""));
     when(request.getRequestBody()).thenReturn(requestData);
 
     endpoint.handle(request);
-    verify(keyManager).deleteValidators(keys);
+    verify(keyManager).deleteValidators(eq(keys), any());
     verify(request, never()).respondError(anyInt(), any());
     verify(request, times(1)).respondOk(any(DeleteKeysResponse.class));
   }
@@ -64,10 +78,11 @@ public class DeleteKeysTest {
   @Test
   void shouldReturnSuccessIfNoKeysArePassed() throws JsonProcessingException {
     when(request.getRequestBody()).thenReturn(requestData);
-    when(keyManager.deleteValidators(any())).thenReturn(new DeleteKeysResponse(List.of(), ""));
+    when(keyManager.deleteValidators(any(), any()))
+        .thenReturn(new DeleteKeysResponse(List.of(), ""));
 
     endpoint.handle(request);
-    verify(keyManager).deleteValidators(eq(Collections.emptyList()));
+    verify(keyManager).deleteValidators(eq(Collections.emptyList()), any());
     verify(request, never()).respondError(anyInt(), any());
     verify(request, times(1)).respondOk(any(DeleteKeysResponse.class));
   }
@@ -78,7 +93,7 @@ public class DeleteKeysTest {
 
     assertThatThrownBy(() -> endpoint.handle(request))
         .isInstanceOf(MissingRequestBodyException.class);
-    verify(keyManager, never()).deleteValidators(any());
+    verify(keyManager, never()).deleteValidators(any(), any());
     verify(request, never()).respondOk(any());
   }
 }

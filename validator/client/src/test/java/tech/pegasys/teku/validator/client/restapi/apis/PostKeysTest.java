@@ -29,17 +29,17 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
-import tech.pegasys.teku.validator.client.KeyManager;
+import tech.pegasys.teku.validator.client.ActiveKeyManager;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeysRequest;
 
 public class PostKeysTest {
-  private final KeyManager keyManager = mock(KeyManager.class);
+  private final ActiveKeyManager keyManager = mock(ActiveKeyManager.class);
   private final RestApiRequest request = mock(RestApiRequest.class);
-  private final PostKeys endpoint = new PostKeys(keyManager);
 
   @Test
-  void shouldRespondBadRequestIfPasswordsAndKeystoresMisMatch() throws JsonProcessingException {
+  void shouldRespondBadRequestIfPasswordsAndKeystoresMisMatch(@TempDir final Path tempDir)
+      throws JsonProcessingException {
+    final PostKeys endpoint = new PostKeys(keyManager, tempDir);
     final PostKeysRequest body = new PostKeysRequest();
     body.setKeystores(List.of("{}"));
     body.setPasswords(List.of());
@@ -54,10 +54,9 @@ public class PostKeysTest {
   @Test
   void shouldNotImportSlashingProtectionWithoutKeysPresent(@TempDir final Path tempDir)
       throws JsonProcessingException {
-    final DataDirLayout dataDirLayout = getDataDirLayout(tempDir);
+    final PostKeys endpoint = new PostKeys(keyManager, tempDir);
     final PostKeysRequest body = new PostKeysRequest();
     body.setSlashingProtection(Optional.of("{}"));
-    when(keyManager.getDataDirLayout()).thenReturn(dataDirLayout);
     when(request.getRequestBody()).thenReturn(body);
 
     endpoint.handle(request);
@@ -65,7 +64,9 @@ public class PostKeysTest {
   }
 
   @Test
-  void emptyRequest_shouldGiveEmptySuccess() throws JsonProcessingException {
+  void emptyRequest_shouldGiveEmptySuccess(@TempDir final Path tempDir)
+      throws JsonProcessingException {
+    final PostKeys endpoint = new PostKeys(keyManager, tempDir);
     final PostKeysRequest body = new PostKeysRequest();
     when(request.getRequestBody()).thenReturn(body);
 
@@ -76,30 +77,15 @@ public class PostKeysTest {
   @Test
   void shouldRespondBadRequestIfSlashingProtectionImportFails(@TempDir final Path tempDir)
       throws JsonProcessingException {
-    final DataDirLayout dataDirLayout = getDataDirLayout(tempDir);
+    final PostKeys endpoint = new PostKeys(keyManager, tempDir);
     final PostKeysRequest body = new PostKeysRequest();
     body.setSlashingProtection(Optional.of("{}"));
     body.setPasswords(List.of("pass"));
     body.setKeystores(List.of("keystore"));
-    when(keyManager.getDataDirLayout()).thenReturn(dataDirLayout);
     when(request.getRequestBody()).thenReturn(body);
 
     assertThatThrownBy(() -> endpoint.handle(request))
         .isInstanceOf(BadRequestException.class)
         .hasMessageStartingWith("Import data does not appear to have metadata");
-  }
-
-  private DataDirLayout getDataDirLayout(final Path tempDir) {
-    return new DataDirLayout() {
-      @Override
-      public Path getBeaconDataDirectory() {
-        return null;
-      }
-
-      @Override
-      public Path getValidatorDataDirectory() {
-        return tempDir;
-      }
-    };
   }
 }

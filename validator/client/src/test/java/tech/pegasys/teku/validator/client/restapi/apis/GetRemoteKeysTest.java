@@ -26,11 +26,11 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.validator.client.KeyManager;
+import tech.pegasys.teku.validator.client.ActiveKeyManager;
 import tech.pegasys.teku.validator.client.Validator;
 
 class GetRemoteKeysTest {
-  final KeyManager keyManager = mock(KeyManager.class);
+  final ActiveKeyManager keyManager = mock(ActiveKeyManager.class);
 
   @Test
   void shouldListValidatorKeys() throws Exception {

@@ -28,11 +28,11 @@ import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.infrastructure.restapi.OpenApiTestUtil;
 import tech.pegasys.teku.infrastructure.restapi.RestApi;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
-import tech.pegasys.teku.validator.client.KeyManager;
+import tech.pegasys.teku.validator.client.ActiveKeyManager;
 
 class ValidatorOpenApiTest {
   private final ValidatorRestApiConfig config = mock(ValidatorRestApiConfig.class);
-  private final KeyManager keyManager = mock(KeyManager.class);
+  private final ActiveKeyManager keyManager = mock(ActiveKeyManager.class);
   private RestApi restApi;
   private final OpenApiTestUtil<ValidatorOpenApiTest> util =
       new OpenApiTestUtil<>(ValidatorOpenApiTest.class);
@@ -48,9 +48,8 @@ class ValidatorOpenApiTest {
     when(config.isRestApiDocsEnabled()).thenReturn(true);
     when(config.getRestApiKeystoreFile()).thenReturn(Optional.of(Path.of("keystore")));
     when(config.getRestApiKeystorePasswordFile()).thenReturn(Optional.of(Path.of("pass")));
-    when(keyManager.getDataDirLayout()).thenReturn(dataDirLayout);
     when(dataDirLayout.getValidatorDataDirectory()).thenReturn(validatorDataDirectory);
-    restApi = ValidatorRestApi.create(config, keyManager);
+    restApi = ValidatorRestApi.create(config, keyManager, dataDirLayout);
     maybeJson = restApi.getRestApiDocs();
     assertThat(maybeJson).isPresent();
     jsonNode = util.parseSwagger(maybeJson.orElseThrow());

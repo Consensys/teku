@@ -37,7 +37,6 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.data.SlashingProtectionIncrementalExporter;
-import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
@@ -46,13 +45,12 @@ import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysResponse;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeletionStatus;
 
-class KeyManagerTest {
+class ActiveKeyManagerTest {
 
   private final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createMinimalAltair());
   private final ValidatorLoader validatorLoader = mock(ValidatorLoader.class);
   private final OwnedValidators ownedValidators = mock(OwnedValidators.class);
-  private final DataDirLayout dataDirLayout = mock(DataDirLayout.class);
   private final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
   private final SlashingProtectionIncrementalExporter exporter =
       mock(SlashingProtectionIncrementalExporter.class);
@@ -60,7 +58,7 @@ class KeyManagerTest {
 
   @Test
   void shouldReturnNotFoundIfSlashingProtectionNotFound() {
-    final KeyManager keyManager = new KeyManager(validatorLoader, dataDirLayout);
+    final ActiveKeyManager keyManager = new ActiveKeyManager(validatorLoader);
     when(exporter.haveSlashingProtectionData(publicKey)).thenReturn(false);
 
     final DeleteKeyResult result =
@@ -70,7 +68,7 @@ class KeyManagerTest {
 
   @Test
   void shouldReturnNotActiveIfSlashingProtectionFound() {
-    final KeyManager keyManager = new KeyManager(validatorLoader, dataDirLayout);
+    final ActiveKeyManager keyManager = new ActiveKeyManager(validatorLoader);
     when(exporter.haveSlashingProtectionData(publicKey)).thenReturn(true);
 
     final DeleteKeyResult result =
@@ -80,7 +78,7 @@ class KeyManagerTest {
 
   @Test
   void deleteValidator_shouldStopAndDeleteValidator() {
-    final KeyManager keyManager = new KeyManager(validatorLoader, dataDirLayout);
+    final ActiveKeyManager keyManager = new ActiveKeyManager(validatorLoader);
     final Validator activeValidator = mock(Validator.class);
 
     when(activeValidator.getPublicKey()).thenReturn(publicKey);
@@ -103,7 +101,7 @@ class KeyManagerTest {
         tempDir.resolve(publicKey.toBytesCompressed().toUnprefixedHexString() + ".yml"));
     final SlashingProtectionIncrementalExporter exporter =
         new SlashingProtectionIncrementalExporter(tempDir);
-    final KeyManager keyManager = new KeyManager(validatorLoader, dataDirLayout);
+    final ActiveKeyManager keyManager = new ActiveKeyManager(validatorLoader);
     final Validator activeValidator = mock(Validator.class);
 
     when(activeValidator.getPublicKey()).thenReturn(publicKey);
@@ -120,7 +118,7 @@ class KeyManagerTest {
 
   @Test
   void deleteValidators_shouldStopAndDeleteValidator(@TempDir final Path tempDir) {
-    final KeyManager keyManager = new KeyManager(validatorLoader, getDataDirLayout(tempDir));
+    final ActiveKeyManager keyManager = new ActiveKeyManager(validatorLoader);
     final Validator activeValidator = mock(Validator.class);
 
     when(activeValidator.getPublicKey()).thenReturn(publicKey);
@@ -131,7 +129,7 @@ class KeyManagerTest {
     when(exporter.addPublicKeyToExport(eq(publicKey), any())).thenReturn(Optional.empty());
     when(validatorLoader.deleteMutableValidator(publicKey)).thenReturn(DeleteKeyResult.success());
 
-    final DeleteKeysResponse response = keyManager.deleteValidators(List.of(publicKey));
+    final DeleteKeysResponse response = keyManager.deleteValidators(List.of(publicKey), tempDir);
     verify(signer).delete();
     verify(validatorLoader).deleteMutableValidator(publicKey);
 
@@ -142,7 +140,7 @@ class KeyManagerTest {
 
   @Test
   void deleteValidators_shouldRejectRequestToDeleteReadOnlyValidator(@TempDir final Path tempDir) {
-    final KeyManager keyManager = new KeyManager(validatorLoader, getDataDirLayout(tempDir));
+    final ActiveKeyManager keyManager = new ActiveKeyManager(validatorLoader);
     final Validator activeValidator = mock(Validator.class);
 
     when(activeValidator.isReadOnly()).thenReturn(true);
@@ -150,7 +148,7 @@ class KeyManagerTest {
         .thenReturn(new OwnedValidators(Map.of(publicKey, activeValidator)));
     when(activeValidator.getPublicKey()).thenReturn(publicKey);
 
-    final DeleteKeysResponse response = keyManager.deleteValidators(List.of(publicKey));
+    final DeleteKeysResponse response = keyManager.deleteValidators(List.of(publicKey), tempDir);
     assertThat(response.getData()).hasSize(1);
     assertThat(response.getData().get(0).getStatus()).isEqualTo(DeletionStatus.ERROR);
     assertThat(response.getData().get(0).getMessage().orElse("")).contains("read-only");
@@ -159,7 +157,7 @@ class KeyManagerTest {
 
   @Test
   void shouldReturnActiveValidatorsList() {
-    final KeyManager keyManager = new KeyManager(validatorLoader, dataDirLayout);
+    final ActiveKeyManager keyManager = new ActiveKeyManager(validatorLoader);
     final List<Validator> validatorsList = generateActiveValidatorsList();
     when(ownedValidators.getActiveValidators()).thenReturn(validatorsList);
     when(validatorLoader.getOwnedValidators()).thenReturn(ownedValidators);
@@ -170,7 +168,7 @@ class KeyManagerTest {
 
   @Test
   void shouldReturnEmptyKeyList() {
-    final KeyManager keyManager = new KeyManager(validatorLoader, dataDirLayout);
+    final ActiveKeyManager keyManager = new ActiveKeyManager(validatorLoader);
     final List<Validator> validatorsList = Collections.emptyList();
     when(ownedValidators.getActiveValidators()).thenReturn(validatorsList);
     when(validatorLoader.getOwnedValidators()).thenReturn(ownedValidators);
@@ -202,7 +200,7 @@ class KeyManagerTest {
         new Validator(keyPair3.getPublicKey(), NO_OP_SIGNER, Optional::empty, false);
     List<Validator> activeValidators = Arrays.asList(validator1, validator2, validator3);
 
-    final KeyManager keyManager = new KeyManager(validatorLoader, dataDirLayout);
+    final ActiveKeyManager keyManager = new ActiveKeyManager(validatorLoader);
     when(ownedValidators.getActiveValidators()).thenReturn(activeValidators);
     when(validatorLoader.getOwnedValidators()).thenReturn(ownedValidators);
     final List<Validator> result = keyManager.getActiveRemoteValidatorKeys();
@@ -213,26 +211,12 @@ class KeyManagerTest {
 
   @Test
   void shouldReturnEmptyRemoteKeyList() {
-    final KeyManager keyManager = new KeyManager(validatorLoader, dataDirLayout);
+    final ActiveKeyManager keyManager = new ActiveKeyManager(validatorLoader);
     final List<Validator> validatorsList = Collections.emptyList();
     when(ownedValidators.getActiveValidators()).thenReturn(validatorsList);
     when(validatorLoader.getOwnedValidators()).thenReturn(ownedValidators);
     final List<Validator> activeValidatorList = keyManager.getActiveRemoteValidatorKeys();
 
     assertThat(activeValidatorList).isEmpty();
-  }
-
-  private DataDirLayout getDataDirLayout(final Path tempDir) {
-    return new DataDirLayout() {
-      @Override
-      public Path getBeaconDataDirectory() {
-        return tempDir;
-      }
-
-      @Override
-      public Path getValidatorDataDirectory() {
-        return tempDir;
-      }
-    };
   }
 }
