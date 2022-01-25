@@ -214,7 +214,7 @@ public class Spec {
     return atSlot(slot).getConfig().getEth1FollowDistance();
   }
 
-  public UInt64 getSecondsPerEth1Block(final UInt64 slot) {
+  public int getSecondsPerEth1Block(final UInt64 slot) {
     return atSlot(slot).getConfig().getSecondsPerEth1Block();
   }
 

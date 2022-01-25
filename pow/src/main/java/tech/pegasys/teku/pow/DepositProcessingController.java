@@ -25,12 +25,14 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.util.config.Constants;
 
 public class DepositProcessingController {
 
   private static final Logger LOG = LogManager.getLogger();
 
+  private final SpecConfig config;
   private final Eth1Provider eth1Provider;
   private final Eth1EventsChannel eth1EventsChannel;
   private final AsyncRunner asyncRunner;
@@ -49,12 +51,14 @@ public class DepositProcessingController {
   private final Eth1BlockFetcher eth1BlockFetcher;
 
   public DepositProcessingController(
+      SpecConfig config,
       Eth1Provider eth1Provider,
       Eth1EventsChannel eth1EventsChannel,
       AsyncRunner asyncRunner,
       DepositFetcher depositFetcher,
       Eth1BlockFetcher eth1BlockFetcher,
       Eth1HeadTracker headTracker) {
+    this.config = config;
     this.eth1Provider = eth1Provider;
     this.eth1EventsChannel = eth1EventsChannel;
     this.asyncRunner = asyncRunner;
@@ -133,7 +137,8 @@ public class DepositProcessingController {
             block -> {
               final BigInteger blockNumber = block.getNumber();
               LOG.trace("Successfully fetched block {} for min genesis checking", blockNumber);
-              if (MinimumGenesisTimeBlockFinder.compareBlockTimestampToMinGenesisTime(block) >= 0) {
+              if (MinimumGenesisTimeBlockFinder.compareBlockTimestampToMinGenesisTime(config, block)
+                  >= 0) {
                 notifyMinGenesisTimeBlockReached(eth1EventsChannel, block);
                 isBlockByBlockModeOn = false;
                 LOG.debug(
@@ -141,8 +146,9 @@ public class DepositProcessingController {
               } else {
                 LOG.trace(
                     "Seconds until min genesis block {}",
-                    Constants.MIN_GENESIS_TIME.minus(
-                        calculateCandidateGenesisTimestamp(block.getTimestamp())));
+                    config
+                        .getMinGenesisTime()
+                        .minus(calculateCandidateGenesisTimestamp(config, block.getTimestamp())));
               }
             })
         .finish(

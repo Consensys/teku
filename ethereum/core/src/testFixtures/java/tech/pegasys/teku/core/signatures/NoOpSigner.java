@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 ConsenSys AG.
+ * Copyright 2022 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.core.signatures;
 
+import java.net.URL;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -25,10 +27,9 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.Contribu
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionData;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 
-public class NoOpSigner implements Signer {
-  public static final NoOpSigner NO_OP_SIGNER = new NoOpSigner();
+public abstract class NoOpSigner implements Signer {
 
-  private NoOpSigner() {}
+  NoOpSigner() {}
 
   @Override
   public void delete() {}
@@ -85,7 +86,5 @@ public class NoOpSigner implements Signer {
   }
 
   @Override
-  public boolean isLocal() {
-    return false;
-  }
+  public abstract Optional<URL> getSigningServiceUrl();
 }

@@ -33,7 +33,7 @@ class Eth1VotingPeriodTest {
       SpecConfigLoader.loadConfig(
           "minimal",
           b ->
-              b.secondsPerEth1Block(UInt64.valueOf(3))
+              b.secondsPerEth1Block(3)
                   .eth1FollowDistance(UInt64.valueOf(5))
                   .epochsPerEth1VotingPeriod(1)
                   .slotsPerEpoch(6)
@@ -60,8 +60,6 @@ class Eth1VotingPeriodTest {
 
   @BeforeAll
   static void setConstants() {
-    Constants.SECONDS_PER_ETH1_BLOCK = UInt64.valueOf(3);
-    Constants.ETH1_FOLLOW_DISTANCE = UInt64.valueOf(5);
     Constants.EPOCHS_PER_ETH1_VOTING_PERIOD = 1;
     Constants.SLOTS_PER_EPOCH = 6;
     Constants.SECONDS_PER_SLOT = 4;

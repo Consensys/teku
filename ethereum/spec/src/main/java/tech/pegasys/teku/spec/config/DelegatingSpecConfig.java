@@ -271,7 +271,7 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
-  public UInt64 getSecondsPerEth1Block() {
+  public int getSecondsPerEth1Block() {
     return specConfig.getSecondsPerEth1Block();
   }
 

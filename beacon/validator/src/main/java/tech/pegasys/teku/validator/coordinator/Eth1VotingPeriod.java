@@ -25,7 +25,8 @@ public class Eth1VotingPeriod {
 
   public Eth1VotingPeriod(final Spec spec) {
     this.spec = spec;
-    cacheDuration = calculateEth1DataCacheDurationPriorToFollowDistance();
+    this.cacheDuration =
+        calculateEth1DataCacheDurationPriorToFollowDistance(spec.getGenesisSpecConfig());
   }
 
   public UInt64 getSpecRangeLowerBound(final UInt64 slot, final UInt64 genesisTime) {

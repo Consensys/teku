@@ -22,6 +22,7 @@ For information on changes in released versions of Teku, see the [releases page]
 * Reduced amount of data copying required when calculating sha256 hashes and use a more efficient sha256 implementation when available.
 * Updated Javalin to version 4.2.0.
 * Added periodic keep alive to event stream.
+* Added get remote keys to keymanager api
 * Added the local key management api specified in the standard keymanager-api specification for the validator-client.
 
 ### Bug Fixes

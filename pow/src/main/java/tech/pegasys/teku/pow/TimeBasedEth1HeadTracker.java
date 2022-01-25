@@ -190,7 +190,7 @@ public class TimeBasedEth1HeadTracker implements Eth1HeadTracker, RunLoopLogic {
     return getEth1FollowDistance().times(getSecondsPerEth1Block());
   }
 
-  private UInt64 getSecondsPerEth1Block() {
+  private int getSecondsPerEth1Block() {
     return spec.getGenesisSpecConfig().getSecondsPerEth1Block();
   }
 

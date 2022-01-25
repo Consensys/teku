@@ -36,4 +36,6 @@ dependencies {
   testFixturesImplementation testFixtures(project(':infrastructure:async'))
   testFixturesImplementation project(':infrastructure:crypto')
   testFixturesImplementation project(':infrastructure:ssz')
+  testFixturesImplementation project(':infrastructure:logging')
+  testFixturesImplementation 'org.apache.logging.log4j:log4j-core'
 }

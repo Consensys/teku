@@ -90,7 +90,7 @@ public class SpecConfigBuilder {
   private Integer maxVoluntaryExits;
 
   // Validator
-  private UInt64 secondsPerEth1Block;
+  private Integer secondsPerEth1Block;
 
   // Fork Choice
   private Integer safeSlotsToUpdateJustified;
@@ -516,7 +516,7 @@ public class SpecConfigBuilder {
     return this;
   }
 
-  public SpecConfigBuilder secondsPerEth1Block(final UInt64 secondsPerEth1Block) {
+  public SpecConfigBuilder secondsPerEth1Block(final Integer secondsPerEth1Block) {
     checkNotNull(secondsPerEth1Block);
     this.secondsPerEth1Block = secondsPerEth1Block;
     return this;

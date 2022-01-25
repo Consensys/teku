@@ -26,8 +26,6 @@ import static tech.pegasys.teku.infrastructure.async.SafeFuture.COMPLETE;
 import java.math.BigInteger;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -40,16 +38,21 @@ import tech.pegasys.teku.infrastructure.async.TrackingUncaughtExceptionHandler;
 import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.Eth1HeadTracker.HeadUpdatedSubscriber;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.schema.ReplayDepositsResult;
-import tech.pegasys.teku.util.config.Constants;
 
 class Eth1DepositManagerTest {
 
   private static final SafeFuture<ReplayDepositsResult> NOTHING_REPLAYED =
       SafeFuture.completedFuture(ReplayDepositsResult.empty());
   private static final int MIN_GENESIS_BLOCK_TIMESTAMP = 10_000;
-
+  private final SpecConfig config =
+      SpecConfigLoader.loadConfig(
+          "minimal",
+          builder ->
+              builder.minGenesisTime(UInt64.valueOf(10_300)).genesisDelay(UInt64.valueOf(300)));
   private final Eth1Provider eth1Provider = mock(Eth1Provider.class);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final ValidatingEth1EventsPublisher eth1EventsChannel =
@@ -73,6 +76,7 @@ class Eth1DepositManagerTest {
 
   private final Eth1DepositManager manager =
       new Eth1DepositManager(
+          config,
           eth1Provider,
           asyncRunner,
           eth1EventsChannel,
@@ -82,19 +86,9 @@ class Eth1DepositManagerTest {
           Optional.empty(),
           eth1HeadTracker);
 
-  @BeforeAll
-  static void setConstants() {
-    Constants.MIN_GENESIS_TIME = UInt64.valueOf(10_000).plus(Constants.GENESIS_DELAY);
-  }
-
   @BeforeEach
   public void setup() {
     Thread.setDefaultUncaughtExceptionHandler(exceptionHandler);
-  }
-
-  @AfterAll
-  static void resetConstants() {
-    Constants.setConstants("minimal");
   }
 
   @Test

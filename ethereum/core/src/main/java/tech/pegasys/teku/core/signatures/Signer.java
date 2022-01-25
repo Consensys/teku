@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.core.signatures;
 
+import java.net.URL;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -51,5 +53,9 @@ public interface Signer {
   SafeFuture<BLSSignature> signContributionAndProof(
       ContributionAndProof contributionAndProof, ForkInfo forkInfo);
 
-  boolean isLocal();
+  default boolean isLocal() {
+    return getSigningServiceUrl().isEmpty();
+  }
+
+  Optional<URL> getSigningServiceUrl();
 }
