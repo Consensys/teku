@@ -16,41 +16,55 @@ do
   command -v $COMMAND 2>/dev/null || { echo >&2 "I require $COMMAND but it's not installed.  Aborting."; exit 1; }
 done
 
+TEMP=`mktemp -d`
+
+function cleanup() {
+    rm -rf "${TEMP}"
+}
+trap cleanup EXIT
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
 SIGNER_URL=${1:-http://localhost:19000}
 echo "Signer url: $SIGNER_URL"
 echo "Initialising payload.json..."
-echo "{ \"keystores\": [" > payload.json
+echo "{ \"keystores\": [" > "${TEMP}/payload.json"
 
 echo "  - > writing keystores..."
-for FILE in `ls keys/*.json`
+for FILE in `ls ${DIR}/keys/*.json`
 do
   if [ ! -z "$D" ]
   then
-    echo "," >> payload.json
+    echo "," >> "${TEMP}/payload.json"
   else
     D=1
   fi
-  cat $FILE|jq -c |jq -Rs . >> payload.json
+  cat $FILE|jq -c |jq -Rs . >> "${TEMP}/payload.json"
 done
+
 echo "],
-\"passwords\": [" >> payload.json
+\"passwords\": [" >> "${TEMP}/payload.json"
 echo "  - > writing passwords..."
-for FILE in `ls passwords/*.txt`
+
+for FILE in `ls ${DIR}/passwords/*.txt`
 do
   if [ ! -z "$P" ]
   then
-    echo "," >> payload.json
+    echo "," >> "${TEMP}/payload.json"
   else
     P=1
   fi
-  cat $FILE|jq -Rs .>> payload.json
+  cat $FILE|jq -Rs .>> "${TEMP}/payload.json"
 done
+
 echo "]
-}" >> payload.json
+}" >> "${TEMP}/payload.json"
 
 echo "Sending payload.json to ${SIGNER_URL}/eth/v1/keystores..."
+
 curl -q -X POST ${SIGNER_URL}/eth/v1/keystores \
- -H "Content-Type: application/json" \
- -d @payload.json \
- -o result.json
- echo "Wrote result to result.json."
+     -H "Content-Type: application/json" \
+     -d "@${TEMP}/payload.json" \
+     -o "${TEMP}/result.json"
+
+ echo "Wrote result to ${TEMP}/result.json."
