@@ -16,13 +16,17 @@ package tech.pegasys.teku.validator.client.proposerconfig;
 import java.io.File;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.validator.client.ProposerConfig;
+import tech.pegasys.teku.validator.client.proposerconfig.loader.ProposerConfigLoader;
 
 public class FileProposerConfigProvider extends AbstractProposerConfigProvider {
   private final File source;
 
   FileProposerConfigProvider(
-      final AsyncRunner asyncRunner, final boolean refresh, final File source) {
-    super(asyncRunner, refresh);
+      final AsyncRunner asyncRunner,
+      final boolean refresh,
+      final ProposerConfigLoader proposerConfigLoader,
+      final File source) {
+    super(asyncRunner, refresh, proposerConfigLoader);
     this.source = source;
   }
 

@@ -20,20 +20,25 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.validator.client.ProposerConfig;
+import tech.pegasys.teku.validator.client.proposerconfig.loader.ProposerConfigLoader;
 
 public interface ProposerConfigProvider {
   ProposerConfigProvider NOOP = () -> SafeFuture.completedFuture(Optional.empty());
 
   static ProposerConfigProvider create(
-      final AsyncRunner asyncRunner, final boolean refresh, final Optional<String> source) {
+      final AsyncRunner asyncRunner,
+      final boolean refresh,
+      final ProposerConfigLoader proposerConfigLoader,
+      final Optional<String> source) {
 
     if (source.isPresent()) {
       try {
         URL sourceUrl = new URL(source.get());
-        return new UrlProposerConfigProvider(asyncRunner, refresh, sourceUrl);
+        return new UrlProposerConfigProvider(asyncRunner, refresh, proposerConfigLoader, sourceUrl);
       } catch (MalformedURLException e) {
         File sourceFile = new File(source.get());
-        return new FileProposerConfigProvider(asyncRunner, refresh, sourceFile);
+        return new FileProposerConfigProvider(
+            asyncRunner, refresh, proposerConfigLoader, sourceFile);
       }
     }
     return NOOP;
