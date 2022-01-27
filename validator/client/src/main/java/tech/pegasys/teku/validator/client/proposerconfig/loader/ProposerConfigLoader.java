@@ -18,6 +18,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.validator.client.ProposerConfig;
 
@@ -34,19 +35,22 @@ public class ProposerConfigLoader {
 
   public ProposerConfig getProposerConfig(final File source) {
     try {
-      final ProposerConfig proposerConfig = objectMapper.readValue(source, ProposerConfig.class);
-      return proposerConfig;
+      return objectMapper.readValue(source, ProposerConfig.class);
     } catch (IOException ex) {
-      throw new InvalidConfigurationException("Failed to proposer config from File " + source, ex);
+      throw new InvalidConfigurationException(
+          "Failed to load proposer config from file: " + source, ex);
     }
   }
 
   public ProposerConfig getProposerConfig(final URL source) {
     try {
-      final ProposerConfig proposerConfig = objectMapper.readValue(source, ProposerConfig.class);
-      return proposerConfig;
+      return objectMapper.readValue(source, ProposerConfig.class);
     } catch (IOException ex) {
-      throw new InvalidConfigurationException("Failed to proposer config from URL " + source, ex);
+
+      throw new InvalidConfigurationException(
+          "Failed to load proposer config from URL:"
+              + UrlSanitizer.sanitizePotentialUrl(source.toString()),
+          ex);
     }
   }
 }
