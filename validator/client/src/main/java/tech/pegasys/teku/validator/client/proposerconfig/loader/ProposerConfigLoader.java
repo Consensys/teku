@@ -48,7 +48,7 @@ public class ProposerConfigLoader {
     } catch (IOException ex) {
 
       throw new InvalidConfigurationException(
-          "Failed to load proposer config from URL:"
+          "Failed to load proposer config from URL: "
               + UrlSanitizer.sanitizePotentialUrl(source.toString()),
           ex);
     }
