@@ -68,7 +68,7 @@ public class ValidatorClientService extends Service {
   private final List<ValidatorTimingChannel> validatorTimingChannels = new ArrayList<>();
   private ValidatorStatusLogger validatorStatusLogger;
   private ValidatorIndexProvider validatorIndexProvider;
-  private ProposerConfigProvider proposerConfigProvider;
+  private Optional<ProposerConfigProvider> proposerConfigProvider;
 
   private final SafeFuture<Void> initializationComplete = new SafeFuture<>();
 
@@ -186,13 +186,6 @@ public class ValidatorClientService extends Service {
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
 
-    this.proposerConfigProvider =
-        ProposerConfigProvider.create(
-            asyncRunner,
-            config.getValidatorConfig().getRefreshProposerConfigFromSource(),
-            new ProposerConfigLoader(new JsonProvider().getObjectMapper()),
-            config.getValidatorConfig().getProposerConfigSource());
-
     this.validatorIndexProvider =
         new ValidatorIndexProvider(validators, validatorApiChannel, asyncRunner);
     final BlockDutyFactory blockDutyFactory =
@@ -247,13 +240,23 @@ public class ValidatorClientService extends Service {
     }
 
     if (spec.isMilestoneSupported(SpecMilestone.BELLATRIX)) {
+      proposerConfigProvider =
+          Optional.of(
+              ProposerConfigProvider.create(
+                  asyncRunner,
+                  config.getValidatorConfig().getRefreshProposerConfigFromSource(),
+                  new ProposerConfigLoader(new JsonProvider().getObjectMapper()),
+                  config.getValidatorConfig().getProposerConfigSource()));
+
       validatorTimingChannels.add(
           new BeaconProposerPreparer(
               validatorApiChannel,
               validatorIndexProvider,
-              proposerConfigProvider,
+              proposerConfigProvider.get(),
               config.getValidatorConfig().getProposerDefaultFeeRecipient(),
               spec));
+    } else {
+      proposerConfigProvider = Optional.empty();
     }
     addValidatorCountMetric(metricsSystem, validators);
     this.validatorStatusLogger =
@@ -293,7 +296,11 @@ public class ValidatorClientService extends Service {
   @Override
   protected SafeFuture<?> doStart() {
     return initializationComplete
-        .thenCompose(__ -> proposerConfigProvider.getProposerConfig())
+        .thenCompose(
+            __ ->
+                proposerConfigProvider
+                    .map(ProposerConfigProvider::getProposerConfig)
+                    .orElse(SafeFuture.completedFuture(Optional.empty())))
         .thenCompose(
             __ -> {
               validatorRestApi.ifPresent(restApi -> restApi.start().reportExceptions());
