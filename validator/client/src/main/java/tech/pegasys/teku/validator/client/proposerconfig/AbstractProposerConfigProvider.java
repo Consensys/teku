@@ -67,13 +67,16 @@ public abstract class AbstractProposerConfigProvider implements ProposerConfigPr
         .exceptionally(
             throwable -> {
               if (lastProposerConfig.isPresent()) {
-                LOG.warn("An error occurred while obtaining config, providing last loaded config");
+                LOG.warn(
+                    "An error occurred while obtaining config, providing last loaded config",
+                    throwable);
                 return lastProposerConfig;
               }
               throw new RuntimeException(
                   "An error occurred while obtaining config and there is no previously loaded config",
                   throwable);
             })
+        .thenPeek(__ -> LOG.info("proposer config successfully loaded"))
         .alwaysRun(() -> requestInProgress.set(false));
   }
 
