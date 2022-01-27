@@ -15,7 +15,6 @@ package tech.pegasys.teku.cli.options;
 
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
-import tech.pegasys.teku.validator.api.ValidatorConfig;
 
 public class ValidatorProposerOptions {
   @Option(
@@ -43,8 +42,7 @@ public class ValidatorProposerOptions {
       arity = "0..1",
       fallbackValue = "true",
       hidden = true)
-  private boolean proposerConfigRefreshEnabled =
-      ValidatorConfig.DEFAULT_VALIDATOR_PROPOSER_CONFIG_REFRESH_ENABLED;
+  private Boolean proposerConfigRefreshEnabled = null;
 
   public void configure(TekuConfiguration.Builder builder) {
     builder.validator(

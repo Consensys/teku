@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -33,7 +34,7 @@ public class ProposerConfig {
   private Config defaultConfig;
 
   @JsonCreator
-  ProposerConfig(
+  public ProposerConfig(
       @JsonProperty(value = "proposer_config") final Map<Bytes48, Config> proposerConfig,
       @JsonProperty(value = "default_config") final Config defaultConfig) {
     checkNotNull(defaultConfig, "default_config is required");
@@ -57,19 +58,46 @@ public class ProposerConfig {
     return Optional.ofNullable(defaultConfig);
   }
 
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    final ProposerConfig that = (ProposerConfig) o;
+    return Objects.equals(proposerConfig, that.proposerConfig)
+        && Objects.equals(defaultConfig, that.defaultConfig);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(proposerConfig, defaultConfig);
+  }
+
   @JsonIgnoreProperties(ignoreUnknown = true)
   public static class Config {
     @JsonProperty(value = "fee_recipient")
     private Bytes20 feeRecipient;
 
     @JsonCreator
-    Config(@JsonProperty(value = "fee_recipient") final Bytes20 feeRecipient) {
+    public Config(@JsonProperty(value = "fee_recipient") final Bytes20 feeRecipient) {
       checkNotNull(feeRecipient, "fee_recipient is required");
       this.feeRecipient = feeRecipient;
     }
 
     public Bytes20 getFeeRecipient() {
       return feeRecipient;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      final Config that = (Config) o;
+      return Objects.equals(feeRecipient, that.feeRecipient);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(feeRecipient);
     }
   }
 }

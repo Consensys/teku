@@ -16,13 +16,17 @@ package tech.pegasys.teku.validator.client.proposerconfig;
 import java.net.URL;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.validator.client.ProposerConfig;
+import tech.pegasys.teku.validator.client.proposerconfig.loader.ProposerConfigLoader;
 
 public class UrlProposerConfigProvider extends AbstractProposerConfigProvider {
   private final URL source;
 
   UrlProposerConfigProvider(
-      final AsyncRunner asyncRunner, final boolean refresh, final URL source) {
-    super(asyncRunner, refresh);
+      final AsyncRunner asyncRunner,
+      final boolean refresh,
+      final ProposerConfigLoader proposerConfigLoader,
+      final URL source) {
+    super(asyncRunner, refresh, proposerConfigLoader);
     this.source = source;
   }
 
