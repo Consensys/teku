@@ -15,6 +15,8 @@ package tech.pegasys.teku.validator.client;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.annotations.VisibleForTesting;
+
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -194,5 +196,12 @@ public class KeyManager {
     }
 
     return validatorLoader.loadMutableValidator(keyStoreData, password, slashingProtectionImporter);
+  }
+
+  private PostKeyResult importExternalValidators(
+          final BLSPublicKey publicKey,
+          final URL signerUrl,
+          final Optional<SlashingProtectionImporter> slashingProtectionImporter) {
+    return validatorLoader.loadExternalMutableValidator(publicKey, signerUrl, slashingProtectionImporter);
   }
 }

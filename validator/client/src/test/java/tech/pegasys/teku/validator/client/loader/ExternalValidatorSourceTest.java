@@ -62,7 +62,7 @@ public class ExternalValidatorSourceTest {
         .thenReturn(httpResponse);
     validatorSource =
         ExternalValidatorSource.create(
-            spec, metricsSystem, config, () -> httpClient, publicKeyLoader, asyncRunner);
+            spec, metricsSystem, config, () -> httpClient, publicKeyLoader, asyncRunner, true);
   }
 
   @Test

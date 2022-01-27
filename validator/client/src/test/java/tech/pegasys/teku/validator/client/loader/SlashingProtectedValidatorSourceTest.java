@@ -79,10 +79,9 @@ public class SlashingProtectedValidatorSourceTest {
         .thenReturn(SafeFuture.completedFuture(dataStructureUtil.randomSignature()));
     when(keyStoreData.getPubkey()).thenReturn(publicKey.toSSZBytes());
     when(delegate.addValidator(any(), any(), any()))
-        .thenReturn(new AddLocalValidatorResult(PostKeyResult.success(), Optional.of(signer)));
+        .thenReturn(new AddValidatorResult(PostKeyResult.success(), Optional.of(signer)));
 
-    final AddLocalValidatorResult result =
-        validatorSource.addValidator(keyStoreData, "pass", publicKey);
+    final AddValidatorResult result = validatorSource.addValidator(keyStoreData, "pass", publicKey);
     final Signer slashingSigner = result.getSigner().orElseThrow();
     final BeaconBlock block = dataStructureUtil.randomBeaconBlock(1234);
     final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();

@@ -147,7 +147,9 @@ public class ValidatorSourceFactory {
             config,
             externalSignerHttpClientFactory,
             publicKeyLoader,
-            asyncRunner);
+            asyncRunner,
+            true // TODO Check this
+            );
     return Optional.of(
         config.isValidatorExternalSignerSlashingProtectionEnabled()
             ? slashingProtected(externalValidatorSource)

@@ -15,12 +15,14 @@ package tech.pegasys.teku.validator.client.loader;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Suppliers;
+import java.net.URL;
 import java.net.http.HttpClient;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes48;
@@ -122,8 +124,37 @@ public class ValidatorLoader {
       return PostKeyResult.duplicate();
     }
 
-    final AddLocalValidatorResult validatorAddResult =
+    final AddValidatorResult validatorAddResult =
         mutableValidatorSource.get().addValidator(keyStoreData, password, publicKey);
+
+    if (validatorAddResult.getSigner().isEmpty()) {
+      return validatorAddResult.getResult();
+    }
+    addValidator(validatorAddResult.getSigner().get(), publicKey);
+    return PostKeyResult.success();
+  }
+
+  public synchronized PostKeyResult loadExternalMutableValidator(
+      final BLSPublicKey publicKey,
+      final URL signerUrl,
+      final Optional<SlashingProtectionImporter> slashingProtectionImporter) {
+    if (!canAddValidator()) {
+      return PostKeyResult.error("Not able to add validator");
+    }
+
+    if (slashingProtectionImporter.isPresent()) {
+      final Optional<String> errorString =
+              slashingProtectionImporter.get().updateSigningRecord(publicKey, LOG::debug);
+      if (errorString.isPresent()) {
+        return PostKeyResult.error(errorString.get());
+      }
+    }
+    if (ownedValidators.hasValidator(publicKey)) {
+      return PostKeyResult.duplicate();
+    }
+
+    final AddValidatorResult validatorAddResult =
+            mutableValidatorSource.get().addValidator(publicKey, signerUrl);
 
     if (validatorAddResult.getSigner().isEmpty()) {
       return validatorAddResult.getResult();
