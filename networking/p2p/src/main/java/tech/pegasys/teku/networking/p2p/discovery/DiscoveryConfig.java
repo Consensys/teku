@@ -136,7 +136,7 @@ public class DiscoveryConfig {
     }
 
     public Builder listenUdpPort(final int listenUdpPort) {
-      if (listenUdpPort < 0 || listenUdpPort > 65535) {
+      if (listenUdpPort <= 0 || listenUdpPort > 65535) {
         throw new IllegalArgumentException("Invalid listenUdpPort: " + listenUdpPort);
       }
       this.listenUdpPort = OptionalInt.of(listenUdpPort);
@@ -144,7 +144,7 @@ public class DiscoveryConfig {
     }
 
     public Builder listenUdpPortDefault(final int listenUdpPort) {
-      if (listenUdpPort < 0 || listenUdpPort > 65535) {
+      if (listenUdpPort <= 0 || listenUdpPort > 65535) {
         throw new IllegalArgumentException("Invalid listenUdpPort: " + listenUdpPort);
       }
       if (this.listenUdpPort.isEmpty()) {
@@ -155,9 +155,11 @@ public class DiscoveryConfig {
 
     public Builder advertisedUdpPort(final OptionalInt advertisedUdpPort) {
       checkNotNull(advertisedUdpPort);
-      if (advertisedUdpPort.getAsInt() < 0 || advertisedUdpPort.getAsInt() > 65535) {
-        throw new IllegalArgumentException(
-            "Invalid advertisedUdpPort: " + advertisedUdpPort.getAsInt());
+      if (advertisedUdpPort.isPresent()) {
+        if (advertisedUdpPort.getAsInt() <= 0 || advertisedUdpPort.getAsInt() > 65535) {
+          throw new IllegalArgumentException(
+              "Invalid advertisedUdpPort: " + advertisedUdpPort.getAsInt());
+        }
       }
       this.advertisedUdpPort = advertisedUdpPort;
       return this;
@@ -165,9 +167,11 @@ public class DiscoveryConfig {
 
     public Builder advertisedUdpPortDefault(final OptionalInt advertisedUdpPort) {
       checkNotNull(advertisedUdpPort);
-      if (advertisedUdpPort.getAsInt() < 0 || advertisedUdpPort.getAsInt() > 65535) {
-        throw new IllegalArgumentException(
-            "Invalid advertisedUdpPort: " + advertisedUdpPort.getAsInt());
+      if (advertisedUdpPort.isPresent()) {
+        if (advertisedUdpPort.getAsInt() <= 0 || advertisedUdpPort.getAsInt() > 65535) {
+          throw new IllegalArgumentException(
+              "Invalid advertisedUdpPort: " + advertisedUdpPort.getAsInt());
+        }
       }
       if (this.advertisedUdpPort.isEmpty()) {
         this.advertisedUdpPort = advertisedUdpPort;

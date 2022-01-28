@@ -223,7 +223,7 @@ public class ValidatorConfig {
     }
 
     public Builder validatorExternalSignerTimeout(final Duration validatorExternalSignerTimeout) {
-      if (validatorExternalSignerTimeout.isZero() || validatorExternalSignerTimeout.isNegative()) {
+      if (validatorExternalSignerTimeout.isNegative()) {
         throw new IllegalArgumentException(
             "Invalid validatorExternalSignerTimeout: " + validatorExternalSignerTimeout);
       }

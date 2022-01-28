@@ -214,7 +214,8 @@ public class GossipPeerScoringConfig {
     }
 
     public Builder decayInterval(final Duration decayInterval) {
-      if (decayInterval.isZero() || decayInterval.isNegative()) {
+      checkNotNull(decayInterval);
+      if (decayInterval.isNegative()) {
         throw new IllegalArgumentException("Invalid decayInterval: " + decayInterval);
       }
       this.decayInterval = decayInterval;
@@ -228,7 +229,8 @@ public class GossipPeerScoringConfig {
     }
 
     public Builder retainScore(final Duration retainScore) {
-      if (retainScore.isZero() || retainScore.isNegative()) {
+      checkNotNull(retainScore);
+      if (retainScore.isNegative()) {
         throw new IllegalArgumentException("Invalid retainScore: " + retainScore);
       }
       this.retainScore = retainScore;

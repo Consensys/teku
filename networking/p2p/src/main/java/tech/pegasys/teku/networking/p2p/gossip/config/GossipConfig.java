@@ -176,7 +176,8 @@ public class GossipConfig {
     }
 
     public Builder fanoutTTL(final Duration fanoutTTL) {
-      if (fanoutTTL.isZero() || fanoutTTL.isNegative()) {
+      checkNotNull(fanoutTTL);
+      if (fanoutTTL.isNegative()) {
         throw new IllegalArgumentException("Invalid fanoutTTL: " + fanoutTTL);
       }
       this.fanoutTTL = fanoutTTL;
@@ -196,7 +197,8 @@ public class GossipConfig {
     }
 
     public Builder heartbeatInterval(final Duration heartbeatInterval) {
-      if (heartbeatInterval.isZero() || heartbeatInterval.isNegative()) {
+      checkNotNull(heartbeatInterval);
+      if (heartbeatInterval.isNegative()) {
         throw new IllegalArgumentException("Invalid heartbeatInterval: " + heartbeatInterval);
       }
       this.heartbeatInterval = heartbeatInterval;
@@ -204,7 +206,8 @@ public class GossipConfig {
     }
 
     public Builder seenTTL(final Duration seenTTL) {
-      if (seenTTL.isZero() || seenTTL.isNegative()) {
+      checkNotNull(seenTTL);
+      if (seenTTL.isNegative()) {
         throw new IllegalArgumentException("Invalid seenTTL: " + seenTTL);
       }
       this.seenTTL = seenTTL;

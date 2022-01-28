@@ -118,7 +118,7 @@ public class MetricsConfig {
     }
 
     public MetricsConfigBuilder metricsPort(int metricsPort) {
-      if (metricsPort < 0 || metricsPort > 65535) {
+      if (metricsPort <= 0 || metricsPort > 65535) {
         throw new IllegalArgumentException("Invalid metricsPort: " + metricsPort);
       }
       this.metricsPort = metricsPort;
