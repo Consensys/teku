@@ -50,7 +50,7 @@ public class ExternalValidatorSource implements ValidatorSource {
   private final boolean readOnly;
   private final Map<BLSPublicKey, URL> externalValidatorSourceMap = new ConcurrentHashMap<>();
 
-  private ExternalValidatorSource(
+  public ExternalValidatorSource(
       final Spec spec,
       final ValidatorConfig config,
       final Supplier<HttpClient> externalSignerHttpClientFactory,

@@ -75,7 +75,8 @@ public class ValidatorSourceFactory {
     } else {
       addExternalValidatorSource().ifPresent(validatorSources::add);
       addLocalValidatorSource().ifPresent(validatorSources::add);
-      addMutableValidatorSource().ifPresent(validatorSources::add);
+      addMutableLocalValidatorSource().ifPresent(validatorSources::add);
+      addMutableExternalValidatorSource().ifPresent(validatorSources::add);
     }
     return validatorSources;
   }
@@ -88,7 +89,7 @@ public class ValidatorSourceFactory {
     return mutableExternalValidatorSource;
   }
 
-  private Optional<ValidatorSource> addMutableValidatorSource() {
+  private Optional<ValidatorSource> addMutableLocalValidatorSource() {
     if (maybeDataDir.isEmpty()) {
       return Optional.empty();
     }
@@ -116,6 +117,20 @@ public class ValidatorSourceFactory {
             false,
             maybeDataDir);
     mutableLocalValidatorSource = Optional.of(slashingProtected(localValidatorSource));
+    return mutableLocalValidatorSource;
+  }
+
+  private Optional<ValidatorSource> addMutableExternalValidatorSource() {
+    final ExternalValidatorSource externalValidatorSource =
+        ExternalValidatorSource.create(
+            spec,
+            metricsSystem,
+            config,
+            externalSignerHttpClientFactory,
+            publicKeyLoader,
+            asyncRunner,
+            false);
+    mutableExternalValidatorSource = Optional.of(slashingProtected(externalValidatorSource));
     return mutableLocalValidatorSource;
   }
 
@@ -153,8 +168,7 @@ public class ValidatorSourceFactory {
             externalSignerHttpClientFactory,
             publicKeyLoader,
             asyncRunner,
-            true // TODO Check this
-            );
+            true);
     return Optional.of(
         config.isValidatorExternalSignerSlashingProtectionEnabled()
             ? slashingProtected(externalValidatorSource)
