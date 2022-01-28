@@ -44,6 +44,7 @@ public class ValidatorSourceFactory {
   private final MetricsSystem metricsSystem;
   private final Optional<DataDirLayout> maybeDataDir;
   private Optional<ValidatorSource> mutableLocalValidatorSource = Optional.empty();
+  private Optional<ValidatorSource> mutableExternalValidatorSource = Optional.empty();
 
   public ValidatorSourceFactory(
       final Spec spec,
@@ -81,6 +82,10 @@ public class ValidatorSourceFactory {
 
   public Optional<ValidatorSource> getMutableLocalValidatorSource() {
     return mutableLocalValidatorSource;
+  }
+
+  public Optional<ValidatorSource> getMutableExternalValidatorSource() {
+    return mutableExternalValidatorSource;
   }
 
   private Optional<ValidatorSource> addMutableValidatorSource() {
