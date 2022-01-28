@@ -118,7 +118,7 @@ public class ExternalValidatorSource implements ValidatorSource {
 
   @Override
   public AddValidatorResult addValidator(
-      KeyStoreData keyStoreData, String password, BLSPublicKey publicKey) {
+      final KeyStoreData keyStoreData, final String password, final BLSPublicKey publicKey) {
     throw new UnsupportedOperationException();
   }
 
