@@ -134,6 +134,9 @@ public class BeaconRestApiConfig {
     private BeaconRestApiConfigBuilder() {}
 
     public BeaconRestApiConfigBuilder restApiPort(final int restApiPort) {
+      if (restApiPort < 0 || restApiPort > 65535) {
+        throw new IllegalArgumentException("Invalid restApiPort: " + restApiPort);
+      }
       this.restApiPort = restApiPort;
       return this;
     }

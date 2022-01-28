@@ -112,6 +112,9 @@ public class StorageConfiguration {
     }
 
     public Builder dataStorageFrequency(long dataStorageFrequency) {
+      if (dataStorageFrequency < 0) {
+        throw new IllegalArgumentException("Invalid dataStorageFrequency: " + dataStorageFrequency);
+      }
       this.dataStorageFrequency = dataStorageFrequency;
       return this;
     }
@@ -132,6 +135,9 @@ public class StorageConfiguration {
     }
 
     public Builder maxKnownNodeCacheSize(final int maxKnownNodeCacheSize) {
+      if (maxKnownNodeCacheSize < 0) {
+        throw new IllegalArgumentException("Invalid maxKnownNodeCacheSize: " + maxKnownNodeCacheSize);
+      }
       this.maxKnownNodeCacheSize = maxKnownNodeCacheSize;
       return this;
     }

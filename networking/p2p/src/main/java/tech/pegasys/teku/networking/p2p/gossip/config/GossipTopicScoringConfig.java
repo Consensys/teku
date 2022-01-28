@@ -201,7 +201,9 @@ public class GossipTopicScoringConfig {
     }
 
     public Builder timeInMeshQuantum(final Duration timeInMeshQuantum) {
-      checkNotNull(timeInMeshQuantum);
+      if (timeInMeshQuantum.isZero() || timeInMeshQuantum.isNegative()) {
+        throw new IllegalArgumentException("Invalid timeInMeshQuantum: " + timeInMeshQuantum);
+      }
       this.timeInMeshQuantum = timeInMeshQuantum;
       return this;
     }
@@ -255,13 +257,19 @@ public class GossipTopicScoringConfig {
     }
 
     public Builder meshMessageDeliveriesActivation(final Duration meshMessageDeliveriesActivation) {
-      checkNotNull(meshMessageDeliveriesActivation);
+      if (meshMessageDeliveriesActivation.isZero() || meshMessageDeliveriesActivation.isNegative()) {
+        throw new IllegalArgumentException(
+          "Invalid meshMessageDeliveriesActivation: " + meshMessageDeliveriesActivation);
+      }
       this.meshMessageDeliveriesActivation = meshMessageDeliveriesActivation;
       return this;
     }
 
     public Builder meshMessageDeliveryWindow(final Duration meshMessageDeliveryWindow) {
-      checkNotNull(meshMessageDeliveryWindow);
+      if (meshMessageDeliveryWindow.isZero() || meshMessageDeliveryWindow.isNegative()) {
+        throw new IllegalArgumentException(
+          "Invalid meshMessageDeliveryWindow: " + meshMessageDeliveryWindow);
+      }
       this.meshMessageDeliveryWindow = meshMessageDeliveryWindow;
       return this;
     }

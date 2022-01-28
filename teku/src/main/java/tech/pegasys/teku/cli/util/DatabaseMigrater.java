@@ -219,6 +219,9 @@ public class DatabaseMigrater {
     }
 
     public Builder batchSize(final int batchSize) {
+      if (batchSize < 0) {
+        throw new IllegalArgumentException("Invalid batchSize: " + batchSize);
+      }
       this.batchSize = batchSize;
       return this;
     }

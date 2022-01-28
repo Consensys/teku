@@ -115,6 +115,9 @@ public class ValidatorRestApiConfig {
     private Optional<Path> restApiKeystorePasswordFile = Optional.empty();
 
     public ValidatorRestApiConfigBuilder restApiPort(final int restApiPort) {
+      if (restApiPort < 0 || restApiPort > 65535) {
+        throw new IllegalArgumentException("Invalid restApiPort: " + restApiPort);
+      }
       this.restApiPort = restApiPort;
       return this;
     }

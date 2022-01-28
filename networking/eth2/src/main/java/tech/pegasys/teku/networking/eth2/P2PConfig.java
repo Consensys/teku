@@ -257,16 +257,25 @@ public class P2PConfig {
     }
 
     public Builder batchVerifyMaxThreads(final int batchVerifyMaxThreads) {
+      if (batchVerifyMaxThreads < 0) {
+        throw new IllegalArgumentException("Invalid batchVerifyMaxThreads: " + batchVerifyMaxThreads);
+      }
       this.batchVerifyMaxThreads = batchVerifyMaxThreads;
       return this;
     }
 
     public Builder batchVerifyQueueCapacity(final int batchVerifyQueueCapacity) {
+      if (batchVerifyQueueCapacity < 0) {
+        throw new IllegalArgumentException("Invalid batchVerifyQueueCapacity: " + batchVerifyQueueCapacity);
+      }
       this.batchVerifyQueueCapacity = batchVerifyQueueCapacity;
       return this;
     }
 
     public Builder batchVerifyMaxBatchSize(final int batchVerifyMaxBatchSize) {
+      if (batchVerifyMaxBatchSize < 0) {
+        throw new IllegalArgumentException("Invalid batchVerifyMaxBatchSize: " + batchVerifyMaxBatchSize);
+      }
       this.batchVerifyMaxBatchSize = batchVerifyMaxBatchSize;
       return this;
     }
