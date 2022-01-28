@@ -257,9 +257,10 @@ public class GossipTopicScoringConfig {
     }
 
     public Builder meshMessageDeliveriesActivation(final Duration meshMessageDeliveriesActivation) {
-      if (meshMessageDeliveriesActivation.isZero() || meshMessageDeliveriesActivation.isNegative()) {
+      if (meshMessageDeliveriesActivation.isZero()
+          || meshMessageDeliveriesActivation.isNegative()) {
         throw new IllegalArgumentException(
-          "Invalid meshMessageDeliveriesActivation: " + meshMessageDeliveriesActivation);
+            "Invalid meshMessageDeliveriesActivation: " + meshMessageDeliveriesActivation);
       }
       this.meshMessageDeliveriesActivation = meshMessageDeliveriesActivation;
       return this;
@@ -268,7 +269,7 @@ public class GossipTopicScoringConfig {
     public Builder meshMessageDeliveryWindow(final Duration meshMessageDeliveryWindow) {
       if (meshMessageDeliveryWindow.isZero() || meshMessageDeliveryWindow.isNegative()) {
         throw new IllegalArgumentException(
-          "Invalid meshMessageDeliveryWindow: " + meshMessageDeliveryWindow);
+            "Invalid meshMessageDeliveryWindow: " + meshMessageDeliveryWindow);
       }
       this.meshMessageDeliveryWindow = meshMessageDeliveryWindow;
       return this;

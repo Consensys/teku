@@ -154,7 +154,8 @@ public class PowchainConfiguration {
 
     public Builder eth1LogsMaxBlockRange(final int eth1LogsMaxBlockRange) {
       if (eth1LogsMaxBlockRange < 0) {
-        throw new IllegalArgumentException("Invalid eth1LogsMaxBlockRange: " + eth1LogsMaxBlockRange);
+        throw new IllegalArgumentException(
+            "Invalid eth1LogsMaxBlockRange: " + eth1LogsMaxBlockRange);
       }
       this.eth1LogsMaxBlockRange = eth1LogsMaxBlockRange;
       return this;

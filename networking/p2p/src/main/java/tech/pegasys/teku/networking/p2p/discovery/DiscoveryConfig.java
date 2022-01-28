@@ -156,7 +156,8 @@ public class DiscoveryConfig {
     public Builder advertisedUdpPort(final OptionalInt advertisedUdpPort) {
       checkNotNull(advertisedUdpPort);
       if (advertisedUdpPort.getAsInt() < 0 || advertisedUdpPort.getAsInt() > 65535) {
-        throw new IllegalArgumentException("Invalid advertisedUdpPort: " + advertisedUdpPort.getAsInt());
+        throw new IllegalArgumentException(
+            "Invalid advertisedUdpPort: " + advertisedUdpPort.getAsInt());
       }
       this.advertisedUdpPort = advertisedUdpPort;
       return this;
@@ -165,7 +166,8 @@ public class DiscoveryConfig {
     public Builder advertisedUdpPortDefault(final OptionalInt advertisedUdpPort) {
       checkNotNull(advertisedUdpPort);
       if (advertisedUdpPort.getAsInt() < 0 || advertisedUdpPort.getAsInt() > 65535) {
-        throw new IllegalArgumentException("Invalid advertisedUdpPort: " + advertisedUdpPort.getAsInt());
+        throw new IllegalArgumentException(
+            "Invalid advertisedUdpPort: " + advertisedUdpPort.getAsInt());
       }
       if (this.advertisedUdpPort.isEmpty()) {
         this.advertisedUdpPort = advertisedUdpPort;

@@ -272,7 +272,8 @@ public class Eth2NetworkConfiguration {
 
     public Builder startupTargetPeerCount(final int startupTargetPeerCount) {
       if (startupTargetPeerCount < 0) {
-        throw new IllegalArgumentException("Invalid startupTargetPeerCount: " + startupTargetPeerCount);
+        throw new IllegalArgumentException(
+            "Invalid startupTargetPeerCount: " + startupTargetPeerCount);
       }
       this.startupTargetPeerCount = startupTargetPeerCount;
       return this;
@@ -280,7 +281,8 @@ public class Eth2NetworkConfiguration {
 
     public Builder startupTimeoutSeconds(final int startupTimeoutSeconds) {
       if (startupTimeoutSeconds < 0) {
-        throw new IllegalArgumentException("Invalid startupTimeoutSeconds: " + startupTimeoutSeconds);
+        throw new IllegalArgumentException(
+            "Invalid startupTimeoutSeconds: " + startupTimeoutSeconds);
       }
       this.startupTimeoutSeconds = startupTimeoutSeconds;
       return this;
@@ -326,7 +328,7 @@ public class Eth2NetworkConfiguration {
     public Builder safeSlotsToImportOptimistically(final int safeSlotsToImportOptimistically) {
       if (safeSlotsToImportOptimistically < 0) {
         throw new IllegalArgumentException(
-          "Invalid safeSlotsToImportOptimistically: " + safeSlotsToImportOptimistically);
+            "Invalid safeSlotsToImportOptimistically: " + safeSlotsToImportOptimistically);
       }
       this.safeSlotsToImportOptimistically = safeSlotsToImportOptimistically;
       return this;
