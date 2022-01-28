@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.time.Duration;
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 
 public class GossipPeerScoringConfig {
@@ -216,7 +217,8 @@ public class GossipPeerScoringConfig {
     public Builder decayInterval(final Duration decayInterval) {
       checkNotNull(decayInterval);
       if (decayInterval.isNegative()) {
-        throw new IllegalArgumentException("Invalid decayInterval: " + decayInterval);
+        throw new InvalidConfigurationException(
+            String.format("Invalid decayInterval: %s", decayInterval));
       }
       this.decayInterval = decayInterval;
       return this;
@@ -231,7 +233,8 @@ public class GossipPeerScoringConfig {
     public Builder retainScore(final Duration retainScore) {
       checkNotNull(retainScore);
       if (retainScore.isNegative()) {
-        throw new IllegalArgumentException("Invalid retainScore: " + retainScore);
+        throw new InvalidConfigurationException(
+            String.format("Invalid retainScore: %s", retainScore));
       }
       this.retainScore = retainScore;
       return this;

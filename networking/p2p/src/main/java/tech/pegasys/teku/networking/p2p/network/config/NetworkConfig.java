@@ -186,8 +186,9 @@ public class NetworkConfig {
     }
 
     public Builder listenPort(final int listenPort) {
-      if (listenPort <= 0) {
-        throw new IllegalArgumentException("Invalid listenPort: " + listenPort);
+      if (listenPort < 0 || listenPort > 65535) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid listenPort: %d", listenPort));
       }
       this.listenPort = listenPort;
       return this;
@@ -196,9 +197,9 @@ public class NetworkConfig {
     public Builder advertisedPort(final OptionalInt advertisedPort) {
       checkNotNull(advertisedPort);
       if (advertisedPort.isPresent()) {
-        if (advertisedPort.getAsInt() <= 0) {
-          throw new IllegalArgumentException(
-              "Invalid advertisedPort: " + advertisedPort.getAsInt());
+        if (advertisedPort.getAsInt() < 0 || advertisedPort.getAsInt() > 65535) {
+          throw new InvalidConfigurationException(
+              String.format("Invalid advertisedPort: %d", advertisedPort.getAsInt()));
         }
       }
       this.advertisedPort = advertisedPort;

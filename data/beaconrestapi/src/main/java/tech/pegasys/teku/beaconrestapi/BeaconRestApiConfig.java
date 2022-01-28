@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class BeaconRestApiConfig {
@@ -134,8 +135,9 @@ public class BeaconRestApiConfig {
     private BeaconRestApiConfigBuilder() {}
 
     public BeaconRestApiConfigBuilder restApiPort(final int restApiPort) {
-      if (restApiPort <= 0 || restApiPort > 65535) {
-        throw new IllegalArgumentException("Invalid restApiPort: " + restApiPort);
+      if (restApiPort < 0 || restApiPort > 65535) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid restApiPort: %d", restApiPort));
       }
       this.restApiPort = restApiPort;
       return this;

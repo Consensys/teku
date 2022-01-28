@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.services.chainstorage;
 
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
@@ -113,7 +114,8 @@ public class StorageConfiguration {
 
     public Builder dataStorageFrequency(long dataStorageFrequency) {
       if (dataStorageFrequency < 0) {
-        throw new IllegalArgumentException("Invalid dataStorageFrequency: " + dataStorageFrequency);
+        throw new InvalidConfigurationException(
+            String.format("Invalid dataStorageFrequency: %d", dataStorageFrequency));
       }
       this.dataStorageFrequency = dataStorageFrequency;
       return this;
@@ -136,8 +138,8 @@ public class StorageConfiguration {
 
     public Builder maxKnownNodeCacheSize(final int maxKnownNodeCacheSize) {
       if (maxKnownNodeCacheSize < 0) {
-        throw new IllegalArgumentException(
-            "Invalid maxKnownNodeCacheSize: " + maxKnownNodeCacheSize);
+        throw new InvalidConfigurationException(
+            String.format("Invalid maxKnownNodeCacheSize: %d", maxKnownNodeCacheSize));
       }
       this.maxKnownNodeCacheSize = maxKnownNodeCacheSize;
       return this;

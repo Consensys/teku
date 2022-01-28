@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.p2p.gossip.config;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.time.Duration;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
 /** Scoring config for a single topic */
 public class GossipTopicScoringConfig {
@@ -203,7 +204,8 @@ public class GossipTopicScoringConfig {
     public Builder timeInMeshQuantum(final Duration timeInMeshQuantum) {
       checkNotNull(timeInMeshQuantum);
       if (timeInMeshQuantum.isNegative()) {
-        throw new IllegalArgumentException("Invalid timeInMeshQuantum: " + timeInMeshQuantum);
+        throw new InvalidConfigurationException(
+            String.format("Invalid timeInMeshQuantum: %s", timeInMeshQuantum));
       }
       this.timeInMeshQuantum = timeInMeshQuantum;
       return this;
@@ -260,8 +262,9 @@ public class GossipTopicScoringConfig {
     public Builder meshMessageDeliveriesActivation(final Duration meshMessageDeliveriesActivation) {
       checkNotNull(meshMessageDeliveriesActivation);
       if (meshMessageDeliveriesActivation.isNegative()) {
-        throw new IllegalArgumentException(
-            "Invalid meshMessageDeliveriesActivation: " + meshMessageDeliveriesActivation);
+        throw new InvalidConfigurationException(
+            String.format(
+                "Invalid meshMessageDeliveriesActivation: %s", meshMessageDeliveriesActivation));
       }
       this.meshMessageDeliveriesActivation = meshMessageDeliveriesActivation;
       return this;
@@ -270,8 +273,8 @@ public class GossipTopicScoringConfig {
     public Builder meshMessageDeliveryWindow(final Duration meshMessageDeliveryWindow) {
       checkNotNull(meshMessageDeliveryWindow);
       if (meshMessageDeliveryWindow.isNegative()) {
-        throw new IllegalArgumentException(
-            "Invalid meshMessageDeliveryWindow: " + meshMessageDeliveryWindow);
+        throw new InvalidConfigurationException(
+            String.format("Invalid meshMessageDeliveryWindow: %s", meshMessageDeliveryWindow));
       }
       this.meshMessageDeliveryWindow = meshMessageDeliveryWindow;
       return this;

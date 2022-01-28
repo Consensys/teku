@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.time.Duration;
 import java.util.function.Consumer;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
 /**
  * Gossip options
@@ -178,7 +179,7 @@ public class GossipConfig {
     public Builder fanoutTTL(final Duration fanoutTTL) {
       checkNotNull(fanoutTTL);
       if (fanoutTTL.isNegative()) {
-        throw new IllegalArgumentException("Invalid fanoutTTL: " + fanoutTTL);
+        throw new InvalidConfigurationException(String.format("Invalid fanoutTTL: %s", fanoutTTL));
       }
       this.fanoutTTL = fanoutTTL;
       return this;
@@ -199,7 +200,8 @@ public class GossipConfig {
     public Builder heartbeatInterval(final Duration heartbeatInterval) {
       checkNotNull(heartbeatInterval);
       if (heartbeatInterval.isNegative()) {
-        throw new IllegalArgumentException("Invalid heartbeatInterval: " + heartbeatInterval);
+        throw new InvalidConfigurationException(
+            String.format("Invalid heartbeatInterval: %s", heartbeatInterval));
       }
       this.heartbeatInterval = heartbeatInterval;
       return this;
@@ -208,7 +210,7 @@ public class GossipConfig {
     public Builder seenTTL(final Duration seenTTL) {
       checkNotNull(seenTTL);
       if (seenTTL.isNegative()) {
-        throw new IllegalArgumentException("Invalid seenTTL: " + seenTTL);
+        throw new InvalidConfigurationException(String.format("Invalid seenTTL: %s", seenTTL));
       }
       this.seenTTL = seenTTL;
       return this;

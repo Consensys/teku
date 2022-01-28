@@ -19,6 +19,7 @@ import static tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.DEFA
 import java.util.Collections;
 import java.util.List;
 import java.util.OptionalInt;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
 public class DiscoveryConfig {
 
@@ -136,16 +137,18 @@ public class DiscoveryConfig {
     }
 
     public Builder listenUdpPort(final int listenUdpPort) {
-      if (listenUdpPort <= 0 || listenUdpPort > 65535) {
-        throw new IllegalArgumentException("Invalid listenUdpPort: " + listenUdpPort);
+      if (listenUdpPort < 0 || listenUdpPort > 65535) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid listenUdpPort: %d", listenUdpPort));
       }
       this.listenUdpPort = OptionalInt.of(listenUdpPort);
       return this;
     }
 
     public Builder listenUdpPortDefault(final int listenUdpPort) {
-      if (listenUdpPort <= 0 || listenUdpPort > 65535) {
-        throw new IllegalArgumentException("Invalid listenUdpPort: " + listenUdpPort);
+      if (listenUdpPort < 0 || listenUdpPort > 65535) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid listenUdpPort: %d", listenUdpPort));
       }
       if (this.listenUdpPort.isEmpty()) {
         this.listenUdpPort = OptionalInt.of(listenUdpPort);
@@ -156,9 +159,9 @@ public class DiscoveryConfig {
     public Builder advertisedUdpPort(final OptionalInt advertisedUdpPort) {
       checkNotNull(advertisedUdpPort);
       if (advertisedUdpPort.isPresent()) {
-        if (advertisedUdpPort.getAsInt() <= 0 || advertisedUdpPort.getAsInt() > 65535) {
-          throw new IllegalArgumentException(
-              "Invalid advertisedUdpPort: " + advertisedUdpPort.getAsInt());
+        if (advertisedUdpPort.getAsInt() < 0 || advertisedUdpPort.getAsInt() > 65535) {
+          throw new InvalidConfigurationException(
+              String.format("Invalid advertisedUdpPort: " + advertisedUdpPort.getAsInt()));
         }
       }
       this.advertisedUdpPort = advertisedUdpPort;
@@ -168,9 +171,9 @@ public class DiscoveryConfig {
     public Builder advertisedUdpPortDefault(final OptionalInt advertisedUdpPort) {
       checkNotNull(advertisedUdpPort);
       if (advertisedUdpPort.isPresent()) {
-        if (advertisedUdpPort.getAsInt() <= 0 || advertisedUdpPort.getAsInt() > 65535) {
-          throw new IllegalArgumentException(
-              "Invalid advertisedUdpPort: " + advertisedUdpPort.getAsInt());
+        if (advertisedUdpPort.getAsInt() < 0 || advertisedUdpPort.getAsInt() > 65535) {
+          throw new InvalidConfigurationException(
+              String.format("Invalid advertisedUdpPort: %d", advertisedUdpPort.getAsInt()));
         }
       }
       if (this.advertisedUdpPort.isEmpty()) {
@@ -202,7 +205,7 @@ public class DiscoveryConfig {
     public Builder minPeers(final Integer minPeers) {
       checkNotNull(minPeers);
       if (minPeers < 0) {
-        throw new IllegalArgumentException("Invalid minPeers: " + minPeers);
+        throw new InvalidConfigurationException(String.format("Invalid minPeers: %d", minPeers));
       }
       this.minPeers = minPeers;
       return this;
@@ -211,7 +214,7 @@ public class DiscoveryConfig {
     public Builder maxPeers(final Integer maxPeers) {
       checkNotNull(maxPeers);
       if (maxPeers < 0) {
-        throw new IllegalArgumentException("Invalid maxPeers: " + maxPeers);
+        throw new InvalidConfigurationException(String.format("Invalid maxPeers: %d", maxPeers));
       }
       this.maxPeers = maxPeers;
       return this;
