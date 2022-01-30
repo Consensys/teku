@@ -13,20 +13,6 @@
 For information on changes in released versions of Teku, see the [releases page](https://github.com/ConsenSys/teku/releases).
 
 ## Unreleased Changes
-### Breaking Changes
-* The "merge" hard fork has now been renamed to "bellatrix", matching the changes in the beacon spec 1.1.8 release.
-    Custom network configurations will need to be updated and the `version` field in the Beacon REST API will now report `bellatrix` instead of `merge`.
-
 ### Additions and Improvements
-* Optimised sync committee processing to avoid duplicate group checks for public keys.
-* Reduced amount of data copying required when calculating sha256 hashes and use a more efficient sha256 implementation when available.
-* Updated Javalin to version 4.2.0.
-* Added periodic keep alive to event stream.
-* Added get remote keys to keymanager api
-* Added the local key management api specified in the standard keymanager-api specification for the validator-client.
 
 ### Bug Fixes
-* Rest api endpoints accepting validator IDs will no longer reject valid bytes48 hex strings that are not on the g2 curve.
-* Upgraded discovery to fix `ConcurrentModificationException`.
-* Fixed 503 response from REST APIs when creating an attestation or block based on finalized data.
-* Improved peer validation during libp2p handshake.
