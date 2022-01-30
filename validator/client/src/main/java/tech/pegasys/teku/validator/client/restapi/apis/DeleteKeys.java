@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.client.restapi.apis;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.nio.file.Path;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
@@ -26,8 +27,9 @@ import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysRequest;
 public class DeleteKeys extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/keystores";
   private final KeyManager keyManager;
+  private final Path slashingProtectionPath;
 
-  public DeleteKeys(final KeyManager keyManager) {
+  public DeleteKeys(final KeyManager keyManager, final Path slashingProtectionPath) {
     super(
         EndpointMetadata.delete(ROUTE)
             .operationId("DeleteKeys")
@@ -49,11 +51,13 @@ public class DeleteKeys extends RestApiEndpoint {
             .build());
 
     this.keyManager = keyManager;
+    this.slashingProtectionPath = slashingProtectionPath;
   }
 
   @Override
   public void handle(final RestApiRequest request) throws JsonProcessingException {
     DeleteKeysRequest deleteRequest = request.getRequestBody();
-    request.respondOk(keyManager.deleteValidators(deleteRequest.getPublicKeys()));
+    request.respondOk(
+        keyManager.deleteValidators(deleteRequest.getPublicKeys(), slashingProtectionPath));
   }
 }

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client;
 
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -21,16 +22,29 @@ import tech.pegasys.teku.data.SlashingProtectionImporter;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysResponse;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 
-public interface KeyManager {
-  List<Validator> getActiveValidatorKeys();
+public class NoOpKeyManager implements KeyManager {
 
-  List<Validator> getActiveRemoteValidatorKeys();
+  @Override
+  public List<Validator> getActiveValidatorKeys() {
+    return Collections.emptyList();
+  }
 
-  DeleteKeysResponse deleteValidators(
-      final List<BLSPublicKey> validators, final Path slashingProtectionPath);
+  @Override
+  public List<Validator> getActiveRemoteValidatorKeys() {
+    return Collections.emptyList();
+  }
 
-  List<PostKeyResult> importValidators(
+  @Override
+  public DeleteKeysResponse deleteValidators(
+      final List<BLSPublicKey> validators, final Path slashingProtectionPath) {
+    return new DeleteKeysResponse(Collections.emptyList(), "");
+  }
+
+  @Override
+  public List<PostKeyResult> importValidators(
       final List<String> keystores,
       final List<String> passwords,
-      final Optional<SlashingProtectionImporter> slashingProtectionImporter);
+      final Optional<SlashingProtectionImporter> slashingProtectionImporter) {
+    return Collections.emptyList();
+  }
 }

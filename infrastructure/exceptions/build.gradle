@@ -1,5 +1,3 @@
 dependencies {
-  implementation project(':infrastructure:async')
-
   implementation 'org.apache.commons:commons-lang3'
 }
