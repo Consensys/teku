@@ -20,7 +20,6 @@ import static tech.pegasys.teku.infrastructure.restapi.types.CoreTypes.HTTP_ERRO
 
 import io.javalin.Javalin;
 import io.javalin.core.JavalinConfig;
-import io.javalin.core.security.AccessManager;
 import io.javalin.jetty.JettyUtil;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -34,7 +33,6 @@ import java.util.OptionalInt;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
@@ -61,9 +59,9 @@ public class RestApiBuilder {
 
   private final OpenApiDocBuilder openApiDocBuilder = new OpenApiDocBuilder();
   private boolean openApiDocsEnabled = false;
-  private Optional<AccessManager> accessManager = Optional.empty();
   private Optional<Path> maybeKeystorePath = Optional.empty();
   private Optional<Path> maybePasswordPath = Optional.empty();
+  private Optional<Path> passwordFilePath = Optional.empty();
 
   public RestApiBuilder listenAddress(final String listenAddress) {
     this.listenAddress = listenAddress;
@@ -83,7 +81,7 @@ public class RestApiBuilder {
   }
 
   public RestApiBuilder passwordFilePath(final Path passwordFilePath) {
-    checkAccessFile(passwordFilePath);
+    this.passwordFilePath = Optional.ofNullable(passwordFilePath);
     return this;
   }
 
@@ -129,7 +127,6 @@ public class RestApiBuilder {
         Javalin.create(
             config -> {
               config.defaultContentType = "application/json";
-              accessManager.ifPresent(config::accessManager);
               config.showJavalinBanner = false;
               configureCors(config);
               config.server(this::createJettyServer);
@@ -149,25 +146,7 @@ public class RestApiBuilder {
       app.get("/swagger-docs", ctx -> ctx.json(apiDocs));
       restApiDocs = Optional.of(apiDocs);
     }
-    return new RestApi(app, restApiDocs);
-  }
-
-  private void checkAccessFile(final Path path) {
-    if (!path.toFile().exists()) {
-      try {
-        if (!path.getParent().toFile().mkdirs() && !path.getParent().toFile().isDirectory()) {
-          LOG.error("Could not mkdirs for file {}", path.toAbsolutePath());
-          throw new IllegalStateException(
-              String.format("Cannot create directories %s", path.getParent().toAbsolutePath()));
-        }
-        final Bytes generated = Bytes.random(16);
-        LOG.info("Initializing API auth access file {}", path.toAbsolutePath());
-        Files.writeString(path, generated.toUnprefixedHexString(), UTF_8);
-      } catch (IOException e) {
-        LOG.error("Failed to write auth file to " + path, e);
-      }
-    }
-    accessManager = Optional.of(new AuthorizationManager(path));
+    return new RestApi(app, restApiDocs, passwordFilePath);
   }
 
   private void addExceptionHandlers(final Javalin app) {
