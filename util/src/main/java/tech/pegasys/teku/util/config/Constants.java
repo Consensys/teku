@@ -25,13 +25,8 @@ public class Constants {
 
   @Deprecated public static int MAX_VALIDATORS_PER_COMMITTEE;
 
-  @Deprecated public static int SECONDS_PER_SLOT = 12;
   @Deprecated public static int SLOTS_PER_EPOCH;
-  @Deprecated public static int EPOCHS_PER_ETH1_VOTING_PERIOD;
   @Deprecated public static int SLOTS_PER_HISTORICAL_ROOT;
-
-  // Deposit Contract
-  @Deprecated public static int DEPOSIT_CHAIN_ID;
 
   // Networking
   public static final int GOSSIP_MAX_SIZE = 1048576; // bytes

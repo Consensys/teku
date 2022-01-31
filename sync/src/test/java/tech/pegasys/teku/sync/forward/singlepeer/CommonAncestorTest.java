@@ -18,7 +18,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.Test;
@@ -40,7 +39,7 @@ public class CommonAncestorTest extends AbstractSyncTest {
     final PeerStatus status =
         withPeerHeadSlot(
             currentLocalHead,
-            compute_epoch_at_slot(currentLocalHead),
+            spec.computeEpochAtSlot(currentLocalHead),
             dataStructureUtil.randomBytes32());
     when(storageClient.getHeadSlot()).thenReturn(currentLocalHead);
 
@@ -61,7 +60,7 @@ public class CommonAncestorTest extends AbstractSyncTest {
     final PeerStatus status =
         withPeerHeadSlot(
             currentRemoteHead,
-            compute_epoch_at_slot(currentRemoteHead),
+            spec.computeEpochAtSlot(currentRemoteHead),
             dataStructureUtil.randomBytes32());
     when(storageClient.getHeadSlot()).thenReturn(currentLocalHead);
 
@@ -90,7 +89,7 @@ public class CommonAncestorTest extends AbstractSyncTest {
     final PeerStatus status =
         withPeerHeadSlot(
             currentRemoteHead,
-            compute_epoch_at_slot(currentRemoteHead),
+            spec.computeEpochAtSlot(currentRemoteHead),
             dataStructureUtil.randomBytes32());
     when(storageClient.getHeadSlot()).thenReturn(currentLocalHead);
     when(storageClient.containsBlock(any())).thenReturn(true);

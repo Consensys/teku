@@ -107,7 +107,13 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
     peerChainTracker.subscribeToTargetChainUpdates(syncController::onTargetChainsUpdated);
     final SyncStallDetector syncStallDetector =
         new SyncStallDetector(
-            eventThread, asyncRunner, timeProvider, syncController, batchSync, recentChainData);
+            spec,
+            eventThread,
+            asyncRunner,
+            timeProvider,
+            syncController,
+            batchSync,
+            recentChainData);
     return new MultipeerSyncService(
         eventThread, recentChainData, peerChainTracker, syncController, syncStallDetector);
   }

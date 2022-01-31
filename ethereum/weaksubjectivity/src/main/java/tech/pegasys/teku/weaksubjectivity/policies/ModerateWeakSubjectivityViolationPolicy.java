@@ -25,7 +25,7 @@ class ModerateWeakSubjectivityViolationPolicy extends CompoundWeakSubjectivityVi
       new Throttler<>(
           new LoggingWeakSubjectivityViolationPolicy(
               WeakSubjectivityLogger.createFileLogger(), Level.INFO),
-          UInt64.valueOf(50));
+          UInt64.valueOf(2));
 
   public ModerateWeakSubjectivityViolationPolicy() {
     super(List.of(WeakSubjectivityViolationPolicy.strict()));
@@ -33,14 +33,14 @@ class ModerateWeakSubjectivityViolationPolicy extends CompoundWeakSubjectivityVi
 
   @Override
   public void onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
+      final UInt64 currentEpoch,
       final CheckpointState latestFinalizedCheckpoint,
-      final UInt64 currentSlot,
       final UInt64 wsPeriod) {
     // Warn periodically
     warningPolicy.invoke(
-        currentSlot,
+        currentEpoch,
         p ->
             p.onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
-                latestFinalizedCheckpoint, currentSlot, wsPeriod));
+                currentEpoch, latestFinalizedCheckpoint, wsPeriod));
   }
 }

@@ -27,7 +27,6 @@ import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.beaconnode.BeaconChainEventAdapter;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod;
@@ -58,7 +57,7 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
                 new EventSourceHandler(
                     validatorTimingChannel, metricsSystem, generateEarlyAttestations),
                 eventSourceUrl)
-            .maxReconnectTime(Duration.ofSeconds(Constants.SECONDS_PER_SLOT))
+            .maxReconnectTime(Duration.ofSeconds(12))
             .client(okHttpClient)
             .requestTransformer(request -> applyBasicAuthentication(eventSourceUrl, request))
             .build();

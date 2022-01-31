@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.sync.forward.multipeer.chains.TargetChainTestUtil.chainWith;
 
 import java.util.Optional;
@@ -81,7 +80,8 @@ class PeerChainTrackerTest {
     final TargetChain finalizedChain =
         chainWith(
             new SlotAndBlockRoot(
-                compute_start_slot_at_epoch(status.getFinalizedEpoch()), status.getFinalizedRoot()),
+                spec.computeStartSlotAtEpoch(status.getFinalizedEpoch()),
+                status.getFinalizedRoot()),
             syncSource);
     final TargetChain nonfinalizedChain =
         chainWith(new SlotAndBlockRoot(status.getHeadSlot(), status.getHeadRoot()), syncSource);

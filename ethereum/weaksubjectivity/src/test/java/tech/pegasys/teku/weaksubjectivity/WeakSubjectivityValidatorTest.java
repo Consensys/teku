@@ -21,8 +21,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import java.util.Arrays;
 import java.util.List;
@@ -59,7 +57,7 @@ public class WeakSubjectivityValidatorTest {
       mock(WeakSubjectivityViolationPolicy.class);
   private final CheckpointState checkpointState = mock(CheckpointState.class);
   private final UInt64 currentSlot = UInt64.valueOf(10_000);
-  private final UInt64 currentEpoch = compute_epoch_at_slot(currentSlot);
+  private final UInt64 currentEpoch = spec.computeEpochAtSlot(currentSlot);
   private final UInt64 mockWsPeriod = UInt64.valueOf(3);
 
   @BeforeEach
@@ -79,7 +77,7 @@ public class WeakSubjectivityValidatorTest {
 
     verify(policy)
         .onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
-            checkpointState, currentSlot, mockWsPeriod);
+            spec.computeEpochAtSlot(currentSlot), checkpointState, mockWsPeriod);
 
     verifyNoMoreInteractions(policy);
   }
@@ -131,7 +129,7 @@ public class WeakSubjectivityValidatorTest {
 
     verify(policy)
         .onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
-            checkpointState, currentSlot, mockWsPeriod);
+            spec.computeEpochAtSlot(currentSlot), checkpointState, mockWsPeriod);
     verifyNoMoreInteractions(policy);
   }
 
@@ -196,7 +194,7 @@ public class WeakSubjectivityValidatorTest {
 
     verify(policy)
         .onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
-            checkpointState, currentSlot, mockWsPeriod);
+            spec.computeEpochAtSlot(currentSlot), checkpointState, mockWsPeriod);
     verifyNoMoreInteractions(policy);
   }
 
@@ -224,7 +222,7 @@ public class WeakSubjectivityValidatorTest {
             wsCheckpoint, checkpointState.getRoot(), checkpointState.getBlockSlot());
     verify(policy)
         .onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
-            checkpointState, currentSlot, mockWsPeriod);
+            spec.computeEpochAtSlot(currentSlot), checkpointState, mockWsPeriod);
     verifyNoMoreInteractions(policy);
   }
 
@@ -278,7 +276,7 @@ public class WeakSubjectivityValidatorTest {
 
     verify(policy)
         .onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
-            checkpointState, currentSlot, mockWsPeriod);
+            spec.computeEpochAtSlot(currentSlot), checkpointState, mockWsPeriod);
     verifyNoMoreInteractions(policy);
   }
 
@@ -361,7 +359,7 @@ public class WeakSubjectivityValidatorTest {
   @Test
   public void validateChainIsConsistentWithWSCheckpoint_checkpointFinalizedWithMatchingBlock() {
     final UInt64 checkpointEpoch = UInt64.valueOf(100);
-    final UInt64 checkpointSlot = compute_start_slot_at_epoch(checkpointEpoch);
+    final UInt64 checkpointSlot = spec.computeStartSlotAtEpoch(checkpointEpoch);
     final SignedBeaconBlock checkpointBlock =
         dataStructureUtil.randomSignedBeaconBlock(checkpointSlot);
     final Checkpoint wsCheckpoint = new Checkpoint(checkpointEpoch, checkpointBlock.getRoot());
@@ -383,7 +381,7 @@ public class WeakSubjectivityValidatorTest {
   @Test
   public void validateChainIsConsistentWithWSCheckpoint_checkpointFinalizedWithNonMatchingBlock() {
     final UInt64 checkpointEpoch = UInt64.valueOf(100);
-    final UInt64 checkpointSlot = compute_start_slot_at_epoch(checkpointEpoch);
+    final UInt64 checkpointSlot = spec.computeStartSlotAtEpoch(checkpointEpoch);
     final SignedBeaconBlock checkpointBlock =
         dataStructureUtil.randomSignedBeaconBlock(checkpointSlot);
     final SignedBeaconBlock otherBlock = dataStructureUtil.randomSignedBeaconBlock(checkpointSlot);
@@ -410,7 +408,7 @@ public class WeakSubjectivityValidatorTest {
   @Test
   public void validateChainIsConsistentWithWSCheckpoint_checkpointFinalizedWithMissingBlock() {
     final UInt64 checkpointEpoch = UInt64.valueOf(100);
-    final UInt64 checkpointSlot = compute_start_slot_at_epoch(checkpointEpoch);
+    final UInt64 checkpointSlot = spec.computeStartSlotAtEpoch(checkpointEpoch);
     final SignedBeaconBlock checkpointBlock =
         dataStructureUtil.randomSignedBeaconBlock(checkpointSlot);
     final Checkpoint wsCheckpoint = new Checkpoint(checkpointEpoch, checkpointBlock.getRoot());
@@ -456,7 +454,7 @@ public class WeakSubjectivityValidatorTest {
   @Test
   public void isBlockValid_withWSCheckpoint_blockAtCheckpointEpochBoundary_matches() {
     final UInt64 wsCheckpointEpoch = UInt64.valueOf(100);
-    final UInt64 wsCheckpointSlot = compute_start_slot_at_epoch(wsCheckpointEpoch);
+    final UInt64 wsCheckpointSlot = spec.computeStartSlotAtEpoch(wsCheckpointEpoch);
     final Checkpoint wsCheckpoint =
         new Checkpoint(wsCheckpointEpoch, Bytes32.fromHexStringLenient("0x0100"));
     final WeakSubjectivityConfig config =
@@ -472,7 +470,7 @@ public class WeakSubjectivityValidatorTest {
   @Test
   public void isBlockValid_withWSCheckpoint_blockAtCheckpointEpochBoundary_mismatch() {
     final UInt64 wsCheckpointEpoch = UInt64.valueOf(100);
-    final UInt64 wsCheckpointSlot = compute_start_slot_at_epoch(wsCheckpointEpoch);
+    final UInt64 wsCheckpointSlot = spec.computeStartSlotAtEpoch(wsCheckpointEpoch);
     final Checkpoint wsCheckpoint =
         new Checkpoint(wsCheckpointEpoch, Bytes32.fromHexStringLenient("0x0100"));
     final WeakSubjectivityConfig config =
@@ -488,7 +486,7 @@ public class WeakSubjectivityValidatorTest {
   @Test
   public void isBlockValid_withWSCheckpoint_blockAfterCheckpointEpochBoundary_matchingAncestor() {
     final UInt64 wsCheckpointEpoch = UInt64.valueOf(100);
-    final UInt64 wsCheckpointSlot = compute_start_slot_at_epoch(wsCheckpointEpoch);
+    final UInt64 wsCheckpointSlot = spec.computeStartSlotAtEpoch(wsCheckpointEpoch);
     final SignedBeaconBlock checkpointBlock =
         dataStructureUtil.randomSignedBeaconBlock(wsCheckpointSlot);
 
@@ -511,7 +509,7 @@ public class WeakSubjectivityValidatorTest {
   @Test
   public void isBlockValid_withWSCheckpoint_blockAfterCheckpointEpochBoundary_mismatchedAncestor() {
     final UInt64 wsCheckpointEpoch = UInt64.valueOf(100);
-    final UInt64 wsCheckpointSlot = compute_start_slot_at_epoch(wsCheckpointEpoch);
+    final UInt64 wsCheckpointSlot = spec.computeStartSlotAtEpoch(wsCheckpointEpoch);
     final SignedBeaconBlock checkpointBlock =
         dataStructureUtil.randomSignedBeaconBlock(wsCheckpointSlot);
     final SignedBeaconBlock conflictingBlock =

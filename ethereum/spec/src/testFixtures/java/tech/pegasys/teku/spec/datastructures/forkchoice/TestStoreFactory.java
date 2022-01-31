@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.datastructures.forkchoice;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -96,7 +95,7 @@ public class TestStoreFactory {
 
     return new TestStoreImpl(
         spec,
-        anchorState.getGenesis_time().plus(anchorState.getSlot().times(SECONDS_PER_SLOT)),
+        spec.getSlotStartTime(anchorState.getSlot(), anchorState.getGenesis_time()),
         anchorState.getGenesis_time(),
         Optional.of(anchorCheckpoint),
         anchorCheckpoint,

@@ -14,7 +14,6 @@
 package tech.pegasys.teku.services.beaconchain;
 
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -121,7 +120,7 @@ public class WeakSubjectivityInitializer {
     final UInt64 slotsBetweenBlockAndEpochStart =
         initialAnchor.getEpochStartSlot().minus(initialAnchor.getBlockSlot());
     final UInt64 anchorEpoch = initialAnchor.getEpoch();
-    final UInt64 currentEpoch = compute_epoch_at_slot(currentSlot);
+    final UInt64 currentEpoch = spec.computeEpochAtSlot(currentSlot);
 
     if (initialAnchor.getBlockSlot().isGreaterThanOrEqualTo(currentSlot)) {
       throw new IllegalStateException(

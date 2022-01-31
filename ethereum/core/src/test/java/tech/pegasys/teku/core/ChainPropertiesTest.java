@@ -14,37 +14,41 @@
 package tech.pegasys.teku.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 
 public class ChainPropertiesTest {
+
+  private final Spec spec = TestSpecFactory.createDefault();
+  private final ChainProperties chainProperties = new ChainProperties(spec);
 
   @Test
   public void computeBestEpochFinalizableAtSlot_atEpochBoundary() {
     final UInt64 epoch = UInt64.valueOf(2);
-    final UInt64 startSlot = compute_start_slot_at_epoch(epoch);
+    final UInt64 startSlot = spec.computeStartSlotAtEpoch(epoch);
 
-    final UInt64 result = ChainProperties.computeBestEpochFinalizableAtSlot(startSlot);
+    final UInt64 result = chainProperties.computeBestEpochFinalizableAtSlot(startSlot);
     assertThat(result).isEqualTo(epoch);
   }
 
   @Test
   public void computeBestEpochFinalizableAtSlot_priorToEpochBoundary() {
     final UInt64 epoch = UInt64.valueOf(2);
-    final UInt64 slot = compute_start_slot_at_epoch(epoch).minus(UInt64.ONE);
+    final UInt64 slot = spec.computeStartSlotAtEpoch(epoch).minus(UInt64.ONE);
 
-    final UInt64 result = ChainProperties.computeBestEpochFinalizableAtSlot(slot);
+    final UInt64 result = chainProperties.computeBestEpochFinalizableAtSlot(slot);
     assertThat(result).isEqualTo(epoch);
   }
 
   @Test
   public void computeBestEpochFinalizableAtSlot_afterEpochBoundary() {
     final UInt64 epoch = UInt64.valueOf(2);
-    final UInt64 slot = compute_start_slot_at_epoch(epoch).plus(UInt64.ONE);
+    final UInt64 slot = spec.computeStartSlotAtEpoch(epoch).plus(UInt64.ONE);
 
-    final UInt64 result = ChainProperties.computeBestEpochFinalizableAtSlot(slot);
+    final UInt64 result = chainProperties.computeBestEpochFinalizableAtSlot(slot);
     assertThat(result).isEqualTo(epoch.plus(UInt64.ONE));
   }
 }

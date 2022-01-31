@@ -36,19 +36,22 @@ import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.exception.RejectedRequestException;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.util.config.Constants;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class Web3jEth1ProviderTest {
-  final Web3j web3 = mock(Web3j.class);
-  final Request request1 = mock(Request.class);
-  final Request request2 = mock(Request.class);
-  StubAsyncRunner asyncRunner;
-  StubTimeProvider timeProvider;
-  Web3jEth1Provider provider;
+  private final Spec spec = TestSpecFactory.createDefault();
+  private final Web3j web3 = mock(Web3j.class);
+  private final Request request1 = mock(Request.class);
+  private final Request request2 = mock(Request.class);
+  private StubAsyncRunner asyncRunner;
+  private StubTimeProvider timeProvider;
+  private Web3jEth1Provider provider;
 
-  static final String CHAIN_ID_CORRECT = "5";
-  static final String CHAIN_ID_WRONG = "1";
+  private static final String CHAIN_ID_CORRECT = "5";
+  private static final String CHAIN_ID_WRONG = "1";
 
   @BeforeEach
   void setup() {
@@ -56,6 +59,7 @@ public class Web3jEth1ProviderTest {
     timeProvider = StubTimeProvider.withTimeInSeconds(1000);
     provider =
         new Web3jEth1Provider(
+            spec.getGenesisSpecConfig(),
             new StubMetricsSystem(),
             Eth1Provider.generateEth1ProviderId(0, "https://eth.test.org:1234/test"),
             web3,

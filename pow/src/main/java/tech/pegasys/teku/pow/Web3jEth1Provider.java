@@ -45,6 +45,7 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.exception.RejectedRequestException;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.util.config.Constants;
 
 public class Web3jEth1Provider extends AbstractMonitorableEth1Provider {
@@ -53,17 +54,20 @@ public class Web3jEth1Provider extends AbstractMonitorableEth1Provider {
   private final AtomicBoolean validating = new AtomicBoolean(false);
 
   private final String id;
+  private final SpecConfig config;
   private final Web3j web3j;
   private final AsyncRunner asyncRunner;
   private final LabelledMetric<Counter> requestCounter;
 
   public Web3jEth1Provider(
+      final SpecConfig config,
       final MetricsSystem metricsSystem,
       final String id,
       final Web3j web3j,
       final AsyncRunner asyncRunner,
       final TimeProvider timeProvider) {
     super(timeProvider);
+    this.config = config;
     this.web3j = web3j;
     this.asyncRunner = asyncRunner;
     this.id = id;
@@ -243,9 +247,9 @@ public class Web3jEth1Provider extends AbstractMonitorableEth1Provider {
     return getChainId()
         .thenApply(
             chainId -> {
-              if (chainId.intValueExact() != Constants.DEPOSIT_CHAIN_ID) {
+              if (chainId.intValueExact() != config.getDepositChainId()) {
                 STATUS_LOG.eth1DepositChainIdMismatch(
-                    Constants.DEPOSIT_CHAIN_ID, chainId.intValueExact(), this.id);
+                    config.getDepositChainId(), chainId.intValueExact(), this.id);
                 return Result.FAILED;
               }
               return Result.SUCCESS;

@@ -20,7 +20,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -128,7 +127,7 @@ public class SyncManagerTest {
   @Test
   void sync_noSuitablePeers_remoteEpochInTheFuture() {
     // Remote peer finalized epoch is too far ahead
-    final UInt64 headSlot = compute_start_slot_at_epoch(PEER_FINALIZED_EPOCH).minus(1);
+    final UInt64 headSlot = spec.computeStartSlotAtEpoch(PEER_FINALIZED_EPOCH).minus(1);
     localSlot.set(headSlot);
 
     when(network.streamPeers()).thenReturn(Stream.of(peer));
