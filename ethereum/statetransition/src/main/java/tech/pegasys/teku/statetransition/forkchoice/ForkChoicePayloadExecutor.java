@@ -71,15 +71,7 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
           Optional.of(
               bellatrixTransitionHelpers.validateMergeBlock(executionEngine, executionPayload));
     } else {
-      result =
-          Optional.of(
-              executionEngine
-                  .executePayload(executionPayload)
-                  .exceptionally(
-                      error -> {
-                        LOG.error("Error while executing payload", error);
-                        return ExecutePayloadResult.SYNCING;
-                      }));
+      result = Optional.of(executionEngine.executePayload(executionPayload));
     }
     return true;
   }
