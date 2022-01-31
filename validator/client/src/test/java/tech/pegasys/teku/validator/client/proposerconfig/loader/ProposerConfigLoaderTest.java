@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.google.common.io.Resources;
-import java.io.File;
 import java.net.URL;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -33,13 +32,6 @@ public class ProposerConfigLoaderTest {
     final URL resource = Resources.getResource("proposerConfigValid1.json");
 
     validateContent1(loader.getProposerConfig(resource));
-  }
-
-  @Test
-  void shouldLoadValidConfigFromFile() {
-    final URL resource = Resources.getResource("proposerConfigValid1.json");
-
-    validateContent1(loader.getProposerConfig(new File(resource.getPath())));
   }
 
   @Test

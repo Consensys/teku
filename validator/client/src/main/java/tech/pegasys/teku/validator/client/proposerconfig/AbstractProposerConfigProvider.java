@@ -15,7 +15,6 @@ package tech.pegasys.teku.validator.client.proposerconfig;
 
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -30,7 +29,7 @@ public abstract class AbstractProposerConfigProvider implements ProposerConfigPr
   private final AsyncRunner asyncRunner;
   protected final ProposerConfigLoader proposerConfigLoader;
   private Optional<ProposerConfig> lastProposerConfig = Optional.empty();
-  private final AtomicBoolean requestInProgress = new AtomicBoolean(false);
+  private Optional<SafeFuture<Optional<ProposerConfig>>> futureProposerConfig = Optional.empty();
 
   AbstractProposerConfigProvider(
       final AsyncRunner asyncRunner,
@@ -42,42 +41,47 @@ public abstract class AbstractProposerConfigProvider implements ProposerConfigPr
   }
 
   @Override
-  public SafeFuture<Optional<ProposerConfig>> getProposerConfig() {
+  public synchronized SafeFuture<Optional<ProposerConfig>> getProposerConfig() {
     if (lastProposerConfig.isPresent() && !refresh) {
       return SafeFuture.completedFuture(lastProposerConfig);
     }
 
-    if (!requestInProgress.compareAndSet(false, true)) {
+    if (futureProposerConfig.isPresent()) {
       if (lastProposerConfig.isPresent()) {
         LOG.warn("A proposer config load is in progress, providing last loaded config");
         return SafeFuture.completedFuture(lastProposerConfig);
       }
-      return SafeFuture.failedFuture(
-          new RuntimeException(
-              "A proposer config load is in progress and there is no previously loaded config"));
+      return futureProposerConfig.get();
     }
-
-    return asyncRunner
-        .runAsync(
-            () -> {
-              lastProposerConfig = Optional.of(internalGetProposerConfig());
-              return lastProposerConfig;
-            })
-        .orTimeout(30, TimeUnit.SECONDS)
-        .exceptionally(
-            throwable -> {
-              if (lastProposerConfig.isPresent()) {
-                LOG.warn(
-                    "An error occurred while obtaining config, providing last loaded config",
-                    throwable);
-                return lastProposerConfig;
-              }
-              throw new RuntimeException(
-                  "An error occurred while obtaining config and there is no previously loaded config",
-                  throwable);
-            })
-        .thenPeek(__ -> LOG.info("proposer config successfully loaded"))
-        .alwaysRun(() -> requestInProgress.set(false));
+    futureProposerConfig =
+        Optional.of(
+            asyncRunner
+                .runAsync(
+                    () -> {
+                      lastProposerConfig = Optional.of(internalGetProposerConfig());
+                      return lastProposerConfig;
+                    })
+                .orTimeout(30, TimeUnit.SECONDS)
+                .exceptionally(
+                    throwable -> {
+                      if (lastProposerConfig.isPresent()) {
+                        LOG.warn(
+                            "An error occurred while obtaining config, providing last loaded config",
+                            throwable);
+                        return lastProposerConfig;
+                      }
+                      throw new RuntimeException(
+                          "An error occurred while obtaining config and there is no previously loaded config",
+                          throwable);
+                    })
+                .thenPeek(__ -> LOG.info("proposer config successfully loaded"))
+                .alwaysRun(
+                    () -> {
+                      synchronized (this) {
+                        futureProposerConfig = Optional.empty();
+                      }
+                    }));
+    return futureProposerConfig.get();
   }
 
   protected abstract ProposerConfig internalGetProposerConfig();

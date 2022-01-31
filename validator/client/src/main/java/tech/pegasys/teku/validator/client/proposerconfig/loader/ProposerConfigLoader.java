@@ -14,7 +14,6 @@
 package tech.pegasys.teku.validator.client.proposerconfig.loader;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
@@ -33,22 +32,13 @@ public class ProposerConfigLoader {
     this.objectMapper = objectMapper;
   }
 
-  public ProposerConfig getProposerConfig(final File source) {
-    try {
-      return objectMapper.readValue(source, ProposerConfig.class);
-    } catch (IOException ex) {
-      throw new InvalidConfigurationException(
-          "Failed to load proposer config from file: " + source, ex);
-    }
-  }
-
   public ProposerConfig getProposerConfig(final URL source) {
     try {
       return objectMapper.readValue(source, ProposerConfig.class);
     } catch (IOException ex) {
 
       throw new InvalidConfigurationException(
-          "Failed to load proposer config from URL: "
+          "Failed to load proposer config from: "
               + UrlSanitizer.sanitizePotentialUrl(source.toString()),
           ex);
     }
