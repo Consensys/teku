@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.gossip.forks;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -72,7 +73,7 @@ class GossipForkManagerTest {
     final GossipForkManager manager = builder().fork(currentForkSubscriptions).build();
     manager.configureGossipForEpoch(UInt64.ZERO);
 
-    verify(currentForkSubscriptions).startGossip(GENESIS_VALIDATORS_ROOT);
+    verify(currentForkSubscriptions).startGossip(GENESIS_VALIDATORS_ROOT, false);
   }
 
   @Test
@@ -84,8 +85,8 @@ class GossipForkManagerTest {
 
     manager.configureGossipForEpoch(UInt64.valueOf(3));
 
-    verify(currentForkSubscriptions).startGossip(GENESIS_VALIDATORS_ROOT);
-    verify(nextForkSubscriptions).startGossip(GENESIS_VALIDATORS_ROOT);
+    verify(currentForkSubscriptions).startGossip(GENESIS_VALIDATORS_ROOT, false);
+    verify(nextForkSubscriptions).startGossip(GENESIS_VALIDATORS_ROOT, false);
   }
 
   @Test
@@ -98,10 +99,10 @@ class GossipForkManagerTest {
     managerForForks(currentFork, nextFork, laterFork, tooLateFork)
         .configureGossipForEpoch(UInt64.ONE);
 
-    verify(currentFork).startGossip(GENESIS_VALIDATORS_ROOT);
-    verify(nextFork).startGossip(GENESIS_VALIDATORS_ROOT);
-    verify(laterFork).startGossip(GENESIS_VALIDATORS_ROOT);
-    verify(tooLateFork, never()).startGossip(any());
+    verify(currentFork).startGossip(GENESIS_VALIDATORS_ROOT, false);
+    verify(nextFork).startGossip(GENESIS_VALIDATORS_ROOT, false);
+    verify(laterFork).startGossip(GENESIS_VALIDATORS_ROOT, false);
+    verify(tooLateFork, never()).startGossip(any(), anyBoolean());
   }
 
   @Test
@@ -113,8 +114,8 @@ class GossipForkManagerTest {
 
     manager.configureGossipForEpoch(UInt64.valueOf(2));
 
-    verify(currentForkSubscriptions).startGossip(GENESIS_VALIDATORS_ROOT);
-    verify(nextForkSubscriptions, never()).startGossip(any());
+    verify(currentForkSubscriptions).startGossip(GENESIS_VALIDATORS_ROOT, false);
+    verify(nextForkSubscriptions, never()).startGossip(any(), anyBoolean());
   }
 
   @Test
@@ -134,6 +135,27 @@ class GossipForkManagerTest {
   }
 
   @Test
+  void shouldResubscribeAfterStopping() {
+    final GossipForkSubscriptions currentForkSubscriptions = forkAtEpoch(0);
+    final GossipForkSubscriptions nextForkSubscriptions = forkAtEpoch(5);
+    final GossipForkSubscriptions laterForkSubscriptions = forkAtEpoch(10);
+    final GossipForkManager manager =
+        managerForForks(currentForkSubscriptions, nextForkSubscriptions, laterForkSubscriptions);
+    manager.configureGossipForEpoch(UInt64.valueOf(3));
+    verify(currentForkSubscriptions, times(1)).startGossip(any(), anyBoolean());
+    verify(nextForkSubscriptions, times(1)).startGossip(any(), anyBoolean());
+
+    manager.stopGossip();
+
+    verify(currentForkSubscriptions).stopGossip();
+    verify(nextForkSubscriptions).stopGossip();
+
+    manager.configureGossipForEpoch(UInt64.valueOf(3));
+    verify(currentForkSubscriptions, times(2)).startGossip(any(), anyBoolean());
+    verify(nextForkSubscriptions, times(2)).startGossip(any(), anyBoolean());
+  }
+
+  @Test
   void shouldStopForkTwoEpochsAfterTheNextOneActivates() {
     final GossipForkSubscriptions genesisFork = forkAtEpoch(0);
     final GossipForkSubscriptions newFork = forkAtEpoch(5);
@@ -141,14 +163,14 @@ class GossipForkManagerTest {
     final GossipForkManager manager = managerForForks(genesisFork, newFork);
     manager.configureGossipForEpoch(UInt64.valueOf(4));
 
-    verify(genesisFork).startGossip(GENESIS_VALIDATORS_ROOT);
-    verify(newFork).startGossip(GENESIS_VALIDATORS_ROOT);
+    verify(genesisFork).startGossip(GENESIS_VALIDATORS_ROOT, false);
+    verify(newFork).startGossip(GENESIS_VALIDATORS_ROOT, false);
 
     // Shouldn't make any changes in epochs 5 or 6
     manager.configureGossipForEpoch(UInt64.valueOf(5));
     manager.configureGossipForEpoch(UInt64.valueOf(6));
-    verify(genesisFork, times(1)).startGossip(GENESIS_VALIDATORS_ROOT);
-    verify(newFork, times(1)).startGossip(GENESIS_VALIDATORS_ROOT);
+    verify(genesisFork, times(1)).startGossip(GENESIS_VALIDATORS_ROOT, false);
+    verify(newFork, times(1)).startGossip(GENESIS_VALIDATORS_ROOT, false);
     verify(genesisFork, never()).stopGossip();
     verify(newFork, never()).stopGossip();
 
@@ -169,17 +191,17 @@ class GossipForkManagerTest {
 
     // Should start the genesis subscriptions on first call
     manager.configureGossipForEpoch(UInt64.ZERO);
-    verify(genesisFork).startGossip(GENESIS_VALIDATORS_ROOT);
+    verify(genesisFork).startGossip(GENESIS_VALIDATORS_ROOT, false);
 
     // Jump to epoch 10 and should wind up with only laterFork active
     manager.configureGossipForEpoch(UInt64.valueOf(10));
     verify(genesisFork).stopGossip();
 
     // No point starting newFork as it's already due to be stopped
-    verify(newFork, never()).startGossip(GENESIS_VALIDATORS_ROOT);
+    verify(newFork, never()).startGossip(GENESIS_VALIDATORS_ROOT, false);
     verify(newFork, never()).stopGossip();
 
-    verify(laterFork).startGossip(GENESIS_VALIDATORS_ROOT);
+    verify(laterFork).startGossip(GENESIS_VALIDATORS_ROOT, false);
   }
 
   @Test
@@ -359,7 +381,7 @@ class GossipForkManagerTest {
 
     manager.configureGossipForEpoch(UInt64.valueOf(8));
 
-    verify(secondFork).startGossip(GENESIS_VALIDATORS_ROOT);
+    verify(secondFork).startGossip(GENESIS_VALIDATORS_ROOT, false);
     subscriptionType.verifySubscribe(secondFork, 1);
     subscriptionType.verifySubscribe(secondFork, 2);
     subscriptionType.verifySubscribe(secondFork, 5);
@@ -437,10 +459,50 @@ class GossipForkManagerTest {
 
     manager.configureGossipForEpoch(UInt64.valueOf(8));
 
-    verify(secondFork).startGossip(GENESIS_VALIDATORS_ROOT);
+    verify(secondFork).startGossip(GENESIS_VALIDATORS_ROOT, false);
     subscriptionType.verifySubscribe(secondFork, 1);
     subscriptionType.verifyNotSubscribed(secondFork, 2);
     subscriptionType.verifySubscribe(secondFork, 5);
+  }
+
+  @Test
+  void shouldStopAndRestartNonOptimisticSyncTopics() {
+    final GossipForkSubscriptions subscriptions = forkAtEpoch(0);
+    final GossipForkManager manager = managerForForks(subscriptions);
+
+    manager.configureGossipForEpoch(UInt64.ZERO);
+    verify(subscriptions, times(1)).startGossip(GENESIS_VALIDATORS_ROOT, false);
+
+    manager.onOptimisticHeadChanged(true);
+    verify(subscriptions).stopGossipForOptimisticSync();
+
+    manager.onOptimisticHeadChanged(false);
+    verify(subscriptions, times(2)).startGossip(GENESIS_VALIDATORS_ROOT, false);
+  }
+
+  @Test
+  void shouldIgnoreOptimisticHeadChangesWhenNotStarted() {
+    final GossipForkSubscriptions subscriptions = forkAtEpoch(0);
+    final GossipForkManager manager = managerForForks(subscriptions);
+
+    manager.onOptimisticHeadChanged(true);
+    verify(subscriptions, never()).stopGossipForOptimisticSync();
+
+    manager.onOptimisticHeadChanged(false);
+    verify(subscriptions, never()).startGossip(any(), anyBoolean());
+  }
+
+  @Test
+  void shouldStartSubscriptionsInOptimisticSyncMode() {
+    when(recentChainData.getOptimisticHead())
+        .thenReturn(Optional.of(dataStructureUtil.randomForkChoiceState(true)));
+
+    final GossipForkSubscriptions subscriptions = forkAtEpoch(0);
+    final GossipForkManager manager = managerForForks(subscriptions);
+
+    manager.configureGossipForEpoch(UInt64.ZERO);
+
+    verify(subscriptions).startGossip(GENESIS_VALIDATORS_ROOT, true);
   }
 
   private GossipForkSubscriptions forkAtEpoch(final long epoch) {

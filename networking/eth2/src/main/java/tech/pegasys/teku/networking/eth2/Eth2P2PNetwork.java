@@ -27,6 +27,8 @@ public interface Eth2P2PNetwork extends P2PNetwork<Eth2Peer> {
 
   void onEpoch(UInt64 epoch);
 
+  void onSyncStateChanged(final boolean isInSync, final boolean isOptimistic);
+
   void subscribeToAttestationSubnetId(int subnetId);
 
   void unsubscribeFromAttestationSubnetId(int subnetId);

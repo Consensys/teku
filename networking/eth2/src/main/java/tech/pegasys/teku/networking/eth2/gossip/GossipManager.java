@@ -17,4 +17,8 @@ public interface GossipManager {
   void subscribe();
 
   void unsubscribe();
+
+  default boolean isEnabledDuringOptimisticSync() {
+    return false;
+  }
 }

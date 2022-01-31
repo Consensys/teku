@@ -131,6 +131,20 @@ public class GossipForkManager {
     // Stop all active gossips
     activeSubscriptions.forEach(GossipForkSubscriptions::stopGossip);
     activeSubscriptions.clear();
+    // Ensure we will create new active subscriptions if we are started again in the same epoch
+    currentEpoch = Optional.empty();
+  }
+
+  public synchronized void onOptimisticHeadChanged(final boolean isHeadOptimistic) {
+    if (isHeadOptimistic) {
+      activeSubscriptions.forEach(GossipForkSubscriptions::stopGossipForOptimisticSync);
+    } else {
+      activeSubscriptions.forEach(
+          subscriptions ->
+              subscriptions.startGossip(
+                  recentChainData.getGenesisData().orElseThrow().getGenesisValidatorsRoot(),
+                  false));
+    }
   }
 
   public synchronized void publishAttestation(final ValidateableAttestation attestation) {
@@ -237,7 +251,8 @@ public class GossipForkManager {
   private void startSubscriptions(final GossipForkSubscriptions subscription) {
     if (activeSubscriptions.add(subscription)) {
       subscription.startGossip(
-          recentChainData.getGenesisData().orElseThrow().getGenesisValidatorsRoot());
+          recentChainData.getGenesisData().orElseThrow().getGenesisValidatorsRoot(),
+          recentChainData.getOptimisticHead().isPresent());
       currentAttestationSubnets.forEach(subscription::subscribeToAttestationSubnetId);
       currentSyncCommitteeSubnets.forEach(subscription::subscribeToSyncCommitteeSubnet);
     }
