@@ -14,8 +14,6 @@
 package tech.pegasys.teku.statetransition.forkchoice;
 
 import java.util.Optional;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -27,8 +25,6 @@ import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecution
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
 
 class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
-  private static final Logger LOG = LogManager.getLogger();
-
   private final Spec spec;
   private final SignedBeaconBlock block;
   private final ExecutionEngineChannel executionEngine;
@@ -71,15 +67,7 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
           Optional.of(
               bellatrixTransitionHelpers.validateMergeBlock(executionEngine, executionPayload));
     } else {
-      result =
-          Optional.of(
-              executionEngine
-                  .executePayload(executionPayload)
-                  .exceptionally(
-                      error -> {
-                        LOG.error("Error while executing payload", error);
-                        return ExecutePayloadResult.SYNCING;
-                      }));
+      result = Optional.of(executionEngine.executePayload(executionPayload));
     }
     return true;
   }
