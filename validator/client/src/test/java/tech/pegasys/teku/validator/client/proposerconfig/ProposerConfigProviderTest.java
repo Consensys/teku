@@ -19,6 +19,8 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableMap;
 import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -44,7 +46,11 @@ public class ProposerConfigProviderTest {
 
   private final ProposerConfigProvider proposerConfigProvider =
       ProposerConfigProvider.create(asyncRunner, true, proposerConfigLoader, Optional.of(SOURCE));
-  private final File sourceFile = new File(SOURCE);
+  private final URL sourceUrl;
+
+  public ProposerConfigProviderTest() throws MalformedURLException {
+    sourceUrl = new File(SOURCE).toURI().toURL();
+  }
 
   @Test
   void getProposerConfig_shouldReturnConfig() {
@@ -53,7 +59,7 @@ public class ProposerConfigProviderTest {
 
     assertThat(futureMaybeConfig).isNotCompleted();
 
-    when(proposerConfigLoader.getProposerConfig(sourceFile)).thenReturn(proposerConfigA);
+    when(proposerConfigLoader.getProposerConfig(sourceUrl)).thenReturn(proposerConfigA);
     asyncRunner.executeQueuedActions();
 
     assertThat(futureMaybeConfig).isCompletedWithValue(Optional.of(proposerConfigA));
@@ -64,7 +70,7 @@ public class ProposerConfigProviderTest {
     SafeFuture<Optional<ProposerConfig>> futureMaybeConfig =
         proposerConfigProvider.getProposerConfig();
 
-    when(proposerConfigLoader.getProposerConfig(sourceFile))
+    when(proposerConfigLoader.getProposerConfig(sourceUrl))
         .thenThrow(new RuntimeException("error"));
     asyncRunner.executeQueuedActions();
 
@@ -76,14 +82,14 @@ public class ProposerConfigProviderTest {
     SafeFuture<Optional<ProposerConfig>> futureMaybeConfig =
         proposerConfigProvider.getProposerConfig();
 
-    when(proposerConfigLoader.getProposerConfig(sourceFile)).thenReturn(proposerConfigA);
+    when(proposerConfigLoader.getProposerConfig(sourceUrl)).thenReturn(proposerConfigA);
     asyncRunner.executeQueuedActions();
 
     assertThat(futureMaybeConfig).isCompletedWithValue(Optional.of(proposerConfigA));
 
     futureMaybeConfig = proposerConfigProvider.getProposerConfig();
 
-    when(proposerConfigLoader.getProposerConfig(sourceFile))
+    when(proposerConfigLoader.getProposerConfig(sourceUrl))
         .thenThrow(new RuntimeException("error"));
     asyncRunner.executeQueuedActions();
 
@@ -91,15 +97,16 @@ public class ProposerConfigProviderTest {
   }
 
   @Test
-  void getProposerConfig_onConcurrentCallsShouldThrowWhenNoLastConfigAvailable() {
+  void getProposerConfig_onConcurrentCallsShouldMergeFuturesWhenNoLastConfigAvailable() {
     SafeFuture<Optional<ProposerConfig>> futureMaybeConfig =
         proposerConfigProvider.getProposerConfig();
 
     SafeFuture<Optional<ProposerConfig>> futureMaybeConfig2 =
         proposerConfigProvider.getProposerConfig();
-    assertThat(futureMaybeConfig2).isCompletedExceptionally();
+    assertThat(futureMaybeConfig2).isEqualTo(futureMaybeConfig);
+    assertThat(futureMaybeConfig2).isNotCompleted();
 
-    when(proposerConfigLoader.getProposerConfig(sourceFile)).thenReturn(proposerConfigA);
+    when(proposerConfigLoader.getProposerConfig(sourceUrl)).thenReturn(proposerConfigA);
     asyncRunner.executeQueuedActions();
 
     assertThat(futureMaybeConfig).isCompletedWithValue(Optional.of(proposerConfigA));
@@ -110,7 +117,7 @@ public class ProposerConfigProviderTest {
     SafeFuture<Optional<ProposerConfig>> futureMaybeConfig =
         proposerConfigProvider.getProposerConfig();
 
-    when(proposerConfigLoader.getProposerConfig(sourceFile)).thenReturn(proposerConfigA);
+    when(proposerConfigLoader.getProposerConfig(sourceUrl)).thenReturn(proposerConfigA);
     asyncRunner.executeQueuedActions();
 
     assertThat(futureMaybeConfig).isCompletedWithValue(Optional.of(proposerConfigA));
@@ -121,7 +128,7 @@ public class ProposerConfigProviderTest {
 
     assertThat(futureMaybeConfig2).isCompletedWithValue(Optional.of(proposerConfigA));
 
-    when(proposerConfigLoader.getProposerConfig(sourceFile)).thenReturn(proposerConfigB);
+    when(proposerConfigLoader.getProposerConfig(sourceUrl)).thenReturn(proposerConfigB);
     asyncRunner.executeQueuedActions();
 
     assertThat(futureMaybeConfig).isCompletedWithValue(Optional.of(proposerConfigB));
@@ -138,12 +145,12 @@ public class ProposerConfigProviderTest {
 
     assertThat(futureMaybeConfig).isNotCompleted();
 
-    when(proposerConfigLoader.getProposerConfig(sourceFile)).thenReturn(proposerConfigA);
+    when(proposerConfigLoader.getProposerConfig(sourceUrl)).thenReturn(proposerConfigA);
     asyncRunner.executeQueuedActions();
 
     assertThat(futureMaybeConfig).isCompletedWithValue(Optional.of(proposerConfigA));
 
-    when(proposerConfigLoader.getProposerConfig(sourceFile)).thenReturn(proposerConfigB);
+    when(proposerConfigLoader.getProposerConfig(sourceUrl)).thenReturn(proposerConfigB);
 
     futureMaybeConfig = proposerConfigProvider.getProposerConfig();
     assertThat(futureMaybeConfig).isCompletedWithValue(Optional.of(proposerConfigA));

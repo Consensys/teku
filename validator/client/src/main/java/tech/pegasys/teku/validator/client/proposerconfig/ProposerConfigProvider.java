@@ -32,14 +32,18 @@ public interface ProposerConfigProvider {
       final Optional<String> source) {
 
     if (source.isPresent()) {
+      URL sourceUrl;
       try {
-        URL sourceUrl = new URL(source.get());
+        sourceUrl = new URL(source.get());
         return new UrlProposerConfigProvider(asyncRunner, refresh, proposerConfigLoader, sourceUrl);
-      } catch (MalformedURLException e) {
-        File sourceFile = new File(source.get());
-        return new FileProposerConfigProvider(
-            asyncRunner, refresh, proposerConfigLoader, sourceFile);
+      } catch (MalformedURLException e1) {
+        try {
+          sourceUrl = new File(source.get()).toURI().toURL();
+        } catch (MalformedURLException e2) {
+          throw new RuntimeException("Unable to translate file to URL", e2);
+        }
       }
+      return new UrlProposerConfigProvider(asyncRunner, refresh, proposerConfigLoader, sourceUrl);
     }
     return NOOP;
   }

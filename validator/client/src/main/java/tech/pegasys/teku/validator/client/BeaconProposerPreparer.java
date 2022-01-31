@@ -67,21 +67,19 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
 
       validatorIndexProvider
           .getValidatorIndexesByPublicKey()
-          .thenApply(
-              blsPublicKeyIntegerMap ->
+          .thenCompose(
+              publicKeyToIndex ->
                   proposerConfigFuture
                       .thenApply(
                           proposerConfig ->
-                              buildBeaconPreparableProposerList(
-                                  proposerConfig, blsPublicKeyIntegerMap))
+                              buildBeaconPreparableProposerList(proposerConfig, publicKeyToIndex))
                       .exceptionally(
                           throwable -> {
                             LOG.warn(
                                 "An error occurred while obtaining proposer config", throwable);
                             return buildBeaconPreparableProposerList(
-                                Optional.empty(), blsPublicKeyIntegerMap);
-                          })
-                      .join())
+                                Optional.empty(), publicKeyToIndex);
+                          }))
           .thenAccept(validatorApiChannel::prepareBeaconProposer)
           .finish(VALIDATOR_LOGGER::beaconProposerPreparationFailed);
     }
