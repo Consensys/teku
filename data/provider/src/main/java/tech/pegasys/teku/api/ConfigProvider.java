@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.api.response.v1.config.GetForkScheduleResponse;
 import tech.pegasys.teku.api.response.v1.config.GetSpecResponse;
 import tech.pegasys.teku.api.schema.Fork;
@@ -46,7 +47,7 @@ public class ConfigProvider {
         .getRawConfig()
         .forEach(
             (k, v) -> {
-              configAttributes.put(k, "" + v);
+              configAttributes.put(k, formatValue(v));
             });
 
     // For the time being, manually add legacy constants for compatibility reasons
@@ -89,6 +90,13 @@ public class ConfigProvider {
             });
 
     return new GetSpecResponse(configAttributes);
+  }
+
+  private String formatValue(final Object v) {
+    if (v instanceof UInt256) {
+      return ((UInt256) v).toBigInteger().toString(10);
+    }
+    return v.toString();
   }
 
   public GetForkScheduleResponse getForkSchedule() {
