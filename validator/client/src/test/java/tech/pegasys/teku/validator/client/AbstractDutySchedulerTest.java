@@ -56,7 +56,7 @@ public abstract class AbstractDutySchedulerTest {
 
   @BeforeEach
   public void setUp() {
-    when(validatorIndexProvider.getValidatorIndices(VALIDATOR_KEYS))
+    when(validatorIndexProvider.getValidatorIndices())
         .thenReturn(SafeFuture.completedFuture(VALIDATOR_INDICES));
     final SafeFuture<BLSSignature> rejectAggregationSignature =
         SafeFuture.failedFuture(new UnsupportedOperationException("This test ignores aggregation"));

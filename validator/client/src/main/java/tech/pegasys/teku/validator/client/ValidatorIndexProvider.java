@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.validator.client;
 
-import static java.util.Collections.unmodifiableMap;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
@@ -25,6 +24,8 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -37,7 +38,7 @@ public class ValidatorIndexProvider {
 
   private static final Logger LOG = LogManager.getLogger();
   public static final Duration RETRY_DELAY = Duration.ofSeconds(5);
-  private final OwnedValidators validators;
+  private final OwnedValidators ownedValidators;
   private final ValidatorApiChannel validatorApiChannel;
   private final AsyncRunner asyncRunner;
   private final Map<BLSPublicKey, Integer> validatorIndexesByPublicKey = new ConcurrentHashMap<>();
@@ -46,10 +47,10 @@ public class ValidatorIndexProvider {
   private final SafeFuture<Void> firstSuccessfulRequest = new SafeFuture<>();
 
   public ValidatorIndexProvider(
-      final OwnedValidators validators,
+      final OwnedValidators ownedValidators,
       final ValidatorApiChannel validatorApiChannel,
       final AsyncRunner asyncRunner) {
-    this.validators = validators;
+    this.ownedValidators = ownedValidators;
     this.validatorApiChannel = validatorApiChannel;
     this.asyncRunner = asyncRunner;
   }
@@ -82,7 +83,7 @@ public class ValidatorIndexProvider {
   }
 
   private Collection<BLSPublicKey> getUnknownValidators() {
-    return Sets.difference(validators.getPublicKeys(), validatorIndexesByPublicKey.keySet());
+    return Sets.difference(ownedValidators.getPublicKeys(), validatorIndexesByPublicKey.keySet());
   }
 
   private void logNewValidatorIndices(final Map<BLSPublicKey, Integer> knownValidators) {
@@ -100,15 +101,23 @@ public class ValidatorIndexProvider {
     return Optional.ofNullable(validatorIndexesByPublicKey.get(publicKey));
   }
 
-  public SafeFuture<Collection<Integer>> getValidatorIndices(
-      final Collection<BLSPublicKey> publicKeys) {
+  public SafeFuture<Collection<Integer>> getValidatorIndices() {
     // Wait for at least one successful load of validator indices before attempting to read
     return firstSuccessfulRequest.thenApply(
         __ ->
-            publicKeys.stream().flatMap(key -> getValidatorIndex(key).stream()).collect(toList()));
+            ownedValidators.getActiveValidators().stream()
+                .flatMap(validator -> getValidatorIndex(validator.getPublicKey()).stream())
+                .collect(toList()));
   }
 
   public SafeFuture<Map<BLSPublicKey, Integer>> getValidatorIndexesByPublicKey() {
-    return firstSuccessfulRequest.thenApply(__ -> unmodifiableMap(validatorIndexesByPublicKey));
+    // Wait for at least one successful load of validator indices before attempting to read
+    return firstSuccessfulRequest.thenApply(
+        __ ->
+            ownedValidators.getActiveValidators().stream()
+                .map(Validator::getPublicKey)
+                .collect(
+                    Collectors.<BLSPublicKey, BLSPublicKey, Integer>toMap(
+                        Function.identity(), validatorIndexesByPublicKey::get)));
   }
 }

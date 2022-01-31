@@ -161,7 +161,7 @@ class ValidatorIndexProviderTest {
     final SafeFuture<Map<BLSPublicKey, Integer>> requestResult = new SafeFuture<>();
     when(validatorApiChannel.getValidatorIndices(Set.of(key1))).thenReturn(requestResult);
 
-    final SafeFuture<Collection<Integer>> result = provider.getValidatorIndices(List.of(key1));
+    final SafeFuture<Collection<Integer>> result = provider.getValidatorIndices();
     assertThat(result).isNotDone();
 
     provider.lookupValidators();
