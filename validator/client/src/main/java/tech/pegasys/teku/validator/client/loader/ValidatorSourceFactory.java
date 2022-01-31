@@ -32,6 +32,32 @@ import tech.pegasys.teku.validator.api.KeyStoreFilesLocator;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
 
+/**
+ * ValidatorSourceFactory creates the validator sources that control loading, and sometimes removal,
+ * of validators in memory.
+ *
+ * <p><a href="https://ethereum.github.io/keymanager-APIs/">Keymanager API</a> Validators added via
+ * keymanager are considered not read-only, they can be added and removed via API calls at runtime,
+ * without the need to issue HUP signals.
+ *
+ * <p>Read-only sources can include sources that are loaded from CLI options like `--validator-keys`
+ * and `--validators-external-signer-public-keys`, where a static list of validators can be
+ * specified and re-loaded during a HUP or on every restart.
+ *
+ * <p>Removal of mutable sources makes use of a delegation pattern, where the `DeletableSigner`
+ * ensures that signing cannot occur once the source has been marked deleted.
+ *
+ * <p>DeletableSigner -> SlashingProtectedSigner -> (LocalSigner | ExternalSigner)
+ * <li>DeletableSigner being at the top of the hierarchy ensures that a signer can be deleted and
+ *     ensure no further signing occurs. Outstanding duties for a validator may still attempt to
+ *     process. It also delegates if it is read-only: read-only signers will not be allowed to be
+ *     deleted.
+ * <li>SlashingProtectedSigner ensures that a signer cannot attempt to sign anything that may
+ *     violate slashing conditions. Actual signing is delegated once it has been verified that
+ *     slashing would not occur.
+ * <li>LocalSigner uses local signing
+ * <li>ExternalSigner delegates singing to an external tool
+ */
 public class ValidatorSourceFactory {
   private static final Logger LOG = LogManager.getLogger();
   private final Spec spec;
