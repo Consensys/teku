@@ -131,6 +131,8 @@ public class GossipForkManager {
     // Stop all active gossips
     activeSubscriptions.forEach(GossipForkSubscriptions::stopGossip);
     activeSubscriptions.clear();
+    // Ensure we will create new active subscriptions if we are started again in the same epoch
+    currentEpoch = Optional.empty();
   }
 
   public synchronized void onOptimisticHeadChanged(final boolean isHeadOptimistic) {

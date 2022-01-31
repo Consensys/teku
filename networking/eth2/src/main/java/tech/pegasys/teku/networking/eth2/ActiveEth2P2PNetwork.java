@@ -142,6 +142,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
         syncCommitteeSubnetService.subscribeToUpdates(
             discoveryNetwork::setSyncCommitteeSubnetSubscriptions);
 
+    // TODO: This doesn't start gossip if
     gossipForkManager.configureGossipForEpoch(recentChainData.getCurrentEpoch().orElseThrow());
     processedAttestationSubscriptionProvider.subscribe(gossipForkManager::publishAttestation);
     eventChannels.subscribe(BlockGossipChannel.class, gossipForkManager::publishBlock);
