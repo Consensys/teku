@@ -15,8 +15,6 @@ package tech.pegasys.teku.storage.server.kvstore;
 
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import java.util.HashSet;
 import java.util.Optional;
@@ -39,7 +37,7 @@ public abstract class AbstractKvStoreDatabaseWithHotStatesTest extends AbstractK
     initGenesis();
 
     final UInt64 latestEpoch = UInt64.valueOf(3);
-    final UInt64 targetSlot = compute_start_slot_at_epoch(latestEpoch);
+    final UInt64 targetSlot = spec.computeStartSlotAtEpoch(latestEpoch);
     chainBuilder.generateBlocksUpToSlot(targetSlot);
 
     // Add blocks
@@ -68,7 +66,7 @@ public abstract class AbstractKvStoreDatabaseWithHotStatesTest extends AbstractK
     initGenesis();
 
     final UInt64 latestEpoch = UInt64.valueOf(3);
-    final UInt64 targetSlot = compute_start_slot_at_epoch(latestEpoch);
+    final UInt64 targetSlot = spec.computeStartSlotAtEpoch(latestEpoch);
     chainBuilder.generateBlocksUpToSlot(targetSlot);
 
     // Add blocks
@@ -90,7 +88,7 @@ public abstract class AbstractKvStoreDatabaseWithHotStatesTest extends AbstractK
     initGenesis();
 
     final UInt64 latestEpoch = UInt64.valueOf(3 * storageFrequency);
-    final UInt64 targetSlot = compute_start_slot_at_epoch(latestEpoch);
+    final UInt64 targetSlot = spec.computeStartSlotAtEpoch(latestEpoch);
     chainBuilder.generateBlocksUpToSlot(targetSlot);
 
     // Add blocks
@@ -103,7 +101,7 @@ public abstract class AbstractKvStoreDatabaseWithHotStatesTest extends AbstractK
       final Optional<BeaconState> actual = database.getHotState(blockAndState.getRoot());
 
       final UInt64 currentSlot = UInt64.valueOf(i);
-      final UInt64 currentEpoch = compute_epoch_at_slot(currentSlot);
+      final UInt64 currentEpoch = spec.computeEpochAtSlot(currentSlot);
       final boolean shouldPersistThisEpoch = currentEpoch.mod(storageFrequency).equals(UInt64.ZERO);
       if (epochBoundarySlots.contains(currentSlot) && shouldPersistThisEpoch) {
         assertThat(actual).contains(blockAndState.getState());
@@ -122,7 +120,7 @@ public abstract class AbstractKvStoreDatabaseWithHotStatesTest extends AbstractK
     initGenesis();
 
     final UInt64 latestEpoch = UInt64.valueOf(3);
-    final UInt64 targetSlot = compute_start_slot_at_epoch(latestEpoch);
+    final UInt64 targetSlot = spec.computeStartSlotAtEpoch(latestEpoch);
     chainBuilder.generateBlocksUpToSlot(targetSlot);
 
     // Add blocks
@@ -140,7 +138,7 @@ public abstract class AbstractKvStoreDatabaseWithHotStatesTest extends AbstractK
   private Set<UInt64> getEpochBoundarySlots(final int fromEpoch, final int toEpoch) {
     final Set<UInt64> epochBoundarySlots = new HashSet<>();
     for (int i = fromEpoch; i <= toEpoch; i++) {
-      final UInt64 epochSlot = compute_start_slot_at_epoch(UInt64.valueOf(i));
+      final UInt64 epochSlot = spec.computeStartSlotAtEpoch(UInt64.valueOf(i));
       epochBoundarySlots.add(epochSlot);
     }
     return epochBoundarySlots;

@@ -703,7 +703,7 @@ class RecentChainDataTest {
     final UInt64 skipBlocksLong = UInt64.valueOf(skipBlocks);
     final UInt64 finalizedBlockSlot = UInt64.valueOf(10).plus(historicalRoots);
     final UInt64 finalizedEpoch =
-        ChainProperties.computeBestEpochFinalizableAtSlot(finalizedBlockSlot);
+        new ChainProperties(spec).computeBestEpochFinalizableAtSlot(finalizedBlockSlot);
     final UInt64 recentSlot = spec.computeStartSlotAtEpoch(finalizedEpoch).plus(ONE);
     final UInt64 chainHeight = historicalRoots.times(2).plus(recentSlot).plus(5);
     // Build historical blocks

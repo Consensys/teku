@@ -36,13 +36,12 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil;
 
 class StateAtSlotTaskTest {
   private static final UInt64 EPOCH = UInt64.valueOf(2);
-  private static final UInt64 SLOT = BeaconStateUtil.compute_start_slot_at_epoch(EPOCH);
 
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private final UInt64 slot = spec.computeStartSlotAtEpoch(EPOCH);
   private final StateAtSlotTask.AsyncStateProvider stateProvider =
       mock(StateAtSlotTask.AsyncStateProvider.class);
   private final ChainBuilder chainBuilder = ChainBuilder.create(spec);
@@ -54,23 +53,23 @@ class StateAtSlotTaskTest {
 
   @Test
   void performTask_shouldReturnExistingStateWhenAlreadyAtCorrectSlot() {
-    chainBuilder.generateBlocksUpToSlot(SLOT);
-    final SignedBlockAndState base = chainBuilder.getBlockAndStateAtSlot(SLOT);
+    chainBuilder.generateBlocksUpToSlot(slot);
+    final SignedBlockAndState base = chainBuilder.getBlockAndStateAtSlot(slot);
     when(stateProvider.getState(base.getRoot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(base.getState())));
 
-    final SafeFuture<Optional<BeaconState>> result = createTask(SLOT, base.getRoot()).performTask();
+    final SafeFuture<Optional<BeaconState>> result = createTask(slot, base.getRoot()).performTask();
     assertThatSafeFuture(result).isCompletedWithOptionalContaining(base.getState());
   }
 
   @Test
   void performTask_shouldThrowInvalidCheckpointExceptionWhenStateIsAheadOfSlot() {
-    chainBuilder.generateBlocksUpToSlot(SLOT.plus(1));
-    final SignedBlockAndState base = chainBuilder.getBlockAndStateAtSlot(SLOT.plus(1));
+    chainBuilder.generateBlocksUpToSlot(slot.plus(1));
+    final SignedBlockAndState base = chainBuilder.getBlockAndStateAtSlot(slot.plus(1));
     when(stateProvider.getState(base.getRoot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(base.getState())));
 
-    final SafeFuture<Optional<BeaconState>> result = createTask(SLOT, base.getRoot()).performTask();
+    final SafeFuture<Optional<BeaconState>> result = createTask(slot, base.getRoot()).performTask();
     assertThatSafeFuture(result).isCompletedExceptionallyWith(InvalidCheckpointException.class);
   }
 
@@ -131,8 +130,8 @@ class StateAtSlotTaskTest {
 
   @Test
   void rebase_shouldUseSuppliedStateAsNewStartingPoint() {
-    final SignedBlockAndState newBase = chainBuilder.generateBlockAtSlot(SLOT.minus(1));
-    final Checkpoint realCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(SLOT);
+    final SignedBlockAndState newBase = chainBuilder.generateBlockAtSlot(slot.minus(1));
+    final Checkpoint realCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(slot);
     final BeaconState expectedState =
         CheckpointStateGenerator.regenerateCheckpointState(
             spec, realCheckpoint, newBase.getState());

@@ -20,7 +20,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -68,7 +67,7 @@ public class WeakSubjectivityInitializerTest {
 
   @Test
   public void finalizeAndStoreConfig_nothingStored_withNewArgs() {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     final Checkpoint cliCheckpoint = dataStructureUtil.randomCheckpoint();
     final WeakSubjectivityConfig cliConfig =
         WeakSubjectivityConfig.builder()
@@ -93,7 +92,7 @@ public class WeakSubjectivityInitializerTest {
 
   @Test
   public void finalizeAndStoreConfig_withStoredCheckpoint_noNewArgs() {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
     // Setup storage
     final Checkpoint storedCheckpoint = dataStructureUtil.randomCheckpoint();
@@ -115,7 +114,7 @@ public class WeakSubjectivityInitializerTest {
 
   @Test
   public void finalizeAndStoreConfig_withStoredCheckpoint_withNewDistinctArgs() {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     final Checkpoint cliCheckpoint = dataStructureUtil.randomCheckpoint();
     final WeakSubjectivityConfig cliConfig =
         WeakSubjectivityConfig.builder()
@@ -145,7 +144,7 @@ public class WeakSubjectivityInitializerTest {
 
   @Test
   public void finalizeAndStoreConfig_withStoredCheckpoint_withConsistentCLIArgs() {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     final Checkpoint cliCheckpoint = dataStructureUtil.randomCheckpoint();
     final WeakSubjectivityConfig cliConfig =
         WeakSubjectivityConfig.builder()
@@ -170,7 +169,7 @@ public class WeakSubjectivityInitializerTest {
 
   @Test
   public void validateInitialAnchor_forGenesisAtGenesisSlot() {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     final AnchorPoint anchor = dataStructureUtil.randomAnchorPoint(0);
 
     // Should not throw
@@ -179,7 +178,7 @@ public class WeakSubjectivityInitializerTest {
 
   @Test
   public void validateInitialAnchor_forGenesisAfterGenesisSlot() {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     final AnchorPoint anchor = dataStructureUtil.randomAnchorPoint(0);
 
     // Should not throw
@@ -189,9 +188,9 @@ public class WeakSubjectivityInitializerTest {
   @Test
   public void validateInitialAnchor_forInitialStateFromFuture() {
     final UInt64 currentEpoch = UInt64.valueOf(10);
-    final UInt64 currentSlot = compute_start_slot_at_epoch(currentEpoch);
+    final UInt64 currentSlot = spec.computeStartSlotAtEpoch(currentEpoch);
 
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     final AnchorPoint anchor = dataStructureUtil.randomAnchorPoint(currentEpoch.plus(1));
 
     assertThatThrownBy(() -> initializer.validateInitialAnchor(anchor, currentSlot, spec))
@@ -205,9 +204,9 @@ public class WeakSubjectivityInitializerTest {
   @Test
   public void validateInitialAnchor_forEpochTooRecentToBeFinal() {
     final UInt64 currentEpoch = UInt64.valueOf(10);
-    final UInt64 currentSlot = compute_start_slot_at_epoch(currentEpoch).plus(1);
+    final UInt64 currentSlot = spec.computeStartSlotAtEpoch(currentEpoch).plus(1);
 
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     final AnchorPoint anchor = dataStructureUtil.randomAnchorPoint(currentEpoch.minus(1));
 
     assertThatThrownBy(() -> initializer.validateInitialAnchor(anchor, currentSlot, spec))

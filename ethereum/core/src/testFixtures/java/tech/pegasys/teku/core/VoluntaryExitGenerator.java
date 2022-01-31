@@ -14,7 +14,6 @@
 package tech.pegasys.teku.core;
 
 import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 import java.util.List;
 import tech.pegasys.teku.bls.BLSKeyPair;
@@ -52,7 +51,7 @@ public class VoluntaryExitGenerator {
 
   public SignedVoluntaryExit withInvalidSignature(BeaconState state, int validatorIndex) {
     return create(
-        state.getForkInfo(), compute_epoch_at_slot(state.getSlot()), validatorIndex, false);
+        state.getForkInfo(), spec.computeEpochAtSlot(state.getSlot()), validatorIndex, false);
   }
 
   public SignedVoluntaryExit valid(
@@ -61,7 +60,7 @@ public class VoluntaryExitGenerator {
       checkForValidatorHavingBeenActiveLongEnough(state, validatorIndex);
     }
     return create(
-        state.getForkInfo(), compute_epoch_at_slot(state.getSlot()), validatorIndex, true);
+        state.getForkInfo(), spec.computeEpochAtSlot(state.getSlot()), validatorIndex, true);
   }
 
   public SignedVoluntaryExit valid(BeaconState state, int validatorIndex) {
@@ -85,7 +84,7 @@ public class VoluntaryExitGenerator {
             .get(validatorIndex)
             .getActivation_epoch()
             .plus(spec.getSpecConfig(spec.getCurrentEpoch(state)).getShardCommitteePeriod())
-            .compareTo(compute_epoch_at_slot(state.getSlot()))
+            .compareTo(spec.computeEpochAtSlot(state.getSlot()))
         >= 0) {
       throw new IllegalStateException(
           "Validator has not been active long enough to have a valid exit");

@@ -49,7 +49,6 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
-import tech.pegasys.teku.util.config.Constants;
 
 /** @deprecated Prefer ChainBuilder, ChainUpdater, or StorageSystem */
 @Deprecated
@@ -174,7 +173,7 @@ public class BeaconChainUtil {
 
   public void setSlot(final UInt64 currentSlot) {
     checkState(!recentChainData.isPreGenesis(), "Cannot set current slot before genesis");
-    final UInt64 secPerSlot = UInt64.valueOf(Constants.SECONDS_PER_SLOT);
+    final int secPerSlot = spec.getGenesisSpecConfig().getSecondsPerSlot();
     final UInt64 time = recentChainData.getGenesisTime().plus(currentSlot.times(secPerSlot));
     setTime(time);
   }
