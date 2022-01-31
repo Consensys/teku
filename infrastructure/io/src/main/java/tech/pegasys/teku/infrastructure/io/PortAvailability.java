@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
@@ -56,18 +57,20 @@ public class PortAvailability {
     return (port >= 0 && port <= 65535);
   }
 
-  public static void checkPortsAvailable(final int tcpPort, final int udpPort) {
+  public static void checkPortsAvailable(final int tcpPort, final Optional<Integer> maybeUdpPort) {
     if (!isPortAvailableForTcp(tcpPort)) {
       throw new InvalidConfigurationException(
           String.format(
               "P2P Port %d (TCP) is already in use. Check for other processes using this port.",
               tcpPort));
     }
-    if (!isPortAvailableForUdp(udpPort)) {
-      throw new InvalidConfigurationException(
-          String.format(
-              "P2P Port %d (UDP) is already in use. Check for other processes using this port.",
-              udpPort));
-    }
+    maybeUdpPort.ifPresent(udpPort -> {
+      if (!isPortAvailableForUdp(udpPort)) {
+        throw new InvalidConfigurationException(
+            String.format(
+                "P2P Port %d (UDP) is already in use. Check for other processes using this port.",
+                udpPort));
+      }
+    });
   }
 }

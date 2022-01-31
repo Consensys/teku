@@ -59,6 +59,7 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.StableSubnetSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.ValidatorBasedStableSubnetSubscriber;
 import tech.pegasys.teku.networking.eth2.mock.NoOpEth2P2PNetwork;
+import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
@@ -670,9 +671,13 @@ public class BeaconChainController extends Service
       return;
     }
 
+    DiscoveryConfig discoveryConfig = beaconConfig.p2pConfig().getDiscoveryConfig();
+    final Optional<Integer> maybeUdpPort = discoveryConfig.isDiscoveryEnabled() ?
+        Optional.of(discoveryConfig.getListenUdpPort()) : Optional.empty();
+
     PortAvailability.checkPortsAvailable(
         beaconConfig.p2pConfig().getNetworkConfig().getListenPort(),
-        beaconConfig.p2pConfig().getDiscoveryConfig().getListenUdpPort());
+        maybeUdpPort);
 
     final KeyValueStore<String, Bytes> keyValueStore =
         new FileKeyValueStore(beaconDataDirectory.resolve(KEY_VALUE_STORE_SUBDIRECTORY));
