@@ -71,16 +71,6 @@ public class ValidatorSourceFactory {
   private final Optional<DataDirLayout> maybeDataDir;
   private Optional<ValidatorSource> mutableLocalValidatorSource = Optional.empty();
 
-  // Validator Sources
-  //   - sources loaded by configuration flags from static sources are read-only.
-  //     - this is because on restart, they would be reloaded from the same static list
-  //     - examples are
-  //       - those specified by `--validator-keys`, where a directory of keys are loaded, or even
-  // specific keys.
-  //       - external sources that load from a list of public keys
-  // `--validators-external-signer-public-keys`
-  //   - keymanager-api allows for sources to be dynamically adjusted at runtime.
-  //
   public ValidatorSourceFactory(
       final Spec spec,
       final ValidatorConfig config,
