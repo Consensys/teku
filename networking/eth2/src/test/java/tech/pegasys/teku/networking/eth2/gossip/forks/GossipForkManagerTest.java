@@ -465,6 +465,46 @@ class GossipForkManagerTest {
     subscriptionType.verifySubscribe(secondFork, 5);
   }
 
+  @Test
+  void shouldStopAndRestartNonOptimisticSyncTopics() {
+    final GossipForkSubscriptions subscriptions = forkAtEpoch(0);
+    final GossipForkManager manager = managerForForks(subscriptions);
+
+    manager.configureGossipForEpoch(UInt64.ZERO);
+    verify(subscriptions, times(1)).startGossip(GENESIS_VALIDATORS_ROOT, false);
+
+    manager.onOptimisticHeadChanged(true);
+    verify(subscriptions).stopGossipForOptimisticSync();
+
+    manager.onOptimisticHeadChanged(false);
+    verify(subscriptions, times(2)).startGossip(GENESIS_VALIDATORS_ROOT, false);
+  }
+
+  @Test
+  void shouldIgnoreOptimisticHeadChangesWhenNotStarted() {
+    final GossipForkSubscriptions subscriptions = forkAtEpoch(0);
+    final GossipForkManager manager = managerForForks(subscriptions);
+
+    manager.onOptimisticHeadChanged(true);
+    verify(subscriptions, never()).stopGossipForOptimisticSync();
+
+    manager.onOptimisticHeadChanged(false);
+    verify(subscriptions, never()).startGossip(any(), anyBoolean());
+  }
+
+  @Test
+  void shouldStartSubscriptionsInOptimisticSyncMode() {
+    when(recentChainData.getOptimisticHead())
+        .thenReturn(Optional.of(dataStructureUtil.randomForkChoiceState(true)));
+
+    final GossipForkSubscriptions subscriptions = forkAtEpoch(0);
+    final GossipForkManager manager = managerForForks(subscriptions);
+
+    manager.configureGossipForEpoch(UInt64.ZERO);
+
+    verify(subscriptions).startGossip(GENESIS_VALIDATORS_ROOT, true);
+  }
+
   private GossipForkSubscriptions forkAtEpoch(final long epoch) {
     final GossipForkSubscriptions subscriptions =
         mock(GossipForkSubscriptions.class, "subscriptionsForEpoch" + epoch);

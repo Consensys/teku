@@ -114,6 +114,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
+import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
@@ -979,6 +980,16 @@ public final class DataStructureUtil {
 
   public EnrForkId randomEnrForkId() {
     return new EnrForkId(randomBytes4(), randomBytes4(), randomUInt64());
+  }
+
+  public ForkChoiceState randomForkChoiceState(final boolean optimisticHead) {
+    return new ForkChoiceState(
+        randomBytes32(),
+        randomUInt64(),
+        randomBytes32(),
+        randomBytes32(),
+        randomBytes32(),
+        optimisticHead);
   }
 
   public BeaconState randomBeaconState() {
