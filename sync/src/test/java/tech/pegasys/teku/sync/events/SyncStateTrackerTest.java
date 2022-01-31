@@ -120,11 +120,12 @@ class SyncStateTrackerTest {
 
     // start syncing
     syncSubscriber.onSyncingChange(true);
-    assertSyncState(SyncState.SYNCING);
+    assertSyncState(SyncState.OPTIMISTIC_SYNCING);
     verify(eventLogger).syncStart();
 
     // head no more optimistic
     tracker.onOptimisticHeadChanged(false);
+    assertSyncState(SyncState.SYNCING);
 
     // in sync
     syncSubscriber.onSyncingChange(false);
@@ -133,7 +134,7 @@ class SyncStateTrackerTest {
 
     // turn head optimistic
     tracker.onOptimisticHeadChanged(true);
-    assertSyncState(SyncState.SYNCING);
+    assertSyncState(SyncState.OPTIMISTIC_SYNCING);
 
     verifyNoMoreInteractions(eventLogger);
   }

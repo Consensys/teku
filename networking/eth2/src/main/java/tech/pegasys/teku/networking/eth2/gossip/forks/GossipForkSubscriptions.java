@@ -27,9 +27,11 @@ public interface GossipForkSubscriptions {
 
   UInt64 getActivationEpoch();
 
-  void startGossip(Bytes32 genesisValidatorsRoot);
+  void startGossip(Bytes32 genesisValidatorsRoot, boolean isOptimisticHead);
 
   void stopGossip();
+
+  void stopGossipForOptimisticSync();
 
   void publishAttestation(ValidateableAttestation attestation);
 
