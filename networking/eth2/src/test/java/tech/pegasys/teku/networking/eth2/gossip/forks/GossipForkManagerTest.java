@@ -135,6 +135,27 @@ class GossipForkManagerTest {
   }
 
   @Test
+  void shouldResubscribeAfterStopping() {
+    final GossipForkSubscriptions currentForkSubscriptions = forkAtEpoch(0);
+    final GossipForkSubscriptions nextForkSubscriptions = forkAtEpoch(5);
+    final GossipForkSubscriptions laterForkSubscriptions = forkAtEpoch(10);
+    final GossipForkManager manager =
+        managerForForks(currentForkSubscriptions, nextForkSubscriptions, laterForkSubscriptions);
+    manager.configureGossipForEpoch(UInt64.valueOf(3));
+    verify(currentForkSubscriptions, times(1)).startGossip(any(), anyBoolean());
+    verify(nextForkSubscriptions, times(1)).startGossip(any(), anyBoolean());
+
+    manager.stopGossip();
+
+    verify(currentForkSubscriptions).stopGossip();
+    verify(nextForkSubscriptions).stopGossip();
+
+    manager.configureGossipForEpoch(UInt64.valueOf(3));
+    verify(currentForkSubscriptions, times(2)).startGossip(any(), anyBoolean());
+    verify(nextForkSubscriptions, times(2)).startGossip(any(), anyBoolean());
+  }
+
+  @Test
   void shouldStopForkTwoEpochsAfterTheNextOneActivates() {
     final GossipForkSubscriptions genesisFork = forkAtEpoch(0);
     final GossipForkSubscriptions newFork = forkAtEpoch(5);
