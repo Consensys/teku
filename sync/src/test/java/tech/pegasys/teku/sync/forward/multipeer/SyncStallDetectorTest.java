@@ -30,6 +30,8 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -37,7 +39,8 @@ import tech.pegasys.teku.sync.forward.multipeer.batches.Batch;
 import tech.pegasys.teku.sync.forward.multipeer.batches.SyncSourceBatch;
 
 class SyncStallDetectorTest {
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final Spec spec = TestSpecFactory.createDefault();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private final InlineEventThread eventThread = new InlineEventThread();
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(1000);
@@ -49,7 +52,7 @@ class SyncStallDetectorTest {
 
   private final SyncStallDetector detector =
       new SyncStallDetector(
-          eventThread, asyncRunner, timeProvider, syncController, sync, recentChainData);
+          spec, eventThread, asyncRunner, timeProvider, syncController, sync, recentChainData);
 
   @BeforeEach
   void setUp() {

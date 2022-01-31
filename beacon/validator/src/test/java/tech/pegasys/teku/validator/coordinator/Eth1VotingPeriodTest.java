@@ -60,9 +60,7 @@ class Eth1VotingPeriodTest {
 
   @BeforeAll
   static void setConstants() {
-    Constants.EPOCHS_PER_ETH1_VOTING_PERIOD = 1;
     Constants.SLOTS_PER_EPOCH = 6;
-    Constants.SECONDS_PER_SLOT = 4;
   }
 
   @AfterAll

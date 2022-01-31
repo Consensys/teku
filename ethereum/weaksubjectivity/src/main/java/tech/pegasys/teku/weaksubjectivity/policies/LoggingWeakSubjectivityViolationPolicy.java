@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.weaksubjectivity.policies;
 
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -38,10 +36,9 @@ class LoggingWeakSubjectivityViolationPolicy implements WeakSubjectivityViolatio
 
   @Override
   public void onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
+      final UInt64 currentEpoch,
       final CheckpointState latestFinalizedCheckpoint,
-      final UInt64 currentSlot,
       final UInt64 wsPeriod) {
-    final UInt64 currentEpoch = compute_epoch_at_slot(currentSlot);
     LOG.log(
         level,
         "The latest finalized checkpoint at epoch {} fell outside of the weak subjectivity period after epoch {}, which is prior to the current epoch {}.",

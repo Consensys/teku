@@ -23,7 +23,6 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.sync.forward.multipeer.BatchImporter.BatchImportResult.IMPORTED_ALL_BLOCKS;
 import static tech.pegasys.teku.sync.forward.multipeer.BatchImporter.BatchImportResult.IMPORT_FAILED;
 import static tech.pegasys.teku.sync.forward.multipeer.batches.BatchAssert.assertThatBatch;
@@ -38,6 +37,8 @@ import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -53,7 +54,8 @@ import tech.pegasys.teku.sync.forward.multipeer.chains.TargetChains;
 
 class BatchSyncTest {
   private final UInt64 BATCH_SIZE = UInt64.valueOf(25);
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final Spec spec = TestSpecFactory.createDefault();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final InlineEventThread eventThread = new InlineEventThread();
 
   private final StorageSystem storageSystem =
@@ -91,7 +93,7 @@ class BatchSyncTest {
     when(commonAncestor.findCommonAncestor(any()))
         .thenAnswer(
             invocation ->
-                completedFuture(compute_start_slot_at_epoch(recentChainData.getFinalizedEpoch())));
+                completedFuture(spec.computeStartSlotAtEpoch(recentChainData.getFinalizedEpoch())));
   }
 
   @Test

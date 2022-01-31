@@ -22,8 +22,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.util.config.Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE;
 
 import java.util.ArrayList;
@@ -48,15 +46,15 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.util.config.Constants;
 
 public class PeerSyncTest extends AbstractSyncTest {
 
-  private static final SignedBeaconBlock BLOCK = new DataStructureUtil().randomSignedBeaconBlock(1);
   private static final Bytes32 PEER_HEAD_BLOCK_ROOT = Bytes32.fromHexString("0x1234");
   private static final UInt64 PEER_HEAD_SLOT = UInt64.valueOf(30);
   private static final UInt64 PEER_FINALIZED_EPOCH = UInt64.valueOf(3);
+
+  private final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
+  private final int slotsPerEpoch = spec.getGenesisSpecConfig().getSlotsPerEpoch();
 
   private static final PeerStatus PEER_STATUS =
       PeerStatus.fromStatusMessage(
@@ -122,7 +120,7 @@ public class PeerSyncTest extends AbstractSyncTest {
 
   void testFailedBlockImport(
       final Supplier<BlockImportResult> importResult, final boolean shouldDisconnect) {
-    testFailedBlockImport(importResult, shouldDisconnect, BLOCK);
+    testFailedBlockImport(importResult, shouldDisconnect, block);
   }
 
   void testFailedBlockImport(
@@ -189,7 +187,7 @@ public class PeerSyncTest extends AbstractSyncTest {
     peerSync.stop();
 
     try {
-      responseListener.onResponse(BLOCK).join();
+      responseListener.onResponse(block).join();
       fail("Should have thrown an error to indicate the sync was stopped");
     } catch (final CancellationException e) {
       // RpcMessageHandler will consider the request complete if there's an error processing a
@@ -396,7 +394,7 @@ public class PeerSyncTest extends AbstractSyncTest {
 
     // first non-finalized slot after syncing with peer
     final UInt64 secondSyncStartingSlot =
-        PEER_FINALIZED_EPOCH.times(Constants.SLOTS_PER_EPOCH).plus(UInt64.ONE);
+        PEER_FINALIZED_EPOCH.times(slotsPerEpoch).plus(UInt64.ONE);
 
     verify(peer)
         .requestBlocksByRange(
@@ -422,7 +420,7 @@ public class PeerSyncTest extends AbstractSyncTest {
   void sync_failSyncIfPeerThrottlesTooAggressively() {
     final UInt64 startSlot = UInt64.ONE;
     UInt64 minPeerSlot = MAX_BLOCK_BY_RANGE_REQUEST_SIZE.plus(startSlot);
-    withPeerFinalizedEpoch(compute_epoch_at_slot(minPeerSlot));
+    withPeerFinalizedEpoch(spec.computeEpochAtSlot(minPeerSlot));
 
     final List<SafeFuture<Void>> requestFutures = new ArrayList<>();
     OngoingStubbing<SafeFuture<Void>> requestStub =
@@ -549,8 +547,7 @@ public class PeerSyncTest extends AbstractSyncTest {
   }
 
   private void withPeerFinalizedEpoch(final UInt64 finalizedEpoch) {
-    final UInt64 headSlot =
-        compute_start_slot_at_epoch(finalizedEpoch).plus(2 * Constants.SLOTS_PER_EPOCH);
+    final UInt64 headSlot = spec.computeStartSlotAtEpoch(finalizedEpoch).plus(2 * slotsPerEpoch);
     final PeerStatus peer_status =
         PeerStatus.fromStatusMessage(
             new StatusMessage(

@@ -72,6 +72,9 @@ class ConstantsReader {
           "DOMAIN_SELECTION_PROOF",
           "DOMAIN_AGGREGATE_AND_PROOF",
           // Removed from Constants (only available through SpecConfig)
+          "DEPOSIT_CHAIN_ID",
+          "SECONDS_PER_SLOT",
+          "EPOCHS_PER_ETH1_VOTING_PERIOD",
           "MIN_GENESIS_TIME",
           "GENESIS_DELAY",
           "MIN_GENESIS_ACTIVE_VALIDATOR_COUNT",
