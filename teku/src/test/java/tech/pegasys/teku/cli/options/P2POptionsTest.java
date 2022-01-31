@@ -231,7 +231,7 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(
             getTekuConfigurationFromArguments("--p2p-private-key-file", "   ")
                 .network()
-                .getPrivateKeyFile())
+                .getPrivateKeySource())
         .isEmpty();
   }
 
