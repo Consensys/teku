@@ -97,7 +97,7 @@ public class ProposerConfigProviderTest {
   }
 
   @Test
-  void getProposerConfig_onConcurrentCallsShouldMergeFuturesWhenNoLastConfigAvailable() {
+  void getProposerConfig_onConcurrentCallsShouldMergeFutures() {
     SafeFuture<Optional<ProposerConfig>> futureMaybeConfig =
         proposerConfigProvider.getProposerConfig();
 
@@ -110,28 +110,6 @@ public class ProposerConfigProviderTest {
     asyncRunner.executeQueuedActions();
 
     assertThat(futureMaybeConfig).isCompletedWithValue(Optional.of(proposerConfigA));
-  }
-
-  @Test
-  void getProposerConfig_onConcurrentCallsShouldReturnLastConfigWhenLastConfigAvailable() {
-    SafeFuture<Optional<ProposerConfig>> futureMaybeConfig =
-        proposerConfigProvider.getProposerConfig();
-
-    when(proposerConfigLoader.getProposerConfig(sourceUrl)).thenReturn(proposerConfigA);
-    asyncRunner.executeQueuedActions();
-
-    assertThat(futureMaybeConfig).isCompletedWithValue(Optional.of(proposerConfigA));
-
-    futureMaybeConfig = proposerConfigProvider.getProposerConfig();
-    SafeFuture<Optional<ProposerConfig>> futureMaybeConfig2 =
-        proposerConfigProvider.getProposerConfig();
-
-    assertThat(futureMaybeConfig2).isCompletedWithValue(Optional.of(proposerConfigA));
-
-    when(proposerConfigLoader.getProposerConfig(sourceUrl)).thenReturn(proposerConfigB);
-    asyncRunner.executeQueuedActions();
-
-    assertThat(futureMaybeConfig).isCompletedWithValue(Optional.of(proposerConfigB));
   }
 
   @Test

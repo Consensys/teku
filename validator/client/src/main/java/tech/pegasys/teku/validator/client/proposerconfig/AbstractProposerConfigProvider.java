@@ -47,10 +47,8 @@ public abstract class AbstractProposerConfigProvider implements ProposerConfigPr
     }
 
     if (futureProposerConfig.isPresent()) {
-      if (lastProposerConfig.isPresent()) {
-        LOG.warn("A proposer config load is in progress, providing last loaded config");
-        return SafeFuture.completedFuture(lastProposerConfig);
-      }
+      LOG.warn(
+          "A proposer config load is already progress, waiting it instead of generating a new request");
       return futureProposerConfig.get();
     }
     futureProposerConfig =
