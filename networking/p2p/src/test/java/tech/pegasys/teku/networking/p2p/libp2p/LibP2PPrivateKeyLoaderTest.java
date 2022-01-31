@@ -25,6 +25,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.network.p2p.jvmlibp2p.PrivateKeyGenerator;
+import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.PrivateKeySource;
 import tech.pegasys.teku.storage.store.MemKeyValueStore;
 
 public class LibP2PPrivateKeyLoaderTest {
@@ -54,15 +55,14 @@ public class LibP2PPrivateKeyLoaderTest {
   }
 
   @Test
-  void testPrivateKeyLoaded(@TempDir final Path tmpDir) throws IOException {
+  void testPrivateKeyLoaded() {
     // check that user supplied private key file has precedence over generated file
-    Path customPKFile = tmpDir.resolve("customPK.hex");
     final PrivKey privKey = PrivateKeyGenerator.generate();
     final Bytes privKeyBytes = Bytes.wrap(privKey.bytes());
-    Files.writeString(customPKFile, privKeyBytes.toHexString());
+    PrivateKeySource privKeySource = () -> privKeyBytes;
 
     final LibP2PPrivateKeyLoader loader =
-        new LibP2PPrivateKeyLoader(store, Optional.of(customPKFile.toAbsolutePath().toString()));
+        new LibP2PPrivateKeyLoader(store, Optional.of(privKeySource));
     assertThat(loader.get()).isEqualTo(privKey);
   }
 

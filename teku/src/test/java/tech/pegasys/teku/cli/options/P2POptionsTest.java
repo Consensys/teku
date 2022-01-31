@@ -24,6 +24,7 @@ import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
+import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.FilePrivateKeySource;
 
 public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
@@ -46,7 +47,9 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(networkConfig.getAdvertisedIp()).isEqualTo("127.200.0.1");
     assertThat(networkConfig.getNetworkInterface()).isEqualTo("127.100.0.1");
     assertThat(networkConfig.getListenPort()).isEqualTo(4321);
-    assertThat(networkConfig.getPrivateKeyFile()).contains("/the/file");
+    assertThat(networkConfig.getPrivateKeySource()).containsInstanceOf(FilePrivateKeySource.class);
+    assertThat(((FilePrivateKeySource) networkConfig.getPrivateKeySource().get()).getFileName())
+        .isEqualTo("/the/file");
   }
 
   @Test
@@ -213,7 +216,11 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   public void privateKeyFile_shouldBeSettable() {
     TekuConfiguration tekuConfiguration =
         getTekuConfigurationFromArguments("--p2p-private-key-file", "/some/file");
-    assertThat(tekuConfiguration.network().getPrivateKeyFile()).contains("/some/file");
+    assertThat(tekuConfiguration.network().getPrivateKeySource())
+        .containsInstanceOf(FilePrivateKeySource.class);
+    assertThat(((FilePrivateKeySource) tekuConfiguration.network().getPrivateKeySource().get())
+        .getFileName())
+        .isEqualTo("/some/file");
     assertThat(createConfigBuilder().network(b -> b.privateKeyFile("/some/file")).build())
         .usingRecursiveComparison()
         .isEqualTo(tekuConfiguration);
