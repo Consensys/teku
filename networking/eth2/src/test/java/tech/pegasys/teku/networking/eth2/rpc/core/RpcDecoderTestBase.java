@@ -14,7 +14,7 @@
 package tech.pegasys.teku.networking.eth2.rpc.core;
 
 import static org.mockito.Mockito.mock;
-import static tech.pegasys.teku.util.config.Constants.MAX_CHUNK_SIZE;
+import static tech.pegasys.teku.spec.config.Constants.MAX_CHUNK_SIZE;
 
 import io.netty.buffer.ByteBuf;
 import java.nio.charset.StandardCharsets;

@@ -16,8 +16,8 @@ package tech.pegasys.teku.networking.eth2;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static tech.pegasys.teku.util.config.Constants.MAX_CHUNK_SIZE;
-import static tech.pegasys.teku.util.config.Constants.MAX_CHUNK_SIZE_BELLATRIX;
+import static tech.pegasys.teku.spec.config.Constants.MAX_CHUNK_SIZE;
+import static tech.pegasys.teku.spec.config.Constants.MAX_CHUNK_SIZE_BELLATRIX;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -61,6 +61,7 @@ import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -74,7 +75,6 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.KeyValueStore;
-import tech.pegasys.teku.util.config.Constants;
 
 /**
  * CAUTION: this API is unstable and primarily intended for debugging and testing purposes this API

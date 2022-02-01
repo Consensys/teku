@@ -18,7 +18,7 @@ import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBytes32VectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.util.config.SpecDependent;
 
 public class HistoricalBatch

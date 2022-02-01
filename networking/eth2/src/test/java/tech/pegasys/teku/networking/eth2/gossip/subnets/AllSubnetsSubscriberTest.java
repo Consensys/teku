@@ -24,8 +24,8 @@ import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
-import tech.pegasys.teku.util.config.Constants;
 
 class AllSubnetsSubscriberTest {
   private final AttestationTopicSubscriber attestationTopicSubscriber =

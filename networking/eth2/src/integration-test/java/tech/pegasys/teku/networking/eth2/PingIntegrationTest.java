@@ -30,8 +30,8 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManagerAccess;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
+import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
-import tech.pegasys.teku.util.config.Constants;
 
 public class PingIntegrationTest {
   private final Eth2P2PNetworkFactory networkFactory = new Eth2P2PNetworkFactory();

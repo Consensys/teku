@@ -28,8 +28,8 @@ import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
-import tech.pegasys.teku.util.config.Constants;
 
 @Fork(3)
 @BenchmarkMode(Mode.SingleShotTime)
@@ -44,7 +44,7 @@ public class ShuffleBenchmark {
   private final MiscHelpers miscHelpers = spec.atSlot(UInt64.ZERO).miscHelpers();
 
   public ShuffleBenchmark() {
-    Constants.setConstants("mainnet");
+    Constants.setConstants(spec);
   }
 
   @Benchmark

@@ -18,8 +18,8 @@ import java.time.Duration;
 import java.util.function.Supplier;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.util.config.Constants;
 
 class ScoringConfig {
   private static final double MAX_IN_MESH_SCORE = 10.0;

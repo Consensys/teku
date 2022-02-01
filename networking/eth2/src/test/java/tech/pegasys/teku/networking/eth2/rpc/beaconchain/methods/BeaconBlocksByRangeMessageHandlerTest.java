@@ -25,8 +25,8 @@ import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
-import static tech.pegasys.teku.util.config.Constants.MAX_CHUNK_SIZE;
-import static tech.pegasys.teku.util.config.Constants.MAX_REQUEST_BLOCKS;
+import static tech.pegasys.teku.spec.config.Constants.MAX_CHUNK_SIZE;
+import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS;
 
 import java.util.List;
 import java.util.NavigableMap;

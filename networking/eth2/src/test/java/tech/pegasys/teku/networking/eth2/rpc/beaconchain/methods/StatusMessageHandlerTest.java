@@ -18,7 +18,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageHandler.NODE_NOT_READY;
-import static tech.pegasys.teku.util.config.Constants.MAX_CHUNK_SIZE;
+import static tech.pegasys.teku.spec.config.Constants.MAX_CHUNK_SIZE;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;

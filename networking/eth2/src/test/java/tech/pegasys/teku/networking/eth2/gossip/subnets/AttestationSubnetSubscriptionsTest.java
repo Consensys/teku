@@ -22,7 +22,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
-import static tech.pegasys.teku.util.config.Constants.GOSSIP_MAX_SIZE;
+import static tech.pegasys.teku.spec.config.Constants.GOSSIP_MAX_SIZE;
 
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
