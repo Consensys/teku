@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
@@ -271,11 +272,19 @@ public class Eth2NetworkConfiguration {
     }
 
     public Builder startupTargetPeerCount(final int startupTargetPeerCount) {
+      if (startupTargetPeerCount < 0) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid startupTargetPeerCount: %d", startupTargetPeerCount));
+      }
       this.startupTargetPeerCount = startupTargetPeerCount;
       return this;
     }
 
     public Builder startupTimeoutSeconds(final int startupTimeoutSeconds) {
+      if (startupTimeoutSeconds < 0) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid startupTimeoutSeconds: %d", startupTimeoutSeconds));
+      }
       this.startupTimeoutSeconds = startupTimeoutSeconds;
       return this;
     }
@@ -318,6 +327,11 @@ public class Eth2NetworkConfiguration {
     }
 
     public Builder safeSlotsToImportOptimistically(final int safeSlotsToImportOptimistically) {
+      if (safeSlotsToImportOptimistically < 0) {
+        throw new InvalidConfigurationException(
+            String.format(
+                "Invalid safeSlotsToImportOptimistically: %d", safeSlotsToImportOptimistically));
+      }
       this.safeSlotsToImportOptimistically = safeSlotsToImportOptimistically;
       return this;
     }

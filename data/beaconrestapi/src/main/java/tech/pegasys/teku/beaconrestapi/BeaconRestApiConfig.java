@@ -17,6 +17,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.io.PortAvailability;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 public class BeaconRestApiConfig {
@@ -134,6 +136,10 @@ public class BeaconRestApiConfig {
     private BeaconRestApiConfigBuilder() {}
 
     public BeaconRestApiConfigBuilder restApiPort(final int restApiPort) {
+      if (!PortAvailability.isPortValid(restApiPort)) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid restApiPort: %d", restApiPort));
+      }
       this.restApiPort = restApiPort;
       return this;
     }
@@ -181,6 +187,10 @@ public class BeaconRestApiConfig {
     }
 
     public BeaconRestApiConfigBuilder maxPendingEvents(final int maxEventQueueSize) {
+      if (maxEventQueueSize < 0) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid maxEventQueueSize: %d", maxEventQueueSize));
+      }
       this.maxPendingEvents = maxEventQueueSize;
       return this;
     }
@@ -192,6 +202,10 @@ public class BeaconRestApiConfig {
     }
 
     public BeaconRestApiConfigBuilder validatorThreads(final int validatorThreads) {
+      if (validatorThreads < 0) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid validatorThreads: %d", validatorThreads));
+      }
       this.validatorThreads = validatorThreads;
       return this;
     }

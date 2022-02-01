@@ -33,6 +33,7 @@ import tech.pegasys.teku.cli.subcommand.internal.validator.options.KeystorePassw
 import tech.pegasys.teku.cli.subcommand.internal.validator.options.ValidatorPasswordOptions;
 import tech.pegasys.teku.cli.subcommand.internal.validator.options.WithdrawalPasswordOptions;
 import tech.pegasys.teku.infrastructure.crypto.SecureRandomProvider;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
 public class KeyGenerator {
   private static final String VALIDATOR_PASSWORD_PROMPT = "Validator Keystore";
@@ -56,6 +57,10 @@ public class KeyGenerator {
       final CommandSpec commandSpec,
       final Function<String, String> envSupplier,
       final Consumer<String> commandOutput) {
+    if (validatorCount < 0) {
+      throw new InvalidConfigurationException(
+          String.format("Invalid validatorCount: %d", validatorCount));
+    }
     this.validatorCount = validatorCount;
     this.outputPath = outputPath;
     this.validatorPasswordOptions = validatorPasswordOptions;
