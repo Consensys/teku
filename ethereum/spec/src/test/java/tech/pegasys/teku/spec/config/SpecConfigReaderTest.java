@@ -29,17 +29,10 @@ public class SpecConfigReaderTest {
   private final SpecConfigReader reader = new SpecConfigReader();
 
   @Test
-  public void read_multiFileFormat_mismatchedDuplicateFields() {
-    processFileAsInputStream(getInvalidConfigPath("multifile_dupFields/config"), this::readConfig);
-    processFileAsInputStream(
-        getInvalidConfigPath("multifile_dupFields/preset_phase0"),
-        preset -> {
-          assertThatThrownBy(() -> readConfig(preset))
-              .isInstanceOf(IllegalArgumentException.class)
-              .hasMessageContaining(
-                  "Found duplicate declarations for spec constant 'MAX_COMMITTEES_PER_SLOT' with divergent values: '12' and '64'");
-          return null;
-        });
+  public void read_multiFileFormat_overridesPresetBase() {
+      final SpecConfig config = readStandardConfigWithPreset("with-overrides");
+      assertThat(config).isNotNull();
+      assertThat(config.getMaxCommitteesPerSlot()).isEqualTo(64);
   }
 
   @Test
