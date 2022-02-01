@@ -21,14 +21,13 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
-import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 
 class ValidatorConfigTest {
 
   private final ValidatorConfig.Builder configBuilder = ValidatorConfig.builder();
 
   @Test
-  public void shouldThrowExceptionIfExternalPublicKeysAreSpecifiedWithoutExternalSignerUrl() {
+  public void shouldThrowIfExternalPublicKeysAreSpecifiedWithoutExternalSignerUrl() {
     final ValidatorConfig.Builder builder =
         configBuilder.validatorExternalSignerPublicKeySources(
             List.of(BLSTestUtil.randomKeyPair(0).getPublicKey().toString()));
@@ -39,7 +38,7 @@ class ValidatorConfigTest {
   }
 
   @Test
-  public void noExceptionThrownIfExternalSignerUrlIsSpecifiedWithoutExternalPublicKeys()
+  public void shouldNotThrowIfExternalSignerUrlIsSpecifiedWithoutExternalPublicKeys()
       throws MalformedURLException {
     final ValidatorConfig.Builder builder =
         configBuilder.validatorExternalSignerUrl(URI.create("http://localhost:9000").toURL());
@@ -47,7 +46,7 @@ class ValidatorConfigTest {
   }
 
   @Test
-  public void noExceptionThrownIfBothExternalSignerUrlAndPublicKeysAreSpecified()
+  public void shouldNotThrowIfBothExternalSignerUrlAndPublicKeysAreSpecified()
       throws MalformedURLException {
     final ValidatorConfig.Builder builder =
         configBuilder
@@ -59,7 +58,7 @@ class ValidatorConfigTest {
   }
 
   @Test
-  public void shouldThrowExceptionIfExternalSignerKeystoreSpecifiedWithoutPasswordFile() {
+  public void shouldThrowIfExternalSignerKeystoreSpecifiedWithoutPasswordFile() {
     final ValidatorConfig.Builder builder =
         configBuilder.validatorExternalSignerKeystore(Path.of("somepath"));
     Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
@@ -69,7 +68,7 @@ class ValidatorConfigTest {
   }
 
   @Test
-  public void shouldThrowExceptionIfExternalSignerKeystorePasswordFileIsSpecifiedWithoutKeystore() {
+  public void shouldThrowIfExternalSignerKeystorePasswordFileIsSpecifiedWithoutKeystore() {
     final ValidatorConfig.Builder builder =
         configBuilder.validatorExternalSignerKeystorePasswordFile(Path.of("somepath"));
     Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
@@ -79,7 +78,7 @@ class ValidatorConfigTest {
   }
 
   @Test
-  public void noExceptionThrownIfBothExternalSignerKeystoreAndPasswordFileAreSpecified() {
+  public void shouldNotThrowIfBothExternalSignerKeystoreAndPasswordFileAreSpecified() {
     final ValidatorConfig.Builder builder =
         configBuilder
             .validatorExternalSignerKeystore(Path.of("somepath"))
@@ -89,7 +88,7 @@ class ValidatorConfigTest {
   }
 
   @Test
-  public void shouldThrowExceptionIfExternalSignerTruststoreSpecifiedWithoutPasswordFile() {
+  public void shouldThrowIfExternalSignerTruststoreSpecifiedWithoutPasswordFile() {
     final ValidatorConfig.Builder builder =
         configBuilder.validatorExternalSignerTruststore(Path.of("somepath"));
     Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
@@ -99,8 +98,7 @@ class ValidatorConfigTest {
   }
 
   @Test
-  public void
-      shouldThrowExceptionIfExternalSignerTruststorePasswordFileIsSpecifiedWithoutTruststore() {
+  public void shouldThrowIfExternalSignerTruststorePasswordFileIsSpecifiedWithoutTruststore() {
     final ValidatorConfig.Builder builder =
         configBuilder.validatorExternalSignerTruststorePasswordFile(Path.of("somepath"));
     Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
@@ -110,7 +108,7 @@ class ValidatorConfigTest {
   }
 
   @Test
-  public void noExceptionThrownIfBothExternalSignerTruststoreAndPasswordFileAreSpecified() {
+  public void shouldNotThrowIfBothExternalSignerTruststoreAndPasswordFileAreSpecified() {
     final ValidatorConfig.Builder builder =
         configBuilder
             .validatorExternalSignerTruststore(Path.of("somepath"))
@@ -120,7 +118,7 @@ class ValidatorConfigTest {
   }
 
   @Test
-  public void bellatrix_shouldThrowExceptionIfExternalSignerPublicKeySourcesIsSpecified()
+  public void bellatrix_shouldThrowIfExternalSignerPublicKeySourcesIsSpecified()
       throws MalformedURLException {
     final ValidatorConfig config =
         configBuilder
@@ -129,24 +127,18 @@ class ValidatorConfigTest {
             .validatorExternalSignerUrl(URI.create("http://localhost:9000").toURL())
             .build();
 
-    Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
-        .isThrownBy(config::getProposerDefaultFeeRecipient)
-        .withMessageContaining(
-            "Invalid configuration. --Xvalidators-proposer-default-fee-recipient must be specified when Bellatrix milestone is active");
+    verifyProposerConfigOrProposerDefaultFeeRecipientThrow(config);
   }
 
   @Test
-  public void bellatrix_shouldThrowExceptionIfValidatorKeysAreSpecified() {
+  public void bellatrix_shouldThrowIfValidatorKeysAreSpecified() {
     final ValidatorConfig config = configBuilder.validatorKeys(List.of("some string")).build();
 
-    Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
-        .isThrownBy(config::getProposerDefaultFeeRecipient)
-        .withMessageContaining(
-            "Invalid configuration. --Xvalidators-proposer-default-fee-recipient must be specified when Bellatrix milestone is active");
+    verifyProposerConfigOrProposerDefaultFeeRecipientThrow(config);
   }
 
   @Test
-  public void bellatrix_noExceptionThrownIfIfExternalSignerPublicKeySourcesIsSpecified()
+  public void bellatrix_shouldNotThrowIfValidationIsActiveAndDefaultFeeRecipientIsSpecified()
       throws MalformedURLException {
     final ValidatorConfig config =
         configBuilder
@@ -156,18 +148,37 @@ class ValidatorConfigTest {
             .proposerDefaultFeeRecipient("0x0000000000000000000000000000000000000000")
             .build();
 
-    Assertions.assertThatCode(config::getProposerDefaultFeeRecipient).doesNotThrowAnyException();
+    verifyProposerConfigOrProposerDefaultFeeRecipientNotThrow(config);
   }
 
   @Test
-  public void bellatrix_noExceptionThrownIfIfValidatorKeysAreSpecified() {
+  public void bellatrix_shouldNotThrowIfValidationIsActiveAndProposerConfigSourceIsSpecified()
+      throws MalformedURLException {
     final ValidatorConfig config =
         configBuilder
-            .validatorKeys(List.of("some string"))
-            .proposerDefaultFeeRecipient(
-                Eth1Address.fromHexString("0x0000000000000000000000000000000000000000"))
+            .validatorExternalSignerPublicKeySources(
+                List.of(BLSTestUtil.randomKeyPair(0).getPublicKey().toString()))
+            .validatorExternalSignerUrl(URI.create("http://localhost:9000").toURL())
+            .proposerConfigSource("some path")
             .build();
 
+    verifyProposerConfigOrProposerDefaultFeeRecipientNotThrow(config);
+  }
+
+  void verifyProposerConfigOrProposerDefaultFeeRecipientNotThrow(final ValidatorConfig config) {
     Assertions.assertThatCode(config::getProposerDefaultFeeRecipient).doesNotThrowAnyException();
+    Assertions.assertThatCode(config::getProposerConfigSource).doesNotThrowAnyException();
+  }
+
+  void verifyProposerConfigOrProposerDefaultFeeRecipientThrow(final ValidatorConfig config) {
+    verifyProposerConfigOrProposerDefaultFeeRecipientThrow(config::getProposerDefaultFeeRecipient);
+    verifyProposerConfigOrProposerDefaultFeeRecipientThrow(config::getProposerConfigSource);
+  }
+
+  void verifyProposerConfigOrProposerDefaultFeeRecipientThrow(final Runnable task) {
+    Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
+        .isThrownBy(task::run)
+        .withMessageContaining(
+            "Invalid configuration. --Xvalidators-proposer-default-fee-recipient or --Xvalidators-proposer-config must be specified when Bellatrix milestone is active");
   }
 }
