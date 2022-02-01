@@ -29,7 +29,7 @@ public class SpecConfigReaderTest {
   private final SpecConfigReader reader = new SpecConfigReader();
 
   @Test
-  public void read_multiFileFormat_overridesPresetBase() {
+  public void read_mainnet_allowsOverridingPresetBase() {
       final SpecConfig config = readStandardConfigWithPreset("with-overrides");
       assertThat(config).isNotNull();
       assertThat(config.getMaxCommitteesPerSlot()).isEqualTo(64);
