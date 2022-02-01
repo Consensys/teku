@@ -14,7 +14,6 @@
 package tech.pegasys.teku.reference.phase0.forkchoice;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 
 import com.google.common.collect.ImmutableMap;
 import java.nio.ByteOrder;
@@ -49,7 +48,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionengine.StubExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
-import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
@@ -97,7 +96,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
 
     final ForkChoice forkChoice =
         new ForkChoice(
-            spec, new InlineEventThread(), recentChainData, mock(ForkChoiceNotifier.class), true);
+            spec, new InlineEventThread(), recentChainData, new StubForkChoiceNotifier(), true);
     final StubExecutionEngineChannel executionEngine = new StubExecutionEngineChannel(spec);
 
     runSteps(testDefinition, spec, recentChainData, forkChoice, executionEngine);

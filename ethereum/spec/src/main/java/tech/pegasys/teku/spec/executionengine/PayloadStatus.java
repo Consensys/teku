@@ -18,39 +18,39 @@ import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 
-public class ExecutePayloadResult {
-  public static final ExecutePayloadResult VALID =
-      new ExecutePayloadResult(
+public class PayloadStatus {
+  public static final PayloadStatus VALID =
+      new PayloadStatus(
           Optional.of(ExecutionPayloadStatus.VALID),
           Optional.empty(),
           Optional.empty(),
           Optional.empty());
-  public static final ExecutePayloadResult SYNCING =
-      new ExecutePayloadResult(
+  public static final PayloadStatus SYNCING =
+      new PayloadStatus(
           Optional.of(ExecutionPayloadStatus.SYNCING),
           Optional.empty(),
           Optional.empty(),
           Optional.empty());
 
-  public static ExecutePayloadResult failedExecution(final Throwable cause) {
-    return new ExecutePayloadResult(
+  public static PayloadStatus failedExecution(final Throwable cause) {
+    return new PayloadStatus(
         Optional.empty(), Optional.empty(), Optional.empty(), Optional.of(cause));
   }
 
-  public static ExecutePayloadResult invalid(
+  public static PayloadStatus invalid(
       Optional<Bytes32> latestValidHash, Optional<String> validationError) {
-    return new ExecutePayloadResult(
+    return new PayloadStatus(
         Optional.of(ExecutionPayloadStatus.INVALID),
         latestValidHash,
         validationError,
         Optional.empty());
   }
 
-  public static ExecutePayloadResult create(
+  public static PayloadStatus create(
       ExecutionPayloadStatus status,
       Optional<Bytes32> latestValidHash,
       Optional<String> validationError) {
-    return new ExecutePayloadResult(
+    return new PayloadStatus(
         Optional.of(status), latestValidHash, validationError, Optional.empty());
   }
 
@@ -59,7 +59,7 @@ public class ExecutePayloadResult {
   private final Optional<String> validationError;
   private final Optional<Throwable> failureCause;
 
-  private ExecutePayloadResult(
+  private PayloadStatus(
       Optional<ExecutionPayloadStatus> status,
       Optional<Bytes32> latestValidHash,
       Optional<String> validationError,
@@ -86,6 +86,18 @@ public class ExecutePayloadResult {
     return this.status.map(s -> s == status).orElse(false);
   }
 
+  public boolean hasValidStatus() {
+    return this.status.map(ExecutionPayloadStatus::isValid).orElse(false);
+  }
+
+  public boolean hasNotValidatedStatus() {
+    return this.status.map(ExecutionPayloadStatus::isNotValidated).orElse(false);
+  }
+
+  public boolean hasInvalidStatus() {
+    return this.status.map(ExecutionPayloadStatus::isInvalid).orElse(false);
+  }
+
   public Optional<Bytes32> getLatestValidHash() {
     return latestValidHash;
   }
@@ -98,7 +110,7 @@ public class ExecutePayloadResult {
   public boolean equals(final Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    final ExecutePayloadResult that = (ExecutePayloadResult) o;
+    final PayloadStatus that = (PayloadStatus) o;
     return Objects.equals(status, that.status)
         && Objects.equals(latestValidHash, that.latestValidHash)
         && Objects.equals(validationError, that.validationError);

@@ -23,8 +23,9 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.executionlayer.client.serialization.Bytes32Deserializer;
 import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
+import tech.pegasys.teku.spec.executionengine.PayloadStatus;
 
-public class ExecutePayloadResult {
+public class PayloadStatusV1 {
   private final ExecutionPayloadStatus status;
 
   @JsonDeserialize(using = Bytes32Deserializer.class)
@@ -32,18 +33,18 @@ public class ExecutePayloadResult {
 
   private final String validationError;
 
-  public ExecutePayloadResult(
+  public PayloadStatusV1(
       @JsonProperty("status") ExecutionPayloadStatus status,
       @JsonProperty("latestValidHash") Bytes32 latestValidHash,
       @JsonProperty("validationError") String validationError) {
-    checkNotNull(status, "status");
+    checkNotNull(status, "status cannot be null");
     this.status = status;
     this.latestValidHash = latestValidHash;
     this.validationError = validationError;
   }
 
-  public tech.pegasys.teku.spec.executionengine.ExecutePayloadResult asInternalExecutionPayload() {
-    return tech.pegasys.teku.spec.executionengine.ExecutePayloadResult.create(
+  public PayloadStatus asInternalExecutionPayload() {
+    return PayloadStatus.create(
         status, Optional.ofNullable(latestValidHash), Optional.ofNullable(validationError));
   }
 
@@ -51,7 +52,7 @@ public class ExecutePayloadResult {
   public boolean equals(final Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    final ExecutePayloadResult that = (ExecutePayloadResult) o;
+    final PayloadStatusV1 that = (PayloadStatusV1) o;
     return Objects.equals(status, that.status)
         && Objects.equals(latestValidHash, that.latestValidHash)
         && Objects.equals(validationError, that.validationError);

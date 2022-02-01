@@ -130,7 +130,7 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
             payload.getParentHash(),
             payload.getFeeRecipient(),
             payload.getStateRoot(),
-            payload.getReceiptRoot(),
+            payload.getReceiptsRoot(),
             payload.getLogsBloom(),
             payload.getRandom(),
             payload.getBlockNumber(),
