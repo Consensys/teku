@@ -55,10 +55,11 @@ public class WeakSubjectivityValidator {
     this.violationPolicy = violationPolicy;
     this.config = config;
 
-    final int throttlingPeriod = 20;
+    final int throttlingPeriodEpochs = 1;
     final WeakSubjectivityLogger wsLogger = WeakSubjectivityLogger.createFileLogger();
-    this.wsChecksSuppressedLogger = new Throttler<>(wsLogger, UInt64.valueOf(throttlingPeriod));
-    this.deferValidationLogger = new Throttler<>(wsLogger, UInt64.valueOf(throttlingPeriod));
+    this.wsChecksSuppressedLogger =
+        new Throttler<>(wsLogger, UInt64.valueOf(throttlingPeriodEpochs));
+    this.deferValidationLogger = new Throttler<>(wsLogger, UInt64.valueOf(throttlingPeriodEpochs));
   }
 
   public static WeakSubjectivityValidator strict(final WeakSubjectivityConfig config) {
@@ -215,7 +216,7 @@ public class WeakSubjectivityValidator {
       final CheckpointState latestFinalizedCheckpoint, final UInt64 currentSlot) {
     final UInt64 wsPeriod = calculator.computeWeakSubjectivityPeriod(latestFinalizedCheckpoint);
     violationPolicy.onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
-        latestFinalizedCheckpoint, currentSlot, wsPeriod);
+        spec.computeEpochAtSlot(currentSlot), latestFinalizedCheckpoint, wsPeriod);
   }
 
   private void handleInconsistentWsCheckpoint(final SignedBeaconBlock inconsistentBlock) {

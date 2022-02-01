@@ -123,23 +123,8 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
 
   private synchronized void startup() {
     state.set(State.RUNNING);
-    queueGossipStart();
-  }
-
-  private void queueGossipStart() {
-    LOG.debug("Check if gossip should be started");
-    final UInt64 slotsBehind = recentChainData.getChainHeadSlotsBehind().orElseThrow();
-    if (slotsBehind.isLessThanOrEqualTo(500)) {
-      // Start gossip if we're "close enough" to the chain head
-      // Note: we don't want to be too strict here, otherwise we could end up with our sync logic
-      // inactive because our chain is almost caught up to the chainhead, but gossip inactive so
-      // that our node slowly falls behind because no gossip is propagating.  However, if we're too
-      // aggressive, our node could be down-scored for subscribing to topics that it can't yet
-      // validate or propagate.
+    if (isCloseToInSync()) {
       startGossip();
-    } else {
-      // Schedule a future check
-      asyncRunner.runAfterDelay(this::queueGossipStart, Duration.ofSeconds(10)).reportExceptions();
     }
   }
 
@@ -162,6 +147,29 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     eventChannels.subscribe(BlockGossipChannel.class, gossipForkManager::publishBlock);
 
     setTopicScoringParams();
+  }
+
+  @Override
+  public void onSyncStateChanged(final boolean isInSync, final boolean isOptimistic) {
+    if (state.get() != State.RUNNING) {
+      return;
+    }
+    if (isInSync || isCloseToInSync()) {
+      startGossip();
+    } else {
+      if (gossipStarted.compareAndSet(true, false)) {
+        LOG.warn("Stopping eth2 gossip while node is syncing");
+        gossipForkManager.stopGossip();
+      }
+    }
+    gossipForkManager.onOptimisticHeadChanged(isOptimistic);
+  }
+
+  private boolean isCloseToInSync() {
+    return recentChainData
+        .getChainHeadSlotsBehind()
+        .orElse(UInt64.MAX_VALUE)
+        .isLessThanOrEqualTo(500);
   }
 
   private void setTopicScoringParams() {

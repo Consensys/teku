@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.sync.forward.multipeer;
 
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-
 import com.google.common.base.MoreObjects;
 import java.time.Duration;
 import java.util.Optional;
@@ -28,6 +26,7 @@ import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.forward.multipeer.batches.Batch;
@@ -41,6 +40,7 @@ public class SyncStallDetector extends Service {
   static final int MAX_SECONDS_BETWEEN_IMPORTS = 180;
   static final int MAX_SECONDS_BETWEEN_IMPORT_PROGRESS = 180;
 
+  private final Spec spec;
   private final EventThread eventThread;
   private final AsyncRunner asyncRunner;
   private final TimeProvider timeProvider;
@@ -52,12 +52,14 @@ public class SyncStallDetector extends Service {
   private final RecentChainData recentChainData;
 
   public SyncStallDetector(
+      final Spec spec,
       final EventThread eventThread,
       final AsyncRunner asyncRunner,
       final TimeProvider timeProvider,
       final SyncController syncController,
       final BatchSync sync,
       final RecentChainData recentChainData) {
+    this.spec = spec;
     this.eventThread = eventThread;
     this.asyncRunner = asyncRunner;
     this.timeProvider = timeProvider;
@@ -158,7 +160,7 @@ public class SyncStallDetector extends Service {
         if (!recentChainData.containsBlock(block.getRoot())
             && !recentChainData
                 .getFinalizedEpoch()
-                .isGreaterThanOrEqualTo(compute_epoch_at_slot(block.getSlot()))) {
+                .isGreaterThanOrEqualTo(spec.computeEpochAtSlot(block.getSlot()))) {
           return lastImportedBlock;
         }
         lastImportedBlock = Optional.of(block.getRoot());

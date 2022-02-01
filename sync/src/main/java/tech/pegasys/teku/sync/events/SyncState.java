@@ -16,6 +16,7 @@ package tech.pegasys.teku.sync.events;
 public enum SyncState {
   START_UP,
   SYNCING,
+  OPTIMISTIC_SYNCING,
   IN_SYNC;
 
   public boolean isInSync() {
@@ -27,6 +28,10 @@ public enum SyncState {
   }
 
   public boolean isSyncing() {
-    return this == SYNCING;
+    return this == SYNCING || this == OPTIMISTIC_SYNCING;
+  }
+
+  public boolean isOptimistic() {
+    return this == OPTIMISTIC_SYNCING;
   }
 }

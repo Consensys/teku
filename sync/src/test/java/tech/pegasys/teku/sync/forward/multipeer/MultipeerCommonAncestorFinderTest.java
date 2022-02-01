@@ -18,7 +18,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.sync.forward.multipeer.chains.TargetChainTestUtil.chainWith;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -38,18 +37,18 @@ import tech.pegasys.teku.sync.forward.singlepeer.CommonAncestor;
 
 class MultipeerCommonAncestorFinderTest {
 
+  private static final UInt64 FINALIZED_EPOCH = UInt64.valueOf(10);
+  final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final CommonAncestor commonAncestor = mock(CommonAncestor.class);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final InlineEventThread eventThread = new InlineEventThread();
   private final SyncSource syncSource1 = new StubSyncSource();
   private final SyncSource syncSource2 = new StubSyncSource();
-  final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private final UInt64 finalizedSlot = spec.computeStartSlotAtEpoch(FINALIZED_EPOCH);
 
   private final MultipeerCommonAncestorFinder commonAncestorFinder =
       new MultipeerCommonAncestorFinder(recentChainData, commonAncestor, eventThread, spec);
-  private static final UInt64 FINALIZED_EPOCH = UInt64.valueOf(10);
-  private static final UInt64 FINALIZED_SLOT = compute_start_slot_at_epoch(FINALIZED_EPOCH);
 
   @BeforeEach
   void setUp() {
@@ -62,7 +61,7 @@ class MultipeerCommonAncestorFinderTest {
         chainWith(new SlotAndBlockRoot(UInt64.valueOf(10_000), dataStructureUtil.randomBytes32()));
 
     final SafeFuture<UInt64> result = findCommonAncestor(chain);
-    assertThat(result).isCompletedWithValue(FINALIZED_SLOT);
+    assertThat(result).isCompletedWithValue(finalizedSlot);
   }
 
   @Test
@@ -78,7 +77,7 @@ class MultipeerCommonAncestorFinderTest {
     assertThat(result).isNotDone();
 
     verify(commonAncestor)
-        .getCommonAncestor(syncSource1, FINALIZED_SLOT, chain.getChainHead().getSlot());
+        .getCommonAncestor(syncSource1, finalizedSlot, chain.getChainHead().getSlot());
 
     final UInt64 expected = UInt64.valueOf(4243);
     source1CommonAncestor.complete(expected);
@@ -102,10 +101,10 @@ class MultipeerCommonAncestorFinderTest {
     assertThat(result).isNotDone();
 
     verify(commonAncestor)
-        .getCommonAncestor(syncSource1, FINALIZED_SLOT, chain.getChainHead().getSlot());
+        .getCommonAncestor(syncSource1, finalizedSlot, chain.getChainHead().getSlot());
 
     verify(commonAncestor)
-        .getCommonAncestor(syncSource2, FINALIZED_SLOT, chain.getChainHead().getSlot());
+        .getCommonAncestor(syncSource2, finalizedSlot, chain.getChainHead().getSlot());
 
     final UInt64 expected = UInt64.valueOf(4243);
     source1CommonAncestor.complete(expected);
@@ -132,16 +131,16 @@ class MultipeerCommonAncestorFinderTest {
     assertThat(result).isNotDone();
 
     verify(commonAncestor)
-        .getCommonAncestor(syncSource1, FINALIZED_SLOT, chain.getChainHead().getSlot());
+        .getCommonAncestor(syncSource1, finalizedSlot, chain.getChainHead().getSlot());
 
     verify(commonAncestor)
-        .getCommonAncestor(syncSource2, FINALIZED_SLOT, chain.getChainHead().getSlot());
+        .getCommonAncestor(syncSource2, finalizedSlot, chain.getChainHead().getSlot());
 
     source1CommonAncestor.complete(UInt64.valueOf(4243));
     assertThat(result).isNotDone();
 
     source2CommonAncestor.complete(UInt64.valueOf(4355));
-    assertThat(result).isCompletedWithValue(FINALIZED_SLOT);
+    assertThat(result).isCompletedWithValue(finalizedSlot);
   }
 
   @Test
@@ -161,14 +160,14 @@ class MultipeerCommonAncestorFinderTest {
     assertThat(result).isNotDone();
 
     verify(commonAncestor)
-        .getCommonAncestor(syncSource1, FINALIZED_SLOT, chain.getChainHead().getSlot());
+        .getCommonAncestor(syncSource1, finalizedSlot, chain.getChainHead().getSlot());
 
     verify(commonAncestor)
-        .getCommonAncestor(syncSource2, FINALIZED_SLOT, chain.getChainHead().getSlot());
+        .getCommonAncestor(syncSource2, finalizedSlot, chain.getChainHead().getSlot());
 
     source1CommonAncestor.completeExceptionally(new RuntimeException("Doh!"));
     source2CommonAncestor.complete(UInt64.valueOf(1485));
-    assertThat(result).isCompletedWithValue(FINALIZED_SLOT);
+    assertThat(result).isCompletedWithValue(finalizedSlot);
   }
 
   private SafeFuture<UInt64> findCommonAncestor(final TargetChain chain) {

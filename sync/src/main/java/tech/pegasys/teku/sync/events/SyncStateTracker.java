@@ -103,7 +103,9 @@ public class SyncStateTracker extends Service
 
   private void updateCurrentState() {
     final SyncState previousState = currentState;
-    if (syncActive || headIsOptimistic) {
+    if (headIsOptimistic) {
+      currentState = SyncState.OPTIMISTIC_SYNCING;
+    } else if (syncActive) {
       currentState = SyncState.SYNCING;
     } else if (startingUp) {
       currentState = SyncState.START_UP;

@@ -18,7 +18,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.reference.phase0.ssz_generic.containers.UInt16PrimitiveSchema.UINT16_SCHEMA;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.List;
+import org.apache.tuweni.units.bigints.UInt256;
 import org.opentest4j.TestAbortedException;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
@@ -63,6 +65,9 @@ public class SszGenericBasicVectorTestExecutor extends AbstractSszGenericTestExe
       case "uint8":
         // Java will treat the byte as a signed byte so unsigned value to signed byte
         return Byte.toString((byte) Integer.parseUnsignedInt(value));
+      case "uint256":
+        // UInt256.toString outputs hex whereas the tests use decimal - reformat to match
+        return UInt256.valueOf(new BigInteger(value)).toString();
       default:
         return value;
     }

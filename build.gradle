@@ -16,10 +16,10 @@ buildscript {
 plugins {
   id 'com.diffplug.spotless' version '6.2.0'
   id 'com.github.ben-manes.versions' version '0.41.0'
-  id 'com.github.jk1.dependency-license-report' version '2.0'
+  id 'com.github.jk1.dependency-license-report' version '2.1'
   id 'io.spring.dependency-management' version '1.0.11.RELEASE'
   id 'net.ltgt.errorprone' version '2.0.2' apply false
-  id 'de.undercouch.download' version '4.1.2'
+  id 'de.undercouch.download' version '5.0.1'
   id 'org.ajoberstar.grgit' version '4.1.1'
 }
 
@@ -223,7 +223,7 @@ allprojects {
   }
 }
 
-def refTestVersion = 'v1.1.8' // Arbitrary change to refresh cache number: 0
+def refTestVersion = 'v1.1.9' // Arbitrary change to refresh cache number: 0
 def blsRefTestVersion = 'v0.1.0'
 def refTestBaseUrl = 'https://github.com/ethereum/eth2.0-spec-tests/releases/download'
 def blsRefTestBaseUrl = 'https://github.com/ethereum/bls12-381-tests/releases/download'

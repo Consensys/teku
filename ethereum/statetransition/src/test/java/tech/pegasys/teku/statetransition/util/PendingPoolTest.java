@@ -14,7 +14,6 @@
 package tech.pegasys.teku.statetransition.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -244,7 +243,7 @@ public class PendingPoolTest {
   }
 
   private Checkpoint finalizedCheckpoint(SignedBeaconBlock block) {
-    final UInt64 epoch = compute_epoch_at_slot(block.getSlot()).plus(UInt64.ONE);
+    final UInt64 epoch = spec.computeEpochAtSlot(block.getSlot()).plus(UInt64.ONE);
     final Bytes32 root = block.getMessage().hashTreeRoot();
 
     return new Checkpoint(epoch, root);

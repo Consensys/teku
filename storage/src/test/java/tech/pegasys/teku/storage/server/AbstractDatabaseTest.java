@@ -71,6 +71,7 @@ public abstract class AbstractDatabaseTest {
 
   protected final Spec spec = TestSpecFactory.createMinimalPhase0();
   protected final ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
+  protected final ChainProperties chainProperties = new ChainProperties(spec);
 
   protected UInt64 genesisTime = UInt64.valueOf(100);
   protected AnchorPoint genesisAnchor;
@@ -537,7 +538,7 @@ public abstract class AbstractDatabaseTest {
 
     final int startSlot = genesisBlockAndState.getSlot().intValue();
     final int minFinalSlot = startSlot + StoreConfig.DEFAULT_STATE_CACHE_SIZE + 10;
-    final UInt64 finalizedEpoch = ChainProperties.computeBestEpochFinalizableAtSlot(minFinalSlot);
+    final UInt64 finalizedEpoch = chainProperties.computeBestEpochFinalizableAtSlot(minFinalSlot);
     final UInt64 finalizedSlot = spec.computeStartSlotAtEpoch(finalizedEpoch);
 
     chainBuilder.generateBlocksUpToSlot(finalizedSlot);

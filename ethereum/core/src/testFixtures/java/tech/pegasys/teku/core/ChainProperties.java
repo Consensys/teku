@@ -13,12 +13,16 @@
 
 package tech.pegasys.teku.core;
 
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 
 public class ChainProperties {
+
+  private final Spec spec;
+
+  public ChainProperties(final Spec spec) {
+    this.spec = spec;
+  }
 
   /**
    * Given a slot, returns the earliest epoch that can be finalized with a block at this slot. If
@@ -28,7 +32,7 @@ public class ChainProperties {
    * @param slot The slot we want to finalize.
    * @return The earliest epoch that can be finalized at this slot.
    */
-  public static UInt64 computeBestEpochFinalizableAtSlot(long slot) {
+  public UInt64 computeBestEpochFinalizableAtSlot(long slot) {
     return computeBestEpochFinalizableAtSlot(UInt64.valueOf(slot));
   }
 
@@ -40,9 +44,9 @@ public class ChainProperties {
    * @param slot The slot we want to finalize.
    * @return The earliest epoch that can be finalized at this slot.
    */
-  public static UInt64 computeBestEpochFinalizableAtSlot(UInt64 slot) {
-    final UInt64 currentEpoch = compute_epoch_at_slot(slot);
-    final UInt64 startSlotAtCurrentEpoch = compute_start_slot_at_epoch(currentEpoch);
+  public UInt64 computeBestEpochFinalizableAtSlot(UInt64 slot) {
+    final UInt64 currentEpoch = spec.computeEpochAtSlot(slot);
+    final UInt64 startSlotAtCurrentEpoch = spec.computeStartSlotAtEpoch(currentEpoch);
     return startSlotAtCurrentEpoch.equals(slot) ? currentEpoch : currentEpoch.plus(UInt64.ONE);
   }
 }
