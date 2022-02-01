@@ -2,6 +2,7 @@ dependencies {
     api 'org.hyperledger.besu:plugin-api'
 
     implementation project(':infrastructure:exceptions')
+    implementation project(':infrastructure:io')
 
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     implementation 'io.prometheus:simpleclient'

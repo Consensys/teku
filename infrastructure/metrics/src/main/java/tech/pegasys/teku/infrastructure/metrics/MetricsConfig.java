@@ -21,6 +21,7 @@ import java.util.Set;
 import org.hyperledger.besu.metrics.StandardMetricCategory;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.io.PortAvailability;
 
 public class MetricsConfig {
 
@@ -119,7 +120,7 @@ public class MetricsConfig {
     }
 
     public MetricsConfigBuilder metricsPort(int metricsPort) {
-      if (metricsPort < 0 || metricsPort > 65535) {
+      if (!PortAvailability.isPortValid(metricsPort)) {
         throw new InvalidConfigurationException(
             String.format("Invalid metricsPort: %d", metricsPort));
       }

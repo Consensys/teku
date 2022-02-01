@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.OptionalInt;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.io.PortAvailability;
 
 public class DiscoveryConfig {
 
@@ -137,7 +138,7 @@ public class DiscoveryConfig {
     }
 
     public Builder listenUdpPort(final int listenUdpPort) {
-      if (listenUdpPort < 0 || listenUdpPort > 65535) {
+      if (!PortAvailability.isPortValid(listenUdpPort)) {
         throw new InvalidConfigurationException(
             String.format("Invalid listenUdpPort: %d", listenUdpPort));
       }
@@ -146,9 +147,9 @@ public class DiscoveryConfig {
     }
 
     public Builder listenUdpPortDefault(final int listenUdpPort) {
-      if (listenUdpPort < 0 || listenUdpPort > 65535) {
+      if (!PortAvailability.isPortValid(listenUdpPort)) {
         throw new InvalidConfigurationException(
-            String.format("Invalid listenUdpPort: %d", listenUdpPort));
+            String.format("Invalid listenUdpPortDefault: %d", listenUdpPort));
       }
       if (this.listenUdpPort.isEmpty()) {
         this.listenUdpPort = OptionalInt.of(listenUdpPort);
@@ -159,7 +160,7 @@ public class DiscoveryConfig {
     public Builder advertisedUdpPort(final OptionalInt advertisedUdpPort) {
       checkNotNull(advertisedUdpPort);
       if (advertisedUdpPort.isPresent()) {
-        if (advertisedUdpPort.getAsInt() < 0 || advertisedUdpPort.getAsInt() > 65535) {
+        if (!PortAvailability.isPortValid(advertisedUdpPort.getAsInt())) {
           throw new InvalidConfigurationException(
               String.format("Invalid advertisedUdpPort: " + advertisedUdpPort.getAsInt()));
         }
@@ -171,9 +172,9 @@ public class DiscoveryConfig {
     public Builder advertisedUdpPortDefault(final OptionalInt advertisedUdpPort) {
       checkNotNull(advertisedUdpPort);
       if (advertisedUdpPort.isPresent()) {
-        if (advertisedUdpPort.getAsInt() < 0 || advertisedUdpPort.getAsInt() > 65535) {
+        if (!PortAvailability.isPortValid(advertisedUdpPort.getAsInt())) {
           throw new InvalidConfigurationException(
-              String.format("Invalid advertisedUdpPort: %d", advertisedUdpPort.getAsInt()));
+              String.format("Invalid advertisedUdpPortDefault: %d", advertisedUdpPort.getAsInt()));
         }
       }
       if (this.advertisedUdpPort.isEmpty()) {
