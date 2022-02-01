@@ -30,9 +30,9 @@ public class SpecConfigReaderTest {
 
   @Test
   public void read_mainnet_allowsOverridingPresetBase() {
-      final SpecConfig config = readStandardConfigWithPreset("with-overrides");
-      assertThat(config).isNotNull();
-      assertThat(config.getMaxCommitteesPerSlot()).isEqualTo(12); // Mainnet preset is 64.
+    final SpecConfig config = readStandardConfigWithPreset("with-overrides");
+    assertThat(config).isNotNull();
+    assertThat(config.getMaxCommitteesPerSlot()).isEqualTo(12); // Mainnet preset is 64.
   }
 
   @Test
