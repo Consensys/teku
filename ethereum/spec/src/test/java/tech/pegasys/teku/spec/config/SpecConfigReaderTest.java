@@ -13,49 +13,16 @@
 
 package tech.pegasys.teku.spec.config;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllAltairFieldsSet;
-import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllBellatrixFieldsSet;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
-import java.util.Optional;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class SpecConfigReaderTest {
   private final SpecConfigReader reader = new SpecConfigReader();
-
-  @Test
-  public void read_mainnet_allowsOverridingPresetBase() {
-    final SpecConfig config = readStandardConfigWithPreset("with-overrides");
-    assertThat(config).isNotNull();
-    assertThat(config.getMaxCommitteesPerSlot()).isEqualTo(12); // Mainnet preset is 64.
-  }
-
-  @Test
-  public void read_mainnet() throws Exception {
-    final SpecConfig config = readStandardConfigWithPreset("mainnet");
-    assertThat(config).isNotNull();
-
-    // Spot check a few values
-    assertThat(config.getMaxCommitteesPerSlot()).isEqualTo(64);
-    Assertions.assertThat(config.getTargetCommitteeSize()).isEqualTo(128);
-    assertAllBellatrixFieldsSet(config);
-  }
-
-  @Test
-  public void read_minimal() throws Exception {
-    final SpecConfig config = readStandardConfigWithPreset("minimal");
-    assertThat(config).isNotNull();
-
-    // Spot check a few values
-    assertThat(config.getMaxCommitteesPerSlot()).isEqualTo(4);
-    Assertions.assertThat(config.getTargetCommitteeSize()).isEqualTo(4);
-    assertAllBellatrixFieldsSet(config);
-  }
 
   @Test
   public void read_missingConfig() {
@@ -88,7 +55,8 @@ public class SpecConfigReaderTest {
     Assertions.assertThatCode(
             () -> {
               processFileAsInputStream(
-                  getInvalidConfigPath("unknownField"), source -> reader.read(source, true));
+                  getInvalidConfigPath("unknownField"),
+                  source -> reader.readAndApply(source, true));
               assertAllAltairFieldsSet(reader.build());
             })
         .doesNotThrowAnyException();
@@ -98,12 +66,10 @@ public class SpecConfigReaderTest {
   public void read_emptyFile() {
     processFileAsInputStream(
         getInvalidConfigPath("empty"),
-        stream -> {
-          assertThatThrownBy(() -> readConfig(stream))
-              .isInstanceOf(IllegalArgumentException.class)
-              .hasMessageContaining("Supplied spec config is empty");
-          return null;
-        });
+        stream ->
+            assertThatThrownBy(() -> readConfig(stream))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Supplied spec config is empty"));
   }
 
   @Test
@@ -119,155 +85,113 @@ public class SpecConfigReaderTest {
   public void read_invalidInteger_wrongType() {
     processFileAsInputStream(
         getInvalidConfigPath("invalidInteger_wrongType"),
-        stream -> {
-          assertThatThrownBy(() -> readConfig(stream))
-              .isInstanceOf(IllegalArgumentException.class)
-              .hasMessageContaining(
-                  "Failed to parse value for constant MAX_COMMITTEES_PER_SLOT: 'string value'");
-          return null;
-        });
+        stream ->
+            assertThatThrownBy(() -> readConfig(stream))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining(
+                    "Failed to parse value for constant MAX_COMMITTEES_PER_SLOT: 'string value'"));
   }
 
   @Test
   public void read_invalidInteger_tooLarge() {
     processFileAsInputStream(
         getInvalidConfigPath("invalidInteger_tooLarge"),
-        stream -> {
-          assertThatThrownBy(() -> readConfig(stream))
-              .isInstanceOf(IllegalArgumentException.class)
-              .hasMessageContaining(
-                  "Failed to parse value for constant MAX_COMMITTEES_PER_SLOT: '2147483648'");
-          return null;
-        });
+        stream ->
+            assertThatThrownBy(() -> readConfig(stream))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining(
+                    "Failed to parse value for constant MAX_COMMITTEES_PER_SLOT: '2147483648'"));
   }
 
   @Test
   public void read_invalidInteger_negative() {
     processFileAsInputStream(
         getInvalidConfigPath("invalidInteger_negative"),
-        stream -> {
-          assertThatThrownBy(() -> readConfig(stream))
-              .isInstanceOf(IllegalArgumentException.class)
-              .hasMessageContaining(
-                  "Failed to parse value for constant MAX_COMMITTEES_PER_SLOT: '-1'");
-          return null;
-        });
+        stream ->
+            assertThatThrownBy(() -> readConfig(stream))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining(
+                    "Failed to parse value for constant MAX_COMMITTEES_PER_SLOT: '-1'"));
   }
 
   @Test
   public void read_invalidLong_wrongType() {
     processFileAsInputStream(
         getInvalidConfigPath("invalidLong_wrongType"),
-        stream -> {
-          assertThatThrownBy(() -> readConfig(stream))
-              .isInstanceOf(IllegalArgumentException.class)
-              .hasMessageContaining(
-                  "Cannot read spec config: Cannot deserialize value of type `java.lang.String` from Array");
-          return null;
-        });
+        stream ->
+            assertThatThrownBy(() -> readConfig(stream))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining(
+                    "Cannot read spec config: Cannot deserialize value of type `java.lang.String` from Array"));
   }
 
   @Test
   public void read_invalidLong_tooLarge() {
     processFileAsInputStream(
         getInvalidConfigPath("invalidLong_tooLarge"),
-        stream -> {
-          assertThatThrownBy(() -> readConfig(stream))
-              .isInstanceOf(IllegalArgumentException.class)
-              .hasMessageContaining(
-                  "Failed to parse value for constant VALIDATOR_REGISTRY_LIMIT: '9223372036854775808'");
-          return null;
-        });
+        stream ->
+            assertThatThrownBy(() -> readConfig(stream))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining(
+                    "Failed to parse value for constant VALIDATOR_REGISTRY_LIMIT: '9223372036854775808'"));
   }
 
   @Test
   public void read_invalidLong_negative() {
     processFileAsInputStream(
         getInvalidConfigPath("invalidLong_negative"),
-        stream -> {
-          assertThatThrownBy(() -> readConfig(stream))
-              .isInstanceOf(IllegalArgumentException.class)
-              .hasMessageContaining(
-                  "Failed to parse value for constant VALIDATOR_REGISTRY_LIMIT: '-1099511627776'");
-          return null;
-        });
+        stream ->
+            assertThatThrownBy(() -> readConfig(stream))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining(
+                    "Failed to parse value for constant VALIDATOR_REGISTRY_LIMIT: '-1099511627776'"));
   }
 
   @Test
   public void read_invalidUInt64_negative() {
     processFileAsInputStream(
         getInvalidConfigPath("invalidUInt64_negative"),
-        stream -> {
-          assertThatThrownBy(() -> readConfig(stream))
-              .isInstanceOf(IllegalArgumentException.class)
-              .hasMessageContaining("Failed to parse value for constant MIN_GENESIS_TIME: '-1'");
-          return null;
-        });
+        stream ->
+            assertThatThrownBy(() -> readConfig(stream))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Failed to parse value for constant MIN_GENESIS_TIME: '-1'"));
   }
 
   @Test
   public void read_invalidUInt64_tooLarge() {
     processFileAsInputStream(
         getInvalidConfigPath("invalidUInt64_tooLarge"),
-        stream -> {
-          assertThatThrownBy(() -> readConfig(stream))
-              .isInstanceOf(IllegalArgumentException.class)
-              .hasMessageContaining(
-                  "Failed to parse value for constant MIN_GENESIS_TIME: '18446744073709552001'");
-          return null;
-        });
+        stream ->
+            assertThatThrownBy(() -> readConfig(stream))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining(
+                    "Failed to parse value for constant MIN_GENESIS_TIME: '18446744073709552001'"));
   }
 
   @Test
   public void read_invalidBytes4_tooLarge() {
     processFileAsInputStream(
         getInvalidConfigPath("invalidBytes4_tooLarge"),
-        stream -> {
-          assertThatThrownBy(() -> readConfig(stream))
-              .isInstanceOf(IllegalArgumentException.class)
-              .hasMessageContaining(
-                  "Failed to parse value for constant GENESIS_FORK_VERSION: '0x0102030405'");
-          return null;
-        });
+        stream ->
+            assertThatThrownBy(() -> readConfig(stream))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining(
+                    "Failed to parse value for constant GENESIS_FORK_VERSION: '0x0102030405'"));
   }
 
   @Test
   public void read_invalidBytes4_tooSmall() {
     processFileAsInputStream(
         getInvalidConfigPath("invalidBytes4_tooSmall"),
-        stream -> {
-          assertThatThrownBy(() -> readConfig(stream))
-              .isInstanceOf(IllegalArgumentException.class)
-              .hasMessageContaining(
-                  "Failed to parse value for constant GENESIS_FORK_VERSION: '0x0102'");
-          return null;
-        });
+        stream ->
+            assertThatThrownBy(() -> readConfig(stream))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining(
+                    "Failed to parse value for constant GENESIS_FORK_VERSION: '0x0102'"));
   }
 
-  private SpecConfig readStandardConfigWithPreset(final String configName) {
-    final String configPath = getStandardConfigPath(configName);
-    final Optional<String> preset = processFileAsInputStream(configPath, this::readConfig);
-    if (preset.isPresent()) {
-      for (String presetPath : getPresetPaths(preset.get())) {
-        processFileAsInputStream(presetPath, this::readConfig);
-      }
-    }
-    return reader.build();
-  }
-
-  private Optional<String> readConfig(final InputStream preset) throws IOException {
-    return reader.read(preset, false);
-  }
-
-  private List<String> getPresetPaths(final String presetName) {
-    return List.of(
-        getStandardConfigPath("presets/" + presetName + "/phase0"),
-        getStandardConfigPath("presets/" + presetName + "/altair"),
-        getStandardConfigPath("presets/" + presetName + "/bellatrix"));
-  }
-
-  private static String getStandardConfigPath(final String name) {
-    return getConfigPath("standard/" + name);
+  private void readConfig(final InputStream preset) throws IOException {
+    reader.readAndApply(preset, false);
   }
 
   private static String getInvalidConfigPath(final String name) {
@@ -279,10 +203,9 @@ public class SpecConfigReaderTest {
     return path + name + ".yaml";
   }
 
-  private <T> T processFileAsInputStream(
-      final String fileName, final InputStreamHandler<T> handler) {
+  private void processFileAsInputStream(final String fileName, final InputStreamHandler handler) {
     try (final InputStream inputStream = getFileFromResourceAsStream(fileName)) {
-      return handler.accept(inputStream);
+      handler.accept(inputStream);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -297,7 +220,7 @@ public class SpecConfigReaderTest {
     return inputStream;
   }
 
-  private interface InputStreamHandler<T> {
-    T accept(InputStream inputStream) throws IOException;
+  private interface InputStreamHandler {
+    void accept(InputStream inputStream) throws IOException;
   }
 }

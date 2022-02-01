@@ -33,7 +33,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -49,7 +48,7 @@ import tech.pegasys.teku.spec.config.SpecConfigBuilder.BellatrixBuilder;
 
 public class SpecConfigReader {
   private static final Logger LOG = LogManager.getLogger();
-  private static final String PRESET_KEY = "PRESET_BASE";
+  public static final String PRESET_KEY = "PRESET_BASE";
   private static final String CONFIG_NAME_KEY = "CONFIG_NAME";
   private static final ImmutableSet<String> KEYS_TO_IGNORE =
       ImmutableSet.of(
@@ -113,23 +112,12 @@ public class SpecConfigReader {
    * field is set
    *
    * @param source The source to read
-   * @return An optional value containing any declared preset if it is specified in this source
    * @throws IOException Thrown if an error occurs reading the source
    */
-  public Optional<String> read(final InputStream source, final boolean ignoreUnknownConfigItems)
+  public void readAndApply(final InputStream source, final boolean ignoreUnknownConfigItems)
       throws IOException {
     final Map<String, String> rawValues = readValues(source);
     loadFromMap(rawValues, ignoreUnknownConfigItems);
-    return Optional.ofNullable(rawValues.get(PRESET_KEY)).map(this::castPresetValue);
-  }
-
-  private String castPresetValue(final Object preset) {
-    if (!(preset instanceof String)) {
-      throw new IllegalArgumentException(
-          String.format(
-              "Unable to parse config field '%s' (value = '%s') as a string", PRESET_KEY, preset));
-    }
-    return (String) preset;
   }
 
   public void loadFromMap(
@@ -198,7 +186,7 @@ public class SpecConfigReader {
     }
   }
 
-  private void processSeenValues(final Map<String, ? extends Object> rawValues) {
+  private void processSeenValues(final Map<String, ?> rawValues) {
     if (seenValues.isEmpty()) {
       seenValues.putAll(rawValues);
       return;
@@ -218,19 +206,15 @@ public class SpecConfigReader {
   }
 
   @SuppressWarnings("unchecked")
-  private Map<String, String> readValues(final InputStream source) throws IOException {
+  public Map<String, String> readValues(final InputStream source) throws IOException {
     final ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
     try {
-      final Map<String, String> values =
-          (Map<String, String>)
-              mapper
-                  .readerFor(
-                      mapper
-                          .getTypeFactory()
-                          .constructMapType(Map.class, String.class, String.class))
-                  .readValues(source)
-                  .next();
-      return values;
+      return (Map<String, String>)
+          mapper
+              .readerFor(
+                  mapper.getTypeFactory().constructMapType(Map.class, String.class, String.class))
+              .readValues(source)
+              .next();
     } catch (NoSuchElementException e) {
       throw new IllegalArgumentException("Supplied spec config is empty");
     } catch (RuntimeJsonMappingException e) {
@@ -283,9 +267,9 @@ public class SpecConfigReader {
     }
   }
 
-  private Integer parseInt(final Object input) {
+  private int parseInt(final Object input) {
     final String stringValue = input.toString();
-    final Integer value;
+    final int value;
     if (input instanceof Integer) {
       value = (Integer) input;
     } else if (stringValue.startsWith("0x")) {
@@ -294,7 +278,7 @@ public class SpecConfigReader {
               .toUnsignedBigInteger(ByteOrder.LITTLE_ENDIAN)
               .intValueExact();
     } else {
-      value = Integer.valueOf(stringValue, 10);
+      value = Integer.parseInt(stringValue, 10);
     }
 
     // Validate

@@ -19,6 +19,7 @@ dependencies {
 
     testImplementation testFixtures(project(':infrastructure:bls'))
 
+    testImplementation 'commons-io:commons-io'
     testImplementation 'org.assertj:assertj-core'
     testImplementation 'org.mockito:mockito-core'
     testImplementation 'org.junit.jupiter:junit-jupiter-api'

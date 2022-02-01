@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -75,7 +77,7 @@ public class SpecConfigLoaderTest {
   public void shouldLoadMainnetFromFileUrl() throws Exception {
     final URL url = getMainnetConfigResourceAsUrl();
     final SpecConfig config = SpecConfigLoader.loadConfig(url.toString());
-    assertAllAltairFieldsSet(config);
+    assertAllBellatrixFieldsSet(config);
   }
 
   @Test
@@ -84,7 +86,7 @@ public class SpecConfigLoaderTest {
       final Path file = tempDir.resolve("mainnet.yml");
       writeStreamToFile(inputStream, file);
       final SpecConfig config = SpecConfigLoader.loadConfig(file.toAbsolutePath().toString());
-      assertAllAltairFieldsSet(config);
+      assertAllBellatrixFieldsSet(config);
     }
   }
 
@@ -135,6 +137,14 @@ public class SpecConfigLoaderTest {
   }
 
   @Test
+  public void shouldBeAbleToOverridePresetValues() {
+    final URL configUrl = getClass().getResource("standard/with-overrides.yaml");
+    final SpecConfig config = SpecConfigLoader.loadConfig(configUrl.toString(), false, __ -> {});
+    assertThat(config).isNotNull();
+    assertThat(config.getMaxCommitteesPerSlot()).isEqualTo(12); // Mainnet preset is 64.
+  }
+
+  @Test
   public void shouldTestAllKnownNetworks() {
     final List<String> testedNetworks =
         knownNetworks().map(args -> (String) args.get()[0]).sorted().collect(Collectors.toList());
@@ -154,9 +164,9 @@ public class SpecConfigLoaderTest {
 
   private void writeStreamToFile(final InputStream inputStream, final Path filePath)
       throws Exception {
-    byte[] buffer = new byte[inputStream.available()];
-    inputStream.read(buffer);
-    Files.write(filePath, buffer);
+    try (final OutputStream outputStream = Files.newOutputStream(filePath)) {
+      IOUtils.copy(inputStream, outputStream);
+    }
   }
 
   private InputStream getMainnetConfigAsStream() {
