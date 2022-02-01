@@ -40,6 +40,7 @@ public class ValidatorConfig {
   public static final boolean DEFAULT_GENERATE_EARLY_ATTESTATIONS = true;
   public static final boolean DEFAULT_SEND_ATTESTATIONS_AS_BATCH = true;
   public static final Optional<Bytes32> DEFAULT_GRAFFITI = Optional.empty();
+  public static final boolean DEFAULT_VALIDATOR_PROPOSER_CONFIG_REFRESH_ENABLED = false;
 
   private final List<String> validatorKeys;
   private final List<String> validatorExternalSignerPublicKeySources;
@@ -58,6 +59,8 @@ public class ValidatorConfig {
   private final boolean useDependentRoots;
   private final boolean generateEarlyAttestations;
   private final Optional<Eth1Address> proposerDefaultFeeRecipient;
+  private final Optional<String> proposerConfigSource;
+  private final boolean refreshProposerConfigFromSource;
 
   private ValidatorConfig(
       final List<String> validatorKeys,
@@ -76,7 +79,9 @@ public class ValidatorConfig {
       final int validatorExternalSignerConcurrentRequestLimit,
       final boolean useDependentRoots,
       final boolean generateEarlyAttestations,
-      final Optional<Eth1Address> proposerDefaultFeeRecipient) {
+      final Optional<Eth1Address> proposerDefaultFeeRecipient,
+      final Optional<String> proposerConfigSource,
+      final boolean refreshProposerConfigFromSource) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
@@ -97,6 +102,8 @@ public class ValidatorConfig {
     this.useDependentRoots = useDependentRoots;
     this.generateEarlyAttestations = generateEarlyAttestations;
     this.proposerDefaultFeeRecipient = proposerDefaultFeeRecipient;
+    this.proposerConfigSource = proposerConfigSource;
+    this.refreshProposerConfigFromSource = refreshProposerConfigFromSource;
   }
 
   public static Builder builder() {
@@ -161,15 +168,25 @@ public class ValidatorConfig {
   }
 
   public Optional<Eth1Address> getProposerDefaultFeeRecipient() {
-    validateProposerDefaultFeeRecipient();
+    validateProposerDefaultFeeRecipientOrProposerConfigSource();
     return proposerDefaultFeeRecipient;
   }
 
-  private void validateProposerDefaultFeeRecipient() {
+  public Optional<String> getProposerConfigSource() {
+    validateProposerDefaultFeeRecipientOrProposerConfigSource();
+    return proposerConfigSource;
+  }
+
+  public boolean getRefreshProposerConfigFromSource() {
+    return refreshProposerConfigFromSource;
+  }
+
+  private void validateProposerDefaultFeeRecipientOrProposerConfigSource() {
     if (proposerDefaultFeeRecipient.isEmpty()
+        && proposerConfigSource.isEmpty()
         && !(validatorKeys.isEmpty() && validatorExternalSignerPublicKeySources.isEmpty())) {
       throw new InvalidConfigurationException(
-          "Invalid configuration. --Xvalidators-proposer-default-fee-recipient must be specified when Bellatrix milestone is active");
+          "Invalid configuration. --Xvalidators-proposer-default-fee-recipient or --Xvalidators-proposer-config must be specified when Bellatrix milestone is active");
     }
   }
 
@@ -195,6 +212,9 @@ public class ValidatorConfig {
     private boolean useDependentRoots = DEFAULT_USE_DEPENDENT_ROOTS;
     private boolean generateEarlyAttestations = DEFAULT_GENERATE_EARLY_ATTESTATIONS;
     private Optional<Eth1Address> proposerDefaultFeeRecipient = Optional.empty();
+    private Optional<String> proposerConfigSource = Optional.empty();
+    private boolean refreshProposerConfigFromSource =
+        DEFAULT_VALIDATOR_PROPOSER_CONFIG_REFRESH_ENABLED;
 
     private Builder() {}
 
@@ -223,12 +243,23 @@ public class ValidatorConfig {
     }
 
     public Builder validatorExternalSignerTimeout(final Duration validatorExternalSignerTimeout) {
+      if (validatorExternalSignerTimeout.isNegative()) {
+        throw new InvalidConfigurationException(
+            String.format(
+                "Invalid validatorExternalSignerTimeout: %s", validatorExternalSignerTimeout));
+      }
       this.validatorExternalSignerTimeout = validatorExternalSignerTimeout;
       return this;
     }
 
     public Builder validatorExternalSignerConcurrentRequestLimit(
         int validatorExternalSignerConcurrentRequestLimit) {
+      if (validatorExternalSignerConcurrentRequestLimit < 0) {
+        throw new InvalidConfigurationException(
+            String.format(
+                "Invalid validatorExternalSignerConcurrentRequestLimit: %s",
+                validatorExternalSignerConcurrentRequestLimit));
+      }
       this.validatorExternalSignerConcurrentRequestLimit =
           validatorExternalSignerConcurrentRequestLimit;
       return this;
@@ -304,6 +335,16 @@ public class ValidatorConfig {
       return this;
     }
 
+    public Builder proposerConfigSource(final String proposerConfigSource) {
+      this.proposerConfigSource = Optional.ofNullable(proposerConfigSource);
+      return this;
+    }
+
+    public Builder refreshProposerConfigFromSource(final boolean refreshProposerConfigFromSource) {
+      this.refreshProposerConfigFromSource = refreshProposerConfigFromSource;
+      return this;
+    }
+
     public ValidatorConfig build() {
       validateExternalSignerUrlAndPublicKeys();
       validateExternalSignerKeystoreAndPasswordFileConfig();
@@ -326,7 +367,9 @@ public class ValidatorConfig {
           validatorExternalSignerConcurrentRequestLimit,
           useDependentRoots,
           generateEarlyAttestations,
-          proposerDefaultFeeRecipient);
+          proposerDefaultFeeRecipient,
+          proposerConfigSource,
+          refreshProposerConfigFromSource);
     }
 
     private void validateExternalSignerUrlAndPublicKeys() {
