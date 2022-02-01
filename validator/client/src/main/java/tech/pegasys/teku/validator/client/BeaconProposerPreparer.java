@@ -87,12 +87,13 @@ public class BeaconProposerPreparer implements ValidatorTimingChannel {
 
   private List<BeaconPreparableProposer> buildBeaconPreparableProposerList(
       Optional<ProposerConfig> maybeProposerConfig,
-      Map<BLSPublicKey, Integer> blsPublicKeyIntegerMap) {
-    return blsPublicKeyIntegerMap.entrySet().stream()
+      Map<BLSPublicKey, Optional<Integer>> blsPublicKeyToIndexMap) {
+    return blsPublicKeyToIndexMap.entrySet().stream()
+        .filter(blsPublicKeyOptionalEntry -> blsPublicKeyOptionalEntry.getValue().isPresent())
         .map(
             blsPublicKeyIntegerEntry ->
                 new BeaconPreparableProposer(
-                    UInt64.valueOf(blsPublicKeyIntegerEntry.getValue()),
+                    UInt64.valueOf(blsPublicKeyIntegerEntry.getValue().get()),
                     getFeeRecipient(maybeProposerConfig, blsPublicKeyIntegerEntry.getKey())))
         .collect(Collectors.toList());
   }

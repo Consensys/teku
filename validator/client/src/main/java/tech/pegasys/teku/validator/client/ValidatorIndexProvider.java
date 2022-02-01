@@ -110,14 +110,12 @@ public class ValidatorIndexProvider {
                 .collect(toList()));
   }
 
-  public SafeFuture<Map<BLSPublicKey, Integer>> getValidatorIndexesByPublicKey() {
+  public SafeFuture<Map<BLSPublicKey, Optional<Integer>>> getValidatorIndexesByPublicKey() {
     // Wait for at least one successful load of validator indices before attempting to read
     return firstSuccessfulRequest.thenApply(
         __ ->
             ownedValidators.getActiveValidators().stream()
                 .map(Validator::getPublicKey)
-                .collect(
-                    Collectors.<BLSPublicKey, BLSPublicKey, Integer>toMap(
-                        Function.identity(), validatorIndexesByPublicKey::get)));
+                .collect(Collectors.toMap(Function.identity(), this::getValidatorIndex)));
   }
 }

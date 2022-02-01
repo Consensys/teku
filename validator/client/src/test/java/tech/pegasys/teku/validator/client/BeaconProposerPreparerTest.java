@@ -66,10 +66,20 @@ public class BeaconProposerPreparerTest {
             specContext.getDataStructureUtil().randomPublicKey(),
             mock(Signer.class),
             Optional::empty);
+    Validator validatorWithoutIndex =
+        new Validator(
+            specContext.getDataStructureUtil().randomPublicKey(),
+            mock(Signer.class),
+            Optional::empty);
 
-    Map<BLSPublicKey, Integer> validatorIndexesByPublicKey =
+    Map<BLSPublicKey, Optional<Integer>> validatorIndexesByPublicKey =
         Map.of(
-            validator1.getPublicKey(), validator1Index, validator2.getPublicKey(), validator2Index);
+            validator1.getPublicKey(),
+            Optional.of(validator1Index),
+            validator2.getPublicKey(),
+            Optional.of(validator2Index),
+            validatorWithoutIndex.getPublicKey(),
+            Optional.empty());
 
     defaultFeeRecipient = specContext.getDataStructureUtil().randomEth1Address();
     defaultFeeRecipientConfig = specContext.getDataStructureUtil().randomEth1Address();
