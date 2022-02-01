@@ -186,6 +186,10 @@ public class BeaconRestApiConfig {
     }
 
     public BeaconRestApiConfigBuilder maxPendingEvents(final int maxEventQueueSize) {
+      if (maxEventQueueSize < 0) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid maxEventQueueSize: %d", maxEventQueueSize));
+      }
       this.maxPendingEvents = maxEventQueueSize;
       return this;
     }
@@ -197,6 +201,10 @@ public class BeaconRestApiConfig {
     }
 
     public BeaconRestApiConfigBuilder validatorThreads(final int validatorThreads) {
+      if (validatorThreads < 0) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid validatorThreads: %d", validatorThreads));
+      }
       this.validatorThreads = validatorThreads;
       return this;
     }

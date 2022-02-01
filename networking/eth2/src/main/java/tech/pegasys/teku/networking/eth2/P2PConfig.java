@@ -228,6 +228,10 @@ public class P2PConfig {
 
     public Builder targetSubnetSubscriberCount(final Integer targetSubnetSubscriberCount) {
       checkNotNull(targetSubnetSubscriberCount);
+      if (targetSubnetSubscriberCount < 0) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid targetSubnetSubscriberCount: %d", targetSubnetSubscriberCount));
+      }
       this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
       return this;
     }
@@ -240,12 +244,20 @@ public class P2PConfig {
 
     public Builder peerRateLimit(final Integer peerRateLimit) {
       checkNotNull(peerRateLimit);
+      if (peerRateLimit < 0) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid peerRateLimit: %d", peerRateLimit));
+      }
       this.peerRateLimit = peerRateLimit;
       return this;
     }
 
     public Builder peerRequestLimit(final Integer peerRequestLimit) {
       checkNotNull(peerRequestLimit);
+      if (peerRequestLimit < 0) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid peerRequestLimit: %d", peerRequestLimit));
+      }
       this.peerRequestLimit = peerRequestLimit;
       return this;
     }

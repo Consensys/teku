@@ -148,11 +148,19 @@ public class MetricsConfig {
     }
 
     public MetricsConfigBuilder metricsPublicationInterval(int metricsPublicationInterval) {
+      if (metricsPublicationInterval < 0) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid metricsPublicationInterval: %d", metricsPublicationInterval));
+      }
       this.metricsPublicationInterval = metricsPublicationInterval;
       return this;
     }
 
     public MetricsConfigBuilder idleTimeoutSeconds(final int idleTimeoutSeconds) {
+      if (idleTimeoutSeconds < 0) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid idleTimeoutSeconds: %d", idleTimeoutSeconds));
+      }
       this.idleTimeoutSeconds = idleTimeoutSeconds;
       return this;
     }

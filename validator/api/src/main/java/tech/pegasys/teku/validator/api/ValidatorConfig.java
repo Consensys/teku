@@ -234,6 +234,12 @@ public class ValidatorConfig {
 
     public Builder validatorExternalSignerConcurrentRequestLimit(
         int validatorExternalSignerConcurrentRequestLimit) {
+      if (validatorExternalSignerConcurrentRequestLimit < 0) {
+        throw new InvalidConfigurationException(
+            String.format(
+                "Invalid validatorExternalSignerConcurrentRequestLimit: %s",
+                validatorExternalSignerConcurrentRequestLimit));
+      }
       this.validatorExternalSignerConcurrentRequestLimit =
           validatorExternalSignerConcurrentRequestLimit;
       return this;

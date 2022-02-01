@@ -222,6 +222,10 @@ public class DiscoveryConfig {
 
     public Builder minRandomlySelectedPeers(final Integer minRandomlySelectedPeers) {
       checkNotNull(minRandomlySelectedPeers);
+      if (maxPeers < 0) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid minRandomlySelectedPeers: %d", minRandomlySelectedPeers));
+      }
       this.minRandomlySelectedPeers = OptionalInt.of(minRandomlySelectedPeers);
       return this;
     }
