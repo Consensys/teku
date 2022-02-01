@@ -79,7 +79,7 @@ class AttestationDutyLoaderTest {
 
   @BeforeEach
   void setUp() {
-    when(validatorIndexProvider.getValidatorIndices(any()))
+    when(validatorIndexProvider.getValidatorIndices())
         .thenReturn(SafeFuture.completedFuture(VALIDATOR_INDICES));
     when(forkProvider.getForkInfo(any())).thenReturn(SafeFuture.completedFuture(forkInfo));
   }

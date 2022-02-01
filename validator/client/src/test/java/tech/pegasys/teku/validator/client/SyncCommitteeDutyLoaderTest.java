@@ -69,7 +69,7 @@ class SyncCommitteeDutyLoaderTest {
 
   @BeforeEach
   void setUp() {
-    when(validatorIndexProvider.getValidatorIndices(validators.getPublicKeys()))
+    when(validatorIndexProvider.getValidatorIndices())
         .thenReturn(SafeFuture.completedFuture(validatorIndices));
   }
 
