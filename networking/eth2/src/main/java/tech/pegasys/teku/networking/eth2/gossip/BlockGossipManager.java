@@ -51,4 +51,9 @@ public class BlockGossipManager extends AbstractGossipManager<SignedBeaconBlock>
   public void publishBlock(final SignedBeaconBlock message) {
     publishMessage(message);
   }
+
+  @Override
+  public boolean isEnabledDuringOptimisticSync() {
+    return true;
+  }
 }

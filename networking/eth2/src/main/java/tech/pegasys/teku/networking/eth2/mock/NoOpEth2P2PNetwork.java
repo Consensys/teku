@@ -36,6 +36,9 @@ public class NoOpEth2P2PNetwork extends MockP2PNetwork<Eth2Peer> implements Eth2
   public void onEpoch(final UInt64 epoch) {}
 
   @Override
+  public void onSyncStateChanged(final boolean isInSync, final boolean isOptimistic) {}
+
+  @Override
   public void subscribeToAttestationSubnetId(final int subnetId) {}
 
   @Override

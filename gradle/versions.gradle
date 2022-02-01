@@ -68,7 +68,7 @@ dependencyManagement {
       }
     }
 
-    dependencySet(group: 'io.vertx', version: '3.9.9') {
+    dependencySet(group: 'io.vertx', version: '4.2.4') {
       entry 'vertx-codegen'
       entry 'vertx-core'
       entry 'vertx-unit'
@@ -136,13 +136,13 @@ dependencyManagement {
 
     dependency 'io.prometheus:simpleclient:0.9.0'
 
-    dependencySet(group: 'org.hyperledger.besu.internal', version: '21.10.5') {
+    dependencySet(group: 'org.hyperledger.besu.internal', version: '21.10.9') {
       entry('metrics-core') {
         // We include netty-all so omit the separated jars
         exclude 'io.netty:netty-tcnative-boringssl-static'
       }
     }
-    dependency 'org.hyperledger.besu:plugin-api:21.10.3'
+    dependency 'org.hyperledger.besu:plugin-api:21.10.9'
 
     dependencySet(group: 'org.testcontainers', version: '1.16.3') {
       entry "testcontainers"

@@ -119,6 +119,7 @@ import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.sync.SyncServiceFactory;
 import tech.pegasys.teku.sync.events.CoalescingChainHeadChannel;
+import tech.pegasys.teku.sync.events.SyncState;
 import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorPerformanceTrackingMode;
@@ -856,6 +857,13 @@ public class BeaconChainController extends Service
         .ifPresent(
             isOptimistic ->
                 syncService.getOptimisticSyncSubscriber().onOptimisticHeadChanged(isOptimistic));
+
+    // Subscribe to sync state changes so gossip can be enabled and disabled appropriately
+    syncService.subscribeToSyncStateChanges(
+        state -> p2pNetwork.onSyncStateChanged(state.isInSync(), state.isOptimistic()));
+    // Ensure the initial state is setup correctly
+    final SyncState currentSyncState = syncService.getCurrentSyncState();
+    p2pNetwork.onSyncStateChanged(currentSyncState.isInSync(), currentSyncState.isOptimistic());
   }
 
   protected void initOperationsReOrgManager() {
