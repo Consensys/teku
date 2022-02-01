@@ -210,7 +210,7 @@ public class SpecConfigReader {
       if (existingValue != null && !Objects.equals(existingValue, newValue)) {
         LOG.warn(
             String.format(
-                "Found duplicate declarations for spec constant '%s'. Overriding preset value '%s' with '%s'",
+                "Found duplicate declarations for spec constant '%s'. Overriding preset value '%s' with '%s'.",
                 key, existingValue, newValue));
       }
       seenValues.put(key, newValue);
