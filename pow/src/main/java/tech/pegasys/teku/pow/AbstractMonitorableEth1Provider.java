@@ -15,7 +15,7 @@ package tech.pegasys.teku.pow;
 
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.spec.config.Constants;
 
 public abstract class AbstractMonitorableEth1Provider implements MonitorableEth1Provider {
   protected enum Result {

@@ -29,7 +29,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.exception.Eth1RequestException;
-import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.spec.config.Constants;
 
 public class FallbackAwareEth1Provider implements Eth1Provider {
   private static final Logger LOG = LogManager.getLogger();

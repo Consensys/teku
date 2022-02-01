@@ -17,7 +17,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
+import static tech.pegasys.teku.spec.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
 
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;

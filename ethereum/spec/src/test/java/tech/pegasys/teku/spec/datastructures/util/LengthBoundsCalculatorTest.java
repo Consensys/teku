@@ -25,6 +25,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
@@ -50,7 +51,6 @@ import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
-import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.SpecDependent;
 
 /**
@@ -63,13 +63,13 @@ public class LengthBoundsCalculatorTest {
 
   @BeforeAll
   static void setConstants() {
-    Constants.setConstants("mainnet");
+    Constants.setConstants(TestSpecFactory.createMainnetPhase0());
     SpecDependent.resetAll();
   }
 
   @AfterAll
   static void restoreConstants() {
-    Constants.setConstants("minimal");
+    Constants.setConstants(TestSpecFactory.createMinimalPhase0());
     SpecDependent.resetAll();
   }
 

@@ -14,9 +14,9 @@
 package tech.pegasys.teku.statetransition.validation;
 
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_GOSSIP_CLOCK_DISPARITY;
+import static tech.pegasys.teku.spec.config.Constants.VALID_BLOCK_SET_SIZE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
-import static tech.pegasys.teku.util.config.Constants.MAXIMUM_GOSSIP_CLOCK_DISPARITY;
-import static tech.pegasys.teku.util.config.Constants.VALID_BLOCK_SET_SIZE;
 
 import com.google.common.base.Objects;
 import java.util.Optional;

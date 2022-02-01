@@ -36,6 +36,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -48,7 +49,6 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
-import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.SpecDependent;
 
 @ExtendWith(BouncyCastleExtension.class)
@@ -74,7 +74,7 @@ class FuzzUtilTest {
 
   @AfterEach
   public void cleanup() {
-    Constants.setConstants("minimal");
+    Constants.setConstants(TestSpecFactory.createMinimalPhase0());
     SpecDependent.resetAll();
   }
 

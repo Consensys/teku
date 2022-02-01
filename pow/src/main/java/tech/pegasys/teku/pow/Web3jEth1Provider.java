@@ -45,8 +45,8 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.exception.RejectedRequestException;
+import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.util.config.Constants;
 
 public class Web3jEth1Provider extends AbstractMonitorableEth1Provider {
   private static final Logger LOG = LogManager.getLogger();

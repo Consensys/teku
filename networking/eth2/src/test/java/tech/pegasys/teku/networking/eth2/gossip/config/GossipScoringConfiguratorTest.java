@@ -15,7 +15,7 @@ package tech.pegasys.teku.networking.eth2.gossip.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
-import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
+import static tech.pegasys.teku.spec.config.Constants.ATTESTATION_SUBNET_COUNT;
 
 import java.time.Duration;
 import java.util.Map;

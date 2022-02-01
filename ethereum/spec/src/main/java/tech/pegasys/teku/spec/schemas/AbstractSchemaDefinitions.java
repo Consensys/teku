@@ -15,8 +15,8 @@ package tech.pegasys.teku.spec.schemas;
 
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
+import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
-import tech.pegasys.teku.util.config.Constants;
 
 public abstract class AbstractSchemaDefinitions implements SchemaDefinitions {
 

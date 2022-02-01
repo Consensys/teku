@@ -25,8 +25,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.teku.infrastructure.ssz.SszTestUtils;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszMutableBytes32Vector;
+import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.SpecDependent;
 
 @ExtendWith(BouncyCastleExtension.class)
@@ -35,13 +36,13 @@ public class HistoricalBatchTest {
 
   @BeforeAll
   static void setConstants() {
-    Constants.setConstants("mainnet");
+    Constants.setConstants(TestSpecFactory.createMainnetPhase0());
     SpecDependent.resetAll();
   }
 
   @AfterAll
   static void restoreConstants() {
-    Constants.setConstants("minimal");
+    Constants.setConstants(TestSpecFactory.createMinimalPhase0());
     SpecDependent.resetAll();
   }
 

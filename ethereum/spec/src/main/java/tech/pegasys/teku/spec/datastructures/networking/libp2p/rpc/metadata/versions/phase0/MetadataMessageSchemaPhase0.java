@@ -20,8 +20,8 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessageSchema;
-import tech.pegasys.teku.util.config.Constants;
 
 public class MetadataMessageSchemaPhase0
     extends ContainerSchema2<MetadataMessagePhase0, SszUInt64, SszBitvector>

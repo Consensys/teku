@@ -17,15 +17,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
-import tech.pegasys.teku.util.config.Constants;
 
 class Eth1VotingPeriodTest {
 
@@ -57,16 +54,6 @@ class Eth1VotingPeriodTest {
   // Next Voting Period Start Slot = 102
   // Next Voting Period Start Time = 1408
   // Next Voting Period Lower Bound = 1378
-
-  @BeforeAll
-  static void setConstants() {
-    Constants.SLOTS_PER_EPOCH = 6;
-  }
-
-  @AfterAll
-  static void restoreConstants() {
-    Constants.setConstants("minimal");
-  }
 
   @Test
   void checkTimeValues() {

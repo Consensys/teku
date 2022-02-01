@@ -44,6 +44,7 @@ import tech.pegasys.teku.networking.eth2.peers.RespondingEth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
@@ -54,7 +55,6 @@ import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.sync.events.SyncState;
 import tech.pegasys.teku.sync.events.SyncStateProvider;
-import tech.pegasys.teku.util.config.Constants;
 
 public class HistoricalBlockSyncServiceTest {
   private final Spec spec = TestSpecFactory.createDefault();

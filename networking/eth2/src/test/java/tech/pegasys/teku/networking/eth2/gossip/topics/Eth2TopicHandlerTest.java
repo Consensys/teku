@@ -14,7 +14,7 @@
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
-import static tech.pegasys.teku.util.config.Constants.GOSSIP_MAX_SIZE;
+import static tech.pegasys.teku.spec.config.Constants.GOSSIP_MAX_SIZE;
 
 import io.libp2p.core.pubsub.ValidationResult;
 import java.util.concurrent.CompletionException;

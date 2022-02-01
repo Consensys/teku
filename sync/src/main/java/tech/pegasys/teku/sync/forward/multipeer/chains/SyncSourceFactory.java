@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.sync.forward.multipeer.chains;
 
-import static tech.pegasys.teku.util.config.Constants.MAX_BLOCKS_PER_MINUTE;
-import static tech.pegasys.teku.util.config.Constants.SYNC_BATCH_SIZE;
+import static tech.pegasys.teku.spec.config.Constants.MAX_BLOCKS_PER_MINUTE;
+import static tech.pegasys.teku.spec.config.Constants.SYNC_BATCH_SIZE;
 
 import java.util.HashMap;
 import java.util.Map;
