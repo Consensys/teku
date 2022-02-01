@@ -16,6 +16,7 @@ package tech.pegasys.teku.storage.store;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Objects;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
 public class StoreConfig {
   public static int MAX_CACHE_SIZE = 10_000;
@@ -146,6 +147,12 @@ public class StoreConfig {
 
     public Builder hotStatePersistenceFrequencyInEpochs(
         final int hotStatePersistenceFrequencyInEpochs) {
+      if (hotStatePersistenceFrequencyInEpochs < 0) {
+        throw new InvalidConfigurationException(
+            String.format(
+                "Invalid hotStatePersistenceFrequencyInEpochs: %d",
+                hotStatePersistenceFrequencyInEpochs));
+      }
       this.hotStatePersistenceFrequencyInEpochs = hotStatePersistenceFrequencyInEpochs;
       return this;
     }

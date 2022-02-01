@@ -25,6 +25,7 @@ import java.util.function.Consumer;
 import org.apache.commons.io.FileUtils;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.teku.cli.options.ValidatorClientDataOptions;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
@@ -219,6 +220,9 @@ public class DatabaseMigrater {
     }
 
     public Builder batchSize(final int batchSize) {
+      if (batchSize < 0) {
+        throw new InvalidConfigurationException(String.format("Invalid batchSize: %d", batchSize));
+      }
       this.batchSize = batchSize;
       return this;
     }

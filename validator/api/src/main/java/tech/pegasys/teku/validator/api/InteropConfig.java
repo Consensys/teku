@@ -79,6 +79,11 @@ public class InteropConfig {
     private InteropConfigBuilder() {}
 
     public InteropConfigBuilder interopGenesisTime(Integer interopGenesisTime) {
+      checkNotNull(interopGenesisTime);
+      if (interopGenesisTime < 0) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid interopGenesisTime: %d", interopGenesisTime));
+      }
       this.interopGenesisTime = interopGenesisTime;
       return this;
     }
@@ -90,16 +95,29 @@ public class InteropConfig {
 
     public InteropConfigBuilder interopOwnedValidatorStartIndex(
         int interopOwnedValidatorStartIndex) {
+      if (interopOwnedValidatorStartIndex < 0) {
+        throw new InvalidConfigurationException(
+            String.format(
+                "Invalid interopOwnedValidatorStartIndex: %d", interopOwnedValidatorStartIndex));
+      }
       this.interopOwnedValidatorStartIndex = interopOwnedValidatorStartIndex;
       return this;
     }
 
     public InteropConfigBuilder interopOwnedValidatorCount(int interopOwnedValidatorCount) {
+      if (interopOwnedValidatorCount < 0) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid interopOwnedValidatorCount: %d", interopOwnedValidatorCount));
+      }
       this.interopOwnedValidatorCount = interopOwnedValidatorCount;
       return this;
     }
 
     public InteropConfigBuilder interopNumberOfValidators(int interopNumberOfValidators) {
+      if (interopNumberOfValidators < 0) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid interopNumberOfValidators: %d", interopNumberOfValidators));
+      }
       this.interopNumberOfValidators = interopNumberOfValidators;
       return this;
     }

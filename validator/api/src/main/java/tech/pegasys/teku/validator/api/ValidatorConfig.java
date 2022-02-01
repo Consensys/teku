@@ -243,12 +243,23 @@ public class ValidatorConfig {
     }
 
     public Builder validatorExternalSignerTimeout(final Duration validatorExternalSignerTimeout) {
+      if (validatorExternalSignerTimeout.isNegative()) {
+        throw new InvalidConfigurationException(
+            String.format(
+                "Invalid validatorExternalSignerTimeout: %s", validatorExternalSignerTimeout));
+      }
       this.validatorExternalSignerTimeout = validatorExternalSignerTimeout;
       return this;
     }
 
     public Builder validatorExternalSignerConcurrentRequestLimit(
         int validatorExternalSignerConcurrentRequestLimit) {
+      if (validatorExternalSignerConcurrentRequestLimit < 0) {
+        throw new InvalidConfigurationException(
+            String.format(
+                "Invalid validatorExternalSignerConcurrentRequestLimit: %s",
+                validatorExternalSignerConcurrentRequestLimit));
+      }
       this.validatorExternalSignerConcurrentRequestLimit =
           validatorExternalSignerConcurrentRequestLimit;
       return this;
