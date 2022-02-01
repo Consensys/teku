@@ -40,7 +40,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.spec.networks.Eth2Network;
-import tech.pegasys.teku.util.config.Constants;
 
 public class SpecConfigLoaderTest {
 
@@ -170,15 +169,11 @@ public class SpecConfigLoaderTest {
   }
 
   private InputStream getMainnetConfigAsStream() {
-    return Constants.class
-        .getClassLoader()
-        .getResourceAsStream("tech/pegasys/teku/util/config/configs/mainnet.yaml");
+    return SpecConfig.class.getResourceAsStream("configs/mainnet.yaml");
   }
 
   private URL getMainnetConfigResourceAsUrl() {
-    return Constants.class
-        .getClassLoader()
-        .getResource("tech/pegasys/teku/util/config/configs/mainnet.yaml");
+    return SpecConfig.class.getResource("configs/mainnet.yaml");
   }
 
   private InputStream loadInvalidFile(final String file) {

@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.services.executionengine;
 
-import static tech.pegasys.teku.util.config.Constants.MAXIMUM_CONCURRENT_EE_REQUESTS;
+import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_EE_REQUESTS;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

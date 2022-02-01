@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
@@ -42,7 +41,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataValidator.AttestationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.statetransition.attestation.AttestationWorthinessChecker;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.util.config.Constants;
 
 class AggregatingAttestationPoolTest {
 
@@ -71,11 +69,6 @@ class AggregatingAttestationPoolTest {
     when(mockSpec.getCurrentEpoch(any())).thenAnswer(i -> spec.getCurrentEpoch(i.getArgument(0)));
     when(mockSpec.createAttestationWorthinessChecker(any()))
         .thenAnswer(i -> spec.createAttestationWorthinessChecker(i.getArgument(0)));
-  }
-
-  @AfterEach
-  public void tearDown() {
-    Constants.setConstants("minimal");
   }
 
   @Test

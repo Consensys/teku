@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 
-import static tech.pegasys.teku.util.config.Constants.GOSSIP_MAX_SIZE;
+import static tech.pegasys.teku.spec.config.Constants.GOSSIP_MAX_SIZE;
 
 import java.util.ArrayList;
 import java.util.List;

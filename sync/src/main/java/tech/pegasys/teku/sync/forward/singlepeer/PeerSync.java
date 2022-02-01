@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.sync.forward.singlepeer;
 
-import static tech.pegasys.teku.util.config.Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE;
+import static tech.pegasys.teku.spec.config.Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE;
 
 import com.google.common.base.Throwables;
 import java.time.Duration;

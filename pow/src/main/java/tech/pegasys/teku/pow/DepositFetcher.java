@@ -42,7 +42,7 @@ import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.pow.contract.DepositContract;
 import tech.pegasys.teku.pow.contract.DepositContract.DepositEventEventResponse;
 import tech.pegasys.teku.pow.exception.Eth1RequestException;
-import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.spec.config.Constants;
 
 public class DepositFetcher {
 

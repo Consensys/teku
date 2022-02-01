@@ -20,7 +20,7 @@ import java.io.IOException;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitlistSchema;
-import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.spec.config.Constants;
 
 public class SszBitlistDeserializer extends JsonDeserializer<SszBitlist> {
   @Override

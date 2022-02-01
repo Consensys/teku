@@ -26,7 +26,6 @@ import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.networks.Eth2Presets;
-import tech.pegasys.teku.util.config.Constants;
 
 public class SpecConfigLoader {
   private static final String CONFIG_PATH = "configs/";
@@ -134,17 +133,15 @@ public class SpecConfigLoader {
   }
 
   private static ResourceLoader getConfigLoader() {
-    // TODO(#3394) - move Constants resources from util to this module
     return ResourceLoader.classpathUrlOrFile(
-        Constants.class,
+        SpecConfig.class,
         enumerateAvailableConfigResources(),
         s -> s.endsWith(".yaml") || s.endsWith(".yml"));
   }
 
   private static ResourceLoader getPresetLoader() {
-    // TODO(#3394) - move Constants resources from util to this module
     return ResourceLoader.classpathUrlOrFile(
-        Constants.class,
+        SpecConfig.class,
         enumerateAvailablePresetResources(),
         s -> s.endsWith(".yaml") || s.endsWith(".yml"));
   }

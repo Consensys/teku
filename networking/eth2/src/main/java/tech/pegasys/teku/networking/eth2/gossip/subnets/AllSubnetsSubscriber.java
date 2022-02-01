@@ -14,7 +14,7 @@
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
 import static java.util.stream.Collectors.toSet;
-import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
+import static tech.pegasys.teku.spec.config.Constants.ATTESTATION_SUBNET_COUNT;
 
 import java.util.Set;
 import java.util.stream.IntStream;
