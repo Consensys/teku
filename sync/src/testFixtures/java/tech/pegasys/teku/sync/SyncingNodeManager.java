@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.sync;
 
-import static org.mockito.Mockito.mock;
 import static tech.pegasys.teku.infrastructure.events.TestExceptionHandler.TEST_EXCEPTION_HANDLER;
 
 import java.util.List;
@@ -42,7 +41,7 @@ import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
-import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
@@ -95,7 +94,7 @@ public class SyncingNodeManager {
 
     ForkChoice forkChoice =
         new ForkChoice(
-            spec, new InlineEventThread(), recentChainData, mock(ForkChoiceNotifier.class));
+            spec, new InlineEventThread(), recentChainData, new StubForkChoiceNotifier());
     BlockImporter blockImporter =
         new BlockImporter(
             spec,

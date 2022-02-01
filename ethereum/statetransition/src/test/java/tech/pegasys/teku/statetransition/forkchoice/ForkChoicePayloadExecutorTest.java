@@ -30,8 +30,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.executionengine.ExecutePayloadResult;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
+import tech.pegasys.teku.spec.executionengine.PayloadStatus;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -46,7 +46,7 @@ class ForkChoicePayloadExecutorTest {
   private final ExecutionPayloadHeader defaultPayloadHeader =
       schemaDefinitionsBellatrix.getExecutionPayloadHeaderSchema().getDefault();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final SafeFuture<ExecutePayloadResult> executionResult = new SafeFuture<>();
+  private final SafeFuture<PayloadStatus> executionResult = new SafeFuture<>();
   private final ExecutionEngineChannel executionEngine = mock(ExecutionEngineChannel.class);
   private final ExecutionPayloadHeader payloadHeader =
       dataStructureUtil.randomExecutionPayloadHeader();
@@ -59,14 +59,14 @@ class ForkChoicePayloadExecutorTest {
 
   @BeforeEach
   void setUp() {
-    when(executionEngine.executePayload(any())).thenReturn(executionResult);
+    when(executionEngine.newPayload(any())).thenReturn(executionResult);
   }
 
   @Test
   void optimisticallyExecute_shouldSendToExecutionEngineAndReturnTrue() {
     final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
     final boolean result = payloadExecutor.optimisticallyExecute(payloadHeader, payload);
-    verify(executionEngine).executePayload(payload);
+    verify(executionEngine).newPayload(payload);
     assertThat(result).isTrue();
   }
 
@@ -74,10 +74,9 @@ class ForkChoicePayloadExecutorTest {
   void optimisticallyExecute_shouldNotExecuteDefaultPayload() {
     final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
     final boolean result = payloadExecutor.optimisticallyExecute(payloadHeader, defaultPayload);
-    verify(executionEngine, never()).executePayload(any());
+    verify(executionEngine, never()).newPayload(any());
     assertThat(result).isTrue();
-    assertThat(payloadExecutor.getExecutionResult())
-        .isCompletedWithValue(ExecutePayloadResult.VALID);
+    assertThat(payloadExecutor.getExecutionResult()).isCompletedWithValue(PayloadStatus.VALID);
   }
 
   /**
@@ -98,7 +97,7 @@ class ForkChoicePayloadExecutorTest {
 
     // Should defer execution until it has checked the terminal difficulty so we expect getPoWBlock
     verify(executionEngine).getPowBlock(payload.getParentHash());
-    verify(executionEngine, never()).executePayload(payload);
+    verify(executionEngine, never()).newPayload(payload);
     assertThat(result).isTrue();
   }
 
@@ -111,10 +110,10 @@ class ForkChoicePayloadExecutorTest {
 
     // Should defer execution until it has checked the terminal difficulty so we expect getPoWBlock
     verify(executionEngine).getPowBlock(payload.getParentHash());
-    verify(executionEngine, never()).executePayload(payload);
+    verify(executionEngine, never()).newPayload(payload);
     assertThat(execution).isTrue();
     assertThat(payloadExecutor.getExecutionResult())
-        .isCompletedWithValueMatching(ExecutePayloadResult::hasFailedExecution);
+        .isCompletedWithValueMatching(PayloadStatus::hasFailedExecution);
     ;
   }
 
@@ -122,8 +121,8 @@ class ForkChoicePayloadExecutorTest {
   void shouldReturnValidImmediatelyWhenNoPayloadExecuted() {
     final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
 
-    final SafeFuture<ExecutePayloadResult> result = payloadExecutor.getExecutionResult();
-    assertThat(result).isCompletedWithValue(ExecutePayloadResult.VALID);
+    final SafeFuture<PayloadStatus> result = payloadExecutor.getExecutionResult();
+    assertThat(result).isCompletedWithValue(PayloadStatus.VALID);
   }
 
   @Test
@@ -131,12 +130,12 @@ class ForkChoicePayloadExecutorTest {
     final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
     payloadExecutor.optimisticallyExecute(payloadHeader, payload);
 
-    final SafeFuture<ExecutePayloadResult> result = payloadExecutor.getExecutionResult();
+    final SafeFuture<PayloadStatus> result = payloadExecutor.getExecutionResult();
     assertThat(result).isNotCompleted();
 
-    this.executionResult.complete(ExecutePayloadResult.VALID);
+    this.executionResult.complete(PayloadStatus.VALID);
 
-    assertThat(result).isCompletedWithValue(ExecutePayloadResult.VALID);
+    assertThat(result).isCompletedWithValue(PayloadStatus.VALID);
   }
 
   private ForkChoicePayloadExecutor createPayloadExecutor() {

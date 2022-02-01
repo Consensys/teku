@@ -84,8 +84,8 @@ import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.block.ReexecutingExecutionPayloadBlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifierImpl;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
-import tech.pegasys.teku.statetransition.forkchoice.OptimisticHeadValidator;
 import tech.pegasys.teku.statetransition.forkchoice.TerminalPowBlockMonitor;
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
 import tech.pegasys.teku.statetransition.synccommittee.SignedContributionAndProofValidator;
@@ -194,7 +194,6 @@ public class BeaconChainController extends Service
   protected volatile ForkChoiceNotifier forkChoiceNotifier;
   protected volatile ExecutionEngineChannel executionEngine;
   protected volatile Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor = Optional.empty();
-  protected volatile Optional<OptimisticHeadValidator> optimisticHeadValidator = Optional.empty();
 
   protected UInt64 genesisTimeTracker = ZERO;
   protected BlockManager blockManager;
@@ -271,8 +270,7 @@ public class BeaconChainController extends Service
             attestationManager.stop(),
             p2pNetwork.stop(),
             SafeFuture.fromRunnable(
-                () -> terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::stop)),
-            optimisticHeadValidator.map(Service::stop).orElse(SafeFuture.completedFuture(null)))
+                () -> terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::stop)))
         .thenRun(forkChoiceExecutor::stop);
   }
 
@@ -327,7 +325,6 @@ public class BeaconChainController extends Service
     initForkChoiceNotifier();
     initTerminalPowBlockMonitor();
     initForkChoice();
-    initOptimisticHeadValidator();
     initBlockImporter();
     initCombinedChainDataClient();
     initAttestationPool();
@@ -364,15 +361,6 @@ public class BeaconChainController extends Service
           Optional.of(
               new TerminalPowBlockMonitor(
                   executionEngine, spec, recentChainData, forkChoiceNotifier, beaconAsyncRunner));
-    }
-  }
-
-  protected void initOptimisticHeadValidator() {
-    if (spec.isMilestoneSupported(SpecMilestone.BELLATRIX)) {
-      optimisticHeadValidator =
-          Optional.of(
-              new OptimisticHeadValidator(
-                  beaconAsyncRunner, forkChoice, recentChainData, executionEngine));
     }
   }
 
@@ -883,7 +871,7 @@ public class BeaconChainController extends Service
   protected void initForkChoiceNotifier() {
     LOG.debug("BeaconChainController.initForkChoiceNotifier()");
     forkChoiceNotifier =
-        ForkChoiceNotifier.create(
+        ForkChoiceNotifierImpl.create(
             asyncRunnerFactory,
             spec,
             executionEngine,
@@ -963,7 +951,6 @@ public class BeaconChainController extends Service
     }
     slotProcessor.setCurrentSlot(currentSlot);
     performanceTracker.start(currentSlot);
-    optimisticHeadValidator.ifPresent(validator -> validator.start().reportExceptions());
   }
 
   protected UInt64 getCurrentSlot(final UInt64 genesisTime) {

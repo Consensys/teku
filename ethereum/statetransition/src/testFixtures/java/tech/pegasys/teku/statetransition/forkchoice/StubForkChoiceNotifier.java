@@ -23,19 +23,34 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.Beaco
 import tech.pegasys.teku.spec.executionengine.ForkChoiceState;
 import tech.pegasys.teku.spec.executionengine.ForkChoiceUpdatedResult;
 
-public interface ForkChoiceNotifier {
-  void onUpdatePreparableProposers(Collection<BeaconPreparableProposer> proposers);
+public class StubForkChoiceNotifier implements ForkChoiceNotifier {
 
-  SafeFuture<Optional<ForkChoiceUpdatedResult>> onForkChoiceUpdated(
-      ForkChoiceState forkChoiceState);
+  @Override
+  public void onUpdatePreparableProposers(Collection<BeaconPreparableProposer> proposers) {}
 
-  void onAttestationsDue(UInt64 slot);
+  @Override
+  public SafeFuture<Optional<ForkChoiceUpdatedResult>> onForkChoiceUpdated(
+      ForkChoiceState forkChoiceState) {
+    return SafeFuture.completedFuture(Optional.empty());
+  }
 
-  void onSyncingStatusChanged(boolean inSync);
+  @Override
+  public void onAttestationsDue(UInt64 slot) {}
 
-  SafeFuture<Optional<Bytes8>> getPayloadId(Bytes32 parentBeaconBlockRoot, UInt64 blockSlot);
+  @Override
+  public void onSyncingStatusChanged(boolean inSync) {}
 
-  void onTerminalBlockReached(Bytes32 executionBlockHash);
+  @Override
+  public SafeFuture<Optional<Bytes8>> getPayloadId(
+      Bytes32 parentBeaconBlockRoot, UInt64 blockSlot) {
+    return null;
+  }
 
-  PayloadAttributesCalculator getPayloadAttributesCalculator();
+  @Override
+  public void onTerminalBlockReached(Bytes32 executionBlockHash) {}
+
+  @Override
+  public PayloadAttributesCalculator getPayloadAttributesCalculator() {
+    return null;
+  }
 }

@@ -30,9 +30,9 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
-import tech.pegasys.teku.spec.executionengine.ExecutePayloadResult;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.executionengine.ExecutionPayloadStatus;
+import tech.pegasys.teku.spec.executionengine.PayloadStatus;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class BellatrixTransitionHelpersTest {
@@ -78,16 +78,16 @@ class BellatrixTransitionHelpersTest {
   }
 
   @Test
-  void shouldExecutePayloadIfTerminalDifficultyConditionsMet() {
+  void shouldCallNewPayloadIfTerminalDifficultyConditionsMet() {
     final PowBlock powBlock = withPowBlock(payload.getParentHash(), terminalDifficulty.plus(1));
     withPowBlock(powBlock.getParentHash(), terminalDifficulty.subtract(1));
 
-    final ExecutePayloadResult expectedPayloadResult = ExecutePayloadResult.VALID;
-    when(executionEngine.executePayload(payload))
+    final PayloadStatus expectedPayloadResult = PayloadStatus.VALID;
+    when(executionEngine.newPayload(payload))
         .thenReturn(SafeFuture.completedFuture(expectedPayloadResult));
 
     assertThat(validateMergeBlock()).isCompletedWithValue(expectedPayloadResult);
-    verify(executionEngine).executePayload(payload);
+    verify(executionEngine).newPayload(payload);
   }
 
   private PowBlock withPowBlock(final Bytes32 hash, final UInt256 totalDifficulty) {
@@ -102,7 +102,7 @@ class BellatrixTransitionHelpersTest {
     assertPayloadResultStatus(validateMergeBlock(), expectedStatus);
   }
 
-  private SafeFuture<ExecutePayloadResult> validateMergeBlock() {
+  private SafeFuture<PayloadStatus> validateMergeBlock() {
     return spec.getGenesisSpec()
         .getBellatrixTransitionHelpers()
         .orElseThrow()
@@ -110,7 +110,7 @@ class BellatrixTransitionHelpersTest {
   }
 
   private void assertPayloadResultStatus(
-      final SafeFuture<ExecutePayloadResult> result, final ExecutionPayloadStatus expectedStatus) {
+      final SafeFuture<PayloadStatus> result, final ExecutionPayloadStatus expectedStatus) {
     assertThat(result)
         .isCompletedWithValueMatching(
             payloadResult -> payloadResult.hasStatus(expectedStatus),
