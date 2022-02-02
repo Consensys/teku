@@ -16,9 +16,9 @@ package tech.pegasys.teku.protoarray;
 import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -191,36 +191,42 @@ public class ProtoNode {
   }
 
   @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof ProtoNode)) return false;
-    ProtoNode protoNode = (ProtoNode) o;
-    return Objects.equal(getBlockSlot(), protoNode.getBlockSlot())
-        && Objects.equal(getStateRoot(), protoNode.getStateRoot())
-        && Objects.equal(getBlockRoot(), protoNode.getBlockRoot())
-        && Objects.equal(getParentRoot(), protoNode.getParentRoot())
-        && Objects.equal(getJustifiedEpoch(), protoNode.getJustifiedEpoch())
-        && Objects.equal(getFinalizedEpoch(), protoNode.getFinalizedEpoch())
-        && Objects.equal(getWeight(), protoNode.getWeight())
-        && Objects.equal(getParentIndex(), protoNode.getParentIndex())
-        && Objects.equal(getBestChildIndex(), protoNode.getBestChildIndex())
-        && Objects.equal(getBestDescendantIndex(), protoNode.getBestDescendantIndex())
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final ProtoNode protoNode = (ProtoNode) o;
+    return Objects.equals(blockSlot, protoNode.blockSlot)
+        && Objects.equals(stateRoot, protoNode.stateRoot)
+        && Objects.equals(blockRoot, protoNode.blockRoot)
+        && Objects.equals(parentRoot, protoNode.parentRoot)
+        && Objects.equals(justifiedEpoch, protoNode.justifiedEpoch)
+        && Objects.equals(finalizedEpoch, protoNode.finalizedEpoch)
+        && Objects.equals(executionBlockHash, protoNode.executionBlockHash)
+        && Objects.equals(weight, protoNode.weight)
+        && Objects.equals(parentIndex, protoNode.parentIndex)
+        && Objects.equals(bestChildIndex, protoNode.bestChildIndex)
+        && Objects.equals(bestDescendantIndex, protoNode.bestDescendantIndex)
         && validationStatus == protoNode.validationStatus;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(
-        getBlockSlot(),
-        getStateRoot(),
-        getBlockRoot(),
-        getParentRoot(),
-        getJustifiedEpoch(),
-        getFinalizedEpoch(),
-        getWeight(),
-        getParentIndex(),
-        getBestChildIndex(),
-        getBestDescendantIndex(),
+    return Objects.hash(
+        blockSlot,
+        stateRoot,
+        blockRoot,
+        parentRoot,
+        justifiedEpoch,
+        finalizedEpoch,
+        executionBlockHash,
+        weight,
+        parentIndex,
+        bestChildIndex,
+        bestDescendantIndex,
         validationStatus);
   }
 
@@ -233,6 +239,7 @@ public class ProtoNode {
         .add("parentRoot", parentRoot)
         .add("justifiedEpoch", justifiedEpoch)
         .add("finalizedEpoch", finalizedEpoch)
+        .add("executionBlockHash", executionBlockHash)
         .add("weight", weight)
         .add("parentIndex", parentIndex)
         .add("bestChildIndex", bestChildIndex)

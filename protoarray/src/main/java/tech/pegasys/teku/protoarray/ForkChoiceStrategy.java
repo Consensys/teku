@@ -453,7 +453,9 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   }
 
   public void onExecutionPayloadResult(
-      final Bytes32 blockRoot, final ExecutionPayloadStatus status) {
+      final Bytes32 blockRoot,
+      final ExecutionPayloadStatus status,
+      final Optional<Bytes32> latestValidHash) {
     if (status == ExecutionPayloadStatus.SYNCING) {
       return;
     }
@@ -465,7 +467,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
           break;
         case INVALID:
           LOG.warn("Payload for block root {} was invalid", blockRoot);
-          protoArray.markNodeInvalid(blockRoot);
+          protoArray.markNodeInvalid(blockRoot, latestValidHash);
           break;
         default:
           throw new IllegalArgumentException("Unknown payload status: " + status);
