@@ -25,6 +25,8 @@ import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.validator.api.InteropConfig;
@@ -45,6 +47,7 @@ public class ValidatorSourceFactory {
   private final Optional<DataDirLayout> maybeDataDir;
   private Optional<ValidatorSource> mutableLocalValidatorSource = Optional.empty();
   private Optional<ValidatorSource> mutableExternalValidatorSource = Optional.empty();
+  private ThrottlingTaskQueue externalSignerTaskQueue;
 
   public ValidatorSourceFactory(
       final Spec spec,
@@ -121,6 +124,10 @@ public class ValidatorSourceFactory {
   }
 
   private Optional<ValidatorSource> addMutableExternalValidatorSource() {
+    if (config.getValidatorExternalSignerPublicKeySources().isEmpty()) {
+      return Optional.empty();
+    }
+
     final ExternalValidatorSource externalValidatorSource =
         ExternalValidatorSource.create(
             spec,
@@ -129,7 +136,8 @@ public class ValidatorSourceFactory {
             externalSignerHttpClientFactory,
             publicKeyLoader,
             asyncRunner,
-            false);
+            false,
+            initializeExternalSignerTaskQueue());
     mutableExternalValidatorSource = Optional.of(slashingProtected(externalValidatorSource));
     return mutableLocalValidatorSource;
   }
@@ -160,6 +168,7 @@ public class ValidatorSourceFactory {
     if (config.getValidatorExternalSignerPublicKeySources().isEmpty()) {
       return Optional.empty();
     }
+
     final ValidatorSource externalValidatorSource =
         ExternalValidatorSource.create(
             spec,
@@ -168,7 +177,8 @@ public class ValidatorSourceFactory {
             externalSignerHttpClientFactory,
             publicKeyLoader,
             asyncRunner,
-            true);
+            true,
+            initializeExternalSignerTaskQueue());
     return Optional.of(
         config.isValidatorExternalSignerSlashingProtectionEnabled()
             ? slashingProtected(externalValidatorSource)
@@ -177,5 +187,18 @@ public class ValidatorSourceFactory {
 
   private ValidatorSource slashingProtected(final ValidatorSource validatorSource) {
     return new SlashingProtectedValidatorSource(validatorSource, slashingProtector);
+  }
+
+  private ThrottlingTaskQueue initializeExternalSignerTaskQueue() {
+    if (externalSignerTaskQueue == null) {
+      externalSignerTaskQueue =
+          new ThrottlingTaskQueue(
+              config.getValidatorExternalSignerConcurrentRequestLimit(),
+              metricsSystem,
+              TekuMetricCategory.VALIDATOR,
+              "external_signer_request_queue_size");
+    }
+
+    return externalSignerTaskQueue;
   }
 }

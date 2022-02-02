@@ -197,11 +197,17 @@ public class KeyManager {
     return validatorLoader.loadMutableValidator(keyStoreData, password, slashingProtectionImporter);
   }
 
-  private PostKeyResult importExternalValidators(
-      final BLSPublicKey publicKey,
-      final URL signerUrl,
+  public List<PostKeyResult> importExternalValidators(
+      final List<BLSPublicKey> publicKeys,
+      final List<URL> signerUrls,
       final Optional<SlashingProtectionImporter> slashingProtectionImporter) {
-    return validatorLoader.loadExternalMutableValidator(
-        publicKey, signerUrl, slashingProtectionImporter);
+    final List<PostKeyResult> importResults = new ArrayList<>();
+    for (int i = 0; i < publicKeys.size(); i++) {
+      importResults.add(
+          validatorLoader.loadExternalMutableValidator(
+              publicKeys.get(i), signerUrls.get(i), slashingProtectionImporter));
+    }
+
+    return importResults;
   }
 }

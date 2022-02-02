@@ -1,0 +1,22 @@
+{
+  "title" : "PostRemoteKeysRequest",
+  "type" : "object",
+  "properties" : {
+    "pubkey" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/PubKey"
+      }
+    },
+    "signer" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/Signer"
+      }
+    },
+    "slashing_protection" : {
+      "type" : "string",
+      "description" : "JSON serialized representation of the slash protection data in format defined in EIP-3076: Slashing Protection Interchange Format."
+    }
+  }
+}

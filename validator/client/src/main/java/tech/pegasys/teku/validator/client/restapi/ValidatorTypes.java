@@ -18,6 +18,7 @@ import static tech.pegasys.teku.infrastructure.restapi.types.CoreTypes.STRING_TY
 import static tech.pegasys.teku.infrastructure.restapi.types.DeserializableTypeDefinition.enumOf;
 import static tech.pegasys.teku.infrastructure.restapi.types.SerializableTypeDefinition.listOf;
 
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 import java.util.Optional;
@@ -35,6 +36,7 @@ import tech.pegasys.teku.validator.client.restapi.apis.schema.DeletionStatus;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.ImportStatus;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeysRequest;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.PostRemoteKeysRequest;
 
 public class ValidatorTypes {
 
@@ -48,6 +50,12 @@ public class ValidatorTypes {
   public static final SerializableTypeDefinition<List<PostKeyResult>> POST_KEYS_RESPONSE =
       SerializableTypeDefinition.<List<PostKeyResult>>object()
           .name("PostKeysResponse")
+          .withField("data", listOf(POST_KEY_RESULT), Function.identity())
+          .build();
+
+  public static final SerializableTypeDefinition<List<PostKeyResult>> POST_REMOTE_KEYS_RESPONSE =
+      SerializableTypeDefinition.<List<PostKeyResult>>object()
+          .name("PostRemoteKeysResponse")
           .withField("data", listOf(POST_KEY_RESULT), Function.identity())
           .build();
 
@@ -72,6 +80,7 @@ public class ValidatorTypes {
               PostKeysRequest::getSlashingProtection,
               PostKeysRequest::setSlashingProtection)
           .build();
+
   public static DeserializableTypeDefinition<BLSPublicKey> PUBKEY_TYPE =
       DeserializableTypeDefinition.string(BLSPublicKey.class)
           .name("PubKey")
@@ -82,6 +91,42 @@ public class ValidatorTypes {
               "0x93247f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74a")
           .description(
               "The validator's BLS public key, uniquely identifying them. _48-bytes, hex encoded with 0x prefix, case insensitive._")
+          .build();
+
+  public static DeserializableTypeDefinition<URL> URL_TYPE =
+      DeserializableTypeDefinition.string(URL.class)
+          .name("Signer")
+          .parser(
+              url -> { // TODO Fix
+                try {
+                  return new URL(url);
+                } catch (MalformedURLException e) {
+                  throw new IllegalArgumentException(e);
+                }
+              })
+          .formatter(URL::toString)
+          .build();
+
+  public static final DeserializableTypeDefinition<PostRemoteKeysRequest> POST_REMOTE_KEYS_REQUEST =
+      DeserializableTypeDefinition.object(PostRemoteKeysRequest.class)
+          .name("PostRemoteKeysRequest")
+          .initializer(PostRemoteKeysRequest::new)
+          .withField(
+              "pubkey",
+              DeserializableTypeDefinition.listOf(PUBKEY_TYPE),
+              PostRemoteKeysRequest::getPubKeys,
+              PostRemoteKeysRequest::setPubKeys)
+          .withField(
+              "signer",
+              DeserializableTypeDefinition.listOf(URL_TYPE),
+              PostRemoteKeysRequest::getSigners,
+              PostRemoteKeysRequest::setSigners)
+          .withOptionalField(
+              "slashing_protection",
+              CoreTypes.string(
+                  "JSON serialized representation of the slash protection data in format defined in EIP-3076: Slashing Protection Interchange Format."),
+              PostRemoteKeysRequest::getSlashingProtection,
+              PostRemoteKeysRequest::setSlashingProtection)
           .build();
 
   public static SerializableTypeDefinition<Validator> ACTIVE_VALIDATOR =

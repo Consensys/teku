@@ -31,7 +31,9 @@ import org.mockito.ArgumentMatchers;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
@@ -42,6 +44,7 @@ public class ExternalValidatorSourceTest {
   private final HttpClient httpClient = mock(HttpClient.class);
   private final MetricsSystem metricsSystem = new StubMetricsSystem();
   private final AsyncRunner asyncRunner = new StubAsyncRunner();
+  private ThrottlingTaskQueue externalSignerTaskQueue;
 
   @SuppressWarnings("unchecked")
   private final HttpResponse<Void> httpResponse = mock(HttpResponse.class);
@@ -57,12 +60,25 @@ public class ExternalValidatorSourceTest {
         ValidatorConfig.builder()
             .validatorExternalSignerUrl(new URL("http://localhost:9000"))
             .build();
+    externalSignerTaskQueue =
+        new ThrottlingTaskQueue(
+            config.getValidatorExternalSignerConcurrentRequestLimit(),
+            metricsSystem,
+            TekuMetricCategory.VALIDATOR,
+            "external_signer_request_queue_size");
     when(httpResponse.statusCode()).thenReturn(SC_OK);
     when(httpClient.send(any(), ArgumentMatchers.<HttpResponse.BodyHandler<Void>>any()))
         .thenReturn(httpResponse);
     validatorSource =
         ExternalValidatorSource.create(
-            spec, metricsSystem, config, () -> httpClient, publicKeyLoader, asyncRunner, true);
+            spec,
+            metricsSystem,
+            config,
+            () -> httpClient,
+            publicKeyLoader,
+            asyncRunner,
+            true,
+            externalSignerTaskQueue);
   }
 
   @Test

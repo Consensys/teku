@@ -30,7 +30,6 @@ import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
-import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
@@ -50,7 +49,7 @@ public class ExternalValidatorSource implements ValidatorSource {
   private final boolean readOnly;
   private final Map<BLSPublicKey, URL> externalValidatorSourceMap = new ConcurrentHashMap<>();
 
-  public ExternalValidatorSource(
+  private ExternalValidatorSource(
       final Spec spec,
       final ValidatorConfig config,
       final Supplier<HttpClient> externalSignerHttpClientFactory,
@@ -74,13 +73,8 @@ public class ExternalValidatorSource implements ValidatorSource {
       final Supplier<HttpClient> externalSignerHttpClientFactory,
       final PublicKeyLoader publicKeyLoader,
       final AsyncRunner asyncRunner,
-      final boolean readOnly) {
-    final ThrottlingTaskQueue externalSignerTaskQueue =
-        new ThrottlingTaskQueue(
-            config.getValidatorExternalSignerConcurrentRequestLimit(),
-            metricsSystem,
-            TekuMetricCategory.VALIDATOR,
-            "external_signer_request_queue_size");
+      final boolean readOnly,
+      final ThrottlingTaskQueue externalSignerTaskQueue) {
     setupExternalSignerStatusLogging(config, externalSignerHttpClientFactory, asyncRunner);
     return new ExternalValidatorSource(
         spec,

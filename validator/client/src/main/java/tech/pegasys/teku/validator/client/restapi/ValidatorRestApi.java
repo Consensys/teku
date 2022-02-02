@@ -30,6 +30,7 @@ import tech.pegasys.teku.validator.client.restapi.apis.DeleteKeys;
 import tech.pegasys.teku.validator.client.restapi.apis.GetKeys;
 import tech.pegasys.teku.validator.client.restapi.apis.GetRemoteKeys;
 import tech.pegasys.teku.validator.client.restapi.apis.PostKeys;
+import tech.pegasys.teku.validator.client.restapi.apis.PostRemoteKeys;
 
 public class ValidatorRestApi {
   public static RestApi create(final ValidatorRestApiConfig config, final KeyManager keyManager) {
@@ -65,6 +66,7 @@ public class ValidatorRestApi {
         .endpoint(new PostKeys(keyManager))
         .sslCertificate(config.getRestApiKeystoreFile(), config.getRestApiKeystorePasswordFile())
         .endpoint(new GetRemoteKeys(keyManager))
+        .endpoint(new PostRemoteKeys(keyManager))
         .passwordFilePath(
             ValidatorClientService.getKeyManagerPath(keyManager.getDataDirLayout())
                 .resolve("validator-api-bearer"))

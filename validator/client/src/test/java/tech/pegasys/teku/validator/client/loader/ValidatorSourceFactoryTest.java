@@ -14,14 +14,21 @@
 package tech.pegasys.teku.validator.client.loader;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import java.io.IOException;
+import java.net.URL;
 import java.net.http.HttpClient;
+import java.net.http.HttpResponse;
 import java.nio.file.Path;
 import java.util.Optional;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.ArgumentMatchers;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -36,14 +43,28 @@ class ValidatorSourceFactoryTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final InteropConfig disabledInteropConfig =
       InteropConfig.builder().specProvider(spec).build();
-  final ValidatorConfig config =
-      ValidatorConfig.builder().validatorExternalSignerSlashingProtectionEnabled(false).build();
+  private ValidatorConfig config;
 
   private final SlashingProtector slashingProtector = mock(SlashingProtector.class);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final HttpClient httpClient = mock(HttpClient.class);
   private final MetricsSystem metricsSystem = new StubMetricsSystem();
   private final PublicKeyLoader publicKeyLoader = new PublicKeyLoader();
+
+  @SuppressWarnings("unchecked")
+  private final HttpResponse<Void> upcheckResponse = mock(HttpResponse.class);
+
+  @BeforeEach
+  void setUp() throws IOException, InterruptedException {
+    config =
+        ValidatorConfig.builder()
+            .validatorExternalSignerSlashingProtectionEnabled(false)
+            .validatorExternalSignerUrl(new URL("http://host.com"))
+            .build();
+
+    when(httpClient.send(any(), ArgumentMatchers.<HttpResponse.BodyHandler<Void>>any()))
+        .thenReturn(upcheckResponse);
+  }
 
   @Test
   void mutableValidatorShouldBeSlashingProtected(@TempDir final Path tempDir) {

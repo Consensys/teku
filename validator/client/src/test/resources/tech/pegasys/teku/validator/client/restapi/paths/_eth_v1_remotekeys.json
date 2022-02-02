@@ -56,5 +56,74 @@
         }
       }
     }
+  },
+  "post" : {
+    "operationId" : "ImportRemoteKeys",
+    "summary" : "Import Remote Keys",
+    "description" : "Import remote keys for the validator client to request duties for.",
+    "requestBody" : {
+      "content" : {
+        "application/json" : {
+          "schema" : {
+            "$ref" : "#/components/schemas/PostRemoteKeysRequest"
+          }
+        }
+      }
+    },
+    "security" : [ {
+      "bearerAuth" : [ ]
+    } ],
+    "responses" : {
+      "200" : {
+        "description" : "Success response",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/PostRemoteKeysResponse"
+            }
+          }
+        }
+      },
+      "401" : {
+        "description" : "Unauthorized, no token is found",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "403" : {
+        "description" : "Forbidden, a token is found but is invalid",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      }
+    }
   }
 }
