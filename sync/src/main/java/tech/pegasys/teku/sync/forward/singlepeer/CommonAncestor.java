@@ -38,7 +38,9 @@ public class CommonAncestor {
 
   public SafeFuture<UInt64> getCommonAncestor(
       final SyncSource peer, final UInt64 firstNonFinalSlot, final UInt64 peerHeadSlot) {
-    final UInt64 lowestHeadSlot = storageClient.getHeadSlot().min(peerHeadSlot);
+    final UInt64 ourHeadSlot =
+        storageClient.getOptimisticHeadSlot().orElse(storageClient.getHeadSlot());
+    final UInt64 lowestHeadSlot = ourHeadSlot.min(peerHeadSlot);
     if (lowestHeadSlot.isLessThan(firstNonFinalSlot.plus(OPTIMISTIC_HISTORY_LENGTH))) {
       return SafeFuture.completedFuture(firstNonFinalSlot);
     }
@@ -50,7 +52,7 @@ public class CommonAncestor {
     LOG.debug(
         "Local head slot {}. Have {} non finalized slots, "
             + "will sample ahead every {} slots from {} to {}. Peer head is {}",
-        storageClient.getHeadSlot(),
+        ourHeadSlot,
         localNonFinalisedSlotCount,
         SAMPLE_RATE,
         firstRequestedSlot,

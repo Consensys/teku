@@ -983,9 +983,14 @@ public final class DataStructureUtil {
   }
 
   public ForkChoiceState randomForkChoiceState(final boolean optimisticHead) {
+    return randomForkChoiceState(randomUInt64(), optimisticHead);
+  }
+
+  public ForkChoiceState randomForkChoiceState(
+      final UInt64 headBlockSlot, final boolean optimisticHead) {
     return new ForkChoiceState(
         randomBytes32(),
-        randomUInt64(),
+        headBlockSlot,
         randomBytes32(),
         randomBytes32(),
         randomBytes32(),
