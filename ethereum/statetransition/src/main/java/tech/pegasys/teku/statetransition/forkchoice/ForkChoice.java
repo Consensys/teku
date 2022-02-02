@@ -289,7 +289,8 @@ public class ForkChoice {
 
     // Note: not using thenRun here because we want to ensure each step is on the event thread
     transaction.commit().join();
-    forkChoiceStrategy.onExecutionPayloadResult(block.getRoot(), payloadResultStatus);
+    forkChoiceStrategy.onExecutionPayloadResult(
+        block.getRoot(), payloadResultStatus, payloadResult.getLatestValidHash());
 
     final UInt64 currentEpoch = spec.computeEpochAtSlot(spec.getCurrentSlot(transaction));
 
@@ -317,22 +318,22 @@ public class ForkChoice {
       final UInt64 latestFinalizedBlockSlot) {
     onForkChoiceThread(
             () -> {
-              if (!result.hasStatus(ExecutionPayloadStatus.VALID)) {
-                return;
-              }
-              UInt64 latestValidFinalizedSlotInStore =
-                  recentChainData.getLatestValidFinalizedSlot();
+              if (result.hasStatus(ExecutionPayloadStatus.VALID)) {
+                UInt64 latestValidFinalizedSlotInStore =
+                    recentChainData.getLatestValidFinalizedSlot();
 
-              if (latestFinalizedBlockSlot.isGreaterThan(latestValidFinalizedSlotInStore)) {
-                final StoreTransaction transaction = recentChainData.startStoreTransaction();
-                transaction.setLatestValidFinalizedSlot(latestFinalizedBlockSlot);
-                transaction.commit().join();
+                if (latestFinalizedBlockSlot.isGreaterThan(latestValidFinalizedSlotInStore)) {
+                  final StoreTransaction transaction = recentChainData.startStoreTransaction();
+                  transaction.setLatestValidFinalizedSlot(latestFinalizedBlockSlot);
+                  transaction.commit().join();
+                }
               }
 
               recentChainData
                   .getForkChoiceStrategy()
                   .orElseThrow()
-                  .onExecutionPayloadResult(blockRoot, result.getStatus().orElseThrow());
+                  .onExecutionPayloadResult(
+                      blockRoot, result.getStatus().orElseThrow(), result.getLatestValidHash());
             })
         .reportExceptions();
   }

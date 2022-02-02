@@ -247,19 +247,50 @@ public class ProtoArray {
     }
   }
 
-  public void markNodeInvalid(final Bytes32 blockRoot) {
+  public void markNodeInvalid(final Bytes32 blockRoot, final Optional<Bytes32> latestValidHash) {
     final Optional<Integer> maybeIndex = indices.get(blockRoot);
     if (maybeIndex.isEmpty()) {
       LOG.debug("Couldn't update status for block {} because it was unknown", blockRoot);
       return;
     }
-    final int index = maybeIndex.get();
-    final ProtoNode node = getNodeByIndex(index);
+    final int index;
+    final ProtoNode node;
+    if (latestValidHash.isPresent()) {
+      final Optional<Integer> maybeFirstInvalidNodeIndex =
+          findFirstInvalidNodeIndex(maybeIndex.get(), latestValidHash.get());
+      index = maybeFirstInvalidNodeIndex.orElse(maybeIndex.get());
+      node = getNodeByIndex(index);
+      // We found the latestValidHash so mark it as valid
+      if (maybeFirstInvalidNodeIndex.isPresent()) {
+        markNodeValid(node.getParentRoot());
+      }
+    } else {
+      index = maybeIndex.get();
+      node = getNodeByIndex(index);
+    }
+
     node.setValidationStatus(INVALID);
-    removeBlockRoot(blockRoot);
+    removeBlockRoot(node.getBlockRoot());
     markDescendantsAsInvalid(index);
     // Applying zero deltas causes the newly marked INVALID nodes to have their weight set to 0
     applyDeltas(new ArrayList<>(Collections.nCopies(getTotalTrackedNodeCount(), 0L)));
+  }
+
+  private Optional<Integer> findFirstInvalidNodeIndex(
+      final int invalidNodeIndex, final Bytes32 latestValidHash) {
+    int firstInvalidNodeIndex = invalidNodeIndex;
+    Optional<Integer> parentIndex = getNodeByIndex(invalidNodeIndex).getParentIndex();
+    while (parentIndex.isPresent()) {
+      final ProtoNode parentNode = getNodeByIndex(parentIndex.get());
+      if (parentNode.getExecutionBlockHash().equals(latestValidHash)) {
+        return Optional.of(firstInvalidNodeIndex);
+      }
+      firstInvalidNodeIndex = parentIndex.get();
+      parentIndex = parentNode.getParentIndex();
+    }
+    // Couldn't find the last valid hash - so can't take advantage of it.
+    LOG.debug("Failed to find block for latestValidHash {}", latestValidHash);
+    return Optional.empty();
   }
 
   private void markDescendantsAsInvalid(final int index) {
