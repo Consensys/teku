@@ -32,7 +32,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -96,7 +95,6 @@ public class SpecConfigReader {
           .build();
 
   final SpecConfigBuilder configBuilder = SpecConfig.builder();
-  final HashMap<String, Object> seenValues = new HashMap<>();
 
   public SpecConfig build() {
     return configBuilder.build();
@@ -122,7 +120,6 @@ public class SpecConfigReader {
 
   public void loadFromMap(
       final Map<String, String> rawValues, final boolean ignoreUnknownConfigItems) {
-    processSeenValues(rawValues);
     final Map<String, String> unprocessedConfig = new HashMap<>(rawValues);
     final Map<String, String> apiSpecConfig = new HashMap<>(rawValues);
     // Remove any keys that we're ignoring
@@ -183,25 +180,6 @@ public class SpecConfigReader {
       } else {
         LOG.info("Ignoring unknown items in network configuration: {}", unknownKeys);
       }
-    }
-  }
-
-  private void processSeenValues(final Map<String, ?> rawValues) {
-    if (seenValues.isEmpty()) {
-      seenValues.putAll(rawValues);
-      return;
-    }
-
-    for (String key : rawValues.keySet()) {
-      final Object newValue = rawValues.get(key);
-      final Object existingValue = seenValues.get(key);
-      if (existingValue != null && !Objects.equals(existingValue, newValue)) {
-        LOG.warn(
-            String.format(
-                "Found duplicate declarations for spec constant '%s'. Overriding preset value '%s' with '%s'.",
-                key, existingValue, newValue));
-      }
-      seenValues.put(key, newValue);
     }
   }
 
