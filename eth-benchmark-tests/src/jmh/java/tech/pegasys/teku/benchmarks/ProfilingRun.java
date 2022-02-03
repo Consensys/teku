@@ -70,7 +70,7 @@ public class ProfilingRun {
 
     String blocksFile =
         "/blocks/blocks_epoch_"
-            + Constants.SLOTS_PER_EPOCH
+            + spec.getSlotsPerEpoch(UInt64.ZERO)
             + "_validators_"
             + validatorsCount
             + ".ssz.gz";
@@ -97,6 +97,7 @@ public class ProfilingRun {
           BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);
       BlockImporter blockImporter =
           new BlockImporter(
+              spec,
               blockImportNotifications,
               recentChainData,
               forkChoice,
@@ -150,7 +151,7 @@ public class ProfilingRun {
 
     String blocksFile =
         "/blocks/blocks_epoch_"
-            + Constants.SLOTS_PER_EPOCH
+            + spec.getSlotsPerEpoch(UInt64.ZERO)
             + "_validators_"
             + validatorsCount
             + ".ssz.gz";
@@ -177,6 +178,7 @@ public class ProfilingRun {
               spec, new InlineEventThread(), recentChainData, mock(ForkChoiceNotifier.class));
       BlockImporter blockImporter =
           new BlockImporter(
+              spec,
               blockImportNotifications,
               recentChainData,
               forkChoice,

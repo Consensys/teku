@@ -33,6 +33,7 @@ import tech.pegasys.teku.benchmarks.gen.BlockIO;
 import tech.pegasys.teku.benchmarks.gen.BlsKeyPairIO;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.Constants;
@@ -74,7 +75,7 @@ public abstract class TransitionBenchmark {
 
     String blocksFile =
         "/blocks/blocks_epoch_"
-            + Constants.SLOTS_PER_EPOCH
+            + spec.getSlotsPerEpoch(UInt64.ZERO)
             + "_validators_"
             + validatorsCount
             + ".ssz.gz";
@@ -96,6 +97,7 @@ public abstract class TransitionBenchmark {
 
     blockImporter =
         new BlockImporter(
+            spec,
             blockImportNotifications,
             recentChainData,
             forkChoice,
@@ -136,7 +138,8 @@ public abstract class TransitionBenchmark {
     @Setup(Level.Iteration)
     public void skipAndPrefetch() throws Exception {
       if (lastResult != null
-          && (lastResult.getBlock().getSlot().longValue() + 1) % Constants.SLOTS_PER_EPOCH == 0) {
+          && (lastResult.getBlock().getSlot().longValue() + 1) % spec.getSlotsPerEpoch(UInt64.ZERO)
+              == 0) {
 
         // import block with epoch transition
         importNextBlock();
@@ -162,7 +165,8 @@ public abstract class TransitionBenchmark {
     public void skipAndPrefetch() throws Exception {
       // import all blocks without epoch transition
       while (lastResult == null
-          || (lastResult.getBlock().getSlot().longValue() + 1) % Constants.SLOTS_PER_EPOCH != 0) {
+          || (lastResult.getBlock().getSlot().longValue() + 1) % spec.getSlotsPerEpoch(UInt64.ZERO)
+              != 0) {
         importNextBlock();
       }
       prefetchBlock();

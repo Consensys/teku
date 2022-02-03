@@ -22,7 +22,6 @@ public class Constants {
 
   @Deprecated public static int MAX_VALIDATORS_PER_COMMITTEE;
 
-  @Deprecated public static int SLOTS_PER_EPOCH;
   @Deprecated public static int SLOTS_PER_HISTORICAL_ROOT;
 
   // Networking
@@ -87,7 +86,6 @@ public class Constants {
   @Deprecated
   public static void setConstants(final SpecConfig config) {
     MAX_VALIDATORS_PER_COMMITTEE = config.getMaxValidatorsPerCommittee();
-    SLOTS_PER_EPOCH = config.getSlotsPerEpoch();
     SLOTS_PER_HISTORICAL_ROOT = config.getSlotsPerHistoricalRoot();
     SpecDependent.resetAll();
   }
