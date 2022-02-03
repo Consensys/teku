@@ -105,7 +105,7 @@ class ForkChoicePayloadExecutorTest {
   @Test
   void optimisticallyExecute_shouldReturnFailedExecutionOnMergeBlockWhenELOffline() {
     when(executionEngine.getPowBlock(payload.getParentHash()))
-        .thenReturn(SafeFuture.failedFuture(new IOException("Boom")));
+        .thenReturn(SafeFuture.failedFuture(new Error()));
     final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
     final boolean execution = payloadExecutor.optimisticallyExecute(defaultPayloadHeader, payload);
 
