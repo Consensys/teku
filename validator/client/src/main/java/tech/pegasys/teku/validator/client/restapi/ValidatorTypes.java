@@ -97,27 +97,27 @@ public class ValidatorTypes {
           .build();
 
   public static DeserializableTypeDefinition<URL> URL_TYPE =
-          DeserializableTypeDefinition.string(URL.class)
-                  .name("Signer")
-                  .formatter(URL::toString)
-                  .parser(
-                          url -> { // TODO Fix
-                            try {
-                              return new URL(url);
-                            } catch (MalformedURLException e) {
-                              throw new IllegalArgumentException(e);
-                            }
-                          })
-                  .build();
+      DeserializableTypeDefinition.string(URL.class)
+          .name("Signer")
+          .formatter(URL::toString)
+          .parser(
+              url -> { // TODO Fix
+                try {
+                  return new URL(url);
+                } catch (MalformedURLException e) {
+                  throw new IllegalArgumentException(e);
+                }
+              })
+          .build();
 
   public static DeserializableTypeDefinition<Validator> REMOTE_KEY =
-          DeserializableTypeDefinition.object(Validator.class)
+      DeserializableTypeDefinition.object(Validator.class)
           .withField("pubkey", PUBKEY_TYPE, Validator::getPublicKey, Validator::setPublicKey)
           .withOptionalField(
               "url",
               URL_TYPE,
               validator -> validator.getSigner().getSigningServiceUrl(),
-                  ((validator, url) -> validator.getSigner().setSigningServiceUrl(url)))
+              ((validator, url) -> validator.getSigner().setSigningServiceUrl(url)))
           .withField("readonly", BOOLEAN_TYPE, Validator::isReadOnly, Validator::setReadOnly)
           .build();
 
@@ -128,21 +128,21 @@ public class ValidatorTypes {
           .build();
 
   public static final DeserializableTypeDefinition<PostRemoteKeysRequest> POST_REMOTE_KEYS_REQUEST =
-          DeserializableTypeDefinition.object(PostRemoteKeysRequest.class)
-                  .name("PostRemoteKeysRequest")
-                  .initializer(PostRemoteKeysRequest::new)
-                  .withField(
-                          "remote_keys",
-                          DeserializableTypeDefinition.listOf(REMOTE_KEY),
-                          PostRemoteKeysRequest::getValidators,
-                          PostRemoteKeysRequest::setValidators)
-                  .build();
+      DeserializableTypeDefinition.object(PostRemoteKeysRequest.class)
+          .name("PostRemoteKeysRequest")
+          .initializer(PostRemoteKeysRequest::new)
+          .withField(
+              "remote_keys",
+              DeserializableTypeDefinition.listOf(REMOTE_KEY),
+              PostRemoteKeysRequest::getValidators,
+              PostRemoteKeysRequest::setValidators)
+          .build();
 
   public static final SerializableTypeDefinition<List<PostKeyResult>> POST_REMOTE_KEYS_RESPONSE =
-          SerializableTypeDefinition.<List<PostKeyResult>>object()
-                  .name("PostRemoteKeysResponse")
-                  .withField("data", listOf(POST_KEY_RESULT), Function.identity())
-                  .build();
+      SerializableTypeDefinition.<List<PostKeyResult>>object()
+          .name("PostRemoteKeysResponse")
+          .withField("data", listOf(POST_KEY_RESULT), Function.identity())
+          .build();
 
   static SerializableTypeDefinition<DeleteKeyResult> DELETE_KEY_RESULT =
       SerializableTypeDefinition.object(DeleteKeyResult.class)
