@@ -20,7 +20,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
@@ -46,10 +45,11 @@ import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   private static final Logger LOG = LogManager.getLogger();
 
+  private static final int ERROR_REPEAT_DELAY_MILLIS = 30 * 1000;
   private final Web3j eth1Web3j;
   private final HttpService eeWeb3jService;
   private final AtomicLong nextId = new AtomicLong(MESSAGE_ORDER_RESET_ID);
-  private final AtomicBoolean isErrored = new AtomicBoolean(false);
+  private final AtomicLong lastError = new AtomicLong(-1);
 
   public Web3JExecutionEngineClient(String eeEndpoint) {
     this.eeWeb3jService = new HttpService(eeEndpoint, createOkHttpClient());
@@ -127,13 +127,16 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   }
 
   private void handleError(Throwable error) {
-    if (isErrored.compareAndSet(false, true)) {
-      EVENT_LOG.executionClientIsOffline(error);
+    final long errorTime = lastError.get();
+    if (errorTime == -1 || System.currentTimeMillis() - errorTime > ERROR_REPEAT_DELAY_MILLIS) {
+      if (lastError.compareAndSet(errorTime, System.currentTimeMillis())) {
+        EVENT_LOG.executionClientIsOffline(error);
+      }
     }
   }
 
   private void handleSuccess() {
-    if (isErrored.compareAndSet(true, false)) {
+    if (lastError.getAndUpdate(x -> -1) != -1) {
       EVENT_LOG.executionClientIsOnline();
     }
   }
