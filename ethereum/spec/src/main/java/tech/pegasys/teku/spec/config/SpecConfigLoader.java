@@ -26,7 +26,6 @@ import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.networks.Eth2Presets;
-import tech.pegasys.teku.util.config.Constants;
 
 public class SpecConfigLoader {
   private static final String CONFIG_PATH = "configs/";
@@ -50,7 +49,7 @@ public class SpecConfigLoader {
       final boolean ignoreUnknownConfigItems,
       final Consumer<SpecConfigBuilder> modifier) {
     final SpecConfigReader reader = new SpecConfigReader();
-    processConfig(configName, source -> reader.read(source, ignoreUnknownConfigItems));
+    processConfig(configName, reader, ignoreUnknownConfigItems);
     return reader.build(modifier);
   }
 
@@ -60,42 +59,54 @@ public class SpecConfigLoader {
     return reader.build();
   }
 
-  static void processConfig(final String source, final InputStreamProcessor processor) {
+  static void processConfig(
+      final String source, final SpecConfigReader reader, final boolean ignoreUnknownConfigItems) {
     try (final InputStream configFile = loadConfigurationFile(source)) {
-      final Optional<String> maybePreset = processor.processConfig(configFile);
+      final Map<String, String> configValues = reader.readValues(configFile);
+      final Optional<String> maybePreset =
+          Optional.ofNullable(configValues.get(SpecConfigReader.PRESET_KEY));
 
-      if (maybePreset.isEmpty()) {
-        // Legacy config files won't have a preset field
-        return;
-      }
-      final String preset = maybePreset.get();
-
-      try (final InputStream phase0Input = loadPhase0Preset(source, preset)) {
-        processor.processConfig(phase0Input);
+      // Legacy config files won't have a preset field
+      if (maybePreset.isPresent()) {
+        final String preset = maybePreset.get();
+        applyPreset(source, reader, ignoreUnknownConfigItems, preset);
       }
 
-      try (final InputStream altairInput = loadAltairPreset(preset).orElse(null)) {
-        // Altair is optional
-        if (altairInput != null) {
-          processor.processConfig(altairInput);
-        }
-      }
-
-      try (final InputStream bellatrixInput = loadBellatrixPreset(preset).orElse(null)) {
-        // Bellatrix is optional
-        if (bellatrixInput != null) {
-          processor.processConfig(bellatrixInput);
-        }
-      }
+      reader.loadFromMap(configValues, ignoreUnknownConfigItems);
     } catch (IOException | IllegalArgumentException e) {
       throw new IllegalArgumentException(
           "Unable to load configuration for network \"" + source + "\": " + e.getMessage(), e);
     }
   }
 
+  private static void applyPreset(
+      final String source,
+      final SpecConfigReader reader,
+      final boolean ignoreUnknownConfigItems,
+      final String preset)
+      throws IOException {
+    try (final InputStream phase0Input = loadPhase0Preset(source, preset)) {
+      reader.readAndApply(phase0Input, ignoreUnknownConfigItems);
+    }
+
+    try (final InputStream altairInput = loadAltairPreset(preset).orElse(null)) {
+      // Altair is optional
+      if (altairInput != null) {
+        reader.readAndApply(altairInput, ignoreUnknownConfigItems);
+      }
+    }
+
+    try (final InputStream bellatrixInput = loadBellatrixPreset(preset).orElse(null)) {
+      // Bellatrix is optional
+      if (bellatrixInput != null) {
+        reader.readAndApply(bellatrixInput, ignoreUnknownConfigItems);
+      }
+    }
+  }
+
   private static InputStream loadConfigurationFile(final String source) throws IOException {
     return getConfigLoader()
-        .load(CONFIG_PATH + source + ".yaml", source)
+        .load(source, CONFIG_PATH + source + ".yaml")
         .orElseThrow(() -> new FileNotFoundException("Could not load spec config from " + source));
   }
 
@@ -122,17 +133,15 @@ public class SpecConfigLoader {
   }
 
   private static ResourceLoader getConfigLoader() {
-    // TODO(#3394) - move Constants resources from util to this module
     return ResourceLoader.classpathUrlOrFile(
-        Constants.class,
+        SpecConfig.class,
         enumerateAvailableConfigResources(),
         s -> s.endsWith(".yaml") || s.endsWith(".yml"));
   }
 
   private static ResourceLoader getPresetLoader() {
-    // TODO(#3394) - move Constants resources from util to this module
     return ResourceLoader.classpathUrlOrFile(
-        Constants.class,
+        SpecConfig.class,
         enumerateAvailablePresetResources(),
         s -> s.endsWith(".yaml") || s.endsWith(".yml"));
   }
@@ -154,17 +163,5 @@ public class SpecConfigLoader {
                     PRESET_PATH + s + "/altair.yaml",
                     PRESET_PATH + s + "/bellatrix.yaml"))
         .collect(Collectors.toList());
-  }
-
-  @FunctionalInterface
-  interface InputStreamProcessor {
-    /**
-     * Process the given config input, optionally returning a preset that should be loaded.
-     *
-     * @param inputStream The input stream containing config data to be processed
-     * @return An optional preset that should be loaded
-     * @throws IOException Thrown if an error occurs while reading the input stream
-     */
-    Optional<String> processConfig(InputStream inputStream) throws IOException;
   }
 }

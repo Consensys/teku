@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.Validato
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public abstract class AbstractEpochProcessor implements EpochProcessor {
   protected final SpecConfig specConfig;
@@ -46,6 +47,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
   protected final ValidatorsUtil validatorsUtil;
   protected final BeaconStateUtil beaconStateUtil;
   protected final ValidatorStatusFactory validatorStatusFactory;
+  private final SchemaDefinitions schemaDefinitions;
   protected final BeaconStateAccessors beaconStateAccessors;
   protected final BeaconStateMutators beaconStateMutators;
 
@@ -56,7 +58,8 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
       final BeaconStateMutators beaconStateMutators,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
-      final ValidatorStatusFactory validatorStatusFactory) {
+      final ValidatorStatusFactory validatorStatusFactory,
+      final SchemaDefinitions schemaDefinitions) {
     this.specConfig = specConfig;
     this.miscHelpers = miscHelpers;
     this.beaconStateAccessors = beaconStateAccessors;
@@ -64,6 +67,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     this.validatorsUtil = validatorsUtil;
     this.beaconStateUtil = beaconStateUtil;
     this.validatorStatusFactory = validatorStatusFactory;
+    this.schemaDefinitions = schemaDefinitions;
   }
 
   /**
@@ -408,7 +412,9 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
         .mod(specConfig.getSlotsPerHistoricalRoot() / specConfig.getSlotsPerEpoch())
         .equals(UInt64.ZERO)) {
       HistoricalBatch historicalBatch =
-          new HistoricalBatch(state.getBlock_roots(), state.getState_roots());
+          schemaDefinitions
+              .getHistoricalBatchSchema()
+              .create(state.getBlock_roots(), state.getState_roots());
       state.getHistorical_roots().appendElement(historicalBatch.hashTreeRoot());
     }
   }

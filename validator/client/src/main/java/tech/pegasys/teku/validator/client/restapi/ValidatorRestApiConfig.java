@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.io.PortAvailability;
 
 public class ValidatorRestApiConfig {
 
@@ -115,6 +116,10 @@ public class ValidatorRestApiConfig {
     private Optional<Path> restApiKeystorePasswordFile = Optional.empty();
 
     public ValidatorRestApiConfigBuilder restApiPort(final int restApiPort) {
+      if (!PortAvailability.isPortValid(restApiPort)) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid restApiPort: %s", restApiPort));
+      }
       this.restApiPort = restApiPort;
       return this;
     }

@@ -11,7 +11,6 @@ dependencies {
     integrationTestImplementation project(':infrastructure:ssz')
     integrationTestImplementation project(':storage')
     integrationTestImplementation project(':infrastructure:async')
-    integrationTestImplementation project(':util')
 
     integrationTestImplementation testFixtures(project(':ethereum:networks'))
     integrationTestImplementation testFixtures(project(':infrastructure:async'))

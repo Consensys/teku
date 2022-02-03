@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2;
 
-import static tech.pegasys.teku.util.config.Constants.MAX_CHUNK_SIZE;
+import static tech.pegasys.teku.spec.config.Constants.MAX_CHUNK_SIZE;
 
 import org.junit.jupiter.api.AfterEach;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;

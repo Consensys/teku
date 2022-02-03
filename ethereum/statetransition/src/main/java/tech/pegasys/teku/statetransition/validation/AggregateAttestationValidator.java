@@ -15,9 +15,9 @@ package tech.pegasys.teku.statetransition.validation;
 
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.spec.config.Constants.VALID_AGGREGATE_SET_SIZE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ignore;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
-import static tech.pegasys.teku.util.config.Constants.VALID_AGGREGATE_SET_SIZE;
 
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Objects;

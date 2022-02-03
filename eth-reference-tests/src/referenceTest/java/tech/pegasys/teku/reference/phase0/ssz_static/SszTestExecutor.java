@@ -47,6 +47,9 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
               "ssz_static/BeaconBlockBody",
               new SszTestExecutor<>(SchemaDefinitions::getBeaconBlockBodySchema))
           .put(
+              "ssz_static/HistoricalBatch",
+              new SszTestExecutor<>(SchemaDefinitions::getHistoricalBatchSchema))
+          .put(
               "ssz_static/SyncCommittee",
               new SszTestExecutor<>(
                   schemas -> schemas.getBeaconStateSchema().getCurrentSyncCommitteeSchemaOrThrow()))

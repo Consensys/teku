@@ -42,15 +42,13 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
-import tech.pegasys.teku.util.config.Constants;
 
 public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointChannel {
   private static final Logger LOG = LogManager.getLogger();
 
   private static final Comparator<SlotAndRoot> SLOT_AND_ROOT_COMPARATOR =
       Comparator.comparing(SlotAndRoot::getSlot).thenComparing(SlotAndRoot::getRoot);
-  private static final UInt64 DEFAULT_HISTORICAL_SLOT_TOLERANCE =
-      UInt64.valueOf(Constants.SLOTS_PER_EPOCH * 10);
+  private static final UInt64 DEFAULT_HISTORICAL_SLOT_TOLERANCE = UInt64.valueOf(320);
   private static final int DEFAULT_MAX_ITEMS = 5000;
 
   private final Spec spec;

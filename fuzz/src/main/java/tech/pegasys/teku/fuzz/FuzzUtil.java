@@ -35,6 +35,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -45,8 +46,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
-import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.util.config.SpecDependent;
 
 public class FuzzUtil {
   // NOTE: alternatively could also have these all in separate classes, which implement a
@@ -74,12 +73,10 @@ public class FuzzUtil {
   public static void initialize(final boolean useMainnetConfig, final boolean disable_bls) {
     // NOTE: makes global Constants/config changes
     if (useMainnetConfig) {
-      Constants.setConstants("mainnet");
+      Constants.setConstants(TestSpecFactory.createMainnetPhase0());
     } else {
-      Constants.setConstants("minimal");
+      Constants.setConstants(TestSpecFactory.createMinimalPhase0());
     }
-    // guessing this might be necessary soon?
-    SpecDependent.resetAll();
 
     if (disable_bls) {
       BLSConstants.disableBLSVerification();

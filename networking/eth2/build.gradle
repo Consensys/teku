@@ -17,7 +17,6 @@ dependencies {
   implementation project(':storage')
   implementation project(':storage:api')
   implementation project(':protoarray')
-  implementation project(':util')
   implementation project(':infrastructure:serviceutils')
 
   implementation 'io.libp2p:jvm-libp2p-minimal'

@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.statetransition.validation;
 
+import static tech.pegasys.teku.spec.config.Constants.VALID_VALIDATOR_SET_SIZE;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.IGNORE;
-import static tech.pegasys.teku.util.config.Constants.VALID_VALIDATOR_SET_SIZE;
 
 import java.util.Optional;
 import java.util.Set;

@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.networking.eth2.SubnetSubscriptionService;
@@ -265,6 +266,10 @@ public class PeerSubnetSubscriptions {
 
     public Builder targetSubnetSubscriberCount(final Integer targetSubnetSubscriberCount) {
       checkNotNull(targetSubnetSubscriberCount);
+      if (targetSubnetSubscriberCount < 0) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid targetSubnetSubscriberCount: %d", targetSubnetSubscriberCount));
+      }
       this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
       return this;
     }

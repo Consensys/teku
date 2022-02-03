@@ -14,7 +14,7 @@
 package tech.pegasys.teku.statetransition.synccommittee;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static tech.pegasys.teku.util.config.Constants.MAXIMUM_GOSSIP_CLOCK_DISPARITY;
+import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_GOSSIP_CLOCK_DISPARITY;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

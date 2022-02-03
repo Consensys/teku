@@ -14,7 +14,7 @@
 package tech.pegasys.teku.spec.logic.common.util;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
+import static tech.pegasys.teku.spec.config.Constants.ATTESTATION_SUBNET_COUNT;
 
 import java.util.List;
 import java.util.stream.Stream;

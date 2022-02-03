@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.validator.beaconnode;
 
-import static tech.pegasys.teku.util.config.Constants.GENESIS_DATA_RETRY_DELAY;
+import static tech.pegasys.teku.spec.config.Constants.GENESIS_DATA_RETRY_DELAY;
 
 import com.google.common.base.Suppliers;
 import java.util.function.Supplier;

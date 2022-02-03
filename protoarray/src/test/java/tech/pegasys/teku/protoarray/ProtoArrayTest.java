@@ -23,6 +23,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -44,6 +45,7 @@ class ProtoArrayTest {
   private final Bytes32 block2a = dataStructureUtil.randomBytes32();
   private final Bytes32 block2b = dataStructureUtil.randomBytes32();
   private final Bytes32 block3a = dataStructureUtil.randomBytes32();
+  private final Bytes32 block4a = dataStructureUtil.randomBytes32();
 
   private ProtoArray protoArray =
       new ProtoArrayBuilder()
@@ -107,7 +109,7 @@ class ProtoArrayTest {
 
     assertStrictHead(block1a);
 
-    protoArray.markNodeInvalid(block2a);
+    protoArray.markNodeInvalid(block2a, Optional.empty());
 
     assertStrictHead(block1a);
   }
@@ -120,7 +122,7 @@ class ProtoArrayTest {
 
     assertStrictHead(block1a);
 
-    protoArray.markNodeInvalid(block2a);
+    protoArray.markNodeInvalid(block2a, Optional.empty());
 
     assertStrictHead(block1a);
   }
@@ -130,7 +132,7 @@ class ProtoArrayTest {
     addOptimisticBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
     addOptimisticBlock(2, block2a, block1a);
     addOptimisticBlock(3, block3a, block2a);
-    protoArray.markNodeInvalid(GENESIS_CHECKPOINT.getRoot());
+    protoArray.markNodeInvalid(GENESIS_CHECKPOINT.getRoot(), Optional.empty());
 
     assertThatThrownBy(
             () -> protoArray.findHead(GENESIS_CHECKPOINT.getRoot(), UInt64.ZERO, UInt64.ZERO))
@@ -179,7 +181,7 @@ class ProtoArrayTest {
 
     assertOptimisticHead(block2a);
 
-    protoArray.markNodeInvalid(block2a);
+    protoArray.markNodeInvalid(block2a, Optional.empty());
 
     assertOptimisticHead(block1a);
   }
@@ -198,7 +200,7 @@ class ProtoArrayTest {
         .isEqualTo(protoArray.getIndexByRoot(block3a));
     assertOptimisticHead(block3a);
 
-    protoArray.markNodeInvalid(block2a);
+    protoArray.markNodeInvalid(block2a, Optional.empty());
 
     assertOptimisticHead(block1a);
   }
@@ -217,7 +219,7 @@ class ProtoArrayTest {
         .isEqualTo(protoArray.getIndexByRoot(block3a));
     assertOptimisticHead(block3a);
 
-    protoArray.markNodeInvalid(block3a);
+    protoArray.markNodeInvalid(block3a, Optional.empty());
 
     assertOptimisticHead(block2a);
   }
@@ -231,7 +233,7 @@ class ProtoArrayTest {
 
     assertOptimisticHead(block3a);
 
-    protoArray.markNodeInvalid(GENESIS_CHECKPOINT.getRoot());
+    protoArray.markNodeInvalid(GENESIS_CHECKPOINT.getRoot(), Optional.empty());
 
     assertThatThrownBy(
             () ->
@@ -305,7 +307,7 @@ class ProtoArrayTest {
     assertOptimisticHead(block2b);
     assertStrictHead(block1b);
 
-    protoArray.markNodeInvalid(block2a);
+    protoArray.markNodeInvalid(block2a, Optional.empty());
 
     // Validators 0 and 1 switch forks to chain a
     voteUpdater.putVote(UInt64.ZERO, new VoteTracker(block1b, block2a, UInt64.ONE));
@@ -342,11 +344,82 @@ class ProtoArrayTest {
     assertStrictHead(block1a);
 
     // But oh no! It turns out to be invalid.
-    protoArray.markNodeInvalid(block2a);
+    protoArray.markNodeInvalid(block2a, Optional.empty());
 
     // So we switch back to chain b (notably without having to applyScoreChanges)
     assertOptimisticHead(block2b);
     assertStrictHead(block1b);
+  }
+
+  @Test
+  void markNodeInvalid_shouldMarkAllNodesAfterLastValidHashAsInvalid() {
+    addValidBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
+    addOptimisticBlock(2, block2a, block1a);
+    addOptimisticBlock(3, block3a, block2a);
+
+    assertOptimisticHead(block3a);
+
+    protoArray.markNodeInvalid(block3a, Optional.of(getExecutionBlockHash(block1a)));
+
+    assertOptimisticHead(block1a);
+    assertThat(protoArray.contains(block3a)).isFalse();
+    assertThat(protoArray.contains(block2a)).isFalse();
+  }
+
+  @Test
+  void markNodeInvalid_shouldMarkLastValidBlockAndAncestorsAsValid() {
+    addOptimisticBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
+    addOptimisticBlock(2, block2a, block1a);
+    addOptimisticBlock(3, block3a, block2a);
+    addOptimisticBlock(4, block4a, block3a);
+
+    assertOptimisticHead(block4a);
+
+    protoArray.markNodeInvalid(block4a, Optional.of(getExecutionBlockHash(block2a)));
+
+    assertOptimisticHead(block2a);
+    assertThat(protoArray.contains(block4a)).isFalse();
+    assertThat(protoArray.contains(block3a)).isFalse();
+    assertThat(protoArray.contains(block2a)).isTrue();
+    assertThat(protoArray.contains(block1a)).isTrue();
+    assertThat(protoArray.getProtoNode(block1a).map(ProtoNode::isOptimistic)).contains(false);
+    assertThat(protoArray.getProtoNode(block2a).map(ProtoNode::isOptimistic)).contains(false);
+  }
+
+  @Test
+  void markNodeInvalid_shouldNotMarkAncestorsValidWhenLastValidBlockNotProvided() {
+    addOptimisticBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
+    addOptimisticBlock(2, block2a, block1a);
+    addOptimisticBlock(3, block3a, block2a);
+
+    assertOptimisticHead(block3a);
+
+    protoArray.markNodeInvalid(block3a, Optional.empty());
+
+    assertOptimisticHead(block2a);
+    assertThat(protoArray.contains(block3a)).isFalse();
+    assertThat(protoArray.contains(block2a)).isTrue();
+    assertThat(protoArray.contains(block1a)).isTrue();
+    assertThat(protoArray.getProtoNode(block1a).map(ProtoNode::isOptimistic)).contains(true);
+    assertThat(protoArray.getProtoNode(block2a).map(ProtoNode::isOptimistic)).contains(true);
+  }
+
+  @Test
+  void markNodeInvalid_shouldOnlyMarkSpecifiedNodeAsInvalidWhenLastValidHashUnknown() {
+    addOptimisticBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
+    addOptimisticBlock(2, block2a, block1a);
+    addOptimisticBlock(3, block3a, block2a);
+
+    assertOptimisticHead(block3a);
+
+    protoArray.markNodeInvalid(block3a, Optional.of(dataStructureUtil.randomBytes32()));
+
+    assertOptimisticHead(block2a);
+    assertThat(protoArray.contains(block3a)).isFalse();
+    assertThat(protoArray.contains(block2a)).isTrue();
+    assertThat(protoArray.contains(block1a)).isTrue();
+    assertThat(protoArray.getProtoNode(block1a).map(ProtoNode::isOptimistic)).contains(true);
+    assertThat(protoArray.getProtoNode(block2a).map(ProtoNode::isOptimistic)).contains(true);
   }
 
   @Test
@@ -383,7 +456,7 @@ class ProtoArrayTest {
   @Test
   void contains_shouldNotContainInvalidBlock() {
     addOptimisticBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
-    protoArray.markNodeInvalid(block1a);
+    protoArray.markNodeInvalid(block1a, Optional.empty());
     assertThat(protoArray.contains(block1a)).isFalse();
   }
 
@@ -391,7 +464,7 @@ class ProtoArrayTest {
   void contains_shouldNotContainDescendantsOfInvalidBlock() {
     addOptimisticBlock(1, block1a, GENESIS_CHECKPOINT.getRoot());
     addOptimisticBlock(1, block2a, block1a);
-    protoArray.markNodeInvalid(block1a);
+    protoArray.markNodeInvalid(block1a, Optional.empty());
     assertThat(protoArray.contains(block1a)).isFalse();
     assertThat(protoArray.contains(block2a)).isFalse();
   }
@@ -421,8 +494,12 @@ class ProtoArrayTest {
         dataStructureUtil.randomBytes32(),
         GENESIS_CHECKPOINT.getEpoch(),
         GENESIS_CHECKPOINT.getEpoch(),
-        Bytes32.ZERO,
+        getExecutionBlockHash(blockRoot),
         true);
+  }
+
+  private Bytes32 getExecutionBlockHash(final Bytes32 blockRoot) {
+    return Hash.sha256(blockRoot);
   }
 
   private List<Long> computeDeltas() {

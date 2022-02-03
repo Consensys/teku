@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
@@ -153,6 +154,10 @@ public class PowchainConfiguration {
     }
 
     public Builder eth1LogsMaxBlockRange(final int eth1LogsMaxBlockRange) {
+      if (eth1LogsMaxBlockRange < 0) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid eth1LogsMaxBlockRange: %d", eth1LogsMaxBlockRange));
+      }
       this.eth1LogsMaxBlockRange = eth1LogsMaxBlockRange;
       return this;
     }

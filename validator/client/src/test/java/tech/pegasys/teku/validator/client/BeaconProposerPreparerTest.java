@@ -25,10 +25,10 @@ import static org.mockito.Mockito.when;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import org.mockito.ArgumentCaptor;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -38,7 +38,7 @@ import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.eth1.Eth1Address;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
-import tech.pegasys.teku.validator.client.loader.OwnedValidators;
+import tech.pegasys.teku.validator.client.proposerconfig.ProposerConfigProvider;
 
 @TestSpecContext(milestone = SpecMilestone.BELLATRIX)
 public class BeaconProposerPreparerTest {
@@ -46,8 +46,11 @@ public class BeaconProposerPreparerTest {
   private final int validator2Index = 23;
   private final ValidatorIndexProvider validatorIndexProvider = mock(ValidatorIndexProvider.class);
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
+  private final ProposerConfigProvider proposerConfigProvider = mock(ProposerConfigProvider.class);
   private BeaconProposerPreparer beaconProposerPreparer;
-  private Eth1Address feeRecipient;
+  private Eth1Address defaultFeeRecipient;
+  private Eth1Address defaultFeeRecipientConfig;
+  private Eth1Address validator1FeeRecipientConfig;
 
   private long slotsPerEpoch;
 
@@ -63,41 +66,84 @@ public class BeaconProposerPreparerTest {
             specContext.getDataStructureUtil().randomPublicKey(),
             mock(Signer.class),
             Optional::empty);
+    Validator validatorWithoutIndex =
+        new Validator(
+            specContext.getDataStructureUtil().randomPublicKey(),
+            mock(Signer.class),
+            Optional::empty);
 
-    Set<Integer> validatorIndices = Set.of(validator1Index, validator2Index);
-    OwnedValidators validators =
-        new OwnedValidators(
-            Map.of(validator1.getPublicKey(), validator1, validator2.getPublicKey(), validator2));
+    Map<BLSPublicKey, Optional<Integer>> validatorIndexesByPublicKey =
+        Map.of(
+            validator1.getPublicKey(),
+            Optional.of(validator1Index),
+            validator2.getPublicKey(),
+            Optional.of(validator2Index),
+            validatorWithoutIndex.getPublicKey(),
+            Optional.empty());
 
-    feeRecipient = specContext.getDataStructureUtil().randomEth1Address();
+    defaultFeeRecipient = specContext.getDataStructureUtil().randomEth1Address();
+    defaultFeeRecipientConfig = specContext.getDataStructureUtil().randomEth1Address();
+    validator1FeeRecipientConfig = specContext.getDataStructureUtil().randomEth1Address();
+
+    ProposerConfig proposerConfig =
+        new ProposerConfig(
+            Map.of(
+                validator1.getPublicKey().toBytesCompressed(),
+                new ProposerConfig.Config(validator1FeeRecipientConfig)),
+            new ProposerConfig.Config(defaultFeeRecipientConfig));
 
     beaconProposerPreparer =
         new BeaconProposerPreparer(
             validatorApiChannel,
             validatorIndexProvider,
-            Optional.of(feeRecipient),
-            validators,
+            proposerConfigProvider,
+            Optional.of(defaultFeeRecipient),
             specContext.getSpec());
 
     slotsPerEpoch = specContext.getSpec().getSlotsPerEpoch(UInt64.ZERO);
 
-    when(validatorIndexProvider.getValidatorIndices(validators.getPublicKeys()))
-        .thenReturn(SafeFuture.completedFuture(validatorIndices));
+    when(validatorIndexProvider.getValidatorIndexesByPublicKey())
+        .thenReturn(SafeFuture.completedFuture(validatorIndexesByPublicKey));
+    when(proposerConfigProvider.getProposerConfig())
+        .thenReturn(SafeFuture.completedFuture(Optional.of(proposerConfig)));
   }
 
   @TestTemplate
-  void should_callPrepareBeaconProposerAtBeginningOfEpoch(SpecContext specContext) {
-    beaconProposerPreparer.onSlot(UInt64.valueOf(slotsPerEpoch * 2));
-
-    @SuppressWarnings("unchecked")
-    final ArgumentCaptor<Collection<BeaconPreparableProposer>> captor =
-        ArgumentCaptor.forClass(Collection.class);
-    verify(validatorApiChannel).prepareBeaconProposer(captor.capture());
+  void should_callPrepareBeaconProposerAtBeginningOfEpoch() {
+    ArgumentCaptor<Collection<BeaconPreparableProposer>> captor = doCall();
 
     assertThat(captor.getValue())
         .containsExactlyInAnyOrder(
-            new BeaconPreparableProposer(UInt64.valueOf(validator1Index), feeRecipient),
-            new BeaconPreparableProposer(UInt64.valueOf(validator2Index), feeRecipient));
+            new BeaconPreparableProposer(
+                UInt64.valueOf(validator1Index), validator1FeeRecipientConfig),
+            new BeaconPreparableProposer(
+                UInt64.valueOf(validator2Index), defaultFeeRecipientConfig));
+  }
+
+  @TestTemplate
+  void should_useDefaultFeeRecipientWhenNoConfig() {
+    when(proposerConfigProvider.getProposerConfig())
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+
+    ArgumentCaptor<Collection<BeaconPreparableProposer>> captor = doCall();
+
+    assertThat(captor.getValue())
+        .containsExactlyInAnyOrder(
+            new BeaconPreparableProposer(UInt64.valueOf(validator1Index), defaultFeeRecipient),
+            new BeaconPreparableProposer(UInt64.valueOf(validator2Index), defaultFeeRecipient));
+  }
+
+  @TestTemplate
+  void should_useDefaultFeeRecipientWhenExceptionInConfigProvider() {
+    when(proposerConfigProvider.getProposerConfig())
+        .thenReturn(SafeFuture.failedFuture(new RuntimeException("error")));
+
+    ArgumentCaptor<Collection<BeaconPreparableProposer>> captor = doCall();
+
+    assertThat(captor.getValue())
+        .containsExactlyInAnyOrder(
+            new BeaconPreparableProposer(UInt64.valueOf(validator1Index), defaultFeeRecipient),
+            new BeaconPreparableProposer(UInt64.valueOf(validator2Index), defaultFeeRecipient));
   }
 
   @TestTemplate
@@ -115,5 +161,16 @@ public class BeaconProposerPreparerTest {
 
     beaconProposerPreparer.onSlot(UInt64.ZERO);
     verify(validatorApiChannel, times(1)).prepareBeaconProposer(any());
+  }
+
+  private ArgumentCaptor<Collection<BeaconPreparableProposer>> doCall() {
+    beaconProposerPreparer.onSlot(UInt64.valueOf(slotsPerEpoch * 2));
+
+    @SuppressWarnings("unchecked")
+    final ArgumentCaptor<Collection<BeaconPreparableProposer>> captor =
+        ArgumentCaptor.forClass(Collection.class);
+    verify(validatorApiChannel).prepareBeaconProposer(captor.capture());
+
+    return captor;
   }
 }

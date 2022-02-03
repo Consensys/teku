@@ -22,7 +22,6 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import java.util.List;
 import java.util.OptionalInt;
@@ -155,7 +154,8 @@ class AggregateAttestationValidatorTest {
   @Test
   public void shouldReturnValidForValidAggregate_whenManyBlocksHaveBeenSkipped() {
     final StateAndBlockSummary chainHead = recentChainData.getChainHead().orElseThrow();
-    final UInt64 currentSlot = chainHead.getSlot().plus(SLOTS_PER_EPOCH * 3);
+    final UInt64 currentSlot =
+        chainHead.getSlot().plus(spec.getSlotsPerEpoch(chainHead.getSlot()) * 3L);
     storageSystem.chainUpdater().setCurrentSlot(currentSlot);
 
     final SignedAggregateAndProof aggregate =

@@ -19,6 +19,8 @@ import static tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.DEFA
 import java.util.Collections;
 import java.util.List;
 import java.util.OptionalInt;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.io.PortAvailability;
 
 public class DiscoveryConfig {
 
@@ -136,11 +138,19 @@ public class DiscoveryConfig {
     }
 
     public Builder listenUdpPort(final int listenUdpPort) {
+      if (!PortAvailability.isPortValid(listenUdpPort)) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid listenUdpPort: %d", listenUdpPort));
+      }
       this.listenUdpPort = OptionalInt.of(listenUdpPort);
       return this;
     }
 
     public Builder listenUdpPortDefault(final int listenUdpPort) {
+      if (!PortAvailability.isPortValid(listenUdpPort)) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid listenUdpPortDefault: %d", listenUdpPort));
+      }
       if (this.listenUdpPort.isEmpty()) {
         this.listenUdpPort = OptionalInt.of(listenUdpPort);
       }
@@ -149,12 +159,24 @@ public class DiscoveryConfig {
 
     public Builder advertisedUdpPort(final OptionalInt advertisedUdpPort) {
       checkNotNull(advertisedUdpPort);
+      if (advertisedUdpPort.isPresent()) {
+        if (!PortAvailability.isPortValid(advertisedUdpPort.getAsInt())) {
+          throw new InvalidConfigurationException(
+              String.format("Invalid advertisedUdpPort: " + advertisedUdpPort.getAsInt()));
+        }
+      }
       this.advertisedUdpPort = advertisedUdpPort;
       return this;
     }
 
     public Builder advertisedUdpPortDefault(final OptionalInt advertisedUdpPort) {
       checkNotNull(advertisedUdpPort);
+      if (advertisedUdpPort.isPresent()) {
+        if (!PortAvailability.isPortValid(advertisedUdpPort.getAsInt())) {
+          throw new InvalidConfigurationException(
+              String.format("Invalid advertisedUdpPortDefault: %d", advertisedUdpPort.getAsInt()));
+        }
+      }
       if (this.advertisedUdpPort.isEmpty()) {
         this.advertisedUdpPort = advertisedUdpPort;
       }
@@ -183,18 +205,28 @@ public class DiscoveryConfig {
 
     public Builder minPeers(final Integer minPeers) {
       checkNotNull(minPeers);
+      if (minPeers < 0) {
+        throw new InvalidConfigurationException(String.format("Invalid minPeers: %d", minPeers));
+      }
       this.minPeers = minPeers;
       return this;
     }
 
     public Builder maxPeers(final Integer maxPeers) {
       checkNotNull(maxPeers);
+      if (maxPeers < 0) {
+        throw new InvalidConfigurationException(String.format("Invalid maxPeers: %d", maxPeers));
+      }
       this.maxPeers = maxPeers;
       return this;
     }
 
     public Builder minRandomlySelectedPeers(final Integer minRandomlySelectedPeers) {
       checkNotNull(minRandomlySelectedPeers);
+      if (minRandomlySelectedPeers < 0) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid minRandomlySelectedPeers: %d", minRandomlySelectedPeers));
+      }
       this.minRandomlySelectedPeers = OptionalInt.of(minRandomlySelectedPeers);
       return this;
     }

@@ -14,11 +14,11 @@
 package tech.pegasys.teku.statetransition.synccommittee;
 
 import static java.util.stream.Collectors.toList;
+import static tech.pegasys.teku.spec.config.Constants.VALID_SYNC_COMMITTEE_MESSAGE_SET_SIZE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ignore;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
-import static tech.pegasys.teku.util.config.Constants.VALID_SYNC_COMMITTEE_MESSAGE_SET_SIZE;
 
 import java.util.List;
 import java.util.Objects;

@@ -5,13 +5,13 @@ dependencies {
   implementation project(':ethereum:networks')
   implementation project(':infrastructure:async')
   implementation project(':infrastructure:bls')
+  implementation project(':infrastructure:exceptions')
   implementation project(':infrastructure:logging')
   implementation project(':infrastructure:metrics')
   implementation project(':infrastructure:version')
   implementation project(':pow')
   implementation project(':storage:api')
   implementation project(':infrastructure:serviceutils')
-  implementation project(':util')
   implementation project(':validator:client')
 
   implementation 'com.google.code.gson:gson'

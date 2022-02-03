@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.api.response.v1.validator.GetNewBlockResponse;
 import tech.pegasys.teku.api.response.v2.debug.GetStateResponseV2;
@@ -44,6 +45,8 @@ public class JsonProvider {
     module.addDeserializer(BLSPubKey.class, new BLSPubKeyDeserializer());
     module.addDeserializer(BLSSignature.class, new BLSSignatureDeserializer());
     module.addSerializer(BLSSignature.class, new BLSSignatureSerializer());
+
+    module.addKeyDeserializer(Bytes48.class, new Bytes48KeyDeserializer());
 
     module.addDeserializer(Bytes32.class, new Bytes32Deserializer());
     module.addDeserializer(Bytes4.class, new Bytes4Deserializer());

@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class EpochProcessorAltair extends AbstractEpochProcessor {
 
@@ -47,7 +48,8 @@ public class EpochProcessorAltair extends AbstractEpochProcessor {
       final BeaconStateMutators beaconStateMutators,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
-      final ValidatorStatusFactory validatorStatusFactory) {
+      final ValidatorStatusFactory validatorStatusFactory,
+      final SchemaDefinitions schemaDefinitions) {
     super(
         specConfig,
         miscHelpers,
@@ -55,7 +57,8 @@ public class EpochProcessorAltair extends AbstractEpochProcessor {
         beaconStateMutators,
         validatorsUtil,
         beaconStateUtil,
-        validatorStatusFactory);
+        validatorStatusFactory,
+        schemaDefinitions);
     this.specConfigAltair = specConfig;
     this.miscHelpersAltair = miscHelpers;
     this.beaconStateAccessorsAltair = beaconStateAccessors;

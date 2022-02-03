@@ -57,7 +57,7 @@ public class MultipeerCommonAncestorFinder {
         spec.computeStartSlotAtEpoch(recentChainData.getFinalizedEpoch());
 
     if (targetChain.getPeerCount() == 0) {
-      // No sources to find a common ancestor with, assume its the finalized slot
+      // No sources to find a common ancestor with, assume it's the finalized slot
       return SafeFuture.completedFuture(latestFinalizedSlot);
     }
 

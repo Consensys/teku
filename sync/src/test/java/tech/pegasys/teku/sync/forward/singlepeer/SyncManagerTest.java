@@ -43,34 +43,34 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.events.SyncingStatus;
 import tech.pegasys.teku.sync.forward.ForwardSync.SyncSubscriber;
-import tech.pegasys.teku.util.config.Constants;
 
 public class SyncManagerTest {
 
   private static final long SUBSCRIPTION_ID = 3423;
   private static final Bytes32 PEER_HEAD_BLOCK_ROOT = Bytes32.fromHexString("0x1234");
   private static final UInt64 PEER_FINALIZED_EPOCH = UInt64.valueOf(3);
-  private static final UInt64 PEER_HEAD_SLOT = UInt64.valueOf(Constants.SLOTS_PER_EPOCH * 5);
-  private static final PeerStatus PEER_STATUS =
+
+  private final Spec spec = TestSpecFactory.createDefault();
+  private final UInt64 peerHeadSlot = UInt64.valueOf(spec.getSlotsPerEpoch(UInt64.ZERO) * 5L);
+  private final PeerStatus peerStatus =
       PeerStatus.fromStatusMessage(
           new StatusMessage(
               Bytes4.leftPad(Bytes.EMPTY),
               Bytes32.ZERO,
               PEER_FINALIZED_EPOCH,
               PEER_HEAD_BLOCK_ROOT,
-              PEER_HEAD_SLOT));
+              peerHeadSlot));
 
-  private RecentChainData storageClient = mock(RecentChainData.class);
-  private Eth2P2PNetwork network = mock(Eth2P2PNetwork.class);
+  private final RecentChainData storageClient = mock(RecentChainData.class);
+  private final Eth2P2PNetwork network = mock(Eth2P2PNetwork.class);
   private final PeerSync peerSync = mock(PeerSync.class);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
-  private final Spec spec = TestSpecFactory.createDefault();
-  private SyncManager syncManager =
+  private final SyncManager syncManager =
       new SyncManager(asyncRunner, network, storageClient, peerSync, spec);
   private final Eth2Peer peer = mock(Eth2Peer.class);
   private final SyncSubscriber syncSubscriber = mock(SyncSubscriber.class);
 
-  private final AtomicReference<UInt64> localSlot = new AtomicReference<>(PEER_HEAD_SLOT);
+  private final AtomicReference<UInt64> localSlot = new AtomicReference<>(peerHeadSlot);
   private final AtomicReference<UInt64> localHeadSlot = new AtomicReference<>(UInt64.ZERO);
   private final AtomicReference<UInt64> localFinalizedEpoch = new AtomicReference<>(UInt64.ZERO);
 
@@ -84,7 +84,7 @@ public class SyncManagerTest {
     when(storageClient.getFinalizedEpoch()).thenAnswer((__) -> localFinalizedEpoch.get());
     when(storageClient.getCurrentSlot()).thenAnswer((__) -> Optional.ofNullable(localSlot.get()));
     when(storageClient.getHeadSlot()).thenAnswer((__) -> localHeadSlot.get());
-    when(peer.getStatus()).thenReturn(PEER_STATUS);
+    when(peer.getStatus()).thenReturn(peerStatus);
   }
 
   @Test
@@ -100,7 +100,7 @@ public class SyncManagerTest {
   @Test
   void sync_noSuitablePeers() {
     // We're already in sync with the peer
-    setLocalChainState(PEER_STATUS.getHeadSlot(), PEER_STATUS.getFinalizedEpoch());
+    setLocalChainState(peerStatus.getHeadSlot(), peerStatus.getFinalizedEpoch());
 
     when(network.streamPeers()).thenReturn(Stream.of(peer));
     // Should be immediately completed as there is nothing to do.
@@ -113,8 +113,8 @@ public class SyncManagerTest {
   @Test
   void sync_noSuitablePeers_almostInSync() {
     // We're almost in sync with the peer
-    final UInt64 oldHeadSlot = PEER_STATUS.getHeadSlot().minus(Constants.SLOTS_PER_EPOCH);
-    setLocalChainState(oldHeadSlot, PEER_STATUS.getFinalizedEpoch().minus(1));
+    final UInt64 oldHeadSlot = peerStatus.getHeadSlot().minus(spec.getSlotsPerEpoch(UInt64.ZERO));
+    setLocalChainState(oldHeadSlot, peerStatus.getFinalizedEpoch().minus(1));
 
     when(network.streamPeers()).thenReturn(Stream.of(peer));
     // Should be immediately completed as there is nothing to do.
@@ -141,7 +141,7 @@ public class SyncManagerTest {
   @Test
   void sync_noSuitablePeers_remoteHeadSlotInTheFuture() {
     // Remote peer head slot is too far ahead
-    final UInt64 headSlot = PEER_HEAD_SLOT.minus(2);
+    final UInt64 headSlot = peerHeadSlot.minus(2);
     localSlot.set(headSlot);
 
     when(network.streamPeers()).thenReturn(Stream.of(peer));
@@ -175,7 +175,7 @@ public class SyncManagerTest {
 
   @Test
   void sync_existingPeers_remoteHeadSlotIsAheadButWithinErrorThreshold() {
-    final UInt64 headSlot = PEER_HEAD_SLOT.minus(1);
+    final UInt64 headSlot = peerHeadSlot.minus(1);
     localSlot.set(headSlot);
 
     when(network.streamPeers()).thenReturn(Stream.of(peer));
@@ -199,7 +199,7 @@ public class SyncManagerTest {
 
   @Test
   void sync_existingPeers_peerFinalizedEpochMoreThan1EpochAhead() {
-    setLocalChainState(PEER_STATUS.getHeadSlot(), PEER_STATUS.getFinalizedEpoch().minus(2));
+    setLocalChainState(peerStatus.getHeadSlot(), peerStatus.getFinalizedEpoch().minus(2));
     when(network.streamPeers()).thenReturn(Stream.of(peer));
 
     final SafeFuture<PeerSyncResult> syncFuture = new SafeFuture<>();
@@ -222,8 +222,9 @@ public class SyncManagerTest {
   @Test
   void sync_existingPeerWithSameFinalizedEpochButMuchBetterHeadSlot() {
     when(network.streamPeers()).thenReturn(Stream.of(peer));
-    final UInt64 oldHeadSlot = PEER_STATUS.getHeadSlot().minus(Constants.SLOTS_PER_EPOCH + 1);
-    setLocalChainState(oldHeadSlot, PEER_STATUS.getFinalizedEpoch());
+    final UInt64 oldHeadSlot =
+        peerStatus.getHeadSlot().minus(spec.getSlotsPerEpoch(UInt64.ZERO) + 1);
+    setLocalChainState(oldHeadSlot, peerStatus.getFinalizedEpoch());
 
     final SafeFuture<PeerSyncResult> syncFuture = new SafeFuture<>();
     when(peerSync.sync(peer)).thenReturn(syncFuture);
@@ -257,7 +258,7 @@ public class SyncManagerTest {
 
     // The sync didn't complete correctly so we should start a new one with a new peer
     final Eth2Peer peer2 = mock(Eth2Peer.class);
-    when(peer2.getStatus()).thenReturn(PEER_STATUS);
+    when(peer2.getStatus()).thenReturn(peerStatus);
     when(network.streamPeers()).thenReturn(Stream.of(peer2));
     when(peerSync.sync(peer2)).thenReturn(new SafeFuture<>());
     syncFuture.complete(PeerSyncResult.FAULTY_ADVERTISEMENT);
@@ -292,7 +293,7 @@ public class SyncManagerTest {
 
     // Second peer connecting causes another sync to be scheduled.
     final Eth2Peer peer2 = mock(Eth2Peer.class);
-    when(peer2.getStatus()).thenReturn(PEER_STATUS);
+    when(peer2.getStatus()).thenReturn(peerStatus);
     when(network.streamPeers()).thenReturn(Stream.of(peer2));
     when(peerSync.sync(peer2)).thenReturn(syncFuture2);
 
@@ -342,7 +343,7 @@ public class SyncManagerTest {
     SyncingStatus syncingStatus = syncManager.getSyncStatus();
     assertThat(syncingStatus.getCurrentSlot()).isEqualTo(headSlot);
     assertThat(syncingStatus.getStartingSlot()).isEqualTo(Optional.of(startingSlot));
-    assertThat(syncingStatus.getHighestSlot()).isEqualTo(Optional.of(PEER_HEAD_SLOT));
+    assertThat(syncingStatus.getHighestSlot()).isEqualTo(Optional.of(peerHeadSlot));
 
     assertThat(syncManager.isSyncQueued()).isFalse();
 

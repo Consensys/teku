@@ -80,6 +80,7 @@ public class BlockManagerTest {
 
   private final BlockImporter blockImporter =
       new BlockImporter(
+          spec,
           blockImportNotifications,
           localRecentChainData,
           forkChoice,

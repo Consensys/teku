@@ -18,8 +18,6 @@ import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBytes32VectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.util.config.SpecDependent;
 
 public class HistoricalBatch
     extends Container2<HistoricalBatch, SszBytes32Vector, SszBytes32Vector> {
@@ -27,13 +25,11 @@ public class HistoricalBatch
   public static class HistoricalBatchSchema
       extends ContainerSchema2<HistoricalBatch, SszBytes32Vector, SszBytes32Vector> {
 
-    public HistoricalBatchSchema() {
+    public HistoricalBatchSchema(final int slotsPerHistoricalRoot) {
       super(
           "HistoricalBatch",
-          namedSchema(
-              "block_roots", SszBytes32VectorSchema.create(Constants.SLOTS_PER_HISTORICAL_ROOT)),
-          namedSchema(
-              "state_roots", SszBytes32VectorSchema.create(Constants.SLOTS_PER_HISTORICAL_ROOT)));
+          namedSchema("block_roots", SszBytes32VectorSchema.create(slotsPerHistoricalRoot)),
+          namedSchema("state_roots", SszBytes32VectorSchema.create(slotsPerHistoricalRoot)));
     }
 
     @Override
@@ -54,20 +50,8 @@ public class HistoricalBatch
     }
   }
 
-  public static HistoricalBatchSchema getSszSchema() {
-    return SSZ_SCHEMA.get();
-  }
-
-  public static final SpecDependent<HistoricalBatchSchema> SSZ_SCHEMA =
-      SpecDependent.of(HistoricalBatchSchema::new);
-
   private HistoricalBatch(HistoricalBatchSchema type, TreeNode backingNode) {
     super(type, backingNode);
-  }
-
-  @Deprecated // Use the constructor with type
-  public HistoricalBatch(SszBytes32Vector block_roots, SszBytes32Vector state_roots) {
-    this(SSZ_SCHEMA.get(), block_roots, state_roots);
   }
 
   private HistoricalBatch(
