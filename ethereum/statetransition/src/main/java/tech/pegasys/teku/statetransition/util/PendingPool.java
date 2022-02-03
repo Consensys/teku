@@ -38,7 +38,6 @@ import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -49,8 +48,7 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
 
   private static final Comparator<SlotAndRoot> SLOT_AND_ROOT_COMPARATOR =
       Comparator.comparing(SlotAndRoot::getSlot).thenComparing(SlotAndRoot::getRoot);
-  private static final UInt64 DEFAULT_HISTORICAL_SLOT_TOLERANCE =
-      UInt64.valueOf(Constants.SLOTS_PER_EPOCH * 10);
+  private static final UInt64 DEFAULT_HISTORICAL_SLOT_TOLERANCE = UInt64.valueOf(320);
   private static final int DEFAULT_MAX_ITEMS = 5000;
 
   private final Spec spec;

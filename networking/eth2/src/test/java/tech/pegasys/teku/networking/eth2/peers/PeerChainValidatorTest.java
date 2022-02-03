@@ -34,7 +34,6 @@ import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
@@ -513,7 +512,7 @@ public class PeerChainValidatorTest {
     final Bytes32 headRoot = Bytes32.fromHexString("0xeeee");
     // Set a head slot some distance beyond the finalized epoch
     final UInt64 headSlot =
-        remoteFinalizedCheckpoint.getEpoch().times(Constants.SLOTS_PER_EPOCH).plus(10L);
+        remoteFinalizedCheckpoint.getEpoch().times(spec.getSlotsPerEpoch(UInt64.ZERO)).plus(10L);
 
     final PeerStatus status =
         new PeerStatus(

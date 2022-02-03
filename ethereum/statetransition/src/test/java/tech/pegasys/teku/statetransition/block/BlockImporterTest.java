@@ -85,6 +85,7 @@ public class BlockImporterTest {
 
   private final BlockImporter blockImporter =
       new BlockImporter(
+          spec,
           blockImportNotifications,
           recentChainData,
           forkChoice,
@@ -361,6 +362,7 @@ public class BlockImporterTest {
         WeakSubjectivityValidator.lenient(wsConfig);
     final BlockImporter blockImporter =
         new BlockImporter(
+            spec,
             blockImportNotifications,
             recentChainData,
             forkChoice,
@@ -390,6 +392,7 @@ public class BlockImporterTest {
         WeakSubjectivityValidator.lenient(wsConfig);
     final BlockImporter blockImporter =
         new BlockImporter(
+            spec,
             blockImportNotifications,
             recentChainData,
             forkChoice,
@@ -413,6 +416,7 @@ public class BlockImporterTest {
             spec, new InlineEventThread(), storageSystem.recentChainData(), forkChoiceNotifier);
     final BlockImporter blockImporter =
         new BlockImporter(
+            spec,
             blockImportNotifications,
             storageSystem.recentChainData(),
             forkChoice,
@@ -451,6 +455,7 @@ public class BlockImporterTest {
             spec, new InlineEventThread(), storageSystem.recentChainData(), forkChoiceNotifier);
     final BlockImporter blockImporter =
         new BlockImporter(
+            spec,
             blockImportNotifications,
             storageSystem.recentChainData(),
             forkChoice,
@@ -497,6 +502,7 @@ public class BlockImporterTest {
             spec, new InlineEventThread(), storageSystem.recentChainData(), forkChoiceNotifier);
     final BlockImporter blockImporter =
         new BlockImporter(
+            spec,
             blockImportNotifications,
             storageSystem.recentChainData(),
             forkChoice,
@@ -535,6 +541,7 @@ public class BlockImporterTest {
             spec, new InlineEventThread(), storageSystem.recentChainData(), forkChoiceNotifier);
     final BlockImporter blockImporter =
         new BlockImporter(
+            spec,
             blockImportNotifications,
             storageSystem.recentChainData(),
             forkChoice,
@@ -561,6 +568,7 @@ public class BlockImporterTest {
             spec, new InlineEventThread(), storageSystem.recentChainData(), forkChoiceNotifier);
     final BlockImporter blockImporter =
         new BlockImporter(
+            spec,
             blockImportNotifications,
             storageSystem.recentChainData(),
             forkChoice,

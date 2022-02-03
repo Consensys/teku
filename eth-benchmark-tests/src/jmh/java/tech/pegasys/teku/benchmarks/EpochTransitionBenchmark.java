@@ -35,6 +35,7 @@ import tech.pegasys.teku.benchmarks.util.CustomRunner;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszMutableUInt64List;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.Constants;
@@ -90,7 +91,7 @@ public class EpochTransitionBenchmark {
 
     String blocksFile =
         "/blocks/blocks_epoch_"
-            + Constants.SLOTS_PER_EPOCH
+            + spec.getSlotsPerEpoch(UInt64.ZERO)
             + "_validators_"
             + validatorsCount
             + ".ssz.gz";
@@ -114,6 +115,7 @@ public class EpochTransitionBenchmark {
 
     blockImporter =
         new BlockImporter(
+            spec,
             blockImportNotifications,
             recentChainData,
             forkChoice,

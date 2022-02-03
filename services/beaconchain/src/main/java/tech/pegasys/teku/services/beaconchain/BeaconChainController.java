@@ -794,6 +794,7 @@ public class BeaconChainController extends Service
     LOG.debug("BeaconChainController.initBlockImporter()");
     blockImporter =
         new BlockImporter(
+            spec,
             eventChannels.getPublisher(BlockImportNotifications.class),
             recentChainData,
             forkChoice,
