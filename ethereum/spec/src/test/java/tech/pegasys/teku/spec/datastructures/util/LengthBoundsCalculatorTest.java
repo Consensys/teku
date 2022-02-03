@@ -47,7 +47,6 @@ import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkData;
-import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
@@ -106,7 +105,8 @@ public class LengthBoundsCalculatorTest {
         Arguments.of(getProvider(Fork.SSZ_SCHEMA), SszLengthBounds.ofBytes(16, 16)),
         Arguments.of(getProvider(ForkData.SSZ_SCHEMA), SszLengthBounds.ofBytes(36, 36)),
         Arguments.of(
-            getProvider(HistoricalBatch.SSZ_SCHEMA.get()), SszLengthBounds.ofBytes(524288, 524288)),
+            (SchemaProvider) SchemaDefinitions::getHistoricalBatchSchema,
+            SszLengthBounds.ofBytes(524288, 524288)),
         Arguments.of(
             getProvider(IndexedAttestation.SSZ_SCHEMA), SszLengthBounds.ofBytes(228, 16612)),
         Arguments.of(getProvider(PendingAttestation.SSZ_SCHEMA), SszLengthBounds.ofBytes(149, 405)),

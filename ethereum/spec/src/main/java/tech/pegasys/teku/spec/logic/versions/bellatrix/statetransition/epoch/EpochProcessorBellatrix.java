@@ -25,6 +25,7 @@ import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.EpochProcessorAltair;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class EpochProcessorBellatrix extends EpochProcessorAltair {
 
@@ -37,7 +38,8 @@ public class EpochProcessorBellatrix extends EpochProcessorAltair {
       final BeaconStateMutators beaconStateMutators,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
-      final ValidatorStatusFactory validatorStatusFactory) {
+      final ValidatorStatusFactory validatorStatusFactory,
+      final SchemaDefinitions schemaDefinitions) {
     super(
         specConfig,
         miscHelpers,
@@ -45,7 +47,8 @@ public class EpochProcessorBellatrix extends EpochProcessorAltair {
         beaconStateMutators,
         validatorsUtil,
         beaconStateUtil,
-        validatorStatusFactory);
+        validatorStatusFactory,
+        schemaDefinitions);
     specConfigBellatrix = specConfig;
   }
 

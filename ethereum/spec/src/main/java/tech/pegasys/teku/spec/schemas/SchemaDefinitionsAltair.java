@@ -42,6 +42,7 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
   private final MetadataMessageSchemaAltair metadataMessageSchema;
 
   public SchemaDefinitionsAltair(final SpecConfigAltair specConfig) {
+    super(specConfig);
     this.beaconStateSchema = BeaconStateSchemaAltair.create(specConfig);
     this.beaconBlockBodySchema = BeaconBlockBodySchemaAltair.create(specConfig);
     this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema);

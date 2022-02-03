@@ -22,8 +22,6 @@ public class Constants {
 
   @Deprecated public static int MAX_VALIDATORS_PER_COMMITTEE;
 
-  @Deprecated public static int SLOTS_PER_HISTORICAL_ROOT;
-
   // Networking
   public static final int GOSSIP_MAX_SIZE = 1048576; // bytes
   public static final int GOSSIP_MAX_SIZE_BELLATRIX = 10485760; // bytes
@@ -86,7 +84,6 @@ public class Constants {
   @Deprecated
   public static void setConstants(final SpecConfig config) {
     MAX_VALIDATORS_PER_COMMITTEE = config.getMaxValidatorsPerCommittee();
-    SLOTS_PER_HISTORICAL_ROOT = config.getSlotsPerHistoricalRoot();
     SpecDependent.resetAll();
   }
 }
