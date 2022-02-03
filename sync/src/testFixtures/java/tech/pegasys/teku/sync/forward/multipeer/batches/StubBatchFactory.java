@@ -61,6 +61,10 @@ public class StubBatchFactory extends BatchFactory implements Iterable<Batch> {
     return batchSupports.get(batch).importResult;
   }
 
+  public void resetImportResult(final Batch batch) {
+    batchSupports.get(batch).importResult = new SafeFuture<>();
+  }
+
   public void receiveBlocks(final Batch batch, final SignedBeaconBlock... blocks) {
     batchSupports.get(batch).syncSource.receiveBlocks(blocks);
   }
@@ -105,7 +109,7 @@ public class StubBatchFactory extends BatchFactory implements Iterable<Batch> {
   private static final class BatchSupport
       implements SyncSourceSelector, ConflictResolutionStrategy {
 
-    private final SafeFuture<BatchImportResult> importResult = new SafeFuture<>();
+    private SafeFuture<BatchImportResult> importResult = new SafeFuture<>();
     private final StubSyncSource syncSource = new StubSyncSource();
     private final Batch batch;
     private final Batch eventThreadOnlyBatch;

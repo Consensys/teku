@@ -69,7 +69,13 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
       // This is the first filled payload, so need to check it's a valid merge block
       result =
           Optional.of(
-              bellatrixTransitionHelpers.validateMergeBlock(executionEngine, executionPayload));
+              bellatrixTransitionHelpers
+                  .validateMergeBlock(executionEngine, executionPayload)
+                  .exceptionally(
+                      error -> {
+                        LOG.error("Error while validating merge block", error);
+                        return ExecutePayloadResult.failedExecution(error);
+                      }));
     } else {
       result =
           Optional.of(

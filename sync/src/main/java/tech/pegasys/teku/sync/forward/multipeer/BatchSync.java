@@ -19,11 +19,13 @@ import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.exceptio
 import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.exceptionHandlingRunnable;
 
 import com.google.common.annotations.VisibleForTesting;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.NavigableSet;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.logging.LogFormatter;
@@ -33,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.sync.forward.multipeer.BatchImporter.BatchImportResult;
 import tech.pegasys.teku.sync.forward.multipeer.batches.Batch;
 import tech.pegasys.teku.sync.forward.multipeer.batches.BatchChain;
 import tech.pegasys.teku.sync.forward.multipeer.batches.BatchFactory;
@@ -42,8 +45,10 @@ import tech.pegasys.teku.sync.forward.multipeer.chains.TargetChain;
 public class BatchSync implements Sync {
   private static final Logger LOG = LogManager.getLogger();
   private static final int MAX_PENDING_BATCHES = 5;
+  private static final Duration PAUSE_ON_SERVICE_OFFLINE = Duration.ofSeconds(5);
 
   private final EventThread eventThread;
+  private final AsyncRunner asyncRunner;
   private final RecentChainData recentChainData;
   private final BatchImporter batchImporter;
   private final BatchDataRequester batchDataRequester;
@@ -67,8 +72,11 @@ public class BatchSync implements Sync {
    */
   private UInt64 lastImportTimerStartPointSeconds;
 
+  private boolean scheduledSync = false;
+
   private BatchSync(
       final EventThread eventThread,
+      final AsyncRunner asyncRunner,
       final RecentChainData recentChainData,
       final BatchChain activeBatches,
       final BatchImporter batchImporter,
@@ -76,6 +84,7 @@ public class BatchSync implements Sync {
       final MultipeerCommonAncestorFinder commonAncestorFinder,
       final TimeProvider timeProvider) {
     this.eventThread = eventThread;
+    this.asyncRunner = asyncRunner;
     this.recentChainData = recentChainData;
     this.activeBatches = activeBatches;
     this.batchImporter = batchImporter;
@@ -87,6 +96,7 @@ public class BatchSync implements Sync {
 
   public static BatchSync create(
       final EventThread eventThread,
+      final AsyncRunner asyncRunner,
       final RecentChainData recentChainData,
       final BatchImporter batchImporter,
       final BatchFactory batchFactory,
@@ -99,6 +109,7 @@ public class BatchSync implements Sync {
             eventThread, activeBatches, batchFactory, batchSize, MAX_PENDING_BATCHES);
     return new BatchSync(
         eventThread,
+        asyncRunner,
         recentChainData,
         activeBatches,
         batchImporter,
@@ -383,6 +394,7 @@ public class BatchSync implements Sync {
       progressSync();
       return;
     }
+
     if (result.isFailure()) {
       // Mark all batches that form a chain with this one as invalid
       for (Batch batch : activeBatches.batchesAfterInclusive(importedBatch)) {
@@ -392,6 +404,22 @@ public class BatchSync implements Sync {
         LOG.debug("Marking batch {} as invalid because it extends from an invalid block", batch);
         batch.markAsInvalid();
       }
+    } else if (result == BatchImportResult.SERVICE_OFFLINE) {
+      if (!scheduledSync) {
+        LOG.info("Sync is delayed, unable to verify blocks. Probably Execution Client is offline");
+        asyncRunner
+            .runAfterDelay(
+                () ->
+                    eventThread.execute(
+                        () -> {
+                          scheduledSync = false;
+                          progressSync();
+                        }),
+                PAUSE_ON_SERVICE_OFFLINE)
+            .reportExceptions();
+        scheduledSync = true;
+      }
+      return;
     } else {
       // Everything prior to this batch must already exist on our chain so we can drop them all
       activeBatches.removeUpToIncluding(importedBatch);
