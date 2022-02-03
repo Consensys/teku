@@ -45,7 +45,6 @@ import tech.pegasys.teku.spec.datastructures.state.ForkData;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.SigningData;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
-import tech.pegasys.teku.util.config.SpecDependent;
 
 public class SszTestExecutorDeprecated<T extends SszData> implements TestExecutor {
   private final Supplier<SszSchema<T>> sszType;
@@ -99,10 +98,6 @@ public class SszTestExecutorDeprecated<T extends SszData> implements TestExecuto
           .put(
               "ssz_static/VoluntaryExit", new SszTestExecutorDeprecated<>(VoluntaryExit.SSZ_SCHEMA))
           .build();
-
-  public SszTestExecutorDeprecated(final SpecDependent<? extends SszSchema<T>> sszType) {
-    this.sszType = sszType::get;
-  }
 
   public SszTestExecutorDeprecated(final SszSchema<T> sszType) {
     this.sszType = () -> sszType;

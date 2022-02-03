@@ -12,7 +12,6 @@ dependencies {
   implementation project(':pow')
   implementation project(':storage:api')
   implementation project(':infrastructure:serviceutils')
-  implementation project(':util')
   implementation project(':validator:client')
 
   implementation 'com.google.code.gson:gson'

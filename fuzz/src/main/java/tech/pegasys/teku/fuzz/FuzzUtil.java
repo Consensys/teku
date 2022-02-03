@@ -46,7 +46,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
-import tech.pegasys.teku.util.config.SpecDependent;
 
 public class FuzzUtil {
   // NOTE: alternatively could also have these all in separate classes, which implement a
@@ -78,8 +77,6 @@ public class FuzzUtil {
     } else {
       Constants.setConstants(TestSpecFactory.createMinimalPhase0());
     }
-    // guessing this might be necessary soon?
-    SpecDependent.resetAll();
 
     if (disable_bls) {
       BLSConstants.disableBLSVerification();

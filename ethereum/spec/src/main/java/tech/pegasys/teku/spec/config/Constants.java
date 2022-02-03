@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.config;
 import java.time.Duration;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.util.config.SpecDependent;
 
 public class Constants {
 
@@ -84,6 +83,5 @@ public class Constants {
   @Deprecated
   public static void setConstants(final SpecConfig config) {
     MAX_VALIDATORS_PER_COMMITTEE = config.getMaxValidatorsPerCommittee();
-    SpecDependent.resetAll();
   }
 }

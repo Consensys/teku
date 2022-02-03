@@ -16,8 +16,6 @@ package tech.pegasys.teku.spec.datastructures.util;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.stream.Stream;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -25,7 +23,6 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszLengthBounds;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
@@ -50,7 +47,6 @@ import tech.pegasys.teku.spec.datastructures.state.ForkData;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
-import tech.pegasys.teku.util.config.SpecDependent;
 
 /**
  * This is in the wrong module but we want to be able to access the datastructure types to check
@@ -59,18 +55,6 @@ import tech.pegasys.teku.util.config.SpecDependent;
 public class LengthBoundsCalculatorTest {
   final Spec spec = TestSpecFactory.createMainnetPhase0();
   final SchemaDefinitions schemaDefinitions = spec.getGenesisSchemaDefinitions();
-
-  @BeforeAll
-  static void setConstants() {
-    Constants.setConstants(TestSpecFactory.createMainnetPhase0());
-    SpecDependent.resetAll();
-  }
-
-  @AfterAll
-  static void restoreConstants() {
-    Constants.setConstants(TestSpecFactory.createMinimalPhase0());
-    SpecDependent.resetAll();
-  }
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("generateParameters")

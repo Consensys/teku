@@ -19,7 +19,6 @@ dependencies {
   implementation project(':validator:beaconnode')
   implementation project(':validator:eventadapter')
   implementation project(':validator:remote')
-  implementation project(':util')
   implementation project(':data:serializer')
   implementation project(':data:provider')
   implementation project(':data:dataexchange')
