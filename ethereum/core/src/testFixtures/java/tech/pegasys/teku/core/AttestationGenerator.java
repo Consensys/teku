@@ -14,7 +14,6 @@
 package tech.pegasys.teku.core;
 
 import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 import com.google.common.base.Preconditions;
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -210,7 +209,7 @@ public class AttestationGenerator {
       this.headState = generateHeadState(headBlockAndState.getState(), assignedSlot);
       this.validatorKeys = validatorKeys;
       this.assignedSlot = assignedSlot;
-      this.assignedSlotEpoch = compute_epoch_at_slot(assignedSlot);
+      this.assignedSlotEpoch = spec.computeEpochAtSlot(assignedSlot);
       this.validatorKeySupplier = validatorKeySupplier;
       generateNextAttestation();
     }

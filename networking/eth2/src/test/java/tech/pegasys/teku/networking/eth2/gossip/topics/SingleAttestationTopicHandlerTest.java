@@ -15,7 +15,7 @@ package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.util.config.Constants.GOSSIP_MAX_SIZE;
+import static tech.pegasys.teku.spec.config.Constants.GOSSIP_MAX_SIZE;
 
 import io.libp2p.core.pubsub.ValidationResult;
 import java.util.List;

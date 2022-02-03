@@ -34,6 +34,7 @@ import tech.pegasys.teku.infrastructure.async.ScheduledExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -41,7 +42,6 @@ import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DepositStorage;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 import tech.pegasys.teku.storage.store.UpdatableStore;
-import tech.pegasys.teku.util.config.Constants;
 
 @Command(
     name = "db",
@@ -179,7 +179,7 @@ public class DebugDbCommand implements Runnable {
   }
 
   private void setConstants(@Mixin final Eth2NetworkOptions eth2NetworkOptions) {
-    Constants.setConstants(eth2NetworkOptions.getNetworkConfiguration().getConstants());
+    Constants.setConstants(eth2NetworkOptions.getNetworkConfiguration().getSpec());
   }
 
   private Database createDatabase(

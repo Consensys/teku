@@ -27,6 +27,8 @@ import tech.pegasys.teku.config.TekuConfiguration;
 public final class Teku {
 
   static {
+    // Disable libsodium in tuweni Hash because the check for it's presence can be very slow.
+    System.setProperty("org.apache.tuweni.crypto.useSodium", "false");
     Security.addProvider(new BouncyCastleProvider());
   }
 

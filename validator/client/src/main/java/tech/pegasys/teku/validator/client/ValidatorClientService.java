@@ -30,6 +30,7 @@ import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
 import tech.pegasys.teku.infrastructure.io.SystemSignalListener;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.restapi.RestApi;
+import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
@@ -48,6 +49,8 @@ import tech.pegasys.teku.validator.client.duties.synccommittee.SyncCommitteeSche
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 import tech.pegasys.teku.validator.client.loader.PublicKeyLoader;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
+import tech.pegasys.teku.validator.client.proposerconfig.ProposerConfigProvider;
+import tech.pegasys.teku.validator.client.proposerconfig.loader.ProposerConfigLoader;
 import tech.pegasys.teku.validator.client.restapi.ValidatorRestApi;
 import tech.pegasys.teku.validator.client.restapi.ValidatorRestApiConfig;
 import tech.pegasys.teku.validator.eventadapter.InProcessBeaconNodeApi;
@@ -65,6 +68,7 @@ public class ValidatorClientService extends Service {
   private final List<ValidatorTimingChannel> validatorTimingChannels = new ArrayList<>();
   private ValidatorStatusLogger validatorStatusLogger;
   private ValidatorIndexProvider validatorIndexProvider;
+  private Optional<ProposerConfigProvider> proposerConfigProvider;
 
   private final SafeFuture<Void> initializationComplete = new SafeFuture<>();
 
@@ -130,7 +134,8 @@ public class ValidatorClientService extends Service {
           Optional.of(
               ValidatorRestApi.create(
                   validatorApiConfig,
-                  new KeyManager(validatorLoader, services.getDataDirLayout())));
+                  new ActiveKeyManager(validatorLoader),
+                  services.getDataDirLayout()));
     } else {
       LOG.info("validator-api-enabled is false, not starting rest api.");
     }
@@ -180,6 +185,7 @@ public class ValidatorClientService extends Service {
       AsyncRunner asyncRunner) {
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
+
     this.validatorIndexProvider =
         new ValidatorIndexProvider(validators, validatorApiChannel, asyncRunner);
     final BlockDutyFactory blockDutyFactory =
@@ -234,13 +240,23 @@ public class ValidatorClientService extends Service {
     }
 
     if (spec.isMilestoneSupported(SpecMilestone.BELLATRIX)) {
+      proposerConfigProvider =
+          Optional.of(
+              ProposerConfigProvider.create(
+                  asyncRunner,
+                  config.getValidatorConfig().getRefreshProposerConfigFromSource(),
+                  new ProposerConfigLoader(new JsonProvider().getObjectMapper()),
+                  config.getValidatorConfig().getProposerConfigSource()));
+
       validatorTimingChannels.add(
           new BeaconProposerPreparer(
               validatorApiChannel,
               validatorIndexProvider,
+              proposerConfigProvider.get(),
               config.getValidatorConfig().getProposerDefaultFeeRecipient(),
-              validators,
               spec));
+    } else {
+      proposerConfigProvider = Optional.empty();
     }
     addValidatorCountMetric(metricsSystem, validators);
     this.validatorStatusLogger =
@@ -279,22 +295,28 @@ public class ValidatorClientService extends Service {
 
   @Override
   protected SafeFuture<?> doStart() {
-    return initializationComplete.thenCompose(
-        (__) -> {
-          validatorRestApi.ifPresent(restApi -> restApi.start().reportExceptions());
-          SystemSignalListener.registerReloadConfigListener(validatorLoader::loadValidators);
-          validatorIndexProvider.lookupValidators();
-          eventChannels.subscribe(
-              ValidatorTimingChannel.class,
-              new ValidatorTimingActions(
-                  validatorStatusLogger,
-                  validatorIndexProvider,
-                  validatorTimingChannels,
-                  spec,
-                  metricsSystem));
-          validatorStatusLogger.printInitialValidatorStatuses().reportExceptions();
-          return beaconNodeApi.subscribeToEvents();
-        });
+    return initializationComplete
+        .thenCompose(
+            __ ->
+                proposerConfigProvider
+                    .map(ProposerConfigProvider::getProposerConfig)
+                    .orElse(SafeFuture.completedFuture(Optional.empty())))
+        .thenCompose(
+            __ -> {
+              validatorRestApi.ifPresent(restApi -> restApi.start().reportExceptions());
+              SystemSignalListener.registerReloadConfigListener(validatorLoader::loadValidators);
+              validatorIndexProvider.lookupValidators();
+              eventChannels.subscribe(
+                  ValidatorTimingChannel.class,
+                  new ValidatorTimingActions(
+                      validatorStatusLogger,
+                      validatorIndexProvider,
+                      validatorTimingChannels,
+                      spec,
+                      metricsSystem));
+              validatorStatusLogger.printInitialValidatorStatuses().reportExceptions();
+              return beaconNodeApi.subscribeToEvents();
+            });
   }
 
   @Override

@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc;
 
-import static tech.pegasys.teku.util.config.Constants.MAX_REQUEST_BLOCKS;
+import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS;
 
 import java.util.List;
 import java.util.stream.Collectors;

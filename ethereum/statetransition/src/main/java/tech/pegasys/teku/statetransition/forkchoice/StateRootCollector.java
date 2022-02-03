@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
+import static tech.pegasys.teku.spec.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

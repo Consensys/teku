@@ -98,6 +98,7 @@ public class SyncingNodeManager {
             spec, new InlineEventThread(), recentChainData, mock(ForkChoiceNotifier.class));
     BlockImporter blockImporter =
         new BlockImporter(
+            spec,
             eventChannels.getPublisher(BlockImportNotifications.class),
             recentChainData,
             forkChoice,

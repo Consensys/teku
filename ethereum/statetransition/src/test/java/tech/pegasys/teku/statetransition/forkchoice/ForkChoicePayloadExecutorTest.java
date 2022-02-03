@@ -20,7 +20,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.io.IOException;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -69,19 +68,6 @@ class ForkChoicePayloadExecutorTest {
     final boolean result = payloadExecutor.optimisticallyExecute(payloadHeader, payload);
     verify(executionEngine).executePayload(payload);
     assertThat(result).isTrue();
-  }
-
-  @Test
-  void optimisticallyExecute_shouldTreatErrorFromExecutionEngineAsSyncing() {
-    when(executionEngine.executePayload(any()))
-        .thenReturn(SafeFuture.failedFuture(new IOException("Boom")));
-    final ForkChoicePayloadExecutor payloadExecutor = createPayloadExecutor();
-    final boolean result = payloadExecutor.optimisticallyExecute(payloadHeader, payload);
-    verify(executionEngine).executePayload(payload);
-    assertThat(result).isTrue();
-
-    final SafeFuture<ExecutePayloadResult> combinedResult = payloadExecutor.getExecutionResult();
-    assertThat(combinedResult).isCompletedWithValue(ExecutePayloadResult.SYNCING);
   }
 
   @Test

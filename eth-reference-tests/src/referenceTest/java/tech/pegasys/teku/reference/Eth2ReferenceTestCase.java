@@ -32,7 +32,7 @@ import tech.pegasys.teku.reference.phase0.shuffling.ShufflingTestExecutor;
 import tech.pegasys.teku.reference.phase0.ssz_generic.SszGenericTests;
 import tech.pegasys.teku.reference.phase0.ssz_static.SszTestExecutor;
 import tech.pegasys.teku.reference.phase0.ssz_static.SszTestExecutorDeprecated;
-import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.util.config.SpecDependent;
 
 public abstract class Eth2ReferenceTestCase {
@@ -72,15 +72,9 @@ public abstract class Eth2ReferenceTestCase {
           .build();
 
   protected void runReferenceTest(final TestDefinition testDefinition) throws Throwable {
-    setConstants(testDefinition.getConfigName());
+    Constants.setConstants(testDefinition.getSpec());
+    SpecDependent.resetAll();
     getExecutorFor(testDefinition).runTest(testDefinition);
-  }
-
-  private void setConstants(final String spec) {
-    if (!spec.equals("general") && !spec.equals("bls")) {
-      Constants.setConstants(spec);
-      SpecDependent.resetAll();
-    }
   }
 
   private TestExecutor getExecutorFor(final TestDefinition testDefinition) {

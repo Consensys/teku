@@ -19,14 +19,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.BeaconState;
-import tech.pegasys.teku.api.schema.ValidatorsRequest;
 import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
@@ -171,25 +168,5 @@ class JsonProviderTest {
     BeaconState state = new BeaconStatePhase0(stateInternal);
     String jsonState = jsonProvider.objectToJSON(state);
     assertTrue(jsonState.length() > 0);
-  }
-
-  @Test
-  void validatorsRequestTest() throws JsonProcessingException {
-    final String PUBKEY =
-        "0xa99a76ed7796f7be22d5b7e85deeb7c5677e88e511e0b337618f8c4eb61349b4bf2d153f649f7b53359fe8b94a38e44c";
-    final String data =
-        "{\n"
-            + "  \"epoch\": 0, \n"
-            + "  \"pubkeys\": [\n"
-            + "\""
-            + PUBKEY
-            + "\"\n"
-            + "  ]\n"
-            + "}";
-
-    ValidatorsRequest result = jsonProvider.jsonToObject(data, ValidatorsRequest.class);
-
-    assertThat(result.epoch).isEqualTo(UInt64.ZERO);
-    assertThat(result.pubkeys).isEqualTo(List.of(BLSPubKey.fromHexString(PUBKEY)));
   }
 }

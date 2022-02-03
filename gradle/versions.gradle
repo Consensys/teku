@@ -6,7 +6,7 @@ dependencyManagement {
 
     dependency 'com.google.auto.service:auto-service:1.0-rc7'
 
-    dependencySet(group: 'com.google.errorprone', version: '2.10.0') {
+    dependencySet(group: 'com.google.errorprone', version: '2.11.0') {
       entry 'error_prone_annotation'
       entry 'error_prone_check_api'
       entry 'error_prone_core'
@@ -21,7 +21,7 @@ dependencyManagement {
     dependency 'com.googlecode.json-simple:json-simple:1.1.1'
     dependency 'org.jsoup:jsoup:1.14.3'
 
-    dependency 'com.launchdarkly:okhttp-eventsource:2.4.0'
+    dependency 'com.launchdarkly:okhttp-eventsource:2.5.0'
 
     dependency 'com.squareup.okhttp3:okhttp:4.9.2'
     dependency 'com.squareup.okhttp3:mockwebserver:4.9.2'
@@ -30,7 +30,7 @@ dependencyManagement {
 
     dependency 'info.picocli:picocli:4.6.2'
 
-    dependencySet(group: 'io.javalin', version: '4.2.0') {
+    dependencySet(group: 'io.javalin', version: '4.3.0') {
       entry 'javalin'
       entry('javalin-openapi') {
         exclude 'org.webjars.npm:redoc'
@@ -52,7 +52,7 @@ dependencyManagement {
 
     dependency 'org.mock-server:mockserver-junit-jupiter:5.11.2'
 
-    dependencySet(group: 'io.swagger.core.v3', version: '2.1.11') {
+    dependencySet(group: 'io.swagger.core.v3', version: '2.1.12') {
       entry 'swagger-parser'
       entry 'swagger-core'
       entry 'swagger-models'
@@ -68,7 +68,7 @@ dependencyManagement {
       }
     }
 
-    dependencySet(group: 'io.vertx', version: '3.9.9') {
+    dependencySet(group: 'io.vertx', version: '4.2.4') {
       entry 'vertx-codegen'
       entry 'vertx-core'
       entry 'vertx-unit'
@@ -80,12 +80,11 @@ dependencyManagement {
 
     dependency 'javax.annotation:javax.annotation-api:1.3.2'
 
-    dependencySet(group: 'org.apache.tuweni', version: '1.0.0') {
+    dependencySet(group: 'org.apache.tuweni', version: '2.1.0') {
       entry 'tuweni-bytes'
       entry 'tuweni-crypto'
       entry 'tuweni-junit'
       entry 'tuweni-ssz'
-      entry 'tuweni-toml'
       entry 'tuweni-units'
     }
 
@@ -114,8 +113,8 @@ dependencyManagement {
       entry 'junit-jupiter-params'
     }
 
-    dependency 'org.mockito:mockito-core:4.2.0'
-    dependency 'org.mockito:mockito-junit-jupiter:4.2.0'
+    dependency 'org.mockito:mockito-core:4.3.1'
+    dependency 'org.mockito:mockito-junit-jupiter:4.3.1'
 
     dependencySet(group: "org.openjdk.jmh", version: "1.34") {
       entry 'jmh-core'
@@ -137,15 +136,15 @@ dependencyManagement {
 
     dependency 'io.prometheus:simpleclient:0.9.0'
 
-    dependencySet(group: 'org.hyperledger.besu.internal', version: '21.10.5') {
+    dependencySet(group: 'org.hyperledger.besu.internal', version: '21.10.9') {
       entry('metrics-core') {
         // We include netty-all so omit the separated jars
         exclude 'io.netty:netty-tcnative-boringssl-static'
       }
     }
-    dependency 'org.hyperledger.besu:plugin-api:21.10.3'
+    dependency 'org.hyperledger.besu:plugin-api:21.10.9'
 
-    dependencySet(group: 'org.testcontainers', version: '1.16.2') {
+    dependencySet(group: 'org.testcontainers', version: '1.16.3') {
       entry "testcontainers"
       entry "junit-jupiter"
     }
@@ -158,7 +157,7 @@ dependencyManagement {
       exclude 'org.apache.tuweni:units'
     }
 
-    dependency 'tech.pegasys.signers.internal:bls-keystore:1.0.25'
+    dependency 'tech.pegasys.signers.internal:bls-keystore:2.0.0'
 
     dependency 'org.jupnp:org.jupnp.support:2.6.0'
     dependency 'org.jupnp:org.jupnp:2.6.0'

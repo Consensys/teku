@@ -43,7 +43,6 @@ import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.store.UpdatableStore;
-import tech.pegasys.teku.util.config.Constants;
 
 public class PeerChainValidatorTest {
   private final Spec spec = TestSpecFactory.createDefault();
@@ -513,7 +512,7 @@ public class PeerChainValidatorTest {
     final Bytes32 headRoot = Bytes32.fromHexString("0xeeee");
     // Set a head slot some distance beyond the finalized epoch
     final UInt64 headSlot =
-        remoteFinalizedCheckpoint.getEpoch().times(Constants.SLOTS_PER_EPOCH).plus(10L);
+        remoteFinalizedCheckpoint.getEpoch().times(spec.getSlotsPerEpoch(UInt64.ZERO)).plus(10L);
 
     final PeerStatus status =
         new PeerStatus(

@@ -15,7 +15,7 @@ package tech.pegasys.teku.services.powchain;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.pow.api.Eth1DataCachePeriodCalculator.calculateEth1DataCacheDurationPriorToCurrentTime;
-import static tech.pegasys.teku.util.config.Constants.MAXIMUM_CONCURRENT_ETH1_REQUESTS;
+import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_ETH1_REQUESTS;
 
 import java.util.List;
 import java.util.Optional;
@@ -80,6 +80,7 @@ public class PowchainService extends Service {
                 .mapToObj(
                     idx ->
                         new Web3jEth1Provider(
+                            powConfig.getSpec().getGenesisSpecConfig(),
                             serviceConfig.getMetricsSystem(),
                             Eth1Provider.generateEth1ProviderId(
                                 idx + 1, powConfig.getEth1Endpoints().get(idx)),

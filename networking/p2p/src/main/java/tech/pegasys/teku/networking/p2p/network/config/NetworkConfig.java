@@ -24,6 +24,7 @@ import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.io.PortAvailability;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
 
 public class NetworkConfig {
@@ -186,12 +187,22 @@ public class NetworkConfig {
     }
 
     public Builder listenPort(final int listenPort) {
+      if (!PortAvailability.isPortValid(listenPort)) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid listenPort: %d", listenPort));
+      }
       this.listenPort = listenPort;
       return this;
     }
 
     public Builder advertisedPort(final OptionalInt advertisedPort) {
       checkNotNull(advertisedPort);
+      if (advertisedPort.isPresent()) {
+        if (!PortAvailability.isPortValid(advertisedPort.getAsInt())) {
+          throw new InvalidConfigurationException(
+              String.format("Invalid advertisedPort: %d", advertisedPort.getAsInt()));
+        }
+      }
       this.advertisedPort = advertisedPort;
       return this;
     }

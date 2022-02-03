@@ -14,7 +14,6 @@
 package tech.pegasys.teku.storage.server;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.storage.store.StoreAssertions.assertStoresMatch;
 
 import com.google.common.io.Files;
@@ -131,7 +130,7 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
 
     // Create finalized block at slot prior to epoch boundary
     final UInt64 finalizedEpoch = UInt64.valueOf(2);
-    final UInt64 finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch).minus(UInt64.ONE);
+    final UInt64 finalizedSlot = spec.computeStartSlotAtEpoch(finalizedEpoch).minus(UInt64.ONE);
     chainBuilder.generateBlocksUpToSlot(finalizedSlot);
     final SignedBlockAndState finalizedBlock = chainBuilder.getBlockAndStateAtSlot(finalizedSlot);
     final Checkpoint finalizedCheckpoint =
@@ -177,7 +176,7 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
     // Set up database from an anchor point
     final UInt64 anchorEpoch = UInt64.valueOf(10);
     final SignedBlockAndState anchorBlockAndState =
-        chainBuilder.generateBlockAtSlot(compute_start_slot_at_epoch(anchorEpoch));
+        chainBuilder.generateBlockAtSlot(spec.computeStartSlotAtEpoch(anchorEpoch));
     final AnchorPoint anchor =
         AnchorPoint.create(
             spec, new Checkpoint(anchorEpoch, anchorBlockAndState.getRoot()), anchorBlockAndState);

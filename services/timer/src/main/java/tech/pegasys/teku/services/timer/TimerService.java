@@ -16,7 +16,6 @@ package tech.pegasys.teku.services.timer;
 import static org.quartz.JobBuilder.newJob;
 import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 import static org.quartz.TriggerBuilder.newTrigger;
-import static tech.pegasys.teku.util.config.Constants.TIME_TICKER_REFRESH_RATE;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import org.quartz.DateBuilder;
@@ -32,6 +31,7 @@ import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 
 public class TimerService extends Service {
 
+  public static final double TIME_TICKER_REFRESH_RATE = 2; // per sec
   public static final String TIME_EVENTS_CHANNEL = "TimeEventsChannel";
 
   private static final AtomicInteger TIMER_ID_GENERATOR = new AtomicInteger();

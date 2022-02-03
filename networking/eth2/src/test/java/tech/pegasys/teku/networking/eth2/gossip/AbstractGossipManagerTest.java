@@ -20,7 +20,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
-import static tech.pegasys.teku.util.config.Constants.GOSSIP_MAX_SIZE;
+import static tech.pegasys.teku.spec.config.Constants.GOSSIP_MAX_SIZE;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

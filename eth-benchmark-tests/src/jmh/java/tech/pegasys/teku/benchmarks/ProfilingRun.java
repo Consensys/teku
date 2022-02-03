@@ -33,6 +33,7 @@ import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.interop.InteropStartupUtil;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -49,7 +50,6 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityFactory;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
@@ -62,7 +62,7 @@ public class ProfilingRun {
   @Test
   public void importBlocks() throws Exception {
 
-    Constants.setConstants("mainnet");
+    Constants.setConstants(TestSpecFactory.createMainnetPhase0());
     AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = false;
 
     int validatorsCount = 32 * 1024;
@@ -70,7 +70,7 @@ public class ProfilingRun {
 
     String blocksFile =
         "/blocks/blocks_epoch_"
-            + Constants.SLOTS_PER_EPOCH
+            + spec.getSlotsPerEpoch(UInt64.ZERO)
             + "_validators_"
             + validatorsCount
             + ".ssz.gz";
@@ -97,6 +97,7 @@ public class ProfilingRun {
           BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);
       BlockImporter blockImporter =
           new BlockImporter(
+              spec,
               blockImportNotifications,
               recentChainData,
               forkChoice,
@@ -143,14 +144,14 @@ public class ProfilingRun {
   @Test
   public void importBlocksMemProfiling() throws Exception {
 
-    Constants.setConstants("mainnet");
+    Constants.setConstants(TestSpecFactory.createMainnetPhase0());
     AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = false;
 
     int validatorsCount = 32 * 1024;
 
     String blocksFile =
         "/blocks/blocks_epoch_"
-            + Constants.SLOTS_PER_EPOCH
+            + spec.getSlotsPerEpoch(UInt64.ZERO)
             + "_validators_"
             + validatorsCount
             + ".ssz.gz";
@@ -177,6 +178,7 @@ public class ProfilingRun {
               spec, new InlineEventThread(), recentChainData, mock(ForkChoiceNotifier.class));
       BlockImporter blockImporter =
           new BlockImporter(
+              spec,
               blockImportNotifications,
               recentChainData,
               forkChoice,

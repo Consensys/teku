@@ -22,6 +22,7 @@ dependencies {
   implementation project(':infrastructure:async')
   implementation project(':infrastructure:io')
   implementation project(':infrastructure:logging')
+  implementation project(':infrastructure:restapi')
   implementation project(':infrastructure:version')
   implementation project(':networking:p2p')
   implementation project(':networking:eth2')

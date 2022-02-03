@@ -27,10 +27,10 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.schema.ReplayDepositsResult;
-import tech.pegasys.teku.util.config.Constants;
 
 public class Eth1DepositManager {
 

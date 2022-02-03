@@ -21,9 +21,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import java.util.List;
 import java.util.OptionalInt;
@@ -156,7 +154,8 @@ class AggregateAttestationValidatorTest {
   @Test
   public void shouldReturnValidForValidAggregate_whenManyBlocksHaveBeenSkipped() {
     final StateAndBlockSummary chainHead = recentChainData.getChainHead().orElseThrow();
-    final UInt64 currentSlot = chainHead.getSlot().plus(SLOTS_PER_EPOCH * 3);
+    final UInt64 currentSlot =
+        chainHead.getSlot().plus(spec.getSlotsPerEpoch(chainHead.getSlot()) * 3L);
     storageSystem.chainUpdater().setCurrentSlot(currentSlot);
 
     final SignedAggregateAndProof aggregate =
@@ -453,7 +452,7 @@ class AggregateAttestationValidatorTest {
     final AttestationData attestationData = aggregate.getMessage().getAggregate().getData();
     final CommitteeAssignment committeeAssignment =
         getCommitteeAssignment(
-            chainHead, aggregatorIndex, compute_epoch_at_slot(chainHead.getSlot()));
+            chainHead, aggregatorIndex, spec.computeEpochAtSlot(chainHead.getSlot()));
     if (committeeAssignment.getCommitteeIndex().equals(attestationData.getIndex())
         && committeeAssignment.getSlot().equals(attestationData.getSlot())) {
       fail("Aggregator was in the committee");

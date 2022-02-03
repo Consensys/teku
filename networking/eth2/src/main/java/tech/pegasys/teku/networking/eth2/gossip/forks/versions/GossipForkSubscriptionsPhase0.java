@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 
-import static tech.pegasys.teku.util.config.Constants.GOSSIP_MAX_SIZE;
+import static tech.pegasys.teku.spec.config.Constants.GOSSIP_MAX_SIZE;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -106,10 +106,15 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
   }
 
   @Override
-  public final void startGossip(final Bytes32 genesisValidatorsRoot) {
-    final ForkInfo forkInfo = new ForkInfo(fork, genesisValidatorsRoot);
-    addGossipManagers(forkInfo);
-    gossipManagers.forEach(GossipManager::subscribe);
+  public final void startGossip(
+      final Bytes32 genesisValidatorsRoot, final boolean isOptimisticHead) {
+    if (gossipManagers.isEmpty()) {
+      final ForkInfo forkInfo = new ForkInfo(fork, genesisValidatorsRoot);
+      addGossipManagers(forkInfo);
+    }
+    gossipManagers.stream()
+        .filter(manager -> manager.isEnabledDuringOptimisticSync() || !isOptimisticHead)
+        .forEach(GossipManager::subscribe);
   }
 
   protected void addGossipManagers(final ForkInfo forkInfo) {
@@ -192,6 +197,13 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
   @Override
   public void stopGossip() {
     gossipManagers.forEach(GossipManager::unsubscribe);
+  }
+
+  @Override
+  public void stopGossipForOptimisticSync() {
+    gossipManagers.stream()
+        .filter(manager -> !manager.isEnabledDuringOptimisticSync())
+        .forEach(GossipManager::unsubscribe);
   }
 
   @Override

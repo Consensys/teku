@@ -26,6 +26,7 @@ import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -37,11 +38,11 @@ import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
 public class BlockImporter {
   private static final Logger LOG = LogManager.getLogger();
+  private final Spec spec;
   private final BlockImportNotifications blockImportNotifications;
   private final RecentChainData recentChainData;
   private final ForkChoice forkChoice;
@@ -61,11 +62,13 @@ public class BlockImporter {
       new AtomicReference<>(null);
 
   public BlockImporter(
+      final Spec spec,
       final BlockImportNotifications blockImportNotifications,
       final RecentChainData recentChainData,
       final ForkChoice forkChoice,
       final WeakSubjectivityValidator weakSubjectivityValidator,
       final ExecutionEngineChannel executionEngine) {
+    this.spec = spec;
     this.blockImportNotifications = blockImportNotifications;
     this.recentChainData = recentChainData;
     this.forkChoice = forkChoice;
@@ -128,7 +131,7 @@ public class BlockImporter {
               final Optional<UInt64> wsPeriodInSlots =
                   weakSubjectivityValidator
                       .getWSPeriod(finalizedCheckpointState)
-                      .map(epochs -> epochs.times(Constants.SLOTS_PER_EPOCH));
+                      .map(epochs -> epochs.times(spec.getSlotsPerEpoch(currentSlot)));
               final UInt64 headSlot = recentChainData.getHeadSlot();
               if (wsPeriodInSlots
                   .map(wsp -> headSlot.plus(wsp).isGreaterThanOrEqualTo(currentSlot))

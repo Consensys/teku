@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.OptionalInt;
 import java.util.function.Consumer;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.networking.eth2.gossip.config.Eth2Context;
 import tech.pegasys.teku.networking.eth2.gossip.config.GossipConfigurator;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
@@ -227,6 +228,10 @@ public class P2PConfig {
 
     public Builder targetSubnetSubscriberCount(final Integer targetSubnetSubscriberCount) {
       checkNotNull(targetSubnetSubscriberCount);
+      if (targetSubnetSubscriberCount < 0) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid targetSubnetSubscriberCount: %d", targetSubnetSubscriberCount));
+      }
       this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
       return this;
     }
@@ -239,12 +244,20 @@ public class P2PConfig {
 
     public Builder peerRateLimit(final Integer peerRateLimit) {
       checkNotNull(peerRateLimit);
+      if (peerRateLimit < 0) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid peerRateLimit: %d", peerRateLimit));
+      }
       this.peerRateLimit = peerRateLimit;
       return this;
     }
 
     public Builder peerRequestLimit(final Integer peerRequestLimit) {
       checkNotNull(peerRequestLimit);
+      if (peerRequestLimit < 0) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid peerRequestLimit: %d", peerRequestLimit));
+      }
       this.peerRequestLimit = peerRequestLimit;
       return this;
     }
@@ -257,16 +270,28 @@ public class P2PConfig {
     }
 
     public Builder batchVerifyMaxThreads(final int batchVerifyMaxThreads) {
+      if (batchVerifyMaxThreads < 0) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid batchVerifyMaxThreads: %d", batchVerifyMaxThreads));
+      }
       this.batchVerifyMaxThreads = batchVerifyMaxThreads;
       return this;
     }
 
     public Builder batchVerifyQueueCapacity(final int batchVerifyQueueCapacity) {
+      if (batchVerifyQueueCapacity < 0) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid batchVerifyQueueCapacity: %d", batchVerifyQueueCapacity));
+      }
       this.batchVerifyQueueCapacity = batchVerifyQueueCapacity;
       return this;
     }
 
     public Builder batchVerifyMaxBatchSize(final int batchVerifyMaxBatchSize) {
+      if (batchVerifyMaxBatchSize < 0) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid batchVerifyMaxBatchSize: %d", batchVerifyMaxBatchSize));
+      }
       this.batchVerifyMaxBatchSize = batchVerifyMaxBatchSize;
       return this;
     }

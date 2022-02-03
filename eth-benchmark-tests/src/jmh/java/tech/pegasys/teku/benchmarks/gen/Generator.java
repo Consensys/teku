@@ -30,6 +30,7 @@ import tech.pegasys.teku.core.AttestationGenerator;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -38,7 +39,6 @@ import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.config.Constants;
 
 /**
  * Utility class for generating BLS keypairs and blocks files Test methods need to be run manually
@@ -49,7 +49,7 @@ public class Generator {
   @Test
   public void generateBlocks() throws Exception {
     final Spec spec = TestSpecFactory.createMainnetAltair();
-    Constants.setConstants("mainnet");
+    Constants.setConstants(spec);
 
     AbstractBlockProcessor.BLS_VERIFY_DEPOSIT = false;
 

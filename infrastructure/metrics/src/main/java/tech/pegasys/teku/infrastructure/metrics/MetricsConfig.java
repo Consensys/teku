@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Set;
 import org.hyperledger.besu.metrics.StandardMetricCategory;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.io.PortAvailability;
 
 public class MetricsConfig {
 
@@ -118,6 +120,10 @@ public class MetricsConfig {
     }
 
     public MetricsConfigBuilder metricsPort(int metricsPort) {
+      if (!PortAvailability.isPortValid(metricsPort)) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid metricsPort: %d", metricsPort));
+      }
       this.metricsPort = metricsPort;
       return this;
     }
@@ -143,11 +149,19 @@ public class MetricsConfig {
     }
 
     public MetricsConfigBuilder metricsPublicationInterval(int metricsPublicationInterval) {
+      if (metricsPublicationInterval < 0) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid metricsPublicationInterval: %d", metricsPublicationInterval));
+      }
       this.metricsPublicationInterval = metricsPublicationInterval;
       return this;
     }
 
     public MetricsConfigBuilder idleTimeoutSeconds(final int idleTimeoutSeconds) {
+      if (idleTimeoutSeconds < 0) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid idleTimeoutSeconds: %d", idleTimeoutSeconds));
+      }
       this.idleTimeoutSeconds = idleTimeoutSeconds;
       return this;
     }

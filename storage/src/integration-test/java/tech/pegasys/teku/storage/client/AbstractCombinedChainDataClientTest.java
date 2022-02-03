@@ -14,8 +14,6 @@
 package tech.pegasys.teku.storage.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import java.util.List;
 import java.util.Optional;
@@ -92,8 +90,8 @@ public abstract class AbstractCombinedChainDataClientTest {
     final UInt64 historicalSlot = chainUpdater.advanceChain().getSlot();
     final UInt64 finalizedSlot = UInt64.valueOf(10);
     chainUpdater.advanceChain(finalizedSlot);
-    final UInt64 finalizedEpoch = compute_epoch_at_slot(finalizedSlot).plus(UInt64.ONE);
-    final UInt64 recentSlot = compute_start_slot_at_epoch(finalizedEpoch).plus(UInt64.ONE);
+    final UInt64 finalizedEpoch = spec.computeEpochAtSlot(finalizedSlot).plus(UInt64.ONE);
+    final UInt64 recentSlot = spec.computeStartSlotAtEpoch(finalizedEpoch).plus(UInt64.ONE);
     chainUpdater.finalizeEpoch(finalizedEpoch);
     // Add some recent blocks
     chainUpdater.advanceChain(recentSlot);
@@ -154,7 +152,7 @@ public abstract class AbstractCombinedChainDataClientTest {
   public <T> void queryBySlot_shouldRetrieveLatestFinalizedState(
       final String caseName, final QueryBySlotTestCase<T> testCase) {
     final UInt64 finalizedEpoch = UInt64.valueOf(2);
-    final UInt64 finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
+    final UInt64 finalizedSlot = spec.computeStartSlotAtEpoch(finalizedEpoch);
 
     // Setup chain with finalized block
     chainUpdater.initializeGenesis();
@@ -279,7 +277,7 @@ public abstract class AbstractCombinedChainDataClientTest {
   @Test
   public void getCheckpointStateAtEpoch_recentEpochWithSkippedBoundarySlot() {
     final UInt64 epoch = UInt64.valueOf(3);
-    final UInt64 epochSlot = compute_start_slot_at_epoch(epoch);
+    final UInt64 epochSlot = spec.computeStartSlotAtEpoch(epoch);
     final UInt64 nextEpoch = epoch.plus(UInt64.ONE);
 
     chainUpdater.initializeGenesis();
@@ -287,7 +285,7 @@ public abstract class AbstractCombinedChainDataClientTest {
     final SignedBlockAndState checkpointBlockAndState =
         chainUpdater.advanceChain(epochSlot.minus(2));
     // Bury queried epoch behind additional blocks
-    chainUpdater.advanceChain(compute_start_slot_at_epoch(nextEpoch));
+    chainUpdater.advanceChain(spec.computeStartSlotAtEpoch(nextEpoch));
     chainUpdater.addNewBestBlock();
 
     final Checkpoint checkpoint = new Checkpoint(epoch, checkpointBlockAndState.getRoot());
@@ -301,14 +299,14 @@ public abstract class AbstractCombinedChainDataClientTest {
   @Test
   public void getCheckpointStateAtEpoch_recentEpoch() {
     final UInt64 epoch = UInt64.valueOf(3);
-    final UInt64 epochSlot = compute_start_slot_at_epoch(epoch);
+    final UInt64 epochSlot = spec.computeStartSlotAtEpoch(epoch);
     final UInt64 nextEpoch = epoch.plus(UInt64.ONE);
 
     chainUpdater.initializeGenesis();
     // Setup chain at epoch to be queried
     final SignedBlockAndState checkpointBlockAndState = chainUpdater.advanceChain(epochSlot);
     // Bury queried epoch behind additional blocks
-    chainUpdater.advanceChain(compute_start_slot_at_epoch(nextEpoch));
+    chainUpdater.advanceChain(spec.computeStartSlotAtEpoch(nextEpoch));
     chainUpdater.addNewBestBlock();
 
     final Checkpoint checkpoint = new Checkpoint(epoch, checkpointBlockAndState.getRoot());
@@ -337,7 +335,7 @@ public abstract class AbstractCombinedChainDataClientTest {
 
   protected SignedBlockAndState advanceChainAndGetBestBlockAndState(final long epoch) {
     final UInt64 finalizedEpoch = UInt64.valueOf(epoch);
-    final UInt64 finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
+    final UInt64 finalizedSlot = spec.computeStartSlotAtEpoch(finalizedEpoch);
 
     chainUpdater.initializeGenesis();
     chainUpdater.advanceChain(finalizedSlot);

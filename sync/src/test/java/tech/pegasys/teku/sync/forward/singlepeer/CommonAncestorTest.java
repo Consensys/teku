@@ -18,8 +18,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.spec.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -40,7 +40,7 @@ public class CommonAncestorTest extends AbstractSyncTest {
     final PeerStatus status =
         withPeerHeadSlot(
             currentLocalHead,
-            compute_epoch_at_slot(currentLocalHead),
+            spec.computeEpochAtSlot(currentLocalHead),
             dataStructureUtil.randomBytes32());
     when(storageClient.getHeadSlot()).thenReturn(currentLocalHead);
 
@@ -61,7 +61,7 @@ public class CommonAncestorTest extends AbstractSyncTest {
     final PeerStatus status =
         withPeerHeadSlot(
             currentRemoteHead,
-            compute_epoch_at_slot(currentRemoteHead),
+            spec.computeEpochAtSlot(currentRemoteHead),
             dataStructureUtil.randomBytes32());
     when(storageClient.getHeadSlot()).thenReturn(currentLocalHead);
 
@@ -90,9 +90,53 @@ public class CommonAncestorTest extends AbstractSyncTest {
     final PeerStatus status =
         withPeerHeadSlot(
             currentRemoteHead,
-            compute_epoch_at_slot(currentRemoteHead),
+            spec.computeEpochAtSlot(currentRemoteHead),
             dataStructureUtil.randomBytes32());
     when(storageClient.getHeadSlot()).thenReturn(currentLocalHead);
+    when(storageClient.containsBlock(any())).thenReturn(true);
+
+    SafeFuture<UInt64> futureSlot =
+        commonAncestor.getCommonAncestor(peer, firstNonFinalSlot, status.getHeadSlot());
+
+    verify(peer)
+        .requestBlocksByRange(
+            eq(syncStartSlot),
+            eq(CommonAncestor.BLOCK_COUNT),
+            eq(CommonAncestor.SAMPLE_RATE),
+            responseListenerArgumentCaptor.capture());
+
+    assertThat(futureSlot.isDone()).isFalse();
+    final RpcResponseListener<SignedBeaconBlock> responseListener =
+        responseListenerArgumentCaptor.getValue();
+    respondWithBlocksAtSlots(
+        responseListener, currentLocalHead.minus(2850), currentLocalHead.minus(2250));
+    requestFuture1.complete(null);
+    assertThat(futureSlot.get()).isEqualTo(currentLocalHead.minus(2250));
+  }
+
+  @Test
+  void shouldUseOptimisticHeadAsLocalChainHead() throws ExecutionException, InterruptedException {
+    final UInt64 firstNonFinalSlot = dataStructureUtil.randomUInt64();
+    final UInt64 currentLocalHead =
+        firstNonFinalSlot.plus(CommonAncestor.OPTIMISTIC_HISTORY_LENGTH.times(10));
+    final UInt64 currentRemoteHead =
+        firstNonFinalSlot.plus(CommonAncestor.OPTIMISTIC_HISTORY_LENGTH.times(9));
+    final CommonAncestor commonAncestor = new CommonAncestor(storageClient);
+    final UInt64 syncStartSlot = currentRemoteHead.minus(CommonAncestor.OPTIMISTIC_HISTORY_LENGTH);
+    final SafeFuture<Void> requestFuture1 = new SafeFuture<>();
+    when(peer.requestBlocksByRange(
+            eq(syncStartSlot),
+            eq(CommonAncestor.BLOCK_COUNT),
+            eq(CommonAncestor.SAMPLE_RATE),
+            any()))
+        .thenReturn(requestFuture1);
+    final PeerStatus status =
+        withPeerHeadSlot(
+            currentRemoteHead,
+            spec.computeEpochAtSlot(currentRemoteHead),
+            dataStructureUtil.randomBytes32());
+    when(storageClient.getHeadSlot()).thenReturn(firstNonFinalSlot);
+    when(storageClient.getOptimisticHeadSlot()).thenReturn(Optional.of(currentLocalHead));
     when(storageClient.containsBlock(any())).thenReturn(true);
 
     SafeFuture<UInt64> futureSlot =

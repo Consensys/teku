@@ -183,6 +183,52 @@ public class ActiveEth2P2PNetworkTest {
     assertThat(capturedValues.get(3)).containsExactlyInAnyOrder(1, 3);
   }
 
+  @Test
+  void onSyncStateChanged_shouldEnableGossipWhenInSync() {
+    // Current slot is a long way beyond the chain head
+    storageSystem.chainUpdater().setCurrentSlot(UInt64.valueOf(1000));
+
+    assertThat(network.start()).isCompleted();
+    // Won't start gossip as chain head is too old
+    verify(gossipForkManager, never()).configureGossipForEpoch(any());
+
+    network.onSyncStateChanged(true, false);
+
+    // Even though we're a long way behind, start gossip because we believe we're in sync
+    verify(gossipForkManager).configureGossipForEpoch(any());
+  }
+
+  @Test
+  void onSyncStateChanged_shouldStopGossipWhenTooFarBehindAndNotInSync() {
+    // Current slot is a long way beyond the chain head
+    storageSystem.chainUpdater().setCurrentSlot(UInt64.valueOf(1000));
+
+    assertThat(network.start()).isCompleted();
+    network.onSyncStateChanged(true, false);
+    // Even though we're a long way behind, start gossip because we believe we're in sync
+    verify(gossipForkManager).configureGossipForEpoch(any());
+
+    network.onSyncStateChanged(false, false);
+    verify(gossipForkManager).stopGossip();
+  }
+
+  @Test
+  void onSyncStateChanged_shouldNotifyForkManagerOfOptimisticSyncState() {
+    assertThat(network.start()).isCompleted();
+
+    network.onSyncStateChanged(false, true);
+    verify(gossipForkManager).onOptimisticHeadChanged(true);
+
+    network.onSyncStateChanged(false, false);
+    verify(gossipForkManager).onOptimisticHeadChanged(false);
+
+    network.onSyncStateChanged(true, true);
+    verify(gossipForkManager, times(2)).onOptimisticHeadChanged(true);
+
+    network.onSyncStateChanged(true, false);
+    verify(gossipForkManager, times(2)).onOptimisticHeadChanged(false);
+  }
+
   @SuppressWarnings("unchecked")
   private ArgumentCaptor<Iterable<Integer>> subnetIdCaptor() {
     return ArgumentCaptor.forClass(Iterable.class);

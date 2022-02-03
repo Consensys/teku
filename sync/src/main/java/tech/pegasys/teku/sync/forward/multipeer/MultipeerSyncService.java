@@ -27,6 +27,7 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.util.PendingPool;
@@ -38,7 +39,6 @@ import tech.pegasys.teku.sync.forward.multipeer.batches.PeerScoringConflictResol
 import tech.pegasys.teku.sync.forward.multipeer.chains.PeerChainTracker;
 import tech.pegasys.teku.sync.forward.multipeer.chains.SyncSourceFactory;
 import tech.pegasys.teku.sync.forward.multipeer.chains.TargetChains;
-import tech.pegasys.teku.util.config.Constants;
 
 public class MultipeerSyncService extends Service implements ForwardSyncService {
   private static final Logger LOG = LogManager.getLogger();
@@ -108,7 +108,13 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
     peerChainTracker.subscribeToTargetChainUpdates(syncController::onTargetChainsUpdated);
     final SyncStallDetector syncStallDetector =
         new SyncStallDetector(
-            eventThread, asyncRunner, timeProvider, syncController, batchSync, recentChainData);
+            spec,
+            eventThread,
+            asyncRunner,
+            timeProvider,
+            syncController,
+            batchSync,
+            recentChainData);
     return new MultipeerSyncService(
         eventThread, recentChainData, peerChainTracker, syncController, syncStallDetector);
   }

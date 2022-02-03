@@ -20,6 +20,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Optional;
 import org.apache.commons.io.IOUtils;
@@ -29,15 +30,15 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.validator.client.KeyManager;
-import tech.pegasys.teku.validator.client.ValidatorClientService;
 import tech.pegasys.teku.validator.client.restapi.ValidatorTypes;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeysRequest;
 
 public class PostKeys extends RestApiEndpoint {
   private final KeyManager keyManager;
   public static final String ROUTE = "/eth/v1/keystores";
+  private final Path slashingProtectionPath;
 
-  public PostKeys(final KeyManager keyManager) {
+  public PostKeys(final KeyManager keyManager, final Path slashingProtectionPath) {
     super(
         EndpointMetadata.post(ROUTE)
             .operationId("ImportKeystores")
@@ -49,6 +50,7 @@ public class PostKeys extends RestApiEndpoint {
             .withAuthenticationResponses()
             .build());
     this.keyManager = keyManager;
+    this.slashingProtectionPath = slashingProtectionPath;
   }
 
   @Override
@@ -80,8 +82,7 @@ public class PostKeys extends RestApiEndpoint {
       final InputStream slashingProtectionData =
           IOUtils.toInputStream(slashingData.get(), StandardCharsets.UTF_8);
       final SlashingProtectionImporter importer =
-          new SlashingProtectionImporter(
-              ValidatorClientService.getSlashingProtectionPath(keyManager.getDataDirLayout()));
+          new SlashingProtectionImporter(slashingProtectionPath);
       try {
         final Optional<String> initialiseError = importer.initialise(slashingProtectionData);
         if (initialiseError.isPresent()) {

@@ -54,7 +54,6 @@ import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.sync.events.SyncState;
 import tech.pegasys.teku.sync.events.SyncStateProvider;
-import tech.pegasys.teku.util.config.Constants;
 
 public class HistoricalBlockSyncServiceTest {
   private final Spec spec = TestSpecFactory.createDefault();
@@ -93,6 +92,8 @@ public class HistoricalBlockSyncServiceTest {
   private final ArgumentCaptor<Collection<SignedBeaconBlock>> blockCaptor =
       ArgumentCaptor.forClass(Collection.class);
 
+  private final int slotsPerEpoch = spec.getSlotsPerEpoch(UInt64.ZERO);
+
   @SuppressWarnings("unchecked")
   @BeforeEach
   public void setup() {
@@ -126,11 +127,9 @@ public class HistoricalBlockSyncServiceTest {
     currentSyncState.set(SyncState.SYNCING);
 
     // Setup chain
-    final int epochHeight = 10;
+    final long epochHeight = 10;
     storageSystem.chainBuilder().generateGenesis();
-    storageSystem
-        .chainBuilder()
-        .generateBlocksUpToSlot(Constants.SLOTS_PER_EPOCH * epochHeight + 3);
+    storageSystem.chainBuilder().generateBlocksUpToSlot(slotsPerEpoch * epochHeight + 3);
     final AnchorPoint anchor =
         initializeChainAtEpoch(storageSystem.chainBuilder().getLatestEpoch());
     final List<SignedBeaconBlock> expectedBlocks =
@@ -166,11 +165,9 @@ public class HistoricalBlockSyncServiceTest {
     currentSyncState.set(SyncState.IN_SYNC);
 
     // Setup chain
-    final int epochHeight = 10;
+    final long epochHeight = 10;
     storageSystem.chainBuilder().generateGenesis();
-    storageSystem
-        .chainBuilder()
-        .generateBlocksUpToSlot(Constants.SLOTS_PER_EPOCH * epochHeight + 3);
+    storageSystem.chainBuilder().generateBlocksUpToSlot(slotsPerEpoch * epochHeight + 3);
     final AnchorPoint anchor =
         initializeChainAtEpoch(storageSystem.chainBuilder().getLatestEpoch());
     final List<SignedBeaconBlock> expectedBlocks =
@@ -207,11 +204,9 @@ public class HistoricalBlockSyncServiceTest {
     currentSyncState.set(SyncState.IN_SYNC);
 
     // Setup chain
-    final int epochHeight = 10;
+    final long epochHeight = 10;
     storageSystem.chainBuilder().generateGenesis();
-    storageSystem
-        .chainBuilder()
-        .generateBlocksUpToSlot(Constants.SLOTS_PER_EPOCH * epochHeight + 3);
+    storageSystem.chainBuilder().generateBlocksUpToSlot(slotsPerEpoch * epochHeight + 3);
     final AnchorPoint anchor =
         initializeChainAtEpoch(storageSystem.chainBuilder().getLatestEpoch());
     final List<SignedBeaconBlock> expectedBlocks =
@@ -276,11 +271,9 @@ public class HistoricalBlockSyncServiceTest {
     currentSyncState.set(SyncState.IN_SYNC);
 
     // Setup chain
-    final int epochHeight = 10;
+    final long epochHeight = 10;
     storageSystem.chainBuilder().generateGenesis();
-    storageSystem
-        .chainBuilder()
-        .generateBlocksUpToSlot(Constants.SLOTS_PER_EPOCH * epochHeight + 3);
+    storageSystem.chainBuilder().generateBlocksUpToSlot(slotsPerEpoch * epochHeight + 3);
     final AnchorPoint anchor =
         initializeChainAtEpoch(storageSystem.chainBuilder().getLatestEpoch());
     final List<SignedBeaconBlock> expectedBlocks =

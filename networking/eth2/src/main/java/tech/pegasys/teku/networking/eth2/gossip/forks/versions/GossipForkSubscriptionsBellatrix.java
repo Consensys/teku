@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 
-import static tech.pegasys.teku.util.config.Constants.GOSSIP_MAX_SIZE_BELLATRIX;
+import static tech.pegasys.teku.spec.config.Constants.GOSSIP_MAX_SIZE_BELLATRIX;
 
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
