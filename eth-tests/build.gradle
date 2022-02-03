@@ -7,7 +7,6 @@ dependencies {
   implementation project(':infrastructure:bls')
   implementation project(':infrastructure:ssz')
   implementation project(':storage')
-  implementation project(':util')
 
   implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'

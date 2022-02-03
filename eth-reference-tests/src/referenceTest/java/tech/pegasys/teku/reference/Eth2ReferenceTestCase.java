@@ -33,7 +33,6 @@ import tech.pegasys.teku.reference.phase0.ssz_generic.SszGenericTests;
 import tech.pegasys.teku.reference.phase0.ssz_static.SszTestExecutor;
 import tech.pegasys.teku.reference.phase0.ssz_static.SszTestExecutorDeprecated;
 import tech.pegasys.teku.spec.config.Constants;
-import tech.pegasys.teku.util.config.SpecDependent;
 
 public abstract class Eth2ReferenceTestCase {
 
@@ -73,7 +72,6 @@ public abstract class Eth2ReferenceTestCase {
 
   protected void runReferenceTest(final TestDefinition testDefinition) throws Throwable {
     Constants.setConstants(testDefinition.getSpec());
-    SpecDependent.resetAll();
     getExecutorFor(testDefinition).runTest(testDefinition);
   }
 

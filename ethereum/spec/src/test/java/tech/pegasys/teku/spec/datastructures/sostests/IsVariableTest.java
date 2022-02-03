@@ -36,7 +36,6 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
-import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
@@ -68,7 +67,7 @@ public class IsVariableTest {
         Arguments.of(VoluntaryExit.SSZ_SCHEMA),
         Arguments.of(Checkpoint.SSZ_SCHEMA),
         Arguments.of(Fork.SSZ_SCHEMA),
-        Arguments.of(HistoricalBatch.SSZ_SCHEMA.get()),
+        Arguments.of(SCHEMA_DEFINITIONS.getHistoricalBatchSchema()),
         Arguments.of(Validator.SSZ_SCHEMA));
   }
 

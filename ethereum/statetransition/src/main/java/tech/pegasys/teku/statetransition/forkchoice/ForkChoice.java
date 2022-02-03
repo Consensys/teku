@@ -266,7 +266,7 @@ public class ForkChoice {
     }
 
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
-    addParentStateRoots(blockSlotState, transaction);
+    addParentStateRoots(spec, blockSlotState, transaction);
     forkChoiceUtil.applyBlockToStore(transaction, block, postState);
 
     if (proposerBoostEnabled && spec.getCurrentSlot(transaction).equals(block.getSlot())) {

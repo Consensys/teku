@@ -108,7 +108,8 @@ public class SpecLogicPhase0 extends AbstractSpecLogic {
             beaconStateMutators,
             validatorsUtil,
             beaconStateUtil,
-            validatorStatusFactory);
+            validatorStatusFactory,
+            schemaDefinitions);
     final BlockProcessorPhase0 blockProcessor =
         new BlockProcessorPhase0(
             config,

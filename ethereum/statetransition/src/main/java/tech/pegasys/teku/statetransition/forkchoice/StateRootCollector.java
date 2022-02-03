@@ -13,13 +13,12 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
-import static tech.pegasys.teku.spec.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -28,24 +27,25 @@ public class StateRootCollector {
   private static final Logger LOG = LogManager.getLogger();
 
   public static void addParentStateRoots(
-      final BeaconState blockSlotState, final StoreTransaction transaction) {
+      final Spec spec, final BeaconState blockSlotState, final StoreTransaction transaction) {
     final UInt64 newBlockSlot = blockSlotState.getSlot();
+    final int slotsPerHistoricalRoot = spec.getSpecConfig(newBlockSlot).getSlotsPerHistoricalRoot();
     final SszBytes32Vector blockRoots = blockSlotState.getBlock_roots();
     final SszBytes32Vector stateRoots = blockSlotState.getState_roots();
-    final UInt64 minimumSlot = newBlockSlot.minusMinZero(SLOTS_PER_HISTORICAL_ROOT);
+    final UInt64 minimumSlot = newBlockSlot.minusMinZero(slotsPerHistoricalRoot);
     // Get the parent block root from the state as the genesis block root is recorded as 0
     final Bytes32 parentBlockRoot =
-        blockRoots.getElement(
-            newBlockSlot.minusMinZero(1).mod(SLOTS_PER_HISTORICAL_ROOT).intValue());
+        blockRoots.getElement(newBlockSlot.minusMinZero(1).mod(slotsPerHistoricalRoot).intValue());
     UInt64 slot = newBlockSlot.minusMinZero(1);
     while (slot.isGreaterThanOrEqualTo(minimumSlot) && !slot.isZero()) {
-      final Bytes32 previousBlockRoot = getValue(blockRoots, slot.minus(1));
+      final Bytes32 previousBlockRoot = getValue(blockRoots, slot.minus(1), slotsPerHistoricalRoot);
       if (!previousBlockRoot.equals(parentBlockRoot)) {
         // Reached the first slot of the parent block - its state root is already be imported
         return;
       }
       transaction.putStateRoot(
-          getValue(stateRoots, slot), new SlotAndBlockRoot(slot, parentBlockRoot));
+          getValue(stateRoots, slot, slotsPerHistoricalRoot),
+          new SlotAndBlockRoot(slot, parentBlockRoot));
       slot = slot.decrement();
     }
     if (!slot.isZero()) {
@@ -53,7 +53,8 @@ public class StateRootCollector {
     }
   }
 
-  private static Bytes32 getValue(final SszBytes32Vector roots, final UInt64 slot) {
-    return roots.getElement(slot.mod(SLOTS_PER_HISTORICAL_ROOT).intValue());
+  private static Bytes32 getValue(
+      final SszBytes32Vector roots, final UInt64 slot, final int slotsPerHistoricalRoot) {
+    return roots.getElement(slot.mod(slotsPerHistoricalRoot).intValue());
   }
 }

@@ -5,7 +5,6 @@ dependencies {
     implementation testFixtures(project(':ethereum:spec'))
     implementation project(':infrastructure:bls')
     implementation project(':infrastructure:ssz')
-    implementation project(':util')
 
     implementation 'org.apache.tuweni:tuweni-bytes'
 

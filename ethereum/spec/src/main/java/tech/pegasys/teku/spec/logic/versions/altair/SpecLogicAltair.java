@@ -125,7 +125,8 @@ public class SpecLogicAltair extends AbstractSpecLogic {
             beaconStateMutators,
             validatorsUtil,
             beaconStateUtil,
-            validatorStatusFactory);
+            validatorStatusFactory,
+            schemaDefinitions);
     final SyncCommitteeUtil syncCommitteeUtil =
         new SyncCommitteeUtil(
             beaconStateAccessors, validatorsUtil, config, miscHelpers, schemaDefinitions);
