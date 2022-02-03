@@ -61,7 +61,7 @@ public class ExternalSigner implements Signer {
   public static final String EXTERNAL_SIGNER_ENDPOINT = "/api/v1/eth2/sign";
   private static final String FORK_INFO = "fork_info";
   private final JsonProvider jsonProvider = new JsonProvider();
-  private final URL signingServiceUrl;
+  private URL signingServiceUrl;
   private final BLSPublicKey blsPublicKey;
   private final Duration timeout;
   private final Spec spec;
@@ -256,6 +256,11 @@ public class ExternalSigner implements Signer {
   @Override
   public Optional<URL> getSigningServiceUrl() {
     return Optional.of(signingServiceUrl);
+  }
+
+  @Override
+  public void setSigningServiceUrl(Optional<URL> signingServiceUrl) {
+    signingServiceUrl.ifPresent(url -> this.signingServiceUrl = url);
   }
 
   private SafeFuture<Bytes> signingRootFromSyncCommitteeUtils(

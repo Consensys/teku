@@ -18,6 +18,7 @@ import static tech.pegasys.teku.infrastructure.restapi.types.CoreTypes.STRING_TY
 import static tech.pegasys.teku.infrastructure.restapi.types.DeserializableTypeDefinition.enumOf;
 import static tech.pegasys.teku.infrastructure.restapi.types.SerializableTypeDefinition.listOf;
 
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 import java.util.Optional;
@@ -28,13 +29,7 @@ import tech.pegasys.teku.infrastructure.restapi.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.restapi.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.types.SerializableTypeDefinition;
 import tech.pegasys.teku.validator.client.Validator;
-import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
-import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysRequest;
-import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysResponse;
-import tech.pegasys.teku.validator.client.restapi.apis.schema.DeletionStatus;
-import tech.pegasys.teku.validator.client.restapi.apis.schema.ImportStatus;
-import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
-import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeysRequest;
+import tech.pegasys.teku.validator.client.restapi.apis.schema.*;
 
 public class ValidatorTypes {
 
@@ -72,6 +67,7 @@ public class ValidatorTypes {
               PostKeysRequest::getSlashingProtection,
               PostKeysRequest::setSlashingProtection)
           .build();
+
   public static DeserializableTypeDefinition<BLSPublicKey> PUBKEY_TYPE =
       DeserializableTypeDefinition.string(BLSPublicKey.class)
           .name("PubKey")
@@ -100,14 +96,29 @@ public class ValidatorTypes {
           .withField("data", listOf(ACTIVE_VALIDATOR), Function.identity())
           .build();
 
-  public static SerializableTypeDefinition<Validator> REMOTE_KEY =
-      SerializableTypeDefinition.object(Validator.class)
-          .withField("pubkey", PUBKEY_TYPE, Validator::getPublicKey)
+  public static DeserializableTypeDefinition<URL> URL_TYPE =
+          DeserializableTypeDefinition.string(URL.class)
+                  .name("Signer")
+                  .formatter(URL::toString)
+                  .parser(
+                          url -> { // TODO Fix
+                            try {
+                              return new URL(url);
+                            } catch (MalformedURLException e) {
+                              throw new IllegalArgumentException(e);
+                            }
+                          })
+                  .build();
+
+  public static DeserializableTypeDefinition<Validator> REMOTE_KEY =
+          DeserializableTypeDefinition.object(Validator.class)
+          .withField("pubkey", PUBKEY_TYPE, Validator::getPublicKey, Validator::setPublicKey)
           .withOptionalField(
               "url",
-              STRING_TYPE,
-              validator -> validator.getSigner().getSigningServiceUrl().map(URL::toString))
-          .withField("readonly", BOOLEAN_TYPE, Validator::isReadOnly)
+              URL_TYPE,
+              validator -> validator.getSigner().getSigningServiceUrl(),
+                  ((validator, url) -> validator.getSigner().setSigningServiceUrl(url)))
+          .withField("readonly", BOOLEAN_TYPE, Validator::isReadOnly, Validator::setReadOnly)
           .build();
 
   public static SerializableTypeDefinition<List<Validator>> LIST_REMOTE_KEYS_RESPONSE_TYPE =
@@ -115,6 +126,23 @@ public class ValidatorTypes {
           .name("ListRemoteKeysResponse")
           .withField("data", listOf(REMOTE_KEY), Function.identity())
           .build();
+
+  public static final DeserializableTypeDefinition<PostRemoteKeysRequest> POST_REMOTE_KEYS_REQUEST =
+          DeserializableTypeDefinition.object(PostRemoteKeysRequest.class)
+                  .name("PostRemoteKeysRequest")
+                  .initializer(PostRemoteKeysRequest::new)
+                  .withField(
+                          "remote_keys",
+                          DeserializableTypeDefinition.listOf(REMOTE_KEY),
+                          PostRemoteKeysRequest::getValidators,
+                          PostRemoteKeysRequest::setValidators)
+                  .build();
+
+  public static final SerializableTypeDefinition<List<PostKeyResult>> POST_REMOTE_KEYS_RESPONSE =
+          SerializableTypeDefinition.<List<PostKeyResult>>object()
+                  .name("PostRemoteKeysResponse")
+                  .withField("data", listOf(POST_KEY_RESULT), Function.identity())
+                  .build();
 
   static SerializableTypeDefinition<DeleteKeyResult> DELETE_KEY_RESULT =
       SerializableTypeDefinition.object(DeleteKeyResult.class)

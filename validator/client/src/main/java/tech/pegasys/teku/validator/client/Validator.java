@@ -20,10 +20,10 @@ import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.validator.api.GraffitiProvider;
 
 public class Validator {
-  private final BLSPublicKey publicKey;
+  private BLSPublicKey publicKey;
   private final Signer signer;
   private final GraffitiProvider graffitiProvider;
-  private final boolean readOnly;
+  private boolean readOnly;
 
   public Validator(
       final BLSPublicKey publicKey, final Signer signer, final GraffitiProvider graffitiProvider) {
@@ -45,6 +45,10 @@ public class Validator {
     return publicKey;
   }
 
+  public void setPublicKey(BLSPublicKey publicKey) {
+    this.publicKey = publicKey;
+  }
+
   public Signer getSigner() {
     return signer;
   }
@@ -55,6 +59,10 @@ public class Validator {
 
   public boolean isReadOnly() {
     return readOnly;
+  }
+
+  public void setReadOnly(boolean readOnly) {
+    this.readOnly = readOnly;
   }
 
   @Override

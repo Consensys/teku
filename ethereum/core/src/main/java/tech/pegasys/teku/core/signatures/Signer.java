@@ -58,4 +58,8 @@ public interface Signer {
   }
 
   Optional<URL> getSigningServiceUrl();
+
+  default void setSigningServiceUrl(Optional<URL> signingServiceUrl) {
+
+  }
 }
