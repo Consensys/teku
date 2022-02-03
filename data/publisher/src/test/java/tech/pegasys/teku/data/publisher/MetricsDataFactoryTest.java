@@ -15,113 +15,36 @@ package tech.pegasys.teku.data.publisher;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import java.util.ArrayList;
 import java.util.List;
-import org.hyperledger.besu.metrics.Observation;
-import org.hyperledger.besu.metrics.StandardMetricCategory;
 import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
-import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
-import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.test.data.publisher.DeserializedMetricDataObject;
+import tech.pegasys.teku.test.data.publisher.StubMetricsPublisherReader;
 
 class MetricsDataFactoryTest {
+  private final PrometheusMetricsSystem prometheusMetricsSystem =
+      mock(PrometheusMetricsSystem.class);
+  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(10_000);
+  private final MetricsDataFactory factory =
+      new MetricsDataFactory(prometheusMetricsSystem, timeProvider);
 
-  private final JsonProvider jsonProvider = new JsonProvider();
-  private static final int CURRENT_TIME = 10_000;
-  PrometheusMetricsSystem prometheusMock = mock(PrometheusMetricsSystem.class);
-  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(CURRENT_TIME);
+  @ParameterizedTest(name = "Total_{0}_Active_{1}")
+  @MethodSource("getValidatorParams")
+  void shouldIncludeValidatorMetricsInPublish(
+      final int validatorsTotal, final int validatorsActive, final int elementCount) {
+    MetricsPublisherReader reader =
+        new StubMetricsPublisherReader(1100L, 2200L, validatorsTotal, validatorsActive);
 
-  @Test
-  public void shouldExtractMetricsFromPrometheusMetricsAndSerialiseJson()
-      throws JsonProcessingException {
-    when(prometheusMock.streamObservations()).thenReturn(getMockObservations().stream());
-    final MetricsDataFactory metricsDataFactory = new MetricsDataFactory(prometheusMock);
-
-    final List<BaseMetricData> baseMetricData = metricsDataFactory.getMetricData(timeProvider);
-    assertThat(baseMetricData.size()).isEqualTo(3);
-    final String beaconNode = jsonProvider.objectToJSON(baseMetricData.get(0));
-    final String validator = jsonProvider.objectToJSON(baseMetricData.get(1));
-    final String system = jsonProvider.objectToJSON(baseMetricData.get(2));
-
-    BeaconNodeMetricData beaconNodeDeserialized =
-        jsonProvider.jsonToObject(beaconNode, BeaconNodeMetricData.class);
-    ValidatorMetricData validatorDeserialized =
-        jsonProvider.jsonToObject(validator, ValidatorMetricData.class);
-    SystemMetricData systemDeserialized = jsonProvider.jsonToObject(system, SystemMetricData.class);
-
-    assertThat(baseMetricData.get(0)).isInstanceOf(BeaconNodeMetricData.class);
-    assertThat(baseMetricData.get(1)).isInstanceOf(ValidatorMetricData.class);
-    assertThat(baseMetricData.get(2)).isInstanceOf(SystemMetricData.class);
-
-    assertThat(baseMetricData.get(0)).isEqualTo(beaconNodeDeserialized);
-    assertThat(baseMetricData.get(1)).isEqualTo(validatorDeserialized);
-    assertThat(baseMetricData.get(2)).isEqualTo(systemDeserialized);
+    final List<BaseMetricData> data = factory.getMetricData(reader);
+    assertThat(data.size()).isEqualTo(elementCount);
+    data.forEach(element -> assertThat(element).isInstanceOf(ValidatorMetricData.class));
   }
 
-  @Test
-  public void shouldDeserializeObjectFromString() throws JsonProcessingException {
-    when(prometheusMock.streamObservations()).thenReturn(getMockObservations().stream());
-    final MetricsDataFactory metricsDataFactory = new MetricsDataFactory(prometheusMock);
-    final List<BaseMetricData> baseMetricData = metricsDataFactory.getMetricData(timeProvider);
-    assertThat(baseMetricData.size()).isEqualTo(3);
-
-    String listOfMetrics = jsonProvider.objectToJSON(baseMetricData);
-    DeserializedMetricDataObject[] base =
-        jsonProvider.jsonToObject(listOfMetrics, DeserializedMetricDataObject[].class);
-
-    assertThat(base.length).isEqualTo(3);
-  }
-
-  @Test
-  public void shouldSerializeObjectFromPrometheusMetricsWithDefaultValues()
-      throws JsonProcessingException {
-    when(prometheusMock.streamObservations()).thenReturn(new ArrayList<Observation>().stream());
-    final MetricsDataFactory metricsDataFactory = new MetricsDataFactory(prometheusMock);
-
-    final List<BaseMetricData> baseMetricData = metricsDataFactory.getMetricData(timeProvider);
-    assertThat(baseMetricData.size()).isEqualTo(3);
-    final String beaconNode = jsonProvider.objectToJSON(baseMetricData.get(0));
-    final String validator = jsonProvider.objectToJSON(baseMetricData.get(1));
-    final String system = jsonProvider.objectToJSON(baseMetricData.get(2));
-
-    BeaconNodeMetricData beaconNodeDeserialized =
-        jsonProvider.jsonToObject(beaconNode, BeaconNodeMetricData.class);
-    ValidatorMetricData validatorDeserialized =
-        jsonProvider.jsonToObject(validator, ValidatorMetricData.class);
-    SystemMetricData systemDeserialized = jsonProvider.jsonToObject(system, SystemMetricData.class);
-
-    assertThat(baseMetricData.get(0)).isInstanceOf(BeaconNodeMetricData.class);
-    assertThat(baseMetricData.get(1)).isInstanceOf(ValidatorMetricData.class);
-    assertThat(baseMetricData.get(2)).isInstanceOf(SystemMetricData.class);
-
-    assertThat(baseMetricData.get(0)).isEqualTo(beaconNodeDeserialized);
-    assertThat(baseMetricData.get(1)).isEqualTo(validatorDeserialized);
-    assertThat(baseMetricData.get(2)).isEqualTo(systemDeserialized);
-
-    assertThat(beaconNodeDeserialized.network_peers_connected).isNull();
-    assertThat(validatorDeserialized.validator_total).isNull();
-    assertThat(systemDeserialized.cpu_node_system_seconds_total).isNull();
-  }
-
-  private ArrayList<Observation> getMockObservations() {
-    ArrayList<Observation> list = new ArrayList<>();
-    Observation cpu =
-        new Observation(StandardMetricCategory.PROCESS, "cpu_seconds_total", 1.0, null);
-    Observation memory =
-        new Observation(StandardMetricCategory.JVM, "memory_pool_bytes_used", 1.0, null);
-    Observation activeValidators =
-        new Observation(TekuMetricCategory.BEACON, "current_active_validators", 1.0, null);
-    Observation liveValidators =
-        new Observation(TekuMetricCategory.BEACON, "current_live_validators", 1.0, null);
-    list.add(cpu);
-    list.add(memory);
-    list.add(activeValidators);
-    list.add(liveValidators);
-    return list;
+  public static java.util.stream.Stream<Arguments> getValidatorParams() {
+    return java.util.stream.Stream.of(
+        Arguments.of(1, 2, 1), Arguments.of(0, 1, 1), Arguments.of(1, 0, 1), Arguments.of(0, 0, 0));
   }
 }

@@ -16,12 +16,15 @@ package tech.pegasys.teku.data.publisher;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import java.io.IOException;
-import org.assertj.core.api.Assertions;
+import java.net.URL;
+import java.util.Optional;
 import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,58 +36,51 @@ import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 
 class MetricsPublisherManagerTest {
 
-  private MetricsEndpoint metricsEndpoint;
-  private MetricsConfig metricsConfig;
-  private MetricsPublisher metricsPublisher;
-  PrometheusMetricsSystem prometheusMetricsSystem;
-
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(10_000);
   private final StubAsyncRunnerFactory asyncRunnerFactory = new StubAsyncRunnerFactory();
+  private final MetricsEndpoint metricsEndpoint = mock(MetricsEndpoint.class);
+  private final MetricsConfig metricsConfig = mock(MetricsConfig.class);
+  private final MetricsPublisher metricsPublisher = mock(MetricsPublisher.class);
+  private final PrometheusMetricsSystem prometheusMetricsSystem =
+      mock(PrometheusMetricsSystem.class);
+
+  private MetricsPublisherManager publisherManager;
 
   @BeforeEach
-  void init_mocks() throws IOException {
-    this.metricsEndpoint = mock(MetricsEndpoint.class);
-    this.metricsConfig = mock(MetricsConfig.class);
-    this.metricsPublisher = mock(MetricsPublisher.class);
-    this.prometheusMetricsSystem = mock(PrometheusMetricsSystem.class);
+  void setup() throws IOException {
     when(metricsConfig.getPublicationInterval()).thenReturn(1);
     when(metricsEndpoint.getMetricsSystem()).thenReturn(prometheusMetricsSystem);
     when(metricsEndpoint.getMetricConfig()).thenReturn(metricsConfig);
-    when(metricsConfig.getMetricsEndpoint()).thenReturn("/");
-    when(metricsPublisher.publishMetrics(anyString(), anyString())).thenReturn(200);
+    when(metricsConfig.getMetricsEndpoint()).thenReturn(Optional.of(new URL("http://host.com/")));
+    when(metricsPublisher.publishMetrics(anyString())).thenReturn(SC_OK);
+    publisherManager =
+        new MetricsPublisherManager(
+            asyncRunnerFactory, timeProvider, metricsEndpoint, metricsPublisher);
   }
 
   @Test
-  public void shouldRunPublisherEveryXSeconds() throws InterruptedException, IOException {
-    MetricsPublisherManager publisherManager =
-        new MetricsPublisherManager(asyncRunnerFactory, timeProvider, metricsEndpoint);
-    publisherManager.setMetricsPublisher(metricsPublisher);
-    verify(metricsPublisher, times(0)).publishMetrics(anyString(), anyString());
-    SafeFuture<?> safeFuture = publisherManager.doStart();
+  public void shouldRunPublisherEveryXSeconds() throws IOException {
+    assertThat(asyncRunnerFactory.getStubAsyncRunners().size()).isEqualTo(0);
+    verify(metricsPublisher, times(0)).publishMetrics(anyString());
+
+    assertThat(publisherManager.doStart()).isEqualTo(SafeFuture.COMPLETE);
     assertThat(asyncRunnerFactory.getStubAsyncRunners().size()).isEqualTo(1);
-    asyncRunnerFactory.getStubAsyncRunners().get(0).executeQueuedActions();
-    verify(metricsPublisher, times(1)).publishMetrics(anyString(), anyString());
-    asyncRunnerFactory.getStubAsyncRunners().get(0).executeQueuedActions();
-    verify(metricsPublisher, times(2)).publishMetrics(anyString(), anyString());
-    Assertions.assertThat(safeFuture).isEqualTo(SafeFuture.COMPLETE);
-  }
 
-  @Test
-  public void shouldReturnHTTPStatusOk() throws IOException {
-    MetricsPublisherManager publisherManager =
-        new MetricsPublisherManager(asyncRunnerFactory, timeProvider, metricsEndpoint);
-    publisherManager.setMetricsPublisher(metricsPublisher);
-    Assertions.assertThat(publisherManager.publishMetrics()).isEqualTo(200);
+    asyncRunnerFactory.getStubAsyncRunners().get(0).executeQueuedActions();
+    verify(metricsPublisher, times(1)).publishMetrics(anyString());
+
+    asyncRunnerFactory.getStubAsyncRunners().get(0).executeQueuedActions();
+    verify(metricsPublisher, times(2)).publishMetrics(anyString());
   }
 
   @Test
   public void shouldStopGracefully() throws IOException {
-    MetricsPublisherManager publisherManager =
-        new MetricsPublisherManager(asyncRunnerFactory, timeProvider, metricsEndpoint);
-    publisherManager.setMetricsPublisher(metricsPublisher);
-    SafeFuture<?> safeFuture = publisherManager.doStart();
-    Assertions.assertThat(safeFuture).isEqualTo(SafeFuture.COMPLETE);
-    safeFuture = publisherManager.doStop();
-    Assertions.assertThat(safeFuture).isEqualTo(SafeFuture.COMPLETE);
+    final MetricsPublisherManager publisherManager =
+        new MetricsPublisherManager(
+            asyncRunnerFactory, timeProvider, metricsEndpoint, metricsPublisher);
+    assertThat(publisherManager.doStart()).isEqualTo(SafeFuture.COMPLETE);
+    assertThat(publisherManager.doStop()).isEqualTo(SafeFuture.COMPLETE);
+    asyncRunnerFactory.getStubAsyncRunners().get(0).executeQueuedActions();
+    verify(metricsPublisher, never()).publishMetrics(anyString());
   }
 }

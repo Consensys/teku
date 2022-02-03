@@ -39,7 +39,7 @@ public class BeaconNodeMetricData extends BaseMetricData {
       @JsonProperty("client_version") String clientVersion,
       @JsonProperty("network_peers_connected") Integer networkPeersConnected,
       @JsonProperty("sync_beacon_head_slot") Long syncBeaconHeadSlot) {
-    super(version, timestamp, process);
+    super(timestamp, process);
     this.cpu_process_seconds_total = cpuProcessSecondsTotal;
     this.memory_process_bytes = memoryProcessBytes;
     this.client_name = clientName;

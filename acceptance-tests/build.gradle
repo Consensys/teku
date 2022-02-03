@@ -13,6 +13,7 @@ dependencies {
   testFixturesImplementation testFixtures(project(':data:publisher'))
   testFixturesImplementation project(':infrastructure:async')
   testFixturesImplementation project(':infrastructure:bls')
+  testFixturesImplementation project(':infrastructure:metrics')
   testFixturesImplementation testFixtures(project(':infrastructure:async'))
   testFixturesImplementation project(':teku')
 

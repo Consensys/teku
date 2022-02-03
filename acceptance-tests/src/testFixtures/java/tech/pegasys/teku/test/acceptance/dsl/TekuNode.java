@@ -620,8 +620,8 @@ public class TekuNode extends Node {
 
     public Config withExternalMetricsClient(
         final ExternalMetricNode externalMetricsNode, final int intervalBetweenPublications) {
-      configMap.put("Xmetrics-endpoint", externalMetricsNode.getPublicationEndpointURL());
-      configMap.put("Xmetrics-publication-interval", intervalBetweenPublications);
+      configMap.put("Xmetrics-publish-endpoint", externalMetricsNode.getPublicationEndpointURL());
+      configMap.put("Xmetrics-publish-interval", intervalBetweenPublications);
       return this;
     }
 
