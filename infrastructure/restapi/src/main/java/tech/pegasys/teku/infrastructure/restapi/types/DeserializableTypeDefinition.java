@@ -16,6 +16,7 @@ package tech.pegasys.teku.infrastructure.restapi.types;
 import com.fasterxml.jackson.core.JsonParser;
 import java.io.IOException;
 import java.util.List;
+import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.restapi.types.StringBasedPrimitiveTypeDefinition.StringTypeBuilder;
 
 public interface DeserializableTypeDefinition<TObject> extends SerializableTypeDefinition<TObject> {
@@ -37,12 +38,19 @@ public interface DeserializableTypeDefinition<TObject> extends SerializableTypeD
     return new EnumTypeDefinition<>(itemType);
   }
 
-  static <TObject> DeserializableObjectTypeDefinitionBuilder<TObject> object(
+  static <TObject> DeserializableObjectTypeDefinitionBuilder<TObject, TObject> object(
       @SuppressWarnings("unused") final Class<TObject> type) {
+    final DeserializableObjectTypeDefinitionBuilder<TObject, TObject> typeBuilder = object();
+    return typeBuilder.finisher(Function.identity());
+  }
+
+  static <TObject, TBuilder> DeserializableObjectTypeDefinitionBuilder<TObject, TBuilder> object(
+      @SuppressWarnings("unused") final Class<TObject> type,
+      @SuppressWarnings("unused") final Class<TBuilder> builderType) {
     return object();
   }
 
-  static <TObject> DeserializableObjectTypeDefinitionBuilder<TObject> object() {
+  static <TObject, TBuilder> DeserializableObjectTypeDefinitionBuilder<TObject, TBuilder> object() {
     return new DeserializableObjectTypeDefinitionBuilder<>();
   }
 }

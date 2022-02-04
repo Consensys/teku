@@ -24,30 +24,35 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.restapi.exceptions.MissingRequiredFieldException;
 
-class DeserializableObjectTypeDefinition<TObject> extends SerializableObjectTypeDefinition<TObject>
+class DeserializableObjectTypeDefinition<TObject, TBuilder>
+    extends SerializableObjectTypeDefinition<TObject>
     implements DeserializableTypeDefinition<TObject> {
   private static final Logger LOG = LogManager.getLogger();
-  private final Map<String, DeserializableFieldDefinition<TObject>> deserializableFields;
-  private final Supplier<TObject> initializer;
+  private final Map<String, DeserializableFieldDefinition<TObject, TBuilder>> deserializableFields;
+  private final Supplier<TBuilder> initializer;
+  private final Function<TBuilder, TObject> finisher;
 
   DeserializableObjectTypeDefinition(
       final Optional<String> name,
-      final Supplier<TObject> initializer,
-      final Map<String, DeserializableFieldDefinition<TObject>> fields) {
+      final Supplier<TBuilder> initializer,
+      final Function<TBuilder, TObject> finisher,
+      final Map<String, DeserializableFieldDefinition<TObject, TBuilder>> fields) {
     super(name, fields);
     this.initializer = initializer;
+    this.finisher = finisher;
     this.deserializableFields = fields;
   }
 
   @Override
   public TObject deserialize(final JsonParser p) throws IOException {
-    final TObject result = initializer.get();
+    final TBuilder builder = initializer.get();
     JsonToken t = p.getCurrentToken();
     if (t == null) {
       t = p.nextToken();
@@ -59,10 +64,10 @@ class DeserializableObjectTypeDefinition<TObject> extends SerializableObjectType
     for (; t == JsonToken.FIELD_NAME; t = p.nextToken()) {
       String fieldName = p.getCurrentName();
       p.nextToken();
-      final DeserializableFieldDefinition<TObject> objectField =
+      final DeserializableFieldDefinition<TObject, TBuilder> objectField =
           deserializableFields.get(fieldName);
       if (objectField != null) {
-        objectField.readField(result, p);
+        objectField.readField(builder, p);
         presentFields.add(fieldName);
       } else {
         LOG.debug("Unknown field: {}", fieldName);
@@ -76,12 +81,10 @@ class DeserializableObjectTypeDefinition<TObject> extends SerializableObjectType
             .collect(Collectors.toList());
     if (!missingRequiredFields.isEmpty()) {
       throw new MissingRequiredFieldException(
-          "required fields: ("
-              + missingRequiredFields.stream().collect(Collectors.joining(", "))
-              + ") were not set");
+          "required fields: (" + String.join(", ", missingRequiredFields) + ") were not set");
     }
 
-    return result;
+    return finisher.apply(builder);
   }
 
   @Override

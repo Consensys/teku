@@ -18,17 +18,17 @@ import java.io.IOException;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
-class RequiredDeserializableFieldDefinition<TObject, TField>
+class RequiredDeserializableFieldDefinition<TObject, TBuilder, TField>
     extends RequiredSerializableFieldDefinition<TObject, TField>
-    implements DeserializableFieldDefinition<TObject> {
+    implements DeserializableFieldDefinition<TObject, TBuilder> {
 
-  private final BiConsumer<TObject, TField> setter;
+  private final BiConsumer<TBuilder, TField> setter;
   private final DeserializableTypeDefinition<TField> deserializableType;
 
   RequiredDeserializableFieldDefinition(
       final String name,
       final Function<TObject, TField> getter,
-      final BiConsumer<TObject, TField> setter,
+      final BiConsumer<TBuilder, TField> setter,
       final DeserializableTypeDefinition<TField> type) {
     super(name, getter, type);
     this.setter = setter;
@@ -36,7 +36,7 @@ class RequiredDeserializableFieldDefinition<TObject, TField>
   }
 
   @Override
-  public void readField(final TObject target, final JsonParser parser) throws IOException {
+  public void readField(final TBuilder target, final JsonParser parser) throws IOException {
     final TField value = deserializableType.deserialize(parser);
     setter.accept(target, value);
   }
