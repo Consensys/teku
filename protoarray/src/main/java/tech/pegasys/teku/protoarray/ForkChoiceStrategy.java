@@ -456,7 +456,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   public void onExecutionPayloadResult(final Bytes32 blockRoot, final ExecutePayloadResult result) {
     if (result.hasFailedExecution()) {
       LOG.warn(
-          "Payload for block root {} not processed, failed execution, EL is offline",
+          "Unable to execute Payload for block root {}, Execution Engine is offline",
           blockRoot,
           result.getFailureCause().orElseThrow());
       return;
