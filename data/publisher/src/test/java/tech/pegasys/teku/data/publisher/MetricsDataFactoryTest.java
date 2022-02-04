@@ -22,7 +22,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
-import tech.pegasys.teku.test.data.publisher.StubMetricsPublisherReader;
+import tech.pegasys.teku.test.data.publisher.StubMetricsPublisherSource;
 
 class MetricsDataFactoryTest {
   private final PrometheusMetricsSystem prometheusMetricsSystem =
@@ -35,10 +35,10 @@ class MetricsDataFactoryTest {
   @MethodSource("getValidatorParams")
   void shouldIncludeValidatorMetricsInPublish(
       final int validatorsTotal, final int validatorsActive, final int elementCount) {
-    MetricsPublisherReader reader =
-        new StubMetricsPublisherReader(1100L, 2200L, validatorsTotal, validatorsActive);
+    MetricsPublisherSource source =
+        new StubMetricsPublisherSource(1100L, 2200L, validatorsTotal, validatorsActive);
 
-    final List<BaseMetricData> data = factory.getMetricData(reader);
+    final List<BaseMetricData> data = factory.getMetricData(source);
     assertThat(data.size()).isEqualTo(elementCount);
     data.forEach(element -> assertThat(element).isInstanceOf(ValidatorMetricData.class));
   }

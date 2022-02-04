@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.data.publisher;
 
-public interface MetricsPublisherReader {
+public interface MetricsPublisherSource {
   long getCpuSecondsTotal();
 
   long getMemoryProcessBytes();

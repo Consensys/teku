@@ -77,7 +77,7 @@ public class MetricsOptions {
   @Option(
       names = {"--Xmetrics-publish-endpoint"},
       hidden = true,
-      paramLabel = "<ENDPOINT>",
+      paramLabel = "<URL>",
       description = "Publish metrics for node monitoring to an external service",
       arity = "1")
   private String metricsEndpoint = null;

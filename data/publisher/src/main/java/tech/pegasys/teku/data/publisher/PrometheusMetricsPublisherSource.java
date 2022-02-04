@@ -17,13 +17,13 @@ import java.util.List;
 import org.hyperledger.besu.metrics.Observation;
 import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
 
-public class PrometheusMetricsPublisherReader implements MetricsPublisherReader {
+public class PrometheusMetricsPublisherSource implements MetricsPublisherSource {
   private long cpuSecondsTotal;
   private long memoryProcessBytes;
   private int validatorsTotal;
   private int validatorsActive;
 
-  public PrometheusMetricsPublisherReader(final PrometheusMetricsSystem metricsSystem) {
+  public PrometheusMetricsPublisherSource(final PrometheusMetricsSystem metricsSystem) {
     metricsSystem.streamObservations().forEach(this::storeObservationIfNeeded);
   }
 

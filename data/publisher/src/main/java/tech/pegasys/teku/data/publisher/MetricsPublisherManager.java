@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.data.publisher;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
@@ -77,15 +76,9 @@ public class MetricsPublisherManager extends Service {
     return doStart();
   }
 
-  private void publishMetrics() {
+  private void publishMetrics() throws IOException {
     List<BaseMetricData> clientData = metricsDataFactory.getMetricData();
-    try {
-      metricsPublisher.publishMetrics(jsonProvider.objectToJSON(clientData));
-    } catch (JsonProcessingException e) {
-      LOG.debug("Error exporting Metrics to publish", e);
-    } catch (IOException e) {
-      LOG.debug("Error publishing metrics to remote host", e);
-    }
+    metricsPublisher.publishMetrics(jsonProvider.objectToJSON(clientData));
   }
 
   @Override

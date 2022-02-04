@@ -39,6 +39,13 @@ public class GeneralProcessMetricData extends BaseMetricData {
   @JsonProperty("sync_eth2_fallback_connected")
   private final boolean eth2FallbackConnected = false;
 
+  public GeneralProcessMetricData(
+      final long timestamp, final String process, final MetricsPublisherSource source) {
+    super(timestamp, process);
+    this.cpuProcessSecondsTotal = source.getCpuSecondsTotal();
+    this.memoryProcessBytes = source.getMemoryProcessBytes();
+  }
+
   public long getCpuProcessSecondsTotal() {
     return cpuProcessSecondsTotal;
   }
@@ -65,12 +72,5 @@ public class GeneralProcessMetricData extends BaseMetricData {
 
   public int getClientBuild() {
     return clientBuild;
-  }
-
-  public GeneralProcessMetricData(
-      final long timestamp, final String process, final MetricsPublisherReader reader) {
-    super(timestamp, process);
-    this.cpuProcessSecondsTotal = reader.getCpuSecondsTotal();
-    this.memoryProcessBytes = reader.getMemoryProcessBytes();
   }
 }

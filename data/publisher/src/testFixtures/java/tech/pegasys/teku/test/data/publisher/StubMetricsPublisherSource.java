@@ -13,15 +13,15 @@
 
 package tech.pegasys.teku.test.data.publisher;
 
-import tech.pegasys.teku.data.publisher.MetricsPublisherReader;
+import tech.pegasys.teku.data.publisher.MetricsPublisherSource;
 
-public class StubMetricsPublisherReader implements MetricsPublisherReader {
+public class StubMetricsPublisherSource implements MetricsPublisherSource {
   public final long cpuSecondsTotal;
   public final long memoryProcessBytes;
   public final int validatorsTotal;
   public final int validatorsActive;
 
-  public StubMetricsPublisherReader(
+  public StubMetricsPublisherSource(
       final long cpuSecondsTotal,
       final long memoryProcessBytes,
       final int validatorsTotal,

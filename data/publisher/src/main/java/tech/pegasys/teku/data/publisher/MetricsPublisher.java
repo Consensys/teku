@@ -37,16 +37,15 @@ public class MetricsPublisher {
     this.endpoint = endpoint;
   }
 
-  public int publishMetrics(final String json) throws IOException {
+  public void publishMetrics(final String json) throws IOException {
     RequestBody body = RequestBody.create(json, MEDIA_TYPE);
     Request request = new Request.Builder().url(endpoint).post(body).build();
     Response response = this.client.newCall(request).execute();
     int responseCode = response.code();
     response.close();
     if (responseCode != SC_OK) {
-      LOG.debug(
+      LOG.error(
           "Failed to publish metrics to external metrics service. Response code {}", responseCode);
     }
-    return responseCode;
   }
 }

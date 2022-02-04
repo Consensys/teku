@@ -32,10 +32,10 @@ class MetricsDataFactory {
     this.timeProvider = timeProvider;
   }
 
-  List<BaseMetricData> getMetricData(final MetricsPublisherReader reader) {
+  List<BaseMetricData> getMetricData(final MetricsPublisherSource source) {
     final List<BaseMetricData> metricList = new ArrayList<>();
-    if (reader.getValidatorsTotal() > 0L || reader.getValidatorsActive() > 0L) {
-      metricList.add(new ValidatorMetricData(timeProvider.getTimeInMillis().longValue(), reader));
+    if (source.getValidatorsTotal() > 0L || source.getValidatorsActive() > 0L) {
+      metricList.add(new ValidatorMetricData(timeProvider.getTimeInMillis().longValue(), source));
     }
 
     return metricList;
@@ -47,6 +47,6 @@ class MetricsDataFactory {
       return new ArrayList<>();
     }
     return getMetricData(
-        new PrometheusMetricsPublisherReader((PrometheusMetricsSystem) metricsSystem));
+        new PrometheusMetricsPublisherSource((PrometheusMetricsSystem) metricsSystem));
   }
 }

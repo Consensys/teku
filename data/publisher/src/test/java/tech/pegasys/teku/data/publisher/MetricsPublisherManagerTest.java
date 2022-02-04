@@ -20,7 +20,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import java.io.IOException;
 import java.net.URL;
@@ -52,7 +51,6 @@ class MetricsPublisherManagerTest {
     when(metricsEndpoint.getMetricsSystem()).thenReturn(prometheusMetricsSystem);
     when(metricsEndpoint.getMetricConfig()).thenReturn(metricsConfig);
     when(metricsConfig.getMetricsEndpoint()).thenReturn(Optional.of(new URL("http://host.com/")));
-    when(metricsPublisher.publishMetrics(anyString())).thenReturn(SC_OK);
     publisherManager =
         new MetricsPublisherManager(
             asyncRunnerFactory, timeProvider, metricsEndpoint, metricsPublisher);

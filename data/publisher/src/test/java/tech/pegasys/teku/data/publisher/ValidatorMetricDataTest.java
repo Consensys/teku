@@ -20,15 +20,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.test.data.publisher.StubMetricsPublisherReader;
+import tech.pegasys.teku.test.data.publisher.StubMetricsPublisherSource;
 
 class ValidatorMetricDataTest {
   private final JsonProvider jsonProvider = new JsonProvider();
 
   @Test
   public void shouldSerializeObject() throws JsonProcessingException {
-    final MetricsPublisherReader reader = new StubMetricsPublisherReader(1100L, 2200L, 44, 33);
-    final ValidatorMetricData process = new ValidatorMetricData(10L, reader);
+    final MetricsPublisherSource source = new StubMetricsPublisherSource(1100L, 2200L, 44, 33);
+    final ValidatorMetricData process = new ValidatorMetricData(10L, source);
     final String data = jsonProvider.objectToJSON(process);
     final ObjectMapper mapper = jsonProvider.getObjectMapper();
     final JsonNode node = mapper.readTree(data);

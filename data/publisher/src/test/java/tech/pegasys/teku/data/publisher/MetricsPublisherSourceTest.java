@@ -24,30 +24,30 @@ import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 
-class MetricsPublisherReaderTest {
+class MetricsPublisherSourceTest {
   private final PrometheusMetricsSystem metricsSystem = mock(PrometheusMetricsSystem.class);
 
   @Test
   void shouldReadCpuSeconds() {
     when(metricsSystem.streamObservations()).thenReturn(getObservations().stream());
-    final MetricsPublisherReader reader = new PrometheusMetricsPublisherReader(metricsSystem);
-    assertThat(reader.getCpuSecondsTotal()).isEqualTo(11);
-    assertThat(reader.getMemoryProcessBytes()).isEqualTo(55L);
+    final MetricsPublisherSource source = new PrometheusMetricsPublisherSource(metricsSystem);
+    assertThat(source.getCpuSecondsTotal()).isEqualTo(11);
+    assertThat(source.getMemoryProcessBytes()).isEqualTo(55L);
   }
 
   @Test
   void shouldReadMemoryBytes() {
     when(metricsSystem.streamObservations()).thenReturn(getObservations().stream());
-    final MetricsPublisherReader reader = new PrometheusMetricsPublisherReader(metricsSystem);
-    assertThat(reader.getMemoryProcessBytes()).isEqualTo(55L);
+    final MetricsPublisherSource source = new PrometheusMetricsPublisherSource(metricsSystem);
+    assertThat(source.getMemoryProcessBytes()).isEqualTo(55L);
   }
 
   @Test
   void shouldReadValidatorCounts() {
     when(metricsSystem.streamObservations()).thenReturn(getObservations().stream());
-    final MetricsPublisherReader reader = new PrometheusMetricsPublisherReader(metricsSystem);
-    assertThat(reader.getValidatorsActive()).isEqualTo(44L);
-    assertThat(reader.getValidatorsTotal()).isEqualTo(110L);
+    final MetricsPublisherSource source = new PrometheusMetricsPublisherSource(metricsSystem);
+    assertThat(source.getValidatorsActive()).isEqualTo(44L);
+    assertThat(source.getValidatorsTotal()).isEqualTo(110L);
   }
 
   private List<Observation> getObservations() {

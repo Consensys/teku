@@ -24,10 +24,10 @@ public class ValidatorMetricData extends GeneralProcessMetricData {
   @JsonProperty("validator_active")
   private final Integer validatorActive;
 
-  public ValidatorMetricData(final long timestamp, final MetricsPublisherReader reader) {
-    super(timestamp, MetricsPublishCategories.VALIDATOR.getDisplayName(), reader);
-    this.validatorActive = reader.getValidatorsActive();
-    this.validatorTotal = reader.getValidatorsTotal();
+  public ValidatorMetricData(final long timestamp, final MetricsPublisherSource source) {
+    super(timestamp, MetricsPublishCategories.VALIDATOR.getDisplayName(), source);
+    this.validatorActive = source.getValidatorsActive();
+    this.validatorTotal = source.getValidatorsTotal();
   }
 
   public Integer getValidatorTotal() {
