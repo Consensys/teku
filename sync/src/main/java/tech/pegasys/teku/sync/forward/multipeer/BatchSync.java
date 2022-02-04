@@ -406,7 +406,7 @@ public class BatchSync implements Sync {
       }
     } else if (result == BatchImportResult.SERVICE_OFFLINE) {
       if (!scheduledSync) {
-        LOG.info("Sync is delayed, unable to verify blocks. Probably Execution Client is offline");
+        LOG.warn("Unable to import blocks because execution client is offline.");
         asyncRunner
             .runAfterDelay(
                 () ->
