@@ -538,4 +538,18 @@ public class SyncSourceBatchTest {
     receiveBlocks(batch, realBlock);
     assertThat(batch.getBlocks()).containsExactly(realBlock);
   }
+
+  @Test
+  void markInvalid_shouldNotThrowWhenSourceIsAbsent() {
+    final Batch batch = createBatch(0, 1);
+    syncSources.put(batch, new ArrayList<>());
+    batch.markAsInvalid();
+  }
+
+  @Test
+  void markContested_shouldNotThrowWhenSourceIsAbsent() {
+    final Batch batch = createBatch(0, 1);
+    syncSources.put(batch, new ArrayList<>());
+    batch.markAsContested();
+  }
 }

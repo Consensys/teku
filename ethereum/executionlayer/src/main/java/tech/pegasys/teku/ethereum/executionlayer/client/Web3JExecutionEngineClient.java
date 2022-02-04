@@ -20,7 +20,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
@@ -41,19 +40,24 @@ import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadAttributes
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.type.Bytes8;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 
 public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   private static final Logger LOG = LogManager.getLogger();
 
+  private static final int ERROR_REPEAT_DELAY_MILLIS = 30 * 1000;
+  private static final int NO_ERROR_TIME = -1;
   private final Web3j eth1Web3j;
   private final HttpService eeWeb3jService;
+  private final TimeProvider timeProvider;
   private final AtomicLong nextId = new AtomicLong(MESSAGE_ORDER_RESET_ID);
-  private final AtomicBoolean isErrored = new AtomicBoolean(false);
+  private final AtomicLong lastError = new AtomicLong(NO_ERROR_TIME);
 
-  public Web3JExecutionEngineClient(String eeEndpoint) {
+  public Web3JExecutionEngineClient(String eeEndpoint, TimeProvider timeProvider) {
     this.eeWeb3jService = new HttpService(eeEndpoint, createOkHttpClient());
     this.eth1Web3j = Web3j.build(eeWeb3jService);
+    this.timeProvider = timeProvider;
   }
 
   private static OkHttpClient createOkHttpClient() {
@@ -127,13 +131,17 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   }
 
   private void handleError(Throwable error) {
-    if (isErrored.compareAndSet(false, true)) {
-      EVENT_LOG.executionClientIsOffline(error);
+    final long errorTime = lastError.get();
+    if (errorTime == NO_ERROR_TIME
+        || timeProvider.getTimeInMillis().longValue() - errorTime > ERROR_REPEAT_DELAY_MILLIS) {
+      if (lastError.compareAndSet(errorTime, timeProvider.getTimeInMillis().longValue())) {
+        EVENT_LOG.executionClientIsOffline(error);
+      }
     }
   }
 
   private void handleSuccess() {
-    if (isErrored.compareAndSet(true, false)) {
+    if (lastError.getAndUpdate(x -> NO_ERROR_TIME) != NO_ERROR_TIME) {
       EVENT_LOG.executionClientIsOnline();
     }
   }
