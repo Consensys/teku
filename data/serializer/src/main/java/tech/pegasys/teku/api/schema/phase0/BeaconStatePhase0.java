@@ -30,6 +30,7 @@ import tech.pegasys.teku.api.schema.Validator;
 import tech.pegasys.teku.api.schema.interfaces.State;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.state.PendingAttestation.PendingAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 
 public class BeaconStatePhase0 extends BeaconState implements State {
@@ -116,18 +117,26 @@ public class BeaconStatePhase0 extends BeaconState implements State {
     state
         .toMutableVersionPhase0()
         .ifPresent(
-            genesisState -> {
-              genesisState
+            mutableState -> {
+              final PendingAttestationSchema pendingAttestationSchema =
+                  mutableState.getBeaconStateSchema().getPendingAttestationSchema();
+              mutableState
                   .getPrevious_epoch_attestations()
                   .setAll(
                       previous_epoch_attestations.stream()
-                          .map(PendingAttestation::asInternalPendingAttestation)
+                          .map(
+                              pendingAttestation ->
+                                  pendingAttestation.asInternalPendingAttestation(
+                                      pendingAttestationSchema))
                           .collect(Collectors.toList()));
-              genesisState
+              mutableState
                   .getCurrent_epoch_attestations()
                   .setAll(
                       current_epoch_attestations.stream()
-                          .map(PendingAttestation::asInternalPendingAttestation)
+                          .map(
+                              pendingAttestation ->
+                                  pendingAttestation.asInternalPendingAttestation(
+                                      pendingAttestationSchema))
                           .collect(Collectors.toList()));
             });
   }

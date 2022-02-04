@@ -14,6 +14,7 @@
 package tech.pegasys.teku.reference.phase0.ssz_static;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assumptions.assumeThat;
 
 import com.google.common.collect.ImmutableMap;
 import org.apache.tuweni.bytes.Bytes;
@@ -24,6 +25,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.reference.TestDataUtils;
 import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
@@ -49,6 +51,15 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
           .put(
               "ssz_static/HistoricalBatch",
               new SszTestExecutor<>(SchemaDefinitions::getHistoricalBatchSchema))
+          .put(
+              "ssz_static/PendingAttestation",
+              new SszTestExecutor<>(
+                  schemas -> {
+                    assumeThat(schemas.getBeaconStateSchema())
+                        .isInstanceOf(BeaconStateSchemaPhase0.class);
+                    return BeaconStateSchemaPhase0.required(schemas.getBeaconStateSchema())
+                        .getPendingAttestationSchema();
+                  }))
           .put(
               "ssz_static/SyncCommittee",
               new SszTestExecutor<>(

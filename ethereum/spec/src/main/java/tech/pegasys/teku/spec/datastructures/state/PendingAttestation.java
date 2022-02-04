@@ -21,7 +21,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.config.Constants;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 
 public class PendingAttestation
@@ -31,15 +31,23 @@ public class PendingAttestation
       extends ContainerSchema4<
           PendingAttestation, SszBitlist, AttestationData, SszUInt64, SszUInt64> {
 
-    public PendingAttestationSchema() {
+    public PendingAttestationSchema(final SpecConfig config) {
       super(
           "PendingAttestation",
           namedSchema(
               "aggregation_bitfield",
-              SszBitlistSchema.create(Constants.MAX_VALIDATORS_PER_COMMITTEE)),
+              SszBitlistSchema.create(config.getMaxValidatorsPerCommittee())),
           namedSchema("data", AttestationData.SSZ_SCHEMA),
           namedSchema("inclusion_delay", SszPrimitiveSchemas.UINT64_SCHEMA),
           namedSchema("proposer_index", SszPrimitiveSchemas.UINT64_SCHEMA));
+    }
+
+    public PendingAttestation create(
+        final SszBitlist aggregationBitfield,
+        final AttestationData data,
+        final UInt64 inclusionDelay,
+        final UInt64 proposerIndex) {
+      return new PendingAttestation(this, aggregationBitfield, data, inclusionDelay, proposerIndex);
     }
 
     public SszBitlistSchema<?> getAggregationBitfieldSchema() {
@@ -52,31 +60,27 @@ public class PendingAttestation
     }
   }
 
-  public static final PendingAttestationSchema SSZ_SCHEMA = new PendingAttestationSchema();
-
   private PendingAttestation(PendingAttestationSchema type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
   public PendingAttestation(
-      SszBitlist aggregation_bitfield,
-      AttestationData data,
-      UInt64 inclusion_delay,
-      UInt64 proposer_index) {
+      final PendingAttestationSchema schema,
+      final SszBitlist aggregationBitfield,
+      final AttestationData data,
+      final UInt64 inclusionDelay,
+      final UInt64 proposerIndex) {
     super(
-        SSZ_SCHEMA,
-        aggregation_bitfield,
+        schema,
+        aggregationBitfield,
         data,
-        SszUInt64.of(inclusion_delay),
-        SszUInt64.of(proposer_index));
+        SszUInt64.of(inclusionDelay),
+        SszUInt64.of(proposerIndex));
   }
 
-  public PendingAttestation() {
-    super(SSZ_SCHEMA);
-  }
-
-  public PendingAttestation(PendingAttestation pendingAttestation) {
-    super(SSZ_SCHEMA, pendingAttestation.getBackingNode());
+  @Override
+  public PendingAttestationSchema getSchema() {
+    return (PendingAttestationSchema) super.getSchema();
   }
 
   public SszBitlist getAggregation_bits() {

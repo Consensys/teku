@@ -13,13 +13,18 @@
 
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszField;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
+import tech.pegasys.teku.spec.datastructures.state.PendingAttestation.PendingAttestationSchema;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 
@@ -35,14 +40,24 @@ public class BeaconStateSchemaPhase0
     return new BeaconStateSchemaPhase0(specConfig);
   }
 
+  public static BeaconStateSchemaPhase0 required(final SszSchema<? extends BeaconState> schema) {
+    checkArgument(
+        schema instanceof BeaconStateSchemaPhase0,
+        "Expected a BeaconStateSchemaPhase0 but was %s",
+        schema.getClass());
+    return (BeaconStateSchemaPhase0) schema;
+  }
+
   private static List<SszField> getUniqueFields(final SpecConfig specConfig) {
+    final PendingAttestationSchema pendingAttestationSchema =
+        new PendingAttestationSchema(specConfig);
     final SszField previousEpochAttestationsField =
         new SszField(
             15,
             BeaconStateFields.PREVIOUS_EPOCH_ATTESTATIONS.name(),
             () ->
                 SszListSchema.create(
-                    PendingAttestation.SSZ_SCHEMA,
+                    pendingAttestationSchema,
                     (long) specConfig.getMaxAttestations() * specConfig.getSlotsPerEpoch()));
     final SszField currentEpochAttestationsField =
         new SszField(
@@ -50,7 +65,7 @@ public class BeaconStateSchemaPhase0
             BeaconStateFields.CURRENT_EPOCH_ATTESTATIONS.name(),
             () ->
                 SszListSchema.create(
-                    PendingAttestation.SSZ_SCHEMA,
+                    pendingAttestationSchema,
                     (long) specConfig.getMaxAttestations() * specConfig.getSlotsPerEpoch()));
 
     return List.of(previousEpochAttestationsField, currentEpochAttestationsField);
@@ -66,6 +81,10 @@ public class BeaconStateSchemaPhase0
   public SszListSchema<PendingAttestation, ?> getCurrentEpochAttestationsSchema() {
     return (SszListSchema<PendingAttestation, ?>)
         getChildSchema(getFieldIndex(BeaconStateFields.CURRENT_EPOCH_ATTESTATIONS.name()));
+  }
+
+  public PendingAttestationSchema getPendingAttestationSchema() {
+    return (PendingAttestationSchema) getCurrentEpochAttestationsSchema().getElementSchema();
   }
 
   @Override

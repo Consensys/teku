@@ -71,11 +71,14 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
     final AttestationData data = attestation.getData();
 
     PendingAttestation pendingAttestation =
-        new PendingAttestation(
-            attestation.getAggregationBits(),
-            data,
-            state.getSlot().minus(data.getSlot()),
-            UInt64.valueOf(beaconStateAccessors.getBeaconProposerIndex(state)));
+        state
+            .getBeaconStateSchema()
+            .getPendingAttestationSchema()
+            .create(
+                attestation.getAggregationBits(),
+                data,
+                state.getSlot().minus(data.getSlot()),
+                UInt64.valueOf(beaconStateAccessors.getBeaconProposerIndex(state)));
 
     if (data.getTarget().getEpoch().equals(beaconStateAccessors.getCurrentEpoch(state))) {
       state.getCurrent_epoch_attestations().append(pendingAttestation);
