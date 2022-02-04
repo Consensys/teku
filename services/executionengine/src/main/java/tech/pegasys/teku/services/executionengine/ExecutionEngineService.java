@@ -22,6 +22,7 @@ import tech.pegasys.teku.ethereum.executionlayer.ExecutionEngineChannelImpl;
 import tech.pegasys.teku.ethereum.executionlayer.ThrottlingExecutionEngineChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.spec.executionengine.ExecutionEngineChannel;
@@ -32,11 +33,13 @@ public class ExecutionEngineService extends Service {
   private final EventChannels eventChannels;
   private final ExecutionEngineConfiguration config;
   private final MetricsSystem metricsSystem;
+  private final TimeProvider timeProvider;
 
   public ExecutionEngineService(
       final ServiceConfig serviceConfig, final ExecutionEngineConfiguration config) {
     this.eventChannels = serviceConfig.getEventChannels();
     this.metricsSystem = serviceConfig.getMetricsSystem();
+    this.timeProvider = serviceConfig.getTimeProvider();
     this.config = config;
   }
 
@@ -46,7 +49,7 @@ public class ExecutionEngineService extends Service {
     LOG.info("Using execution engine at {}", endpoint);
     final ExecutionEngineChannel executionEngine =
         new ThrottlingExecutionEngineChannel(
-            ExecutionEngineChannelImpl.create(endpoint, config.getSpec()),
+            ExecutionEngineChannelImpl.create(endpoint, config.getSpec(), timeProvider),
             MAXIMUM_CONCURRENT_EE_REQUESTS,
             metricsSystem);
     eventChannels.subscribe(ExecutionEngineChannel.class, executionEngine);

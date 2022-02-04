@@ -29,6 +29,7 @@ import tech.pegasys.teku.ethereum.executionlayer.client.schema.PayloadAttributes
 import tech.pegasys.teku.ethereum.executionlayer.client.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.type.Bytes8;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -45,9 +46,11 @@ public class ExecutionEngineChannelImpl implements ExecutionEngineChannel {
   private final ExecutionEngineClient executionEngineClient;
   private final Spec spec;
 
-  public static ExecutionEngineChannelImpl create(String eeEndpoint, Spec spec) {
+  public static ExecutionEngineChannelImpl create(
+      String eeEndpoint, Spec spec, TimeProvider timeProvider) {
     checkNotNull(eeEndpoint);
-    return new ExecutionEngineChannelImpl(new Web3JExecutionEngineClient(eeEndpoint), spec);
+    return new ExecutionEngineChannelImpl(
+        new Web3JExecutionEngineClient(eeEndpoint, timeProvider), spec);
   }
 
   private ExecutionEngineChannelImpl(ExecutionEngineClient executionEngineClient, Spec spec) {
