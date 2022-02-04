@@ -15,17 +15,23 @@ package tech.pegasys.teku.test.acceptance.dsl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
 import org.testcontainers.images.builder.ImageFromDockerfile;
-import tech.pegasys.teku.data.publisher.MetricsDataClient;
 import tech.pegasys.teku.infrastructure.async.Waiter;
-import tech.pegasys.teku.test.data.publisher.DeserializedMetricDataObject;
 
 public class ExternalMetricNode extends Node {
   private static final Logger LOG = LogManager.getLogger();
@@ -62,68 +68,72 @@ public class ExternalMetricNode extends Node {
     return httpClient.get(new URI(this.getAddress()), "/output");
   }
 
-  private DeserializedMetricDataObject[] getPublishedObjects()
-      throws URISyntaxException, IOException {
+  private List<Map<String, Object>> getPublishedObjects() throws URISyntaxException, IOException {
     String response = getResponse();
     LOG.debug("Metric data was published " + response);
-    return jsonProvider.jsonToObject(response, DeserializedMetricDataObject[].class);
+    final ObjectMapper mapper = jsonProvider.getObjectMapper();
+    JsonNode node = mapper.readTree(response);
+    final List<Map<String, Object>> result = new ArrayList<>();
+    assertThat(node.isArray()).isTrue();
+    for (JsonNode child : ImmutableList.copyOf(node.elements())) {
+      final Map<String, Object> elements = new HashMap<>();
+      for (String field : ImmutableList.copyOf(child.fieldNames())) {
+        switch (child.get(field).getNodeType()) {
+          case BOOLEAN:
+            elements.put(field, child.get(field).asBoolean());
+            break;
+          case NUMBER:
+            elements.put(field, child.get(field).asLong());
+            break;
+          default:
+            elements.put(field, child.get(field).asText());
+        }
+      }
+      result.add(elements);
+    }
+    return result;
   }
 
-  public void waitForBeaconNodeMetricPublication() {
+  public void waitForValidatorMetricPublication(final long validatorCount) {
     Waiter.waitFor(
         () -> {
-          DeserializedMetricDataObject[] publishedData = getPublishedObjects();
-          assertThat(publishedData.length).isEqualTo(3);
-
-          assertThat(publishedData[0]).isNotNull();
-          assertThat(publishedData[0].process).isNotNull();
-          assertThat(publishedData[0].process)
-              .isEqualTo(MetricsDataClient.BEACON_NODE.getDataClient());
-          assertThat(publishedData[0].version).isNotNull();
-          assertThat(publishedData[0].timestamp).isNotNull();
-          assertThat(publishedData[0].client_name).isNotNull();
-          assertThat(publishedData[0].client_version).isNotNull();
-          assertThat(publishedData[0].cpu_process_seconds_total).isNotNull();
-          assertThat(publishedData[0].memory_process_bytes).isNotNull();
-          assertThat(publishedData[0].network_peers_connected).isNotNull();
-          assertThat(publishedData[0].sync_beacon_head_slot).isNotNull();
+          Map<String, Object> publishedData = getPublisher("validator", getPublishedObjects());
+          assertThat(publishedData).isNotNull();
+          assertThat(publishedData.size()).isEqualTo(12);
+          checkBaseMetricData(publishedData);
+          checkGeneralProcessMetricData(publishedData);
+          assertThat(publishedData.get("validator_total")).isNotNull().isEqualTo(validatorCount);
+          assertThat(publishedData.get("validator_active")).isNotNull().isEqualTo(validatorCount);
         });
   }
 
-  public void waitForValidatorMetricPublication() {
-    Waiter.waitFor(
-        () -> {
-          DeserializedMetricDataObject[] publishedData = getPublishedObjects();
-          assertThat(publishedData.length).isEqualTo(3);
-
-          assertThat(publishedData[1]).isNotNull();
-          assertThat(publishedData[1].process).isNotNull();
-          assertThat(publishedData[1].process)
-              .isEqualTo(MetricsDataClient.VALIDATOR.getDataClient());
-          assertThat(publishedData[1].version).isNotNull();
-          assertThat(publishedData[1].timestamp).isNotNull();
-          assertThat(publishedData[1].client_name).isNotNull();
-          assertThat(publishedData[1].client_version).isNotNull();
-          assertThat(publishedData[1].cpu_process_seconds_total).isNotNull();
-          assertThat(publishedData[1].memory_process_bytes).isNotNull();
-          assertThat(publishedData[1].validator_total).isNotNull();
-        });
+  private Map<String, Object> getPublisher(
+      final String publisherName, final List<Map<String, Object>> publishedObjects) {
+    for (Map<String, Object> current : publishedObjects) {
+      final Object publisher = current.get("process");
+      if (publisher instanceof String && publisher.equals(publisherName)) {
+        return current;
+      }
+    }
+    LOG.debug("Failed to find publisher {}", publisherName);
+    return null;
   }
 
-  public void waitForSystemMetricPublication() {
-    Waiter.waitFor(
-        () -> {
-          DeserializedMetricDataObject[] publishedData = getPublishedObjects();
-          assertThat(publishedData.length).isEqualTo(3);
+  private void checkBaseMetricData(final Map<String, Object> publishedData) {
+    assertThat(publishedData.get("version")).isEqualTo(1L);
+    assertThat(publishedData.get("timestamp")).isNotNull().isInstanceOf(Long.class);
+  }
 
-          assertThat(publishedData[2]).isNotNull();
-          assertThat(publishedData[2].process).isNotNull();
-          assertThat(publishedData[2].process).isEqualTo(MetricsDataClient.SYSTEM.getDataClient());
-          assertThat(publishedData[2].version).isNotNull();
-          assertThat(publishedData[2].timestamp).isNotNull();
-          assertThat(publishedData[2].cpu_node_system_seconds_total).isNotNull();
-          assertThat(publishedData[2].misc_os).isNotNull();
-        });
+  private void checkGeneralProcessMetricData(final Map<String, Object> publishedData) {
+    assertThat(publishedData.get("memory_process_bytes")).isNotNull().isInstanceOf(Long.class);
+    assertThat(publishedData.get("cpu_process_seconds_total")).isNotNull().isInstanceOf(Long.class);
+    assertThat(publishedData.get("client_name")).isEqualTo("teku");
+
+    assertThat((String) publishedData.get("client_version"))
+        .matches(Pattern.compile("^\\d\\d\\.\\d\\.\\d.*"));
+    assertThat(publishedData.get("client_build")).isEqualTo(0L);
+    assertThat(publishedData.get("sync_eth2_fallback_configured")).isEqualTo(false);
+    assertThat(publishedData.get("sync_eth2_fallback_connected")).isEqualTo(false);
   }
 
   public void start() {

@@ -19,56 +19,46 @@ import java.util.List;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.junit.BouncyCastleExtension;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.teku.infrastructure.ssz.SszTestUtils;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszMutableBytes32Vector;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.Constants;
+import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch.HistoricalBatchSchema;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.util.config.SpecDependent;
 
 @ExtendWith(BouncyCastleExtension.class)
 public class HistoricalBatchTest {
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
 
-  @BeforeAll
-  static void setConstants() {
-    Constants.setConstants(TestSpecFactory.createMainnetPhase0());
-    SpecDependent.resetAll();
-  }
+  private static final Spec spec = TestSpecFactory.createMainnetPhase0();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
-  @AfterAll
-  static void restoreConstants() {
-    Constants.setConstants(TestSpecFactory.createMinimalPhase0());
-    SpecDependent.resetAll();
-  }
+  private final HistoricalBatchSchema schema =
+      spec.getGenesisSchemaDefinitions().getHistoricalBatchSchema();
 
   @Test
   void vectorLengthsTest() {
-    List<Integer> vectorLengths =
-        List.of(Constants.SLOTS_PER_HISTORICAL_ROOT, Constants.SLOTS_PER_HISTORICAL_ROOT);
-    assertEquals(vectorLengths, SszTestUtils.getVectorLengths(HistoricalBatch.SSZ_SCHEMA.get()));
+    final int slotsPerHistoricalRoot = spec.getGenesisSpecConfig().getSlotsPerHistoricalRoot();
+    List<Integer> vectorLengths = List.of(slotsPerHistoricalRoot, slotsPerHistoricalRoot);
+    assertEquals(vectorLengths, SszTestUtils.getVectorLengths(schema));
   }
 
   @Test
   void roundTripViaSsz() {
-
     SszMutableBytes32Vector block_roots =
-        HistoricalBatch.SSZ_SCHEMA.get().getBlockRootsSchema().getDefault().createWritableCopy();
+        schema.getBlockRootsSchema().getDefault().createWritableCopy();
     SszMutableBytes32Vector state_roots =
-        HistoricalBatch.SSZ_SCHEMA.get().getStateRootsSchema().getDefault().createWritableCopy();
-    IntStream.range(0, Constants.SLOTS_PER_HISTORICAL_ROOT)
+        schema.getStateRootsSchema().getDefault().createWritableCopy();
+    IntStream.range(0, spec.getGenesisSpecConfig().getSlotsPerHistoricalRoot())
         .forEach(
             i -> {
               block_roots.setElement(i, dataStructureUtil.randomBytes32());
               state_roots.setElement(i, dataStructureUtil.randomBytes32());
             });
-    HistoricalBatch batch = new HistoricalBatch(block_roots, state_roots);
+    HistoricalBatch batch = schema.create(block_roots, state_roots);
     Bytes serialized = batch.sszSerialize();
-    HistoricalBatch result = HistoricalBatch.SSZ_SCHEMA.get().sszDeserialize(serialized);
+    HistoricalBatch result = schema.sszDeserialize(serialized);
     assertEquals(batch, result);
   }
 }

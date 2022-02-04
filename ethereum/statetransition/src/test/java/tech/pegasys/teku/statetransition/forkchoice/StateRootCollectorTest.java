@@ -17,7 +17,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static tech.pegasys.teku.spec.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
 
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,6 +34,8 @@ import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 class StateRootCollectorTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private final int slotsPerHistoricalRoot =
+      spec.getGenesisSpecConfig().getSlotsPerHistoricalRoot();
   private final StorageSystem storageSystem =
       InMemoryStorageSystemBuilder.create().specProvider(spec).build();
   private final StoreTransaction transaction = mock(StoreTransaction.class);
@@ -47,7 +48,7 @@ class StateRootCollectorTest {
 
   @Test
   void shouldNotCaptureAnyStateRootsForGenesisState() {
-    StateRootCollector.addParentStateRoots(genesis.getState(), transaction);
+    StateRootCollector.addParentStateRoots(spec, genesis.getState(), transaction);
     verifyNoInteractions(transaction);
   }
 
@@ -55,7 +56,7 @@ class StateRootCollectorTest {
   void shouldNotCaptureAnyStateRootsForBlockInSlot1() {
     final BeaconState state = storageSystem.chainUpdater().advanceChain(1).getState();
 
-    StateRootCollector.addParentStateRoots(state, transaction);
+    StateRootCollector.addParentStateRoots(spec, state, transaction);
     verifyNoInteractions(transaction);
   }
 
@@ -63,7 +64,7 @@ class StateRootCollectorTest {
   void shouldCaptureRootsForEmptySlotsAfterGenesis() {
     final BeaconState state = storageSystem.chainUpdater().advanceChain(3).getState();
 
-    StateRootCollector.addParentStateRoots(state, transaction);
+    StateRootCollector.addParentStateRoots(spec, state, transaction);
 
     verifyStateRootRecorded(state, 2, genesis);
     verifyStateRootRecorded(state, 1, genesis);
@@ -73,12 +74,12 @@ class StateRootCollectorTest {
   @Test
   void shouldNotCaptureStatesPriorToSlotsPerHistoricalRoot() throws Exception {
     final BeaconState state =
-        storageSystem.chainUpdater().advanceChain(SLOTS_PER_HISTORICAL_ROOT + 2).getState();
+        storageSystem.chainUpdater().advanceChain(slotsPerHistoricalRoot + 2).getState();
 
-    StateRootCollector.addParentStateRoots(state, transaction);
+    StateRootCollector.addParentStateRoots(spec, state, transaction);
 
     BeaconState historicState = genesis.getState();
-    for (int i = 2; i < SLOTS_PER_HISTORICAL_ROOT + 2; i++) {
+    for (int i = 2; i < slotsPerHistoricalRoot + 2; i++) {
       final UInt64 slot = UInt64.valueOf(i);
       // Regenerate states to ensure we don't wrap around and record the wrong values.
       historicState = spec.processSlots(historicState, slot);
@@ -94,7 +95,7 @@ class StateRootCollectorTest {
     final SignedBlockAndState parentBlock = storageSystem.chainUpdater().advanceChain(4);
     final BeaconState state = storageSystem.chainUpdater().advanceChain(7).getState();
 
-    StateRootCollector.addParentStateRoots(state, transaction);
+    StateRootCollector.addParentStateRoots(spec, state, transaction);
     verifyStateRootRecorded(state, 5, parentBlock);
     verifyStateRootRecorded(state, 6, parentBlock);
     verifyNoMoreInteractions(transaction);
@@ -109,6 +110,6 @@ class StateRootCollectorTest {
   }
 
   private Bytes32 getStateRoot(final BeaconState state, final int slot) {
-    return state.getState_roots().getElement(slot % SLOTS_PER_HISTORICAL_ROOT);
+    return state.getState_roots().getElement(slot % slotsPerHistoricalRoot);
   }
 }

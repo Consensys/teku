@@ -26,6 +26,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.Validato
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class EpochProcessorPhase0 extends AbstractEpochProcessor {
 
@@ -36,7 +37,8 @@ public class EpochProcessorPhase0 extends AbstractEpochProcessor {
       final BeaconStateMutators beaconStateMutators,
       final ValidatorsUtil validatorsUtil,
       final BeaconStateUtil beaconStateUtil,
-      final ValidatorStatusFactory validatorStatusFactory) {
+      final ValidatorStatusFactory validatorStatusFactory,
+      final SchemaDefinitions schemaDefinitions) {
     super(
         specConfig,
         miscHelpers,
@@ -44,7 +46,8 @@ public class EpochProcessorPhase0 extends AbstractEpochProcessor {
         beaconStateMutators,
         validatorsUtil,
         beaconStateUtil,
-        validatorStatusFactory);
+        validatorStatusFactory,
+        schemaDefinitions);
   }
 
   @Override

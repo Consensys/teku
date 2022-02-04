@@ -4,7 +4,6 @@ dependencies {
 
   implementation project(':ethereum:spec')
   implementation project(':infrastructure:bls')
-  implementation project(':util')
   implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.apache.tuweni:tuweni-units'
 

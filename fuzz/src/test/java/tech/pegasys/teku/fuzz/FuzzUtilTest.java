@@ -49,7 +49,6 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
-import tech.pegasys.teku.util.config.SpecDependent;
 
 @ExtendWith(BouncyCastleExtension.class)
 class FuzzUtilTest {
@@ -75,7 +74,6 @@ class FuzzUtilTest {
   @AfterEach
   public void cleanup() {
     Constants.setConstants(TestSpecFactory.createMinimalPhase0());
-    SpecDependent.resetAll();
   }
 
   @Test

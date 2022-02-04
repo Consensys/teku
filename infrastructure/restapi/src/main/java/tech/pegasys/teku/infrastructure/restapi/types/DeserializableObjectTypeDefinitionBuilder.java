@@ -22,44 +22,53 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-public class DeserializableObjectTypeDefinitionBuilder<TObject> {
-  private final Map<String, DeserializableFieldDefinition<TObject>> fields = new LinkedHashMap<>();
+public class DeserializableObjectTypeDefinitionBuilder<TObject, TBuilder> {
+  private final Map<String, DeserializableFieldDefinition<TObject, TBuilder>> fields =
+      new LinkedHashMap<>();
   private Optional<String> name = Optional.empty();
-  private Supplier<TObject> initializer;
+  private Supplier<TBuilder> initializer;
+  private Function<TBuilder, TObject> finisher;
 
   DeserializableObjectTypeDefinitionBuilder() {}
 
-  public DeserializableObjectTypeDefinitionBuilder<TObject> name(final String name) {
+  public DeserializableObjectTypeDefinitionBuilder<TObject, TBuilder> name(final String name) {
     this.name = Optional.of(name);
     return this;
   }
 
-  public DeserializableObjectTypeDefinitionBuilder<TObject> initializer(
-      Supplier<TObject> initializer) {
+  public DeserializableObjectTypeDefinitionBuilder<TObject, TBuilder> initializer(
+      Supplier<TBuilder> initializer) {
     this.initializer = initializer;
     return this;
   }
 
-  public <TField> DeserializableObjectTypeDefinitionBuilder<TObject> withField(
+  public DeserializableObjectTypeDefinitionBuilder<TObject, TBuilder> finisher(
+      final Function<TBuilder, TObject> finisher) {
+    this.finisher = finisher;
+    return this;
+  }
+
+  public <TField> DeserializableObjectTypeDefinitionBuilder<TObject, TBuilder> withField(
       final String name,
       final DeserializableTypeDefinition<TField> type,
       final Function<TObject, TField> getter,
-      final BiConsumer<TObject, TField> setter) {
+      final BiConsumer<TBuilder, TField> setter) {
     this.fields.put(name, new RequiredDeserializableFieldDefinition<>(name, getter, setter, type));
     return this;
   }
 
-  public <TField> DeserializableObjectTypeDefinitionBuilder<TObject> withOptionalField(
+  public <TField> DeserializableObjectTypeDefinitionBuilder<TObject, TBuilder> withOptionalField(
       final String name,
       final DeserializableTypeDefinition<TField> type,
       final Function<TObject, Optional<TField>> getter,
-      final BiConsumer<TObject, Optional<TField>> setter) {
+      final BiConsumer<TBuilder, Optional<TField>> setter) {
     this.fields.put(name, new OptionalDeserializableFieldDefinition<>(name, getter, setter, type));
     return this;
   }
 
   public DeserializableTypeDefinition<TObject> build() {
     checkNotNull(initializer, "Must specify an initializer");
-    return new DeserializableObjectTypeDefinition<>(name, initializer, fields);
+    checkNotNull(finisher, "Must specify a finisher");
+    return new DeserializableObjectTypeDefinition<>(name, initializer, finisher, fields);
   }
 }

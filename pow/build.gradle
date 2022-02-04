@@ -4,7 +4,6 @@ dependencies {
   implementation project(':infrastructure:async')
   implementation project(':infrastructure:bls')
   implementation project(':infrastructure:ssz')
-  implementation project(':util')
   implementation project(':infrastructure:events')
   implementation project(':infrastructure:exceptions')
   implementation project(':infrastructure:logging')
@@ -24,7 +23,6 @@ dependencies {
   testImplementation testFixtures(project(':infrastructure:metrics'))
   testImplementation testFixtures(project(':ethereum:spec'))
 
-  testFixturesImplementation project(':util')
   testFixturesImplementation project(':ethereum:pow:api')
   testFixturesImplementation project(':infrastructure:events')
 }

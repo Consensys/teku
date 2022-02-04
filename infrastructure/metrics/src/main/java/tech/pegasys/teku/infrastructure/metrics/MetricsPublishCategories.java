@@ -11,34 +11,25 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.data.publisher;
+package tech.pegasys.teku.infrastructure.metrics;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+public enum MetricsPublishCategories {
+  VALIDATOR("validator"),
+  BEACON_NODE("beaconnode"),
+  SYSTEM("system");
 
-public class BaseMetricData {
-  @JsonProperty("version")
-  private final int version = 1;
+  private final String displayName;
 
-  @JsonProperty("timestamp")
-  private final long timestamp;
-
-  @JsonProperty("process")
-  private final String process;
-
-  public BaseMetricData(long timestamp, String process) {
-    this.timestamp = timestamp;
-    this.process = process;
+  MetricsPublishCategories(String displayName) {
+    this.displayName = displayName;
   }
 
-  public int getVersion() {
-    return version;
+  public String getDisplayName() {
+    return this.displayName;
   }
 
-  public long getTimestamp() {
-    return timestamp;
-  }
-
-  public String getProcess() {
-    return process;
+  @Override
+  public String toString() {
+    return displayName;
   }
 }

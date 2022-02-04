@@ -10,7 +10,6 @@ dependencies {
   implementation project(':storage:api')
   implementation project(':validator:api')
   implementation project(':validator:beaconnode')
-  implementation project(':util')
 
   implementation 'org.apache.tuweni:tuweni-bytes'
 

@@ -29,7 +29,6 @@ dependencies {
     // From datastructures - TODO(#3356) clean up these imports
     api project(':infrastructure:bls')
     api project(':infrastructure:ssz')
-    api project(':util')
 
     implementation project(':infrastructure:async')
     implementation project(':infrastructure:bls')
@@ -58,7 +57,6 @@ dependencies {
     testFixturesApi 'com.google.guava:guava'
     testFixturesApi project(':infrastructure:unsigned')
 
-    testFixturesImplementation project(':util')
     testFixturesImplementation project(':infrastructure:async')
     testFixturesImplementation project(':infrastructure:bls')
     testFixturesImplementation testFixtures(project(':infrastructure:bls'))

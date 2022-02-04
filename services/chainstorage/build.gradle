@@ -8,7 +8,6 @@ dependencies {
   implementation project(':infrastructure:serviceutils')
   implementation project(':storage')
   implementation project(':storage:api')
-  implementation project(':util')
   implementation project(':pow')
   implementation project(':infrastructure:events')
   implementation project(':protoarray')
