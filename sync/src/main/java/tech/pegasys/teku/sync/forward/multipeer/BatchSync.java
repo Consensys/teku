@@ -72,7 +72,7 @@ public class BatchSync implements Sync {
    */
   private UInt64 lastImportTimerStartPointSeconds;
 
-  private boolean scheduledSync = false;
+  private boolean scheduledProgressSync = false;
 
   private BatchSync(
       final EventThread eventThread,
@@ -405,19 +405,19 @@ public class BatchSync implements Sync {
         batch.markAsInvalid();
       }
     } else if (result == BatchImportResult.SERVICE_OFFLINE) {
-      if (!scheduledSync) {
+      if (!scheduledProgressSync) {
         LOG.warn("Unable to import blocks because execution client is offline.");
         asyncRunner
             .runAfterDelay(
                 () ->
                     eventThread.execute(
                         () -> {
-                          scheduledSync = false;
+                          scheduledProgressSync = false;
                           progressSync();
                         }),
                 PAUSE_ON_SERVICE_OFFLINE)
             .reportExceptions();
-        scheduledSync = true;
+        scheduledProgressSync = true;
       }
       return;
     } else {

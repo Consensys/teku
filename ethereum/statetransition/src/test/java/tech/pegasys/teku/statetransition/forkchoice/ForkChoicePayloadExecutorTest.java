@@ -113,9 +113,9 @@ class ForkChoicePayloadExecutorTest {
     verify(executionEngine).getPowBlock(payload.getParentHash());
     verify(executionEngine, never()).executePayload(payload);
     assertThat(execution).isTrue();
-    assertThat(payloadExecutor.getExecutionResult()).isCompleted();
-    final ExecutePayloadResult result = payloadExecutor.getExecutionResult().getImmediately();
-    assertThat(result.hasFailedExecution()).isTrue();
+    assertThat(payloadExecutor.getExecutionResult())
+        .isCompletedWithValueMatching(ExecutePayloadResult::hasFailedExecution);
+    ;
   }
 
   @Test
