@@ -13,12 +13,16 @@
 
 package tech.pegasys.teku.cli.options;
 
+import com.google.common.base.Strings;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.List;
 import java.util.Set;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.metrics.MetricsConfig;
 
 public class MetricsOptions {
@@ -71,19 +75,19 @@ public class MetricsOptions {
   private int idleTimeoutSeconds = MetricsConfig.DEFAULT_IDLE_TIMEOUT_SECONDS;
 
   @Option(
-      names = {"--Xmetrics-endpoint"},
+      names = {"--Xmetrics-publish-endpoint"},
       hidden = true,
-      paramLabel = "<ENDPOINT>",
-      description = "External endpoint service to receive metrics",
+      paramLabel = "<URL>",
+      description = "Publish metrics for node monitoring to an external service",
       arity = "1")
   private String metricsEndpoint = null;
 
   @Option(
-      names = {"--Xmetrics-publication-interval"},
+      names = {"--Xmetrics-publish-interval"},
       hidden = true,
       paramLabel = "<INTEGER>",
       description =
-          "Interval between metric publications to the external endpoint service (measured in seconds)",
+          "Interval between metric publications to the external service (measured in seconds)",
       arity = "1")
   private int metricsPublicationInterval = MetricsConfig.DEFAULT_METRICS_PUBLICATION_INTERVAL;
 
@@ -95,8 +99,20 @@ public class MetricsOptions {
                 .metricsInterface(metricsInterface)
                 .metricsCategories(metricsCategories)
                 .metricsHostAllowlist(metricsHostAllowlist)
-                .metricsEndpoint(metricsEndpoint)
-                .metricsPublicationInterval(metricsPublicationInterval)
+                .metricsPublishEndpoint(parseMetricsEndpointUrl())
+                .metricsPublishInterval(metricsPublicationInterval)
                 .idleTimeoutSeconds(idleTimeoutSeconds));
+  }
+
+  private URL parseMetricsEndpointUrl() {
+    if (Strings.isNullOrEmpty(metricsEndpoint)) {
+      return null;
+    }
+    try {
+      return new URL(metricsEndpoint);
+    } catch (MalformedURLException e) {
+      throw new InvalidConfigurationException(
+          "Invalid configuration. Metrics Endpoint has invalid syntax", e);
+    }
   }
 }

@@ -13,64 +13,28 @@
 
 package tech.pegasys.teku.data.publisher;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.Objects;
+import tech.pegasys.teku.infrastructure.metrics.MetricsPublishCategories;
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
-public class ValidatorMetricData extends BaseMetricData {
+public class ValidatorMetricData extends GeneralProcessMetricData {
 
-  public final Long cpu_process_seconds_total;
-  public final Long memory_process_bytes;
-  public final String client_name;
-  public final String client_version;
-  public final Integer validator_total;
-  public final Integer validator_active;
+  @JsonProperty("validator_total")
+  private final Integer validatorTotal;
 
-  @JsonCreator
-  public ValidatorMetricData(
-      @JsonProperty("version") int version,
-      @JsonProperty("timestamp") long timestamp,
-      @JsonProperty("process") String process,
-      @JsonProperty("cpu_process_seconds_total") Long cpuProcessSecondsTotal,
-      @JsonProperty("memory_process_bytes") Long memoryProcessBytes,
-      @JsonProperty("client_name") String clientName,
-      @JsonProperty("client_version") String clientVersion,
-      @JsonProperty("validator_total") Integer validatorTotal,
-      @JsonProperty("validator_active") Integer validatorActive) {
-    super(version, timestamp, process);
-    this.cpu_process_seconds_total = cpuProcessSecondsTotal;
-    this.memory_process_bytes = memoryProcessBytes;
-    this.client_name = clientName;
-    this.client_version = clientVersion;
-    this.validator_total = validatorTotal;
-    this.validator_active = validatorActive;
+  @JsonProperty("validator_active")
+  private final Integer validatorActive;
+
+  public ValidatorMetricData(final long timestamp, final MetricsPublisherSource source) {
+    super(timestamp, MetricsPublishCategories.VALIDATOR.getDisplayName(), source);
+    this.validatorActive = source.getValidatorsActive();
+    this.validatorTotal = source.getValidatorsTotal();
   }
 
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-    if (!super.equals(o)) return false;
-    ValidatorMetricData that = (ValidatorMetricData) o;
-    return Objects.equals(cpu_process_seconds_total, that.cpu_process_seconds_total)
-        && Objects.equals(memory_process_bytes, that.memory_process_bytes)
-        && Objects.equals(client_name, that.client_name)
-        && Objects.equals(client_version, that.client_version)
-        && Objects.equals(validator_total, that.validator_total)
-        && Objects.equals(validator_active, that.validator_active);
+  public Integer getValidatorTotal() {
+    return validatorTotal;
   }
 
-  @Override
-  public int hashCode() {
-    return Objects.hash(
-        super.hashCode(),
-        cpu_process_seconds_total,
-        memory_process_bytes,
-        client_name,
-        client_version,
-        validator_total,
-        validator_active);
+  public Integer getValidatorActive() {
+    return validatorActive;
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 ConsenSys AG.
+ * Copyright 2022 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -20,21 +20,19 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.test.data.publisher.StubMetricsPublisherSource;
 
-class ValidatorMetricDataTest {
+public class BaseMetricDataTest {
   private final JsonProvider jsonProvider = new JsonProvider();
 
   @Test
   public void shouldSerializeObject() throws JsonProcessingException {
-    final MetricsPublisherSource source = new StubMetricsPublisherSource(1100L, 2200L, 44, 33);
-    final ValidatorMetricData process = new ValidatorMetricData(10L, source);
+    final String processField = "system";
+    final BaseMetricData process = new BaseMetricData(10L, processField);
     final String data = jsonProvider.objectToJSON(process);
     final ObjectMapper mapper = jsonProvider.getObjectMapper();
     final JsonNode node = mapper.readTree(data);
-    assertThat(node.size()).isEqualTo(12);
-    assertThat(node.get("process").asText()).isEqualTo("validator");
-    assertThat(node.get("validator_total").asInt()).isEqualTo(44L);
-    assertThat(node.get("validator_active").asInt()).isEqualTo(33L);
+    assertThat(node.get("version").asInt()).isEqualTo(1);
+    assertThat(node.get("process").asText()).isEqualTo(processField);
+    assertThat(node.get("timestamp").asLong()).isEqualTo(10L);
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 ConsenSys AG.
+ * Copyright 2022 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,19 +13,12 @@
 
 package tech.pegasys.teku.data.publisher;
 
-public enum MetricsDataClient {
-  VALIDATOR("validator"),
-  BEACON_NODE("beaconnode"),
-  SYSTEM("system"),
-  MINIMAL("minimal");
+public interface MetricsPublisherSource {
+  long getCpuSecondsTotal();
 
-  private String dataClient;
+  long getMemoryProcessBytes();
 
-  MetricsDataClient(String dataClient) {
-    this.dataClient = dataClient;
-  }
+  int getValidatorsTotal();
 
-  public String getDataClient() {
-    return this.dataClient;
-  }
+  int getValidatorsActive();
 }
