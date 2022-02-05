@@ -33,13 +33,14 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing.AttesterSlashingSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
-class BeaconBlockBodySchemaBellatrixImpl
+public class BeaconBlockBodySchemaBellatrixImpl
     extends ContainerSchema10<
         BeaconBlockBodyBellatrixImpl,
         SszSignature,
@@ -79,7 +80,8 @@ class BeaconBlockBodySchemaBellatrixImpl
         executionPayloadSchema);
   }
 
-  static BeaconBlockBodySchemaBellatrixImpl create(final SpecConfigBellatrix specConfig) {
+  public static BeaconBlockBodySchemaBellatrixImpl create(
+      final SpecConfigBellatrix specConfig, final AttesterSlashingSchema attesterSlashingSchema) {
     return new BeaconBlockBodySchemaBellatrixImpl(
         namedSchema(BlockBodyFields.RANDAO_REVEAL.name(), SszSignatureSchema.INSTANCE),
         namedSchema(BlockBodyFields.ETH1_DATA.name(), Eth1Data.SSZ_SCHEMA),
@@ -90,8 +92,7 @@ class BeaconBlockBodySchemaBellatrixImpl
                 ProposerSlashing.SSZ_SCHEMA, specConfig.getMaxProposerSlashings())),
         namedSchema(
             BlockBodyFields.ATTESTER_SLASHINGS.name(),
-            SszListSchema.create(
-                AttesterSlashing.SSZ_SCHEMA, specConfig.getMaxAttesterSlashings())),
+            SszListSchema.create(attesterSlashingSchema, specConfig.getMaxAttesterSlashings())),
         namedSchema(
             BlockBodyFields.ATTESTATIONS.name(),
             SszListSchema.create(

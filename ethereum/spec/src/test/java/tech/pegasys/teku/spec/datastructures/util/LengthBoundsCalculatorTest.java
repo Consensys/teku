@@ -30,11 +30,9 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksB
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
-import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
@@ -71,7 +69,9 @@ public class LengthBoundsCalculatorTest {
             (SchemaProvider) SchemaDefinitions::getAttestationSchema,
             SszLengthBounds.ofBytes(229, 485)),
         Arguments.of(getProvider(AttestationData.SSZ_SCHEMA), SszLengthBounds.ofBytes(128, 128)),
-        Arguments.of(getProvider(AttesterSlashing.SSZ_SCHEMA), SszLengthBounds.ofBytes(464, 33232)),
+        Arguments.of(
+            (SchemaProvider) SchemaDefinitions::getAttesterSlashingSchema,
+            SszLengthBounds.ofBytes(464, 33232)),
         Arguments.of(
             (SchemaProvider) SchemaDefinitions::getBeaconBlockSchema,
             SszLengthBounds.ofBytes(304, 157656)),
@@ -93,7 +93,8 @@ public class LengthBoundsCalculatorTest {
             (SchemaProvider) SchemaDefinitions::getHistoricalBatchSchema,
             SszLengthBounds.ofBytes(524288, 524288)),
         Arguments.of(
-            getProvider(IndexedAttestation.SSZ_SCHEMA), SszLengthBounds.ofBytes(228, 16612)),
+            (SchemaProvider) SchemaDefinitions::getIndexedAttestationSchema,
+            SszLengthBounds.ofBytes(228, 16612)),
         Arguments.of(
             (SchemaProvider)
                 definitions ->

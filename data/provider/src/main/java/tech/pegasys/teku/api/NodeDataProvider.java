@@ -31,6 +31,7 @@ import tech.pegasys.teku.api.schema.ProposerSlashing;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
 import tech.pegasys.teku.spec.datastructures.blocks.ReceivedBlockListener;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
@@ -45,6 +46,7 @@ import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
 
 public class NodeDataProvider {
 
+  private final Spec spec;
   private final AggregatingAttestationPool attestationPool;
   private final OperationPool<tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing>
       attesterSlashingPool;
@@ -60,6 +62,7 @@ public class NodeDataProvider {
   private final PayloadAttributesCalculator payloadAttributesCalculator;
 
   public NodeDataProvider(
+      final Spec spec,
       final AggregatingAttestationPool attestationPool,
       final OperationPool<tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing>
           attesterSlashingsPool,
@@ -73,6 +76,7 @@ public class NodeDataProvider {
       final boolean isLivenessTrackingEnabled,
       final ActiveValidatorChannel activeValidatorChannel,
       final PayloadAttributesCalculator payloadAttributesCalculator) {
+    this.spec = spec;
     this.attestationPool = attestationPool;
     this.attesterSlashingPool = attesterSlashingsPool;
     this.proposerSlashingPool = proposerSlashingPool;
@@ -116,7 +120,7 @@ public class NodeDataProvider {
   }
 
   public SafeFuture<InternalValidationResult> postAttesterSlashing(AttesterSlashing slashing) {
-    return attesterSlashingPool.add(slashing.asInternalAttesterSlashing());
+    return attesterSlashingPool.add(slashing.asInternalAttesterSlashing(spec));
   }
 
   public SafeFuture<InternalValidationResult> postProposerSlashing(ProposerSlashing slashing) {

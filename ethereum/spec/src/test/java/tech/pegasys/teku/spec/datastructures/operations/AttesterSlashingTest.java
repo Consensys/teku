@@ -18,16 +18,24 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import java.util.Objects;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing.AttesterSlashingSchema;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class AttesterSlashingTest {
 
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private IndexedAttestation indexedAttestation1 = dataStructureUtil.randomIndexedAttestation();
-  private IndexedAttestation indexedAttestation2 = dataStructureUtil.randomIndexedAttestation();
+  private final Spec spec = TestSpecFactory.createDefault();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final AttesterSlashingSchema attesterSlashingSchema =
+      spec.getGenesisSchemaDefinitions().getAttesterSlashingSchema();
+  private final IndexedAttestation indexedAttestation1 =
+      dataStructureUtil.randomIndexedAttestation();
+  private final IndexedAttestation indexedAttestation2 =
+      dataStructureUtil.randomIndexedAttestation();
 
   private AttesterSlashing attesterSlashing =
-      new AttesterSlashing(indexedAttestation1, indexedAttestation2);
+      attesterSlashingSchema.create(indexedAttestation1, indexedAttestation2);
 
   @Test
   void equalsReturnsTrueWhenObjectsAreSame() {
@@ -39,7 +47,7 @@ class AttesterSlashingTest {
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
     AttesterSlashing testAttesterSlashing =
-        new AttesterSlashing(indexedAttestation1, indexedAttestation2);
+        attesterSlashingSchema.create(indexedAttestation1, indexedAttestation2);
 
     assertEquals(attesterSlashing, testAttesterSlashing);
   }
@@ -54,7 +62,7 @@ class AttesterSlashingTest {
     }
 
     AttesterSlashing testAttesterSlashing =
-        new AttesterSlashing(otherIndexedAttestation1, indexedAttestation2);
+        attesterSlashingSchema.create(otherIndexedAttestation1, indexedAttestation2);
 
     assertNotEquals(attesterSlashing, testAttesterSlashing);
   }
@@ -69,7 +77,7 @@ class AttesterSlashingTest {
     }
 
     AttesterSlashing testAttesterSlashing =
-        new AttesterSlashing(indexedAttestation1, otherIndexedAttestation2);
+        attesterSlashingSchema.create(indexedAttestation1, otherIndexedAttestation2);
 
     assertNotEquals(attesterSlashing, testAttesterSlashing);
   }
@@ -78,7 +86,7 @@ class AttesterSlashingTest {
   void roundtripSsz() {
     AttesterSlashing attesterSlashing = dataStructureUtil.randomAttesterSlashing();
     AttesterSlashing newAttesterSlashing =
-        AttesterSlashing.SSZ_SCHEMA.sszDeserialize(attesterSlashing.sszSerialize());
+        attesterSlashingSchema.sszDeserialize(attesterSlashing.sszSerialize());
     assertEquals(attesterSlashing, newAttesterSlashing);
   }
 }

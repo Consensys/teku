@@ -43,6 +43,9 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
               "ssz_static/Attestation",
               new SszTestExecutor<>(SchemaDefinitions::getAttestationSchema))
           .put(
+              "ssz_static/AttesterSlashing",
+              new SszTestExecutor<>(SchemaDefinitions::getAttesterSlashingSchema))
+          .put(
               "ssz_static/SignedAggregateAndProof",
               new SszTestExecutor<>(SchemaDefinitions::getSignedAggregateAndProofSchema))
           .put(
@@ -60,6 +63,9 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
           .put(
               "ssz_static/HistoricalBatch",
               new SszTestExecutor<>(SchemaDefinitions::getHistoricalBatchSchema))
+          .put(
+              "ssz_static/IndexedAttestation",
+              new SszTestExecutor<>(SchemaDefinitions::getIndexedAttestationSchema))
           .put(
               "ssz_static/PendingAttestation",
               new SszTestExecutor<>(

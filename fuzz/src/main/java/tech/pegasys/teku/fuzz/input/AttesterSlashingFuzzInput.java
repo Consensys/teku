@@ -29,7 +29,7 @@ public class AttesterSlashingFuzzInput
       createType(final SpecVersion spec) {
     return ContainerSchema2.create(
         SszSchema.as(BeaconState.class, spec.getSchemaDefinitions().getBeaconStateSchema()),
-        AttesterSlashing.SSZ_SCHEMA,
+        spec.getSchemaDefinitions().getAttesterSlashingSchema(),
         AttesterSlashingFuzzInput::new);
   }
 
